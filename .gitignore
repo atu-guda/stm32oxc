@@ -1,0 +1,31 @@
+# Object files
+*.o
+*.obj
+*.elf
+
+# Libraries
+*.lib
+*.a
+
+# Shared objects
+*.so
+*.so.*
+
+# Executables
+*.bin
+*.out
+*.hex
+
+# info files
+*.map
+*.log
+*.lst
+
+# dep files
+*.d
+
+# vim swaps
+.*.swp
+
+# input/example/template files
+_in/*
