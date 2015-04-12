@@ -129,6 +129,9 @@ void SysTick_Handler(void);
 
 void SystemClock_Config(void);
 
+#define FreeRTOS_to_stm32cube_tick_hook \
+  void vApplicationTickHook() { HAL_IncTick();  }
+
 
 
 /** return position of first setted bit LSB=0, or FF if 0 */

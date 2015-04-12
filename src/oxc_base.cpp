@@ -7,7 +7,7 @@
 
 #include <oxc_base.h>
 
-#ifdef STD_SYSTICK_HANDLER
+#if STD_SYSTICK_HANDLER != 0
 #ifdef USE_FREERTOS
 #warning Non-RTOS SysTick_Handler defined
 #endif
