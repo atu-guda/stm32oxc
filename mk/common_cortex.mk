@@ -114,7 +114,7 @@ endif
 
 vpath %.c   $(SRCPATHS) $(OXCSRC)/startup
 vpath %.cpp $(SRCPATHS)
-vpath %.s   $(OXCSRC)/startup $(STMSRC)
+vpath %.s   $(OXCSRC)/startup $(STMSRC)/startup
 vpath %.o   $(OBJDIR)
 vpath %.d   $(DEPSDIR)
 

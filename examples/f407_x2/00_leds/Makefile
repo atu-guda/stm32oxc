@@ -3,24 +3,21 @@ MCTYPE = STM32F407
 
 LINK=$(CC)
 
-USE_OX = y
-USE_MICRORL = n
+USE_OXC = y
 USE_FREERTOS = n
-USE_USB_OTG = n
-USE_USB_DEFAULT_CDC = n
 NO_STDLIB = y
 
 # TODO: copy to main location
-OXDIR = /home/atu/proj/stm32/ox
+OXCDIR = /home/atu/proj/stm32/oxc
 
-CFLAGS_ADD := -DSTM32F40_41xxx -DHSE_VALUE=8000000
+CFLAGS_ADD := -DSTM32F407xx -DHSE_VALUE=8000000
 #
-LDSCRIPT = $(OXDIR)/ld/stm32f407ve_512k_192k_x.ld
+LDSCRIPT = $(OXCDIR)/ld/STM32F407VE_FLASH.ld
 
-SRCS = main.c
-#SRCS += system_stm32f4xx.c
-SRCS += clock_stm32f4xx_08HSE168.c
-SRCS += startup_stm32f40xx_x.s
+SRCS  = main.c
+SRCS += stm32f4xx_hal_msp.c
+SRCS += system_stm32f4xx.c
+SRCS += startup_stm32f407xx.s
 #SRCS += ox_base.cpp
 #SRCS += ox_dev.cpp
 #SRCS += ox_console.cpp
@@ -28,60 +25,77 @@ SRCS += startup_stm32f40xx_x.s
 #SRCS += ox_gpio.cpp
 #SRCS += ox_i2c.cpp
 
-# stm32lib sources
-# SRCS += stm32f4xx_adc.c
-# SRCS += stm32f4xx_can.c
-# SRCS += stm32f4xx_crc.c
-# SRCS += stm32f4xx_cryp_aes.c
-# SRCS += stm32f4xx_cryp.c
-# SRCS += stm32f4xx_cryp_des.c
-# SRCS += stm32f4xx_cryp_tdes.c
-# SRCS += stm32f4xx_dac.c
-# SRCS += stm32f4xx_dbgmcu.c
-# SRCS += stm32f4xx_dcmi.c
-# SRCS += stm32f4xx_dma2d.c
-# SRCS += stm32f4xx_dma.c
-# SRCS += stm32f4xx_exti.c
-# SRCS += stm32f4xx_flash.c
-# SRCS += stm32f4xx_fmc.c
-# SRCS += stm32f4xx_fsmc.c
-SRCS += stm32f4xx_gpio.c
-# SRCS += stm32f4xx_hash.c
-# SRCS += stm32f4xx_hash_md5.c
-# SRCS += stm32f4xx_hash_sha1.c
-# SRCS += stm32f4xx_i2c.c
-# SRCS += stm32f4xx_iwdg.c
-# SRCS += stm32f4xx_ltdc.c
-# SRCS += stm32f4xx_misc.c
-# SRCS += stm32f4xx_pwr.c
-SRCS += stm32f4xx_rcc.c
-# SRCS += stm32f4xx_rng.c
-# SRCS += stm32f4xx_rtc.c
-# SRCS += stm32f4xx_sai.c
-# SRCS += stm32f4xx_sdio.c
-# SRCS += stm32f4xx_spi.c
-# SRCS += stm32f4xx_syscfg.c
-# SRCS += stm32f4xx_tim.c
-# SRCS += stm32f4xx_usart.c
-# SRCS += stm32f4xx_wwdg.c
-# SRCS += stm32f4x7_eth.c
+# stm32cube sources.
+# Base:
+SRCS += stm32f4xx_hal.c
+SRCS += stm32f4xx_hal_cortex.c
+SRCS += stm32f4xx_hal_gpio.c
+SRCS += stm32f4xx_hal_rcc.c
 
-# FreeRTOS: rtos/Source -> /usr/share/FreeRTOS/Source
-#SRCS += croutine.c
-#SRCS += list.c
-#SRCS += queue.c
-#SRCS += tasks.c
-#SRCS += timers.c
-# symlink to Source/portable/GCC/ARM_CM3/port.c <<< change
-#SRCS += heap_2.c
-# symlink to Source/portable/GCC/ARM_CM4F/port.c <<< change
-#SRCS += port.c
-# Beware: portmacro.h is symlink to
-#   rtos/Source/portable/GCC/ARM_CM3/portmacro.h or CM4F
+# aux:
+# SRCS += stm32f4xx_hal_adc.c
+# SRCS += stm32f4xx_hal_adc_ex.c
+# SRCS += stm32f4xx_hal_can.c
+# SRCS += stm32f4xx_hal_cec.c
+# SRCS += stm32f4xx_hal_crc.c
+# SRCS += stm32f4xx_hal_cryp.c
+# SRCS += stm32f4xx_hal_cryp_ex.c
+# SRCS += stm32f4xx_hal_dac.c
+# SRCS += stm32f4xx_hal_dac_ex.c
+# SRCS += stm32f4xx_hal_dcmi.c
+# SRCS += stm32f4xx_hal_dcmi_ex.c
+# SRCS += stm32f4xx_hal_dma2d.c
+# SRCS += stm32f4xx_hal_dma.c
+# SRCS += stm32f4xx_hal_dma_ex.c
+# SRCS += stm32f4xx_hal_eth.c
+# SRCS += stm32f4xx_hal_flash.c
+# SRCS += stm32f4xx_hal_flash_ex.c
+# SRCS += stm32f4xx_hal_flash_ramfunc.c
+# SRCS += stm32f4xx_hal_fmpi2c.c
+# SRCS += stm32f4xx_hal_fmpi2c_ex.c
+# SRCS += stm32f4xx_hal_hash.c
+# SRCS += stm32f4xx_hal_hash_ex.c
+# SRCS += stm32f4xx_hal_hcd.c
+# SRCS += stm32f4xx_hal_i2c.c
+# SRCS += stm32f4xx_hal_i2c_ex.c
+# SRCS += stm32f4xx_hal_i2s.c
+# SRCS += stm32f4xx_hal_i2s_ex.c
+# SRCS += stm32f4xx_hal_irda.c
+# SRCS += stm32f4xx_hal_iwdg.c
+# SRCS += stm32f4xx_hal_ltdc.c
+# SRCS += stm32f4xx_hal_msp_template.c
+# SRCS += stm32f4xx_hal_nand.c
+# SRCS += stm32f4xx_hal_nor.c
+# SRCS += stm32f4xx_hal_pccard.c
+# SRCS += stm32f4xx_hal_pcd.c
+# SRCS += stm32f4xx_hal_pcd_ex.c
+# SRCS += stm32f4xx_hal_pwr.c
+# SRCS += stm32f4xx_hal_pwr_ex.c
+# SRCS += stm32f4xx_hal_qspi.c
+# SRCS += stm32f4xx_hal_rcc_ex.c
+# SRCS += stm32f4xx_hal_rng.c
+# SRCS += stm32f4xx_hal_rtc.c
+# SRCS += stm32f4xx_hal_rtc_ex.c
+# SRCS += stm32f4xx_hal_sai.c
+# SRCS += stm32f4xx_hal_sai_ex.c
+# SRCS += stm32f4xx_hal_sd.c
+# SRCS += stm32f4xx_hal_sdram.c
+# SRCS += stm32f4xx_hal_smartcard.c
+# SRCS += stm32f4xx_hal_spdifrx.c
+# SRCS += stm32f4xx_hal_spi.c
+# SRCS += stm32f4xx_hal_sram.c
+# SRCS += stm32f4xx_hal_tim.c
+# SRCS += stm32f4xx_hal_tim_ex.c
+# SRCS += stm32f4xx_hal_uart.c
+# SRCS += stm32f4xx_hal_usart.c
+# SRCS += stm32f4xx_hal_wwdg.c
+# SRCS += stm32f4xx_ll_fmc.c
+# SRCS += stm32f4xx_ll_fsmc.c
+# SRCS += stm32f4xx_ll_sdmmc.c
+# SRCS += stm32f4xx_ll_usb.c
 
-###################################################
 
-include $(OXDIR)/mk/common_cortex.mk
+include $(OXCDIR)/mk/common_cortex.mk
 
 include $(wildcard $(DEPSDIR)/*.d)
 #
