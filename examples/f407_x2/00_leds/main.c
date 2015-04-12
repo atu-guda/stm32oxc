@@ -1,5 +1,5 @@
 #include "stm32f4xx_hal.h"
-// #include <ox_base.h>
+// #include <oxc_base.h>
 
 void NMI_Handler(void);
 void HardFault_Handler(void);
@@ -12,6 +12,7 @@ void PendSV_Handler(void);
 void SysTick_Handler(void);
 
 void SystemClock_Config(void);
+
 void MX_GPIO_Init(void);
 
 
@@ -57,9 +58,8 @@ int main(void)
     j = (t + 1);
     t = j - 1;
     GPIO_WriteBits( GPIOC, i, 0x000F );
-    // GPIOC->ODR = i;
     // GPIO_WriteBits( TPORT, j, mask );
-    // HAL_GPIO_TogglePin( GPIOC, 3 );
+    // HAL_GPIO_TogglePin( GPIOC, i );
     ++i;
     i &= 0x0F;
     HAL_Delay( 200 );
@@ -85,7 +85,7 @@ void SystemClock_Config(void)
   RCC_ClkInitTypeDef RCC_ClkInitStruct;
   RCC_OscInitTypeDef RCC_OscInitStruct;
 
-  __PWR_CLK_ENABLE();
+  // __PWR_CLK_ENABLE();
   __HAL_RCC_PWR_CLK_ENABLE();
 
   __HAL_PWR_VOLTAGESCALING_CONFIG( PWR_REGULATOR_VOLTAGE_SCALE1 );
