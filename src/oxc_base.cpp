@@ -5,45 +5,21 @@
 #include <stdlib.h>
 #endif
 
-#include <ox_base.h>
+#include <oxc_base.h>
 
-#if defined(STM32F1)
-
-GPIO_InitTypeDef GPIO_Modes[pinMode_MAX] = {
-  { 0, GPIO_DFL_Speed, GPIO_Mode_IN_FLOATING  },// None - fake INF
-  { 0, GPIO_DFL_Speed, GPIO_Mode_AIN },         // AN
-  { 0, GPIO_DFL_Speed, GPIO_Mode_IN_FLOATING }, // INF
-  { 0, GPIO_DFL_Speed, GPIO_Mode_IPU },         // IPU
-  { 0, GPIO_DFL_Speed, GPIO_Mode_IPD },         // IPD
-  { 0, GPIO_DFL_Speed, GPIO_Mode_Out_PP },      // Out_PP
-  { 0, GPIO_DFL_Speed, GPIO_Mode_Out_OD },      // Out_OD
-  { 0, GPIO_DFL_Speed, GPIO_Mode_AF_PP },       // AF_PP
-  { 0, GPIO_DFL_Speed, GPIO_Mode_AF_OD },       // AF_OD
-  { 0, GPIO_DFL_Speed, GPIO_Mode_IPU }          // AFIU = IPU for f1
-};
-#else // 2.3.4 is similar?
-
-GPIO_InitTypeDef GPIO_Modes[pinMode_MAX] = {
-  { 0, GPIO_Mode_IN,  GPIO_DFL_Speed, GPIO_OType_PP, GPIO_PuPd_NOPULL  }, // None - fake INF
-  { 0, GPIO_Mode_AN,  GPIO_DFL_Speed, GPIO_OType_PP, GPIO_PuPd_NOPULL  }, // AN
-  { 0, GPIO_Mode_IN,  GPIO_DFL_Speed, GPIO_OType_PP, GPIO_PuPd_NOPULL  }, // INF
-  { 0, GPIO_Mode_IN,  GPIO_DFL_Speed, GPIO_OType_PP, GPIO_PuPd_UP      }, // IPU
-  { 0, GPIO_Mode_IN,  GPIO_DFL_Speed, GPIO_OType_PP, GPIO_PuPd_DOWN    }, // IPD
-  { 0, GPIO_Mode_OUT, GPIO_DFL_Speed, GPIO_OType_PP, GPIO_PuPd_NOPULL  }, // Out_PP
-  { 0, GPIO_Mode_OUT, GPIO_DFL_Speed, GPIO_OType_OD, GPIO_PuPd_NOPULL  }, // Out_OD
-  { 0, GPIO_Mode_AF,  GPIO_DFL_Speed, GPIO_OType_PP, GPIO_PuPd_NOPULL  }, // AF_PP
-  { 0, GPIO_Mode_AF,  GPIO_DFL_Speed, GPIO_OType_OD, GPIO_PuPd_NOPULL  }, // AF_OD
-  { 0, GPIO_Mode_AF,  GPIO_DFL_Speed, GPIO_OType_PP, GPIO_PuPd_UP      }  // AFIU
-};
+#ifdef STD_SYSTICK_HANDLER
+#ifdef USE_FREERTOS
+#warning Non-RTOS SysTick_Handler defined
+#endif
+void SysTick_Handler(void)
+{
+  HAL_IncTick();
+  HAL_SYSTICK_IRQHandler();
+}
 
 #endif
 
-void devPinsConf( GPIO_TypeDef* GPIOx, enum PinModeNum mode_num, uint16_t pins )
-{
-  GPIO_InitTypeDef gp = GPIO_Modes[mode_num];
-  gp.GPIO_Pin = pins;
-  GPIO_Init( GPIOx, &gp );
-}
+int exit_rc = 0;
 
 uint8_t numFirstBit( uint32_t a )
 {
@@ -79,10 +55,6 @@ void die( uint16_t n )
   while(1) { delay_bad_ms( n*200 ); /* NOP */ };
 }
 
-void GPIO_WriteBits( GPIO_TypeDef* GPIOx, uint16_t PortVal, uint16_t mask )
-{
-  GPIOx->ODR = ( PortVal & mask ) | ( GPIOx->ODR & (~mask) );
-}
 
 void delay_bad_mcs( uint32_t mcs )
 {
@@ -102,7 +74,8 @@ void delay_ms( uint32_t ms )
     delay_bad_ms( ms );
   }
   #else
-  delay_bad_ms( ms );
+  HAL_Delay( ms );
+  // delay_bad_ms( ms ); // TODO: config
   #endif
 }
 

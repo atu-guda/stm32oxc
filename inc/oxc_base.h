@@ -2,26 +2,31 @@
 #define _OXC_BASE_H
 
 
-#if defined (STM32F1)
-  #include "stm32f10x_conf.h"
+#if defined (STM32F0)
+ #include <stm32f0xx_hal.h>
  #define SET_BIT_REG   BSRR
  #define RESET_BIT_REG BRR
- #define NVIC_FOR_FREERTOS NVIC_SetPriorityGrouping( NVIC_PriorityGroup_4 );
+ #define RESET_BIT_SHIFT 0
+#elif defined (STM32F1)
+ #include <stm32f1xx_hal.h>
+ #define SET_BIT_REG   BSRR
+ #define RESET_BIT_REG BRR
+ #define RESET_BIT_SHIFT 0
 #elif defined (STM32F2)
-  #include "stm32f2xx_conf.h"
+ #include <stm32f2xx_hal.h>
  #define SET_BIT_REG   BSRRL
  #define RESET_BIT_REG BSRRH
- #define NVIC_FOR_FREERTOS NVIC_SetPriorityGrouping( NVIC_PriorityGroup_4 );
+ #define RESET_BIT_SHIFT 0
 #elif defined (STM32F3)
-  #include "stm32f30x_conf.h"
- #define SET_BIT_REG   BSRR
- #define RESET_BIT_REG BRR
- #define NVIC_FOR_FREERTOS NVIC_SetPriorityGrouping( NVIC_PriorityGroup_4 );
-#elif defined (STM32F4)
-  #include "stm32f4xx_conf.h"
+ #include <stm32f3xx_hal.h>
  #define SET_BIT_REG   BSRRL
  #define RESET_BIT_REG BSRRH
- #define NVIC_FOR_FREERTOS NVIC_SetPriorityGrouping( NVIC_PriorityGroup_4 );
+ #define RESET_BIT_SHIFT 0
+#elif defined (STM32F4)
+ #include <stm32f4xx_hal.h>
+ #define SET_BIT_REG   BSRR
+ #define RESET_BIT_REG BSRR
+ #define RESET_BIT_SHIFT 16
 #else
   #error "Unsupported MCU"
 #endif
@@ -30,7 +35,7 @@
   #error "Required and give MCBASE is not equal"
 #endif
 
-#define UNUSED __attribute__((unused))
+#define UNUSED_ARG __attribute__((unused))
 
 
 #define PORT_BITS 16
@@ -51,6 +56,7 @@
 #define BIT14 0x4000
 #define BIT15 0x8000
 
+extern int exit_rc;
 
 typedef __IO uint32_t reg32;
 typedef const char *const ccstr;
@@ -99,8 +105,10 @@ void taskYieldFun(void);
 void vApplicationIdleHook(void);
 void vApplicationTickHook(void);
 // misc functions
+void _exit( int rc );
 void die( uint16_t n );
-void delay_ms( uint32_t ms ); // base on vTaskDelay - switch to sheduler
+
+void delay_ms( uint32_t ms ); // base on vTaskDelay - switch to shceduler (if avail), or to HAL
 void delay_mcs( uint32_t mcs );
 // dumb delay fuctions - loop based - for use w/o timer and for small times
 void delay_bad_n( uint32_t n );
@@ -108,62 +116,20 @@ void delay_bad_s( uint32_t s );
 void delay_bad_ms( uint32_t ms );
 void delay_bad_mcs( uint32_t mcs );
 
-// RCC registers for enable devices
-enum RCC_Bus { // indexes in RCC_enr
-  RCC_Bus0 = 0, RCC_APB1 = 0,
-  RCC_Bus1 = 1, RCC_APB2 = 1,
-  RCC_Bus2 = 2, RCC_AHB = 2, RCC_AHB1  = 2,
-  RCC_Bus3 = 3, RCC_AHB2  = 3,
-  RCC_Bus4 = 4, RCC_AHB3  = 4,
-  RCC_NBUS = 5
-};
+// signal handlers descriotions
+void NMI_Handler(void);
+void HardFault_Handler(void);
+void MemManage_Handler(void);
+void BusFault_Handler(void);
+void UsageFault_Handler(void);
+void SVC_Handler(void);
+void DebugMon_Handler(void);
+void PendSV_Handler(void);
+void SysTick_Handler(void);
 
-enum PinModeNum {
-  pinMode_NONE = 0,
-  pinMode_AN,
-  pinMode_INF,
-  pinMode_IPU,
-  pinMode_IPD,
-  pinMode_Out_PP,
-  pinMode_Out_OD,
-  pinMode_AF_PP,
-  pinMode_AF_OD,
-  pinMode_AFIU,
-  pinMode_MAX, // size
-  // aliases (default, may be other)
-  pinMode_TIM_Capt   = pinMode_INF,
-  pinMode_TIM_Out    = pinMode_Out_PP,
-  pinMode_USART_TX   = pinMode_AF_PP,
-  pinMode_USART_RX   = pinMode_AFIU,
-  pinMode_SPI_SCK    = pinMode_AF_PP,
-  pinMode_SPI_MOSI   = pinMode_AF_PP,
-  pinMode_SPI_MISO   = pinMode_INF,
-  pinMode_SPI_NSS    = pinMode_INF,
-  pinMode_I2C_SCK    = pinMode_AF_OD,
-  pinMode_I2C_SDA    = pinMode_AF_OD,
-  pinMode_I2C_SMBA   = pinMode_AF_OD
-};
-
-#if defined(STM32F1)
-#define GPIO_DFL_Speed GPIO_Speed_50MHz
-
-#elif defined(STM32F2)
-#define GPIO_DFL_Speed GPIO_Speed_100MHz
-
-#elif defined(STM32F3)
-#define  GPIO_DFL_Speed GPIO_Speed_Level_3
-
-#elif defined(STM32F4)
-#define  GPIO_DFL_Speed  GPIO_High_Speed
-#else
-  #error "Unknow MCU type"
-#endif
-extern GPIO_InitTypeDef GPIO_Modes[pinMode_MAX];
+void SystemClock_Config(void);
 
 
-void devPinsConf( GPIO_TypeDef* GPIOx, enum PinModeNum mode_num, uint16_t pins );
-/** write some (mask based) bits to port, keep all other */
-void GPIO_WriteBits( GPIO_TypeDef* GPIOx, uint16_t PortVal, uint16_t mask );
 
 /** return position of first setted bit LSB=0, or FF if 0 */
 uint8_t numFirstBit( uint32_t a );
@@ -191,3 +157,4 @@ char* i2dec( int n, char *s );
 
 #endif
 
+// vim: path=.,/usr/share/stm32cube/inc
