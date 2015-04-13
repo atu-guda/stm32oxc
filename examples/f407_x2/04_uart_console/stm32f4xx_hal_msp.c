@@ -7,6 +7,7 @@
 
 #include <stm32f4xx_hal.h>
 
+#include <FreeRTOS.h>
 
 void HAL_UART_MspInit( UART_HandleTypeDef* huart )
 {
@@ -29,8 +30,8 @@ void HAL_UART_MspInit( UART_HandleTypeDef* huart )
 
     /* Peripheral interrupt init*/
     // wait: not now
-    // HAL_NVIC_SetPriority( USART2_IRQn, configKERNEL_INTERRUPT_PRIORITY, 0 );
-    // HAL_NVIC_EnableIRQ( USART2_IRQn );
+    HAL_NVIC_SetPriority( USART2_IRQn, configKERNEL_INTERRUPT_PRIORITY, 0 );
+    HAL_NVIC_EnableIRQ( USART2_IRQn );
   }
 
 }
