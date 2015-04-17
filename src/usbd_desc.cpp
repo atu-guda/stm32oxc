@@ -6,16 +6,36 @@
 
 #include <usbd_core.h>
 #include "usbd_desc.h"
-#include "usbd_conf.h"
+#include <usbd_conf.h>
 
 /* Private define ------------------------------------------------------------*/
+#ifndef USBD_VID
 #define USBD_VID                      0x0483
+#endif
+
+#ifndef USBD_PID
 #define USBD_PID                      0x5740
+#endif
+
+#ifndef USBD_LANGID_STRING
 #define USBD_LANGID_STRING            0x409
-#define USBD_MANUFACTURER_STRING      "Atu_labs"
+#endif
+
+#ifndef USBD_MANUFACTURER_STRING
+#define USBD_MANUFACTURER_STRING      "Unknown manufaturer"
+#endif
+
+#ifndef USBD_PRODUCT_FS_STRING
 #define USBD_PRODUCT_FS_STRING        "STM32 Virtual ComPort"
+#endif
+
+#ifndef USBD_CONFIGURATION_FS_STRING
 #define USBD_CONFIGURATION_FS_STRING  "VCP Config"
+#endif
+
+#ifndef USBD_INTERFACE_FS_STRING
 #define USBD_INTERFACE_FS_STRING      "VCP Interface"
+#endif
 
 /* Private function prototypes -----------------------------------------------*/
 uint8_t *USBD_VCP_DeviceDescriptor( USBD_SpeedTypeDef speed, uint16_t *length );

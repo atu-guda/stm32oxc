@@ -8,6 +8,7 @@ LINK=$(CC)
 USE_OXC = y
 USE_FREERTOS = y
 NO_STDLIB = y
+USE_USB_DEFAULT_CDC = y
 
 # TODO: copy to main location
 OXCDIR = /home/atu/proj/stm32/oxc
@@ -32,14 +33,13 @@ SRCS += oxc_console.cpp
 SRCS += oxc_debug1.cpp
 SRCS += oxc_gpio.cpp
 #SRCS += oxc_usartio.cpp
-#SRCS += oxc_usbcdcio.cpp
+SRCS += oxc_usbcdcio.cpp
 SRCS += oxc_smallrl.cpp
 SRCS += oxc_smallrl_q.cpp
 #SRCS += oxc_i2c.cpp
 
 SRCS += usbd_cdc_interface.cpp
-SRCS += usbd_desc.cpp
-SRCS += usbd_conf.cpp
+
 
 # stm32cube sources.
 # Base:

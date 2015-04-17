@@ -1,7 +1,6 @@
-#include <stm32f4xx_hal.h>
-#include <usbd_core.h>
-
 #include <oxc_base.h>
+
+#include <usbd_core.h>
 
 /* Private variables ---------------------------------------------------------*/
 PCD_HandleTypeDef hpcd;

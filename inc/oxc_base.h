@@ -95,8 +95,8 @@ typedef const char *const ccstr;
 #endif
 
 #ifdef __cplusplus
-template<typename T> class _ShowType; // to output decucted type
-                                      // _ShowType< decltype(XXXX) > xType;
+// template<typename T> class _ShowType; // to output decucted type
+//                                       // _ShowType< decltype(XXXX) > xType;
  extern "C" {
 #endif
 
@@ -126,6 +126,7 @@ void SVC_Handler(void);
 void DebugMon_Handler(void);
 void PendSV_Handler(void);
 void SysTick_Handler(void);
+void OTG_FS_IRQHandler(void);
 
 void SystemClock_Config(void);
 

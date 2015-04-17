@@ -2,11 +2,12 @@
 #define __USBD_CONF_H
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32f4xx_hal.h"
 #include <stdint.h>
-// all include need only for debug! here USBD_DEBUG_LEVEL = 0
+#include <stdlib.h>
+// to correct include "stm32fXxx_hal.h"
+#include <oxc_base.h>
+// this includes need only for debug! here USBD_DEBUG_LEVEL = 0
 // #include <stdio.h>
-// #include <stdlib.h>
 // #include <string.h>
 
 

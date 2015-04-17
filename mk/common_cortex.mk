@@ -96,11 +96,11 @@ ifeq "$(USE_USB_OTG)" "y"
 endif
 
 ifeq "$(USE_USB_DEFAULT_CDC)" "y"
-  # SRCPATHS += $(OXCSRC)/usb_cdc
+  SRCPATHS += $(OXCSRC)/usb_cdc
   # ALLFLAGS += -I$(OXCINC)/usb_cdc
-  # SRCS += usb_bsp.cpp
+  SRCS += usbd_conf.cpp
+  SRCS += usbd_desc.cpp
   # SRCS += usbd_cdc_vcp.cpp
-  # SRCS += usbd_desc.cpp
   # SRCS += usbd_usr.cpp
   # # USB: lib:
   # SRCS += usb_dcd.c
