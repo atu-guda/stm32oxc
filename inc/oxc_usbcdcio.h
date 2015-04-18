@@ -12,11 +12,11 @@ extern USBD_HandleTypeDef USBD_Dev;
 
 class UsbcdcIO : public DevIO {
   public:
-   UsbcdcIO( USBD_HandleTypeDef *a_usb_dev )
-     : usb_dev( a_usb_dev )
-    { }
+   UsbcdcIO()
+    { pusb_dev = &usb_dev; static_usbcdcio = this; }
    // virtual ~UsbcdcIO() override {};
    // virtual void reset() override {}
+   void init();
 
    virtual int sendBlockSync( const char *s, int l ) override;
    //{ usb->transmit( s, l ); return l; } // TODO: check return status
@@ -32,11 +32,26 @@ class UsbcdcIO : public DevIO {
 
    USBD_CDC_LineCodingTypeDef* getCdcLineCoding() { return &lineCoding; }
 
+   static int8_t CDC_Itf_Init();
+   static int8_t CDC_Itf_DeInit();
+   static int8_t CDC_Itf_Control( uint8_t cmd, uint8_t* pbuf, uint16_t length );
+   static int8_t CDC_Itf_Receive( uint8_t* pbuf, uint32_t *Len );
+
 
   protected:
-   USBD_HandleTypeDef *usb_dev;
+   USBD_HandleTypeDef usb_dev;
+   static USBD_HandleTypeDef *pusb_dev;
+   static UsbcdcIO *static_usbcdcio;
    USBD_CDC_LineCodingTypeDef lineCoding =
    { 115200, /* baud rate*/ 0x00, /* stop bits-1*/  0x00,   /* parity - none*/  0x08 /* nb. of bits 8*/
+   };
+   char rx_buf[TX_BUF_SIZE];
+   USBD_CDC_ItfTypeDef cdc_fops =
+   {
+     CDC_Itf_Init,
+     CDC_Itf_DeInit,
+     CDC_Itf_Control,
+     CDC_Itf_Receive
    };
 };
 

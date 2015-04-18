@@ -57,19 +57,17 @@ int DevIO::recvByte( char *b, int w_tick )
 void DevIO::task_send()
 {
   // if( on_transmit ) { return; } // handle by IRQ
-  const int xbufsz = 32;
-  char xbuf[xbufsz]; // TODO: param
   int ns = 0;
   int wait_now = wait_tx;
   char ct;
-  for( ns=0; ns<xbufsz; ++ns ) {
+  for( ns=0; ns<TX_BUF_SIZE; ++ns ) {
     BaseType_t ts = xQueueReceive( obuf, &ct, wait_now );
     if( ts != pdTRUE ) { break; };
-    xbuf[ns] = ct;
+    tx_buf[ns] = ct;
     wait_now = 0;
   }
   if( ns == 0 ) { return; }
-  sendBlockSync( xbuf, ns );
+  sendBlockSync( tx_buf, ns ); // TODO: if( send_now )?
 };
 
 void DevIO::task_recv()

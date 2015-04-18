@@ -26,7 +26,7 @@ BOARD_DEFINE_LEDS;
 // void MX_GPIO_Init(void);
 
 USBD_HandleTypeDef USBD_Dev;
-UsbcdcIO usbcdc( &USBD_Dev );
+UsbcdcIO usbcdc;
 
 
 const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
@@ -81,17 +81,7 @@ int main(void)
 
   leds.write( 0x0F );  delay_bad_ms( 200 );
 
-  USBD_Init( &USBD_Dev, &VCP_Desc, 0 );
-
-  /* Add Supported Class */
-  USBD_RegisterClass( &USBD_Dev, USBD_CDC_CLASS );
-
-  /* Add CDC Interface Class */
-  USBD_CDC_RegisterInterface( &USBD_Dev, &USBD_CDC_fops );
-  leds.write( 0x09 );  delay_bad_ms( 200 );
-
-  /* Start Device Process */
-  USBD_Start( &USBD_Dev );
+  usbcdc.init();
   leds.write( 0x07 );  delay_bad_ms( 200 );
 
 

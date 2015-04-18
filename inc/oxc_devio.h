@@ -11,8 +11,10 @@ class DevIO {
   public:
    using OnRecvFun = void (*)( const char *s, int l );
    enum {
-     IBUF_SZ = 128,     //* Input buffer size
-     OBUF_SZ = 128,     //* Output buffer size
+     IBUF_SZ = 128,     //* Input queue  size
+     OBUF_SZ = 128,     //* Output queue size
+     TX_BUF_SIZE = 256, //* low-level transmit buffer size
+     RX_BUF_SIZE = 256  //* low-level receive buffer size, buffer itself - only if quired
    };
 
    DevIO()
@@ -58,6 +60,7 @@ class DevIO {
    int wait_tx = 1500;
    int wait_rx = 1500;
    bool on_transmit = false;
+   char tx_buf[TX_BUF_SIZE];
 };
 
 #define STD_COMMON_RECV_TASK( name, obj ) \
