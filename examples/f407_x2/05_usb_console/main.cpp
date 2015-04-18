@@ -26,7 +26,6 @@ BOARD_DEFINE_LEDS;
 // void MX_GPIO_Init(void);
 
 USBD_HandleTypeDef USBD_Dev;
-extern PCD_HandleTypeDef hpcd;
 UsbcdcIO usbcdc( &USBD_Dev );
 
 
@@ -144,12 +143,12 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
 
   idle_flag = 1;
   while (1) {
-    // buf1[3] = '0' + (nl % 32 );
-    // usbcdc.sendBlockSync( buf1, 10 );
-    // USBD_CDC_SetTxBuffer( &USBD_Dev, (uint8_t*)buf1, 10 );
-    // USBD_CDC_TransmitPacket( &USBD_Dev );
-    usbcdc.sendBlockSync( "ABCDEFGGHIJKLMNOPQRSTUVW..XYZ01234567890\r\n" , 42 );
-    usbcdc.sendBlock(     "abcdefgghijklmnopqrstuvw..xyz01234567890\r\n" , 42 );
+    usbcdc.sendBlockSync( "<.ABCDEFGHIJKLMNOPQRSTUVW..XYZ01234567890>\r\n" , 44 );
+    // delay_ms(1);
+    usbcdc.sendBlockSync( "<!ZBCDEFGHIJKLMNOPQRSTUVW..XYZ01234567890>\r\n" , 44 );
+    // delay_ms(1);
+    usbcdc.sendBlock(     "<:abcdefghijklmnopqrstuvw..xyz01234567890>\r\n" , 44 );
+    // delay_ms(1);
     ++nl;
     if( idle_flag == 0 ) {
       pr_sd( ".. main idle  ", nl );
@@ -267,11 +266,6 @@ int cmd_test0( int argc, const char * const * argv )
 }
 
 //  ----------------------------- configs ----------------
-
-void OTG_FS_IRQHandler(void)
-{
-  HAL_PCD_IRQHandler( &hpcd );
-}
 
 FreeRTOS_to_stm32cube_tick_hook;
 

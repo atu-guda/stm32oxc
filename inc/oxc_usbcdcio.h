@@ -6,6 +6,9 @@
 #include <usbd_cdc.h>
 #include <usbd_cdc_interface.h>
 
+extern PCD_HandleTypeDef hpcd;
+extern USBD_DescriptorsTypeDef VCP_Desc;
+extern USBD_HandleTypeDef USBD_Dev;
 
 class UsbcdcIO : public DevIO {
   public:
