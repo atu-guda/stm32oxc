@@ -1,6 +1,6 @@
 #include <oxc_usbcdcio.h>
 
-#include <oxc_gpio.h> // debug
+// #include <oxc_gpio.h> // debug
 
 USBD_HandleTypeDef* UsbcdcIO::pusb_dev = nullptr;
 UsbcdcIO* UsbcdcIO::static_usbcdcio = nullptr;
@@ -114,7 +114,8 @@ int8_t UsbcdcIO::CDC_Itf_Control ( uint8_t cmd, uint8_t* pbuf, uint16_t length U
 
 int8_t UsbcdcIO::CDC_Itf_Receive( uint8_t* Buf UNUSED_ARG , uint32_t *Len UNUSED_ARG )
 {
-  leds.toggle( 0x08 );
+  // leds.toggle( 0x08 );
+  static_usbcdcio->charsFromIrq( (char*)Buf, *Len );
 
   USBD_CDC_ReceivePacket( pusb_dev ); // ???
   return USBD_OK;

@@ -38,8 +38,6 @@ SRCS += oxc_smallrl.cpp
 SRCS += oxc_smallrl_q.cpp
 #SRCS += oxc_i2c.cpp
 
-#SRCS += usbd_cdc_interface.cpp
-
 
 # stm32cube sources.
 # Base:

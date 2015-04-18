@@ -25,7 +25,6 @@ BOARD_DEFINE_LEDS;
 
 // void MX_GPIO_Init(void);
 
-USBD_HandleTypeDef USBD_Dev;
 UsbcdcIO usbcdc;
 
 
@@ -93,7 +92,7 @@ int main(void)
   //           code       name    stack_sz      param  prty  TaskHandle_t*
   xTaskCreate( task_leds, "leds", 1*def_stksz, nullptr,   1, nullptr );
   xTaskCreate( task_usbcdc_send, "send", 2*def_stksz, 0,  2, 0 );  // 2
-  // xTaskCreate( task_usart2_recv, "recv", 2*def_stksz, 0,  2, 0 );  // 2
+  xTaskCreate( task_usbcdc_recv, "recv", 2*def_stksz, 0,  2, 0 );  // 2
   xTaskCreate( task_main, "main", 2*def_stksz, 0, 1, 0 );
   xTaskCreate( task_smallrl_cmd, "smallrl_cmd", def_stksz, 0, 1, 0 );
 
@@ -119,9 +118,8 @@ extern uint8_t UserTxBuffer[];
 void task_main( void *prm UNUSED_ARG ) // TMAIN
 {
   uint32_t nl = 0;
-  // char buf1[32] = "AaBbCcDd\r\n";
 
-  // usartio.setOnRecv( on_received_char );
+  usbcdc.setOnRecv( on_received_char );
 
   pr( "*=*** Main loop: ****** " NL );
   delay_ms( 20 );
@@ -133,11 +131,11 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
 
   idle_flag = 1;
   while (1) {
-    usbcdc.sendBlockSync( "<.ABCDEFGHIJKLMNOPQRSTUVW..XYZ01234567890>\r\n" , 44 );
+    // usbcdc.sendBlockSync( "<.ABCDEFGHIJKLMNOPQRSTUVW..XYZ01234567890>\r\n" , 44 );
     // delay_ms(1);
-    usbcdc.sendBlockSync( "<!ZBCDEFGHIJKLMNOPQRSTUVW..XYZ01234567890>\r\n" , 44 );
+    // usbcdc.sendBlockSync( "<!ZBCDEFGHIJKLMNOPQRSTUVW..XYZ01234567890>\r\n" , 44 );
     // delay_ms(1);
-    usbcdc.sendBlock(     "<:abcdefghijklmnopqrstuvw..xyz01234567890>\r\n" , 44 );
+    // usbcdc.sendBlock(     "<:abcdefghijklmnopqrstuvw..xyz01234567890>\r\n" , 44 );
     // delay_ms(1);
     ++nl;
     if( idle_flag == 0 ) {
@@ -145,7 +143,7 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
       srl.redraw();
     }
     idle_flag = 0;
-    delay_ms( 10000 );
+    delay_ms( 60000 );
     // delay_ms( 1 );
 
   }
