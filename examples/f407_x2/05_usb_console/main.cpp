@@ -23,8 +23,6 @@ using namespace SMLRL;
 // PinsOut p1 { GPIOC, 0, 4 };
 BOARD_DEFINE_LEDS;
 
-// void MX_GPIO_Init(void);
-
 UsbcdcIO usbcdc;
 
 
@@ -76,11 +74,10 @@ int main(void)
 
   SystemClock_Config();
   leds.initHW();
-  // MX_GPIO_Init();
 
   leds.write( 0x0F );  delay_bad_ms( 200 );
 
-  usbcdc.init();
+  //usbcdc.init();
   leds.write( 0x07 );  delay_bad_ms( 200 );
 
 
@@ -89,12 +86,12 @@ int main(void)
   global_smallrl = &srl;
   SMALLRL_INIT_QUEUE;
 
-  //           code       name    stack_sz      param  prty  TaskHandle_t*
-  xTaskCreate( task_leds, "leds", 1*def_stksz, nullptr,   1, nullptr );
-  xTaskCreate( task_usbcdc_send, "send", 2*def_stksz, 0,  2, 0 );  // 2
-  xTaskCreate( task_usbcdc_recv, "recv", 2*def_stksz, 0,  2, 0 );  // 2
-  xTaskCreate( task_main, "main", 2*def_stksz, 0, 1, 0 );
-  xTaskCreate( task_smallrl_cmd, "smallrl_cmd", def_stksz, 0, 1, 0 );
+  //           code               name    stack_sz      param  prty TaskHandle_t*
+  xTaskCreate( task_leds,        "leds", 1*def_stksz, nullptr,   1, nullptr );
+  xTaskCreate( task_usbcdc_send, "send", 2*def_stksz, nullptr,   2, nullptr );  // 2
+  xTaskCreate( task_usbcdc_recv, "recv", 2*def_stksz, nullptr,   2, nullptr );  // 2
+  xTaskCreate( task_main,        "main", 2*def_stksz, nullptr,   1, nullptr );
+  xTaskCreate( task_smallrl_cmd, "scmd", 2*def_stksz, nullptr,   1, nullptr );
 
   vTaskStartScheduler();
   die4led( 0xFF );
@@ -119,10 +116,14 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
 {
   uint32_t nl = 0;
 
+  usbcdc.init();
+  delay_ms( 50 );
+  user_vars['t'-'a'] = 1000;
+
   usbcdc.setOnRecv( on_received_char );
 
+  delay_ms( 10 );
   pr( "*=*** Main loop: ****** " NL );
-  delay_ms( 20 );
 
   srl.setSigFun( smallrl_sigint );
   srl.set_ps1( "\033[32m#\033[0m ", 2 );
@@ -156,7 +157,7 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
 void _exit( int rc )
 {
   exit_rc = rc;
-  die( rc );
+  die4led( rc );
 }
 
 
@@ -199,7 +200,7 @@ int smallrl_exec( const char *s, int l )
 void on_received_char( const char *s, int l )
 {
   // leds.toggle( BIT2 );
-  if( !s ) { return; }
+  if( !s || l<1 ) { return; }
   for( int i=0; i<l; ++i ) {
     srl.addChar( *s++ );
   }
@@ -210,6 +211,7 @@ void on_received_char( const char *s, int l )
 void smallrl_sigint(void)
 {
   break_flag = 1;
+  idle_flag = 1;
   leds.toggle( BIT3 );
 }
 
@@ -230,6 +232,7 @@ int cmd_test0( int argc, const char * const * argv )
 
   // log_add( "Test0 " );
   TickType_t tc0 = xTaskGetTickCount(), tc00 = tc0;
+  uint32_t t_step = user_vars['t'-'a'];
   uint32_t tm0 = HAL_GetTick();
 
   for( int i=0; i<16 && !break_flag; ++i ) {
@@ -239,7 +242,7 @@ int cmd_test0( int argc, const char * const * argv )
     pr( "  tick: "); pr_d( tcc - tc00 );
     pr( "  ms_tick: "); pr_d( tmc - tm0 );
     pr( NL );
-    vTaskDelayUntil( &tc0, 1000 );
+    vTaskDelayUntil( &tc0, t_step );
     // delay_ms( 1000 );
     // MillisecondTimer::delay(1000);
   }

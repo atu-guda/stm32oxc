@@ -33,7 +33,7 @@ void default_USBFS_MspInit(void)
   __HAL_RCC_USB_OTG_FS_CLK_ENABLE();
   __HAL_RCC_SYSCFG_CLK_ENABLE();
 
-  HAL_NVIC_SetPriority( OTG_FS_IRQn, 15, 0 ); // TODO: =configLIBRARY_KERNEL_INTERRUPT_PRIORITY
+  HAL_NVIC_SetPriority( OTG_FS_IRQn, 15, 0 ); // TODO: ???=configLIBRARY_KERNEL_INTERRUPT_PRIORITY
 
   /* Enable USBFS Interrupt */
   HAL_NVIC_EnableIRQ( OTG_FS_IRQn );
@@ -306,5 +306,6 @@ void  USBD_LL_Delay( uint32_t delay )
 {
   // HAL_Delay( delay );
   delay_ms( delay );
+  // delay_bad_ms( delay );
 }
 

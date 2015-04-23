@@ -1,5 +1,6 @@
 #include <oxc_console.h>
 #include <oxc_smallrl.h>
+// #include <oxc_debug1.h>
 #include <cstring>
 
 SMLRL::SmallRL *SMLRL::global_smallrl = nullptr;
@@ -90,7 +91,9 @@ int SMLRL::exec_direct( const char *s, int l )
   memcpy( ss, s, l+1 );
   char *argv[MAX_ARGS];
   int argc = cmdline_split( ss, argv, MAX_ARGS );
-  // dump8( ss, len+1 );
+  // DEBUG
+  // dump8( s,  l+1 );
+  // dump8( ss, l+1 );
 
   if( argc < 1 ) { return 1; }
 

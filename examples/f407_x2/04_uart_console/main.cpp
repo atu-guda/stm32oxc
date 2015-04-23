@@ -91,7 +91,7 @@ int main(void)
   xTaskCreate( task_usart2_send, "send", 2*def_stksz, 0,  2, 0 );  // 2
   xTaskCreate( task_usart2_recv, "recv", 2*def_stksz, 0,  2, 0 );  // 2
   xTaskCreate( task_main, "main", 2*def_stksz, 0, 1, 0 );
-  xTaskCreate( task_smallrl_cmd, "smallrl_cmd", def_stksz, 0, 1, 0 );
+  xTaskCreate( task_smallrl_cmd, "smallrl_cmd", 2*def_stksz, 0, 1, 0 );
 
   vTaskStartScheduler();
   die4led( 0xFF );
@@ -211,7 +211,7 @@ void smallrl_sigint(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  int a1 = 0;
+  int a1 = 16;
   if( argc > 1 ) {
     a1 = strtol( argv[1], 0, 0 );
   }
@@ -227,7 +227,7 @@ int cmd_test0( int argc, const char * const * argv )
   TickType_t tc0 = xTaskGetTickCount(), tc00 = tc0;
   uint32_t tm0 = HAL_GetTick();
 
-  for( int i=0; i<16 && !break_flag; ++i ) {
+  for( int i=0; i<a1 && !break_flag; ++i ) {
     TickType_t tcc = xTaskGetTickCount();
     uint32_t tmc = HAL_GetTick();
     pr( " Fake Action i= " ); pr_d( i );
@@ -236,7 +236,6 @@ int cmd_test0( int argc, const char * const * argv )
     pr( NL );
     vTaskDelayUntil( &tc0, 1000 );
     // delay_ms( 1000 );
-    // MillisecondTimer::delay(1000);
   }
 
   pr( NL );

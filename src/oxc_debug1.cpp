@@ -144,9 +144,45 @@ int cmd_info( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
   pr( NL );
   pr_sdx( errno );
   pr_sdx( SystemCoreClock );
+
+  uint32_t c_msp = __get_MSP();
+  pr_shx( c_msp );
+
+  uint32_t prio_grouping = HAL_NVIC_GetPriorityGrouping();
+  pr_sdx( prio_grouping );
+
+  uint32_t prio_preempt, prio_sub;
+  struct OutIrqName {
+    IRQn_Type IRQn;
+    const char* nm;
+  };
+  const OutIrqName irqs[] = {
+    { SysTick_IRQn, "SysTick" },
+    { EXTI0_IRQn,   "EXTI0  " },
+    { I2C1_EV_IRQn, "I2C1_EV" },
+    { USART2_IRQn,  "USART2 " },
+    { OTG_FS_IRQn,  "OTG_FS " },
+    { SPI1_IRQn,    "SPI1   " }
+  };
+
+  for( auto iqn : irqs ) {
+    HAL_NVIC_GetPriority( iqn.IRQn, prio_grouping, &prio_preempt, &prio_sub );
+    pr( iqn.nm ); pr( " (" ); pr_d( iqn.IRQn );
+    pr( ")  preempt= " ); pr_d( prio_preempt );
+    pr( "  sub= " ); pr_d( prio_sub );
+    pr( NL );
+  }
+
+
   #if USE_FREERTOS != 0
     int tick_count = xTaskGetTickCount();
     pr_sdx( tick_count );
+    const char *nm = pcTaskGetTaskName( 0 );
+    pr( "task: \"" ); pr( nm ); pr( "\"" NL );
+    int prty = uxTaskPriorityGet( 0 );
+    pr_sdx( prty );
+    uint32_t hwm = uxTaskGetStackHighWaterMark( 0 );
+    pr_sdx( hwm );
   #endif
   return 0;
 }
@@ -321,3 +357,4 @@ int cmd_log_reset( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
 }
 CmdInfo CMDINFO_LOG_RESET { "lr",     0,  cmd_log_reset,  "  - reset log buffer"  };
 
+// vim: path=.,/usr/share/stm32lib/inc/,/usr/arm-none-eabi/include,../inc
