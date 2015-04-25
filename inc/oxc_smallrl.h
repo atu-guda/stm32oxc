@@ -7,7 +7,7 @@
 #define SMLRL_BUFSZ 128
 #endif
 #ifndef SMLRL_HISTSZ
-#define SMLRL_HISTSZ (SMLRL_BUFSZ*2)
+#define SMLRL_HISTSZ (SMLRL_BUFSZ*3)
 #endif
 
 #ifndef NL
@@ -86,6 +86,7 @@ namespace SMLRL {
      void redraw() const;
      void set_ps1( const char *p, int a_vlen = 0 );
      void puts( const char *s ) const;
+     void set_print_cmd( bool pr ) { print_cmd = pr; }
 
      void term_cmd1( int n, char c ) const;
      void term_move_x( int n ) const;
@@ -127,6 +128,7 @@ namespace SMLRL {
      int h_end = 0; // end history pos (start of new)
      EscState esc = esc_no;  // escape state
      int ps1_len = 2, ps1_vlen = 2; // real and visual ps1 sizes
+     bool print_cmd = false;
      PrintFun prf;
      ExecFun exf;
      SigFun  sigf = nullptr;

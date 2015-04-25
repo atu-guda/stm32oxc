@@ -35,7 +35,7 @@ int SMLRL::exec_queue( const char *s, int l )
 
   cmd.l = l;
   cmd.cmdline[l+1] = '\0';
-  memcpy( cmd.cmdline, s, l+1 );
+  memmove( cmd.cmdline, s, l+1 );
   // pr( NL "exec_queue: sizeof(SmallRlCmd)= "  ); pr_d( sizeof(SmallRlCmd) ); pr( NL );
   // dump8( cmd.cmdline,  cmd.l+1 );
   BaseType_t taskWoken;

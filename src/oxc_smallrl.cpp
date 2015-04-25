@@ -21,6 +21,9 @@ int SMLRL::cmdline_split( char *cmd, char** argv, int max_args )
   char was_quo = 0;
 
   int l = strlen( cmd ); // need, as we adds many nulls
+  if( l < 1 || l > SMLRL_BUFSZ-4 ) {
+    return 0;
+  }
   int j = 0;
 
   for( int i=0; i<=l; ++i ) { // ??? <= ???
@@ -87,18 +90,25 @@ int SMLRL::cmdline_split( char *cmd, char** argv, int max_args )
 
 int SMLRL::exec_direct( const char *s, int l )
 {
+  if( l<0 || l >= SMLRL_BUFSZ ) {
+    return 0;
+  }
+  // dump8( s,  l+1 );
   char ss[l+1];
-  memcpy( ss, s, l+1 );
+  // static char ss[SMLRL_BUFSZ+2]; // TODO: lock!
+  // memcpy( ss, s, l+1 );
+  memmove( ss, s, l+1 );
+  // dump8( ss, l+1 );
+
   char *argv[MAX_ARGS];
   int argc = cmdline_split( ss, argv, MAX_ARGS );
   // DEBUG
-  // dump8( s,  l+1 );
   // dump8( ss, l+1 );
 
   if( argc < 1 ) { return 1; }
 
   CmdFun f = 0;
-  const char *nm = "???";
+  // const char *nm = "???";
 
   for( int i=0; global_cmds[i] && i<CMDS_NMAX; ++i ) {
     if( global_cmds[i]->name == 0 ) {
@@ -106,20 +116,20 @@ int SMLRL::exec_direct( const char *s, int l )
     }
     if( argv[0][1] == '\0'  &&  argv[0][0] == global_cmds[i]->acr ) {
       f = global_cmds[i]->fun;
-      nm = global_cmds[i]->name;
+      // nm = global_cmds[i]->name;
       break;
     }
     if( strcmp( global_cmds[i]->name, argv[0])  == 0 ) {
       f = global_cmds[i]->fun;
-      nm = global_cmds[i]->name;
+      // nm = global_cmds[i]->name;
       break;
     }
   }
 
   if( f != 0 ) {
       int rc = 0;
-      pr( NL "=== CMD: \"" ); pr( nm ); pr( "\"" NL );
-      delay_ms( 50 );
+      // pr( NL "=== CMD: \"" ); pr( nm ); pr( "\"" NL );
+      // delay_ms( 50 );
       rc = f( argc, argv );
       pr_sdx( rc );
   } else {
@@ -325,7 +335,7 @@ int SMLRL::SmallRL::history_next()
   if( nc < 0 ) { return 0; };
   int l = strlen( hist+nc );
   if( l >= bufsz ) { return 0; }
-  memcpy( buf, hist+nc, l+1 );
+  memmove( buf, hist+nc, l+1 );
   epos = cpos = l;
   h_cc = nc;
   redraw();
@@ -344,7 +354,7 @@ int SMLRL::SmallRL::history_prev()
 
   int l = strlen( hist+nc );
   if( l >= bufsz ) { return 0; }
-  memcpy( buf, hist+nc, l+1 );
+  memmove( buf, hist+nc, l+1 );
   epos = cpos = l;
   h_cc = nc;
   redraw();
@@ -407,12 +417,15 @@ int SMLRL::SmallRL::addChar( char c )
 
 void SMLRL::SmallRL::handle_nl()
 {
+  if( print_cmd ) {
+    prf( NL "CMD: \"", 8 ); prf( buf, epos ); prf( "\"" NL, 3 );
+  }
   if( exf && epos > 0 ) {
 
     if( buf[0] == '.' ) { // DEBUG
       switch( buf[1] ) {
         case 'h':  history_print(); break;
-        #ifdef _OX_DEBUG1_H
+        #ifdef _OXC_DEBUG1_H
           case 'd':  dump8( hist, 16 ); break;
         #endif
         case 'r':  reset(); break;
@@ -480,7 +493,7 @@ int SMLRL::SmallRL::history_add_cur()
   }
 
   h_cc = h_cur = h_end;
-  memcpy( hist+h_cur, buf, epos+1 );
+  memmove( hist+h_cur, buf, epos+1 );
   h_end += epos+1;
   if( h_end >= histsz ) { h_end = 0; }
   for( int i=h_end; i<histsz && hist[i]!= '\0'; ++i ) { // rm old cmd corpse

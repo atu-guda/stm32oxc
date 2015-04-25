@@ -26,7 +26,8 @@
 #define USBD_malloc               malloc
 #define USBD_free                 free
 #define USBD_memset               memset
-#define USBD_memcpy               memcpy
+// atu: memcpy seemd to be buggy
+#define USBD_memcpy               memmove
 
 /* DEBUG macros */
 #if (USBD_DEBUG_LEVEL > 0)

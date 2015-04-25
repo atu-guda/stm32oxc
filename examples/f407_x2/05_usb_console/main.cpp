@@ -7,7 +7,8 @@
 #include <oxc_usbcdcio.h>
 #include <oxc_console.h>
 #include <oxc_debug1.h>
-#include <oxc_smallrl_q.h>
+#include <oxc_smallrl.h>
+// #include <oxc_smallrl_q.h>
 
 #include "usbd_desc.h"
 #include <usbd_cdc.h>
@@ -35,8 +36,8 @@ void smallrl_sigint(void);
 QueueHandle_t smallrl_cmd_queue;
 
 
-// SmallRL srl( smallrl_print, smallrl_exec );
-SmallRL srl( smallrl_print, exec_queue );
+SmallRL srl( smallrl_print, smallrl_exec );
+// SmallRL srl( smallrl_print, exec_queue );
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -58,14 +59,15 @@ extern "C" {
 
 void task_main( void *prm UNUSED_ARG );
 void task_leds( void *prm UNUSED_ARG );
+void task_gchar( void *prm UNUSED_ARG );
 
 
 }
 
-void on_received_char( const char *s, int l );
+// void on_received_char( const char *s, int l );
 
 // STD_USART2_IRQ( usartio );
-STD_USBCDC_RECV_TASK( usbcdc );
+// STD_USBCDC_RECV_TASK( usbcdc );
 STD_USBCDC_SEND_TASK( usbcdc );
 
 int main(void)
@@ -78,20 +80,21 @@ int main(void)
   leds.write( 0x0F );  delay_bad_ms( 200 );
 
   //usbcdc.init();
-  leds.write( 0x07 );  delay_bad_ms( 200 );
+  // leds.write( 0x07 );  delay_bad_ms( 200 );
 
 
   leds.write( 0x00 );
 
   global_smallrl = &srl;
-  SMALLRL_INIT_QUEUE;
+  // SMALLRL_INIT_QUEUE;
 
   //           code               name    stack_sz      param  prty TaskHandle_t*
   xTaskCreate( task_leds,        "leds", 1*def_stksz, nullptr,   1, nullptr );
   xTaskCreate( task_usbcdc_send, "send", 2*def_stksz, nullptr,   2, nullptr );  // 2
-  xTaskCreate( task_usbcdc_recv, "recv", 2*def_stksz, nullptr,   2, nullptr );  // 2
+  // xTaskCreate( task_usbcdc_recv, "recv", 2*def_stksz, nullptr,   2, nullptr );  // 2
   xTaskCreate( task_main,        "main", 2*def_stksz, nullptr,   1, nullptr );
-  xTaskCreate( task_smallrl_cmd, "scmd", 2*def_stksz, nullptr,   1, nullptr );
+  xTaskCreate( task_gchar,      "gchar", 2*def_stksz, nullptr,   1, nullptr );
+  // xTaskCreate( task_smallrl_cmd, "scmd", 2*def_stksz, nullptr,   1, nullptr );
 
   vTaskStartScheduler();
   die4led( 0xFF );
@@ -110,8 +113,6 @@ void task_leds( void *prm UNUSED_ARG )
   }
 }
 
-extern uint8_t UserTxBuffer[];
-
 void task_main( void *prm UNUSED_ARG ) // TMAIN
 {
   uint32_t nl = 0;
@@ -120,7 +121,7 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
   delay_ms( 50 );
   user_vars['t'-'a'] = 1000;
 
-  usbcdc.setOnRecv( on_received_char );
+  // usbcdc.setOnRecv( on_received_char );
 
   delay_ms( 10 );
   pr( "*=*** Main loop: ****** " NL );
@@ -128,6 +129,7 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
   srl.setSigFun( smallrl_sigint );
   srl.set_ps1( "\033[32m#\033[0m ", 2 );
   srl.re_ps();
+  srl.set_print_cmd( true );
 
 
   idle_flag = 1;
@@ -147,6 +149,21 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
     delay_ms( 60000 );
     // delay_ms( 1 );
 
+  }
+  vTaskDelete(NULL);
+}
+
+void task_gchar( void *prm UNUSED_ARG )
+{
+  char sc[2] = { 0, 0 };
+  while (1) {
+    int n = usbcdc.recvByte( sc, 10000 );
+    if( n ) {
+      // pr( NL "--- c='" ); pr( sc ); pr( "\"" NL );
+      // leds.toggle( BIT0 );
+      srl.addChar( sc[0] );
+      idle_flag = 1;
+    }
   }
   vTaskDelete(NULL);
 }
@@ -189,23 +206,23 @@ int smallrl_print( const char *s, int l )
 
 int smallrl_exec( const char *s, int l )
 {
-  pr( NL "Cmd: \"" );
-  prl( s, l );
-  pr( "\" " NL );
+  // pr( NL "Cmd: \"" );
+  // prl( s, l );
+  // pr( "\" " NL );
   exec_direct( s, l );
   return 1;
 }
 
 // will be called by real receiver: USART, USB...
-void on_received_char( const char *s, int l )
-{
-  // leds.toggle( BIT2 );
-  if( !s || l<1 ) { return; }
-  for( int i=0; i<l; ++i ) {
-    srl.addChar( *s++ );
-  }
-  idle_flag = 1;
-}
+// void on_received_char( const char *s, int l )
+// {
+//   leds.toggle( BIT2 );
+//   if( !s || l<1 ) { return; }
+//   // for( int i=0; i<l; ++i ) {
+//   //   srl.addChar( *s++ );
+//   // }
+//   idle_flag = 1;
+// }
 
 
 void smallrl_sigint(void)

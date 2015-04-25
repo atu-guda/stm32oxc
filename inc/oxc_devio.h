@@ -14,7 +14,7 @@ class DevIO {
      IBUF_SZ = 128,     //* Input queue  size
      OBUF_SZ = 128,     //* Output queue size
      TX_BUF_SIZE = 256, //* low-level transmit buffer size
-     RX_BUF_SIZE = 256  //* low-level receive buffer size, buffer itself - only if quired
+     RX_BUF_SIZE = 256  //* low-level receive buffer size, buffer itself - only if required
    };
 
    DevIO()
