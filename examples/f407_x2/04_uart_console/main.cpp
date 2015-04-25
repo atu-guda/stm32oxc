@@ -31,7 +31,6 @@ QueueHandle_t smallrl_cmd_queue;
 
 
 SmallRL srl( smallrl_print, smallrl_exec );
-// SmallRL srl( smallrl_print, exec_queue );
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -86,14 +85,11 @@ int main(void)
   leds.write( 0x00 );
 
   global_smallrl = &srl;
-  // SMALLRL_INIT_QUEUE;
 
   //           code               name    stack_sz      param  prty  TaskHandle_t*
   xTaskCreate( task_leds,        "leds", 1*def_stksz, nullptr,   1, nullptr );
-  xTaskCreate( task_usart2_send, "send", 2*def_stksz, 0,  2, 0 );  // 2
-  // xTaskCreate( task_usart2_recv, "recv", 2*def_stksz, 0,  2, 0 );  // 2
-  xTaskCreate( task_main,        "main", 2*def_stksz, 0, 1, 0 );
-  // xTaskCreate( task_smallrl_cmd, "smallrl_cmd", 2*def_stksz, 0, 1, 0 );
+  xTaskCreate( task_usart2_send, "send", 2*def_stksz, nullptr,   2, nullptr );  // 2
+  xTaskCreate( task_main,        "main", 2*def_stksz, nullptr,   1, nullptr );
   xTaskCreate( task_gchar,      "gchar", 2*def_stksz, nullptr,   1, nullptr );
 
   vTaskStartScheduler();
@@ -120,8 +116,6 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
   delay_ms( 50 );
   user_vars['t'-'a'] = 1000;
 
-  // usartio.sendStrSync( "abcdefghijklmn" NL );
-  // usartio.setOnRecv( on_received_char );
   usartio.itEnable( UART_IT_RXNE );
 
   usartio.sendStrSync( "0123456789ABCDEF" NL );
@@ -204,23 +198,10 @@ int smallrl_print( const char *s, int l )
 
 int smallrl_exec( const char *s, int l )
 {
-  // pr( NL "Cmd: \"" );
-  // prl( s, l );
-  // pr( "\" " NL );
   exec_direct( s, l );
   return 1;
 }
 
-// will be called by real receiver: USART, USB...
-// void on_received_char( const char *s, int l )
-// {
-//   leds.toggle( BIT2 );
-//   if( !s || l<1 ) { return; }
-//   // for( int i=0; i<l; ++i ) {
-//   //   srl.addChar( *s++ );
-//   // }
-//   idle_flag = 1;
-// }
 
 
 void smallrl_sigint(void)
