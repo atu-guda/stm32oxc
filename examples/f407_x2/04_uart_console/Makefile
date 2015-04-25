@@ -8,6 +8,7 @@ LINK=$(CC)
 USE_OXC = y
 USE_FREERTOS = y
 NO_STDLIB = y
+# USE_USB_DEFAULT_CDC = y
 
 # TODO: copy to main location
 OXCDIR = /home/atu/proj/stm32/oxc
@@ -19,7 +20,7 @@ CFLAGS_ADD += -Wno-unused-parameter
 LDSCRIPT = $(STMLD)/STM32F407VE_FLASH.ld
 
 SRCS  = main.cpp
-SRCS += stm32f4xx_hal_msp.c
+SRCS += stm32f4xx_hal_msp.cpp
 SRCS += system_stm32f4xx.c
 SRCS += startup_stm32f407xx.s
 
@@ -33,7 +34,7 @@ SRCS += oxc_debug1.cpp
 SRCS += oxc_gpio.cpp
 SRCS += oxc_usartio.cpp
 SRCS += oxc_smallrl.cpp
-SRCS += oxc_smallrl_q.cpp
+# SRCS += oxc_smallrl_q.cpp
 #SRCS += oxc_i2c.cpp
 
 # stm32cube sources.

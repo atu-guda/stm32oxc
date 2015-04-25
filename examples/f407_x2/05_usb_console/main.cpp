@@ -235,7 +235,7 @@ void smallrl_sigint(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  int a1 = 0;
+  int a1 = 16;
   if( argc > 1 ) {
     a1 = strtol( argv[1], 0, 0 );
   }
@@ -252,7 +252,7 @@ int cmd_test0( int argc, const char * const * argv )
   uint32_t t_step = user_vars['t'-'a'];
   uint32_t tm0 = HAL_GetTick();
 
-  for( int i=0; i<16 && !break_flag; ++i ) {
+  for( int i=0; i<a1 && !break_flag; ++i ) {
     TickType_t tcc = xTaskGetTickCount();
     uint32_t tmc = HAL_GetTick();
     pr( " Fake Action i= " ); pr_d( i );
@@ -261,7 +261,6 @@ int cmd_test0( int argc, const char * const * argv )
     pr( NL );
     vTaskDelayUntil( &tc0, t_step );
     // delay_ms( 1000 );
-    // MillisecondTimer::delay(1000);
   }
 
   pr( NL );

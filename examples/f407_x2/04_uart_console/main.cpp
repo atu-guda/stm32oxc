@@ -6,7 +6,7 @@
 #include <oxc_usartio.h>
 #include <oxc_console.h>
 #include <oxc_debug1.h>
-#include <oxc_smallrl_q.h>
+#include <oxc_smallrl.h>
 
 #include <FreeRTOS.h>
 #include <task.h>
@@ -30,8 +30,8 @@ void smallrl_sigint(void);
 QueueHandle_t smallrl_cmd_queue;
 
 
-// SmallRL srl( smallrl_print, smallrl_exec );
-SmallRL srl( smallrl_print, exec_queue );
+SmallRL srl( smallrl_print, smallrl_exec );
+// SmallRL srl( smallrl_print, exec_queue );
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -53,17 +53,19 @@ extern "C" {
 
 void task_main( void *prm UNUSED_ARG );
 void task_leds( void *prm UNUSED_ARG );
+void task_gchar( void *prm UNUSED_ARG );
+
 
 }
 
-void on_received_char( const char *s, int l );
+// void on_received_char( const char *s, int l );
 
 UART_HandleTypeDef uah;
 UsartIO usartio( &uah, USART2 );
 void init_uart( UART_HandleTypeDef *uahp, int baud = 115200 );
 
 STD_USART2_SEND_TASK( usartio );
-STD_USART2_RECV_TASK( usartio );
+// STD_USART2_RECV_TASK( usartio );
 STD_USART2_IRQ( usartio );
 
 int main(void)
@@ -84,14 +86,15 @@ int main(void)
   leds.write( 0x00 );
 
   global_smallrl = &srl;
-  SMALLRL_INIT_QUEUE;
+  // SMALLRL_INIT_QUEUE;
 
-  //           code       name    stack_sz      param  prty  TaskHandle_t*
-  xTaskCreate( task_leds, "leds", 1*def_stksz, nullptr,   1, nullptr );
+  //           code               name    stack_sz      param  prty  TaskHandle_t*
+  xTaskCreate( task_leds,        "leds", 1*def_stksz, nullptr,   1, nullptr );
   xTaskCreate( task_usart2_send, "send", 2*def_stksz, 0,  2, 0 );  // 2
-  xTaskCreate( task_usart2_recv, "recv", 2*def_stksz, 0,  2, 0 );  // 2
-  xTaskCreate( task_main, "main", 2*def_stksz, 0, 1, 0 );
-  xTaskCreate( task_smallrl_cmd, "smallrl_cmd", 2*def_stksz, 0, 1, 0 );
+  // xTaskCreate( task_usart2_recv, "recv", 2*def_stksz, 0,  2, 0 );  // 2
+  xTaskCreate( task_main,        "main", 2*def_stksz, 0, 1, 0 );
+  // xTaskCreate( task_smallrl_cmd, "smallrl_cmd", 2*def_stksz, 0, 1, 0 );
+  xTaskCreate( task_gchar,      "gchar", 2*def_stksz, nullptr,   1, nullptr );
 
   vTaskStartScheduler();
   die4led( 0xFF );
@@ -114,9 +117,11 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
 {
   uint32_t nl = 0;
 
+  delay_ms( 50 );
+  user_vars['t'-'a'] = 1000;
 
   // usartio.sendStrSync( "abcdefghijklmn" NL );
-  usartio.setOnRecv( on_received_char );
+  // usartio.setOnRecv( on_received_char );
   usartio.itEnable( UART_IT_RXNE );
 
   usartio.sendStrSync( "0123456789ABCDEF" NL );
@@ -128,6 +133,7 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
   srl.setSigFun( smallrl_sigint );
   srl.set_ps1( "\033[32m#\033[0m ", 2 );
   srl.re_ps();
+  srl.set_print_cmd( true );
 
 
   idle_flag = 1;
@@ -145,13 +151,28 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
   vTaskDelete(NULL);
 }
 
+void task_gchar( void *prm UNUSED_ARG )
+{
+  char sc[2] = { 0, 0 };
+  while (1) {
+    int n = usartio.recvByte( sc, 10000 );
+    if( n ) {
+      // pr( NL "--- c='" ); pr( sc ); pr( "\"" NL );
+      // leds.toggle( BIT0 );
+      srl.addChar( sc[0] );
+      idle_flag = 1;
+    }
+  }
+  vTaskDelete(NULL);
+}
+
 
 
 
 void _exit( int rc )
 {
   exit_rc = rc;
-  for( ;; );
+  die4led( rc );
 }
 
 
@@ -183,28 +204,29 @@ int smallrl_print( const char *s, int l )
 
 int smallrl_exec( const char *s, int l )
 {
-  pr( NL "Cmd: \"" );
-  prl( s, l );
-  pr( "\" " NL );
+  // pr( NL "Cmd: \"" );
+  // prl( s, l );
+  // pr( "\" " NL );
   exec_direct( s, l );
   return 1;
 }
 
 // will be called by real receiver: USART, USB...
-void on_received_char( const char *s, int l )
-{
-  // leds.toggle( BIT2 );
-  if( !s ) { return; }
-  for( int i=0; i<l; ++i ) {
-    srl.addChar( *s++ );
-  }
-  idle_flag = 1;
-}
+// void on_received_char( const char *s, int l )
+// {
+//   leds.toggle( BIT2 );
+//   if( !s || l<1 ) { return; }
+//   // for( int i=0; i<l; ++i ) {
+//   //   srl.addChar( *s++ );
+//   // }
+//   idle_flag = 1;
+// }
 
 
 void smallrl_sigint(void)
 {
   break_flag = 1;
+  idle_flag = 1;
   leds.toggle( BIT3 );
 }
 
@@ -225,6 +247,7 @@ int cmd_test0( int argc, const char * const * argv )
 
   // log_add( "Test0 " );
   TickType_t tc0 = xTaskGetTickCount(), tc00 = tc0;
+  uint32_t t_step = user_vars['t'-'a'];
   uint32_t tm0 = HAL_GetTick();
 
   for( int i=0; i<a1 && !break_flag; ++i ) {
@@ -234,7 +257,7 @@ int cmd_test0( int argc, const char * const * argv )
     pr( "  tick: "); pr_d( tcc - tc00 );
     pr( "  ms_tick: "); pr_d( tmc - tm0 );
     pr( NL );
-    vTaskDelayUntil( &tc0, 1000 );
+    vTaskDelayUntil( &tc0, t_step );
     // delay_ms( 1000 );
   }
 
