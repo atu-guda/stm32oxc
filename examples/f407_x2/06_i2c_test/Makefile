@@ -32,6 +32,7 @@ SRCS += oxc_osfun.cpp
 SRCS += oxc_console.cpp
 SRCS += oxc_debug1.cpp
 SRCS += oxc_gpio.cpp
+SRCS += oxc_debug_i2c.cpp
 #SRCS += oxc_usartio.cpp
 SRCS += oxc_usbcdcio.cpp
 SRCS += oxc_smallrl.cpp

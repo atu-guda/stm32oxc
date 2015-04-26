@@ -7,6 +7,7 @@
 #include <oxc_usbcdcio.h>
 #include <oxc_console.h>
 #include <oxc_debug1.h>
+#include <oxc_debug_i2c.h>
 #include <oxc_smallrl.h>
 
 #include "usbd_desc.h"
@@ -47,6 +48,7 @@ int break_flag = 0;
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
+  DEBUG_I2C_CMDS,
 
   &CMDINFO_TEST0,
   nullptr
@@ -64,8 +66,6 @@ void task_gchar( void *prm UNUSED_ARG );
 
 I2C_HandleTypeDef i2ch;
 
-// STD_USART2_IRQ( usartio );
-// STD_USBCDC_RECV_TASK( usbcdc );
 STD_USBCDC_SEND_TASK( usbcdc );
 
 int main(void)
@@ -87,8 +87,9 @@ int main(void)
   i2ch.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
   i2ch.Init.NoStretchMode   = I2C_NOSTRETCH_DISABLE;
   i2ch.Init.OwnAddress1     = 0;
-  i2ch.Init.OwnAddress2     = 0xFE;
+  i2ch.Init.OwnAddress2     = 0;
   HAL_I2C_Init( &i2ch );
+  i2ch_dbg = &i2ch;
 
 
   leds.write( 0x00 );
@@ -232,18 +233,21 @@ int cmd_test0( int argc, const char * const * argv )
   pr( NL "Test0: st_a= " ); pr_h( st_a ); pr( " en_a= " ); pr_h( en_a );
   pr( NL );
 
-  uint8_t val;
+  // uint8_t val;
   int i_err;
   for( uint8_t ad = (uint16_t)st_a; ad <= (uint16_t)en_a && ! break_flag; ++ad ) {
-    HAL_StatusTypeDef rc = HAL_I2C_Master_Transmit( &i2ch, ad, &val, 1, 200 );
+    uint16_t ad2 = ad << 1;
+    // HAL_StatusTypeDef rc = HAL_I2C_Master_Transmit( &i2ch, ad, &val, 1, 200 );
+    HAL_StatusTypeDef rc = HAL_I2C_IsDeviceReady( &i2ch, ad2, 3, 200 );
     i_err = i2ch.ErrorCode;
-    pr( "ad = " ); pr_h( ad ); pr( "  rc= " ); pr_d( rc ) ; pr( "  err= " ); pr_d( i_err ); pr(NL);
-    delay_ms( 50 );
+    // pr( "ad = " ); pr_h( ad ); pr( "  rc= " ); pr_d( rc ) ; pr( "  err= " ); pr_d( i_err ); pr(NL);
+    delay_ms( 10 );
     if( rc != HAL_OK ) {
       continue;
     }
-    pr( NL "************************************ " );
-    pr_shx( ad );
+    pr( "ad = " ); pr_h( ad ); pr( "  rc= " ); pr_d( rc ) ; pr( "  err= " ); pr_d( i_err ); pr(NL);
+    // pr( NL "************************************ " );
+    // pr_shx( ad );
   }
 
 
