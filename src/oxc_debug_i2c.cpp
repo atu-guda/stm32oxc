@@ -102,7 +102,7 @@ int cmd_i2c_send( int argc, const char * const * argv )
   pr( NL "I2C Send  " ); pr_d( v );
   pr( " to " ); pr_h( addr ); pr( NL );
 
-  HAL_StatusTypeDef rc = HAL_I2C_Master_Transmit( i2ch_dbg, addr2, &v, 1, 100 ); // TODO: timeout
+  HAL_StatusTypeDef rc = HAL_I2C_Master_Transmit( i2ch_dbg, addr2, &v, 1, I2C_TO );
   I2C_PRINT_STATUS;
 
   // i2c_print_status( i2c_dbg );

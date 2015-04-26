@@ -8,6 +8,7 @@
 #include <oxc_console.h>
 #include <oxc_debug1.h>
 #include <oxc_debug_i2c.h>
+#include <oxc_hd44780_i2c.h>
 #include <oxc_smallrl.h>
 
 #include "usbd_desc.h"
@@ -64,6 +65,7 @@ void task_gchar( void *prm UNUSED_ARG );
 }
 
 I2C_HandleTypeDef i2ch;
+HD44780_i2c lcdt( i2ch );
 
 STD_USBCDC_SEND_TASK( usbcdc );
 
@@ -219,36 +221,42 @@ void smallrl_sigint(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  int st_a = 2;
+  int a1 = 0;
   if( argc > 1 ) {
-    st_a = strtol( argv[1], 0, 0 );
-    pr( NL "Test0: argv[1]= \"" ); pr( argv[1] ); pr( "\"" NL );
+    a1 = strtol( argv[1], 0, 0 );
   }
-  int en_a = 127;
+  pr( NL "Test0: a1= " ); pr_d( a1 ); pr( NL );
+  uint8_t ch_st = 0x30;
   if( argc > 2 ) {
-    pr( NL "Test0: argv[2]= \"" ); pr( argv[2] ); pr( "\"" NL );
-    en_a = strtol( argv[2], 0, 0 );
+    ch_st = (uint8_t)(strtol( argv[2], 0, 0 ) );
   }
-  pr( NL "Test0: st_a= " ); pr_h( st_a ); pr( " en_a= " ); pr_h( en_a );
-  pr( NL );
+  uint8_t ch_en = ch_st + 0x10;
 
-  // uint8_t val;
-  int i_err;
-  for( uint8_t ad = (uint16_t)st_a; ad <= (uint16_t)en_a && ! break_flag; ++ad ) {
-    uint16_t ad2 = ad << 1;
-    // HAL_StatusTypeDef rc = HAL_I2C_Master_Transmit( &i2ch, ad, &val, 1, 200 );
-    HAL_StatusTypeDef rc = HAL_I2C_IsDeviceReady( &i2ch, ad2, 3, 200 );
-    i_err = i2ch.ErrorCode;
-    // pr( "ad = " ); pr_h( ad ); pr( "  rc= " ); pr_d( rc ) ; pr( "  err= " ); pr_d( i_err ); pr(NL);
-    delay_ms( 10 );
-    if( rc != HAL_OK ) {
-      continue;
-    }
-    pr( "ad = " ); pr_h( ad ); pr( "  rc= " ); pr_d( rc ) ; pr( "  err= " ); pr_d( i_err ); pr(NL);
-    // pr( NL "************************************ " );
-    // pr_shx( ad );
+  lcdt.init_4b();
+  int status = lcdt.getStatus();
+  pr_sdx( status );
+
+  lcdt.putch( 'X' );
+  lcdt.puts( " ptn-hlo!\n\t" );
+  lcdt.curs_on();
+  delay_ms( 1000 );
+  lcdt.off();
+  delay_ms( 1000 );
+  lcdt.led_off();
+  delay_ms( 1000 );
+  lcdt.led_on();
+  delay_ms( 1000 );
+  lcdt.on();
+  lcdt.gotoxy( 2, 1 );
+  for( uint8_t ch = ch_st; ch < ch_en; ++ch) {
+    lcdt.putch( ch );
   }
-
+  // lcdt.puts( "L2:\x01\x02\x03\04" );
+  delay_ms( 500 );
+  for( int i=0; i<100; ++i ) {
+    lcdt.home();
+    lcdt.putch( '@' | (i&0x0F) );
+  }
 
   pr( NL );
 
