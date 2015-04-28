@@ -231,6 +231,10 @@ int cmd_test0( int argc, const char * const * argv )
   }
   pr( NL "Test0: st_a= " ); pr_h( st_a ); pr( " en_a= " ); pr_h( en_a );
   pr( NL );
+  __HAL_I2C_DISABLE( &i2ch );
+  delay_ms( 50 );
+  __HAL_I2C_ENABLE( &i2ch );
+  delay_ms( 50 );
 
   // uint8_t val;
   int i_err;

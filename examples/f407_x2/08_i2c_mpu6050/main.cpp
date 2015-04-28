@@ -22,6 +22,8 @@
 using namespace std;
 using namespace SMLRL;
 
+#define RESET_I2C  __HAL_I2C_DISABLE( &i2ch ); delay_ms( 10 ); __HAL_I2C_ENABLE( &i2ch );  delay_ms( 10 );
+
 // PinsOut p1 { GPIOC, 0, 4 };
 BOARD_DEFINE_LEDS;
 
@@ -241,6 +243,7 @@ int cmd_test0( int argc, const char * const * argv )
 
   int16_t adata[MPU6050::mpu6050_alldata_sz];
   // accel.sleep();
+  RESET_I2C;
   accel.setDLP( MPU6050::DLP_BW::bw_10 );
   accel.init();
   // int tick_start = xTaskGetTickCount();
