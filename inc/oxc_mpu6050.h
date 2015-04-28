@@ -1,5 +1,5 @@
 #ifndef _OXC_MPU6050_H
-#define _OX_MPU6050_H
+#define _OXC_MPU6050_H
 
 #include <oxc_base.h>
 

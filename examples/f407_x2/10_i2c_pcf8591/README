@@ -1,0 +1,30 @@
+Use ADC/DAC PCF8591 via I2C (addr: 0x48-ox4F, used  0x48)
+4 channel: ADC
+1 channel: DAC
+Send seq:
+addr, cfg_byte, [DAC data....]
+
+SCL = B6 + 4.7k pullUp
+SDA = B7 + 4.7k pullUp
+
+Out:
+  0: 0.00
+ 10: 0.11
+ 64: 0.79
+100: 1.25
+128: 1.61
+192: 2.40
+220: 2.73
+225: 2.78
+230: 2.79
+240: 2.80
+255: 2.80
+
+Console:  USBCDC via SmallRL.
+
+used USB FS:
+A11 = D-
+A12 = D+
+A9  = Vbus - unused?
+A10 = Id   - unused
+
