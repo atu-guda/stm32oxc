@@ -1,0 +1,10 @@
+Test TIM1 as PWM output
+out: E9,11,13,14
+
+Console: USB FS:
+A11 = D-
+A12 = D+
+
+A9  = Vbus - unused?
+A10 = Id   - unused
+
