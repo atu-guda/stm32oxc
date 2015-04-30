@@ -30,6 +30,8 @@ TIM_OC_InitTypeDef tim_oc_cfg;
 int pwm_vals[] = { 25, 50, 75, 90 };
 void tim1_cfg();
 void pwm_recalc();
+void pwm_update();
+void pwm_print_cfg();
 
 const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
 
@@ -225,7 +227,9 @@ int cmd_test0( int argc, const char * const * argv )
   }
   pr( NL );
 
-  pwm_recalc();
+  pwm_print_cfg();
+  // pwm_recalc();
+  pwm_update();
 
   delay_ms( 10 );
   break_flag = 0;
@@ -236,14 +240,7 @@ int cmd_test0( int argc, const char * const * argv )
 
 int cmd_tinit( int argc, const char * const * argv )
 {
-  int presc = user_vars['p'-'a'];
-  int arr   = user_vars['a'-'a'];
-  int freq1 = 84000000 / ( presc + 1 );
-  int freq2 = freq1 / ( arr + 1 );
-  pr( NL "TIM1 reinit: prescale: " ); pr_d( presc );
-  pr( " ARR: " ); pr_d( arr );
-  pr( " freq1: " ); pr_d( freq1 );
-  pr( " freq2: " ); pr_d( freq2 ); pr( NL );
+  pwm_print_cfg();
 
   tim1_cfg();
 
@@ -313,6 +310,30 @@ void pwm_recalc()
     return;
   }
 }
+
+void pwm_update()
+{
+  tim1h.Instance->PSC  = user_vars['p'-'a'];
+  int pbase = user_vars['a'-'a'];
+  tim1h.Instance->ARR  = pbase;
+  tim1h.Instance->CCR1 = pwm_vals[0] * pbase / 100;
+  tim1h.Instance->CCR2 = pwm_vals[1] * pbase / 100;
+  tim1h.Instance->CCR3 = pwm_vals[2] * pbase / 100;
+  tim1h.Instance->CCR4 = pwm_vals[3] * pbase / 100;
+}
+
+void pwm_print_cfg()
+{
+  int presc = user_vars['p'-'a'];
+  int arr   = user_vars['a'-'a'];
+  int freq1 = 84000000 / ( presc + 1 );
+  int freq2 = freq1 / ( arr + 1 );
+  pr( NL "TIM1 reinit: prescale: " ); pr_d( presc );
+  pr( " ARR: " ); pr_d( arr );
+  pr( " freq1: " ); pr_d( freq1 );
+  pr( " freq2: " ); pr_d( freq2 ); pr( NL );
+}
+
 
 FreeRTOS_to_stm32cube_tick_hook;
 
