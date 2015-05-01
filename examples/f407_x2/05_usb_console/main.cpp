@@ -8,7 +8,6 @@
 #include <oxc_console.h>
 #include <oxc_debug1.h>
 #include <oxc_smallrl.h>
-// #include <oxc_smallrl_q.h>
 
 #include "usbd_desc.h"
 #include <usbd_cdc.h>
@@ -32,8 +31,7 @@ const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
 // SmallRL storage and config
 int smallrl_print( const char *s, int l );
 int smallrl_exec( const char *s, int l );
-void smallrl_sigint(void);
-QueueHandle_t smallrl_cmd_queue;
+void smallrl_sigint(void); // unused?
 
 
 SmallRL srl( smallrl_print, smallrl_exec );
@@ -61,13 +59,8 @@ void task_main( void *prm UNUSED_ARG );
 void task_leds( void *prm UNUSED_ARG );
 void task_gchar( void *prm UNUSED_ARG );
 
-
 }
 
-// void on_received_char( const char *s, int l );
-
-// STD_USART2_IRQ( usartio );
-// STD_USBCDC_RECV_TASK( usbcdc );
 STD_USBCDC_SEND_TASK( usbcdc );
 
 int main(void)
@@ -85,16 +78,16 @@ int main(void)
 
   leds.write( 0x00 );
 
+  user_vars['t'-'a'] = 1000;
+  user_vars['n'-'a'] = 10;
+
   global_smallrl = &srl;
-  // SMALLRL_INIT_QUEUE;
 
   //           code               name    stack_sz      param  prty TaskHandle_t*
   xTaskCreate( task_leds,        "leds", 1*def_stksz, nullptr,   1, nullptr );
   xTaskCreate( task_usbcdc_send, "send", 2*def_stksz, nullptr,   2, nullptr );  // 2
-  // xTaskCreate( task_usbcdc_recv, "recv", 2*def_stksz, nullptr,   2, nullptr );  // 2
   xTaskCreate( task_main,        "main", 2*def_stksz, nullptr,   1, nullptr );
   xTaskCreate( task_gchar,      "gchar", 2*def_stksz, nullptr,   1, nullptr );
-  // xTaskCreate( task_smallrl_cmd, "scmd", 2*def_stksz, nullptr,   1, nullptr );
 
   vTaskStartScheduler();
   die4led( 0xFF );
@@ -119,9 +112,6 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
 
   usbcdc.init();
   delay_ms( 50 );
-  user_vars['t'-'a'] = 1000;
-
-  // usbcdc.setOnRecv( on_received_char );
 
   delay_ms( 10 );
   pr( "*=*** Main loop: ****** " NL );
@@ -134,12 +124,6 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
 
   idle_flag = 1;
   while(1) {
-    // usbcdc.sendBlockSync( "<.ABCDEFGHIJKLMNOPQRSTUVW..XYZ01234567890>\r\n" , 44 );
-    // delay_ms(1);
-    // usbcdc.sendBlockSync( "<!ZBCDEFGHIJKLMNOPQRSTUVW..XYZ01234567890>\r\n" , 44 );
-    // delay_ms(1);
-    // usbcdc.sendBlock(     "<:abcdefghijklmnopqrstuvw..xyz01234567890>\r\n" , 44 );
-    // delay_ms(1);
     ++nl;
     if( idle_flag == 0 ) {
       pr_sd( ".. main idle  ", nl );
@@ -159,8 +143,12 @@ void task_gchar( void *prm UNUSED_ARG )
   while (1) {
     int n = usbcdc.recvByte( sc, 10000 );
     if( n ) {
-      // pr( NL "--- c='" ); pr( sc ); pr( "\"" NL );
       // leds.toggle( BIT0 );
+      // if( sc[0] == KEY_SIGINT ) {
+      //   smallrl_sigint();
+      //   continue;
+      // }
+      // pr( NL "--- c='" ); pr( sc ); pr( "\"" NL );
       srl.addChar( sc[0] );
       idle_flag = 1;
     }
@@ -189,7 +177,6 @@ int pr( const char *s )
 
 int prl( const char *s, int l )
 {
-  // usbcdc.sendBlockSync( s, l );
   usbcdc.sendBlock( s, l );
   idle_flag = 1;
   return 0;
@@ -206,23 +193,9 @@ int smallrl_print( const char *s, int l )
 
 int smallrl_exec( const char *s, int l )
 {
-  // pr( NL "Cmd: \"" );
-  // prl( s, l );
-  // pr( "\" " NL );
   exec_direct( s, l );
   return 1;
 }
-
-// will be called by real receiver: USART, USB...
-// void on_received_char( const char *s, int l )
-// {
-//   leds.toggle( BIT2 );
-//   if( !s || l<1 ) { return; }
-//   // for( int i=0; i<l; ++i ) {
-//   //   srl.addChar( *s++ );
-//   // }
-//   idle_flag = 1;
-// }
 
 
 void smallrl_sigint(void)
@@ -235,11 +208,12 @@ void smallrl_sigint(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  int a1 = 16;
+  int n = user_vars['n'-'a'];
+  uint32_t t_step = user_vars['t'-'a'];
   if( argc > 1 ) {
-    a1 = strtol( argv[1], 0, 0 );
+    n = strtol( argv[1], 0, 0 );
   }
-  pr( NL "Test0: a1= " ); pr_d( a1 );
+  pr( NL "Test0: n= " ); pr_d( n ); pr( " t= " ); pr_d( t_step );
   pr( NL );
 
   int prty = uxTaskPriorityGet( 0 );
@@ -249,10 +223,10 @@ int cmd_test0( int argc, const char * const * argv )
 
   // log_add( "Test0 " );
   TickType_t tc0 = xTaskGetTickCount(), tc00 = tc0;
-  uint32_t t_step = user_vars['t'-'a'];
   uint32_t tm0 = HAL_GetTick();
 
-  for( int i=0; i<a1 && !break_flag; ++i ) {
+  break_flag = 0;
+  for( int i=0; i<n && !break_flag; ++i ) {
     TickType_t tcc = xTaskGetTickCount();
     uint32_t tmc = HAL_GetTick();
     pr( " Fake Action i= " ); pr_d( i );
