@@ -88,8 +88,9 @@ int main(void)
   global_smallrl = &srl;
 
   user_vars['t'-'a'] = 1000;
-  user_vars['p'-'a'] = 8399;  // prescaler, 86MHz->10kHz
+  user_vars['p'-'a'] = 16799;// prescaler, 186MHz->10kHz
   user_vars['a'-'a'] = 9999; // ARR, 10kHz->1Hz
+  user_vars['r'-'a'] = 0;    // flag: raw values
 
 
   //           code               name    stack_sz      param  prty TaskHandle_t*
@@ -316,17 +317,21 @@ void pwm_update()
   tim1h.Instance->PSC  = user_vars['p'-'a'];
   int pbase = user_vars['a'-'a'];
   tim1h.Instance->ARR  = pbase;
-  tim1h.Instance->CCR1 = pwm_vals[0] * pbase / 100;
-  tim1h.Instance->CCR2 = pwm_vals[1] * pbase / 100;
-  tim1h.Instance->CCR3 = pwm_vals[2] * pbase / 100;
-  tim1h.Instance->CCR4 = pwm_vals[3] * pbase / 100;
+  int scl = pbase;
+  if( user_vars['r'-'a'] ) { // raw values
+    scl = 100;
+  }
+  tim1h.Instance->CCR1 = pwm_vals[0] * scl / 100;
+  tim1h.Instance->CCR2 = pwm_vals[1] * scl / 100;
+  tim1h.Instance->CCR3 = pwm_vals[2] * scl / 100;
+  tim1h.Instance->CCR4 = pwm_vals[3] * scl / 100;
 }
 
 void pwm_print_cfg()
 {
   int presc = user_vars['p'-'a'];
   int arr   = user_vars['a'-'a'];
-  int freq1 = 84000000 / ( presc + 1 );
+  int freq1 = 84000000 * 2  / ( presc + 1 ); // *2 : if APB2 prescaler != 1 (=2)
   int freq2 = freq1 / ( arr + 1 );
   pr( NL "TIM1 reinit: prescale: " ); pr_d( presc );
   pr( " ARR: " ); pr_d( arr );

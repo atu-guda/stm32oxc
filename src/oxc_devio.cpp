@@ -89,6 +89,7 @@ void DevIO::charsFromIrq( const char *s, int l )
 {
   BaseType_t wake = pdFALSE;
   for( int i=0; i<l; ++i ) {
+    // TODO: handle Ctrl-C = 3
     xQueueSendFromISR( ibuf, s+i, &wake  );
   }
   portEND_SWITCHING_ISR( wake );

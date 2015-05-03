@@ -112,10 +112,12 @@ int8_t UsbcdcIO::CDC_Itf_Control ( uint8_t cmd, uint8_t* pbuf, uint16_t length U
   return USBD_OK;
 }
 
-int8_t UsbcdcIO::CDC_Itf_Receive( uint8_t* Buf UNUSED_ARG , uint32_t *Len UNUSED_ARG )
+int8_t UsbcdcIO::CDC_Itf_Receive( uint8_t* Buf, uint32_t *Len )
 {
   // leds.toggle( 0x08 );
-  static_usbcdcio->charsFromIrq( (char*)Buf, *Len );
+  if( static_usbcdcio && Buf && Len ) {
+    static_usbcdcio->charsFromIrq( (char*)Buf, *Len );
+  }
 
   USBD_CDC_ReceivePacket( pusb_dev ); // ???
   return USBD_OK;

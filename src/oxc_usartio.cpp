@@ -1,5 +1,5 @@
 #include <oxc_usartio.h>
-#include <oxc_gpio.h> // debug
+// #include <oxc_gpio.h> // debug
 
 int UsartIO::sendBlockSync( const char *s, int l )
 {
