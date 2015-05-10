@@ -1,7 +1,6 @@
 #include <cstring>
 #include <cstdlib>
 
-
 #include <bsp/board_stm32f407_atu_x2.h>
 #include <oxc_gpio.h>
 #include <oxc_usbcdcio.h>
@@ -112,6 +111,7 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
 
   delay_ms( 10 );
   pr( "*=*** Main loop: ****** " NL );
+  delay_ms( 20 );
 
   srl.setSigFun( smallrl_sigint );
   srl.set_ps1( "\033[32m#\033[0m ", 2 );
@@ -133,6 +133,7 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
   }
   vTaskDelete(NULL);
 }
+
 
 // TEST0
 int cmd_test0( int argc, const char * const * argv )

@@ -37,6 +37,7 @@ SRCS += oxc_debug_i2c.cpp
 SRCS += oxc_usbcdcio.cpp
 SRCS += oxc_smallrl.cpp
 #SRCS += oxc_smallrl_q.cpp
+SRCS += oxc_common1.cpp
 #SRCS += oxc_i2c.cpp
 
 
