@@ -24,6 +24,7 @@ using namespace SMLRL;
 BOARD_DEFINE_LEDS;
 
 UsbcdcIO usbcdc;
+void sigint(int v);
 
 
 const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
@@ -35,7 +36,6 @@ void smallrl_sigint(void); // unused?
 
 
 SmallRL srl( smallrl_print, smallrl_exec );
-// SmallRL srl( smallrl_print, exec_queue );
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -132,6 +132,7 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
   uint32_t nl = 0;
 
   usbcdc.init();
+  usbcdc.setOnSigInt( sigint );
   delay_ms( 50 );
 
   delay_ms( 10 );
@@ -212,6 +213,10 @@ int smallrl_exec( const char *s, int l )
   return 1;
 }
 
+void sigint( int v UNUSED_ARG )
+{
+  smallrl_sigint();
+}
 
 void smallrl_sigint(void)
 {

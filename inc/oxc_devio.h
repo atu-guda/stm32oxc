@@ -10,6 +10,7 @@
 class DevIO {
   public:
    using OnRecvFun = void (*)( const char *s, int l );
+   using SigFun = void (*)( int v );
    enum {
      IBUF_SZ = 128,     //* Input queue  size
      OBUF_SZ = 128,     //* Output queue size
@@ -43,6 +44,7 @@ class DevIO {
    virtual int recvBlock( char *s, int l, int w_tick = 0 ); // w_tick - for every
    virtual int recvBlockPoll( char *s, int l, int w_tick = 0 );
    virtual void setOnRecv( OnRecvFun a_onRecv ) { onRecv = a_onRecv; };
+   virtual void setOnSigInt( SigFun a_onSigInt ) { onSigInt = a_onSigInt; };
 
    virtual void task_send();
    virtual void task_recv();
@@ -56,6 +58,7 @@ class DevIO {
    QueueHandle_t ibuf;
    QueueHandle_t obuf;
    OnRecvFun onRecv = nullptr;
+   SigFun onSigInt = nullptr;
    int err = 0;
    int wait_tx = 1500;
    int wait_rx = 1500;
