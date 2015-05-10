@@ -141,6 +141,9 @@ uint8_t numFirstBit( uint32_t a );
 extern const char hex_digits[];
 extern const char dec_digits[];
 
+extern int idle_flag;
+extern int break_flag;
+
 // 64/log_2[10] \approx 20
 #define INT_STR_SZ_DEC 24
 #define INT_STR_SZ_HEX 20

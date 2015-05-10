@@ -1,7 +1,7 @@
 #ifndef _OXC_CONSOLE_H
 #define _OXC_CONSOLE_H
 
-#include <oxc_base.h>
+#include <oxc_devio.h>
 
 #ifndef NL
   #define NL "\r\n"
@@ -12,10 +12,7 @@
  extern "C" {
 #endif
 
-extern int idle_flag;
-// define to transfer char to console master
-void on_received_char( char c );
-typedef int (*CmdFun)(int argc, const char * const * argv );
+typedef int (*CmdFun)( int argc, const char * const * argv );
 
 #define CMDS_NMAX 100
 struct CmdInfo
@@ -28,8 +25,6 @@ struct CmdInfo
 extern const CmdInfo* global_cmds[];
 
 
-int pr( const char *s ); // redefine in main to current output
-int prl( const char *s, int l ); // redefine in main to current output
 int pr_d( int d );
 int pr_h( uint32_t d );
 #define pr_a(a) pr_h( (uint32_t)(a) )

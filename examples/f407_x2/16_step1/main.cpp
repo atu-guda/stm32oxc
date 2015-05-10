@@ -7,6 +7,7 @@
 #include <oxc_usbcdcio.h>
 #include <oxc_console.h>
 #include <oxc_debug1.h>
+#include <oxc_common1.h>
 #include <oxc_smallrl.h>
 
 #include "usbd_desc.h"
@@ -24,26 +25,15 @@ using namespace SMLRL;
 BOARD_DEFINE_LEDS;
 
 UsbcdcIO usbcdc;
-void sigint(int v);
 
 
 const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
-
-// SmallRL storage and config
-int smallrl_print( const char *s, int l );
-int smallrl_exec( const char *s, int l );
-void smallrl_sigint(void); // unused?
-
 
 SmallRL srl( smallrl_print, smallrl_exec );
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " [N] [01] - test step 0"  };
-
-int idle_flag = 0;
-int break_flag = 0;
-
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -73,11 +63,7 @@ const int n_modes = sizeof(m_modes)/sizeof(MotorMode);
 
 
 extern "C" {
-
 void task_main( void *prm UNUSED_ARG );
-void task_leds( void *prm UNUSED_ARG );
-void task_gchar( void *prm UNUSED_ARG );
-
 }
 
 STD_USBCDC_SEND_TASK( usbcdc );
@@ -92,11 +78,6 @@ int main(void)
   motor.initHW();
 
   leds.write( 0x0F );  delay_bad_ms( 200 );
-
-  //usbcdc.init();
-  // leds.write( 0x07 );  delay_bad_ms( 200 );
-
-
   leds.write( 0x00 );
 
   user_vars['t'-'a'] = 1000;
@@ -118,21 +99,15 @@ int main(void)
   return 0;
 }
 
-void task_leds( void *prm UNUSED_ARG )
-{
-  while (1)
-  {
-    leds.toggle( BIT1 );
-    delay_ms( 500 );
-  }
-}
-
 void task_main( void *prm UNUSED_ARG ) // TMAIN
 {
   uint32_t nl = 0;
 
   usbcdc.init();
   usbcdc.setOnSigInt( sigint );
+  devio_fds[0] = &usbcdc; // stdin
+  devio_fds[1] = &usbcdc; // stdout
+  devio_fds[2] = &usbcdc; // stderr
   delay_ms( 50 );
 
   delay_ms( 10 );
@@ -157,72 +132,6 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
 
   }
   vTaskDelete(NULL);
-}
-
-void task_gchar( void *prm UNUSED_ARG )
-{
-  char sc[2] = { 0, 0 };
-  while (1) {
-    int n = usbcdc.recvByte( sc, 10000 );
-    if( n ) {
-      srl.addChar( sc[0] );
-      idle_flag = 1;
-    }
-  }
-  vTaskDelete(NULL);
-}
-
-
-
-
-void _exit( int rc )
-{
-  exit_rc = rc;
-  die4led( rc );
-}
-
-
-int pr( const char *s )
-{
-  if( !s || !*s ) {
-    return 0;
-  }
-  prl( s, strlen(s) );
-  return 0;
-}
-
-int prl( const char *s, int l )
-{
-  usbcdc.sendBlock( s, l );
-  idle_flag = 1;
-  return 0;
-}
-
-// ---------------------------- smallrl -----------------------
-
-
-int smallrl_print( const char *s, int l )
-{
-  prl( s, l );
-  return 1;
-}
-
-int smallrl_exec( const char *s, int l )
-{
-  exec_direct( s, l );
-  return 1;
-}
-
-void sigint( int v UNUSED_ARG )
-{
-  smallrl_sigint();
-}
-
-void smallrl_sigint(void)
-{
-  break_flag = 1;
-  idle_flag = 1;
-  leds.toggle( BIT3 );
 }
 
 // TEST0

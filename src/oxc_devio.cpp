@@ -3,6 +3,10 @@
 
 using namespace std;
 
+DevIO* devio_fds[DEVIO_MAX];
+int idle_flag = 0;
+int break_flag = 0;
+
 DevIO::~DevIO()
 {
   reset();
@@ -136,6 +140,40 @@ int DevIO::recvBlockPoll( char *s, int l, int w_tick )
   }
   return n;
 }
+
+#define COMMON_FD_TEST(fd) \
+  if( fd < 0 || fd > DEVIO_MAX || !devio_fds[fd] ) {\
+    return 0; \
+  }
+
+int recvByte( int fd, char *s, int w_tick )
+{
+  COMMON_FD_TEST( fd );
+  return devio_fds[fd]->recvByte( s, w_tick );
+}
+
+int sendBlock( int fd, const char *s, int l )
+{
+  COMMON_FD_TEST( fd );
+  return devio_fds[fd]->sendBlock( s, l );
+}
+
+int pr( const char *s )
+{
+  if( !s || !*s ) {
+    return 0;
+  }
+  prl( s, strlen(s) );
+  return 0;
+}
+
+int prl( const char *s, int l )
+{
+  sendBlock( 1, s, l );
+  idle_flag = 1;
+  return 0;
+}
+
 
 // void DevIO::initIRQ( uint8_t ch, uint8_t prio )
 // {

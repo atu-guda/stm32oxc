@@ -55,6 +55,7 @@ class DevIO {
    virtual int  setAddr( uint32_t addr ) = 0;
    // void initIRQ( uint8_t ch, uint8_t prio ); // TODO:? store ch
   protected:
+   // TODO: open mode + flags
    QueueHandle_t ibuf;
    QueueHandle_t obuf;
    OnRecvFun onRecv = nullptr;
@@ -65,6 +66,18 @@ class DevIO {
    bool on_transmit = false;
    char tx_buf[TX_BUF_SIZE];
 };
+
+// fd - ali
+const int DEVIO_MAX = 16;      //* Maximum number of devios
+const int DEVIO_STDIN_NO = 0;  //* Number of stdin
+const int DEVIO_STDOUT_NO = 1; //* Number of stdout
+const int DEVIO_STDERR_NO = 2; //* Number of stderr
+extern DevIO *devio_fds[DEVIO_MAX];
+
+int recvByte( int fd, char *s, int w_tick = 0 );
+int sendBlock( int fd, const char *s, int l );
+int pr( const char *s );
+int prl( const char *s, int l );
 
 #define STD_COMMON_RECV_TASK( name, obj ) \
   void name( void *prm UNUSED_ARG ) { while(1) {  obj.task_recv(); }  vTaskDelete(0); }

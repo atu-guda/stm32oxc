@@ -7,6 +7,7 @@
 #endif
 
 #include <oxc_gpio.h>
+#include <oxc_devio.h>
 #include <oxc_debug1.h>
 
 // general buffers
