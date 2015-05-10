@@ -231,7 +231,7 @@ void init_usonic()
 {
   tim1h.Instance = TIM1;
   tim1h.Init.Prescaler         = 997; // 5.8 mks approx 1mm
-  tim1h.Init.Period            = 8500;
+  tim1h.Init.Period            = 32000; // 8500;
   tim1h.Init.ClockDivision     = 0;
   tim1h.Init.CounterMode       = TIM_COUNTERMODE_UP;
   tim1h.Init.RepetitionCounter = 0;
