@@ -1,0 +1,11 @@
+use: 1-wire 18B20 (initial) on E:15
+
+Pin used simultaneously for input and output.
+
+used USB FS:
+A11 = D-
+A12 = D+
+
+A9  = Vbus - unused?
+A10 = Id   - unused
+
