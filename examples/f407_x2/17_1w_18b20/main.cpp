@@ -97,8 +97,8 @@ class OneWire {
      CMD_READ_ROM = 0x33,
      CMD_MATCH_ROM = 0x55,
      CMD_SKIP_ROM = 0xCC,
-     CMD_READ_SPAD = 0x4E,
-     CMD_WRITE_SPAD = 0xBE
+     CMD_WRITE_SPAD = 0x4E,
+     CMD_READ_SPAD = 0xBE
    };
    OneWire( IoPin  &a_p )
      : p( a_p ) {};
@@ -130,8 +130,12 @@ class OneWire {
    bool readRom( uint8_t *rcv, uint16_t r_sz = 8  );
    bool matchRom( const uint8_t *addr, uint8_t cmd, uint8_t *rcv, uint16_t r_sz );
    bool skipRom( uint8_t cmd, uint8_t *rcv, uint16_t r_sz );
+   static uint8_t crc( const uint8_t *b, uint16_t l );
+   void set_check_crc( bool a_set ) { check_crc = a_set; }
   protected:
    IoPin &p;
+   int err = 0;
+   bool check_crc = true;
 };
 
 void OneWire::write_buf( const uint8_t *b, uint16_t l )
@@ -182,7 +186,11 @@ bool OneWire::gcmd( const uint8_t *addr, uint8_t cmd,
   if( rcv && r_sz ) {
     read_buf( rcv, r_sz );
   }
-  return true;
+  if( !check_crc ) {
+    return true;
+  }
+  uint8_t cr = crc( rcv, r_sz );
+  return cr == rcv[r_sz-1];
 }
 
 bool OneWire::searchRom( const uint8_t *snd, uint8_t *rcv, uint16_t r_sz  )
@@ -193,8 +201,11 @@ bool OneWire::searchRom( const uint8_t *snd, uint8_t *rcv, uint16_t r_sz  )
   write1byte( CMD_SEARCH_ROM );
   write_buf( snd, 8 );
   read_buf( rcv, 8 );
-
-  return true;
+  if( !check_crc ) {
+    return true;
+  }
+  uint8_t cr = crc( rcv, r_sz );
+  return cr == rcv[r_sz-1];
 }
 
 bool OneWire::readRom( uint8_t *rcv, uint16_t r_sz  )
@@ -204,14 +215,16 @@ bool OneWire::readRom( uint8_t *rcv, uint16_t r_sz  )
   }
   write1byte( CMD_READ_ROM );
   read_buf( rcv, r_sz );
-
-  return true;
+  if( !check_crc ) {
+    return true;
+  }
+  uint8_t cr = crc( rcv, r_sz );
+  return cr == rcv[r_sz-1];
 }
 
 bool OneWire::matchRom( const uint8_t *addr, uint8_t cmd, uint8_t *rcv, uint16_t r_sz  )
 {
   return gcmd( addr, cmd, nullptr, 0, rcv, r_sz );
-  return true;
 }
 
 bool OneWire::skipRom( uint8_t cmd, uint8_t *rcv, uint16_t r_sz  )
@@ -219,6 +232,24 @@ bool OneWire::skipRom( uint8_t cmd, uint8_t *rcv, uint16_t r_sz  )
   return gcmd( nullptr, cmd, nullptr, 0, rcv, r_sz );
 }
 
+uint8_t OneWire::crc( const uint8_t *b, uint16_t l )
+{
+  uint8_t crc = 0;
+
+  while( --l ) {
+    uint8_t ib = *b++;
+    for( uint8_t i = 8; i; --i ) {
+      uint8_t mx = ( crc ^ ib) & 0x01;
+      crc >>= 1;
+      if( mx ) {
+        crc ^= 0x8C;
+      }
+      ib >>= 1;
+    }
+  }
+
+  return crc;
+}
 
 extern "C" {
 void task_main( void *prm UNUSED_ARG );
@@ -347,7 +378,7 @@ int cmd_test0( int argc, const char * const * argv )
 
 int cmd_1wire0( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
 {
-  uint8_t buf[12], addr[8];
+  uint8_t buf[12], addr[12];
   pr( NL "1wire test start." NL );
 
   bool have_dev = wire1.reset();
@@ -357,26 +388,30 @@ int cmd_1wire0( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
   }
 
   delay_ms( 1 ); // for logic analizator
-  wire1.readRom( addr, 8 );
+  bool ok =  wire1.readRom( addr, 8 );
+  pr( ok ? "readRom OK" NL  : "readRom FAIL!!!" NL );
   dump8( addr, 8 );
 
-  wire1.skipRom( OneWire::CMD_READ_SPAD, buf, 12 ); // read buf // really need 9
+
+  ok = wire1.skipRom( OneWire::CMD_READ_SPAD, buf, 9 ); //  really need 9
+  pr( ok ? "READ_SPAD OK" NL  : "READSPAD FAIL!!!" NL );
   dump8( buf, 12 );
 
   wire1.skipRom( 0x44, nullptr, 0 ); // convert T
   delay_ms( 1000 );
 
-  wire1.skipRom( OneWire::CMD_READ_SPAD, buf, 12 ); // read buf
+  wire1.skipRom( OneWire::CMD_READ_SPAD, buf, 9 ); // read buf
   dump8( buf, 12 );
   int te = buf[0] + (buf[1] << 8);
   pr_sdx( te );
   te *= 1000; te /= 16;
   pr_sdx( te );
 
-  wire1.matchRom( addr, OneWire::CMD_READ_SPAD, buf, 12 ); // read buf with addr
+  wire1.matchRom( addr, OneWire::CMD_READ_SPAD, buf, 9 ); // read buf with addr
   dump8( buf, 12 );
   addr[1] = 0xFF; // bad addr
-  wire1.matchRom( addr, OneWire::CMD_READ_SPAD, buf, 12 ); // read buf with addr
+  ok = wire1.matchRom( addr, OneWire::CMD_READ_SPAD, buf, 9 ); // read buf with addr
+  pr( ok ? "READ_SPAD OK" NL  : "READSPAD FAIL!!!" NL );
   dump8( buf, 12 );
 
   wire1.eot();
