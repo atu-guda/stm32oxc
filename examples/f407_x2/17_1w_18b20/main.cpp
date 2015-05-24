@@ -47,15 +47,9 @@ const CmdInfo* global_cmds[] = {
 
 #define d_mcs delay_bad_mcs
 
-class OneWire {
+class IoPin {
   public:
-   enum {
-     T_W1_L =  6, T_W1_H = 64,
-     T_W0_L = 60, T_W0_H = 10,
-     T_R_L = 6, T_R_H1 = 9, T_R_H2 = 55,
-     T_RST_L = 480, T_RST_H1 = 70, T_RST_H2 = 410
-   };
-   OneWire( GPIO_TypeDef *a_gpio, uint16_t a_pin )
+   IoPin( GPIO_TypeDef *a_gpio, uint16_t a_pin )
      : gpio( a_gpio ), pin( a_pin ) {};
    void initHW();
    void sw1() { gpio->SET_BIT_REG = pin; };
@@ -75,29 +69,12 @@ class OneWire {
      return (gpio->IDR & pin) ? 1 : 0;
    };
 
-   bool reset() {
-     sw0(); d_mcs( T_RST_L ); sw1(); d_mcs( T_RST_H1 );
-     bool r = ! rw_raw(); d_mcs( T_RST_H2 );
-     return r;
-   };
-   void w0() { sw0(); d_mcs( T_W0_L ); sw1(); d_mcs( T_W0_H ); };
-   void w1() { sw0(); d_mcs( T_W1_L ); sw1(); d_mcs( T_W1_H ); };
-   void write1bit( bool b ) { if( b ) w1(); else w0(); };
-   uint8_t read1bit() {
-     sw0(); d_mcs( T_R_L ); sw1(); d_mcs( T_R_H1 );
-     uint8_t r = rw_raw(); d_mcs( T_R_H2 );
-     return r;
-   };
-   void write1byte( uint8_t w ) { write_buf( &w, 1 ); };
-   uint8_t read1byte(){ uint8_t r; read_buf( &r, 1 ); return r; };
-   void write_buf( const uint8_t *b, uint16_t l );
-   void read_buf( uint8_t *b, uint16_t l );
   protected:
    GPIO_TypeDef *gpio;
    uint16_t pin;
 };
 
-void OneWire::initHW()
+void IoPin::initHW()
 {
   GPIO_enableClk( gpio );
   GPIO_InitTypeDef gio;
@@ -106,8 +83,42 @@ void OneWire::initHW()
   gio.Pull  = GPIO_NOPULL;
   gio.Speed = GPIO_SPEED_FAST;
   HAL_GPIO_Init( gpio, &gio );
-  sw1();
 }
+
+
+class OneWire {
+  public:
+   enum {
+     T_W1_L =  6, T_W1_H = 64,
+     T_W0_L = 60, T_W0_H = 10,
+     T_R_L = 6, T_R_H1 = 9, T_R_H2 = 55,
+     T_RST_L = 480, T_RST_H1 = 70, T_RST_H2 = 410
+   };
+   OneWire( IoPin  &a_p )
+     : p( a_p ) {};
+   void initHW() { p.sw1(); };
+   void eot()    { p.sw1(); };
+
+   bool reset() {
+     p.sw0(); d_mcs( T_RST_L ); p.sw1(); d_mcs( T_RST_H1 );
+     bool r = ! p.rw_raw(); d_mcs( T_RST_H2 );
+     return r;
+   };
+   void w0() { p.sw0(); d_mcs( T_W0_L ); p.sw1(); d_mcs( T_W0_H ); };
+   void w1() { p.sw0(); d_mcs( T_W1_L ); p.sw1(); d_mcs( T_W1_H ); };
+   void write1bit( bool b ) { if( b ) w1(); else w0(); };
+   uint8_t read1bit() {
+     p.sw0(); d_mcs( T_R_L ); p.sw1(); d_mcs( T_R_H1 );
+     uint8_t r = p.rw_raw(); d_mcs( T_R_H2 );
+     return r;
+   };
+   void write1byte( uint8_t w ) { write_buf( &w, 1 ); };
+   uint8_t read1byte(){ uint8_t r; read_buf( &r, 1 ); return r; };
+   void write_buf( const uint8_t *b, uint16_t l );
+   void read_buf( uint8_t *b, uint16_t l );
+  protected:
+   IoPin &p;
+};
 
 void OneWire::write_buf( const uint8_t *b, uint16_t l )
 {
@@ -142,7 +153,8 @@ extern "C" {
 void task_main( void *prm UNUSED_ARG );
 }
 
-OneWire wire1( GPIOE, GPIO_PIN_15 );
+IoPin pin_wire1( GPIOE, GPIO_PIN_15 );
+OneWire wire1( pin_wire1 );
 
 STD_USBCDC_SEND_TASK( usbcdc );
 
@@ -153,6 +165,7 @@ int main(void)
   SystemClock_Config();
   leds.initHW();
 
+  pin_wire1.initHW();
   wire1.initHW();
 
   leds.write( 0x0F );  delay_bad_ms( 200 );
@@ -189,7 +202,7 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
   delay_ms( 50 );
 
   delay_ms( 10 );
-  wire1.sw1();
+  wire1.initHW();
   pr( "*=*** Main loop: ****** " NL );
   delay_ms( 20 );
 
@@ -238,9 +251,9 @@ int cmd_test0( int argc, const char * const * argv )
   break_flag = 0;
   bool out_flag = user_vars['o'-'a'];
   for( int i=0; i<n && !break_flag; ++i ) {
-    wire1.set_sw0( i & 1 );
+    pin_wire1.set_sw0( i & 1 );
     if( out_flag ) {
-      uint16_t iv = wire1.rw();
+      uint16_t iv = pin_wire1.rw();
       pr( "i= " ); pr_d( i );
       pr( "  iv= " ); pr_h( iv );
       pr( NL );
@@ -255,7 +268,7 @@ int cmd_test0( int argc, const char * const * argv )
   delay_ms( 10 );
   break_flag = 0;
   idle_flag = 1;
-  wire1.sw1();
+  pin_wire1.sw1();
 
   pr( NL "test0 end." NL );
   return 0;
@@ -302,7 +315,7 @@ int cmd_1wire0( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
   te *= 1000; te /= 16;
   pr_sdx( te );
 
-  wire1.sw1();
+  wire1.eot();
   delay_ms( 100 );
 
   pr( NL "1wire test end." NL );
