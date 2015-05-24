@@ -92,7 +92,13 @@ class OneWire {
      T_W1_L =  6, T_W1_H = 64,
      T_W0_L = 60, T_W0_H = 10,
      T_R_L = 6, T_R_H1 = 9, T_R_H2 = 55,
-     T_RST_L = 480, T_RST_H1 = 70, T_RST_H2 = 410
+     T_RST_L = 480, T_RST_H1 = 70, T_RST_H2 = 410,
+     CMD_SEARCH_ROM = 0xF0,
+     CMD_READ_ROM = 0x33,
+     CMD_MATCH_ROM = 0x55,
+     CMD_SKIP_ROM = 0xCC,
+     CMD_READ_SPAD = 0x4E,
+     CMD_WRITE_SPAD = 0xBE
    };
    OneWire( IoPin  &a_p )
      : p( a_p ) {};
@@ -116,6 +122,14 @@ class OneWire {
    uint8_t read1byte(){ uint8_t r; read_buf( &r, 1 ); return r; };
    void write_buf( const uint8_t *b, uint16_t l );
    void read_buf( uint8_t *b, uint16_t l );
+
+   bool gcmd( const uint8_t *addr, uint8_t cmd, // genegic command
+       const uint8_t *snd, uint8_t s_sz, uint8_t *rcv, uint16_t r_sz  );
+
+   bool searchRom( const uint8_t *snd, uint8_t *rcv, uint16_t r_sz  );
+   bool readRom( uint8_t *rcv, uint16_t r_sz = 8  );
+   bool matchRom( const uint8_t *addr, uint8_t cmd, uint8_t *rcv, uint16_t r_sz );
+   bool skipRom( uint8_t cmd, uint8_t *rcv, uint16_t r_sz );
   protected:
    IoPin &p;
 };
@@ -146,6 +160,63 @@ void OneWire::read_buf( uint8_t *b, uint16_t l )
     delay_ms( 1 );
     // d_mcs( T_R_L );
   };
+}
+
+bool OneWire::gcmd( const uint8_t *addr, uint8_t cmd,
+       const uint8_t *snd, uint8_t s_sz, uint8_t *rcv, uint16_t r_sz  )
+{
+  if( !reset() ) {
+    return false;
+  }
+
+  if( addr ) {
+    write1byte( CMD_MATCH_ROM );
+    write_buf( addr, 8 );
+  } else {
+    write1byte( CMD_SKIP_ROM );
+  }
+  write1byte( cmd );
+  if( snd && s_sz ) {
+    write_buf( snd, s_sz );
+  }
+  if( rcv && r_sz ) {
+    read_buf( rcv, r_sz );
+  }
+  return true;
+}
+
+bool OneWire::searchRom( const uint8_t *snd, uint8_t *rcv, uint16_t r_sz  )
+{
+  if( !snd || !rcv || !reset() ) {
+    return false;
+  }
+  write1byte( CMD_SEARCH_ROM );
+  write_buf( snd, 8 );
+  read_buf( rcv, 8 );
+
+  return true;
+}
+
+bool OneWire::readRom( uint8_t *rcv, uint16_t r_sz  )
+{
+  if( !rcv || !reset() ) {
+    return false;
+  }
+  write1byte( CMD_READ_ROM );
+  read_buf( rcv, r_sz );
+
+  return true;
+}
+
+bool OneWire::matchRom( const uint8_t *addr, uint8_t cmd, uint8_t *rcv, uint16_t r_sz  )
+{
+  return gcmd( addr, cmd, nullptr, 0, rcv, r_sz );
+  return true;
+}
+
+bool OneWire::skipRom( uint8_t cmd, uint8_t *rcv, uint16_t r_sz  )
+{
+  return gcmd( nullptr, cmd, nullptr, 0, rcv, r_sz );
 }
 
 
@@ -276,12 +347,9 @@ int cmd_test0( int argc, const char * const * argv )
 
 int cmd_1wire0( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
 {
-  uint8_t buf[12];
+  uint8_t buf[12], addr[8];
   pr( NL "1wire test start." NL );
-  // wire1.sw1();
-  // delay_bad_mcs( 500 );
-  // wire1.sw0();
-  // delay_bad_mcs( 500 );
+
   bool have_dev = wire1.reset();
   pr_sdx( have_dev );
   if( !have_dev ) {
@@ -289,31 +357,27 @@ int cmd_1wire0( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
   }
 
   delay_ms( 1 ); // for logic analizator
-  wire1.reset();
-  wire1.write1byte( 0x33 ); // 33 = read ROM (only one device)
-  wire1.read_buf( buf, 8 );
-  dump8( buf, 8 );
+  wire1.readRom( addr, 8 );
+  dump8( addr, 8 );
 
-  wire1.reset();
-  wire1.write1byte( 0xCC ); // skip rom
-  wire1.write1byte( 0xBE ); // read buf
-  wire1.read_buf( buf, 8 );
-  dump8( buf, 8 );
+  wire1.skipRom( OneWire::CMD_READ_SPAD, buf, 12 ); // read buf // really need 9
+  dump8( buf, 12 );
 
-  wire1.reset();
-  wire1.write1byte( 0xCC ); // skip rom
-  wire1.write1byte( 0x44 ); // convert
+  wire1.skipRom( 0x44, nullptr, 0 ); // convert T
   delay_ms( 1000 );
 
-  wire1.reset();
-  wire1.write1byte( 0xCC ); // skip rom
-  wire1.write1byte( 0xBE ); // read buf
-  wire1.read_buf( buf, 9 );
-  dump8( buf, 9 );
+  wire1.skipRom( OneWire::CMD_READ_SPAD, buf, 12 ); // read buf
+  dump8( buf, 12 );
   int te = buf[0] + (buf[1] << 8);
   pr_sdx( te );
   te *= 1000; te /= 16;
   pr_sdx( te );
+
+  wire1.matchRom( addr, OneWire::CMD_READ_SPAD, buf, 12 ); // read buf with addr
+  dump8( buf, 12 );
+  addr[1] = 0xFF; // bad addr
+  wire1.matchRom( addr, OneWire::CMD_READ_SPAD, buf, 12 ); // read buf with addr
+  dump8( buf, 12 );
 
   wire1.eot();
   delay_ms( 100 );
