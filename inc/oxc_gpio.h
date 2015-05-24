@@ -51,6 +51,33 @@ class PinsOut
 extern PinsOut leds;
 void die4led( uint16_t n );
 
+class IoPin {
+  public:
+   IoPin( GPIO_TypeDef *a_gpio, uint16_t a_pin )
+     : gpio( a_gpio ), pin( a_pin ) {};
+   void initHW();
+   void sw1() { gpio->SET_BIT_REG = pin; };
+   void sw0() {
+     #if RESET_BIT_SHIFT == 0
+     gpio->RESET_BIT_REG = pin;
+     #else
+     gpio->RESET_BIT_REG = pin << RESET_BIT_SHIFT;
+     #endif
+   };
+   void set_sw0( bool s ) { if( s ) sw1(); else sw0(); }
+   uint8_t rw() {
+     delay_bad_mcs( 1 );
+     return rw_raw();
+   };
+   uint8_t rw_raw() {
+     return (gpio->IDR & pin) ? 1 : 0;
+   };
+
+  protected:
+   GPIO_TypeDef *gpio;
+   uint16_t pin;
+};
+
 
 #endif
 

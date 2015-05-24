@@ -83,4 +83,16 @@ void die4led( uint16_t n )
   }
 }
 
+void IoPin::initHW()
+{
+  GPIO_enableClk( gpio );
+  GPIO_InitTypeDef gio;
+  gio.Pin   = pin;
+  gio.Mode  = GPIO_MODE_OUTPUT_OD;
+  gio.Pull  = GPIO_NOPULL;
+  gio.Speed = GPIO_SPEED_FAST;
+  HAL_GPIO_Init( gpio, &gio );
+}
+
+
 // vim: path=.,/usr/share/stm32cube/inc
