@@ -84,6 +84,12 @@ class SSD1306 {
      MEM_SZ = ( X_SZ * Y_SZ / 8 ),
      PRE_BUF = 8 // special place before buffer
    };
+   struct OfsData {
+     uint32_t ofs1;
+     uint8_t m1;
+     uint32_t ofs2;
+     uint8_t m2;
+   };
    SSD1306( I2C_HandleTypeDef &a_i2ch, uint8_t a_addr = BASE_ADDR )
      : i2ch( a_i2ch ), addr2( a_addr<<1 ) {};
    void init();
@@ -105,11 +111,20 @@ class SSD1306 {
    void out_screen();
    uint8_t* fb() { return scr; }
 
+   uint32_t xy2ofs( uint16_t x, uint16_t y ) {
+     return x + (uint32_t)( y >> 3 ) * X_SZ;
+   }
+   uint8_t xy2midx( uint16_t x UNUSED_ARG, uint16_t y ) {
+     return (uint8_t)( y & 0x07 );
+   }
    void fillAll( uint32_t col );
    void pixx( uint16_t x, uint16_t y, uint32_t col ); // w/o control: private?
    void pix(  uint16_t x, uint16_t y, uint32_t col );  // with control
    void hline( uint16_t x1, uint16_t y,  uint16_t x2, uint32_t col );
    void vline( uint16_t x,  uint16_t y1, uint16_t y2, uint32_t col );
+  private:
+   void vline0( const OfsData &od );
+   void vline1( const OfsData &od );
   private:
    I2C_HandleTypeDef &i2ch;
    uint8_t addr2;
@@ -169,8 +184,8 @@ void SSD1306::fillAll( uint32_t col )
 
 void SSD1306::pixx( uint16_t x, uint16_t y, uint32_t col )
 {
-  uint32_t ofs = (x) + (uint32_t)( y >> 3 ) * X_SZ;
-  uint8_t midx = (uint8_t)( y & 0x07 );
+  uint32_t ofs = xy2ofs( x, y);
+  uint8_t midx = xy2midx( x, y );
   if( col ) {
     scr[ofs] |= msk_set[midx];
   } else {
@@ -197,8 +212,8 @@ void SSD1306::hline( uint16_t x1,uint16_t y, uint16_t x2, uint32_t col )
   if( x2 >= X_SZ ) {
     x2 = X_SZ-1;
   }
-  uint32_t ofs = (x1) + (uint32_t)( y >> 3 ) * X_SZ;
-  uint8_t midx = (uint8_t)( y & 0x07 );
+  uint32_t ofs = xy2ofs(  x1, y );
+  uint8_t midx = xy2midx( x1, y );
   uint16_t n = x2 - x1;
 
   if( col ) {
@@ -225,39 +240,52 @@ void SSD1306::vline( uint16_t x, uint16_t y1, uint16_t y2, uint32_t col )
   if( y2 >= Y_SZ ) {
     y2 = Y_SZ-1;
   }
-  uint32_t ofs1 = x + (uint32_t)( y1 >> 3 ) * X_SZ;
-  uint8_t midx1 = (uint8_t)( y1 & 0x07 );
-  uint8_t m1 = msk_l1[midx1];
-  uint32_t ofs2 = x + (uint32_t)( y2 >> 3 ) * X_SZ;
-  uint8_t midx2 = (uint8_t)( y2 & 0x07 );
-  uint8_t m2 = msk_l2[midx2];
+  OfsData od;
+  od.ofs1  = xy2ofs( x, y1 );
+  uint8_t midx1 = xy2midx( x, y1 );
+  od.m1    = msk_l1[midx1];
+  od.ofs2  = xy2ofs( x, y2 );
+  uint8_t midx2 = xy2midx( x, y2 );
+  od.m2    = msk_l2[midx2];
 
-  if( ofs1 == ofs2 ) { // single segment
-    m1 &= m2;
+  if( od.ofs1 == od.ofs2 ) { // single segment
+    od.m1 &= od.m2;
   }
   if( col ) {
-    scr[ofs1] |= m1;
+    vline1( od );
   } else {
-    scr[ofs1] &= ~m1;
+    vline0( od );
   }
-  if( ofs1 == ofs2 ) { // single segment
+}
+
+void SSD1306::vline0( const OfsData &od )
+{
+  scr[od.ofs1] &= ~od.m1;
+  if( od.ofs1 == od.ofs2 ) { // single segment
     return;
   }
 
-
-  if( col ) {
-    scr[ofs2] |= m2;
-    for( uint32_t o = ofs1+X_SZ; o < ofs2; o+=X_SZ ) {
-      scr[o] = 0xFF;
-    }
-  } else {
-    scr[ofs2] &= ~m2;
-    for( uint32_t o = ofs1+X_SZ; o < ofs2; o+=X_SZ ) {
-      scr[o] = 0;
-    }
+  scr[od.ofs2] &= ~od.m2;
+  for( uint32_t o = od.ofs1+X_SZ; o < od.ofs2; o+=X_SZ ) {
+    scr[o] = 0;
   }
 
 }
+
+void SSD1306::vline1( const OfsData &od )
+{
+  scr[od.ofs1] |= od.m1;
+  if( od.ofs1 == od.ofs2 ) { // single segment
+    return;
+  }
+
+  scr[od.ofs2] |= od.m2;
+  for( uint32_t o = od.ofs1+X_SZ; o < od.ofs2; o+=X_SZ ) {
+    scr[o] = 0xFF;
+  }
+}
+
+
 
 // ----------------------------------------------------------------
 
