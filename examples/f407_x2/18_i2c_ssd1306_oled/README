@@ -1,0 +1,13 @@
+Test SSD1396 OLED display driver on I2C1
+
+SCL = B6 + 4.7k pullUp
+SDA = B7 + 4.7k pullUp
+
+Console:  USBCDC via SmallRL.
+
+used USB FS:
+A11 = D-
+A12 = D+
+A9  = Vbus - unused?
+A10 = Id   - unused
+
