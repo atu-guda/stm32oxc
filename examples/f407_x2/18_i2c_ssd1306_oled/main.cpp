@@ -122,9 +122,13 @@ class SSD1306 {
    void pix(  uint16_t x, uint16_t y, uint32_t col );  // with control
    void hline( uint16_t x1, uint16_t y,  uint16_t x2, uint32_t col );
    void vline( uint16_t x,  uint16_t y1, uint16_t y2, uint32_t col );
+   void rect( uint16_t x1,  uint16_t y1, uint16_t x2, uint16_t y2, uint32_t col );
+   void box(  uint16_t x1,  uint16_t y1, uint16_t x2, uint16_t y2, uint32_t col );
   private:
    void vline0( const OfsData &od );
    void vline1( const OfsData &od );
+   void box0( const OfsData &od, uint16_t n );
+   void box1( const OfsData &od, uint16_t n );
   private:
    I2C_HandleTypeDef &i2ch;
    uint8_t addr2;
@@ -285,6 +289,83 @@ void SSD1306::vline1( const OfsData &od )
   }
 }
 
+void SSD1306::rect( uint16_t x1,  uint16_t y1, uint16_t x2, uint16_t y2, uint32_t col )
+{
+  hline( x1, y1, x2, col );
+  hline( x1, y2, x2, col );
+  vline( x1, y1, y2, col );
+  vline( x2, y1, y2, col );
+}
+
+void SSD1306::box(  uint16_t x1,  uint16_t y1, uint16_t x2, uint16_t y2, uint32_t col )
+{
+  if( x2 < x1 ) {
+    uint16_t t = x2; x2 = x1; x1 = t;
+  };
+  if( y2 < y1 ) {
+    uint16_t t = y2; y2 = y1; y1 = t;
+  };
+  if( x1 >= X_SZ || y1 >= Y_SZ ) {
+    return;
+  }
+  if( x2 >= X_SZ ) {
+    x2 = X_SZ-1;
+  }
+  if( y2 >= Y_SZ ) {
+    y2 = Y_SZ-1;
+  }
+  OfsData od;
+  od.ofs1  = xy2ofs( x1, y1 );
+  uint8_t midx1 = xy2midx( x1, y1 );
+  od.m1    = msk_l1[midx1];
+  od.ofs2  = xy2ofs( x1, y2 );
+  uint8_t midx2 = xy2midx( x1, y2 );
+  od.m2    = msk_l2[midx2];
+  uint16_t n = x2 - x1;
+
+  if( od.ofs1 == od.ofs2 ) { // single segment
+    od.m1 &= od.m2;
+  }
+  if( col ) {
+    box1( od, n );
+  } else {
+    box0( od, n );
+  }
+}
+
+void SSD1306::box0( const OfsData &od, uint16_t n )
+{
+  for( uint16_t i=0; i<n; ++i ) {
+    scr[od.ofs1+i] &= ~od.m1;
+  }
+  if( od.ofs1 == od.ofs2 ) { // single segment
+    return;
+  }
+
+  for( uint16_t i=0; i<n; ++i ) {
+    scr[od.ofs2+i] &= ~od.m2;
+    for( uint32_t o = od.ofs1+X_SZ; o < od.ofs2; o+=X_SZ ) {
+      scr[o+i] = 0;
+    }
+  }
+}
+
+void SSD1306::box1( const OfsData &od, uint16_t n )
+{
+  for( uint16_t i=0; i<n; ++i ) {
+    scr[od.ofs1+i] |= od.m1;
+  }
+  if( od.ofs1 == od.ofs2 ) { // single segment
+    return;
+  }
+
+  for( uint16_t i=0; i<n; ++i ) {
+    scr[od.ofs2+i] |= od.m2;
+    for( uint32_t o = od.ofs1+X_SZ; o < od.ofs2; o+=X_SZ ) {
+      scr[o+i] = 0xFF;
+    }
+  }
+}
 
 
 // ----------------------------------------------------------------
@@ -449,6 +530,11 @@ int cmd_test0( int argc, const char * const * argv )
   for( uint16_t ro=0; ro<64; ++ro ) {
     screen.vline( ro, 0, ro, (ro&1) );
   }
+
+  screen.rect( 10, 10, 117, 53, 1 );
+  screen.rect( 11, 11, 116, 52, 0 );
+  screen.box(  12, 12, 64,  51, 1 );
+  screen.box(  65, 11, 115, 51, 0 );
 
   screen.out_screen();
 
