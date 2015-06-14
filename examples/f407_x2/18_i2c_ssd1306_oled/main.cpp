@@ -69,235 +69,63 @@ I2C_HandleTypeDef i2ch;
 
 inline int sign( int x ) { return (x>0) ? 1 : ( (x<0) ? -1: 0 ) ; }
 
-class SSD1306 {
+//* abstract pixel buffer: unknown bit depth and videoram structure
+class PixBuf {
   public:
-   enum {
-     BASE_ADDR = 0x3C,
-     X_SZ = 128,
-     Y_SZ = 64,
-     I2C_TO  = 100,
-     CMD_1 = 0x80,
-     CMD_N = 0x00,
-     DATA_1 = 0xC0,
-     DATA_N = 0x40,
-     CMD_MODE = 0x20,
-     CMD_CONTRAST = 0x81,
-     CMD_RAM = 0xA4, // default, output follows RAM
-     CMD_FULLON = 0xA5, // output in ON, independent of RAM
-     CMD_NOINVERSE = 0xA6,
-     CMD_INVERSE = 0xA7,
-     CMD_OFF = 0xAE,
-     CMD_ON = 0xAF,
-     MEM_SZ = ( X_SZ * Y_SZ / 8 ),
-     PRE_BUF = 8 // special place before buffer
-   };
-   struct OfsData {
-     uint32_t ofs1;
-     uint8_t m1;
-     uint32_t ofs2;
-     uint8_t m2;
-   };
-   SSD1306( I2C_HandleTypeDef &a_i2ch, uint8_t a_addr = BASE_ADDR )
-     : i2ch( a_i2ch ), addr2( a_addr<<1 ) {};
-   void init();
-   void cmd1( uint8_t cmd );
-   void cmd2( uint8_t cmd, uint8_t val );
-   void data1( uint8_t d );
-
-   void switch_on() { cmd1( CMD_ON ); };
-   void switch_off() { cmd1( CMD_OFF ); };
-   void contrast( uint8_t v ) { cmd2( CMD_CONTRAST, v ); };
-   void full_on() { cmd1( CMD_FULLON ); };
-   void on_ram() { cmd1( CMD_RAM ); };
-   void no_inverse() { cmd1( CMD_NOINVERSE ); };
-   void inverse() { cmd1( CMD_INVERSE ); };
-   void mode_horisontal() { cmd2( CMD_MODE, 0x00 ); };
-   void mode_vertical()   { cmd2( CMD_MODE, 0x01 ); };
-   void mode_paged()      { cmd2( CMD_MODE, 0x02 ); };
-   void cls();
-   void out_screen();
+   enum { PRE_BUF = 0 }; // bytes before real buffer: for transfer cmd
+   PixBuf( uint16_t a_width, uint16_t a_height, uint16_t a_bpp );
+   PixBuf( const PixBuf &r );
+   ~PixBuf();
    uint8_t* fb() { return scr; }
+   uint8_t* xfb() { return xscr; }
 
-   uint32_t xy2ofs( uint16_t x, uint16_t y ) {
-     return x + (uint32_t)( y >> 3 ) * X_SZ;
-   }
-   uint8_t xy2midx( uint16_t x UNUSED_ARG, uint16_t y ) {
-     return (uint8_t)( y & 0x07 );
-   }
-   void fillAll( uint32_t col );
-   void pixx( uint16_t x, uint16_t y, uint32_t col ); // w/o control: private?
-   void pix(  uint16_t x, uint16_t y, uint32_t col );  // with control
-   void hline( uint16_t x1, uint16_t y,  uint16_t x2, uint32_t col );
-   void vline( uint16_t x,  uint16_t y1, uint16_t y2, uint32_t col );
-   void rect( uint16_t x1,  uint16_t y1, uint16_t x2, uint16_t y2, uint32_t col );
-   void box(  uint16_t x1,  uint16_t y1, uint16_t x2, uint16_t y2, uint32_t col );
-   void line(  uint16_t x1,  uint16_t y1, uint16_t x2, uint16_t y2, uint32_t col );
-  private:
-   void vline0( const OfsData &od );
-   void vline1( const OfsData &od );
-   void box0( const OfsData &od, uint16_t n );
-   void box1( const OfsData &od, uint16_t n );
-  private:
-   I2C_HandleTypeDef &i2ch;
-   uint8_t addr2;
-   uint8_t xscr[PRE_BUF+MEM_SZ];
-   uint8_t *scr = xscr + PRE_BUF;
-   const uint8_t msk_set[8] = { 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80 };
-   const uint8_t msk_uns[8] = { 0xFE, 0xFD, 0xFB, 0xF7, 0xEF, 0xDF, 0xBF, 0x7F };
-   const uint8_t msk_l1[8]  = { 0xFF, 0xFE, 0xFC, 0xF8, 0xF0, 0xE0, 0xC0, 0x80 };
-   const uint8_t msk_l2[8]  = { 0x01, 0x03, 0x07, 0x0F, 0x1F, 0x3F, 0x7F, 0xFF };
+   virtual uint32_t xy2ofs( uint16_t x, uint16_t y ) = 0;
+   virtual uint8_t xy2midx( uint16_t x UNUSED_ARG, uint16_t y ) = 0;
+   virtual void fillAll( uint32_t col ) = 0;
+   virtual void pixx( uint16_t x, uint16_t y, uint32_t col ) = 0; // w/o control: private?
+   virtual void pix(  uint16_t x, uint16_t y, uint32_t col );  // with control
+   virtual void hline( uint16_t x1, uint16_t y,  uint16_t x2, uint32_t col ) = 0;
+   virtual void vline( uint16_t x,  uint16_t y1, uint16_t y2, uint32_t col ) = 0;
+   virtual void rect( uint16_t x1,  uint16_t y1, uint16_t x2, uint16_t y2, uint32_t col );
+   virtual void box(  uint16_t x1,  uint16_t y1, uint16_t x2, uint16_t y2, uint32_t col ) = 0;
+   virtual void line(  uint16_t x1,  uint16_t y1, uint16_t x2, uint16_t y2, uint32_t col );
+  protected:
+   uint16_t width, height, bpp;
+   uint32_t sz; // in bytes;
+   uint8_t *xscr;
+   uint8_t *scr;
 };
 
-void SSD1306::cmd1( uint8_t cmd )
+PixBuf::PixBuf( uint16_t a_width, uint16_t a_height, uint16_t a_bpp )
+  : width( a_width ), height( a_height ), bpp( a_bpp ),
+    sz( uint32_t(width) * height * bpp / 8 ),
+    xscr( new uint8_t[sz+PRE_BUF] ),
+    scr( xscr+PRE_BUF )
 {
-  uint8_t xcmd[] = { CMD_1, cmd };
-  HAL_I2C_Master_Transmit( &i2ch, addr2,  xcmd, 2, I2C_TO );
 }
 
-void SSD1306::cmd2( uint8_t cmd, uint8_t val )
+PixBuf::PixBuf( const PixBuf &r )
+  : width(r.width), height(r.height), bpp(r.bpp), sz(r.sz),
+    xscr( new uint8_t[sz+PRE_BUF] ),
+    scr( xscr+PRE_BUF )
 {
-  uint8_t xcmd[] = { CMD_N, cmd, val };
-  HAL_I2C_Master_Transmit( &i2ch, addr2,  xcmd, 3, I2C_TO );
+  memcpy( xscr, r.xscr, sz+PRE_BUF );
 }
 
-void SSD1306::data1( uint8_t d )
+PixBuf::~PixBuf()
 {
-  uint8_t xcmd[] = { DATA_1, d };
-  HAL_I2C_Master_Transmit( &i2ch, addr2,  xcmd, 2, I2C_TO );
+  delete[] xscr; xscr = nullptr; scr = nullptr;
 }
 
-
-void SSD1306::init()
+void PixBuf::pix(  uint16_t x, uint16_t y, uint32_t col )
 {
-  memset( scr, 0, MEM_SZ );
-  uint8_t on_cmd[] = { 0x00, 0x8D, 0x14, 0xAF };
-  HAL_I2C_Master_Transmit( &i2ch, addr2,  on_cmd, 4, I2C_TO );
-}
-
-void SSD1306::cls()
-{
-  memset( scr, 0, MEM_SZ );
-  out_screen();
-}
-
-void SSD1306::out_screen()
-{
-  uint8_t go_00[] = { 0x00, 0xB0, 0x00, 0x10 };
-  HAL_I2C_Master_Transmit( &i2ch, addr2,  go_00, 4, I2C_TO );
-  xscr[PRE_BUF-1] = DATA_N;
-  HAL_I2C_Master_Transmit( &i2ch, addr2,  xscr+PRE_BUF-1, MEM_SZ+1, I2C_TO );
-}
-
-void SSD1306::fillAll( uint32_t col )
-{
-  uint8_t v = col ? 0xFF : 0;
-  memset( scr, v, MEM_SZ );
-}
-
-void SSD1306::pixx( uint16_t x, uint16_t y, uint32_t col )
-{
-  uint32_t ofs = xy2ofs( x, y);
-  uint8_t midx = xy2midx( x, y );
-  if( col ) {
-    scr[ofs] |= msk_set[midx];
-  } else {
-    scr[ofs] &= msk_uns[midx];
-  }
-}
-
-void SSD1306::pix(  uint16_t x, uint16_t y, uint32_t col )
-{
-  if( x >= X_SZ || y >= Y_SZ ) {
+  if( x >= width || y >= height ) {
     return;
   }
   pixx( x, y, col );
 }
 
-void SSD1306::hline( uint16_t x1,uint16_t y, uint16_t x2, uint32_t col )
-{
-  if( x2 < x1 ) {
-    swap( x1, x2 );
-  };
-  if( x1 >= X_SZ || y >= Y_SZ ) {
-    return;
-  }
-  if( x2 >= X_SZ ) {
-    x2 = X_SZ-1;
-  }
-  uint32_t ofs = xy2ofs(  x1, y );
-  uint8_t midx = xy2midx( x1, y );
-  uint16_t n = x2 - x1;
-
-  if( col ) {
-    uint8_t m = msk_set[midx];
-    for( uint16_t i=0; i<n; ++i, ++ofs ) {
-      scr[ofs] |= m;
-    }
-  } else {
-    uint8_t m = msk_uns[midx];
-    for( uint16_t i=0; i<n; ++i, ++ofs ) {
-      scr[ofs] &= m;
-    }
-  }
-}
-
-void SSD1306::vline( uint16_t x, uint16_t y1, uint16_t y2, uint32_t col )
-{
-  if( y2 < y1 ) {
-    swap( y1, y2 );
-  };
-  if( x >= X_SZ || y1 >= Y_SZ ) {
-    return;
-  }
-  if( y2 >= Y_SZ ) {
-    y2 = Y_SZ-1;
-  }
-  OfsData od;
-  od.ofs1  = xy2ofs( x, y1 );
-  uint8_t midx1 = xy2midx( x, y1 );
-  od.m1    = msk_l1[midx1];
-  od.ofs2  = xy2ofs( x, y2 );
-  uint8_t midx2 = xy2midx( x, y2 );
-  od.m2    = msk_l2[midx2];
-
-  if( od.ofs1 == od.ofs2 ) { // single segment
-    od.m1 &= od.m2;
-  }
-  if( col ) {
-    vline1( od );
-  } else {
-    vline0( od );
-  }
-}
-
-void SSD1306::vline0( const OfsData &od )
-{
-  scr[od.ofs1] &= ~od.m1;
-  if( od.ofs1 == od.ofs2 ) { // single segment
-    return;
-  }
-
-  scr[od.ofs2] &= ~od.m2;
-  for( uint32_t o = od.ofs1+X_SZ; o < od.ofs2; o+=X_SZ ) {
-    scr[o] = 0;
-  }
-
-}
-
-void SSD1306::vline1( const OfsData &od )
-{
-  scr[od.ofs1] |= od.m1;
-  if( od.ofs1 == od.ofs2 ) { // single segment
-    return;
-  }
-
-  scr[od.ofs2] |= od.m2;
-  for( uint32_t o = od.ofs1+X_SZ; o < od.ofs2; o+=X_SZ ) {
-    scr[o] = 0xFF;
-  }
-}
-
-void SSD1306::rect( uint16_t x1,  uint16_t y1, uint16_t x2, uint16_t y2, uint32_t col )
+void PixBuf::rect( uint16_t x1,  uint16_t y1, uint16_t x2, uint16_t y2, uint32_t col )
 {
   hline( x1, y1, x2, col );
   hline( x1, y2, x2, col );
@@ -305,77 +133,17 @@ void SSD1306::rect( uint16_t x1,  uint16_t y1, uint16_t x2, uint16_t y2, uint32_
   vline( x2, y1, y2, col );
 }
 
-void SSD1306::box(  uint16_t x1,  uint16_t y1, uint16_t x2, uint16_t y2, uint32_t col )
+void PixBuf::box(  uint16_t x1,  uint16_t y1, uint16_t x2, uint16_t y2, uint32_t col )
 {
-  if( x2 < x1 ) {
-    swap( x1, x2 );
-  };
-  if( y2 < y1 ) {
-    swap( y1, y2 );
-  };
-  if( x1 >= X_SZ || y1 >= Y_SZ ) {
-    return;
-  }
-  if( x2 >= X_SZ ) {
-    x2 = X_SZ-1;
-  }
-  if( y2 >= Y_SZ ) {
-    y2 = Y_SZ-1;
-  }
-  OfsData od;
-  od.ofs1  = xy2ofs( x1, y1 );
-  uint8_t midx1 = xy2midx( x1, y1 );
-  od.m1    = msk_l1[midx1];
-  od.ofs2  = xy2ofs( x1, y2 );
-  uint8_t midx2 = xy2midx( x1, y2 );
-  od.m2    = msk_l2[midx2];
-  uint16_t n = x2 - x1;
-
-  if( od.ofs1 == od.ofs2 ) { // single segment
-    od.m1 &= od.m2;
-  }
-  if( col ) {
-    box1( od, n );
-  } else {
-    box0( od, n );
-  }
-}
-
-void SSD1306::box0( const OfsData &od, uint16_t n )
-{
-  for( uint16_t i=0; i<n; ++i ) {
-    scr[od.ofs1+i] &= ~od.m1;
-  }
-  if( od.ofs1 == od.ofs2 ) { // single segment
-    return;
-  }
-
-  for( uint16_t i=0; i<n; ++i ) {
-    scr[od.ofs2+i] &= ~od.m2;
-    for( uint32_t o = od.ofs1+X_SZ; o < od.ofs2; o+=X_SZ ) {
-      scr[o+i] = 0;
+  // bad fallback realization
+  for( uint16_t y=y1; y<=y2; ++y ) {
+    for( uint16_t x=x1; x<=x2; ++x ) {
+      pix( x, y, col );
     }
   }
 }
 
-void SSD1306::box1( const OfsData &od, uint16_t n )
-{
-  for( uint16_t i=0; i<n; ++i ) {
-    scr[od.ofs1+i] |= od.m1;
-  }
-  if( od.ofs1 == od.ofs2 ) { // single segment
-    return;
-  }
-
-  for( uint16_t i=0; i<n; ++i ) {
-    scr[od.ofs2+i] |= od.m2;
-    for( uint32_t o = od.ofs1+X_SZ; o < od.ofs2; o+=X_SZ ) {
-      scr[o+i] = 0xFF;
-    }
-  }
-}
-
-void SSD1306::line(  uint16_t x1,  uint16_t y1, uint16_t x2, uint16_t y2, uint32_t col )
+void PixBuf::line(  uint16_t x1,  uint16_t y1, uint16_t x2, uint16_t y2, uint32_t col )
 {
   uint16_t dx = abs( x2 - x1 );
   uint16_t dy = abs( y2 - y1 );
@@ -425,8 +193,305 @@ void SSD1306::line(  uint16_t x1,  uint16_t y1, uint16_t x2, uint16_t y2, uint32
 }
 
 
+//-----------------------------
+
+class PixBuf1V : public PixBuf {
+  public:
+   PixBuf1V( uint16_t a_w, uint16_t a_h )
+     : PixBuf( a_w, a_h, 1 ) {};
+   virtual uint32_t xy2ofs( uint16_t x, uint16_t y ) override {
+     return x + (uint32_t)( y >> 3 ) * width;
+   }
+   virtual uint8_t xy2midx( uint16_t x UNUSED_ARG, uint16_t y ) override {
+     return (uint8_t)( y & 0x07 );
+   }
+   virtual void fillAll( uint32_t col ) override;
+   virtual void pixx( uint16_t x, uint16_t y, uint32_t col ) override; // w/o control: private?
+   // virtual void pix(  uint16_t x, uint16_t y, uint32_t col ) override;  // with control
+   virtual void hline( uint16_t x1, uint16_t y,  uint16_t x2, uint32_t col ) override;
+   virtual void vline( uint16_t x,  uint16_t y1, uint16_t y2, uint32_t col ) override;
+   // virtual void rect( uint16_t x1,  uint16_t y1, uint16_t x2, uint16_t y2, uint32_t col ) override;
+   virtual void box(  uint16_t x1,  uint16_t y1, uint16_t x2, uint16_t y2, uint32_t col ) override;
+
+   struct OfsData {
+     uint32_t ofs1;
+     uint8_t m1;
+     uint32_t ofs2;
+     uint8_t m2;
+   };
+  protected:
+   void vline0( const OfsData &od );
+   void vline1( const OfsData &od );
+   void box0( const OfsData &od, uint16_t n );
+   void box1( const OfsData &od, uint16_t n );
+  protected:
+   const uint8_t msk_set[8] = { 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80 };
+   const uint8_t msk_uns[8] = { 0xFE, 0xFD, 0xFB, 0xF7, 0xEF, 0xDF, 0xBF, 0x7F };
+   const uint8_t msk_l1[8]  = { 0xFF, 0xFE, 0xFC, 0xF8, 0xF0, 0xE0, 0xC0, 0x80 };
+   const uint8_t msk_l2[8]  = { 0x01, 0x03, 0x07, 0x0F, 0x1F, 0x3F, 0x7F, 0xFF };
+};
+
+void PixBuf1V::fillAll( uint32_t col )
+{
+  uint8_t v = col ? 0xFF : 0;
+  memset( scr, v, sz );
+}
+
+void PixBuf1V::pixx( uint16_t x, uint16_t y, uint32_t col )
+{
+  uint32_t ofs = xy2ofs( x, y);
+  uint8_t midx = xy2midx( x, y );
+  if( col ) {
+    scr[ofs] |= msk_set[midx];
+  } else {
+    scr[ofs] &= msk_uns[midx];
+  }
+}
+
+
+void PixBuf1V::hline( uint16_t x1, uint16_t y,  uint16_t x2, uint32_t col )
+{
+  if( x2 < x1 ) {
+    swap( x1, x2 );
+  };
+  if( x1 >= width || y >= height ) {
+    return;
+  }
+  if( x2 >= width ) {
+    x2 = width-1;
+  }
+  uint32_t ofs = xy2ofs(  x1, y );
+  uint8_t midx = xy2midx( x1, y );
+  uint16_t n = x2 - x1;
+
+  if( col ) {
+    uint8_t m = msk_set[midx];
+    for( uint16_t i=0; i<n; ++i, ++ofs ) {
+      scr[ofs] |= m;
+    }
+  } else {
+    uint8_t m = msk_uns[midx];
+    for( uint16_t i=0; i<n; ++i, ++ofs ) {
+      scr[ofs] &= m;
+    }
+  }
+}
+
+void PixBuf1V::vline( uint16_t x,  uint16_t y1, uint16_t y2, uint32_t col )
+{
+  if( y2 < y1 ) {
+    swap( y1, y2 );
+  };
+  if( x >= width || y1 >= height ) {
+    return;
+  }
+  if( y2 >= height ) {
+    y2 = height - 1;
+  }
+  OfsData od;
+  od.ofs1  = xy2ofs( x, y1 );
+  uint8_t midx1 = xy2midx( x, y1 );
+  od.m1    = msk_l1[midx1];
+  od.ofs2  = xy2ofs( x, y2 );
+  uint8_t midx2 = xy2midx( x, y2 );
+  od.m2    = msk_l2[midx2];
+
+  if( od.ofs1 == od.ofs2 ) { // single segment
+    od.m1 &= od.m2;
+  }
+  if( col ) {
+    vline1( od );
+  } else {
+    vline0( od );
+  }
+}
+
+void PixBuf1V::vline0( const OfsData &od )
+{
+  scr[od.ofs1] &= ~od.m1;
+  if( od.ofs1 == od.ofs2 ) { // single segment
+    return;
+  }
+
+  scr[od.ofs2] &= ~od.m2;
+  for( uint32_t o = od.ofs1+width; o < od.ofs2; o+=width ) {
+    scr[o] = 0;
+  }
+
+}
+
+void PixBuf1V::vline1( const OfsData &od )
+{
+  scr[od.ofs1] |= od.m1;
+  if( od.ofs1 == od.ofs2 ) { // single segment
+    return;
+  }
+
+  scr[od.ofs2] |= od.m2;
+  for( uint32_t o = od.ofs1+width; o < od.ofs2; o+=width ) {
+    scr[o] = 0xFF;
+  }
+}
+
+
+void PixBuf1V::box(  uint16_t x1,  uint16_t y1, uint16_t x2, uint16_t y2, uint32_t col )
+{
+  if( x2 < x1 ) {
+    swap( x1, x2 );
+  };
+  if( y2 < y1 ) {
+    swap( y1, y2 );
+  };
+  if( x1 >= width || y1 >= height ) {
+    return;
+  }
+  if( x2 >= width ) {
+    x2 = width-1;
+  }
+  if( y2 >= height ) {
+    y2 = height-1;
+  }
+  OfsData od;
+  od.ofs1  = xy2ofs( x1, y1 );
+  uint8_t midx1 = xy2midx( x1, y1 );
+  od.m1    = msk_l1[midx1];
+  od.ofs2  = xy2ofs( x1, y2 );
+  uint8_t midx2 = xy2midx( x1, y2 );
+  od.m2    = msk_l2[midx2];
+  uint16_t n = x2 - x1;
+
+  if( od.ofs1 == od.ofs2 ) { // single segment
+    od.m1 &= od.m2;
+  }
+  if( col ) {
+    box1( od, n );
+  } else {
+    box0( od, n );
+  }
+}
+
+void PixBuf1V::box0( const OfsData &od, uint16_t n )
+{
+  for( uint16_t i=0; i<n; ++i ) {
+    scr[od.ofs1+i] &= ~od.m1;
+  }
+  if( od.ofs1 == od.ofs2 ) { // single segment
+    return;
+  }
+
+  for( uint16_t i=0; i<n; ++i ) {
+    scr[od.ofs2+i] &= ~od.m2;
+    for( uint32_t o = od.ofs1+width; o < od.ofs2; o+=width ) {
+      scr[o+i] = 0;
+    }
+  }
+}
+
+void PixBuf1V::box1( const OfsData &od, uint16_t n )
+{
+  for( uint16_t i=0; i<n; ++i ) {
+    scr[od.ofs1+i] |= od.m1;
+  }
+  if( od.ofs1 == od.ofs2 ) { // single segment
+    return;
+  }
+
+  for( uint16_t i=0; i<n; ++i ) {
+    scr[od.ofs2+i] |= od.m2;
+    for( uint32_t o = od.ofs1+width; o < od.ofs2; o+=width ) {
+      scr[o+i] = 0xFF;
+    }
+  }
+}
+
+
+// -----------------------------------------------------------------------------
+
+class SSD1306 {
+  public:
+   enum {
+     BASE_ADDR = 0x3C,
+     X_SZ = 128,
+     Y_SZ = 64,
+     I2C_TO  = 100,
+     CMD_1 = 0x80,
+     CMD_N = 0x00,
+     DATA_1 = 0xC0,
+     DATA_N = 0x40,
+     CMD_MODE = 0x20,
+     CMD_CONTRAST = 0x81,
+     CMD_RAM = 0xA4, // default, output follows RAM
+     CMD_FULLON = 0xA5, // output in ON, independent of RAM
+     CMD_NOINVERSE = 0xA6,
+     CMD_INVERSE = 0xA7,
+     CMD_OFF = 0xAE,
+     CMD_ON = 0xAF,
+     MEM_SZ = ( X_SZ * Y_SZ / 8 )
+   };
+   SSD1306( I2C_HandleTypeDef &a_i2ch, uint8_t a_addr = BASE_ADDR )
+     : i2ch( a_i2ch ), addr2( a_addr<<1 ) {};
+   void init();
+   void cmd1( uint8_t cmd );
+   void cmd2( uint8_t cmd, uint8_t val );
+   void data1( uint8_t d );
+
+   void switch_on() { cmd1( CMD_ON ); };
+   void switch_off() { cmd1( CMD_OFF ); };
+   void contrast( uint8_t v ) { cmd2( CMD_CONTRAST, v ); };
+   void full_on() { cmd1( CMD_FULLON ); };
+   void on_ram() { cmd1( CMD_RAM ); };
+   void no_inverse() { cmd1( CMD_NOINVERSE ); };
+   void inverse() { cmd1( CMD_INVERSE ); };
+   void mode_horisontal() { cmd2( CMD_MODE, 0x00 ); };
+   void mode_vertical()   { cmd2( CMD_MODE, 0x01 ); };
+   void mode_paged()      { cmd2( CMD_MODE, 0x02 ); };
+   void out( PixBuf1V &pb );
+
+  private:
+   I2C_HandleTypeDef &i2ch;
+   uint8_t addr2;
+};
+
+void SSD1306::cmd1( uint8_t cmd )
+{
+  uint8_t xcmd[] = { CMD_1, cmd };
+  HAL_I2C_Master_Transmit( &i2ch, addr2,  xcmd, 2, I2C_TO );
+}
+
+void SSD1306::cmd2( uint8_t cmd, uint8_t val )
+{
+  uint8_t xcmd[] = { CMD_N, cmd, val };
+  HAL_I2C_Master_Transmit( &i2ch, addr2,  xcmd, 3, I2C_TO );
+}
+
+void SSD1306::data1( uint8_t d )
+{
+  uint8_t xcmd[] = { DATA_1, d };
+  HAL_I2C_Master_Transmit( &i2ch, addr2,  xcmd, 2, I2C_TO );
+}
+
+
+void SSD1306::init()
+{
+  uint8_t on_cmd[] = { 0x00, 0x8D, 0x14, 0xAF };
+  HAL_I2C_Master_Transmit( &i2ch, addr2,  on_cmd, 4, I2C_TO );
+}
+
+
+
+void SSD1306::out( PixBuf1V &pb )
+{
+  uint8_t go_00[] = { 0x00, 0xB0, 0x00, 0x10 };
+  HAL_I2C_Master_Transmit( &i2ch, addr2,  go_00, 4, I2C_TO );
+  uint8_t *buf = pb.fb();
+  --buf; // one byte for cmd
+  *buf = DATA_N;
+  HAL_I2C_Master_Transmit( &i2ch, addr2,  buf, MEM_SZ+1, I2C_TO );
+}
+
 // ----------------------------------------------------------------
 
+PixBuf1V pb0( 128, 64 );
 SSD1306 screen( i2ch );
 
 
@@ -554,46 +619,35 @@ int cmd_test0( int argc, const char * const * argv )
 
   screen.mode_horisontal();
 
-  // screen.cmd1( 0xB0 );
-  // screen.cmd1( 0x00 );
-  // screen.cmd1( 0x10 );
 
-
-  screen.cls();
+  pb0.fillAll( 0 );
 
   // uint8_t *fb = screen.fb();
 
-  // for( uint16_t i = 0; i<1024; ++i ) {
-  //   // fb[i] = (uint8_t)((i>>2) & 0xFF);
-  //   // fb[i] = 0x41;
-  //   fb[i] = ( i & 1 ) ? 1 : 2;
-  // }
-  // fb[0] = 0x7E; fb[125] = 0xFF; fb[127] = 0x80;
-
-  // screen.fillAll( 1 );
+  // pb0.fillAll( 1 );
   for( uint16_t co = 0; co < 64; ++ co ) {
-    screen.pix( co,   co, 1 );
-    screen.pix( 2*co, co, 1 );
+    pb0.pix( co,   co, 1 );
+    pb0.pix( 2*co, co, 1 );
   }
-  screen.pix( 10,  10, 0 );
-  screen.pix( 40,  20, 0 );
+  pb0.pix( 10,  10, 0 );
+  pb0.pix( 40,  20, 0 );
 
-  screen.hline(  0,  0, 128, 1 );
-  screen.hline( 11, 10, 100, 1 );
-  screen.hline( 80, 10,  90, 0 );
-  screen.hline(  0, 60, 200, 1 );
-  screen.hline(  0, 30, 200, 0 );
+  pb0.hline(  0,  0, 128, 1 );
+  pb0.hline( 11, 10, 100, 1 );
+  pb0.hline( 80, 10,  90, 0 );
+  pb0.hline(  0, 60, 200, 1 );
+  pb0.hline(  0, 30, 200, 0 );
 
   for( uint16_t ro=0; ro<64; ++ro ) {
-    screen.vline( ro, 0, ro, (ro&1) );
+    pb0.vline( ro, 0, ro, (ro&1) );
   }
 
-  screen.rect( 10, 10, 117, 53, 1 );
-  screen.rect( 11, 11, 116, 52, 0 );
-  screen.box(  12, 12, 64,  51, 1 );
-  screen.box(  65, 11, 115, 51, 0 );
+  pb0.rect( 10, 10, 117, 53, 1 );
+  pb0.rect( 11, 11, 116, 52, 0 );
+  pb0.box(  12, 12, 64,  51, 1 );
+  pb0.box(  65, 11, 115, 51, 0 );
 
-  screen.out_screen();
+  screen.out( pb0 );
 
   pr( NL );
 
@@ -607,7 +661,8 @@ int cmd_test0( int argc, const char * const * argv )
 
 int cmd_cls( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
 {
-  screen.cls();
+  pb0.fillAll( 0 );
+  screen.out( pb0 );
   pr( NL "CLS end." NL );
   return 0;
 }
@@ -627,9 +682,9 @@ int cmd_putbyte( int argc, const char * const * argv )
   }
   pr( NL "putbyte: ofs= " ); pr_d( ofs ); pr( " v= " ); pr_h( v );
 
-  uint8_t *fb = screen.fb();
+  uint8_t *fb = pb0.fb();
   fb[ofs] = v;
-  screen.out_screen();
+  screen.out( pb0 );
 
   pr( NL "putbyte end." NL );
   return 0;
@@ -648,10 +703,10 @@ int cmd_vline( int argc, const char * const * argv )
   pr( NL "vline: y0= " ); pr_d( y0 ); pr( " y1= " ); pr_h( y1 );
 
   for( uint16_t y = y0; y<= y1; ++y ) {
-    screen.vline( y, y/2, y, (y&1) );
+    pb0.vline( y, y/2, y, (y&1) );
   }
 
-  screen.out_screen();
+  screen.out( pb0 );
 
   pr( NL "vline end." NL );
   return 0;
@@ -675,12 +730,12 @@ int cmd_line( int argc, const char * const * argv )
     float alp = an * dn * 3.1415926 / 180;
     uint16_t x1 = x0 + 30 * cosf(alp);
     uint16_t y1 = y0 + 30 * sinf(alp);
-    pr( "x1= " ); pr_d( x1 );
-    pr( "y1= " ); pr_d( y1 ); pr( NL );
-    screen.line( x0, y0, x1, y1, (an&1) );
+    // pr( "x1= " ); pr_d( x1 );
+    // pr( " y1= " ); pr_d( y1 ); pr( NL );
+    pb0.line( x0, y0, x1, y1, (an&1) );
   }
 
-  screen.out_screen();
+  screen.out( pb0 );
 
   pr( NL "lines end." NL );
   return 0;
