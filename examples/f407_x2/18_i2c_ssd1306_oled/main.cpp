@@ -1,5 +1,6 @@
 #include <cstring>
 #include <cstdlib>
+#include <algorithm>
 
 #include <bsp/board_stm32f407_atu_x2.h>
 #include <oxc_gpio.h>
@@ -44,6 +45,9 @@ CmdInfo CMDINFO_PUTBYTE { "putbyte", 'Y', cmd_putbyte, " ofs byte - pyt byte on 
 int cmd_vline( int argc, const char * const * argv );
 CmdInfo CMDINFO_VLINE { "vline", 0, cmd_vline, " [start [end]] - test vline"  };
 
+int cmd_line( int argc, const char * const * argv );
+CmdInfo CMDINFO_LINE { "line", 'L', cmd_line, " - test line"  };
+
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
   DEBUG_I2C_CMDS,
@@ -52,6 +56,7 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_CLS,
   &CMDINFO_PUTBYTE,
   &CMDINFO_VLINE,
+  &CMDINFO_LINE,
   nullptr
 };
 
@@ -61,6 +66,8 @@ void task_main( void *prm UNUSED_ARG );
 }
 
 I2C_HandleTypeDef i2ch;
+
+inline int sign( int x ) { return (x>0) ? 1 : ( (x<0) ? -1: 0 ) ; }
 
 class SSD1306 {
   public:
@@ -124,6 +131,7 @@ class SSD1306 {
    void vline( uint16_t x,  uint16_t y1, uint16_t y2, uint32_t col );
    void rect( uint16_t x1,  uint16_t y1, uint16_t x2, uint16_t y2, uint32_t col );
    void box(  uint16_t x1,  uint16_t y1, uint16_t x2, uint16_t y2, uint32_t col );
+   void line(  uint16_t x1,  uint16_t y1, uint16_t x2, uint16_t y2, uint32_t col );
   private:
    void vline0( const OfsData &od );
    void vline1( const OfsData &od );
@@ -208,7 +216,7 @@ void SSD1306::pix(  uint16_t x, uint16_t y, uint32_t col )
 void SSD1306::hline( uint16_t x1,uint16_t y, uint16_t x2, uint32_t col )
 {
   if( x2 < x1 ) {
-    uint16_t t = x2; x2 = x1; x1 = t;
+    swap( x1, x2 );
   };
   if( x1 >= X_SZ || y >= Y_SZ ) {
     return;
@@ -236,7 +244,7 @@ void SSD1306::hline( uint16_t x1,uint16_t y, uint16_t x2, uint32_t col )
 void SSD1306::vline( uint16_t x, uint16_t y1, uint16_t y2, uint32_t col )
 {
   if( y2 < y1 ) {
-    uint16_t t = y2; y2 = y1; y1 = t;
+    swap( y1, y2 );
   };
   if( x >= X_SZ || y1 >= Y_SZ ) {
     return;
@@ -300,10 +308,10 @@ void SSD1306::rect( uint16_t x1,  uint16_t y1, uint16_t x2, uint16_t y2, uint32_
 void SSD1306::box(  uint16_t x1,  uint16_t y1, uint16_t x2, uint16_t y2, uint32_t col )
 {
   if( x2 < x1 ) {
-    uint16_t t = x2; x2 = x1; x1 = t;
+    swap( x1, x2 );
   };
   if( y2 < y1 ) {
-    uint16_t t = y2; y2 = y1; y1 = t;
+    swap( y1, y2 );
   };
   if( x1 >= X_SZ || y1 >= Y_SZ ) {
     return;
@@ -365,6 +373,55 @@ void SSD1306::box1( const OfsData &od, uint16_t n )
       scr[o+i] = 0xFF;
     }
   }
+}
+
+void SSD1306::line(  uint16_t x1,  uint16_t y1, uint16_t x2, uint16_t y2, uint32_t col )
+{
+  uint16_t dx = abs( x2 - x1 );
+  uint16_t dy = abs( y2 - y1 );
+  if( dx == 0 ) {
+    return vline( x1, y1, y2, col );
+  }
+  if( dy == 0 ) {
+    return hline( x1, x2, y1, col );
+  }
+
+  int d = 0;
+  if( dx > dy ) { // -------------- step by x
+
+    if( x2 < x1 ) {
+      swap( x1, x2 ); swap( y1, y2 );
+    };
+    int dlt = sign( (int)(y2) - (int)(y1) );
+    int dlterr = 2 * dy;
+    int cy = y1;
+    for( uint16_t cx=x1; cx<=x2; ++cx ) {
+      pix( cx, cy, col );
+      d += dlterr;
+      if( d >= dx ) {
+        cy += dlt;
+        d -= 2 * dx;
+      }
+    }
+
+  } else {        // -------------- step by x
+
+    if( y2 < y1 ) {
+      swap( x1, x2 ); swap( y1, y2 );
+    };
+    int dlt = sign( (int)(x2) - (int)(x1) );
+    int dlterr = 2 * dx;
+    int cx = x1;
+    for( uint16_t cy=y1; cy<=y2; ++cy ) {
+      pix( cx, cy, col );
+      d += dlterr;
+      if( d >= dy ) {
+        cx += dlt;
+        d -= 2 * dy;
+      }
+    }
+  }
+
 }
 
 
@@ -596,7 +653,36 @@ int cmd_vline( int argc, const char * const * argv )
 
   screen.out_screen();
 
-  pr( NL "putbyte end." NL );
+  pr( NL "vline end." NL );
+  return 0;
+}
+
+int cmd_line( int argc, const char * const * argv )
+{
+  uint16_t nl = 36;
+  if( argc > 1 ) {
+    nl = strtol( argv[1], 0, 0 );
+  }
+  uint16_t dn = 360 / nl;
+  if( argc > 2 ) {
+    dn = strtol( argv[2], 0, 0 );
+  }
+  pr( NL "lines: = nl" ); pr_d( nl ); pr( " dn= " ); pr_d( dn );
+
+  uint16_t x0 = 64, y0 = 32;
+
+  for( uint16_t an = 0;  an <= nl; ++an ) {
+    float alp = an * dn * 3.1415926 / 180;
+    uint16_t x1 = x0 + 30 * cosf(alp);
+    uint16_t y1 = y0 + 30 * sinf(alp);
+    pr( "x1= " ); pr_d( x1 );
+    pr( "y1= " ); pr_d( y1 ); pr( NL );
+    screen.line( x0, y0, x1, y1, (an&1) );
+  }
+
+  screen.out_screen();
+
+  pr( NL "lines end." NL );
   return 0;
 }
 
