@@ -39,9 +39,6 @@ CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
 int cmd_cls( int argc, const char * const * argv );
 CmdInfo CMDINFO_CLS { "cls", 'X', cmd_cls, " - clear screen"  };
 
-int cmd_putbyte( int argc, const char * const * argv );
-CmdInfo CMDINFO_PUTBYTE { "putbyte", 'Y', cmd_putbyte, " ofs byte - pyt byte on screen"  };
-
 int cmd_vline( int argc, const char * const * argv );
 CmdInfo CMDINFO_VLINE { "vline", 0, cmd_vline, " [start [end]] - test vline"  };
 
@@ -54,7 +51,6 @@ const CmdInfo* global_cmds[] = {
 
   &CMDINFO_TEST0,
   &CMDINFO_CLS,
-  &CMDINFO_PUTBYTE,
   &CMDINFO_VLINE,
   &CMDINFO_LINE,
   nullptr
@@ -89,6 +85,8 @@ class PixBuf {
    virtual void rect( uint16_t x1,  uint16_t y1, uint16_t x2, uint16_t y2, uint32_t col );
    virtual void box(  uint16_t x1,  uint16_t y1, uint16_t x2, uint16_t y2, uint32_t col ) = 0;
    virtual void line(  uint16_t x1,  uint16_t y1, uint16_t x2, uint16_t y2, uint32_t col );
+   virtual void circle( uint16_t x0,  uint16_t y0, uint16_t r, uint32_t col );
+   virtual void fillCircle( uint16_t x0,  uint16_t y0, uint16_t r, uint32_t col );
   protected:
    uint16_t width, height, bpp;
    uint32_t sz; // in bytes;
@@ -188,6 +186,58 @@ void PixBuf::line(  uint16_t x1,  uint16_t y1, uint16_t x2, uint16_t y2, uint32_
         d -= 2 * dy;
       }
     }
+  }
+
+}
+
+void PixBuf::circle( uint16_t x0,  uint16_t y0, uint16_t r, uint32_t col )
+{
+  uint16_t xc = 0;
+  int dlt = 1 - 2 * r;
+  int d = 0, yc = r;
+  while( yc >=0 ) {
+    pix( x0+xc, y0+yc, col );
+    pix( x0+xc, y0-yc, col );
+    pix( x0-xc, y0+yc, col );
+    pix( x0-xc, y0-yc, col );
+    d = 2 * ( dlt + yc ) - 1;
+    if( ( dlt < 0) && ( d <= 0) ) {
+      dlt += 2 * ++xc + 1;
+      continue;
+    }
+    d = 2 * ( dlt - xc ) - 1;
+    if( ( dlt > 0) && (d > 0) ) {
+      dlt += 1 - 2 * --yc;
+      continue;
+    }
+    ++xc;
+    dlt += 2 * (xc - yc);
+    --yc; // w/o = box with rounded corners
+  }
+
+}
+
+void PixBuf::fillCircle( uint16_t x0,  uint16_t y0, uint16_t r, uint32_t col )
+{
+  uint16_t xc = 0;
+  int dlt = 1 - 2 * r;
+  int d = 0, yc = r;
+  while( yc >=0 ) {
+    hline( x0-xc, y0-yc, x0+xc, col );
+    hline( x0-xc, y0+yc, x0+xc, col );
+    d = 2 * ( dlt + yc ) - 1;
+    if( ( dlt < 0) && ( d <= 0) ) {
+      dlt += 2 * ++xc + 1;
+      continue;
+    }
+    d = 2 * ( dlt - xc ) - 1;
+    if( ( dlt > 0) && (d > 0) ) {
+      dlt += 1 - 2 * --yc;
+      continue;
+    }
+    ++xc;
+    dlt += 2 * (xc - yc);
+    --yc; // w/o = box with rounded corners
   }
 
 }
@@ -606,10 +656,10 @@ int cmd_test0( int argc, const char * const * argv )
   // delay_ms( 500 );
   // screen.on_ram();
   //
-  // delay_ms( 500 );
-  // screen.inverse();
-  // delay_ms( 500 );
-  // screen.no_inverse();
+  delay_ms( 500 );
+  screen.inverse();
+  delay_ms( 500 );
+  screen.no_inverse();
   //
   //
   // delay_ms( 500 );
@@ -647,6 +697,11 @@ int cmd_test0( int argc, const char * const * argv )
   pb0.box(  12, 12, 64,  51, 1 );
   pb0.box(  65, 11, 115, 51, 0 );
 
+  pb0.fillCircle( 64, 32, 10, 1 );
+  pb0.fillCircle( 64, 32, 6,  0 );
+  pb0.circle( 64, 32, 15, 0 );
+  pb0.circle( 64, 32, 20, 1 );
+
   screen.out( pb0 );
 
   pr( NL );
@@ -667,28 +722,6 @@ int cmd_cls( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
   return 0;
 }
 
-int cmd_putbyte( int argc, const char * const * argv )
-{
-  uint16_t ofs = 0;
-  if( argc > 1 ) {
-    ofs = strtol( argv[1], 0, 0 );
-  }
-  if( ofs > SSD1306::MEM_SZ ) {
-    ofs= 0;
-  }
-  uint8_t v = 0;
-  if( argc > 2 ) {
-    v = (uint8_t)strtol( argv[2], 0, 0 );
-  }
-  pr( NL "putbyte: ofs= " ); pr_d( ofs ); pr( " v= " ); pr_h( v );
-
-  uint8_t *fb = pb0.fb();
-  fb[ofs] = v;
-  screen.out( pb0 );
-
-  pr( NL "putbyte end." NL );
-  return 0;
-}
 
 int cmd_vline( int argc, const char * const * argv )
 {
