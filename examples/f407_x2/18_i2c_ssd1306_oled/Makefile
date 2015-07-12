@@ -9,6 +9,7 @@ USE_OXC = y
 USE_FREERTOS = y
 NO_STDLIB = y
 USE_USB_DEFAULT_CDC = y
+USE_FONTS = y
 
 # TODO: copy to main location
 OXCDIR = /home/atu/proj/stm32/oxc
@@ -109,6 +110,12 @@ SRCS += stm32f4xx_hal_pcd.c
 # SRCS += stm32f4xx_ll_fsmc.c
 # SRCS += stm32f4xx_ll_sdmmc.c
 # SRCS += stm32f4xx_ll_usb.c
+
+SRCS += font8.c
+SRCS += font12.c
+SRCS += font16.c
+SRCS += font20.c
+SRCS += font24.c
 
 
 SRCS += usbd_core.c

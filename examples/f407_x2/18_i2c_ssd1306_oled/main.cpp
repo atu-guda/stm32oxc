@@ -2,6 +2,8 @@
 #include <cstdlib>
 #include <algorithm>
 
+#include <fonts.h>
+
 #include <bsp/board_stm32f407_atu_x2.h>
 #include <oxc_gpio.h>
 #include <oxc_usbcdcio.h>
@@ -87,6 +89,7 @@ class PixBuf {
    virtual void line(  uint16_t x1,  uint16_t y1, uint16_t x2, uint16_t y2, uint32_t col );
    virtual void circle( uint16_t x0,  uint16_t y0, uint16_t r, uint32_t col );
    virtual void fillCircle( uint16_t x0,  uint16_t y0, uint16_t r, uint32_t col );
+   virtual void outChar( uint16_t x0,  uint16_t y0, char c, const sFONT *fnt, uint32_t col );
   protected:
    uint16_t width, height, bpp;
    uint32_t sz; // in bytes;
@@ -240,6 +243,38 @@ void PixBuf::fillCircle( uint16_t x0,  uint16_t y0, uint16_t r, uint32_t col )
     --yc; // w/o = box with rounded corners
   }
 
+}
+
+void PixBuf::outChar( uint16_t x0,  uint16_t y0, char c, const sFONT *fnt, uint32_t col )
+{
+  if( !fnt ) { return; }
+  uint16_t height = fnt->Height, width = fnt->Width, w8 = ( width + 7 ) / 8;
+  uint16_t ofs = 8 * w8 - width;
+  const uint8_t *cdata = & ( fnt->table[ (c-' ') * height * w8 ] );
+  uint32_t line=0;
+
+  for( int i=0; i < height; ++i ) {
+    const uint8_t *pcd = ( (const uint8_t *)(cdata) + w8 * i );
+
+    switch( w8 ) {
+      case 1:
+        line =  pcd[0];  break;
+
+      case 2:
+        line =  (pcd[0]<< 8) | pcd[1];  break;
+
+      case 3:
+      default:
+        line = ( pcd[0]<< 16 ) | ( pcd[1]<< 8 ) | pcd[2];  break;
+    }
+
+    for( int j = 0; j < width; ++j ) {
+      if( line & (1 << ( width- j + ofs - 1)) ) {
+        pix( x0 + j, y0, col );
+      }
+    }
+    ++y0;
+  }
 }
 
 
@@ -701,6 +736,9 @@ int cmd_test0( int argc, const char * const * argv )
   pb0.fillCircle( 64, 32, 6,  0 );
   pb0.circle( 64, 32, 15, 0 );
   pb0.circle( 64, 32, 20, 1 );
+
+  pb0.outChar( 20, 20, 'A', &Font8,  0 );
+  pb0.outChar( 90, 20, 'W', &Font12, 1 );
 
   screen.out( pb0 );
 

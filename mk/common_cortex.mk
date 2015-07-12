@@ -89,6 +89,10 @@ ifeq "$(USE_FREERTOS)" "y"
   ALLFLAGS += -I$(RTINC) -DUSE_FREERTOS
 endif
 
+ifeq "$(USE_FONTS)" "y"
+  SRCPATHS += $(OXCSRC)/fonts
+endif
+
 ifeq "$(USE_USB_OTG)" "y"
   # SRCPATHS += $(STMSRC)/usb_otg
   # ALLFLAGS += -I$(STMINC)/usb_otg
