@@ -40,6 +40,8 @@ SRCS += oxc_smallrl.cpp
 #SRCS += oxc_smallrl_q.cpp
 SRCS += oxc_common1.cpp
 #SRCS += oxc_i2c.cpp
+SRCS += oxc_pixbuf.cpp
+SRCS += oxc_pixbuf1v.cpp
 
 
 # stm32cube sources.
