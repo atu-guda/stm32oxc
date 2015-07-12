@@ -37,11 +37,11 @@ SRCS += oxc_debug_i2c.cpp
 #SRCS += oxc_usartio.cpp
 SRCS += oxc_usbcdcio.cpp
 SRCS += oxc_smallrl.cpp
-#SRCS += oxc_smallrl_q.cpp
 SRCS += oxc_common1.cpp
 #SRCS += oxc_i2c.cpp
 SRCS += oxc_pixbuf.cpp
 SRCS += oxc_pixbuf1v.cpp
+SRCS += oxc_ssd1306.cpp
 
 
 # stm32cube sources.

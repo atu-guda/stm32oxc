@@ -11,8 +11,7 @@
 #include <oxc_common1.h>
 #include <oxc_smallrl.h>
 
-#include <oxc_pixbuf.h>
-#include <oxc_pixbuf1v.h>
+#include <oxc_ssd1306.h>
 
 #include "usbd_desc.h"
 #include <usbd_cdc.h>
@@ -71,87 +70,7 @@ I2C_HandleTypeDef i2ch;
 
 // -----------------------------------------------------------------------------
 
-class SSD1306 {
-  public:
-   enum {
-     BASE_ADDR = 0x3C,
-     X_SZ = 128,
-     Y_SZ = 64,
-     I2C_TO  = 100,
-     CMD_1 = 0x80,
-     CMD_N = 0x00,
-     DATA_1 = 0xC0,
-     DATA_N = 0x40,
-     CMD_MODE = 0x20,
-     CMD_CONTRAST = 0x81,
-     CMD_RAM = 0xA4, // default, output follows RAM
-     CMD_FULLON = 0xA5, // output in ON, independent of RAM
-     CMD_NOINVERSE = 0xA6,
-     CMD_INVERSE = 0xA7,
-     CMD_OFF = 0xAE,
-     CMD_ON = 0xAF,
-     MEM_SZ = ( X_SZ * Y_SZ / 8 )
-   };
-   SSD1306( I2C_HandleTypeDef &a_i2ch, uint8_t a_addr = BASE_ADDR )
-     : i2ch( a_i2ch ), addr2( a_addr<<1 ) {};
-   void init();
-   void cmd1( uint8_t cmd );
-   void cmd2( uint8_t cmd, uint8_t val );
-   void data1( uint8_t d );
 
-   void switch_on() { cmd1( CMD_ON ); };
-   void switch_off() { cmd1( CMD_OFF ); };
-   void contrast( uint8_t v ) { cmd2( CMD_CONTRAST, v ); };
-   void full_on() { cmd1( CMD_FULLON ); };
-   void on_ram() { cmd1( CMD_RAM ); };
-   void no_inverse() { cmd1( CMD_NOINVERSE ); };
-   void inverse() { cmd1( CMD_INVERSE ); };
-   void mode_horisontal() { cmd2( CMD_MODE, 0x00 ); };
-   void mode_vertical()   { cmd2( CMD_MODE, 0x01 ); };
-   void mode_paged()      { cmd2( CMD_MODE, 0x02 ); };
-   void out( PixBuf1V &pb );
-
-  private:
-   I2C_HandleTypeDef &i2ch;
-   uint8_t addr2;
-};
-
-void SSD1306::cmd1( uint8_t cmd )
-{
-  uint8_t xcmd[] = { CMD_1, cmd };
-  HAL_I2C_Master_Transmit( &i2ch, addr2,  xcmd, 2, I2C_TO );
-}
-
-void SSD1306::cmd2( uint8_t cmd, uint8_t val )
-{
-  uint8_t xcmd[] = { CMD_N, cmd, val };
-  HAL_I2C_Master_Transmit( &i2ch, addr2,  xcmd, 3, I2C_TO );
-}
-
-void SSD1306::data1( uint8_t d )
-{
-  uint8_t xcmd[] = { DATA_1, d };
-  HAL_I2C_Master_Transmit( &i2ch, addr2,  xcmd, 2, I2C_TO );
-}
-
-
-void SSD1306::init()
-{
-  uint8_t on_cmd[] = { 0x00, 0x8D, 0x14, 0xAF };
-  HAL_I2C_Master_Transmit( &i2ch, addr2,  on_cmd, 4, I2C_TO );
-}
-
-
-
-void SSD1306::out( PixBuf1V &pb )
-{
-  uint8_t go_00[] = { 0x00, 0xB0, 0x00, 0x10 };
-  HAL_I2C_Master_Transmit( &i2ch, addr2,  go_00, 4, I2C_TO );
-  uint8_t *buf = pb.fb();
-  --buf; // one byte for cmd
-  *buf = DATA_N;
-  HAL_I2C_Master_Transmit( &i2ch, addr2,  buf, MEM_SZ+1, I2C_TO );
-}
 
 // ----------------------------------------------------------------
 
