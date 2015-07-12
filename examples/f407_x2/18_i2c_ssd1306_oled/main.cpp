@@ -70,7 +70,12 @@ inline int sign( int x ) { return (x>0) ? 1 : ( (x<0) ? -1: 0 ) ; }
 //* abstract pixel buffer: unknown bit depth and videoram structure
 class PixBuf {
   public:
-   enum { PRE_BUF = 0 }; // bytes before real buffer: for transfer cmd
+   enum {
+     PRE_BUF = 4, // bytes before real buffer: for transfer cmd
+     STRBOX_BG = 1,
+     STRBOX_BORDER = 2,
+     STRBOX_ALL = STRBOX_BG | STRBOX_BORDER
+   };
    PixBuf( uint16_t a_width, uint16_t a_height, uint16_t a_bpp );
    PixBuf( const PixBuf &r );
    ~PixBuf();
@@ -90,6 +95,9 @@ class PixBuf {
    virtual void circle( uint16_t x0,  uint16_t y0, uint16_t r, uint32_t col );
    virtual void fillCircle( uint16_t x0,  uint16_t y0, uint16_t r, uint32_t col );
    virtual void outChar( uint16_t x0,  uint16_t y0, char c, const sFONT *fnt, uint32_t col );
+   virtual void outStr( uint16_t x0,  uint16_t y0, const char *s, const sFONT *fnt, uint32_t col );
+   virtual void outStrBox( uint16_t x0,  uint16_t y0, const char *s, const sFONT *fnt,
+                           uint32_t col, uint32_t bg_col, uint32_t brd_col, uint16_t flg = STRBOX_BG );
   protected:
    uint16_t width, height, bpp;
    uint32_t sz; // in bytes;
@@ -277,6 +285,32 @@ void PixBuf::outChar( uint16_t x0,  uint16_t y0, char c, const sFONT *fnt, uint3
   }
 }
 
+void PixBuf::outStr( uint16_t x0, uint16_t y0, const char *s, const sFONT *fnt, uint32_t col )
+{
+  if( !s || !fnt ) { return; }
+  uint16_t xc = x0, w = fnt->Width;
+  while( *s ) {
+    outChar( xc, y0, *s, fnt, col );
+    ++s; xc += w;
+  }
+
+}
+
+void PixBuf::outStrBox( uint16_t x0,  uint16_t y0, const char *s, const sFONT *fnt,
+                        uint32_t col, uint32_t bg_col, uint32_t brd_col, uint16_t flg )
+{
+  if( !fnt || !s ) { return; }
+  int l = strlen( s );
+  uint16_t w = fnt->Width, h = fnt->Height;
+  uint16_t r = x0 + w * l + 1, b = y0 + h;
+  if( flg | STRBOX_BG ) {
+    box( x0-1, y0-1, r, b, bg_col );
+  }
+  if( flg | STRBOX_BORDER ) {
+    rect( x0-2, y0-2, r+1, b+1, brd_col );
+  }
+  outStr( x0, y0, s, fnt, col );
+}
 
 //-----------------------------
 
@@ -737,8 +771,9 @@ int cmd_test0( int argc, const char * const * argv )
   pb0.circle( 64, 32, 15, 0 );
   pb0.circle( 64, 32, 20, 1 );
 
-  pb0.outChar( 20, 20, 'A', &Font8,  0 );
-  pb0.outChar( 90, 20, 'W', &Font12, 1 );
+  pb0.outChar( 20, 20, 'A', &Font12,  0 );
+  pb0.outStrBox( 90, 20, "String", &Font8, 1, 0, 1, PixBuf::STRBOX_ALL );
+  pb0.outStrBox( 90, 40, "Str2", &Font8, 0, 1, 0, PixBuf::STRBOX_BG );
 
   screen.out( pb0 );
 

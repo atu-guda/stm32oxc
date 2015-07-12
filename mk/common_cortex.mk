@@ -90,7 +90,7 @@ ifeq "$(USE_FREERTOS)" "y"
 endif
 
 ifeq "$(USE_FONTS)" "y"
-  SRCPATHS += $(OXCSRC)/fonts
+  SRCPATHS += $(STMSRC)/fonts
 endif
 
 ifeq "$(USE_USB_OTG)" "y"
