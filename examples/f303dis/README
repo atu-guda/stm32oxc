@@ -1,0 +1,10 @@
+Examples for STM32F3Discovery board with STM32F303VCT6 MCU.
+Onboard:
+ST-Link V2
+8 LEDS: E8:E15 BROGBROG
+2 Buttons: Reset + PA0:Up
+LSM303DHCL accel + compas
+L3GD20 Gyro (SPI1)
+
+Clock is via ST-Link MCO 8 MHz.
+

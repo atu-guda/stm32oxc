@@ -66,7 +66,7 @@ void PinsOut::initHW()
   gpi.Pin = mask;
   gpi.Mode = GPIO_MODE_OUTPUT_PP;
   gpi.Pull = GPIO_NOPULL;
-  gpi.Speed = GPIO_SPEED_FAST;
+  gpi.Speed = GPIO_SPEED_HIGH;
   HAL_GPIO_Init( gpio, &gpi );
 };
 
@@ -90,7 +90,7 @@ void IoPin::initHW()
   gio.Pin   = pin;
   gio.Mode  = GPIO_MODE_OUTPUT_OD;
   gio.Pull  = GPIO_NOPULL;
-  gio.Speed = GPIO_SPEED_FAST;
+  gio.Speed = GPIO_SPEED_HIGH;
   HAL_GPIO_Init( gpio, &gio );
 }
 
