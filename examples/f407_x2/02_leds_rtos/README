@@ -1,1 +1,1 @@
-Leds blink using FreeRTOS
+Leds blink using FreeRTOS + EXTI lines 0,1 IRQ
