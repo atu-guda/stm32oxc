@@ -119,11 +119,6 @@ SRCS += font16.c
 SRCS += font20.c
 SRCS += font24.c
 
-
-SRCS += usbd_core.c
-SRCS += usbd_cdc.c
-SRCS += usbd_ctlreq.c
-SRCS += usbd_ioreq.c
 SRCS += stm32f4xx_ll_usb.c
 SRCS += stm32f4xx_hal_pcd_ex.c
 

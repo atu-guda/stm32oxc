@@ -11,7 +11,7 @@ STMINC=$(STMDIR)/inc
 STMSRC=$(STMDIR)/src
 STMLD=$(STMDIR)/ld
 
-# OXCDIR := ox // from Makefile
+# OXCDIR := oxc // from Makefile
 OXCINC = $(OXCDIR)/inc
 OXCSRC = $(OXCDIR)/src
 
@@ -29,7 +29,8 @@ RTINC=$(RTSRC)/include
 ALLFLAGS := -g3 -O2
 ALLFLAGS += -Wall -Wextra -Wundef
 ALLFLAGS += -fno-common -ffunction-sections -fdata-sections
-CWARNFLAGS := -Wimplicit-function-declaration -Wmissing-prototypes -Wstrict-prototypes
+CWARNFLAGS := -Wimplicit-function-declaration -Wmissing-prototypes -Wstrict-prototypes -Wno-unused-parameter
+CWARNFLAGS += -Wno-unused-parameter
 
 #ALLFLAGS += -DUSE_STDPERIPH_DRIVER=1
 ALLFLAGS += -DPROJ_NAME=\"$(PROJ_NAME)\"
@@ -40,27 +41,40 @@ ifeq "$(NO_STDLIB)" "y"
 endif
 
 $(info MCTYPE is $(MCTYPE) )
+# MCBASE is like "STM32F4"
 MCBASE := $(shell echo "$(MCTYPE)" | head -c 7  )
 $(info MCBASE is $(MCBASE) )
+# MCSUFF is like "f4"
+MCSUFF := $(shell m1='$(MCBASE)'; echo -n "$${m1,,*}" | tail -c 2  )
+$(info MCSUFF is $(MCSUFF) )
 
 ALLFLAGS  += -D$(MCTYPE) -D$(MCBASE) -DMCTYPE=$(MCTYPE) -DMCBASE=$(MCBASE)
 
+KNOWN_MCU := no
 ifeq "$(MCBASE)" "STM32F0"
   ARCHFLAGS = -mthumb -mcpu=cortex-m0 -mfix-cortex-m3-ldrd
+  KNOWN_MCU := yes
 endif
 ifeq "$(MCBASE)" "STM32F1"
   ARCHFLAGS = -mthumb -mcpu=cortex-m3 -mfix-cortex-m3-ldrd
+  KNOWN_MCU := yes
 endif
 ifeq "$(MCBASE)" "STM32F2"
   ARCHFLAGS = -mthumb -mcpu=cortex-m3 -mfix-cortex-m3-ldrd
+  KNOWN_MCU := yes
 endif
 ifeq "$(MCBASE)" "STM32F3"
   ARCHFLAGS = -mthumb -mcpu=cortex-m4 -mfloat-abi=softfp -mfpu=fpv4-sp-d16
+  KNOWN_MCU := yes
 endif
 ifeq "$(MCBASE)" "STM32F4"
   ARCHFLAGS += -mthumb -mcpu=cortex-m4 -mfloat-abi=softfp -mfpu=fpv4-sp-d16
+  KNOWN_MCU := yes
 endif
 
+ifneq "$(KNOWN_MCU)" "yes"
+  $(warning Unknown MCU base $(MCBASE))
+endif
 
 ALLFLAGS += $(ARCHFLAGS)
 ALLFLAGS += $(CFLAGS_ADD)
@@ -93,27 +107,17 @@ ifeq "$(USE_FONTS)" "y"
   SRCPATHS += $(STMSRC)/fonts
 endif
 
-ifeq "$(USE_USB_OTG)" "y"
-  # SRCPATHS += $(STMSRC)/usb_otg
-  # ALLFLAGS += -I$(STMINC)/usb_otg
-  # ALLFLAGS += -DUSE_USB_OTG_FS=1 -DUSE_EMBEDDED_PHY=1
-endif
 
 ifeq "$(USE_USB_DEFAULT_CDC)" "y"
-  SRCPATHS += $(OXCSRC)/usb_cdc
-  # ALLFLAGS += -I$(OXCINC)/usb_cdc
+  SRCPATHS += $(OXCSRC)/usb_cdc_$(MCSUFF)
+  ALLFLAGS += -I$(OXCINC)/usb_cdc_$(MCSUFF)
   SRCS += usbd_conf.cpp
   SRCS += usbd_desc.cpp
-  # SRCS += usbd_cdc_vcp.cpp
-  # SRCS += usbd_usr.cpp
-  # # USB: lib:
-  # SRCS += usb_dcd.c
-  # SRCS += usb_core.c
-  # SRCS += usbd_core.c
-  # SRCS += usbd_req.c
-  # SRCS += usbd_ioreq.c
-  # SRCS += usbd_cdc_core.c
-  # SRCS += usb_dcd_int.c
+  # USB: lib:
+  SRCS += usbd_core.c
+  SRCS += usbd_cdc.c
+  SRCS += usbd_ctlreq.c
+  SRCS += usbd_ioreq.c
 endif
 
 vpath %.c   $(SRCPATHS) $(OXCSRC)/startup
