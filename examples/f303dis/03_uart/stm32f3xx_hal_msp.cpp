@@ -6,7 +6,7 @@
   */
 
 #include <stm32f3xx_hal.h>
-#include <oxc_gpio.h> // only for debug (leds)
+// #include <oxc_gpio.h> // only for debug (leds)
 
 
 void HAL_UART_MspInit( UART_HandleTypeDef* huart )
@@ -14,9 +14,9 @@ void HAL_UART_MspInit( UART_HandleTypeDef* huart )
 
   GPIO_InitTypeDef gio;
   if( huart->Instance == USART2 ) {
-    leds.set( BIT6 );
+    // leds.set( BIT6 );
     __USART2_CLK_ENABLE();
-    __GPIOA_CLK_ENABLE();
+    // __GPIOA_CLK_ENABLE();
     __GPIOD_CLK_ENABLE();
 
     /** USART2 GPIO Configuration
@@ -46,7 +46,8 @@ void HAL_UART_MspDeInit( UART_HandleTypeDef* huart )
 {
   if( huart->Instance==USART2 )  {
     __USART2_CLK_DISABLE();
-    HAL_GPIO_DeInit( GPIOA, GPIO_PIN_2|GPIO_PIN_3 );
+    // HAL_GPIO_DeInit( GPIOA, GPIO_PIN_2 | GPIO_PIN_3 );
+    HAL_GPIO_DeInit( GPIOD, GPIO_PIN_5 | GPIO_PIN_6 );
     /* Peripheral interrupt Deinit*/
     HAL_NVIC_DisableIRQ( USART2_IRQn );
   }
