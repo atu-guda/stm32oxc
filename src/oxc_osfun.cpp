@@ -4,7 +4,7 @@
 
 extern int  _end;
 extern "C" {
-  caddr_t _sbrk ( int incr ) {
+  char* _sbrk ( int incr ) {
 
     static unsigned char *heap = NULL;
     unsigned char *prev_heap;
@@ -17,7 +17,7 @@ extern "C" {
 
     heap += incr;
 
-    return (caddr_t) prev_heap;
+    return (char*) prev_heap;
   }
 }
 

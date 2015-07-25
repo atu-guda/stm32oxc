@@ -34,11 +34,6 @@ void task_gchar( void *prm UNUSED_ARG )
 
 
 
-void _exit( int rc )
-{
-  exit_rc = rc;
-  die4led( rc );
-}
 
 // ---------------------------- smallrl -----------------------
 

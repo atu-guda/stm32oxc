@@ -46,7 +46,7 @@ void UsartIO::handleIRQ()
   int n_work = 0;
   BaseType_t wake = pdFALSE;
   BaseType_t qrec;
-  uint32_t status = us->SR;
+  uint32_t status = us->USART_SR_REG;
 
   // leds.set( BIT3 ); // DEBUG
 
@@ -55,7 +55,7 @@ void UsartIO::handleIRQ()
     ++n_work;
     cr = recvRaw();
     // leds.set( BIT2 );
-    if( status & ( UART_FLAG_ORE | UART_FLAG_FE | UART_FLAG_LBD ) ) {
+    if( status & ( UART_FLAG_ORE | UART_FLAG_FE /*| UART_FLAG_LBD*/ ) ) { // TODO: on MCU
       err = status;
     } else {
       xQueueSendFromISR( ibuf, &cr, &wake  );

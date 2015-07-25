@@ -1,0 +1,10 @@
+Using  UART as console via SmallRL.
+Used USART2 with FT232RL-alike board.
+
+TMP:
+PD5  = USART2_TX
+PD6  = USART2_RX
+
+#PA2  = USART2_TX
+#PA3  = USART2_RX
+

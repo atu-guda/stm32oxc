@@ -1,7 +1,7 @@
 #include <cstring>
 #include <cstdlib>
 
-#include <bsp/board_stm32f407_atu_x2.h>
+#include <bsp/board_stm32f3discovery.h>
 #include <oxc_gpio.h>
 #include <oxc_usartio.h>
 #include <oxc_console.h>
@@ -16,7 +16,7 @@
 using namespace std;
 using namespace SMLRL;
 
-// PinsOut p1 { GPIOC, 0, 4 };
+// PinsOut p1 { GPIOE, 8, 8 };
 BOARD_DEFINE_LEDS;
 
 
@@ -102,7 +102,7 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
   devio_fds[2] = &usartio; // stderr
 
   usartio.sendStrSync( "0123456789ABCDEF" NL );
-  delay_ms( 10 );
+  delay_ms( 50 );
   pr( "*=*** Main loop: ****** " NL );
   delay_ms( 20 );
 
@@ -181,6 +181,7 @@ void init_uart( UART_HandleTypeDef *uahp, int baud )
   uahp->Init.HwFlowCtl    = UART_HWCONTROL_NONE;
   uahp->Init.Mode         = UART_MODE_TX_RX;
   uahp->Init.OverSampling = UART_OVERSAMPLING_16;
+  uahp->AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
   if( HAL_UART_Init( uahp ) != HAL_OK )  {
     die4led( 0x08 );
   }

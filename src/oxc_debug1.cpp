@@ -162,7 +162,7 @@ int cmd_info( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
     { EXTI0_IRQn,   "EXTI0  " },
     { I2C1_EV_IRQn, "I2C1_EV" },
     { USART2_IRQn,  "USART2 " },
-    { OTG_FS_IRQn,  "OTG_FS " },
+    // { OTG_FS_IRQn,  "OTG_FS " }, TODO: depend in MCU type
     { SPI1_IRQn,    "SPI1   " }
   };
 

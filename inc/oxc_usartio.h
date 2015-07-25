@@ -29,16 +29,16 @@ class UsartIO : public DevIO {
    void handleIRQ();
    virtual void task_send() override; // special
 
-   void sendRaw( uint16_t v ) { us->DR = ( v & (uint16_t)0x01FF); };
-   int16_t recvRaw() { return (uint16_t)( us->DR & (uint16_t)0x01FF ); };
+   void sendRaw( uint16_t v ) { us->USART_TX_REG = ( v & (uint16_t)0x01FF); };
+   int16_t recvRaw() { return (uint16_t)( us->USART_RX_REG & (uint16_t)0x01FF ); };
    void enable()  { us->CR1 |=  CR1_UE;  };
    void disable() { us->CR1 &= ~CR1_UE; };
    void itEnable(  uint32_t it )  { __HAL_UART_ENABLE_IT(  uah, it ); };
    void itDisable( uint32_t it )  { __HAL_UART_DISABLE_IT( uah, it ); };
    void sendBrk() { us->CR1 |= CR1_SBK; };
-   bool checkFlag( uint16_t flg ) { return ( us->SR & flg ); };
-   void clearFlag( uint16_t flg ) { us->SR &= (uint16_t)~flg; };
-   uint16_t getSR() { return us->SR; }
+   bool checkFlag( uint16_t flg ) { return ( us->USART_SR_REG & flg ); };
+   void clearFlag( uint16_t flg ) { us->USART_SR_REG &= (uint16_t)~flg; };
+   uint16_t getSR() { return us->USART_SR_REG; }
    uint16_t getCR1() { return us->CR1; }
    // ITStatus getITStatus( uint16_t it ) { return USART_GetITStatus( us, it ); };
    // void clearITPendingBit( uint16_t it ) { return USART_ClearITPendingBit( us, it );} ;
