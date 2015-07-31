@@ -41,6 +41,11 @@ void default_USBFS_MspInit(void)
 }
 
 
+void OTG_FS_IRQHandler(void)
+{
+  HAL_PCD_IRQHandler( &hpcd );
+}
+
 
 /*******************************************************************************
                        LL Driver Callbacks (PCD -> USB Device Library)

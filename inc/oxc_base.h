@@ -142,6 +142,9 @@ void DebugMon_Handler(void);
 void PendSV_Handler(void);
 void SysTick_Handler(void);
 void OTG_FS_IRQHandler(void);
+void USB_LP_CAN_RX0_IRQHandler(void);
+void USBWakeUp_IRQHandler(void);
+void WWDG_IRQHandler(void);
 
 void SystemClock_Config(void);
 

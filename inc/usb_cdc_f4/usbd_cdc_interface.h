@@ -1,7 +1,6 @@
 #ifndef __USBD_CDC_IF_H
 #define __USBD_CDC_IF_H
 
-/* Includes ------------------------------------------------------------------*/
 #include <usbd_cdc.h>
 
 /* Periodically, the state of the buffer "UserTxBuffer" is checked.
@@ -10,4 +9,5 @@
 
 extern USBD_CDC_ItfTypeDef  USBD_CDC_fops;
 
-#endif /* __USBD_CDC_IF_H */
+#endif
+

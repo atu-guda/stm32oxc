@@ -5,14 +5,9 @@
 USBD_HandleTypeDef* UsbcdcIO::pusb_dev = nullptr;
 UsbcdcIO* UsbcdcIO::static_usbcdcio = nullptr;
 
-void OTG_FS_IRQHandler(void)
-{
-  HAL_PCD_IRQHandler( &hpcd );
-}
-
 void UsbcdcIO::init()
 {
-  USBD_Init( &usb_dev, &VCP_Desc, 0 );
+  USBD_Init( &usb_dev, &VCP_Desc, 0 ); // 0 = DEVICE_FS
   USBD_RegisterClass( &usb_dev, USBD_CDC_CLASS );
   USBD_CDC_RegisterInterface( &usb_dev, &cdc_fops );
   USBD_Start( &usb_dev );
