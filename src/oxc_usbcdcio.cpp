@@ -18,9 +18,17 @@ int UsbcdcIO::sendBlockSync( const char *s, int l )
   if( !s || l < 1 ) {
     return 0;
   }
+  USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef *)usb_dev.pClassData;
+  if( !hcdc ) {
+    return 0;
+  }
   USBD_CDC_SetTxBuffer( &usb_dev, (uint8_t*)s, l );
   uint8_t rc;
   for( int n_try = 0; n_try < wait_tx; ++n_try ) {
+    if( hcdc->TxState ) {
+      delay_ms( 1 );
+      continue;
+    }
     rc = USBD_CDC_TransmitPacket( &usb_dev );
     if( rc == USBD_OK ) {
       return l;
