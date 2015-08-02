@@ -102,7 +102,8 @@ SRCS += queue.c
 SRCS += tasks.c
 #SRCS += timers.c
 # symlink to Source/portable/GCC/ARM_CM3/port.c <<< change
-SRCS += heap_2.c
+#SRCS += heap_2.c
+SRCS += heap_3.c
 # symlink to Source/portable/GCC/ARM_CM4F/port.c <<< change
 SRCS += port.c
 # Beware: portmacro.h is symlink to

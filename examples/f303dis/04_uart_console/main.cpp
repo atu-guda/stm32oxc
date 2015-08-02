@@ -20,7 +20,8 @@ BOARD_DEFINE_LEDS;
 
 
 
-const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
+const int def_stksz = 1 * configMINIMAL_STACK_SIZE;
+// const int def_stksz = 128; // to find minimum
 
 SmallRL srl( smallrl_print, smallrl_exec );
 
@@ -75,8 +76,8 @@ int main(void)
 
   //           code               name    stack_sz      param  prty TaskHandle_t*
   xTaskCreate( task_leds,        "leds", 1*def_stksz, nullptr,   1, nullptr );
-  xTaskCreate( task_usart2_send, "send", 2*def_stksz, nullptr,   2, nullptr );  // 2
-  xTaskCreate( task_main,        "main", 2*def_stksz, nullptr,   1, nullptr );
+  xTaskCreate( task_usart2_send, "send", 1*def_stksz, nullptr,   2, nullptr );  // 2
+  xTaskCreate( task_main,        "main", 1*def_stksz, nullptr,   1, nullptr );
   xTaskCreate( task_gchar,      "gchar", 2*def_stksz, nullptr,   1, nullptr );
 
   vTaskStartScheduler();

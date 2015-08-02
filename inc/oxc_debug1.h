@@ -1,7 +1,6 @@
 #ifndef _OXC_DEBUG1_H
 #define _OXC_DEBUG1_H
 
-// #include <oxc_outs.h>
 #include <oxc_console.h>
 
 #ifdef __cplusplus

@@ -15,6 +15,8 @@ char gbuf_a[GBUF_SZ];
 char gbuf_b[GBUF_SZ]; // and log too
 int user_vars[N_USER_VARS];
 
+extern  const int _sdata, _edata, _sbss, _ebss, _end, _estack;
+
 char* str2addr( const char *str )
 {
   if( str[0] == 'a' && str[1] == '\0' ) {
@@ -142,14 +144,22 @@ int cmd_info( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
   pr( "  PCLK1: " ); pr_d( HAL_RCC_GetPCLK1Freq() );
   pr( "  PCLK2: " ); pr_d( HAL_RCC_GetPCLK2Freq() );
   pr( "  HSE_VALUE: " ); pr_d( HSE_VALUE );
-  pr( NL );
-  pr_sdx( errno );
-  pr_sdx( dbg_val0 );
-  pr_sdx( dbg_val1 );
   pr_sdx( SystemCoreClock );
 
-  uint32_t c_msp = __get_MSP();
-  pr_shx( c_msp );
+  pr( NL "errno= "); pr_d( errno );
+  pr( NL "dbg_val0= 0x" ); pr_h( dbg_val0 ); pr( " = " ); pr_d( dbg_val0 );
+  pr(   " dbg_val1= 0x" ); pr_h( dbg_val1 ); pr( " = " ); pr_d( dbg_val1 );
+  pr( NL "dbg_val2= 0x" ); pr_h( dbg_val2 ); pr( " = " ); pr_d( dbg_val2 );
+  pr(   " dbg_val3= 0x" ); pr_h( dbg_val3 ); pr( " = " ); pr_d( dbg_val3 );
+
+  pr( NL "_sdata= " ); pr_h( (int)(&_sdata) ); pr(  " _edata=  " ); pr_h( (int)(&_edata) );
+  pr( NL "_sbss=  " ); pr_h( (int)(&_sbss) );  pr(  " _ebss=   " ); pr_h( (int)(&_ebss) );
+  pr( NL "_end=   " ); pr_h( (int)(&_end) );   pr(  " _estack= " ); pr_h( (int)(&_estack) );
+
+  uint32_t c_msp = __get_MSP(), c_psp = __get_PSP();
+  pr( NL "MSP=   " ); pr_h( c_msp );   pr(  " PSP= " ); pr_h( c_psp );
+  pr( "  __heap_top=   " ); pr_h( (int)__heap_top );
+  pr( NL );
 
   uint32_t prio_grouping = HAL_NVIC_GetPriorityGrouping();
   pr_sdx( prio_grouping );
@@ -175,31 +185,33 @@ int cmd_info( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
     pr( "  sub= " ); pr_d( prio_sub );
     pr( NL );
   }
-  delay_ms( 200 );
+  delay_ms( 100 );
 
-  // TODO: need correct _sbrk (see oxc_osfun.cpp)
-  // unsigned max_malloc_sz = 0;
-  // for( unsigned sz = 1024; sz < 1024 * 1024; sz += 1024 ) {
-  //   void *p = malloc( sz );
-  //   if( !p ) {
-  //     break;
-  //   }
-  //   free( p );
-  //   pr_sdx( sz );
-  //   delay_ms( 50 );
-  // }
-  // pr_sdx( max_malloc_sz );
+  unsigned max_malloc_sz = 0;
+  for( unsigned sz = 1024; sz < 1024 * 1024; sz += 1024 ) {
+    void *p = malloc( sz );
+    if( !p ) {
+      break;
+    }
+    free( p );
+    max_malloc_sz = sz;
+    // pr_sdx( sz );
+    // delay_ms( 50 );
+  }
+  pr_sdx( max_malloc_sz );
 
 
   #if USE_FREERTOS != 0
-    int tick_count = xTaskGetTickCount();
-    pr_sdx( tick_count );
     const char *nm = pcTaskGetTaskName( 0 );
-    pr( "task: \"" ); pr( nm ); pr( "\"" NL );
+    pr( "task: \"" ); pr( nm ); pr( "\" tick_count: "  );
+    int tick_count = xTaskGetTickCount();
+    pr_d( tick_count );
     int prty = uxTaskPriorityGet( 0 );
-    pr_sdx( prty );
-    uint32_t hwm = uxTaskGetStackHighWaterMark( 0 );
-    pr_sdx( hwm );
+    pr( "  prty: " );    pr_d( prty );
+    // uint32_t free_heap = xPortGetFreeHeapSize(); // not in heap_3.c
+    // pr( "  free_heap: " );    pr_d( free_heap );
+    uint32_t highStackWaterMark = uxTaskGetStackHighWaterMark( 0 );
+    pr_sdx( highStackWaterMark );
   #endif
   errno = 0;
   return 0;

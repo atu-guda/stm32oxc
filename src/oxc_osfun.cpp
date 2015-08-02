@@ -1,32 +1,42 @@
 #include <stdlib.h>
+#include <errno.h>
 #include <oxc_base.h>
 
 
-extern int  _end;
+extern  const int _sdata, _edata, _sbss, _ebss, _end, _estack;
+char* __heap_top = (char*)(&_end);
+
 extern "C" {
-  char* _sbrk ( int incr ) {
 
-    static unsigned char *heap = NULL;
-    unsigned char *prev_heap;
+char* _sbrk ( int incr )
+{
+  char *prev_heap;
 
-    if (heap == NULL) {
-      heap = (unsigned char *)&_end;
+  prev_heap = __heap_top;
+  if( incr > 0 ) {
+    incr += 3;
+    incr &= ~3; // align to 4 bytes
+
+    if( (unsigned)(__heap_top) + incr + 128 >= (unsigned)(__get_MSP()) ) {
+      errno = ENOMEM;
+      // dbg_val0 = (unsigned)(__heap_top) + incr + 128;
+      // dbg_val1 = incr;
+      // dbg_val3 = __get_MSP();
+      return (char*)(-1);
     }
-    prev_heap = heap;
-    /* check removed to show basic approach */
 
-    heap += incr;
-
-    return (char*) prev_heap;
+    __heap_top += incr;
   }
+
+  return prev_heap;
 }
 
-extern "C" {
 void abort(void)
 {
-  for(;;) ;
+  for(;;);
 }
-}
+
+} // extern "C"
 
 namespace __gnu_cxx {
   void __verbose_terminate_handler() {

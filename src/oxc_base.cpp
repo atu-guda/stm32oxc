@@ -8,7 +8,7 @@
 #include <oxc_base.h>
 
 int exit_rc = 0;
-volatile int dbg_val0 = 0, dbg_val1 = 0;
+volatile int dbg_val0 = 0, dbg_val1 = 0, dbg_val2 = 0, dbg_val3 = 0;
 
 #if STD_SYSTICK_HANDLER != 0
 #ifdef USE_FREERTOS

@@ -72,9 +72,10 @@
 #define BIT15 0x8000
 
 extern int exit_rc;
-extern volatile int dbg_val0, dbg_val1;
+extern volatile int dbg_val0, dbg_val1, dbg_val2, dbg_val3;
 extern volatile int idle_flag;
 extern volatile int break_flag;
+extern char* __heap_top;
 
 typedef __IO uint32_t reg32;
 typedef const char *const ccstr;
