@@ -6,6 +6,7 @@
 #include <oxc_console.h>
 #include <oxc_debug1.h>
 #include <oxc_debug_i2c.h>
+#include <oxc_bmp085.h>
 #include <oxc_common1.h>
 #include <oxc_smallrl.h>
 
@@ -137,38 +138,30 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  int st_a = 2;
+  int n = user_vars['n'-'a'];
+  uint32_t t_step = user_vars['t'-'a'];
   if( argc > 1 ) {
-    st_a = strtol( argv[1], 0, 0 );
-    pr( NL "Test0: argv[1]= \"" ); pr( argv[1] ); pr( "\"" NL );
+    n = strtol( argv[1], 0, 0 );
   }
-  int en_a = 127;
-  if( argc > 2 ) {
-    pr( NL "Test0: argv[2]= \"" ); pr( argv[2] ); pr( "\"" NL );
-    en_a = strtol( argv[2], 0, 0 );
-  }
-  pr( NL "Test0: st_a= " ); pr_h( st_a ); pr( " en_a= " ); pr_h( en_a );
+  pr( NL "Test0: n= " ); pr_d( n ); pr( " t= " ); pr_d( t_step );
   pr( NL );
-  __HAL_I2C_DISABLE( &i2ch );
-  delay_ms( 50 );
-  __HAL_I2C_ENABLE( &i2ch );
-  delay_ms( 50 );
 
-  // uint8_t val;
-  int i_err;
-  for( uint8_t ad = (uint16_t)st_a; ad <= (uint16_t)en_a && ! break_flag; ++ad ) {
-    uint16_t ad2 = ad << 1;
-    // HAL_StatusTypeDef rc = HAL_I2C_Master_Transmit( &i2ch, ad, &val, 1, 200 );
-    HAL_StatusTypeDef rc = HAL_I2C_IsDeviceReady( &i2ch, ad2, 3, 200 );
-    i_err = i2ch.ErrorCode;
-    // pr( "ad = " ); pr_h( ad ); pr( "  rc= " ); pr_d( rc ) ; pr( "  err= " ); pr_d( i_err ); pr(NL);
-    delay_ms( 10 );
-    if( rc != HAL_OK ) {
-      continue;
-    }
-    pr( "ad = " ); pr_h( ad ); pr( "  rc= " ); pr_d( rc ) ; pr( "  err= " ); pr_d( i_err ); pr(NL);
-    // pr( NL "************************************ " );
-    // pr_shx( ad );
+  BMP085 baro( i2ch );
+  baro.readCalibrData();
+
+  TickType_t tc0 = xTaskGetTickCount();
+
+  break_flag = 0;
+  for( int i=0; i<n && !break_flag ; ++i ) {
+
+    baro.getAllCalc( 3 );
+    int t10 = baro.get_T10();
+    int p   = baro.get_P();
+    // int t_u = baro.get_T_uncons();
+    // int p_u = baro.get_P_uncons();
+    pr( "T= " ); pr_d( t10 ); pr( "  P= " ); pr_d( p ); pr( NL );
+    vTaskDelayUntil( &tc0, t_step );
+    // delay_ms( t_step );
   }
 
   pr( NL );
