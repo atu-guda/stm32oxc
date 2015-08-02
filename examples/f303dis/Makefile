@@ -9,8 +9,8 @@ SUBDIRS = \
   06_i2c_test \
   08_i2c_mpu6050 \
   09_i2c_bmp085 \
-#  10_i2c_pcf8591 \
-#  11_i2c_ds3231 \
+  10_i2c_pcf8591 \
+  11_i2c_ds3231 \
 #  12_tim_pwm \
 #  14_tim_enco \
 #  15_tim_usonic \
