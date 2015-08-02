@@ -144,6 +144,8 @@ int cmd_info( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
   pr( "  HSE_VALUE: " ); pr_d( HSE_VALUE );
   pr( NL );
   pr_sdx( errno );
+  pr_sdx( dbg_val0 );
+  pr_sdx( dbg_val1 );
   pr_sdx( SystemCoreClock );
 
   uint32_t c_msp = __get_MSP();
@@ -173,6 +175,20 @@ int cmd_info( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
     pr( "  sub= " ); pr_d( prio_sub );
     pr( NL );
   }
+  delay_ms( 200 );
+
+  // TODO: need correct _sbrk (see oxc_osfun.cpp)
+  // unsigned max_malloc_sz = 0;
+  // for( unsigned sz = 1024; sz < 1024 * 1024; sz += 1024 ) {
+  //   void *p = malloc( sz );
+  //   if( !p ) {
+  //     break;
+  //   }
+  //   free( p );
+  //   pr_sdx( sz );
+  //   delay_ms( 50 );
+  // }
+  // pr_sdx( max_malloc_sz );
 
 
   #if USE_FREERTOS != 0
@@ -185,6 +201,7 @@ int cmd_info( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
     uint32_t hwm = uxTaskGetStackHighWaterMark( 0 );
     pr_sdx( hwm );
   #endif
+  errno = 0;
   return 0;
 }
 CmdInfo CMDINFO_INFO {  "info",  'i', cmd_info,       " - Output general info" };
