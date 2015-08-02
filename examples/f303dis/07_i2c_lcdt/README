@@ -1,0 +1,16 @@
+Control HD44780 LCD display via i2c port expander PCF8574
+Use "test" command to send string, on/off display
+
+-------------------------- BEWARE! ------------------------------
+On STM32F3Discovery board accelerometer + compas LSD303DLHC
+is connected to I2C1. It is ***NOT*** 5V tolerant.
+PCF8574 wors with 3.3v, but HD44780 requires 5V.
+So you seed 5/3.3V I2C converter not to froast accel.
+
+SCL = B6 + 10k pullUp on board
+SDA = B7 + 10k pullUp on board
+
+Console via USART2 with FT232RL-alike board.
+PA2  = USART2_TX
+PA3  = USART2_RX
+

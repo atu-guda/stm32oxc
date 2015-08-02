@@ -2,17 +2,13 @@
 #include <cstdlib>
 
 #include <oxc_gpio.h>
-#include <oxc_usbcdcio.h>
+#include <oxc_usartio.h>
 #include <oxc_console.h>
 #include <oxc_debug1.h>
 #include <oxc_debug_i2c.h>
 #include <oxc_hd44780_i2c.h>
 #include <oxc_common1.h>
 #include <oxc_smallrl.h>
-
-#include "usbd_desc.h"
-#include <usbd_cdc.h>
-#include <usbd_cdc_interface.h>
 
 #include <FreeRTOS.h>
 #include <task.h>
@@ -21,13 +17,12 @@
 using namespace std;
 using namespace SMLRL;
 
-// PinsOut p1 { GPIOC, 0, 4 };
+// PinsOut p1 { GPIOE, 8, 8 };
 BOARD_DEFINE_LEDS;
 
-UsbcdcIO usbcdc;
 
 
-const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
+const int def_stksz = 1 * configMINIMAL_STACK_SIZE;
 
 SmallRL srl( smallrl_print, smallrl_exec );
 
@@ -50,8 +45,15 @@ void task_main( void *prm UNUSED_ARG );
 
 I2C_HandleTypeDef i2ch;
 HD44780_i2c lcdt( i2ch );
+void MX_I2C1_Init( I2C_HandleTypeDef &i2c );
 
-STD_USBCDC_SEND_TASK( usbcdc );
+UART_HandleTypeDef uah;
+UsartIO usartio( &uah, USART2 );
+int init_uart( UART_HandleTypeDef *uahp, int baud = 115200 );
+
+STD_USART2_SEND_TASK( usartio );
+// STD_USART2_RECV_TASK( usartio );
+STD_USART2_IRQ( usartio );
 
 int main(void)
 {
@@ -61,20 +63,18 @@ int main(void)
   leds.initHW();
 
   leds.write( 0x0F );  delay_bad_ms( 200 );
+  if( !init_uart( &uah ) ) {
+    die4led( 0x08 );
+  }
+  leds.write( 0x0A );  delay_bad_ms( 200 );
 
+  // HAL_UART_Transmit( &uah, (uint8_t*)"START\r\n", 7, 100 );
 
-  i2ch.Instance             = I2C1;
-  i2ch.State                = HAL_I2C_STATE_RESET;
-  i2ch.Init.AddressingMode  = I2C_ADDRESSINGMODE_7BIT;
-  i2ch.Init.ClockSpeed      = 100000;
-  i2ch.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
-  i2ch.Init.DutyCycle       = I2C_DUTYCYCLE_16_9;
-  i2ch.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
-  i2ch.Init.NoStretchMode   = I2C_NOSTRETCH_DISABLE;
-  i2ch.Init.OwnAddress1     = 0;
-  i2ch.Init.OwnAddress2     = 0;
-  HAL_I2C_Init( &i2ch );
+  usartio.sendStrSync( "0123456789---main()---ABCDEF" NL );
+
+  MX_I2C1_Init( i2ch );
   i2ch_dbg = &i2ch;
+
 
   leds.write( 0x00 );
 
@@ -85,8 +85,8 @@ int main(void)
 
   //           code               name    stack_sz      param  prty TaskHandle_t*
   xTaskCreate( task_leds,        "leds", 1*def_stksz, nullptr,   1, nullptr );
-  xTaskCreate( task_usbcdc_send, "send", 2*def_stksz, nullptr,   2, nullptr );  // 2
-  xTaskCreate( task_main,        "main", 2*def_stksz, nullptr,   1, nullptr );
+  xTaskCreate( task_usart2_send, "send", 1*def_stksz, nullptr,   2, nullptr );  // 2
+  xTaskCreate( task_main,        "main", 1*def_stksz, nullptr,   1, nullptr );
   xTaskCreate( task_gchar,      "gchar", 2*def_stksz, nullptr,   1, nullptr );
 
   vTaskStartScheduler();
@@ -101,14 +101,16 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
 {
   uint32_t nl = 0;
 
-  usbcdc.init();
-  usbcdc.setOnSigInt( sigint );
-  devio_fds[0] = &usbcdc; // stdin
-  devio_fds[1] = &usbcdc; // stdout
-  devio_fds[2] = &usbcdc; // stderr
   delay_ms( 50 );
+  user_vars['t'-'a'] = 1000;
 
-  delay_ms( 10 );
+  usartio.itEnable( UART_IT_RXNE );
+  usartio.setOnSigInt( sigint );
+  devio_fds[0] = &usartio; // stdin
+  devio_fds[1] = &usartio; // stdout
+  devio_fds[2] = &usartio; // stderr
+
+  delay_ms( 50 );
   pr( "*=*** Main loop: ****** " NL );
   delay_ms( 20 );
 
