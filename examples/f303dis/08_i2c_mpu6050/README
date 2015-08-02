@@ -1,0 +1,10 @@
+Use MPU-6050 accel + gyro via I2C
+"D" command - 1 measurement
+
+SCL = B6 + 10k pullUp on board
+SDA = B7 + 10k pullUp on board
+
+Console via USART2 with FT232RL-alike board.
+PA2  = USART2_TX
+PA3  = USART2_RX
+
