@@ -6,7 +6,7 @@ SUBDIRS = \
   03_uart \
   04_uart_console \
   05_usb_console \
-#  06_i2c_test \
+  06_i2c_test \
 #  07_i2c_lcdt \
 #  08_i2c_mpu6050 \
 #  09_i2c_bmp085 \
