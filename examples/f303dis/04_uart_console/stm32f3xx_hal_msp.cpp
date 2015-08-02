@@ -9,6 +9,9 @@
 
 #include <FreeRTOS.h>
 
+
+// --------------------------- UART --------------------------------------
+
 void HAL_UART_MspInit( UART_HandleTypeDef* huart )
 {
 
@@ -42,7 +45,7 @@ void HAL_UART_MspInit( UART_HandleTypeDef* huart )
 
 void HAL_UART_MspDeInit( UART_HandleTypeDef* huart )
 {
-  if( huart->Instance==USART2 )  {
+  if( huart->Instance==USART2 ) {
     __USART2_CLK_DISABLE();
     HAL_GPIO_DeInit( GPIOA, GPIO_PIN_2 | GPIO_PIN_3 );
     // HAL_GPIO_DeInit( GPIOD, GPIO_PIN_5 | GPIO_PIN_6 );
@@ -50,5 +53,20 @@ void HAL_UART_MspDeInit( UART_HandleTypeDef* huart )
     HAL_NVIC_DisableIRQ( USART2_IRQn );
   }
 
+}
+
+
+int init_uart( UART_HandleTypeDef *uahp, int baud )
+{
+  uahp->Instance = USART2;
+  uahp->Init.BaudRate     = baud;
+  uahp->Init.WordLength   = UART_WORDLENGTH_8B;
+  uahp->Init.StopBits     = UART_STOPBITS_1;
+  uahp->Init.Parity       = UART_PARITY_NONE;
+  uahp->Init.HwFlowCtl    = UART_HWCONTROL_NONE;
+  uahp->Init.Mode         = UART_MODE_TX_RX;
+  uahp->Init.OverSampling = UART_OVERSAMPLING_16;
+  uahp->AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  return( HAL_UART_Init( uahp ) == HAL_OK );
 }
 
