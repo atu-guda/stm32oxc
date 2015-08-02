@@ -3,7 +3,7 @@ MCTYPE = STM32F303
 
 MCINCTYPE = $(MCTYPE)xx
 
-LINK=$(CC)
+LINK=$(CXX)
 
 USE_OXC = y
 USE_FREERTOS = y
@@ -98,7 +98,6 @@ SRCS += stm32f3xx_hal_rcc_ex.c
 
 
 
-# SRCS += stm32f3xx_ll_usb.c
 SRCS += stm32f3xx_hal_pcd.c
 SRCS += stm32f3xx_hal_pcd_ex.c
 

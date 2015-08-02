@@ -1,5 +1,6 @@
-#include <bsp/board_stm32f3discovery.h>
 #include <oxc_gpio.h>
+
+using namespace std;
 
 void MX_GPIO_Init(void);
 

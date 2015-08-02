@@ -1,7 +1,6 @@
 #include <cstring>
 #include <cstdlib>
 
-#include <bsp/board_stm32f3discovery.h>
 #include <oxc_gpio.h>
 #include <oxc_usartio.h>
 #include <oxc_console.h>

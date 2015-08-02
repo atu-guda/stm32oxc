@@ -1,9 +1,10 @@
-#include <bsp/board_stm32f407_atu_x2.h>
 #include <oxc_gpio.h>
 
 #include <FreeRTOS.h>
 #include <task.h>
 #include <queue.h>
+
+using namespace std;
 
 void MX_GPIO_Init(void);
 

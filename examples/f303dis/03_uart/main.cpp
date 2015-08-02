@@ -1,11 +1,12 @@
-#include <string.h>
+#include <cstring>
 
-#include <bsp/board_stm32f3discovery.h>
 #include <oxc_gpio.h>
 
 #include <FreeRTOS.h>
 #include <task.h>
 #include <queue.h>
+
+using namespace std;
 
 
 // PinsOut p1 { GPIOE, 8, 8 };

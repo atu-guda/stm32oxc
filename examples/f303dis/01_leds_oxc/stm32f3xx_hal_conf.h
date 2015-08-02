@@ -8,6 +8,8 @@
 #define REQ_MCBASE STM32F3
 #define REQ_SYSCLK_FREQ 72
 
+#include <bsp/board_stm32f3discovery.h>
+
 // not use with FreeRTOS
 #define STD_SYSTICK_HANDLER 1
 

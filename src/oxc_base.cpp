@@ -7,6 +7,9 @@
 
 #include <oxc_base.h>
 
+int exit_rc = 0;
+volatile int dbg_val0 = 0, dbg_val1 = 0;
+
 #if STD_SYSTICK_HANDLER != 0
 #ifdef USE_FREERTOS
 #warning Non-RTOS SysTick_Handler defined
@@ -18,8 +21,6 @@ void SysTick_Handler(void)
 }
 
 #endif
-
-int exit_rc = 0;
 
 uint8_t numFirstBit( uint32_t a )
 {

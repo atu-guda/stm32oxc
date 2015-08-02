@@ -12,6 +12,8 @@
 #define REQ_MCBASE STM32F4
 #define REQ_SYSCLK_FREQ 168
 
+#include <bsp/board_stm32f407_atu_x2.h>
+
 // not use with FreeRTOS
 #define STD_SYSTICK_HANDLER 1
 

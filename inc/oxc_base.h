@@ -72,6 +72,9 @@
 #define BIT15 0x8000
 
 extern int exit_rc;
+extern volatile int dbg_val0, dbg_val1;
+extern volatile int idle_flag;
+extern volatile int break_flag;
 
 typedef __IO uint32_t reg32;
 typedef const char *const ccstr;
@@ -108,6 +111,7 @@ typedef const char *const ccstr;
   #define T_MS_MUL  33845
   #define T_S_MUL   33845000
 #endif
+
 
 #ifdef __cplusplus
 // template<typename T> class _ShowType; // to output decucted type
@@ -158,9 +162,6 @@ uint8_t numFirstBit( uint32_t a );
 
 extern const char hex_digits[];
 extern const char dec_digits[];
-
-extern int idle_flag;
-extern int break_flag;
 
 // 64/log_2[10] \approx 20
 #define INT_STR_SZ_DEC 24

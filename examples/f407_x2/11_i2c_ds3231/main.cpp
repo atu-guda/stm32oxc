@@ -1,7 +1,6 @@
 #include <cstring>
 #include <cstdlib>
 
-#include <bsp/board_stm32f407_atu_x2.h>
 #include <oxc_gpio.h>
 #include <oxc_usbcdcio.h>
 #include <oxc_console.h>

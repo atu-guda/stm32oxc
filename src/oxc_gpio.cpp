@@ -79,7 +79,7 @@ void die4led( uint16_t n )
   leds.set( n );
   while(1) {
     delay_bad_ms( 100 );
-    leds.toggle( BIT0 );
+    leds.toggle( LED_BSP_ERR );
   }
 }
 

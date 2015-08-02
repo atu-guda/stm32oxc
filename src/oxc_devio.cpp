@@ -4,8 +4,8 @@
 using namespace std;
 
 DevIO* devio_fds[DEVIO_MAX];
-int idle_flag = 0;
-int break_flag = 0;
+volatile int idle_flag = 0;
+volatile int break_flag = 0;
 
 DevIO::~DevIO()
 {

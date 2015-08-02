@@ -4,6 +4,12 @@
 #ifndef __STM32F3xx_HAL_CONF_H
 #define __STM32F3xx_HAL_CONF_H
 
+// for oxc lib: just to check
+#define REQ_MCBASE STM32F3
+#define REQ_SYSCLK_FREQ 72
+
+#include <bsp/board_stm32f3discovery.h>
+
 #ifdef __cplusplus
  extern "C" {
 #endif
