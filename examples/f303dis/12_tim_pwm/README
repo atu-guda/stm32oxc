@@ -1,0 +1,26 @@
+Test TIM8 as PWM output
+out: C6, C7, C8, C9 (CH3,4),
+PREpere:
+may be (reserver) + C6: tick for usonic sensor, C7 - input from sensor
+
+user vars:
+ p - prescaler
+ a - ARR
+ r - flag: 1: row CCR values 0: in % to ARR
+ t - unused
+T val1 val2 val3 val4
+
+Attension: TIM inner input clock is 2 * APB2 = 144 MHz
+
+For servo:
+ p = PSC = 144 -> freq1 = 1MHz
+ a = ARR = 9999 -> freq2 = 100Hz (10 ms)
+ so values in 'T' command is in microseconds,
+  typicaly 500 -- 2500 (may vary)
+
+Using  UART as console via SmallRL.
+Used USART2 with FT232RL-alike board.
+
+PA2  = USART2_TX
+PA3  = USART2_RX
+

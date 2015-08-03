@@ -70,7 +70,7 @@ int main(void)
 
   user_vars['t'-'a'] = 1000;
   user_vars['n'-'a'] = 10;
-  user_vars['p'-'a'] = 16799;// prescaler, 186MHz->10kHz
+  user_vars['p'-'a'] = 16799;// prescaler, 168MHz->10kHz
   user_vars['a'-'a'] = 9999; // ARR, 10kHz->1Hz
   user_vars['r'-'a'] = 0;    // flag: raw values
 
