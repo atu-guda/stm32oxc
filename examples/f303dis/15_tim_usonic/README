@@ -1,0 +1,20 @@
+Test TIM8 as usonic sensor HC-SR04 driver
+out: C6: TIM8:CH1
+IN:  C7: TIM9:CH2
+c \approx 340 m/s + echo: 170 m/s
+1mm - 5.88mks
+168Mhz / 998: 1tick = 1mm
+144Mhz / 847: 1tick = 1mm
+TIM1.CH1: pulser
+TIM1.CH2: both edge receiver: IRQ
+Vcc for sensor: 5v required: with 3.3: no good return pulse
+
+TODO: calibrate
+
+
+Using  UART as console via SmallRL.
+Used USART2 with FT232RL-alike board.
+
+PA2  = USART2_TX
+PA3  = USART2_RX
+
