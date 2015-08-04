@@ -12,12 +12,12 @@ SUBDIRS = \
   09_i2c_bmp085 \
   10_i2c_pcf8591 \
   11_i2c_ds3231 \
-#  12_tim_pwm \
-#  14_tim_enco \
-#  15_tim_usonic \
-#  16_step1 \
-#  17_1w_18b20 \
-#  18_i2c_ssd1306_oled
+  12_tim_pwm \
+  14_tim_enco \
+  15_tim_usonic \
+  16_step1 \
+  17_1w_18b20 \
+  18_i2c_ssd1306_oled
 
 
 ALL : examples_f303_d3
