@@ -1,0 +1,14 @@
+Test TIM8 as encoder output
+in: C6, C7
+
+So so stable.
+TODO: delta near 0 is huge (0xFFFF), may be with irq?
+
+
+
+Using  UART as console via SmallRL.
+Used USART2 with FT232RL-alike board.
+
+PA2  = USART2_TX
+PA3  = USART2_RX
+
