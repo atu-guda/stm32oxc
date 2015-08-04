@@ -1,0 +1,19 @@
+Control different stepmotors.
+C0:C3
+bipolar 2 coil: mode0,mode1 C0:C2 coil1 C1:C3 coil2 (via LM298 or so)
+monopolar 4 coil: C0:C1:C2:C3
+
+Optocouplers suggested.
+
+Modes: (var 'm')
+ 0: 4-phases half-step
+ 1: 4-phases full-step
+ 2: 3-phases half-step
+ 3: 3-phases full-step
+
+
+
+Console: used USART2 with FT232RL-alike board.
+PA2  = USART2_TX
+PA3  = USART2_RX
+
