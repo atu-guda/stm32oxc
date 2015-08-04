@@ -41,18 +41,26 @@ bool OneWire::gcmd( const uint8_t *addr, uint8_t cmd,
   } else {
     write1byte( CMD_SKIP_ROM );
   }
+
   write1byte( cmd );
+
   if( snd && s_sz ) {
     write_buf( snd, s_sz );
   }
+
   if( rcv && r_sz ) {
     read_buf( rcv, r_sz );
-  }
+  } else {
+    return true;
+  };
+
   if( !check_crc ) {
     return true;
   }
-  uint8_t cr = crc( rcv, r_sz );
-  return cr == rcv[r_sz-1];
+
+  uint8_t cr = calcCrc( rcv, r_sz );
+
+  return (cr == rcv[r_sz-1] );
 }
 
 bool OneWire::searchRom( const uint8_t *snd, uint8_t *rcv, uint16_t r_sz  )
@@ -66,7 +74,7 @@ bool OneWire::searchRom( const uint8_t *snd, uint8_t *rcv, uint16_t r_sz  )
   if( !check_crc ) {
     return true;
   }
-  uint8_t cr = crc( rcv, r_sz );
+  uint8_t cr = calcCrc( rcv, r_sz );
   return cr == rcv[r_sz-1];
 }
 
@@ -80,7 +88,7 @@ bool OneWire::readRom( uint8_t *rcv, uint16_t r_sz  )
   if( !check_crc ) {
     return true;
   }
-  uint8_t cr = crc( rcv, r_sz );
+  uint8_t cr = calcCrc( rcv, r_sz );
   return cr == rcv[r_sz-1];
 }
 
@@ -94,14 +102,14 @@ bool OneWire::skipRom( uint8_t cmd, uint8_t *rcv, uint16_t r_sz  )
   return gcmd( nullptr, cmd, nullptr, 0, rcv, r_sz );
 }
 
-uint8_t OneWire::crc( const uint8_t *b, uint16_t l )
+uint8_t OneWire::calcCrc( const uint8_t *b, uint16_t l )
 {
   uint8_t crc = 0;
 
-  while( --l ) {
-    uint8_t ib = *b++;
-    for( uint8_t i = 8; i; --i ) {
-      uint8_t mx = ( crc ^ ib) & 0x01;
+  for( uint16_t j=0; j<l-1; ++j ) {
+    uint8_t ib = b[j];
+    for( uint8_t i = 0; i<8; ++i ) {
+      uint8_t mx = ( crc ^ ib ) & 0x01;
       crc >>= 1;
       if( mx ) {
         crc ^= 0x8C;

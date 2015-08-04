@@ -51,7 +51,7 @@ class OneWire {
    bool readRom( uint8_t *rcv, uint16_t r_sz = 8  );
    bool matchRom( const uint8_t *addr, uint8_t cmd, uint8_t *rcv, uint16_t r_sz );
    bool skipRom( uint8_t cmd, uint8_t *rcv, uint16_t r_sz );
-   static uint8_t crc( const uint8_t *b, uint16_t l );
+   static uint8_t calcCrc( const uint8_t *b, uint16_t l );
    void set_check_crc( bool a_set ) { check_crc = a_set; }
    int getErr() const { return err; }
   protected:

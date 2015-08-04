@@ -2,17 +2,13 @@
 #include <cstdlib>
 
 #include <oxc_gpio.h>
-#include <oxc_usbcdcio.h>
+#include <oxc_usartio.h>
 #include <oxc_console.h>
 #include <oxc_debug1.h>
 #include <oxc_common1.h>
 #include <oxc_smallrl.h>
 
 #include <oxc_onewire.h>
-
-#include "usbd_desc.h"
-#include <usbd_cdc.h>
-#include <usbd_cdc_interface.h>
 
 #include <FreeRTOS.h>
 #include <task.h>
@@ -21,13 +17,12 @@
 using namespace std;
 using namespace SMLRL;
 
-// PinsOut p1 { GPIOC, 0, 4 };
+// PinsOut p1 { GPIOE, 8, 8 };
 BOARD_DEFINE_LEDS;
 
-UsbcdcIO usbcdc;
 
 
-const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
+const int def_stksz = 1 * configMINIMAL_STACK_SIZE;
 
 SmallRL srl( smallrl_print, smallrl_exec );
 
@@ -51,10 +46,16 @@ extern "C" {
 void task_main( void *prm UNUSED_ARG );
 }
 
-IoPin pin_wire1( GPIOE, GPIO_PIN_15 );
+IoPin pin_wire1( GPIOC, GPIO_PIN_0 );
 OneWire wire1( pin_wire1 );
 
-STD_USBCDC_SEND_TASK( usbcdc );
+UART_HandleTypeDef uah;
+UsartIO usartio( &uah, USART2 );
+int init_uart( UART_HandleTypeDef *uahp, int baud = 115200 );
+
+STD_USART2_SEND_TASK( usartio );
+// STD_USART2_RECV_TASK( usartio );
+STD_USART2_IRQ( usartio );
 
 int main(void)
 {
@@ -63,10 +64,14 @@ int main(void)
   SystemClock_Config();
   leds.initHW();
 
+  leds.write( 0x0F );  delay_bad_ms( 200 );
+  if( !init_uart( &uah ) ) {
+    die4led( 0x08 );
+  }
+  leds.write( 0x0A );  delay_bad_ms( 200 );
+
   pin_wire1.initHW();
   wire1.initHW();
-
-  leds.write( 0x0F );  delay_bad_ms( 200 );
   leds.write( 0x00 );
 
   user_vars['t'-'a'] = 1000;
@@ -76,8 +81,8 @@ int main(void)
 
   //           code               name    stack_sz      param  prty TaskHandle_t*
   xTaskCreate( task_leds,        "leds", 1*def_stksz, nullptr,   1, nullptr );
-  xTaskCreate( task_usbcdc_send, "send", 2*def_stksz, nullptr,   2, nullptr );  // 2
-  xTaskCreate( task_main,        "main", 2*def_stksz, nullptr,   1, nullptr );
+  xTaskCreate( task_usart2_send, "send", 1*def_stksz, nullptr,   2, nullptr );  // 2
+  xTaskCreate( task_main,        "main", 1*def_stksz, nullptr,   1, nullptr );
   xTaskCreate( task_gchar,      "gchar", 2*def_stksz, nullptr,   1, nullptr );
 
   vTaskStartScheduler();
@@ -92,15 +97,21 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
 {
   uint32_t nl = 0;
 
-  usbcdc.init();
-  usbcdc.setOnSigInt( sigint );
-  devio_fds[0] = &usbcdc; // stdin
-  devio_fds[1] = &usbcdc; // stdout
-  devio_fds[2] = &usbcdc; // stderr
   delay_ms( 50 );
+  user_vars['t'-'a'] = 1000;
+
+  usartio.itEnable( UART_IT_RXNE );
+  usartio.setOnSigInt( sigint );
+  devio_fds[0] = &usartio; // stdin
+  devio_fds[1] = &usartio; // stdout
+  devio_fds[2] = &usartio; // stderr
 
   delay_ms( 10 );
+
   wire1.initHW();
+  // wire1.set_check_crc( 0 ); // TEST?
+
+
   pr( "*=*** Main loop: ****** " NL );
   delay_ms( 20 );
 
@@ -144,7 +155,10 @@ int cmd_test0( int argc, const char * const * argv )
   pr( "name: \"" ); pr( nm ); pr( "\"" NL );
 
   // log_add( "Test0 " );
-  // TickType_t tc0 = xTaskGetTickCount();
+  TickType_t tc0 = xTaskGetTickCount();
+  delay_bad_mcs( 1000000 );
+  TickType_t tc1 = xTaskGetTickCount() - tc0;
+  pr_sdx( tc1 )
 
   break_flag = 0;
   bool out_flag = user_vars['o'-'a'];
@@ -174,7 +188,7 @@ int cmd_test0( int argc, const char * const * argv )
 
 int cmd_1wire0( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
 {
-  uint8_t buf[12], addr[12];
+  uint8_t buf[16], addr[16];
   pr( NL "1wire test start." NL );
 
   bool have_dev = wire1.reset();
@@ -188,27 +202,31 @@ int cmd_1wire0( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
   pr( ok ? "readRom OK" NL  : "readRom FAIL!!!" NL );
   dump8( addr, 8 );
 
-
   ok = wire1.skipRom( OneWire::CMD_READ_SPAD, buf, 9 ); //  really need 9
   pr( ok ? "READ_SPAD OK" NL  : "READSPAD FAIL!!!" NL );
   dump8( buf, 12 );
 
+  pr( NL "Sending 'Convert T' " );
   wire1.skipRom( 0x44, nullptr, 0 ); // convert T
+  pr(  " and wait.." );
   delay_ms( 1000 );
+  pr( ". done" NL );
+  delay_ms( 20 );
 
   wire1.skipRom( OneWire::CMD_READ_SPAD, buf, 9 ); // read buf
   dump8( buf, 12 );
+  delay_ms( 10 );
   int te = buf[0] + (buf[1] << 8);
   pr_sdx( te );
   te *= 1000; te /= 16;
   pr_sdx( te );
 
-  wire1.matchRom( addr, OneWire::CMD_READ_SPAD, buf, 9 ); // read buf with addr
-  dump8( buf, 12 );
-  addr[1] = 0xFF; // bad addr
-  ok = wire1.matchRom( addr, OneWire::CMD_READ_SPAD, buf, 9 ); // read buf with addr
-  pr( ok ? "READ_SPAD OK" NL  : "READSPAD FAIL!!!" NL );
-  dump8( buf, 12 );
+  // wire1.matchRom( addr, OneWire::CMD_READ_SPAD, buf, 9 ); // read buf with addr
+  // dump8( buf, 12 );
+  // addr[1] = 0xFF; // bad addr
+  // ok = wire1.matchRom( addr, OneWire::CMD_READ_SPAD, buf, 9 ); // read buf with addr
+  // pr( ok ? "READ_SPAD OK" NL  : "READSPAD FAIL!!!" NL );
+  // dump8( buf, 12 );
 
   wire1.eot();
   delay_ms( 100 );

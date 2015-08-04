@@ -104,9 +104,9 @@ typedef const char *const ccstr;
   #define T_MS_MUL  7979
   #define T_S_MUL   10261378
 #elif REQ_SYSCLK_FREQ == 72
-  #define T_MKS_MUL    8
+  #define T_MKS_MUL 9
   #define T_MS_MUL  7979
-  #define T_S_MUL   10261378
+  #define T_S_MUL   10259736
 #elif REQ_SYSCLK_FREQ == 168
   #define T_MKS_MUL 32
   #define T_MS_MUL  33845
