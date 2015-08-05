@@ -11,6 +11,7 @@
 #define N_USER_VARS  ('z' - 'a' + 1 )
 // user vars
 extern int user_vars[N_USER_VARS];
+#define UVAR(c) (user_vars[(c)-'a'])
 
 // general buffers
 #define GBUF_SZ 256

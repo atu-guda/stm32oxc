@@ -91,7 +91,7 @@ LDFLAGS += -Wl,--start-group -lc -lgcc -lnosys -Wl,--end-group
 
 ALLFLAGS += -I. -I$(STMINC)
 
-SRCPATHS =  $(STMSRC) $(STMSRC)/templates
+SRCPATHS =  $(STMSRC) $(STMSRC)/templates $(ADDSRC)
 
 ifeq "$(USE_OXC)" "y"
   SRCPATHS += $(OXCSRC)

@@ -1,0 +1,12 @@
+Test onboard LSM303DHLC accel + compas via I2C1.
+
+SCL = B6 + 10k pullUp on board
+SDA = B7 + 10k pullUp on board
+
+Some other pins connected:
+E2 = DRDY, E4 = INT1, E5 = INT2 (seems unused now)
+
+Console via USART2 with FT232RL-alike board.
+PA2  = USART2_TX
+PA3  = USART2_RX
+
