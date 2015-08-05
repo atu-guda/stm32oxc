@@ -58,6 +58,7 @@ STD_USART2_IRQ( usartio );
 
 // --------------------- peripherals defs --------------------------
 
+// TODO: to board file
 #define ACCELERO_I2C_ADDRESS             0x32
 
 #define ACCELERO_DRDY_PIN                GPIO_PIN_2                  /* PE.02 */
@@ -105,16 +106,14 @@ int main(void)
   }
   leds.write( 0x0A );  delay_bad_ms( 200 );
 
-  // HAL_UART_Transmit( &uah, (uint8_t*)"START\r\n", 7, 100 );
-
   MX_I2C1_Init( i2ch );
   i2ch_dbg = &i2ch;
 
 
   leds.write( 0x00 );
 
-  user_vars['t'-'a'] = 1000;
-  user_vars['n'-'a'] = 10;
+  UVAR('t') = 1000;
+  UVAR('n') = 10;
 
   global_smallrl = &srl;
 
@@ -137,7 +136,6 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
   uint32_t nl = 0;
 
   delay_ms( 50 );
-  user_vars['t'-'a'] = 1000;
 
   usartio.itEnable( UART_IT_RXNE );
   usartio.setOnSigInt( sigint );
@@ -210,42 +208,43 @@ uint8_t BSP_ACCELERO_Init(void)
 {
   uint8_t ret = ACCELERO_ERROR;
   uint16_t ctrl = 0x0000;
-  ACCELERO_InitTypeDef acclel_istr;
-  ACCELERO_FilterConfigTypeDef LSM303DLHC_FilterStructure;
+  ACCELERO_InitTypeDef accel_cfg;
+  ACCELERO_FilterConfigTypeDef filter_cfg;
 
   if( Lsm303dlhcDrv.ReadID() == I_AM_LMS303DLHC ) {
     AccelerometerDrv = &Lsm303dlhcDrv;
 
     /* MEMS configuration ------------------------------------------------------*/
-    acclel_istr.Power_Mode = LSM303DLHC_NORMAL_MODE;
-    acclel_istr.AccOutput_DataRate = LSM303DLHC_ODR_50_HZ;
-    acclel_istr.Axes_Enable= LSM303DLHC_AXES_ENABLE;
-    acclel_istr.AccFull_Scale = LSM303DLHC_FULLSCALE_2G;
-    acclel_istr.BlockData_Update = LSM303DLHC_BlockUpdate_Continous;
-    acclel_istr.Endianness = LSM303DLHC_BLE_LSB;
-    acclel_istr.High_Resolution = LSM303DLHC_HR_ENABLE;
+    accel_cfg.Power_Mode = LSM303DLHC_NORMAL_MODE;
+    accel_cfg.AccOutput_DataRate = LSM303DLHC_ODR_50_HZ;
+    accel_cfg.Axes_Enable= LSM303DLHC_AXES_ENABLE;
+    accel_cfg.AccFull_Scale = LSM303DLHC_FULLSCALE_2G;
+    // accel_cfg.AccFull_Scale = LSM303DLHC_FULLSCALE_8G;
+    accel_cfg.BlockData_Update = LSM303DLHC_BlockUpdate_Continous;
+    accel_cfg.Endianness = LSM303DLHC_BLE_LSB;
+    accel_cfg.High_Resolution = LSM303DLHC_HR_ENABLE;
 
     /* Configure MEMS: data rate, power mode, full scale and axes */
-    ctrl |= (acclel_istr.Power_Mode | acclel_istr.AccOutput_DataRate | \
-        acclel_istr.Axes_Enable);
+    ctrl |= (accel_cfg.Power_Mode | accel_cfg.AccOutput_DataRate | \
+        accel_cfg.Axes_Enable);
 
-    ctrl |= ((acclel_istr.BlockData_Update | acclel_istr.Endianness | \
-              acclel_istr.AccFull_Scale | acclel_istr.High_Resolution) << 8);
+    ctrl |= ((accel_cfg.BlockData_Update | accel_cfg.Endianness | \
+              accel_cfg.AccFull_Scale | accel_cfg.High_Resolution) << 8);
 
     /* Configure the accelerometer main parameters */
     AccelerometerDrv->Init(ctrl);
 
     /* Fill the accelerometer LPF structure */
-    LSM303DLHC_FilterStructure.HighPassFilter_Mode_Selection = LSM303DLHC_HPM_NORMAL_MODE;
-    LSM303DLHC_FilterStructure.HighPassFilter_CutOff_Frequency = LSM303DLHC_HPFCF_16;
-    LSM303DLHC_FilterStructure.HighPassFilter_AOI1 = LSM303DLHC_HPF_AOI1_DISABLE;
-    LSM303DLHC_FilterStructure.HighPassFilter_AOI2 = LSM303DLHC_HPF_AOI2_DISABLE;
+    filter_cfg.HighPassFilter_Mode_Selection = LSM303DLHC_HPM_NORMAL_MODE;
+    filter_cfg.HighPassFilter_CutOff_Frequency = LSM303DLHC_HPFCF_16;
+    filter_cfg.HighPassFilter_AOI1 = LSM303DLHC_HPF_AOI1_DISABLE;
+    filter_cfg.HighPassFilter_AOI2 = LSM303DLHC_HPF_AOI2_DISABLE;
 
     /* Configure MEMS: mode, cutoff frquency, Filter status, Click, AOI1 and AOI2 */
-    ctrl = (uint8_t) (LSM303DLHC_FilterStructure.HighPassFilter_Mode_Selection |\
-        LSM303DLHC_FilterStructure.HighPassFilter_CutOff_Frequency|\
-        LSM303DLHC_FilterStructure.HighPassFilter_AOI1|\
-        LSM303DLHC_FilterStructure.HighPassFilter_AOI2);
+    ctrl = (uint8_t) (filter_cfg.HighPassFilter_Mode_Selection |\
+        filter_cfg.HighPassFilter_CutOff_Frequency|\
+        filter_cfg.HighPassFilter_AOI1|\
+        filter_cfg.HighPassFilter_AOI2);
 
     /* Configure the accelerometer LPF main parameters */
     AccelerometerDrv->FilterConfig( ctrl );
@@ -258,11 +257,6 @@ uint8_t BSP_ACCELERO_Init(void)
   return ret;
 }
 
-/**
- * @brief  Reboot memory content of ACCELEROMETER
- * @param  None
- * @retval None
- */
 void BSP_ACCELERO_Reset(void)
 {
   if( AccelerometerDrv->Reset != NULL )  {
@@ -270,18 +264,19 @@ void BSP_ACCELERO_Reset(void)
   }
 }
 
-/**
- * @brief  Get XYZ acceleration
- * @param pDataXYZ Pointeur on 3 angular accelerations
- *                 pDataXYZ[0] = X axis, pDataXYZ[1] = Y axis, pDataXYZ[2] = Z axis
- * @retval None
- */
-void BSP_ACCELERO_GetXYZ(int16_t *pDataXYZ)
+void BSP_ACCELERO_GetXYZ( int16_t *pDataXYZ )
 {
   if( AccelerometerDrv->GetXYZ != NULL )  {
-    AccelerometerDrv->GetXYZ(pDataXYZ);
+    AccelerometerDrv->GetXYZ( pDataXYZ );
   }
 }
+
+// void BSP_COMPAS_GetXYZ( int16_t *pDataXYZ )
+// {
+//   if( CompasDrv->GetXYZ != NULL )  {
+//     CompasDrv->GetXYZ( pDataXYZ );
+//   }
+// }
 
 void COMPASSACCELERO_IO_Init(void)
 {
@@ -314,11 +309,6 @@ void COMPASSACCELERO_IO_Init(void)
   // I2Cx_Init();
 }
 
-/**
- * @brief  Configures COMPASS / ACCELERO click IT
- * @param  None
- * @retval None
- */
 void COMPASSACCELERO_IO_ITConfig(void)
 {
   // GPIO_InitTypeDef GPIO_InitStructure;
@@ -339,14 +329,7 @@ void COMPASSACCELERO_IO_ITConfig(void)
 
 }
 
-/**
- * @brief  Writes one byte to the COMPASS / ACCELEROMETER.
- * @param  DeviceAddr : specifies the slave address to be programmed.
- * @param  RegisterAddr specifies the COMPASS / ACCELEROMETER register to be written.
- * @param  Value : Data to be written
- * @retval   None
- */
-void COMPASSACCELERO_IO_Write(uint16_t DeviceAddr, uint8_t RegisterAddr, uint8_t v )
+void COMPASSACCELERO_IO_Write( uint16_t DeviceAddr, uint8_t RegisterAddr, uint8_t v )
 {
   HAL_StatusTypeDef status = HAL_OK;
 
@@ -359,12 +342,6 @@ void COMPASSACCELERO_IO_Write(uint16_t DeviceAddr, uint8_t RegisterAddr, uint8_t
   }
 }
 
-/**
- * @brief  Reads a block of data from the COMPASS / ACCELEROMETER.
- * @param  DeviceAddr : specifies the slave address to be programmed(ACC_I2C_ADDRESS or MAG_I2C_ADDRESS).
- * @param  RegisterAddr : specifies the COMPASS / ACCELEROMETER internal address register to read from
- * @retval ACCELEROMETER register value
- */
 uint8_t COMPASSACCELERO_IO_Read(uint16_t DeviceAddr, uint8_t RegisterAddr)
 {
   HAL_StatusTypeDef status = HAL_OK;
@@ -373,7 +350,7 @@ uint8_t COMPASSACCELERO_IO_Read(uint16_t DeviceAddr, uint8_t RegisterAddr)
   status = HAL_I2C_Mem_Read( &i2ch, DeviceAddr, RegisterAddr, I2C_MEMADD_SIZE_8BIT,
       &v, 1, 100 /*I2cxTimeout*/ );
 
-  if(status != HAL_OK)  {
+  if( status != HAL_OK )  {
     errno = 101;
     return 0;
     // I2Cx_Error();
