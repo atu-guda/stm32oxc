@@ -1,3 +1,12 @@
+DevIO : public Dev
+Envelop FreeRTOS queue to class (may be with abstract parent)
+Or replace queues with buffers with locks.
+I2C class
+IO on idle / manual flush.
+Errno of fd check
+weak common functions.
+SMLRL::u2_3dig - up to common
 Common UART init
+Test: float coast, sprintf coast.
 Move more common code to common dir.
 
