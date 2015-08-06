@@ -12,10 +12,6 @@
 
 #include <oxc_ssd1306.h>
 
-#include "usbd_desc.h"
-#include <usbd_cdc.h>
-#include <usbd_cdc_interface.h>
-
 #include <FreeRTOS.h>
 #include <task.h>
 #include <queue.h>

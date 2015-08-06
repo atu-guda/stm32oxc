@@ -2,7 +2,6 @@ DevIO : public Dev
 I2C class
 IO on idle / manual flush.
 Errno of fd check
-weak common functions.
 SMLRL::u2_3dig - up to common
 Common UART init
 Test: float, sprintf, queue cost.

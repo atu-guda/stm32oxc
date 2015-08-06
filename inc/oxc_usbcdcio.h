@@ -4,7 +4,6 @@
 #include <oxc_devio.h>
 
 #include <usbd_cdc.h>
-#include <usbd_cdc_interface.h>
 
 extern PCD_HandleTypeDef hpcd;
 extern USBD_DescriptorsTypeDef VCP_Desc;
