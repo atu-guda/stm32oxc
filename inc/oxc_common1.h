@@ -10,16 +10,16 @@
 extern volatile int task_leds_step; // initial = 5
 
 // SmallRL storage and config
-int smallrl_print( const char *s, int l );
-int smallrl_exec( const char *s, int l );
-void smallrl_sigint(void); // unused?
-void sigint(int v);
+int smallrl_print( const char *s, int l ) __weak;
+int smallrl_exec( const char *s, int l ) __weak;
+void smallrl_sigint(void) __weak; // unused?
+void sigint(int v) __weak;
 
 
 extern "C" {
 
-void task_leds( void *prm UNUSED_ARG );
-void task_gchar( void *prm UNUSED_ARG );
+void task_leds( void *prm UNUSED_ARG ) __weak;
+void task_gchar( void *prm UNUSED_ARG ) __weak;
 
 }
 

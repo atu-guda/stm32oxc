@@ -1,52 +1,22 @@
 PROJ_NAME=i2c_lcdt
-MCTYPE = STM32F303
-
-MCINCTYPE = $(MCTYPE)xx
-
-LINK=$(CXX)
 
 USE_OXC = y
+# USE_OXC_DEVIO = y
+USE_OXC_DEBUG = y
+USE_OXC_CONSOLE_USART = y
+USE_OXC_CONSOLE_USB_CDC = n
 USE_FREERTOS = y
-NO_STDLIB = y
+# FREERTOS_HEAP = heap_2.c
+# # default: heap_3.c
 # USE_USB_DEFAULT_CDC = y
 
 # TODO: copy to main location
 OXCDIR = /home/atu/proj/stm32/oxc
 
-CFLAGS_ADD := -D$(MCINCTYPE) -DSTM32F303xC -DHSE_VALUE=8000000
-CFLAGS_ADD += -Wno-unused-parameter
-#
-LDSCRIPT = $(STMLD)/STM32F303VC_FLASH.ld
-
 SRCS  = main.cpp
-SRCS += stm32f3xx_hal_msp.cpp
-SRCS += system_stm32f3xx.c
-SRCS += startup_stm32f303xc.s
 
-SRCS += stm32f3_clock_HSE072b.c
-
-SRCS += oxc_base.cpp
-SRCS += oxc_gpio.cpp
-SRCS += oxc_devio.cpp
-SRCS += oxc_rtosqueue.cpp
-SRCS += oxc_osfun.cpp
-SRCS += oxc_console.cpp
-SRCS += oxc_debug1.cpp
 SRCS += oxc_debug_i2c.cpp
 SRCS += oxc_hd44780_i2c.cpp
-SRCS += oxc_usartio.cpp
-#SRCS += oxc_usbcdcio.cpp
-SRCS += oxc_smallrl.cpp
-# SRCS += oxc_smallrl_q.cpp
-SRCS += oxc_common1.cpp
-#SRCS += oxc_i2c.cpp
-
-# stm32cube sources.
-# Base:
-SRCS += stm32f3xx_hal.c
-SRCS += stm32f3xx_hal_cortex.c
-SRCS += stm32f3xx_hal_gpio.c
-SRCS += stm32f3xx_hal_rcc.c
 
 # aux:
 # SRCS += stm32f3xx_hal_adc.c
@@ -97,21 +67,7 @@ SRCS += stm32f3xx_hal_uart.c
 # SRCS += stm32f3xx_hal_wwdg.c
 # SRCS += stm32f3xx_ll_fmc.c
 
-
-# FreeRTOS: rtos/Source -> /usr/share/FreeRTOS/Source
-#SRCS += croutine.c
-SRCS += list.c
-SRCS += queue.c
-SRCS += tasks.c
-#SRCS += timers.c
-# symlink to Source/portable/GCC/ARM_CM3/port.c <<< change
-#SRCS += heap_2.c
-SRCS += heap_3.c
-# symlink to Source/portable/GCC/ARM_CM4F/port.c <<< change
-SRCS += port.c
-# Beware: portmacro.h is symlink to
-#   rtos/Source/portable/GCC/ARM_CM3/portmacro.h or CM4F
-
+include ../common/board_add.mk
 include $(OXCDIR)/mk/common_cortex.mk
 # ../../../mk/common_cortex.mk
 

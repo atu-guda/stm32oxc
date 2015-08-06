@@ -8,11 +8,18 @@
 #ifndef __STM32F4xx_HAL_CONF_H
 #define __STM32F4xx_HAL_CONF_H
 
+// for oxc lib: just to check
+#define REQ_MCBASE STM32F4
+#define REQ_SYSCLK_FREQ 168
+
+#include <bsp/board_stm32f407_atu_x2.h>
+
+// not use with FreeRTOS
+#define STD_SYSTICK_HANDLER 1
+
 #ifdef __cplusplus
  extern "C" {
 #endif
-
-void SysTick_Handler(void);
 
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/

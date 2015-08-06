@@ -26,13 +26,13 @@ RTINC=$(RTSRC)/include
 
 ###################################################
 
-ALLFLAGS := -g3 -O2
+ALLFLAGS  = -g3 -O2
 ALLFLAGS += -Wall -Wextra -Wundef
 ALLFLAGS += -fno-common -ffunction-sections -fdata-sections
+ALLFLAGS += -D$(MCINCTYPE) -DHSE_VALUE=$(HSE_VALUE)
 CWARNFLAGS := -Wimplicit-function-declaration -Wmissing-prototypes -Wstrict-prototypes -Wno-unused-parameter
-CWARNFLAGS += -Wno-unused-parameter
+CXXWARNFLAGS := -Wno-unused-parameter
 
-#ALLFLAGS += -DUSE_STDPERIPH_DRIVER=1
 ALLFLAGS += -DPROJ_NAME=\"$(PROJ_NAME)\"
 ALLFLAGS += -ffreestanding
 ALLFLAGS += -mlittle-endian
@@ -93,18 +93,81 @@ ALLFLAGS += -I. -I$(STMINC)
 
 SRCPATHS =  $(STMSRC) $(STMSRC)/templates $(ADDSRC)
 
+ifeq "$(USE_OXC_CONSOLE_USART)" "y"
+  $(info "Used USART console" )
+  USE_OXC_CONSOLE = y
+  SRCS += oxc_usartio.cpp
+endif
+
+ifeq "$(USE_OXC_CONSOLE_USB_CDC)" "y"
+  $(info "Used USB_CDC console" )
+  USE_OXC_CONSOLE = y
+  SRCS += oxc_usbcdcio.cpp
+endif
+
+ifeq "$(USE_OXC_CONSOLE)" "y"
+  $(info "Used console" )
+  USE_OXC_DEVIO = y
+  SRCS += oxc_console.cpp
+  SRCS += oxc_smallrl.cpp
+  SRCS += oxc_common1.cpp
+else
+  $(info "NOT Used console" )
+  ifeq "$(USE_OXC_DEBUG)" "y"
+    $(warning "Console must be used if debug is in use")
+  endif
+endif
+
+ifeq "$(USE_OXC_DEVIO)" "y"
+  $(info "Used DEVIO" )
+  USE_OXC = y
+  SRCS += oxc_devio.cpp
+  SRCS += oxc_rtosqueue.cpp
+  ifneq "$(USE_FREERTOS)" "y"
+    $(warning "FreeRTOS must be used if DevIO is in use")
+  endif
+endif
+
+ifeq "$(USE_OXC_DEBUG)" "y"
+  SRCS += oxc_debug1.cpp
+endif
+
+
 ifeq "$(USE_OXC)" "y"
   SRCPATHS += $(OXCSRC)
   ALLFLAGS += -I$(OXCINC)
+  SRCS += oxc_base.cpp
+  SRCS += oxc_gpio.cpp
+  SRCS += oxc_osfun.cpp
 endif
 
 ifeq "$(USE_FREERTOS)" "y"
   SRCPATHS += $(RTSRC) $(RTDIR)
   ALLFLAGS += -I$(RTINC) -DUSE_FREERTOS
+  ifndef FREERTOS_HEAP
+    FREERTOS_HEAP = heap_3.c
+  endif
+  # rtos -> /usr/share/FreeRTOS
+  #SRCS += croutine.c
+  SRCS += list.c
+  SRCS += queue.c
+  SRCS += tasks.c
+  SRCS += timers.c
+  # symlink to Source/portable/GCC/ARM_CM3/port.c <<< change
+  SRCS += $(FREERTOS_HEAP)
+  # symlink to Source/portable/GCC/ARM_CM4F/port.c <<< change
+  SRCS += port.c
+  # Beware: portmacro.h is symlink to
+  #  rtos/Source/portable/GCC/ARM_CM3/portmacro.h or CM4F
 endif
 
 ifeq "$(USE_FONTS)" "y"
   SRCPATHS += $(STMSRC)/fonts
+  SRCS += font8.c
+  SRCS += font12.c
+  SRCS += font16.c
+  SRCS += font20.c
+  SRCS += font24.c
 endif
 
 
@@ -132,8 +195,8 @@ OBJS0 = $(OBJS0a:.c=.o)
 OBJS  = $(OBJS0:.s=.o)
 OBJS1 = $(addprefix $(OBJDIR)/,$(OBJS))
 
-CFLAGS   = $(ALLFLAGS)  -std=c11 $(CWARNFLAGS)
-CXXFLAGS = $(ALLFLAGS)  -std=c++11 -fno-rtti -fno-exceptions -fno-threadsafe-statics
+CFLAGS   = $(ALLFLAGS)  -std=c11   $(CWARNFLAGS)
+CXXFLAGS = $(ALLFLAGS)  -std=c++11 $(CXXWARNFLAGS) -fno-rtti -fno-exceptions -fno-threadsafe-statics
 
 ###################################################
 

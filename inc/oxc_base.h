@@ -52,6 +52,15 @@
 
 #define UNUSED_ARG __attribute__((unused))
 
+#if defined ( __GNUC__ )
+  #ifndef __weak
+    #define __weak   __attribute__((weak))
+  #endif
+  #ifndef __packed
+    #define __packed __attribute__((__packed__))
+  #endif
+#endif
+
 
 #define PORT_BITS 16
 #define BIT0  0x0001

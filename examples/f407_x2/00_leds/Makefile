@@ -1,39 +1,24 @@
 PROJ_NAME=leds
-MCTYPE = STM32F407
 
-MCINCTYPE = $(MCTYPE)xx
-
-LINK=$(CC)
 
 USE_OXC = y
+# USE_OXC_DEVIO = y
+USE_OXC_DEBUG = n
+USE_OXC_CONSOLE_USART = n
+USE_OXC_CONSOLE_USB_CDC = n
 USE_FREERTOS = n
-NO_STDLIB = y
+# FREERTOS_HEAP = heap_2.c
+# # default: heap_3.c
+# USE_USB_DEFAULT_CDC = y
+
 
 # TODO: copy to main location
 OXCDIR = /home/atu/proj/stm32/oxc
 
-#CFLAGS_ADD := -DSTM32F407xx -DHSE_VALUE=8000000
-CFLAGS_ADD := -D$(MCINCTYPE) -DHSE_VALUE=8000000
-#
-LDSCRIPT = $(STMLD)/STM32F407VE_FLASH.ld
 
 SRCS  = main.c
-SRCS += stm32f4xx_hal_msp.c
-SRCS += system_stm32f4xx.c
-SRCS += startup_stm32f407xx.s
-#SRCS += ox_base.cpp
-#SRCS += ox_dev.cpp
-#SRCS += ox_console.cpp
-#SRCS += ox_debug1.cpp
-#SRCS += ox_gpio.cpp
-#SRCS += ox_i2c.cpp
 
-# stm32cube sources.
-# Base:
-SRCS += stm32f4xx_hal.c
-SRCS += stm32f4xx_hal_cortex.c
-SRCS += stm32f4xx_hal_gpio.c
-SRCS += stm32f4xx_hal_rcc.c
+#SRCS += ox_i2c.cpp
 
 # aux:
 # SRCS += stm32f4xx_hal_adc.c
@@ -98,6 +83,7 @@ SRCS += stm32f4xx_hal_rcc.c
 # SRCS += stm32f4xx_ll_usb.c
 
 
+include ../common/board_add.mk
 include $(OXCDIR)/mk/common_cortex.mk
 # ../../../mk/common_cortex.mk
 
