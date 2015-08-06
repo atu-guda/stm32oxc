@@ -162,7 +162,7 @@ $(OBJDIR)/%.o: %.s
 
 
 $(PROJ_NAME).elf: $(OBJS1)
-	$(LINK) $^ $(LDFLAGS) -o $@
+	$(LINK) $^ $(LDFLAGS) $(LIBS) -o $@
 	$(OBJCOPY) -O ihex $(PROJ_NAME).elf $(PROJ_NAME).hex
 	$(OBJCOPY) -O binary $(PROJ_NAME).elf $(PROJ_NAME).bin
 	$(OBJDUMP) -h -f -d -S $(PROJ_NAME).elf > $(PROJ_NAME).lst

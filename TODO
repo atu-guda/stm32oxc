@@ -7,6 +7,13 @@ Errno of fd check
 weak common functions.
 SMLRL::u2_3dig - up to common
 Common UART init
-Test: float coast, sprintf coast.
+Test: float, sprintf, queue cost.
+  result: queue =~ size * n + fixed; (RAM)
+  float: +3k (FLASH)
+  sin: +4k
+  sqrt: +0.5;
+  arm_sin_f32: up to 2x faster
+  printf: +16k
+
 Move more common code to common dir.
 

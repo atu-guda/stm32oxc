@@ -63,13 +63,13 @@ int main(void)
   }
   leds.write( 0x0A );  delay_bad_ms( 200 );
 
-  HAL_UART_Transmit( &uah, (uint8_t*)"START\r\n", 7, 100 );
+  // HAL_UART_Transmit( &uah, (uint8_t*)"START\r\n", 7, 100 );
 
-  usartio.sendStrSync( "0123456789---main()---ABCDEF" NL );
+  // usartio.sendStrSync( "0123456789---main()---ABCDEF" NL );
   leds.write( 0x00 );
 
-  user_vars['t'-'a'] = 1000;
-  user_vars['n'-'a'] = 10;
+  UVAR('t') = 1000;
+  UVAR('n') = 10;
 
   global_smallrl = &srl;
 
@@ -82,8 +82,6 @@ int main(void)
   vTaskStartScheduler();
   die4led( 0xFF );
 
-
-
   return 0;
 }
 
@@ -92,7 +90,6 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
   uint32_t nl = 0;
 
   delay_ms( 50 );
-  user_vars['t'-'a'] = 1000;
 
   usartio.itEnable( UART_IT_RXNE );
   usartio.setOnSigInt( sigint );
@@ -100,7 +97,7 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
   devio_fds[1] = &usartio; // stdout
   devio_fds[2] = &usartio; // stderr
 
-  usartio.sendStrSync( "0123456789ABCDEF" NL );
+  // usartio.sendStrSync( "0123456789ABCDEF" NL );
   delay_ms( 50 );
   pr( "*=*** Main loop: ****** " NL );
   delay_ms( 20 );
@@ -130,8 +127,8 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  int n = user_vars['n'-'a'];
-  uint32_t t_step = user_vars['t'-'a'];
+  int n = UVAR('n');
+  uint32_t t_step = UVAR('t');
   if( argc > 1 ) {
     n = strtol( argv[1], 0, 0 );
   }
@@ -162,7 +159,7 @@ int cmd_test0( int argc, const char * const * argv )
   pr( NL );
 
   delay_ms( 10 );
-  break_flag = 0;
+  break_flag = 0;  idle_flag = 1;
 
   pr( NL "test0 end." NL );
   return 0;

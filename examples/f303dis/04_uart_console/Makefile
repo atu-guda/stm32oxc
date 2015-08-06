@@ -14,7 +14,8 @@ NO_STDLIB = y
 OXCDIR = /home/atu/proj/stm32/oxc
 
 CFLAGS_ADD := -D$(MCINCTYPE) -DSTM32F303xC -DHSE_VALUE=8000000
-CFLAGS_ADD += -Wno-unused-parameter
+# CFLAGS_ADD += -DARM_MATH_CM4 -D__FPU_PRESENT=1
+# LIBS       += -L$(STMDIR)/lib -larm_cortexM4l_math
 #
 LDSCRIPT = $(STMLD)/STM32F303VC_FLASH.ld
 
