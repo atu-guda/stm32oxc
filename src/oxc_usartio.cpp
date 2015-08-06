@@ -58,7 +58,7 @@ void UsartIO::handleIRQ()
     if( status & ( UART_FLAG_ORE | UART_FLAG_FE /*| UART_FLAG_LBD*/ ) ) { // TODO: on MCU
       err = status;
     } else {
-      xQueueSendFromISR( ibuf, &cr, &wake  );
+      ibuf.sendFromISR( &cr, &wake  );
     }
     // leds.reset( BIT2 );
   }
@@ -67,7 +67,7 @@ void UsartIO::handleIRQ()
   if( on_transmit  &&  (status & UART_FLAG_TXE) ) {
     // leds.set( BIT0 );
     ++n_work;
-    qrec = xQueueReceiveFromISR( obuf, &cs, &wake );
+    qrec = obuf.recvFromISR( &cs, &wake );
     if( qrec == pdTRUE ) {
       sendRaw( cs );
     } else {
@@ -95,7 +95,7 @@ void UsartIO::task_send()
   }
 
   char ct;
-  BaseType_t ts = xQueueReceive( obuf, &ct, wait_tx );
+  BaseType_t ts = obuf.recv( &ct, wait_tx );
   if( ts == pdTRUE ) {
     on_transmit = true;
     // leds.toggle( BIT1 ); // DEBUG

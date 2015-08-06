@@ -1,6 +1,4 @@
 DevIO : public Dev
-Envelop FreeRTOS queue to class (may be with abstract parent)
-Or replace queues with buffers with locks.
 I2C class
 IO on idle / manual flush.
 Errno of fd check

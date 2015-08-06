@@ -1,10 +1,7 @@
 #ifndef _OXC_DEVIO_H
 #define _OXC_DEVIO_H
 
-#include <oxc_base.h>
-
-#include <FreeRTOS.h>
-#include <queue.h>
+#include <oxc_rtosqueue.h>
 
 
 class DevIO {
@@ -18,9 +15,9 @@ class DevIO {
      RX_BUF_SIZE = 256  //* low-level receive buffer size, buffer itself - only if required
    };
 
-   DevIO()
-     : ibuf( xQueueCreate( IBUF_SZ, 1 ) ),
-       obuf( xQueueCreate( OBUF_SZ, 1 ) )
+   DevIO( unsigned ibuf_sz = IBUF_SZ, unsigned obuf_sz = OBUF_SZ )
+     : ibuf( ibuf_sz, 1 ),
+       obuf( obuf_sz, 1 )
     {};
    virtual ~DevIO();
    virtual void reset();
@@ -56,8 +53,8 @@ class DevIO {
    // void initIRQ( uint8_t ch, uint8_t prio ); // TODO:? store ch
   protected:
    // TODO: open mode + flags
-   QueueHandle_t ibuf;
-   QueueHandle_t obuf;
+   RtosQueue ibuf;
+   RtosQueue obuf;
    OnRecvFun onRecv = nullptr;
    SigFun onSigInt = nullptr;
    int err = 0;

@@ -28,6 +28,7 @@ SRCS += stm32f3_clock_HSE072b.c
 SRCS += oxc_base.cpp
 SRCS += oxc_gpio.cpp
 SRCS += oxc_devio.cpp
+SRCS += oxc_rtosqueue.cpp
 SRCS += oxc_osfun.cpp
 SRCS += oxc_console.cpp
 SRCS += oxc_debug1.cpp

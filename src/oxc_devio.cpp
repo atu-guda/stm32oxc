@@ -10,14 +10,12 @@ volatile int break_flag = 0;
 DevIO::~DevIO()
 {
   reset();
-  vQueueDelete( obuf );
-  vQueueDelete( ibuf );
 }
 
 void DevIO::reset()
 {
-  xQueueReset( ibuf );
-  xQueueReset( obuf );
+  ibuf.reset();
+  obuf.reset();
 }
 
 int DevIO::sendBlock( const char *s, int l )
@@ -29,7 +27,7 @@ int DevIO::sendBlock( const char *s, int l )
   int ns = 0, sst;
 
   for( int i=0; i<l; ++i ) {
-    sst = xQueueSend( obuf, &(s[i]), wait_tx );
+    sst = obuf.send( &(s[i]), wait_tx );
     if( sst != pdTRUE ) {
       err = 10;
       break;
@@ -49,7 +47,7 @@ int DevIO::recvByte( char *b, int w_tick )
   if( !b ) { return 0; }
 
   char c;
-  BaseType_t r = xQueueReceive( ibuf, &c, w_tick );
+  BaseType_t r = ibuf.recv( &c, w_tick );
   if( r == pdTRUE ) {
     *b = c;
     return 1;
@@ -65,7 +63,7 @@ void DevIO::task_send()
   int wait_now = wait_tx;
   char ct;
   for( ns=0; ns<TX_BUF_SIZE; ++ns ) {
-    BaseType_t ts = xQueueReceive( obuf, &ct, wait_now );
+    BaseType_t ts = obuf.recv( &ct, wait_now );
     if( ts != pdTRUE ) { break; };
     tx_buf[ns] = ct;
     wait_now = 0;
@@ -78,7 +76,7 @@ void DevIO::task_recv()
 {
   // leds.set( BIT2 );
   char cr;
-  BaseType_t ts = xQueueReceive( ibuf, &cr, wait_rx );
+  BaseType_t ts = ibuf.recv( &cr, wait_rx );
   if( ts == pdTRUE ) {
     if( onRecv != nullptr ) {
       onRecv( &cr, 1 );
@@ -96,7 +94,7 @@ void DevIO::charsFromIrq( const char *s, int l )
     if( s[i] == 3  && onSigInt ) { // handle Ctrl-C = 3
       onSigInt( s[i] );
     } else {
-      xQueueSendFromISR( ibuf, s+i, &wake  );
+      ibuf.sendFromISR( s+i, &wake  );
     }
   }
   portEND_SWITCHING_ISR( wake );

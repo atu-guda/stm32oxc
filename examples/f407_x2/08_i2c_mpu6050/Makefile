@@ -27,11 +27,12 @@ SRCS += startup_stm32f407xx.s
 SRCS += stm32f4_clock_HSE168.c
 
 SRCS += oxc_base.cpp
+SRCS += oxc_gpio.cpp
 SRCS += oxc_devio.cpp
+SRCS += oxc_rtosqueue.cpp
 SRCS += oxc_osfun.cpp
 SRCS += oxc_console.cpp
 SRCS += oxc_debug1.cpp
-SRCS += oxc_gpio.cpp
 SRCS += oxc_debug_i2c.cpp
 SRCS += oxc_mpu6050.cpp
 #SRCS += oxc_hd44780_i2c.cpp
