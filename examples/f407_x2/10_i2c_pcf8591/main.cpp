@@ -74,8 +74,8 @@ int main(void)
 
   leds.write( 0x00 );
 
-  user_vars['t'-'a'] = 1000;
-  user_vars['n'-'a'] = 10;
+  UVAR('t') = 1000;
+  UVAR('n') = 10;
 
   global_smallrl = &srl;
 
@@ -138,7 +138,7 @@ int cmd_test0( int argc, const char * const * argv )
   pr( NL "Test0: n= " ); pr_d( n ); pr( " t= " ); pr_d( t_step );
   pr( NL );
 
-  int v_end = user_vars['e'-'a'];
+  int v_end = UVAR('e');
 
   PCF8591 adc( i2ch );
   adc.setMode( PCF8591::autoinc | PCF8591::mode_4in | PCF8591::out_en );

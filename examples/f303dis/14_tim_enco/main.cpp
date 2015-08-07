@@ -66,8 +66,8 @@ int main(void)
 
   leds.write( 0x00 );
 
-  user_vars['t'-'a'] = 10;
-  user_vars['n'-'a'] = 2000;
+  UVAR('t') = 10;
+  UVAR('n') = 2000;
 
   global_smallrl = &srl;
 
@@ -183,7 +183,7 @@ void init_enco()
   enco_cfg.IC2Filter      = 0x0F; /// 0-F
 
   if( HAL_TIM_Encoder_Init( &tim8h, &enco_cfg ) != HAL_OK ) {
-    user_vars['e'-'a'] = 1;
+    UVAR('e') = 1;
     return;
   }
   HAL_TIM_Encoder_Start( &tim8h, TIM_CHANNEL_ALL );

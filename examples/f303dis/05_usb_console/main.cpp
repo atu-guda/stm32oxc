@@ -56,8 +56,8 @@ int main(void)
   // leds.write( 0x00 );
   leds.write( 0x00 );  delay_bad_ms( 500 );
 
-  user_vars['t'-'a'] = 1000;
-  user_vars['n'-'a'] = 10;
+  UVAR('t') = 1000;
+  UVAR('n') = 10;
 
   global_smallrl = &srl;
 

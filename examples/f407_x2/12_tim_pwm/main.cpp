@@ -64,11 +64,11 @@ int main(void)
   leds.write( 0x0F );  delay_bad_ms( 200 );
   leds.write( 0x00 );
 
-  user_vars['t'-'a'] = 1000;
-  user_vars['n'-'a'] = 10;
-  user_vars['p'-'a'] = 16799;// prescaler, 168MHz->10kHz
-  user_vars['a'-'a'] = 9999; // ARR, 10kHz->1Hz
-  user_vars['r'-'a'] = 0;    // flag: raw values
+  UVAR('t') = 1000;
+  UVAR('n') = 10;
+  UVAR('p') = 16799;// prescaler, 168MHz->10kHz
+  UVAR('a') = 9999; // ARR, 10kHz->1Hz
+  UVAR('r') = 0;    // flag: raw values
 
   global_smallrl = &srl;
 
@@ -167,12 +167,12 @@ int cmd_tinit( int argc, const char * const * argv )
 void tim1_cfg()
 {
   tim1h.Instance = TIM1;
-  tim1h.Init.Prescaler = user_vars['p'-'a'];
-  tim1h.Init.Period    = user_vars['a'-'a'];
+  tim1h.Init.Prescaler = UVAR('p');
+  tim1h.Init.Period    = UVAR('a');
   tim1h.Init.ClockDivision = 0;
   tim1h.Init.CounterMode = TIM_COUNTERMODE_UP;
   if( HAL_TIM_PWM_Init( &tim1h ) != HAL_OK ) {
-    user_vars['e'-'a'] = 1; // like error
+    UVAR('e') = 1; // like error
     return;
   }
 
@@ -182,56 +182,56 @@ void tim1_cfg()
 
 void pwm_recalc()
 {
-  int pbase = user_vars['a'-'a'];
+  int pbase = UVAR('a');
   tim_oc_cfg.OCMode = TIM_OCMODE_PWM1;
   tim_oc_cfg.OCPolarity = TIM_OCPOLARITY_HIGH;
   tim_oc_cfg.OCFastMode = TIM_OCFAST_DISABLE;
   tim_oc_cfg.Pulse = pwm_vals[0] * pbase / 100;
   if( HAL_TIM_PWM_ConfigChannel( &tim1h, &tim_oc_cfg, TIM_CHANNEL_1 ) != HAL_OK ) {
-    user_vars['e'-'a'] = 11;
+    UVAR('e') = 11;
     return;
   }
   tim_oc_cfg.Pulse =  pwm_vals[1] * pbase / 100;
   if( HAL_TIM_PWM_ConfigChannel( &tim1h, &tim_oc_cfg, TIM_CHANNEL_2 ) != HAL_OK ) {
-    user_vars['e'-'a'] = 12;
+    UVAR('e') = 12;
     return;
   }
   tim_oc_cfg.Pulse =  pwm_vals[2] * pbase / 100;
   if( HAL_TIM_PWM_ConfigChannel( &tim1h, &tim_oc_cfg, TIM_CHANNEL_3 ) != HAL_OK ) {
-    user_vars['e'-'a'] = 13;
+    UVAR('e') = 13;
     return;
   }
   tim_oc_cfg.Pulse =  pwm_vals[3] * pbase / 100;
   if( HAL_TIM_PWM_ConfigChannel( &tim1h, &tim_oc_cfg, TIM_CHANNEL_4 ) != HAL_OK ) {
-    user_vars['e'-'a'] = 14;
+    UVAR('e') = 14;
     return;
   }
 
   if( HAL_TIM_PWM_Start( &tim1h, TIM_CHANNEL_1 ) != HAL_OK ) {
-    user_vars['e'-'a'] = 21;
+    UVAR('e') = 21;
     return;
   }
   if( HAL_TIM_PWM_Start( &tim1h, TIM_CHANNEL_2 ) != HAL_OK ) {
-    user_vars['e'-'a'] = 22;
+    UVAR('e') = 22;
     return;
   }
   if( HAL_TIM_PWM_Start( &tim1h, TIM_CHANNEL_3 ) != HAL_OK ) {
-    user_vars['e'-'a'] = 23;
+    UVAR('e') = 23;
     return;
   }
   if( HAL_TIM_PWM_Start( &tim1h, TIM_CHANNEL_4 ) != HAL_OK ) {
-    user_vars['e'-'a'] = 24;
+    UVAR('e') = 24;
     return;
   }
 }
 
 void pwm_update()
 {
-  tim1h.Instance->PSC  = user_vars['p'-'a'];
-  int pbase = user_vars['a'-'a'];
+  tim1h.Instance->PSC  = UVAR('p');
+  int pbase = UVAR('a');
   tim1h.Instance->ARR  = pbase;
   int scl = pbase;
-  if( user_vars['r'-'a'] ) { // raw values
+  if( UVAR('r') ) { // raw values
     scl = 100;
   }
   tim1h.Instance->CCR1 = pwm_vals[0] * scl / 100;
@@ -242,8 +242,8 @@ void pwm_update()
 
 void pwm_print_cfg()
 {
-  int presc = user_vars['p'-'a'];
-  int arr   = user_vars['a'-'a'];
+  int presc = UVAR('p');
+  int arr   = UVAR('a');
   int freq1 = 84000000 * 2  / ( presc + 1 ); // *2 : if APB2 prescaler != 1 (=2)
   int freq2 = freq1 / ( arr + 1 );
   pr( NL "TIM1 reinit: prescale: " ); pr_d( presc );

@@ -65,8 +65,8 @@ int main(void)
   leds.write( 0x0F );  delay_bad_ms( 200 );
   leds.write( 0x00 );
 
-  user_vars['t'-'a'] = 1000;
-  user_vars['n'-'a'] = 10;
+  UVAR('t') = 1000;
+  UVAR('n') = 10;
 
   global_smallrl = &srl;
 
@@ -140,7 +140,7 @@ int cmd_test0( int argc, const char * const * argv )
   // TickType_t tc0 = xTaskGetTickCount();
 
   break_flag = 0;
-  bool out_flag = user_vars['o'-'a'];
+  bool out_flag = UVAR('o');
   for( int i=0; i<n && !break_flag; ++i ) {
     pin_wire1.set_sw0( i & 1 );
     if( out_flag ) {

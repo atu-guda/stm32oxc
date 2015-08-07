@@ -74,8 +74,8 @@ int main(void)
   wire1.initHW();
   leds.write( 0x00 );
 
-  user_vars['t'-'a'] = 1000;
-  user_vars['n'-'a'] = 10;
+  UVAR('t') = 1000;
+  UVAR('n') = 10;
 
   global_smallrl = &srl;
 
@@ -98,7 +98,6 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
   uint32_t nl = 0;
 
   delay_ms( 50 );
-  user_vars['t'-'a'] = 1000;
 
   usartio.itEnable( UART_IT_RXNE );
   usartio.setOnSigInt( sigint );
@@ -158,7 +157,7 @@ int cmd_test0( int argc, const char * const * argv )
   pr_sdx( tc1 )
 
   break_flag = 0;
-  bool out_flag = user_vars['o'-'a'];
+  bool out_flag = UVAR('o');
   for( int i=0; i<n && !break_flag; ++i ) {
     pin_wire1.set_sw0( i & 1 );
     if( out_flag ) {

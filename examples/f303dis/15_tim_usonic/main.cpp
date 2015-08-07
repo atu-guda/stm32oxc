@@ -69,8 +69,8 @@ int main(void)
 
   leds.write( 0x00 );
 
-  user_vars['t'-'a'] = 1000;
-  user_vars['n'-'a'] = 20;
+  UVAR('t') = 1000;
+  UVAR('n') = 20;
 
   global_smallrl = &srl;
 
@@ -93,7 +93,6 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
   uint32_t nl = 0;
 
   delay_ms( 50 );
-  user_vars['t'-'a'] = 1000;
 
   usartio.itEnable( UART_IT_RXNE );
   usartio.setOnSigInt( sigint );
@@ -146,7 +145,7 @@ int cmd_test0( int argc, const char * const * argv )
 
   for( int i=0; i<n && !break_flag; ++i ) {
     pr( "[" ); pr_d( i );
-    pr( "]  l= " ); pr_d( user_vars['l'-'a'] );
+    pr( "]  l= " ); pr_d( UVAR('l') );
     pr( NL );
     vTaskDelayUntil( &tc0, t_step );
     // delay_ms( t_step );
@@ -173,7 +172,7 @@ void init_usonic()
   tim8h.Init.CounterMode       = TIM_COUNTERMODE_UP;
   tim8h.Init.RepetitionCounter = 0;
   if( HAL_TIM_PWM_Init( &tim8h ) != HAL_OK ) {
-    user_vars['e'-'a'] = 1; // like error
+    UVAR('e') = 1; // like error
     return;
   }
 
@@ -183,11 +182,11 @@ void init_usonic()
   tim_oc_cfg.OCFastMode = TIM_OCFAST_DISABLE;
   tim_oc_cfg.Pulse = 3; // 3 = appex 16 mks
   if( HAL_TIM_PWM_ConfigChannel( &tim8h, &tim_oc_cfg, TIM_CHANNEL_1 ) != HAL_OK ) {
-    user_vars['e'-'a'] = 11;
+    UVAR('e') = 11;
     return;
   }
   if( HAL_TIM_PWM_Start( &tim8h, TIM_CHANNEL_1 ) != HAL_OK ) {
-    user_vars['e'-'a'] = 12;
+    UVAR('e') = 12;
     return;
   }
 
@@ -200,7 +199,7 @@ void init_usonic()
 
   if( HAL_TIM_IC_ConfigChannel( &tim8h, &tim_ic_cfg, TIM_CHANNEL_2 ) != HAL_OK )
   {
-    user_vars['e'-'a'] = 21;
+    UVAR('e') = 21;
     return;
   }
 
@@ -208,7 +207,7 @@ void init_usonic()
   HAL_NVIC_EnableIRQ( TIM8_CC_IRQn );
 
   if( HAL_TIM_IC_Start_IT( &tim8h, TIM_CHANNEL_2 ) != HAL_OK ) {
-    user_vars['e'-'a'] = 23;
+    UVAR('e') = 23;
   }
 }
 
@@ -224,12 +223,12 @@ void HAL_TIM_IC_CaptureCallback( TIM_HandleTypeDef *htim )
   if( htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2 )  {
     cap2 = HAL_TIM_ReadCapturedValue( htim, TIM_CHANNEL_2 );
     if( cap2 > c_old ) {
-      user_vars['l'-'a'] = cap2 - c_old ;
+      UVAR('l') = cap2 - c_old ;
     }
     c_old = cap2;
 
-    user_vars['m'-'a'] = cap2;
-    user_vars['z'-'a'] = htim->Instance->CNT;
+    UVAR('m') = cap2;
+    UVAR('z') = htim->Instance->CNT;
   }
 }
 

@@ -74,11 +74,11 @@ int main(void)
 
   leds.write( 0x00 );
 
-  user_vars['t'-'a'] = 1000;
-  user_vars['n'-'a'] = 10;
-  user_vars['p'-'a'] = 14399;// prescaler, 144MHz->10kHz
-  user_vars['a'-'a'] = 9999; // ARR, 10kHz->1Hz
-  user_vars['r'-'a'] = 0;    // flag: raw values
+  UVAR('t') = 1000;
+  UVAR('n') = 10;
+  UVAR('p') = 14399;// prescaler, 144MHz->10kHz
+  UVAR('a') = 9999; // ARR, 10kHz->1Hz
+  UVAR('r') = 0;    // flag: raw values
 
   global_smallrl = &srl;
 
@@ -101,7 +101,6 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
   uint32_t nl = 0;
 
   delay_ms( 50 );
-  user_vars['t'-'a'] = 1000;
 
   usartio.itEnable( UART_IT_RXNE );
   usartio.setOnSigInt( sigint );
@@ -185,24 +184,24 @@ void tim8_cfg()
   // TIM_MasterConfigTypeDef sMasterConfig;
 
   tim8h.Instance = TIM8;
-  tim8h.Init.Prescaler =  user_vars['p'-'a'];
+  tim8h.Init.Prescaler =  UVAR('p');
   tim8h.Init.CounterMode = TIM_COUNTERMODE_UP;
-  tim8h.Init.Period =  user_vars['a'-'a'];
+  tim8h.Init.Period =  UVAR('a');
   tim8h.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   tim8h.Init.RepetitionCounter = 0;
 
   if( HAL_TIM_PWM_Init( &tim8h ) != HAL_OK ) {
-    user_vars['e'-'a'] = 1; // like error
+    UVAR('e') = 1; // like error
     return;
   }
 
   // if( HAL_TIM_OC_Init( &tim8h ) != HAL_OK ) {
-  //   user_vars['e'-'a'] = 5;
+  //   UVAR('e') = 5;
   //   return;
   // }
   //
   // if( HAL_TIM_IC_Init( &tim8h ) != HAL_OK ) {
-  //   user_vars['e'-'a'] = 7;
+  //   UVAR('e') = 7;
   //   return;
   // }
 
@@ -226,7 +225,7 @@ void tim8_cfg()
   // tim_oc_cfg.OCFastMode = TIM_OCFAST_DISABLE;
   // tim_oc_cfg.Pulse = tim8h.Init.Period /2;
   // if( HAL_TIM_PWM_ConfigChannel( &tim8h, &tim_oc_cfg, TIM_CHANNEL_1 ) != HAL_OK ) {
-  //   user_vars['e'-'a'] = 9;
+  //   UVAR('e') = 9;
   //   return;
   // };
   // HAL_TIM_PWM_ConfigChannel( &tim8h, &tim_oc_cfg, TIM_CHANNEL_2 );
@@ -258,7 +257,7 @@ void tim8_cfg()
 void pwm_recalc()
 {
   TIM_OC_InitTypeDef tim_oc_cfg;
-  int pbase = user_vars['a'-'a'];
+  int pbase = UVAR('a');
   tim_oc_cfg.OCMode = TIM_OCMODE_PWM1;
   tim_oc_cfg.OCPolarity = TIM_OCPOLARITY_HIGH;
   tim_oc_cfg.OCFastMode = TIM_OCFAST_DISABLE;
@@ -270,7 +269,7 @@ void pwm_recalc()
     HAL_TIM_PWM_Stop( &tim8h, channels[i] );
     tim_oc_cfg.Pulse = pwm_vals[i] * pbase / 100;
     if( HAL_TIM_PWM_ConfigChannel( &tim8h, &tim_oc_cfg, channels[i] ) != HAL_OK ) {
-      user_vars['e'-'a'] = 11+i;
+      UVAR('e') = 11+i;
       return;
     }
     HAL_TIM_PWM_Start( &tim8h, channels[i] );
@@ -280,11 +279,11 @@ void pwm_recalc()
 
 void pwm_update()
 {
-  tim8h.Instance->PSC  = user_vars['p'-'a'];
-  int pbase = user_vars['a'-'a'];
+  tim8h.Instance->PSC  = UVAR('p');
+  int pbase = UVAR('a');
   tim8h.Instance->ARR  = pbase;
   int scl = pbase;
-  if( user_vars['r'-'a'] ) { // raw values
+  if( UVAR('r') ) { // raw values
     scl = 100;
   }
   tim8h.Instance->CCR1 = pwm_vals[0] * scl / 100;
@@ -295,8 +294,8 @@ void pwm_update()
 
 void pwm_print_cfg()
 {
-  int presc = user_vars['p'-'a'];
-  int arr   = user_vars['a'-'a'];
+  int presc = UVAR('p');
+  int arr   = UVAR('a');
   int freq1 = 72000000 * 2  / ( presc + 1 ); // *2 : if APB2 prescaler != 1 (=2)
   int freq2 = freq1 / ( arr + 1 );
   pr( NL "TIM8 reinit: prescale: " ); pr_d( presc );

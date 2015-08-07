@@ -76,8 +76,8 @@ int main(void)
 
   leds.write( 0x00 );
 
-  user_vars['t'-'a'] = 1000;
-  user_vars['n'-'a'] = 10;
+  UVAR('t') = 1000;
+  UVAR('n') = 10;
 
   global_smallrl = &srl;
 
@@ -100,7 +100,6 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
   uint32_t nl = 0;
 
   delay_ms( 50 );
-  user_vars['t'-'a'] = 1000;
 
   usartio.itEnable( UART_IT_RXNE );
   usartio.setOnSigInt( sigint );
