@@ -5,7 +5,7 @@
 #include <oxc_debug1.h>
 #include <oxc_i2c.h>
 
-extern I2C_HandleTypeDef *i2ch_dbg;
+// extern I2C_HandleTypeDef *i2ch_dbg;
 extern DevI2C *i2c_dbg;
 
 

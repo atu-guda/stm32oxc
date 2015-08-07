@@ -59,6 +59,7 @@ void task_main( void *prm UNUSED_ARG );
 }
 
 I2C_HandleTypeDef i2ch;
+DevI2C i2cd( &i2ch, 0 ); // zero add means no real device
 
 
 
@@ -97,7 +98,7 @@ int main(void)
   i2ch.Init.OwnAddress1     = 0;
   i2ch.Init.OwnAddress2     = 0;
   HAL_I2C_Init( &i2ch );
-  i2ch_dbg = &i2ch;
+  i2c_dbg = &i2cd;
 
 
   leds.write( 0x00 );

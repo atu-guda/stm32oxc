@@ -17,6 +17,8 @@ class DevI2C  {
    void initI2C( uint32_t speed = default_i2c_speed, uint8_t own_addr = 0 );
    void deInit();
    void resetDev();
+   void setAddr( uint8_t addr ) { addr2 = addr << 1; }
+   uint8_t getAddr() const { return addr2>>1; }
    I2C_HandleTypeDef* dev() { return i2ch; };
    bool  ping( uint8_t addr = 0 ); // 0 means addr2
    // returns: >0 = N of send/recv bytes, <0 - error

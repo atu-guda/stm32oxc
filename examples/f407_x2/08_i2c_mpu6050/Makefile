@@ -14,9 +14,10 @@ USE_USB_DEFAULT_CDC = y
 OXCDIR = /home/atu/proj/stm32/oxc
 
 SRCS  = main.cpp
+
+SRCS += oxc_i2c.cpp
 SRCS += oxc_debug_i2c.cpp
 SRCS += oxc_mpu6050.cpp
-#SRCS += oxc_i2c.cpp
 
 # aux:
 # SRCS += stm32f4xx_hal_adc.c
@@ -79,6 +80,7 @@ SRCS += stm32f4xx_hal_pcd.c
 # SRCS += stm32f4xx_ll_fsmc.c
 # SRCS += stm32f4xx_ll_sdmmc.c
 # SRCS += stm32f4xx_ll_usb.c
+
 
 SRCS += stm32f4xx_ll_usb.c
 SRCS += stm32f4xx_hal_pcd_ex.c

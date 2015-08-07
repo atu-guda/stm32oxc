@@ -51,8 +51,8 @@ extern "C" {
 void task_main( void *prm UNUSED_ARG );
 }
 
-#define RESET_I2C  __HAL_I2C_DISABLE( &i2ch ); delay_ms( 10 ); __HAL_I2C_ENABLE( &i2ch );  delay_ms( 10 );
 I2C_HandleTypeDef i2ch;
+DevI2C i2cd( &i2ch, 0 ); // zero add means no real device
 DS3231 rtc( i2ch );
 void MX_I2C1_Init( I2C_HandleTypeDef &i2c );
 
@@ -77,13 +77,8 @@ int main(void)
   }
   leds.write( 0x0A );  delay_bad_ms( 200 );
 
-  // HAL_UART_Transmit( &uah, (uint8_t*)"START\r\n", 7, 100 );
-
-  usartio.sendStrSync( "0123456789---main()---ABCDEF" NL );
-
   MX_I2C1_Init( i2ch );
-  i2ch_dbg = &i2ch;
-
+  i2c_dbg = &i2cd;
 
   leds.write( 0x00 );
 
@@ -152,7 +147,7 @@ int cmd_test0( int argc, const char * const * argv )
   pr( NL "Test0: n= " ); pr_d( n ); pr( " t= " ); pr_d( t_step );
   pr( NL );
 
-  RESET_I2C;
+  i2cd.resetDev();
   char time_buf[10], date_buf[14];
   uint8_t t_hour, t_min, t_sec;
 

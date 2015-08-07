@@ -16,8 +16,9 @@ USE_FONTS = y
 OXCDIR = /home/atu/proj/stm32/oxc
 
 SRCS  = main.cpp
+
+SRCS += oxc_i2c.cpp
 SRCS += oxc_debug_i2c.cpp
-#SRCS += oxc_i2c.cpp
 SRCS += oxc_pixbuf.cpp
 SRCS += oxc_pixbuf1v.cpp
 SRCS += oxc_ssd1306.cpp
@@ -70,8 +71,6 @@ SRCS += stm32f3xx_hal_uart.c
 # SRCS += stm32f3xx_hal_usart.c
 # SRCS += stm32f3xx_hal_wwdg.c
 # SRCS += stm32f3xx_ll_fmc.c
-
-
 
 include ../common/board_add.mk
 include $(OXCDIR)/mk/common_cortex.mk

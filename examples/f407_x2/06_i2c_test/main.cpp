@@ -44,6 +44,7 @@ void task_main( void *prm UNUSED_ARG );
 }
 
 I2C_HandleTypeDef i2ch;
+DevI2C i2cd( &i2ch, 0 ); // zero add means no real device
 
 STD_USBCDC_SEND_TASK( usbcdc );
 
@@ -68,7 +69,7 @@ int main(void)
   i2ch.Init.OwnAddress1     = 0;
   i2ch.Init.OwnAddress2     = 0;
   HAL_I2C_Init( &i2ch );
-  i2ch_dbg = &i2ch;
+  i2c_dbg = &i2cd;
 
 
   leds.write( 0x00 );
@@ -136,28 +137,19 @@ int cmd_test0( int argc, const char * const * argv )
   int en_a = arg2long_d( 2, argc, argv, 127, st_a, 127 );
   pr( NL "Test0: st_a= " ); pr_h( st_a ); pr( " en_a= " ); pr_h( en_a );
   pr( NL );
-  __HAL_I2C_DISABLE( &i2ch );
-  delay_ms( 50 );
-  __HAL_I2C_ENABLE( &i2ch );
-  delay_ms( 50 );
+  i2cd.resetDev();
 
   // uint8_t val;
   int i_err;
   for( uint8_t ad = (uint16_t)st_a; ad <= (uint16_t)en_a && ! break_flag; ++ad ) {
-    uint16_t ad2 = ad << 1;
-    // HAL_StatusTypeDef rc = HAL_I2C_Master_Transmit( &i2ch, ad, &val, 1, 200 );
-    HAL_StatusTypeDef rc = HAL_I2C_IsDeviceReady( &i2ch, ad2, 3, 200 );
-    i_err = i2ch.ErrorCode;
-    // pr( "ad = " ); pr_h( ad ); pr( "  rc= " ); pr_d( rc ) ; pr( "  err= " ); pr_d( i_err ); pr(NL);
+    bool rc = i2cd.ping( ad );
+    i_err = i2cd.getErr();
     delay_ms( 10 );
-    if( rc != HAL_OK ) {
+    if( !rc ) {
       continue;
     }
     pr( "ad = " ); pr_h( ad ); pr( "  rc= " ); pr_d( rc ) ; pr( "  err= " ); pr_d( i_err ); pr(NL);
-    // pr( NL "************************************ " );
-    // pr_shx( ad );
   }
-
 
   pr( NL );
 

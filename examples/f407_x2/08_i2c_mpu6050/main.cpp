@@ -17,8 +17,6 @@
 using namespace std;
 using namespace SMLRL;
 
-#define RESET_I2C  __HAL_I2C_DISABLE( &i2ch ); delay_ms( 10 ); __HAL_I2C_ENABLE( &i2ch );  delay_ms( 10 );
-
 // PinsOut p1 { GPIOC, 0, 4 };
 BOARD_DEFINE_LEDS;
 
@@ -51,6 +49,7 @@ void task_main( void *prm UNUSED_ARG );
 }
 
 I2C_HandleTypeDef i2ch;
+DevI2C i2cd( &i2ch, 0 ); // zero add means no real device
 MPU6050 accel( i2ch );
 
 STD_USBCDC_SEND_TASK( usbcdc );
@@ -76,7 +75,7 @@ int main(void)
   i2ch.Init.OwnAddress1     = 0;
   i2ch.Init.OwnAddress2     = 0;
   HAL_I2C_Init( &i2ch );
-  i2ch_dbg = &i2ch;
+  i2c_dbg = &i2cd;
 
 
   leds.write( 0x00 );
@@ -152,7 +151,7 @@ int cmd_test0( int argc, const char * const * argv )
 
   int16_t adata[MPU6050::mpu6050_alldata_sz];
   // accel.sleep();
-  RESET_I2C;
+  i2cd.resetDev();
   accel.setDLP( MPU6050::DLP_BW::bw_10 );
   accel.init();
 

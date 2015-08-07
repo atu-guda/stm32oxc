@@ -4,22 +4,17 @@
 #include <oxc_debug_i2c.h>
 
 
-I2C_HandleTypeDef *i2ch_dbg = nullptr;
 DevI2C *i2c_dbg = nullptr;
 
-// timeout
-#define I2C_TO 100
-#define RESET_I2C  __HAL_I2C_DISABLE( i2ch_dbg ); delay_ms( 10 ); __HAL_I2C_ENABLE( i2ch_dbg );  delay_ms( 10 );
-
-static const char i2c_nodev_msg[] = NL "I2C debug device (i2ch_dbg) is not set!" NL;
+static const char i2c_nodev_msg[] = NL "I2C debug device (i2c_dbg) is not set!" NL;
 #define CHECK_I2C_DEV \
-  if( !i2ch_dbg ) { \
+  if( !i2c_dbg ) { \
     pr( i2c_nodev_msg ); \
     return 2; \
   }
 #define I2C_PRINT_STATUS  pr( NL "I2C status " ); pr_d( rc ); \
-  pr( NL "state: " ); pr_d( HAL_I2C_GetState( i2ch_dbg ) ); \
-  pr( NL "error: " ); pr_d( HAL_I2C_GetError( i2ch_dbg ) ); \
+  pr( NL "state: " ); pr_d( i2c_dbg->getState() ); \
+  pr( NL "error: " ); pr_d( i2c_dbg->getErr() ); \
   pr( NL );
 
 int cmd_i2c_scan( int argc, const char * const * argv )
@@ -31,26 +26,20 @@ int cmd_i2c_scan( int argc, const char * const * argv )
   pr( " ; " ); pr_d( addr_end ); pr( " ] " NL );
   CHECK_I2C_DEV;
 
-  RESET_I2C;
+  i2c_dbg->resetDev();
 
   for( uint8_t addr=addr_start; addr < addr_end; ++addr ) {
-    uint16_t ad2 = addr << 1;
-    // init_i2c();
-    HAL_StatusTypeDef rc = HAL_I2C_IsDeviceReady( i2ch_dbg, ad2, 3, I2C_TO );
-    int i_err = i2ch_dbg->ErrorCode;
+    bool rc = i2c_dbg->ping( addr );
+    int i_err = i2c_dbg->getErr();
     delay_ms( 10 );
-    if( rc != HAL_OK ) {
+    if( !rc ) {
       continue;
     }
     pr_d( addr ); pr( " (0x" ); pr_h( addr ); pr( ") " );
     pr(" : " );      pr_d( i_err ); pr( NL );
   }
 
-  // ev  = i2c_dbg.getEv();
-  // pr_shx( ev );
-
   pr( NL "I2C scan end." NL );
-
   return 0;
 }
 CmdInfo CMDINFO_I2C_SCAN {
@@ -68,17 +57,15 @@ int cmd_i2c_send( int argc, const char * const * argv )
   uint8_t v = arg2long_d( 1, argc, argv, 0, 255 );
 
   uint16_t addr = arg2long_d( 2, argc, argv, (uint16_t)(UVAR('p')), 0, 127 );
-  uint16_t addr2 = addr<<1;
 
   pr( NL "I2C Send  " ); pr_d( v );
   pr( " to " ); pr_h( addr ); pr( NL );
 
-  RESET_I2C;
+  i2c_dbg->resetDev();
 
-  HAL_StatusTypeDef rc = HAL_I2C_Master_Transmit( i2ch_dbg, addr2, &v, 1, I2C_TO );
+  i2c_dbg->setAddr( addr );
+  int rc = i2c_dbg->send( v );
   I2C_PRINT_STATUS;
-
-  // i2c_print_status( i2c_dbg );
 
   return 0;
 }
@@ -95,16 +82,16 @@ int cmd_i2c_send_r1( int argc, const char * const * argv )
     return -1;
   }
   uint16_t addr = (uint16_t)(UVAR('p'));
-  uint16_t addr2 = addr<<1;
   uint8_t reg = (uint8_t) strtol( argv[1], 0, 0 );
   uint8_t val = (uint8_t) strtol( argv[2], 0, 0 );
 
   pr( NL "I2C Send  " ); pr_d( val );
   pr( " to " ); pr_h( addr ); pr( ": " ); pr_h( reg ); pr( NL );
 
-  RESET_I2C;
+  i2c_dbg->resetDev();
 
-  HAL_StatusTypeDef rc = HAL_I2C_Mem_Write( i2ch_dbg, addr2, reg, I2C_MEMADD_SIZE_8BIT, &val, 1, I2C_TO );
+  i2c_dbg->setAddr( addr );
+  int rc = i2c_dbg->send_reg1( reg, &val, 1 );
   I2C_PRINT_STATUS;
 
   // i2c_print_status( i2c_dbg );
@@ -123,19 +110,17 @@ int cmd_i2c_send_r2( int argc, const char * const * argv )
     return -1;
   }
   uint8_t addr = (uint8_t)(UVAR('p'));
-  uint16_t addr2 = addr<<1;
   uint16_t reg = (uint16_t) strtol( argv[1], 0, 0 );
   uint8_t  val = (uint8_t) strtol( argv[2], 0, 0 );
 
   pr( NL "I2C Send  r2: " ); pr_d( val );
   pr( " to " ); pr_h( addr ); pr( ": " ); pr_h( reg ); pr( NL );
 
-  RESET_I2C;
+  i2c_dbg->resetDev();
 
-  HAL_StatusTypeDef rc = HAL_I2C_Mem_Write( i2ch_dbg, addr2, reg, I2C_MEMADD_SIZE_16BIT, &val, 1, I2C_TO );
+  i2c_dbg->setAddr( addr );
+  int rc = i2c_dbg->send_reg2( reg, &val, 1 );
   I2C_PRINT_STATUS;
-
-  // i2c_print_status( i2c_dbg );
 
   return 0;
 }
@@ -147,38 +132,20 @@ CmdInfo CMDINFO_I2C_SEND_R2 {
 int cmd_i2c_recv( int argc, const char * const * argv )
 {
   CHECK_I2C_DEV;
-  // uint8_t v = 0;
-  uint8_t  addr = (uint8_t)(UVAR('p'));
-  long l;
-  int nr = 1;
-  char *eptr;
 
-  if( argc > 1 ) {
-    l = strtol( argv[1], &eptr, 0 );
-    if( eptr != argv[1] ) {
-      addr = (uint8_t)(l);
-    }
-  }
-
-  if( argc > 2 ) {
-    l = strtol( argv[2], &eptr, 0 );
-    if( eptr != argv[2] ) {
-      nr = l;
-    }
-  }
+  uint8_t addr  =  (uint8_t)arg2long_d( 1, argc, argv, 0, 0, 127 );
+  uint16_t nr   = (uint16_t)arg2long_d( 2, argc, argv, 1, 1, sizeof(gbuf_a) );
 
   pr( NL "I2C Recv from " );  pr_h( addr ); pr( " nr= " ); pr_d( nr ); pr( NL );
 
-  RESET_I2C;
+  i2c_dbg->resetDev();
 
-  uint16_t addr2 = addr<<1;
-  HAL_StatusTypeDef rc = HAL_I2C_Master_Receive( i2ch_dbg, addr2, (uint8_t*)(&gbuf_a), nr, I2C_TO );
+  i2c_dbg->setAddr( addr );
+  int rc = i2c_dbg->recv( (uint8_t*)(&gbuf_a), nr );
   I2C_PRINT_STATUS;
-  if( rc == HAL_OK ) {
+  if( rc > 0 ) {
     dump8( gbuf_a, nr );
   }
-
-  // i2c_print_status( i2c_dbg );
 
   return 0;
 }
@@ -200,12 +167,12 @@ int cmd_i2c_recv_r1( int argc, const char * const * argv )
   pr( NL "I2C recv r1 from  " );
   pr_h( addr ); pr( ":" ); pr_h( reg ); pr( " n= " ); pr_d( n );
 
-  RESET_I2C;
+  i2c_dbg->resetDev();
 
-  uint16_t addr2 = addr<<1;
-  HAL_StatusTypeDef rc = HAL_I2C_Mem_Read( i2ch_dbg, addr2, reg, I2C_MEMADD_SIZE_8BIT, (uint8_t*)(gbuf_a), n, I2C_TO );
+  i2c_dbg->setAddr( addr );
+  int rc = i2c_dbg->recv_reg2( reg, (uint8_t*)(gbuf_a), n );
   I2C_PRINT_STATUS;
-  if( rc == HAL_OK ) {
+  if( rc > 0 ) {
     dump8( gbuf_a, n );
   }
   // i2c_print_status( i2c_dbg );
@@ -216,13 +183,6 @@ CmdInfo CMDINFO_I2C_RECV_R1 {
   "recv1",  0,  cmd_i2c_recv_r1, "reg [n] - recv from I2C(reg), reg_sz=1 (addr=var[p])"
 };
 
-// void i2c_print_status( DevI2C &i2c )
-// {
-//   int nt, err, ev;
-//   err = i2c.getErr();    pr_sdx( err );
-//   nt  = i2c.getNTrans(); pr_sdx( nt );
-//   ev  = i2c.getLastEv(); pr_shx( ev );
-// }
 
 // TODO: combine with r1
 int cmd_i2c_recv_r2( int argc, const char * const * argv )
@@ -239,12 +199,12 @@ int cmd_i2c_recv_r2( int argc, const char * const * argv )
   pr( NL "I2C recv r2 from  " );
   pr_h( addr ); pr( ":" ); pr_h( reg ); pr( " n= " ); pr_d( n );
 
-  RESET_I2C;
+  i2c_dbg->resetDev();
 
-  uint16_t addr2 = addr<<1;
-  HAL_StatusTypeDef rc = HAL_I2C_Mem_Read( i2ch_dbg, addr2, reg, I2C_MEMADD_SIZE_16BIT, (uint8_t*)(gbuf_a), n, I2C_TO );
+  i2c_dbg->setAddr( addr );
+  int rc = i2c_dbg->recv_reg2( reg, (uint8_t*)(gbuf_a), n );
   I2C_PRINT_STATUS;
-  if( rc == HAL_OK ) {
+  if( rc > 0 ) {
     dump8( gbuf_a, n );
   }
 
@@ -256,5 +216,4 @@ CmdInfo CMDINFO_I2C_RECV_R2 {
 
 #undef CHECK_I2C_DEV
 #undef I2C_PRINT_STATUS
-#undef I2C_TO
 
