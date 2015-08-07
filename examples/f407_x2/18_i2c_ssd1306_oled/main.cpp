@@ -161,17 +161,7 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  int st_a = 2;
-  if( argc > 1 ) {
-    st_a = strtol( argv[1], 0, 0 );
-    pr( NL "Test0: argv[1]= \"" ); pr( argv[1] ); pr( "\"" NL );
-  }
-  int en_a = 127;
-  if( argc > 2 ) {
-    pr( NL "Test0: argv[2]= \"" ); pr( argv[2] ); pr( "\"" NL );
-    en_a = strtol( argv[2], 0, 0 );
-  }
-  pr( NL "Test0: st_a= " ); pr_h( st_a ); pr( " en_a= " ); pr_h( en_a );
+  pr( NL "Test0: " NL );
 
   screen.init();
 
@@ -257,14 +247,8 @@ int cmd_cls( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
 
 int cmd_vline( int argc, const char * const * argv )
 {
-  uint16_t y0 = 0;
-  if( argc > 1 ) {
-    y0 = strtol( argv[1], 0, 0 );
-  }
-  uint16_t y1 = 64;
-  if( argc > 2 ) {
-    y1 = strtol( argv[2], 0, 0 );
-  }
+  uint16_t y0 = arg2long_d( 1, argc, argv,  0, 0, 256 );
+  uint16_t y1 = arg2long_d( 2, argc, argv, 64, 0, 256 );
   pr( NL "vline: y0= " ); pr_d( y0 ); pr( " y1= " ); pr_h( y1 );
 
   for( uint16_t y = y0; y<= y1; ++y ) {
@@ -279,14 +263,8 @@ int cmd_vline( int argc, const char * const * argv )
 
 int cmd_line( int argc, const char * const * argv )
 {
-  uint16_t nl = 36;
-  if( argc > 1 ) {
-    nl = strtol( argv[1], 0, 0 );
-  }
-  uint16_t dn = 360 / nl;
-  if( argc > 2 ) {
-    dn = strtol( argv[2], 0, 0 );
-  }
+  uint16_t nl = arg2long_d( 1, argc, argv,  36, 0, 1024 );
+  uint16_t dn = arg2long_d( 2, argc, argv,  360/nl, 1, 512 );
   pr( NL "lines: = nl" ); pr_d( nl ); pr( " dn= " ); pr_d( dn );
 
   uint16_t x0 = 64, y0 = 32;

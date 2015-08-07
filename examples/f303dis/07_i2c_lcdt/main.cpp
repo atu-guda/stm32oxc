@@ -139,15 +139,9 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  // int n = user_vars['n'-'a'];
-  uint32_t t_step = user_vars['t'-'a'];
-  // if( argc > 1 ) {
-  //   n = strtol( argv[1], 0, 0 );
-  // }
-  uint8_t ch_st = 0x30;
-  if( argc > 2 ) {
-    ch_st = (uint8_t)(strtol( argv[2], 0, 0 ) );
-  }
+  // int n = UVAR('n');
+  uint32_t t_step = UVAR('t');
+  uint8_t ch_st = (uint8_t)arg2long_d( 2, argc, argv, 0x30, 0, 256-16 );
   uint8_t ch_en = ch_st + 0x10;
 
   lcdt.init_4b();

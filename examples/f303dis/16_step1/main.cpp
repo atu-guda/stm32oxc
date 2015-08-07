@@ -146,13 +146,10 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
 int cmd_test0( int argc, const char * const * argv )
 {
   static int ph = 0;
-  int n = user_vars['n'-'a'];
-  uint32_t t_step = user_vars['t'-'a'];
-  if( argc > 1 ) {
-    n = strtol( argv[1], 0, 0 );
-  }
+  int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
+  uint32_t t_step = UVAR('t');
 
-  int m = user_vars['m'-'a'];
+  int m = UVAR('m');
   if( m >= n_modes ) {
     m = 0;
   }

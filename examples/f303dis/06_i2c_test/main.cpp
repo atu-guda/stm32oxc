@@ -137,16 +137,8 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  int st_a = 2;
-  if( argc > 1 ) {
-    st_a = strtol( argv[1], 0, 0 );
-    pr( NL "Test0: argv[1]= \"" ); pr( argv[1] ); pr( "\"" NL );
-  }
-  int en_a = 127;
-  if( argc > 2 ) {
-    pr( NL "Test0: argv[2]= \"" ); pr( argv[2] ); pr( "\"" NL );
-    en_a = strtol( argv[2], 0, 0 );
-  }
+  int st_a = arg2long_d( 1, argc, argv,   2,    0, 127 );
+  int en_a = arg2long_d( 2, argc, argv, 127, st_a, 127 );
   pr( NL "Test0: st_a= " ); pr_h( st_a ); pr( " en_a= " ); pr_h( en_a );
   pr( NL );
   __HAL_I2C_DISABLE( &i2ch );

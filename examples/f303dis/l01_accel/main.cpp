@@ -173,12 +173,8 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
 int cmd_test0( int argc, const char * const * argv )
 {
   int16_t buf[3];
-  int n = UVAR('n');
+  int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
   int t = UVAR('t');
-  if( argc > 1 ) {
-    n = strtol( argv[1], 0, 0 );
-    pr( NL "Test0: n= \"" ); pr_d( n ); pr( "\"" NL );
-  }
 
   break_flag = 0;
   // LSM303DLHC_AccInit( 0 );
