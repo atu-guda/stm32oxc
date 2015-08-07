@@ -94,32 +94,32 @@ ALLFLAGS += -I. -I$(STMINC)
 SRCPATHS =  $(STMSRC) $(STMSRC)/templates $(ADDSRC)
 
 ifeq "$(USE_OXC_CONSOLE_USART)" "y"
-  $(info "Used USART console" )
+  # $(info "Used USART console" )
   USE_OXC_CONSOLE = y
   SRCS += oxc_usartio.cpp
 endif
 
 ifeq "$(USE_OXC_CONSOLE_USB_CDC)" "y"
-  $(info "Used USB_CDC console" )
+  # $(info "Used USB_CDC console" )
   USE_OXC_CONSOLE = y
   SRCS += oxc_usbcdcio.cpp
 endif
 
 ifeq "$(USE_OXC_CONSOLE)" "y"
-  $(info "Used console" )
+  # $(info "Used console" )
   USE_OXC_DEVIO = y
   SRCS += oxc_console.cpp
   SRCS += oxc_smallrl.cpp
   SRCS += oxc_common1.cpp
 else
-  $(info "NOT Used console" )
+  # $(info "NOT Used console" )
   ifeq "$(USE_OXC_DEBUG)" "y"
     $(warning "Console must be used if debug is in use")
   endif
 endif
 
 ifeq "$(USE_OXC_DEVIO)" "y"
-  $(info "Used DEVIO" )
+  # $(info "Used DEVIO" )
   USE_OXC = y
   SRCS += oxc_devio.cpp
   SRCS += oxc_rtosqueue.cpp
@@ -137,6 +137,7 @@ ifeq "$(USE_OXC)" "y"
   SRCPATHS += $(OXCSRC)
   ALLFLAGS += -I$(OXCINC)
   SRCS += oxc_base.cpp
+  SRCS += oxc_miscfun.cpp
   SRCS += oxc_gpio.cpp
   SRCS += oxc_osfun.cpp
 endif

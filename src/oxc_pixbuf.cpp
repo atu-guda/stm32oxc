@@ -3,6 +3,7 @@
 
 using namespace std;
 
+#include <oxc_miscfun.h>
 #include <oxc_pixbuf.h>
 
   PixBuf::PixBuf( uint16_t a_width, uint16_t a_height, uint16_t a_bpp )

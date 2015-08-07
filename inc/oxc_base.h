@@ -1,7 +1,6 @@
 #ifndef _OXC_BASE_H
 #define _OXC_BASE_H
 
-
 #if defined (STM32F0)
  #include <stm32f0xx_hal.h>
  #define SET_BIT_REG   BSRR
@@ -166,32 +165,10 @@ void SystemClock_Config(void);
   void vApplicationTickHook() { HAL_IncTick();  }
 
 
-
-/** return position of first setted bit LSB=0, or FF if 0 */
-uint8_t numFirstBit( uint32_t a );
-
-extern const char hex_digits[];
-extern const char dec_digits[];
-
-// 64/log_2[10] \approx 20
-#define INT_STR_SZ_DEC 24
-#define INT_STR_SZ_HEX 20
-
-// converts char to hex represenration (2 digits+EOL, store to s)
-char* char2hex( char c, char *s );
-// converts uint32 to hex represenration (8(64=16) digits+EOL, store to s)
-char* word2hex( uint32_t d,  char *s );
-// 64/log_2[10] \approx 20
-#define INT_STR_SZ 24
-// if s == 0 returns ptr to inner static buffer
-char* i2dec( int n, char *s );
-
 #ifdef __cplusplus
 }
 #endif
 
-inline int sign( int x );
-inline int sign( int x ) { return (x>0) ? 1 : ( (x<0) ? -1: 0 ) ; }
 
 
 #endif

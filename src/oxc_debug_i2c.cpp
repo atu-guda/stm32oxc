@@ -20,31 +20,9 @@ static const char i2c_nodev_msg[] = NL "I2C debug device (i2ch_dbg) is not set!"
 
 int cmd_i2c_scan( int argc, const char * const * argv )
 {
-  uint8_t addr_start = 2, addr_end = 127;
-  long l;
-  char *eptr;
+  uint8_t addr_start = (uint8_t)arg2long_d( 1, argc, argv,   2,            0, 127 );
+  uint8_t addr_end   = (uint8_t)arg2long_d( 2, argc, argv, 127, addr_start+1, 127 );
 
-  // TODO: generic to oxc_debug1 or console
-  if( argc > 1 ) {
-    l = strtol( argv[1], &eptr, 0 );
-    if( eptr != argv[1] ) {
-      addr_start = (uint8_t)(l);
-    }
-  }
-
-  if( argc > 2 ) {
-    l = strtol( argv[2], &eptr, 0 );
-    if( eptr != argv[2] ) {
-      addr_end = (uint8_t)(l);
-    }
-  }
-
-  if( addr_start < 2 ) {
-    addr_start = 2;
-  }
-  if( addr_end <= addr_start ) {
-    addr_end = addr_start+1;
-  }
   pr( NL "I2C Scan in range [ " ); pr_d( addr_start );
   pr( " ; " ); pr_d( addr_end ); pr( " ] " NL );
   CHECK_I2C_DEV;

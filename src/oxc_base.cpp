@@ -22,17 +22,6 @@ void SysTick_Handler(void)
 
 #endif
 
-uint8_t numFirstBit( uint32_t a )
-{
-  for( uint8_t n = 0; n<sizeof(a)*8; ++n ) {
-    if( a & 1 ) {
-      return n;
-    }
-    a >>= 1;
-  }
-  return 0xFF;
-}
-
 
 void taskYieldFun()
 {
@@ -116,57 +105,4 @@ void delay_mcs( uint32_t mcs )
 
 
 
-const char hex_digits[] = "0123456789ABCDEFG";
-const char dec_digits[] = "0123456789???";
-
-
-
-char* char2hex( char c, char *s )
-{
-  if( s != 0 ) {
-    s[0] = hex_digits[ (uint8_t)(c) >> 4 ];
-    s[1] = hex_digits[ c & 0x0F ];
-    s[2] = 0;
-  }
-  return s;
-}
-
-char* word2hex( uint32_t d,  char *s )
-{
-  if( s != 0 ) {
-    int i;
-    for( i=7; i>=0; --i ) {
-      s[i] = hex_digits[ d & 0x0F ];
-      d >>= 4;
-    }
-    s[8] = 0;
-  }
-  return s;
-}
-
-char* i2dec( int n, char *s )
-{
-  static char sbuf[INT_STR_SZ_DEC];
-  char tbuf[24];
-  unsigned u;
-  if( !s ) {
-    s = sbuf;
-  }
-  char *bufptr = s, *tmpptr = tbuf + 1;
-  *tbuf = '\0';
-
-  if( n < 0 ){ //  sign
-    u = ( (unsigned)(-(1+n)) ) + 1; // INT_MIN handling
-    *bufptr++ = '-';
-  } else {
-    u=n;
-  }
-
-  do {
-    *tmpptr++ = dec_digits[ u % 10 ];
-  } while( u /= 10 );
-
-  while( ( *bufptr++ = *--tmpptr ) != '\0' ) /* NOP */;
-  return s;
-}
 

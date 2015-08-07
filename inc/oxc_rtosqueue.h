@@ -1,7 +1,7 @@
 #ifndef _OXC_OXC_RTOSQUEUE_H
 #define _OXC_OXC_RTOSQUEUE_H
 
-#include <oxc_base.h>
+#include <oxc_miscfun.h>
 
 #include <FreeRTOS.h>
 #include <queue.h>
