@@ -63,8 +63,10 @@ int cmd_i2c_send( int argc, const char * const * argv )
 
   i2c_dbg->resetDev();
 
+  uint8_t old_addr = i2c_dbg->getAddr();
   i2c_dbg->setAddr( addr );
   int rc = i2c_dbg->send( v );
+  i2c_dbg->setAddr( old_addr );
   I2C_PRINT_STATUS;
 
   return 0;
@@ -90,8 +92,10 @@ int cmd_i2c_send_r1( int argc, const char * const * argv )
 
   i2c_dbg->resetDev();
 
+  uint8_t old_addr = i2c_dbg->getAddr();
   i2c_dbg->setAddr( addr );
   int rc = i2c_dbg->send_reg1( reg, &val, 1 );
+  i2c_dbg->setAddr( old_addr );
   I2C_PRINT_STATUS;
 
   // i2c_print_status( i2c_dbg );
@@ -118,8 +122,10 @@ int cmd_i2c_send_r2( int argc, const char * const * argv )
 
   i2c_dbg->resetDev();
 
+  uint8_t old_addr = i2c_dbg->getAddr();
   i2c_dbg->setAddr( addr );
   int rc = i2c_dbg->send_reg2( reg, &val, 1 );
+  i2c_dbg->setAddr( old_addr );
   I2C_PRINT_STATUS;
 
   return 0;
@@ -140,8 +146,10 @@ int cmd_i2c_recv( int argc, const char * const * argv )
 
   i2c_dbg->resetDev();
 
+  uint8_t old_addr = i2c_dbg->getAddr();
   i2c_dbg->setAddr( addr );
   int rc = i2c_dbg->recv( (uint8_t*)(&gbuf_a), nr );
+  i2c_dbg->setAddr( old_addr );
   I2C_PRINT_STATUS;
   if( rc > 0 ) {
     dump8( gbuf_a, nr );
@@ -169,8 +177,10 @@ int cmd_i2c_recv_r1( int argc, const char * const * argv )
 
   i2c_dbg->resetDev();
 
+  uint8_t old_addr = i2c_dbg->getAddr();
   i2c_dbg->setAddr( addr );
   int rc = i2c_dbg->recv_reg2( reg, (uint8_t*)(gbuf_a), n );
+  i2c_dbg->setAddr( old_addr );
   I2C_PRINT_STATUS;
   if( rc > 0 ) {
     dump8( gbuf_a, n );
@@ -201,8 +211,10 @@ int cmd_i2c_recv_r2( int argc, const char * const * argv )
 
   i2c_dbg->resetDev();
 
+  uint8_t old_addr = i2c_dbg->getAddr();
   i2c_dbg->setAddr( addr );
   int rc = i2c_dbg->recv_reg2( reg, (uint8_t*)(gbuf_a), n );
+  i2c_dbg->setAddr( old_addr );
   I2C_PRINT_STATUS;
   if( rc > 0 ) {
     dump8( gbuf_a, n );
