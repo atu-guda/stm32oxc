@@ -5,6 +5,7 @@
 
 
 I2C_HandleTypeDef *i2ch_dbg = nullptr;
+DevI2C *i2c_dbg = nullptr;
 
 // timeout
 #define I2C_TO 100
@@ -16,7 +17,10 @@ static const char i2c_nodev_msg[] = NL "I2C debug device (i2ch_dbg) is not set!"
     pr( i2c_nodev_msg ); \
     return 2; \
   }
-#define I2C_PRINT_STATUS  pr( NL "I2C action status  " ); pr_d( rc ); pr( NL );
+#define I2C_PRINT_STATUS  pr( NL "I2C status " ); pr_d( rc ); \
+  pr( NL "state: " ); pr_d( HAL_I2C_GetState( i2ch_dbg ) ); \
+  pr( NL "error: " ); pr_d( HAL_I2C_GetError( i2ch_dbg ) ); \
+  pr( NL );
 
 int cmd_i2c_scan( int argc, const char * const * argv )
 {
@@ -61,23 +65,9 @@ int cmd_i2c_send( int argc, const char * const * argv )
     pr( "error: value required" NL );
     return 1;
   }
-  uint8_t v = 0;
-  long l;
-  char *eptr;
+  uint8_t v = arg2long_d( 1, argc, argv, 0, 255 );
 
-  l = strtol( argv[1], &eptr, 0 );
-  if( eptr != argv[1] ) {
-    v = (uint8_t)(l);
-  }
-
-  uint16_t addr = (uint16_t)(user_vars['p'-'a']);
-
-  if( argc > 2 ) {
-    l = strtol( argv[2], &eptr, 0 );
-    if( eptr != argv[2] ) {
-      addr = (uint16_t)(l);
-    }
-  }
+  uint16_t addr = arg2long_d( 2, argc, argv, (uint16_t)(UVAR('p')), 0, 127 );
   uint16_t addr2 = addr<<1;
 
   pr( NL "I2C Send  " ); pr_d( v );
@@ -104,7 +94,7 @@ int cmd_i2c_send_r1( int argc, const char * const * argv )
     pr( "** ERR: reg val required" NL );
     return -1;
   }
-  uint16_t addr = (uint16_t)(user_vars['p'-'a']);
+  uint16_t addr = (uint16_t)(UVAR('p'));
   uint16_t addr2 = addr<<1;
   uint8_t reg = (uint8_t) strtol( argv[1], 0, 0 );
   uint8_t val = (uint8_t) strtol( argv[2], 0, 0 );
@@ -132,7 +122,7 @@ int cmd_i2c_send_r2( int argc, const char * const * argv )
     pr( "** ERR: reg val required" NL );
     return -1;
   }
-  uint8_t addr = (uint8_t)(user_vars['p'-'a']);
+  uint8_t addr = (uint8_t)(UVAR('p'));
   uint16_t addr2 = addr<<1;
   uint16_t reg = (uint16_t) strtol( argv[1], 0, 0 );
   uint8_t  val = (uint8_t) strtol( argv[2], 0, 0 );
@@ -158,7 +148,7 @@ int cmd_i2c_recv( int argc, const char * const * argv )
 {
   CHECK_I2C_DEV;
   // uint8_t v = 0;
-  uint8_t  addr = (uint8_t)(user_vars['p'-'a']);
+  uint8_t  addr = (uint8_t)(UVAR('p'));
   long l;
   int nr = 1;
   char *eptr;
@@ -203,20 +193,9 @@ int cmd_i2c_recv_r1( int argc, const char * const * argv )
     pr( "** ERR: reg required" NL );
     return -1;
   }
-  uint8_t addr = (uint8_t)(user_vars['p'-'a']);
-  uint8_t reg = (uint8_t) strtol( argv[1], 0, 0 );
-  uint16_t n = 1;
-
-  if( argc > 2 ) {
-    char *eptr;
-    long l = strtol( argv[2], &eptr, 0 );
-    if( eptr != argv[2] ) {
-      n = (uint16_t)( l );
-    }
-    if( n > sizeof(gbuf_a) ) {
-      n = sizeof(gbuf_a);
-    }
-  }
+  uint8_t addr = (uint8_t)(UVAR('p'));
+  uint16_t reg  = (uint16_t)arg2long_d( 1, argc, argv, 0, 0, 0xFF );
+  uint16_t n =    (uint16_t)arg2long_d( 2, argc, argv, 1, 1, sizeof(gbuf_a) );
 
   pr( NL "I2C recv r1 from  " );
   pr_h( addr ); pr( ":" ); pr_h( reg ); pr( " n= " ); pr_d( n );
@@ -253,20 +232,9 @@ int cmd_i2c_recv_r2( int argc, const char * const * argv )
     pr( "** ERR: reg required" NL );
     return -1;
   }
-  uint8_t addr = (uint8_t)(user_vars['p'-'a']);
-  uint16_t reg  = (uint16_t) strtol( argv[1], 0, 0 );
-  uint16_t n = 1;
-
-  if( argc > 2 ) {
-    char *eptr;
-    long l = strtol( argv[2], &eptr, 0 );
-    if( eptr != argv[2] ) {
-      n = (uint16_t)( l );
-    }
-    if( n > sizeof(gbuf_a) ) {
-      n = sizeof(gbuf_a);
-    }
-  }
+  uint8_t addr = (uint8_t)(UVAR('p'));
+  uint16_t reg  = (uint16_t)arg2long_d( 1, argc, argv, 0, 0, 0xFFFF );
+  uint16_t n =    (uint16_t)arg2long_d( 2, argc, argv, 1, 1, sizeof(gbuf_a) );
 
   pr( NL "I2C recv r2 from  " );
   pr_h( addr ); pr( ":" ); pr_h( reg ); pr( " n= " ); pr_d( n );

@@ -3,8 +3,10 @@
 
 #include <oxc_console.h>
 #include <oxc_debug1.h>
+#include <oxc_i2c.h>
 
 extern I2C_HandleTypeDef *i2ch_dbg;
+extern DevI2C *i2c_dbg;
 
 
 int cmd_i2c_scan( int argc, const char * const * argv );
