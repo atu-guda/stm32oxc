@@ -3,18 +3,15 @@
 // #define BMP_DEBUG 1
 #undef BMP_DEBUG
 
-#define I2C_TO 200
 
-void BMP085::readCalibrData()
+bool BMP085::readCalibrData()
 {
 #ifndef BMP_DEBUG
-  HAL_I2C_Mem_Read( &i2ch, addr2, reg_calibr_start, I2C_MEMADD_SIZE_8BIT, (uint8_t*)(&calibr), sizeof(calibr), I2C_TO );
-  uint16_t *data = (uint16_t*)(&calibr);
-  for( uint8_t i=0; i<n_calibr_data; ++i ) { // swap
-    uint32_t v = data[i];
-    v = __REV16( v );
-    data[i] = (uint16_t)(v);
+  int rc = recv_reg1( reg_calibr_start, (uint8_t*)(&calibr), sizeof(calibr) );
+  if( rc < (int)sizeof(calibr) ) {
+    return false;
   }
+  rev16( (uint16_t*)(&calibr), n_calibr_data );
 #else
   calibr.ac1 = 408;   calibr.ac2 = -72;   calibr.ac3 = -14383;
   calibr.ac4 = 32741; calibr.ac5 = 32757; calibr.ac6 =  23153;
@@ -24,18 +21,17 @@ void BMP085::readCalibrData()
   calibr.mc = -8711;
   calibr.md = 2868;
 #endif
-
+  return true;
 }
 
 int  BMP085::get_T_uncons( bool do_get )
 {
 #ifndef BMP_DEBUG
   if( do_get ) {
-    uint8_t cmd = cmd_read_T;
-    HAL_I2C_Mem_Write( &i2ch, addr2, reg_cmd, I2C_MEMADD_SIZE_8BIT, &cmd, 1, I2C_TO );
+    send_reg1( reg_cmd,  cmd_read_T );
     delay_ms( t_wait_T );
     uint8_t tt[2];
-    HAL_I2C_Mem_Read( &i2ch, addr2, reg_out, I2C_MEMADD_SIZE_8BIT, tt, sizeof(tt), I2C_TO );
+    recv_reg1( reg_out, tt, sizeof(tt) );
     t_uncons = ( (tt[0]<<8) + tt[1] );
   }
 #else
@@ -50,10 +46,10 @@ int  BMP085::get_P_uncons( bool do_get )
 #ifndef BMP_DEBUG
   if( do_get ) {
     uint8_t cmd = cmd_read_P0 | ( oss << 6 );
-    HAL_I2C_Mem_Write( &i2ch, addr2, reg_cmd, I2C_MEMADD_SIZE_8BIT, &cmd, 1, I2C_TO );
+    send_reg1( reg_cmd, cmd );
     delay_ms( t_wait_P );
     uint8_t tp[3];
-    HAL_I2C_Mem_Read( &i2ch, addr2, reg_out, I2C_MEMADD_SIZE_8BIT, tp, sizeof(tp), I2C_TO );
+    recv_reg1( reg_out, tp, sizeof(tp) );
     p_uncons = ( (tp[0]<<16) + (tp[1]<<8) + tp[2] ) >> (8-oss);
   }
 #else
@@ -110,5 +106,4 @@ void BMP085::calc()
 
 }
 
-#undef I2C_TO
 

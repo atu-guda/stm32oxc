@@ -44,7 +44,7 @@ void task_main( void *prm UNUSED_ARG );
 }
 
 I2C_HandleTypeDef i2ch;
-DevI2C i2cd( &i2ch, 0 ); // zero add means no real device
+BMP085 baro( &i2ch );
 void MX_I2C1_Init( I2C_HandleTypeDef &i2c );
 
 UART_HandleTypeDef uah;
@@ -69,7 +69,7 @@ int main(void)
   leds.write( 0x0A );  delay_bad_ms( 200 );
 
   MX_I2C1_Init( i2ch );
-  i2c_dbg = &i2cd;
+  i2c_dbg = &baro;
 
   leds.write( 0x00 );
 
@@ -138,7 +138,6 @@ int cmd_test0( int argc, const char * const * argv )
   pr( NL "Test0: n= " ); pr_d( n ); pr( " t= " ); pr_d( t_step );
   pr( NL );
 
-  BMP085 baro( i2ch );
   baro.readCalibrData();
 
   TickType_t tc0 = xTaskGetTickCount();

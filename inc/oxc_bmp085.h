@@ -1,9 +1,9 @@
 #ifndef _OXC_BMP085_H
 #define _OXC_BMP085_H
 
-#include <oxc_base.h>
+#include <oxc_i2c.h>
 
-class BMP085 {
+class BMP085 : public DevI2C {
   public:
    enum {
      def_i2c_addr = 0x77,
@@ -26,10 +26,10 @@ class BMP085 {
      int16_t   b1, b2, mb, mc, md;
    } __attribute__((packed));
    static_assert( sizeof(CalibrData) == n_calibr_data*sizeof(uint16_t), "Bad CalibrData size" );
-   BMP085( I2C_HandleTypeDef &a_i2ch, uint8_t d_addr = def_i2c_addr )
-     : i2ch(a_i2ch), addr2(d_addr<<1) {};
+   BMP085( I2C_HandleTypeDef *a_i2ch, uint8_t d_addr = def_i2c_addr )
+     : DevI2C( a_i2ch, d_addr ) {};
    void init() { readCalibrData(); };
-   void readCalibrData();
+   bool readCalibrData();
    int  get_T_uncons( bool do_get = false );
    int  get_P_uncons( bool do_get = false );
    void getAllCalc( uint8_t a_oss );
@@ -38,8 +38,6 @@ class BMP085 {
    int  get_P()   { return p;   }
    const int16_t* getCalibr() const { return (const int16_t*)(&calibr); }
   protected:
-   I2C_HandleTypeDef &i2ch;
-   uint8_t addr2;
    CalibrData calibr;
    int32_t t_uncons = 0, t10 = 0;
    int32_t p_uncons = 0, p = 0;
