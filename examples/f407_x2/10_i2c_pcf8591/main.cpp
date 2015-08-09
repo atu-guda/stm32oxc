@@ -45,7 +45,7 @@ void task_main( void *prm UNUSED_ARG );
 }
 
 I2C_HandleTypeDef i2ch;
-BMP085 baro( &i2ch );
+PCF8591 adc( &i2ch );
 
 STD_USBCDC_SEND_TASK( usbcdc );
 
@@ -70,7 +70,7 @@ int main(void)
   i2ch.Init.OwnAddress1     = 0;
   i2ch.Init.OwnAddress2     = 0;
   HAL_I2C_Init( &i2ch );
-  i2c_dbg = &baro;
+  i2c_dbg = &adc;
 
 
   leds.write( 0x00 );
@@ -141,7 +141,6 @@ int cmd_test0( int argc, const char * const * argv )
 
   int v_end = UVAR('e');
 
-  PCF8591 adc( i2ch );
   adc.setMode( PCF8591::autoinc | PCF8591::mode_4in | PCF8591::out_en );
 
   TickType_t tc0 = xTaskGetTickCount();

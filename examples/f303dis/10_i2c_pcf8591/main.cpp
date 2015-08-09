@@ -44,7 +44,7 @@ void task_main( void *prm UNUSED_ARG );
 }
 
 I2C_HandleTypeDef i2ch;
-DevI2C i2cd( &i2ch, 0 ); // zero add means no real device
+PCF8591 adc( &i2ch );
 void MX_I2C1_Init( I2C_HandleTypeDef &i2c );
 
 UART_HandleTypeDef uah;
@@ -69,7 +69,7 @@ int main(void)
   leds.write( 0x0A );  delay_bad_ms( 200 );
 
   MX_I2C1_Init( i2ch );
-  i2c_dbg = &i2cd;
+  i2c_dbg = &adc;
 
   leds.write( 0x00 );
 
@@ -140,7 +140,6 @@ int cmd_test0( int argc, const char * const * argv )
 
   int v_end = UVAR('e');
 
-  PCF8591 adc( i2ch );
   adc.setMode( PCF8591::autoinc | PCF8591::mode_4in | PCF8591::out_en );
 
   TickType_t tc0 = xTaskGetTickCount();
