@@ -46,7 +46,7 @@ void task_main( void *prm UNUSED_ARG );
 
 I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 ); // zero add means no real device
-HD44780_i2c lcdt( i2ch );
+HD44780_i2c lcdt{ &i2ch };
 
 STD_USBCDC_SEND_TASK( usbcdc );
 
@@ -71,7 +71,7 @@ int main(void)
   i2ch.Init.OwnAddress1     = 0;
   i2ch.Init.OwnAddress2     = 0;
   HAL_I2C_Init( &i2ch );
-  i2c_dbg = &i2cd;
+  i2c_dbg = &lcdt;
 
 
   leds.write( 0x00 );
@@ -137,12 +137,12 @@ int cmd_test0( int argc, const char * const * argv )
 {
   // int n = UVAR('n');
   uint32_t t_step = UVAR('t');
-  uint8_t ch_st = (uint8_t)arg2long_d( 2, argc, argv, 0x30, 0, 256-16 );
-  uint8_t ch_en = ch_st + 0x10;
+  uint16_t ch_st = (uint8_t)arg2long_d( 1, argc, argv, 0x30, 0, 256-16 );
+  uint16_t ch_en = ch_st + 0x10;
 
   lcdt.init_4b();
-  int status = lcdt.getStatus();
-  pr_sdx( status );
+  int state = lcdt.getState();
+  pr_sdx( state );
 
   lcdt.putch( 'X' );
   lcdt.puts( " ptn-hlo!\n\t" );
@@ -156,14 +156,8 @@ int cmd_test0( int argc, const char * const * argv )
   delay_ms( t_step );
   lcdt.on();
   lcdt.gotoxy( 2, 1 );
-  for( uint8_t ch = ch_st; ch < ch_en; ++ch) {
-    lcdt.putch( ch );
-  }
-  // lcdt.puts( "L2:\x01\x02\x03\04" );
-  delay_ms( t_step );
-  for( int i=0; i<100; ++i ) {
-    lcdt.home();
-    lcdt.putch( '@' | (i&0x0F) );
+  for( uint16_t ch = ch_st; ch < ch_en; ++ch ) {
+    lcdt.putch( (uint8_t)ch );
   }
 
   pr( NL );

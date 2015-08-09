@@ -1,6 +1,5 @@
 #include <oxc_hd44780_i2c.h>
 
-#define I2C_TO 200
 
 void HD44780_i2c::init_4b( bool is_2row )
 {
@@ -13,10 +12,6 @@ void HD44780_i2c::init_4b( bool is_2row )
   on();
 }
 
-int  HD44780_i2c::send1( uint8_t d )
-{
-  return HAL_I2C_Master_Transmit( &i2c, addr2, &d, 1, I2C_TO );
-}
 
 void HD44780_i2c::wr4( uint8_t v, bool is_data )
 {
@@ -24,26 +19,26 @@ void HD44780_i2c::wr4( uint8_t v, bool is_data )
   b |= led_state;
   uint8_t v1 = ( v & 0xF0 );
   uint8_t d = v1 | lcd_bit_e | b;
-  send1( d );
+  send( d );
   delay_mcs( 1 );
   d = v1 | led_state | b;
-  send1( d );
+  send( d );
   delay_mcs( 1 );
   v1 = v << 4;
   d = v1 | lcd_bit_e | b;
-  send1( d );
+  send( d );
   delay_mcs( 1 );
   d = v1 | b;
-  send1( d );
+  send( d );
 }
 
 void HD44780_i2c::strobe( uint8_t v )
 {
   uint8_t d = v | lcd_bit_e | led_state;
-  send1( d );
+  send( d );
   delay_mcs( 2 );
   d = v | led_state;
-  send1( d );
+  send( d );
 }
 
 void HD44780_i2c::puts( const char *s )
@@ -64,4 +59,3 @@ void HD44780_i2c::gotoxy( uint8_t x, uint8_t y )
 
 }
 
-#undef I2C_TO

@@ -1,9 +1,9 @@
 #ifndef _OXC_HD44780_I2C_H
 #define _OXC_HD44780_I2C_H
 
-#include <oxc_base.h>
+#include <oxc_i2c.h>
 
-class HD44780_i2c {
+class HD44780_i2c : public DevI2C {
   public:
     enum {
       lcd_8b_mode   = 0x30,
@@ -21,10 +21,8 @@ class HD44780_i2c {
       lcd_bit_led   = 0x08,
       lcd_def_addr  = 0x27
     };
-    HD44780_i2c( I2C_HandleTypeDef &i2c_d, uint8_t d_addr = lcd_def_addr )
-     : i2c( i2c_d ), addr2( d_addr<<1 ) {};
-    int  send1( uint8_t d );
-    int getStatus() const { return status; };
+    HD44780_i2c( I2C_HandleTypeDef *i2c_h, uint8_t d_addr = lcd_def_addr )
+     : DevI2C( i2c_h, d_addr ) {};
     void init_4b( bool is_2row = true );
     void wr4( uint8_t v, bool is_data );
     void strobe( uint8_t v );
@@ -42,9 +40,6 @@ class HD44780_i2c {
     void led_off()  { led_state = 0;          cmd( mod | lcd_cmd_onoff ); }
 
   protected:
-   I2C_HandleTypeDef &i2c;
-   uint8_t addr2;
-   int status = 0;
    uint8_t mod = 0;
    uint8_t led_state = lcd_bit_led;
    const uint8_t cpl = 40; // 40 char/line
