@@ -1,15 +1,15 @@
 #ifndef _OXC_SSD1306_H
 #define _OXC_SSD1306_H
 
+#include <oxc_i2c.h>
 #include <oxc_pixbuf1v.h>
 
-class SSD1306 {
+class SSD1306 : public DevI2C {
   public:
    enum {
      BASE_ADDR = 0x3C,
      X_SZ = 128,
      Y_SZ = 64,
-     I2C_TO  = 100,
      CMD_1 = 0x80,
      CMD_N = 0x00,
      DATA_1 = 0xC0,
@@ -24,28 +24,26 @@ class SSD1306 {
      CMD_ON = 0xAF,
      MEM_SZ = ( X_SZ * Y_SZ / 8 )
    };
-   SSD1306( I2C_HandleTypeDef &a_i2ch, uint8_t a_addr = BASE_ADDR )
-     : i2ch( a_i2ch ), addr2( a_addr<<1 ) {};
-   void init();
-   void cmd1( uint8_t cmd );
-   void cmd2( uint8_t cmd, uint8_t val );
-   void data1( uint8_t d );
+   SSD1306( I2C_HandleTypeDef *a_i2ch, uint8_t a_addr = BASE_ADDR )
+     : DevI2C( a_i2ch, a_addr ) {};
+   int init();
+   int cmd1( uint8_t cmd );
+   int cmd2( uint8_t cmd, uint8_t val );
+   int data1( uint8_t d );
 
-   void switch_on() { cmd1( CMD_ON ); };
-   void switch_off() { cmd1( CMD_OFF ); };
-   void contrast( uint8_t v ) { cmd2( CMD_CONTRAST, v ); };
-   void full_on() { cmd1( CMD_FULLON ); };
-   void on_ram() { cmd1( CMD_RAM ); };
-   void no_inverse() { cmd1( CMD_NOINVERSE ); };
-   void inverse() { cmd1( CMD_INVERSE ); };
-   void mode_horisontal() { cmd2( CMD_MODE, 0x00 ); };
-   void mode_vertical()   { cmd2( CMD_MODE, 0x01 ); };
-   void mode_paged()      { cmd2( CMD_MODE, 0x02 ); };
-   void out( PixBuf1V &pb );
+   int switch_on() { return cmd1( CMD_ON ); };
+   int switch_off() { return cmd1( CMD_OFF ); };
+   int contrast( uint8_t v ) { return cmd2( CMD_CONTRAST, v ); };
+   int full_on() { return cmd1( CMD_FULLON ); };
+   int on_ram() { return cmd1( CMD_RAM ); };
+   int no_inverse() { return cmd1( CMD_NOINVERSE ); };
+   int inverse() { return cmd1( CMD_INVERSE ); };
+   int mode_horisontal() { return cmd2( CMD_MODE, 0x00 ); };
+   int mode_vertical()   { return cmd2( CMD_MODE, 0x01 ); };
+   int mode_paged()      { return cmd2( CMD_MODE, 0x02 ); };
+   int out( PixBuf1V &pb );
 
-  private:
-   I2C_HandleTypeDef &i2ch;
-   uint8_t addr2;
+  protected:
 };
 
 #endif

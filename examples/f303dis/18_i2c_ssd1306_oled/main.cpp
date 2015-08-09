@@ -58,7 +58,8 @@ void task_main( void *prm UNUSED_ARG );
 }
 
 I2C_HandleTypeDef i2ch;
-DevI2C i2cd( &i2ch, 0 ); // zero add means no real device
+PixBuf1V pb0( 128, 64 );
+SSD1306 screen( &i2ch );
 void MX_I2C1_Init( I2C_HandleTypeDef &i2c );
 
 UART_HandleTypeDef uah;
@@ -70,8 +71,6 @@ STD_USART2_SEND_TASK( usartio );
 STD_USART2_IRQ( usartio );
 // ----------------------------------------------------------------
 
-PixBuf1V pb0( 128, 64 );
-SSD1306 screen( i2ch );
 
 
 int main(void)
@@ -88,7 +87,7 @@ int main(void)
   leds.write( 0x0A );  delay_bad_ms( 200 );
 
   MX_I2C1_Init( i2ch );
-  i2c_dbg = &i2cd;
+  i2c_dbg = &screen;
 
   leds.write( 0x00 );
 
@@ -152,7 +151,7 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  pr( NL "Test0:  " NL );
+  pr( NL "Test0: " NL );
 
   screen.init();
 
@@ -165,7 +164,7 @@ int cmd_test0( int argc, const char * const * argv )
   // delay_ms( 500 );
   // screen.on_ram();
   //
-  delay_ms( 500 );
+  // delay_ms( 500 );
   screen.inverse();
   delay_ms( 500 );
   screen.no_inverse();

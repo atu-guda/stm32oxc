@@ -48,7 +48,7 @@ int DevI2C::send( uint8_t ds )
 
 int  DevI2C::send( const uint8_t *ds, int ns )
 {
-  if( *ds || ns < 1 ) {
+  if( ds == nullptr || ns < 1 ) {
     return 0;
   }
   HAL_StatusTypeDef rc = HAL_I2C_Master_Transmit( i2ch, addr2, (uint8_t*)ds, ns, maxWait );
@@ -58,6 +58,9 @@ int  DevI2C::send( const uint8_t *ds, int ns )
 
 int  DevI2C::send_reg1( uint8_t reg,  const uint8_t *ds, int ns )
 {
+  if( ds == nullptr || ns < 1 ) {
+    return 0;
+  }
   HAL_StatusTypeDef rc = HAL_I2C_Mem_Write( i2ch, addr2, reg, I2C_MEMADD_SIZE_8BIT,
             (uint8_t*)ds, ns, maxWait );
   return ( rc == HAL_OK ) ? ns : 0;
@@ -65,6 +68,9 @@ int  DevI2C::send_reg1( uint8_t reg,  const uint8_t *ds, int ns )
 
 int  DevI2C::send_reg2(  uint16_t reg, const uint8_t *ds, int ns )
 {
+  if( ds == nullptr || ns < 1 ) {
+    return 0;
+  }
   HAL_StatusTypeDef rc = HAL_I2C_Mem_Write( i2ch, addr2, reg, I2C_MEMADD_SIZE_16BIT,
             (uint8_t*)ds, ns, maxWait );
   return ( rc == HAL_OK ) ? ns : 0;
@@ -80,6 +86,9 @@ int  DevI2C::recv()
 
 int  DevI2C::recv( uint8_t *dd, int nd )
 {
+  if( dd == nullptr || nd < 1 ) {
+    return 0;
+  }
   HAL_StatusTypeDef rc = HAL_I2C_Master_Receive( i2ch, addr2, (uint8_t*)(dd), nd, maxWait );
   return ( rc == HAL_OK ) ? nd :0;
 }
@@ -87,6 +96,9 @@ int  DevI2C::recv( uint8_t *dd, int nd )
 
 int  DevI2C::recv_reg1(  int8_t reg,  uint8_t *dd, int nd )
 {
+  if( dd == nullptr || nd < 1 ) {
+    return 0;
+  }
   HAL_StatusTypeDef rc = HAL_I2C_Mem_Read( i2ch, addr2, reg, I2C_MEMADD_SIZE_8BIT,
       dd, nd, maxWait );
   return ( rc == HAL_OK ) ? nd :0;
@@ -94,6 +106,9 @@ int  DevI2C::recv_reg1(  int8_t reg,  uint8_t *dd, int nd )
 
 int  DevI2C::recv_reg2(  int16_t reg, uint8_t *dd, int nd )
 {
+  if( dd == nullptr || nd < 1 ) {
+    return 0;
+  }
   HAL_StatusTypeDef rc = HAL_I2C_Mem_Read( i2ch, addr2, reg, I2C_MEMADD_SIZE_16BIT,
       dd, nd, maxWait );
   return ( rc == HAL_OK ) ? nd :0;
