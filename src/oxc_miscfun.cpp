@@ -100,3 +100,10 @@ void rev16( uint16_t *v, int n )
     v[i] = t;
   }
 }
+
+void bcd_to_char2( uint8_t bcd, char *s )
+{
+  if( !s ) { return; };
+  s[1] = '0' + ( bcd & 0x0F );
+  s[0] = '0' + ( bcd >> 4 );
+}

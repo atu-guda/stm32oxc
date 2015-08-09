@@ -1,21 +1,12 @@
 #ifndef _OXC_DS3231_H
 #define _OXC_DS3231_H
 
-#include <oxc_base.h>
+#include <oxc_i2c.h>
 
 // inner regs: 1-byte addr
 
-inline uint8_t uint8_to_bcd( uint8_t v ) {
-  return ( v % 10 ) + (( v / 10 ) << 4);
-}
 
-inline uint8_t bcd_to_uint8( uint8_t bcd ) {
-  return ( bcd & 0x0F ) + 10 * ( bcd >> 4 );
-}
-
-void bcd_to_char2( uint8_t bcd, char *s );
-
-class DS3231 {
+class DS3231 : public DevI2C {
   public:
    enum {
      def_addr     = 0x68,
@@ -45,10 +36,9 @@ class DS3231 {
      year_base       = 2000, // zero year
    };
 
-   DS3231( I2C_HandleTypeDef &d_i2ch, uint8_t d_addr = def_addr )
-     : i2ch( d_i2ch ), addr2( d_addr<<1 ) {};
-   int sendByteReg( uint16_t reg, uint8_t d );
-   int setCtl( uint8_t ctl );
+   DS3231( I2C_HandleTypeDef *d_i2ch, uint8_t d_addr = def_addr )
+     : DevI2C( d_i2ch, d_addr ) {};
+   int setCtl( uint8_t ctl ) { return send_reg1( reg_ctl, ctl ); };
    uint8_t getStatus();
    int setTime( uint8_t  hour,  uint8_t min, uint8_t  sec );
    int getTime( uint8_t *hour, uint8_t *min, uint8_t *sec );
@@ -56,9 +46,7 @@ class DS3231 {
    int setDate( int16_t  year,  uint8_t month, uint8_t  day );
    int getDate( int16_t *year, uint8_t *month, uint8_t *day );
    int getDateStr( char *s ); // YYYY:MM:DD = 11 bytes minimum
-  private:
-   I2C_HandleTypeDef &i2ch;
-   uint8_t addr2;
+  protected:
 };
 
 #endif

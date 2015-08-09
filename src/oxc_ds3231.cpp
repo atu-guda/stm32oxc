@@ -1,28 +1,10 @@
 #include <oxc_ds3231.h>
 
-#define I2C_TO 100
-
-void bcd_to_char2( uint8_t bcd, char *s )
-{
-  if( !s ) { return; };
-  s[1] = '0' + ( bcd & 0x0F );
-  s[0] = '0' + ( bcd >> 4 );
-}
-
-int DS3231::sendByteReg( uint16_t reg, uint8_t d )
-{
-  return HAL_I2C_Mem_Write( &i2ch, addr2, reg, I2C_MEMADD_SIZE_8BIT, &d, 1, I2C_TO );
-}
-
-int DS3231::setCtl( uint8_t ctl )
-{
-  return sendByteReg( reg_ctl, ctl );
-}
 
 uint8_t DS3231::getStatus()
 {
   uint8_t v = 0;
-  HAL_I2C_Mem_Read( &i2ch, addr2, reg_status, I2C_MEMADD_SIZE_8BIT, &v, 1, I2C_TO );
+  recv_reg1( reg_status, &v, 1 );
   return v;
 }
 
@@ -35,36 +17,36 @@ int DS3231::setTime( uint8_t  hour,  uint8_t min, uint8_t  sec )
   buf[0] = uint8_to_bcd( sec );
   buf[1] = uint8_to_bcd( min );
   buf[2] = uint8_to_bcd( hour );
-  return HAL_I2C_Mem_Write( &i2ch, addr2, reg_sec, I2C_MEMADD_SIZE_8BIT, buf, 3, I2C_TO );
+  return send_reg1( reg_sec, buf, 3 );
 }
 
 int DS3231::getTime( uint8_t *hour, uint8_t *min, uint8_t *sec )
 {
   uint8_t buf[4];
-  auto rc = HAL_I2C_Mem_Read( &i2ch, addr2, reg_sec, I2C_MEMADD_SIZE_8BIT, buf, 3, I2C_TO );
-  if( rc != HAL_OK ) {
-    return rc;
+  auto rc = recv_reg1( reg_sec, buf, 3 );
+  if( rc < 1  ) {
+    return 0;
   }
   buf[2] &= 0x3F; // hide 13/24 switch
   uint8_t h = bcd_to_uint8( buf[2] ), m = bcd_to_uint8( buf[1] ), s = bcd_to_uint8( buf[0] );
   if( hour ) { *hour = h; };
   if( min  ) { *min  = m; };
   if( sec  ) { *sec  = s; };
-  return rc;
+  return 1;
 }
 
 int DS3231::getTimeStr( char *s )
 {
   uint8_t buf[4];
   if( !s ) { return HAL_ERROR; }
-  auto rc = HAL_I2C_Mem_Read( &i2ch, addr2, reg_sec, I2C_MEMADD_SIZE_8BIT, buf, 3, I2C_TO );
-  if( rc != HAL_OK ) {
-    return rc;
+  auto rc = recv_reg1( reg_sec, buf, 3 );
+  if( rc < 1 ) {
+    return 0;
   }
   bcd_to_char2( buf[2], s   ); s[2] = ':';  // HH:
   bcd_to_char2( buf[1], s+3 ); s[5] = ':';  // HH:MM:
   bcd_to_char2( buf[0], s+6 ); s[8] = '\0'; // HH:MM:SS
-  return rc;
+  return 1;
 }
 
 int DS3231::setDate( int16_t  year,  uint8_t month, uint8_t  day )
@@ -78,15 +60,15 @@ int DS3231::setDate( int16_t  year,  uint8_t month, uint8_t  day )
   buf[0] = uint8_to_bcd( day );
   buf[1] = uint8_to_bcd( month );
   buf[2] = uint8_to_bcd( (uint8_t)year );
-  return HAL_I2C_Mem_Write( &i2ch, addr2, reg_day, I2C_MEMADD_SIZE_8BIT, buf, 3, I2C_TO );
+  return send_reg1( reg_day, buf, 3 );
 }
 
 int DS3231::getDate( int16_t *year, uint8_t *month, uint8_t *day )
 {
   uint8_t buf[4];
-  auto rc = HAL_I2C_Mem_Read( &i2ch, addr2, reg_day, I2C_MEMADD_SIZE_8BIT, buf, 3, I2C_TO );
-  if( rc != HAL_OK ) {
-    return rc;
+  auto rc = recv_reg1( reg_day, buf, 3 );
+  if( rc < 0 ) {
+    return 0;
   }
   int16_t y = year_base;
   if( buf[1] & 0x80 ) { y += 100; }
@@ -98,16 +80,16 @@ int DS3231::getDate( int16_t *year, uint8_t *month, uint8_t *day )
   if( year )   { *year = ye; };
   if( month  ) { *month  = mo; };
   if( day  )   { *day  = da; };
-  return rc;
+  return 1;
 }
 
 int DS3231::getDateStr( char *s )
 {
   uint8_t buf[4];
-  if( !s ) { return HAL_ERROR; }
-  auto rc = HAL_I2C_Mem_Read( &i2ch, addr2, reg_day, I2C_MEMADD_SIZE_8BIT, buf, 3, I2C_TO );
-  if( rc != HAL_OK ) {
-    return rc;
+  if( !s ) { return 0; }
+  auto rc = recv_reg1( reg_day, buf, 3 );
+  if( rc < 1 ) {
+    return 0;
   }
   s[0] = '2';
   s[1] = ( buf[1] & 0x80 ) ? '1' : '0';

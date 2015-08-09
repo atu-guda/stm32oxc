@@ -46,6 +46,16 @@ long arg2long_d( int narg, int argc, const char * const * argv, long def,
 inline uint16_t rev16( uint16_t v ) { return (uint16_t)__REV16( v );}
 void rev16( uint16_t *v, int n );
 
+inline uint8_t uint8_to_bcd( uint8_t v ) {
+  return ( v % 10 ) + (( v / 10 ) << 4);
+}
+
+inline uint8_t bcd_to_uint8( uint8_t bcd ) {
+  return ( bcd & 0x0F ) + 10 * ( bcd >> 4 );
+}
+
+void bcd_to_char2( uint8_t bcd, char *s );
+
 #endif
 
 // vim: path=.,/usr/share/stm32cube/inc

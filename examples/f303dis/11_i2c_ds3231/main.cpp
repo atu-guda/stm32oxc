@@ -52,8 +52,7 @@ void task_main( void *prm UNUSED_ARG );
 }
 
 I2C_HandleTypeDef i2ch;
-DevI2C i2cd( &i2ch, 0 ); // zero add means no real device
-DS3231 rtc( i2ch );
+DS3231 rtc( &i2ch );
 void MX_I2C1_Init( I2C_HandleTypeDef &i2c );
 
 UART_HandleTypeDef uah;
@@ -78,7 +77,7 @@ int main(void)
   leds.write( 0x0A );  delay_bad_ms( 200 );
 
   MX_I2C1_Init( i2ch );
-  i2c_dbg = &i2cd;
+  i2c_dbg = &rtc;
 
   leds.write( 0x00 );
 
@@ -147,7 +146,7 @@ int cmd_test0( int argc, const char * const * argv )
   pr( NL "Test0: n= " ); pr_d( n ); pr( " t= " ); pr_d( t_step );
   pr( NL );
 
-  i2cd.resetDev();
+  rtc.resetDev();
   char time_buf[10], date_buf[14];
   uint8_t t_hour, t_min, t_sec;
 
