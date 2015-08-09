@@ -1,11 +1,11 @@
 #ifndef _OXC_MPU6050_H
 #define _OXC_MPU6050_H
 
-#include <oxc_base.h>
+#include <oxc_i2c.h>
 
 // inner regs: 1-byte addr
 
-class MPU6050 {
+class MPU6050 : public DevI2C {
   public:
    enum {
      mpu6050_def_addr     = 0x68,
@@ -20,7 +20,7 @@ class MPU6050 {
      mpu6050_reg_a_yl     = 0x3E, // y accel Low
      mpu6050_reg_a_zh     = 0x3F, // z accel High
      mpu6050_reg_a_zl     = 0x40, // z accel Low
-     mpu6050_reg_temph    = 0x41, // Temp High
+     mpu6050_reg_temph    = 0x41, // Temp High : temperatue returns C*100
      mpu6050_reg_templ    = 0x42, // Temp Low
      mpu6050_reg_g_xh     = 0x43, // x gyro High
      mpu6050_reg_g_xl     = 0x44, // x gyro Low
@@ -48,15 +48,15 @@ class MPU6050 {
      pll_ext32k = 4,   pll_ext19m = 5, pll_stop = 7,   pll_sleep = 0x40
    };
 
-   MPU6050( I2C_HandleTypeDef &d_i2ch, uint8_t d_addr = mpu6050_def_addr )
-     : i2ch( d_i2ch ), addr2( d_addr<<1 ) {};
+   MPU6050( I2C_HandleTypeDef *d_i2ch, uint8_t d_addr = mpu6050_def_addr )
+     : DevI2C( d_i2ch, d_addr ) {};
    void init();
-   int  sendByteReg( uint16_t reg, uint8_t d );
-   void sleep() {  sendByteReg( mpu6050_reg_pwr1, pll_sleep ); }
-   void wake( PLL_source sou ){ sendByteReg( mpu6050_reg_pwr1, sou ); }
-   void setDLP( DLP_BW dlp_bw ) { sendByteReg( mpu6050_reg_cfg, dlp_bw ); }
-   void setAccScale( ACC_scale accs ) { sendByteReg( mpu6050_reg_cfg_acc, accs ); }
-   void setGyroScale( Gyro_scale gyros ) { sendByteReg( mpu6050_reg_cfg_gyro, gyros ); }
+   void sleep() {  send_reg1( mpu6050_reg_pwr1, pll_sleep ); }
+   void wake( PLL_source sou ){ send_reg1( mpu6050_reg_pwr1, sou ); }
+   void setDLP( DLP_BW dlp_bw ) { send_reg1( mpu6050_reg_cfg, dlp_bw ); }
+   void setAccScale( ACC_scale accs ) { send_reg1( mpu6050_reg_cfg_acc, accs ); }
+   void setGyroScale( Gyro_scale gyros ) { send_reg1( mpu6050_reg_cfg_gyro, gyros ); }
+   int fixTemp( int v ) { return v*10/34 + 3653; };
    int16_t getReg( uint8_t reg ); // reg is 16-bit
    void    getRegs( uint8_t reg1, uint8_t n, int16_t *data );
    int16_t getAccX() { return getReg( mpu6050_reg_a_xh ); }
@@ -67,11 +67,12 @@ class MPU6050 {
    int16_t getGyroY() { return getReg( mpu6050_reg_g_yh ); }
    int16_t getGyroZ() { return getReg( mpu6050_reg_g_zh ); }
    void    getGyroAll( int16_t *gyro ){ return getRegs( mpu6050_reg_g_xh, 3, gyro ); }
-   int16_t getTemp() { return getReg( mpu6050_reg_temph ); }
-   void    getAll( int16_t *all_data ){ return getRegs( mpu6050_reg_a_xh, 8, all_data ); }
+   int16_t getTemp() { return fixTemp( getReg( mpu6050_reg_temph )); }
+   void    getAll( int16_t *all_data ){
+     getRegs( mpu6050_reg_a_xh, 8, all_data );
+     all_data[3] = (int16_t)( fixTemp( all_data[3] ));
+   }
   private:
-   I2C_HandleTypeDef &i2ch;
-   uint8_t addr2;
 };
 
 #endif

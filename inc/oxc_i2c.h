@@ -25,7 +25,11 @@ class DevI2C  {
    int  send( uint8_t ds );
    int  send( const uint8_t *ds, int ns );
    int  send_reg1(  uint8_t reg,  const uint8_t *ds, int ns );
+   int  send_reg1(  uint8_t reg,  uint8_t d )
+     { return send_reg1( reg, &d, 1 ); }
    int  send_reg2(  uint16_t reg, const uint8_t *ds, int ns );
+   int  send_reg2(  uint8_t reg,  uint8_t d )
+     { return send_reg2( reg, &d, 1 ); }
    int  recv();
    int  recv( uint8_t *dd, int nd );
    int  recv_reg1(  int8_t reg,  uint8_t *dd, int nd );

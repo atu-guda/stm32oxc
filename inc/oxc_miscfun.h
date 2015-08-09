@@ -42,7 +42,9 @@ bool arg2long( int narg, int argc, const char * const * argv, long *v,
 long arg2long_d( int narg, int argc, const char * const * argv, long def,
                  long vmin = INT32_MIN, long vmax = INT32_MAX );
 
-
+ // swap bytes in 16-bits
+inline uint16_t rev16( uint16_t v ) { return (uint16_t)__REV16( v );}
+void rev16( uint16_t *v, int n );
 
 #endif
 

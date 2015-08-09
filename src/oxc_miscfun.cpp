@@ -92,3 +92,11 @@ long arg2long_d( int narg, int argc, const char * const * argv, long def,
   return v;
 }
 
+void rev16( uint16_t *v, int n )
+{
+  for( int i=0; i<n; ++i ) {
+    uint16_t t = v[i];
+    t = __REV16( t );
+    v[i] = t;
+  }
+}

@@ -49,8 +49,7 @@ void task_main( void *prm UNUSED_ARG );
 }
 
 I2C_HandleTypeDef i2ch;
-DevI2C i2cd( &i2ch, 0 ); // zero add means no real device
-MPU6050 accel( i2ch );
+MPU6050 accel( &i2ch );
 
 STD_USBCDC_SEND_TASK( usbcdc );
 
@@ -75,7 +74,7 @@ int main(void)
   i2ch.Init.OwnAddress1     = 0;
   i2ch.Init.OwnAddress2     = 0;
   HAL_I2C_Init( &i2ch );
-  i2c_dbg = &i2cd;
+  i2c_dbg = &accel;
 
 
   leds.write( 0x00 );
@@ -113,9 +112,8 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
   accel.init();
   accel.setAccScale( MPU6050::ACC_scale::accs_8g );
   accel.setDLP( MPU6050::DLP_BW::bw_44 );
+  delay_ms( 50 );
 
-
-  delay_ms( 10 );
   pr( "*=*** Main loop: ****** " NL );
   delay_ms( 20 );
 
@@ -151,7 +149,7 @@ int cmd_test0( int argc, const char * const * argv )
 
   int16_t adata[MPU6050::mpu6050_alldata_sz];
   // accel.sleep();
-  i2cd.resetDev();
+  accel.resetDev();
   accel.setDLP( MPU6050::DLP_BW::bw_10 );
   accel.init();
 

@@ -17,8 +17,6 @@
 using namespace std;
 using namespace SMLRL;
 
-#define RESET_I2C  __HAL_I2C_DISABLE( &i2ch ); delay_ms( 10 ); __HAL_I2C_ENABLE( &i2ch );  delay_ms( 10 );
-
 // PinsOut p1 { GPIOE, 8, 8 };
 BOARD_DEFINE_LEDS;
 
@@ -33,7 +31,7 @@ int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
 
 int cmd_data0( int argc, const char * const * argv );
-CmdInfo CMDINFO_DATA0 { "data0", 'D', cmd_data0, " - data trnsmission 0"  };
+CmdInfo CMDINFO_DATA0 { "data0", 'D', cmd_data0, " - data trasmission 0"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -50,8 +48,7 @@ void task_main( void *prm UNUSED_ARG );
 }
 
 I2C_HandleTypeDef i2ch;
-DevI2C i2cd( &i2ch, 0 ); // zero add means no real device
-MPU6050 accel( i2ch );
+MPU6050 accel( &i2ch );
 void MX_I2C1_Init( I2C_HandleTypeDef &i2c );
 
 UART_HandleTypeDef uah;
@@ -76,7 +73,7 @@ int main(void)
   leds.write( 0x0A );  delay_bad_ms( 200 );
 
   MX_I2C1_Init( i2ch );
-  i2c_dbg = &i2cd;
+  i2c_dbg = &accel;
 
   leds.write( 0x00 );
 
@@ -151,7 +148,7 @@ int cmd_test0( int argc, const char * const * argv )
 
   int16_t adata[MPU6050::mpu6050_alldata_sz];
   // accel.sleep();
-  RESET_I2C;
+  accel.resetDev();
   accel.setDLP( MPU6050::DLP_BW::bw_10 );
   accel.init();
 
