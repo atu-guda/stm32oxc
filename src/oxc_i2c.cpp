@@ -55,25 +55,27 @@ int  DevI2C::send( const uint8_t *ds, int ns )
   return ( rc == HAL_OK ) ? ns : 0;
 }
 
-
-int  DevI2C::send_reg1( uint8_t reg,  const uint8_t *ds, int ns )
+int  DevI2C::send_reg12( uint8_t reg,  const uint8_t *ds, int ns, bool is2byte )
 {
   if( ds == nullptr || ns < 1 ) {
     return 0;
   }
-  HAL_StatusTypeDef rc = HAL_I2C_Mem_Write( i2ch, addr2, reg, I2C_MEMADD_SIZE_8BIT,
+  auto szcmd = is2byte ? I2C_MEMADD_SIZE_16BIT: I2C_MEMADD_SIZE_8BIT;
+  HAL_StatusTypeDef rc = HAL_I2C_Mem_Write( i2ch, addr2, reg, szcmd,
             (uint8_t*)ds, ns, maxWait );
   return ( rc == HAL_OK ) ? ns : 0;
 }
 
+
+
+int  DevI2C::send_reg1( uint8_t reg,  const uint8_t *ds, int ns )
+{
+  return send_reg12( reg, ds, ns, false );
+}
+
 int  DevI2C::send_reg2(  uint16_t reg, const uint8_t *ds, int ns )
 {
-  if( ds == nullptr || ns < 1 ) {
-    return 0;
-  }
-  HAL_StatusTypeDef rc = HAL_I2C_Mem_Write( i2ch, addr2, reg, I2C_MEMADD_SIZE_16BIT,
-            (uint8_t*)ds, ns, maxWait );
-  return ( rc == HAL_OK ) ? ns : 0;
+  return send_reg12( reg, ds, ns, true );
 }
 
 int  DevI2C::recv()
@@ -94,23 +96,24 @@ int  DevI2C::recv( uint8_t *dd, int nd )
 }
 
 
-int  DevI2C::recv_reg1(  int8_t reg,  uint8_t *dd, int nd )
+int  DevI2C::recv_reg12(  int8_t reg,  uint8_t *dd, int nd, bool is2byte )
 {
   if( dd == nullptr || nd < 1 ) {
     return 0;
   }
-  HAL_StatusTypeDef rc = HAL_I2C_Mem_Read( i2ch, addr2, reg, I2C_MEMADD_SIZE_8BIT,
+  auto szcmd = is2byte ? I2C_MEMADD_SIZE_16BIT: I2C_MEMADD_SIZE_8BIT;
+  HAL_StatusTypeDef rc = HAL_I2C_Mem_Read( i2ch, addr2, reg, szcmd,
       dd, nd, maxWait );
   return ( rc == HAL_OK ) ? nd :0;
 }
 
+int  DevI2C::recv_reg1(  int8_t reg,  uint8_t *dd, int nd )
+{
+  return recv_reg12( reg, dd, nd, false );
+}
+
 int  DevI2C::recv_reg2(  int16_t reg, uint8_t *dd, int nd )
 {
-  if( dd == nullptr || nd < 1 ) {
-    return 0;
-  }
-  HAL_StatusTypeDef rc = HAL_I2C_Mem_Read( i2ch, addr2, reg, I2C_MEMADD_SIZE_16BIT,
-      dd, nd, maxWait );
-  return ( rc == HAL_OK ) ? nd :0;
+  return recv_reg12( reg, dd, nd, true );
 }
 

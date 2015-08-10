@@ -71,8 +71,7 @@ CmdInfo CMDINFO_I2C_SEND {
   "send",  'S', cmd_i2c_send,   "val [addr] - send to I2C (def addr=var[p])"
 };
 
-
-int cmd_i2c_send_r1( int argc, const char * const * argv )
+int subcmd_i2c_send_rx( int argc, const char * const * argv, bool is2byte )
 {
   CHECK_I2C_DEV;
   if( argc < 3 ) {
@@ -91,13 +90,16 @@ int cmd_i2c_send_r1( int argc, const char * const * argv )
 
   uint8_t old_addr = i2c_dbg->getAddr();
   i2c_dbg->setAddr( addr );
-  int rc = i2c_dbg->send_reg1( reg, &v, 1 );
+  int rc = i2c_dbg->send_reg12( reg, &v, 1, is2byte );
   i2c_dbg->setAddr( old_addr );
   I2C_PRINT_STATUS;
 
-  // i2c_print_status( i2c_dbg );
-
   return 0;
+}
+
+int cmd_i2c_send_r1( int argc, const char * const * argv )
+{
+  return subcmd_i2c_send_rx( argc, argv, false );
 }
 CmdInfo CMDINFO_I2C_SEND_R1 {
   "send1", 0, cmd_i2c_send_r1, "reg val - send to I2C(reg), reg_sz=1 (addr=var[p])"
@@ -105,24 +107,7 @@ CmdInfo CMDINFO_I2C_SEND_R1 {
 
 int cmd_i2c_send_r2( int argc, const char * const * argv )
 {
-  CHECK_I2C_DEV;
-
-  uint8_t reg = arg2long_d( 1, argc, argv, 0, 255 );
-  uint8_t v   = arg2long_d( 2, argc, argv, 0, 255 );
-  uint8_t addr = (uint8_t)(UVAR('p'));
-
-  pr( NL "I2C Send  r2: " ); pr_d( v );
-  pr( " to " ); pr_h( addr ); pr( ": " ); pr_h( reg ); pr( NL );
-
-  i2c_dbg->resetDev();
-
-  uint8_t old_addr = i2c_dbg->getAddr();
-  i2c_dbg->setAddr( addr );
-  int rc = i2c_dbg->send_reg2( reg, &v, 1 );
-  i2c_dbg->setAddr( old_addr );
-  I2C_PRINT_STATUS;
-
-  return 0;
+  return subcmd_i2c_send_rx( argc, argv, true );
 }
 CmdInfo CMDINFO_I2C_SEND_R2 {
   "send2",  0,  cmd_i2c_send_r2, "reg val - send to I2C(reg), reg_sz=2 (addr=var[p])"
@@ -155,7 +140,7 @@ CmdInfo CMDINFO_I2C_RECV {
   "recv",  'R', cmd_i2c_recv,    "[addr [nr]] - recv from I2C (def addr=var[p])"
 };
 
-int subcmd_i2c_recv_rx( int argc, const char * const * argv, bool byte2 )
+int subcmd_i2c_recv_rx( int argc, const char * const * argv, bool is2byte )
 {
   CHECK_I2C_DEV;
   uint8_t addr = (uint8_t)(UVAR('p'));
@@ -169,12 +154,7 @@ int subcmd_i2c_recv_rx( int argc, const char * const * argv, bool byte2 )
 
   uint8_t old_addr = i2c_dbg->getAddr();
   i2c_dbg->setAddr( addr );
-  int rc;
-  if( byte2 ) {
-    rc = i2c_dbg->recv_reg2( reg, (uint8_t*)(gbuf_a), n );
-  } else {
-    rc = i2c_dbg->recv_reg1( reg, (uint8_t*)(gbuf_a), n );
-  }
+  int rc = i2c_dbg->recv_reg12( reg, (uint8_t*)(gbuf_a), n, is2byte );
   i2c_dbg->setAddr( old_addr );
   I2C_PRINT_STATUS;
   if( rc > 0 ) {

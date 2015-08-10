@@ -24,6 +24,7 @@ class DevI2C  {
    // returns: >0 = N of send/recv bytes, <0 - error
    int  send( uint8_t ds );
    int  send( const uint8_t *ds, int ns );
+   int  send_reg12(  uint8_t reg,  const uint8_t *ds, int ns, bool is2byte );
    int  send_reg1(  uint8_t reg,  const uint8_t *ds, int ns );
    int  send_reg1(  uint8_t reg,  uint8_t d )
      { return send_reg1( reg, &d, 1 ); }
@@ -32,6 +33,7 @@ class DevI2C  {
      { return send_reg2( reg, &d, 1 ); }
    int  recv();
    int  recv( uint8_t *dd, int nd );
+   int  recv_reg12(  int8_t reg,  uint8_t *dd, int nd, bool is2byte );
    int  recv_reg1(  int8_t reg,  uint8_t *dd, int nd );
    int  recv_reg2(  int16_t reg, uint8_t *dd, int nd );
    void setMaxWait( uint32_t mv ) { maxWait = mv; }
