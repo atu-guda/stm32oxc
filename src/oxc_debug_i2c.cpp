@@ -12,9 +12,9 @@ static const char i2c_nodev_msg[] = NL "I2C debug device (i2c_dbg) is not set!" 
     pr( i2c_nodev_msg ); \
     return 2; \
   }
-#define I2C_PRINT_STATUS  pr( NL "I2C status " ); pr_d( rc ); \
-  pr( NL "state: " ); pr_d( i2c_dbg->getState() ); \
-  pr( NL "error: " ); pr_d( i2c_dbg->getErr() ); \
+#define I2C_PRINT_STATUS  pr( NL "I2C N: " ); pr_d( rc ); \
+  pr( " state: " ); pr_d( i2c_dbg->getState() ); \
+  pr( " error: " ); pr_d( i2c_dbg->getErr() ); \
   pr( NL );
 
 int cmd_i2c_scan( int argc, const char * const * argv )
@@ -50,12 +50,8 @@ CmdInfo CMDINFO_I2C_SCAN {
 int cmd_i2c_send( int argc, const char * const * argv )
 {
   CHECK_I2C_DEV;
-  if( argc < 2 ) {
-    pr( "error: value required" NL );
-    return 1;
-  }
-  uint8_t v = arg2long_d( 1, argc, argv, 0, 255 );
 
+  uint8_t v = arg2long_d( 1, argc, argv, 0, 255 );
   uint16_t addr = arg2long_d( 2, argc, argv, (uint16_t)(UVAR('p')), 0, 127 );
 
   pr( NL "I2C Send  " ); pr_d( v );
@@ -83,18 +79,19 @@ int cmd_i2c_send_r1( int argc, const char * const * argv )
     pr( "** ERR: reg val required" NL );
     return -1;
   }
-  uint16_t addr = (uint16_t)(UVAR('p'));
-  uint8_t reg = (uint8_t) strtol( argv[1], 0, 0 );
-  uint8_t val = (uint8_t) strtol( argv[2], 0, 0 );
 
-  pr( NL "I2C Send  " ); pr_d( val );
+  uint8_t reg = arg2long_d( 1, argc, argv, 0, 255 );
+  uint8_t v   = arg2long_d( 2, argc, argv, 0, 255 );
+  uint8_t addr = (uint8_t)(UVAR('p'));
+
+  pr( NL "I2C Send  " ); pr_d( v );
   pr( " to " ); pr_h( addr ); pr( ": " ); pr_h( reg ); pr( NL );
 
   i2c_dbg->resetDev();
 
   uint8_t old_addr = i2c_dbg->getAddr();
   i2c_dbg->setAddr( addr );
-  int rc = i2c_dbg->send_reg1( reg, &val, 1 );
+  int rc = i2c_dbg->send_reg1( reg, &v, 1 );
   i2c_dbg->setAddr( old_addr );
   I2C_PRINT_STATUS;
 
@@ -109,22 +106,19 @@ CmdInfo CMDINFO_I2C_SEND_R1 {
 int cmd_i2c_send_r2( int argc, const char * const * argv )
 {
   CHECK_I2C_DEV;
-  if( argc < 3 ) {
-    pr( "** ERR: reg val required" NL );
-    return -1;
-  }
-  uint8_t addr = (uint8_t)(UVAR('p'));
-  uint16_t reg = (uint16_t) strtol( argv[1], 0, 0 );
-  uint8_t  val = (uint8_t) strtol( argv[2], 0, 0 );
 
-  pr( NL "I2C Send  r2: " ); pr_d( val );
+  uint8_t reg = arg2long_d( 1, argc, argv, 0, 255 );
+  uint8_t v   = arg2long_d( 2, argc, argv, 0, 255 );
+  uint8_t addr = (uint8_t)(UVAR('p'));
+
+  pr( NL "I2C Send  r2: " ); pr_d( v );
   pr( " to " ); pr_h( addr ); pr( ": " ); pr_h( reg ); pr( NL );
 
   i2c_dbg->resetDev();
 
   uint8_t old_addr = i2c_dbg->getAddr();
   i2c_dbg->setAddr( addr );
-  int rc = i2c_dbg->send_reg2( reg, &val, 1 );
+  int rc = i2c_dbg->send_reg2( reg, &v, 1 );
   i2c_dbg->setAddr( old_addr );
   I2C_PRINT_STATUS;
 
@@ -161,47 +155,9 @@ CmdInfo CMDINFO_I2C_RECV {
   "recv",  'R', cmd_i2c_recv,    "[addr [nr]] - recv from I2C (def addr=var[p])"
 };
 
-int cmd_i2c_recv_r1( int argc, const char * const * argv )
+int subcmd_i2c_recv_rx( int argc, const char * const * argv, bool byte2 )
 {
   CHECK_I2C_DEV;
-  if( argc < 2 ) {
-    pr( "** ERR: reg required" NL );
-    return -1;
-  }
-  uint8_t addr = (uint8_t)(UVAR('p'));
-  uint16_t reg  = (uint16_t)arg2long_d( 1, argc, argv, 0, 0, 0xFF );
-  uint16_t n =    (uint16_t)arg2long_d( 2, argc, argv, 1, 1, sizeof(gbuf_a) );
-
-  pr( NL "I2C recv r1 from  " );
-  pr_h( addr ); pr( ":" ); pr_h( reg ); pr( " n= " ); pr_d( n );
-
-  i2c_dbg->resetDev();
-
-  uint8_t old_addr = i2c_dbg->getAddr();
-  i2c_dbg->setAddr( addr );
-  int rc = i2c_dbg->recv_reg2( reg, (uint8_t*)(gbuf_a), n );
-  i2c_dbg->setAddr( old_addr );
-  I2C_PRINT_STATUS;
-  if( rc > 0 ) {
-    dump8( gbuf_a, n );
-  }
-  // i2c_print_status( i2c_dbg );
-
-  return 0;
-}
-CmdInfo CMDINFO_I2C_RECV_R1 {
-  "recv1",  0,  cmd_i2c_recv_r1, "reg [n] - recv from I2C(reg), reg_sz=1 (addr=var[p])"
-};
-
-
-// TODO: combine with r1
-int cmd_i2c_recv_r2( int argc, const char * const * argv )
-{
-  CHECK_I2C_DEV;
-  if( argc < 2 ) {
-    pr( "** ERR: reg required" NL );
-    return -1;
-  }
   uint8_t addr = (uint8_t)(UVAR('p'));
   uint16_t reg  = (uint16_t)arg2long_d( 1, argc, argv, 0, 0, 0xFFFF );
   uint16_t n =    (uint16_t)arg2long_d( 2, argc, argv, 1, 1, sizeof(gbuf_a) );
@@ -213,7 +169,12 @@ int cmd_i2c_recv_r2( int argc, const char * const * argv )
 
   uint8_t old_addr = i2c_dbg->getAddr();
   i2c_dbg->setAddr( addr );
-  int rc = i2c_dbg->recv_reg2( reg, (uint8_t*)(gbuf_a), n );
+  int rc;
+  if( byte2 ) {
+    rc = i2c_dbg->recv_reg2( reg, (uint8_t*)(gbuf_a), n );
+  } else {
+    rc = i2c_dbg->recv_reg1( reg, (uint8_t*)(gbuf_a), n );
+  }
   i2c_dbg->setAddr( old_addr );
   I2C_PRINT_STATUS;
   if( rc > 0 ) {
@@ -221,6 +182,21 @@ int cmd_i2c_recv_r2( int argc, const char * const * argv )
   }
 
   return 0;
+}
+
+int cmd_i2c_recv_r1( int argc, const char * const * argv )
+{
+  return subcmd_i2c_recv_rx( argc, argv, false );
+}
+CmdInfo CMDINFO_I2C_RECV_R1 {
+  "recv1",  0,  cmd_i2c_recv_r1, "reg [n] - recv from I2C(reg), reg_sz=1 (addr=var[p])"
+};
+
+
+// TODO: combine with r1
+int cmd_i2c_recv_r2( int argc, const char * const * argv )
+{
+  return subcmd_i2c_recv_rx( argc, argv, true );
 }
 CmdInfo CMDINFO_I2C_RECV_R2 {
   "recv2",  0,  cmd_i2c_recv_r2, "reg [n] - recv from I2C(reg), reg_sz=2 (addr=var[p])"

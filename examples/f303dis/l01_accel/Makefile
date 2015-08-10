@@ -19,8 +19,8 @@ ADDSRC     +=   $(STMDIR)/bsp/Components/lsm303dlhc
 
 SRCS  = main.cpp
 
+SRCS += oxc_i2c.cpp
 SRCS += oxc_debug_i2c.cpp
-#SRCS += oxc_i2c.cpp
 
 # stm32cube sources.
 # Base: : from board

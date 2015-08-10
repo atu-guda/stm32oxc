@@ -6,6 +6,7 @@
 #include <oxc_usartio.h>
 #include <oxc_console.h>
 #include <oxc_debug1.h>
+#include <oxc_i2c.h>
 #include <oxc_debug_i2c.h>
 #include <oxc_common1.h>
 #include <oxc_smallrl.h>
@@ -32,11 +33,15 @@ SmallRL srl( smallrl_print, smallrl_exec );
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
 
+int cmd_test1( int argc, const char * const * argv );
+CmdInfo CMDINFO_TEST1 { "test1", 'X', cmd_test1, " - I2C actions"  };
+
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
   DEBUG_I2C_CMDS,
 
   &CMDINFO_TEST0,
+  &CMDINFO_TEST1,
   nullptr
 };
 
@@ -46,6 +51,7 @@ extern "C" {
 }
 
 I2C_HandleTypeDef i2ch;
+DevI2C i2cd( &i2ch, 0x19 );
 void MX_I2C1_Init( I2C_HandleTypeDef &i2c );
 
 UART_HandleTypeDef uah;
@@ -107,7 +113,7 @@ int main(void)
   leds.write( 0x0A );  delay_bad_ms( 200 );
 
   MX_I2C1_Init( i2ch );
-  i2ch_dbg = &i2ch;
+  i2c_dbg = &i2cd;
 
 
   leds.write( 0x00 );
@@ -176,6 +182,9 @@ int cmd_test0( int argc, const char * const * argv )
   int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
   int t = UVAR('t');
 
+  leds.set( BIT0 );
+  delay_bad_mcs( 10 );
+
   break_flag = 0;
   // LSM303DLHC_AccInit( 0 );
   BSP_ACCELERO_Init();
@@ -189,6 +198,8 @@ int cmd_test0( int argc, const char * const * argv )
     delay_ms( t );
   }
 
+  leds.reset( BIT0 );
+
   pr( NL );
 
   delay_ms( 10 );
@@ -196,6 +207,33 @@ int cmd_test0( int argc, const char * const * argv )
   idle_flag = 1;
 
   pr( NL "test0 end." NL );
+  return 0;
+}
+
+int cmd_test1( int argc, const char * const * argv )
+{
+  uint8_t buf[4];
+  buf[0] = buf[1] = buf[2] = buf[3] = 0;
+
+  leds.set( BIT0 );
+  delay_bad_mcs( 10 );
+
+  int rc = i2cd.recv_reg1( 0x0F, buf, 1 );
+  pr_sdx( rc );
+  dump8( buf, 4 );
+
+
+
+
+  leds.reset( BIT0 );
+
+  pr( NL );
+
+  delay_ms( 10 );
+  break_flag = 0;
+  idle_flag = 1;
+
+  pr( NL "test1 end." NL );
   return 0;
 }
 //  ----------------------------- devices ----------------

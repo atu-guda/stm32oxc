@@ -19,6 +19,8 @@ int cmd_i2c_send_r2( int argc, const char * const * argv );
 extern CmdInfo CMDINFO_I2C_SEND_R2;
 int cmd_i2c_recv( int argc, const char * const * argv );
 extern CmdInfo CMDINFO_I2C_RECV;
+
+int subcmd_i2c_recv_rx( int argc, const char * const * argv, bool byte2 );
 int cmd_i2c_recv_r1( int argc, const char * const * argv );
 extern CmdInfo CMDINFO_I2C_RECV_R1;
 int cmd_i2c_recv_r2( int argc, const char * const * argv );

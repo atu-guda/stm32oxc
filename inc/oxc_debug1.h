@@ -26,7 +26,7 @@ void log_print(void);
 // helper function : converts some names and numbers to address, fail = -1 (BAD_ADDR)
 char* str2addr( const char *str );
 
-void dump8( const void *addr, int n );
+void dump8( const void *addr, int n, bool isAbs = false );
 
 void print_user_var( int idx );
 

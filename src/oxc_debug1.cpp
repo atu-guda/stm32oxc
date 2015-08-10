@@ -19,6 +19,9 @@ extern  const int _sdata, _edata, _sbss, _ebss, _end, _estack;
 
 char* str2addr( const char *str )
 {
+  if( !str || !*str ) {
+    return (char*)(BAD_ADDR);
+  }
   if( str[0] == 'a' && str[1] == '\0' ) {
     return gbuf_a;
   } else if ( str[0] == 'b' && str[1] == '\0' ) {
@@ -34,14 +37,14 @@ char* str2addr( const char *str )
 
 
 
-void dump8( const void *addr, int n )
+void dump8( const void *addr, int n, bool isAbs  )
 {
   char b[8]; // for char2hex
   unsigned const char* ad = (unsigned const char*)(addr);
   if( !ad  ||  ad == BAD_ADDR ) {
     return;
   }
-  unsigned const char* ad0 = ad;
+  unsigned const char* ad0 = isAbs ? ad : nullptr; // left label
   pr( NL );
 
   int i, row, bs;
@@ -260,17 +263,15 @@ int cmd_dump( int argc, const char * const * argv )
     return 2;
   }
 
-  int n = 1;
-  if( argc >= 3 ) {
-    n = strtol( argv[2], 0, 0 );
-  }
+  int n = arg2long_d( 2, argc, argv, 1, 1, 0x8000 );
+  int isAbs = arg2long_d( 3, argc, argv, 0, 0, 1 );
 
   pr( NL "** dump: argc=" ); pr_d( argc ); pr( " addr=" ); pr_a( addr );
   pr_sdx( n );
-  dump8( addr, n );
+  dump8( addr, n, isAbs );
   return 0;
 }
-CmdInfo CMDINFO_DUMP { "dump",  'd', cmd_dump, " {a|b|addr} [n] - HexDumps given area"  };
+CmdInfo CMDINFO_DUMP { "dump",  'd', cmd_dump, " {a|b|addr} [n] [abs:0:1]- HexDumps given area"  };
 
 int cmd_fill( int argc, const char * const * argv )
 {
@@ -293,16 +294,8 @@ int cmd_fill( int argc, const char * const * argv )
     }
   }
 
-  int n = 1;
-  if( argc >= 4 ) {
-    n = strtol( argv[3], 0, 0 );
-  }
-
-  uint8_t stp = 0;
-  if( argc >= 5 ) {
-    stp = ( uint8_t ) ( strtol( argv[4], 0, 0 ) );
-  }
-
+  int n = arg2long_d( 3, argc, argv, 1, 1, 0xFFFF );
+  uint8_t stp = (uint8_t)arg2long_d( 4, argc, argv, 0, 0, 0xFF );
 
   pr( "** fill: addr=" ); pr_a( addr );
   pr_sdx( v );
@@ -350,6 +343,7 @@ int cmd_svar( int argc, const char * const * argv )
     return 2;
   }
   user_vars[idx] = strtol( argv[2], 0, 0 );
+  print_user_var( idx );
   return 0;
 }
 CmdInfo CMDINFO_SVAR { "set", 's', cmd_svar,  "name value - set var a-z"  };
@@ -357,10 +351,7 @@ CmdInfo CMDINFO_SVAR { "set", 's', cmd_svar,  "name value - set var a-z"  };
 
 int cmd_die( int argc, const char * const * argv )
 {
-  int v = 0;
-  if( argc > 1 ) {
-    v = strtol( argv[1], 0, 0 );
-  }
+  int v = arg2long_d( 1, argc, argv, 0, 0, 0xFF );
   die4led( v );
   return 0; // never ;-)
 }
