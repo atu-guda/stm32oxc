@@ -56,6 +56,8 @@ void term_cmd1( int n, char c, int fd = 1 );
 void term_cmd2( int n1, int n2, char c, int fd = 1 );
 void term_move_x( int n, int fd = 1 );
 void term_set_x( int n, int fd = 1 );
+void term_set_xy( int x, int y, int fd = 1 );
+void term_set_scroll_area( int top, int bottom, int fd = 1 );
 inline void term_set_00( int fd = 1    ) { prl( "\033[1;1H", 6, fd ); };
 inline void term_left1( int fd = 1 )     { prl( "\033[1D", 4, fd ); };
 inline void term_right1( int fd = 1 )    { prl( "\033[1C", 4, fd ); };
@@ -88,6 +90,7 @@ struct CmdInfo
 extern const CmdInfo* global_cmds[];
 
 
+inline int pr_c( char c, int fd = 1 ) { return prl( &c, 1, fd ); }
 int pr_d( int d, int fd = 1 );
 int pr_h( uint32_t d, int fd = 1 );
 #define pr_a(a) pr_h( (uint32_t)(a) )

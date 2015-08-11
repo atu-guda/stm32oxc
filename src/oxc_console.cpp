@@ -21,7 +21,7 @@ void term_cmd2( int n1, int n2, char c, int fd )
   b[5] = ';';
   u2_3dig( n2, b+6 ); // 6,7,8
   b[9] = c; b[10] = 0;
-  prl( b, 9, fd );
+  prl( b, 10, fd );
 }
 
 void term_move_x( int n, int fd )
@@ -40,8 +40,18 @@ void term_set_x( int n, int fd )
 
 void term_set_xy( int x, int y, int fd )
 {
-  term_cmd2(  x, y, 'H', fd );
+  term_cmd2( y, x, 'H', fd );
 }
+
+void term_set_scroll_area( int top, int bottom, int fd )
+{
+  if( top < 0 || bottom < 0 ) {
+    prl( "\033[r", 3, fd );
+  } else {
+    term_cmd2( top, bottom, 'r', fd );
+  }
+}
+
 
 int pr_d( int d, int fd )
 {

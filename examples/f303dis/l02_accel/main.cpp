@@ -47,6 +47,8 @@ I2C_HandleTypeDef i2ch;
 LSM303DHLC_Accel accel( &i2ch );
 void MX_I2C1_Init( I2C_HandleTypeDef &i2c );
 
+void draw_hbar_gauge( int x, int y, int w, int v, int vmin, int vmax, int fd = 1 );
+
 UART_HandleTypeDef uah;
 UsartIO usartio( &uah, USART2 );
 int init_uart( UART_HandleTypeDef *uahp, int baud = 115200 );
@@ -73,8 +75,8 @@ int main(void)
 
   leds.write( 0x00 );
 
-  UVAR('t') = 1000;
-  UVAR('n') = 10;
+  UVAR('t') = 100;
+  UVAR('n') = 50;
 
   global_smallrl = &srl;
 
@@ -168,18 +170,29 @@ int cmd_test0( int argc, const char * const * argv )
   TickType_t tc0 = xTaskGetTickCount(), tc00 = tc0;
   int16_t xyz[3];
 
+  // term_set_scroll_area( 2, 16 );
+  // pr( NL );
+  term_clear();
+  // delay_ms( 50 );
+
   break_flag = 0;
   for( int i=0; i<n && !break_flag; ++i ) {
     accel.getAccAll( xyz );
     TickType_t tcc = xTaskGetTickCount();
+    draw_hbar_gauge( 1, 1, 100, xyz[0], INT16_MIN, INT16_MAX );
+    draw_hbar_gauge( 1, 2, 100, xyz[1], INT16_MIN, INT16_MAX );
+    draw_hbar_gauge( 1, 3, 100, xyz[2], INT16_MIN, INT16_MAX );
+    term_set_xy( 10, 5 );
     pr( "i= " ); pr_d( i );
     pr( "  tick: "); pr_d( tcc - tc00 );
     pr( " [ " ); pr_d( xyz[0] );
     pr( " ; " ); pr_d( xyz[1] );
     pr( " ; " ); pr_d( xyz[2] );
-    pr( " ] " NL );
+    pr( " ] " /* NL  */ );
     vTaskDelayUntil( &tc0, t_step );
   }
+
+  // term_set_scroll_area( -1, -1 );
 
   pr( NL );
 
@@ -190,6 +203,44 @@ int cmd_test0( int argc, const char * const * argv )
   return 0;
 }
 
+void draw_hbar_gauge( int x, int y, int w, int v, int vmin, int vmax, int fd )
+{
+  int w0 = w - 2;
+  if( w0 < 3 ) { return; };
+  char lbra = '[', rbra = ']';
+  if( v < vmin ) { v = vmin; lbra = '$'; };
+  if( v > vmax ) { v = vmax; rbra = '$'; };
+
+  int iv = ( v - vmin ) * w0 / ( vmax - vmin );
+  int i0 = ( 0 - vmin ) * w0 / ( vmax - vmin );
+  char zero_char = '*';
+  if( i0 < 0 )   { i0 = 0;    zero_char = '<'; };
+  if( i0 >= w0 ) { i0 = w0-1; zero_char = '>'; };
+
+  int lb = i0, rb = iv;
+  bool left_zero = true;
+  if( lb > rb ) { int t = lb; lb = rb; rb = t; left_zero = false; }
+  term_save_cpos( fd );
+  term_set_xy( x, y, fd );
+
+
+  pr_c( lbra, fd );
+  int i; // not in loop
+  for( i=0; i<lb-1; ++i ) {
+    pr_c( '.', fd );
+  }
+  pr_c( left_zero ? zero_char : '.' ); ++i;
+  for( /* */; i<rb-2; ++i ) {
+    pr_c( 'W', fd );
+  }
+  pr_c( left_zero ? 'W' : zero_char ); ++i;
+  for( /* */; i<w; ++i ) {
+    pr_c( '.', fd );
+  }
+  pr_c( rbra, fd );
+
+  term_rest_cpos( fd );
+}
 //  ----------------------------- configs ----------------
 
 FreeRTOS_to_stm32cube_tick_hook;
