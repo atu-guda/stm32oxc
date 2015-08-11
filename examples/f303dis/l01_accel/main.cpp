@@ -370,6 +370,9 @@ void COMPASSACCELERO_IO_Write( uint16_t DeviceAddr, uint8_t RegisterAddr, uint8_
   status = HAL_I2C_Mem_Write( &i2ch, DeviceAddr, (uint16_t)RegisterAddr, I2C_MEMADD_SIZE_8BIT,
       &v, 1, 100 /*I2cxTimeout*/);
 
+  pr( NL "W: dev: " ); pr_h( DeviceAddr ); pr( " reg: " ); pr_h( RegisterAddr );
+  pr( " <- " ); pr_h( v ); pr( NL );
+
   if( status != HAL_OK )  {
     errno = 108;
     // I2Cx_Error();
@@ -383,6 +386,9 @@ uint8_t COMPASSACCELERO_IO_Read(uint16_t DeviceAddr, uint8_t RegisterAddr)
 
   status = HAL_I2C_Mem_Read( &i2ch, DeviceAddr, RegisterAddr, I2C_MEMADD_SIZE_8BIT,
       &v, 1, 100 /*I2cxTimeout*/ );
+
+  pr( NL "R: dev: " ); pr_h( DeviceAddr ); pr( " reg: " ); pr_h( RegisterAddr );
+  pr( " -> " ); pr_h( v ); pr( NL );
 
   if( status != HAL_OK )  {
     errno = 101;
