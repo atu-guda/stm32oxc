@@ -1,6 +1,8 @@
-#include <stdlib.h>
+#include <cstdlib>
 
 #include <oxc_miscfun.h>
+
+using namespace std;
 
 uint8_t numFirstBit( uint32_t a )
 {
@@ -115,4 +117,6 @@ void u2_3dig( unsigned n, char *s )
   s[1] = '0' + n % 10; n /= 10;
   s[0] = '0' + n % 10;
 }
+
+
 

@@ -156,18 +156,18 @@ int sendBlock( int fd, const char *s, int l )
   return devio_fds[fd]->sendBlock( s, l );
 }
 
-int pr( const char *s )
+int pr( const char *s, int fd /* = 1 */ )
 {
   if( !s || !*s ) {
     return 0;
   }
-  prl( s, strlen(s) );
+  prl( s, strlen(s), fd );
   return 0;
 }
 
-int prl( const char *s, int l )
+int prl( const char *s, int l, int fd /* = 1 */  )
 {
-  sendBlock( 1, s, l );
+  sendBlock( fd, s, l );
   idle_flag = 1;
   return 0;
 }

@@ -1,9 +1,7 @@
-Convert argv[i] to int with checks.
-DevIO : public Dev
-I2C class
+Move term ctl to console
+DevIO : public Dev ?
 IO on idle / manual flush.
 Errno of fd check
-SMLRL::u2_3dig - up to common
 Common UART init
 Test: float, sprintf, queue cost.
   result: queue =~ size * n + fixed; (RAM)

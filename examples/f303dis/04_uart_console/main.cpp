@@ -22,7 +22,7 @@ BOARD_DEFINE_LEDS;
 const int def_stksz = 1 * configMINIMAL_STACK_SIZE;
 // const int def_stksz = 128; // to find minimum
 
-SmallRL srl( smallrl_print, smallrl_exec );
+SmallRL srl( smallrl_exec );
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );

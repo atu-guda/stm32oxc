@@ -25,7 +25,7 @@ UsbcdcIO usbcdc;
 
 const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
 
-SmallRL srl( smallrl_print, smallrl_exec );
+SmallRL srl( smallrl_exec );
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );

@@ -3,139 +3,12 @@
 // #include <oxc_debug1.h>
 #include <cstring>
 
+using namespace std;
+
 SMLRL::SmallRL *SMLRL::global_smallrl = nullptr;
 
-
-int SMLRL::cmdline_split( char *cmd, char** argv, int max_args )
-{
-  if( !cmd || !argv || ! *cmd ) { return 0; }
-  int nc = 0;
-  bool was_bs = false;
-  char was_quo = 0;
-
-  int l = strlen( cmd ); // need, as we adds many nulls
-  if( l < 1 || l > SMLRL_BUFSZ-4 ) {
-    return 0;
-  }
-  int j = 0;
-
-  for( int i=0; i<=l; ++i ) { // ??? <= ???
-    char c = cmd[i];
-    // cerr << "c: '" << c << "' was_bs: " << was_bs << " i= " << i << " j= " << j << endl;
-
-    if( was_bs ) {
-      was_bs = false;
-      char c1 = c;
-      switch( c ) {
-        case 'n': c1 = '\n'; break;
-        case 'r': c1 = '\r'; break;
-        case 't': c1 = '\t'; break;
-        case 'e': c1 = '\033'; break;
-      }
-      cmd[j++] = c1;
-      continue;
-    }
-
-    if( c == '\\' && was_quo != '\'' ) {
-      was_bs = true;
-      continue;
-    }
-
-    if( was_quo ) {
-      if( c == was_quo ) { was_quo = 0; continue; }
-      cmd[j++] = c;
-      continue;
-    }
-
-    if( c == '\'' || c == '"' ) {
-      was_quo = c; continue;
-    }
-
-    if( c == ' ' ) {
-      cmd[j++] = '\0'; continue;
-    }
-    cmd[j++] = c;
-  }
-  for( int i=j; i<=l; ++i ) { cmd[i] = '\0'; } // <= !!!
-
-  if( was_quo ) { return 0; }
-
-
-  bool was_nul = true; // start assumed as nul
-  char c;
-
-  for( int i=0; i<l; ++i ) {
-    c = cmd[i];
-    bool is_nul = ( c == '\0' );
-
-    if( was_nul && ! is_nul ) {
-      argv[nc++] = cmd+i;
-      if( nc >= (max_args-1) ) { break; } // (-1): place for last null
-    }
-
-    was_nul = is_nul;
-  };
-
-
-  argv[nc] = nullptr;
-  return nc;
-}
-
-int SMLRL::exec_direct( const char *s, int l )
-{
-  if( l<0 || l >= SMLRL_BUFSZ ) {
-    return 0;
-  }
-  // dump8( s,  l+1 );
-  char ss[l+1];
-  // static char ss[SMLRL_BUFSZ+2]; // TODO: lock!
-  // memcpy( ss, s, l+1 );
-  memmove( ss, s, l+1 );
-  // dump8( ss, l+1 );
-
-  char *argv[MAX_ARGS];
-  int argc = cmdline_split( ss, argv, MAX_ARGS );
-  // DEBUG
-  // dump8( ss, l+1 );
-
-  if( argc < 1 ) { return 1; }
-
-  CmdFun f = 0;
-  // const char *nm = "???";
-
-  for( int i=0; global_cmds[i] && i<CMDS_NMAX; ++i ) {
-    if( global_cmds[i]->name == 0 ) {
-      break;
-    }
-    if( argv[0][1] == '\0'  &&  argv[0][0] == global_cmds[i]->acr ) {
-      f = global_cmds[i]->fun;
-      // nm = global_cmds[i]->name;
-      break;
-    }
-    if( strcmp( global_cmds[i]->name, argv[0])  == 0 ) {
-      f = global_cmds[i]->fun;
-      // nm = global_cmds[i]->name;
-      break;
-    }
-  }
-
-  if( f != 0 ) {
-      int rc = 0;
-      // pr( NL "=== CMD: \"" ); pr( nm ); pr( "\"" NL );
-      // delay_ms( 50 );
-      rc = f( argc, argv );
-      pr_sdx( rc );
-  } else {
-    pr( "ERR:  Unknown command \"" );  pr( argv[0] );   pr( "\"" NL );
-  }
-
-  return 0;
-}
-
-// ----------------------- SmallRL ------------------------------
-
-SMLRL::SmallRL::SmallRL( PrintFun a_prf, ExecFun a_exf )
-      : prf( a_prf ), exf( a_exf )
+SMLRL::SmallRL::SmallRL( ExecFun a_exf, int a_fd /* = 1 */ )
+      : exf( a_exf ), fd( a_fd )
 {
   ps1[0] = '#'; ps1[1] = ' '; ps1[2] = 0;
   reset();
@@ -150,9 +23,9 @@ void SMLRL::SmallRL::reset()
 
 void SMLRL::SmallRL::re_ps() const
 {
-  puts( NL );
+  pr( NL, fd );
   print_ps1();
-  term_good_cpos();
+  set_good_cpos();
 }
 
 void SMLRL::SmallRL::set_ps1( const char *p, int a_vlen )
@@ -167,37 +40,7 @@ void SMLRL::SmallRL::set_ps1( const char *p, int a_vlen )
   ps1_len = l; ps1_vlen = a_vlen;
 }
 
-void SMLRL::SmallRL:: puts( const char *s ) const
-{
-  if( !s || !prf ) { return; }
-  int l = strlen( s );
-  if( l < 1 ) { return; }
-  prf( s, l );
-}
 
-void SMLRL::SmallRL::term_cmd1( int n, char c ) const
-{
-  char b[8];
-  b[0] = '\033'; // ESC
-  b[1] = '[';
-  u2_3dig( n, b+2 ); // 2,3,4
-  b[5] = c; b[6] = 0;
-  prf( b, 6 );
-}
-
-void SMLRL::SmallRL::term_move_x( int n ) const
-{
-  if( n < 0 ) {
-    term_cmd1( -n, 'D' );
-  } else {
-    term_cmd1(  n, 'C' );
-  }
-}
-
-void SMLRL::SmallRL::term_set_x( int n ) const
-{
-  term_cmd1(  n, 'G' );
-}
 
 // ---------- commands -------------------
 int SMLRL::SmallRL::cmd_bs()
@@ -205,10 +48,10 @@ int SMLRL::SmallRL::cmd_bs()
   if( cpos < 1 ) { return 0; }
   memmove( buf+cpos-1, buf+cpos, epos-cpos+1 );
   --cpos; --epos;
-  term_left1();
-  term_kill_EOL();
-  prf( buf+cpos, epos-cpos+1 );
-  term_good_cpos();
+  term_left1( fd );
+  term_kill_EOL( fd );
+  prl( buf+cpos, epos-cpos+1, fd );
+  set_good_cpos();
   return 1;
 }
 
@@ -217,16 +60,16 @@ int SMLRL::SmallRL::cmd_delch()
   if( epos < 1 || cpos >= epos ) { return 0; }
   memmove( buf+cpos, buf+cpos+1, epos-cpos+1 );
   --epos;
-  term_kill_EOL();
-  prf( buf+cpos, epos-cpos+1 );
-  term_good_cpos();
+  term_kill_EOL( fd );
+  prl( buf+cpos, epos-cpos+1, fd );
+  set_good_cpos();
   return 1;
 }
 
 int SMLRL::SmallRL::cmd_home()
 {
   cpos = 0;
-  term_good_cpos();
+  set_good_cpos();
   return 1;
 }
 
@@ -234,7 +77,7 @@ int SMLRL::SmallRL::cmd_left()
 {
   if( cpos < 1 ) { return 0; }
   --cpos;
-  term_left1();
+  term_left1( fd );
   return 1;
 }
 
@@ -242,21 +85,21 @@ int SMLRL::SmallRL::cmd_right()
 {
   if( cpos >=epos ) { return 0; }
   ++cpos;
-  term_right1();
+  term_right1( fd );
   return 1;
 }
 
 int SMLRL::SmallRL::cmd_end()
 {
   cpos = epos;
-  term_good_cpos();
+  set_good_cpos();
   return 1;
 }
 
 int SMLRL::SmallRL::cmd_kill_eol()
 {
   epos = cpos; buf[cpos] = 0;
-  term_kill_EOL();
+  term_kill_EOL( fd );
   return 1;
 }
 
@@ -285,7 +128,7 @@ int SMLRL::SmallRL::cmd_kill_word()
 
 int SMLRL::SmallRL::cmd_redraw()
 {
-  term_clear(); term_set_00();
+  term_clear( fd ); term_set_00( fd );
   redraw();
   return 1;
 }
@@ -294,7 +137,7 @@ int SMLRL::SmallRL::cmd_sigint()
 {
   if( !sigf ) { return 0; }
   sigf();
-  puts( NL );
+  pr( NL, fd );
   redraw();
   return 1;
 }
@@ -306,19 +149,19 @@ int SMLRL::SmallRL::cmd_addchar( char c )
   }
   memmove( buf+cpos+1, buf+cpos, epos-cpos+1 );
   buf[cpos] = c;
-  prf( buf+cpos, epos-cpos+1 );
+  prl( buf+cpos, epos-cpos+1, fd );
   ++epos; ++cpos;
-  term_set_x( 1+cpos+ps1_vlen );
+  term_set_x( 1+cpos+ps1_vlen, fd  );
   return epos;
 }
 
 void SMLRL::SmallRL::redraw() const
 {
-  term_kill_line();
-  term_set_x( 1 );
+  term_kill_line( fd );
+  term_set_x( 1, fd );
   print_ps1();
-  prf( buf, epos );
-  term_good_cpos();
+  prl( buf, epos, fd );
+  set_good_cpos();
 }
 
 int SMLRL::SmallRL::history_next()
@@ -364,37 +207,37 @@ int SMLRL::SmallRL::addChar( char c )
   }
 
   switch( c ) {
-    case KEY_CR: case KEY_LF:
+    case TermKey::KEY_CR: case TermKey::KEY_LF:
       handle_nl();
       return 1;
-    case KEY_ESC:
+    case TermKey::KEY_ESC:
       esc = esc_start;
       return 1;
-    case KEY_BS: case KEY_DEL:
+    case TermKey::KEY_BS: case TermKey::KEY_DEL:
       return cmd_bs();
-    case KEY_DELCH:
+    case TermKey::KEY_DELCH:
       return cmd_delch();
-    case KEY_HOME:
+    case TermKey::KEY_HOME:
       return cmd_home();
-    case KEY_LEFT:
+    case TermKey::KEY_LEFT:
       return cmd_left();
-    case KEY_RIGHT:
+    case TermKey::KEY_RIGHT:
       return cmd_right();
-    case KEY_END:
+    case TermKey::KEY_END:
       return cmd_end();
-    case KEY_KILL_END:
+    case TermKey::KEY_KILL_END:
       return cmd_kill_eol();
-    case KEY_KILL_BOL:
+    case TermKey::KEY_KILL_BOL:
       return cmd_kill_bol();
-    case KEY_KILL_WORD:
+    case TermKey::KEY_KILL_WORD:
       return cmd_kill_word();
-    case KEY_REDRAW:
+    case TermKey::KEY_REDRAW:
       return cmd_redraw();
-    case KEY_HIST_NEXT:
+    case TermKey::KEY_HIST_NEXT:
       return history_next();
-    case KEY_HIST_PREV:
+    case TermKey::KEY_HIST_PREV:
       return history_prev();
-    case KEY_SIGINT:
+    case TermKey::KEY_SIGINT:
       return cmd_sigint();
     default:
       break;
@@ -411,7 +254,7 @@ int SMLRL::SmallRL::addChar( char c )
 void SMLRL::SmallRL::handle_nl()
 {
   if( print_cmd ) {
-    prf( NL "CMD: \"", 8 ); prf( buf, epos ); prf( "\"" NL, 3 );
+    prl( NL "CMD: \"", 8, fd ); prl( buf, epos, fd ); prl( "\"" NL, 3, fd );
   }
   if( exf && epos > 0 ) {
 
@@ -537,13 +380,13 @@ int  SMLRL::SmallRL::history_find_next( int cp ) const
 
 void SMLRL::SmallRL::history_print() const
 {
-  puts( NL "HISTORY:" NL );
+  pr( NL "HISTORY:" NL, fd );
   int c = h_cur;
 
   for( int i=0; i<22; ++i ) {
     int l = strlen( hist + c );
     if( l < 1 ) {   return;   }
-    prf( hist+c, l ); puts( NL );
+    prl( hist+c, l, fd ); pr( NL, fd );
 
     int nc = history_find_prev( c );
     if( nc < 0 ) { break; }
