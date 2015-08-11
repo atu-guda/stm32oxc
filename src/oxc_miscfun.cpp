@@ -107,3 +107,12 @@ void bcd_to_char2( uint8_t bcd, char *s )
   s[1] = '0' + ( bcd & 0x0F );
   s[0] = '0' + ( bcd >> 4 );
 }
+
+void u2_3dig( unsigned n, char *s )
+{
+  if( !s ) { return; }
+  s[2] = '0' + n % 10; n /= 10;
+  s[1] = '0' + n % 10; n /= 10;
+  s[0] = '0' + n % 10;
+}
+

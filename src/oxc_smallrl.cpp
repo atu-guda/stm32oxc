@@ -5,13 +5,6 @@
 
 SMLRL::SmallRL *SMLRL::global_smallrl = nullptr;
 
-void SMLRL::u2_3dig( unsigned n, char *s )
-{
-  if( !s ) { return; }
-  s[2] = '0' + n % 10; n /= 10;
-  s[1] = '0' + n % 10; n /= 10;
-  s[0] = '0' + n % 10;
-}
 
 int SMLRL::cmdline_split( char *cmd, char** argv, int max_args )
 {

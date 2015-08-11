@@ -56,6 +56,9 @@ inline uint8_t bcd_to_uint8( uint8_t bcd ) {
 
 void bcd_to_char2( uint8_t bcd, char *s );
 
+// converts decimal to 3-byte string w/o null termnation
+void u2_3dig( unsigned n, char *s );
+
 #endif
 
 // vim: path=.,/usr/share/stm32cube/inc

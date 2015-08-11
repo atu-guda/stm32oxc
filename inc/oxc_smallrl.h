@@ -22,7 +22,6 @@
 
 namespace SMLRL {
 
-  void u2_3dig( unsigned n, char *s ); // 3 chars w/o 0
   int cmdline_split( char *cmd, char** argv, int max_args ); // modifies cmd!
   int exec_direct( const char *s, int l );
 
