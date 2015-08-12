@@ -209,7 +209,7 @@ int exec_direct( const char *s, int l )
 
 BarHText::BarHText( int x, int y, int w, int v_min, int v_max, int a_fd  )
   : x0( x ), y0( y ), w0( w-2 ), vmin( v_min ), vmax( v_max ), fd( a_fd ),
-    i0( ( 0 - vmin ) * w0 / ( vmax - vmin ) )
+    i0( ( 0 - vmin ) * ( w0-1 ) / ( vmax - vmin ) )
 {
   c_zero_e = c_zero;
   if( i0 < 0 )   { i0 = 0;    c_zero_e = '<'; };
@@ -223,7 +223,7 @@ void BarHText::draw( int v )
   if( v < vmin ) { v = vmin; lbra = '$'; };
   if( v > vmax ) { v = vmax; rbra = '$'; };
 
-  int iv = ( v - vmin ) * w0 / ( vmax - vmin );
+  int iv = ( v - vmin ) * ( w0 - 1 ) / ( vmax - vmin );
   char zero_char = c_zero_e;
 
   int lb = i0, rb = iv;
@@ -238,11 +238,11 @@ void BarHText::draw( int v )
 
   pr_c( lbra, fd );
   int i; // not in loop
-  for( i=0; i<lb-1; ++i ) {
+  for( i=0; i<lb; ++i ) {
     pr_c( c_space, fd );
   }
   pr_c( ( left_zero && drawZero ) ? zero_char : c_space ); ++i;
-  for( /* */; i<rb-2; ++i ) {
+  for( /* */; i<rb; ++i ) {
     pr_c( c_bar, fd );
   }
   pr_c( ( !left_zero && drawZero ) ? zero_char : c_bar ); ++i;
