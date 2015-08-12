@@ -47,8 +47,6 @@ I2C_HandleTypeDef i2ch;
 LSM303DHLC_Accel accel( &i2ch );
 void MX_I2C1_Init( I2C_HandleTypeDef &i2c );
 
-void draw_hbar_gauge( int x, int y, int w, int v, int vmin, int vmax, int fd = 1 );
-
 UART_HandleTypeDef uah;
 UsartIO usartio( &uah, USART2 );
 int init_uart( UART_HandleTypeDef *uahp, int baud = 115200 );
@@ -155,6 +153,10 @@ int cmd_test0( int argc, const char * const * argv )
   pr( " scale= " ); pr_d( scale ); pr( " c4v= " ); pr_h( c4v );
   pr( NL );
 
+  BarHText bar_x( 1, 1, 100, INT16_MIN, INT16_MAX );
+  BarHText bar_y( 1, 2, 100, INT16_MIN, INT16_MAX );
+  BarHText bar_z( 1, 3, 100, INT16_MIN, INT16_MAX );
+
   accel.resetDev();
 
   // if( ! accel.check_id() ) {
@@ -179,9 +181,9 @@ int cmd_test0( int argc, const char * const * argv )
   for( int i=0; i<n && !break_flag; ++i ) {
     accel.getAccAll( xyz );
     TickType_t tcc = xTaskGetTickCount();
-    draw_hbar_gauge( 1, 1, 100, xyz[0], INT16_MIN, INT16_MAX );
-    draw_hbar_gauge( 1, 2, 100, xyz[1], INT16_MIN, INT16_MAX );
-    draw_hbar_gauge( 1, 3, 100, xyz[2], INT16_MIN, INT16_MAX );
+    bar_x.draw( xyz[0] );
+    bar_y.draw( xyz[1] );
+    bar_z.draw( xyz[2] );
     term_set_xy( 10, 5 );
     pr( "i= " ); pr_d( i );
     pr( "  tick: "); pr_d( tcc - tc00 );
@@ -203,44 +205,6 @@ int cmd_test0( int argc, const char * const * argv )
   return 0;
 }
 
-void draw_hbar_gauge( int x, int y, int w, int v, int vmin, int vmax, int fd )
-{
-  int w0 = w - 2;
-  if( w0 < 3 ) { return; };
-  char lbra = '[', rbra = ']';
-  if( v < vmin ) { v = vmin; lbra = '$'; };
-  if( v > vmax ) { v = vmax; rbra = '$'; };
-
-  int iv = ( v - vmin ) * w0 / ( vmax - vmin );
-  int i0 = ( 0 - vmin ) * w0 / ( vmax - vmin );
-  char zero_char = '*';
-  if( i0 < 0 )   { i0 = 0;    zero_char = '<'; };
-  if( i0 >= w0 ) { i0 = w0-1; zero_char = '>'; };
-
-  int lb = i0, rb = iv;
-  bool left_zero = true;
-  if( lb > rb ) { int t = lb; lb = rb; rb = t; left_zero = false; }
-  term_save_cpos( fd );
-  term_set_xy( x, y, fd );
-
-
-  pr_c( lbra, fd );
-  int i; // not in loop
-  for( i=0; i<lb-1; ++i ) {
-    pr_c( '.', fd );
-  }
-  pr_c( left_zero ? zero_char : '.' ); ++i;
-  for( /* */; i<rb-2; ++i ) {
-    pr_c( 'W', fd );
-  }
-  pr_c( left_zero ? 'W' : zero_char ); ++i;
-  for( /* */; i<w; ++i ) {
-    pr_c( '.', fd );
-  }
-  pr_c( rbra, fd );
-
-  term_rest_cpos( fd );
-}
 //  ----------------------------- configs ----------------
 
 FreeRTOS_to_stm32cube_tick_hook;
