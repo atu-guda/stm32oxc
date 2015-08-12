@@ -5,7 +5,7 @@
 #include <oxc_usartio.h>
 #include <oxc_console.h>
 #include <oxc_debug1.h>
-#include <oxc_lsm303dlhc_accel.h>
+#include <oxc_lsm303dlhc_mag.h>
 #include <oxc_debug_i2c.h>
 #include <oxc_common1.h>
 #include <oxc_smallrl.h>
@@ -44,7 +44,7 @@ void task_main( void *prm UNUSED_ARG );
 }
 
 I2C_HandleTypeDef i2ch;
-LSM303DHLC_Accel accel( &i2ch );
+LSM303DHLC_Mag mag( &i2ch );
 void MX_I2C1_Init( I2C_HandleTypeDef &i2c );
 
 UART_HandleTypeDef uah;
@@ -69,11 +69,11 @@ int main(void)
   leds.write( 0x0A );  delay_bad_ms( 200 );
 
   MX_I2C1_Init( i2ch );
-  i2c_dbg = &accel;
+  i2c_dbg = &mag;
 
   leds.write( 0x00 );
 
-  UVAR('t') = 100;
+  UVAR('t') = 500;
   UVAR('n') = 50;
 
   global_smallrl = &srl;
@@ -134,71 +134,64 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
 int cmd_test0( int argc, const char * const * argv )
 {
   int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
-  int scale = arg2long_d( 2, argc, argv, 0, 0, 3 );
+  int scale = arg2long_d( 2, argc, argv, 0, 0, 6 );
   uint32_t t_step = UVAR('t');
-  const uint8_t c4_scales[] = {
-    LSM303DHLC_Accel::Ctl4_val::scale_2g,
-    LSM303DHLC_Accel::Ctl4_val::scale_4g,
-    LSM303DHLC_Accel::Ctl4_val::scale_8g,
-    LSM303DHLC_Accel::Ctl4_val::scale_16g,
+  const uint8_t mag_scales[] = {
+    LSM303DHLC_Mag::crb_sens_1_3,
+    LSM303DHLC_Mag::crb_sens_1_9,
+    LSM303DHLC_Mag::crb_sens_2_5,
+    LSM303DHLC_Mag::crb_sens_4_0,
+    LSM303DHLC_Mag::crb_sens_4_7,
+    LSM303DHLC_Mag::crb_sens_5_6,
+    LSM303DHLC_Mag::crb_sens_8_1,
     0
   };
-
-  uint8_t c4v = c4_scales[scale];
-  if( argc > 3 ) {
-    c4v |= (uint8_t)LSM303DHLC_Accel::Ctl4_val::hr_enable;
-  }
+  uint8_t sens = mag_scales[scale];
 
   pr( NL "Test0: n= " ); pr_d( n ); pr( " t= " ); pr_d( t_step );
-  pr( " scale= " ); pr_d( scale ); pr( " c4v= " ); pr_h( c4v );
+  pr( " scale= " ); pr_d( scale ); pr( " sens= " ); pr_h( sens );
   pr( NL );
 
-  BarHText bar_x( 1, 1, 100, INT16_MIN, INT16_MAX );
-  BarHText bar_y( 1, 2, 100, INT16_MIN, INT16_MAX );
-  BarHText bar_z( 1, 3, 100, INT16_MIN, INT16_MAX );
+  int scale_min = -1000; // INT16_MIN
+  int scale_max =  1000; // INT16_MAX
 
-  accel.resetDev();
+  BarHText bar_x( 1, 1, 100, scale_min, scale_max );
+  BarHText bar_y( 1, 2, 100, scale_min, scale_max );
+  BarHText bar_z( 1, 3, 100, scale_min, scale_max );
 
-  // if( ! accel.check_id() ) {
-  //   pr( "LSM303DHLC_Accel no found" NL );
-  //   return 1;
-  // }
-  if( ! accel.init( (LSM303DHLC_Accel::Ctl4_val)c4v ) ) {
-    pr( "Fail to init LSM303DHLC_Accel" NL );
+  mag.resetDev();
+
+  if( ! mag.init(  LSM303DHLC_Mag::cra_odr_15_Hz | LSM303DHLC_Mag::cra_temp_en, sens ) ) {
+    pr( "Fail to init LSM303DHLC_Mag" NL );
     return 1;
   }
-  accel.rebootMem(); // bad try to drop previous measurement
 
   TickType_t tc0 = xTaskGetTickCount(), tc00 = tc0;
-  int16_t xyz[3];
+  int16_t xyz[3], temp;
 
-  // term_set_scroll_area( 2, 16 );
-  // pr( NL );
   term_clear();
-  // delay_ms( 50 );
 
   break_flag = 0;
-  int el_t = 0;
   for( int i=0; i<n && !break_flag; ++i ) {
-    accel.getAccAll( xyz );
-    TickType_t tcc = xTaskGetTickCount(); el_t = tcc - tc00;
+    mag.getMagAll( xyz );
+    temp = mag.getTemp();
+    TickType_t tcc = xTaskGetTickCount();
     bar_x.draw( xyz[0] );
     bar_y.draw( xyz[1] );
     bar_z.draw( xyz[2] );
     term_set_xy( 10, 5 );
     pr( "i= " ); pr_d( i );
-    pr( "  tick: ");  pr_d( el_t );
+    pr( "  tick: "); pr_d( tcc - tc00 );
     pr( " [ " ); pr_d( xyz[0] );
     pr( " ; " ); pr_d( xyz[1] );
     pr( " ; " ); pr_d( xyz[2] );
-    pr( " ] " /* NL  */ );
+    pr( " ] " /* NL  */ ); pr_d( temp );
     vTaskDelayUntil( &tc0, t_step );
   }
 
   // term_set_scroll_area( -1, -1 );
 
   pr( NL );
-  pr_sdx( el_t );
 
   delay_ms( 10 );
   break_flag = 0;  idle_flag = 1;
