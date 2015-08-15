@@ -35,6 +35,9 @@ char* i2dec( int n, char *s );
 inline int sign( int x );
 inline int sign( int x ) { return (x>0) ? 1 : ( (x<0) ? -1: 0 ) ; }
 
+inline int imin( int a, int b  ) { return (a<b) ? a : b; }
+inline int imax( int a, int b  ) { return (a>b) ? a : b; }
+
 // converts given arg to int, with check and limits
 bool arg2long( int narg, int argc, const char * const * argv, long *v,
                long vmin= INT32_MIN, int vmax = INT32_MAX );
