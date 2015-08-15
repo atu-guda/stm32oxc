@@ -68,14 +68,6 @@ inline void term_save_cpos( int fd = 1 ) { prl( "\033[s", 3, fd ); };
 inline void term_rest_cpos( int fd = 1 ) { prl( "\033[u", 3, fd ); };
 inline void term_clear( int fd = 1 )     { prl( "\033[2J", 4, fd ); };
 
-int term_delch( int fd = 1 );
-int term_home( int fd = 1 );
-int term_left( int fd = 1 );
-int term_right( int fd = 1 );
-int term_end( int fd = 1 );
-int term_kill_eol( int fd = 1 );
-int term_kill_bol( int fd = 1 );
-int term_kill_word( int fd = 1);
 
 typedef int (*CmdFun)( int argc, const char * const * argv );
 

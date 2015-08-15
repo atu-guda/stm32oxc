@@ -17,7 +17,7 @@ extern int user_vars[N_USER_VARS];
 #define GBUF_SZ 256
 extern char gbuf_a[GBUF_SZ];
 extern char gbuf_b[GBUF_SZ];
-extern int log_buf_idx; // gbuf_b in log place too
+extern int log_buf_idx; // gbuf_b is log place too
 void log_add( const char *s );
 void log_add_bin( const char *s, uint16_t len );
 void log_reset(void);
@@ -29,6 +29,10 @@ char* str2addr( const char *str );
 void dump8( const void *addr, int n, bool isAbs = false );
 
 void print_user_var( int idx );
+
+// arch-dependent function
+// fill string s with information about pin config
+void gpio_pin_info( GPIO_TypeDef *gi, uint16_t pin, char *s );
 
 // common commands:
 int cmd_info( int argc, const char * const * argv );
@@ -53,6 +57,8 @@ int cmd_log_print( int argc, const char * const * argv );
 extern CmdInfo CMDINFO_LOG_PRINT;
 int cmd_log_reset( int argc, const char * const * argv );
 extern CmdInfo CMDINFO_LOG_RESET;
+int cmd_pin_info( int argc, const char * const * argv );
+extern CmdInfo CMDINFO_PIN_INFO;
 
 #define DEBUG_CMDS \
   &CMDINFO_HELP, \
@@ -65,7 +71,8 @@ extern CmdInfo CMDINFO_LOG_RESET;
   &CMDINFO_LOG_PRINT, \
   &CMDINFO_LOG_RESET, \
   &CMDINFO_PVAR, \
-  &CMDINFO_SVAR \
+  &CMDINFO_SVAR, \
+  &CMDINFO_PIN_INFO \
 
 #ifdef __cplusplus
 }

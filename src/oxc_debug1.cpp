@@ -136,6 +136,84 @@ void print_user_var( int idx )
   pr_h( user_vars[idx] ); pr( NL );
 }
 
+//----------------------------------------------------------------------
+
+static const char *pin_moder_name[] = { "Inp", "Out", "AFn", "Ana", "?m?" };
+static const char *pin_speed_name[] = { "Low", "Lo1", "Med", "Hig", "?s?" };
+static const char *pin_pupdr_name[] = { "No", "Up", "Dn", "Xx", "?p" };
+
+#if defined (STM32F0)
+void gpio_pin_info( GPIO_TypeDef *gi, uint16_t pin, char *s )
+{
+  if( !gi || !s || pin >= PORT_BITS ) { return; }
+  s[0] = '?'; s[1] = 0;
+}
+#elif defined (STM32F1)
+void gpio_pin_info( GPIO_TypeDef *gi, uint16_t pin, char *s )
+{
+  if( !gi || !s || pin >= PORT_BITS ) { return; }
+  s[0] = '?'; s[1] = 0;
+}
+#elif defined (STM32F2)
+void gpio_pin_info( GPIO_TypeDef *gi, uint16_t pin, char *s )
+{
+  if( !gi || !s || pin >= PORT_BITS ) { return; }
+  s[0] = '?'; s[1] = 0;
+}
+#elif defined (STM32F3)
+void gpio_pin_info( GPIO_TypeDef *gi, uint16_t pin, char *s )
+{
+  if( !gi || !s || pin >= PORT_BITS ) { return; }
+  int j = 0;
+  uint16_t p2 = pin << 1;
+  uint16_t mod = ( gi->MODER >> p2 ) & 0x03;
+  for( int i=0; i<3; ++i ) {
+    s[j++] = pin_moder_name[mod][i];
+  }
+
+  s[j++] = '.';
+  if( ( gi->OTYPER >> pin ) & 1 ) {
+    s[j++] = 'O'; s[j++] = 'D';
+  } else {
+    s[j++] = 'P'; s[j++] = 'P';
+  }
+
+  s[j++] = '.';
+  uint16_t spe = ( gi->OSPEEDR >> p2 ) & 0x03;
+  for( int i=0; i<3; ++i ) {
+    s[j++] = pin_speed_name[spe][i];
+  }
+
+  s[j++] = '.';
+  uint16_t pupd = ( gi->PUPDR >> p2 ) & 0x03;
+  for( int i=0; i<2; ++i ) {
+    s[j++] = pin_pupdr_name[pupd][i];
+  }
+
+  s[j++] = ':'; s[j++] = 'A'; s[j++] = 'F';
+  uint32_t afnr = ( pin > 7 ) ? gi->AFR[1] : gi->AFR[0];
+  uint16_t afn = ( afnr >> (pin<<2) ) & 0x0F;
+  s[j++] = '0' + afn;
+
+  s[j++] = '='; s[j++] = 'i';
+  s[j++] = ( ( gi->IDR >> pin ) & 1 ) ? '1' : '0';
+  s[j++] = ','; s[j++] = 'o';
+  s[j++] = ( ( gi->ODR >> pin ) & 1 ) ? '1' : '0';
+
+  s[j++] = 0;
+}
+#elif defined (STM32F4)
+void gpio_pin_info( GPIO_TypeDef *gi, uint16_t pin, char *s )
+{
+  if( !gi || !s || pin >= PORT_BITS ) { return; }
+  s[0] = '?'; s[1] = 0;
+}
+#else
+  #warning "Unknown MCU family"
+#endif
+
+
+//----------------------------------------------------------------------
 // common commands
 //
 int cmd_info( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
@@ -377,5 +455,42 @@ int cmd_log_reset( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
   return 0;
 }
 CmdInfo CMDINFO_LOG_RESET { "lr",     0,  cmd_log_reset,  "  - reset log buffer"  };
+
+int cmd_pin_info( int argc, const char * const * argv )
+{
+  char s[32];
+  uint16_t pin = arg2long_d( 2, argc, argv, 0, 0, 15 );
+  char pstr[2] = "A";
+  GPIO_TypeDef *gi = GPIOA;
+  if( argc > 1 ) {
+    switch( argv[1][0] ) {
+      case 'B': gi = GPIOB; pstr[0] = 'B'; break;
+      case 'C': gi = GPIOC; pstr[0] = 'C'; break;
+      case 'D': gi = GPIOD; pstr[0] = 'D'; break;
+      #ifdef GPIOE
+      case 'E': gi = GPIOE; pstr[0] = 'E'; break;
+      #endif
+      #ifdef GPIOF
+      case 'F': gi = GPIOF; pstr[0] = 'F'; break;
+      #endif
+      #ifdef GPIOG
+      case 'G': gi = GPIOG; pstr[0] = 'G'; break;
+      #endif
+      #ifdef GPIOI
+      case 'I': gi = GPIOI; pstr[0] = 'I'; break;
+      #endif
+    }
+  }
+  pr( NL "Port "); pr( pstr ); pr( " pin: " ); pr_d( pin );
+  pr( " addr: " ); pr_a( gi ); pr( NL );
+  gpio_pin_info( gi, pin, s );
+  pr( s ); pr( NL );
+  dump8( gi, (sizeof(*gi)+15) & 0xF0 );
+
+
+  return 0;
+}
+CmdInfo CMDINFO_PIN_INFO { "pinfo",  0, cmd_pin_info,       " [A-I] [0-15] - info about pin" };
+
 
 // vim: path=.,/usr/share/stm32lib/inc/,/usr/arm-none-eabi/include,../inc
