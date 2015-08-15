@@ -27,10 +27,14 @@ SmallRL srl( smallrl_exec );
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
 
+int cmd_sendr_spi( int argc, const char * const * argv );
+CmdInfo CMDINFO_SENDR { "sendr", 'S', cmd_sendr_spi, "[0xXX ...] - send bytes, recv UVAR('r')"  };
+
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
 
   &CMDINFO_TEST0,
+  &CMDINFO_SENDR,
   nullptr
 };
 
@@ -140,11 +144,11 @@ int cmd_test0( int argc, const char * const * argv )
   pr( NL "Test0: sv= " ); pr_h( sv ); pr( " nd= " ); pr_d( nd );
   pr( NL );
 
-  // for logic analizer
-  nss_pin.reset( 1 );
-  DLY_T;
-  nss_pin.set( 1 );
-  DLY_T;
+  // // for logic analizer
+  // nss_pin.reset( 1 );
+  // DLY_T;
+  // nss_pin.set( 1 );
+  // DLY_T;
 
   // spi_d.resetDev();
 
@@ -152,14 +156,6 @@ int cmd_test0( int argc, const char * const * argv )
   // int rc = spi_d.send( (uint8_t)sv );
   // int rc = spi_d.recv( (uint8_t*)gbuf_a, imin(UVAR('r'),sizeof(gbuf_a)) );
 
-  // delay_mcs( 200 );
-  // nss_pin.reset( 1 );
-  // DLY_T;
-  // nss_pin.set( 1 );
-  // DLY_T;
-  // nss_pin.reset( 1 );
-  // DLY_T;
-  // nss_pin.set( 1 );
 
   pr_sdx( rc );
   if( rc > 0 ) {
@@ -178,6 +174,35 @@ int cmd_test0( int argc, const char * const * argv )
   pr( NL "test0 end." NL );
   return 0;
 }
+
+int cmd_sendr_spi( int argc, const char * const * argv )
+{
+  uint8_t sbuf[16]; // really used not more then 9 - max args
+  uint16_t ns = argc - 1;
+
+  for( uint16_t i = 0; i<ns; ++i ) {
+    uint8_t t = arg2long_d( i+1, argc, argv, 0, 0, 0xFF );
+    sbuf[i] = t;
+  }
+
+  int nd = imin( UVAR('r'), sizeof(gbuf_a) );
+  pr( NL "Send/recv: ns= " ); pr_d( ns ); pr( " nd= " ); pr_d( nd );
+  pr( NL );
+  dump8( sbuf, ns );
+
+  int rc = spi_d.send_recv( sbuf, ns, (uint8_t*)gbuf_a, nd );
+
+  pr_sdx( rc );
+  if( rc > 0 ) {
+    dump8( gbuf_a, rc );
+  }
+  delay_ms( 10 );
+  break_flag = 0;  idle_flag = 1;
+
+  pr( NL "sendr end." NL );
+  return 0;
+}
+
 
 //  ----------------------------- configs ----------------
 
