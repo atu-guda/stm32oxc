@@ -14,7 +14,7 @@ class PinsOut
    PinsOut( GPIO_TypeDef *gi, uint8_t a_start, uint8_t a_n )
      : gpio( gi ),
        start( a_start ), n( a_n ),
-       mask( ((uint16_t)(0xFFFF) << (PORT_BITS - n)) >> (PORT_BITS - n - start) )
+       mask( (uint16_t)((uint16_t)(0xFFFF) << (PORT_BITS - n)) >> (PORT_BITS - n - start) )
      {};
    uint16_t getMask() const { return mask; }
    void initHW();
