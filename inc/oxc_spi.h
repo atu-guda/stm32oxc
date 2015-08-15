@@ -21,6 +21,7 @@ class DevSPI  {
    void nss_post();
    int  send( const uint8_t *ds, int ns );
    int  send( uint8_t ds );
+   int  send2( const uint8_t *ds1, int ns1, const uint8_t *ds2, int ns2 );
    int  recv( uint8_t *dd, int nd );
    int  recv();
    int  send_recv( const uint8_t *ds, int ns, uint8_t *dd, int nd );

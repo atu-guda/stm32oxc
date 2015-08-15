@@ -102,6 +102,21 @@ int  DevSPI::send_recv( const uint8_t *ds, int ns, uint8_t *dd, int nd )
   return ( rc == HAL_OK ) ? nd : 0;
 }
 
+int  DevSPI::send2( const uint8_t *ds1, int ns1, const uint8_t *ds2, int ns2 )
+{
+  if( ds1 == nullptr || ns1 < 1 || ds2 == nullptr || ns2 < 1 ) {
+    return 0;
+  }
+
+  nss_pre();
+  HAL_StatusTypeDef rc = HAL_SPI_Transmit( spi, (uint8_t*)ds1, ns1, maxWait );
+  if( rc == HAL_OK ) {
+    rc = HAL_SPI_Transmit( spi, (uint8_t*)(ds2), ns2, maxWait );
+  }
+  nss_post();
+
+  return ( rc == HAL_OK ) ? ( ns1 + ns2 ) : 0;
+}
 
 int  DevSPI::send_recv( uint8_t ds, uint8_t *dd, int nd )
 {
