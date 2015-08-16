@@ -37,6 +37,7 @@ class DevSPI_MAX7219 {
    void setDigit( uint8_t pos, uint8_t v )  { wr2( R_D0+pos, v ); }
    void setXDigit( uint8_t pos, uint8_t v ); // bitmap mode required
    void setDigits( const uint8_t *vs, uint8_t dpos = 0xFF, uint8_t st=0, uint8_t en=7 );
+   void setXDigits( const uint8_t *vs, uint8_t dpos = 0xFF, uint8_t st=0, uint8_t en=7 );
    void setVal( int v, uint8_t dpos = 0xFF, uint8_t st=0, uint8_t l=7 );
    void setUVal( unsigned v, uint8_t dpos = 0xFF, uint8_t st=0, uint8_t l=8 );
    void setXVal( unsigned v, uint8_t dpos = 0xFF, uint8_t st=0, uint8_t l=8 );

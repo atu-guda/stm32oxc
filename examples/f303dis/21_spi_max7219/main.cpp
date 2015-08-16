@@ -143,7 +143,7 @@ int cmd_test0( int argc, const char * const * argv )
   uint8_t pos = arg2long_d( 2, argc, argv,  1, 0, 7 );
   uint8_t l = arg2long_d( 3, argc, argv,  3, 1, 8 );
   uint8_t v0[] = { 1, 2, 3, 4, 0x0E, 6, 7, 8 };
-  pr( NL "Test0: v= " ); pr_d( v ); pr( " pos= " ); pr_d( pos );
+  pr( NL "Test0: v= " ); pr_d( v ); pr( " = " ); pr_h( v ); pr( "  pos= " ); pr_d( pos );
   pr( NL );
 
   max7219.setIntens( 1 );
@@ -186,6 +186,18 @@ int cmd_test0( int argc, const char * const * argv )
   delay_ms( 500 );
   max7219.setVal( v, 1, pos, l );
 
+  delay_ms( 1000 );
+  max7219.setDecode( 0x00 ); // all = bitmap
+  max7219.setXVal( v, 1, 0, 8 );
+  delay_ms( 1000 );
+  max7219.setXDigit( 7, 0x10 );
+  max7219.setXDigit( 6, 0x11 );
+  max7219.setXDigit( 5, 0x12 );
+  max7219.setXDigit( 4, 0x13 );
+  max7219.setXDigit( 3, 0x14 );
+  max7219.setXDigit( 2, 0x15 );
+  // delay_ms( 4000 );
+  // max7219.setDecode( 0xFF ); // all = digits
 
 
   delay_ms( 10 );
