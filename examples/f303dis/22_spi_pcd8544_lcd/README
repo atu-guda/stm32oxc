@@ -1,0 +1,17 @@
+Test PCD8544 (Nokia 5110) LCD display driver on SPI2
+
+SPI2:
+B12 = Soft NSS
+B13 = SCK
+B14 = MISO
+B15 = MOSI
+
+More:
+B10: !RST
+B11: D/!C
+
+
+Console via USART2 with FT232RL-alike board.
+PA2  = USART2_TX
+PA3  = USART2_RX
+
