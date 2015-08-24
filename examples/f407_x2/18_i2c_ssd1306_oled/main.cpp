@@ -42,6 +42,9 @@ CmdInfo CMDINFO_VLINE { "vline", 0, cmd_vline, " [start [end]] - test vline"  };
 int cmd_line( int argc, const char * const * argv );
 CmdInfo CMDINFO_LINE { "line", 'L', cmd_line, " - test line"  };
 
+int cmd_contr( int argc, const char * const * argv );
+CmdInfo CMDINFO_CONTR { "contr",  0, cmd_contr, " [v] - test contrast"  };
+
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
   DEBUG_I2C_CMDS,
@@ -50,6 +53,7 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_CLS,
   &CMDINFO_VLINE,
   &CMDINFO_LINE,
+  &CMDINFO_CONTR,
   nullptr
 };
 
@@ -59,10 +63,11 @@ void task_main( void *prm UNUSED_ARG );
 }
 
 I2C_HandleTypeDef i2ch;
-PixBuf1V pb0( 128, 64 );
+
+const uint16_t xmax = SSD1306::X_SZ, ymax = SSD1306::Y_SZ;
+const uint16_t xcen = xmax/2, ycen = ymax/2, ystp = ymax / 10;
+PixBuf1V pb0( xmax, ymax );
 SSD1306 screen( &i2ch );
-
-
 
 
 // -----------------------------------------------------------------------------
@@ -97,7 +102,6 @@ int main(void)
   i2ch.Init.OwnAddress2     = 0;
   HAL_I2C_Init( &i2ch );
   i2c_dbg = &screen;
-
 
   leds.write( 0x00 );
 
@@ -192,36 +196,34 @@ int cmd_test0( int argc, const char * const * argv )
   // uint8_t *fb = screen.fb();
 
   // pb0.fillAll( 1 );
-  for( uint16_t co = 0; co < 64; ++ co ) {
+  for( uint16_t co = 0; co < ymax; ++ co ) {
     pb0.pix( co,   co, 1 );
     pb0.pix( 2*co, co, 1 );
   }
-  pb0.pix( 10,  10, 0 );
-  pb0.pix( 40,  20, 0 );
+  pb0.pix(   ystp,   ystp, 0 );
+  pb0.pix( 4*ystp, 4*ystp, 0 );
 
-  pb0.hline(  0,  0, 128, 1 );
-  pb0.hline( 11, 10, 100, 1 );
-  pb0.hline( 80, 10,  90, 0 );
-  pb0.hline(  0, 60, 200, 1 );
-  pb0.hline(  0, 30, 200, 0 );
+  pb0.hline(      0,    0,        xmax,   1 );
+  pb0.hline( 1*ystp, ystp,   xmax-1*ystp, 1 );
+  pb0.hline( 3*ystp, ystp,   xmax-3*ystp, 0 );
 
-  for( uint16_t ro=0; ro<64; ++ro ) {
+  for( uint16_t ro=0; ro<ycen; ++ro ) {
     pb0.vline( ro, 0, ro, (ro&1) );
   }
 
-  pb0.rect( 10, 10, 117, 53, 1 );
-  pb0.rect( 11, 11, 116, 52, 0 );
-  pb0.box(  12, 12, 64,  51, 1 );
-  pb0.box(  65, 11, 115, 51, 0 );
+  pb0.box(   3,   3,  xmax-3,  4*ystp-3, 1 );
+  pb0.box(  17,   7,  xmax-7,  4*ystp-7, 0 );
+  pb0.rect( 24,   5,      34,  4*ystp-5, 0 );
+  pb0.rect( 37,   5,      47,  4*ystp-5, 1 );
 
-  pb0.fillCircle( 64, 32, 10, 1 );
-  pb0.fillCircle( 64, 32, 6,  0 );
-  pb0.circle( 64, 32, 15, 0 );
-  pb0.circle( 64, 32, 20, 1 );
+  pb0.fillCircle( xcen, ycen, 5*ystp, 1 );
+  pb0.fillCircle( xcen, ycen, 2*ystp, 0 );
+  pb0.circle( xcen, ycen, 3*ystp, 0 );
+  pb0.circle( xcen, ycen, 1*ystp, 1 );
 
-  pb0.outChar( 20, 20, 'A', &Font12,  0 );
-  pb0.outStrBox( 90, 20, "String", &Font8, 1, 0, 1, PixBuf::STRBOX_ALL );
-  pb0.outStrBox( 90, 40, "Str2", &Font8, 0, 1, 0, PixBuf::STRBOX_BG );
+  pb0.outChar( 2, 2, 'A', &Font12,  0 );
+  pb0.outStrBox(      2*ystp,  7*ystp, "String", &Font8, 1, 0, 1, PixBuf::STRBOX_ALL );
+  pb0.outStrBox( xmax-7*ystp,  7*ystp, "Str2",   &Font8, 0, 1, 0, PixBuf::STRBOX_BG );
 
   screen.out( pb0 );
 
@@ -246,8 +248,8 @@ int cmd_cls( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
 
 int cmd_vline( int argc, const char * const * argv )
 {
-  uint16_t y0 = arg2long_d( 1, argc, argv,  0, 0, 256 );
-  uint16_t y1 = arg2long_d( 2, argc, argv, 64, 0, 256 );
+  uint16_t y0 = arg2long_d( 1, argc, argv,    0,  0, ymax );
+  uint16_t y1 = arg2long_d( 2, argc, argv, ymax, y0, ymax );
   pr( NL "vline: y0= " ); pr_d( y0 ); pr( " y1= " ); pr_h( y1 );
 
   for( uint16_t y = y0; y<= y1; ++y ) {
@@ -264,17 +266,17 @@ int cmd_line( int argc, const char * const * argv )
 {
   uint16_t nl = arg2long_d( 1, argc, argv,  36, 0, 1024 );
   uint16_t dn = arg2long_d( 2, argc, argv,  360/nl, 1, 512 );
-  pr( NL "lines: = nl" ); pr_d( nl ); pr( " dn= " ); pr_d( dn );
+  pr( NL "lines: nl = " ); pr_d( nl ); pr( " dn= " ); pr_d( dn );
 
-  uint16_t x0 = 64, y0 = 32;
+  pb0.box( xcen, ystp, xmax-ystp, ymax-ystp, 1 );
 
   for( uint16_t an = 0;  an <= nl; ++an ) {
-    float alp = an * dn * 3.1415926 / 180;
-    uint16_t x1 = x0 + 30 * cosf(alp);
-    uint16_t y1 = y0 + 30 * sinf(alp);
+    float alp = an * dn * 3.1415926f / 180;
+    uint16_t x1 = xcen + 8 * ystp * cosf( alp );
+    uint16_t y1 = ycen + 8 * ystp * sinf( alp );
     // pr( "x1= " ); pr_d( x1 );
     // pr( " y1= " ); pr_d( y1 ); pr( NL );
-    pb0.line( x0, y0, x1, y1, (an&1) );
+    pb0.line( xcen, ycen, x1, y1, (an&1) );
   }
 
   screen.out( pb0 );
@@ -282,6 +284,18 @@ int cmd_line( int argc, const char * const * argv )
   pr( NL "lines end." NL );
   return 0;
 }
+
+int cmd_contr( int argc, const char * const * argv )
+{
+  uint8_t co = arg2long_d( 1, argc, argv,  0x48, 0, 0x7F );
+  pr( NL "contrast: co=" ); pr_d( co );
+
+  screen.contrast( co );
+
+  pr( NL "contrast end." NL );
+  return 0;
+}
+
 
 //  ----------------------------- configs ----------------
 

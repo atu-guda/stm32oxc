@@ -1,4 +1,4 @@
-Move term ctl to console
+Common graphics tests.
 DevIO : public Dev ?
 IO on idle / manual flush.
 Errno of fd check
