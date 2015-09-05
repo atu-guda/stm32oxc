@@ -15,6 +15,7 @@ class DevSPI_SdCard {
    DevSPI_SdCard( DevSPI &a_spi )
      : spi( a_spi ) {};
    bool isInited() const { return inited; }
+   uint32_t getCaps() const { return caps; }
    static uint8_t crc7( uint8_t t, uint8_t d );
    static uint8_t crc7( const uint8_t *p, uint16_t l );
    static uint16_t crc16_ccitt( uint16_t crc, uint8_t d );

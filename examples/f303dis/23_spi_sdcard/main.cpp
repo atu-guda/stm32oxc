@@ -58,6 +58,7 @@ SPI_HandleTypeDef spi2_h;
 DevSPI spi_d( &spi2_h, &nss_pin );
 
 DevSPI_SdCard card( spi_d );
+uint8_t cardbuf[512];
 
 int main(void)
 {
