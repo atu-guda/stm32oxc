@@ -40,6 +40,8 @@ class DevSPI  {
     { return waitForFlag( SPI_FLAG_TXE, SPI_FLAG_TXE, ticks ); }
    HAL_StatusTypeDef waitForNXRE( int ticks = -1 )
     { return waitForFlag( SPI_FLAG_RXNE, SPI_FLAG_RXNE, ticks ); }
+   int  sendSame( uint8_t ds, int ns );
+   int  txrx( uint8_t ds, uint8_t *dr = nullptr );
 
   protected:
    SPI_HandleTypeDef *spi;
