@@ -1,4 +1,5 @@
 Common graphics tests.
+Common I2C init in F4x2 examples
 DevIO : public Dev ?
 IO on idle / manual flush.
 Errno of fd check

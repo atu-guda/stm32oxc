@@ -6,7 +6,7 @@ void DevSPI::initSPI()
   if( nss_pin ) {
     nss_pin->initHW();
   }
-  nss_post();
+  nss_post_cond();
 }
 
 void DevSPI::deInit()
@@ -20,7 +20,7 @@ void DevSPI::resetDev()
   __HAL_SPI_DISABLE( spi );
   delay_ms( 1 );
   __HAL_SPI_ENABLE( spi );
-  nss_post();
+  nss_post_cond();
   delay_ms( 1 );
 }
 
@@ -58,9 +58,9 @@ int  DevSPI::send( const uint8_t *ds, int ns )
     return 0;
   }
 
-  nss_pre();
+  nss_pre_cond();
   HAL_StatusTypeDef rc = HAL_SPI_Transmit( spi, (uint8_t*)ds, ns, maxWait );
-  nss_post();
+  nss_post_cond();
 
   return ( rc == HAL_OK ) ? ns : 0;
 }
@@ -79,9 +79,9 @@ int  DevSPI::recv( uint8_t *dd, int nd )
     return 0;
   }
 
-  nss_pre();
+  nss_pre_cond();
   HAL_StatusTypeDef rc = HAL_SPI_Receive( spi, (uint8_t*)(dd), nd, maxWait );
-  nss_post();
+  nss_post_cond();
 
   return ( rc == HAL_OK ) ? nd : 0;
 }
@@ -92,12 +92,12 @@ int  DevSPI::send_recv( const uint8_t *ds, int ns, uint8_t *dd, int nd )
     return 0;
   }
 
-  nss_pre();
+  nss_pre_cond();
   HAL_StatusTypeDef rc = HAL_SPI_Transmit( spi, (uint8_t*)ds, ns, maxWait );
   if( rc == HAL_OK ) {
     rc = HAL_SPI_Receive( spi, (uint8_t*)(dd), nd, maxWait );
   }
-  nss_post();
+  nss_post_cond();
 
   return ( rc == HAL_OK ) ? nd : 0;
 }
@@ -108,12 +108,12 @@ int  DevSPI::send2( const uint8_t *ds1, int ns1, const uint8_t *ds2, int ns2 )
     return 0;
   }
 
-  nss_pre();
+  nss_pre_cond();
   HAL_StatusTypeDef rc = HAL_SPI_Transmit( spi, (uint8_t*)ds1, ns1, maxWait );
   if( rc == HAL_OK ) {
     rc = HAL_SPI_Transmit( spi, (uint8_t*)(ds2), ns2, maxWait );
   }
-  nss_post();
+  nss_post_cond();
 
   return ( rc == HAL_OK ) ? ( ns1 + ns2 ) : 0;
 }
@@ -131,12 +131,12 @@ int  DevSPI::duplex( const uint8_t *ds, uint8_t *dd, int nd )
     return 0;
   }
 
-  nss_pre();
+  nss_pre_cond();
   HAL_StatusTypeDef rc = HAL_SPI_TransmitReceive( spi, (uint8_t*)ds, dd, nd, maxWait );
   if( rc == HAL_OK ) {
     rc = HAL_SPI_Receive( spi, (uint8_t*)(dd), nd, maxWait );
   }
-  nss_post();
+  nss_post_cond();
 
   return ( rc == HAL_OK ) ? nd : 0;
 }
