@@ -46,6 +46,31 @@ void DevSPI::nss_post()
   delay_bad_mcs( tss_delay_mcs );
 }
 
+HAL_StatusTypeDef DevSPI::waitForFlag(  uint32_t flag, uint32_t val, int ticks )
+{
+  if( ticks < 0 ) { ticks = maxWait; };
+
+  uint32_t st = HAL_GetTick(), ct = 0;
+  for( ; ct < (unsigned)ticks; ct = HAL_GetTick() - st ) {
+    if( ( spi->Instance->SR & flag ) == val )  {
+      return HAL_OK;
+    }
+    taskYieldFun();
+  }
+
+  // is really need?
+  __HAL_SPI_DISABLE_IT( spi, (SPI_IT_TXE | SPI_IT_RXNE | SPI_IT_ERR ) );
+  if( spi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLED )
+  {
+    __HAL_SPI_RESET_CRC( spi );
+  }
+  spi->State= HAL_SPI_STATE_READY;
+
+  __HAL_UNLOCK( spi );
+
+  return HAL_TIMEOUT;
+}
+
 
 int DevSPI::send( uint8_t ds )
 {

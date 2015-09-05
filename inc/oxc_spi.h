@@ -34,6 +34,12 @@ class DevSPI  {
    void setUseNss( bool un ) { use_nss = un; } // for send*/recv*/duplex*
    int  getErr() const { return spi->ErrorCode; };
    int  getState() const { return spi->State; };
+   // low-level
+   HAL_StatusTypeDef waitForFlag( uint32_t flag, uint32_t val, int ticks = -1 );  // -1 means 'use maxWait'
+   HAL_StatusTypeDef waitForTXE( int ticks = -1 )
+    { return waitForFlag( SPI_FLAG_TXE, SPI_FLAG_TXE, ticks ); }
+   HAL_StatusTypeDef waitForNXRE( int ticks = -1 )
+    { return waitForFlag( SPI_FLAG_RXNE, SPI_FLAG_RXNE, ticks ); }
 
   protected:
    SPI_HandleTypeDef *spi;

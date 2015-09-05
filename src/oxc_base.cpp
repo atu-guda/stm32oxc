@@ -29,10 +29,10 @@ void taskYieldFun()
     if( xTaskGetSchedulerState() == taskSCHEDULER_RUNNING ) {
       taskYIELD();
     } else {
-      delay_bad_mcs( 100 );
+      delay_bad_mcs( 1 );
     }
   #else
-    delay_mcs( 100 );
+    delay_mcs( 1 );
   #endif
 }
 
