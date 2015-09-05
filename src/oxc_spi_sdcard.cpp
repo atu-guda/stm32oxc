@@ -1,5 +1,13 @@
 #include <oxc_spi_sdcard.h>
+
+#define SD_DEBUG 1
+
+#if SD_DEBUG
 #include <oxc_debug1.h> // tmp for debug
+#define prD(x) pr(x)
+#else
+#define prD(x) {}
+#endif
 
 
 uint8_t DevSPI_SdCard::crc7( uint8_t t, uint8_t d )
@@ -46,57 +54,72 @@ uint16_t DevSPI_SdCard::crc16( const uint8_t *p, uint16_t l )
 
 int DevSPI_SdCard::sd_cmd( uint8_t c, uint32_t arg )
 {
+  #if SD_DEBUG
+  pr( "CMD: " ); pr_d( c ); pr( " arg= " ); pr_d( arg ); pr( " = " ); pr_h( arg ); pr( NL );
+  #endif
   uint8_t crc = 0;
+  err_c = ERR_SPI; // beforehand
   uint8_t t = 0x40 | c;   if( !spi.txrx( t ) ) return 0;  crc = crc7( crc, t );
   t = arg >> 24;          if( !spi.txrx( t ) ) return 0;  crc = crc7( crc, t );
   t = arg >> 16;          if( !spi.txrx( t ) ) return 0;  crc = crc7( crc, t );
   t = arg >>  8;          if( !spi.txrx( t ) ) return 0;  crc = crc7( crc, t );
   t = arg;                if( !spi.txrx( t ) ) return 0;  crc = crc7( crc, t );
   t = crc | 0x01;         if( !spi.txrx( t ) ) return 0;
+  err_c = 0;
   return 6;
 }
 
-uint8_t DevSPI_SdCard::getR1()
+bool DevSPI_SdCard::getR1()
 {
-  uint8_t r;
+  r1 = 0xFF; err_c = 0;
+  prD( "** R1= " );
   for( uint32_t i=0; i<n_try; ++i ) {
-    if( !spi.txrx( 0xFF, &r ) ) { return 0xFF; };
-    if( ! ( r & 0x80 )  ) {
-      return r;
+    if( !spi.txrx( 0xFF, &r1 ) ) {
+      err_c = ERR_SPI; r1 = 0xFF;
+      prD( " err: SPI" NL );
+      return false;
+    };
+    if( ! ( r1 & 0x80 )  ) {
+      #if SD_DEBUG
+      pr_h( r1 );
+      #endif
+      return true;
     }
   }
-  return 0xFF;
+  prD( " err: TOUT" NL );
+  err_c = ERR_TOUT;
+  return false;
 }
 
 
-uint16_t DevSPI_SdCard::getR2()
+bool DevSPI_SdCard::getR2()
 {
-  uint8_t r1, r2;
-  bool found = false;
+  err_c = 0;
+  r2 = 0xFFFF;
+  uint8_t r1a;
+  if( !getR1() ) { return false; };
 
-  for( uint32_t i=0; i<n_try; ++i ) {
-    spi.txrx( 0xFF, &r1 );
-    if( ! ( r1 & 0x80 ) ) {
-      found = true; break;
-    }
+  if( !spi.txrx( 0xFF, &r1a  ) ) {
+    err_c = ERR_SPI;
+    return false;
   }
-  if( !found ) {
-    return 0xff;
-  }
-  spi.txrx( 0xFF, &r2  );
 
-  return  (r1<<8) | r2;
+  r2 =  (r1<<8) | r1a;
+  return true;
 }
 
-uint8_t DevSPI_SdCard::getR7( uint32_t *r7 )
+bool DevSPI_SdCard::getR7( uint8_t bad_bits )
 {
-  uint8_t r1 = getR1();
-  if( r1 != 0x01 ) {
-    return r1;
+  if( !getR1() ) {
+    return false;
+  }
+  if( r1 & bad_bits ) {
+    err_c = ERR_BITS;
+    return false;
   }
 
   uint8_t r0;
-  spi.txrx( 0xFF, &r0 );
+  spi.txrx( 0xFF, &r0 ); // TODO: more check;
   uint32_t r = r0 << 24;
   spi.txrx( 0xFF, &r0 );
   r |= r0 << 16;
@@ -104,9 +127,53 @@ uint8_t DevSPI_SdCard::getR7( uint32_t *r7 )
   r |= r0 <<  8;
   spi.txrx( 0xFF, &r0 );
   r |= r0;
-  *r7 = r;
-  return 0x01;
+  r7 = r;
+  return true;
 }
+
+int DevSPI_SdCard::sd_cmd_r1( uint8_t c, uint32_t arg, uint8_t bad_bits )
+{
+  spi.nss_pre();
+  if( !sd_cmd( c, arg ) ) {
+    return 0;
+  }
+  if( !getR1()  || r1 == 0xFF ) {
+    return 0;
+  }
+  nec();
+  spi.nss_post();
+  #if SD_DEBUG
+  pr( " R1: " ); pr_h( r1 ); pr( " bad: " ); pr_d( r1 & bad_bits ); pr( NL );
+  #endif
+  if( r1 & bad_bits ) {
+    err_c = ERR_BITS;
+    return 0;
+  }
+  return 1;
+}
+
+int DevSPI_SdCard::sd_cmd_r7( uint8_t c, uint32_t arg, uint8_t bad_bits )
+{
+  spi.nss_pre();
+  if( !sd_cmd( c, arg ) ) {
+    return 0;
+  }
+  if( !getR7( bad_bits ) ) {
+    return 0;
+  }
+  nec();
+  spi.nss_post();
+  #if SD_DEBUG
+  pr( " R1: " ); pr_h( r1 ); pr( " R7: "); pr_h( r7 ); pr( " bad: " ); pr_d( r1 & bad_bits ); pr( NL );
+  #endif
+  if( r1 & bad_bits ) {
+    err_c = ERR_BITS;
+    return 0;
+  }
+  return 1;
+}
+
+
 
 void DevSPI_SdCard::nec()
 {
@@ -115,98 +182,72 @@ void DevSPI_SdCard::nec()
 
 int DevSPI_SdCard::init()
 {
-  __label__ err_spi, err;
-  int r;
-  uint32_t r3, r7;
   int tries = 1000;
   uint32_t hcs = 0;
   caps = 0; inited = false;
 
-//   /* start with 100-400 kHz clock */
-//   // spi_set_speed(SD_SPEED_400KHZ);
-//
-  pr("cmd0 - reset.. ");
+  //   /* start with 100-400 kHz clock */
+  //   // spi_set_speed(SD_SPEED_400KHZ);
+
+  prD( "cmd0 - reset.. " );
   spi.nss_post();/* 74+ clocks with CS high */
   spi.sendSame( 0xFF, 10 );
   /* reset */
-  spi.nss_pre();
-  sd_cmd( 0, 0 );
-  r = getR1();
-  nec();
-  spi.nss_post();
-  pr_shx( r );
-
-  if( r == 0xFF ) {
-    goto err_spi;
+  if( !sd_cmd_r1( 0, 0 ) ) {
+    return 1;
   }
-  if( r != 0x01 ) {
-    pr("fail\n");
-    goto err;
-  }
-  pr( "success idle" NL );
 
+  prD( "success idle" NL );
 
-  pr( "CMD8 - voltage.. " NL );
+  prD( "CMD8 - voltage.. " NL );
+
   /* ask about voltage supply */
-  spi.nss_pre();
-  sd_cmd( 8, 0x1aa ); // VHS = 1
-  r = getR7( &r7 );
-  nec();
-  spi.nss_post();
-  pr_shx( r );  pr_shx( r7 );
+  if( !  sd_cmd_r7( 8, 0x1AA, ~( 0x01 | 0x04 ) ) ) {
+    return 8;
+  }
 
   caps |= CAP_V2_00;
-  if( r == 0xff ) {
-    goto err_spi;
-  }
 
-  if( r == 0x01 ) {
-    pr( "success, SD v2.x" NL );
-  } else if ( r & 0x4 ) {
+  if( r1 == 0x01 ) {
+    prD( "success, SD v2.x" NL );
+  } else if ( r1 & 0x4 ) {
     caps &= ~CAP_V2_00;
-    pr( "not implemented, SD v1.x" NL );
+    prD( "not implemented, SD v1.x" NL );
   } else {
-    pr("fail\n");
-    // pr_shx( r );
+    prD( "fail_8" NL );
     return 3;
   }
 
 
-  pr( "cmd58 - ocr.. " NL );
+  prD( "cmd58 - ocr.. " NL );
   /* ask about voltage supply */
-  spi.nss_pre();
-  sd_cmd( 58, 0 );
-  r = getR7( &r3 );
-  nec();
-  spi.nss_post();
-  if( r == 0xff ) {
-    goto err_spi;
+  if( !  sd_cmd_r7( 58, 0x1AA, ~( 0x01 | 0x04 ) ) ) {
+    return 58;
   }
-  if( r != 0x01 && !(r & 0x4) ) { // allow it to not be implemented - old cards
-    pr("fail_58" NL);
-    pr_shx( r );
-    return 3;
-  } else {
-    for ( int i=4; i<24; ++i ) {
-      if( r3 & 1<<i ) {
-        break;
-      }
-      pr( "Vdd voltage window: "); pr_d( (12+i)/10 );  pr("."); pr_d( (12+i)%10 ); pr( NL );
-    }
 
-    for( int i=23; i>=4; ++i ) {
-      if ( r3 & 1<<i ) {
-        break;
-      }
-      // CCS shouldn't be valid here yet
-      pr_d( (13+i)/10 ); pr( "." );  pr_d( (13+i)%10 ); pr( "V, CSS: ");
-      pr_d( r3>>30 & 1); pr( " status: " ); pr_d( r3>>31 ); pr( NL );
+  for ( int i=4; i<24; ++i ) {
+    if( r7 & (1<<i) ) {
+      break;
     }
+    #if SD_DEBUG
+    pr( "Vdd voltage window: "); pr_d( (12+i)/10 );  pr("."); pr_d( (12+i)%10 ); pr( NL );
+    #endif
   }
-  pr( "success_58" NL);
+
+  for( int i=23; i>=4; ++i ) {
+    if ( r7 & 1<<i ) {
+      break;
+    }
+    // CCS shouldn't be valid here yet
+    #if SD_DEBUG
+    pr_d( (13+i)/10 ); pr( "." );  pr_d( (13+i)%10 ); pr( "V, CSS: ");
+    pr_d( r7>>30 & 1); pr( " status: " ); pr_d( r7>>31 ); pr( NL );
+    #endif
+  }
+  prD( "success_58" NL);
 
 
-  pr("acmd41 - hcs.. ");
+  prD("acmd41 - hcs.. ");
 
   if( caps & CAP_V2_00 ) {// say we support SDHC
     hcs = 1<<30;
@@ -215,122 +256,76 @@ int DevSPI_SdCard::init()
   /* needs to be polled until in_idle_state becomes 0 */
   do {
     /* send we don't support SDHC */
-    spi.nss_pre();
-    sd_cmd( 55, 0 ); // next cmd is ACMD
-    r = getR1();
-    nec();
-    spi.nss_post();
-    if( r == 0xFF ) {
-      goto err_spi;
-    }
-    /* well... it's probably not idle here, but specs aren't clear */
-    if ( r & 0xfe ) {
-      pr( "fail_55" NL);
-      pr_shx( r );
-      goto err;
+    if( !sd_cmd_r1( 55, 0 ) ) {
+      return 55;
     }
 
-    spi.nss_pre();
-    sd_cmd( 41, hcs );
-    r = getR1();
-    nec();
-    spi.nss_post();
-    if( r == 0xFF ) {
-      goto err_spi;
+    if( !sd_cmd_r1( 41, hcs ) ) {
+      return 41;
     }
-    if( r & 0xFE ) {
-      pr("fail_41" NL);
-      pr_shx( r );
-      goto err;
-    }
-  } while(r != 0 && tries-- );
+
+  } while( r1 != 0 && tries-- );
 
   if( tries == -1 ) {
-    pr("timeouted" NL);
-    goto err;
+    prD("timeouted" NL);
+    return 100;
   }
-  pr("success_55_41" NL);
+  prD("success_55_41" NL);
 
   // Seems after this card is initialized which means bit 0 of R1
   //  will be cleared. Not too sure.
 
   if( caps & CAP_V2_00 ) {
-    pr( "cmd58 - ocr, 2nd time.. " NL );
+    prD( "cmd58 - ocr, 2nd time.. " NL );
     /* ask about voltage supply */
-    spi.nss_pre();
-    sd_cmd( 58, 0 );
-    r = getR7( &r3 );
-    nec();
-    spi.nss_post();
-    if( r == 0xFF ) {
-      goto err_spi;
-    }
-    if( r & 0xFE ) {
-      pr( "fail_58_2" NL );
-      pr_shx( r );
-      return 5;
+    if( !  sd_cmd_r7( 58, 0x1AA, ~( 0x01 | 0x04 ) ) ) {
+      return 58;
     }
     for( int i=4; i<24; ++i ) {
-      if( r3 & 1<<i ) {
+      if( r7 & 1<<i ) {
         break;
       }
+      #if SD_DEBUG
       pr( "Vdd voltage window: "); pr_d( (12+i)/10 );  pr("."); pr_d( (12+i)%10 ); pr( NL );
+      #endif
     }
     for( int i=23; i>=4; i-- ) {
-      if( r3 & 1<<i ) {
+      if( r7 & 1<<i ) {
         break;
       }
       // CCS shouldn't be valid here yet
+      #if SD_DEBUG
       pr_d( (13+i)/10 ); pr( "." );  pr_d( (13+i)%10 ); pr( "V, CSS: ");
-      pr_d( r3>>30 & 1); pr( " status: " ); pr_d( r3>>31 ); pr( NL );
+      pr_d( r7>>30 & 1); pr( " status: " ); pr_d( r7>>31 ); pr( NL );
+      #endif
     }
     // XXX power up status should be 1 here, since we're finished initializing, but it's not. WHY?
     // that means CCS is invalid, so we'll set CAP_SDHC later
-    if( r3>>30 & 1 ) {
+    if( r7>>30 & 1 ) {
       caps |= CAP_SDHC;
-      pr( "set CAP_SDHS" NL );
+      prD( "set CAP_SDHS" NL );
     }
 
-    pr( "success_58_x2" NL );
+    prD( "success_58_x2" NL );
   }
 
 
   /* with SDHC block length is fixed to 1024 */
   if( (caps & CAP_SDHC) == 0) {
-    pr("not SDHC: use cmd16 - block length.. ");
-    spi.nss_pre();
-    sd_cmd( 16, 512 );
-    r = getR1();
-    nec();
-    spi.nss_post();
-    if( r == 0xFF ) {
-      goto err_spi;
+    prD("not SDHC: use cmd16 - block length.. ");
+    if( !sd_cmd_r1( 16, 512 ) ) {
+      return 16;
     }
-    if( r & 0xFE ) {
-      pr("fail_16\n");
-      pr_shx( r );
-      goto err;
-    }
-    pr("success_16\n");
+    prD( "success_16" NL );
   }
 
 
-  pr("cmd59 - enable crc.. ");
+  prD("cmd59 - enable crc.. ");
   /* crc on */
-  spi.nss_pre();
-  sd_cmd( 59, 0 );
-  r = getR1();
-  nec();
-  spi.nss_post();
-  if( r == 0xFF ) {
-    goto err_spi;
+  if( !sd_cmd_r1( 59, 0 ) ) {
+    return 59;
   }
-  if( r & 0xFE ) {
-    pr("fail_59\n");
-    pr_shx( r );
-    goto err;
-  }
-  pr( "success_59" NL );
+  prD( "success_59" NL );
 
 
   //   /* now we can up the clock to <= 25 MHz */
@@ -338,12 +333,4 @@ int DevSPI_SdCard::init()
   //
   inited = true;
   return 0;
-
-  err_spi:
-  pr( "fail spi" NL);
-  return 1;
-
-  err:
-  pr( "fail_2" NL);
-  return 2;
 }
