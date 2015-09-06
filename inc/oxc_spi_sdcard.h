@@ -12,7 +12,8 @@ class DevSPI_SdCard {
      CRC7_INIT = 0x89,
      ERR_SPI = 1,
      ERR_BITS = 2,
-     ERR_TOUT = 4
+     ERR_TOUT = 4,
+     ERR_CRC = 8
    };
 
    DevSPI_SdCard( DevSPI &a_spi )
@@ -35,6 +36,8 @@ class DevSPI_SdCard {
    int sd_cmd_r7( uint8_t c, uint32_t arg, uint8_t bad_bits = 0xFE );
    void nec(); // is really need?
    int init();
+   int getData( uint8_t *d, int l );
+   int putData( const uint8_t *d, int l );
 
 
   protected:

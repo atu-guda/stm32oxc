@@ -334,3 +334,105 @@ int DevSPI_SdCard::init()
   inited = true;
   return 0;
 }
+
+#define TXRX( sd, rd ) \
+  if( ! spi.txrx( sd, rd ) ) { \
+      err_c = ERR_SPI;  return 0; \
+  }
+
+
+int DevSPI_SdCard::getData( uint8_t *d, int l )
+{
+  if( !d || !l || !inited ) {
+    return 0;
+  }
+
+  err_c = 0;
+  int tries = 20000;
+  uint8_t r;
+  uint16_t c16;
+  uint16_t calc_crc;
+
+  while( tries-- ) {
+    TXRX( 0xFF, &r );
+    if( r == 0xFE ) {
+      break;
+    }
+  }
+  if( tries < 0 ) {
+    err_c = ERR_TOUT;  return 0;
+  }
+
+  int n = 0;
+  for( n=0; n<l; ++n ) {
+    TXRX( 0xFF, &r );
+    d[n] = r;
+  }
+
+  TXRX( 0xFF, &r );
+  c16  = r << 8;
+  TXRX( 0xFF, &r );
+  c16 |= r;
+
+  calc_crc = crc16( d, l );
+  if( c16 != calc_crc ) {
+    err_c = ERR_CRC; return 0;
+  }
+  return n;
+}
+
+int DevSPI_SdCard::putData( const uint8_t *d, int l )
+{
+  if( !d || !l || !inited ) {
+    return 0;
+  }
+
+  err_c = 0;
+  uint8_t r;
+
+  TXRX( 0xFE, &r ); // data start
+
+  int n;
+  for( n=0; n<l; ++n ) {
+    r = d[n];
+    TXRX( r, nullptr );
+  }
+
+  uint16_t crc = crc16( d, l );
+  TXRX( crc>>8, nullptr );
+  TXRX( crc, nullptr );
+
+  // normally just one dummy read in between... specs don't say how many
+  int tries = 10;
+  while( tries-- ) {
+    TXRX( 0xFF, &r );
+    if( r != 0xFF ) {
+      break;
+    }
+  }
+  if( tries < 0 ) {
+    err_c = ERR_TOUT;  return 0;
+  }
+
+  /* poll busy, about 300 reads for 256 MB card */
+  tries = 100000;
+  while( tries-- ) {
+    TXRX( 0xFF, &r );
+    if( r == 0xFF ) {
+      break;
+    }
+  }
+  if( tries < 0 ) {
+    err_c = ERR_TOUT;  return 0;
+  }
+
+  /* data accepted, WIN */
+  if( (r & 0x1f) == 0x05 ) {
+    return n;
+  }
+
+  err_c = ERR_CRC;
+  return 0;
+}
+
+
