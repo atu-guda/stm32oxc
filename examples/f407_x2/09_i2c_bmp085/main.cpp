@@ -54,10 +54,11 @@ int main(void)
   HAL_Init();
 
   SystemClock_Config();
+  __disable_irq();
+
   leds.initHW();
 
   leds.write( 0x0F );  delay_bad_ms( 200 );
-
 
   i2ch.Instance             = I2C1;
   i2ch.State                = HAL_I2C_STATE_RESET;
@@ -73,7 +74,6 @@ int main(void)
   i2c_dbg = &baro;
 
 
-  leds.write( 0x00 );
 
   UVAR('t') = 1000;
   UVAR('n') = 10;
@@ -86,11 +86,11 @@ int main(void)
   xTaskCreate( task_main,        "main", 2*def_stksz, nullptr,   1, nullptr );
   xTaskCreate( task_gchar,      "gchar", 2*def_stksz, nullptr,   1, nullptr );
 
+  leds.write( 0x00 );
+  __enable_irq();
   vTaskStartScheduler();
+
   die4led( 0xFF );
-
-
-
   return 0;
 }
 

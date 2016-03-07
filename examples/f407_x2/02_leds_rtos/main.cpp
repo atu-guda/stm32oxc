@@ -31,19 +31,18 @@ int main(void)
   HAL_Init();
 
   SystemClock_Config();
+  __disable_irq();
+
   leds.initHW();
   MX_GPIO_Init();
 
-  leds.write( 0x01 );  delay_bad_mcs(   2000 );
   leds.write( 0x0F );  delay_bad_ms( 200 );
-  // leds.write( 0x0A );  delay_bad_ms( 200 );
 
   xTaskCreate( task_leds, "leds", 2*def_stksz, 0, 1, 0 );
 
+  __enable_irq();
   vTaskStartScheduler();
   die4led( 0xFF );
-
-
 
   return 0;
 }

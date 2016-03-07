@@ -57,16 +57,17 @@ int main(void)
   HAL_Init();
 
   SystemClock_Config();
+  __disable_irq();
+
   leds.initHW();
 
   leds.write( 0x0F );  delay_bad_ms( 200 );
   init_uart( &uah );
   leds.write( 0x0A );  delay_bad_ms( 200 );
 
-  HAL_UART_Transmit( &uah, (uint8_t*)"START\r\n", 7, 100 );
+  // HAL_UART_Transmit( &uah, (uint8_t*)"START\r\n", 7, 100 );
 
-  usartio.sendStrSync( "0123456789---main()---ABCDEF" NL );
-  leds.write( 0x00 );
+  // usartio.sendStrSync( "0123456789---main()---ABCDEF" NL );
 
   UVAR('t') = 1000;
   UVAR('n') = 10;
@@ -79,11 +80,11 @@ int main(void)
   xTaskCreate( task_main,        "main", 2*def_stksz, nullptr,   1, nullptr );
   xTaskCreate( task_gchar,      "gchar", 2*def_stksz, nullptr,   1, nullptr );
 
+  leds.write( 0x00 );
+  __enable_irq();
   vTaskStartScheduler();
+
   die4led( 0xFF );
-
-
-
   return 0;
 }
 

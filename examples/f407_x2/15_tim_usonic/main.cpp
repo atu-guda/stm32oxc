@@ -53,10 +53,11 @@ int main(void)
   HAL_Init();
 
   SystemClock_Config();
+  __disable_irq();
+
   leds.initHW();
 
   leds.write( 0x0F );  delay_bad_ms( 200 );
-  leds.write( 0x00 );
 
   UVAR('t') = 1000;
   UVAR('n') = 20;
@@ -69,11 +70,11 @@ int main(void)
   xTaskCreate( task_main,        "main", 2*def_stksz, nullptr,   1, nullptr );
   xTaskCreate( task_gchar,      "gchar", 2*def_stksz, nullptr,   1, nullptr );
 
+  __enable_irq();
+  leds.write( 0x00 );
   vTaskStartScheduler();
+
   die4led( 0xFF );
-
-
-
   return 0;
 }
 

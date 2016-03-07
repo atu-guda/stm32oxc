@@ -84,10 +84,8 @@ int main(void)
   leds.write( 0x00 );
   __enable_irq();
   vTaskStartScheduler();
+
   die4led( 0xFF );
-
-
-
   return 0;
 }
 
