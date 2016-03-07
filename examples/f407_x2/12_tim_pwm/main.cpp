@@ -54,15 +54,18 @@ void task_main( void *prm UNUSED_ARG );
 
 STD_USBCDC_SEND_TASK( usbcdc );
 
+
+
 int main(void)
 {
   HAL_Init();
 
   SystemClock_Config();
+  __disable_irq();
+
   leds.initHW();
 
-  leds.write( 0x0F );  delay_bad_ms( 200 );
-  leds.write( 0x00 );
+  leds.write( 0x0F ); delay_bad_ms( 200 );
 
   UVAR('t') = 1000;
   UVAR('n') = 10;
@@ -78,6 +81,8 @@ int main(void)
   xTaskCreate( task_main,        "main", 2*def_stksz, nullptr,   1, nullptr );
   xTaskCreate( task_gchar,      "gchar", 2*def_stksz, nullptr,   1, nullptr );
 
+  leds.write( 0x00 );
+  __enable_irq();
   vTaskStartScheduler();
   die4led( 0xFF );
 

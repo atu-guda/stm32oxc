@@ -34,8 +34,9 @@ int main(void)
   leds.initHW();
   MX_GPIO_Init();
 
+  leds.write( 0x01 );  delay_bad_mcs(   2000 );
   leds.write( 0x0F );  delay_bad_ms( 200 );
-  leds.write( 0x0A );  delay_bad_ms( 200 );
+  // leds.write( 0x0A );  delay_bad_ms( 200 );
 
   xTaskCreate( task_leds, "leds", 2*def_stksz, 0, 1, 0 );
 
