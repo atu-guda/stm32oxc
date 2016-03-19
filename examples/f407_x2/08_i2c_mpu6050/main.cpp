@@ -51,6 +51,9 @@ void task_main( void *prm UNUSED_ARG );
 I2C_HandleTypeDef i2ch;
 MPU6050 accel( &i2ch );
 
+void MX_I2C1_Init( I2C_HandleTypeDef &i2c, uint32_t speed = 100000 );
+
+
 STD_USBCDC_SEND_TASK( usbcdc );
 
 int main(void)
@@ -61,21 +64,9 @@ int main(void)
   __disable_irq();
 
   leds.initHW();
-
   leds.write( 0x0F );  delay_bad_ms( 200 );
 
-
-  i2ch.Instance             = I2C1;
-  i2ch.State                = HAL_I2C_STATE_RESET;
-  i2ch.Init.AddressingMode  = I2C_ADDRESSINGMODE_7BIT;
-  i2ch.Init.ClockSpeed      = 100000;
-  i2ch.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
-  i2ch.Init.DutyCycle       = I2C_DUTYCYCLE_16_9;
-  i2ch.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
-  i2ch.Init.NoStretchMode   = I2C_NOSTRETCH_DISABLE;
-  i2ch.Init.OwnAddress1     = 0;
-  i2ch.Init.OwnAddress2     = 0;
-  HAL_I2C_Init( &i2ch );
+  MX_I2C1_Init( i2ch );
   i2c_dbg = &accel;
 
 

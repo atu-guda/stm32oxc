@@ -10,11 +10,13 @@ USE_FREERTOS = y
 # # default: heap_3.c
 USE_USB_DEFAULT_CDC = y
 
+
 # TODO: copy to main location
 OXCDIR = /home/atu/proj/stm32/oxc
 
 
 SRCS  = main.cpp
+SRCS += i2c1_default_init.cpp
 
 SRCS += oxc_i2c.cpp
 SRCS += oxc_debug_i2c.cpp
