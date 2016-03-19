@@ -87,37 +87,9 @@ int main(void)
 
 void task_main( void *prm UNUSED_ARG ) // TMAIN
 {
-  uint32_t nl = 0;
+  SET_USBCDC_AS_STDIO(usbcdc);
 
-  usbcdc.init();
-  usbcdc.setOnSigInt( sigint );
-  devio_fds[0] = &usbcdc; // stdin
-  devio_fds[1] = &usbcdc; // stdout
-  devio_fds[2] = &usbcdc; // stderr
-  delay_ms( 50 );
-
-  delay_ms( 10 );
-  pr( "*=*** Main loop: ****** " NL );
-  delay_ms( 20 );
-
-  srl.setSigFun( smallrl_sigint );
-  srl.set_ps1( "\033[32m#\033[0m ", 2 );
-  srl.re_ps();
-  srl.set_print_cmd( true );
-
-
-  idle_flag = 1;
-  while(1) {
-    ++nl;
-    if( idle_flag == 0 ) {
-      pr_sd( ".. main idle  ", nl );
-      srl.redraw();
-    }
-    idle_flag = 0;
-    delay_ms( 60000 );
-    // delay_ms( 1 );
-
-  }
+  default_main_loop();
   vTaskDelete(NULL);
 }
 

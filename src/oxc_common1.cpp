@@ -16,12 +16,45 @@ void task_leds( void *prm UNUSED_ARG )
     int dly = task_leds_step * TASK_LEDS_QUANT;
     if( dly < 10 )    { dly = 10;    };
     if( dly > 10000 ) { dly = 10000; };
-    leds.toggle( LED_BSP_IDLE );
+    #ifdef LED_BSP_IDLE
+      leds.toggle( LED_BSP_IDLE );
+    #endif
     delay_ms( dly );
   }
   vTaskDelete(NULL);
 }
 
+#ifndef MAIN_LOOP_WAIT
+#define MAIN_LOOP_WAIT 60000
+#endif
+
+void default_main_loop()
+{
+  uint32_t nl = 0;
+  delay_ms( 10 );
+  pr( "*=*** Main loop: ****** " NL );
+  delay_ms( 20 );
+  if( ! global_smallrl ) {
+    die( 0x01 );
+  }
+
+  global_smallrl->setSigFun( smallrl_sigint );
+  global_smallrl->set_ps1( "\033[32m#\033[0m ", 2 );
+  global_smallrl->re_ps();
+  global_smallrl->set_print_cmd( true );
+
+
+  idle_flag = 1;
+  while(1) {
+    ++nl;
+    if( idle_flag == 0 ) {
+      pr_sd( ".. main idle  ", nl );
+      global_smallrl->redraw();
+    }
+    idle_flag = 0;
+    delay_ms( MAIN_LOOP_WAIT );
+  }
+}
 
 void task_gchar( void *prm UNUSED_ARG )
 {
