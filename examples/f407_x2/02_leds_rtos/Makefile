@@ -19,7 +19,9 @@ SRCS  = main.cpp
 
 #SRCS += oxc_i2c.cpp
 
-# aux:
+#SRCS += ox_i2c.cpp
+
+# aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
 # SRCS += stm32f4xx_hal_adc.c
 # SRCS += stm32f4xx_hal_adc_ex.c
 # SRCS += stm32f4xx_hal_can.c
@@ -34,6 +36,7 @@ SRCS  = main.cpp
 # SRCS += stm32f4xx_hal_dma2d.c
 # SRCS += stm32f4xx_hal_dma.c
 # SRCS += stm32f4xx_hal_dma_ex.c
+# SRCS += stm32f4xx_hal_dsi.c
 # SRCS += stm32f4xx_hal_eth.c
 # SRCS += stm32f4xx_hal_flash.c
 # SRCS += stm32f4xx_hal_flash_ex.c
@@ -49,7 +52,9 @@ SRCS  = main.cpp
 # SRCS += stm32f4xx_hal_i2s_ex.c
 # SRCS += stm32f4xx_hal_irda.c
 # SRCS += stm32f4xx_hal_iwdg.c
+# SRCS += stm32f4xx_hal_lptim.c
 # SRCS += stm32f4xx_hal_ltdc.c
+# SRCS += stm32f4xx_hal_ltdc_ex.c
 # SRCS += stm32f4xx_hal_msp_template.c
 # SRCS += stm32f4xx_hal_nand.c
 # SRCS += stm32f4xx_hal_nor.c

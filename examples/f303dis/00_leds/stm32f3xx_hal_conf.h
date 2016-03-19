@@ -23,6 +23,8 @@
 //#define HAL_ADC_MODULE_ENABLED
 //#define HAL_CAN_MODULE_ENABLED
 //#define HAL_CEC_MODULE_ENABLED
+//#define HAL_COMP_MODULE_ENABLED
+#define HAL_CORTEX_MODULE_ENABLED
 //#define HAL_HRTIM_MODULE_ENABLED
 //#define HAL_OPAMP_MODULE_ENABLED
 //#define HAL_SDADC_MODULE_ENABLED
@@ -52,7 +54,6 @@
 #define HAL_RCC_MODULE_ENABLED
 #define HAL_FLASH_MODULE_ENABLED
 #define HAL_PWR_MODULE_ENABLED
-#define HAL_CORTEX_MODULE_ENABLED
 /* ########################## HSE/HSI Values adaptation ##################### */
 /**
   * @brief Adjust the value of External High Speed oscillator (HSE) used in your application.
@@ -97,11 +98,18 @@
                                              The real value may vary depending on the variations
                                              in voltage and temperature.  */
 /**
-  * @brief External Low Speed oscillator (LSI) value.
+  * @brief External Low Speed oscillator (LSE) value.
   */
 #if !defined  (LSE_VALUE)
  #define LSE_VALUE  ((uint32_t)32768)    /*!< Value of the External Low Speed oscillator in Hz */
 #endif /* LSE_VALUE */
+
+/**
+  * @brief Time out for LSE start up value in ms.
+  */
+#if !defined  (LSE_STARTUP_TIMEOUT)
+  #define LSE_STARTUP_TIMEOUT    ((uint32_t)5000)   /*!< Time out for LSE start up, in ms */
+#endif /* LSE_STARTUP_TIMEOUT */
 
 /**
   * @brief External clock source for I2S peripheral
@@ -111,7 +119,7 @@
   *        - External clock not generated on EVAL 373
   */
 #if !defined  (EXTERNAL_CLOCK_VALUE)
-  #define EXTERNAL_CLOCK_VALUE    ((uint32_t)8000000.0) /*!< Value of the External oscillator in Hz*/
+  #define EXTERNAL_CLOCK_VALUE    ((uint32_t)8000000) /*!< Value of the External oscillator in Hz*/
 #endif /* EXTERNAL_CLOCK_VALUE */
 
 /* Tip: To avoid modifying this file each time you need to use different HSE,
@@ -121,8 +129,7 @@
 /**
   * @brief This is the HAL system configuration section
   */
-
-#define  VDD_VALUE                   ((uint32_t)3300) /*!< Value of VDD in mv */
+#define  VDD_VALUE                    ((uint32_t)3300) /*!< Value of VDD in mv */
 #define  TICK_INT_PRIORITY            ((uint32_t)0)    /*!< tick interrupt priority (lowest by default)  */
 #define  USE_RTOS                     0
 #define  PREFETCH_ENABLE              1
@@ -184,6 +191,22 @@
 #ifdef HAL_FLASH_MODULE_ENABLED
  #include "stm32f3xx_hal_flash.h"
 #endif /* HAL_FLASH_MODULE_ENABLED */
+
+#ifdef HAL_SRAM_MODULE_ENABLED
+  #include "stm32f3xx_hal_sram.h"
+#endif /* HAL_SRAM_MODULE_ENABLED */
+
+#ifdef HAL_NOR_MODULE_ENABLED
+  #include "stm32f3xx_hal_nor.h"
+#endif /* HAL_NOR_MODULE_ENABLED */
+
+#ifdef HAL_NAND_MODULE_ENABLED
+  #include "stm32f3xx_hal_nand.h"
+#endif /* HAL_NAND_MODULE_ENABLED */
+
+#ifdef HAL_PCCARD_MODULE_ENABLED
+  #include "stm32f3xx_hal_pccard.h"
+#endif /* HAL_PCCARD_MODULE_ENABLED */
 
 #ifdef HAL_HRTIM_MODULE_ENABLED
  #include "stm32f3xx_hal_hrtim.h"

@@ -1,3 +1,5 @@
+Really fix (now disable/enable IRQ) delays before scheduler start.
+Common task_main with separate init (+common for USART, USB)
 Common graphics tests.
 Common I2C init in F4x2 examples
 DevIO : public Dev ?
@@ -5,7 +7,8 @@ IO on idle / manual flush.
 Errno of fd check
 Common UART init
 Test: float, sprintf, queue cost.
-  result: queue =~ size * n + fixed; (RAM)
+ Results:
+  queue: =~ size * n + fixed; (RAM)
   float: +3k (FLASH)
   sin: +4k
   sqrt: +0.5;
