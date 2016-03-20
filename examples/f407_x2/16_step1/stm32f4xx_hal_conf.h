@@ -12,8 +12,8 @@
 
 #include <bsp/board_stm32f407_atu_x2.h>
 
-// not use with FreeRTOS
-#define STD_SYSTICK_HANDLER 0
+// now even for FreeRTOS
+#define STD_SYSTICK_HANDLER 1
 
 // ########################## Module Selection ##############################
 // base modules

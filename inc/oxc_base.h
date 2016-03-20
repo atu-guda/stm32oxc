@@ -79,6 +79,7 @@
 #define BIT14 0x4000
 #define BIT15 0x8000
 
+extern int ready_to_start_scheduler;
 extern int exit_rc;
 extern volatile int dbg_val0, dbg_val1, dbg_val2, dbg_val3;
 extern volatile int idle_flag;

@@ -117,7 +117,9 @@ NVIC value of 255. */
 standard names. */
 #define vPortSVCHandler SVC_Handler
 #define xPortPendSVHandler PendSV_Handler
-#define xPortSysTickHandler SysTick_Handler
+/* IMPORTANT: This define MUST be commented when used with STM32Cube firmware,
+              to prevent overwriting SysTick_Handler defined within STM32Cube HAL */
+/* #define xPortSysTickHandler SysTick_Handler */
 
 #endif /* FREERTOS_CONFIG_H */
 

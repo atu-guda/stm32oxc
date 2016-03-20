@@ -19,8 +19,6 @@ SRCS  = main.cpp
 
 #SRCS += oxc_i2c.cpp
 
-#SRCS += ox_i2c.cpp
-
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
 # SRCS += stm32f4xx_hal_adc.c
 # SRCS += stm32f4xx_hal_adc_ex.c

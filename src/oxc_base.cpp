@@ -7,19 +7,31 @@
 
 #include <oxc_base.h>
 
+int ready_to_start_scheduler = 0;
 int exit_rc = 0;
 volatile int dbg_val0 = 0, dbg_val1 = 0, dbg_val2 = 0, dbg_val3 = 0;
 
 #if STD_SYSTICK_HANDLER != 0
 #ifdef USE_FREERTOS
-#warning Non-RTOS SysTick_Handler defined
-#endif
+extern "C" {
+void xPortSysTickHandler();
+};
+void SysTick_Handler(void)
+{
+  if( ready_to_start_scheduler ) {
+    xPortSysTickHandler();
+  } else {
+    HAL_IncTick();
+    HAL_SYSTICK_IRQHandler();
+  }
+}
+#else
 void SysTick_Handler(void)
 {
   HAL_IncTick();
   HAL_SYSTICK_IRQHandler();
 }
-
+#endif
 #endif
 
 

@@ -56,7 +56,6 @@ int main(void)
   HAL_Init();
 
   SystemClock_Config();
-  __disable_irq();
 
   leds.initHW();
   leds.write( 0x0F );  delay_bad_ms( 200 );
@@ -77,7 +76,7 @@ int main(void)
   xTaskCreate( task_gchar,      "gchar", 2*def_stksz, nullptr,   1, nullptr );
 
   leds.write( 0x00 );
-  __enable_irq();
+  ready_to_start_scheduler = 1;
   vTaskStartScheduler();
 
   die4led( 0xFF );

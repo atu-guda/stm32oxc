@@ -11,13 +11,14 @@ volatile int task_leds_step = 5;
 
 void task_leds( void *prm UNUSED_ARG )
 {
-  while (1)
-  {
+  while (1) {
     int dly = task_leds_step * TASK_LEDS_QUANT;
     if( dly < 10 )    { dly = 10;    };
     if( dly > 10000 ) { dly = 10000; };
     #ifdef LED_BSP_IDLE
       leds.toggle( LED_BSP_IDLE );
+    #else
+      #waring LED_BSP_IDLE is not defined
     #endif
     delay_ms( dly );
   }
