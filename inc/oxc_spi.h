@@ -7,8 +7,6 @@
 
 class DevSPI  {
   public:
-   enum {
-   };
    DevSPI( SPI_HandleTypeDef *a_spi, PinsOut *a_nss_pin = nullptr )
      : spi( a_spi ), nss_pin( a_nss_pin )
     {
