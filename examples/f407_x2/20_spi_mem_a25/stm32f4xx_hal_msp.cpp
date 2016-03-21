@@ -45,6 +45,7 @@ void HAL_SPI_MspInit( SPI_HandleTypeDef *hspi )
 {
   GPIO_InitTypeDef gio;
   if( hspi->Instance == SPI1 ) {
+    __GPIOA_CLK_ENABLE();
     __SPI1_CLK_ENABLE();
     // SPI1 GPIO Configuration
     // A5 --> SPI1_SCK

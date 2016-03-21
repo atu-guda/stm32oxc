@@ -33,6 +33,7 @@ int MX_SPI1_Init()
   spi1_h.Init.CLKPhase = SPI_PHASE_1EDGE;
   spi1_h.Init.NSS = SPI_NSS_SOFT;
   // spi1_h.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  // spi1_h.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;
   spi1_h.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;
   spi1_h.Init.FirstBit = SPI_FIRSTBIT_MSB;
   spi1_h.Init.TIMode = SPI_TIMODE_DISABLED;
@@ -44,6 +45,7 @@ void HAL_SPI_MspInit( SPI_HandleTypeDef *hspi )
 {
   GPIO_InitTypeDef gio;
   if( hspi->Instance == SPI1 ) {
+    __GPIOA_CLK_ENABLE();
     __SPI1_CLK_ENABLE();
     // SPI1 GPIO Configuration
     // A5 --> SPI1_SCK

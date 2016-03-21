@@ -33,11 +33,15 @@ CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
 int cmd_sendr_spi( int argc, const char * const * argv );
 CmdInfo CMDINFO_SENDR { "sendr", 'S', cmd_sendr_spi, "[0xXX ...] - send bytes, recv UVAR('r')"  };
 
-const CmdInfo* global_cmds[] = {
+int cmd_reset_spi( int argc, const char * const * argv );
+CmdInfo CMDINFO_RESETSPI { "rezet_spi", 'Z', cmd_reset_spi, " - reset spi"  };
+
+  const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
 
   &CMDINFO_TEST0,
   &CMDINFO_SENDR,
+  &CMDINFO_RESETSPI,
   nullptr
 };
 
@@ -65,7 +69,7 @@ int main(void)
   if( MX_SPI1_Init() != HAL_OK ) {
     die4led( 0x04 );
   }
-  nss_pin.initHW();
+  // nss_pin.initHW();
   //nss_pin.set(1);
   spi_d.initSPI();
 
@@ -125,6 +129,7 @@ int cmd_test0( int argc, const char * const * argv )
     dump8( gbuf_a, rc );
   }
   pr( NL "SPI1" NL );
+  pr_shx( SPI1 );
   pr_shx( SPI1->CR1 );
   pr_shx( SPI1->CR2 );
   pr_shx( SPI1->SR );
@@ -165,6 +170,18 @@ int cmd_sendr_spi( int argc, const char * const * argv )
   pr( NL "sendr end." NL );
   return 0;
 }
+
+int cmd_reset_spi( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
+{
+  // int rc = MX_SPI1_Init();
+  // HAL_SPI_MspInit( &spi1_h );
+  // pr_sdx( rc );
+  spi_d.resetDev();
+
+  pr( NL "reset SPI end." NL );
+  return 0;
+}
+
 
 
 //  ----------------------------- configs ----------------

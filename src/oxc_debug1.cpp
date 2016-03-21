@@ -142,25 +142,13 @@ static const char *pin_moder_name[] = { "Inp", "Out", "AFn", "Ana", "?m?" };
 static const char *pin_speed_name[] = { "Low", "Lo1", "Med", "Hig", "?s?" };
 static const char *pin_pupdr_name[] = { "No", "Up", "Dn", "Xx", "?p" };
 
-#if defined (STM32F0)
+#if  defined (STM32F0) || defined (STM32F1)
 void gpio_pin_info( GPIO_TypeDef *gi, uint16_t pin, char *s )
 {
   if( !gi || !s || pin >= PORT_BITS ) { return; }
   s[0] = '?'; s[1] = 0;
 }
-#elif defined (STM32F1)
-void gpio_pin_info( GPIO_TypeDef *gi, uint16_t pin, char *s )
-{
-  if( !gi || !s || pin >= PORT_BITS ) { return; }
-  s[0] = '?'; s[1] = 0;
-}
-#elif defined (STM32F2)
-void gpio_pin_info( GPIO_TypeDef *gi, uint16_t pin, char *s )
-{
-  if( !gi || !s || pin >= PORT_BITS ) { return; }
-  s[0] = '?'; s[1] = 0;
-}
-#elif defined (STM32F3)
+#elif defined (STM32F2) || defined (STM32F3) || defined (STM32F4) || defined (STM32F7)
 void gpio_pin_info( GPIO_TypeDef *gi, uint16_t pin, char *s )
 {
   if( !gi || !s || pin >= PORT_BITS ) { return; }
@@ -193,7 +181,7 @@ void gpio_pin_info( GPIO_TypeDef *gi, uint16_t pin, char *s )
   s[j++] = ':'; s[j++] = 'A'; s[j++] = 'F';
   uint32_t afnr = ( pin > 7 ) ? gi->AFR[1] : gi->AFR[0];
   uint16_t afn = ( afnr >> ( ( pin & 0x07 )<<2) ) & 0x0F;
-  s[j++] = '0' + afn;
+  s[j++] = hex_digits[afn];
 
   s[j++] = '='; s[j++] = 'i';
   s[j++] = ( ( gi->IDR >> pin ) & 1 ) ? '1' : '0';
@@ -201,12 +189,6 @@ void gpio_pin_info( GPIO_TypeDef *gi, uint16_t pin, char *s )
   s[j++] = ( ( gi->ODR >> pin ) & 1 ) ? '1' : '0';
 
   s[j++] = 0;
-}
-#elif defined (STM32F4)
-void gpio_pin_info( GPIO_TypeDef *gi, uint16_t pin, char *s )
-{
-  if( !gi || !s || pin >= PORT_BITS ) { return; }
-  s[0] = '?'; s[1] = 0;
 }
 #else
   #warning "Unknown MCU family"
