@@ -4,11 +4,11 @@
 #include <oxc_gpio.h>
 #include <oxc_usbcdcio.h>
 #include <oxc_console.h>
+#include <oxc_spi.h>
+#include <oxc_spimem_at.h>
 #include <oxc_debug1.h>
 #include <oxc_common1.h>
 #include <oxc_smallrl.h>
-
-#include <oxc_spi.h>
 
 #include <FreeRTOS.h>
 #include <task.h>
@@ -30,14 +30,18 @@ SmallRL srl( smallrl_exec );
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
 
-int cmd_sendr_spi( int argc, const char * const * argv );
-CmdInfo CMDINFO_SENDR { "sendr", 'S', cmd_sendr_spi, "[0xXX ...] - send bytes, recv UVAR('r')"  };
+int cmd_spimem_erase( int argc, const char * const * argv );
+CmdInfo CMDINFO_ERASR { "erase",  0, cmd_spimem_erase, "- ERASE CHIP!"  };
+
+int cmd_spimem_sector0_erase( int argc, const char * const * argv );
+CmdInfo CMDINFO_ERAS0 { "era0",  0, cmd_spimem_sector0_erase, "- erase sector 0"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
 
   &CMDINFO_TEST0,
-  &CMDINFO_SENDR,
+  &CMDINFO_ERASR,
+  &CMDINFO_ERAS0,
   nullptr
 };
 
@@ -52,6 +56,7 @@ int MX_SPI1_Init();
 PinsOut nss_pin( GPIOA, 4, 1 ); //  to test GPIO
 SPI_HandleTypeDef spi1_h;
 DevSPI spi_d( &spi1_h, &nss_pin );
+DevSPIMem_AT memspi( spi_d );
 
 int main(void)
 {
@@ -65,13 +70,12 @@ int main(void)
   if( MX_SPI1_Init() != HAL_OK ) {
     die4led( 0x04 );
   }
-  nss_pin.initHW();
-  //nss_pin.set(1);
+  // nss_pin.initHW(); //?? remove?
   spi_d.initSPI();
 
   UVAR('t') = 1000;
   UVAR('n') = 10;
-  UVAR('r') = 0x20; // default bytes to read
+  UVAR('r') = 0x20; // default bytes to read/write
 
   global_smallrl = &srl;
 
@@ -97,39 +101,40 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
   vTaskDelete(NULL);
 }
 
-#define DLY_T delay_mcs( 10 );
+// #define DLY_T delay_mcs( 10 );
 
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  uint8_t sv = arg2long_d( 1, argc, argv, 0x15, 0, 0xFF );
-  int nd     = arg2long_d( 2, argc, argv,    2, 0, sizeof(gbuf_a) );
-  pr( NL "Test0: sv= " ); pr_h( sv ); pr( " nd= " ); pr_d( nd );
+  int nd     = imin( UVAR('r'), sizeof(gbuf_b) );
+  pr( NL "Test0: nd= " ); pr_d( nd );
   pr( NL );
 
-  // for logic analizer
-  // nss_pin.reset( 1 );
-  // DLY_T;
-  // nss_pin.set( 1 );
-  // DLY_T;
+  uint16_t chip_id = memspi.read_id();
+  pr_shx( chip_id );
 
-  // spi_d.resetDev();
+  int status = memspi.status();
+  pr_shx( status );
 
-  int rc = spi_d.send_recv( sv, (uint8_t*)gbuf_a, nd );
-  // int rc = spi_d.send( (uint8_t)sv );
-  // int rc = spi_d.recv( (uint8_t*)gbuf_a, imin(UVAR('r'),sizeof(gbuf_a)) );
+  memset( gbuf_b, '\x00', sizeof( gbuf_b ) );
 
+  int rc = memspi.read( (uint8_t*)gbuf_b, 0x00, nd );
+  pr( " Read Before: rc = " ); pr_d( rc ); pr( NL );
+  dump8( gbuf_b, nd );
 
-  pr_sdx( rc );
-  if( rc > 0 ) {
-    dump8( gbuf_a, rc );
+  for( int i=0; i<nd; ++i ) {
+    gbuf_a[i] = (char)( '0' + i );
   }
-  pr( NL "SPI1" NL );
-  pr_shx( SPI1->CR1 );
-  pr_shx( SPI1->CR2 );
-  pr_shx( SPI1->SR );
-  pr_shx( SPI1->DR );
+  rc = memspi.write( (uint8_t*)gbuf_a, 0x00, nd );
+  pr( NL "Write: rc= " ); pr_d( rc ); pr( NL );
 
+  rc = memspi.read( (uint8_t*)gbuf_b, 0x00, nd );
+  pr( " Read After: rc = " ); pr_d( rc ); pr( NL );
+  dump8( gbuf_b, nd );
+
+  rc = memspi.read( (uint8_t*)gbuf_b, 0x03, nd );
+  pr( " Read After with offset 3: rc = " ); pr_d( rc ); pr( NL );
+  dump8( gbuf_b, nd );
 
   delay_ms( 10 );
   break_flag = 0;  idle_flag = 1;
@@ -138,33 +143,40 @@ int cmd_test0( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_sendr_spi( int argc, const char * const * argv )
+int cmd_spimem_erase( int argc, const char * const * argv )
 {
-  uint8_t sbuf[16]; // really used not more then 9 - max args
-  uint16_t ns = argc - 1;
+  pr( NL "Erase chips " NL );
 
-  for( uint16_t i = 0; i<ns; ++i ) {
-    uint8_t t = arg2long_d( i+1, argc, argv, 0, 0, 0xFF );
-    sbuf[i] = t;
-  }
+  TickType_t tc0 = xTaskGetTickCount();
 
-  int nd = imin( UVAR('r'), sizeof(gbuf_a) );
-  pr( NL "Send/recv: ns= " ); pr_d( ns ); pr( " nd= " ); pr_d( nd );
-  pr( NL );
-  dump8( sbuf, ns );
+  int rc = memspi.erase_chip();
 
-  int rc = spi_d.send_recv( sbuf, ns, (uint8_t*)gbuf_a, nd );
+  TickType_t tc1 = xTaskGetTickCount();
 
-  pr_sdx( rc );
-  if( rc > 0 ) {
-    dump8( gbuf_a, rc );
-  }
-  delay_ms( 10 );
+  pr( NL "rc= " ); pr_d( rc ); pr( " ticks: " ); pr_d( tc1 - tc0 );
   break_flag = 0;  idle_flag = 1;
 
-  pr( NL "sendr end." NL );
+  pr( NL "Erase end." NL );
   return 0;
 }
+
+int cmd_spimem_sector0_erase( int argc, const char * const * argv )
+{
+  pr( NL "Erase sector 0 " NL );
+
+  TickType_t tc0 = xTaskGetTickCount();
+
+  int rc = memspi.erase_sector( 0x000000 );
+
+  TickType_t tc1 = xTaskGetTickCount();
+
+  pr( NL "rc= " ); pr_d( rc ); pr( " ticks: " ); pr_d( tc1 - tc0 );
+  break_flag = 0;  idle_flag = 1;
+
+  pr( NL "Erase end." NL );
+  return 0;
+}
+
 
 
 //  ----------------------------- configs ----------------

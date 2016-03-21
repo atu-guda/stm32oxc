@@ -4,11 +4,11 @@
 #include <oxc_gpio.h>
 #include <oxc_usbcdcio.h>
 #include <oxc_console.h>
+#include <oxc_spi.h>
+#include <oxc_spi_max7219.h>
 #include <oxc_debug1.h>
 #include <oxc_common1.h>
 #include <oxc_smallrl.h>
-
-#include <oxc_spi.h>
 
 #include <FreeRTOS.h>
 #include <task.h>
@@ -52,6 +52,7 @@ int MX_SPI1_Init();
 PinsOut nss_pin( GPIOA, 4, 1 ); //  to test GPIO
 SPI_HandleTypeDef spi1_h;
 DevSPI spi_d( &spi1_h, &nss_pin );
+DevSPI_MAX7219 max7219( spi_d );
 
 int main(void)
 {
@@ -65,13 +66,13 @@ int main(void)
   if( MX_SPI1_Init() != HAL_OK ) {
     die4led( 0x04 );
   }
-  nss_pin.initHW();
+  // nss_pin.initHW();
   //nss_pin.set(1);
   spi_d.initSPI();
 
   UVAR('t') = 1000;
   UVAR('n') = 10;
-  UVAR('r') = 0x20; // default bytes to read
+  UVAR('r') = 0; // default bytes to read
 
   global_smallrl = &srl;
 
@@ -102,33 +103,67 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  uint8_t sv = arg2long_d( 1, argc, argv, 0x15, 0, 0xFF );
-  int nd     = arg2long_d( 2, argc, argv,    2, 0, sizeof(gbuf_a) );
-  pr( NL "Test0: sv= " ); pr_h( sv ); pr( " nd= " ); pr_d( nd );
+  int v = arg2long_d( 1, argc, argv, 987 );
+  uint8_t pos = arg2long_d( 2, argc, argv,  1, 0, 7 );
+  uint8_t l = arg2long_d( 3, argc, argv,  3, 1, 8 );
+  uint8_t v0[] = { 1, 2, 3, 4, 0x0E, 6, 7, 8 };
+  pr( NL "Test0: v= " ); pr_d( v ); pr( " = " ); pr_h( v ); pr( "  pos= " ); pr_d( pos );
   pr( NL );
-
-  // for logic analizer
-  // nss_pin.reset( 1 );
-  // DLY_T;
-  // nss_pin.set( 1 );
-  // DLY_T;
 
   // spi_d.resetDev();
 
-  int rc = spi_d.send_recv( sv, (uint8_t*)gbuf_a, nd );
-  // int rc = spi_d.send( (uint8_t)sv );
-  // int rc = spi_d.recv( (uint8_t*)gbuf_a, imin(UVAR('r'),sizeof(gbuf_a)) );
+  max7219.setIntens( 1 );
+  max7219.setDecode( 0xFE ); // position 0 - bitfield
+  max7219.setLimit( 7 );
 
+  for( uint8_t i=1; i<8; ++i ) {
+    max7219.setDigit( i, i+8 );
+  };
+  max7219.setDigit( 0, 0xC9 );
 
-  pr_sdx( rc );
-  if( rc > 0 ) {
-    dump8( gbuf_a, rc );
-  }
-  pr( NL "SPI1" NL );
-  pr_shx( SPI1->CR1 );
-  pr_shx( SPI1->CR2 );
-  pr_shx( SPI1->SR );
-  pr_shx( SPI1->DR );
+  max7219.test_on();
+  delay_ms( 200 );
+  max7219.test_off();
+  delay_ms( 200 );
+  max7219.off();
+  delay_ms( 200 );
+  max7219.on();
+  delay_ms( 200 );
+  max7219.setIntens( 3 );
+  delay_ms( 200 );
+  max7219.setIntens( 5 );
+  delay_ms( 200 );
+  max7219.setIntens( 7 );
+  delay_ms( 200 );
+  max7219.setIntens( 0 );
+
+  delay_ms( 500 );
+  max7219.setLimit( 4 );
+  delay_ms( 500 );
+  max7219.setLimit( 7 );
+  delay_ms( 500 );
+
+  max7219.setDecode( 0xFF ); // all = digits
+  max7219.setDigits( v0, 3, 0, 5 );
+  delay_ms( 1000 );
+  max7219.setUVal( 12345678, 7, 0, 8 );
+  delay_ms( 1000 );
+  max7219.clsDig();
+  delay_ms( 500 );
+  max7219.setVal( v, 1, pos, l );
+
+  delay_ms( 1000 );
+  max7219.setDecode( 0x00 ); // all = bitmap
+  max7219.setXVal( v, 1, 0, 8 );
+  delay_ms( 1000 );
+  max7219.setXDigit( 7, 0x10 );
+  max7219.setXDigit( 6, 0x11 );
+  max7219.setXDigit( 5, 0x12 );
+  max7219.setXDigit( 4, 0x13 );
+  max7219.setXDigit( 3, 0x14 );
+  max7219.setXDigit( 2, 0x15 );
+  // delay_ms( 4000 );
+  // max7219.setDecode( 0xFF ); // all = digits
 
 
   delay_ms( 10 );

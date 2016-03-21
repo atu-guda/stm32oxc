@@ -1,0 +1,18 @@
+Test SPI AT25F512/1024 memory
+Fail for now.
+
+Used: SPI1:
+A5 = SCK
+A6 = MISO
+A7 = MOSI
++A4 = Soft NSS
+
+
+
+used USB FS:
+A11 = D-
+A12 = D+
+
+A9  = Vbus - unused?
+A10 = Id   - unused
+

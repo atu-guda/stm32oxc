@@ -1,0 +1,16 @@
+Test MAX7219 LED 8x8 segment LED driver via SPI
+
+Used: SPI1:
+A5 = SCK
+A6 = MISO
+A7 = MOSI
++A4 = Soft NSS
+
+
+used USB FS:
+A11 = D-
+A12 = D+
+
+A9  = Vbus - unused?
+A10 = Id   - unused
+
