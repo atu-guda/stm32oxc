@@ -98,7 +98,7 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
   vTaskDelete(NULL);
 }
 
-// #define DLY_T delay_mcs( 10 );
+#define DLY_T delay_mcs( 10 );
 
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
@@ -108,7 +108,7 @@ int cmd_test0( int argc, const char * const * argv )
   pr( NL "Test0: sv= " ); pr_h( sv ); pr( " nd= " ); pr_d( nd );
   pr( NL );
 
-  // // for logic analizer
+  // for logic analizer
   // nss_pin.reset( 1 );
   // DLY_T;
   // nss_pin.set( 1 );
