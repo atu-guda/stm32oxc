@@ -19,21 +19,21 @@
  #define USART_SR_REG SR
 #elif defined (STM32F2)
  #include <stm32f2xx_hal.h>
- #define SET_BIT_REG   BSRRL
- #define RESET_BIT_REG BSRRH
- #define RESET_BIT_SHIFT 0
+ #define SET_BIT_REG   BSRR
+ #define RESET_BIT_REG BSRR
+ #define RESET_BIT_SHIFT 16
  #define USART_TX_REG DR
  #define USART_RX_REG DR
  #define USART_SR_REG SR
 #elif defined (STM32F3)
  #include <stm32f3xx_hal.h>
- #define SET_BIT_REG   BSRRL
- #define RESET_BIT_REG BSRRH
+ #define SET_BIT_REG   BSRR
+ #define RESET_BIT_REG BRR
  #define RESET_BIT_SHIFT 0
  #define USART_TX_REG TDR
  #define USART_RX_REG RDR
  #define USART_SR_REG ISR
-#elif defined (STM32F4)
+#elif defined (STM32F4) || defined(STM32F7)
  #include <stm32f4xx_hal.h>
  #define SET_BIT_REG   BSRR
  #define RESET_BIT_REG BSRR

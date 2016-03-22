@@ -17,7 +17,10 @@ SUBDIRS = \
   15_tim_usonic \
   16_step1 \
   17_1w_18b20 \
-  18_i2c_ssd1306_oled
+  18_i2c_ssd1306_oled \
+  19_spi_test \
+  20_spi_mem_a25 \
+  21_spi_max7219
 
 ALL : examples_f407_x2
 

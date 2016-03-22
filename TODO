@@ -1,12 +1,10 @@
-Really fix (now disable/enable IRQ) delays before scheduler start.
-Common task_main with separate init (+common for USART, USB)
+Fix F3 GPIO set/reset
 Common graphics tests.
-Common I2C init in F4x2 examples
 DevIO : public Dev ?
 IO on idle / manual flush.
 Errno of fd check
 Common UART init
-Test: float, sprintf, queue cost.
+Test: float, sprintf, queue cost. TODO: iprintf!
  Results:
   queue: =~ size * n + fixed; (RAM)
   float: +3k (FLASH)
@@ -16,4 +14,14 @@ Test: float, sprintf, queue cost.
   printf: +16k
 
 Move more common code to common dir.
+
+devices:
+ADC
+DAC
+MFRX522  - RFID
+DHT11 - humidity
+HMC5983 - compass
+PCA9685 - for Servo
+Ether
+GPS
 

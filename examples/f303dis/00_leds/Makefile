@@ -1,5 +1,6 @@
 PROJ_NAME=leds
 
+
 USE_OXC = y
 # USE_OXC_DEVIO = y
 USE_OXC_DEBUG = n
@@ -10,12 +11,16 @@ USE_FREERTOS = n
 # # default: heap_3.c
 # USE_USB_DEFAULT_CDC = y
 
+
 # TODO: copy to main location
 OXCDIR = /home/atu/proj/stm32/oxc
 
+
 SRCS  = main.c
 
-# aux:
+#SRCS += ox_i2c.cpp
+
+# aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
 # SRCS += stm32f3xx_hal_adc.c
 # SRCS += stm32f3xx_hal_adc_ex.c
 # SRCS += stm32f3xx_hal_can.c

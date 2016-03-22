@@ -1,5 +1,6 @@
 PROJ_NAME=leds_rtos
 
+
 USE_OXC = y
 # USE_OXC_DEVIO = y
 USE_OXC_DEBUG = n
@@ -17,7 +18,7 @@ OXCDIR = /home/atu/proj/stm32/oxc
 
 SRCS  = main.cpp
 
-# aux:
+# aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
 # SRCS += stm32f3xx_hal_adc.c
 # SRCS += stm32f3xx_hal_adc_ex.c
 # SRCS += stm32f3xx_hal_can.c

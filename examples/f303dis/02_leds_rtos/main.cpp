@@ -31,6 +31,7 @@ int main(void)
   HAL_Init();
 
   SystemClock_Config();
+
   leds.initHW();
   MX_GPIO_Init();
 
@@ -39,11 +40,10 @@ int main(void)
 
   xTaskCreate( task_leds, "leds", 2*def_stksz, 0, 1, 0 );
 
+  ready_to_start_scheduler = 1;
   vTaskStartScheduler();
+
   die4led( 0xFF );
-
-
-
   return 0;
 }
 
