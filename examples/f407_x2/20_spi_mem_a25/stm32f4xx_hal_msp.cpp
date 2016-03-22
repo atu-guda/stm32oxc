@@ -33,8 +33,9 @@ int MX_SPI1_Init()
   spi1_h.Init.CLKPhase = SPI_PHASE_1EDGE;
   spi1_h.Init.NSS = SPI_NSS_SOFT;
   // spi1_h.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  spi1_h.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_4;
   // spi1_h.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;
-  spi1_h.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;
+  // spi1_h.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;
   spi1_h.Init.FirstBit = SPI_FIRSTBIT_MSB;
   spi1_h.Init.TIMode = SPI_TIMODE_DISABLED;
   spi1_h.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLED;

@@ -121,20 +121,24 @@ int cmd_test0( int argc, const char * const * argv )
   int rc = memspi.read( (uint8_t*)gbuf_b, 0x00, nd );
   pr( " Read Before: rc = " ); pr_d( rc ); pr( NL );
   dump8( gbuf_b, nd );
+  status = memspi.status(); pr_shx( status ); pr( NL );
 
   for( int i=0; i<nd; ++i ) {
     gbuf_a[i] = (char)( '0' + i );
   }
   rc = memspi.write( (uint8_t*)gbuf_a, 0x00, nd );
   pr( NL "Write: rc= " ); pr_d( rc ); pr( NL );
+  status = memspi.status(); pr_shx( status ); pr( NL );
 
   rc = memspi.read( (uint8_t*)gbuf_b, 0x00, nd );
   pr( " Read After: rc = " ); pr_d( rc ); pr( NL );
   dump8( gbuf_b, nd );
+  status = memspi.status(); pr_shx( status ); pr( NL );
 
   rc = memspi.read( (uint8_t*)gbuf_b, 0x03, nd );
   pr( " Read After with offset 3: rc = " ); pr_d( rc ); pr( NL );
   dump8( gbuf_b, nd );
+  status = memspi.status(); pr_shx( status ); pr( NL );
 
   delay_ms( 10 );
   break_flag = 0;  idle_flag = 1;

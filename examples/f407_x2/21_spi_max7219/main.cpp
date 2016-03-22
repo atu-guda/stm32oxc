@@ -162,8 +162,18 @@ int cmd_test0( int argc, const char * const * argv )
   max7219.setXDigit( 4, 0x13 );
   max7219.setXDigit( 3, 0x14 );
   max7219.setXDigit( 2, 0x15 );
-  // delay_ms( 4000 );
+
+  delay_ms( 2000 );
   // max7219.setDecode( 0xFF ); // all = digits
+  for( int i=0; i<8; ++i ) {
+    max7219.setDigit( i, i );
+  }
+
+  delay_ms( 2000 );
+  // max7219.setDecode( 0xFF ); // all = digits
+  for( int i=0; i<8; ++i ) {
+    max7219.setDigit( i, 1<<i | 1<<(i/2) | 0x81 );
+  }
 
 
   delay_ms( 10 );
