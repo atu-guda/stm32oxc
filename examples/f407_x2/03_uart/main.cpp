@@ -8,7 +8,6 @@
 
 using namespace std;
 
-void MX_GPIO_Init(void);
 
 
 // PinsOut p1 { GPIOC, 0, 4 };
@@ -39,7 +38,7 @@ int main(void)
 
   leds.write( 0x0F );  delay_bad_ms( 200 );
 
-  xTaskCreate( task_leds, "leds",   def_stksz, 0, 1, 0 );
+  xTaskCreate( task_leds, "leds", 1*def_stksz, 0, 1, 0 );
   xTaskCreate( task_send, "send", 2*def_stksz, 0, 1, 0 );
 
   leds.write( 0x00 );
@@ -78,26 +77,6 @@ void _exit( int rc )
   for( ;; );
 }
 
-//  configs
-void MX_GPIO_Init(void)
-{
-  // // putput init moved to PinsOut initHW
-  //
-  // __HAL_RCC_SYSCFG_CLK_ENABLE();
-  // __GPIOA_CLK_ENABLE();
-  // GPIO_InitTypeDef gpi;
-  //
-  // /* Configure  input GPIO pins : PA0 PA1 */
-  // gpi.Pin = GPIO_PIN_0 | GPIO_PIN_1;
-  // // gpi.Mode = GPIO_MODE_EVT_RISING;
-  // gpi.Mode = GPIO_MODE_IT_RISING;
-  // gpi.Pull = GPIO_PULLDOWN;
-  // HAL_GPIO_Init( GPIOA, &gpi );
-  //
-  // // HAL_NVIC_SetPriority( EXTI0_IRQn, configKERNEL_INTERRUPT_PRIORITY, 0 );
-  // // HAL_NVIC_SetPriority( EXTI0_IRQn, 4, 0 );
-  // // HAL_NVIC_EnableIRQ( EXTI0_IRQn );
-}
 
 void init_uart( UART_HandleTypeDef *uahp, int baud )
 {

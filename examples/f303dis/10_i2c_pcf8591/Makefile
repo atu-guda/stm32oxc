@@ -10,6 +10,7 @@ USE_FREERTOS = y
 # # default: heap_3.c
 # USE_USB_DEFAULT_CDC = y
 
+
 # TODO: copy to main location
 OXCDIR = /home/atu/proj/stm32/oxc
 
@@ -67,6 +68,7 @@ SRCS += stm32f3xx_hal_uart.c
 # SRCS += stm32f3xx_hal_usart.c
 # SRCS += stm32f3xx_hal_wwdg.c
 # SRCS += stm32f3xx_ll_fmc.c
+
 
 include ../common/board_add.mk
 include $(OXCDIR)/mk/common_cortex.mk

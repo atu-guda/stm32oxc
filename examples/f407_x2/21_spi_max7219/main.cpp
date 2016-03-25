@@ -211,7 +211,6 @@ int cmd_sendr_spi( int argc, const char * const * argv )
   return 0;
 }
 
-
 //  ----------------------------- configs ----------------
 
 FreeRTOS_to_stm32cube_tick_hook;

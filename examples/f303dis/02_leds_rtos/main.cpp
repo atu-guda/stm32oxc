@@ -59,11 +59,6 @@ void task_leds( void *prm UNUSED_ARG )
   }
 }
 
-void _exit( int rc )
-{
-  exit_rc = rc;
-  for( ;; );
-}
 
 // configs
 void MX_GPIO_Init(void)

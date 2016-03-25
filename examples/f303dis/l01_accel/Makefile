@@ -1,6 +1,5 @@
 PROJ_NAME=accel_test
 
-
 USE_OXC = y
 # USE_OXC_DEVIO = y
 USE_OXC_DEBUG = y
@@ -10,6 +9,7 @@ USE_FREERTOS = y
 # FREERTOS_HEAP = heap_2.c
 # # default: heap_3.c
 # USE_USB_DEFAULT_CDC = y
+
 
 # TODO: copy to main location
 OXCDIR = /home/atu/proj/stm32/oxc
@@ -21,9 +21,6 @@ SRCS  = main.cpp
 
 SRCS += oxc_i2c.cpp
 SRCS += oxc_debug_i2c.cpp
-
-# stm32cube sources.
-# Base: : from board
 
 # aux:
 # SRCS += stm32f3xx_hal_adc.c

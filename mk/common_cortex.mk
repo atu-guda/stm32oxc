@@ -116,6 +116,7 @@ else
   ifeq "$(USE_OXC_DEBUG)" "y"
     $(warning "Console must be used if debug is in use")
   endif
+  SRCS += oxc_common1.cpp
 endif
 
 ifeq "$(USE_OXC_DEVIO)" "y"

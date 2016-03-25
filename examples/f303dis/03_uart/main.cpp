@@ -44,22 +44,14 @@ int main(void)
   xTaskCreate( task_leds, "leds", 1*def_stksz, 0, 1, 0 );
   xTaskCreate( task_send, "send", 2*def_stksz, 0, 1, 0 );
 
+  leds.write( 0x00 );
+  ready_to_start_scheduler = 1;
   vTaskStartScheduler();
+
   die4led( 0xFF );
-
-
-
   return 0;
 }
 
-void task_leds( void *prm UNUSED_ARG )
-{
-  while (1)
-  {
-    leds.toggle( BIT0 );
-    delay_ms( 500 );
-  }
-}
 
 void task_send( void *prm UNUSED_ARG )
 {
@@ -95,12 +87,6 @@ void task_send( void *prm UNUSED_ARG )
   }
 }
 
-
-void _exit( int rc )
-{
-  exit_rc = rc;
-  for( ;; );
-}
 
 //  configs
 

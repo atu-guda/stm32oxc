@@ -10,7 +10,6 @@
 
 #include <FreeRTOS.h>
 #include <task.h>
-#include <queue.h>
 
 using namespace std;
 using namespace SMLRL;
@@ -131,7 +130,7 @@ int cmd_test0( int argc, const char * const * argv )
   pr( NL );
 
   delay_ms( 10 );
-  break_flag = 0;
+  break_flag = 0;  idle_flag = 1;
 
   pr( NL "test0 end." NL );
   return 0;

@@ -1,8 +1,9 @@
 PROJ_NAME=uart
 
+
 USE_OXC = y
 USE_OXC_DEVIO = y
-USE_OXC_DEBUG = n
+USE_OXC_DEBUG = y
 USE_OXC_CONSOLE_USART = n
 USE_OXC_CONSOLE_USB_CDC = n
 USE_FREERTOS = y
@@ -14,10 +15,12 @@ USE_FREERTOS = y
 # TODO: copy to main location
 OXCDIR = /home/atu/proj/stm32/oxc
 
+
 SRCS  = main.cpp
 
+SRCS += oxc_common1.cpp
 
-# aux:
+# aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
 # SRCS += stm32f3xx_hal_adc.c
 # SRCS += stm32f3xx_hal_adc_ex.c
 # SRCS += stm32f3xx_hal_can.c
@@ -65,7 +68,6 @@ SRCS += stm32f3xx_hal_uart.c
 # SRCS += stm32f3xx_hal_usart.c
 # SRCS += stm32f3xx_hal_wwdg.c
 # SRCS += stm32f3xx_ll_fmc.c
-
 
 
 include ../common/board_add.mk

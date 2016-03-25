@@ -19,6 +19,7 @@ using namespace SMLRL;
 BOARD_DEFINE_LEDS;
 
 
+
 const int def_stksz = 1 * configMINIMAL_STACK_SIZE;
 
 SmallRL srl( smallrl_exec );
@@ -70,7 +71,6 @@ int main(void)
   }
   leds.write( 0x0A );  delay_bad_ms( 200 );
 
-  leds.write( 0x00 );
 
   if( MX_SPI2_Init() != HAL_OK ) {
     die4led( 0x04 );
@@ -91,46 +91,21 @@ int main(void)
   xTaskCreate( task_main,        "main", 1*def_stksz, nullptr,   1, nullptr );
   xTaskCreate( task_gchar,      "gchar", 2*def_stksz, nullptr,   1, nullptr );
 
+  leds.write( 0x00 );
+  ready_to_start_scheduler = 1;
   vTaskStartScheduler();
-  die4led( 0xFF );
 
+  die4led( 0xFF );
   return 0;
 }
 
 void task_main( void *prm UNUSED_ARG ) // TMAIN
 {
-  uint32_t nl = 0;
+  SET_UART_AS_STDIO(usartio);
 
-  delay_ms( 50 );
+  delay_ms( 10 );
 
-  usartio.itEnable( UART_IT_RXNE );
-  usartio.setOnSigInt( sigint );
-  devio_fds[0] = &usartio; // stdin
-  devio_fds[1] = &usartio; // stdout
-  devio_fds[2] = &usartio; // stderr
-
-  delay_ms( 50 );
-  pr( "*=*** Main loop: ****** " NL );
-  delay_ms( 20 );
-
-  srl.setSigFun( smallrl_sigint );
-  srl.set_ps1( "\033[32m#\033[0m ", 2 );
-  srl.re_ps();
-  srl.set_print_cmd( true );
-
-
-  idle_flag = 1;
-  while(1) {
-    ++nl;
-    if( idle_flag == 0 ) {
-      pr_sd( ".. main idle  ", nl );
-      srl.redraw();
-    }
-    idle_flag = 0;
-    delay_ms( 60000 );
-    // delay_ms( 1 );
-
-  }
+  default_main_loop();
   vTaskDelete(NULL);
 }
 
@@ -202,7 +177,6 @@ int cmd_sendr_spi( int argc, const char * const * argv )
   pr( NL "sendr end." NL );
   return 0;
 }
-
 
 //  ----------------------------- configs ----------------
 
