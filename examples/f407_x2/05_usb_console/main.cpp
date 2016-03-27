@@ -10,7 +10,6 @@
 
 #include <FreeRTOS.h>
 #include <task.h>
-#include <queue.h>
 
 using namespace std;
 using namespace SMLRL;

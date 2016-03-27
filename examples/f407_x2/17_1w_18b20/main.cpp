@@ -12,7 +12,6 @@
 
 #include <FreeRTOS.h>
 #include <task.h>
-#include <queue.h>
 
 using namespace std;
 using namespace SMLRL;
@@ -102,26 +101,39 @@ int cmd_test0( int argc, const char * const * argv )
   pr( NL "Test0: n= " ); pr_d( n ); pr( " t= " ); pr_d( t_step );
   pr( NL );
 
-  int prty = uxTaskPriorityGet( 0 );
-  pr_sdx( prty );
-  const char *nm = pcTaskGetTaskName( 0 );
-  pr( "name: \"" ); pr( nm ); pr( "\"" NL );
+  uint8_t buf[12];
 
   // log_add( "Test0 " );
-  // TickType_t tc0 = xTaskGetTickCount();
+  TickType_t tc0 = xTaskGetTickCount();
 
   break_flag = 0;
-  bool out_flag = UVAR('o');
+  // bool out_flag = UVAR('o');
+  bool ok = false;
   for( int i=0; i<n && !break_flag; ++i ) {
-    pin_wire1.set_sw0( i & 1 );
-    if( out_flag ) {
-      uint16_t iv = pin_wire1.rw();
-      pr( "i= " ); pr_d( i );
-      pr( "  iv= " ); pr_h( iv );
-      pr( NL );
+    // pin_wire1.set_sw0( i & 1 );
+    // if( out_flag ) {
+    //   uint16_t iv = pin_wire1.rw();
+    //   pr( "i= " ); pr_d( i );
+    //   pr( "  iv= " ); pr_h( iv );
+    //   pr( NL );
+    // }
+    ok = wire1.skipRom( 0x44, nullptr, 0 ); // convert T
+    if( !ok ) {
+      pr( "Err: 0x44 fail" NL );
     }
-    delay_bad_mcs( t_step );
-    // vTaskDelayUntil( &tc0, t_step );
+    delay_ms( 750 );
+    memset( buf, 0, sizeof(buf) );
+    ok = ok && wire1.skipRom( OneWire::CMD_READ_SPAD, buf, 9 ); // read buf
+    if( !ok ) {
+      pr( "Err: skipRom::READ_SPAD fail" NL );
+    } else {
+      int te = buf[0] + (buf[1] << 8);
+      // pr_sdx( te );
+      te *= 1000; te /= 16;
+      pr_sdx( te );
+    }
+
+    vTaskDelayUntil( &tc0, t_step );
     // delay_ms( t_step );
   }
 
@@ -147,31 +159,41 @@ int cmd_1wire0( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
     return 1;
   }
 
+  memset( addr, 0, sizeof(addr) );
   delay_ms( 1 ); // for logic analizator
   bool ok =  wire1.readRom( addr, 8 );
-  pr( ok ? "readRom OK" NL  : "readRom FAIL!!!" NL );
+  pr( ok ? "readRom OK. addr:" NL  : "readRom FAIL!!!" NL );
   dump8( addr, 8 );
 
 
+  memset( buf, 0, sizeof(buf) );
   ok = wire1.skipRom( OneWire::CMD_READ_SPAD, buf, 9 ); //  really need 9
-  pr( ok ? "READ_SPAD OK" NL  : "READSPAD FAIL!!!" NL );
+  pr( ok ? "READ_SPAD OK. buf:" NL  : "READSPAD FAIL!!!" NL );
   dump8( buf, 12 );
 
-  wire1.skipRom( 0x44, nullptr, 0 ); // convert T
+  ok = wire1.skipRom( 0x44, nullptr, 0 ); // convert T
+  pr( "ConvertT(44), waitung...  ok=" ); pr_d ( ok ); pr( NL );
   delay_ms( 1000 );
 
+  memset( buf, 0, sizeof(buf) );
   wire1.skipRom( OneWire::CMD_READ_SPAD, buf, 9 ); // read buf
+  pr( ok ? "READ_SPAD OK. buf:" NL  : "READSPAD FAIL!!!" NL );
   dump8( buf, 12 );
+
   int te = buf[0] + (buf[1] << 8);
   pr_sdx( te );
   te *= 1000; te /= 16;
   pr_sdx( te );
 
-  wire1.matchRom( addr, OneWire::CMD_READ_SPAD, buf, 9 ); // read buf with addr
+  memset( buf, 0, sizeof(buf) );
+  ok = wire1.matchRom( addr, OneWire::CMD_READ_SPAD, buf, 9 ); // read buf with addr
+  pr( "MatchROM.READ_SPAD  ok=" ); pr_d ( ok ); pr( NL );
   dump8( buf, 12 );
+
+  memset( buf, 0, sizeof(buf) );
   addr[1] = 0xFF; // bad addr
   ok = wire1.matchRom( addr, OneWire::CMD_READ_SPAD, buf, 9 ); // read buf with addr
-  pr( ok ? "READ_SPAD OK" NL  : "READSPAD FAIL!!!" NL );
+  pr( ok ? "Bad addr: READ_SPAD OK" NL  : "Bad addr: READSPAD FAIL!!!" NL );
   dump8( buf, 12 );
 
   wire1.eot();
