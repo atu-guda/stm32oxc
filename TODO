@@ -1,9 +1,10 @@
-Fix F3 GPIO set/reset
+1wire return codes test
+declare all/most IRQ handlers as extern "C"
 Common graphics tests.
 DevIO : public Dev ?
 IO on idle / manual flush.
 Errno of fd check
-Common UART init
+Common UART init (perf board or per MCU/UART_N)
 Test: float, sprintf, queue cost. TODO: iprintf!
  Results:
   queue: =~ size * n + fixed; (RAM)
