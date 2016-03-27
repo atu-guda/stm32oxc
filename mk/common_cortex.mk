@@ -97,12 +97,14 @@ ifeq "$(USE_OXC_CONSOLE_USART)" "y"
   # $(info "Used USART console" )
   USE_OXC_CONSOLE = y
   SRCS += oxc_usartio.cpp
+  ALLFLAGS += -DUSE_OXC_CONSOLE_USART
 endif
 
 ifeq "$(USE_OXC_CONSOLE_USB_CDC)" "y"
   # $(info "Used USB_CDC console" )
   USE_OXC_CONSOLE = y
   SRCS += oxc_usbcdcio.cpp
+  ALLFLAGS += -DUSE_OXC_CONSOLE_USB_CDC
 endif
 
 ifeq "$(USE_OXC_CONSOLE)" "y"
@@ -111,12 +113,12 @@ ifeq "$(USE_OXC_CONSOLE)" "y"
   SRCS += oxc_console.cpp
   SRCS += oxc_smallrl.cpp
   SRCS += oxc_common1.cpp
+  ALLFLAGS += -DUSE_OXC_CONSOLE
 else
   # $(info "NOT Used console" )
   ifeq "$(USE_OXC_DEBUG)" "y"
     $(warning "Console must be used if debug is in use")
   endif
-  SRCS += oxc_common1.cpp
 endif
 
 ifeq "$(USE_OXC_DEVIO)" "y"
@@ -124,6 +126,7 @@ ifeq "$(USE_OXC_DEVIO)" "y"
   USE_OXC = y
   SRCS += oxc_devio.cpp
   SRCS += oxc_rtosqueue.cpp
+  ALLFLAGS += -DUSE_OXC_DEVIO
   ifneq "$(USE_FREERTOS)" "y"
     $(warning "FreeRTOS must be used if DevIO is in use")
   endif
@@ -131,6 +134,7 @@ endif
 
 ifeq "$(USE_OXC_DEBUG)" "y"
   SRCS += oxc_debug1.cpp
+  ALLFLAGS += -DUSE_OXC_DEBUG
 endif
 
 

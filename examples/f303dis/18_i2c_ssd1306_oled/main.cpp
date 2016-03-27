@@ -2,18 +2,9 @@
 #include <cstdlib>
 #include <algorithm>
 
-#include <oxc_gpio.h>
-#include <oxc_usartio.h>
-#include <oxc_console.h>
-#include <oxc_debug1.h>
-#include <oxc_debug_i2c.h>
-#include <oxc_common1.h>
-#include <oxc_smallrl.h>
+#include <oxc_auto.h>
 
 #include <oxc_ssd1306.h>
-
-#include <FreeRTOS.h>
-#include <task.h>
 
 using namespace std;
 using namespace SMLRL;

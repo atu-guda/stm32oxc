@@ -1,5 +1,5 @@
 #include "stm32f4xx_hal.h"
-#include <oxc_base.h>
+#include <oxc_auto.h>
 
 void NMI_Handler(void);
 void HardFault_Handler(void);
@@ -17,13 +17,8 @@ void MX_GPIO_Init(void);
 
 
 int  delay_bad(void);
-void GPIO_WriteBits( GPIO_TypeDef* GPIOx, uint16_t PortVal, uint16_t mask );
 void _exit( int rc );
 
-void GPIO_WriteBits( GPIO_TypeDef* GPIOx, uint16_t PortVal, uint16_t mask )
-{
-  GPIOx->ODR = ( PortVal & mask ) | ( GPIOx->ODR & (~mask) );
-}
 
 
 #define TPORT                GPIOD

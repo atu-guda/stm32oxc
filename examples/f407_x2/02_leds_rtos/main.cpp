@@ -1,8 +1,4 @@
-#include <oxc_gpio.h>
-
-#include <FreeRTOS.h>
-#include <task.h>
-#include <queue.h>
+#include <oxc_auto.h>
 
 using namespace std;
 

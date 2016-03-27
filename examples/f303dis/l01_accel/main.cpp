@@ -2,17 +2,7 @@
 #include <cstdlib>
 #include <cerrno>
 
-#include <oxc_gpio.h>
-#include <oxc_usartio.h>
-#include <oxc_console.h>
-#include <oxc_debug1.h>
-#include <oxc_i2c.h>
-#include <oxc_debug_i2c.h>
-#include <oxc_common1.h>
-#include <oxc_smallrl.h>
-
-#include <FreeRTOS.h>
-#include <task.h>
+#include <oxc_auto.h>
 
 #include <lsm303dlhc.h>
 

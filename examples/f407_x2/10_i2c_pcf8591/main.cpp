@@ -1,17 +1,8 @@
 #include <cstring>
 #include <cstdlib>
 
-#include <oxc_gpio.h>
-#include <oxc_usbcdcio.h>
-#include <oxc_console.h>
-#include <oxc_debug1.h>
-#include <oxc_debug_i2c.h>
+#include <oxc_auto.h>
 #include <oxc_pcf8591.h>
-#include <oxc_common1.h>
-#include <oxc_smallrl.h>
-
-#include <FreeRTOS.h>
-#include <task.h>
 
 using namespace std;
 using namespace SMLRL;

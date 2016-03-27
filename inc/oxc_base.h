@@ -162,8 +162,13 @@ void WWDG_IRQHandler(void);
 
 void SystemClock_Config(void);
 
-#define FreeRTOS_to_stm32cube_tick_hook \
-  void vApplicationTickHook() { HAL_IncTick();  }
+#ifdef USE_FREERTOS
+
+  #define FreeRTOS_to_stm32cube_tick_hook \
+    void vApplicationTickHook() { HAL_IncTick();  }
+  #include <FreeRTOS.h>
+  #include <task.h>
+#endif
 
 
 #ifdef __cplusplus

@@ -1,4 +1,4 @@
-#include <oxc_gpio.h>
+#include <oxc_auto.h>
 
 using namespace std;
 

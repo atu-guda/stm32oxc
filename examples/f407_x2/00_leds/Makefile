@@ -16,7 +16,7 @@ USE_FREERTOS = n
 OXCDIR = /home/atu/proj/stm32/oxc
 
 
-SRCS  = main.c
+SRCS  = main.cpp
 
 #SRCS += ox_i2c.cpp
 

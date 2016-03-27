@@ -1,9 +1,10 @@
 #include <oxc_gpio.h>
 #include <oxc_smallrl.h>
 #include <oxc_common1.h>
-#include <FreeRTOS.h>
-#include <task.h>
-#include <queue.h>
+
+#if !defined USE_FREERTOS
+#error This file in only for FreeRTOS enabled projects.
+#endif
 
 using namespace SMLRL;
 

@@ -1,4 +1,4 @@
-#include <oxc_gpio.h>
+#include <oxc_auto.h>
 
 using namespace std;
 
@@ -56,12 +56,6 @@ int main(void)
     delay_ms( 200 );
   }
   return 0;
-}
-
-void _exit( int rc )
-{
-  exit_rc = rc;
-  for( ;; );
 }
 
 // configs

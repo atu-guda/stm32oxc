@@ -1,17 +1,9 @@
 #include <cstring>
 #include <cstdlib>
 
-#include <oxc_gpio.h>
-#include <oxc_usartio.h>
-#include <oxc_console.h>
-#include <oxc_spi.h>
-#include <oxc_spi_max7219.h>
-#include <oxc_debug1.h>
-#include <oxc_common1.h>
-#include <oxc_smallrl.h>
+#include <oxc_auto.h>
 
-#include <FreeRTOS.h>
-#include <task.h>
+#include <oxc_spi_max7219.h>
 
 using namespace std;
 using namespace SMLRL;

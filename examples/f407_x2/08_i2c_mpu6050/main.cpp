@@ -1,17 +1,8 @@
 #include <cstring>
 #include <cstdlib>
 
-#include <oxc_gpio.h>
-#include <oxc_usbcdcio.h>
-#include <oxc_console.h>
-#include <oxc_debug1.h>
-#include <oxc_debug_i2c.h>
+#include <oxc_auto.h>
 #include <oxc_mpu6050.h>
-#include <oxc_common1.h>
-#include <oxc_smallrl.h>
-
-#include <FreeRTOS.h>
-#include <task.h>
 
 using namespace std;
 using namespace SMLRL;
@@ -31,7 +22,7 @@ int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
 
 int cmd_data0( int argc, const char * const * argv );
-CmdInfo CMDINFO_DATA0 { "data0", 'D', cmd_data0, " - data trnsmission 0"  };
+CmdInfo CMDINFO_DATA0 { "data0", 'D', cmd_data0, " - data transmission 0"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
