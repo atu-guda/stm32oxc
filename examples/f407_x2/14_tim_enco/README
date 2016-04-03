@@ -1,7 +1,7 @@
 Test TIM1 as encoder input
 in: E9,11
 Not so stable work.
-Dont forget abot capacitors.
+Dont forget about capacitors.
 
 Console: USB FS:
 A11 = D-

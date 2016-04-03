@@ -51,7 +51,7 @@ int cmd_i2c_send( int argc, const char * const * argv )
 {
   CHECK_I2C_DEV;
 
-  uint8_t v = arg2long_d( 1, argc, argv, 0, 255 );
+  uint8_t v = arg2long_d( 1, argc, argv, 0, 0, 255 );
   uint16_t addr = arg2long_d( 2, argc, argv, (uint16_t)(UVAR('p')), 0, 127 );
 
   pr( NL "I2C Send  " ); pr_d( v );
@@ -79,11 +79,11 @@ int subcmd_i2c_send_rx( int argc, const char * const * argv, bool is2byte )
     return -1;
   }
 
-  uint8_t reg = arg2long_d( 1, argc, argv, 0, 255 );
-  uint8_t v   = arg2long_d( 2, argc, argv, 0, 255 );
+  uint8_t reg = arg2long_d( 1, argc, argv, 0, 0, 255 );
+  uint8_t v   = arg2long_d( 2, argc, argv, 0, 0, 255 );
   uint8_t addr = (uint8_t)(UVAR('p'));
 
-  pr( NL "I2C Send  " ); pr_d( v );
+  pr( NL "I2C Send  " ); pr_d( v ); pr( " = 0x" ); pr_h( v );
   pr( " to " ); pr_h( addr ); pr( ": " ); pr_h( reg ); pr( NL );
 
   i2c_dbg->resetDev();

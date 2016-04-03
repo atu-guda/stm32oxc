@@ -21,8 +21,9 @@ ADC
 DAC
 MFRX522  - RFID
 DHT11 - humidity
-HMC5983 - compass
 PCA9685 - for Servo
+IRDA
+Color screen
 Ether
 GPS
 
