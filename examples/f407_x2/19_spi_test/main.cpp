@@ -23,14 +23,18 @@ CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
 int cmd_sendr_spi( int argc, const char * const * argv );
 CmdInfo CMDINFO_SENDR { "sendr", 'S', cmd_sendr_spi, "[0xXX ...] - send bytes, recv UVAR('r')"  };
 
+int cmd_duplex_spi( int argc, const char * const * argv );
+CmdInfo CMDINFO_DUPLEX { "duplex", 'U', cmd_duplex_spi, "[0xXX ...] - send/recv bytes"  };
+
 int cmd_reset_spi( int argc, const char * const * argv );
-CmdInfo CMDINFO_RESETSPI { "rezet_spi", 'Z', cmd_reset_spi, " - reset spi"  };
+CmdInfo CMDINFO_RESETSPI { "reset_spi", 'Z', cmd_reset_spi, " - reset spi"  };
 
   const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
 
   &CMDINFO_TEST0,
   &CMDINFO_SENDR,
+  &CMDINFO_DUPLEX,
   &CMDINFO_RESETSPI,
   nullptr
 };
@@ -46,6 +50,7 @@ int MX_SPI1_Init();
 PinsOut nss_pin( GPIOA, 4, 1 ); //  to test GPIO
 SPI_HandleTypeDef spi1_h;
 DevSPI spi_d( &spi1_h, &nss_pin );
+void info_spi();
 
 int main(void)
 {
@@ -118,12 +123,7 @@ int cmd_test0( int argc, const char * const * argv )
   if( rc > 0 ) {
     dump8( gbuf_a, rc );
   }
-  pr( NL "SPI1" NL );
-  pr_shx( SPI1 );
-  pr_shx( SPI1->CR1 );
-  pr_shx( SPI1->CR2 );
-  pr_shx( SPI1->SR );
-  pr_shx( SPI1->DR );
+  info_spi();
 
 
   delay_ms( 10 );
@@ -157,9 +157,41 @@ int cmd_sendr_spi( int argc, const char * const * argv )
   delay_ms( 10 );
   break_flag = 0;  idle_flag = 1;
 
+  info_spi();
+
   pr( NL "sendr end." NL );
   return 0;
 }
+
+int cmd_duplex_spi( int argc, const char * const * argv )
+{
+  uint8_t sbuf[16]; // really used not more then 9 - max args
+  uint16_t ns = argc - 1;
+
+  for( uint16_t i = 0; i<ns; ++i ) {
+    uint8_t t = arg2long_d( i+1, argc, argv, 0, 0, 0xFF );
+    sbuf[i] = t;
+  }
+
+  pr( NL "Duplex: ns= " ); pr_d( ns );
+  pr( NL );
+  dump8( sbuf, ns );
+
+  int rc = spi_d.duplex( sbuf, (uint8_t*)gbuf_a, ns );
+
+  pr_sdx( rc );
+  if( rc > 0 ) {
+    dump8( gbuf_a, rc );
+  }
+  delay_ms( 10 );
+  break_flag = 0;  idle_flag = 1;
+
+  info_spi();
+
+  pr( NL "Duplex end." NL );
+  return 0;
+}
+
 
 int cmd_reset_spi( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
 {
@@ -168,10 +200,21 @@ int cmd_reset_spi( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
   // pr_sdx( rc );
   spi_d.resetDev();
 
+  info_spi();
+
   pr( NL "reset SPI end." NL );
   return 0;
 }
 
+void info_spi()
+{
+  pr( NL "SPI1" NL );
+  pr_shx( SPI1 );
+  pr_shx( SPI1->CR1 );
+  pr_shx( SPI1->CR2 );
+  pr_shx( SPI1->SR );
+  pr_shx( SPI1->DR );
+}
 
 
 //  ----------------------------- configs ----------------

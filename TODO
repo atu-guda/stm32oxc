@@ -1,5 +1,8 @@
 1wire return codes test
 declare all/most IRQ handlers as extern "C"
+BitField debug print
+SPI debug
+Keepalive LED with more data.
 Common graphics tests.
 DevIO : public Dev ?
 IO on idle / manual flush.
