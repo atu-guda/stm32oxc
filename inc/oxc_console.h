@@ -81,6 +81,13 @@ struct CmdInfo
 };
 extern const CmdInfo* global_cmds[];
 
+struct BitNames {
+  uint8_t s; //* start bit number (from 0);
+  uint8_t n; //* number of bits (0 - struct array end)
+  const char *const name; //* bit name or bitfield base (nullptr-end too)
+};
+
+
 
 inline int pr_c( char c, int fd = 1 ) { return prl( &c, 1, fd ); }
 int pr_d( int d, int fd = 1 );
@@ -96,6 +103,7 @@ int pr_sh( const char *s, int d, int fd = 1 );
 
 int cmdline_split( char *cmd, char** argv, int max_args );
 int exec_direct( const char *s, int l );
+void pr_bitnames( uint32_t b, const BitNames *bn );
 
 // ------------------------ BarHText ----------------------------------
 

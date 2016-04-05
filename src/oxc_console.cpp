@@ -79,6 +79,27 @@ int pr_sh( const char *s, int d, int fd )
   return pr( NL );
 }
 
+void pr_bitnames( uint32_t b, const BitNames *bn )
+{
+  static int constexpr bpi = sizeof(b)*8;
+  if( !bn ) { return; }
+  char sep[2] = " ";
+  for( ; bn->n !=0 && bn->name != nullptr; ++bn ) {
+    if( bn->n == 1 ) { // single bit
+      if( b & (1<<bn->s) ) {
+        pr( sep ); sep[0] = ',';
+        pr( bn->name );
+      }
+    } else {           // pack of bits
+      pr( sep ); sep[0] = ',';
+      pr( bn->name ); pr("_");
+      uint32_t v = (b>>bn->s) & ( ~0u>>(bpi-bn->n) );
+      pr_h( v );
+    }
+  }
+}
+
+
 int cmdline_split( char *cmd, char** argv, int max_args )
 {
   if( !cmd || !argv || ! *cmd ) { return 0; }

@@ -236,3 +236,66 @@ int  DevSPI::txrx( uint8_t ds, uint8_t *dr )
   return 1;
 }
 
+#ifdef USE_OXC_DEBUG
+
+// TODO: per MCU type
+const BitNames SPI_CR1_bitnames[] {
+  {  0, 1, "CHPA" },
+  {  1, 1, "CPOL" },
+  {  2, 1, "MSTR" },
+  {  3, 3, "BRn" },
+  {  6, 1, "SPE" },
+  {  7, 1, "LSBFIRST" },
+  {  8, 1, "SSI" },
+  {  9, 1, "SSM" },
+  { 10, 1, "RXONLY" },
+  { 11, 1, "DFF" },
+  { 12, 1, "CRCNEXT" },
+  { 13, 1, "CRCEN" },
+  { 14, 1, "BIDIOE" },
+  { 15, 1, "BIDIMODE" },
+  {  0, 0, nullptr }
+};
+
+const BitNames SPI_CR2_bitnames[] {
+  {  0, 1, "RXDMAEN" },
+  {  1, 1, "TXDMAEN" },
+  {  2, 1, "SSOE" },
+  {  4, 1, "FRF" },
+  {  5, 1, "ERRIE" },
+  {  6, 1, "RXNEIE" },
+  {  7, 1, "TXEIE" },
+  {  0, 0, nullptr }
+};
+
+const BitNames SPI_SR_bitnames[] {
+  {  0, 1, "RXNE" },
+  {  1, 1, "TXE" },
+  {  2, 1, "CHSIDE" },
+  {  3, 1, "UDR" },
+  {  4, 1, "CRCERR" },
+  {  5, 1, "MODF" },
+  {  6, 1, "OVR" },
+  {  7, 1, "BSY" },
+  {  8, 1, "FRE" },
+  {  0, 0, nullptr }
+};
+
+
+void print_SPI_info( SPI_TypeDef *spi )
+{
+  if( !spi ) { return; }
+  pr( "SPI: " ); pr_a( spi );
+  pr( " CR1= " ); pr_h( spi->CR1 ); pr_bitnames( spi->CR1, SPI_CR1_bitnames );
+  pr( " CR2= " ); pr_h( spi->CR2 ); pr_bitnames( spi->CR2, SPI_CR2_bitnames );
+  pr( " SR= " );  pr_h( spi->SR );  pr_bitnames( spi->SR,  SPI_SR_bitnames  );
+  pr( " DR= " );  pr_h( spi->DR );
+  pr( NL );
+}
+
+void DevSPI::pr_info() const
+{
+  print_SPI_info( spi->Instance );
+  pr( " error_code= " ); pr_d( spi->ErrorCode ); pr( NL );
+}
+#endif

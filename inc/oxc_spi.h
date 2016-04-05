@@ -15,6 +15,7 @@ class DevSPI  {
    void deInit();
    void resetDev();
    SPI_HandleTypeDef* dev() { return spi; };
+   SPI_TypeDef* instance() { return spi->Instance; }
    void nss_pre();
    void nss_post();
    void nss_pre_cond()  { if( use_nss )  nss_pre();  };
@@ -40,6 +41,9 @@ class DevSPI  {
     { return waitForFlag( SPI_FLAG_RXNE, SPI_FLAG_RXNE, ticks ); }
    int  sendSame( uint8_t ds, int ns );
    int  txrx( uint8_t ds, uint8_t *dr = nullptr );
+   #ifdef USE_OXC_DEBUG
+     void pr_info() const;
+   #endif
 
   protected:
    SPI_HandleTypeDef *spi;
@@ -50,5 +54,12 @@ class DevSPI  {
    uint32_t tss_delay_mcs = 1;
 };
 
+#ifdef USE_OXC_DEBUG
+#include <oxc_console.h>
+extern const BitNames SPI_CR1_bitnames[];
+extern const BitNames SPI_CR2_bitnames[];
+extern const BitNames SPI_SR_bitnames[];
+void print_SPI_info( SPI_TypeDef *spi );
+#endif
 
 #endif

@@ -22,11 +22,11 @@ Move more common code to common dir.
 devices:
 ADC
 DAC
-MFRX522  - RFID
-DHT11 - humidity
 PCA9685 - for Servo
+DHT11 - humidity
 IRDA
 Color screen
 Ether
 GPS
+MFRX522  - RFID
 

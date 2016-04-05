@@ -50,7 +50,6 @@ int MX_SPI1_Init();
 PinsOut nss_pin( GPIOA, 4, 1 ); //  to test GPIO
 SPI_HandleTypeDef spi1_h;
 DevSPI spi_d( &spi1_h, &nss_pin );
-void info_spi();
 
 int main(void)
 {
@@ -123,7 +122,7 @@ int cmd_test0( int argc, const char * const * argv )
   if( rc > 0 ) {
     dump8( gbuf_a, rc );
   }
-  info_spi();
+  spi_d.pr_info();
 
 
   delay_ms( 10 );
@@ -157,7 +156,7 @@ int cmd_sendr_spi( int argc, const char * const * argv )
   delay_ms( 10 );
   break_flag = 0;  idle_flag = 1;
 
-  info_spi();
+  spi_d.pr_info();
 
   pr( NL "sendr end." NL );
   return 0;
@@ -186,7 +185,7 @@ int cmd_duplex_spi( int argc, const char * const * argv )
   delay_ms( 10 );
   break_flag = 0;  idle_flag = 1;
 
-  info_spi();
+  spi_d.pr_info();
 
   pr( NL "Duplex end." NL );
   return 0;
@@ -200,21 +199,12 @@ int cmd_reset_spi( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
   // pr_sdx( rc );
   spi_d.resetDev();
 
-  info_spi();
+  spi_d.pr_info();
 
   pr( NL "reset SPI end." NL );
   return 0;
 }
 
-void info_spi()
-{
-  pr( NL "SPI1" NL );
-  pr_shx( SPI1 );
-  pr_shx( SPI1->CR1 );
-  pr_shx( SPI1->CR2 );
-  pr_shx( SPI1->SR );
-  pr_shx( SPI1->DR );
-}
 
 
 //  ----------------------------- configs ----------------
