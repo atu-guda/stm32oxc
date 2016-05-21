@@ -1,5 +1,6 @@
 #include <oxc_hd44780_i2c.h>
 
+const uint8_t HD44780_i2c::line_addr[n_lines]  { 0x00, 0x40, 0x14, 0x54 };
 
 void HD44780_i2c::init_4b( bool is_2row )
 {
@@ -53,9 +54,16 @@ void HD44780_i2c::puts( const char *s )
 
 void HD44780_i2c::gotoxy( uint8_t x, uint8_t y )
 {
-  uint8_t ofs = y * cpl + x;
+  if( y > n_lines ) {
+    return;
+  }
+  uint8_t ofs = x + line_addr[y];
+  // if( y > 1 ) {
+  //   ofs += cpl/2;
+  //   y &= 1;
+  // }
+  // ofs += y * cpl;
   ofs |= 0x80; // cmd
   cmd( ofs );
-
 }
 

@@ -2,7 +2,6 @@
 #include <cstdlib>
 
 #include <oxc_auto.h>
-
 #include <oxc_hd44780_i2c.h>
 
 using namespace std;
@@ -20,12 +19,18 @@ SmallRL srl( smallrl_exec );
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
+int cmd_xychar( int argc, const char * const * argv );
+CmdInfo CMDINFO_XYCHAR{ "xychar", 'X', cmd_xychar, " x y code - put char at x y"  };
+int cmd_puts( int argc, const char * const * argv );
+CmdInfo CMDINFO_PUTS{ "puts", 'P', cmd_puts, "string - put string at cur pos"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
   DEBUG_I2C_CMDS,
 
   &CMDINFO_TEST0,
+  &CMDINFO_XYCHAR,
+  &CMDINFO_PUTS,
   nullptr
 };
 
@@ -62,7 +67,6 @@ int main(void)
   MX_I2C1_Init( i2ch );
   i2c_dbg = &lcdt;
 
-  leds.write( 0x00 );
 
   UVAR('t') = 1000;
   UVAR('n') = 10;
@@ -126,11 +130,46 @@ int cmd_test0( int argc, const char * const * argv )
   pr( NL );
 
   delay_ms( 10 );
-  break_flag = 0;  idle_flag = 1;
+  break_flag = 0;
+  idle_flag = 1;
 
   pr( NL "test0 end." NL );
   return 0;
 }
+
+int cmd_xychar( int argc, const char * const * argv )
+{
+  uint8_t x  = (uint8_t)arg2long_d( 1, argc, argv, 0x0, 0,   64 );
+  uint8_t y  = (uint8_t)arg2long_d( 2, argc, argv, 0x0, 0,    3 );
+  uint8_t ch = (uint8_t)arg2long_d( 3, argc, argv, 'Z', 0, 0xFF );
+
+  lcdt.gotoxy( x, y );
+  lcdt.putch( (uint8_t)ch );
+
+  pr( NL );
+
+  break_flag = 0;
+  idle_flag = 1;
+
+  pr( NL "xychar end." NL );
+  return 0;
+}
+
+int cmd_puts( int argc, const char * const * argv )
+{
+  const char *s = "Z";
+  if( argc > 1 ) {
+    s = argv[1];
+  }
+  lcdt.puts( s );
+
+  break_flag = 0;
+  idle_flag = 1;
+
+  pr( NL "puts end." NL );
+  return 0;
+}
+
 
 //  ----------------------------- configs ----------------
 

@@ -42,6 +42,8 @@ class HD44780_i2c : public DevI2C {
   protected:
    uint8_t mod = 0;
    uint8_t led_state = lcd_bit_led;
+   static const constexpr uint8_t n_lines { 4 };
+   static const uint8_t line_addr[n_lines];
    const uint8_t cpl = 40; // 40 char/line
 };
 
