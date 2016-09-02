@@ -32,6 +32,9 @@ class DevSPI  {
    void setTssDelay( uint32_t t ) { tss_delay_mcs = t; }
    void setUseNss( bool un ) { use_nss = un; } // for send*/recv*/duplex*
    int  getErr() const { return spi->ErrorCode; };
+   int  getLastErr() const { return last_err; };
+   int  resetLastErr() { int old_last_err = last_err; last_err = 0; return old_last_err; };
+   int  getLastRc() const { return last_rc; };
    int  getState() const { return spi->State; };
    // low-level
    HAL_StatusTypeDef waitForFlag( uint32_t flag, uint32_t val, int ticks = -1 );  // -1 means 'use maxWait'
@@ -52,6 +55,8 @@ class DevSPI  {
    bool inv_nss = false;
    bool use_nss = true;
    uint32_t tss_delay_mcs = 1;
+   uint32_t last_err = 0;
+   HAL_StatusTypeDef last_rc = HAL_OK;
 };
 
 #ifdef USE_OXC_DEBUG

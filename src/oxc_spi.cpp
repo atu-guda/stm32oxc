@@ -7,12 +7,14 @@ void DevSPI::initSPI()
     nss_pin->initHW();
   }
   nss_post_cond();
+  last_rc = HAL_OK; last_err = 0;
 }
 
 void DevSPI::deInit()
 {
   __HAL_SPI_DISABLE( spi );
   HAL_SPI_DeInit( spi );
+  last_rc = HAL_OK; last_err = 0;
 }
 
 void DevSPI::resetDev()
@@ -22,6 +24,7 @@ void DevSPI::resetDev()
   __HAL_SPI_ENABLE( spi );
   nss_post_cond();
   delay_ms( 1 );
+  last_rc = HAL_OK;
 }
 
 void DevSPI::nss_pre()
@@ -84,10 +87,15 @@ int  DevSPI::send( const uint8_t *ds, int ns )
   }
 
   nss_pre_cond();
-  HAL_StatusTypeDef rc = HAL_SPI_Transmit( spi, (uint8_t*)ds, ns, maxWait );
+  last_rc = HAL_SPI_Transmit( spi, (uint8_t*)ds, ns, maxWait );
   nss_post_cond();
 
-  return ( rc == HAL_OK ) ? ns : 0;
+  if ( last_rc != HAL_OK ) {
+    last_err = getErr();
+    return 0;
+  }
+
+  return ns;
 }
 
 
@@ -105,10 +113,15 @@ int  DevSPI::recv( uint8_t *dd, int nd )
   }
 
   nss_pre_cond();
-  HAL_StatusTypeDef rc = HAL_SPI_Receive( spi, (uint8_t*)(dd), nd, maxWait );
+  last_rc = HAL_SPI_Receive( spi, (uint8_t*)(dd), nd, maxWait );
   nss_post_cond();
 
-  return ( rc == HAL_OK ) ? nd : 0;
+  if ( last_rc != HAL_OK ) {
+    last_err = getErr();
+    return 0;
+  }
+
+  return nd;
 }
 
 int  DevSPI::send_recv( const uint8_t *ds, int ns, uint8_t *dd, int nd )
@@ -118,13 +131,18 @@ int  DevSPI::send_recv( const uint8_t *ds, int ns, uint8_t *dd, int nd )
   }
 
   nss_pre_cond();
-  HAL_StatusTypeDef rc = HAL_SPI_Transmit( spi, (uint8_t*)ds, ns, maxWait );
-  if( rc == HAL_OK ) {
-    rc = HAL_SPI_Receive( spi, (uint8_t*)(dd), nd, maxWait );
+  last_rc = HAL_SPI_Transmit( spi, (uint8_t*)ds, ns, maxWait );
+  if( last_rc == HAL_OK ) {
+    last_rc = HAL_SPI_Receive( spi, (uint8_t*)(dd), nd, maxWait );
   }
   nss_post_cond();
 
-  return ( rc == HAL_OK ) ? nd : 0;
+  if ( last_rc != HAL_OK ) {
+    last_err = getErr();
+    return 0;
+  }
+
+  return nd;
 }
 
 int  DevSPI::send2( const uint8_t *ds1, int ns1, const uint8_t *ds2, int ns2 )
@@ -134,13 +152,18 @@ int  DevSPI::send2( const uint8_t *ds1, int ns1, const uint8_t *ds2, int ns2 )
   }
 
   nss_pre_cond();
-  HAL_StatusTypeDef rc = HAL_SPI_Transmit( spi, (uint8_t*)ds1, ns1, maxWait );
-  if( rc == HAL_OK ) {
-    rc = HAL_SPI_Transmit( spi, (uint8_t*)(ds2), ns2, maxWait );
+  last_rc = HAL_SPI_Transmit( spi, (uint8_t*)ds1, ns1, maxWait );
+  if( last_rc == HAL_OK ) {
+    last_rc = HAL_SPI_Transmit( spi, (uint8_t*)(ds2), ns2, maxWait );
   }
   nss_post_cond();
 
-  return ( rc == HAL_OK ) ? ( ns1 + ns2 ) : 0;
+  if ( last_rc != HAL_OK ) {
+    last_err = getErr();
+    return 0;
+  }
+
+  return ns1 + ns2;
 }
 
 int  DevSPI::send_recv( uint8_t ds, uint8_t *dd, int nd )
@@ -157,13 +180,18 @@ int  DevSPI::duplex( const uint8_t *ds, uint8_t *dd, int nd )
   }
 
   nss_pre_cond();
-  HAL_StatusTypeDef rc = HAL_SPI_TransmitReceive( spi, (uint8_t*)ds, dd, nd, maxWait );
-  if( rc == HAL_OK ) {
-    rc = HAL_SPI_Receive( spi, (uint8_t*)(dd), nd, maxWait );
+  last_rc = HAL_SPI_TransmitReceive( spi, (uint8_t*)ds, dd, nd, maxWait );
+  if( last_rc == HAL_OK ) {
+    last_rc = HAL_SPI_Receive( spi, (uint8_t*)(dd), nd, maxWait );
   }
   nss_post_cond();
 
-  return ( rc == HAL_OK ) ? nd : 0;
+  if ( last_rc != HAL_OK ) {
+    last_err = getErr();
+    return 0;
+  }
+
+  return nd;
 }
 
 
@@ -296,6 +324,8 @@ void print_SPI_info( SPI_TypeDef *spi )
 void DevSPI::pr_info() const
 {
   print_SPI_info( spi->Instance );
-  pr( " error_code= " ); pr_d( spi->ErrorCode ); pr( NL );
+  pr( " error_code= " ); pr_d( spi->ErrorCode );
+  pr( " last_err= " ); pr_d( last_err );
+  pr( " last_rc= " ); pr_d( last_rc ); pr( NL );
 }
 #endif
