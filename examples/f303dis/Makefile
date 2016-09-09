@@ -21,7 +21,10 @@ SUBDIRS = \
   19_spi_test \
   20_spi_mem_a25 \
   21_spi_max7219 \
-  22_spi_pcd8544_lcd
+  22_spi_pcd8544_lcd \
+  l01_accel \
+  l02_accel \
+  l03_mag
 
 
 ALL : examples_f303_d3

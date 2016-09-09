@@ -1,5 +1,7 @@
 #include <cstring>
 #include <cstdlib>
+#include <cmath>
+
 #include <algorithm>
 
 #include <oxc_auto.h>

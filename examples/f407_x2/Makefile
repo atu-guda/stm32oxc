@@ -20,7 +20,9 @@ SUBDIRS = \
   18_i2c_ssd1306_oled \
   19_spi_test \
   20_spi_mem_a25 \
-  21_spi_max7219
+  21_spi_max7219 \
+  24_i2c_hmc5983 \
+  25_spi_max31855_tcouple
 
 ALL : examples_f407_x2
 
