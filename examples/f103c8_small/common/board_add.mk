@@ -12,8 +12,8 @@ SRCS += stm32f1xx_hal_msp.c
 SRCS += system_stm32f1xx.c
 SRCS += startup_stm32f103xb.s
 
-# SRCS += stm32f1_clock_HSE072.c
-SRCS += stm32f1_clock_HSE072_LSE.c
+SRCS += stm32f1_clock_HSE072.c
+# SRCS += stm32f1_clock_HSE072_LSE.c
 
 # base hal files
 SRCS += stm32f1xx_hal.c

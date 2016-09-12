@@ -32,6 +32,10 @@ int main(void)
   HAL_Init();
 
   SystemClock_Config();
+
+  // HAL_RCC_MCOConfig( RCC_MCO, RCC_MCO1SOURCE_PLLCLK, RCC_MCODIV_1 );
+  // HAL_RCC_MCOConfig( RCC_MCO, RCC_MCO1SOURCE_HSE, RCC_MCODIV_1 );
+
   HAL_NVIC_SetPriority( SysTick_IRQn, 0, 0 ); // test?
 
   MX_GPIO_Init();
@@ -43,7 +47,7 @@ int main(void)
     GPIO_WriteBits( GPIOB, j, 0xF000 );
     ++i;
     i &= 0x0FF;
-    HAL_Delay( 200 );
+    HAL_Delay( 1000 );
     // delay_bad();
   }
   return 0;
@@ -63,6 +67,17 @@ void Error_Handler(void)
   while(1) {
   }
 }
+
+/* void HAL_SYSTICK_Callback(void) */
+/* { */
+/*   static uint16_t v = 0; */
+/*   GPIO_WriteBits( GPIOB, v, 0xF000 ); */
+/*   if( v == 0 ) { */
+/*     v = 0xF000; */
+/*   } else { */
+/*     v = 0; */
+/*   } */
+/* } */
 
 // configs
 

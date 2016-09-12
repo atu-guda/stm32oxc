@@ -43,7 +43,7 @@ void SystemClock_Config(void)
     Error_Handler();
   }
 
-  HAL_SYSTICK_Config( HAL_RCC_GetHCLKFreq()/1000 );
+  HAL_SYSTICK_Config( HAL_RCC_GetHCLKFreq() / (1000*8) );
 
   HAL_SYSTICK_CLKSourceConfig( SYSTICK_CLKSOURCE_HCLK );
 
