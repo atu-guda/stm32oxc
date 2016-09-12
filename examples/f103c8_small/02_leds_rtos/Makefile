@@ -1,29 +1,20 @@
-PROJ_NAME=leds
-
+PROJ_NAME=leds_rtos
 
 USE_OXC = y
 # USE_OXC_DEVIO = y
 USE_OXC_DEBUG = n
 USE_OXC_CONSOLE_USART = n
 USE_OXC_CONSOLE_USB_CDC = n
-USE_FREERTOS = n
+USE_FREERTOS = y
 # FREERTOS_HEAP = heap_2.c
 # # default: heap_3.c
 # USE_USB_DEFAULT_CDC = y
-
 
 # TODO: copy to main location
 OXCDIR = /home/atu/proj/stm32/oxc
 
 
-SRCS  = main.c
-
-SRCS += gpio.c
-
-SRCS += stm32f1xx_hal_rcc_ex.c
-
-
-#SRCS += ox_i2c.cpp
+SRCS  = main.cpp
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
 
@@ -65,9 +56,6 @@ SRCS += stm32f1xx_hal_rcc_ex.c
 # SRCS += stm32f1xx_hal_uart.c
 # SRCS += stm32f1xx_hal_usart.c
 # SRCS += stm32f1xx_hal_wwdg.c
-
-
-
 
 include ../common/board_add.mk
 include $(OXCDIR)/mk/common_cortex.mk

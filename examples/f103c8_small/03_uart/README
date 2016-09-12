@@ -1,0 +1,5 @@
+Used USART1 with UAST-USB board.
+
+A9 = TX
+A10 = RX
+
