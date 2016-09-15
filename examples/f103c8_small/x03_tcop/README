@@ -1,0 +1,6 @@
+More actions fo UART - really for thermocouple interface
+Used USART1 with UAST-USB board.
+
+A9 = TX
+A10 = RX
+
