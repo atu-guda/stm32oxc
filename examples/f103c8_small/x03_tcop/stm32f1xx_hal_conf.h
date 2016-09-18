@@ -19,6 +19,7 @@
 #define USE_COMMON_HAL_MODULES
 #define HAL_UART_MODULE_ENABLED
 #define HAL_DMA_MODULE_ENABLED
+#define HAL_SPI_MODULE_ENABLED
 
 // AUX modules : full list: ../common/hal_modules_list.h
 //

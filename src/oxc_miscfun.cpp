@@ -1,4 +1,5 @@
 #include <cstdlib>
+#include <cstring>
 
 #include <oxc_miscfun.h>
 
@@ -42,31 +43,61 @@ char* word2hex( uint32_t d,  char *s )
   return s;
 }
 
-char* i2dec( int n, char *s )
+char* i2dec( int n, char *s, unsigned min_sz, char fill_ch )
 {
   static char sbuf[INT_STR_SZ_DEC];
-  char tbuf[24];
-  unsigned u;
+  char tbuf[INT_STR_SZ_DEC];
   if( !s ) {
     s = sbuf;
   }
+  if( min_sz < 1 ) { min_sz = 1; }
+  if( min_sz > INT_STR_SZ_DEC-2 ) { min_sz = INT_STR_SZ_DEC-2; }
   char *bufptr = s, *tmpptr = tbuf + 1;
   *tbuf = '\0';
 
+  unsigned u, nc = 0;
   if( n < 0 ){ //  sign
     u = ( (unsigned)(-(1+n)) ) + 1; // INT_MIN handling
-    *bufptr++ = '-';
+    *bufptr++ = '-'; ++nc;
   } else {
     u=n;
   }
 
   do {
-    *tmpptr++ = dec_digits[ u % 10 ];
+    *tmpptr++ = dec_digits[ u % 10 ]; ++nc;
   } while( u /= 10 );
+
+  while( nc < min_sz ) {
+    *tmpptr++ = fill_ch; ++nc;
+  }
 
   while( ( *bufptr++ = *--tmpptr ) != '\0' ) /* NOP */;
   return s;
 }
+
+
+char* ifcvt( int v, int mult, char *s, unsigned min_sz_frac,  unsigned min_sz_int, char plus_ch  )
+{
+  char t[INT_STR_SZ_DEC];
+  if( !s ) {
+    return 0;
+  }
+  int i1 = v / mult;
+  int i2 = v - i1 * mult;
+  char sig = '-';
+  if( i1 >=0  &&  i2 >= 0 ) {
+    sig = plus_ch;
+  }
+  if( i1 < 0 ) { i1 = -i1; }
+  if( i2 < 0 ) { i2 = -i2; }
+  s[0] = sig; s[1] = '\0';
+  char int_fill = ' ';
+  if( min_sz_int > 1 ) { int_fill = '0'; };
+  i2dec( i1, t, min_sz_int,  int_fill ); strncat( s, t, INT_STR_SZ_DEC ); strncat( s, ".", 1 );
+  i2dec( i2, t, min_sz_frac, '0'     );  strncat( s, t, INT_STR_SZ_DEC );
+  return s;
+}
+
 
 
 bool arg2long( int narg, int argc, const char * const * argv, long *v,

@@ -25,8 +25,18 @@ const int TX_BUF_SZ = 128;
 char tx_buf[TX_BUF_SZ];
 int prs( const char *s );
 
+SPI_HandleTypeDef hspi1;
+void MX_SPI1_Init();
+void HAL_SPI_MspDeInit( SPI_HandleTypeDef* spiHandle );
+
+const uint8_t MAX31855_FAIL = 0x01; // v[2]
+const uint8_t MAX31855_BRK  = 0x01; // v[0]
+const uint8_t MAX31855_GND  = 0x02;
+const uint8_t MAX31855_VCC  = 0x04;
+
 volatile uint32_t loop_delay = 1000;
-const uint16_t    tx_wait = 100;
+const uint16_t    tx_wait  = 100;
+const uint16_t    spi_wait = 100;
 
 int main(void)
 {
@@ -40,6 +50,9 @@ int main(void)
   leds.write( 0x0A );  delay_bad_ms( 200 );
 
   MX_USART1_UART_Init();
+  MX_SPI1_Init();
+
+  HAL_GPIO_WritePin( GPIOA, GPIO_PIN_4 , GPIO_PIN_SET );
 
   xTaskCreate( task_leds, "leds", 1*def_stksz, 0, 1, 0 );
   xTaskCreate( task_send, "send", 2*def_stksz, 0, 1, 0 );
@@ -69,9 +82,8 @@ int prs( const char *s )
 
 void task_send( void *prm UNUSED_ARG )
 {
-  // strcpy( tx_buf, "ABCDE <.> 0123\r\n" );
-  // int ssz = strlen( tx_buf );
   char buf[32];
+  uint8_t v[4];
   // uint8_t rc;
   int T_in_i = 28, T_in_p = 7, T_out_i = 301, T_out_p = 1; // 28.7 C, 301.1 C
 
@@ -81,8 +93,63 @@ void task_send( void *prm UNUSED_ARG )
   while( 1 )
   {
     TickType_t tcc = xTaskGetTickCount();
+
+    HAL_GPIO_WritePin( GPIOA, GPIO_PIN_4 , GPIO_PIN_SET );
+    delay_bad_mcs( 2 );
+    int last_rc = HAL_SPI_Receive( &hspi1, (uint8_t*)(v), sizeof(v), spi_wait );
+    if( last_rc != HAL_OK ) {
+      v[2] |= MAX31855_FAIL; // force error;
+    }
+    HAL_GPIO_WritePin( GPIOA, GPIO_PIN_4 , GPIO_PIN_RESET );
+    v[2] |= MAX31855_FAIL; // force error;
+
     tx_buf[0] = '\0';
     i2dec( tcc - tc00, buf );  strncat( tx_buf, buf, 10 ); strncat( tx_buf, " ", 1 );
+
+    // debug
+    // word2hex( *(uint32_t*)(v), buf );  strncat( tx_buf, buf, 10 ); strncat( tx_buf, " ", 1 );
+    char2hex( v[0], buf );  strncat( tx_buf, buf, 4 ); strncat( tx_buf, " ", 1 );
+    char2hex( v[1], buf );  strncat( tx_buf, buf, 4 ); strncat( tx_buf, " ", 1 );
+    char2hex( v[2], buf );  strncat( tx_buf, buf, 4 ); strncat( tx_buf, " ", 1 );
+    char2hex( v[3], buf );  strncat( tx_buf, buf, 4 ); strncat( tx_buf, " ", 1 );
+
+    if( v[2] & MAX31855_FAIL ) {
+      strncat( tx_buf, "FAIL,", 6 );
+      if( v[0] & MAX31855_BRK ) {
+        strncat( tx_buf, "BREAK,", 8 );
+      }
+      if( v[0] & MAX31855_GND ) {
+        strncat( tx_buf, "GND,", 6 );
+      }
+      if( v[0] & MAX31855_VCC ) {
+        strncat( tx_buf, "VCC", 6 );
+      }
+      strncat( tx_buf, " ", 2 );
+    }
+
+    // try even if error
+    int32_t tif =  ( v[3] >> 4 ) | ( v[2] << 4 );
+    // word2hex( tif, buf );  strncat( tx_buf, buf, 10 ); strncat( tx_buf, " ", 1 );
+    if( tif & 0x0800 ) {
+      tif |= 0xFFFFF000;
+    }
+    // word2hex( tif, buf );  strncat( tx_buf, buf, 10 ); strncat( tx_buf, " ", 1 );
+    int32_t tid4 = tif * 625 +  10000;
+    float ti_f = tif      * 0.0625;
+    sprintf( buf, "%f ", ti_f ); strncat( tx_buf, buf, 14 );
+    // fcvt( ti_f, 12, nullptr, nullptr );
+    i2dec( tid4-10000, buf );      strncat( tx_buf, buf, 10 ); strncat( tx_buf, " ", 1 );
+    // T_in_i = tid4 / 10000; T_in_p =  tid4 % 10000;
+    T_in_i = int( ti_f ) ; T_in_p =  int( 10000 * (ti_f - T_in_i) );
+
+    int32_t tof =  ( v[1] >> 2 ) | ( v[0] << 6 );
+    if( tof & 0x2000 ) {
+      tof |= 0xFFFFC000;
+    }
+    int tod4 = tof * 25;
+    i2dec( tod4, buf );      strncat( tx_buf, buf, 10 ); strncat( tx_buf, " ", 1 );
+    T_out_i = tod4 / 100; T_out_p = tod4 % 100;
+
     i2dec( T_in_i, buf );      strncat( tx_buf, buf, 10 ); strncat( tx_buf, ".", 1 );
     i2dec( T_in_p, buf );      strncat( tx_buf, buf, 10 ); strncat( tx_buf, " ", 1 );
     i2dec( T_out_i, buf );     strncat( tx_buf, buf, 10 ); strncat( tx_buf, ".", 1 );

@@ -26,7 +26,9 @@ char* word2hex( uint32_t d,  char *s );
 // 64/log_2[10] \approx 20
 #define INT_STR_SZ 24
 // if s == 0 returns ptr to inner static buffer
-char* i2dec( int n, char *s );
+char* i2dec( int n, char *s, unsigned min_sz = 1, char fill_ch = ' ' );
+// fixed point intr preresentation to string
+char* ifcvt( int v, int mult, char *s, unsigned min_sz_frac = 1,  unsigned min_sz_int = 1, char plus_ch = ' ' );
 
 #ifdef __cplusplus
 }
