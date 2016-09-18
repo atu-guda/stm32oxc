@@ -34,7 +34,7 @@ const uint8_t MAX31855_BRK  = 0x01; // v[0]
 const uint8_t MAX31855_GND  = 0x02;
 const uint8_t MAX31855_VCC  = 0x04;
 
-volatile uint32_t loop_delay = 1000;
+volatile uint32_t loop_delay = 100;
 const uint16_t    tx_wait  = 100;
 const uint16_t    spi_wait = 100;
 
@@ -85,7 +85,6 @@ void task_send( void *prm UNUSED_ARG )
   char buf[32];
   uint8_t v[4];
   // uint8_t rc;
-  int T_in_i = 28, T_in_p = 7, T_out_i = 301, T_out_p = 1; // 28.7 C, 301.1 C
 
   prs( "Start\r\n" );
 
@@ -104,14 +103,30 @@ void task_send( void *prm UNUSED_ARG )
     v[2] |= MAX31855_FAIL; // force error;
 
     tx_buf[0] = '\0';
-    i2dec( tcc - tc00, buf );  strncat( tx_buf, buf, 10 ); strncat( tx_buf, " ", 1 );
+    i2dec( tcc - tc00, buf, 8, '0' );  strncat( tx_buf, buf, 12 ); strncat( tx_buf, " ", 1 );
 
     // debug
     // word2hex( *(uint32_t*)(v), buf );  strncat( tx_buf, buf, 10 ); strncat( tx_buf, " ", 1 );
-    char2hex( v[0], buf );  strncat( tx_buf, buf, 4 ); strncat( tx_buf, " ", 1 );
-    char2hex( v[1], buf );  strncat( tx_buf, buf, 4 ); strncat( tx_buf, " ", 1 );
-    char2hex( v[2], buf );  strncat( tx_buf, buf, 4 ); strncat( tx_buf, " ", 1 );
-    char2hex( v[3], buf );  strncat( tx_buf, buf, 4 ); strncat( tx_buf, " ", 1 );
+    // char2hex( v[0], buf );  strncat( tx_buf, buf, 4 ); strncat( tx_buf, " ", 1 );
+    // char2hex( v[1], buf );  strncat( tx_buf, buf, 4 ); strncat( tx_buf, " ", 1 );
+    // char2hex( v[2], buf );  strncat( tx_buf, buf, 4 ); strncat( tx_buf, " ", 1 );
+    // char2hex( v[3], buf );  strncat( tx_buf, buf, 4 ); strncat( tx_buf, " ", 1 );
+
+
+    // try even if error
+    int32_t tif =  ( v[3] >> 4 ) | ( v[2] << 4 );
+    if( tif & 0x0800 ) {
+      tif |= 0xFFFFF000;
+    }
+    int32_t tid4 = tif * 625;
+    ifcvt( tid4, 10000, buf, 4 ); strncat( tx_buf, buf, 14 ); strncat( tx_buf, " ", 1 );
+
+    int32_t tof =  ( v[1] >> 2 ) | ( v[0] << 6 );
+    if( tof & 0x2000 ) {
+      tof |= 0xFFFFC000;
+    }
+    int tod4 = tof * 25;
+    ifcvt( tod4, 100, buf, 2 ); strncat( tx_buf, buf, 14 ); strncat( tx_buf, " ", 1 );
 
     if( v[2] & MAX31855_FAIL ) {
       strncat( tx_buf, "FAIL,", 6 );
@@ -127,33 +142,6 @@ void task_send( void *prm UNUSED_ARG )
       strncat( tx_buf, " ", 2 );
     }
 
-    // try even if error
-    int32_t tif =  ( v[3] >> 4 ) | ( v[2] << 4 );
-    // word2hex( tif, buf );  strncat( tx_buf, buf, 10 ); strncat( tx_buf, " ", 1 );
-    if( tif & 0x0800 ) {
-      tif |= 0xFFFFF000;
-    }
-    // word2hex( tif, buf );  strncat( tx_buf, buf, 10 ); strncat( tx_buf, " ", 1 );
-    int32_t tid4 = tif * 625 +  10000;
-    float ti_f = tif      * 0.0625;
-    sprintf( buf, "%f ", ti_f ); strncat( tx_buf, buf, 14 );
-    // fcvt( ti_f, 12, nullptr, nullptr );
-    i2dec( tid4-10000, buf );      strncat( tx_buf, buf, 10 ); strncat( tx_buf, " ", 1 );
-    // T_in_i = tid4 / 10000; T_in_p =  tid4 % 10000;
-    T_in_i = int( ti_f ) ; T_in_p =  int( 10000 * (ti_f - T_in_i) );
-
-    int32_t tof =  ( v[1] >> 2 ) | ( v[0] << 6 );
-    if( tof & 0x2000 ) {
-      tof |= 0xFFFFC000;
-    }
-    int tod4 = tof * 25;
-    i2dec( tod4, buf );      strncat( tx_buf, buf, 10 ); strncat( tx_buf, " ", 1 );
-    T_out_i = tod4 / 100; T_out_p = tod4 % 100;
-
-    i2dec( T_in_i, buf );      strncat( tx_buf, buf, 10 ); strncat( tx_buf, ".", 1 );
-    i2dec( T_in_p, buf );      strncat( tx_buf, buf, 10 ); strncat( tx_buf, " ", 1 );
-    i2dec( T_out_i, buf );     strncat( tx_buf, buf, 10 ); strncat( tx_buf, ".", 1 );
-    i2dec( T_out_p, buf );     strncat( tx_buf, buf, 10 );
     strncat( tx_buf, "\r\n", 3 );
     prs( tx_buf );
     vTaskDelayUntil( &tc0, loop_delay );
