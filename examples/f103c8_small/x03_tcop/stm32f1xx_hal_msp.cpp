@@ -1,5 +1,17 @@
 #include <oxc_auto.h>
 
+void MX_inp_Init()
+{
+  // __HAL_RCC_GPIOA_CLK_ENABLE(); // copy from UART
+  // __HAL_RCC_AFIO_CLK_ENABLE();
+  GPIO_InitTypeDef GPIO_InitStruct;
+  GPIO_InitStruct.Pin   = GPIO_PIN_1 | GPIO_PIN_2;
+  GPIO_InitStruct.Mode  = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init( GPIOA, &GPIO_InitStruct );
+}
+
 extern UART_HandleTypeDef uah;
 
 /* USART1 init function */

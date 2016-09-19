@@ -5,6 +5,7 @@
 using namespace std;
 
 void MX_GPIO_Init(void);
+void MX_inp_Init();
 void MX_USART1_UART_Init(void);
 
 
@@ -38,6 +39,7 @@ const uint8_t MAX31855_VCC  = 0x04;
 volatile uint32_t loop_delay = 1000;
 const uint16_t    tx_wait  = 100;
 const uint16_t    spi_wait = 100;
+const uint32_t loop_delays[6] = { 100, 1000, 5000, 10000, 10, 20 }; // last 2 is fake
 
 int main(void)
 {
@@ -51,6 +53,7 @@ int main(void)
   leds.write( 0x0F );  delay_bad_ms( 200 );
   leds.write( 0x0A );  delay_bad_ms( 200 );
 
+  MX_inp_Init();
   MX_USART1_UART_Init();
   MX_SPI1_Init();
 
@@ -88,6 +91,7 @@ void task_send( void *prm UNUSED_ARG )
   uint8_t v[4];
   uint8_t lbits;
   unsigned n = 0;
+  uint16_t ipo;
 
   prs( "Start\r\n" );
 
@@ -97,6 +101,8 @@ void task_send( void *prm UNUSED_ARG )
     TickType_t tcc = xTaskGetTickCount();
 
     lbits = (uint8_t)( ( n & 1 ) << 3 );
+    ipo = ( GPIOA->IDR >> 1 ) & 0x0003;
+    loop_delay = loop_delays[ipo];
 
     HAL_GPIO_WritePin( GPIOA, GPIO_PIN_4 , GPIO_PIN_RESET );
     delay_bad_mcs( 100 );
@@ -105,7 +111,6 @@ void task_send( void *prm UNUSED_ARG )
       v[1] |= MAX31855_FAIL; // force error;
     }
     HAL_GPIO_WritePin( GPIOA, GPIO_PIN_4 , GPIO_PIN_SET );
-    // v[1] |= MAX31855_FAIL; // force error;
 
     tx_buf[0] = '\0';
     i2dec( tcc - tc00, buf, 8, '0' );  strncat( tx_buf, buf, 12 ); strncat( tx_buf, " ", 1 );
@@ -141,6 +146,8 @@ void task_send( void *prm UNUSED_ARG )
       }
       strncat( tx_buf, " ", 2 );
     }
+
+    i2dec( loop_delay, buf ); strncat( tx_buf, buf, 10 ); strncat( tx_buf, " ", 2 );
 
     // debug
     // word2hex( *(uint32_t*)(v), buf );  strncat( tx_buf, buf, 10 ); strncat( tx_buf, " ", 1 );
