@@ -9,6 +9,7 @@ void MX_USART1_UART_Init(void);
 
 
 // BOARD_DEFINE_LEDS;
+PinsOut led0( GPIOC, 13, 1 );
 BOARD_DEFINE_LEDS_EXTRA;
 
 const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
@@ -34,7 +35,7 @@ const uint8_t MAX31855_BRK  = 0x01; // v[0]
 const uint8_t MAX31855_GND  = 0x02;
 const uint8_t MAX31855_VCC  = 0x04;
 
-volatile uint32_t loop_delay = 100;
+volatile uint32_t loop_delay = 1000;
 const uint16_t    tx_wait  = 100;
 const uint16_t    spi_wait = 100;
 
@@ -45,6 +46,7 @@ int main(void)
   SystemClock_Config();
 
   leds.initHW();
+  led0.initHW();
 
   leds.write( 0x0F );  delay_bad_ms( 200 );
   leds.write( 0x0A );  delay_bad_ms( 200 );
@@ -54,7 +56,7 @@ int main(void)
 
   HAL_GPIO_WritePin( GPIOA, GPIO_PIN_4 , GPIO_PIN_SET );
 
-  xTaskCreate( task_leds, "leds", 1*def_stksz, 0, 1, 0 );
+  // xTaskCreate( task_leds, "leds", 1*def_stksz, 0, 1, 0 );
   xTaskCreate( task_send, "send", 2*def_stksz, 0, 1, 0 );
 
   leds.write( 0x00 );
@@ -84,7 +86,8 @@ void task_send( void *prm UNUSED_ARG )
 {
   char buf[32];
   uint8_t v[4];
-  // uint8_t rc;
+  uint8_t lbits;
+  unsigned n = 0;
 
   prs( "Start\r\n" );
 
@@ -93,25 +96,19 @@ void task_send( void *prm UNUSED_ARG )
   {
     TickType_t tcc = xTaskGetTickCount();
 
-    HAL_GPIO_WritePin( GPIOA, GPIO_PIN_4 , GPIO_PIN_SET );
-    delay_bad_mcs( 2 );
-    int last_rc = HAL_SPI_Receive( &hspi1, (uint8_t*)(v), sizeof(v), spi_wait );
-    if( last_rc != HAL_OK ) {
-      v[2] |= MAX31855_FAIL; // force error;
-    }
+    lbits = (uint8_t)( ( n & 1 ) << 3 );
+
     HAL_GPIO_WritePin( GPIOA, GPIO_PIN_4 , GPIO_PIN_RESET );
-    v[2] |= MAX31855_FAIL; // force error;
+    delay_bad_mcs( 100 );
+    int last_rc = HAL_SPI_Receive( &hspi1, (uint8_t*)(v), sizeof(v), spi_wait ); // v[0] is MOST significant!
+    if( last_rc != HAL_OK ) {
+      v[1] |= MAX31855_FAIL; // force error;
+    }
+    HAL_GPIO_WritePin( GPIOA, GPIO_PIN_4 , GPIO_PIN_SET );
+    // v[1] |= MAX31855_FAIL; // force error;
 
     tx_buf[0] = '\0';
     i2dec( tcc - tc00, buf, 8, '0' );  strncat( tx_buf, buf, 12 ); strncat( tx_buf, " ", 1 );
-
-    // debug
-    // word2hex( *(uint32_t*)(v), buf );  strncat( tx_buf, buf, 10 ); strncat( tx_buf, " ", 1 );
-    // char2hex( v[0], buf );  strncat( tx_buf, buf, 4 ); strncat( tx_buf, " ", 1 );
-    // char2hex( v[1], buf );  strncat( tx_buf, buf, 4 ); strncat( tx_buf, " ", 1 );
-    // char2hex( v[2], buf );  strncat( tx_buf, buf, 4 ); strncat( tx_buf, " ", 1 );
-    // char2hex( v[3], buf );  strncat( tx_buf, buf, 4 ); strncat( tx_buf, " ", 1 );
-
 
     // try even if error
     int32_t tif =  ( v[3] >> 4 ) | ( v[2] << 4 );
@@ -128,23 +125,38 @@ void task_send( void *prm UNUSED_ARG )
     int tod4 = tof * 25;
     ifcvt( tod4, 100, buf, 2 ); strncat( tx_buf, buf, 14 ); strncat( tx_buf, " ", 1 );
 
-    if( v[2] & MAX31855_FAIL ) {
+    if( v[1] & MAX31855_FAIL ) {
+      lbits |= 1;
       strncat( tx_buf, "FAIL,", 6 );
-      if( v[0] & MAX31855_BRK ) {
+      if( v[3] & MAX31855_BRK ) {
         strncat( tx_buf, "BREAK,", 8 );
       }
-      if( v[0] & MAX31855_GND ) {
+      if( v[3] & MAX31855_GND ) {
         strncat( tx_buf, "GND,", 6 );
+        lbits |= 4;
       }
-      if( v[0] & MAX31855_VCC ) {
+      if( v[3] & MAX31855_VCC ) {
         strncat( tx_buf, "VCC", 6 );
+        lbits |= 2;
       }
       strncat( tx_buf, " ", 2 );
     }
 
+    // debug
+    // word2hex( *(uint32_t*)(v), buf );  strncat( tx_buf, buf, 10 ); strncat( tx_buf, " ", 1 );
+    // order is reversed: v[0] is MOST significant!
+    // char2hex( v[0], buf );  strncat( tx_buf, buf, 4 ); strncat( tx_buf, " ", 1 );
+    // char2hex( v[1], buf );  strncat( tx_buf, buf, 4 ); strncat( tx_buf, " ", 1 );
+    // char2hex( v[2], buf );  strncat( tx_buf, buf, 4 ); strncat( tx_buf, " ", 1 );
+    // char2hex( v[3], buf );  strncat( tx_buf, buf, 4 ); strncat( tx_buf, " ", 1 );
+
     strncat( tx_buf, "\r\n", 3 );
     prs( tx_buf );
+    // leds.toggle( BIT3 );
+    leds.write( lbits );
+    led0.toggle( BIT0 );
     vTaskDelayUntil( &tc0, loop_delay );
+    ++n;
   }
 }
 
@@ -157,5 +169,5 @@ void Error_Handler(void)
 
 FreeRTOS_to_stm32cube_tick_hook;
 
-// vim: path=.,/usr/share/stm32lib/inc/,/usr/arm-none-eabi/include,../../../inc
+// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,../../../inc
 

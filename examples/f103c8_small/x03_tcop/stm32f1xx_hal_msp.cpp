@@ -102,6 +102,11 @@ void HAL_SPI_MspInit( SPI_HandleTypeDef* spiHandle )
   GPIO_InitStruct.Mode  = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull  = GPIO_NOPULL;
   HAL_GPIO_Init( GPIOA, &GPIO_InitStruct );
+
+  GPIO_InitStruct.Pin   = GPIO_PIN_4;
+  GPIO_InitStruct.Mode  = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+  HAL_GPIO_Init( GPIOA, &GPIO_InitStruct );
 }
 
 void HAL_SPI_MspDeInit( SPI_HandleTypeDef* spiHandle )
