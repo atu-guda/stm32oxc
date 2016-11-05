@@ -17,7 +17,7 @@ OXCDIR = /home/atu/proj/stm32/oxc
 
 SRCS  = main.cpp
 
-SRCS += empty_test0_function.cpp
+SRCS += ../../common/empty_test0_function.cpp
 
 # aux:
 # SRCS += stm32f3xx_hal_adc.c

@@ -17,7 +17,7 @@ OXCDIR = /home/atu/proj/stm32/oxc
 
 SRCS  = main.cpp
 
-SRCS += empty_test0_function.cpp
+SRCS += ../../common/empty_test0_function.cpp
 
 #SRCS += oxc_i2c.cpp
 

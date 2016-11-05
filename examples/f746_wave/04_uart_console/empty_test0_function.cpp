@@ -1,1 +1,0 @@
-../../common/empty_test0_function.cpp
