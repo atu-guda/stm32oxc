@@ -33,8 +33,16 @@
  #define USART_TX_REG TDR
  #define USART_RX_REG RDR
  #define USART_SR_REG ISR
-#elif defined (STM32F4) || defined(STM32F7)
+#elif defined (STM32F4)
  #include <stm32f4xx_hal.h>
+ #define SET_BIT_REG   BSRR
+ #define RESET_BIT_REG BSRR
+ #define RESET_BIT_SHIFT 16
+ #define USART_TX_REG DR
+ #define USART_RX_REG DR
+ #define USART_SR_REG SR
+#elif defined(STM32F7)
+ #include <stm32f7xx_hal.h>
  #define SET_BIT_REG   BSRR
  #define RESET_BIT_REG BSRR
  #define RESET_BIT_SHIFT 16
@@ -120,6 +128,10 @@ typedef const char *const ccstr;
   #define T_MKS_MUL 32
   #define T_MS_MUL  33845
   #define T_S_MUL   33845000
+#elif REQ_SYSCLK_FREQ == 200
+  #define T_MKS_MUL 40
+  #define T_MS_MUL  40292
+  #define T_S_MUL   40291667
 #endif
 
 

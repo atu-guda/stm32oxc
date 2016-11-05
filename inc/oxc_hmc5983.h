@@ -1,6 +1,8 @@
 #ifndef _OXC_OXC_HMC5983_H
 #define _OXC_OXC_HMC5983_H
 
+// HMC5983 3 Axis Compass HMC5983_3_Axis_Compass_IC.pdf
+
 #include <oxc_i2c.h>
 
 // inner regs: 1-byte addr

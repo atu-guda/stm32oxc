@@ -49,6 +49,12 @@ void GPIO_enableClk( GPIO_TypeDef* gp )
     return;
   }
   #endif
+  #ifdef GPIOI
+  if( gp == GPIOI ) {
+    __GPIOI_CLK_ENABLE();
+    return;
+  }
+  #endif
 }
 
 

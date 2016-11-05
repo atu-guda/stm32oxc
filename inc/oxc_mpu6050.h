@@ -1,6 +1,8 @@
 #ifndef _OXC_MPU6050_H
 #define _OXC_MPU6050_H
 
+// Accel, Gyro I2C: PS-MPU-6000A-00v3.4.pdf
+
 #include <oxc_i2c.h>
 
 // inner regs: 1-byte addr

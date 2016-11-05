@@ -39,7 +39,7 @@ const uint8_t MAX31855_VCC  = 0x04;
 volatile uint32_t loop_delay = 1000;
 const uint16_t    tx_wait  = 100;
 const uint16_t    spi_wait = 100;
-const uint32_t loop_delays[6] = { 100, 500, 1000, 20000, 10, 20 }; // last 2 is fake
+const uint32_t loop_delays[6] = { 100, 500, 1000, 2000, 10, 20 }; // last 2 is fake
 
 int main(void)
 {

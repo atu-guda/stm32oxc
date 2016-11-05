@@ -1,6 +1,8 @@
 #ifndef _OXC_PCF8591_H
 #define _OXC_PCF8591_H
 
+// 8-bit AD/DA converter
+
 #include <oxc_i2c.h>
 
 // inner regs: 1-byte addr
