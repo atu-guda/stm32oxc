@@ -17,6 +17,8 @@ OXCDIR = /home/atu/proj/stm32/oxc
 
 SRCS  = main.cpp
 
+SRCS += pcd_usb_init.cpp
+
 # aux:
 # SRCS += stm32f3xx_hal_adc.c
 # SRCS += stm32f3xx_hal_adc_ex.c

@@ -10,7 +10,6 @@ LINK=$(CXX)
 LDSCRIPT = $(STMLD)/STM32F303VC_FLASH.ld
 HSE_VALUE = 8000000
 
-SRCS += stm32f3xx_hal_msp.cpp
 SRCS += system_stm32f3xx.c
 SRCS += startup_stm32f303xc.s
 

@@ -15,9 +15,9 @@ USE_FREERTOS = y
 # TODO: copy to main location
 OXCDIR = /home/atu/proj/stm32/oxc
 
-
 SRCS  = main.cpp
 
+SRCS += uart2_a2a3_hw.cpp
 SRCS += oxc_common1.cpp
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )

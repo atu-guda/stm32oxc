@@ -38,6 +38,7 @@ int main(void)
   leds.write( 0x00 );
 
   init_uart( &uah );
+  HAL_NVIC_DisableIRQ( USART2_IRQn );
 
   xTaskCreate( task_leds, "leds", 1*def_stksz, 0, 1, 0 );
   xTaskCreate( task_send, "send", 2*def_stksz, 0, 1, 0 );
@@ -87,22 +88,6 @@ void task_send( void *prm UNUSED_ARG )
 
 
 //  configs
-
-void init_uart( UART_HandleTypeDef *uahp, int baud )
-{
-  uahp->Instance = USART2;
-  uahp->Init.BaudRate     = baud;
-  uahp->Init.WordLength   = UART_WORDLENGTH_8B;
-  uahp->Init.StopBits     = UART_STOPBITS_1;
-  uahp->Init.Parity       = UART_PARITY_NONE;
-  uahp->Init.HwFlowCtl    = UART_HWCONTROL_NONE;
-  uahp->Init.Mode         = UART_MODE_TX_RX;
-  uahp->Init.OverSampling = UART_OVERSAMPLING_16;
-  uahp->AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
-  if( HAL_UART_Init( uahp ) != HAL_OK )  {
-    die4led( 0x08 );
-  }
-}
 
 
 FreeRTOS_to_stm32cube_tick_hook;
