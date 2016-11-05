@@ -265,7 +265,7 @@ int cmd_info( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
 
 
   #if USE_FREERTOS != 0
-    const char *nm = pcTaskGetTaskName( 0 );
+    const char *nm = pcTaskGetName( 0 );
     pr( "task: \"" ); pr( nm ); pr( "\" tick_count: "  );
     int tick_count = xTaskGetTickCount();
     pr_d( tick_count );

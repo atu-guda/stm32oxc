@@ -1,0 +1,6 @@
+Examples for STM32F746 WaveShare board
+Onboard:
+1 Button: Reset
+
+Clock HSE: 8Hz
+

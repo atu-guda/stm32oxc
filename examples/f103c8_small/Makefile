@@ -1,0 +1,25 @@
+
+SUBDIRS = \
+  00_leds \
+  01_leds_oxc \
+  02_leds_rtos \
+  03_uart \
+  x03_tcop
+
+
+ALL : examples_f103_small
+
+examples_f103_small : $(SUBDIRS)
+
+$(SUBDIRS) :
+	$(MAKE) -C $@
+
+clean :
+	for d in $(SUBDIRS) ; do \
+	  echo make $$d clean ; \
+	  $(MAKE) -C $$d clean ; \
+	done
+
+
+.PHONY: clean  examples_f103_small $(SUBDIRS)
+

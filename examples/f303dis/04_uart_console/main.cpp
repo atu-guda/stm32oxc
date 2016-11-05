@@ -102,7 +102,7 @@ int cmd_test0( int argc, const char * const * argv )
 
   int prty = uxTaskPriorityGet( 0 );
   pr_sdx( prty );
-  const char *nm = pcTaskGetTaskName( 0 );
+  const char *nm = pcTaskGetName( 0 );
   pr( "name: \"" ); pr( nm ); pr( "\"" NL );
 
   // log_add( "Test0 " );

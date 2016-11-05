@@ -1,8 +1,6 @@
-Examples for STM32F103C8 small board.
+Examples for small STM32F103C8T6 board
 Onboard:
-ST-Link V2
-1 LED: C13 B
-external 4 LEDS: B12-15
-1 Buttons: Reset
+1 LED: C13 to Vdd
+1 Button: Reset
 
 

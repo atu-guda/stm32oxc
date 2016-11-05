@@ -41,5 +41,5 @@ clean :
 	done
 
 
-.PHONY: clean  examples_f407_x2 $(SUBDIRS)
+.PHONY: clean  examples_f303_d3 $(SUBDIRS)
 
