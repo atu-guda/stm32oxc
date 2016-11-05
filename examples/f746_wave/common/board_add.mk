@@ -8,7 +8,7 @@ LINK=$(CXX)
 LDSCRIPT = $(STMLD)/STM32F746ZGTx_FLASH.ld
 HSE_VALUE = 8000000
 
-SRCS += stm32f7xx_hal_msp.cpp
+# SRCS += stm32f7xx_hal_msp.cpp
 SRCS += system_stm32f7xx.c
 SRCS += startup_stm32f746xx.s
 

@@ -46,9 +46,9 @@
  #define SET_BIT_REG   BSRR
  #define RESET_BIT_REG BSRR
  #define RESET_BIT_SHIFT 16
- #define USART_TX_REG DR
- #define USART_RX_REG DR
- #define USART_SR_REG SR
+ #define USART_TX_REG TDR
+ #define USART_RX_REG RDR
+ #define USART_SR_REG ISR
 #else
   #error "Unsupported MCU"
 #endif
