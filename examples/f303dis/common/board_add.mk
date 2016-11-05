@@ -3,6 +3,8 @@
 MCTYPE = STM32F303
 MCINCTYPE = STM32F303xC
 
+vpath %.cpp ../common ../../common
+
 #
 LINK=$(CXX)
 LDSCRIPT = $(STMLD)/STM32F303VC_FLASH.ld

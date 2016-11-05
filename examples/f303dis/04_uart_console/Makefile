@@ -14,10 +14,10 @@ USE_FREERTOS = y
 # TODO: copy to main location
 OXCDIR = /home/atu/proj/stm32/oxc
 
-
 SRCS  = main.cpp
 
-SRCS += ../../common/empty_test0_function.cpp
+SRCS += empty_test0_function.cpp
+SRCS += uart2_a2a3_hw.cpp
 
 # aux:
 # SRCS += stm32f3xx_hal_adc.c
