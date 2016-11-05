@@ -1,5 +1,5 @@
 #include "stm32f1xx_hal.h"
-// #include <oxc_base.h>
+#include <oxc_base.h>
 
 void NMI_Handler(void);
 void HardFault_Handler(void);
@@ -14,7 +14,8 @@ void SysTick_Handler(void);
 void SystemClock_Config(void);
 
 void MX_GPIO_Init(void);
-void Error_Handler(void);
+
+USE_DIE_ERROR_HANDLER;
 
 
 int  delay_bad(void);
@@ -62,11 +63,6 @@ int delay_bad()
   return k;
 }
 
-void Error_Handler(void)
-{
-  while(1) {
-  }
-}
 
 /* void HAL_SYSTICK_Callback(void) */
 /* { */

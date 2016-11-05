@@ -9,6 +9,8 @@ using namespace SMLRL;
 // PinsOut p1 { GPIOE, 8, 8 };
 BOARD_DEFINE_LEDS;
 
+USE_DIE4LED_ERROR_HANDLER;
+
 
 TIM_HandleTypeDef tim8h;
 int pwm_vals[] = { 25, 50, 75, 90 };

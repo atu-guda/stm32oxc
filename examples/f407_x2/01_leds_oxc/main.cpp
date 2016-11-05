@@ -2,6 +2,8 @@
 
 using namespace std;
 
+USE_DIE4LED_ERROR_HANDLER;
+
 void MX_GPIO_Init(void);
 
 

@@ -7,6 +7,7 @@ using namespace std;
 void MX_GPIO_Init(void);
 void MX_USART1_UART_Init(void);
 
+USE_DIE4LED_ERROR_HANDLER;
 
 // BOARD_DEFINE_LEDS;
 BOARD_DEFINE_LEDS_EXTRA;
@@ -83,12 +84,6 @@ void task_send( void *prm UNUSED_ARG )
   }
 }
 
-
-
-void Error_Handler(void)
-{
-  die4led( 0x00 );
-}
 
 FreeRTOS_to_stm32cube_tick_hook;
 

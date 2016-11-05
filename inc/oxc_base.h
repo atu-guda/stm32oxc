@@ -148,6 +148,9 @@ void vApplicationTickHook(void);
 // misc functions
 void _exit( int rc );
 void die( uint16_t n );
+void Error_Handler( int rc ); // defined at user program
+#define USE_DIE_ERROR_HANDLER void Error_Handler( int rc ) { die( rc ); };
+#define USE_DIE4LED_ERROR_HANDLER void Error_Handler( int rc ) { die4led( rc ); };
 
 void delay_ms( uint32_t ms ); // base on vTaskDelay - switch to shceduler (if avail), or to HAL
 void delay_mcs( uint32_t mcs );

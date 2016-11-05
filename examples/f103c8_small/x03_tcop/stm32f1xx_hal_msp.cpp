@@ -27,7 +27,7 @@ void MX_USART1_UART_Init(void)
   uah.Init.HwFlowCtl    = UART_HWCONTROL_NONE;
   uah.Init.OverSampling = UART_OVERSAMPLING_16;
   if( HAL_UART_Init( &uah ) != HAL_OK )  {
-    Error_Handler();
+    Error_Handler( 1 );
   }
 }
 
@@ -84,7 +84,7 @@ void MX_SPI1_Init()
   hspi1.Init.CRCCalculation    = SPI_CRCCALCULATION_DISABLE;
   hspi1.Init.CRCPolynomial     = 10;
   if( HAL_SPI_Init( &hspi1 ) != HAL_OK ) {
-    Error_Handler();
+    Error_Handler( 2 );
   }
 }
 

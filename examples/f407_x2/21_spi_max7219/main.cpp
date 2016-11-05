@@ -8,6 +8,8 @@
 using namespace std;
 using namespace SMLRL;
 
+USE_DIE4LED_ERROR_HANDLER;
+
 // PinsOut p1 { GPIOC, 0, 4 };
 BOARD_DEFINE_LEDS;
 

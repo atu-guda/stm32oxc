@@ -2,11 +2,7 @@
 
 using namespace std;
 
-// void MX_GPIO_Init(void);
-extern "C" {
-void Error_Handler(void);
-};
-
+USE_DIE4LED_ERROR_HANDLER;
 
 // PinsOut p1 { GPIOB, 12, 4 };
 // BOARD_DEFINE_LEDS;
@@ -67,12 +63,6 @@ void _exit( int rc )
 {
   exit_rc = rc;
   for( ;; );
-}
-
-void Error_Handler(void)
-{
-  while(1) {
-  }
 }
 
 // vim: path=.,/usr/share/stm32lib/inc/,/usr/arm-none-eabi/include,../../../inc

@@ -2,6 +2,8 @@
 
 #include <oxc_auto.h>
 
+USE_DIE4LED_ERROR_HANDLER;
+
 using namespace std;
 
 void MX_GPIO_Init(void);
@@ -167,12 +169,6 @@ void task_send( void *prm UNUSED_ARG )
   }
 }
 
-
-
-void Error_Handler(void)
-{
-  die4led( 0x00 );
-}
 
 FreeRTOS_to_stm32cube_tick_hook;
 

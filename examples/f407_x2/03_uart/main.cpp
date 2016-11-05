@@ -4,6 +4,8 @@
 
 using namespace std;
 
+USE_DIE4LED_ERROR_HANDLER;
+
 
 
 // PinsOut p1 { GPIOC, 0, 4 };

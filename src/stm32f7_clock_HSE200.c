@@ -29,12 +29,11 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
   RCC_OscInitStruct.PLL.PLLQ = 4;
   if( HAL_RCC_OscConfig( &RCC_OscInitStruct ) != HAL_OK )  {
-    Error_Handler();
+    Error_Handler( 13 );
   }
 
-  /**Activate the Over-Drive mode  */
-  if( HAL_PWREx_EnableOverDrive() != HAL_OK )  {
-    Error_Handler();
+  if( HAL_PWREx_EnableOverDrive() != HAL_OK )  { /**Activate the Over-Drive mode  */
+    Error_Handler( 14 );
   }
 
   /**Initializes the CPU, AHB and APB busses clocks  */
@@ -46,7 +45,7 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
 
   if( HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_6) != HAL_OK ) {
-    Error_Handler();
+    Error_Handler( 15 );
   }
 
   PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_USART1 | RCC_PERIPHCLK_I2C1
@@ -61,7 +60,7 @@ void SystemClock_Config(void)
   PeriphClkInitStruct.I2c1ClockSelection = RCC_I2C1CLKSOURCE_PCLK1;
   PeriphClkInitStruct.Clk48ClockSelection = RCC_CLK48SOURCE_PLLSAIP;
   if( HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK )  {
-    Error_Handler();
+    Error_Handler( 15 );
   }
 
   /**Configure the Systick interrupt time   */

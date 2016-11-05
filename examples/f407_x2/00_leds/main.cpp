@@ -15,6 +15,8 @@ void SystemClock_Config(void);
 
 void MX_GPIO_Init(void);
 
+USE_DIE_ERROR_HANDLER;
+
 
 int  delay_bad(void);
 void _exit( int rc );

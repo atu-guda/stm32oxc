@@ -13,15 +13,14 @@ void PendSV_Handler(void);
 void SysTick_Handler(void);
 
 void SystemClock_Config(void);
-
-void Error_Handler(void);
 }
 
 void MX_GPIO_Init(void);
 
 
 int  delay_bad(void);
-void _exit( int rc );
+
+USE_DIE_ERROR_HANDLER;
 
 
 
@@ -70,11 +69,6 @@ int delay_bad()
   return k;
 }
 
-void Error_Handler(void)
-{
-  while(1) {
-  }
-}
 
 // configs
 

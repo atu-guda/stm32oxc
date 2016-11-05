@@ -1,5 +1,5 @@
 #include "stm32f3xx_hal.h"
-// #include <oxc_base.h>
+#include <oxc_base.h>
 
 void NMI_Handler(void);
 void HardFault_Handler(void);
@@ -15,6 +15,7 @@ void SystemClock_Config(void);
 
 void MX_GPIO_Init(void);
 
+USE_DIE_ERROR_HANDLER;
 
 int  delay_bad(void);
 void GPIO_WriteBits( GPIO_TypeDef* GPIOx, uint16_t PortVal, uint16_t mask );

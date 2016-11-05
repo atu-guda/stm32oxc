@@ -4,6 +4,7 @@ using namespace std;
 
 void MX_GPIO_Init(void);
 
+USE_DIE4LED_ERROR_HANDLER;
 
 // BOARD_DEFINE_LEDS;
 BOARD_DEFINE_LEDS_EXTRA;
@@ -12,7 +13,6 @@ const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
 
 extern "C" {
 
-void Error_Handler(void);
 void EXTI0_IRQHandler(void);
 void EXTI1_IRQHandler(void);
 void HAL_GPIO_EXTI_Callback( uint16_t pin );
@@ -93,12 +93,6 @@ void HAL_GPIO_EXTI_Callback( uint16_t pin )
     led_delay = 1000;
   }
   leds.toggle( 0x01 );
-}
-
-void Error_Handler(void)
-{
-  while(1) {
-  }
 }
 
 FreeRTOS_to_stm32cube_tick_hook;

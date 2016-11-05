@@ -24,7 +24,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLSource  = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLMUL     = RCC_PLL_MUL9;
   if( HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK ) {
-    Error_Handler();
+    Error_Handler( 13 );
   }
 
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK  | RCC_CLOCKTYPE_SYSCLK
@@ -34,13 +34,13 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
   if( HAL_RCC_ClockConfig( &RCC_ClkInitStruct, FLASH_LATENCY_2 ) != HAL_OK ) {
-    Error_Handler();
+    Error_Handler( 14 );
   }
 
   PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RTC;
   PeriphClkInit.RTCClockSelection    = RCC_RTCCLKSOURCE_LSE;
   if( HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK ) {
-    Error_Handler();
+    Error_Handler( 15 );
   }
 
   HAL_SYSTICK_Config( HAL_RCC_GetHCLKFreq() / (1000*8) );
