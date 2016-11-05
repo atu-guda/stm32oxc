@@ -20,6 +20,7 @@ ADDSRC     +=   $(STMDIR)/bsp/Components/lsm303dlhc
 SRCS  = main.cpp
 
 SRCS += uart2_a2a3_hw.cpp
+SRCS += i2c1_b6b7_hw.cpp
 
 SRCS += oxc_i2c.cpp
 SRCS += oxc_debug_i2c.cpp
