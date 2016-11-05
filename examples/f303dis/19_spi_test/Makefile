@@ -17,6 +17,7 @@ OXCDIR = /home/atu/proj/stm32/oxc
 SRCS  = main.cpp
 
 SRCS += uart2_a2a3_hw.cpp
+SRCS += spi2_b13b14b15_hw.cpp
 
 SRCS += oxc_spi.cpp
 
