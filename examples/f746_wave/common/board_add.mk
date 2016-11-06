@@ -3,6 +3,8 @@
 MCTYPE = STM32F746
 MCINCTYPE = $(MCTYPE)xx
 
+vpath %.cpp ../common ../../common
+
 #
 LINK=$(CXX)
 LDSCRIPT = $(STMLD)/STM32F746ZGTx_FLASH.ld

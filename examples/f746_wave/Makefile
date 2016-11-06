@@ -3,6 +3,8 @@ SUBDIRS = \
   00_leds \
   01_leds_oxc \
   02_leds_rtos \
+  03_uart \
+  04_uart_console \
 
 #  03_uart \
 #  04_uart_console \
