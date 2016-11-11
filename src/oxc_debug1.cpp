@@ -28,7 +28,7 @@ char* str2addr( const char *str )
     return gbuf_b;
   }
   char *eptr;
-  char *addr = (char*)( strtol( str, &eptr, 0 ) );
+  char *addr = (char*)( strtoul( str, &eptr, 0 ) );
   if( *eptr == '\0' ) {
     return addr;
   }
@@ -402,7 +402,11 @@ int cmd_svar( int argc, const char * const * argv )
   if( idx < 0 || idx >= N_USER_VARS ) {
     return 2;
   }
-  user_vars[idx] = strtol( argv[2], 0, 0 );
+  if( argv[2][0] == '-' ) {
+    user_vars[idx] = strtol( argv[2], 0, 0 );
+  } else {
+    user_vars[idx] = strtoul( argv[2], 0, 0 );
+  }
   print_user_var( idx );
   return 0;
 }

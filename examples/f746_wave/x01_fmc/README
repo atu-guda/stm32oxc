@@ -1,0 +1,8 @@
+Try to use FMC with external SDRAM IS42S16400J : 64MBit = 8MB
+
+Using  USART as console via SmallRL.
+Used USART1 with UART-USB convertor board
+
+PB6  = USART2_TX
+PB7  = USART2_RX
+
