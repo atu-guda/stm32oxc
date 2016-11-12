@@ -250,18 +250,22 @@ int cmd_info( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
   }
   delay_ms( 100 );
 
-  unsigned max_malloc_sz = 0;
-  for( unsigned sz = 1024; sz < 1024 * 1024; sz += 1024 ) {
-    void *p = malloc( sz );
-    if( !p ) {
-      break;
-    }
-    free( p );
-    max_malloc_sz = sz;
-    // pr_sdx( sz );
-    // delay_ms( 50 );
-  }
-  pr_sdx( max_malloc_sz );
+  // unsigned max_malloc_sz = 0;
+  // for( unsigned sz = 1024 * 1024; sz > 1024 ; sz -= 1024 ) {
+  //   void *p = malloc( sz );
+  //   if( p == nullptr ) {
+  //     continue;
+  //   }
+  //   free( p );
+  //   max_malloc_sz = sz;
+  //   break;
+  //   // pr_sdx( sz );
+  //   // delay_ms( 50 );
+  // }
+  // // malloc_trim( 0 );
+  // // pr_sdx( max_malloc_sz );
+  unsigned xx_malloc_sz =  (unsigned)(__get_MSP()) - (unsigned)(__heap_top) - 128 ;
+  pr_sdx( xx_malloc_sz );
 
 
   #if USE_FREERTOS != 0

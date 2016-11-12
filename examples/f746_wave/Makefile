@@ -5,6 +5,8 @@ SUBDIRS = \
   02_leds_rtos \
   03_uart \
   04_uart_console \
+  50-adc0 \
+  x01_fmc
 
 #  03_uart \
 #  04_uart_console \
