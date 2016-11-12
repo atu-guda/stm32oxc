@@ -13,20 +13,20 @@ char* _sbrk ( int incr )
   char *prev_heap;
 
   prev_heap = __heap_top;
-  if( incr > 0 ) {
-    incr += 3;
-    incr &= ~3; // align to 4 bytes
 
-    if( (unsigned)(__heap_top) + incr + 128 >= (unsigned)(__get_MSP()) ) {
-      errno = ENOMEM;
-      // dbg_val0 = (unsigned)(__heap_top) + incr + 128;
-      // dbg_val1 = incr;
-      // dbg_val3 = __get_MSP();
-      return (char*)(-1);
-    }
+  // even decrease - newlib malloc/free use it!
+  incr += 3;
+  incr &= ~3; // align to 4 bytes
 
-    __heap_top += incr;
+  if( (unsigned)(__heap_top) + incr + 128 >= (unsigned)(__get_MSP()) ) {
+    errno = ENOMEM;
+    // dbg_val0 = (unsigned)(__heap_top) + incr + 128;
+    // dbg_val1 = incr;
+    // dbg_val3 = __get_MSP();
+    return (char*)(-1);
   }
+
+  __heap_top += incr;
 
   return prev_heap;
 }

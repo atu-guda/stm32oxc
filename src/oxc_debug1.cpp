@@ -262,8 +262,8 @@ int cmd_info( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
   //   // pr_sdx( sz );
   //   // delay_ms( 50 );
   // }
-  // // malloc_trim( 0 );
-  // // pr_sdx( max_malloc_sz );
+  // pr_sdx( max_malloc_sz );
+
   unsigned xx_malloc_sz =  (unsigned)(__get_MSP()) - (unsigned)(__heap_top) - 128 ;
   pr_sdx( xx_malloc_sz );
 
