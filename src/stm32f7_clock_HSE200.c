@@ -63,6 +63,9 @@ void SystemClock_Config(void)
     Error_Handler( 15 );
   }
 
+  SCB_EnableICache(); /* Enable I-Cache */
+  SCB_EnableDCache(); /* Enable D-Cache */
+
   /**Configure the Systick interrupt time   */
   HAL_SYSTICK_Config( HAL_RCC_GetHCLKFreq()/1000 );
 
