@@ -1,0 +1,9 @@
+Try ADC with DMA
+4 channel: a0-a3
+
+Using  USART as console via SmallRL.
+Used USART1 with UART-USB convertor board
+
+PB6  = USART1_TX
+PB7  = USART1_RX
+
