@@ -68,6 +68,8 @@
   #endif
 #endif
 
+#include <oxc_irqlist.h>
+
 
 #define PORT_BITS 16
 #define BIT0  0x0001
@@ -151,6 +153,8 @@ void die( uint16_t n );
 void Error_Handler( int rc ); // defined at user program
 #define USE_DIE_ERROR_HANDLER void Error_Handler( int rc ) { die( rc ); };
 #define USE_DIE4LED_ERROR_HANDLER void Error_Handler( int rc ) { die4led( rc ); };
+#define USE_DIE_EXIT void void( int rc ) { die( rc ); };
+#define USE_DIE4LED_EXIT void void( int rc ) { die4led( rc ); };
 
 void delay_ms( uint32_t ms ); // base on vTaskDelay - switch to shceduler (if avail), or to HAL
 void delay_mcs( uint32_t mcs );
@@ -159,21 +163,6 @@ void delay_bad_n( uint32_t n );
 void delay_bad_s( uint32_t s );
 void delay_bad_ms( uint32_t ms );
 void delay_bad_mcs( uint32_t mcs );
-
-// signal handlers descriotions
-void NMI_Handler(void);
-void HardFault_Handler(void);
-void MemManage_Handler(void);
-void BusFault_Handler(void);
-void UsageFault_Handler(void);
-void SVC_Handler(void);
-void DebugMon_Handler(void);
-void PendSV_Handler(void);
-void SysTick_Handler(void);
-void OTG_FS_IRQHandler(void);
-void USB_LP_CAN_RX0_IRQHandler(void);
-void USBWakeUp_IRQHandler(void);
-void WWDG_IRQHandler(void);
 
 void SystemClock_Config(void);
 

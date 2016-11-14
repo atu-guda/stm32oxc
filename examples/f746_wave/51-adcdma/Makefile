@@ -25,6 +25,7 @@ SRCS += adc_init.cpp
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
 # see ../common/f7_modules.mk
 SRCS += stm32f7xx_hal_adc.c
+SRCS += stm32f7xx_hal_adc_ex.c
 
 SRCS += stm32f7xx_hal_uart.c
 SRCS += stm32f7xx_hal_dma.c
