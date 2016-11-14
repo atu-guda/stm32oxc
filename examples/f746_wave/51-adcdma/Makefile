@@ -27,7 +27,7 @@ SRCS += adc_init.cpp
 SRCS += stm32f7xx_hal_adc.c
 
 SRCS += stm32f7xx_hal_uart.c
-#SRCS += stm32f7xx_hal_dma.c
+SRCS += stm32f7xx_hal_dma.c
 
 include ../common/board_add.mk
 include $(OXCDIR)/mk/common_cortex.mk

@@ -14,8 +14,11 @@ BOARD_DEFINE_LEDS;
 void MX_ADC1_Init(void);
 ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
-int v_adc_ref = 3250; // in mV, measured before test
+int v_adc_ref = 3250; // in mV, measured before test, adjust as UVAR('v')
 const int n_ADC_ch = 4;
+const int n_ADC_sampl  = 8;
+const int n_ADC_data = n_ADC_ch * n_ADC_sampl;
+uint16_t adc_v0[ n_ADC_data ];
 
 
 const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
@@ -109,29 +112,43 @@ int cmd_test0( int argc, const char * const * argv )
   // log_add( "Test0 " );
   TickType_t tc0 = xTaskGetTickCount(), tc00 = tc0;
 
+  for( int i=0; i< n_ADC_data; ++i ) {
+    adc_v0[i] = 0;
+  }
   break_flag = 0;
-  for( int i=0; i<n && !break_flag; ++i ) {
-    TickType_t tcc = xTaskGetTickCount();
-    pr( "ADC start  i= " ); pr_d( i );
-    pr( "  tick: "); pr_d( tcc - tc00 );
-    if( HAL_ADC_Start( &hadc1 ) != HAL_OK )  {
-      pr( "  !! ADC Start error" NL );
-      break;
-    }
-    for( int ch=0; ch<n_ADC_ch; ++ch ) {
-      HAL_ADC_PollForConversion( &hadc1, 10 );
-      v = 0;
-      if( HAL_IS_BIT_SET( HAL_ADC_GetState( &hadc1 ), HAL_ADC_STATE_REG_EOC ) )  {
-        v = HAL_ADC_GetValue( &hadc1 );
-        int vv = v * 10 * UVAR('v') / 4096;
-        ifcvt( vv, 10000, buf, 4 );
-        pr( " v= " ); pr_d( v ); pr( " vv= " ); pr( buf );
-      }
-    }
+  if( HAL_ADC_Start_DMA( &hadc1, (uint32_t*)adc_v0, n_ADC_data ) != HAL_OK )   {
+    pr( "ADC_Start_DMA error" NL );
+  }
 
-    pr( NL );
-    vTaskDelayUntil( &tc0, t_step );
+  delay_ms( 500 );
+  // for( int i=0; i<n && !break_flag; ++i ) {
+  //   TickType_t tcc = xTaskGetTickCount();
+  //   pr( "ADC start  i= " ); pr_d( i );
+  //   pr( "  tick: "); pr_d( tcc - tc00 );
+  //   if( HAL_ADC_Start( &hadc1 ) != HAL_OK )  {
+  //     pr( "  !! ADC Start error" NL );
+  //     break;
+  //   }
+  //   for( int ch=0; ch<n_ADC_ch; ++ch ) {
+  //     HAL_ADC_PollForConversion( &hadc1, 10 );
+  //     v = 0;
+  //     if( HAL_IS_BIT_SET( HAL_ADC_GetState( &hadc1 ), HAL_ADC_STATE_REG_EOC ) )  {
+  //       v = HAL_ADC_GetValue( &hadc1 );
+  //       int vv = v * 10 * UVAR('v') / 4096;
+  //       ifcvt( vv, 10000, buf, 4 );
+  //       pr( " v= " ); pr_d( v ); pr( " vv= " ); pr( buf );
+  //     }
+  //   }
+
+  //  pr( NL );
+  //  vTaskDelayUntil( &tc0, t_step );
     // delay_ms( t_step );
+  //}
+  for( int i=0; i< n_ADC_sampl; ++i ) {
+    for( int j=0; j< n_ADC_ch; ++j ) {
+      pr_d( adc_v0[i*n_ADC_ch+j] ) ; pr( "\t" );
+    }
+    pr( NL );
   }
 
   pr( NL );
