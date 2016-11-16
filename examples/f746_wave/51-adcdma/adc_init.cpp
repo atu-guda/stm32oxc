@@ -10,17 +10,17 @@ void MX_ADC1_Init(void)
 {
   ADC_ChannelConfTypeDef sConfig;
 
-  hadc1.Instance = ADC1;
-  hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
-  hadc1.Init.Resolution = ADC_RESOLUTION_12B;
-  hadc1.Init.ScanConvMode = ENABLE;
-  hadc1.Init.ContinuousConvMode = DISABLE;
+  hadc1.Instance                   = ADC1;
+  hadc1.Init.ClockPrescaler        = ADC_CLOCK_SYNC_PCLK_DIV4;
+  hadc1.Init.Resolution            = ADC_RESOLUTION_12B;
+  hadc1.Init.ScanConvMode          = ENABLE;
+  hadc1.Init.ContinuousConvMode    = ENABLE;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
-  hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
-  hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc1.Init.NbrOfConversion = 8*4;
+  hadc1.Init.ExternalTrigConvEdge  = ADC_EXTERNALTRIGCONVEDGE_NONE;
+  hadc1.Init.DataAlign             = ADC_DATAALIGN_RIGHT;
+  hadc1.Init.NbrOfConversion       = 4;
   hadc1.Init.DMAContinuousRequests = DISABLE;
-  hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+  hadc1.Init.EOCSelection          = ADC_EOC_SINGLE_CONV;
   if( HAL_ADC_Init( &hadc1 ) != HAL_OK )  {
     Error_Handler( 2 );
   }
@@ -58,8 +58,8 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
     // DMA part
     __HAL_RCC_DMA2_CLK_ENABLE();
 
-    // HAL_NVIC_SetPriority( DMA2_Stream0_IRQn, 0, 0 );
-    // HAL_NVIC_EnableIRQ( DMA2_Stream0_IRQn );
+    HAL_NVIC_SetPriority( DMA2_Stream0_IRQn, configKERNEL_INTERRUPT_PRIORITY, 0 );
+    HAL_NVIC_EnableIRQ( DMA2_Stream0_IRQn );
 
     // #<{(| Peripheral DMA init|)}>#
     hdma_adc1.Instance                 = DMA2_Stream0;
@@ -78,8 +78,8 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
 
     __HAL_LINKDMA( &hadc1, DMA_Handle, hdma_adc1 );
 
-    // HAL_NVIC_SetPriority( ADC_IRQn, 0, 0 );
-    // HAL_NVIC_EnableIRQ( ADC_IRQn );
+    HAL_NVIC_SetPriority( ADC_IRQn, configKERNEL_INTERRUPT_PRIORITY, 0 );
+    HAL_NVIC_EnableIRQ( ADC_IRQn );
 
   }
 }

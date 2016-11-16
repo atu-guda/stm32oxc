@@ -18,7 +18,8 @@ int v_adc_ref = 3250; // in mV, measured before test, adjust as UVAR('v')
 const int n_ADC_ch = 4;
 const int n_ADC_sampl  = 8;
 const int n_ADC_data = n_ADC_ch * n_ADC_sampl;
-uint16_t adc_v0[ n_ADC_data ];
+const int n_ADC_data_guard = n_ADC_data + n_ADC_ch * 2;
+uint16_t adc_v0[ n_ADC_data_guard ];
 
 
 const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
@@ -105,14 +106,14 @@ int cmd_test0( int argc, const char * const * argv )
   // char buf[32];
   int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
   uint32_t t_step = UVAR('t');
-  pr( NL "Test0: n= " ); pr_d( n ); pr( " t= " ); pr_d( t_step );
-  pr( NL );
+  pr( NL "Test0: n= " ); pr_d( n ); pr( " t= " ); pr_d( t_step );  pr( NL );
+  pr( "ADCx_SR= " ); pr_h( hadc1.Instance->SR );  pr( NL );
   // uint16_t v = 0;
 
   // log_add( "Test0 " );
   TickType_t tc0 = xTaskGetTickCount(), tc00 = tc0;
 
-  for( int i=0; i< n_ADC_data; ++i ) {
+  for( int i=0; i< n_ADC_data_guard; ++i ) {
     adc_v0[i] = 0;
   }
   break_flag = 0;
@@ -144,7 +145,7 @@ int cmd_test0( int argc, const char * const * argv )
   //  vTaskDelayUntil( &tc0, t_step );
     // delay_ms( t_step );
   //}
-  for( int i=0; i< n_ADC_sampl; ++i ) {
+  for( int i=0; i< n_ADC_sampl+2; ++i ) { // +2 = show guard
     for( int j=0; j< n_ADC_ch; ++j ) {
       pr_d( adc_v0[i*n_ADC_ch+j] ) ; pr( "\t" );
     }
@@ -152,6 +153,7 @@ int cmd_test0( int argc, const char * const * argv )
   }
 
   pr( NL );
+  pr( "ADCx_SR= " ); pr_h( hadc1.Instance->SR );  pr( NL );
 
   delay_ms( 10 );
   break_flag = 0;  idle_flag = 1;
