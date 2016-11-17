@@ -10,8 +10,12 @@ USE_DIE4LED_ERROR_HANDLER;
 
 // PinsOut p1 { GPIOC, 0, 4 };
 BOARD_DEFINE_LEDS;
-
+extern "C" {
+ void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc );
+ void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc );
+}
 void MX_ADC1_Init(void);
+void ADC_DMA_REINIT();
 ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
 int v_adc_ref = 3250; // in mV, measured before test, adjust as UVAR('v')
@@ -20,6 +24,8 @@ const int n_ADC_sampl  = 8;
 const int n_ADC_data = n_ADC_ch * n_ADC_sampl;
 const int n_ADC_data_guard = n_ADC_data + n_ADC_ch * 2;
 uint16_t adc_v0[ n_ADC_data_guard ];
+volatile int adc_end_dma = 0;
+volatile int adc_dma_error = 0;
 
 
 const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
@@ -103,57 +109,53 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  // char buf[32];
+  char buf[32];
   int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
-  uint32_t t_step = UVAR('t');
-  pr( NL "Test0: n= " ); pr_d( n ); pr( " t= " ); pr_d( t_step );  pr( NL );
+  uint32_t t_wait = UVAR('t');
+  // MX_ADC1_Init(); // more then need?
+  pr( NL "Test0: n= " ); pr_d( n ); pr( " t_wait= " ); pr_d( t_wait );  pr( NL );
   pr( "ADCx_SR= " ); pr_h( hadc1.Instance->SR );  pr( NL );
   // uint16_t v = 0;
+  hadc1.Instance->SR = 0;
+  ADC_DMA_REINIT();
 
   // log_add( "Test0 " );
-  TickType_t tc0 = xTaskGetTickCount(), tc00 = tc0;
 
   for( int i=0; i< n_ADC_data_guard; ++i ) {
     adc_v0[i] = 0;
   }
   break_flag = 0;
+  adc_end_dma = 0; adc_dma_error = 0;
+  TickType_t tc0 = xTaskGetTickCount(), tc00 = tc0;
   if( HAL_ADC_Start_DMA( &hadc1, (uint32_t*)adc_v0, n_ADC_data ) != HAL_OK )   {
     pr( "ADC_Start_DMA error" NL );
   }
 
-  delay_ms( 500 );
-  // for( int i=0; i<n && !break_flag; ++i ) {
-  //   TickType_t tcc = xTaskGetTickCount();
-  //   pr( "ADC start  i= " ); pr_d( i );
-  //   pr( "  tick: "); pr_d( tcc - tc00 );
-  //   if( HAL_ADC_Start( &hadc1 ) != HAL_OK )  {
-  //     pr( "  !! ADC Start error" NL );
-  //     break;
-  //   }
-  //   for( int ch=0; ch<n_ADC_ch; ++ch ) {
-  //     HAL_ADC_PollForConversion( &hadc1, 10 );
-  //     v = 0;
-  //     if( HAL_IS_BIT_SET( HAL_ADC_GetState( &hadc1 ), HAL_ADC_STATE_REG_EOC ) )  {
-  //       v = HAL_ADC_GetValue( &hadc1 );
-  //       int vv = v * 10 * UVAR('v') / 4096;
-  //       ifcvt( vv, 10000, buf, 4 );
-  //       pr( " v= " ); pr_d( v ); pr( " vv= " ); pr( buf );
-  //     }
-  //   }
+  for( uint32_t ti=0; adc_end_dma == 0 && ti<t_wait; ++ti ) {
+    delay_ms(1);
+  }
+  TickType_t tcc = xTaskGetTickCount();
+  // HAL_ADC_Stop( &hadc1 );
+  if( adc_end_dma == 0 ) {
+    pr( "Fail to wait DMA end " NL );
+  }
+  if( adc_dma_error != 0 ) {
+    pr( "Found DMA error " NL );
+  }
+  pr( "  tick: "); pr_d( tcc - tc00 ); pr( NL );
 
-  //  pr( NL );
-  //  vTaskDelayUntil( &tc0, t_step );
-    // delay_ms( t_step );
-  //}
   for( int i=0; i< n_ADC_sampl+2; ++i ) { // +2 = show guard
     for( int j=0; j< n_ADC_ch; ++j ) {
-      pr_d( adc_v0[i*n_ADC_ch+j] ) ; pr( "\t" );
+      // pr_d( adc_v0[i*n_ADC_ch+j] ) ; pr( "\t" );
+      int vv = adc_v0[i*n_ADC_ch+j] * 10 * UVAR('v') / 4096;
+      ifcvt( vv, 10000, buf, 4 );
+      pr( buf ); pr( "\t" );
     }
     pr( NL );
   }
 
-  pr( NL );
   pr( "ADCx_SR= " ); pr_h( hadc1.Instance->SR );  pr( NL );
+  pr( NL );
 
   delay_ms( 10 );
   break_flag = 0;  idle_flag = 1;
@@ -163,6 +165,28 @@ int cmd_test0( int argc, const char * const * argv )
 }
 
 
+void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc )
+{
+  UVAR('x') = hadc1.Instance->SR;
+  HAL_ADC_Stop_DMA( hadc );
+  hadc1.Instance->SR = 0;
+  adc_end_dma = 1;
+  leds.toggle( BIT2 );
+  ++UVAR('a');
+}
+
+void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc )
+{
+  UVAR('z') = HAL_ADC_GetError( hadc );
+  UVAR('d') = hadc->DMA_Handle->ErrorCode;
+  UVAR('y') = hadc1.Instance->SR;
+  HAL_ADC_Stop_DMA( hadc );
+  hadc1.Instance->SR = 0;
+  hadc->DMA_Handle->ErrorCode = 0;
+  adc_end_dma = 2; adc_dma_error = 1;
+  leds.toggle( BIT0 );
+  ++UVAR('e');
+}
 
 void _exit( int rc )
 {
