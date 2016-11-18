@@ -115,7 +115,6 @@ void ADC_IRQHandler(void)
 void DMA2_Stream0_IRQHandler(void)
 {
   HAL_DMA_IRQHandler( &hdma_adc1 );
-  leds.toggle( BIT1 );
 }
 
 

@@ -27,6 +27,8 @@ uint16_t adc_v0[ n_ADC_data_guard ];
 volatile int adc_end_dma = 0;
 volatile int adc_dma_error = 0;
 
+TIM_HandleTypeDef tim6h;
+void tim6_init( uint16_t presc = 49, uint16_t arr = 100 ); // 1MHz, 10 kHz
 
 const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
 
@@ -70,6 +72,7 @@ int main(void)
 
   MX_USART1_UART_Init();
   leds.write( 0x0F );  delay_bad_ms( 200 );
+  tim6_init( 49999, 10000 ); // 1kHz, 1Hz
   MX_ADC1_Init();
   leds.write( 0x0A );  delay_bad_ms( 200 );
 
@@ -171,7 +174,7 @@ void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc )
   HAL_ADC_Stop_DMA( hadc );
   hadc1.Instance->SR = 0;
   adc_end_dma = 1;
-  leds.toggle( BIT2 );
+  // leds.toggle( BIT2 );
   ++UVAR('a');
 }
 
@@ -184,13 +187,20 @@ void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc )
   hadc1.Instance->SR = 0;
   hadc->DMA_Handle->ErrorCode = 0;
   adc_end_dma = 2; adc_dma_error = 1;
-  leds.toggle( BIT0 );
+  // leds.toggle( BIT0 );
   ++UVAR('e');
 }
 
 void _exit( int rc )
 {
   die4led( rc );
+}
+
+void TIM6_DAC_IRQHandler(void)
+{
+  leds.toggle( BIT2 );
+  ++UVAR('i');
+  HAL_TIM_IRQHandler( &tim6h );
 }
 
 // // configs
