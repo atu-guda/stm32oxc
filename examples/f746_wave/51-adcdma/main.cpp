@@ -13,9 +13,11 @@ BOARD_DEFINE_LEDS;
 extern "C" {
  void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc );
  void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc );
+ void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim );
 }
 void MX_ADC1_Init(void);
 void ADC_DMA_REINIT();
+void pr_ADC_state();
 ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
 int v_adc_ref = 3250; // in mV, measured before test, adjust as UVAR('v')
@@ -26,9 +28,11 @@ const int n_ADC_data_guard = n_ADC_data + n_ADC_ch * 2;
 uint16_t adc_v0[ n_ADC_data_guard ];
 volatile int adc_end_dma = 0;
 volatile int adc_dma_error = 0;
+uint32_t n_cnv = 0;
 
-TIM_HandleTypeDef tim6h;
-void tim6_init( uint16_t presc = 49, uint16_t arr = 100 ); // 1MHz, 10 kHz
+TIM_HandleTypeDef tim2h;
+void tim2_init( uint16_t presc = 49, uint32_t arr = 100 ); // 1MHz, 10 kHz
+void tim2_deinit();
 
 const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
 
@@ -70,17 +74,21 @@ int main(void)
 
   leds.initHW();
 
+  UVAR('t') = 10000; // 10 s wait
+  UVAR('n') = 4;
+  UVAR('v') = v_adc_ref;
+  UVAR('p') = 99; // timer PSC, for 1MHz
+  UVAR('a') = 100000; // timer ARR, for 10Hz
+
   MX_USART1_UART_Init();
   leds.write( 0x0F );  delay_bad_ms( 200 );
-  tim6_init( 49999, 10000 ); // 1kHz, 1Hz
+
   MX_ADC1_Init();
+  delay_bad_ms( 10 );
+  // tim2_init( UVAR('p'), UVAR('a') );
   leds.write( 0x0A );  delay_bad_ms( 200 );
 
   // usartio.sendStrSync( "0123456789---main()---ABCDEF" NL );
-
-  UVAR('t') = 100;
-  UVAR('n') = 4;
-  UVAR('v') = v_adc_ref;
 
   global_smallrl = &srl;
 
@@ -109,16 +117,41 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
   vTaskDelete(NULL);
 }
 
+void pr_ADC_state()
+{
+  pr_shx( ADC1->SR );
+  pr_shx( ADC1->CR1 );
+  pr_shx( ADC1->CR2 );
+  pr_shx( ADC1->SMPR2 );
+  pr_shx( ADC1->SQR1 );
+  pr_shx( ADC1->SQR3 );
+}
+
+void pr_TIM_state( TIM_TypeDef *htim )
+{
+  pr_sdx( htim->CNT  );
+  pr_sdx( htim->ARR  );
+  pr_sdx( htim->PSC  );
+  pr_shx( htim->CR1  );
+  pr_shx( htim->CR2  );
+  pr_shx( htim->SMCR );
+  pr_shx( htim->DIER );
+  pr_shx( htim->SR   );
+}
+
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
   char buf[32];
   int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
   uint32_t t_wait = UVAR('t');
-  // MX_ADC1_Init(); // more then need?
+
   pr( NL "Test0: n= " ); pr_d( n ); pr( " t_wait= " ); pr_d( t_wait );  pr( NL );
-  pr( "ADCx_SR= " ); pr_h( hadc1.Instance->SR );  pr( NL );
   // uint16_t v = 0;
+  tim2_deinit();
+  tim2_init( UVAR('p'), UVAR('a') );
+
+  pr_ADC_state();
   hadc1.Instance->SR = 0;
   ADC_DMA_REINIT();
 
@@ -128,22 +161,24 @@ int cmd_test0( int argc, const char * const * argv )
     adc_v0[i] = 0;
   }
   break_flag = 0;
-  adc_end_dma = 0; adc_dma_error = 0;
+  adc_end_dma = 0; adc_dma_error = 0; n_cnv = 0;
   TickType_t tc0 = xTaskGetTickCount(), tc00 = tc0;
   if( HAL_ADC_Start_DMA( &hadc1, (uint32_t*)adc_v0, n_ADC_data ) != HAL_OK )   {
     pr( "ADC_Start_DMA error" NL );
   }
+  ADC1->CR2 |= 0x40000000; // SWSTART???
 
   for( uint32_t ti=0; adc_end_dma == 0 && ti<t_wait; ++ti ) {
     delay_ms(1);
   }
   TickType_t tcc = xTaskGetTickCount();
+
   // HAL_ADC_Stop( &hadc1 );
   if( adc_end_dma == 0 ) {
     pr( "Fail to wait DMA end " NL );
   }
   if( adc_dma_error != 0 ) {
-    pr( "Found DMA error " NL );
+    pr( "Found DMA error "  ); pr_d( adc_dma_error ); pr( NL );
   }
   pr( "  tick: "); pr_d( tcc - tc00 ); pr( NL );
 
@@ -157,10 +192,15 @@ int cmd_test0( int argc, const char * const * argv )
     pr( NL );
   }
 
-  pr( "ADCx_SR= " ); pr_h( hadc1.Instance->SR );  pr( NL );
+  pr_ADC_state();
   pr( NL );
 
   delay_ms( 10 );
+  uint32_t tm_0 = UVAR('i');
+  delay_ms( 1000 );
+  tm_0 -= UVAR('i');
+  pr_sdx( tm_0 );
+  pr_TIM_state( TIM2 );
   break_flag = 0;  idle_flag = 1;
 
   pr( NL "test0 end." NL );
@@ -175,18 +215,18 @@ void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc )
   hadc1.Instance->SR = 0;
   adc_end_dma = 1;
   // leds.toggle( BIT2 );
-  ++UVAR('a');
+  ++UVAR('g'); // 'g' means good
 }
 
 void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc )
 {
   UVAR('z') = HAL_ADC_GetError( hadc );
-  UVAR('d') = hadc->DMA_Handle->ErrorCode;
+  adc_dma_error = hadc->DMA_Handle->ErrorCode;
   UVAR('y') = hadc1.Instance->SR;
   HAL_ADC_Stop_DMA( hadc );
   hadc1.Instance->SR = 0;
   hadc->DMA_Handle->ErrorCode = 0;
-  adc_end_dma = 2; adc_dma_error = 1;
+  adc_end_dma = 2;
   // leds.toggle( BIT0 );
   ++UVAR('e');
 }
@@ -196,11 +236,18 @@ void _exit( int rc )
   die4led( rc );
 }
 
-void TIM6_DAC_IRQHandler(void)
+void TIM2_IRQHandler(void)
 {
-  leds.toggle( BIT2 );
+  HAL_TIM_IRQHandler( &tim2h );
+  // leds.toggle( BIT2 );
+}
+
+void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
+{
   ++UVAR('i');
-  HAL_TIM_IRQHandler( &tim6h );
+  UVAR('j') = htim->Instance->CNT;
+  ADC1->CR2 |= 0x40000000; // SWSTART???
+  leds.toggle( BIT1 );
 }
 
 // // configs

@@ -16,13 +16,20 @@ void MX_ADC1_Init(void)
   hadc1.Init.ClockPrescaler        = ADC_CLOCK_SYNC_PCLK_DIV4; // 100/4 = 25 Mhz, max 36
   hadc1.Init.Resolution            = ADC_RESOLUTION_12B;
   hadc1.Init.ScanConvMode          = ENABLE;  // if disabled, only first channel works
-  hadc1.Init.ContinuousConvMode    = ENABLE;  // if disabled, only first 1 on NbrOfConversion received
+  // hadc1.Init.ScanConvMode          = DISABLE;
+  // hadc1.Init.ContinuousConvMode    = ENABLE;  // if disabled, only first 1 on NbrOfConversion received
+  hadc1.Init.ContinuousConvMode    = DISABLE; // to start at trigger
   hadc1.Init.DiscontinuousConvMode = DISABLE; // if enabled, seems to not work at all
-  hadc1.Init.ExternalTrigConvEdge  = ADC_EXTERNALTRIGCONVEDGE_NONE;
+  // hadc1.Init.ExternalTrigConvEdge  = ADC_EXTERNALTRIGCONVEDGE_NONE;
+  hadc1.Init.ExternalTrigConvEdge  = ADC_EXTERNALTRIGCONVEDGE_RISING;
+  hadc1.Init.ExternalTrigConv      = ADC_EXTERNALTRIGCONV_T2_TRGO;
+
   hadc1.Init.DataAlign             = ADC_DATAALIGN_RIGHT;
   hadc1.Init.NbrOfConversion       = 4;
-  hadc1.Init.DMAContinuousRequests = DISABLE; // ???
-  hadc1.Init.EOCSelection          = ADC_EOC_SEQ_CONV; // ADC_EOC_SINGLE_CONV; // seens dont metter if DMA
+  // hadc1.Init.DMAContinuousRequests = DISABLE; // ???
+  hadc1.Init.DMAContinuousRequests = ENABLE; // ???
+  // hadc1.Init.EOCSelection          = ADC_EOC_SEQ_CONV; // ADC_EOC_SINGLE_CONV; // seems dont metter if DMA
+  hadc1.Init.EOCSelection          = ADC_EOC_SINGLE_CONV; // test
   if( HAL_ADC_Init( &hadc1 ) != HAL_OK )  {
     Error_Handler( 2 );
   }
@@ -100,7 +107,7 @@ void HAL_ADC_MspDeInit( ADC_HandleTypeDef* adcHandle )
 {
   if( adcHandle->Instance==ADC1 )   {
     __HAL_RCC_ADC1_CLK_DISABLE();
-    HAL_GPIO_DeInit( GPIOA, GPIO_PIN_1 );
+    HAL_GPIO_DeInit( GPIOA, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2  | GPIO_PIN_3  );
     HAL_DMA_DeInit( adcHandle->DMA_Handle );
   }
 
