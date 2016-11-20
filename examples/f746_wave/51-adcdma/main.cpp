@@ -15,7 +15,7 @@ extern "C" {
  void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc );
  void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim );
 }
-void MX_ADC1_Init(void);
+void MX_ADC1_Init( uint8_t n_ch, uint32_t sampl_time );
 void ADC_DMA_REINIT();
 void pr_ADC_state();
 ADC_HandleTypeDef hadc1;
@@ -80,7 +80,7 @@ int main(void)
   MX_USART1_UART_Init();
   leds.write( 0x0F );  delay_bad_ms( 200 );
 
-  MX_ADC1_Init();
+  // MX_ADC1_Init( 4, ADC_SAMPLETIME_28CYCLES );
   delay_bad_ms( 10 );
   // tim2_init( UVAR('p'), UVAR('a') );
   leds.write( 0x0A );  delay_bad_ms( 200 );
@@ -160,7 +160,12 @@ int cmd_test0( int argc, const char * const * argv )
 
   pr_ADC_state();
   hadc1.Instance->SR = 0;
-  ADC_DMA_REINIT();
+  HAL_ADC_MspDeInit( &hadc1 );
+  delay_ms( 10 );
+  HAL_ADC_MspInit( &hadc1 );
+  MX_ADC1_Init( n_ch, ADC_SAMPLETIME_28CYCLES );
+  delay_ms( 10 );
+  // MX_ADC1_Init( n_ch, ADC_SAMPLETIME_3CYCLES );
   tim2_init( UVAR('p'), UVAR('a') );
 
   // log_add( "Test0 " );
@@ -183,6 +188,7 @@ int cmd_test0( int argc, const char * const * argv )
     delay_ms(1);
   }
   TickType_t tcc = xTaskGetTickCount();
+  delay_ms( 10 ); // to settle all
 
   // HAL_ADC_Stop( &hadc1 );
   if( adc_end_dma == 0 ) {

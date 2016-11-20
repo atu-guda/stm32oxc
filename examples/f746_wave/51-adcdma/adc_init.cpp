@@ -8,9 +8,11 @@ extern DMA_HandleTypeDef hdma_adc1;
 
 void ADC_DMA_REINIT();
 
-void MX_ADC1_Init(void)
+void MX_ADC1_Init( uint8_t n_ch, uint32_t sampl_time )
 {
   ADC_ChannelConfTypeDef sConfig;
+  if( n_ch > 4 ) { n_ch = 4; }
+  if( n_ch < 1 ) { n_ch = 1; }
 
   hadc1.Instance                   = ADC1;
   hadc1.Init.ClockPrescaler        = ADC_CLOCK_SYNC_PCLK_DIV4; // 100/4 = 25 Mhz, max 36
@@ -23,9 +25,10 @@ void MX_ADC1_Init(void)
   // hadc1.Init.ExternalTrigConvEdge  = ADC_EXTERNALTRIGCONVEDGE_NONE;
   hadc1.Init.ExternalTrigConvEdge  = ADC_EXTERNALTRIGCONVEDGE_RISING;
   hadc1.Init.ExternalTrigConv      = ADC_EXTERNALTRIGCONV_T2_TRGO;
+  // hadc1.Init.ExternalTrigConv      = ADC_EXTERNALTRIGCONV_T1_TRGO; // just test: no diff found
 
   hadc1.Init.DataAlign             = ADC_DATAALIGN_RIGHT;
-  hadc1.Init.NbrOfConversion       = 4;
+  hadc1.Init.NbrOfConversion       = n_ch;
   // hadc1.Init.DMAContinuousRequests = DISABLE; // ???
   hadc1.Init.DMAContinuousRequests = ENABLE; // ???
   // hadc1.Init.EOCSelection          = ADC_EOC_SEQ_CONV; // ADC_EOC_SINGLE_CONV; // seems dont metter if DMA
@@ -36,8 +39,9 @@ void MX_ADC1_Init(void)
 
   /**Configure for the selected ADC regular channels its corresponding rank in the sequencer and its sample time.  */
   decltype(ADC_CHANNEL_0) static const constexpr chs[]  { ADC_CHANNEL_0, ADC_CHANNEL_1, ADC_CHANNEL_2, ADC_CHANNEL_3 };
+  sConfig.SamplingTime = sampl_time;
   // sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;   //  15  tick: 1.6 MSa,  0.6  us
-  sConfig.SamplingTime = ADC_SAMPLETIME_15CYCLES;  //  27  tick: 925 kSa,  1.08 us
+  // sConfig.SamplingTime = ADC_SAMPLETIME_15CYCLES;  //  27  tick: 925 kSa,  1.08 us
   // sConfig.SamplingTime = ADC_SAMPLETIME_28CYCLES;  //  40  tick: 615 kSa,  1.6  us
   // sConfig.SamplingTime = ADC_SAMPLETIME_56CYCLES;  //  68  tick: 367 kSa,  2.72 us
   // sConfig.SamplingTime = ADC_SAMPLETIME_84CYCLES;  //  96  tick: 260 kSa,  3.84 us
