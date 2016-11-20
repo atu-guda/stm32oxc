@@ -29,6 +29,26 @@ volatile int adc_end_dma = 0;
 volatile int adc_dma_error = 0;
 volatile uint32_t n_series = 0;
 uint32_t n_series_todo = 0;
+const uint32_t n_sampl_times = 7; // curremt numner - in UVAR('s')
+const uint32_t sampl_times_codes[n_sampl_times] = { // all for 25 MHz ADC clock
+  ADC_SAMPLETIME_3CYCLES   , //  15  tick: 1.6 MSa,  0.6  us
+  ADC_SAMPLETIME_15CYCLES  , //  27  tick: 925 kSa,  1.08 us
+  ADC_SAMPLETIME_28CYCLES  , //  40  tick: 615 kSa,  1.6  us
+  ADC_SAMPLETIME_56CYCLES  , //  68  tick: 367 kSa,  2.72 us
+  ADC_SAMPLETIME_84CYCLES  , //  96  tick: 260 kSa,  3.84 us
+  ADC_SAMPLETIME_144CYCLES , // 156  tick: 160 kSa,  6.24 us
+  ADC_SAMPLETIME_480CYCLES   // 492  tick:  50 kSa, 19.68 us
+};
+const uint32_t sampl_times_cycles[n_sampl_times] = { // sample+conv(12)
+    15,  // ADC_SAMPLETIME_3CYCLES     tick: 1.6 MSa,  0.6  us
+    27,  // ADC_SAMPLETIME_15CYCLES    tick: 925 kSa,  1.08 us
+    40,  // ADC_SAMPLETIME_28CYCLES    tick: 615 kSa,  1.6  us
+    68,  // ADC_SAMPLETIME_56CYCLES    tick: 367 kSa,  2.72 us
+    96,  // ADC_SAMPLETIME_84CYCLES    tick: 260 kSa,  3.84 us
+   156,  // ADC_SAMPLETIME_144CYCLES   tick: 160 kSa,  6.24 us
+   492,  // ADC_SAMPLETIME_480CYCLES   tick:  50 kSa, 19.68 us
+};
+
 
 TIM_HandleTypeDef tim2h;
 void tim2_init( uint16_t presc = 49, uint32_t arr = 100 ); // 1MHz, 10 kHz
@@ -76,6 +96,7 @@ int main(void)
   UVAR('a') = 99999; // timer ARR, for 10Hz
   UVAR('c') = n_ADC_ch_max;
   UVAR('n') = 8; // number of series
+  UVAR('s') = 1; // sampling time index
 
   MX_USART1_UART_Init();
   leds.write( 0x0F );  delay_bad_ms( 200 );
@@ -147,6 +168,10 @@ int cmd_test0( int argc, const char * const * argv )
   const uint32_t n_ADC_series_max  = n_ADC_mem / ( 2 * n_ch ); // 2 is 16bit/sample
   uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 0, n_ADC_series_max ); // number of series
 
+  uint32_t sampl_t_idx = UVAR('s');
+  if( sampl_t_idx >= n_sampl_times ) { sampl_t_idx = n_sampl_times-1; };
+  uint32_t f_sampl_ser = 25000000 / ( sampl_times_cycles[sampl_t_idx] * n_ch );
+
   uint32_t tim_f = 100000000 / ( (UVAR('a')+1) * (UVAR('p')+1) ); // timer update freq
   uint32_t t_wait0 = 1000 * n / tim_f;
 
@@ -154,6 +179,7 @@ int cmd_test0( int argc, const char * const * argv )
 
   pr( NL "Test0: n= " ); pr_d( n ); pr( " n_ch= " ); pr_d( n_ch );
   pr( " tim_f= " ); pr_d( tim_f );
+  pr( " f_sampl_ser= " ); pr_d( f_sampl_ser );
   pr( " t_wait0= " ); pr_d( t_wait0 );  pr( NL );
   // uint16_t v = 0;
   tim2_deinit();
@@ -163,9 +189,9 @@ int cmd_test0( int argc, const char * const * argv )
   HAL_ADC_MspDeInit( &hadc1 );
   delay_ms( 10 );
   HAL_ADC_MspInit( &hadc1 );
-  MX_ADC1_Init( n_ch, ADC_SAMPLETIME_28CYCLES );
+  MX_ADC1_Init( n_ch, sampl_t_idx );
   delay_ms( 10 );
-  // MX_ADC1_Init( n_ch, ADC_SAMPLETIME_3CYCLES );
+
   tim2_init( UVAR('p'), UVAR('a') );
 
   // log_add( "Test0 " );
