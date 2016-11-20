@@ -63,7 +63,7 @@ SmallRL srl( smallrl_exec );
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test ADC"  };
 int cmd_out( int argc, const char * const * argv );
-CmdInfo CMDINFO_OUT { "out", 'O', cmd_out, " - output data "  };
+CmdInfo CMDINFO_OUT { "out", 'O', cmd_out, " [N [start]]- output data "  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -280,9 +280,10 @@ int cmd_out( int argc, const char * const * argv )
   if( n_ch > n_ADC_ch_max ) { n_ch = n_ADC_ch_max; };
   if( n_ch < 1 ) { n_ch = 1; };
   uint32_t n = arg2long_d( 1, argc, argv, n_series, 0, n_series+1 ); // number output series
+  uint32_t st= arg2long_d( 2, argc, argv, 0,        0, n_series+1 ); // number output series
 
   uint32_t t = 0;
-  for( uint32_t i=0; i< n; ++i ) {
+  for( uint32_t i=st; i< n+st; ++i ) {
     ifcvt( t, 1000000, buf, 6 );
     pr( buf ); pr( "   " );
     for( int j=0; j< n_ch; ++j ) {
@@ -302,7 +303,7 @@ int cmd_out( int argc, const char * const * argv )
 void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc )
 {
   UVAR('x') = hadc1.Instance->SR;
-  HAL_ADC_Stop_DMA( hadc );
+  // HAL_ADC_Stop_DMA( hadc );
   hadc1.Instance->SR = 0;
   adc_end_dma = 1;
   leds.toggle( BIT2 );

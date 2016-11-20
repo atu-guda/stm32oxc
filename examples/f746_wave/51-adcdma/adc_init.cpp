@@ -29,8 +29,8 @@ void MX_ADC1_Init( uint8_t n_ch, uint32_t sampl_time )
 
   hadc1.Init.DataAlign             = ADC_DATAALIGN_RIGHT;
   hadc1.Init.NbrOfConversion       = n_ch;
-  // hadc1.Init.DMAContinuousRequests = DISABLE; // ???
-  hadc1.Init.DMAContinuousRequests = ENABLE; // ???
+  hadc1.Init.DMAContinuousRequests = DISABLE; // ???
+  /// hadc1.Init.DMAContinuousRequests = ENABLE; // ???
   // hadc1.Init.EOCSelection          = ADC_EOC_SEQ_CONV; // ADC_EOC_SINGLE_CONV; // seems dont metter if DMA
   hadc1.Init.EOCSelection          = ADC_EOC_SINGLE_CONV; // test
   if( HAL_ADC_Init( &hadc1 ) != HAL_OK )  {
@@ -82,8 +82,8 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
     HAL_NVIC_SetPriority( DMA2_Stream0_IRQn, 1, 0 );
     HAL_NVIC_EnableIRQ( DMA2_Stream0_IRQn );
 
-    // HAL_NVIC_SetPriority( ADC_IRQn, configKERNEL_INTERRUPT_PRIORITY, 0 );
-    // HAL_NVIC_EnableIRQ( ADC_IRQn );
+    HAL_NVIC_SetPriority( ADC_IRQn, 2, 0 );
+    HAL_NVIC_EnableIRQ( ADC_IRQn );
 
   }
 }
