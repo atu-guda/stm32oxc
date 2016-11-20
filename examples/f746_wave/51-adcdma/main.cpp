@@ -20,6 +20,7 @@ void ADC_DMA_REINIT();
 void pr_ADC_state();
 ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
+uint32_t t_step = 100000; // in us, recalculated before measurement
 int v_adc_ref = 3250; // in mV, measured before test, adjust as UVAR('v')
 const uint32_t n_ADC_ch_max = 4; // current - in UVAR('c')
 const uint32_t n_ADC_mem  = 1024*128; // MCU dependent
@@ -60,12 +61,15 @@ SmallRL srl( smallrl_exec );
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
+CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test ADC"  };
+int cmd_out( int argc, const char * const * argv );
+CmdInfo CMDINFO_OUT { "out", 'O', cmd_out, " - output data "  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
 
   &CMDINFO_TEST0,
+  &CMDINFO_OUT,
   nullptr
 };
 
@@ -137,24 +141,28 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
 
 void pr_ADC_state()
 {
-  pr_shx( ADC1->SR );
-  pr_shx( ADC1->CR1 );
-  pr_shx( ADC1->CR2 );
-  pr_shx( ADC1->SMPR2 );
-  pr_shx( ADC1->SQR1 );
-  pr_shx( ADC1->SQR3 );
+  if( UVAR('d') > 0 ) {
+    pr_shx( ADC1->SR );
+    pr_shx( ADC1->CR1 );
+    pr_shx( ADC1->CR2 );
+    pr_shx( ADC1->SMPR2 );
+    pr_shx( ADC1->SQR1 );
+    pr_shx( ADC1->SQR3 );
+  }
 }
 
 void pr_TIM_state( TIM_TypeDef *htim )
 {
-  pr_sdx( htim->CNT  );
-  pr_sdx( htim->ARR  );
-  pr_sdx( htim->PSC  );
-  pr_shx( htim->CR1  );
-  pr_shx( htim->CR2  );
-  pr_shx( htim->SMCR );
-  pr_shx( htim->DIER );
-  pr_shx( htim->SR   );
+  if( UVAR('d') > 1 ) {
+    pr_sdx( htim->CNT  );
+    pr_sdx( htim->ARR  );
+    pr_sdx( htim->PSC  );
+    pr_shx( htim->CR1  );
+    pr_shx( htim->CR2  );
+    pr_shx( htim->SMCR );
+    pr_shx( htim->DIER );
+    pr_shx( htim->SR   );
+  }
 }
 
 // TEST0
@@ -172,15 +180,22 @@ int cmd_test0( int argc, const char * const * argv )
   if( sampl_t_idx >= n_sampl_times ) { sampl_t_idx = n_sampl_times-1; };
   uint32_t f_sampl_ser = 25000000 / ( sampl_times_cycles[sampl_t_idx] * n_ch );
 
-  uint32_t tim_f = 100000000 / ( (UVAR('a')+1) * (UVAR('p')+1) ); // timer update freq
-  uint32_t t_wait0 = 1000 * n / tim_f;
+  t_step =  (UVAR('a')+1) * (UVAR('p')+1); // in timer input ticks
+  uint32_t tim_f = 100000000 / t_step; // timer update freq
+  t_step /= 100; // * 1e6 / 1e8
+  uint32_t t_wait0 = n  * t_step / 1000;
+  if( t_wait0 < 1 ) { t_wait0 = 1; }
 
   if( n > n_ADC_series_max ) { n = n_ADC_series_max; };
 
   pr( NL "Test0: n= " ); pr_d( n ); pr( " n_ch= " ); pr_d( n_ch );
   pr( " tim_f= " ); pr_d( tim_f );
-  pr( " f_sampl_ser= " ); pr_d( f_sampl_ser );
+  pr( " t_step= " ); pr_d( t_step );
+  pr( " us;  f_sampl_ser= " ); pr_d( f_sampl_ser );
   pr( " t_wait0= " ); pr_d( t_wait0 );  pr( NL );
+  ifcvt( t_step, 1000000, buf, 6 );
+  pr( " t_step= " ); pr( buf );
+  pr( NL );
   // uint16_t v = 0;
   tim2_deinit();
 
@@ -227,7 +242,16 @@ int cmd_test0( int argc, const char * const * argv )
   pr( "  n_series: "); pr_d( n_series ); pr( NL );
 
   pr( NL );
+
+  bool was_hole = false;
   for( uint32_t i=0; i< (n_series_todo+2); ++i ) { // +2 = show guard
+    if( i > 2 && i < n_series_todo - 2 ) {
+      if( ! was_hole ) {
+        was_hole = true;
+        pr( "....." NL );
+      }
+      continue;
+    }
     for( int j=0; j< n_ch; ++j ) {
       // pr_d( adc_v0[i*n_ch+j] ) ; pr( "\t" );
       int vv = adc_v0[i*n_ch+j] * 10 * UVAR('v') / 4096;
@@ -242,10 +266,35 @@ int cmd_test0( int argc, const char * const * argv )
   pr( NL );
 
   delay_ms( 10 );
-  // pr_TIM_state( TIM2 );
+  pr_TIM_state( TIM2 );
   break_flag = 0;  idle_flag = 1;
 
   pr( NL "test0 end." NL );
+  return 0;
+}
+
+int cmd_out( int argc, const char * const * argv )
+{
+  char buf[32];
+  uint8_t n_ch = UVAR('c');
+  if( n_ch > n_ADC_ch_max ) { n_ch = n_ADC_ch_max; };
+  if( n_ch < 1 ) { n_ch = 1; };
+  uint32_t n = arg2long_d( 1, argc, argv, n_series, 0, n_series+1 ); // number output series
+
+  uint32_t t = 0;
+  for( uint32_t i=0; i< n; ++i ) {
+    ifcvt( t, 1000000, buf, 6 );
+    pr( buf ); pr( "   " );
+    for( int j=0; j< n_ch; ++j ) {
+      int vv = adc_v0[i*n_ch+j] * 10 * UVAR('v') / 4096;
+      ifcvt( vv, 10000, buf, 4 );
+      pr( buf ); pr( "  " );
+    }
+    t += t_step;
+    pr( NL );
+  }
+  pr( NL );
+
   return 0;
 }
 
