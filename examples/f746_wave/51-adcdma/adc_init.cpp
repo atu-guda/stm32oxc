@@ -78,7 +78,8 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
 
     ADC_DMA_REINIT();
 
-    HAL_NVIC_SetPriority( DMA2_Stream0_IRQn, configKERNEL_INTERRUPT_PRIORITY, 0 );
+    // HAL_NVIC_SetPriority( DMA2_Stream0_IRQn, configKERNEL_INTERRUPT_PRIORITY, 0 );
+    HAL_NVIC_SetPriority( DMA2_Stream0_IRQn, 1, 0 );
     HAL_NVIC_EnableIRQ( DMA2_Stream0_IRQn );
 
     // HAL_NVIC_SetPriority( ADC_IRQn, configKERNEL_INTERRUPT_PRIORITY, 0 );
@@ -98,7 +99,7 @@ void ADC_DMA_REINIT()
     hdma_adc1.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
     hdma_adc1.Init.MemDataAlignment    = DMA_MDATAALIGN_HALFWORD;
     hdma_adc1.Init.Mode                = DMA_NORMAL;
-    hdma_adc1.Init.Priority            = DMA_PRIORITY_MEDIUM;
+    hdma_adc1.Init.Priority            = DMA_PRIORITY_HIGH;
     hdma_adc1.Init.FIFOMode            = DMA_FIFOMODE_DISABLE;
     if( HAL_DMA_Init( &hdma_adc1 ) != HAL_OK )   {
       Error_Handler( 6 );

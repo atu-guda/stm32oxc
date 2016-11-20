@@ -11,8 +11,9 @@ void tim2_init( uint16_t presc, uint32_t arr )
 {
   __TIM2_CLK_ENABLE();
 
-  // just for debug
-  HAL_NVIC_SetPriority( TIM2_IRQn, configKERNEL_INTERRUPT_PRIORITY, 0 );
+  // just for debug ???
+  // HAL_NVIC_SetPriority( TIM2_IRQn, configKERNEL_INTERRUPT_PRIORITY, 0 );
+  HAL_NVIC_SetPriority( TIM2_IRQn, 1, 0 );
   HAL_NVIC_EnableIRQ( TIM2_IRQn );
 
   tim2h.Instance               = TIM2;
