@@ -5,6 +5,7 @@ USE_OXC = y
 USE_OXC_DEBUG = y
 USE_OXC_CONSOLE_USART = n
 USE_OXC_CONSOLE_USB_CDC = y
+USE_OXC_I2C = y
 USE_FREERTOS = y
 # FREERTOS_HEAP = heap_2.c
 # # default: heap_3.c
@@ -18,8 +19,6 @@ OXCDIR = /home/atu/proj/stm32/oxc
 SRCS  = main.cpp
 SRCS += i2c1_default_init.cpp
 
-SRCS += oxc_i2c.cpp
-SRCS += oxc_debug_i2c.cpp
 SRCS += oxc_hmc5983.cpp
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )

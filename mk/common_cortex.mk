@@ -152,6 +152,23 @@ ifeq "$(USE_OXC)" "y"
   SRCS += oxc_osfun.cpp
 endif
 
+ifeq "$(USE_OXC_I2C)" "y"
+  SRCS += oxc_i2c.cpp
+  SRCS += stm32$(MCSUFF)xx_hal_i2c.c
+  ifeq "$(USE_OXC_DEBUG)" "y"
+    SRCS += oxc_debug_i2c.cpp
+  endif
+endif
+
+ifeq "$(USE_OXC_SPI)" "y"
+  SRCS += oxc_spi.cpp
+  SRCS += stm32$(MCSUFF)xx_hal_spi.c
+  # ifeq "$(USE_OXC_DEBUG)" "y"
+  #   SRCS += oxc_debug_spi.cpp
+  # endif
+endif
+
+
 ifeq "$(USE_FREERTOS)" "y"
   SRCPATHS += $(RTSRC) $(RTDIR)
   ALLFLAGS += -I$(RTINC) -DUSE_FREERTOS
