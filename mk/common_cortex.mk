@@ -101,6 +101,7 @@ ifeq "$(USE_OXC_CONSOLE_USART)" "y"
   # $(info "Used USART console" )
   USE_OXC_CONSOLE = y
   SRCS += oxc_usartio.cpp
+  SRCS += stm32$(MCSUFF)xx_hal_uart.c
   ALLFLAGS += -DUSE_OXC_CONSOLE_USART
 endif
 
@@ -204,11 +205,21 @@ ifeq "$(USE_USB_DEFAULT_CDC)" "y"
   ALLFLAGS += -I$(OXCINC)/usb_cdc_$(MCSUFF)
   SRCS += usbd_conf.cpp
   SRCS += usbd_desc.cpp
+  # USB: hal:
+  SRCS += stm32$(MCSUFF)xx_hal_pcd.c
+  SRCS += stm32$(MCSUFF)xx_ll_usb.c
+  SRCS += stm32$(MCSUFF)xx_hal_pcd_ex.c
   # USB: lib:
   SRCS += usbd_core.c
   SRCS += usbd_cdc.c
   SRCS += usbd_ctlreq.c
   SRCS += usbd_ioreq.c
+endif
+
+ifeq "$(USE_OXC_CONSOLE_USB_CDC)"  "y"
+  SRCS += stm32f4xx_hal_pcd.c
+  SRCS += stm32f4xx_ll_usb.c
+  SRCS += stm32f4xx_hal_pcd_ex.c
 endif
 
 vpath %.c   $(SRCPATHS) $(OXCSRC)/startup

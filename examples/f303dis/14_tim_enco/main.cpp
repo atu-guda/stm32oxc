@@ -49,6 +49,7 @@ int main(void)
   HAL_Init();
 
   SystemClock_Config();
+
   leds.initHW();
 
   leds.write( 0x0F );  delay_bad_ms( 200 );

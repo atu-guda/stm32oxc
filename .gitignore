@@ -20,6 +20,8 @@
 *.map
 *.log
 *.lst
+*.cap
+*.dat
 
 # dep files
 *.d

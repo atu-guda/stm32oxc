@@ -30,7 +30,6 @@ int main(void)
 
   SystemClock_Config();
 
-  // __HAL_RCC_USART2_CONFIG( RCC_USART2CLKSOURCE_SYSCLK );
   leds.initHW();
 
   leds.write( 0x0F );  delay_bad_ms( 200 );
@@ -62,25 +61,12 @@ void task_send( void *prm UNUSED_ARG )
   while (1)
   {
     // leds.toggle( BIT2 );
-    // really useless: delay_ms(1000) provokes overrun
-    if( __HAL_UART_GET_FLAG( &uah, UART_FLAG_RXNE) ) {
-      if( HAL_UART_Receive( &uah, (uint8_t*)&c, 1, 1 ) == HAL_OK ) {
-        leds.toggle( BIT3 );
-        tx_buf[7] = c;
-      } else {
-        uint8_t st = HAL_UART_GetState( &uah );
-        if( st == HAL_UART_STATE_TIMEOUT ) {
-          uah.gState = HAL_UART_STATE_READY;
-        } else {
-          st <<= 1;
-          leds.write( 0 );
-          die4led( st );
-        }
-      }
+    if( HAL_UART_Receive( &uah, (uint8_t*)&c, 1, 0 ) == HAL_OK ) {
+      leds.toggle( BIT2 );
+      tx_buf[7] = c;
     }
-
-    if( (rc = HAL_UART_Transmit( &uah, (uint8_t*)tx_buf, ssz, 100 )) != HAL_OK ) {
-      leds.toggle( BIT5 );
+    if( HAL_UART_Transmit( &uah, (uint8_t*)tx_buf, ssz, 100 )!= HAL_OK ) {
+      // leds.toggle( BIT3 );
     }
     delay_ms( 1000 );
   }

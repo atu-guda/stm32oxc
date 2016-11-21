@@ -21,7 +21,7 @@ SRCS  = main.cpp
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
 # see ../common/f7_modules.mk
-# SRCS += stm32f7xx_hal_adc.c
+
 
 include ../common/board_add.mk
 include $(OXCDIR)/mk/common_cortex.mk

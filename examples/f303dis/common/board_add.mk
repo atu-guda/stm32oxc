@@ -13,11 +13,19 @@ HSE_VALUE = 8000000
 SRCS += system_stm32f3xx.c
 SRCS += startup_stm32f303xc.s
 
-SRCS += stm32f3_clock_HSE072b.c
+ifneq "$(REQUIRE_SPECIAL_CLOCK)" "y"
+  SRCS += stm32f3_clock_HSE072b.c
+endif
 
 # base hal files
 SRCS += stm32f3xx_hal.c
 SRCS += stm32f3xx_hal_cortex.c
 SRCS += stm32f3xx_hal_gpio.c
 SRCS += stm32f3xx_hal_rcc.c
+SRCS += stm32f3xx_hal_rcc_ex.c
+
+ifeq "$(USE_USB)" "y"
+  SRCS += usbfs_init.cpp
+endif
+
 

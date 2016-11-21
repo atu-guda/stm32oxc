@@ -105,8 +105,7 @@ int cmd_test0( int argc, const char * const * argv )
   TickType_t tc0 = xTaskGetTickCount();
 
   delay_ms( 10 );
-  break_flag = 0;
-  idle_flag = 1;
+  break_flag = 0; idle_flag = 1;
 
 
   for( int i=0; i<n && !break_flag; ++i ) {

@@ -108,6 +108,7 @@ int cmd_test0( int argc, const char * const * argv )
     old_cnt = t_cnt;
     // delay_ms( t_step );
   }
+  break_flag = 0;
 
   pr( NL "test0 end." NL );
   return 0;

@@ -16,16 +16,12 @@ OXCDIR = /home/atu/proj/stm32/oxc
 
 
 SRCS  = main.cpp
-SECS += uart2_init_a2a3.cpp
+SRCS += uart2_init_a2a3.cpp
 
 SRCS += empty_test0_function.cpp
 
-#SRCS += oxc_i2c.cpp
-
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
 # list: see ../common/f4_modules.mk
-
-SRCS += stm32f4xx_hal_uart.c
 
 
 include ../common/board_add.mk

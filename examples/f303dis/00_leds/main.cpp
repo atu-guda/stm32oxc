@@ -1,30 +1,12 @@
-#include "stm32f3xx_hal.h"
-#include <oxc_base.h>
+#include <oxc_gpio.h>
 
-void NMI_Handler(void);
-void HardFault_Handler(void);
-void MemManage_Handler(void);
-void BusFault_Handler(void);
-void UsageFault_Handler(void);
-void SVC_Handler(void);
-void DebugMon_Handler(void);
-void PendSV_Handler(void);
-void SysTick_Handler(void);
-
-void SystemClock_Config(void);
 
 void MX_GPIO_Init(void);
 
 USE_DIE_ERROR_HANDLER;
 
 int  delay_bad(void);
-void GPIO_WriteBits( GPIO_TypeDef* GPIOx, uint16_t PortVal, uint16_t mask );
-void _exit( int rc );
 
-void GPIO_WriteBits( GPIO_TypeDef* GPIOx, uint16_t PortVal, uint16_t mask )
-{
-  GPIOx->ODR = ( PortVal & mask ) | ( GPIOx->ODR & (~mask) );
-}
 
 
 int main(void)

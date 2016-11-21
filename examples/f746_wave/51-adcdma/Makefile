@@ -21,7 +21,6 @@ SRCS += adc_init.cpp
 SRCS += tim2_init.cpp
 # SRCS += empty_test0_function.cpp
 
-#SRCS += oxc_i2c.cpp
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
 # see ../common/f7_modules.mk

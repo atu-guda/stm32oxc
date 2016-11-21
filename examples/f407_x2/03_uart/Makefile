@@ -23,8 +23,6 @@ SRCS += uart2_init_a2a3_noirq.cpp
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
 # list: see ../common/f4_modules.mk
 
-SRCS += stm32f4xx_hal_uart.c
-
 
 include ../common/board_add.mk
 include $(OXCDIR)/mk/common_cortex.mk

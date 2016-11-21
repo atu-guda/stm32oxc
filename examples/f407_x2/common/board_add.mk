@@ -13,7 +13,9 @@ HSE_VALUE = 8000000
 SRCS += system_stm32f4xx.c
 SRCS += startup_stm32f407xx.s
 
-SRCS += stm32f4_clock_HSE168.c
+ifneq "$(REQUIRE_SPECIAL_CLOCK)" "y"
+  SRCS += stm32f4_clock_HSE168.c
+endif
 
 # base hal files
 SRCS += stm32f4xx_hal.c
@@ -25,9 +27,4 @@ ifeq "$(USE_USB)" "y"
   SRCS += usbfs_init.cpp
 endif
 
-ifeq "$(USE_OXC_CONSOLE_USB_CDC)"  "y"
-  SRCS += stm32f4xx_hal_pcd.c
-  SRCS += stm32f4xx_ll_usb.c
-  SRCS += stm32f4xx_hal_pcd_ex.c
-endif
 
