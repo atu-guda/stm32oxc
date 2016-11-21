@@ -41,7 +41,7 @@ void task_main( void *prm UNUSED_ARG );
 
 STD_USBCDC_SEND_TASK( usbcdc );
 
-int MX_SPI1_Init();
+int SPI1_Init_common( uint32_t baud_presc  = SPI_BAUDRATEPRESCALER_256 );
 PinsOut nss_pin( GPIOA, 4, 1 ); //  to test GPIO
 SPI_HandleTypeDef spi1_h;
 DevSPI spi_d( &spi1_h, &nss_pin );
@@ -60,7 +60,7 @@ int main(void)
   leds.initHW();
 
   leds.write( 0x0F );  delay_bad_ms( 200 );
-  if( MX_SPI1_Init() != HAL_OK ) {
+  if( SPI1_Init_common() != HAL_OK ) {
     die4led( 0x04 );
   }
   // nss_pin.initHW();

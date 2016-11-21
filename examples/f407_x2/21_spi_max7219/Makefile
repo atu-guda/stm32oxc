@@ -17,7 +17,7 @@ OXCDIR = /home/atu/proj/stm32/oxc
 
 
 SRCS  = main.cpp
-SRCS += init_spi1.cpp
+SRCS += init_spi1_common_master_a567.cpp
 
 SRCS += oxc_spi_max7219.cpp
 
