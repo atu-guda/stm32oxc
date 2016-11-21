@@ -22,7 +22,8 @@ SUBDIRS = \
   20_spi_mem_a25 \
   21_spi_max7219 \
   24_i2c_hmc5983 \
-  25_spi_max31855_tcouple
+  25_spi_max31855_tcouple \
+  50-adc0
 
 ALL : examples_f407_x2
 

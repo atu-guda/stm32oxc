@@ -76,20 +76,6 @@ void _exit( int rc )
 }
 
 
-void init_uart( UART_HandleTypeDef *uahp, int baud )
-{
-  uahp->Instance = USART2;
-  uahp->Init.BaudRate     = baud;
-  uahp->Init.WordLength   = UART_WORDLENGTH_8B;
-  uahp->Init.StopBits     = UART_STOPBITS_1;
-  uahp->Init.Parity       = UART_PARITY_NONE;
-  uahp->Init.HwFlowCtl    = UART_HWCONTROL_NONE;
-  uahp->Init.Mode         = UART_MODE_TX_RX;
-  uahp->Init.OverSampling = UART_OVERSAMPLING_16;
-  if( HAL_UART_Init( uahp ) != HAL_OK )  {
-    die4led( 0x08 );
-  }
-}
 
 
 FreeRTOS_to_stm32cube_tick_hook;

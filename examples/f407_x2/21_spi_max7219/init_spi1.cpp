@@ -1,23 +1,5 @@
-/**
-  * File Name          : stm32f4xx_hal_msp.c
-  * Description        : This file provides code for the MSP Initialization
-  *                      and de-Initialization codes.
-  ******************************************************************************
-  */
-
-// #include <stm32f4xx_hal.h>
-// #include <usbd_core.h>
-
 #include <oxc_base.h>
 #include <oxc_gpio.h>
-
-void default_USBFS_MspInit(void);
-
-void HAL_PCD_MspInit( PCD_HandleTypeDef *hpcd UNUSED_ARG )
-{
-  default_USBFS_MspInit();
-}
-
 
 // --------------------------- SPI --------------------------------------
 
@@ -33,9 +15,8 @@ int MX_SPI1_Init()
   spi1_h.Init.CLKPhase = SPI_PHASE_1EDGE;
   spi1_h.Init.NSS = SPI_NSS_SOFT;
   // spi1_h.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
-  spi1_h.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_4;
   // spi1_h.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;
-  // spi1_h.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;
+  spi1_h.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;
   spi1_h.Init.FirstBit = SPI_FIRSTBIT_MSB;
   spi1_h.Init.TIMode = SPI_TIMODE_DISABLED;
   spi1_h.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLED;

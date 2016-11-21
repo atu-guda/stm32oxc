@@ -76,18 +76,18 @@
 #define  VDD_VALUE                    ((uint32_t)3300U) /*!< Value of VDD in mv */
 // TODO: check
 //#define  TICK_INT_PRIORITY            ((uint32_t)0)    /*!< tick interrupt priority */
-#define  TICK_INT_PRIORITY            ((uint32_t)0x0FU) /*!< tick interrupt priority */
-#define  USE_RTOS                     0U
-#define  PREFETCH_ENABLE              1U
-#define  INSTRUCTION_CACHE_ENABLE     1U
-#define  DATA_CACHE_ENABLE            1U
+#define  TICK_INT_PRIORITY            ((uint32_t)0x0F) /*!< tick interrupt priority */
+#define  USE_RTOS                     0
+#define  PREFETCH_ENABLE              1
+#define  INSTRUCTION_CACHE_ENABLE     1
+#define  DATA_CACHE_ENABLE            1
 
 /* ########################## Assert Selection ############################## */
 /**
   * @brief Uncomment the line below to expanse the "assert_param" macro in the
   *        HAL drivers code
   */
-/* #define USE_FULL_ASSERT    1U */
+/* #define USE_FULL_ASSERT    1 */
 
 /* ################## Ethernet peripheral configuration ##################### */
 

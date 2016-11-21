@@ -106,6 +106,7 @@ endif
 
 ifeq "$(USE_OXC_CONSOLE_USB_CDC)" "y"
   # $(info "Used USB_CDC console" )
+  USE_USB = y
   USE_OXC_CONSOLE = y
   SRCS += oxc_usbcdcio.cpp
   ALLFLAGS += -DUSE_OXC_CONSOLE_USB_CDC
