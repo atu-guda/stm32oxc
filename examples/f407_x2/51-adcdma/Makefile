@@ -1,4 +1,4 @@
-PROJ_NAME=step1
+PROJ_NAME=adcdma
 
 USE_OXC = y
 # USE_OXC_DEVIO = y
@@ -14,16 +14,21 @@ USE_USB_DEFAULT_CDC = y
 # TODO: copy to main location
 OXCDIR = /home/atu/proj/stm32/oxc
 
-
 SRCS  = main.cpp
 SRCS += usbfs_init.cpp
+SRCS += adc_init.cpp
+SRCS += tim2_init.cpp
 
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
 # list: see ../common/f4_modules.mk
 
+SRCS += stm32f4xx_hal_adc.c
+SRCS += stm32f4xx_hal_tim.c
+SRCS += stm32f4xx_hal_tim_ex.c
+SRCS += stm32f4xx_hal_dma.c
 
-
+# USB modules added automaticaly  if USE_OXC_CONSOLE_USB_CDC = y
 
 include ../common/board_add.mk
 include $(OXCDIR)/mk/common_cortex.mk

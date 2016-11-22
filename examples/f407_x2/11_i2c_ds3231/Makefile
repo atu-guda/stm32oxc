@@ -17,6 +17,7 @@ OXCDIR = /home/atu/proj/stm32/oxc
 
 
 SRCS  = main.cpp
+SRCS += usbfs_init.cpp
 SRCS += i2c1_default_init.cpp
 
 SRCS += oxc_ds3231.cpp

@@ -207,8 +207,10 @@ ifeq "$(USE_USB_DEFAULT_CDC)" "y"
   SRCS += usbd_desc.cpp
   # USB: hal:
   SRCS += stm32$(MCSUFF)xx_hal_pcd.c
-  SRCS += stm32$(MCSUFF)xx_ll_usb.c
   SRCS += stm32$(MCSUFF)xx_hal_pcd_ex.c
+  ifneq "$(MCSUFF)" "f3"
+    SRCS += stm32$(MCSUFF)xx_ll_usb.c
+  endif
   # USB: lib:
   SRCS += usbd_core.c
   SRCS += usbd_cdc.c
@@ -216,11 +218,6 @@ ifeq "$(USE_USB_DEFAULT_CDC)" "y"
   SRCS += usbd_ioreq.c
 endif
 
-ifeq "$(USE_OXC_CONSOLE_USB_CDC)"  "y"
-  SRCS += stm32f4xx_hal_pcd.c
-  SRCS += stm32f4xx_ll_usb.c
-  SRCS += stm32f4xx_hal_pcd_ex.c
-endif
 
 vpath %.c   $(SRCPATHS) $(OXCSRC)/startup
 vpath %.cpp $(SRCPATHS)
