@@ -23,6 +23,7 @@ void ADC_DMA_REINIT();
 void pr_ADC_state();
 ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
+const uint32_t tim_freq_in = 84000000; // depend in MCU, freq TODO: calculate
 uint32_t t_step = 100000; // in us, recalculated before measurement
 int v_adc_ref = 3250; // in mV, measured before test, adjust as UVAR('v')
 const uint32_t n_ADC_ch_max = 4; // current - in UVAR('c')
@@ -94,7 +95,7 @@ int main(void)
 
   UVAR('t') = 1000; // 1 s extra wait
   UVAR('v') = v_adc_ref;
-  UVAR('p') = 99; // timer PSC, for 1MHz
+  UVAR('p') = 84-1; // timer PSC, for 1MHz
   UVAR('a') = 99999; // timer ARR, for 10Hz
   UVAR('c') = n_ADC_ch_max;
   UVAR('n') = 8; // number of series
@@ -166,11 +167,11 @@ int cmd_test0( int argc, const char * const * argv )
 
   uint32_t sampl_t_idx = UVAR('s');
   if( sampl_t_idx >= n_sampl_times ) { sampl_t_idx = n_sampl_times-1; };
-  uint32_t f_sampl_ser = 25000000 / ( sampl_times_cycles[sampl_t_idx] * n_ch );
+  uint32_t f_sampl_ser = 21000000 / ( sampl_times_cycles[sampl_t_idx] * n_ch );
 
   t_step =  (UVAR('a')+1) * (UVAR('p')+1); // in timer input ticks
-  uint32_t tim_f = 100000000 / t_step; // timer update freq
-  t_step /= 100; // * 1e6 / 1e8
+  uint32_t tim_f = tim_freq_in / t_step; // timer update freq
+  t_step /= 84; // * 1e6 / 84e6
   uint32_t t_wait0 = n  * t_step / 1000;
   if( t_wait0 < 1 ) { t_wait0 = 1; }
 
@@ -267,20 +268,26 @@ int cmd_out( int argc, const char * const * argv )
   uint8_t n_ch = UVAR('c');
   if( n_ch > n_ADC_ch_max ) { n_ch = n_ADC_ch_max; };
   if( n_ch < 1 ) { n_ch = 1; };
-  uint32_t n = arg2long_d( 1, argc, argv, n_series, 0, n_series+1 ); // number output series
-  uint32_t st= arg2long_d( 2, argc, argv, 0,        0, n_series+1 ); // number output series
+  uint32_t n = arg2long_d( 1, argc, argv, n_series_todo+1, 0, n_series_todo+1 ); // number output series
+  uint32_t st= arg2long_d( 2, argc, argv, 0,            0, n_series_todo-2 );
 
-  uint32_t t = 0;
-  for( uint32_t i=st; i< n+st; ++i ) {
+  if( n+st >= n_series_todo+1 ) {
+    n = 1 + n_series_todo - st;
+  }
+
+  uint32_t t = st * t_step;
+  for( uint32_t i=0; i< n; ++i ) {
+    uint32_t ii = i + st;
     ifcvt( t, 1000000, buf, 6 );
     pr( buf ); pr( "   " );
     for( int j=0; j< n_ch; ++j ) {
-      int vv = adc_v0[i*n_ch+j] * 10 * UVAR('v') / 4096;
+      int vv = adc_v0[ii*n_ch+j] * 10 * UVAR('v') / 4096;
       ifcvt( vv, 10000, buf, 4 );
       pr( buf ); pr( "  " );
     }
     t += t_step;
     pr( NL );
+    delay_ms( 10 );
   }
   pr( NL );
 
