@@ -30,10 +30,7 @@ const CmdInfo* global_cmds[] = {
 
 
 extern "C" {
-
 void task_main( void *prm UNUSED_ARG );
-
-
 }
 
 
@@ -45,7 +42,6 @@ void MX_FMC_Init(void);
 void BSP_SDRAM_Initialization_sequence( uint32_t RefreshCount );
 
 STD_USART1_SEND_TASK( usartio );
-// STD_USART1_RECV_TASK( usartio );
 STD_USART1_IRQ( usartio );
 
 int main(void)

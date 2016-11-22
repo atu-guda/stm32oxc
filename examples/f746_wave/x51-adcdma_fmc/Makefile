@@ -1,4 +1,4 @@
-PROJ_NAME=fmc
+PROJ_NAME=adcdma_fmc
 
 USE_OXC = y
 # USE_OXC_DEVIO = y
@@ -17,15 +17,20 @@ OXCDIR = /home/atu/proj/stm32/oxc
 
 SRCS  = main.cpp
 SRCS += uart1_b6b7_hw.cpp
+SRCS += adc_init.cpp
+SRCS += tim2_init.cpp
 # SRCS += empty_test0_function.cpp
 SRCS += fmc_sdram_init.cpp
 
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
 # see ../common/f7_modules.mk
+SRCS += stm32f7xx_hal_adc.c
+SRCS += stm32f7xx_hal_adc_ex.c
+SRCS += stm32f7xx_hal_tim.c
+SRCS += stm32f7xx_hal_tim_ex.c
 
-SRCS += stm32f7xx_hal_uart.c
-#SRCS += stm32f7xx_hal_dma.c
+SRCS += stm32f7xx_hal_dma.c
 SRCS += stm32f7xx_hal_sdram.c
 SRCS += stm32f7xx_ll_fmc.c
 
