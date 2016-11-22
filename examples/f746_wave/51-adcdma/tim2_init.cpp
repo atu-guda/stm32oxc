@@ -37,14 +37,14 @@ void tim2_init( uint16_t presc, uint32_t arr )
     Error_Handler( 11 );
   }
 
-  if( HAL_TIM_Base_Start_IT( &tim2h ) != HAL_OK ) {
-    Error_Handler( 4 );
-    return;
-  }
-  // if( HAL_TIM_Base_Start( &tim2h ) != HAL_OK ) {
+  // if( HAL_TIM_Base_Start_IT( &tim2h ) != HAL_OK ) {
   //   Error_Handler( 4 );
   //   return;
   // }
+  if( HAL_TIM_Base_Start( &tim2h ) != HAL_OK ) {
+    Error_Handler( 4 );
+    return;
+  }
 
 }
 

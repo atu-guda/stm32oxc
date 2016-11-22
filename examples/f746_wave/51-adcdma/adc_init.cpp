@@ -10,6 +10,8 @@ void ADC_DMA_REINIT();
 
 void MX_ADC1_Init( uint8_t n_ch, uint32_t sampl_time )
 {
+  __HAL_RCC_ADC1_CLK_ENABLE();
+  __HAL_RCC_DAC_CLK_ENABLE(); // !!!!!!!!!!!!! ?????????? see errata
   ADC_ChannelConfTypeDef sConfig;
   if( n_ch > 4 ) { n_ch = 4; }
   if( n_ch < 1 ) { n_ch = 1; }
@@ -25,7 +27,6 @@ void MX_ADC1_Init( uint8_t n_ch, uint32_t sampl_time )
   // hadc1.Init.ExternalTrigConvEdge  = ADC_EXTERNALTRIGCONVEDGE_NONE;
   hadc1.Init.ExternalTrigConvEdge  = ADC_EXTERNALTRIGCONVEDGE_RISING;
   hadc1.Init.ExternalTrigConv      = ADC_EXTERNALTRIGCONV_T2_TRGO;
-  // hadc1.Init.ExternalTrigConv      = ADC_EXTERNALTRIGCONV_T1_TRGO; // just test: no diff found
 
   hadc1.Init.DataAlign             = ADC_DATAALIGN_RIGHT;
   hadc1.Init.NbrOfConversion       = n_ch;
@@ -40,13 +41,7 @@ void MX_ADC1_Init( uint8_t n_ch, uint32_t sampl_time )
   /**Configure for the selected ADC regular channels its corresponding rank in the sequencer and its sample time.  */
   decltype(ADC_CHANNEL_0) static const constexpr chs[]  { ADC_CHANNEL_0, ADC_CHANNEL_1, ADC_CHANNEL_2, ADC_CHANNEL_3 };
   sConfig.SamplingTime = sampl_time;
-  // sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;   //  15  tick: 1.6 MSa,  0.6  us
-  // sConfig.SamplingTime = ADC_SAMPLETIME_15CYCLES;  //  27  tick: 925 kSa,  1.08 us
-  // sConfig.SamplingTime = ADC_SAMPLETIME_28CYCLES;  //  40  tick: 615 kSa,  1.6  us
-  // sConfig.SamplingTime = ADC_SAMPLETIME_56CYCLES;  //  68  tick: 367 kSa,  2.72 us
-  // sConfig.SamplingTime = ADC_SAMPLETIME_84CYCLES;  //  96  tick: 260 kSa,  3.84 us
-  // sConfig.SamplingTime = ADC_SAMPLETIME_144CYCLES; // 156  tick: 160 kSa,  6.24 us
-  // sConfig.SamplingTime = ADC_SAMPLETIME_480CYCLES; // 492  tick:  50 kSa, 19.68 us
+
   int rank = 1;
   for( auto ch : chs  ) {
     sConfig.Channel = ch;
@@ -58,7 +53,7 @@ void MX_ADC1_Init( uint8_t n_ch, uint32_t sampl_time )
 
 }
 
-void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
+void HAL_ADC_MspInit( ADC_HandleTypeDef* adcHandle )
 {
   GPIO_InitTypeDef GPIO_InitStruct;
   if( adcHandle->Instance == ADC1 )  {

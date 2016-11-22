@@ -20,6 +20,7 @@ void ADC_DMA_REINIT();
 void pr_ADC_state();
 ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
+const uint32_t tim_freq_in = 100000000; // depend in MCU, freq TODO: calculate
 uint32_t t_step = 100000; // in us, recalculated before measurement
 int v_adc_ref = 3250; // in mV, measured before test, adjust as UVAR('v')
 const uint32_t n_ADC_ch_max = 4; // current - in UVAR('c')
@@ -30,7 +31,7 @@ volatile int adc_end_dma = 0;
 volatile int adc_dma_error = 0;
 volatile uint32_t n_series = 0;
 uint32_t n_series_todo = 0;
-const uint32_t n_sampl_times = 7; // curremt numner - in UVAR('s')
+const uint32_t n_sampl_times = 7; // current number - in UVAR('s')
 const uint32_t sampl_times_codes[n_sampl_times] = { // all for 25 MHz ADC clock
   ADC_SAMPLETIME_3CYCLES   , //  15  tick: 1.6 MSa,  0.6  us
   ADC_SAMPLETIME_15CYCLES  , //  27  tick: 925 kSa,  1.08 us
@@ -49,6 +50,7 @@ const uint32_t sampl_times_cycles[n_sampl_times] = { // sample+conv(12)
    156,  // ADC_SAMPLETIME_144CYCLES   tick: 160 kSa,  6.24 us
    492,  // ADC_SAMPLETIME_480CYCLES   tick:  50 kSa, 19.68 us
 };
+
 
 
 TIM_HandleTypeDef tim2h;
@@ -181,7 +183,7 @@ int cmd_test0( int argc, const char * const * argv )
   uint32_t f_sampl_ser = 25000000 / ( sampl_times_cycles[sampl_t_idx] * n_ch );
 
   t_step =  (UVAR('a')+1) * (UVAR('p')+1); // in timer input ticks
-  uint32_t tim_f = 100000000 / t_step; // timer update freq
+  uint32_t tim_f = tim_freq_in / t_step; // timer update freq
   t_step /= 100; // * 1e6 / 1e8
   uint32_t t_wait0 = n  * t_step / 1000;
   if( t_wait0 < 1 ) { t_wait0 = 1; }
@@ -207,8 +209,6 @@ int cmd_test0( int argc, const char * const * argv )
   MX_ADC1_Init( n_ch, sampl_t_idx );
   delay_ms( 10 );
 
-  tim2_init( UVAR('p'), UVAR('a') );
-
   // log_add( "Test0 " );
 
   break_flag = 0;
@@ -222,7 +222,8 @@ int cmd_test0( int argc, const char * const * argv )
   if( HAL_ADC_Start_DMA( &hadc1, (uint32_t*)adc_v0, n_ADC_bytes ) != HAL_OK )   {
     pr( "ADC_Start_DMA error" NL );
   }
-  ADC1->CR2 |= 0x40000000; // SWSTART???
+  tim2_init( UVAR('p'), UVAR('a') );
+  // ADC1->CR2 |= 0x40000000; // SWSTART???
 
   delay_ms( t_wait0 );
   for( uint32_t ti=0; adc_end_dma == 0 && ti<(uint32_t)UVAR('t'); ++ti ) {
@@ -239,8 +240,6 @@ int cmd_test0( int argc, const char * const * argv )
     pr( "Found DMA error "  ); pr_d( adc_dma_error ); pr( NL );
   }
   pr( "  tick: "); pr_d( tcc - tc00 );
-  pr( "  n_series: "); pr_d( n_series ); pr( NL );
-
   pr( NL );
 
   bool was_hole = false;
@@ -279,20 +278,26 @@ int cmd_out( int argc, const char * const * argv )
   uint8_t n_ch = UVAR('c');
   if( n_ch > n_ADC_ch_max ) { n_ch = n_ADC_ch_max; };
   if( n_ch < 1 ) { n_ch = 1; };
-  uint32_t n = arg2long_d( 1, argc, argv, n_series, 0, n_series+1 ); // number output series
-  uint32_t st= arg2long_d( 2, argc, argv, 0,        0, n_series+1 ); // number output series
+  uint32_t n = arg2long_d( 1, argc, argv, n_series_todo, 0, n_series_todo+1 ); // number output series
+  uint32_t st= arg2long_d( 2, argc, argv,             0, 0, n_series_todo-2 );
 
-  uint32_t t = 0;
-  for( uint32_t i=st; i< n+st; ++i ) {
+  if( n+st >= n_series_todo+1 ) {
+    n = 1 + n_series_todo - st;
+  }
+
+  uint32_t t = st * t_step;
+  for( uint32_t i=0; i< n; ++i ) {
+    uint32_t ii = i + st;
     ifcvt( t, 1000000, buf, 6 );
     pr( buf ); pr( "   " );
     for( int j=0; j< n_ch; ++j ) {
-      int vv = adc_v0[i*n_ch+j] * 10 * UVAR('v') / 4096;
+      int vv = adc_v0[ii*n_ch+j] * 10 * UVAR('v') / 4096;
       ifcvt( vv, 10000, buf, 4 );
       pr( buf ); pr( "  " );
     }
     t += t_step;
     pr( NL );
+    delay_ms( 5 );
   }
   pr( NL );
 
@@ -302,23 +307,24 @@ int cmd_out( int argc, const char * const * argv )
 
 void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc )
 {
+  // tim2_deinit();
   UVAR('x') = hadc1.Instance->SR;
-  // HAL_ADC_Stop_DMA( hadc );
   hadc1.Instance->SR = 0;
-  adc_end_dma = 1;
+  adc_end_dma |= 1;
   leds.toggle( BIT2 );
   ++UVAR('g'); // 'g' means good
 }
 
 void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc )
 {
+  // tim2_deinit();
   UVAR('z') = HAL_ADC_GetError( hadc );
   adc_dma_error = hadc->DMA_Handle->ErrorCode;
   UVAR('y') = hadc1.Instance->SR;
   HAL_ADC_Stop_DMA( hadc );
   hadc1.Instance->SR = 0;
   hadc->DMA_Handle->ErrorCode = 0;
-  adc_end_dma = 2;
+  adc_end_dma |= 2;
   // leds.toggle( BIT0 );
   ++UVAR('e');
 }
@@ -333,18 +339,23 @@ void TIM2_IRQHandler(void)
   HAL_TIM_IRQHandler( &tim2h );
 }
 
+// not used for now: only TRGO
 void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
 {
   ++UVAR('i');
   UVAR('j') = htim->Instance->CNT;
   ++n_series;
   if( n_series < n_series_todo ) {
-    ADC1->CR2 |= 0x40000000; // SWSTART???
+    // ADC1->CR2 |= 0x40000000; // SWSTART???
   } else {
     htim->Instance->CR1 &= ~1u;
     // STOP?
   }
   leds.toggle( BIT1 );
+}
+
+void HAL_ADCEx_InjectedConvCpltCallback( ADC_HandleTypeDef * /*hadc*/ )
+{
 }
 
 // // configs
