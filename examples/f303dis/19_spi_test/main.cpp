@@ -23,12 +23,15 @@ CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
 
 int cmd_sendr_spi( int argc, const char * const * argv );
 CmdInfo CMDINFO_SENDR { "sendr", 'S', cmd_sendr_spi, "[0xXX ...] - send bytes, recv UVAR('r')"  };
+int cmd_send_spi1( int argc, const char * const * argv );
+CmdInfo CMDINFO_SEND1 { "send1", 'Z', cmd_send_spi1, "0xXX - send 1 bytes"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
 
   &CMDINFO_TEST0,
   &CMDINFO_SENDR,
+  &CMDINFO_SEND1,
   nullptr
 };
 
@@ -170,6 +173,24 @@ int cmd_sendr_spi( int argc, const char * const * argv )
   pr( NL "sendr end." NL );
   return 0;
 }
+
+int cmd_send_spi1( int argc, const char * const * argv )
+{
+  uint8_t d = arg2long_d( 0, argc, argv, 0, 0, 0xFF );
+
+  pr( NL "Send1: d= " ); pr_h( d ); 
+  pr( NL );
+
+  int rc = spi_d.send( &d, 1 );
+
+  pr_sdx( rc );
+  delay_ms( 10 );
+  break_flag = 0;  idle_flag = 1;
+
+  pr( NL "send1 end." NL );
+  return 0;
+}
+
 
 //  ----------------------------- configs ----------------
 

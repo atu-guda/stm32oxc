@@ -44,7 +44,7 @@ void task_main( void *prm UNUSED_ARG );
 
 I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 ); // zero add means no real device
-HD44780_i2c lcdt{ &i2ch };
+HD44780_i2c lcdt( &i2ch, 0x3F );
 
 void MX_I2C1_Init( I2C_HandleTypeDef &i2c, uint32_t speed = 100000 );
 
