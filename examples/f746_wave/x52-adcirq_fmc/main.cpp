@@ -66,12 +66,15 @@ int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test ADC"  };
 int cmd_out( int argc, const char * const * argv );
 CmdInfo CMDINFO_OUT { "out", 'O', cmd_out, " [N [start]]- output data "  };
+int cmd_set_leds_step( int argc, const char * const * argv );
+CmdInfo CMDINFO_LSTEP { "set_leds_step", 'L', cmd_set_leds_step, " [N] - set leds step in 10 ms "  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
 
   &CMDINFO_TEST0,
   &CMDINFO_OUT,
+  &CMDINFO_LSTEP,
   nullptr
 };
 
@@ -233,6 +236,7 @@ int cmd_test0( int argc, const char * const * argv )
   delay_ms( 1 ); // TODO: check
   tim2_init( UVAR('p'), UVAR('a') );
 
+  idle_flag = 1;
   delay_ms( t_wait0 ); // main wait
   for( uint32_t ti=0;  n_cvt < n_cvt_todo && ti<(uint32_t)UVAR('t'); ++ti ) { // additiona wait
     delay_ms(10);
@@ -302,10 +306,20 @@ int cmd_out( int argc, const char * const * argv )
     }
     t += t_step;
     pr( NL );
+    idle_flag = 1;
     delay_ms( 1 );
   }
   pr( NL );
 
+  return 0;
+}
+
+int cmd_set_leds_step( int argc, const char * const * argv )
+{
+  uint32_t nstep = arg2long_d( 1, argc, argv, 50, 1, 100000 ); // number output series
+  task_leds_step = nstep;
+  pr( "LEDS step is set to " ); pr_d( task_leds_step ); pr( " = " ); pr_d( task_leds_step * TASK_LEDS_QUANT );
+  pr( " ms" NL );
   return 0;
 }
 

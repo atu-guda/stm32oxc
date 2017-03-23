@@ -8,14 +8,14 @@
 
 using namespace SMLRL;
 
-volatile int task_leds_step = 5;
+volatile int task_leds_step = 50; // 500 ms def
 
 void task_leds( void *prm UNUSED_ARG )
 {
   while (1) {
     int dly = task_leds_step * TASK_LEDS_QUANT;
-    if( dly < 10 )    { dly = 10;    };
-    if( dly > 10000 ) { dly = 10000; };
+    if( dly < 10 )      { dly =      10; }; // 10 ms min
+    if( dly > 1000000 ) { dly = 1000000; }; // 1000 s max
     #ifdef LED_BSP_IDLE
       leds.toggle( LED_BSP_IDLE );
     #else
