@@ -50,6 +50,13 @@ $(info MCSUFF is $(MCSUFF) )
 
 ALLFLAGS  += -D$(MCTYPE) -D$(MCBASE) -DMCTYPE=$(MCTYPE) -DMCBASE=$(MCBASE)
 
+
+ifeq "$(USE_FLOAT_SOFTFP)" "y"
+  FLOAT_ABI = softfp
+else
+  FLOAT_ABI = hard
+endif
+
 KNOWN_MCU := no
 ifeq "$(MCBASE)" "STM32F0"
   ARCHFLAGS = -mthumb -mcpu=cortex-m0 -mfix-cortex-m3-ldrd
@@ -64,15 +71,15 @@ ifeq "$(MCBASE)" "STM32F2"
   KNOWN_MCU := yes
 endif
 ifeq "$(MCBASE)" "STM32F3"
-  ARCHFLAGS = -mthumb -mcpu=cortex-m4 -mfloat-abi=softfp -mfpu=fpv4-sp-d16
+  ARCHFLAGS = -mthumb -mcpu=cortex-m4 -mfloat-abi=$(FLOAT_ABI) -mfpu=fpv4-sp-d16
   KNOWN_MCU := yes
 endif
 ifeq "$(MCBASE)" "STM32F4"
-  ARCHFLAGS += -mthumb -mcpu=cortex-m4 -mfloat-abi=softfp -mfpu=fpv4-sp-d16
+  ARCHFLAGS += -mthumb -mcpu=cortex-m4 -mfloat-abi=$(FLOAT_ABI) -mfpu=fpv4-sp-d16
   KNOWN_MCU := yes
 endif
 ifeq "$(MCBASE)" "STM32F7"
-  ARCHFLAGS += -mthumb -mcpu=cortex-m7 -mfloat-abi=softfp -mfpu=fpv4-sp-d16
+  ARCHFLAGS += -mthumb -mcpu=cortex-m7 -mfloat-abi=$(FLOAT_ABI) -mfpu=fpv4-sp-d16
   KNOWN_MCU := yes
 endif
 
