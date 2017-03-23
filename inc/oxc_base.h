@@ -54,7 +54,7 @@
 #endif
 
 #if REQ_MCBASE != MCBASE
-  #error "Required and give MCBASE is not equal"
+  #error "Required and given MCBASE is not equal"
 #endif
 
 #define UNUSED_ARG __attribute__((unused))

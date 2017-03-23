@@ -2,6 +2,7 @@
 
 MCTYPE = STM32F746
 MCINCTYPE = $(MCTYPE)xx
+FREERTOS_ARCHNAME = ARM_CM4F
 
 vpath %.cpp ../common ../../common
 

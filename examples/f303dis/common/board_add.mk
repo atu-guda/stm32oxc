@@ -2,6 +2,7 @@
 
 MCTYPE = STM32F303
 MCINCTYPE = STM32F303xC
+FREERTOS_ARCHNAME = ARM_CM4F
 
 vpath %.cpp ../common ../../common
 

@@ -20,9 +20,8 @@ OBJDIR=.objs
 
 
 # FreeRTOS: rtos/Source -> /usr/share/FreeRTOS/Source (or ../common/rtos ...)
-RTDIR=rtos
-RTSRC=$(RTDIR)/Source
-RTINC=$(RTSRC)/include
+RTDIR=/usr/share/FreeRTOS/Source
+RTINC=$(RTDIR)/include
 
 ###################################################
 
@@ -178,23 +177,20 @@ endif
 
 
 ifeq "$(USE_FREERTOS)" "y"
-  SRCPATHS += $(RTSRC) $(RTDIR)
-  ALLFLAGS += -I$(RTINC) -DUSE_FREERTOS
+  RTARCH = $(RTDIR)/portable/GCC/$(FREERTOS_ARCHNAME)
+  SRCPATHS += $(RTDIR) $(RTARCH) $(RTDIR)/portable/MemMang
+  ALLFLAGS += -I$(RTINC)  -I$(RTARCH) -DUSE_FREERTOS
   ifndef FREERTOS_HEAP
     FREERTOS_HEAP = heap_3.c
   endif
-  # rtos -> /usr/share/FreeRTOS
-  #SRCS += croutine.c
+  # SRCS += croutine.c
+  # SRCS += event_groups.c
   SRCS += list.c
   SRCS += queue.c
   SRCS += tasks.c
   SRCS += timers.c
-  # symlink to Source/portable/GCC/ARM_CM3/port.c <<< change
   SRCS += $(FREERTOS_HEAP)
-  # symlink to Source/portable/GCC/ARM_CM4F/port.c <<< change
   SRCS += port.c
-  # Beware: portmacro.h is symlink to
-  #  rtos/Source/portable/GCC/ARM_CM3/portmacro.h or CM4F
 endif
 
 ifeq "$(USE_FONTS)" "y"
