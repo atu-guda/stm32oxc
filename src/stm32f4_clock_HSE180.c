@@ -4,12 +4,12 @@
 #error This SystemClock_Config is for stm32f4xx only
 #endif
 
-#if REQ_SYSCLK_FREQ != 168
-#error This SystemClock_Config in for 168 MHz only
+#if REQ_SYSCLK_FREQ != 180
+#error This SystemClock_Config in for 180 MHz only
 #endif
 
-// /8, *336, /2 /7
-// 168 MHz, 48 MHz for USB, 21 MHz for ADC (/8)
+// 180 = /8, *360, /2
+// 180 Mhz, no USB, 22.5 MHz for ADC (/8)
 
 
 void SystemClock_Config(void)
@@ -27,7 +27,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLM = 8;
-  RCC_OscInitStruct.PLL.PLLN = 336;
+  RCC_OscInitStruct.PLL.PLLN = 360;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
   RCC_OscInitStruct.PLL.PLLQ = 7;
   if( HAL_RCC_OscConfig( &RCC_OscInitStruct ) != HAL_OK ) {

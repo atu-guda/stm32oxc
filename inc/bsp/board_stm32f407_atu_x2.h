@@ -6,8 +6,11 @@
 
 // default LEDS is C0:C3
 #define BOARD_N_LEDS 4
+#define BOARD_LEDS_GPIO GPIOC
+#define BOARD_LEDS_OFS  0
+#define BOARD_LEDS_MASK 0x000F
 
-#define BOARD_DEFINE_LEDS PinsOut leds( GPIOC, 0, BOARD_N_LEDS );
+#define BOARD_DEFINE_LEDS PinsOut leds( BOARD_LEDS_GPIO, BOARD_LEDS_OFS, BOARD_N_LEDS );
 
 #define LED_BSP_RED       1
 #define LED_BSP_RED_0     1

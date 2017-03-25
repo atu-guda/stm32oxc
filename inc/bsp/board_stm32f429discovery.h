@@ -14,10 +14,14 @@
 // Used internally, but can be used soveware:
 //   USART1->STLINK.VCP(A9,A10)
 
-// default LEDS is G3 (Green), G4 (Red)
+// default LEDS is G13 (Green), G14 (Red)
 #define BOARD_N_LEDS 2
+#define BOARD_LEDS_GPIO GPIOG
+#define BOARD_LEDS_GPIO_ON __GPIOG_CLK_ENABLE()
+#define BOARD_LEDS_OFS  13
+#define BOARD_LEDS_MASK 0x6000
 
-#define BOARD_DEFINE_LEDS PinsOut leds( GPIOG, 0, BOARD_N_LEDS );
+#define BOARD_DEFINE_LEDS PinsOut leds( BOARD_LEDS_GPIO, BOARD_LEDS_OFS, BOARD_N_LEDS );
 
 #define LED_BSP_GREEN     1
 #define LED_BSP_GREEN_0   1

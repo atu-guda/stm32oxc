@@ -1,31 +1,26 @@
-PROJ_NAME=i2c_test
+PROJ_NAME=leds
 
 USE_OXC = y
 # USE_OXC_DEVIO = y
-USE_OXC_DEBUG = y
+USE_OXC_DEBUG = n
 USE_OXC_CONSOLE_USART = n
-USE_OXC_CONSOLE_USB_CDC = y
-USE_OXC_I2C = y
-USE_FREERTOS = y
+USE_OXC_CONSOLE_USB_CDC = n
+USE_FREERTOS = n
 # FREERTOS_HEAP = heap_2.c
 # # default: heap_3.c
-USE_USB_DEFAULT_CDC = y
+# USE_USB_DEFAULT_CDC = y
 
-# LIBS += -L$(STMDIR)/lib/STemWin -lSTemWin532_CM4_GCC
-# LIBS += -L$(STMDIR)/lib/STemWin/STemWin532_CM4_OS_GCC.a
 
 # TODO: copy to main location
 OXCDIR = /home/atu/proj/stm32/oxc
 
 
 SRCS  = main.cpp
-SRCS += usbfs_init.cpp
-SRCS += i2c1_default_init.cpp
 
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
 # list: see ../common/f4_modules.mk
-
+# SRCS += stm32f4xx_hal_pwr_ex.c
 
 
 

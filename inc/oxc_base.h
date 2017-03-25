@@ -105,7 +105,6 @@ typedef const char *const ccstr;
 
 
 // timings for bad loop delays TODO: for other too
-// for 72MHz
 #if REQ_SYSCLK_FREQ == 24
   #define T_MKS_MUL    2
   #define T_MS_MUL  2660
@@ -126,10 +125,22 @@ typedef const char *const ccstr;
   #define T_MKS_MUL 9
   #define T_MS_MUL  7979
   #define T_S_MUL   10259736
+#elif REQ_SYSCLK_FREQ == 144
+  #define T_MKS_MUL 29
+  #define T_MS_MUL  29010
+  #define T_S_MUL   29010000
 #elif REQ_SYSCLK_FREQ == 168
   #define T_MKS_MUL 32
   #define T_MS_MUL  33845
   #define T_S_MUL   33845000
+#elif REQ_SYSCLK_FREQ == 180
+  #define T_MKS_MUL 36
+  #define T_MS_MUL  36263
+  #define T_S_MUL   36262500
+#elif REQ_SYSCLK_FREQ == 192
+  #define T_MKS_MUL 39
+  #define T_MS_MUL  38680
+  #define T_S_MUL   38680000
 #elif REQ_SYSCLK_FREQ == 200
   #define T_MKS_MUL 40
   #define T_MS_MUL  40292

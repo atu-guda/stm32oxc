@@ -6,13 +6,16 @@
 
 // default LEDS is E8:E15
 #define BOARD_N_LEDS 8
+#define BOARD_LEDS_GPIO GPIOE
+#define BOARD_LEDS_OFS  8
+#define BOARD_LEDS_MASK 0xFF00
 
-#define BOARD_DEFINE_LEDS PinsOut leds( GPIOE, 8, BOARD_N_LEDS );
+#define BOARD_DEFINE_LEDS PinsOut leds( BOARD_LEDS_GPIO, BOARD_LEDS_OFS, BOARD_N_LEDS );
 
 // mini LEDS is E12:E15
 #define BOARD_N_LEDS_MINI 4
 
-#define BOARD_DEFINE_LEDS_MINI PinsOut leds( GPIOE, 12, BOARD_N_LEDS_MINI );
+#define BOARD_DEFINE_LEDS_MINI PinsOut leds( BOARD_LEDS_GPIO, 12, BOARD_N_LEDS_MINI );
 
 #define LED_BSP_BLUE         1
 #define LED_BSP_BLUE_0       1

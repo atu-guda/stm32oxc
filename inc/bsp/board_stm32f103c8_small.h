@@ -6,8 +6,11 @@
 
 // signle onboard LED is C13
 #define BOARD_N_LEDS 1
+#define BOARD_LEDS_GPIO GPIOC
+#define BOARD_LEDS_OFS  13
+#define BOARD_LEDS_MASK 0x6000
 
-#define BOARD_DEFINE_LEDS PinsOut leds( GPIOC, 13, BOARD_N_LEDS );
+#define BOARD_DEFINE_LEDS PinsOut leds( BOARD_LEDS_GPIO, BOARD_LEDS_OFS, BOARD_N_LEDS );
 
 // extra LEDS is B12:B15
 #define BOARD_N_LEDS_EXTRA 4
