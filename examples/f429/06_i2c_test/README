@@ -1,0 +1,8 @@
+Test I2C devices on I2C3
+
+SCL = A8 + 4.7k pullUp
+SDA = C9 + 4.7k pullUp
+
+Console:  USART1 + VCP on ST-Link V2-1
+
+
