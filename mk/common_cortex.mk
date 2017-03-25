@@ -61,7 +61,15 @@ ifeq "$(MCBASE)" "STM32F0"
   ARCHFLAGS = -mthumb -mcpu=cortex-m0 -mfix-cortex-m3-ldrd
   KNOWN_MCU := yes
 endif
+ifeq "$(MCBASE)" "STM32L0"
+  ARCHFLAGS = -mthumb -mcpu=cortex-m0 -mfix-cortex-m3-ldrd
+  KNOWN_MCU := yes
+endif
 ifeq "$(MCBASE)" "STM32F1"
+  ARCHFLAGS = -mthumb -mcpu=cortex-m3 -mfix-cortex-m3-ldrd
+  KNOWN_MCU := yes
+endif
+ifeq "$(MCBASE)" "STM32L1"
   ARCHFLAGS = -mthumb -mcpu=cortex-m3 -mfix-cortex-m3-ldrd
   KNOWN_MCU := yes
 endif
