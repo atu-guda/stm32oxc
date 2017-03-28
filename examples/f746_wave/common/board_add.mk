@@ -3,6 +3,7 @@
 MCTYPE = STM32F746
 MCINCTYPE = $(MCTYPE)xx
 FREERTOS_ARCHNAME = ARM_CM4F
+BOARDNAME = STM32F746-wave0 # none
 
 vpath %.cpp ../common ../../common
 

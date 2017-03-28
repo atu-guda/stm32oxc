@@ -5,11 +5,16 @@ CXX:=$(TARGET)-g++
 CPP:=$(TARGET)-cpp
 OBJCOPY:=$(TARGET)-objcopy
 OBJDUMP:=$(TARGET)-objdump
+LINK=$(CXX)
 
 STMDIR=/usr/share/stm32cube
 STMINC=$(STMDIR)/inc
 STMSRC=$(STMDIR)/src
 STMLD=$(STMDIR)/ld
+STMMK=$(STMDIR)/mk
+STMBSP=$(STMDIR)/bsp
+STMBOARDDIR=$(STMBSP)/$(BOARDNAME)
+STMCOMPONENTS=$(STMBSP)/Components
 
 # OXCDIR := oxc // from Makefile
 OXCINC = $(OXCDIR)/inc
@@ -107,9 +112,9 @@ LDFLAGS += -Wl,--start-group -lc -lgcc -lnosys -Wl,--end-group
 
 ###################################################
 
-ALLFLAGS += -I. -I$(STMINC)
+ALLFLAGS += -I. -I$(STMINC) -I$(STMBOARDDIR)
 
-SRCPATHS =  $(STMSRC) $(STMSRC)/templates $(ADDSRC)
+SRCPATHS =  $(STMSRC) $(STMSRC)/templates  $(STMBOARDDIR) $(ADDSRC)
 
 ifeq "$(USE_OXC_CONSOLE_USART)" "y"
   # $(info "Used USART console" )
