@@ -1,4 +1,7 @@
+#ifndef _BOARD_STM32F429DISCOVERY_SDRAM_H
+#define _BOARD_STM32F429DISCOVERY_SDRAM_H
 
+// ---------------- SDRAM -------------------------------------------------------------------------
 #define REFRESH_COUNT       ((uint32_t)0x056A)   /* SDRAM refresh counter (90MHz SDRAM clock) */
 #define SDRAM_BANK_ADDR                 ((uint32_t)0xD0000000)
 
@@ -22,3 +25,7 @@
 #define SDRAM_MODEREG_WRITEBURST_MODE_PROGRAMMED ((uint16_t)0x0000)
 #define SDRAM_MODEREG_WRITEBURST_MODE_SINGLE     ((uint16_t)0x0200)
 
+void SDRAM_Initialization_Sequence( SDRAM_HandleTypeDef *hsdram, FMC_SDRAM_CommandTypeDef *Command );
+int bsp_init_sdram( SDRAM_HandleTypeDef *phsdram );
+
+#endif

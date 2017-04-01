@@ -1,6 +1,6 @@
-#include <stm32f4xx_hal.h>
+#include <oxc_base.h>
 
-#include "main.h"
+#include <bsp/board_stm32f429discovery_sdram.h>
 
 void HAL_SDRAM_MspInit( SDRAM_HandleTypeDef *hsdram )
 {
@@ -95,7 +95,8 @@ void SDRAM_Initialization_Sequence( SDRAM_HandleTypeDef *hsdram, FMC_SDRAM_Comma
   HAL_SDRAM_SendCommand(hsdram, Command, 0x1000);
 
   /* Step 4: Insert 100 ms delay */
-  HAL_Delay(100);
+  // HAL_Delay(100);
+  delay_bad_ms( 100 );
 
   /* Step 5: Configure a PALL (precharge all) command */
   Command->CommandMode        = FMC_SDRAM_CMD_PALL;
@@ -136,3 +137,38 @@ void SDRAM_Initialization_Sequence( SDRAM_HandleTypeDef *hsdram, FMC_SDRAM_Comma
   HAL_SDRAM_ProgramRefreshRate( hsdram, REFRESH_COUNT );
 }
 
+int bsp_init_sdram( SDRAM_HandleTypeDef *phsdram )
+{
+  FMC_SDRAM_TimingTypeDef SDRAM_Timing;
+  FMC_SDRAM_CommandTypeDef command;
+  /*##-1- Configure the SDRAM device #########################################*/
+  phsdram->Instance = FMC_SDRAM_DEVICE;
+
+  // Timing configuration for 96 MHz of SDRAM clock frequency (192MHz/2)
+  // all other must be scaled to 192/180 = 1.066666666
+  SDRAM_Timing.LoadToActiveDelay    = 2; // TMRD: 2 Clock cycles
+  SDRAM_Timing.ExitSelfRefreshDelay = 7; // TXSR: min=70ns (6x11.90ns)
+  SDRAM_Timing.SelfRefreshTime      = 4; // TRAS: min=42ns (4x11.90ns) max=120k (ns)
+  SDRAM_Timing.RowCycleDelay        = 7; // TRC:  min=63 (6x11.90ns)
+  SDRAM_Timing.WriteRecoveryTime    = 2; // TWR:  2 Clock cycles
+  SDRAM_Timing.RPDelay              = 2; // TRP:  15ns => 2x11.90ns
+  SDRAM_Timing.RCDDelay             = 2; // TRCD: 15ns => 2x11.90ns
+
+  phsdram->Init.SDBank             = FMC_SDRAM_BANK2;
+  phsdram->Init.ColumnBitsNumber   = FMC_SDRAM_COLUMN_BITS_NUM_8;
+  phsdram->Init.RowBitsNumber      = FMC_SDRAM_ROW_BITS_NUM_12;
+  phsdram->Init.MemoryDataWidth    = SDRAM_MEMORY_WIDTH;
+  phsdram->Init.InternalBankNumber = FMC_SDRAM_INTERN_BANKS_NUM_4;
+  phsdram->Init.CASLatency         = FMC_SDRAM_CAS_LATENCY_3;
+  phsdram->Init.WriteProtection    = FMC_SDRAM_WRITE_PROTECTION_DISABLE;
+  phsdram->Init.SDClockPeriod      = SDCLOCK_PERIOD;
+  phsdram->Init.ReadBurst          = FMC_SDRAM_RBURST_DISABLE;
+  phsdram->Init.ReadPipeDelay      = FMC_SDRAM_RPIPE_DELAY_1;
+
+  if( HAL_SDRAM_Init( phsdram, &SDRAM_Timing ) != HAL_OK ) {
+    return 0;
+  }
+
+  SDRAM_Initialization_Sequence( phsdram, &command );
+  return 1;
+}

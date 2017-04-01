@@ -20,7 +20,7 @@ OXCDIR = /home/atu/proj/stm32/oxc
 SRCS  = main.cpp
 #SRCS += stm32f4_clock_HSE180.c
 SRCS += uart1_init_a9a10.cpp
-SRCS += f429i_disc_sdram.cpp
+SRCS += oxc_bsp_f429i_disc_sdram.cpp
 
 SRCS += empty_test0_function.cpp
 
