@@ -4,6 +4,7 @@
 // ---------------- SDRAM -------------------------------------------------------------------------
 #define REFRESH_COUNT       ((uint32_t)0x056A)   /* SDRAM refresh counter (90MHz SDRAM clock) */
 #define SDRAM_BANK_ADDR                 ((uint32_t)0xD0000000)
+#define SDRAM_ADDR ((uint8_t *)(SDRAM_BANK_ADDR))
 
 /* #define SDRAM_MEMORY_WIDTH            FMC_SDRAM_MEM_BUS_WIDTH_8 */
 #define SDRAM_MEMORY_WIDTH            FMC_SDRAM_MEM_BUS_WIDTH_16

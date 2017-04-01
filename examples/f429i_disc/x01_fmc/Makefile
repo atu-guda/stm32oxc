@@ -22,7 +22,7 @@ SRCS  = main.cpp
 SRCS += uart1_init_a9a10.cpp
 SRCS += oxc_bsp_f429i_disc_sdram.cpp
 
-SRCS += empty_test0_function.cpp
+# SRCS += empty_test0_function.cpp
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
 # list: see ../common/f4_modules.mk

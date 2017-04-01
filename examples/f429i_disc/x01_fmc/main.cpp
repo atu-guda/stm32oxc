@@ -101,6 +101,28 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
   vTaskDelete(NULL);
 }
 
+// TEST0
+int cmd_test0( int argc, const char * const * argv )
+{
+  int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
+  pr( NL "Test0: n= " ); pr_d( n );
+  pr( NL );
+  delay_ms( 100 );
+  for( int i=0; i<n; ++i ) {
+    SDRAM_ADDR[i] = (uint8_t)(i+0x20);
+  }
+
+  dump8( SDRAM_ADDR, n, true );
+
+  pr( NL );
+
+  delay_ms( 10 );
+  break_flag = 0;  idle_flag = 1;
+
+  pr( NL "test0 end." NL );
+  return 0;
+}
+
 
 
 //  ----------------------------- configs ----------------
