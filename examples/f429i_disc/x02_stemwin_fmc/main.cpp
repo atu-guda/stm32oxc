@@ -18,6 +18,7 @@ USE_DIE4LED_ERROR_HANDLER;
 BOARD_DEFINE_LEDS;
 
 SDRAM_HandleTypeDef hsdram;
+extern LTDC_HandleTypeDef hltdc;
 
 const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
 
@@ -132,12 +133,12 @@ void task_grout( void *prm UNUSED_ARG )
   while( 1 ) {
     if( GUI_Initialized )  {
       GUI_DispStringAt( "Z", i % xsz, i / xsz );
-      // BSP_Pointer_Update();
+      BSP_Pointer_Update();
     }
     delay_ms( 10 );
     ++i;
     i %= xysz;
-    leds.toggle( 0x02 );
+    // leds.toggle( 0x02 );
   }
 
   vTaskDelete(NULL);
@@ -158,6 +159,9 @@ void BSP_Pointer_Update()
   yDiff = (prev_state.Y > ts.Y) ? (prev_state.Y - ts.Y) : (ts.Y - prev_state.Y);
 
   if( ts.TouchDetected ) {
+    leds.toggle( 0x02 );
+    pr( "ts.X= " ); pr_d( ts.X );  pr( " ts.Y= " ); pr_d( ts.Y ); pr( NL );
+    GUI_DispStringAt( "*", ts.X, ts.Y );
     if( (prev_state.TouchDetected != ts.TouchDetected ) ||  (xDiff > 3 ) || (yDiff > 3))  {
       prev_state = ts;
       TS_State.Layer = 0;
@@ -175,15 +179,9 @@ int cmd_test0( int argc, const char * const * argv )
   int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
   pr( NL "Test0: n= " ); pr_d( n );
   pr( NL );
-  delay_ms( 100 );
-  for( int i=0; i<n; ++i ) {
-    SDRAM_ADDR[i] = (uint8_t)(i+0x20);
-  }
 
-  dump8( SDRAM_ADDR, n, true );
 
   pr( NL );
-
   delay_ms( 10 );
   break_flag = 0;  idle_flag = 1;
 
@@ -191,6 +189,11 @@ int cmd_test0( int argc, const char * const * argv )
   return 0;
 }
 
+
+void LTDC_IRQHandler(void)
+{
+  HAL_LTDC_IRQHandler( &hltdc );
+}
 
 
 //  ----------------------------- configs ----------------

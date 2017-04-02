@@ -316,11 +316,11 @@ void HAL_LTDC_MspInit(LTDC_HandleTypeDef *hltdc)
   HAL_GPIO_Init(GPIOG, &GPIO_Init_Structure);
 
   /* Set LTDC Interrupt to the lowest priority */
-  // HAL_NVIC_SetPriority(LTDC_IRQn, 0xF, 0);
-  HAL_NVIC_SetPriority( LTDC_IRQn, 0x5, 0 ); // atu: try
+  HAL_NVIC_SetPriority(LTDC_IRQn, 0xF, 0);
+  /// HAL_NVIC_SetPriority( LTDC_IRQn, 0x5, 0 ); // atu: try
 
   /* Enable LTDC Interrupt */
-  // HAL_NVIC_EnableIRQ( LTDC_IRQn );
+  HAL_NVIC_EnableIRQ( LTDC_IRQn );
 }
 
 /**
