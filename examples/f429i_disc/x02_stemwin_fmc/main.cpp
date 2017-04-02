@@ -27,11 +27,23 @@ SmallRL srl( smallrl_exec );
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
+int cmd_cls( int argc, const char * const * argv );
+CmdInfo CMDINFO_CLS { "cls", 0, cmd_cls, " - clear screen"  };
+int cmd_puts( int argc, const char * const * argv );
+CmdInfo CMDINFO_PUTS { "puts", 0, cmd_puts, " str [x [y]] - put string at coord"  };
+int cmd_line( int argc, const char * const * argv );
+CmdInfo CMDINFO_LINE { "line", 0, cmd_line, " x1 y1 x2 y2 - draw a a line"  };
+int cmd_color( int argc, const char * const * argv );
+CmdInfo CMDINFO_COLOR { "color", 0, cmd_color, " color_val - set a default color value"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
 
   &CMDINFO_TEST0,
+  &CMDINFO_CLS,
+  &CMDINFO_PUTS,
+  &CMDINFO_LINE,
+  &CMDINFO_COLOR,
   nullptr
 };
 
@@ -128,17 +140,11 @@ void task_grout( void *prm UNUSED_ARG )
     GUI_DispStringAt( "Hello world!", (LCD_GetXSize()-100)/2, (LCD_GetYSize()-20)/2 );
   }
 
-  int i=0;
-  int xsz = LCD_GetXSize(), ysz = LCD_GetYSize(), xysz = xsz * ysz;
   while( 1 ) {
     if( GUI_Initialized )  {
-      GUI_DispStringAt( "Z", i % xsz, i / xsz );
       BSP_Pointer_Update();
     }
-    delay_ms( 10 );
-    ++i;
-    i %= xysz;
-    // leds.toggle( 0x02 );
+    delay_ms( 50 );
   }
 
   vTaskDelete(NULL);
@@ -161,7 +167,7 @@ void BSP_Pointer_Update()
   if( ts.TouchDetected ) {
     leds.toggle( 0x02 );
     pr( "ts.X= " ); pr_d( ts.X );  pr( " ts.Y= " ); pr_d( ts.Y ); pr( NL );
-    GUI_DispStringAt( "*", ts.X, ts.Y );
+    GUI_DispCharAt( '*', ts.X, ts.Y );
     if( (prev_state.TouchDetected != ts.TouchDetected ) ||  (xDiff > 3 ) || (yDiff > 3))  {
       prev_state = ts;
       TS_State.Layer = 0;
@@ -177,9 +183,11 @@ void BSP_Pointer_Update()
 int cmd_test0( int argc, const char * const * argv )
 {
   int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
-  pr( NL "Test0: n= " ); pr_d( n );
+  pr( NL "Test0: n= " ); pr_d( n ); pr( " argc= " ); pr_d( argc );
   pr( NL );
 
+  int xsz = LCD_GetXSize(), ysz = LCD_GetYSize();
+  pr( "xsz= "); pr_d( xsz );   pr( " ysz= "); pr_d( ysz ); pr( NL );
 
   pr( NL );
   delay_ms( 10 );
@@ -188,6 +196,52 @@ int cmd_test0( int argc, const char * const * argv )
   pr( NL "test0 end." NL );
   return 0;
 }
+
+int cmd_cls( int argc, const char * const * argv )
+{
+  GUI_Clear();
+  break_flag = 0;  idle_flag = 1;
+  pr( NL "cls end." NL );
+  return 0;
+}
+
+int cmd_puts( int argc, const char * const * argv )
+{
+  const char *s = "?";
+  if( argc > 1 ) {
+    s = argv[1];
+  }
+  int x = arg2long_d( 2, argc, argv, 10, 0 );
+  int y = arg2long_d( 3, argc, argv, 10, 0 );
+  GUI_DispStringAt( s, x, y );
+  break_flag = 0;  idle_flag = 1;
+  pr( NL "puts end." NL );
+  return 0;
+}
+
+int cmd_line( int argc, const char * const * argv )
+{
+  int xsz = LCD_GetXSize(), ysz = LCD_GetYSize();
+  int x1 = arg2long_d( 1, argc, argv,   0, 0, xsz );
+  int y1 = arg2long_d( 2, argc, argv,   0, 0, ysz );
+  int x2 = arg2long_d( 3, argc, argv, xsz, 0, xsz );
+  int y2 = arg2long_d( 4, argc, argv, ysz, 0, ysz );
+  GUI_DrawLine( x1, y1, x2, y2 );
+  break_flag = 0;  idle_flag = 1;
+  pr( NL "puts end." NL );
+  return 0;
+}
+
+
+int cmd_color( int argc, const char * const * argv )
+{
+  uint32_t c = arg2long_d( 1, argc, argv,   0x00FFFFFF, 0 );
+  GUI_SetColor( c );
+  break_flag = 0;  idle_flag = 1;
+  pr( NL "puts end." NL );
+  return 0;
+}
+
 
 
 void LTDC_IRQHandler(void)
