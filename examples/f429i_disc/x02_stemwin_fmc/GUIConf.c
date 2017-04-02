@@ -105,12 +105,12 @@ void GUI_X_Config(void) {
   //
   // 32 bit aligned memory area
   //
-  static U32 aMemory[GUI_NUMBYTES / 4];
+  // static U32 aMemory[GUI_NUMBYTES / 4];
   //
   // Assign memory to emWin
   //
-  GUI_ALLOC_AssignMemory(aMemory, GUI_NUMBYTES);
-  // GUI_ALLOC_AssignMemory( (U32*)(0xD0000000), GUI_NUMBYTES );
+  // GUI_ALLOC_AssignMemory(aMemory, GUI_NUMBYTES);
+  GUI_ALLOC_AssignMemory( (U32*)(0xD0000000), GUI_NUMBYTES );
   //
   // Set default font
   //
