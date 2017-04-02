@@ -13,15 +13,12 @@ const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
 
 extern "C" {
 
-void EXTI0_IRQHandler(void);
-// void EXTI1_IRQHandler(void);
-void HAL_GPIO_EXTI_Callback( uint16_t pin );
-
 void task_leds( void *prm UNUSED_ARG );
 
-}
+} // extern "C"
 
 volatile int led_delay = 1000;
+void HAL_GPIO_EXTI_Callback( uint16_t pin );
 
 int main(void)
 {
@@ -30,13 +27,13 @@ int main(void)
   SystemClock_Config();
 
   leds.initHW();
+  leds.write( BOARD_LEDS_ALL );
   MX_GPIO_Init();
 
-  leds.write( 0x0A );
-  delay_bad_ms( 500 );
-  // HAL_Delay( 500 );
+  // delay_bad_ms( 500 );
+  HAL_Delay( 1000 );
   // delay_ms( 500 );
-  leds.write( 0x0F );
+  leds.write( 0x00 );
   delay_bad_ms( 500 );
 
   xTaskCreate( task_leds, "leds", 2*def_stksz, 0, 1, 0 );
@@ -50,12 +47,11 @@ int main(void)
 
 void task_leds( void *prm UNUSED_ARG )
 {
-  int i=8;
-  while (1)
-  {
+  int i=1;
+  while(1) {
     leds.write( i );
     ++i;
-    i &= 0x0F;
+    i &= BOARD_LEDS_ALL;
     delay_ms( led_delay );
     // HAL_Delay( 1000 );
   }
@@ -70,7 +66,7 @@ void _exit( int rc )
 // // configs
 void MX_GPIO_Init(void)
 {
-  // putput init moved to PinsOut initHW
+  // output init moved to PinsOut initHW
 
   __HAL_RCC_SYSCFG_CLK_ENABLE();
   __GPIOA_CLK_ENABLE();
@@ -96,15 +92,15 @@ void EXTI0_IRQHandler(void)
   HAL_GPIO_EXTI_IRQHandler( BIT0 );
 }
 
-// void EXTI1_IRQHandler(void)
-// {
-//   HAL_GPIO_EXTI_IRQHandler( BIT1 );
-// }
+void EXTI1_IRQHandler(void)
+{
+  HAL_GPIO_EXTI_IRQHandler( BIT1 );
+}
 
 void HAL_GPIO_EXTI_Callback( uint16_t pin )
 {
   if( pin == BIT0 )  {
-    leds.reset( 0x0F );
+    leds.reset( BOARD_LEDS_ALL );
     led_delay >>= 1;
     ++led_delay;
   }

@@ -17,7 +17,7 @@ extern "C" {
 void task_leds( void *prm UNUSED_ARG );
 void task_send( void *prm UNUSED_ARG );
 
-}
+} // extern "C"
 
 UART_HandleTypeDef uah;
 const int TX_BUF_SZ = 128;
@@ -31,9 +31,13 @@ int main(void)
   SystemClock_Config();
 
   leds.initHW();
+  leds.write( BOARD_LEDS_ALL );  HAL_Delay( 200 );
+  leds.write( 0x00 ); delay_ms( 200 );
   init_uart( &uah );
 
-  leds.write( 0x0F );  delay_bad_ms( 200 );
+  leds.write( 0x00 ); HAL_Delay( 200 );
+  leds.write( BOARD_LEDS_ALL );
+  delay_bad_ms( 200 );
 
   xTaskCreate( task_leds, "leds", 1*def_stksz, 0, 1, 0 );
   xTaskCreate( task_send, "send", 2*def_stksz, 0, 1, 0 );
@@ -66,7 +70,6 @@ void task_send( void *prm UNUSED_ARG )
     delay_ms( 1000 );
   }
 }
-
 
 void _exit( int rc )
 {

@@ -100,7 +100,7 @@ ifneq "$(KNOWN_MCU)" "yes"
 endif
 
 ALLFLAGS += $(ARCHFLAGS)
-ALLFLAGS += $(CFLAGS_ADD)
+ALLFLAGS += $(CFLAGS_ADD) $(ADDINC)
 
 LDFLAGS  = --static # -nostartfiles
 LDFLAGS += -g3

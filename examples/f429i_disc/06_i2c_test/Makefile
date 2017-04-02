@@ -26,7 +26,6 @@ SRCS += i2c3_default_init.cpp
 
 
 
-
 include ../common/board_add.mk
 include $(OXCDIR)/mk/common_cortex.mk
 # ../../../mk/common_cortex.mk

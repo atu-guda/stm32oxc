@@ -9,6 +9,9 @@
 #define BOARD_LEDS_GPIO GPIOC
 #define BOARD_LEDS_OFS  0
 #define BOARD_LEDS_MASK 0x000F
+// unshifted
+#define BOARD_LEDS_ALL  0x0F
+
 // extra is C0:C7
 #define BOARD_N_LEDS_EXTRA 8
 

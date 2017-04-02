@@ -1,5 +1,5 @@
 #include <oxc_base.h>
-// nax 72MHz clock for stm32f3discovery with external HSE 8MHz source
+// max 72MHz clock for stm32f3discovery with external HSE 8MHz source
 
 #ifndef STM32F3
 #error This SystemClock_Config is for stm32f3xx only

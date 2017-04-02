@@ -9,6 +9,8 @@
 #define BOARD_LEDS_GPIO GPIOE
 #define BOARD_LEDS_OFS  8
 #define BOARD_LEDS_MASK 0xFF00
+// unshifted
+#define BOARD_LEDS_ALL  0x00FF
 
 #define BOARD_DEFINE_LEDS PinsOut leds( BOARD_LEDS_GPIO, BOARD_LEDS_OFS, BOARD_N_LEDS );
 

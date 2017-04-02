@@ -8,9 +8,9 @@ using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
 
+
+
 BOARD_DEFINE_LEDS;
-
-
 
 const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
 
@@ -33,8 +33,7 @@ extern "C" {
 void task_main( void *prm UNUSED_ARG );
 
 
-}
-
+} // extern "C"
 
 UART_HandleTypeDef uah;
 UsartIO usartio( &uah, USART1 );
@@ -51,10 +50,13 @@ int main(void)
   SystemClock_Config();
 
   leds.initHW();
-
-  leds.write( 0x0F );  delay_bad_ms( 200 );
+  leds.write( BOARD_LEDS_ALL );  HAL_Delay( 200 );
+  leds.write( 0x00 ); delay_ms( 200 );
   init_uart( &uah );
-  leds.write( 0x0A );  delay_bad_ms( 200 );
+
+  leds.write( 0x00 ); HAL_Delay( 200 );
+  leds.write( BOARD_LEDS_ALL );
+  delay_bad_ms( 200 );
 
   // HAL_UART_Transmit( &uah, (uint8_t*)"START\r\n", 7, 100 );
 

@@ -24,7 +24,8 @@ int main(void)
 
   // write/set test
   leds.write( 0x03 );
-  delay_ms(  200 );
+  // delay_ms(  200 );
+  HAL_Delay(  200 );
   leds.write( 0x00 );
   delay_ms(  100 );
   leds.set( 0x01 );
