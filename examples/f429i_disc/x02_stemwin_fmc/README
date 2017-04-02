@@ -1,0 +1,10 @@
+Test FMC SDRAM
+try:
+fill 0xD0000000 0x100 1
+d 0xD0000000 0x100
+
+Used USART1 with VCP on ST_LInk V2-1
+
+PA10  = USART2_TX
+PA11  = USART2_RX
+

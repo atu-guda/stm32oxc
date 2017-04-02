@@ -6,7 +6,8 @@ SUBDIRS = \
   03_uart \
   04_uart_console \
   06_i2c_test \
-  x01_fmc
+  x01_fmc \
+  x02_stemwin_fmc
 
 #  03_uart \
 #  04_uart_console \
