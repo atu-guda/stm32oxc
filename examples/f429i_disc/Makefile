@@ -5,7 +5,7 @@ SUBDIRS = \
   02_leds_rtos \
   03_uart \
   04_uart_console \
-  50-adc0 \
+  06_i2c_test \
   x01_fmc
 
 #  03_uart \
@@ -29,9 +29,9 @@ SUBDIRS = \
 #  22_spi_pcd8544_lcd \
 
 
-ALL : examples_f746_wave
+ALL : examples_f429i_disc
 
-examples_f746_wave : $(SUBDIRS)
+examples_f429i_disc : $(SUBDIRS)
 
 $(SUBDIRS) :
 	$(MAKE) -C $@
@@ -50,5 +50,5 @@ clean :
 	done
 
 
-.PHONY: clean subclean examples_f746_wave $(SUBDIRS)
+.PHONY: clean subclean examples_f429i_disc $(SUBDIRS)
 

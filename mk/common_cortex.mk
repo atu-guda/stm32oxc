@@ -287,13 +287,17 @@ flash: $(PROJ_NAME).bin
 
 
 
-clean:
+subclean:
 	rm -f *.o *.d $(OBJDIR)/*.o $(DEPSDIR)/*.d
 	rm -f $(PROJ_NAME).elf
 	rm -f $(PROJ_NAME).hex
 	rm -f $(PROJ_NAME).lst
 	rm -f $(PROJ_NAME).map
+
+clean: subclean
 	rm -f $(PROJ_NAME).bin
+
+.PHONY: clean subclean
 
 #
 

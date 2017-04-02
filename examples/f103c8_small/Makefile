@@ -14,6 +14,13 @@ examples_f103_small : $(SUBDIRS)
 $(SUBDIRS) :
 	$(MAKE) -C $@
 
+subclean :
+	for d in $(SUBDIRS) ; do \
+	  echo make $$d subclean ; \
+	  $(MAKE) -C $$d subclean ; \
+	done
+
+
 clean :
 	for d in $(SUBDIRS) ; do \
 	  echo make $$d clean ; \
@@ -21,5 +28,5 @@ clean :
 	done
 
 
-.PHONY: clean  examples_f103_small $(SUBDIRS)
+.PHONY: clean subclean examples_f103_small $(SUBDIRS)
 

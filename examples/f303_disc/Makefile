@@ -34,6 +34,13 @@ examples_f303_d3 : $(SUBDIRS)
 $(SUBDIRS) :
 	$(MAKE) -C $@
 
+subclean :
+	for d in $(SUBDIRS) ; do \
+	  echo make $$d subclean ; \
+	  $(MAKE) -C $$d subclean ; \
+	done
+
+
 clean :
 	for d in $(SUBDIRS) ; do \
 	  echo make $$d clean ; \
@@ -41,5 +48,5 @@ clean :
 	done
 
 
-.PHONY: clean  examples_f303_d3 $(SUBDIRS)
+.PHONY: clean subclean examples_f303_d3 $(SUBDIRS)
 
