@@ -7,7 +7,6 @@ USE_DIE4LED_ERROR_HANDLER;
 void MX_GPIO_Init(void);
 
 
-// PinsOut p1 { GPIOC, 0, 4 };
 BOARD_DEFINE_LEDS;
 
 int main(void)
@@ -38,7 +37,7 @@ int main(void)
   delay_ms(  200 );
   leds.reset( 0x01 );
   delay_ms( 1000 );
-  leds.reset( 0x02 );
+  leds.reset( 0x08 );
   delay_ms( 1000 );
 
   // toggle test

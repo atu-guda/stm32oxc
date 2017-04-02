@@ -8,7 +8,6 @@ USE_DIE4LED_ERROR_HANDLER;
 
 
 
-// PinsOut p1 { GPIOC, 0, 4 };
 BOARD_DEFINE_LEDS;
 
 const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
@@ -32,9 +31,13 @@ int main(void)
   SystemClock_Config();
 
   leds.initHW();
+  leds.write( BOARD_LEDS_ALL );  HAL_Delay( 200 );
+  leds.write( 0x00 ); delay_ms( 200 );
   init_uart( &uah );
 
-  leds.write( 0x0F );  delay_bad_ms( 200 );
+  leds.write( 0x00 ); HAL_Delay( 200 );
+  leds.write( BOARD_LEDS_ALL );
+  delay_bad_ms( 200 );
 
   xTaskCreate( task_leds, "leds", 1*def_stksz, 0, 1, 0 );
   xTaskCreate( task_send, "send", 2*def_stksz, 0, 1, 0 );
@@ -58,7 +61,7 @@ void task_send( void *prm UNUSED_ARG )
   {
     // leds.toggle( BIT2 );
     if( HAL_UART_Receive( &uah, (uint8_t*)&c, 1, 0 ) == HAL_OK ) {
-      leds.toggle( BIT2 );
+      leds.toggle( BIT0 );
       tx_buf[7] = c;
     }
     if( HAL_UART_Transmit( &uah, (uint8_t*)tx_buf, ssz, 100 )!= HAL_OK ) {
