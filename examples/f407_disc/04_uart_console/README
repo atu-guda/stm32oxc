@@ -1,4 +1,4 @@
-Simple usage of UART.
+Using  USART as console via SmallRL.
 Used USART2 with USB_UART board.
 
 A2  = USART2_TX

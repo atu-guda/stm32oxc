@@ -4,7 +4,8 @@ SUBDIRS = \
   01_leds_oxc \
   02_leds_rtos \
   03_uart \
-#  04_uart_console \
+  04_uart_console \
+  05_usb_console \
 #  06_i2c_test \
 #  x01_fmc \
 #  x02_stemwin_fmc

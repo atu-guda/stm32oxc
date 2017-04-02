@@ -10,7 +10,6 @@ USE_DIE4LED_ERROR_HANDLER;
 
 BOARD_DEFINE_LEDS;
 
-UsbcdcIO usbcdc;
 
 
 const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
@@ -30,10 +29,20 @@ const CmdInfo* global_cmds[] = {
 
 
 extern "C" {
+
 void task_main( void *prm UNUSED_ARG );
+
+
 }
 
-STD_USBCDC_SEND_TASK( usbcdc );
+
+UART_HandleTypeDef uah;
+UsartIO usartio( &uah, USART2 );
+void init_uart( UART_HandleTypeDef *uahp, int baud = 115200 );
+
+STD_USART2_SEND_TASK( usartio );
+// STD_USART2_RECV_TASK( usartio );
+STD_USART2_IRQ( usartio );
 
 int main(void)
 {
@@ -44,8 +53,11 @@ int main(void)
   leds.initHW();
   leds.write( BOARD_LEDS_ALL );  HAL_Delay( 200 );
   leds.write( 0x00 ); delay_ms( 200 );
-  leds.write( BOARD_LEDS_ALL );  HAL_Delay( 200 );
+  init_uart( &uah );
 
+  // HAL_UART_Transmit( &uah, (uint8_t*)"START\r\n", 7, 100 );
+
+  // usartio.sendStrSync( "0123456789---main()---ABCDEF" NL );
 
   UVAR('t') = 1000;
   UVAR('n') = 10;
@@ -54,7 +66,7 @@ int main(void)
 
   //           code               name    stack_sz      param  prty TaskHandle_t*
   xTaskCreate( task_leds,        "leds", 1*def_stksz, nullptr,   1, nullptr );
-  xTaskCreate( task_usbcdc_send, "send", 2*def_stksz, nullptr,   2, nullptr );  // 2
+  xTaskCreate( task_usart2_send, "send", 2*def_stksz, nullptr,   2, nullptr );  // 2
   xTaskCreate( task_main,        "main", 2*def_stksz, nullptr,   1, nullptr );
   xTaskCreate( task_gchar,      "gchar", 2*def_stksz, nullptr,   1, nullptr );
 
@@ -68,7 +80,10 @@ int main(void)
 
 void task_main( void *prm UNUSED_ARG ) // TMAIN
 {
-  SET_USBCDC_AS_STDIO(usbcdc);
+  SET_UART_AS_STDIO(usartio);
+
+  usartio.sendStrSync( "0123456789ABCDEF" NL );
+  delay_ms( 10 );
 
   default_main_loop();
   vTaskDelete(NULL);
@@ -77,6 +92,8 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
 
 
 //  ----------------------------- configs ----------------
+
+
 
 FreeRTOS_to_stm32cube_tick_hook;
 
