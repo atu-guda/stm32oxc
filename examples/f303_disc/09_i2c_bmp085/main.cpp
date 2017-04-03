@@ -2,7 +2,6 @@
 #include <cstdlib>
 
 #include <oxc_auto.h>
-
 #include <oxc_bmp085.h>
 
 using namespace std;
@@ -10,7 +9,6 @@ using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
 
-// PinsOut p1 { GPIOE, 8, 8 };
 BOARD_DEFINE_LEDS;
 
 
@@ -53,8 +51,8 @@ int main(void)
   HAL_Init();
 
   SystemClock_Config();
-  leds.initHW();
 
+  leds.initHW();
   leds.write( 0x0F );  delay_bad_ms( 200 );
   if( !init_uart( &uah ) ) {
     die4led( 0x08 );
@@ -99,6 +97,7 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
+  const int buf_sz = 80;
   int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
   uint32_t t_step = UVAR('t');
   pr( NL "Test0: n= " ); pr_d( n ); pr( " t= " ); pr_d( t_step );
@@ -109,22 +108,30 @@ int cmd_test0( int argc, const char * const * argv )
   TickType_t tc0 = xTaskGetTickCount();
 
   break_flag = 0;
-  for( int i=0; i<n && !break_flag ; ++i ) {
+  char buf[buf_sz];
+  int p_old = 0;
 
+  for( int i=0; i<n && !break_flag ; ++i ) {
     baro.getAllCalc( 3 );
     int t10 = baro.get_T10();
     int p   = baro.get_P();
+    if( i == 0 ) {
+      p_old = p;
+    }
+    int dp  = p - p_old;
+    p_old   = p;
     // int t_u = baro.get_T_uncons();
     // int p_u = baro.get_P_uncons();
-    pr( "T= " ); pr_d( t10 ); pr( "  P= " ); pr_d( p ); pr( NL );
+    ifcvt( t10, 10, buf, 1 );
+    pr( "T= " ); pr( buf ); pr( "  P= " ); pr_d( p ); pr( " dp= " ); pr_d( dp ); pr( NL );
     vTaskDelayUntil( &tc0, t_step );
-    // delay_ms( t_step );
   }
 
   pr( NL );
 
   delay_ms( 10 );
-  break_flag = 0;  idle_flag = 1;
+  break_flag = 0;
+  idle_flag = 1;
 
   pr( NL "test0 end." NL );
   return 0;

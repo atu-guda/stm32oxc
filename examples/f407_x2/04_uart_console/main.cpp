@@ -8,7 +8,6 @@ using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
 
-// PinsOut p1 { GPIOC, 0, 4 };
 BOARD_DEFINE_LEDS;
 
 
@@ -52,8 +51,10 @@ int main(void)
   SystemClock_Config();
 
   leds.initHW();
+  leds.write( BOARD_LEDS_ALL );  HAL_Delay( 200 );
+  leds.write( 0x00 ); delay_ms( 200 );
+  leds.write( BOARD_LEDS_ALL );  HAL_Delay( 200 );
 
-  leds.write( 0x0F );  delay_bad_ms( 200 );
   init_uart( &uah );
   leds.write( 0x0A );  delay_bad_ms( 200 );
 
