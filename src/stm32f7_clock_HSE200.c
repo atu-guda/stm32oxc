@@ -43,8 +43,7 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.AHBCLKDivider  = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
-
-  if( HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_6) != HAL_OK ) {
+  if( HAL_RCC_ClockConfig( &RCC_ClkInitStruct, FLASH_LATENCY_6 ) != HAL_OK ) {
     Error_Handler( 15 );
   }
 
@@ -59,7 +58,7 @@ void SystemClock_Config(void)
   PeriphClkInitStruct.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK2;
   PeriphClkInitStruct.I2c1ClockSelection = RCC_I2C1CLKSOURCE_PCLK1;
   PeriphClkInitStruct.Clk48ClockSelection = RCC_CLK48SOURCE_PLLSAIP;
-  if( HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK )  {
+  if( HAL_RCCEx_PeriphCLKConfig( &PeriphClkInitStruct ) != HAL_OK )  {
     Error_Handler( 15 );
   }
 

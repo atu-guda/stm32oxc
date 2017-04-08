@@ -1,5 +1,4 @@
 Try to use SD card via SDIO 1 bit wire
-May be with fatfs (later)
 
 C8  = dat0 (MISO)
 C12 = CLK  (SCK)
