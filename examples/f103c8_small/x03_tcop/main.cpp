@@ -47,12 +47,17 @@ int main(void)
 {
   HAL_Init();
 
-  SystemClock_Config();
-
   leds.initHW();
   led0.initHW();
+  leds.write( BOARD_LEDS_ALL );
 
-  leds.write( 0x0F );  delay_bad_ms( 200 );
+  int rc = SystemClockCfg();
+  if( rc ) {
+    die4led( BOARD_LEDS_ALL );
+    return 0;
+  }
+
+  leds.write( 0x00 );  delay_bad_ms( 200 );
   leds.write( 0x0A );  delay_bad_ms( 200 );
 
   MX_inp_Init();

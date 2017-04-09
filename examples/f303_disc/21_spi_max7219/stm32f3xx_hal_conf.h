@@ -24,6 +24,8 @@
 #define HAL_DMA_MODULE_ENABLED
 #define HAL_SPI_MODULE_ENABLED
 
+#define USE_SPI_CRC 0
+
 #include "../common/stm32f3xx_hal_conf_common.h"
 
 

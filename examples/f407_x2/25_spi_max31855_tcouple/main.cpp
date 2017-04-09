@@ -55,11 +55,17 @@ int main(void)
 {
   HAL_Init();
 
-  SystemClock_Config();
-
   leds.initHW();
+  leds.write( BOARD_LEDS_ALL );
 
-  leds.write( 0x0F );  delay_bad_ms( 200 );
+  int rc = SystemClockCfg();
+  if( rc ) {
+    die4led( BOARD_LEDS_ALL );
+    return 0;
+  }
+
+  delay_bad_ms( 200 );  leds.write( 0 );
+
   if( SPI1_Init_common() != HAL_OK ) {
     die4led( 0x04 );
   }
@@ -67,6 +73,8 @@ int main(void)
   //nss_pin.set(1);
   spi_d.setMaxWait( 500 );
   spi_d.initSPI();
+
+  delay_bad_ms( 200 );  leds.write( 1 );
 
   UVAR('t') = 100;
   UVAR('n') = 10;

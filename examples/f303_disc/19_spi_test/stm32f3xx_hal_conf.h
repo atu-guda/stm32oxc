@@ -26,5 +26,6 @@
 
 #include "../common/stm32f3xx_hal_conf_common.h"
 
+#define USE_SPI_CRC 0
 
 #endif /* __STM32F3xx_HAL_CONF_H */

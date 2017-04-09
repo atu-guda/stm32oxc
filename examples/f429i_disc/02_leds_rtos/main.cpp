@@ -24,10 +24,17 @@ int main(void)
 {
   HAL_Init();
 
-  SystemClock_Config();
-
   leds.initHW();
   leds.write( BOARD_LEDS_ALL );
+
+  int rc = SystemClockCfg();
+  if( rc ) {
+    die4led( BOARD_LEDS_ALL );
+    return 0;
+  }
+
+  delay_bad_ms( 200 );  leds.write( 0 );
+
   MX_GPIO_Init();
 
   // delay_bad_ms( 500 );

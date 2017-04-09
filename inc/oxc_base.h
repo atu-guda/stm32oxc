@@ -176,6 +176,7 @@ void delay_bad_ms( uint32_t ms );
 void delay_bad_mcs( uint32_t mcs );
 
 void SystemClock_Config(void);
+int  SystemClockCfg(void); // returns: 0: ok >0 + set errno: error
 
 #ifdef USE_FREERTOS
 

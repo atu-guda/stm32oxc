@@ -48,12 +48,20 @@ int main(void)
 {
   HAL_Init();
 
-  SystemClock_Config();
-
   leds.initHW();
-  leds.write( BOARD_LEDS_ALL );  HAL_Delay( 200 );
-  leds.write( 0x00 ); delay_ms( 200 );
+  leds.write( BOARD_LEDS_ALL );
+
+  int rc = SystemClockCfg();
+  if( rc ) {
+    die4led( BOARD_LEDS_ALL );
+    return 0;
+  }
+
+  delay_bad_ms( 200 );  leds.write( 0 );
+
   init_uart( &uah );
+
+  leds.write( 0x01 ); delay_ms( 200 );
 
   // HAL_UART_Transmit( &uah, (uint8_t*)"START\r\n", 7, 100 );
 

@@ -1,5 +1,5 @@
-#include <oxc_base.h>
-// max 72MHz clock for stm32f103 with HSE 8MHz oscillator
+#include <stm32f1xx_hal.h>
+#include <errno.h>
 
 #ifndef STM32F1
 #error This SystemClock_Config is for stm32f1xx only
@@ -9,7 +9,9 @@
 #error This SystemClock_Config in for 72 MHz only
 #endif
 
-void SystemClock_Config(void)
+int SystemClockCfg(void); // copy from oxc_base.h to reduce deps
+
+int SystemClockCfg(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct;
   RCC_ClkInitTypeDef RCC_ClkInitStruct;
@@ -21,7 +23,8 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLSource  = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLMUL     = RCC_PLL_MUL9;
   if( HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK ) {
-    Error_Handler( 13 );
+    errno = 1001;
+    return  1001;
   }
 
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK  | RCC_CLOCKTYPE_SYSCLK
@@ -31,13 +34,15 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
   if( HAL_RCC_ClockConfig( &RCC_ClkInitStruct, FLASH_LATENCY_2 ) != HAL_OK ) {
-    Error_Handler( 14 );
+    errno = 1003;
+    return  1003;
   }
 
-  HAL_SYSTICK_Config( HAL_RCC_GetHCLKFreq() / (1000) );
+
+  HAL_SYSTICK_Config( HAL_RCC_GetHCLKFreq()/1000 ); // to HAL_delay work even before FreeRTOS start
   HAL_SYSTICK_CLKSourceConfig( SYSTICK_CLKSOURCE_HCLK );
-  /* SysTick_IRQn interrupt configuration */
-  // HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
+  HAL_NVIC_SetPriority( SysTick_IRQn, 0, 0 ); // will be readjusted by FreeRTOS
+  return 0;
 }
 
 

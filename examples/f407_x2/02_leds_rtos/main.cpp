@@ -7,7 +7,6 @@ USE_DIE4LED_ERROR_HANDLER;
 void MX_GPIO_Init(void);
 
 
-// PinsOut p1 { GPIOC, 0, 4 };
 BOARD_DEFINE_LEDS;
 
 const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
@@ -28,9 +27,15 @@ int main(void)
 {
   HAL_Init();
 
-  SystemClock_Config();
-
   leds.initHW();
+  leds.write( BOARD_LEDS_ALL );
+
+  int rc = SystemClockCfg();
+  if( rc ) {
+    die4led( BOARD_LEDS_ALL );
+    return 0;
+  }
+
   MX_GPIO_Init();
 
   leds.write( 0x0A );
@@ -60,12 +65,6 @@ void task_leds( void *prm UNUSED_ARG )
     delay_ms( led_delay );
     // HAL_Delay( 1000 );
   }
-}
-
-void _exit( int rc )
-{
-  exit_rc = rc;
-  for( ;; );
 }
 
 // // configs

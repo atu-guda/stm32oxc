@@ -5,36 +5,42 @@ using namespace std;
 
 USE_DIE4LED_ERROR_HANDLER;
 
-void MX_GPIO_Init(void);
 
-
-// PinsOut p1 { GPIOC, 0, 4 };
 BOARD_DEFINE_LEDS;
+const uint32_t leds_all = BOARD_LEDS_ALL;
 
 int main(void)
 {
   HAL_Init();
 
-  SystemClock_Config();
-
-  MX_GPIO_Init();
-
   leds.initHW();
+  leds.write( BOARD_LEDS_ALL );
+
+  int rc = SystemClockCfg();
+  if( rc ) {
+    die4led( BOARD_LEDS_ALL );
+    return 0;
+  }
+
+  delay_bad_ms( 200 );  leds.write( 0 );
 
   int i=0x04;
 
   // write/set test
-  leds.write( 0x0F );
-  delay_ms(  200 );
+  leds.write( leds_all );
+  // delay_ms(  200 );
+  HAL_Delay(  200 );
   leds.write( 0x00 );
   delay_ms(  100 );
   leds.set( 0x0A );
   delay_ms( 1000 );
   leds.set( 0x01 );
+  delay_ms( 1000 );
+  leds.set( 0x11 );
   delay_ms( 2000 );
 
   // reset test
-  leds.write( 0x0F );
+  leds.write( leds_all );
   delay_ms(  200 );
   leds.reset( 0x0A );
   delay_ms( 1000 );
@@ -42,7 +48,7 @@ int main(void)
   delay_ms( 1000 );
 
   // toggle test
-  leds.write( 0x0F );
+  leds.write( leds_all );
   delay_ms(  200 );
   leds.toggle( 0x0A );
   delay_ms( 1000 );
@@ -55,26 +61,13 @@ int main(void)
   {
     leds.write( i );
     ++i;
-    i &= 0x0F;
+    i &= leds_all;
     delay_ms( 200 );
   }
   return 0;
 }
 
 // configs
-void MX_GPIO_Init(void)
-{
-
-  // GPIO_InitTypeDef GPIO_InitStruct;
-  // moved to PinsOut initHW
-
-  /*Configure GPIO pins : PA0 PA1 */
-  // GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1;
-  // GPIO_InitStruct.Mode = GPIO_MODE_EVT_RISING;
-  // GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-  // HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-}
 
 // vim: path=.,/usr/share/stm32lib/inc/,/usr/arm-none-eabi/include,../../../inc
 

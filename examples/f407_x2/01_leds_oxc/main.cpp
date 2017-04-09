@@ -4,7 +4,6 @@ using namespace std;
 
 USE_DIE4LED_ERROR_HANDLER;
 
-void MX_GPIO_Init(void);
 
 
 BOARD_DEFINE_LEDS;
@@ -14,11 +13,15 @@ int main(void)
 {
   HAL_Init();
 
-  SystemClock_Config();
-
-  MX_GPIO_Init();
-
   leds.initHW();
+  leds.write( BOARD_LEDS_ALL );
+
+  int rc = SystemClockCfg();
+  if( rc ) {
+    die4led( BOARD_LEDS_ALL );
+    return 0;
+  }
+
 
   int i=0x04;
 
@@ -53,8 +56,7 @@ int main(void)
 
   // die4led( 0x0C );
 
-  while (1)
-  {
+  while(1) {
     leds.write( i );
     ++i;
     i &= leds_all;
@@ -63,20 +65,6 @@ int main(void)
   return 0;
 }
 
-// configs
-void MX_GPIO_Init(void)
-{
-
-  // GPIO_InitTypeDef GPIO_InitStruct;
-  // moved to PinsOut initHW
-
-  /*Configure GPIO pins : PA0 PA1 */
-  // GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1;
-  // GPIO_InitStruct.Mode = GPIO_MODE_EVT_RISING;
-  // GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-  // HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-}
 
 // vim: path=.,/usr/share/stm32lib/inc/,/usr/arm-none-eabi/include,../../../inc
 

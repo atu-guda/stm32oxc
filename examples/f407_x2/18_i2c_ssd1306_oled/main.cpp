@@ -80,13 +80,21 @@ int main(void)
 {
   HAL_Init();
 
-  SystemClock_Config();
-
   leds.initHW();
-  leds.write( 0x0F );  delay_bad_ms( 200 );
+  leds.write( BOARD_LEDS_ALL );
+
+  int rc = SystemClockCfg();
+  if( rc ) {
+    die4led( BOARD_LEDS_ALL );
+    return 0;
+  }
+
+  delay_bad_ms( 200 );  leds.write( 0 );
 
   MX_I2C1_Init( i2ch, 400000 );
   i2c_dbg = &screen;
+
+  delay_bad_ms( 200 );  leds.write( 1 );
 
 
   UVAR('t') = 1000;

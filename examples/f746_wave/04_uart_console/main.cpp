@@ -8,7 +8,6 @@ using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
 
-// PinsOut p1 { GPIOC, 0, 4 };
 BOARD_DEFINE_LEDS;
 
 
@@ -49,14 +48,19 @@ int main(void)
 {
   HAL_Init();
 
-  SystemClock_Config();
-
   leds.initHW();
+  leds.write( BOARD_LEDS_ALL );
 
-  leds.write( 0x0F );  delay_bad_ms( 200 );
+  int rc = SystemClockCfg();
+  if( rc ) {
+    die4led( BOARD_LEDS_ALL );
+    return 0;
+  }
+
+  delay_bad_ms( 200 );  leds.write( 0 );
+
   MX_USART1_UART_Init();
   leds.write( 0x0A );  delay_bad_ms( 200 );
-
 
   // usartio.sendStrSync( "0123456789---main()---ABCDEF" NL );
 

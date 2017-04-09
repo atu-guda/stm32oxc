@@ -8,12 +8,15 @@ USE_DIE_ERROR_HANDLER;
 int  delay_bad(void);
 
 
-
 int main(void)
 {
   HAL_Init();
 
-  SystemClock_Config();
+  int rc = SystemClockCfg();
+  if( rc ) {
+    die( 1 );
+    return 0;
+  }
 
   MX_GPIO_Init();
 
