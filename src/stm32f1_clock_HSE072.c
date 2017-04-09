@@ -35,12 +35,7 @@ void SystemClock_Config(void)
   }
 
   HAL_SYSTICK_Config( HAL_RCC_GetHCLKFreq() / (1000) );
-  // HAL_SYSTICK_Config( HAL_RCC_GetHCLKFreq() / (1000*8*2) );
-  // HAL_SYSTICK_Config( 72000000 / (1000*8*2) );
-
   HAL_SYSTICK_CLKSourceConfig( SYSTICK_CLKSOURCE_HCLK );
-  // HAL_SYSTICK_CLKSourceConfig( SYSTICK_CLKSOURCE_HCLK_DIV8 );
-
   /* SysTick_IRQn interrupt configuration */
   // HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
 }

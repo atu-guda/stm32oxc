@@ -1,0 +1,1 @@
+../../f407_x2/common/hal_modules_list.h

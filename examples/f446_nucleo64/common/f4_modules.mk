@@ -1,0 +1,1 @@
+../../f407_x2/common/f4_modules.mk
