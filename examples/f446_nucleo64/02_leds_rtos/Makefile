@@ -1,9 +1,9 @@
-PROJ_NAME=uart_console
+PROJ_NAME=leds_rtos
 
 USE_OXC = y
 # USE_OXC_DEVIO = y
-USE_OXC_DEBUG = y
-USE_OXC_CONSOLE_USART = y
+USE_OXC_DEBUG = n
+USE_OXC_CONSOLE_USART = n
 USE_OXC_CONSOLE_USB_CDC = n
 USE_FREERTOS = y
 # FREERTOS_HEAP = heap_2.c
@@ -17,12 +17,10 @@ OXCDIR = /home/atu/proj/stm32/oxc
 
 
 SRCS  = main.cpp
-SRCS += uart2_init_a2a3.cpp
-
-SRCS += empty_test0_function.cpp
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
 # list: see ../common/f4_modules.mk
+
 
 
 include ../common/board_add.mk

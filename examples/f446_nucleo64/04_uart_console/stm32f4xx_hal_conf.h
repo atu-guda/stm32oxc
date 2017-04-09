@@ -12,6 +12,7 @@
 
 #include <bsp/board_stm32f446_nucleo64.h>
 
+// now even for FreeRTOS
 #define STD_SYSTICK_HANDLER 1
 
 // ########################## Module Selection ##############################
@@ -20,6 +21,8 @@
 
 // AUX modules : full list: ../common/hal_modules_list.h
 //
+#define HAL_DMA_MODULE_ENABLED
+#define HAL_UART_MODULE_ENABLED
 
 #include "../common/stm32f4xx_hal_conf_common.h"
 

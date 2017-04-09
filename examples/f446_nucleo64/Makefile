@@ -1,10 +1,10 @@
 
 SUBDIRS = \
   00_leds \
-  # 01_leds_oxc \
-  # 02_leds_rtos \
-  # 03_uart \
-  # 04_uart_console \
+  01_leds_oxc \
+  02_leds_rtos \
+  03_uart \
+  04_uart_console \
   # 05_usb_console \
   # 06_i2c_test \
   # 07_i2c_lcdt \

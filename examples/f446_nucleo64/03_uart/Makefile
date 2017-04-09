@@ -1,4 +1,4 @@
-PROJ_NAME=uart_console
+PROJ_NAME=uart
 
 USE_OXC = y
 # USE_OXC_DEVIO = y
@@ -17,12 +17,11 @@ OXCDIR = /home/atu/proj/stm32/oxc
 
 
 SRCS  = main.cpp
-SRCS += uart2_init_a2a3.cpp
-
-SRCS += empty_test0_function.cpp
+SRCS += uart2_init_a2a3_noirq.cpp
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
 # list: see ../common/f4_modules.mk
+
 
 
 include ../common/board_add.mk

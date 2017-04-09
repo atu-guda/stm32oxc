@@ -12,6 +12,7 @@
 
 #include <bsp/board_stm32f446_nucleo64.h>
 
+// now even for FreeRTOS
 #define STD_SYSTICK_HANDLER 1
 
 // ########################## Module Selection ##############################

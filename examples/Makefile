@@ -3,6 +3,7 @@ SUBDIRS = \
   f103c8_small \
   f303_disc \
   f407_x2 \
+  f446_nucleo64 \
   f429i_disc \
   f746_wave
 

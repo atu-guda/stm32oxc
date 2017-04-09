@@ -33,7 +33,7 @@ int main(void)
 
   int i=0x04,  j = 0;
   volatile int t = 0;
-  BOARD_LEDS_GPIO_EX->ODR = 0x0F;
+  BOARD_LEDS_GPIO_EX->ODR = BOARD_LEDS_MASK_EX;
   while(1) {
     // j = ( (~i) & 0x000F ) << shift;
     t = HAL_GetTick();

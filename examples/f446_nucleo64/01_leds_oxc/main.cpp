@@ -7,8 +7,8 @@ USE_DIE4LED_ERROR_HANDLER;
 void MX_GPIO_Init(void);
 
 
-BOARD_DEFINE_LEDS;
-const uint32_t leds_all = BOARD_LEDS_ALL;
+BOARD_DEFINE_LEDS_EX; // no board in only one LED
+const uint32_t leds_all = BOARD_LEDS_ALL_EX;
 
 int main(void)
 {
@@ -25,7 +25,7 @@ int main(void)
   // write/set test
   leds.write( leds_all );
   // delay_ms(  200 );
-  HAL_Delay(  500 );
+  HAL_Delay(  200 );
   leds.write( 0x00 );
   delay_ms(  100 );
   leds.set( 0x0A );

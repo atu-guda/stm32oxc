@@ -7,7 +7,6 @@ USE_DIE4LED_ERROR_HANDLER;
 void MX_GPIO_Init(void);
 
 
-// PinsOut p1 { GPIOC, 0, 4 };
 BOARD_DEFINE_LEDS;
 
 int main(void)
