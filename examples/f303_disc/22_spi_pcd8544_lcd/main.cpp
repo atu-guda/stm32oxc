@@ -72,9 +72,6 @@ int init_uart( UART_HandleTypeDef *uahp, int baud = 115200 );
 STD_USART2_SEND_TASK( usartio );
 // STD_USART2_RECV_TASK( usartio );
 STD_USART2_IRQ( usartio );
-// ----------------------------------------------------------------
-
-
 
 int main(void)
 {

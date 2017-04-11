@@ -1,0 +1,12 @@
+Control HD44780 LCD display via i2c port expander PCF8574
+Use "test" command to send string, on/off display
+
+SCL = B8 ? 4.7k pullUp
+SDA = B9 ? 4.7k pullUp
+
+Used USART2 with VCP on ST_LInk V2-1
+
+PA2  = USART1_TX
+PA3  = USART1_RX
+
+

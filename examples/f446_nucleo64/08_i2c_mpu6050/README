@@ -1,0 +1,12 @@
+Use MPU-6050 accel + gyro via I2C
+"D" command - 1 measurement
+
+SCL = B8 ? 4.7k pullUp
+SDA = B9 ? 4.7k pullUp
+
+Used USART2 with VCP on ST_LInk V2-1
+
+PA2  = USART1_TX
+PA3  = USART1_RX
+
+

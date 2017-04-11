@@ -1,4 +1,4 @@
-Test basic SPI actions
+Test MAX31855 thermocouple drv via SPI
 
 Used: SPI1:
 A5 = SCK
@@ -6,19 +6,7 @@ A6 = MISO
 A7 = MOSI
 +A4 = Soft NSS
 
-To use with 595:
-SI   <- MISO
-!OE  <- Gnd
-RCLK <- NSS
-CLK  <- SCK
-!RST <- V
-...
-s r 0 - to not send 00 bytes
-S 0x55 - set value
 
-To use logic analizer,
-  spi1_h.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;
-  and add priliminary drop before.
 
 used USB FS:
 A11 = D-

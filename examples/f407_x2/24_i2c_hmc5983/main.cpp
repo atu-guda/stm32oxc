@@ -39,6 +39,7 @@ void task_main( void *prm UNUSED_ARG );
 
 I2C_HandleTypeDef i2ch;
 HMC5983 mag( &i2ch );
+
 void MX_I2C1_Init( I2C_HandleTypeDef &i2c, uint32_t speed = 100000 );
 
 

@@ -103,6 +103,7 @@ int cmd_test0( int argc, const char * const * argv )
   pr( NL );
 
   uint8_t buf[12];
+  char obuf[40];
 
   // log_add( "Test0 " );
   TickType_t tc0 = xTaskGetTickCount();
@@ -131,7 +132,8 @@ int cmd_test0( int argc, const char * const * argv )
       int te = buf[0] + (buf[1] << 8);
       // pr_sdx( te );
       te *= 1000; te /= 16;
-      pr_sdx( te );
+      ifcvt( te, 1000, obuf, 3 );
+      pr( obuf ); pr( NL );
     }
 
     vTaskDelayUntil( &tc0, t_step );
