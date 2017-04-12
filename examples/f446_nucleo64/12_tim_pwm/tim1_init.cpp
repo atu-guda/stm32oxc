@@ -7,14 +7,14 @@ void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim_pwm )
   }
   TIM_EXA_CLKEN;
 
-  GPIO_InitTypeDef gpi;
+  GPIO_InitTypeDef gio;
 
-  gpi.Pin = TIM_EXA_PINS; // see inc/bsp/board_xxxx.h
-  gpi.Mode = GPIO_MODE_AF_PP;
-  gpi.Pull = GPIO_PULLDOWN;
-  gpi.Speed = GPIO_SPEED_HIGH;
-  gpi.Alternate = TIM_EXA_GPIOAF;
-  HAL_GPIO_Init( TIM_EXA_GPIO, &gpi );
+  gio.Pin = TIM_EXA_PINS; // see inc/bsp/board_xxxx.h
+  gio.Mode = GPIO_MODE_AF_PP;
+  gio.Pull = GPIO_NOPULL;
+  gio.Speed = GPIO_SPEED_HIGH;
+  gio.Alternate = TIM_EXA_GPIOAF;
+  HAL_GPIO_Init( TIM_EXA_GPIO, &gio );
 
   // HAL_NVIC_SetPriority( TIM_EXA_IRQ, 14, 0 );
   // HAL_NVIC_EnableIRQ( TIM_EXA_IRQ );

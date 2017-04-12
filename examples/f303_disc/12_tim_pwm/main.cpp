@@ -14,7 +14,7 @@ BOARD_DEFINE_LEDS;
 
 TIM_HandleTypeDef him_h;
 int pwm_vals[] = { 25, 50, 75, 90 };
-void tim8_cfg();
+void tim_cfg();
 void pwm_recalc();
 void pwm_update();
 void pwm_print_cfg();
@@ -101,7 +101,7 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
 {
   SET_UART_AS_STDIO( usartio );
 
-  tim8_cfg();
+  tim_cfg();
 
   default_main_loop();
   vTaskDelete(NULL);
@@ -139,7 +139,7 @@ int cmd_tinit( int argc, const char * const * argv )
 {
   pwm_print_cfg();
 
-  tim8_cfg();
+  tim_cfg();
 
   pr( NL "tinit end." NL );
   return 0;
@@ -147,32 +147,20 @@ int cmd_tinit( int argc, const char * const * argv )
 
 //  ----------------------------- configs ----------------
 
-void tim8_cfg()
+void tim_cfg()
 {
-  TIM_ClockConfigTypeDef sClockSourceConfig;
-
-  him_h.Instance = TIM8;
-  him_h.Init.Prescaler =  UVAR('p');
+  him_h.Instance = TIM_EXA;
+  him_h.Init.Prescaler = UVAR('p');
+  him_h.Init.Period    = UVAR('a');
+  him_h.Init.ClockDivision = 0;
   him_h.Init.CounterMode = TIM_COUNTERMODE_UP;
-  him_h.Init.Period =  UVAR('a');
-  him_h.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   him_h.Init.RepetitionCounter = 0;
-
   if( HAL_TIM_PWM_Init( &him_h ) != HAL_OK ) {
     UVAR('e') = 1; // like error
     return;
   }
 
-  // if( HAL_TIM_OC_Init( &him_h ) != HAL_OK ) {
-  //   UVAR('e') = 5;
-  //   return;
-  // }
-  //
-  // if( HAL_TIM_IC_Init( &him_h ) != HAL_OK ) {
-  //   UVAR('e') = 7;
-  //   return;
-  // }
-
+  TIM_ClockConfigTypeDef sClockSourceConfig;
   sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
   HAL_TIM_ConfigClockSource( &him_h, &sClockSourceConfig );
 
@@ -230,12 +218,13 @@ void pwm_print_cfg()
 
   int freq1 = pclk2  / ( presc + 1 );
   int freq2 = freq1 / ( arr + 1 );
-  pr( NL "TIM8 reinit: prescale: " ); pr_d( presc );
+  pr( NL TIM_EXA_STR " reinit: prescale: " ); pr_d( presc );
   pr( " ARR: " ); pr_d( arr );
   pr( " freq1: " ); pr_d( freq1 );
   pr( " freq2: " ); pr_d( freq2 ); pr( NL );
 }
 
+//  ----------------------------- configs ----------------
 
 FreeRTOS_to_stm32cube_tick_hook;
 

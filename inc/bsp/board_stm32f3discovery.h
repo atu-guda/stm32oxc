@@ -38,4 +38,14 @@
 #define LED_BSP_RX        LED_BSP_GREEN_0
 #define LED_BSP_ERR       LED_BSP_RED_1
 
+
+#define TIM_EXA        TIM8
+#define TIM_EXA_STR    "TIM8"
+#define TIM_EXA_GPIO   GPIOC
+#define TIM_EXA_PINS   (GPIO_PIN_6 | GPIO_PIN_7 | GPIO_PIN_8 | GPIO_PIN_9)
+#define TIM_EXA_CLKEN  __GPIOC_CLK_ENABLE(); __TIM8_CLK_ENABLE();
+#define TIM_EXA_CLKDIS __TIM8_CLK_DISABLE();
+#define TIM_EXA_GPIOAF GPIO_AF4_TIM8
+#define TIM_EXA_IRQ    TIM8_CC_IRQn
+
 #endif

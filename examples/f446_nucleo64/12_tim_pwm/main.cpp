@@ -11,10 +11,10 @@ USE_DIE4LED_ERROR_HANDLER;
 BOARD_DEFINE_LEDS_EX;
 
 
+
 TIM_HandleTypeDef him_h;
-TIM_OC_InitTypeDef tim_oc_cfg;
 int pwm_vals[] = { 25, 50, 75, 90 };
-void tim1_cfg();
+void tim_cfg();
 void pwm_recalc();
 void pwm_update();
 void pwm_print_cfg();
@@ -101,7 +101,7 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
 {
   SET_UART_AS_STDIO( usartio );
 
-  tim1_cfg();
+  tim_cfg();
 
   default_main_loop();
   vTaskDelete(NULL);
@@ -139,7 +139,7 @@ int cmd_tinit( int argc, const char * const * argv )
 {
   pwm_print_cfg();
 
-  tim1_cfg();
+  tim_cfg();
 
   pr( NL "tinit end." NL );
   return 0;
@@ -147,13 +147,14 @@ int cmd_tinit( int argc, const char * const * argv )
 
 //  ----------------------------- configs ----------------
 
-void tim1_cfg()
+void tim_cfg()
 {
   him_h.Instance = TIM_EXA;
   him_h.Init.Prescaler = UVAR('p');
   him_h.Init.Period    = UVAR('a');
   him_h.Init.ClockDivision = 0;
   him_h.Init.CounterMode = TIM_COUNTERMODE_UP;
+  him_h.Init.RepetitionCounter = 0;
   if( HAL_TIM_PWM_Init( &him_h ) != HAL_OK ) {
     UVAR('e') = 1; // like error
     return;
@@ -165,47 +166,25 @@ void tim1_cfg()
 
 void pwm_recalc()
 {
+  TIM_OC_InitTypeDef tim_oc_cfg;
   int pbase = UVAR('a');
   tim_oc_cfg.OCMode = TIM_OCMODE_PWM1;
   tim_oc_cfg.OCPolarity = TIM_OCPOLARITY_HIGH;
   tim_oc_cfg.OCFastMode = TIM_OCFAST_DISABLE;
-  tim_oc_cfg.Pulse = pwm_vals[0] * pbase / 100;
-  if( HAL_TIM_PWM_ConfigChannel( &him_h, &tim_oc_cfg, TIM_CHANNEL_1 ) != HAL_OK ) {
-    UVAR('e') = 11;
-    return;
-  }
-  tim_oc_cfg.Pulse =  pwm_vals[1] * pbase / 100;
-  if( HAL_TIM_PWM_ConfigChannel( &him_h, &tim_oc_cfg, TIM_CHANNEL_2 ) != HAL_OK ) {
-    UVAR('e') = 12;
-    return;
-  }
-  tim_oc_cfg.Pulse =  pwm_vals[2] * pbase / 100;
-  if( HAL_TIM_PWM_ConfigChannel( &him_h, &tim_oc_cfg, TIM_CHANNEL_3 ) != HAL_OK ) {
-    UVAR('e') = 13;
-    return;
-  }
-  tim_oc_cfg.Pulse =  pwm_vals[3] * pbase / 100;
-  if( HAL_TIM_PWM_ConfigChannel( &him_h, &tim_oc_cfg, TIM_CHANNEL_4 ) != HAL_OK ) {
-    UVAR('e') = 14;
-    return;
+
+  const int nch = 4;
+  const int channels[nch] = { TIM_CHANNEL_1, TIM_CHANNEL_2, TIM_CHANNEL_3, TIM_CHANNEL_4 };
+
+  for( int i=0; i<nch; ++i ) {
+    HAL_TIM_PWM_Stop( &him_h, channels[i] );
+    tim_oc_cfg.Pulse = pwm_vals[i] * pbase / 100;
+    if( HAL_TIM_PWM_ConfigChannel( &him_h, &tim_oc_cfg, channels[i] ) != HAL_OK ) {
+      UVAR('e') = 11+i;
+      return;
+    }
+    HAL_TIM_PWM_Start( &him_h, channels[i] );
   }
 
-  if( HAL_TIM_PWM_Start( &him_h, TIM_CHANNEL_1 ) != HAL_OK ) {
-    UVAR('e') = 21;
-    return;
-  }
-  if( HAL_TIM_PWM_Start( &him_h, TIM_CHANNEL_2 ) != HAL_OK ) {
-    UVAR('e') = 22;
-    return;
-  }
-  if( HAL_TIM_PWM_Start( &him_h, TIM_CHANNEL_3 ) != HAL_OK ) {
-    UVAR('e') = 23;
-    return;
-  }
-  if( HAL_TIM_PWM_Start( &him_h, TIM_CHANNEL_4 ) != HAL_OK ) {
-    UVAR('e') = 24;
-    return;
-  }
 }
 
 void pwm_update()
