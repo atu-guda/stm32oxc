@@ -8,18 +8,18 @@ using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
 
-BOARD_DEFINE_LEDS;
-
+BOARD_DEFINE_LEDS_EX;
 
 
 TIM_HandleTypeDef him_h;
+TIM_OC_InitTypeDef tim_oc_cfg;
 int pwm_vals[] = { 25, 50, 75, 90 };
-void tim8_cfg();
+void tim1_cfg();
 void pwm_recalc();
 void pwm_update();
 void pwm_print_cfg();
 
-const int def_stksz = 1 * configMINIMAL_STACK_SIZE;
+const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
 
 SmallRL srl( smallrl_exec );
 
@@ -46,7 +46,7 @@ void task_main( void *prm UNUSED_ARG );
 
 UART_HandleTypeDef uah;
 UsartIO usartio( &uah, USART2 );
-int init_uart( UART_HandleTypeDef *uahp, int baud = 115200 );
+void init_uart( UART_HandleTypeDef *uahp, int baud = 115200 );
 
 STD_USART2_SEND_TASK( usartio );
 // STD_USART2_RECV_TASK( usartio );
@@ -57,27 +57,27 @@ int main(void)
   HAL_Init();
 
   leds.initHW();
-  leds.write( BOARD_LEDS_ALL );
+  leds.write( BOARD_LEDS_ALL_EX );
 
   int rc = SystemClockCfg();
   if( rc ) {
-    die4led( BOARD_LEDS_ALL );
+    die4led( BOARD_LEDS_ALL_EX );
     return 0;
   }
 
-  delay_bad_ms( 200 );  leds.write( 0 );
+  HAL_Delay( 200 ); // delay_bad_ms( 200 );
+  leds.write( 0x00 ); delay_ms( 200 );
+  leds.write( BOARD_LEDS_ALL_EX );  HAL_Delay( 200 );
 
-
-  if( !init_uart( &uah ) ) {
-    die4led( 0x08 );
-  }
+  init_uart( &uah );
   leds.write( 0x0A );  delay_bad_ms( 200 );
 
-  leds.write( 0x00 );
+  delay_bad_ms( 200 );  leds.write( 1 );
+
 
   UVAR('t') = 1000;
   UVAR('n') = 10;
-  UVAR('p') = 14399;// prescaler, 144MHz->10kHz
+  UVAR('p') = 16799;// prescaler, 168MHz->10kHz
   UVAR('a') = 9999; // ARR, 10kHz->1Hz
   UVAR('r') = 0;    // flag: raw values
 
@@ -85,8 +85,8 @@ int main(void)
 
   //           code               name    stack_sz      param  prty TaskHandle_t*
   xTaskCreate( task_leds,        "leds", 1*def_stksz, nullptr,   1, nullptr );
-  xTaskCreate( task_usart2_send, "send", 1*def_stksz, nullptr,   2, nullptr );  // 2
-  xTaskCreate( task_main,        "main", 1*def_stksz, nullptr,   1, nullptr );
+  xTaskCreate( task_usart2_send, "send", 2*def_stksz, nullptr,   2, nullptr );  // 2
+  xTaskCreate( task_main,        "main", 2*def_stksz, nullptr,   1, nullptr );
   xTaskCreate( task_gchar,      "gchar", 2*def_stksz, nullptr,   1, nullptr );
 
   leds.write( 0x00 );
@@ -101,7 +101,7 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
 {
   SET_UART_AS_STDIO( usartio );
 
-  tim8_cfg();
+  tim1_cfg();
 
   default_main_loop();
   vTaskDelete(NULL);
@@ -139,7 +139,7 @@ int cmd_tinit( int argc, const char * const * argv )
 {
   pwm_print_cfg();
 
-  tim8_cfg();
+  tim1_cfg();
 
   pr( NL "tinit end." NL );
   return 0;
@@ -147,34 +147,17 @@ int cmd_tinit( int argc, const char * const * argv )
 
 //  ----------------------------- configs ----------------
 
-void tim8_cfg()
+void tim1_cfg()
 {
-  TIM_ClockConfigTypeDef sClockSourceConfig;
-
-  him_h.Instance = TIM8;
-  him_h.Init.Prescaler =  UVAR('p');
+  him_h.Instance = TIM_EXA;
+  him_h.Init.Prescaler = UVAR('p');
+  him_h.Init.Period    = UVAR('a');
+  him_h.Init.ClockDivision = 0;
   him_h.Init.CounterMode = TIM_COUNTERMODE_UP;
-  him_h.Init.Period =  UVAR('a');
-  him_h.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  him_h.Init.RepetitionCounter = 0;
-
   if( HAL_TIM_PWM_Init( &him_h ) != HAL_OK ) {
     UVAR('e') = 1; // like error
     return;
   }
-
-  // if( HAL_TIM_OC_Init( &him_h ) != HAL_OK ) {
-  //   UVAR('e') = 5;
-  //   return;
-  // }
-  //
-  // if( HAL_TIM_IC_Init( &him_h ) != HAL_OK ) {
-  //   UVAR('e') = 7;
-  //   return;
-  // }
-
-  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  HAL_TIM_ConfigClockSource( &him_h, &sClockSourceConfig );
 
   pwm_recalc();
 
@@ -182,25 +165,47 @@ void tim8_cfg()
 
 void pwm_recalc()
 {
-  TIM_OC_InitTypeDef tim_oc_cfg;
   int pbase = UVAR('a');
   tim_oc_cfg.OCMode = TIM_OCMODE_PWM1;
   tim_oc_cfg.OCPolarity = TIM_OCPOLARITY_HIGH;
   tim_oc_cfg.OCFastMode = TIM_OCFAST_DISABLE;
-
-  const int nch = 4;
-  const int channels[nch] = { TIM_CHANNEL_1, TIM_CHANNEL_2, TIM_CHANNEL_3, TIM_CHANNEL_4 };
-
-  for( int i=0; i<nch; ++i ) {
-    HAL_TIM_PWM_Stop( &him_h, channels[i] );
-    tim_oc_cfg.Pulse = pwm_vals[i] * pbase / 100;
-    if( HAL_TIM_PWM_ConfigChannel( &him_h, &tim_oc_cfg, channels[i] ) != HAL_OK ) {
-      UVAR('e') = 11+i;
-      return;
-    }
-    HAL_TIM_PWM_Start( &him_h, channels[i] );
+  tim_oc_cfg.Pulse = pwm_vals[0] * pbase / 100;
+  if( HAL_TIM_PWM_ConfigChannel( &him_h, &tim_oc_cfg, TIM_CHANNEL_1 ) != HAL_OK ) {
+    UVAR('e') = 11;
+    return;
+  }
+  tim_oc_cfg.Pulse =  pwm_vals[1] * pbase / 100;
+  if( HAL_TIM_PWM_ConfigChannel( &him_h, &tim_oc_cfg, TIM_CHANNEL_2 ) != HAL_OK ) {
+    UVAR('e') = 12;
+    return;
+  }
+  tim_oc_cfg.Pulse =  pwm_vals[2] * pbase / 100;
+  if( HAL_TIM_PWM_ConfigChannel( &him_h, &tim_oc_cfg, TIM_CHANNEL_3 ) != HAL_OK ) {
+    UVAR('e') = 13;
+    return;
+  }
+  tim_oc_cfg.Pulse =  pwm_vals[3] * pbase / 100;
+  if( HAL_TIM_PWM_ConfigChannel( &him_h, &tim_oc_cfg, TIM_CHANNEL_4 ) != HAL_OK ) {
+    UVAR('e') = 14;
+    return;
   }
 
+  if( HAL_TIM_PWM_Start( &him_h, TIM_CHANNEL_1 ) != HAL_OK ) {
+    UVAR('e') = 21;
+    return;
+  }
+  if( HAL_TIM_PWM_Start( &him_h, TIM_CHANNEL_2 ) != HAL_OK ) {
+    UVAR('e') = 22;
+    return;
+  }
+  if( HAL_TIM_PWM_Start( &him_h, TIM_CHANNEL_3 ) != HAL_OK ) {
+    UVAR('e') = 23;
+    return;
+  }
+  if( HAL_TIM_PWM_Start( &him_h, TIM_CHANNEL_4 ) != HAL_OK ) {
+    UVAR('e') = 24;
+    return;
+  }
 }
 
 void pwm_update()
@@ -223,19 +228,20 @@ void pwm_print_cfg()
   int presc = UVAR('p');
   int arr   = UVAR('a');
   uint32_t hclk  = HAL_RCC_GetHCLKFreq();
-  uint32_t pclk2 = HAL_RCC_GetPCLK2Freq(); // for TIM8
+  uint32_t pclk2 = HAL_RCC_GetPCLK2Freq(); // for TIM1
   if( hclk != pclk2 ) { // *2 : if APB2 prescaler != 1 (=2)
     pclk2 *= 2;
   }
 
   int freq1 = pclk2  / ( presc + 1 );
   int freq2 = freq1 / ( arr + 1 );
-  pr( NL "TIM8 reinit: prescale: " ); pr_d( presc );
+  pr( NL TIM_EXA_STR " reinit: prescale: " ); pr_d( presc );
   pr( " ARR: " ); pr_d( arr );
   pr( " freq1: " ); pr_d( freq1 );
   pr( " freq2: " ); pr_d( freq2 ); pr( NL );
 }
 
+//  ----------------------------- configs ----------------
 
 FreeRTOS_to_stm32cube_tick_hook;
 

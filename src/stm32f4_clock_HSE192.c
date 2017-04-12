@@ -9,8 +9,8 @@
 #error This SystemClock_Config in for 192 MHz only
 #endif
 
-// 192 = /8, *394, /2, /8
-// 180 Mhz, 48 MHz USB, 24 MHz for ADC (/8)
+// 192 = /8, *384, /2, /8
+// 192 Mhz, 48 MHz USB, 32 MHz for ADC (/6)
 
 int SystemClockCfg(void); // copy from oxc_base.h to reduce deps
 

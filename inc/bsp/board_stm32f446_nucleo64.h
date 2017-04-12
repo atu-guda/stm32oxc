@@ -38,6 +38,17 @@
 #define LED_BSP_IDLE      LED_BSP_BLUE_EX
 #define LED_BSP_TX        LED_BSP_RED_EX
 #define LED_BSP_RX        LED_BSP_GREEN_EX
-#define LED_BSP_ERR       LED_BSP_BLUE_EX
+#define LED_BSP_ERR       LED_BSP_YELLOW_EX
+
+
+#define TIM_EXA        TIM1
+#define TIM_EXA_STR    "TIM1"
+#define TIM_EXA_GPIO   GPIOA
+#define TIM_EXA_PINS   (GPIO_PIN_8 | GPIO_PIN_9 | GPIO_PIN_10 | GPIO_PIN_11)
+#define TIM_EXA_CLKEN  __GPIOA_CLK_ENABLE(); __TIM1_CLK_ENABLE();
+#define TIM_EXA_CLKDIS __TIM1_CLK_DISABLE();
+#define TIM_EXA_GPIOAF GPIO_AF1_TIM1
+#define TIM_EXA_IRQ    TIM1_BRK_TIM9_IRQn
+
 
 #endif

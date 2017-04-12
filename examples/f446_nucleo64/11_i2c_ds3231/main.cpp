@@ -105,8 +105,6 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
 {
   SET_UART_AS_STDIO( usartio );
 
-  // usartio.sendStrSync( "0123456789ABCDEF" NL );
-  // delay_ms( 10 );
 
   default_main_loop();
   vTaskDelete(NULL);
