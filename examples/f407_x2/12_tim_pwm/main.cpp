@@ -149,17 +149,24 @@ void tim_cfg()
     return;
   }
 
+  TIM_ClockConfigTypeDef sClockSourceConfig;
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  HAL_TIM_ConfigClockSource( &him_h, &sClockSourceConfig );
+
   pwm_recalc();
 
 }
 
 void pwm_recalc()
 {
-  TIM_OC_InitTypeDef tim_oc_cfg;
   int pbase = UVAR('a');
-  tim_oc_cfg.OCMode = TIM_OCMODE_PWM1;
-  tim_oc_cfg.OCPolarity = TIM_OCPOLARITY_HIGH;
-  tim_oc_cfg.OCFastMode = TIM_OCFAST_DISABLE;
+  TIM_OC_InitTypeDef tim_oc_cfg;
+  tim_oc_cfg.OCMode       = TIM_OCMODE_PWM1;
+  tim_oc_cfg.OCPolarity   = TIM_OCPOLARITY_HIGH;
+  tim_oc_cfg.OCNPolarity  = TIM_OCNPOLARITY_HIGH;
+  tim_oc_cfg.OCFastMode   = TIM_OCFAST_DISABLE;
+  tim_oc_cfg.OCIdleState  = TIM_OCIDLESTATE_RESET;
+  tim_oc_cfg.OCNIdleState = TIM_OCNIDLESTATE_RESET;
 
   const int nch = 4;
   const int channels[nch] = { TIM_CHANNEL_1, TIM_CHANNEL_2, TIM_CHANNEL_3, TIM_CHANNEL_4 };
@@ -207,6 +214,7 @@ void pwm_print_cfg()
   pr( " ARR: " ); pr_d( arr );
   pr( " freq1: " ); pr_d( freq1 );
   pr( " freq2: " ); pr_d( freq2 ); pr( NL );
+  pr( "CCR1: " );   pr_d( him_h.Instance->CCR1 ); pr( NL );
 }
 
 //  ----------------------------- configs ----------------
