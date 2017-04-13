@@ -1,6 +1,6 @@
 Control different stepmotors.
 E0:E3:
-bipolar 2 coil: mode0,mode1 E0:E2 coil1 E1:E1 coil2 (via LM298 or so)
+bipolar 2 coil: mode0,mode1 E0:E2 coil1 E1:E3 coil2 (via LM298 or so)
 monopolar 4 coil: E0:E1:E2:E3
 
 used USB FS:

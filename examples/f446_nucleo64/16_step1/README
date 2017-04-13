@@ -1,0 +1,10 @@
+Control different stepmotors.
+A8:A11
+bipolar 2 coil: mode0,mode1 A8:A10 coil1 A9:A11 coil2 (via LM298 or so)
+monopolar 4 coil: A8:A9:A10:A11
+
+Used USART2 with ST_Link VCP
+
+A2  = USART2_TX
+A3  = USART2_RX
+
