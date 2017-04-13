@@ -1,0 +1,9 @@
+Test TIM1 as encoder input
+in: A8,A9
+Not so stable work.
+Dont forget about capacitors.
+
+PA2  = USART1_TX
+PA3  = USART1_RX
+
+

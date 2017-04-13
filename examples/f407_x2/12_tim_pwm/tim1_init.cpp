@@ -1,8 +1,8 @@
 #include <oxc_base.h>
 
-void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim_pwm )
+void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim )
 {
-  if( htim_pwm->Instance != TIM_EXA ) {
+  if( htim->Instance != TIM_EXA ) {
     return;
   }
   TIM_EXA_CLKEN;
@@ -20,9 +20,9 @@ void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim_pwm )
   // HAL_NVIC_EnableIRQ( TIM_EXA_IRQ );
 }
 
-void HAL_TIM_PWM_MspDeInit( TIM_HandleTypeDef* htim_pwm )
+void HAL_TIM_PWM_MspDeInit( TIM_HandleTypeDef* htim )
 {
-  if( htim_pwm->Instance != TIM_EXA ) {
+  if( htim->Instance != TIM_EXA ) {
     return;
   }
   TIM_EXA_CLKDIS;

@@ -1,15 +1,15 @@
-PROJ_NAME=tim1_enco
+PROJ_NAME=tim1_usonic
 
 USE_OXC = y
 # USE_OXC_DEVIO = y
 USE_OXC_DEBUG = y
-USE_OXC_CONSOLE_USART = n
-USE_OXC_CONSOLE_USB_CDC = y
+USE_OXC_CONSOLE_USART = y
+USE_OXC_CONSOLE_USB_CDC = n
 # USE_OXC_I2C = y
 USE_FREERTOS = y
 # FREERTOS_HEAP = heap_2.c
 # # default: heap_3.c
-USE_USB_DEFAULT_CDC = y
+# USE_USB_DEFAULT_CDC = y
 # REQUIRE_SPECIAL_CLOCK = y
 
 
@@ -18,7 +18,8 @@ OXCDIR = /home/atu/proj/stm32/oxc
 
 
 SRCS  = main.cpp
-SRCS += usbfs_init.cpp
+SRCS += uart2_init_a2a3.cpp
+
 SRCS += tim1_init.cpp
 
 
@@ -26,6 +27,7 @@ SRCS += tim1_init.cpp
 # list: see ../common/f4_modules.mk
 
 SRCS += stm32f4xx_hal_tim.c
+SRCS += stm32f4xx_hal_tim_ex.c
 
 
 

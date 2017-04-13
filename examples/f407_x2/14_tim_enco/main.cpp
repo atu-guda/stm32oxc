@@ -13,8 +13,7 @@ BOARD_DEFINE_LEDS;
 
 UsbcdcIO usbcdc;
 
-TIM_HandleTypeDef tim1h;
-TIM_Encoder_InitTypeDef enco_cfg;
+TIM_HandleTypeDef tim_h;
 void init_enco();
 
 const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
@@ -100,8 +99,8 @@ int cmd_test0( int argc, const char * const * argv )
 
   int old_cnt = -1;
   for( int i=0; i<n && !break_flag; ++i ) {
-    uint16_t t_cnt = tim1h.Instance->CNT;
-    // uint16_t t_ccr1 = tim1h.Instance->CCR1;
+    uint16_t t_cnt = tim_h.Instance->CNT;
+    // uint16_t t_ccr1 = tim_h.Instance->CCR1;
     if( t_cnt != old_cnt ) {
       pr( "[" ); pr_d( i );
       pr( "]  CNT= " ); pr_d( t_cnt );
@@ -120,16 +119,17 @@ int cmd_test0( int argc, const char * const * argv )
 }
 
 //  ----------------------------- configs ----------------
-//
+
 void init_enco()
 {
-  tim1h.Instance = TIM1;
-  tim1h.Init.Period            = 0xFFFF;
-  tim1h.Init.Prescaler         = 0; // 0?
-  tim1h.Init.ClockDivision     = 0;
-  tim1h.Init.CounterMode       = TIM_COUNTERMODE_UP;
-  tim1h.Init.RepetitionCounter = 0;
+  tim_h.Instance               = TIM_EXA;
+  tim_h.Init.Period            = 0xFFFF;
+  tim_h.Init.Prescaler         = 0; // 0?
+  tim_h.Init.ClockDivision     = 0;
+  tim_h.Init.CounterMode       = TIM_COUNTERMODE_UP;
+  tim_h.Init.RepetitionCounter = 0;
 
+  TIM_Encoder_InitTypeDef enco_cfg;
   enco_cfg.EncoderMode    = TIM_ENCODERMODE_TI12;
   enco_cfg.IC1Polarity    = TIM_ICPOLARITY_RISING;
   enco_cfg.IC1Selection   = TIM_ICSELECTION_DIRECTTI;
@@ -140,15 +140,16 @@ void init_enco()
   enco_cfg.IC2Prescaler   = TIM_ICPSC_DIV1;
   enco_cfg.IC2Filter      = 0x0F; /// 0-F
 
-  if( HAL_TIM_Encoder_Init( &tim1h, &enco_cfg ) != HAL_OK ) {
+  if( HAL_TIM_Encoder_Init( &tim_h, &enco_cfg ) != HAL_OK ) {
     UVAR('e') = 1;
     return;
   }
-  HAL_TIM_Encoder_Start( &tim1h, TIM_CHANNEL_ALL );
+  HAL_TIM_Encoder_Start( &tim_h, TIM_CHANNEL_ALL );
 }
 
 
 
+//  ----------------------------- configs ----------------
 
 FreeRTOS_to_stm32cube_tick_hook;
 

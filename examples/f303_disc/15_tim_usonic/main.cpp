@@ -11,11 +11,8 @@ USE_DIE4LED_ERROR_HANDLER;
 // PinsOut p1 { GPIOE, 8, 8 };
 BOARD_DEFINE_LEDS;
 
-extern "C" {
-void TIM8_CC_IRQHandler(void);
-};
 
-TIM_HandleTypeDef tim8h;
+TIM_HandleTypeDef tim_h;
 void init_usonic();
 
 const int def_stksz = 1 * configMINIMAL_STACK_SIZE;
@@ -69,6 +66,7 @@ int main(void)
 
   leds.write( 0x00 );
 
+
   UVAR('t') = 1000;
   UVAR('n') = 20;
 
@@ -90,11 +88,9 @@ int main(void)
 
 void task_main( void *prm UNUSED_ARG ) // TMAIN
 {
-  SET_UART_AS_STDIO(usartio);
+  SET_UART_AS_STDIO( usartio );
 
   init_usonic();
-
-  delay_ms( 10 );
 
   default_main_loop();
   vTaskDelete(NULL);
@@ -134,58 +130,64 @@ int cmd_test0( int argc, const char * const * argv )
 }
 
 //  ----------------------------- configs ----------------
-//
+
 void init_usonic()
 {
-  tim8h.Instance = TIM8;
-  tim8h.Init.Prescaler         = 846; // 5.8 mks approx 1mm
-  tim8h.Init.Period            = 8500; // F approx 20Hz: for future motor PWM
-  tim8h.Init.ClockDivision     = 0;
-  tim8h.Init.CounterMode       = TIM_COUNTERMODE_UP;
-  tim8h.Init.RepetitionCounter = 0;
-  if( HAL_TIM_PWM_Init( &tim8h ) != HAL_OK ) {
+  tim_h.Instance = TIM_EXA;
+  tim_h.Init.Prescaler         = 846; // 5.8 mks approx 1mm
+  tim_h.Init.Period            = 8500; // F approx 20Hz: for future motor PWM
+  tim_h.Init.ClockDivision     = 0;
+  tim_h.Init.CounterMode       = TIM_COUNTERMODE_UP;
+  tim_h.Init.RepetitionCounter = 0;
+  if( HAL_TIM_PWM_Init( &tim_h ) != HAL_OK ) {
     UVAR('e') = 1; // like error
     return;
   }
 
+  TIM_ClockConfigTypeDef sClockSourceConfig;
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  HAL_TIM_ConfigClockSource( &tim_h, &sClockSourceConfig );
+
   TIM_OC_InitTypeDef  tim_oc_cfg;
-  tim_oc_cfg.OCMode = TIM_OCMODE_PWM1;
-  tim_oc_cfg.OCPolarity = TIM_OCPOLARITY_HIGH;
-  tim_oc_cfg.OCFastMode = TIM_OCFAST_DISABLE;
-  tim_oc_cfg.Pulse = 3; // 3 = appex 16 mks
-  if( HAL_TIM_PWM_ConfigChannel( &tim8h, &tim_oc_cfg, TIM_CHANNEL_1 ) != HAL_OK ) {
+  tim_oc_cfg.OCMode       = TIM_OCMODE_PWM1;
+  tim_oc_cfg.OCPolarity   = TIM_OCPOLARITY_HIGH;
+  tim_oc_cfg.OCNPolarity  = TIM_OCNPOLARITY_HIGH;
+  tim_oc_cfg.OCFastMode   = TIM_OCFAST_DISABLE;
+  tim_oc_cfg.OCIdleState  = TIM_OCIDLESTATE_RESET;
+  tim_oc_cfg.OCNIdleState = TIM_OCNIDLESTATE_RESET;
+  tim_oc_cfg.Pulse        = 3; // 3 = approx 16 mks
+  if( HAL_TIM_PWM_ConfigChannel( &tim_h, &tim_oc_cfg, TIM_CHANNEL_1 ) != HAL_OK ) {
     UVAR('e') = 11;
     return;
   }
-  if( HAL_TIM_PWM_Start( &tim8h, TIM_CHANNEL_1 ) != HAL_OK ) {
+  if( HAL_TIM_PWM_Start( &tim_h, TIM_CHANNEL_1 ) != HAL_OK ) {
     UVAR('e') = 12;
     return;
   }
 
   TIM_IC_InitTypeDef  tim_ic_cfg;
   // tim_ic_cfg.ICPolarity = TIM_ICPOLARITY_RISING;
-  tim_ic_cfg.ICPolarity = TIM_ICPOLARITY_BOTHEDGE;
+  tim_ic_cfg.ICPolarity  = TIM_ICPOLARITY_BOTHEDGE; // rising - start, falling - stop
   tim_ic_cfg.ICSelection = TIM_ICSELECTION_DIRECTTI;
   tim_ic_cfg.ICPrescaler = TIM_ICPSC_DIV1;
-  tim_ic_cfg.ICFilter = 0; // 0 - 0x0F
+  tim_ic_cfg.ICFilter    = 0; // 0 - 0x0F
 
-  if( HAL_TIM_IC_ConfigChannel( &tim8h, &tim_ic_cfg, TIM_CHANNEL_2 ) != HAL_OK )
-  {
+  if( HAL_TIM_IC_ConfigChannel( &tim_h, &tim_ic_cfg, TIM_CHANNEL_2 ) != HAL_OK ) {
     UVAR('e') = 21;
     return;
   }
 
-  HAL_NVIC_SetPriority( TIM8_CC_IRQn, 14, 0 );
+  HAL_NVIC_SetPriority( TIM8_CC_IRQn, 5, 0 );
   HAL_NVIC_EnableIRQ( TIM8_CC_IRQn );
 
-  if( HAL_TIM_IC_Start_IT( &tim8h, TIM_CHANNEL_2 ) != HAL_OK ) {
+  if( HAL_TIM_IC_Start_IT( &tim_h, TIM_CHANNEL_2 ) != HAL_OK ) {
     UVAR('e') = 23;
   }
 }
 
 void TIM8_CC_IRQHandler(void)
 {
-  HAL_TIM_IRQHandler( &tim8h );
+  HAL_TIM_IRQHandler( &tim_h );
 }
 
 void HAL_TIM_IC_CaptureCallback( TIM_HandleTypeDef *htim )
@@ -193,6 +195,7 @@ void HAL_TIM_IC_CaptureCallback( TIM_HandleTypeDef *htim )
   uint32_t cap2;
   static uint32_t c_old = 0xFFFFFFFF;
   if( htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2 )  {
+    leds.toggle( BIT2 );
     cap2 = HAL_TIM_ReadCapturedValue( htim, TIM_CHANNEL_2 );
     if( cap2 > c_old ) {
       UVAR('l') = cap2 - c_old ;
@@ -204,7 +207,7 @@ void HAL_TIM_IC_CaptureCallback( TIM_HandleTypeDef *htim )
   }
 }
 
-
+//  ----------------------------- configs ----------------
 
 FreeRTOS_to_stm32cube_tick_hook;
 

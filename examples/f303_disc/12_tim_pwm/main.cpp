@@ -12,7 +12,7 @@ BOARD_DEFINE_LEDS;
 
 
 
-TIM_HandleTypeDef him_h;
+TIM_HandleTypeDef tim_h;
 int pwm_vals[] = { 25, 50, 75, 90 };
 void tim_cfg();
 void pwm_recalc();
@@ -65,8 +65,9 @@ int main(void)
     return 0;
   }
 
-  delay_bad_ms( 200 );  leds.write( 0 );
-
+  HAL_Delay( 200 ); // delay_bad_ms( 200 );
+  leds.write( 0x00 ); delay_ms( 200 );
+  leds.write( BOARD_LEDS_ALL );  HAL_Delay( 200 );
 
   if( !init_uart( &uah ) ) {
     die4led( 0x08 );
@@ -149,20 +150,20 @@ int cmd_tinit( int argc, const char * const * argv )
 
 void tim_cfg()
 {
-  him_h.Instance = TIM_EXA;
-  him_h.Init.Prescaler = UVAR('p');
-  him_h.Init.Period    = UVAR('a');
-  him_h.Init.ClockDivision = 0;
-  him_h.Init.CounterMode = TIM_COUNTERMODE_UP;
-  him_h.Init.RepetitionCounter = 0;
-  if( HAL_TIM_PWM_Init( &him_h ) != HAL_OK ) {
+  tim_h.Instance = TIM_EXA;
+  tim_h.Init.Prescaler = UVAR('p');
+  tim_h.Init.Period    = UVAR('a');
+  tim_h.Init.ClockDivision = 0;
+  tim_h.Init.CounterMode = TIM_COUNTERMODE_UP;
+  tim_h.Init.RepetitionCounter = 0;
+  if( HAL_TIM_PWM_Init( &tim_h ) != HAL_OK ) {
     UVAR('e') = 1; // like error
     return;
   }
 
   TIM_ClockConfigTypeDef sClockSourceConfig;
   sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  HAL_TIM_ConfigClockSource( &him_h, &sClockSourceConfig );
+  HAL_TIM_ConfigClockSource( &tim_h, &sClockSourceConfig );
 
   pwm_recalc();
 
@@ -183,30 +184,30 @@ void pwm_recalc()
   const int channels[nch] = { TIM_CHANNEL_1, TIM_CHANNEL_2, TIM_CHANNEL_3, TIM_CHANNEL_4 };
 
   for( int i=0; i<nch; ++i ) {
-    HAL_TIM_PWM_Stop( &him_h, channels[i] );
+    HAL_TIM_PWM_Stop( &tim_h, channels[i] );
     tim_oc_cfg.Pulse = pwm_vals[i] * pbase / 100;
-    if( HAL_TIM_PWM_ConfigChannel( &him_h, &tim_oc_cfg, channels[i] ) != HAL_OK ) {
+    if( HAL_TIM_PWM_ConfigChannel( &tim_h, &tim_oc_cfg, channels[i] ) != HAL_OK ) {
       UVAR('e') = 11+i;
       return;
     }
-    HAL_TIM_PWM_Start( &him_h, channels[i] );
+    HAL_TIM_PWM_Start( &tim_h, channels[i] );
   }
 
 }
 
 void pwm_update()
 {
-  him_h.Instance->PSC  = UVAR('p');
+  tim_h.Instance->PSC  = UVAR('p');
   int pbase = UVAR('a');
-  him_h.Instance->ARR  = pbase;
+  tim_h.Instance->ARR  = pbase;
   int scl = pbase;
   if( UVAR('r') ) { // raw values
     scl = 100;
   }
-  him_h.Instance->CCR1 = pwm_vals[0] * scl / 100;
-  him_h.Instance->CCR2 = pwm_vals[1] * scl / 100;
-  him_h.Instance->CCR3 = pwm_vals[2] * scl / 100;
-  him_h.Instance->CCR4 = pwm_vals[3] * scl / 100;
+  tim_h.Instance->CCR1 = pwm_vals[0] * scl / 100;
+  tim_h.Instance->CCR2 = pwm_vals[1] * scl / 100;
+  tim_h.Instance->CCR3 = pwm_vals[2] * scl / 100;
+  tim_h.Instance->CCR4 = pwm_vals[3] * scl / 100;
 }
 
 void pwm_print_cfg()
@@ -225,7 +226,7 @@ void pwm_print_cfg()
   pr( " ARR: " ); pr_d( arr );
   pr( " freq1: " ); pr_d( freq1 );
   pr( " freq2: " ); pr_d( freq2 ); pr( NL );
-  pr( "CCR1: " );   pr_d( him_h.Instance->CCR1 ); pr( NL );
+  pr( "CCR1: " );   pr_d( tim_h.Instance->CCR1 ); pr( NL );
 }
 
 //  ----------------------------- configs ----------------

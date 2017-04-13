@@ -1,43 +1,33 @@
 #include <oxc_base.h>
 
-void HAL_TIM_Encoder_MspInit( TIM_HandleTypeDef* timh_enco )
+void HAL_TIM_Encoder_MspInit( TIM_HandleTypeDef* htim )
 {
-  if( timh_enco->Instance != TIM1 ) {
+  if( htim->Instance != TIM_EXA ) {
     return;
   }
-  __TIM1_CLK_ENABLE();
-  __GPIOE_CLK_ENABLE();
+  TIM_EXA_CLKEN;
 
-  GPIO_InitTypeDef gpi;
+  GPIO_InitTypeDef gio;
 
-  /**TIM1 GPIO Configuration
-    PE9      ------> TIM1_CH1
-    PE11     ------> TIM1_CH2
-    */
-  gpi.Pin = GPIO_PIN_9 | GPIO_PIN_11;
-  gpi.Mode = GPIO_MODE_AF_PP;
-  // gpi.Pull = GPIO_PULLDOWN;
-  gpi.Pull = GPIO_NOPULL; // use external resistors
-  gpi.Speed = GPIO_SPEED_LOW;
-  gpi.Alternate = GPIO_AF1_TIM1;
-  HAL_GPIO_Init( GPIOE, &gpi );
+  gio.Pin       = TIM_EXA_PIN1 | TIM_EXA_PIN2; // see inc/bsp/board_xxxx.h
+  gio.Mode = GPIO_MODE_AF_PP;
+  gio.Pull      = GPIO_NOPULL;
+  gio.Speed     = GPIO_SPEED_HIGH;
+  gio.Alternate = TIM_EXA_GPIOAF;
+  HAL_GPIO_Init( TIM_EXA_GPIO, &gio );
 
-  /* Peripheral interrupt init*/
-  /* Sets the priority grouping field */
-  // HAL_NVIC_SetPriority( TIM1_BRK_TIM9_IRQn, 14, 0 );
-  // HAL_NVIC_EnableIRQ( TIM1_BRK_TIM9_IRQn );
-
+  // HAL_NVIC_SetPriority( TIM_EXA_IRQ, 14, 0 );
+  // HAL_NVIC_EnableIRQ( TIM_EXA_IRQ );
 }
 
-void HAL_TIM_PWM_MspDeInit( TIM_HandleTypeDef* timh_enco )
+void HAL_TIM_PWM_MspDeInit( TIM_HandleTypeDef* htim )
 {
-  if( timh_enco->Instance !=TIM1 ) {
+  if( htim->Instance != TIM_EXA ) {
     return;
   }
-  __TIM1_CLK_DISABLE();
-  HAL_GPIO_DeInit( GPIOE, GPIO_PIN_9|GPIO_PIN_11 );
+  TIM_EXA_CLKDIS;
+  HAL_GPIO_DeInit( TIM_EXA_GPIO, TIM_EXA_PINS );
 
-  /* Peripheral interrupt Deinit*/
-  // HAL_NVIC_DisableIRQ(TIM1_BRK_TIM9_IRQn);
+  // HAL_NVIC_DisableIRQ( TIM_EXA_IRQ );
 }
 

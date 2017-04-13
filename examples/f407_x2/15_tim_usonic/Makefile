@@ -5,10 +5,12 @@ USE_OXC = y
 USE_OXC_DEBUG = y
 USE_OXC_CONSOLE_USART = n
 USE_OXC_CONSOLE_USB_CDC = y
+# USE_OXC_I2C = y
 USE_FREERTOS = y
 # FREERTOS_HEAP = heap_2.c
 # # default: heap_3.c
 USE_USB_DEFAULT_CDC = y
+# REQUIRE_SPECIAL_CLOCK = y
 
 
 # TODO: copy to main location
