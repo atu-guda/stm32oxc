@@ -1,0 +1,12 @@
+Try to use SD card via SDIO 1 bit wire
+Try FatFS
+
+C8  = dat0 (MISO)
+B2  = CK   (SCK)
+D2  = CMD  (MOSI)
+
+Used USART2 with ST_Link VCP
+
+A2  = USART2_TX
+A3  = USART2_RX
+

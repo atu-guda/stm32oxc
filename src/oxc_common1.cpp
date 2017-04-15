@@ -34,7 +34,7 @@ void default_main_loop()
 {
   uint32_t nl = 0;
   delay_ms( 10 );
-  pr( "*=*** Main loop: ****** " NL );
+  pr( "*=*** " PROJ_NAME  " main loop: ****** " NL );
   delay_ms( 20 );
   if( ! global_smallrl ) {
     die( 0x01 );
