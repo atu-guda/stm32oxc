@@ -1,4 +1,5 @@
-Try ADC usage
+Try ADC usage: manual conversion mode
+Clock: APB2/4 = 84/4 = 21
 
 Channels:
  A0, //  A1,  A6,  A7
