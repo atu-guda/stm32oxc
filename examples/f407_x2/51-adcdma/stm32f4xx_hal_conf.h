@@ -8,7 +8,7 @@
 
 // for oxc lib: just to check
 #define REQ_MCBASE STM32F4
-#define REQ_SYSCLK_FREQ 168
+#define REQ_SYSCLK_FREQ 144
 
 #include <bsp/board_stm32f407_atu_x2.h>
 

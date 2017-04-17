@@ -1,10 +1,10 @@
 #include <oxc_base.h>
-#include <oxc_gpio.h>
 
 extern ADC_HandleTypeDef hadc1;
 //ADC_HandleTypeDef hadc2;
 //ADC_HandleTypeDef hadc3;
 extern DMA_HandleTypeDef hdma_adc1;
+extern uint32_t adc_clk;
 
 void ADC_DMA_REINIT();
 
@@ -16,7 +16,8 @@ void MX_ADC1_Init( uint8_t n_ch, uint32_t sampl_time )
   if( n_ch < 1 ) { n_ch = 1; }
 
   hadc1.Instance                   = ADC1;
-  hadc1.Init.ClockPrescaler        = ADC_CLOCK_SYNC_PCLK_DIV4; // 84/4 =  21 Mhz, bey be better 72/2=36?
+  hadc1.Init.ClockPrescaler        = ADC_CLOCK_SYNC_PCLK_DIV2; // 72/2 = 36 MHz  = MAX
+  adc_clk = 36000000;
   hadc1.Init.Resolution            = ADC_RESOLUTION_12B;
   hadc1.Init.ScanConvMode          = ENABLE;  // if disabled, only first channel works
   // hadc1.Init.ScanConvMode          = DISABLE;

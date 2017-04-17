@@ -22,11 +22,12 @@ void ADC_DMA_REINIT();
 void pr_ADC_state();
 ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
-const uint32_t tim_freq_in = 84000000; // depend in MCU, freq TODO: calculate
+uint32_t tim_freq_in; // timer input freq
+uint32_t adc_clk = 36000000;     // depend in MCU, set in MX_ADC1_Init
 uint32_t t_step = 100000; // in us, recalculated before measurement
 int v_adc_ref = 3250; // in mV, measured before test, adjust as UVAR('v')
 const uint32_t n_ADC_ch_max = 4; // current - in UVAR('c')
-const uint32_t n_ADC_mem  = 1024*32; // MCU dependent
+const uint32_t n_ADC_mem  = 1024*32; // MCU dependent, in 16-bit samples
 const uint32_t n_ADC_mem_guard  = n_ADC_mem + 2 * n_ADC_ch_max; // 2 lines for guard
 uint16_t adc_v0[ n_ADC_mem_guard ];
 volatile int adc_end_dma = 0;
@@ -34,14 +35,14 @@ volatile int adc_dma_error = 0;
 volatile uint32_t n_series = 0;
 uint32_t n_series_todo = 0;
 const uint32_t n_sampl_times = 7; // current number - in UVAR('s')
-const uint32_t sampl_times_codes[n_sampl_times] = { // all for 25 MHz ADC clock
-  ADC_SAMPLETIME_3CYCLES   , //  15  tick: 1.4 MSa,  0.72 us
-  ADC_SAMPLETIME_15CYCLES  , //  27  tick: 778 kSa,  1.29 us
-  ADC_SAMPLETIME_28CYCLES  , //  40  tick: 525 kSa,  1.91 us
-  ADC_SAMPLETIME_56CYCLES  , //  68  tick: 309 kSa,  3.24 us
-  ADC_SAMPLETIME_84CYCLES  , //  96  tick: 218 kSa,  4.57 us
-  ADC_SAMPLETIME_144CYCLES , // 156  tick: 134 kSa,  7.43 us
-  ADC_SAMPLETIME_480CYCLES   // 492  tick:  42 kSa, 23.43 us
+const uint32_t sampl_times_codes[n_sampl_times] = { // all for 36 MHz ADC clock
+  ADC_SAMPLETIME_3CYCLES   , //  15  tick: 2.40 MSa,  0.42 us
+  ADC_SAMPLETIME_15CYCLES  , //  27  tick: 1.33 MSa,  0.75 us
+  ADC_SAMPLETIME_28CYCLES  , //  40  tick:  900 kSa,  1.11 us
+  ADC_SAMPLETIME_56CYCLES  , //  68  tick:  529 kSa,  1.89 us
+  ADC_SAMPLETIME_84CYCLES  , //  96  tick:  375 kSa,  2.67 us
+  ADC_SAMPLETIME_144CYCLES , // 156  tick:  231 kSa,  4.33 us
+  ADC_SAMPLETIME_480CYCLES   // 492  tick:   73 kSa, 13.67 us
 };
 const uint32_t sampl_times_cycles[n_sampl_times] = { // sample+conv(12)
     15,  // ADC_SAMPLETIME_3CYCLES
@@ -56,7 +57,7 @@ const uint32_t sampl_times_cycles[n_sampl_times] = { // sample+conv(12)
 
 
 TIM_HandleTypeDef tim2h;
-void tim2_init( uint16_t presc = 49, uint32_t arr = 100 ); // 1MHz, 10 kHz
+void tim2_init( uint16_t presc = 36, uint32_t arr = 100 ); // 1MHz, 10 kHz
 void tim2_deinit();
 
 const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
@@ -99,9 +100,15 @@ int main(void)
 
   delay_bad_ms( 200 );  leds.write( 0 );
 
+  tim_freq_in = HAL_RCC_GetPCLK1Freq(); // to TIM2
+  uint32_t hclk_freq = HAL_RCC_GetHCLKFreq();
+  if( tim_freq_in < hclk_freq ) {
+    tim_freq_in *= 2;
+  }
+
   UVAR('t') = 1000; // 1 s extra wait
   UVAR('v') = v_adc_ref;
-  UVAR('p') = 84-1; // timer PSC, for 1MHz
+  UVAR('p') = (tim_freq_in/1000000)-1; // timer PSC, for 1MHz
   UVAR('a') = 99999; // timer ARR, for 10Hz
   UVAR('c') = n_ADC_ch_max;
   UVAR('n') = 8; // number of series
@@ -173,25 +180,24 @@ int cmd_test0( int argc, const char * const * argv )
 
   uint32_t sampl_t_idx = UVAR('s');
   if( sampl_t_idx >= n_sampl_times ) { sampl_t_idx = n_sampl_times-1; };
-  uint32_t f_sampl_ser = 21000000 / ( sampl_times_cycles[sampl_t_idx] * n_ch );
+  uint32_t f_sampl_ser = adc_clk / ( sampl_times_cycles[sampl_t_idx] * n_ch );
 
-  t_step =  (UVAR('a')+1) * (UVAR('p')+1); // in timer input ticks
-  uint32_t tim_f = tim_freq_in / t_step; // timer update freq
-  t_step /= 84; // * 1e6 / 84e6
-  uint32_t t_wait0 = n  * t_step / 1000;
+  uint32_t t_step_tick =  (UVAR('a')+1) * (UVAR('p')+1); // in timer input ticks
+  uint32_t tim_f = tim_freq_in / t_step_tick; // timer update freq
+  t_step = t_step_tick / ( tim_freq_in / 1000000 ); // in us
+  uint32_t t_wait0 = n  * t_step / 1000; // in ms
   if( t_wait0 < 1 ) { t_wait0 = 1; }
 
   if( n > n_ADC_series_max ) { n = n_ADC_series_max; };
 
   pr( NL "Test0: n= " ); pr_d( n ); pr( " n_ch= " ); pr_d( n_ch );
-  pr( " tim_f= " ); pr_d( tim_f );
-  pr( " t_step= " ); pr_d( t_step );
+  pr( "  tim_f= " ); pr_d( tim_f );
+  pr( " Hz;  t_step= " ); pr_d( t_step );
   pr( " us;  f_sampl_ser= " ); pr_d( f_sampl_ser );
   pr( " t_wait0= " ); pr_d( t_wait0 );  pr( NL );
   ifcvt( t_step, 1000000, buf, 6 );
   pr( " t_step= " ); pr( buf );
   pr( NL );
-  // uint16_t v = 0;
   tim2_deinit();
 
   pr_ADC_state();
@@ -350,7 +356,7 @@ void HAL_ADCEx_InjectedConvCpltCallback( ADC_HandleTypeDef * /*hadc*/ )
 {
 }
 
-// // configs
+// configs
 FreeRTOS_to_stm32cube_tick_hook;
 
 // vim: path=.,/usr/share/stm32lib/inc/,/usr/arm-none-eabi/include,../../../inc

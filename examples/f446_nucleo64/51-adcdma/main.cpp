@@ -193,23 +193,22 @@ int cmd_test0( int argc, const char * const * argv )
   if( sampl_t_idx >= n_sampl_times ) { sampl_t_idx = n_sampl_times-1; };
   uint32_t f_sampl_ser = adc_clk / ( sampl_times_cycles[sampl_t_idx] * n_ch );
 
-  t_step =  (UVAR('a')+1) * (UVAR('p')+1); // in timer input ticks
-  uint32_t tim_f = tim_freq_in / t_step; // timer update freq
-  t_step /= 72; // * 1e6 / 72e6
-  uint32_t t_wait0 = n  * t_step / 1000;
+  uint32_t t_step_tick =  (UVAR('a')+1) * (UVAR('p')+1); // in timer input ticks
+  uint32_t tim_f = tim_freq_in / t_step_tick; // timer update freq
+  t_step = t_step_tick / ( tim_freq_in / 1000000 ); // in us
+  uint32_t t_wait0 = n  * t_step / 1000; // in ms
   if( t_wait0 < 1 ) { t_wait0 = 1; }
 
   if( n > n_ADC_series_max ) { n = n_ADC_series_max; };
 
   pr( NL "Test0: n= " ); pr_d( n ); pr( " n_ch= " ); pr_d( n_ch );
-  pr( " tim_f= " ); pr_d( tim_f );
-  pr( " t_step= " ); pr_d( t_step );
+  pr( "  tim_f= " ); pr_d( tim_f );
+  pr( " Hz;  t_step= " ); pr_d( t_step );
   pr( " us;  f_sampl_ser= " ); pr_d( f_sampl_ser );
   pr( " t_wait0= " ); pr_d( t_wait0 );  pr( NL );
   ifcvt( t_step, 1000000, buf, 6 );
   pr( " t_step= " ); pr( buf );
   pr( NL );
-  // uint16_t v = 0;
   tim2_deinit();
 
   pr_ADC_state();
