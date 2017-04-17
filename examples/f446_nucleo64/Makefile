@@ -24,9 +24,9 @@ SUBDIRS = \
   25_spi_max31855_tcouple \
   30_sdcard1 \
   31_sdcard2 \
+  50-adc0 \
 
   # 05_usb_console \
-  # 50-adc0
 
 ALL : examples_f446_nucleo64
 
