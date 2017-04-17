@@ -5,7 +5,7 @@ MCINCTYPE = STM32F103xB # realy C8
 FREERTOS_ARCHNAME = ARM_CM3
 BOARDNAME = STM32F103-BluePill # unofficial
 
-vpath %.cpp ../common ../../common
+ADDSRC += ../common ../../common
 
 #
 LDSCRIPT = $(STMLD)/STM32F103X8_FLASH.ld

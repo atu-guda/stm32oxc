@@ -5,7 +5,7 @@ MCINCTYPE = STM32F303xC
 FREERTOS_ARCHNAME = ARM_CM4F
 BOARDNAME = STM32F3-Discovery
 
-vpath %.cpp ../common ../../common
+ADDSRC += ../common ../../common
 
 #
 LDSCRIPT = $(STMLD)/STM32F303VC_FLASH.ld

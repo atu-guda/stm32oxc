@@ -5,7 +5,7 @@ MCINCTYPE = $(MCTYPE)xx
 FREERTOS_ARCHNAME = ARM_CM4F
 BOARDNAME = STM32F407-atu-x2 # none
 
-vpath %.cpp ../common ../../common
+ADDSRC += ../common ../../common
 
 #
 LDSCRIPT = $(STMLD)/STM32F407VE_FLASH.ld

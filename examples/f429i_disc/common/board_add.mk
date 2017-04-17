@@ -5,7 +5,7 @@ MCINCTYPE = $(MCTYPE)xx
 FREERTOS_ARCHNAME = ARM_CM4F
 BOARDNAME = STM32F429I-Discovery
 
-vpath %.cpp ../common ../../common
+ADDSRC += ../common ../../common
 
 #
 LDSCRIPT = $(STMLD)/STM32F429ZITx_FLASH.ld
