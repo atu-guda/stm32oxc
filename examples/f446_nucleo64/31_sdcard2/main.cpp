@@ -39,9 +39,11 @@ CmdInfo CMDINFO_FSINFO { "fsinfo", 'I', cmd_fsinfo, " info about FAT filesystem"
 int cmd_ls( int argc, const char * const * argv );
 CmdInfo CMDINFO_LS { "ls", 0, cmd_ls, " [path] - list directory contents"  };
 int cmd_cat( int argc, const char * const * argv );
-CmdInfo CMDINFO_CAT { "cat", 0, cmd_cat, " path [max] - output file contents to stdout"  };
+CmdInfo CMDINFO_CAT { "cat", 0, cmd_cat, " path [max [noout]] - output file contents to stdout"  };
 int cmd_appstr( int argc, const char * const * argv );
 CmdInfo CMDINFO_APPSTR { "appstr", 0, cmd_appstr, " file string  - append string to file"  };
+int cmd_wblocks( int argc, const char * const * argv );
+CmdInfo CMDINFO_WBLOCKS { "wblocks", 0, cmd_wblocks, " file [n_blocks]  - write blocks to file"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -53,6 +55,7 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_LS,
   &CMDINFO_CAT,
   &CMDINFO_APPSTR,
+  &CMDINFO_WBLOCKS,
   nullptr
 };
 
@@ -267,11 +270,13 @@ int cmd_cat( int argc, const char * const * argv )
     fn = argv[1];
   }
   uint32_t max_sz = arg2long_d( 2, argc, argv, 1024, 1, 0x7FFFFFFF );
+  bool do_out = ! arg2long_d( 3, argc, argv, 0, 1, 1 );
   pr( "cat file \"" ); pr( fn ); pr( "\"  max_sz= " ); pr_d( max_sz ); pr( NL );
 
   unsigned nr = 0, to_read, was_read; // number of read bytes
   FIL f;
   FRESULT r = f_open( &f, fn, FA_READ );
+  TickType_t tc0 = xTaskGetTickCount(), tc1 = tc0;
   if( r == FR_OK ) {
     while( nr < max_sz ) { // or break
       to_read = max_sz - nr;
@@ -283,16 +288,21 @@ int cmd_cat( int argc, const char * const * argv )
       if( r != FR_OK || was_read < 1 ) {
         break;
       }
-      sendBlock( 1, (const char*)sd_buf, was_read );
+      if( do_out ) {
+        sendBlock( 1, (const char*)sd_buf, was_read );
+      }
       nr += was_read;
     }
     f_close( &f );
+    tc1 = xTaskGetTickCount();
   } else {
     pr( "f_open error: " ); pr_d( r ); pr( NL );
   }
 
   break_flag = 0;  idle_flag = 1;
-  pr( NL "cat end, read " ); pr_d( nr); pr( " bytes, r =  " ); pr_d( r ); pr( NL );
+  pr( NL "cat end, read " ); pr_d( nr);
+  pr( " bytes, r =  " ); pr_d( r );
+  pr( " time =  " ); pr_d( tc1 - tc0 ); pr( NL );
   return 0;
 }
 
@@ -322,6 +332,42 @@ int cmd_appstr( int argc, const char * const * argv )
   pr( NL "appstr end, r= " ); pr_d( r ); pr( " was_wr= "); pr_d( was_wr ); pr( NL );
   return 0;
 }
+
+int cmd_wblocks( int argc, const char * const * argv )
+{
+  if( argc < 2 ) {
+    pr( "Error: need filename [n_sect]" NL );
+    break_flag = 0;  idle_flag = 1;
+    return 1;
+  }
+  uint32_t n_sect = arg2long_d( 2, argc, argv, 1, 1, 1024*2048 );
+
+  const char *fn = argv[1];
+  unsigned  was_wr = 0, w;
+  memset( sd_buf, '1', sizeof( sd_buf ) );
+  FIL f;
+  FRESULT r = f_open( &f, fn, FA_WRITE | FA_OPEN_ALWAYS );
+  TickType_t tc0 = xTaskGetTickCount(), tc1 = tc0;
+  if( r == FR_OK ) {
+    for( unsigned i=0; i < n_sect; ++i ) {
+      r = f_write( &f, sd_buf, sizeof( sd_buf ), &w );
+      was_wr += w;
+      if( r != FR_OK ) {
+        break;
+      }
+    }
+    tc1 = xTaskGetTickCount();
+    f_close( &f );
+  } else {
+    pr( "f_open error: " ); pr_d( r ); pr( NL );
+  }
+
+  break_flag = 0;  idle_flag = 1;
+  pr( NL "wblocks end, r= " ); pr_d( r ); pr( " was_wr= "); pr_d( was_wr );
+  pr( " time =  " ); pr_d( tc1 - tc0 ); pr( NL );
+  return 0;
+}
+
 
 //  ----------------------------- configs ----------------
 
