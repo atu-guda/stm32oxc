@@ -43,7 +43,9 @@ CmdInfo CMDINFO_CAT { "cat", 0, cmd_cat, " path [max [noout]] - output file cont
 int cmd_appstr( int argc, const char * const * argv );
 CmdInfo CMDINFO_APPSTR { "appstr", 0, cmd_appstr, " file string  - append string to file"  };
 int cmd_wblocks( int argc, const char * const * argv );
-CmdInfo CMDINFO_WBLOCKS { "wblocks", 0, cmd_wblocks, " file [n_blocks]  - write blocks to file"  };
+CmdInfo CMDINFO_WBLOCKS { "wblocks", 'W', cmd_wblocks, " file [n_blocks]  - write blocks to file"  };
+int cmd_rm( int argc, const char * const * argv );
+CmdInfo CMDINFO_RM { "rm", 0, cmd_rm, " file - remove file"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -56,6 +58,7 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_CAT,
   &CMDINFO_APPSTR,
   &CMDINFO_WBLOCKS,
+  &CMDINFO_RM,
   nullptr
 };
 
@@ -333,6 +336,7 @@ int cmd_appstr( int argc, const char * const * argv )
   return 0;
 }
 
+
 int cmd_wblocks( int argc, const char * const * argv )
 {
   if( argc < 2 ) {
@@ -367,6 +371,26 @@ int cmd_wblocks( int argc, const char * const * argv )
   pr( " time =  " ); pr_d( tc1 - tc0 ); pr( NL );
   return 0;
 }
+
+int cmd_rm( int argc, const char * const * argv )
+{
+  if( argc < 2 ) {
+    pr( "Error: need filename to delete" NL );
+    break_flag = 0;  idle_flag = 1;
+    return 1;
+  }
+
+  const char *fn = argv[1];
+  FRESULT r = f_unlink( fn );
+  if( r != FR_OK ) {
+    pr( "f_unlink error: " ); pr_d( r ); pr( NL );
+  }
+
+  break_flag = 0;  idle_flag = 1;
+  pr( NL "rm end, r= " ); pr_d( r ); pr( NL );
+  return 0;
+}
+
 
 
 //  ----------------------------- configs ----------------
