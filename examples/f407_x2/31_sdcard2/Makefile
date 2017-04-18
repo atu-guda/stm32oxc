@@ -20,13 +20,14 @@ OXCDIR = /home/atu/proj/stm32/oxc
 
 SRCS  = main.cpp
 SRCS += usbfs_init.cpp
+
 SRCS += f4_sdio_init_1bit.cpp
 SRCS += bsp_driver_sd.c
 SRCS += fatfs.c
-
 SRCS += ff.c
+SRCS += ff_gen_drv.c
+SRCS += diskio.c
 SRCS += sd_diskio.c
-SRCS += unicode.c
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
 # list: see ../common/f4_modules.mk

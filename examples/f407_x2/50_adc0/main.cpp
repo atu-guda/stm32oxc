@@ -8,7 +8,6 @@ using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
 
-// PinsOut p1 { GPIOC, 0, 4 };
 BOARD_DEFINE_LEDS;
 
 UsbcdcIO usbcdc;
@@ -131,6 +130,7 @@ int cmd_test0( int argc, const char * const * argv )
   pr( NL "test0 end." NL );
   return 0;
 }
+
 
 //  ----------------------------- configs ----------------
 

@@ -1,4 +1,9 @@
 Try ADC usage
+Clock: APB2/4 = 84/4 = 21
+
+Channels:
+ A1
+ CH1
 
 Using  USBCDC as console via SmallRL.
 used USB FS:

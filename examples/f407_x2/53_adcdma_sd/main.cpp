@@ -3,6 +3,9 @@
 
 #include <oxc_auto.h>
 
+#include <ff.h>
+#include <fatfs.h>
+
 using namespace std;
 using namespace SMLRL;
 
@@ -11,6 +14,15 @@ USE_DIE4LED_ERROR_HANDLER;
 BOARD_DEFINE_LEDS;
 
 UsbcdcIO usbcdc;
+
+extern SD_HandleTypeDef hsd;
+void MX_SDIO_SD_Init();
+uint8_t sd_buf[512]; // one sector
+HAL_SD_CardInfoTypeDef cardInfo;
+FATFS fs;
+const int fspath_sz = 32;
+char fspath[fspath_sz];
+
 
 extern "C" {
  void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc );
@@ -69,12 +81,15 @@ int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test ADC"  };
 int cmd_out( int argc, const char * const * argv );
 CmdInfo CMDINFO_OUT { "out", 'O', cmd_out, " [N [start]]- output data "  };
+int cmd_outsd( int argc, const char * const * argv );
+CmdInfo CMDINFO_OUTSD { "outsd", 'X', cmd_outsd, "filename [N [start]]- output data to SD"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
 
   &CMDINFO_TEST0,
   &CMDINFO_OUT,
+  &CMDINFO_OUTSD,
   nullptr
 };
 
@@ -99,6 +114,16 @@ int main(void)
   }
 
   delay_bad_ms( 200 );  leds.write( 0 );
+
+  MX_SDIO_SD_Init();
+  UVAR('e') = HAL_SD_Init( &hsd );
+  delay_ms( 10 );
+  MX_FATFS_Init();
+  UVAR('x') = HAL_SD_GetState( &hsd );
+  UVAR('y') = HAL_SD_GetCardInfo( &hsd, &cardInfo );
+  fs.fs_type = 0; // none
+  fspath[0] = '\0';
+  UVAR('z') = f_mount( &fs, "", 1 );
 
   tim_freq_in = HAL_RCC_GetPCLK1Freq(); // to TIM2
   uint32_t hclk_freq = HAL_RCC_GetHCLKFreq();
@@ -197,6 +222,14 @@ int cmd_test0( int argc, const char * const * argv )
   pr( " t_wait0= " ); pr_d( t_wait0 );  pr( NL );
   ifcvt( t_step, 1000000, buf, 6 );
   pr( " t_step= " ); pr( buf );
+  // double zz = 0.1;
+  // pr( " sizeof(double)=" ); pr_d( sizeof(zz));
+  // float t_step_f = (float)t_step_tick / tim_freq_in;
+  // snprintf( buf, sizeof(buf)-1, "%g", t_step_f );
+  // pr( " = " ); pr( buf );
+  // double t_step_f = (float)t_step_tick / tim_freq_in;
+  // snprintf( buf, sizeof(buf)-1, "%g", t_step_f );
+  // pr( " = " ); pr( buf );
   pr( NL );
   tim2_deinit();
 
@@ -299,6 +332,53 @@ int cmd_out( int argc, const char * const * argv )
   }
   pr( NL );
 
+  return 0;
+}
+
+int cmd_outsd( int argc, const char * const * argv )
+{
+  if( argc < 2 ) {
+    pr( "Error: need filename [n [start]]" NL );
+    break_flag = 0;  idle_flag = 1;
+    return 1;
+  }
+
+  char buf[32];
+  uint8_t n_ch = UVAR('c');
+  if( n_ch > n_ADC_ch_max ) { n_ch = n_ADC_ch_max; };
+  if( n_ch < 1 ) { n_ch = 1; };
+  uint32_t n = arg2long_d( 2, argc, argv, n_series_todo, 0, n_series_todo+1 ); // number output series
+  uint32_t st= arg2long_d( 3, argc, argv,             0, 0, n_series_todo-2 );
+
+  if( n+st >= n_series_todo+1 ) {
+    n = 1 + n_series_todo - st;
+  }
+
+  uint32_t t = st * t_step;
+
+  const char *fn = argv[1];
+  FIL f;
+  FRESULT r = f_open( &f, fn, FA_WRITE | FA_OPEN_ALWAYS );
+  if( r == FR_OK ) {
+    for( uint32_t i=0; i< n; ++i ) {
+      uint32_t ii = i + st;
+      ifcvt( t, 1000000, buf, 6 );
+      f_puts( buf, &f ); f_puts( "   ", &f );
+      for( int j=0; j< n_ch; ++j ) {
+        int vv = adc_v0[ii*n_ch+j] * 10 * UVAR('v') / 4096;
+        ifcvt( vv, 10000, buf, 4 );
+        f_puts( buf, &f ); f_puts( "  ", &f );
+      }
+      t += t_step;
+      f_puts( NL, &f );
+    }
+    f_close( &f );
+  } else {
+    pr( "f_open error: " ); pr_d( r ); pr( NL );
+  }
+
+  break_flag = 0;  idle_flag = 1;
+  pr( NL "outsd end, r= " ); pr_d( r ); pr( NL );
   return 0;
 }
 

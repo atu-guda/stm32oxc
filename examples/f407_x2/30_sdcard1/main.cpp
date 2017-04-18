@@ -60,7 +60,6 @@ int main(void)
 
   leds.write( BOARD_LEDS_ALL );  HAL_Delay( 200 );
 
-
   UVAR('t') = 1000;
   UVAR('n') = 10;
 

@@ -25,7 +25,6 @@ SRCS += f4_sdio_init_1bit.cpp
 SRCS += bsp_driver_sd.c
 # SRCS += ccsbcs.c
 SRCS += fatfs.c
-# SRCS += 
 SRCS += ff.c
 SRCS += ff_gen_drv.c
 SRCS += diskio.c

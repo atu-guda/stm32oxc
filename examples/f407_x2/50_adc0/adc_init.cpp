@@ -50,27 +50,6 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init( GPIOA, &GPIO_InitStruct );
 
-    // #<{(| Peripheral DMA init|)}>#
-    // hdma_adc1.Instance = DMA2_Stream0;
-    // hdma_adc1.Init.Channel = DMA_CHANNEL_0;
-    // hdma_adc1.Init.Direction = DMA_PERIPH_TO_MEMORY;
-    // hdma_adc1.Init.PeriphInc = DMA_PINC_DISABLE;
-    // hdma_adc1.Init.MemInc = DMA_MINC_ENABLE;
-    // hdma_adc1.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
-    // hdma_adc1.Init.MemDataAlignment = DMA_MDATAALIGN_HALFWORD;
-    // hdma_adc1.Init.Mode = DMA_NORMAL;
-    // hdma_adc1.Init.Priority = DMA_PRIORITY_LOW;
-    // hdma_adc1.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
-    // if( HAL_DMA_Init( &hdma_adc1 ) != HAL_OK )   {
-    //   Error_Handler( 6 );
-    // }
-    //
-    // __HAL_LINKDMA(adcHandle,DMA_Handle,hdma_adc1);
-    //
-    // #<{(| Peripheral interrupt init |)}>#
-    // HAL_NVIC_SetPriority(ADC_IRQn, 0, 0);
-    // HAL_NVIC_EnableIRQ(ADC_IRQn);
-
   }
 }
 
