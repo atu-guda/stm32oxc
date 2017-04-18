@@ -9,8 +9,11 @@
 #error This SystemClock_Config in for 144 MHz only
 #endif
 
-// /8, *288, /2, /6
-// 144 MHz, 48 Mhz for USB, 36 MHz for ADC (/4)
+// 144 MHz  = 8 MHz, /8, *288, {/2,/6,/6},     /1,      /1,         /4,         /2
+//            HSE     M     N    P  Q  -   AHB_PR  SYSTICK  APB1_PR=36  APB2_PR=72
+// SDIO=48MHz, good for USB, 36 MHz ADC (/4) (MAX)
+// Scale1, -OverDrive, FLASH_LATENCY_5,
+//
 
 int SystemClockCfg(void); // copy from oxc_base.h to reduce deps
 
@@ -18,7 +21,6 @@ int SystemClockCfg(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct;
   RCC_ClkInitTypeDef RCC_ClkInitStruct;
-  // RCC_PeriphCLKInitTypeDef PeriphClkInitStruct;
 
   __HAL_RCC_PWR_CLK_ENABLE();
   __HAL_PWR_VOLTAGESCALING_CONFIG( PWR_REGULATOR_VOLTAGE_SCALE1 );

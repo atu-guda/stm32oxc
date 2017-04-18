@@ -9,7 +9,8 @@
 #error This SystemClock_Config in for 192 MHz only
 #endif
 
-// 192 = /8, *384, /2, /8
+// 192 MHz  = 8 MHz, /4, *180, {/2,/8,/7},     /1,      /1,         /4,         /2
+//            HSE    M      N    P  Q  R   AHB_PR  SYSTICK  APB1_PR=48  APB2_PR=96
 // 192 Mhz, 48 MHz USB, 32 MHz for ADC (/6)
 
 int SystemClockCfg(void); // copy from oxc_base.h to reduce deps
@@ -31,7 +32,7 @@ int SystemClockCfg(void)
   RCC_OscInitStruct.PLL.PLLN = 384;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
   RCC_OscInitStruct.PLL.PLLQ = 8;
-  // RCC_OscInitStruct.PLL.PLLR = 6;
+  // RCC_OscInitStruct.PLL.PLLR = 7;
   if( HAL_RCC_OscConfig( &RCC_OscInitStruct ) != HAL_OK ) {
     errno = 1001;
     return  1001;
@@ -39,6 +40,7 @@ int SystemClockCfg(void)
 
   //
   // No overdrive
+  //
   //
 
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK

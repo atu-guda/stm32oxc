@@ -22,7 +22,6 @@ int SystemClockCfg(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct;
   RCC_ClkInitTypeDef RCC_ClkInitStruct;
-  RCC_PeriphCLKInitTypeDef PeriphClkInitStruct;
 
   __HAL_RCC_PWR_CLK_ENABLE();
   __HAL_PWR_VOLTAGESCALING_CONFIG( PWR_REGULATOR_VOLTAGE_SCALE1 );
@@ -36,7 +35,7 @@ int SystemClockCfg(void)
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
   RCC_OscInitStruct.PLL.PLLQ = 8;
   RCC_OscInitStruct.PLL.PLLR = 7;
-  if( HAL_RCC_OscConfig( &RCC_OscInitStruct ) != HAL_OK )  {
+  if( HAL_RCC_OscConfig( &RCC_OscInitStruct ) != HAL_OK ) {
     errno = 1001;
     return  1001;
   }
@@ -57,6 +56,7 @@ int SystemClockCfg(void)
     return  1003;
   }
 
+  RCC_PeriphCLKInitTypeDef PeriphClkInitStruct;
   PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_RTC | RCC_PERIPHCLK_SDIO
                               | RCC_PERIPHCLK_CLK48;
   PeriphClkInitStruct.Clk48ClockSelection = RCC_CLK48CLKSOURCE_PLLQ;

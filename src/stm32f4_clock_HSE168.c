@@ -9,8 +9,11 @@
 #error This SystemClock_Config in for 168 MHz only
 #endif
 
-// /8, *336, /2 /7
-// 168 MHz, 48 MHz for USB, 21 MHz for ADC (/8)
+// 168 MHz  = 8 MHz, /8, *336, {/2,/7,/7},     /1,      /1,         /4,         /2
+//            HSE     M     N    P  Q  -   AHB_PR  SYSTICK  APB1_PR=42  APB2_PR=84
+// SDIO=48MHz, good for USB, 28 MHz ADC (/6)
+// Scale1, -OverDrive, FLASH_LATENCY_5,
+//
 
 int SystemClockCfg(void); // copy from oxc_base.h to reduce deps
 
@@ -18,7 +21,6 @@ int SystemClockCfg(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct;
   RCC_ClkInitTypeDef RCC_ClkInitStruct;
-  // RCC_PeriphCLKInitTypeDef PeriphClkInitStruct;
 
   __HAL_RCC_PWR_CLK_ENABLE();
   __HAL_PWR_VOLTAGESCALING_CONFIG( PWR_REGULATOR_VOLTAGE_SCALE1 );
@@ -30,8 +32,8 @@ int SystemClockCfg(void)
   RCC_OscInitStruct.PLL.PLLM = 8;
   RCC_OscInitStruct.PLL.PLLN = 336;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
-  RCC_OscInitStruct.PLL.PLLQ = 6;
-  // RCC_OscInitStruct.PLL.PLLR = 6;
+  RCC_OscInitStruct.PLL.PLLQ = 7;
+  // RCC_OscInitStruct.PLL.PLLR = 7;
   if( HAL_RCC_OscConfig( &RCC_OscInitStruct ) != HAL_OK ) {
     errno = 1001;
     return  1001;
