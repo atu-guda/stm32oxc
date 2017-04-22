@@ -1,0 +1,8 @@
+Test calibrate for delays
+
+Using  USART as console via SmallRL.
+Used USART2 with ST_Link VCP
+
+A2  = USART2_TX
+A3  = USART2_RX
+
