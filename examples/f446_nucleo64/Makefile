@@ -24,7 +24,9 @@ SUBDIRS = \
   25_spi_max31855_tcouple \
   30_sdcard1 \
   31_sdcard2 \
-  50-adc0 \
+  50_adc0 \
+  53_adcdma_sd \
+  55_dac0 \
 
   # 05_usb_console \
 

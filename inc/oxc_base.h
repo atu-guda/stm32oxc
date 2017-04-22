@@ -103,53 +103,10 @@ typedef const char *const ccstr;
 #define ARR_SZ(x) (sizeof(x) / sizeof(x[0]))
 #define ARR_AND_SZ(x) x, (sizeof(x) / sizeof(x[0]))
 
-
-// timings for bad loop delays TODO: for other too
-#if REQ_SYSCLK_FREQ == 24
-  #define T_MKS_MUL    2
-  #define T_MS_MUL  2660
-  #define T_S_MUL   3420459
-#elif REQ_SYSCLK_FREQ == 36
-  #define T_MKS_MUL    4
-  #define T_MS_MUL  3990
-  #define T_S_MUL   5130689
-#elif REQ_SYSCLK_FREQ == 48
-  #define T_MKS_MUL    5
-  #define T_MS_MUL  5319
-  #define T_S_MUL   6840918
-#elif REQ_SYSCLK_FREQ == 56
-  #define T_MKS_MUL    8
-  #define T_MS_MUL  7979
-  #define T_S_MUL   10261378
-#elif REQ_SYSCLK_FREQ == 72
-  #define T_MKS_MUL 9
-  #define T_MS_MUL  7979
-  #define T_S_MUL   10259736
-#elif REQ_SYSCLK_FREQ == 144
-  #define T_MKS_MUL 29
-  #define T_MS_MUL  29010
-  #define T_S_MUL   29010000
-#elif REQ_SYSCLK_FREQ == 168
-  #define T_MKS_MUL 32
-  #define T_MS_MUL  33845
-  #define T_S_MUL   33845000
-#elif REQ_SYSCLK_FREQ == 180
-  #define T_MKS_MUL 36
-  #define T_MS_MUL  36263
-  #define T_S_MUL   36262500
-#elif REQ_SYSCLK_FREQ == 192
-  #define T_MKS_MUL 39
-  #define T_MS_MUL  38680
-  #define T_S_MUL   38680000
-#elif REQ_SYSCLK_FREQ == 200
-  #define T_MKS_MUL 40
-  #define T_MS_MUL  40292
-  #define T_S_MUL   40291667
-#endif
-
+extern uint32_t delay_caliberate_value;
 
 #ifdef __cplusplus
-// template<typename T> class _ShowType; // to output decucted type
+// template<typename T> class _ShowType; // to output deducted type
 //                                       // _ShowType< decltype(XXXX) > xType;
  extern "C" {
 #endif
@@ -167,9 +124,11 @@ void Error_Handler( int rc ); // defined at user program
 #define USE_DIE_EXIT void void( int rc ) { die( rc ); };
 #define USE_DIE4LED_EXIT void void( int rc ) { die4led( rc ); };
 
-void delay_ms( uint32_t ms ); // base on vTaskDelay - switch to shceduler (if avail), or to HAL
+void approx_delay_calibrate(void);
+void do_delay_calibrate(void);
+void delay_ms( uint32_t ms ); // base on vTaskDelay - switch to scheduler (if avail), or to HAL
 void delay_mcs( uint32_t mcs );
-// dumb delay fuctions - loop based - for use w/o timer and for small times
+// dumb delay functions - loop based - for use w/o timer and for small times
 void delay_bad_n( uint32_t n );
 void delay_bad_s( uint32_t s );
 void delay_bad_ms( uint32_t ms );

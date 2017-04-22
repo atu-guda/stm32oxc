@@ -10,6 +10,7 @@
 #endif
 
 int SystemClockCfg(void); // copy from oxc_base.h to reduce deps
+void  approx_delay_calibrate();
 
 int SystemClockCfg(void)
 {
@@ -60,6 +61,7 @@ int SystemClockCfg(void)
   HAL_SYSTICK_Config( HAL_RCC_GetHCLKFreq()/1000 ); // to HAL_delay work even before FreeRTOS start
   HAL_SYSTICK_CLKSourceConfig( SYSTICK_CLKSOURCE_HCLK );
   HAL_NVIC_SetPriority( SysTick_IRQn, 0, 0 ); // will be readjusted by FreeRTOS
+  approx_delay_calibrate();
   return 0;
 }
 

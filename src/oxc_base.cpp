@@ -57,10 +57,25 @@ void die( uint16_t n )
   while(1) { delay_bad_ms( n*200 ); /* NOP */ };
 }
 
+uint32_t delay_caliberate_value = 200 * 18; // for initial 18 MHz
+
+void approx_delay_calibrate()
+{
+  delay_caliberate_value = 200 * ( HAL_RCC_GetSysClockFreq() / 1000000 );
+}
+
+void do_delay_calibrate()
+{
+  uint32_t n = delay_caliberate_value * 500; // for calibrate 500 ms
+  uint32_t tm0 = HAL_GetTick();
+  delay_bad_n( n );
+  uint32_t tm1 = HAL_GetTick(), dlt = tm1 - tm0;
+  delay_caliberate_value = n / dlt;
+}
 
 void delay_bad_mcs( uint32_t mcs )
 {
-  uint32_t n = mcs * T_MKS_MUL;
+  uint32_t n = mcs * delay_caliberate_value / 1000;
   for( uint32_t i=0; i<n; ++i ) {
     __asm volatile ( "nop;");
   }
@@ -91,7 +106,7 @@ void delay_bad_n( uint32_t dly )
 
 void delay_bad_s( uint32_t s )
 {
-  uint32_t n = s * T_S_MUL;
+  uint32_t n = s * delay_caliberate_value * 1000;
   for( uint32_t i=0; i<n; ++i ) {
     __asm volatile ( "nop;");
   }
@@ -99,7 +114,7 @@ void delay_bad_s( uint32_t s )
 
 void delay_bad_ms( uint32_t ms )
 {
-  uint32_t n = ms * T_MS_MUL;
+  uint32_t n = ms * delay_caliberate_value;
   for(  uint32_t i = 0; i<n; ++i ) {
     __asm volatile ( "nop;");
   }

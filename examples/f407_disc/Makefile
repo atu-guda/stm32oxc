@@ -6,9 +6,9 @@ SUBDIRS = \
   03_uart \
   04_uart_console \
   05_usb_console \
-#  06_i2c_test \
-#  x01_fmc \
-#  x02_stemwin_fmc
+  06_i2c_test \
+  09_i2c_bmp085 \
+  11_i2c_ds3231 \
 
 #  03_uart \
 #  04_uart_console \
@@ -16,7 +16,6 @@ SUBDIRS = \
 #  06_i2c_test \
 #  07_i2c_lcdt \
 #  08_i2c_mpu6050 \
-#  09_i2c_bmp085 \
 #  10_i2c_pcf8591 \
 #  11_i2c_ds3231 \
 #  12_tim_pwm \

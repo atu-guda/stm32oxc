@@ -44,35 +44,29 @@ STD_USART2_SEND_TASK( usartio );
 // STD_USART2_RECV_TASK( usartio );
 STD_USART2_IRQ( usartio );
 
-uint32_t delay_caliberate_value = 200 * 18; // for initial 18 MHz
-void approx_delay_caliberate() { delay_caliberate_value = 200 * (HAL_RCC_GetSysClockFreq()/1000000); }
-void do_delay_calibrate();
-void xx_delay_bad_ms( uint32_t ms );
-
 int main(void)
 {
   HAL_Init();
 
   leds.initHW();
   leds.write( BOARD_LEDS_ALL_EX );
-  xx_delay_bad_ms( 1000 );
+  delay_bad_ms( 1000 );
   leds.write( 1 );
-  xx_delay_bad_ms( 1000 );
+  delay_bad_ms( 1000 );
   leds.write( BOARD_LEDS_ALL_EX );
 
   int rc = SystemClockCfg();
-  approx_delay_caliberate();
   if( rc ) {
     die4led( BOARD_LEDS_ALL_EX );
     return 0;
   }
 
-  HAL_Delay( 200 ); // xx_delay_bad_ms( 200 );
+  HAL_Delay( 200 ); // delay_bad_ms( 200 );
   leds.write( 0x00 ); delay_ms( 200 );
   leds.write( BOARD_LEDS_ALL_EX );  HAL_Delay( 200 );
 
   init_uart( &uah );
-  leds.write( 0x0A );  xx_delay_bad_ms( 200 );
+  leds.write( 0x0A );  delay_bad_ms( 200 );
 
   UVAR('t') = 1000;
   UVAR('n') = 10;
@@ -140,7 +134,7 @@ int cmd_test0( int argc, const char * const * argv )
     pr( "  ms_tick: "); pr_d( tmc - tm0 );
     pr( NL );
     // vTaskDelayUntil( &tc0, t_step );
-    xx_delay_bad_ms( t_step );
+    delay_bad_ms( t_step );
     // delay_ms( t_step );
   }
 
@@ -153,23 +147,6 @@ int cmd_test0( int argc, const char * const * argv )
   return 0;
 }
 
-void do_delay_calibrate()
-{
-  uint32_t n = delay_caliberate_value * 500; // for calibrate 500 ms
-  uint32_t tm0 = HAL_GetTick();
-  delay_bad_n( n );
-  uint32_t tm1 = HAL_GetTick(), dlt = tm1 - tm0;
-  delay_caliberate_value = n / dlt;
-}
-
-
-void xx_delay_bad_ms( uint32_t ms )
-{
-  uint32_t n = ms * delay_caliberate_value;
-  for(  uint32_t i = 0; i<n; ++i ) {
-    __asm volatile ( "nop;");
-  }
-}
 
 //  ----------------------------- configs ----------------
 
