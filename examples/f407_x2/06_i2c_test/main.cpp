@@ -113,13 +113,6 @@ int cmd_test0( int argc, const char * const * argv )
     pr( "ad = " ); pr_h( ad ); pr( "  rc= " ); pr_d( rc ) ; pr( "  err= " ); pr_d( i_err ); pr(NL);
   }
 
-  pr( NL );
-
-  delay_ms( 10 );
-  break_flag = 0;
-  idle_flag = 1;
-
-  pr( NL "test0 end." NL );
   return 0;
 }
 

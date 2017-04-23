@@ -140,13 +140,6 @@ int cmd_test0( int argc, const char * const * argv )
     lcdt.putch( (uint8_t)ch );
   }
 
-  pr( NL );
-
-  delay_ms( 10 );
-  break_flag = 0;
-  idle_flag = 1;
-
-  pr( NL "test0 end." NL );
   return 0;
 }
 
@@ -159,12 +152,6 @@ int cmd_xychar( int argc, const char * const * argv )
   lcdt.gotoxy( x, y );
   lcdt.putch( (uint8_t)ch );
 
-  pr( NL );
-
-  break_flag = 0;
-  idle_flag = 1;
-
-  pr( NL "xychar end." NL );
   return 0;
 }
 
@@ -176,10 +163,6 @@ int cmd_puts( int argc, const char * const * argv )
   }
   lcdt.puts( s );
 
-  break_flag = 0;
-  idle_flag = 1;
-
-  pr( NL "puts end." NL );
   return 0;
 }
 

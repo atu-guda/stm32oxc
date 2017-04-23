@@ -150,7 +150,6 @@ int cmd_test0( int argc, const char * const * argv )
   term_clear();
   // delay_ms( 50 );
 
-  break_flag = 0;
   int el_t = 0;
   for( int i=0; i<n && !break_flag; ++i ) {
     accel.getAccAll( xyz );
@@ -173,10 +172,6 @@ int cmd_test0( int argc, const char * const * argv )
   pr( NL );
   pr_sdx( el_t );
 
-  delay_ms( 10 );
-  break_flag = 0;  idle_flag = 1;
-
-  pr( NL "test0 end." NL );
   return 0;
 }
 

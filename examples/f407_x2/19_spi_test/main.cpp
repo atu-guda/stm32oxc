@@ -139,11 +139,6 @@ int cmd_test0( int argc, const char * const * argv )
   }
   spi_d.pr_info();
 
-
-  delay_ms( 10 );
-  break_flag = 0;  idle_flag = 1;
-
-  pr( NL "test0 end." NL );
   return 0;
 }
 
@@ -172,11 +167,9 @@ int cmd_sendr_spi( int argc, const char * const * argv )
     pr( "** Error, code= " ); pr_d( spi_d.getErr() ); pr( NL );
   }
   delay_ms( 10 );
-  break_flag = 0;  idle_flag = 1;
 
   spi_d.pr_info();
 
-  pr( NL "sendr end." NL );
   return 0;
 }
 
@@ -196,11 +189,9 @@ int cmd_recv_spi( int argc, const char * const * argv )
     pr( "** Error, code= " ); pr_d( spi_d.getErr() ); pr( NL );
   }
   delay_ms( 10 );
-  break_flag = 0;  idle_flag = 1;
 
   spi_d.pr_info();
 
-  pr( NL "recv SPI end." NL );
   return 0;
 }
 
@@ -227,11 +218,9 @@ int cmd_duplex_spi( int argc, const char * const * argv )
     pr( "** Error, code= " ); pr_d( spi_d.getErr() ); pr( NL );
   }
   delay_ms( 10 );
-  break_flag = 0;  idle_flag = 1;
 
   spi_d.pr_info();
 
-  pr( NL "Duplex end." NL );
   return 0;
 }
 
@@ -245,7 +234,6 @@ int cmd_reset_spi( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
 
   spi_d.pr_info();
 
-  pr( NL "reset SPI end." NL );
   return 0;
 }
 

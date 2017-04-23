@@ -194,19 +194,12 @@ int cmd_test0( int argc, const char * const * argv )
   int xsz = LCD_GetXSize(), ysz = LCD_GetYSize();
   pr( "xsz= "); pr_d( xsz );   pr( " ysz= "); pr_d( ysz ); pr( NL );
 
-  pr( NL );
-  delay_ms( 10 );
-  break_flag = 0;  idle_flag = 1;
-
-  pr( NL "test0 end." NL );
   return 0;
 }
 
 int cmd_cls( int argc, const char * const * argv )
 {
   GUI_Clear();
-  break_flag = 0;  idle_flag = 1;
-  pr( NL "cls end." NL );
   return 0;
 }
 
@@ -219,8 +212,6 @@ int cmd_puts( int argc, const char * const * argv )
   int x = arg2long_d( 2, argc, argv, 10, 0 );
   int y = arg2long_d( 3, argc, argv, 10, 0 );
   GUI_DispStringAt( s, x, y );
-  break_flag = 0;  idle_flag = 1;
-  pr( NL "puts end." NL );
   return 0;
 }
 
@@ -232,8 +223,6 @@ int cmd_line( int argc, const char * const * argv )
   int x2 = arg2long_d( 3, argc, argv, xsz, 0, xsz );
   int y2 = arg2long_d( 4, argc, argv, ysz, 0, ysz );
   GUI_DrawLine( x1, y1, x2, y2 );
-  break_flag = 0;  idle_flag = 1;
-  pr( NL "puts end." NL );
   return 0;
 }
 
@@ -242,8 +231,6 @@ int cmd_color( int argc, const char * const * argv )
 {
   uint32_t c = arg2long_d( 1, argc, argv,   0x00FFFFFF, 0 );
   GUI_SetColor( c );
-  break_flag = 0;  idle_flag = 1;
-  pr( NL "puts end." NL );
   return 0;
 }
 

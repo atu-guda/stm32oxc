@@ -155,15 +155,7 @@ int cmd_test0( int argc, const char * const * argv )
   pr( " class = " ); pr_d( cardInfo.Class );
   pr( " blocks = " ); pr_d( cardInfo.BlockNbr );
   pr( " bsz = " ); pr_d( cardInfo.BlockSize );
-  pr( NL );
 
-
-  pr( NL );
-
-  delay_ms( 10 );
-  break_flag = 0;  idle_flag = 1;
-
-  pr( NL "test0 end." NL );
   return 0;
 }
 
@@ -176,10 +168,7 @@ int cmd_mount( int argc, const char * const * argv )
   FRESULT fr = f_mount( &fs, fspath, 1 );
   pr( "Result: " ); pr_d( fr ); pr( NL );
 
-
-  break_flag = 0;  idle_flag = 1;
-  pr( NL "mount end." NL );
-  return 0;
+  return fr;
 }
 
 int cmd_umount( int argc, const char * const * argv )
@@ -188,9 +177,7 @@ int cmd_umount( int argc, const char * const * argv )
   FRESULT fr = f_mount( nullptr, fspath, 1 );
   pr( "Result: " ); pr_d( fr ); pr( NL );
 
-  break_flag = 0;  idle_flag = 1;
-  pr( NL "umount end." NL );
-  return 0;
+  return fr;
 }
 
 int cmd_ls( int argc, const char * const * argv )
@@ -221,9 +208,7 @@ int cmd_ls( int argc, const char * const * argv )
     pr( "f_opendir error: " ); pr_d( r ); pr( NL );
   }
 
-  break_flag = 0;  idle_flag = 1;
-  pr( NL "ls end." NL );
-  return 0;
+  return r;
 }
 
 int cmd_fsinfo( int argc, const char * const * argv )
@@ -250,8 +235,6 @@ int cmd_fsinfo( int argc, const char * const * argv )
     pr( "free_clust: " ); pr_d( n_f_clust ); pr( " kB:" ); pr_d( n_f_clust * fs.csize / 2 ) ;pr( NL );
   }
 
-  break_flag = 0;  idle_flag = 1;
-  pr( NL "fsinfo end." NL );
   return 0;
 }
 
@@ -291,18 +274,16 @@ int cmd_cat( int argc, const char * const * argv )
     pr( "f_open error: " ); pr_d( r ); pr( NL );
   }
 
-  break_flag = 0;  idle_flag = 1;
   pr( NL "cat end, read " ); pr_d( nr);
   pr( " bytes, r =  " ); pr_d( r );
   pr( " time =  " ); pr_d( tc1 - tc0 ); pr( NL );
-  return 0;
+  return r;
 }
 
 int cmd_appstr( int argc, const char * const * argv )
 {
   if( argc < 3 ) {
     pr( "Error: need filename and string" NL );
-    break_flag = 0;  idle_flag = 1;
     return 1;
   }
 
@@ -320,9 +301,8 @@ int cmd_appstr( int argc, const char * const * argv )
     pr( "f_open error: " ); pr_d( r ); pr( NL );
   }
 
-  break_flag = 0;  idle_flag = 1;
   pr( NL "appstr end, r= " ); pr_d( r ); pr( " was_wr= "); pr_d( was_wr ); pr( NL );
-  return 0;
+  return r;
 }
 
 
@@ -330,7 +310,6 @@ int cmd_wblocks( int argc, const char * const * argv )
 {
   if( argc < 2 ) {
     pr( "Error: need filename [n_sect]" NL );
-    break_flag = 0;  idle_flag = 1;
     return 1;
   }
   uint32_t n_sect = arg2long_d( 2, argc, argv, 1, 1, 1024*2048 );
@@ -355,17 +334,15 @@ int cmd_wblocks( int argc, const char * const * argv )
     pr( "f_open error: " ); pr_d( r ); pr( NL );
   }
 
-  break_flag = 0;  idle_flag = 1;
   pr( NL "wblocks end, r= " ); pr_d( r ); pr( " was_wr= "); pr_d( was_wr );
   pr( " time =  " ); pr_d( tc1 - tc0 ); pr( NL );
-  return 0;
+  return r;
 }
 
 int cmd_rm( int argc, const char * const * argv )
 {
   if( argc < 2 ) {
     pr( "Error: need filename to delete" NL );
-    break_flag = 0;  idle_flag = 1;
     return 1;
   }
 
@@ -375,9 +352,7 @@ int cmd_rm( int argc, const char * const * argv )
     pr( "f_unlink error: " ); pr_d( r ); pr( NL );
   }
 
-  break_flag = 0;  idle_flag = 1;
-  pr( NL "rm end, r= " ); pr_d( r ); pr( NL );
-  return 0;
+  return r;
 }
 
 

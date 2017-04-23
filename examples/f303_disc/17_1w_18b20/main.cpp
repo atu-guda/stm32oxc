@@ -119,7 +119,6 @@ int cmd_test0( int argc, const char * const * argv )
   // log_add( "Test0 " );
   TickType_t tc0 = xTaskGetTickCount();
 
-  break_flag = 0;
   // bool out_flag = UVAR('o');
   bool ok = false;
   for( int i=0; i<n && !break_flag; ++i ) {
@@ -150,22 +149,14 @@ int cmd_test0( int argc, const char * const * argv )
     vTaskDelayUntil( &tc0, t_step );
     // delay_ms( t_step );
   }
-
-  pr( NL );
-
-  delay_ms( 10 );
-  break_flag = 0;
-  idle_flag = 1;
   pin_wire1.sw1();
 
-  pr( NL "test0 end." NL );
   return 0;
 }
 
 int cmd_1wire0( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
 {
   uint8_t buf[12], addr[12];
-  pr( NL "1wire test start." NL );
 
   bool have_dev = wire1.reset();
   pr_sdx( have_dev );
@@ -213,7 +204,6 @@ int cmd_1wire0( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
   wire1.eot();
   delay_ms( 100 );
 
-  pr( NL "1wire test end." NL );
   return 0;
 }
 

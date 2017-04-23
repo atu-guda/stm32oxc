@@ -114,7 +114,6 @@ int cmd_test0( int argc, const char * const * argv )
 
   TickType_t tc0 = xTaskGetTickCount();
 
-  break_flag = 0;
   char buf[buf_sz];
   int p_old = 0;
 
@@ -134,13 +133,6 @@ int cmd_test0( int argc, const char * const * argv )
     vTaskDelayUntil( &tc0, t_step );
   }
 
-  pr( NL );
-
-  delay_ms( 10 );
-  break_flag = 0;
-  idle_flag = 1;
-
-  pr( NL "test0 end." NL );
   return 0;
 }
 

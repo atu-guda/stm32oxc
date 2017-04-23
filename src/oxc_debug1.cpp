@@ -311,6 +311,10 @@ int cmd_help( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG)
     }
     pr( NL );
   }
+  // see oxc_smallrl.cpp : SMLRL::SmallRL::handle_nl
+  pr( ".h - history " NL );
+  pr( ".v - more verbose " NL );
+  pr( ".q - no verbose " NL );
   return 0;
 }
 CmdInfo CMDINFO_HELP { "help",  'h', cmd_help, " - List of commands and arguments"  };

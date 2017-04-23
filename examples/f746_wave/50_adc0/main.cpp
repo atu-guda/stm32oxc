@@ -114,7 +114,6 @@ int cmd_test0( int argc, const char * const * argv )
   // log_add( "Test0 " );
   TickType_t tc0 = xTaskGetTickCount(), tc00 = tc0;
 
-  break_flag = 0;
   for( int i=0; i<n && !break_flag; ++i ) {
     TickType_t tcc = xTaskGetTickCount();
     pr( "ADC start  i= " ); pr_d( i );
@@ -137,12 +136,6 @@ int cmd_test0( int argc, const char * const * argv )
     // delay_ms( t_step );
   }
 
-  pr( NL );
-
-  delay_ms( 10 );
-  break_flag = 0;  idle_flag = 1;
-
-  pr( NL "test0 end." NL );
   return 0;
 }
 

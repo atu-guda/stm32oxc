@@ -132,8 +132,6 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  pr( NL "Test0: " NL );
-
   screen.init();
 
   delay_ms( 500 );
@@ -195,13 +193,6 @@ int cmd_test0( int argc, const char * const * argv )
 
   screen.out( pb0 );
 
-  pr( NL );
-
-  delay_ms( 10 );
-  break_flag = 0;
-  idle_flag = 1;
-
-  pr( NL "test0 end." NL );
   return 0;
 }
 
@@ -209,7 +200,6 @@ int cmd_cls( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
 {
   pb0.fillAll( 0 );
   screen.out( pb0 );
-  pr( NL "CLS end." NL );
   return 0;
 }
 
@@ -226,7 +216,6 @@ int cmd_vline( int argc, const char * const * argv )
 
   screen.out( pb0 );
 
-  pr( NL "vline end." NL );
   return 0;
 }
 
@@ -249,7 +238,6 @@ int cmd_line( int argc, const char * const * argv )
 
   screen.out( pb0 );
 
-  pr( NL "lines end." NL );
   return 0;
 }
 
@@ -260,7 +248,6 @@ int cmd_contr( int argc, const char * const * argv )
 
   screen.contrast( co );
 
-  pr( NL "contrast end." NL );
   return 0;
 }
 

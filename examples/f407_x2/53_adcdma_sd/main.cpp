@@ -243,7 +243,6 @@ int cmd_test0( int argc, const char * const * argv )
 
   // log_add( "Test0 " );
 
-  break_flag = 0;
   uint32_t n_ADC_bytes = n * n_ch;
   uint32_t n_ADC_bytes_guard = n_ADC_bytes + n_ch * 2;
   for( uint32_t i=0; i<n_ADC_bytes_guard;  ++i ) { // TODO: memset
@@ -297,9 +296,7 @@ int cmd_test0( int argc, const char * const * argv )
 
   delay_ms( 10 );
   pr_TIM_state( TIM2 );
-  break_flag = 0;  idle_flag = 1;
 
-  pr( NL "test0 end." NL );
   return 0;
 }
 
@@ -330,7 +327,6 @@ int cmd_out( int argc, const char * const * argv )
     pr( NL );
     delay_ms( 5 );
   }
-  pr( NL );
 
   return 0;
 }
@@ -339,7 +335,6 @@ int cmd_outsd( int argc, const char * const * argv )
 {
   if( argc < 2 ) {
     pr( "Error: need filename [n [start]]" NL );
-    break_flag = 0;  idle_flag = 1;
     return 1;
   }
 
@@ -377,9 +372,7 @@ int cmd_outsd( int argc, const char * const * argv )
     pr( "f_open error: " ); pr_d( r ); pr( NL );
   }
 
-  break_flag = 0;  idle_flag = 1;
-  pr( NL "outsd end, r= " ); pr_d( r ); pr( NL );
-  return 0;
+  return r;
 }
 
 

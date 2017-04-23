@@ -126,7 +126,6 @@ int cmd_test0( int argc, const char * const * argv )
 
   TickType_t tc0 = xTaskGetTickCount();
 
-  break_flag = 0;
   for( int i=0; i<n && !break_flag; ++i ) {
     for( auto &d : adata ) { d = 0; };
     accel.getAll( adata );
@@ -135,16 +134,8 @@ int cmd_test0( int argc, const char * const * argv )
     }
     pr( NL );
     vTaskDelayUntil( &tc0, t_step );
-    // delay_ms( t_step );
   }
 
-  pr( NL );
-
-  delay_ms( 10 );
-  break_flag = 0;
-  idle_flag = 1;
-
-  pr( NL "test0 end." NL );
   return 0;
 }
 

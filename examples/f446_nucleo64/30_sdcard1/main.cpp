@@ -136,15 +136,8 @@ int cmd_test0( int argc, const char * const * argv )
   pr( " class = " ); pr_d( cardInfo.Class );
   pr( " blocks = " ); pr_d( cardInfo.BlockNbr );
   pr( " bsz = " ); pr_d( cardInfo.BlockSize );
-  pr( NL );
 
 
-  pr( NL );
-
-  delay_ms( 10 );
-  break_flag = 0;  idle_flag = 1;
-
-  pr( NL "test0 end." NL );
   return 0;
 }
 

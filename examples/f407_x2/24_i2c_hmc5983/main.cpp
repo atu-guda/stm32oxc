@@ -126,7 +126,6 @@ int cmd_test0( int argc, const char * const * argv )
 
   term_clear();
 
-  break_flag = 0;
   for( int i=0; i<n && !break_flag; ++i ) {
     mag.read1( 10 );
     xyz = mag.getMagAllmcGa();
@@ -145,12 +144,6 @@ int cmd_test0( int argc, const char * const * argv )
     vTaskDelayUntil( &tc0, t_step );
   }
 
-  pr( NL );
-
-  delay_ms( 10 );
-  break_flag = 0;  idle_flag = 1;
-
-  pr( NL "test0 end." NL );
   return 0;
 }
 

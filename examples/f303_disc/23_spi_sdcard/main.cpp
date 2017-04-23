@@ -150,11 +150,6 @@ int cmd_test0( int argc, const char * const * argv )
   pr_shx( SPI2->SR );
   pr_shx( SPI2->DR );
 
-
-  delay_ms( 10 );
-  break_flag = 0;  idle_flag = 1;
-
-  pr( NL "test0 end." NL );
   return 0;
 }
 
@@ -179,10 +174,7 @@ int cmd_sendr_spi( int argc, const char * const * argv )
   if( rc > 0 ) {
     dump8( gbuf_a, rc );
   }
-  delay_ms( 10 );
-  break_flag = 0;  idle_flag = 1;
 
-  pr( NL "sendr end." NL );
   return 0;
 }
 

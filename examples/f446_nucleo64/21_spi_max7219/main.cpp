@@ -189,11 +189,6 @@ int cmd_test0( int argc, const char * const * argv )
     max7219.setDigit( i, 1<<i | 1<<(i/2) | 0x81 );
   }
 
-
-  delay_ms( 10 );
-  break_flag = 0;  idle_flag = 1;
-
-  pr( NL "test0 end." NL );
   return 0;
 }
 
@@ -218,10 +213,7 @@ int cmd_sendr_spi( int argc, const char * const * argv )
   if( rc > 0 ) {
     dump8( gbuf_a, rc );
   }
-  delay_ms( 10 );
-  break_flag = 0;  idle_flag = 1;
 
-  pr( NL "sendr end." NL );
   return 0;
 }
 

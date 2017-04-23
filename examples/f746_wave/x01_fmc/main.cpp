@@ -114,14 +114,6 @@ int cmd_test0( int argc, const char * const * argv )
   uint8_t *mem = (uint8_t *)(0xD0000000);
   dump8( mem, 0x40, true );
 
-
-
-  pr( NL );
-
-  delay_ms( 10 );
-  break_flag = 0;  idle_flag = 1;
-
-  pr( NL "test0 end." NL );
   return 0;
 }
 

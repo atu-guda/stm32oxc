@@ -146,11 +146,6 @@ int cmd_test0( int argc, const char * const * argv )
   pr_shx( SPI2->SR );
   pr_shx( SPI2->DR );
 
-
-  delay_ms( 10 );
-  break_flag = 0;  idle_flag = 1;
-
-  pr( NL "test0 end." NL );
   return 0;
 }
 
@@ -175,28 +170,20 @@ int cmd_sendr_spi( int argc, const char * const * argv )
   if( rc > 0 ) {
     dump8( gbuf_a, rc );
   }
-  delay_ms( 10 );
-  break_flag = 0;  idle_flag = 1;
 
-  pr( NL "sendr end." NL );
-  return 0;
+  return (rc != 0);
 }
 
 int cmd_send_spi1( int argc, const char * const * argv )
 {
   uint8_t d = arg2long_d( 0, argc, argv, 0, 0, 0xFF );
 
-  pr( NL "Send1: d= " ); pr_h( d ); 
+  pr( NL "Send1: d= " ); pr_h( d );
   pr( NL );
 
   int rc = spi_d.send( &d, 1 );
 
-  pr_sdx( rc );
-  delay_ms( 10 );
-  break_flag = 0;  idle_flag = 1;
-
-  pr( NL "send1 end." NL );
-  return 0;
+  return rc;
 }
 
 

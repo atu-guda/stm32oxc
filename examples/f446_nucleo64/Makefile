@@ -20,13 +20,16 @@ SUBDIRS = \
   19_spi_test \
   20_spi_mem_a25 \
   21_spi_max7219 \
+  22_spi_pcd8544_lcd \
   24_i2c_hmc5983 \
   25_spi_max31855_tcouple \
   30_sdcard1 \
   31_sdcard2 \
   50_adc0 \
+  51_adcdma \
   53_adcdma_sd \
   55_dac0 \
+  xx01_calibrate \
 
   # 05_usb_console \
 

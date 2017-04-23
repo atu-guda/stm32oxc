@@ -155,7 +155,6 @@ int cmd_test0( int argc, const char * const * argv )
   leds.set( BIT0 );
   delay_bad_mcs( 10 );
 
-  break_flag = 0;
   // LSM303DLHC_AccInit( 0 );
   BSP_ACCELERO_Init();
 
@@ -170,13 +169,6 @@ int cmd_test0( int argc, const char * const * argv )
 
   leds.reset( BIT0 );
 
-  pr( NL );
-
-  delay_ms( 10 );
-  break_flag = 0;
-  idle_flag = 1;
-
-  pr( NL "test0 end." NL );
   return 0;
 }
 
@@ -192,18 +184,7 @@ int cmd_test1( int argc, const char * const * argv )
   pr_sdx( rc );
   dump8( buf, 4 );
 
-
-
-
   leds.reset( BIT0 );
-
-  pr( NL );
-
-  delay_ms( 10 );
-  break_flag = 0;
-  idle_flag = 1;
-
-  pr( NL "test1 end." NL );
   return 0;
 }
 //  ----------------------------- devices ----------------

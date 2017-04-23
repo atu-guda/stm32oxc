@@ -116,7 +116,6 @@ int cmd_test0( int argc, const char * const * argv )
 
   TickType_t tc0 = xTaskGetTickCount();
 
-  break_flag = 0;
   constexpr const int n_ch = 4;
   uint8_t d_in[n_ch] = { 0, 0, 0, 0 };
 
@@ -130,16 +129,9 @@ int cmd_test0( int argc, const char * const * argv )
     adc.setOut( i & 0xFF );
     pr( NL );
     vTaskDelayUntil( &tc0, t_step );
-    // delay_ms( t_step );
   }
   adc.setOut( v_end );
 
-  pr( NL );
-
-  delay_ms( 10 );
-  break_flag = 0;  idle_flag = 1;
-
-  pr( NL "test0 end." NL );
   return 0;
 }
 

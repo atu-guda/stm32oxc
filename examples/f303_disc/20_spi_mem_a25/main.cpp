@@ -149,10 +149,6 @@ int cmd_test0( int argc, const char * const * argv )
   pr( " Read After with offset 3: rc = " ); pr_d( rc ); pr( NL );
   dump8( gbuf_b, nd );
 
-  delay_ms( 10 );
-  break_flag = 0;  idle_flag = 1;
-
-  pr( NL "test0 end." NL );
   return 0;
 }
 
@@ -160,34 +156,18 @@ int cmd_spimem_erase( int argc, const char * const * argv )
 {
   pr( NL "Erase chips " NL );
 
-  TickType_t tc0 = xTaskGetTickCount();
-
   int rc = memspi.erase_chip();
 
-  TickType_t tc1 = xTaskGetTickCount();
-
-  pr( NL "rc= " ); pr_d( rc ); pr( " ticks: " ); pr_d( tc1 - tc0 );
-  break_flag = 0;  idle_flag = 1;
-
-  pr( NL "Erase end." NL );
-  return 0;
+  return rc;
 }
 
 int cmd_spimem_sector0_erase( int argc, const char * const * argv )
 {
   pr( NL "Erase sector 0 " NL );
 
-  TickType_t tc0 = xTaskGetTickCount();
-
   int rc = memspi.erase_sector( 0x000000 );
 
-  TickType_t tc1 = xTaskGetTickCount();
-
-  pr( NL "rc= " ); pr_d( rc ); pr( " ticks: " ); pr_d( tc1 - tc0 );
-  break_flag = 0;  idle_flag = 1;
-
-  pr( NL "Erase end." NL );
-  return 0;
+  return rc;
 }
 
 //  ----------------------------- configs ----------------

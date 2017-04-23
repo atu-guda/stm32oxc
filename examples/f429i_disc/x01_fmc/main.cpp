@@ -118,12 +118,6 @@ int cmd_test0( int argc, const char * const * argv )
 
   dump8( SDRAM_ADDR, n, true );
 
-  pr( NL );
-
-  delay_ms( 10 );
-  break_flag = 0;  idle_flag = 1;
-
-  pr( NL "test0 end." NL );
   return 0;
 }
 

@@ -126,11 +126,6 @@ int cmd_test0( int argc, const char * const * argv )
   // pwm_recalc();
   pwm_update();
 
-  delay_ms( 10 );
-  break_flag = 0;
-  idle_flag = 1;
-
-  pr( NL "test0 end." NL );
   return 0;
 }
 
@@ -140,7 +135,6 @@ int cmd_tinit( int argc, const char * const * argv )
 
   tim_cfg();
 
-  pr( NL "tinit end." NL );
   return 0;
 }
 

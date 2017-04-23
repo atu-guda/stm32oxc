@@ -159,14 +159,8 @@ int cmd_test0( int argc, const char * const * argv )
     vTaskDelayUntil( &tc0, t_step );
   }
 
-
   spi_d.pr_info();
 
-
-  delay_ms( 10 );
-  break_flag = 0;  idle_flag = 1;
-
-  pr( NL "test0 end." NL );
   return 0;
 }
 
@@ -178,7 +172,6 @@ int cmd_reset_spi( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
 
   spi_d.pr_info();
 
-  pr( NL "reset SPI end." NL );
   return 0;
 }
 
