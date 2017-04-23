@@ -103,7 +103,7 @@ typedef const char *const ccstr;
 #define ARR_SZ(x) (sizeof(x) / sizeof(x[0]))
 #define ARR_AND_SZ(x) x, (sizeof(x) / sizeof(x[0]))
 
-extern uint32_t delay_caliberate_value;
+extern uint32_t delay_calibrate_value;
 
 #ifdef __cplusplus
 // template<typename T> class _ShowType; // to output deducted type
@@ -136,6 +136,25 @@ void delay_bad_mcs( uint32_t mcs );
 
 void SystemClock_Config(void);
 int  SystemClockCfg(void); // returns: 0: ok >0 + set errno: error
+
+// osfuncs, real or not
+int _getpid(void);
+int _kill( int pid, int sig );
+void _exit( int status );
+int _read( int fd, char *buf, int len );
+int _write( int fd, const char *buf, int len );
+int _close( int fd );
+int _fstat( int fd, struct stat *st );
+int _isatty( int fd );
+int _lseek( int fd, int ptr, int whence );
+int _open( char *path, int flags, ... );
+int _wait( int *status );
+int _unlink( char *name );
+int _times( struct tms *buf );
+int _stat( const char *file, struct stat *st );
+int _link( const char *oldname, const char *newname );
+int _fork(void);
+int _execve( char *name, char **argv, char **env );
 
 #ifdef USE_FREERTOS
 

@@ -1,6 +1,11 @@
 #include <stdlib.h>
+#include <sys/stat.h>
 #include <errno.h>
 #include <oxc_base.h>
+
+#ifndef OXC_FAKE_IO
+#include <oxc_devio.h>
+#endif
 
 
 extern  const int _sdata, _edata, _sbss, _ebss, _end, _estack;
@@ -31,10 +36,172 @@ char* _sbrk ( int incr )
   return prev_heap;
 }
 
+
+#ifdef OXC_FAKE_IO
+
+int _read( int fd, char *buf, int len )
+{
+  errno = EBADF;
+  return -1;
+}
+
+int _write( int fd, const char *buf, int len )
+{
+  errno = EBADF;
+  return -1;
+}
+
+
+int _close( int fd )
+{
+  return -1;
+}
+
+
+int _fstat( int fd, struct stat *st )
+{
+  st->st_mode = S_IFCHR;
+  return 0;
+}
+
+int _isatty( int fd )
+{
+  return 0;
+}
+
+int _lseek( int fd, int ptr, int whence )
+{
+  return -1;
+}
+
+int _open( char *path, int flags, ... )
+{
+  errno = ENFILE;
+  return -1;
+}
+
+#else
+// real implementation, not all for now
+
+#define COMMON_FD_TEST(fd) \
+  if( fd < 0 || fd > DEVIO_MAX || !devio_fds[fd] ) {\
+    errno = ENFILE; \
+    return -1; \
+  }
+
+int _read( int fd, char *buf, int len ) // TODO: make better
+{
+  COMMON_FD_TEST( fd );
+  int r = 0;
+  for( int i=0; i < len;  ++i ) {
+    int t = recvByte( fd, buf, 0 );
+    if( t < 1 ) {
+      break;
+    }
+    ++r;
+  }
+  return r;
+}
+
+int _write( int fd, const char *buf, int len )
+{
+  COMMON_FD_TEST( fd );
+  return sendBlock( fd, buf, len );
+}
+
+
+int _close( int fd )
+{
+  COMMON_FD_TEST( fd );
+  return -1;
+}
+
+
+int _fstat( int fd, struct stat *st )
+{
+  COMMON_FD_TEST( fd );
+  st->st_mode = S_IFCHR;
+  return 0;
+}
+
+int _isatty( int fd )
+{
+  COMMON_FD_TEST( fd );
+  return ( fd < 3 );
+}
+
+int _lseek( int fd, int ptr, int whence )
+{
+  COMMON_FD_TEST( fd );
+  return -1;
+}
+
+int _open( char *path, int flags, ... )
+{
+  errno = ENFILE;
+  return -1;
+}
+
+#endif
+
+int _wait( int *status )
+{
+  errno = ECHILD;
+  return -1;
+}
+
+int _unlink( char *name )
+{
+  errno = ENOENT;
+  return -1;
+}
+
+int _times( struct tms *buf )
+{
+  return -1;
+}
+
+int _stat( const char *file, struct stat *st )
+{
+  st->st_mode = S_IFCHR;
+  return 0;
+}
+
+int _link( const char *oldname, const char *newname )
+{
+  errno = EMLINK;
+  return -1;
+}
+
 void abort(void)
 {
   for(;;);
 }
+
+
+int _getpid(void)
+{
+  return 1;
+}
+
+int _kill( int pid, int sig )
+{
+  errno = EINVAL;
+  return -1;
+}
+
+int _fork(void)
+{
+  errno = EAGAIN;
+  return -1;
+}
+
+int _execve( char *name, char **argv, char **env )
+{
+  errno = ENOMEM;
+  return -1;
+}
+
 
 } // extern "C"
 

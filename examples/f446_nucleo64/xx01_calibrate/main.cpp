@@ -1,3 +1,5 @@
+#define _GNU_SOURCE
+#include <cmath>
 #include <cstring>
 #include <cstdlib>
 
@@ -71,7 +73,7 @@ int main(void)
   UVAR('t') = 1000;
   UVAR('n') = 10;
   // UVAR('x') = 10000000; // for calibrate
-  uint32_t c_v0 = delay_caliberate_value;
+  uint32_t c_v0 = delay_calibrate_value;
   UVAR('x') = c_v0 * 500; // for calibrate 500 ms
 
   global_smallrl = &srl;
@@ -110,9 +112,15 @@ int cmd_test0( int argc, const char * const * argv )
   pr( NL "Test0: n= " ); pr_d( n ); pr( " t= " ); pr_d( t_step );
   pr( NL );
 
-  pr( "Current delay_caliberate_value= " ); pr_d( delay_caliberate_value ); pr( NL );
+  pr( "Current delay_calibrate_value= " ); pr_d( delay_calibrate_value ); pr( NL );
   do_delay_calibrate();
-  pr( "New delay_caliberate_value= " ); pr_d( delay_caliberate_value ); pr( NL );
+  pr( "New delay_calibrate_value= " ); pr_d( delay_calibrate_value ); pr( NL );
+
+  UVAR('z') = _write( 1, "ABCDEFGH", 6 );
+  putchar( 'X' );
+  puts( "012345" );
+  _write( 1, "ZZZ\r\n", 5 );
+  printf( "M_PI= %.12g" NL, M_PI );
 
 
   TickType_t tc0 = xTaskGetTickCount(), tc00 = tc0;

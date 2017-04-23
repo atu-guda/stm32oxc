@@ -9,6 +9,7 @@ USE_FREERTOS = y
 # FREERTOS_HEAP = heap_2.c
 # # default: heap_3.c
 USE_USB_DEFAULT_CDC = y
+# REQUIRE_SPECIAL_CLOCK = y # if special clock init is required
 
 
 # TODO: copy to main location
@@ -18,6 +19,7 @@ OXCDIR = /home/atu/proj/stm32/oxc
 SRCS  = main.cpp
 SRCS += usbfs_init.cpp
 
+SRCS += empty_test0_function.cpp
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
 # list: see ../common/f3_modules.mk
