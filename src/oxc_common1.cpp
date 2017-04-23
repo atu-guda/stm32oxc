@@ -30,6 +30,11 @@ void task_leds( void *prm UNUSED_ARG )
 #define MAIN_LOOP_WAIT 60000
 #endif
 
+#ifndef PS1_STRING
+#define PS1_STRING "\033[32m#\033[0m "
+#define PS1_OUTSZ  2
+#endif
+
 void default_main_loop()
 {
   uint32_t nl = 0;
@@ -41,7 +46,7 @@ void default_main_loop()
   }
 
   global_smallrl->setSigFun( smallrl_sigint );
-  global_smallrl->set_ps1( "\033[32m#\033[0m ", 2 );
+  global_smallrl->set_ps1( PS1_STRING, PS1_OUTSZ );
   global_smallrl->re_ps();
   global_smallrl->set_print_cmd( true );
 

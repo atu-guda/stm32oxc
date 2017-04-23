@@ -87,6 +87,7 @@ struct BitNames {
   const char *const name; //* bit name or bitfield base (nullptr-end too)
 };
 
+extern int console_verbose;
 
 
 inline int pr_c( char c, int fd = 1 ) { return prl( &c, 1, fd ); }

@@ -265,6 +265,8 @@ void SMLRL::SmallRL::handle_nl()
           case 'd':  dump8( hist, 16 ); break;
         #endif
         case 'r':  reset(); break;
+        case 'v':  ++console_verbose; break;
+        case 'q':  console_verbose = 0; break;
         default: break;
       }
     } else { // ordinary command

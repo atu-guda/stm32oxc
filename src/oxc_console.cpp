@@ -2,6 +2,8 @@
 #include <oxc_console.h>
 #include <oxc_devio.h>
 
+int console_verbose = 1;
+
 void term_cmd1( int n, char c, int fd )
 {
   char b[8];
@@ -195,30 +197,39 @@ int exec_direct( const char *s, int l )
   if( argc < 1 ) { return 1; }
 
   CmdFun f = 0;
-  // const char *nm = "???";
+  const char *nm = "???";
 
   for( int i=0; global_cmds[i] && i<CMDS_NMAX; ++i ) {
     if( global_cmds[i]->name == 0 ) {
       break;
     }
-    if( argv[0][1] == '\0'  &&  argv[0][0] == global_cmds[i]->acr ) {
+    if( argv[0][1] == '\0'  &&  argv[0][0] == global_cmds[i]->acr ) { // 1-letter abbr
       f = global_cmds[i]->fun;
-      // nm = global_cmds[i]->name;
+      nm = global_cmds[i]->name;
       break;
     }
     if( strcmp( global_cmds[i]->name, argv[0])  == 0 ) {
       f = global_cmds[i]->fun;
-      // nm = global_cmds[i]->name;
+      nm = global_cmds[i]->name;
       break;
     }
   }
 
   if( f != 0 ) {
       int rc = 0;
-      // pr( NL "=== CMD: \"", fd ); pr( nm, fd ); pr( "\"" NL, fd );
-      // delay_ms( 50 );
+      if( console_verbose > 0 ) {
+        pr( NL "=== CMD: \"" ); pr( nm ); pr( "\"" NL );
+        delay_ms( 1 );
+      }
+      break_flag = 0;
+      uint32_t tm0 = HAL_GetTick();
       rc = f( argc, argv );
-      pr_sdx( rc );
+      uint32_t tm1 = HAL_GetTick();
+      break_flag = 0;  idle_flag = 1;
+      if( console_verbose > 0 ) {
+        pr( NL "=== END: \"" ); pr( nm ); pr( "\" rc=" );  pr_d( rc ); pr( " t= " ); pr_d( tm1 - tm0 ); pr( NL );
+        delay_ms( 1 );
+      }
   } else {
     pr( "ERR:  Unknown command \"" );  pr( argv[0] );   pr( "\"" NL );
   }

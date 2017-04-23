@@ -129,11 +129,6 @@ int cmd_test0( int argc, const char * const * argv )
   uint32_t vv = 3250 * v1 / 4096;
   pr_sdx( vv );
 
-  pr( NL );
-  delay_ms( 10 );
-  break_flag = 0;  idle_flag = 1;
-
-  pr( NL "test0 end." NL );
   return 0;
 }
 
@@ -141,7 +136,7 @@ int cmd_ofast( int argc, const char * const * argv )
 {
   int n   = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
   int dly = arg2long_d( 2, argc, argv, 0, 0, 1000 );
-  pr( NL "ofast: n= " ); pr_d( n ); pr( " dly= " ); pr_d( dly );
+  pr( "ofast: n= " ); pr_d( n ); pr( " dly= " ); pr_d( dly );
   pr( NL );
 
   for( int i=0; i<n; ++i ) {
@@ -152,11 +147,6 @@ int cmd_ofast( int argc, const char * const * argv )
     }
   }
 
-  pr( NL );
-  delay_ms( 10 );
-  break_flag = 0;  idle_flag = 1;
-
-  pr( NL "ofast0 end." NL );
   return 0;
 }
 
@@ -165,7 +155,7 @@ int cmd_fun( int argc, const char * const * argv )
   int n   = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
   int tp  = arg2long_d( 2, argc, argv, 0, 0, 5 );
   int dly = arg2long_d( 3, argc, argv, 0, 0, 1000 );
-  pr( NL "funcs: n= " ); pr_d( n ); pr( " tp= " ); pr_d( tp ); pr( " dly= " ); pr_d( dly );
+  pr( "funcs: n= " ); pr_d( n ); pr( " tp= " ); pr_d( tp ); pr( " dly= " ); pr_d( dly );
   pr( NL );
 
   switch( tp ) {
@@ -193,7 +183,7 @@ int cmd_fun( int argc, const char * const * argv )
       break;
   }
 
-  for( int i=0; i<n; ++i ) {
+  for( int i=0; i<n && !break_flag; ++i ) {
     HAL_DAC_SetValue( &hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, dacbuf[i%dacbuf_sz] );
     HAL_DAC_Start( &hdac, DAC_CHANNEL_1 );
     if( dly ) {
@@ -201,11 +191,6 @@ int cmd_fun( int argc, const char * const * argv )
     }
   }
 
-  pr( NL );
-  delay_ms( 10 );
-  break_flag = 0;  idle_flag = 1;
-
-  pr( NL "funcs end." NL );
   return 0;
 }
 
