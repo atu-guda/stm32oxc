@@ -5,18 +5,18 @@
 #error This SystemClock_Config is for stm32f4xx only
 #endif
 
-#if REQ_SYSCLK_FREQ != 144
-#error This SystemClock_Config in for 144 MHz only
+#if REQ_SYSCLK_FREQ != 168
+#error This SystemClock_Config in for 168 MHz only
 #endif
 
-// 144 MHz  = 8 MHz, /8, *288, {/2,/6,/6},     /1,      /1,         /4,         /2
-//            HSE     M     N    P  Q  -   AHB_PR  SYSTICK  APB1_PR=36  APB2_PR=72
-// SDIO=48MHz, good for USB, 36 MHz ADC (/4) (MAX)
+// 168 MHz  = 25MHz,/25, *336, {/2,/7,/7},     /1,      /1,         /4,         /2
+//            HSE     M     N    P  Q  -   AHB_PR  SYSTICK  APB1_PR=42  APB2_PR=84
+// SDIO=48MHz, good for USB, 28 MHz ADC (/6)
 // Scale1, -OverDrive, FLASH_LATENCY_5,
 //
 
 int SystemClockCfg(void); // copy from oxc_base.h to reduce deps
-void  approx_delay_calibrate();
+void  approx_delay_calibrate(void);
 
 int SystemClockCfg(void)
 {
@@ -28,11 +28,11 @@ int SystemClockCfg(void)
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLM = 8;
-  RCC_OscInitStruct.PLL.PLLN = 288;
+  RCC_OscInitStruct.PLL.PLLM = 25;
+  RCC_OscInitStruct.PLL.PLLN = 336;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
-  RCC_OscInitStruct.PLL.PLLQ = 6;
-  // RCC_OscInitStruct.PLL.PLLR = 6;
+  RCC_OscInitStruct.PLL.PLLQ = 7;
+  // RCC_OscInitStruct.PLL.PLLR = 7;
   if( HAL_RCC_OscConfig( &RCC_OscInitStruct ) != HAL_OK ) {
     errno = 1001;
     return  1001;

@@ -9,7 +9,7 @@
 #error This SystemClock_Config in for 144 MHz only
 #endif
 
-// 144 MHz  = 8 MHz, /8, *288, {/2,/6,/6},     /1,      /1,         /4,         /2
+// 144 MHz  = 25MHz,/25, *288, {/2,/6,/6},     /1,      /1,         /4,         /2
 //            HSE     M     N    P  Q  -   AHB_PR  SYSTICK  APB1_PR=36  APB2_PR=72
 // SDIO=48MHz, good for USB, 36 MHz ADC (/4) (MAX)
 // Scale1, -OverDrive, FLASH_LATENCY_5,
@@ -28,7 +28,7 @@ int SystemClockCfg(void)
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLM = 8;
+  RCC_OscInitStruct.PLL.PLLM = 25;
   RCC_OscInitStruct.PLL.PLLN = 288;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
   RCC_OscInitStruct.PLL.PLLQ = 6;

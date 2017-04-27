@@ -169,7 +169,9 @@ ifeq "$(USE_OXC)" "y"
   SRCS += oxc_base.cpp
   SRCS += oxc_miscfun.cpp
   SRCS += oxc_gpio.cpp
-  SRCS += oxc_osfun.cpp
+  ifneq "$(NOUSE_OXC_OSFUN)" "y"
+    SRCS += oxc_osfun.cpp
+  endif
 endif
 
 ifeq "$(USE_OXC_I2C)" "y"
