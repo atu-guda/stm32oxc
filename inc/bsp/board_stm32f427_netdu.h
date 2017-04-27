@@ -28,6 +28,22 @@
 #define LED_BSP_RX        LED_BSP_GREEN
 #define LED_BSP_ERR       LED_BSP_BLUE
 
+#define BOARD_DEFINE_GO_LEDS \
+  PinsOut led_go1( GPIOE,  9, 1 ); \
+  PinsOut led_go2( GPIOE, 11, 1 ); \
+  PinsOut led_go3( GPIOE, 14, 1 ); \
+
+#define BOARD_DEFINE_GO_PWR \
+  PinsOut pwr_go1( GPIOD,  7, 1 ); \
+  PinsOut pwr_go2( GPIOD, 10, 1 ); \
+  PinsOut pwr_go3( GPIOD, 12, 1 ); \
+
+#define GO1_IO_GPIO GPIOD
+#define GO1_IO_PIN  13
+#define GO2_IO_GPIO GPIOD
+#define GO2_IO_PIN  14
+#define GO3_IO_GPIO GPIOD
+#define GO3_IO_PIN  15
 
 // #define TIM_EXA        TIM1
 // #define TIM_EXA_STR    "TIM1"

@@ -1,4 +1,4 @@
-PROJ_NAME=leds
+PROJ_NAME=leds_oxc
 
 USE_OXC = y
 # USE_OXC_DEVIO = y
