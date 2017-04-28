@@ -16,7 +16,7 @@ extern UART_HandleTypeDef uah;
 
 /* USART1 init function */
 
-void MX_USART1_UART_Init(void)
+int MX_USART1_UART_Init(void)
 {
   uah.Instance          = USART1;
   uah.Init.BaudRate     = 115200;
@@ -26,9 +26,7 @@ void MX_USART1_UART_Init(void)
   uah.Init.Mode         = UART_MODE_TX_RX;
   uah.Init.HwFlowCtl    = UART_HWCONTROL_NONE;
   uah.Init.OverSampling = UART_OVERSAMPLING_16;
-  if( HAL_UART_Init( &uah ) != HAL_OK )  {
-    Error_Handler( 1 );
-  }
+  return( HAL_UART_Init( &uah ) == HAL_OK );
 }
 
 void HAL_UART_MspInit( UART_HandleTypeDef* uartHandle )

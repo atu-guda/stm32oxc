@@ -16,10 +16,9 @@ OXCDIR = /home/atu/proj/stm32/oxc
 
 
 SRCS  = main.cpp
-SRCS += uart1_b6b7_hw.cpp
+SRCS += uart1_init_b6b7.cpp
 SRCS += adc_init.cpp
 SRCS += tim2_init.cpp
-# SRCS += empty_test0_function.cpp
 
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )

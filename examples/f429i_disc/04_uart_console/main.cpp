@@ -37,7 +37,7 @@ void task_main( void *prm UNUSED_ARG );
 
 UART_HandleTypeDef uah;
 UsartIO usartio( &uah, USART1 );
-void init_uart( UART_HandleTypeDef *uahp, int baud = 115200 );
+int init_uart( UART_HandleTypeDef *uahp, int baud = 115200 );
 
 STD_USART1_SEND_TASK( usartio );
 // STD_USART1_RECV_TASK( usartio );
@@ -58,7 +58,9 @@ int main(void)
 
   delay_bad_ms( 200 );  leds.write( 0 );
 
-  init_uart( &uah );
+  if( ! init_uart( &uah ) ) {
+      die4led( 1 );
+  }
 
   leds.write( BOARD_LEDS_ALL );
   delay_bad_ms( 200 );

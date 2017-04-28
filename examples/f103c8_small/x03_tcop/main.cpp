@@ -8,7 +8,7 @@ using namespace std;
 
 void MX_GPIO_Init(void);
 void MX_inp_Init();
-void MX_USART1_UART_Init(void);
+int MX_USART1_UART_Init(void);
 
 
 // BOARD_DEFINE_LEDS;
@@ -61,7 +61,9 @@ int main(void)
   leds.write( 0x0A );  delay_bad_ms( 200 );
 
   MX_inp_Init();
-  MX_USART1_UART_Init();
+  if( ! MX_USART1_UART_Init() ) {
+      die4led( 1 );
+  }
   MX_SPI1_Init();
 
   HAL_GPIO_WritePin( GPIOA, GPIO_PIN_4 , GPIO_PIN_SET );

@@ -50,7 +50,7 @@ void MX_I2C1_Init( I2C_HandleTypeDef &i2c, uint32_t speed = 100000 );
 
 UART_HandleTypeDef uah;
 UsartIO usartio( &uah, USART2 );
-void init_uart( UART_HandleTypeDef *uahp, int baud = 115200 );
+int init_uart( UART_HandleTypeDef *uahp, int baud = 115200 );
 
 STD_USART2_SEND_TASK( usartio );
 // STD_USART2_RECV_TASK( usartio );
@@ -73,7 +73,9 @@ int main(void)
   leds.write( 0x00 ); delay_ms( 200 );
   leds.write( BOARD_LEDS_ALL_EX );  HAL_Delay( 200 );
 
-  init_uart( &uah );
+  if( ! init_uart( &uah ) ) {
+      die4led( 1 );
+  }
   leds.write( 0x0A );  delay_bad_ms( 200 );
 
   MX_I2C1_Init( i2ch );

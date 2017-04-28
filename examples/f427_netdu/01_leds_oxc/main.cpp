@@ -11,6 +11,8 @@ const uint32_t leds_all = BOARD_LEDS_ALL;
 
 BOARD_DEFINE_GO_LEDS;
 BOARD_DEFINE_GO_PWR;
+// To test E0/E1 connections
+// PinsOut e_pins( GPIOE, 0, 3 );
 
 int main(void)
 {
@@ -21,6 +23,8 @@ int main(void)
 
   led_go1.initHW();  led_go2.initHW();  led_go3.initHW();
   pwr_go1.initHW();  pwr_go2.initHW();  pwr_go3.initHW();
+
+  // e_pins.initHW();
 
   int rc = SystemClockCfg();
   if( rc ) {
@@ -76,6 +80,9 @@ int main(void)
     if( ( i & 0x0F ) == 0 ) {
       pwr_go3.toggle( BIT0 );
     }
+
+    // e_pins.write( i );
+
     ++i;
     i &= leds_all;
     delay_ms( 250 );

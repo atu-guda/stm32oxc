@@ -22,7 +22,7 @@ void task_send( void *prm UNUSED_ARG );
 UART_HandleTypeDef uah;
 const int TX_BUF_SZ = 128;
 char tx_buf[TX_BUF_SZ];
-void init_uart( UART_HandleTypeDef *uahp, int baud = 115200 );
+int init_uart( UART_HandleTypeDef *uahp, int baud = 115200 );
 
 int main(void)
 {
@@ -39,7 +39,9 @@ int main(void)
 
   delay_bad_ms( 200 );  leds.write( 0 );
 
-  init_uart( &uah );
+  if( ! init_uart( &uah ) ) {
+      die4led( 1 );
+  }
 
   leds.write( BOARD_LEDS_ALL );
   delay_bad_ms( 200 );

@@ -10,7 +10,7 @@
 #endif
 
 int SystemClockCfg(void); // copy from oxc_base.h to reduce deps
-void  approx_delay_calibrate();
+void  approx_delay_calibrate(void);
 
 int SystemClockCfg(void)
 {

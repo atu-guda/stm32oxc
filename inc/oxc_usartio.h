@@ -56,6 +56,8 @@ extern "C" {
   void USART4_IRQHandler(void);
   void USART5_IRQHandler(void);
   void USART6_IRQHandler(void);
+  void UART7_IRQHandler(void);
+  void UART8_IRQHandler(void);
   void task_usart1_send( void *prm UNUSED_ARG );
   void task_usart1_recv( void *prm UNUSED_ARG );
   void task_usart2_send( void *prm UNUSED_ARG );
@@ -67,7 +69,11 @@ extern "C" {
   void task_usart5_send( void *prm UNUSED_ARG );
   void task_usart5_recv( void *prm UNUSED_ARG );
   void task_usart6_send( void *prm UNUSED_ARG );
-  void task_usart7_recv( void *prm UNUSED_ARG );
+  void task_usart6_recv( void *prm UNUSED_ARG );
+  void task_uart7_send( void *prm UNUSED_ARG );
+  void task_uart7_recv( void *prm UNUSED_ARG );
+  void task_uart8_send( void *prm UNUSED_ARG );
+  void task_uart8_recv( void *prm UNUSED_ARG );
 }
 //
 #define STD_USART1_IRQ( obj ) void USART1_IRQHandler(void) { obj.handleIRQ(); }
@@ -76,6 +82,8 @@ extern "C" {
 #define STD_USART4_IRQ( obj ) void USART4_IRQHandler(void) { obj.handleIRQ(); }
 #define STD_USART5_IRQ( obj ) void USART5_IRQHandler(void) { obj.handleIRQ(); }
 #define STD_USART6_IRQ( obj ) void USART6_IRQHandler(void) { obj.handleIRQ(); }
+#define STD_UART7_IRQ( obj )  void UART7_IRQHandler(void)  { obj.handleIRQ(); }
+#define STD_UART8_IRQ( obj )  void UART8_IRQHandler(void)  { obj.handleIRQ(); }
 
 #define STD_USART1_SEND_TASK( obj ) STD_COMMON_SEND_TASK( task_usart1_send, obj )
 #define STD_USART2_SEND_TASK( obj ) STD_COMMON_SEND_TASK( task_usart2_send, obj )
@@ -83,6 +91,8 @@ extern "C" {
 #define STD_USART4_SEND_TASK( obj ) STD_COMMON_SEND_TASK( task_usart4_send, obj )
 #define STD_USART5_SEND_TASK( obj ) STD_COMMON_SEND_TASK( task_usart5_send, obj )
 #define STD_USART6_SEND_TASK( obj ) STD_COMMON_SEND_TASK( task_usart6_send, obj )
+#define STD_UART7_SEND_TASK( obj )  STD_COMMON_SEND_TASK( task_uart7_send,  obj )
+#define STD_UART8_SEND_TASK( obj )  STD_COMMON_SEND_TASK( task_uart8_send,  obj )
 //
 #define STD_USART1_RECV_TASK( obj ) STD_COMMON_RECV_TASK( task_usart1_recv, obj )
 #define STD_USART2_RECV_TASK( obj ) STD_COMMON_RECV_TASK( task_usart2_recv, obj )
@@ -90,6 +100,8 @@ extern "C" {
 #define STD_USART4_RECV_TASK( obj ) STD_COMMON_RECV_TASK( task_usart4_recv, obj )
 #define STD_USART5_RECV_TASK( obj ) STD_COMMON_RECV_TASK( task_usart5_recv, obj )
 #define STD_USART6_RECV_TASK( obj ) STD_COMMON_RECV_TASK( task_usart6_recv, obj )
+#define STD_UART7_RECV_TASK( obj )  STD_COMMON_RECV_TASK( task_uart7_recv,  obj )
+#define STD_UART8_RECV_TASK( obj )  STD_COMMON_RECV_TASK( task_uart8_recv,  obj )
 
 #endif
 // vim: path=.,/usr/share/stm32lib/inc/,/usr/arm-none-eabi/include

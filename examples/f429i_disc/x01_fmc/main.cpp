@@ -42,7 +42,7 @@ void task_main( void *prm UNUSED_ARG );
 
 UART_HandleTypeDef uah;
 UsartIO usartio( &uah, USART1 );
-void init_uart( UART_HandleTypeDef *uahp, int baud = 115200 );
+int init_uart( UART_HandleTypeDef *uahp, int baud = 115200 );
 
 STD_USART1_SEND_TASK( usartio );
 // STD_USART1_RECV_TASK( usartio );
@@ -66,13 +66,11 @@ int main(void)
   leds.write( 0x00 );  delay_ms( 200 );
   bsp_init_sdram( &hsdram );
   leds.write( 0x03 );  delay_bad_ms( 200 );
-  init_uart( &uah );
 
+  if( ! init_uart( &uah ) ) {
+      die4led( 1 );
+  }
   leds.write( 0x0A );  delay_bad_ms( 200 );
-
-  // HAL_UART_Transmit( &uah, (uint8_t*)"START\r\n", 7, 100 );
-
-  // usartio.sendStrSync( "0123456789---main()---ABCDEF" NL );
 
   UVAR('t') = 1000;
   UVAR('n') = 10;

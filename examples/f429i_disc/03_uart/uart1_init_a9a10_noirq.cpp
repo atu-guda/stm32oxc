@@ -1,19 +1,17 @@
 #include <oxc_base.h>
 // not a common file: w/o irq
 
-void init_uart( UART_HandleTypeDef *uahp, int baud )
+int init_uart( UART_HandleTypeDef *uah, int baud )
 {
-  uahp->Instance = USART1;
-  uahp->Init.BaudRate     = baud;
-  uahp->Init.WordLength   = UART_WORDLENGTH_8B;
-  uahp->Init.StopBits     = UART_STOPBITS_1;
-  uahp->Init.Parity       = UART_PARITY_NONE;
-  uahp->Init.HwFlowCtl    = UART_HWCONTROL_NONE;
-  uahp->Init.Mode         = UART_MODE_TX_RX;
-  uahp->Init.OverSampling = UART_OVERSAMPLING_16;
-  if( HAL_UART_Init( uahp ) != HAL_OK )  {
-    Error_Handler( 0x08 );
-  }
+  uah->Instance = USART1;
+  uah->Init.BaudRate     = baud;
+  uah->Init.WordLength   = UART_WORDLENGTH_8B;
+  uah->Init.StopBits     = UART_STOPBITS_1;
+  uah->Init.Parity       = UART_PARITY_NONE;
+  uah->Init.HwFlowCtl    = UART_HWCONTROL_NONE;
+  uah->Init.Mode         = UART_MODE_TX_RX;
+  uah->Init.OverSampling = UART_OVERSAMPLING_16;
+  return( HAL_UART_Init( uah ) == HAL_OK );
 }
 
 void HAL_UART_MspInit( UART_HandleTypeDef* huart )
@@ -24,10 +22,8 @@ void HAL_UART_MspInit( UART_HandleTypeDef* huart )
     __USART1_CLK_ENABLE();
     __GPIOA_CLK_ENABLE();
 
-    /** USART2 GPIO Configuration
-    PA9     ------> USART2_TX
-    PA10     ------> USART2_RX
-    */
+    // A9     ------> USART2_TX
+    // A10    ------> USART2_RX
     gio.Pin = GPIO_PIN_9 | GPIO_PIN_10;
     gio.Mode = GPIO_MODE_AF_PP;
     gio.Pull = GPIO_NOPULL;
@@ -45,7 +41,7 @@ void HAL_UART_MspInit( UART_HandleTypeDef* huart )
 
 void HAL_UART_MspDeInit( UART_HandleTypeDef* huart )
 {
-  if( huart->Instance==USART1 )  {
+  if( huart->Instance == USART1 )  {
     __USART1_CLK_DISABLE();
     HAL_GPIO_DeInit( GPIOA, GPIO_PIN_9 | GPIO_PIN_10 );
     /* Peripheral interrupt Deinit*/

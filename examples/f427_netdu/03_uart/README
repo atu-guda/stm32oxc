@@ -1,0 +1,7 @@
+Simple usage of UART.
+Used UART8 with USB-UART board. via GoBus port 3
+
+// beware, pins E0, E1 on Gobus 3 seemd to be swapped
+E0  = UART8_RX
+E1  = UART8_TX
+

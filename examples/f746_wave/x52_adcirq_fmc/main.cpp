@@ -84,14 +84,17 @@ void task_main( void *prm UNUSED_ARG );
 }
 
 
-UART_HandleTypeDef huart1;
-UsartIO usartio( &huart1, USART1 );
-void MX_USART1_UART_Init(void);
+UART_HandleTypeDef uah;
+UsartIO usartio( &uah, USART1 );
+int init_uart( UART_HandleTypeDef *uahp, int baud = 115200 );
+
+
 
 void MX_FMC_Init(void);
 void BSP_SDRAM_Initialization_sequence( uint32_t RefreshCount );
 
 STD_USART1_SEND_TASK( usartio );
+// STD_USART1_RECV_TASK( usartio );
 STD_USART1_IRQ( usartio );
 
 int main(void)
@@ -107,6 +110,14 @@ int main(void)
     return 0;
   }
 
+  HAL_Delay( 200 ); // delay_bad_ms( 200 );
+  leds.write( 0x00 ); delay_ms( 200 );
+  leds.write( BOARD_LEDS_ALL );  HAL_Delay( 200 );
+
+  if( ! init_uart( &uah ) ) {
+      die4led( 1 );
+  }
+  leds.write( 0x0A );  delay_bad_ms( 200 );
   delay_bad_ms( 200 );  leds.write( 0 );
 
   UVAR('t') = 1000; // 1 s extra wait
@@ -117,7 +128,6 @@ int main(void)
   UVAR('n') = 8; // number of series
   UVAR('s') = 1; // sampling time index
 
-  MX_USART1_UART_Init();
   leds.write( 0x0F );  delay_bad_ms( 200 );
   MX_FMC_Init();
   leds.write( 0x01 );  delay_bad_ms( 200 );
@@ -129,7 +139,6 @@ int main(void)
   // tim2_init( UVAR('p'), UVAR('a') );
   leds.write( 0x0A );  delay_bad_ms( 200 );
 
-  // usartio.sendStrSync( "0123456789---main()---ABCDEF" NL );
 
   global_smallrl = &srl;
 
@@ -149,7 +158,7 @@ int main(void)
 
 void task_main( void *prm UNUSED_ARG ) // TMAIN
 {
-  SET_UART_AS_STDIO(usartio);
+  SET_UART_AS_STDIO( usartio );
 
   usartio.sendStrSync( "0123456789ABCDEF" NL );
   delay_ms( 10 );

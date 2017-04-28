@@ -5,7 +5,7 @@
 using namespace std;
 
 void MX_GPIO_Init(void);
-void MX_USART1_UART_Init(void);
+int MX_USART1_UART_Init(void);
 
 USE_DIE4LED_ERROR_HANDLER;
 
@@ -40,7 +40,9 @@ int main(void)
 
   delay_bad_ms( 200 );  leds.write( 0 );
 
-  MX_USART1_UART_Init();
+  if( ! MX_USART1_UART_Init() ) {
+      die4led( 1 );
+  }
 
   leds.write( 0x01 );  delay_bad_ms( 200 );
 

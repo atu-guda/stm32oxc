@@ -36,9 +36,9 @@ void task_main( void *prm UNUSED_ARG );
 }
 
 
-UART_HandleTypeDef huart1;
-UsartIO usartio( &huart1, USART1 );
-void MX_USART1_UART_Init(void);
+UART_HandleTypeDef uah;
+UsartIO usartio( &uah, USART1 );
+int init_uart( UART_HandleTypeDef *uahp, int baud = 115200 );
 
 STD_USART1_SEND_TASK( usartio );
 // STD_USART1_RECV_TASK( usartio );
@@ -57,12 +57,15 @@ int main(void)
     return 0;
   }
 
-  delay_bad_ms( 200 );  leds.write( 0 );
+  HAL_Delay( 200 ); // delay_bad_ms( 200 );
+  leds.write( 0x00 ); delay_ms( 200 );
+  leds.write( BOARD_LEDS_ALL );  HAL_Delay( 200 );
 
-  MX_USART1_UART_Init();
+  if( ! init_uart( &uah ) ) {
+      die4led( 1 );
+  }
   leds.write( 0x0A );  delay_bad_ms( 200 );
 
-  // usartio.sendStrSync( "0123456789---main()---ABCDEF" NL );
 
   UVAR('t') = 1000;
   UVAR('n') = 10;
@@ -85,7 +88,7 @@ int main(void)
 
 void task_main( void *prm UNUSED_ARG ) // TMAIN
 {
-  SET_UART_AS_STDIO(usartio);
+  SET_UART_AS_STDIO( usartio );
 
   usartio.sendStrSync( "0123456789ABCDEF" NL );
   delay_ms( 10 );
@@ -96,12 +99,10 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
 
 
 
-void _exit( int rc )
-{
-  die4led( rc );
-}
+//  ----------------------------- configs ----------------
 
-// // configs
+
+
 FreeRTOS_to_stm32cube_tick_hook;
 
 // vim: path=.,/usr/share/stm32lib/inc/,/usr/arm-none-eabi/include,../../../inc
