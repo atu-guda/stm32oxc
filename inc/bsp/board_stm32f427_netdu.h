@@ -38,12 +38,26 @@
   PinsOut pwr_go2( GPIOD, 10, 1 ); \
   PinsOut pwr_go3( GPIOD, 12, 1 ); \
 
-#define GO1_IO_GPIO GPIOD
+#define GO_IO_GPIO    GPIOD
+#define GO_IO_CLKEN __GPIOD_CLK_ENABLE();
 #define GO1_IO_PIN  13
-#define GO2_IO_GPIO GPIOD
 #define GO2_IO_PIN  14
-#define GO3_IO_GPIO GPIOD
 #define GO3_IO_PIN  15
+
+#define GO_TXPULLUP_GPIO    GPIOE
+#define GO_TXPULLUP_CLKEN __GPIOE_CLK_ENABLE();
+#define GO1_TXPULLUP_PIN   3
+#define GO2_TXPULLUP_PIN  10
+#define GO3_TXPULLUP_PIN  12
+#define BOARD_DEFINE_GO_TXPULLUP \
+  PinsOut txpullup_go1( GO_TXPULLUP_GPIO, GO1_TXPULLUP_PIN, 1 ); \
+  PinsOut txpullup_go2( GO_TXPULLUP_GPIO, GO2_TXPULLUP_PIN, 1 ); \
+  PinsOut txpullup_g03( GO_TXPULLUP_GPIO, GO3_TXPULLUP_PIN, 1 ); \
+
+#define GO_SPI SPI4
+#define BOARD_DEFINE_GO1_CS   PinsOut spi_cs_go1( GPIOD, 0, 1 );
+#define BOARD_DEFINE_GO2_CS   PinsOut spi_cs_go2( GPIOD, 1, 1 );
+#define BOARD_DEFINE_GO3_CS   PinsOut spi_cs_go3( GPIOD, 2, 1 );
 
 // #define TIM_EXA        TIM1
 // #define TIM_EXA_STR    "TIM1"

@@ -67,11 +67,18 @@ int main(void)
 
   while(1) {
     leds.write( i );
-    led_go1.toggle( BIT0 );
-    pwr_go3.toggle( BIT0 );
+    if( i & 0x07 ) {
+      led_go1.toggle( BIT0 );
+    }
+    if( ( i & 0x07 ) == 3 ) {
+      led_go1.toggle( BIT0 );
+    }
+    if( ( i & 0x0F ) == 0 ) {
+      pwr_go3.toggle( BIT0 );
+    }
     ++i;
     i &= leds_all;
-    delay_ms( 200 );
+    delay_ms( 250 );
   }
   return 0;
 }
