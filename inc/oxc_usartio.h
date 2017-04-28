@@ -49,6 +49,8 @@ class UsartIO : public DevIO {
 };
 
 // common declarations
+int init_uart( UART_HandleTypeDef *uah, int baud = 115200 ); // must be provided by project
+
 extern "C" {
   void USART1_IRQHandler(void);
   void USART2_IRQHandler(void);
@@ -102,6 +104,13 @@ extern "C" {
 #define STD_USART6_RECV_TASK( obj ) STD_COMMON_RECV_TASK( task_usart6_recv, obj )
 #define STD_UART7_RECV_TASK( obj )  STD_COMMON_RECV_TASK( task_uart7_recv,  obj )
 #define STD_UART8_RECV_TASK( obj )  STD_COMMON_RECV_TASK( task_uart8_recv,  obj )
+
+#define UART_CONSOLE_DEFINES( dev ) \
+  UART_HandleTypeDef uah; \
+  UsartIO usartio( &uah, dev ); \
+  STD_ ## dev ## _SEND_TASK( usartio ); \
+  STD_ ## dev ## _IRQ( usartio ); \
+  SmallRL srl( smallrl_exec );
 
 #endif
 // vim: path=.,/usr/share/stm32lib/inc/,/usr/arm-none-eabi/include

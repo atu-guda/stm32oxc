@@ -9,16 +9,13 @@ using namespace std;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
-
-// PinsOut p1 { GPIOC, 0, 4 };
+FreeRTOS_to_stm32cube_tick_hook;
 BOARD_DEFINE_LEDS;
 
-UsbcdcIO usbcdc;
+USBCDC_CONSOLE_DEFINES;
 
 
 const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
-
-SmallRL srl( smallrl_exec );
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -40,7 +37,6 @@ extern "C" {
 void task_main( void *prm UNUSED_ARG );
 }
 
-STD_USBCDC_SEND_TASK( usbcdc );
 
 int SPI1_Init_common( uint32_t baud_presc  = SPI_BAUDRATEPRESCALER_256 );
 PinsOut nss_pin( GPIOA, 4, 1 ); //  to test GPIO
@@ -50,20 +46,12 @@ DevSPI_MAX7219 max7219( spi_d );
 
 int main(void)
 {
-  HAL_Init();
+  STD_PROLOG_USBCDC;
 
-  leds.initHW();
-  leds.write( BOARD_LEDS_ALL );
+  UVAR('t') = 1000;
+  UVAR('n') = 20;
+  UVAR('r') = 0; // default bytes to read
 
-  int rc = SystemClockCfg();
-  if( rc ) {
-    die4led( BOARD_LEDS_ALL );
-    return 0;
-  }
-
-  delay_bad_ms( 200 );  leds.write( 0 );
-
-  leds.write( 0x0F );  delay_bad_ms( 200 );
   if( SPI1_Init_common() != HAL_OK ) {
     die4led( 0x04 );
   }
@@ -71,32 +59,16 @@ int main(void)
   //nss_pin.set(1);
   spi_d.initSPI();
 
-  delay_bad_ms( 200 );  leds.write( 1 );
+  delay_ms( PROLOG_LED_TIME ); leds.write( 0x01 ); delay_ms( PROLOG_LED_TIME );
 
-  UVAR('t') = 1000;
-  UVAR('n') = 10;
-  UVAR('r') = 0; // default bytes to read
+  CREATE_STD_TASKS( task_usbcdc_send );
 
-  global_smallrl = &srl;
-
-  //           code               name    stack_sz      param  prty TaskHandle_t*
-  xTaskCreate( task_leds,        "leds", 1*def_stksz, nullptr,   1, nullptr );
-  xTaskCreate( task_usbcdc_send, "send", 2*def_stksz, nullptr,   2, nullptr );  // 2
-  xTaskCreate( task_main,        "main", 2*def_stksz, nullptr,   1, nullptr );
-  xTaskCreate( task_gchar,      "gchar", 2*def_stksz, nullptr,   1, nullptr );
-
-  leds.write( 0x00 );
-  ready_to_start_scheduler = 1;
-  vTaskStartScheduler();
-
-  die4led( 0xFF );
+  SCHEDULER_START;
   return 0;
 }
 
 void task_main( void *prm UNUSED_ARG ) // TMAIN
 {
-  SET_USBCDC_AS_STDIO(usbcdc);
-
   default_main_loop();
   vTaskDelete(NULL);
 }
@@ -208,7 +180,6 @@ int cmd_sendr_spi( int argc, const char * const * argv )
 
 //  ----------------------------- configs ----------------
 
-FreeRTOS_to_stm32cube_tick_hook;
 
 // vim: path=.,/usr/share/stm32lib/inc/,/usr/arm-none-eabi/include,../../../inc
 

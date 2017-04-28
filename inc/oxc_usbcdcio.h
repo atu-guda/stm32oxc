@@ -63,5 +63,10 @@ extern "C" {
 #define STD_USBCDC_RECV_TASK( obj ) STD_COMMON_RECV_TASK( task_usbcdc_recv, obj )
 #define STD_USBCDC_SEND_TASK( obj ) STD_COMMON_SEND_TASK( task_usbcdc_send, obj )
 
+#define USBCDC_CONSOLE_DEFINES \
+  UsbcdcIO usbcdc; \
+  STD_USBCDC_SEND_TASK( usbcdc ); \
+  SmallRL srl( smallrl_exec );
+
 #endif
 // vim: path=.,/usr/share/stm32lib/inc/,/usr/arm-none-eabi/include

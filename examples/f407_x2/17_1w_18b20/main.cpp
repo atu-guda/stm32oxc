@@ -9,16 +9,13 @@ using namespace std;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
-
-// PinsOut p1 { GPIOC, 0, 4 };
+FreeRTOS_to_stm32cube_tick_hook;
 BOARD_DEFINE_LEDS;
 
-UsbcdcIO usbcdc;
+USBCDC_CONSOLE_DEFINES;
 
 
 const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
-
-SmallRL srl( smallrl_exec );
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -43,51 +40,29 @@ void task_main( void *prm UNUSED_ARG );
 IoPin pin_wire1( GPIOE, GPIO_PIN_15 );
 OneWire wire1( pin_wire1 );
 
-STD_USBCDC_SEND_TASK( usbcdc );
 
 int main(void)
 {
-  HAL_Init();
+  STD_PROLOG_USBCDC;
 
-  leds.initHW();
-  leds.write( BOARD_LEDS_ALL );
-
-  int rc = SystemClockCfg();
-  if( rc ) {
-    die4led( BOARD_LEDS_ALL );
-    return 0;
-  }
-
-  delay_bad_ms( 200 );  leds.write( 0 );
+  UVAR('t') = 1000;
+  UVAR('n') = 20;
 
   pin_wire1.initHW();
   wire1.initHW();
 
-  leds.write( 0x0F );  delay_bad_ms( 200 );
+  delay_ms( PROLOG_LED_TIME ); leds.write( 0x01 ); delay_ms( PROLOG_LED_TIME );
 
-  UVAR('t') = 1000;
-  UVAR('n') = 10;
 
-  global_smallrl = &srl;
 
-  //           code               name    stack_sz      param  prty TaskHandle_t*
-  xTaskCreate( task_leds,        "leds", 1*def_stksz, nullptr,   1, nullptr );
-  xTaskCreate( task_usbcdc_send, "send", 2*def_stksz, nullptr,   2, nullptr );  // 2
-  xTaskCreate( task_main,        "main", 2*def_stksz, nullptr,   1, nullptr );
-  xTaskCreate( task_gchar,      "gchar", 2*def_stksz, nullptr,   1, nullptr );
+  CREATE_STD_TASKS( task_usbcdc_send );
 
-  leds.write( 0x00 );
-  ready_to_start_scheduler = 1;
-  vTaskStartScheduler();
-
-  die4led( 0xFF );
+  SCHEDULER_START;
   return 0;
 }
 
 void task_main( void *prm UNUSED_ARG ) // TMAIN
 {
-  SET_USBCDC_AS_STDIO(usbcdc);
-
   default_main_loop();
   vTaskDelete(NULL);
 }
@@ -198,9 +173,7 @@ int cmd_1wire0( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
 }
 
 //  ----------------------------- configs ----------------
-//
 
-FreeRTOS_to_stm32cube_tick_hook;
 
 // vim: path=.,/usr/share/stm32lib/inc/,/usr/arm-none-eabi/include,../../../inc
 

@@ -7,14 +7,11 @@ using namespace std;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
-
+FreeRTOS_to_stm32cube_tick_hook;
 BOARD_DEFINE_LEDS;
 
 
-
 const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
-
-SmallRL srl( smallrl_exec );
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -29,70 +26,32 @@ const CmdInfo* global_cmds[] = {
 
 
 extern "C" {
-
 void task_main( void *prm UNUSED_ARG );
-
-
 }
 
 
-UART_HandleTypeDef uah;
-UsartIO usartio( &uah, USART2 );
-int init_uart( UART_HandleTypeDef *uahp, int baud = 115200 );
-
-STD_USART2_SEND_TASK( usartio );
-// STD_USART2_RECV_TASK( usartio );
-STD_USART2_IRQ( usartio );
+UART_CONSOLE_DEFINES( USART2 );
 
 int main(void)
 {
-  HAL_Init();
-
-  leds.initHW();
-  leds.write( BOARD_LEDS_ALL );
-
-  int rc = SystemClockCfg();
-  if( rc ) {
-    die4led( BOARD_LEDS_ALL );
-    return 0;
-  }
-
-  HAL_Delay( 200 );
-  leds.write( 0x00 ); delay_ms( 200 );
-  leds.write( BOARD_LEDS_ALL );  HAL_Delay( 200 );
-
-  if( ! init_uart( &uah ) ) {
-      die4led( 1 );
-  }
-  leds.write( 0x0A );  delay_bad_ms( 200 );
+  STD_PROLOG_UART;
 
   // HAL_UART_Transmit( &uah, (uint8_t*)"START\r\n", 7, 100 );
-
   // usartio.sendStrSync( "0123456789---main()---ABCDEF" NL );
+
+  // delay_ms( PROLOG_LED_TIME ); leds.write( 0x01 ); delay_ms( PROLOG_LED_TIME );
 
   UVAR('t') = 1000;
   UVAR('n') = 10;
 
-  global_smallrl = &srl;
+  CREATE_STD_TASKS( task_usart2_send );
 
-  //           code               name    stack_sz      param  prty TaskHandle_t*
-  xTaskCreate( task_leds,        "leds", 1*def_stksz, nullptr,   1, nullptr );
-  xTaskCreate( task_usart2_send, "send", 2*def_stksz, nullptr,   2, nullptr );  // 2
-  xTaskCreate( task_main,        "main", 2*def_stksz, nullptr,   1, nullptr );
-  xTaskCreate( task_gchar,      "gchar", 2*def_stksz, nullptr,   1, nullptr );
-
-  leds.write( 0x00 );
-  ready_to_start_scheduler = 1;
-  vTaskStartScheduler();
-
-  die4led( 0xFF );
+  SCHEDULER_START;
   return 0;
 }
 
 void task_main( void *prm UNUSED_ARG ) // TMAIN
 {
-  SET_UART_AS_STDIO(usartio);
-
   usartio.sendStrSync( "0123456789ABCDEF" NL );
   delay_ms( 10 );
 
@@ -106,7 +65,6 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
 
 
 
-FreeRTOS_to_stm32cube_tick_hook;
 
 // vim: path=.,/usr/share/stm32lib/inc/,/usr/arm-none-eabi/include,../../../inc
 

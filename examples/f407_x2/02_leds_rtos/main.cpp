@@ -21,16 +21,7 @@ volatile int led_delay = 1000;
 
 int main(void)
 {
-  HAL_Init();
-
-  leds.initHW();
-  leds.write( BOARD_LEDS_ALL );
-
-  int rc = SystemClockCfg();
-  if( rc ) {
-    die4led( BOARD_LEDS_ALL );
-    return 0;
-  }
+  STD_PROLOG_START;
 
   MX_GPIO_Init();
 

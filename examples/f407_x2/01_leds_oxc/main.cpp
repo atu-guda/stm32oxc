@@ -11,17 +11,7 @@ const uint32_t leds_all = BOARD_LEDS_ALL;
 
 int main(void)
 {
-  HAL_Init();
-
-  leds.initHW();
-  leds.write( BOARD_LEDS_ALL );
-
-  int rc = SystemClockCfg();
-  if( rc ) {
-    die4led( BOARD_LEDS_ALL );
-    return 0;
-  }
-
+  STD_PROLOG_START;
 
   int i=0x04;
 

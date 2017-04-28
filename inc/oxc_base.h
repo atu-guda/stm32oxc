@@ -119,10 +119,6 @@ void vApplicationTickHook(void);
 void _exit( int rc );
 void die( uint16_t n );
 void Error_Handler( int rc ); // defined at user program
-#define USE_DIE_ERROR_HANDLER void Error_Handler( int rc ) { die( rc ); };
-#define USE_DIE4LED_ERROR_HANDLER void Error_Handler( int rc ) { die4led( rc ); };
-#define USE_DIE_EXIT void void( int rc ) { die( rc ); };
-#define USE_DIE4LED_EXIT void void( int rc ) { die4led( rc ); };
 
 void approx_delay_calibrate(void);
 void do_delay_calibrate(void);
@@ -171,6 +167,62 @@ int _execve( char *name, char **argv, char **env );
 }
 #endif
 
+#define USE_DIE_ERROR_HANDLER void Error_Handler( int rc ) { die( rc ); };
+#define USE_DIE4LED_ERROR_HANDLER void Error_Handler( int rc ) { die4led( rc ); };
+#define USE_DIE_EXIT void void( int rc ) { die( rc ); };
+#define USE_DIE4LED_EXIT void void( int rc ) { die4led( rc ); };
+
+#ifndef PROLOG_LED_TIME
+#define PROLOG_LED_TIME 200
+#endif
+
+#define STD_PROLOG_START \
+  HAL_Init(); \
+  leds.initHW(); \
+  leds.write( BOARD_LEDS_ALL ); \
+  int rc = SystemClockCfg(); \
+  if( rc ) { \
+    die4led( BOARD_LEDS_ALL ); \
+    return 1; \
+  }
+
+#define STD_PROLOG_UART_NOCON \
+  STD_PROLOG_START; \
+  delay_ms( PROLOG_LED_TIME ); leds.write( 0x00 ); delay_ms( PROLOG_LED_TIME ); \
+  if( ! init_uart( &uah ) ) { \
+    die4led( 1 ); \
+  } \
+  leds.write( BOARD_LEDS_ALL );  HAL_Delay( PROLOG_LED_TIME );
+
+#define STD_PROLOG_UART \
+  STD_PROLOG_UART_NOCON; \
+  global_smallrl = &srl; \
+  SET_UART_AS_STDIO( usartio );
+
+#define STD_PROLOG_USBCDC \
+  STD_PROLOG_START; \
+  delay_ms( PROLOG_LED_TIME ); leds.write( 0x00 ); delay_ms( PROLOG_LED_TIME ); \
+  if( ! usbcdc.init() ) { \
+    die4led( 1 ); \
+  } \
+  leds.write( BOARD_LEDS_ALL );  HAL_Delay( PROLOG_LED_TIME ); \
+  global_smallrl = &srl; \
+  SET_USBCDC_AS_STDIO( usbcdc );
+
+
+
+#define SCHEDULER_START \
+  leds.write( 0x00 ); \
+  ready_to_start_scheduler = 1; \
+  vTaskStartScheduler(); \
+  die4led( 0xFF );
+
+#define CREATE_STD_TASKS( SEND_TASK ) \
+  xTaskCreate( task_leds,        "leds", 1*def_stksz, nullptr,   1, nullptr ); \
+  xTaskCreate( SEND_TASK,        "send", 2*def_stksz, nullptr,   2, nullptr ); \
+  xTaskCreate( task_main,        "main", 2*def_stksz, nullptr,   1, nullptr ); \
+  xTaskCreate( task_gchar,      "gchar", 2*def_stksz, nullptr,   1, nullptr );
+  //           code               name    stack_sz      param  prty TaskHandle_t*
 
 
 #endif
