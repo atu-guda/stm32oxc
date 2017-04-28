@@ -9,7 +9,7 @@ using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
 
-BOARD_DEFINE_LEDS_EX;
+BOARD_DEFINE_LEDS;
 
 
 
@@ -57,17 +57,17 @@ int main(void)
   HAL_Init();
 
   leds.initHW();
-  leds.write( BOARD_LEDS_ALL_EX );
+  leds.write( BOARD_LEDS_ALL );
 
   int rc = SystemClockCfg();
   if( rc ) {
-    die4led( BOARD_LEDS_ALL_EX );
+    die4led( BOARD_LEDS_ALL );
     return 0;
   }
 
   HAL_Delay( 200 ); // delay_bad_ms( 200 );
   leds.write( 0x00 ); delay_ms( 200 );
-  leds.write( BOARD_LEDS_ALL_EX );  HAL_Delay( 200 );
+  leds.write( BOARD_LEDS_ALL );  HAL_Delay( 200 );
 
   if( ! init_uart( &uah ) ) {
       die4led( 1 );

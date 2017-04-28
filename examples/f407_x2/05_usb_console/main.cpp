@@ -50,6 +50,9 @@ int main(void)
 
   HAL_Delay( 200 );
   leds.write( 0x00 ); delay_ms( 200 );
+  if( ! usbcdc.init() ) {
+      die4led( 1 );
+  }
   leds.write( BOARD_LEDS_ALL );  HAL_Delay( 200 );
 
 
@@ -74,7 +77,7 @@ int main(void)
 
 void task_main( void *prm UNUSED_ARG ) // TMAIN
 {
-  SET_USBCDC_AS_STDIO(usbcdc);
+  SET_USBCDC_AS_STDIO( usbcdc );
 
   default_main_loop();
   vTaskDelete(NULL);
@@ -83,6 +86,8 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
 
 
 //  ----------------------------- configs ----------------
+
+
 
 FreeRTOS_to_stm32cube_tick_hook;
 

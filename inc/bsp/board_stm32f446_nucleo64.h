@@ -5,40 +5,40 @@
 // headers must be included manualy in C/CPP file
 
 // default: single LED on A5
-#define BOARD_N_LEDS 1
-#define BOARD_LEDS_GPIO GPIOA
-#define BOARD_LEDS_OFS  5
-#define BOARD_LEDS_MASK 0x0020
+#define BOARD_N_LEDS_MINI 1
+#define BOARD_LEDS_GPIO_MINI GPIOA
+#define BOARD_LEDS_OFS_MINI  5
+#define BOARD_LEDS_MASK_MINI 0x0020
 // unshifted
-#define BOARD_LEDS_ALL  0x01
+#define BOARD_LEDS_ALL_MINI  0x01
 
-// extra LEDS is C0:C3
-#define BOARD_N_LEDS_EX 4
-#define BOARD_LEDS_GPIO_EX GPIOC
-#define BOARD_LEDS_OFS_EX  0
-#define BOARD_LEDS_MASK_EX 0x000F
+// not so-extra LEDS is C0:C3
+#define BOARD_N_LEDS 4
+#define BOARD_LEDS_GPIO GPIOC
+#define BOARD_LEDS_OFS  0
+#define BOARD_LEDS_MASK 0x000F
 // unshifted
-#define BOARD_LEDS_ALL_EX  0x0F
+#define BOARD_LEDS_ALL  0x0F
 
 #define BOARD_DEFINE_LEDS PinsOut leds( BOARD_LEDS_GPIO, BOARD_LEDS_OFS, BOARD_N_LEDS );
-#define BOARD_DEFINE_LEDS_EX PinsOut leds( BOARD_LEDS_GPIO_EX, BOARD_LEDS_OFS_EX, BOARD_N_LEDS_EX );
+#define BOARD_DEFINE_LEDS_MINI PinsOut leds( BOARD_LEDS_GPIO_MINI, BOARD_LEDS_OFS_MINI, BOARD_N_LEDS_MINI );
 
-#define LED_BSP_YELLOW    1
+#define LED_BSP_YELLOW_MINI 1
 
-#define LED_BSP_RED_EX      1
-#define LED_BSP_RED_EX      1
-#define LED_BSP_RED_0_EX    1
-#define LED_BSP_YELLOW_EX   2
-#define LED_BSP_YELLOW_0_EX 2
-#define LED_BSP_GREEN_EX    4
-#define LED_BSP_GREEN_0_EX  4
-#define LED_BSP_BLUE_EX     8
-#define LED_BSP_BLUE_0_EX   8
+#define LED_BSP_RED         1
+#define LED_BSP_RED         1
+#define LED_BSP_RED_0       1
+#define LED_BSP_YELLOW      2
+#define LED_BSP_YELLOW_0    2
+#define LED_BSP_GREEN       4
+#define LED_BSP_GREEN_0     4
+#define LED_BSP_BLUE        8
+#define LED_BSP_BLUE_0      8
 
-#define LED_BSP_IDLE      LED_BSP_BLUE_EX
-#define LED_BSP_TX        LED_BSP_RED_EX
-#define LED_BSP_RX        LED_BSP_GREEN_EX
-#define LED_BSP_ERR       LED_BSP_YELLOW_EX
+#define LED_BSP_IDLE      LED_BSP_BLUE
+#define LED_BSP_TX        LED_BSP_RED
+#define LED_BSP_RX        LED_BSP_GREEN
+#define LED_BSP_ERR       LED_BSP_YELLOW
 
 
 #define TIM_EXA        TIM1

@@ -19,18 +19,18 @@ int main(void)
 
   int i=0x04,  j = 0;
   volatile int t = 0;
-  BOARD_LEDS_GPIO_EX->ODR = BOARD_LEDS_MASK_EX;
+  BOARD_LEDS_GPIO->ODR = BOARD_LEDS_MASK;
   while(1) {
     // j = ( (~i) & 0x000F ) << shift;
     t = HAL_GetTick();
     j = (t + 1);
     t = j - 1;
-    GPIO_WriteBits( BOARD_LEDS_GPIO_EX,                 i, BOARD_LEDS_MASK_EX );
-    GPIO_WriteBits(    BOARD_LEDS_GPIO, i<<BOARD_LEDS_OFS, BOARD_LEDS_MASK    );
+    GPIO_WriteBits( BOARD_LEDS_GPIO,  i, BOARD_LEDS_MASK );
+    // GPIO_WriteBits(    BOARD_LEDS_GPIO, i<<BOARD_LEDS_OFS, BOARD_LEDS_MASK    );
     // GPIO_WriteBits( TPORT, j, mask );
     // HAL_GPIO_TogglePin( GPIOC, i );
     ++i;
-    i &= BOARD_LEDS_MASK_EX;
+    i &= BOARD_LEDS_MASK;
     HAL_Delay( 200 );
     // delay_bad();
   }
@@ -64,11 +64,11 @@ void MX_GPIO_Init(void)
   // __GPIOH_CLK_ENABLE();
 
   /*Configure GPIO pins : PC0 PC1 PC2 PC3 */
-  GPIO_InitStruct.Pin =  BOARD_LEDS_MASK_EX; //GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3;
+  GPIO_InitStruct.Pin =  BOARD_LEDS_MASK; //GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_HIGH;
-  HAL_GPIO_Init( BOARD_LEDS_GPIO_EX, &GPIO_InitStruct );
+  HAL_GPIO_Init( BOARD_LEDS_GPIO, &GPIO_InitStruct );
 
   // on-board led
   GPIO_InitStruct.Pin = BOARD_LEDS_MASK;

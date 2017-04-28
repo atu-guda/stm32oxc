@@ -8,7 +8,7 @@ USE_DIE4LED_ERROR_HANDLER;
 
 
 
-BOARD_DEFINE_LEDS_EX;
+BOARD_DEFINE_LEDS;
 
 const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
 
@@ -43,7 +43,7 @@ int main(void)
       die4led( 1 );
   }
 
-  leds.write( BOARD_LEDS_ALL_EX );
+  leds.write( BOARD_LEDS_ALL );
   delay_bad_ms( 200 );
 
   xTaskCreate( task_leds, "leds", 1*def_stksz, 0, 1, 0 );

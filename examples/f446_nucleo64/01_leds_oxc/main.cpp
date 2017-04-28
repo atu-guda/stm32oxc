@@ -5,8 +5,8 @@ using namespace std;
 USE_DIE4LED_ERROR_HANDLER;
 
 
-BOARD_DEFINE_LEDS_EX; // no board in only one LED
-const uint32_t leds_all = BOARD_LEDS_ALL_EX;
+BOARD_DEFINE_LEDS; // no board in only one LED
+const uint32_t leds_all = BOARD_LEDS_ALL;
 
 int main(void)
 {

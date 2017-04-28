@@ -7,7 +7,7 @@ USE_DIE4LED_ERROR_HANDLER;
 void MX_GPIO_Init(void);
 
 
-BOARD_DEFINE_LEDS_EX;
+BOARD_DEFINE_LEDS;
 
 const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
 
