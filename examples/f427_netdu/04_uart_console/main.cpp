@@ -86,7 +86,7 @@ int main(void)
 
 void task_main( void *prm UNUSED_ARG ) // TMAIN
 {
-  SET_UART_AS_STDIO(usartio);
+  SET_UART_AS_STDIO( usartio );
 
   usartio.sendStrSync( "0123456789ABCDEF" NL );
   delay_ms( 10 );

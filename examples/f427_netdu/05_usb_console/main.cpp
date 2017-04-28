@@ -50,6 +50,9 @@ int main(void)
 
   HAL_Delay( 200 );
   leds.write( 0x00 ); delay_ms( 200 );
+  if( ! usbcdc.init() ) {
+      die4led( 1 );
+  }
   leds.write( BOARD_LEDS_ALL );  HAL_Delay( 200 );
 
 

@@ -15,7 +15,7 @@ class UsbcdcIO : public DevIO {
     { pusb_dev = &usb_dev; static_usbcdcio = this; }
    // virtual ~UsbcdcIO() override {};
    // virtual void reset() override {}
-   void init();
+   int init();
 
    virtual int sendBlockSync( const char *s, int l ) override;
    //{ usb->transmit( s, l ); return l; } // TODO: check return status

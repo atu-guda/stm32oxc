@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <oxc_usbcdcio.h>
 
 // #include <oxc_gpio.h> // debug
@@ -5,12 +6,25 @@
 USBD_HandleTypeDef* UsbcdcIO::pusb_dev = nullptr;
 UsbcdcIO* UsbcdcIO::static_usbcdcio = nullptr;
 
-void UsbcdcIO::init()
+int UsbcdcIO::init()
 {
-  USBD_Init( &usb_dev, &VCP_Desc, 0 ); // 0 = DEVICE_FS
-  USBD_RegisterClass( &usb_dev, USBD_CDC_CLASS );
-  USBD_CDC_RegisterInterface( &usb_dev, &cdc_fops );
-  USBD_Start( &usb_dev );
+  if( USBD_Init( &usb_dev, &VCP_Desc, 0 ) != USBD_OK ) { // 0 = DEVICE_FS
+    errno = 2000;
+    return 0;
+  }
+  if( USBD_RegisterClass( &usb_dev, USBD_CDC_CLASS ) != USBD_OK ) {
+    errno = 2001;
+    return 0;
+  }
+  if( USBD_CDC_RegisterInterface( &usb_dev, &cdc_fops ) != USBD_OK ) {
+    errno = 2002;
+    return 0;
+  }
+  if( USBD_Start( &usb_dev ) != USBD_OK ) {
+    errno = 2003;
+    return 0;
+  }
+  return 1;
 }
 
 int UsbcdcIO::sendBlockSync( const char *s, int l )

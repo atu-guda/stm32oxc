@@ -33,13 +33,13 @@ void task_gchar( void *prm UNUSED_ARG ) __weak;
   delay_ms( 10 );
 
 #define SET_USBCDC_AS_STDIO(usbcdc) \
-  usbcdc.init(); \
   usbcdc.setOnSigInt( sigint ); \
   devio_fds[0] = &usbcdc;  \
   devio_fds[1] = &usbcdc;  \
   devio_fds[2] = &usbcdc;  \
   delay_ms( 50 );
 
+  /* usbcdc.init(); \ */
 
 
 #endif
