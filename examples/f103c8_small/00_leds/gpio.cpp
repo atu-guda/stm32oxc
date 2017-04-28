@@ -1,4 +1,4 @@
-#include "gpio.h"
+#include <oxc_auto.h>
 #include "mxconstants.h"
 
 void MX_GPIO_Init(void)

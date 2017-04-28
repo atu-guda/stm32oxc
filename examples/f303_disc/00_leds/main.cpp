@@ -1,12 +1,10 @@
-#include <oxc_gpio.h>
+#include <oxc_auto.h>
 
 
 void MX_GPIO_Init(void);
+int delay_bad(void);
 
 USE_DIE_ERROR_HANDLER;
-
-int  delay_bad(void);
-
 
 int main(void)
 {

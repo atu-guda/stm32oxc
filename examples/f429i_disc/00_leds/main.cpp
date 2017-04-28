@@ -1,14 +1,10 @@
-#include "stm32f4xx_hal.h"
 #include <oxc_auto.h>
 
 
 void MX_GPIO_Init(void);
+int  delay_bad(void);
 
 USE_DIE_ERROR_HANDLER;
-
-
-int  delay_bad(void);
-void _exit( int rc );
 
 
 

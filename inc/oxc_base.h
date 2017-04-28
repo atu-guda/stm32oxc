@@ -138,6 +138,8 @@ void SystemClock_Config(void);
 int  SystemClockCfg(void); // returns: 0: ok >0 + set errno: error
 
 // osfuncs, real or not
+struct stat;
+struct tms;
 int _getpid(void);
 int _kill( int pid, int sig );
 void _exit( int status );

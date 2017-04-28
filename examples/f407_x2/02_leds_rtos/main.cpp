@@ -13,10 +13,6 @@ const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
 
 extern "C" {
 
-void EXTI0_IRQHandler(void);
-void EXTI1_IRQHandler(void);
-void HAL_GPIO_EXTI_Callback( uint16_t pin );
-
 void task_leds( void *prm UNUSED_ARG );
 
 }

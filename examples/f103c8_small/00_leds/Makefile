@@ -17,9 +17,9 @@ NOUSE_OXC_OSFUN = y
 OXCDIR = /home/atu/proj/stm32/oxc
 
 
-SRCS  = main.c
+SRCS  = main.cpp
 
-SRCS += gpio.c
+SRCS += gpio.cpp
 
 SRCS += stm32f1xx_hal_rcc_ex.c
 
