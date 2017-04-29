@@ -20,26 +20,26 @@ void HD44780_i2c::wr4( uint8_t v, bool is_data )
   b |= led_state;
   uint8_t v1 = ( v & 0xF0 );
   uint8_t d = v1 | lcd_bit_e | b;
-  send( d );
+  dev.send( d, addr );
   delay_mcs( 1 );
   d = v1 | led_state | b;
-  send( d );
+  dev.send( d, addr );
   delay_mcs( 1 );
   v1 = v << 4;
   d = v1 | lcd_bit_e | b;
-  send( d );
+  dev.send( d, addr );
   delay_mcs( 1 );
   d = v1 | b;
-  send( d );
+  dev.send( d, addr );
 }
 
 void HD44780_i2c::strobe( uint8_t v )
 {
   uint8_t d = v | lcd_bit_e | led_state;
-  send( d );
+  dev.send( d, addr );
   delay_mcs( 2 );
   d = v | led_state;
-  send( d );
+  dev.send( d, addr );
 }
 
 void HD44780_i2c::puts( const char *s )

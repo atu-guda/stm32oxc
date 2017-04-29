@@ -3,7 +3,7 @@
 
 #include <oxc_i2c.h>
 
-class HD44780_i2c : public DevI2C {
+class HD44780_i2c {
   public:
     enum {
       lcd_8b_mode   = 0x30,
@@ -21,12 +21,16 @@ class HD44780_i2c : public DevI2C {
       lcd_bit_led   = 0x08,
       lcd_def_addr  = 0x27
     };
-    HD44780_i2c( I2C_HandleTypeDef *i2c_h, uint8_t d_addr = lcd_def_addr )
-     : DevI2C( i2c_h, d_addr ) {};
+    HD44780_i2c( DevI2C &a_dev, uint8_t d_addr = lcd_def_addr )
+     : dev( a_dev ), addr( d_addr ) {};
+    void setAddr( uint8_t d_addr ) { addr = d_addr; };
+    uint8_t getAddr() const { return addr; }
+    int  getState() const { return dev.getState(); };
     void init_4b( bool is_2row = true );
     void wr4( uint8_t v, bool is_data );
     void strobe( uint8_t v );
     void putch( char c ) { wr4( c, true ); }
+    void putxych( uint8_t x, uint8_t y, char c ) { gotoxy( x, y ); putch( c ); }
     void cmd( uint8_t cmd ) { wr4( cmd, false ); }
     void puts( const char *s );
     void gotoxy( uint8_t x, uint8_t y );
@@ -40,6 +44,8 @@ class HD44780_i2c : public DevI2C {
     void led_off()  { led_state = 0;          cmd( mod | lcd_cmd_onoff ); }
 
   protected:
+   DevI2C &dev;
+   uint8_t addr;
    uint8_t mod = 0;
    uint8_t led_state = lcd_bit_led;
    static const constexpr uint8_t n_lines { 4 };
