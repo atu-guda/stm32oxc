@@ -84,6 +84,11 @@ void task_main( void *prm UNUSED_ARG );
 int main(void)
 {
   STD_PROLOG_USBCDC;
+  tim_freq_in = HAL_RCC_GetPCLK1Freq(); // to TIM2
+  uint32_t hclk_freq = HAL_RCC_GetHCLKFreq();
+  if( tim_freq_in < hclk_freq ) {
+    tim_freq_in *= 2;
+  }
 
   UVAR('t') = 1000; // 1 s extra wait
   UVAR('v') = v_adc_ref;
@@ -93,14 +98,9 @@ int main(void)
   UVAR('n') = 8; // number of series
   UVAR('s') = 1; // sampling time index
 
-
-  tim_freq_in = HAL_RCC_GetPCLK1Freq(); // to TIM2
-  uint32_t hclk_freq = HAL_RCC_GetHCLKFreq();
-  if( tim_freq_in < hclk_freq ) {
-    tim_freq_in *= 2;
-  }
-
   delay_ms( PROLOG_LED_TIME ); leds.write( 0x01 ); delay_ms( PROLOG_LED_TIME );
+
+
 
   CREATE_STD_TASKS( task_usbcdc_send );
 
