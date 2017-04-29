@@ -50,3 +50,22 @@
 # SRCS += stm32f3xx_hal_gpio.c
 # SRCS += stm32f3xx_hal_rcc.c
 
+# low-level
+# SRCS += stm32f3xx_ll_adc.c
+# SRCS += stm32f3xx_ll_comp.c
+# SRCS += stm32f3xx_ll_crc.c
+# SRCS += stm32f3xx_ll_dac.c
+# SRCS += stm32f3xx_ll_dma.c
+# SRCS += stm32f3xx_ll_exti.c
+# SRCS += stm32f3xx_ll_fmc.c
+# SRCS += stm32f3xx_ll_gpio.c
+# SRCS += stm32f3xx_ll_hrtim.c
+# SRCS += stm32f3xx_ll_i2c.c
+# SRCS += stm32f3xx_ll_opamp.c
+# SRCS += stm32f3xx_ll_pwr.c
+# SRCS += stm32f3xx_ll_rcc.c
+# SRCS += stm32f3xx_ll_rtc.c
+# SRCS += stm32f3xx_ll_spi.c
+# SRCS += stm32f3xx_ll_tim.c
+# SRCS += stm32f3xx_ll_usart.c
+# SRCS += stm32f3xx_ll_utils.c

@@ -127,7 +127,6 @@ int main(void)
   delay_ms( PROLOG_LED_TIME ); leds.write( 0x01 ); delay_ms( PROLOG_LED_TIME );
 
 
-  delay_ms( PROLOG_LED_TIME ); leds.write( 0x01 ); delay_ms( PROLOG_LED_TIME );
 
   CREATE_STD_TASKS( task_usbcdc_send );
 
