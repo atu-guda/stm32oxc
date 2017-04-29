@@ -31,7 +31,6 @@ const CmdInfo* global_cmds[] = {
 
 extern "C" {
 void task_main( void *prm UNUSED_ARG );
-void TIM1_CC_IRQHandler(void);
 }
 
 
@@ -43,9 +42,6 @@ int main(void)
 
   UVAR('t') = 1000;
   UVAR('n') = 20;
-
-
-
 
 
   // delay_ms( PROLOG_LED_TIME ); leds.write( 0x01 ); delay_ms( PROLOG_LED_TIME );

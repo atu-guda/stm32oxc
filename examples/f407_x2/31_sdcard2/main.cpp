@@ -139,7 +139,6 @@ int cmd_mount( int argc, const char * const * argv )
   }
   pr( "Try to mount \"" ); pr( fspath ); pr( "\""  NL);
   FRESULT fr = f_mount( &fs, fspath, 1 );
-  pr( "Result: " ); pr_d( fr ); pr( NL );
 
   return fr;
 }
@@ -148,7 +147,6 @@ int cmd_umount( int argc, const char * const * argv )
 {
   pr( "Try to umount \"" ); pr( fspath ); pr( "\""  NL);
   FRESULT fr = f_mount( nullptr, fspath, 1 );
-  pr( "Result: " ); pr_d( fr ); pr( NL );
 
   return fr;
 }

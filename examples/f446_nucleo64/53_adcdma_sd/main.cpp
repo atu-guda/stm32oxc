@@ -1,5 +1,6 @@
 #include <cstring>
 #include <cstdlib>
+#include <cstdio>
 
 #include <oxc_auto.h>
 
@@ -10,10 +11,10 @@ using namespace std;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
-
-
-
+FreeRTOS_to_stm32cube_tick_hook;
 BOARD_DEFINE_LEDS;
+
+UART_CONSOLE_DEFINES( USART2 );
 
 extern SD_HandleTypeDef hsd;
 void MX_SDIO_SD_Init();
@@ -22,6 +23,8 @@ HAL_SD_CardInfoTypeDef cardInfo;
 FATFS fs;
 const int fspath_sz = 32;
 char fspath[fspath_sz];
+void print_curr( const char *s );
+void out_to_curr( uint32_t n, uint32_t st );
 
 
 extern "C" {
@@ -36,7 +39,8 @@ ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
 uint32_t tim_freq_in; // timer input freq
 uint32_t adc_clk = 36000000;     // depend in MCU, set in MX_ADC1_Init
-uint32_t t_step = 100000; // in us, recalculated before measurement
+// uint32_t t_step = 100000; // in us, recalculated before measurement
+float t_step_f = 0.1; // in s, recalculated before measurement
 int v_adc_ref = 3250; // in mV, measured before test, adjust as UVAR('v')
 const uint32_t n_ADC_ch_max = 4; // current - in UVAR('c')
 const uint32_t n_ADC_mem  = 1024*32; // MCU dependent, in 16-bit samples
@@ -73,8 +77,8 @@ void tim2_init( uint16_t presc = 36, uint32_t arr = 100 ); // 1MHz, 10 kHz
 void tim2_deinit();
 
 const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
-
-SmallRL srl( smallrl_exec );
+const int pbufsz = 128;
+FIL out_file;
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -98,36 +102,9 @@ extern "C" {
 void task_main( void *prm UNUSED_ARG );
 }
 
-
-UART_HandleTypeDef uah;
-UsartIO usartio( &uah, USART2 );
-int init_uart( UART_HandleTypeDef *uahp, int baud = 115200 );
-
-STD_USART2_SEND_TASK( usartio );
-// STD_USART2_RECV_TASK( usartio );
-STD_USART2_IRQ( usartio );
-
 int main(void)
 {
-  HAL_Init();
-
-  leds.initHW();
-  leds.write( BOARD_LEDS_ALL );
-
-  int rc = SystemClockCfg();
-  if( rc ) {
-    die4led( BOARD_LEDS_ALL );
-    return 0;
-  }
-
-  HAL_Delay( 200 ); // delay_bad_ms( 200 );
-  leds.write( 0x00 ); delay_ms( 200 );
-  leds.write( BOARD_LEDS_ALL );  HAL_Delay( 200 );
-
-  if( ! init_uart( &uah ) ) {
-      die4led( 1 );
-  }
-  leds.write( 0x0A );  delay_bad_ms( 200 );
+  STD_PROLOG_UART;
 
   MX_SDIO_SD_Init();
   UVAR('e') = HAL_SD_Init( &hsd );
@@ -138,6 +115,7 @@ int main(void)
   fs.fs_type = 0; // none
   fspath[0] = '\0';
   UVAR('z') = f_mount( &fs, "", 1 );
+  out_file.fs = nullptr;
 
   tim_freq_in = HAL_RCC_GetPCLK1Freq(); // to TIM2
   uint32_t hclk_freq = HAL_RCC_GetHCLKFreq();
@@ -153,29 +131,16 @@ int main(void)
   UVAR('n') = 8; // number of series
   UVAR('s') = 1; // sampling time index
 
-  leds.write( BOARD_LEDS_ALL );  HAL_Delay( 200 );
+  delay_ms( PROLOG_LED_TIME ); leds.write( 0x01 ); delay_ms( PROLOG_LED_TIME );
 
+  CREATE_STD_TASKS( task_usart2_send );
 
-  global_smallrl = &srl;
-
-  //           code               name    stack_sz      param  prty TaskHandle_t*
-  xTaskCreate( task_leds,        "leds", 1*def_stksz, nullptr,   1, nullptr );
-  xTaskCreate( task_usart2_send, "send", 2*def_stksz, nullptr,   2, nullptr );  // 2
-  xTaskCreate( task_main,        "main", 2*def_stksz, nullptr,   1, nullptr );
-  xTaskCreate( task_gchar,      "gchar", 2*def_stksz, nullptr,   1, nullptr );
-
-  leds.write( 0x00 );
-  ready_to_start_scheduler = 1;
-  vTaskStartScheduler();
-
-  die4led( 0xFF );
+  SCHEDULER_START;
   return 0;
 }
 
 void task_main( void *prm UNUSED_ARG ) // TMAIN
 {
-  SET_UART_AS_STDIO( usartio );
-
   default_main_loop();
   vTaskDelete(NULL);
 }
@@ -209,7 +174,7 @@ void pr_TIM_state( TIM_TypeDef *htim )
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  char buf[32];
+  char pbuf[pbufsz];
   uint8_t n_ch = UVAR('c');
   if( n_ch > n_ADC_ch_max ) { n_ch = n_ADC_ch_max; };
   if( n_ch < 1 ) { n_ch = 1; };
@@ -222,21 +187,16 @@ int cmd_test0( int argc, const char * const * argv )
   uint32_t f_sampl_ser = adc_clk / ( sampl_times_cycles[sampl_t_idx] * n_ch );
 
   uint32_t t_step_tick =  (UVAR('a')+1) * (UVAR('p')+1); // in timer input ticks
-  uint32_t tim_f = tim_freq_in / t_step_tick; // timer update freq
-  t_step = t_step_tick / ( tim_freq_in / 1000000 ); // in us
-  uint32_t t_wait0 = n  * t_step / 1000; // in ms
-  if( t_wait0 < 1 ) { t_wait0 = 1; }
+  uint32_t tim_f = tim_freq_in / t_step_tick; // timer update freq, Hz
+  t_step_f = (float)t_step_tick / tim_freq_in; // in s
+  uint32_t t_wait0 = 1 + uint32_t( n * t_step_f * 1000 ); // in ms
 
   if( n > n_ADC_series_max ) { n = n_ADC_series_max; };
 
-  pr( NL "Test0: n= " ); pr_d( n ); pr( " n_ch= " ); pr_d( n_ch );
-  pr( "  tim_f= " ); pr_d( tim_f );
-  pr( " Hz;  t_step= " ); pr_d( t_step );
-  pr( " us;  f_sampl_ser= " ); pr_d( f_sampl_ser );
-  pr( " t_wait0= " ); pr_d( t_wait0 );  pr( NL );
-  ifcvt( t_step, 1000000, buf, 6 );
-  pr( " t_step= " ); pr( buf );
-  pr( NL );
+  snprintf( pbuf, pbufsz-1, "Test0: n= %lu; n_ch= %u; tim_f= %lu Hz; t_step= %.8g s; f_sampl_ser= %lu Hz; t_wait0= %lu ms" NL,
+                                       n,      n_ch,      tim_f,       t_step_f,        f_sampl_ser,      t_wait0  );
+
+  pr( pbuf ); delay_ms( 10 );
   tim2_deinit();
 
   pr_ADC_state();
@@ -247,8 +207,6 @@ int cmd_test0( int argc, const char * const * argv )
   MX_ADC1_Init( n_ch, sampl_t_idx );
   delay_ms( 10 );
 
-  // log_add( "Test0 " );
-
   uint32_t n_ADC_bytes = n * n_ch;
   uint32_t n_ADC_bytes_guard = n_ADC_bytes + n_ch * 2;
   for( uint32_t i=0; i<n_ADC_bytes_guard;  ++i ) { // TODO: memset
@@ -256,6 +214,7 @@ int cmd_test0( int argc, const char * const * argv )
   }
   adc_end_dma = 0; adc_dma_error = 0; n_series = 0; n_series_todo = n;
   TickType_t tc0 = xTaskGetTickCount(), tc00 = tc0;
+  leds.reset( BIT0 | BIT1 | BIT2 );
   if( HAL_ADC_Start_DMA( &hadc1, (uint32_t*)adc_v0, n_ADC_bytes ) != HAL_OK )   {
     pr( "ADC_Start_DMA error" NL );
   }
@@ -278,23 +237,12 @@ int cmd_test0( int argc, const char * const * argv )
   pr( "  tick: "); pr_d( tcc - tc00 );
   pr( NL );
 
-  bool was_hole = false;
-  for( uint32_t i=0; i< (n_series_todo+2); ++i ) { // +2 = show guard
-    if( i > 2 && i < n_series_todo - 2 ) {
-      if( ! was_hole ) {
-        was_hole = true;
-        pr( "....." NL );
-      }
-      continue;
-    }
-    for( int j=0; j< n_ch; ++j ) {
-      // pr_d( adc_v0[i*n_ch+j] ) ; pr( "\t" );
-      int vv = adc_v0[i*n_ch+j] * 10 * UVAR('v') / 4096;
-      ifcvt( vv, 10000, buf, 4 );
-      pr( buf ); pr( "\t" );
-    }
-    pr( NL );
+  out_to_curr( 2, 0 );
+  if( n_series_todo > 2 ) {
+    pr( "....." NL );
+    out_to_curr( 4, n_series_todo-2 );
   }
+
   pr( NL );
 
   pr_ADC_state();
@@ -306,34 +254,53 @@ int cmd_test0( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_out( int argc, const char * const * argv )
+void print_curr( const char *s )
+{
+  if( !s ) {
+    return;
+  }
+  if( out_file.fs == nullptr ) {
+    pr( s );
+    delay_ms( 2 );
+    return;
+  }
+  f_puts( s, &out_file );
+}
+
+void out_to_curr( uint32_t n, uint32_t st )
 {
   char buf[32];
+  char pbuf[pbufsz];
   uint8_t n_ch = UVAR('c');
   if( n_ch > n_ADC_ch_max ) { n_ch = n_ADC_ch_max; };
   if( n_ch < 1 ) { n_ch = 1; };
-  uint32_t n = arg2long_d( 1, argc, argv, n_series_todo, 0, n_series_todo+1 ); // number output series
-  uint32_t st= arg2long_d( 2, argc, argv,             0, 0, n_series_todo-2 );
 
   if( n+st >= n_series_todo+1 ) {
     n = 1 + n_series_todo - st;
   }
 
-  uint32_t t = st * t_step;
+  float t = st * t_step_f;
   for( uint32_t i=0; i< n; ++i ) {
     uint32_t ii = i + st;
-    ifcvt( t, 1000000, buf, 6 );
-    pr( buf ); pr( "   " );
+    t = t_step_f * ii;
+    snprintf( pbuf, pbufsz-1, "%12.7g  ", t );
     for( int j=0; j< n_ch; ++j ) {
       int vv = adc_v0[ii*n_ch+j] * 10 * UVAR('v') / 4096;
       ifcvt( vv, 10000, buf, 4 );
-      pr( buf ); pr( "  " );
+      strcat( pbuf, buf ); strcat( pbuf, "  " );
     }
-    t += t_step;
-    pr( NL );
-    delay_ms( 5 );
+    strcat( pbuf, NL );
+    print_curr( pbuf );
   }
-  pr( NL );
+}
+
+int cmd_out( int argc, const char * const * argv )
+{
+  out_file.fs = nullptr;
+  uint32_t n = arg2long_d( 1, argc, argv, n_series_todo, 0, n_series_todo+1 ); // number output series
+  uint32_t st= arg2long_d( 2, argc, argv,             0, 0, n_series_todo-2 );
+
+  out_to_curr( n, st );
 
   return 0;
 }
@@ -345,39 +312,19 @@ int cmd_outsd( int argc, const char * const * argv )
     return 1;
   }
 
-  char buf[32];
-  uint8_t n_ch = UVAR('c');
-  if( n_ch > n_ADC_ch_max ) { n_ch = n_ADC_ch_max; };
-  if( n_ch < 1 ) { n_ch = 1; };
+  out_file.fs = nullptr;
   uint32_t n = arg2long_d( 2, argc, argv, n_series_todo, 0, n_series_todo+1 ); // number output series
   uint32_t st= arg2long_d( 3, argc, argv,             0, 0, n_series_todo-2 );
 
-  if( n+st >= n_series_todo+1 ) {
-    n = 1 + n_series_todo - st;
-  }
-
-  uint32_t t = st * t_step;
-
   const char *fn = argv[1];
-  FIL f;
-  FRESULT r = f_open( &f, fn, FA_WRITE | FA_OPEN_ALWAYS );
+  FRESULT r = f_open( &out_file, fn, FA_WRITE | FA_OPEN_ALWAYS );
   if( r == FR_OK ) {
-    for( uint32_t i=0; i< n; ++i ) {
-      uint32_t ii = i + st;
-      ifcvt( t, 1000000, buf, 6 );
-      f_puts( buf, &f ); f_puts( "   ", &f );
-      for( int j=0; j< n_ch; ++j ) {
-        int vv = adc_v0[ii*n_ch+j] * 10 * UVAR('v') / 4096;
-        ifcvt( vv, 10000, buf, 4 );
-        f_puts( buf, &f ); f_puts( "  ", &f );
-      }
-      t += t_step;
-      f_puts( NL, &f );
-    }
-    f_close( &f );
+    out_to_curr( n, st );
+    f_close( &out_file );
   } else {
     pr( "f_open error: " ); pr_d( r ); pr( NL );
   }
+  out_file.fs = nullptr;
 
   return r;
 }
@@ -388,8 +335,9 @@ void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc )
   // tim2_deinit();
   UVAR('x') = hadc1.Instance->SR;
   hadc1.Instance->SR = 0;
+  // HAL_ADC_Stop_DMA( hadc );
   adc_end_dma |= 1;
-  leds.toggle( BIT2 );
+  leds.set( BIT2 );
   ++UVAR('g'); // 'g' means good
 }
 
@@ -403,7 +351,7 @@ void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc )
   hadc1.Instance->SR = 0;
   hadc->DMA_Handle->ErrorCode = 0;
   adc_end_dma |= 2;
-  // leds.toggle( BIT0 );
+  leds.set( BIT0 );
   ++UVAR('e');
 }
 
@@ -433,7 +381,6 @@ void HAL_ADCEx_InjectedConvCpltCallback( ADC_HandleTypeDef * /*hadc*/ )
 }
 
 // configs
-FreeRTOS_to_stm32cube_tick_hook;
 
 // vim: path=.,/usr/share/stm32lib/inc/,/usr/arm-none-eabi/include,../../../inc
 

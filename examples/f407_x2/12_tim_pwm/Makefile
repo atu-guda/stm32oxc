@@ -9,6 +9,7 @@ USE_FREERTOS = y
 # FREERTOS_HEAP = heap_2.c
 # # default: heap_3.c
 USE_USB_DEFAULT_CDC = y
+# REQUIRE_SPECIAL_CLOCK = y
 
 
 # TODO: copy to main location

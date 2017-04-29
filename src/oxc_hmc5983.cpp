@@ -20,9 +20,9 @@ bool HMC5983::init( CRA odr, Scales scale )
   buf[1] = scale_bits[scale];
   buf[2] = mode_idle;
 
-  resetDev();
+  dev.resetDev();
 
-  if( send_reg1( reg_cra, buf, 3 ) != 3 ) {
+  if( dev.send_reg1( reg_cra, buf, 3, addr ) != 3 ) {
     return false;
   }
   mcGa_LSb = mcGa_LSbs[scale];
@@ -34,7 +34,7 @@ bool HMC5983::init( CRA odr, Scales scale )
 int16_t HMC5983::getReg( uint8_t reg )
 {
   int32_t v;
-  int rc = recv_reg1( reg, (uint8_t*)(&v), 2 );
+  int rc = dev.recv_reg1( reg, (uint8_t*)(&v), 2, addr );
   if( rc < 1 ) {
     return 0;
   }
@@ -44,7 +44,7 @@ int16_t HMC5983::getReg( uint8_t reg )
 
 bool HMC5983::getRegs( uint8_t reg1, uint8_t n, int16_t *data )
 {
-  int rc = recv_reg1( reg1 /*| 0x80 */, (uint8_t*)(data), 2*n );
+  int rc = dev.recv_reg1( reg1 /*| 0x80 */, (uint8_t*)(data), 2*n, addr );
   if( rc < 1 ) {
     return false;
   }
@@ -61,7 +61,7 @@ bool HMC5983::wait_read( int32_t wait_ms )
     for( int i=0; i< max_loops; ++i ) {
       delay_ms( wait_ms );
       sta = 0;
-      recv_reg1( reg_sr, &sta, 1 );
+      dev.recv_reg1( reg_sr, &sta, 1, addr );
       if( sta & status_rdy ) {
         break;
       }
@@ -83,7 +83,7 @@ bool HMC5983::wait_read( int32_t wait_ms )
 bool HMC5983::read1( int32_t wait_ms )
 {
   regsXYZ[0] = regsXYZ[1] = regsXYZ[2] = 0;
-  if( send_reg1( reg_mode, mode_single ) != 1 ) {
+  if( dev.send_reg1( reg_mode, mode_single, addr ) != 1 ) {
     return false;
   }
   return wait_read( wait_ms );
@@ -91,7 +91,7 @@ bool HMC5983::read1( int32_t wait_ms )
 
 bool HMC5983::startAuto()
 {
-  if( send_reg1( reg_mode, mode_cont ) != 1 ) {
+  if( dev.send_reg1( reg_mode, mode_cont, addr ) != 1 ) {
     return false;
   }
   return true;
@@ -104,7 +104,7 @@ bool HMC5983::readNextAuto( int32_t wait_ms )
 
 bool HMC5983::stopAuto()
 {
-  if( send_reg1( reg_mode, mode_idle ) != 1 ) {
+  if( dev.send_reg1( reg_mode, mode_idle, addr ) != 1 ) {
     return false;
   }
   return true;

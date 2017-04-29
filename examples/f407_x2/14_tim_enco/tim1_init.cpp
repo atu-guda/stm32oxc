@@ -10,8 +10,8 @@ void HAL_TIM_Encoder_MspInit( TIM_HandleTypeDef* htim )
   GPIO_InitTypeDef gio;
 
   gio.Pin       = TIM_EXA_PIN1 | TIM_EXA_PIN2; // see inc/bsp/board_xxxx.h
-  gio.Mode = GPIO_MODE_AF_PP;
-  gio.Pull      = GPIO_NOPULL;
+  gio.Mode      = GPIO_MODE_AF_PP;
+  gio.Pull      = GPIO_NOPULL; // use external resistors
   gio.Speed     = GPIO_SPEED_HIGH;
   gio.Alternate = TIM_EXA_GPIOAF;
   HAL_GPIO_Init( TIM_EXA_GPIO, &gio );

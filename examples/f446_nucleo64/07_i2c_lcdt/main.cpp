@@ -8,18 +8,21 @@ using namespace std;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
-
+FreeRTOS_to_stm32cube_tick_hook;
 BOARD_DEFINE_LEDS;
 
+UART_CONSOLE_DEFINES( USART2 );
 
 
 const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
 
-SmallRL srl( smallrl_exec );
-
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
+int cmd_setaddr( int argc, const char * const * argv );
+CmdInfo CMDINFO_SETADDR { "setaddr", 0, cmd_setaddr, " addr - set device addr (see 'C')"  };
+int cmd_gotoxy( int argc, const char * const * argv );
+CmdInfo CMDINFO_GOTOXY{ "gotoxy", 'G', cmd_gotoxy, " x y - move pos to (x, y)"  };
 int cmd_xychar( int argc, const char * const * argv );
 CmdInfo CMDINFO_XYCHAR{ "xychar", 'X', cmd_xychar, " x y code - put char at x y"  };
 int cmd_puts( int argc, const char * const * argv );
@@ -30,7 +33,9 @@ const CmdInfo* global_cmds[] = {
   DEBUG_I2C_CMDS,
 
   &CMDINFO_TEST0,
+  &CMDINFO_SETADDR,
   &CMDINFO_XYCHAR,
+  &CMDINFO_GOTOXY,
   &CMDINFO_PUTS,
   nullptr
 };
@@ -41,74 +46,32 @@ void task_main( void *prm UNUSED_ARG );
 }
 
 I2C_HandleTypeDef i2ch;
-DevI2C i2cd( &i2ch, 0 ); // zero add means no real device
-HD44780_i2c lcdt( &i2ch, 0x27 );
+DevI2C i2cd( &i2ch, 0 );
+HD44780_i2c lcdt( i2cd, 0x27 );
 
 void MX_I2C1_Init( I2C_HandleTypeDef &i2c, uint32_t speed = 100000 );
 
 
-UART_HandleTypeDef uah;
-UsartIO usartio( &uah, USART2 );
-int init_uart( UART_HandleTypeDef *uahp, int baud = 115200 );
-
-STD_USART2_SEND_TASK( usartio );
-// STD_USART2_RECV_TASK( usartio );
-STD_USART2_IRQ( usartio );
-
 int main(void)
 {
-  HAL_Init();
-
-  leds.initHW();
-  leds.write( BOARD_LEDS_ALL );
-
-  int rc = SystemClockCfg();
-  if( rc ) {
-    die4led( BOARD_LEDS_ALL );
-    return 0;
-  }
-
-  HAL_Delay( 200 ); // delay_bad_ms( 200 );
-  leds.write( 0x00 ); delay_ms( 200 );
-  leds.write( BOARD_LEDS_ALL );  HAL_Delay( 200 );
-
-  if( ! init_uart( &uah ) ) {
-      die4led( 1 );
-  }
-  leds.write( 0x0A );  delay_bad_ms( 200 );
-
-  MX_I2C1_Init( i2ch );
-  i2c_dbg = &i2cd;
-
-  leds.write( 0x01 );
-
+  STD_PROLOG_UART;
 
   UVAR('t') = 1000;
   UVAR('n') = 10;
 
-  global_smallrl = &srl;
+  MX_I2C1_Init( i2ch );
+  i2c_dbg = &i2cd;
 
-  //           code               name    stack_sz      param  prty TaskHandle_t*
-  xTaskCreate( task_leds,        "leds", 1*def_stksz, nullptr,   1, nullptr );
-  xTaskCreate( task_usart2_send, "send", 2*def_stksz, nullptr,   2, nullptr );  // 2
-  xTaskCreate( task_main,        "main", 2*def_stksz, nullptr,   1, nullptr );
-  xTaskCreate( task_gchar,      "gchar", 2*def_stksz, nullptr,   1, nullptr );
+  delay_ms( PROLOG_LED_TIME ); leds.write( 0x01 ); delay_ms( PROLOG_LED_TIME );
 
-  leds.write( 0x00 );
-  ready_to_start_scheduler = 1;
-  vTaskStartScheduler();
+  CREATE_STD_TASKS( task_usart2_send );
 
-  die4led( 0xFF );
+  SCHEDULER_START;
   return 0;
 }
 
 void task_main( void *prm UNUSED_ARG ) // TMAIN
 {
-  SET_UART_AS_STDIO( usartio );
-
-  // usartio.sendStrSync( "0123456789ABCDEF" NL );
-  // delay_ms( 10 );
-
   default_main_loop();
   vTaskDelete(NULL);
 }
@@ -126,6 +89,7 @@ int cmd_test0( int argc, const char * const * argv )
   int state = lcdt.getState();
   pr_sdx( state );
 
+  lcdt.cls();
   lcdt.putch( 'X' );
   lcdt.puts( " ptn-hlo!\n\t" );
   lcdt.curs_on();
@@ -142,6 +106,19 @@ int cmd_test0( int argc, const char * const * argv )
     lcdt.putch( (uint8_t)ch );
   }
 
+  pr( NL );
+
+  return 0;
+}
+
+int cmd_setaddr( int argc, const char * const * argv )
+{
+  if( argc < 2 ) {
+    pr( "Need addr [1-127]" NL );
+    return 1;
+  }
+  uint8_t addr  = (uint8_t)arg2long_d( 1, argc, argv, 0x0, 0,   127 );
+  lcdt.setAddr( addr );
   return 0;
 }
 
@@ -151,9 +128,18 @@ int cmd_xychar( int argc, const char * const * argv )
   uint8_t y  = (uint8_t)arg2long_d( 2, argc, argv, 0x0, 0,    3 );
   uint8_t ch = (uint8_t)arg2long_d( 3, argc, argv, 'Z', 0, 0xFF );
 
-  lcdt.gotoxy( x, y );
-  lcdt.putch( (uint8_t)ch );
+  // lcdt.gotoxy( x, y );
+  lcdt.putxych( x, y, (uint8_t)ch );
 
+  return 0;
+}
+
+int cmd_gotoxy( int argc, const char * const * argv )
+{
+  uint8_t x  = (uint8_t)arg2long_d( 1, argc, argv, 0x0, 0,   64 );
+  uint8_t y  = (uint8_t)arg2long_d( 2, argc, argv, 0x0, 0,    3 );
+
+  lcdt.gotoxy( x, y );
   return 0;
 }
 
@@ -168,10 +154,8 @@ int cmd_puts( int argc, const char * const * argv )
   return 0;
 }
 
-
 //  ----------------------------- configs ----------------
 
-FreeRTOS_to_stm32cube_tick_hook;
 
 // vim: path=.,/usr/share/stm32lib/inc/,/usr/arm-none-eabi/include,../../../inc
 

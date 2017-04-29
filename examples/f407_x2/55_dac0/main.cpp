@@ -12,7 +12,7 @@ USE_DIE4LED_ERROR_HANDLER;
 FreeRTOS_to_stm32cube_tick_hook;
 BOARD_DEFINE_LEDS;
 
-UART_CONSOLE_DEFINES( USART2 );
+USBCDC_CONSOLE_DEFINES;
 
 
 
@@ -47,7 +47,7 @@ void task_main( void *prm UNUSED_ARG );
 
 int main(void)
 {
-  STD_PROLOG_UART;
+  STD_PROLOG_USBCDC;
 
   UVAR('t') = 1000;
   UVAR('n') = 20;
@@ -55,7 +55,7 @@ int main(void)
 
   delay_ms( PROLOG_LED_TIME ); leds.write( 0x01 ); delay_ms( PROLOG_LED_TIME );
 
-  CREATE_STD_TASKS( task_usart2_send );
+  CREATE_STD_TASKS( task_usbcdc_send );
 
   SCHEDULER_START;
   return 0;

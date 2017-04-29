@@ -7,7 +7,7 @@
 
 // inner regs: 1-byte addr
 
-class PCF8591 : public DevI2C {
+class PCF8591 {
   public:
    enum {
      def_addr     = 0x48,
@@ -23,12 +23,16 @@ class PCF8591 : public DevI2C {
      out_en       = 0x40
    };
 
-   PCF8591( I2C_HandleTypeDef *d_i2ch, uint8_t d_addr = def_addr )
-     : DevI2C( d_i2ch,  d_addr ) {};
+   PCF8591( DevI2C &a_dev, uint8_t d_addr = def_addr )
+     : dev( a_dev ),  addr( d_addr ) {};
+   void setAddr( uint8_t d_addr ) { addr = d_addr; };
+   uint8_t getAddr() const { return addr; }
    int  setMode( uint8_t mode );
    int  getIn( uint8_t *d, int sz );
    int  setOut( uint8_t v );
   protected:
+   DevI2C &dev;
+   uint8_t addr;
    uint8_t cfg_reg = 0;
 };
 

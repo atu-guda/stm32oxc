@@ -10,10 +10,10 @@ using namespace std;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
-
-
-
+FreeRTOS_to_stm32cube_tick_hook;
 BOARD_DEFINE_LEDS;
+
+UART_CONSOLE_DEFINES( USART2 );
 
 extern SD_HandleTypeDef hsd;
 void MX_SDIO_SD_Init();
@@ -24,8 +24,6 @@ const int fspath_sz = 32;
 char fspath[fspath_sz];
 
 const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
-
-SmallRL srl( smallrl_exec );
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -68,36 +66,12 @@ void task_main( void *prm UNUSED_ARG );
 }
 
 
-UART_HandleTypeDef uah;
-UsartIO usartio( &uah, USART2 );
-int init_uart( UART_HandleTypeDef *uahp, int baud = 115200 );
-
-STD_USART2_SEND_TASK( usartio );
-// STD_USART2_RECV_TASK( usartio );
-STD_USART2_IRQ( usartio );
-
 int main(void)
 {
-  HAL_Init();
+  STD_PROLOG_UART;
 
-  leds.initHW();
-  leds.write( BOARD_LEDS_ALL );
-
-  int rc = SystemClockCfg();
-  if( rc ) {
-    die4led( BOARD_LEDS_ALL );
-    return 0;
-  }
-
-  HAL_Delay( 200 ); // delay_bad_ms( 200 );
-  leds.write( 0x00 ); delay_ms( 200 );
-  leds.write( BOARD_LEDS_ALL );  HAL_Delay( 200 );
-
-  if( ! init_uart( &uah ) ) {
-      die4led( 1 );
-  }
-  leds.write( 0x0A );  delay_bad_ms( 200 );
-
+  UVAR('t') = 1000;
+  UVAR('n') = 20;
 
   MX_SDIO_SD_Init();
 
@@ -109,31 +83,17 @@ int main(void)
   fs.fs_type = 0; // none
   fspath[0] = '\0';
 
-  leds.write( BOARD_LEDS_ALL );  HAL_Delay( 200 );
+  delay_ms( PROLOG_LED_TIME ); leds.write( 0x01 ); delay_ms( PROLOG_LED_TIME );
 
-  UVAR('t') = 1000;
-  UVAR('n') = 10;
 
-  global_smallrl = &srl;
+  CREATE_STD_TASKS( task_usart2_send );
 
-  //           code               name    stack_sz      param  prty TaskHandle_t*
-  xTaskCreate( task_leds,        "leds", 1*def_stksz, nullptr,   1, nullptr );
-  xTaskCreate( task_usart2_send, "send", 2*def_stksz, nullptr,   2, nullptr );  // 2
-  xTaskCreate( task_main,        "main", 2*def_stksz, nullptr,   1, nullptr );
-  xTaskCreate( task_gchar,      "gchar", 2*def_stksz, nullptr,   1, nullptr );
-
-  leds.write( 0x00 );
-  ready_to_start_scheduler = 1;
-  vTaskStartScheduler();
-
-  die4led( 0xFF );
+  SCHEDULER_START;
   return 0;
 }
 
 void task_main( void *prm UNUSED_ARG ) // TMAIN
 {
-  SET_UART_AS_STDIO( usartio );
-
   default_main_loop();
   vTaskDelete(NULL);
 }
@@ -288,7 +248,7 @@ int cmd_cat( int argc, const char * const * argv )
   pr( NL "cat end, read " ); pr_d( nr);
   pr( " bytes, r =  " ); pr_d( r );
   pr( " time =  " ); pr_d( tc1 - tc0 ); pr( NL );
-  return 0;
+  return r;
 }
 
 int cmd_appstr( int argc, const char * const * argv )
@@ -313,7 +273,7 @@ int cmd_appstr( int argc, const char * const * argv )
   }
 
   pr( NL "appstr end, r= " ); pr_d( r ); pr( " was_wr= "); pr_d( was_wr ); pr( NL );
-  return 0;
+  return r;
 }
 
 
@@ -347,7 +307,7 @@ int cmd_wblocks( int argc, const char * const * argv )
 
   pr( NL "wblocks end, r= " ); pr_d( r ); pr( " was_wr= "); pr_d( was_wr );
   pr( " time =  " ); pr_d( tc1 - tc0 ); pr( NL );
-  return 0;
+  return r;
 }
 
 int cmd_rm( int argc, const char * const * argv )
@@ -370,7 +330,6 @@ int cmd_rm( int argc, const char * const * argv )
 
 //  ----------------------------- configs ----------------
 
-FreeRTOS_to_stm32cube_tick_hook;
 
 // vim: path=.,/usr/share/stm32lib/inc/,/usr/arm-none-eabi/include,../../../inc
 

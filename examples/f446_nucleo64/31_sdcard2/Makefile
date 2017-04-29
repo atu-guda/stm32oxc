@@ -23,7 +23,6 @@ SRCS += uart2_init_a2a3.cpp
 
 SRCS += f4_sdio_init_1bit.cpp
 SRCS += bsp_driver_sd.c
-# SRCS += ccsbcs.c
 SRCS += fatfs.c
 SRCS += ff.c
 SRCS += ff_gen_drv.c

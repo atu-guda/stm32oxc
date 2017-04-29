@@ -18,6 +18,7 @@ OXCDIR = /home/atu/proj/stm32/oxc
 
 SRCS  = main.cpp
 SRCS += usbfs_init.cpp
+
 SRCS += f4_sdio_init_1bit.cpp
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )

@@ -59,7 +59,6 @@ int main(void)
   if( SPI1_Init_common( SPI_BAUDRATEPRESCALER_4 ) != HAL_OK ) {
     die4led( 0x04 );
   }
-  // nss_pin.initHW(); //?? remove?
   spi_d.initSPI();
 
   delay_ms( PROLOG_LED_TIME ); leds.write( 0x01 ); delay_ms( PROLOG_LED_TIME );

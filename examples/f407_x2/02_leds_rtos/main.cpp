@@ -97,7 +97,9 @@ void HAL_GPIO_EXTI_Callback( uint16_t pin )
   if( pin == BIT1 )  {
     leds.reset( 0x0F );
     led_delay >>= 1;
-    ++led_delay;
+    if( led_delay < 1 ) {
+      led_delay = 1000;
+    }
   }
   leds.toggle( 0x01 );
 }

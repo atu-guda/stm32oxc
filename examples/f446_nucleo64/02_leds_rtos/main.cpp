@@ -21,27 +21,16 @@ volatile int led_delay = 1000;
 
 int main(void)
 {
-  HAL_Init();
-
-  leds.initHW();
-  leds.write( BOARD_LEDS_ALL );
-
-  int rc = SystemClockCfg();
-  if( rc ) {
-    die4led( BOARD_LEDS_ALL );
-    return 0;
-  }
-
-  delay_bad_ms( 200 );  leds.write( 0 );
+  STD_PROLOG_START;
 
   MX_GPIO_Init();
 
-  leds.write( 0x0F );
-  // delay_bad_ms( 500 );
-  HAL_Delay( 500 );
-  // delay_ms( 500 );
   leds.write( 0x0A );
-  delay_bad_ms( 200 );
+  delay_bad_ms( 500 );
+  // HAL_Delay( 500 );
+  // delay_ms( 500 );
+  leds.write( 0x0F );
+  delay_bad_ms( 500 );
 
   xTaskCreate( task_leds, "leds", 2*def_stksz, 0, 1, 0 );
 
@@ -55,7 +44,8 @@ int main(void)
 void task_leds( void *prm UNUSED_ARG )
 {
   int i=8;
-  while(1) {
+  while (1)
+  {
     leds.write( i );
     ++i;
     i &= 0x0F;
@@ -63,7 +53,6 @@ void task_leds( void *prm UNUSED_ARG )
     // HAL_Delay( 1000 );
   }
 }
-
 
 // // configs
 void MX_GPIO_Init(void)

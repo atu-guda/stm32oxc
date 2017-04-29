@@ -34,7 +34,8 @@ void task_main( void *prm UNUSED_ARG );
 }
 
 I2C_HandleTypeDef i2ch;
-PCF8591 adc( &i2ch );
+DevI2C i2cd( &i2ch, 0 );
+PCF8591 adc( i2cd );
 
 void MX_I2C1_Init( I2C_HandleTypeDef &i2c, uint32_t speed = 100000 );
 
@@ -47,7 +48,7 @@ int main(void)
   UVAR('n') = 10;
 
   MX_I2C1_Init( i2ch );
-  i2c_dbg = &adc;
+  i2c_dbg = &i2cd;
 
   delay_ms( PROLOG_LED_TIME ); leds.write( 0x01 ); delay_ms( PROLOG_LED_TIME );
 

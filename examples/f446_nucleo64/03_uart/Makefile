@@ -23,7 +23,6 @@ SRCS += uart2_init_a2a3_noirq.cpp
 # list: see ../common/f4_modules.mk
 
 
-
 include ../common/board_add.mk
 include $(OXCDIR)/mk/common_cortex.mk
 # ../../../mk/common_cortex.mk

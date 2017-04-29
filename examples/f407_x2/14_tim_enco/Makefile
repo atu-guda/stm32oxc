@@ -19,6 +19,7 @@ OXCDIR = /home/atu/proj/stm32/oxc
 
 SRCS  = main.cpp
 SRCS += usbfs_init.cpp
+
 SRCS += tim1_init.cpp
 
 

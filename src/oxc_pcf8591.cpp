@@ -4,18 +4,18 @@
 int PCF8591::setMode( uint8_t mode )
 {
   cfg_reg = mode;
-  return send( cfg_reg );
+  return dev.send( cfg_reg, addr );
 }
 
 int PCF8591::getIn( uint8_t *d, int sz )
 {
-  return recv( d, sz );
+  return dev.recv( d, sz, addr );
 }
 
 int PCF8591::setOut( uint8_t v )
 {
   uint8_t ou[2] = { cfg_reg, v };
-  return send( ou, 2 );
+  return dev.send( ou, 2, addr );
 }
 
 

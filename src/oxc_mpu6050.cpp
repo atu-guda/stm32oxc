@@ -4,7 +4,7 @@
 int16_t MPU6050::getReg( uint8_t reg )
 {
   int32_t v;
-  int rc = recv_reg1( reg, (uint8_t*)(&v), 2 );
+  int rc = dev.recv_reg1( reg, (uint8_t*)(&v), 2, addr );
   if( rc < 1 ) {
     return 0;
   }
@@ -14,7 +14,7 @@ int16_t MPU6050::getReg( uint8_t reg )
 
 void MPU6050::getRegs( uint8_t reg1, uint8_t n, int16_t *data )
 {
-  int rc = recv_reg1( reg1, (uint8_t*)(data), 2*n );
+  int rc = dev.recv_reg1( reg1, (uint8_t*)(data), 2*n, addr );
   if( rc < 1 ) {
     return;
   }

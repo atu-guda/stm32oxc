@@ -35,6 +35,7 @@ int main(void)
 void task_send( void *prm UNUSED_ARG )
 {
   strcpy( tx_buf, "ABCDE <.> 0123\r\n" );
+  //               0123456789ABCDEF1011
   int ssz = strlen( tx_buf );
   char c = '?';
 

@@ -4,7 +4,7 @@
 #include <oxc_i2c.h>
 #include <oxc_pixbuf1v.h>
 
-class SSD1306 : public DevI2C {
+class SSD1306 {
   public:
    enum {
      BASE_ADDR = 0x3C,
@@ -24,8 +24,11 @@ class SSD1306 : public DevI2C {
      CMD_ON = 0xAF,
      MEM_SZ = ( X_SZ * Y_SZ / 8 )
    };
-   SSD1306( I2C_HandleTypeDef *a_i2ch, uint8_t a_addr = BASE_ADDR )
-     : DevI2C( a_i2ch, a_addr ) {};
+   SSD1306( DevI2C &a_dev, uint8_t a_addr = BASE_ADDR )
+     : dev( a_dev ), addr( a_addr ) {};
+   void setAddr( uint8_t d_addr ) { addr = d_addr; };
+   uint8_t getAddr() const { return addr; }
+   void resetDev() { dev.resetDev(); }
    int init();
    int cmd1( uint8_t cmd );
    int cmd2( uint8_t cmd, uint8_t val );
@@ -44,6 +47,8 @@ class SSD1306 : public DevI2C {
    int out( PixBuf1V &pb );
 
   protected:
+   DevI2C &dev;
+   uint8_t addr;
 };
 
 #endif

@@ -7,7 +7,7 @@
 
 // inner regs: 1-byte addr
 
-class MPU6050 : public DevI2C {
+class MPU6050 {
   public:
    enum {
      mpu6050_def_addr     = 0x68,
@@ -50,14 +50,16 @@ class MPU6050 : public DevI2C {
      pll_ext32k = 4,   pll_ext19m = 5, pll_stop = 7,   pll_sleep = 0x40
    };
 
-   MPU6050( I2C_HandleTypeDef *d_i2ch, uint8_t d_addr = mpu6050_def_addr )
-     : DevI2C( d_i2ch, d_addr ) {};
+   MPU6050( DevI2C &a_dev, uint8_t d_addr = mpu6050_def_addr )
+     : dev( a_dev ), addr( d_addr ) {};
+   void setAddr( uint8_t d_addr ) { addr = d_addr; };
+   uint8_t getAddr() const { return addr; }
    void init();
-   void sleep() {  send_reg1( mpu6050_reg_pwr1, pll_sleep ); }
-   void wake( PLL_source sou ){ send_reg1( mpu6050_reg_pwr1, sou ); }
-   void setDLP( DLP_BW dlp_bw ) { send_reg1( mpu6050_reg_cfg, dlp_bw ); }
-   void setAccScale( ACC_scale accs ) { send_reg1( mpu6050_reg_cfg_acc, accs ); }
-   void setGyroScale( Gyro_scale gyros ) { send_reg1( mpu6050_reg_cfg_gyro, gyros ); }
+   void sleep() {  dev.send_reg1( mpu6050_reg_pwr1, pll_sleep, addr ); }
+   void wake( PLL_source sou ){ dev.send_reg1( mpu6050_reg_pwr1, sou, addr ); }
+   void setDLP( DLP_BW dlp_bw ) { dev.send_reg1( mpu6050_reg_cfg, dlp_bw, addr ); }
+   void setAccScale( ACC_scale accs ) { dev.send_reg1( mpu6050_reg_cfg_acc, accs, addr ); }
+   void setGyroScale( Gyro_scale gyros ) { dev.send_reg1( mpu6050_reg_cfg_gyro, gyros, addr ); }
    int fixTemp( int v ) { return v*10/34 + 3653; };
    int16_t getReg( uint8_t reg ); // reg is 16-bit
    void    getRegs( uint8_t reg1, uint8_t n, int16_t *data );
@@ -75,6 +77,8 @@ class MPU6050 : public DevI2C {
      all_data[3] = (int16_t)( fixTemp( all_data[3] ));
    }
   private:
+   DevI2C &dev;
+   uint8_t addr;
 };
 
 #endif
