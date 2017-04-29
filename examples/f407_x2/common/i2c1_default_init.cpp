@@ -30,8 +30,8 @@ void HAL_I2C_MspInit( I2C_HandleTypeDef* hi2c )
     __I2C1_CLK_ENABLE();
     __GPIOB_CLK_ENABLE();
 
-    // PB6 --> I2C1_SCL
-    // PB7 --> I2C1_SDA
+    // B6 --> I2C1_SCL
+    // B7 --> I2C1_SDA
     gpi.Pin = GPIO_PIN_6 | GPIO_PIN_7;
     gpi.Mode = GPIO_MODE_AF_OD;
     gpi.Pull = GPIO_NOPULL;
@@ -48,9 +48,9 @@ void HAL_I2C_MspInit( I2C_HandleTypeDef* hi2c )
 
 void HAL_I2C_MspDeInit(I2C_HandleTypeDef* hi2c)
 {
-  if( hi2c->Instance==I2C1 )  {
+  if( hi2c->Instance == I2C1 )  {
     __I2C1_CLK_DISABLE();
-    HAL_GPIO_DeInit( GPIOB, GPIO_PIN_6|GPIO_PIN_7 );
+    HAL_GPIO_DeInit( GPIOB, GPIO_PIN_6 | GPIO_PIN_7 );
     HAL_NVIC_DisableIRQ( I2C1_EV_IRQn );
   }
 

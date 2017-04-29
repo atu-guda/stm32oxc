@@ -10,7 +10,7 @@ USE_DIE4LED_ERROR_HANDLER;
 FreeRTOS_to_stm32cube_tick_hook;
 BOARD_DEFINE_LEDS;
 
-UART_CONSOLE_DEFINES( USART2 );
+BOARD_CONSOLE_DEFINES;
 
 void MX_ADC1_Init(void);
 ADC_HandleTypeDef hadc1;
@@ -37,15 +37,15 @@ void task_main( void *prm UNUSED_ARG );
 
 int main(void)
 {
-  STD_PROLOG_UART;
+  BOARD_PROLOG;
 
   UVAR('t') = 1000;
   UVAR('n') = 20;
   UVAR('v') = v_adc_ref;
 
-  delay_ms( PROLOG_LED_TIME ); leds.write( 0x01 ); delay_ms( PROLOG_LED_TIME );
+  BOARD_POST_INIT_BLINK;
 
-  CREATE_STD_TASKS( task_usart2_send );
+  BOARD_CREATE_STD_TASKS;
 
   SCHEDULER_START;
   return 0;

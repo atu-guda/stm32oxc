@@ -10,7 +10,7 @@ USE_DIE4LED_ERROR_HANDLER;
 FreeRTOS_to_stm32cube_tick_hook;
 BOARD_DEFINE_LEDS;
 
-UART_CONSOLE_DEFINES( USART2 );
+BOARD_CONSOLE_DEFINES;
 
 
 const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
@@ -55,7 +55,7 @@ DevSPI spi_d( &spi2_h, &nss_pin );
 
 int main(void)
 {
-  STD_PROLOG_UART;
+  BOARD_PROLOG;
 
   UVAR('t') = 1000;
   UVAR('n') = 10;
@@ -69,9 +69,9 @@ int main(void)
   spi_d.setMaxWait( 500 );
   spi_d.initSPI();
 
-  delay_ms( PROLOG_LED_TIME ); leds.write( 0x01 ); delay_ms( PROLOG_LED_TIME );
+  BOARD_POST_INIT_BLINK;
 
-  CREATE_STD_TASKS( task_usart2_send );
+  BOARD_CREATE_STD_TASKS;
 
   SCHEDULER_START;
   return 0;

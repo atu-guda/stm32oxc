@@ -15,7 +15,7 @@ USE_DIE4LED_ERROR_HANDLER;
 FreeRTOS_to_stm32cube_tick_hook;
 BOARD_DEFINE_LEDS;
 
-UART_CONSOLE_DEFINES( USART2 );
+BOARD_CONSOLE_DEFINES;
 
 
 const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
@@ -66,7 +66,7 @@ PCD8544 screen( spi_d, rst_dc_pins );
 
 int main(void)
 {
-  STD_PROLOG_UART;
+  BOARD_PROLOG;
 
   UVAR('t') = 1000;
   UVAR('n') = 10;
@@ -76,9 +76,9 @@ int main(void)
   }
   screen.init();
 
-  delay_ms( PROLOG_LED_TIME ); leds.write( 0x01 ); delay_ms( PROLOG_LED_TIME );
+  BOARD_POST_INIT_BLINK;
 
-  CREATE_STD_TASKS( task_usart2_send );
+  BOARD_CREATE_STD_TASKS;
 
   SCHEDULER_START;
   return 0;

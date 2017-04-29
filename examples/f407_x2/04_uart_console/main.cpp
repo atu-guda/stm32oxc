@@ -39,10 +39,10 @@ int main(void)
   // HAL_UART_Transmit( &uah, (uint8_t*)"START\r\n", 7, 100 );
   // usartio.sendStrSync( "0123456789---main()---ABCDEF" NL );
 
-  // delay_ms( PROLOG_LED_TIME ); leds.write( 0x01 ); delay_ms( PROLOG_LED_TIME );
-
   UVAR('t') = 1000;
   UVAR('n') = 10;
+
+  BOARD_POST_INIT_BLINK;
 
   CREATE_STD_TASKS( task_usart2_send );
 
@@ -62,8 +62,6 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
 
 
 //  ----------------------------- configs ----------------
-
-
 
 
 // vim: path=.,/usr/share/stm32lib/inc/,/usr/arm-none-eabi/include,../../../inc

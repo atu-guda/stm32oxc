@@ -49,7 +49,7 @@ void HAL_I2C_MspInit( I2C_HandleTypeDef* hi2c )
 void HAL_I2C_MspDeInit(I2C_HandleTypeDef* hi2c)
 {
   if( hi2c->Instance == I2C1 )  {
-    __I2C3_CLK_DISABLE();
+    __I2C1_CLK_DISABLE();
     HAL_GPIO_DeInit( GPIOB, GPIO_PIN_8 | GPIO_PIN_9 );
     HAL_NVIC_DisableIRQ( I2C1_EV_IRQn );
   }

@@ -10,7 +10,7 @@ USE_DIE4LED_ERROR_HANDLER;
 FreeRTOS_to_stm32cube_tick_hook;
 BOARD_DEFINE_LEDS;
 
-UART_CONSOLE_DEFINES( USART2 );
+BOARD_CONSOLE_DEFINES;
 
 
 const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
@@ -35,17 +35,17 @@ void task_main( void *prm UNUSED_ARG );
 
 int main(void)
 {
-  STD_PROLOG_UART;
+  BOARD_PROLOG;
 
   // HAL_UART_Transmit( &uah, (uint8_t*)"START\r\n", 7, 100 );
   // usartio.sendStrSync( "0123456789---main()---ABCDEF" NL );
 
-  // delay_ms( PROLOG_LED_TIME ); leds.write( 0x01 ); delay_ms( PROLOG_LED_TIME );
-
   UVAR('t') = 1000;
   UVAR('n') = 10;
 
-  CREATE_STD_TASKS( task_usart2_send );
+  BOARD_POST_INIT_BLINK;
+
+  BOARD_CREATE_STD_TASKS;
 
   SCHEDULER_START;
   return 0;

@@ -12,7 +12,7 @@ USE_DIE4LED_ERROR_HANDLER;
 FreeRTOS_to_stm32cube_tick_hook;
 BOARD_DEFINE_LEDS;
 
-USBCDC_CONSOLE_DEFINES;
+BOARD_CONSOLE_DEFINES;
 
 
 const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
@@ -47,7 +47,7 @@ void MX_I2C1_Init( I2C_HandleTypeDef &i2c, uint32_t speed = 100000 );
 
 int main(void)
 {
-  STD_PROLOG_USBCDC;
+  BOARD_PROLOG;
 
   UVAR('t') = 500;
   UVAR('n') = 50;
@@ -55,9 +55,9 @@ int main(void)
   MX_I2C1_Init( i2ch );
   i2c_dbg = &i2cd;
 
-  delay_ms( PROLOG_LED_TIME ); leds.write( 0x01 ); delay_ms( PROLOG_LED_TIME );
+  BOARD_POST_INIT_BLINK;
 
-  CREATE_STD_TASKS( task_usbcdc_send );
+  BOARD_CREATE_STD_TASKS;
 
   SCHEDULER_START;
   return 0;

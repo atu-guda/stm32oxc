@@ -12,7 +12,7 @@ USE_DIE4LED_ERROR_HANDLER;
 FreeRTOS_to_stm32cube_tick_hook;
 BOARD_DEFINE_LEDS;
 
-UART_CONSOLE_DEFINES( USART2 );
+BOARD_CONSOLE_DEFINES;
 
 
 
@@ -36,7 +36,7 @@ void task_main( void *prm UNUSED_ARG );
 
 int main(void)
 {
-  STD_PROLOG_UART;
+  BOARD_PROLOG;
 
   UVAR('t') = 1000;
   UVAR('n') = 10;
@@ -44,7 +44,7 @@ int main(void)
   uint32_t c_v0 = delay_calibrate_value;
   UVAR('x') = c_v0 * 500; // for calibrate 500 ms
 
-  CREATE_STD_TASKS( task_usart2_send );
+  BOARD_CREATE_STD_TASKS;
 
   SCHEDULER_START;
   return 0;

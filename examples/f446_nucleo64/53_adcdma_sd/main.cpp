@@ -14,7 +14,7 @@ USE_DIE4LED_ERROR_HANDLER;
 FreeRTOS_to_stm32cube_tick_hook;
 BOARD_DEFINE_LEDS;
 
-UART_CONSOLE_DEFINES( USART2 );
+BOARD_CONSOLE_DEFINES;
 
 extern SD_HandleTypeDef hsd;
 void MX_SDIO_SD_Init();
@@ -104,7 +104,7 @@ void task_main( void *prm UNUSED_ARG );
 
 int main(void)
 {
-  STD_PROLOG_UART;
+  BOARD_PROLOG;
 
   MX_SDIO_SD_Init();
   UVAR('e') = HAL_SD_Init( &hsd );
@@ -131,9 +131,9 @@ int main(void)
   UVAR('n') = 8; // number of series
   UVAR('s') = 1; // sampling time index
 
-  delay_ms( PROLOG_LED_TIME ); leds.write( 0x01 ); delay_ms( PROLOG_LED_TIME );
+  BOARD_POST_INIT_BLINK;
 
-  CREATE_STD_TASKS( task_usart2_send );
+  BOARD_CREATE_STD_TASKS;
 
   SCHEDULER_START;
   return 0;

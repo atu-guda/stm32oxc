@@ -12,7 +12,7 @@ USE_DIE4LED_ERROR_HANDLER;
 FreeRTOS_to_stm32cube_tick_hook;
 BOARD_DEFINE_LEDS;
 
-USBCDC_CONSOLE_DEFINES;
+BOARD_CONSOLE_DEFINES;
 
 
 const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
@@ -43,7 +43,7 @@ OneWire wire1( pin_wire1 );
 
 int main(void)
 {
-  STD_PROLOG_USBCDC;
+  BOARD_PROLOG;
 
   UVAR('t') = 1000;
   UVAR('n') = 20;
@@ -51,11 +51,11 @@ int main(void)
   pin_wire1.initHW();
   wire1.initHW();
 
-  delay_ms( PROLOG_LED_TIME ); leds.write( 0x01 ); delay_ms( PROLOG_LED_TIME );
+  BOARD_POST_INIT_BLINK;
 
 
 
-  CREATE_STD_TASKS( task_usbcdc_send );
+  BOARD_CREATE_STD_TASKS;
 
   SCHEDULER_START;
   return 0;

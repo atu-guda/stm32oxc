@@ -45,9 +45,9 @@ void HAL_SPI_MspInit( SPI_HandleTypeDef *hspi )
 
 void HAL_SPI_MspDeInit( SPI_HandleTypeDef* hspi )
 {
-  if( hspi->Instance==SPI1 ) {
+  if( hspi->Instance == SPI1 ) {
     __SPI1_CLK_DISABLE();
-    HAL_GPIO_DeInit( GPIOA, GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7 );
+    HAL_GPIO_DeInit( GPIOA, GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7 );
   }
 }
 

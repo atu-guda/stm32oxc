@@ -11,7 +11,7 @@ USE_DIE4LED_ERROR_HANDLER;
 FreeRTOS_to_stm32cube_tick_hook;
 BOARD_DEFINE_LEDS;
 
-USBCDC_CONSOLE_DEFINES;
+BOARD_CONSOLE_DEFINES;
 
 void print_curr( const char *s );
 void out_to_curr( uint32_t n, uint32_t st );
@@ -91,7 +91,7 @@ void task_main( void *prm UNUSED_ARG );
 
 int main(void)
 {
-  STD_PROLOG_USBCDC;
+  BOARD_PROLOG;
   tim_freq_in = HAL_RCC_GetPCLK1Freq(); // to TIM2
   uint32_t hclk_freq = HAL_RCC_GetHCLKFreq();
   if( tim_freq_in < hclk_freq ) {
@@ -106,11 +106,11 @@ int main(void)
   UVAR('n') = 8; // number of series
   UVAR('s') = 1; // sampling time index
 
-  delay_ms( PROLOG_LED_TIME ); leds.write( 0x01 ); delay_ms( PROLOG_LED_TIME );
+  BOARD_POST_INIT_BLINK;
 
 
 
-  CREATE_STD_TASKS( task_usbcdc_send );
+  BOARD_CREATE_STD_TASKS;
 
   SCHEDULER_START;
   return 0;
