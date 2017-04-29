@@ -337,10 +337,6 @@ void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc )
   ++UVAR('e');
 }
 
-void _exit( int rc )
-{
-  die4led( rc );
-}
 
 void TIM2_IRQHandler(void)
 {

@@ -79,11 +79,6 @@ void task_send( void *prm UNUSED_ARG )
   }
 }
 
-void _exit( int rc )
-{
-  exit_rc = rc;
-  for( ;; );
-}
 
 
 
