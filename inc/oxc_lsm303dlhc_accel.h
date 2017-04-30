@@ -88,7 +88,7 @@ class LSM303DHLC_Accel {
    };
 
    LSM303DHLC_Accel( DevI2C &a_dev, uint8_t d_addr = def_addr )
-     : DevI2C( d_i2ch, d_addr ) {};
+     : dev( a_dev ), addr( d_addr ) {};
    void setAddr( uint8_t d_addr ) { addr = d_addr; };
    uint8_t getAddr() const { return addr; }
    void resetDev() { dev.resetDev(); }

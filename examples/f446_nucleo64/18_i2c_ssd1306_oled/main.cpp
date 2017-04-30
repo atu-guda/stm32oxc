@@ -98,8 +98,6 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  pr( NL "Test0: " NL );
-
   screen.init();
 
   delay_ms( 500 );

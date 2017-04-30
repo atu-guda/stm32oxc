@@ -9,15 +9,13 @@ using namespace std;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
-
-// PinsOut p1 { GPIOE, 8, 8 };
+FreeRTOS_to_stm32cube_tick_hook;
 BOARD_DEFINE_LEDS;
 
+BOARD_CONSOLE_DEFINES;
 
 
 const int def_stksz = 1 * configMINIMAL_STACK_SIZE;
-
-SmallRL srl( smallrl_exec );
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -44,14 +42,6 @@ void task_main( void *prm UNUSED_ARG );
 }
 
 
-UART_HandleTypeDef uah;
-UsartIO usartio( &uah, USART2 );
-int init_uart( UART_HandleTypeDef *uahp, int baud = 115200 );
-
-STD_USART2_SEND_TASK( usartio );
-// STD_USART2_RECV_TASK( usartio );
-STD_USART2_IRQ( usartio );
-
 int MX_SPI2_Init( uint32_t prescal = SPI_BAUDRATEPRESCALER_64 );
 PinsOut nss_pin( GPIOB, 12, 1 );
 SPI_HandleTypeDef spi2_h;
@@ -60,61 +50,32 @@ DevSPIMem_AT memspi( spi_d );
 
 int main(void)
 {
-  HAL_Init();
+  BOARD_PROLOG;
 
-  leds.initHW();
-  leds.write( BOARD_LEDS_ALL );
-
-  int rc = SystemClockCfg();
-  if( rc ) {
-    die4led( BOARD_LEDS_ALL );
-    return 0;
-  }
-
-  delay_bad_ms( 200 );  leds.write( 0 );
-
-  if( !init_uart( &uah ) ) {
-    die4led( 0x08 );
-  }
-  leds.write( 0x0A );  delay_bad_ms( 200 );
-
+  UVAR('t') = 1000;
+  UVAR('n') = 20;
+  UVAR('r') = 0x20; // default bytes to read
 
   if( MX_SPI2_Init() != HAL_OK ) {
     die4led( 0x04 );
   }
   spi_d.initSPI();
 
-  UVAR('t') = 1000;
-  UVAR('n') = 10;
-  UVAR('r') = 0x20; // default bytes to read/write
+  BOARD_POST_INIT_BLINK;
 
-  global_smallrl = &srl;
+  BOARD_CREATE_STD_TASKS;
 
-  //           code               name    stack_sz      param  prty TaskHandle_t*
-  xTaskCreate( task_leds,        "leds", 1*def_stksz, nullptr,   1, nullptr );
-  xTaskCreate( task_usart2_send, "send", 1*def_stksz, nullptr,   2, nullptr );  // 2
-  xTaskCreate( task_main,        "main", 1*def_stksz, nullptr,   1, nullptr );
-  xTaskCreate( task_gchar,      "gchar", 2*def_stksz, nullptr,   1, nullptr );
-
-  leds.write( 0x00 );
-  ready_to_start_scheduler = 1;
-  vTaskStartScheduler();
-
-  die4led( 0xFF );
+  SCHEDULER_START;
   return 0;
 }
 
 void task_main( void *prm UNUSED_ARG ) // TMAIN
 {
-  SET_UART_AS_STDIO(usartio);
-
-  delay_ms( 10 );
-
   default_main_loop();
   vTaskDelete(NULL);
 }
 
-#define DLY_T delay_mcs( 10 );
+// #define DLY_T delay_mcs( 10 );
 
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
@@ -134,28 +95,30 @@ int cmd_test0( int argc, const char * const * argv )
   int rc = memspi.read( (uint8_t*)gbuf_b, 0x00, nd );
   pr( " Read Before: rc = " ); pr_d( rc ); pr( NL );
   dump8( gbuf_b, nd );
+  status = memspi.status(); pr_shx( status ); pr( NL );
 
   for( int i=0; i<nd; ++i ) {
     gbuf_a[i] = (char)( '0' + i );
   }
   rc = memspi.write( (uint8_t*)gbuf_a, 0x00, nd );
   pr( NL "Write: rc= " ); pr_d( rc ); pr( NL );
+  status = memspi.status(); pr_shx( status ); pr( NL );
 
   rc = memspi.read( (uint8_t*)gbuf_b, 0x00, nd );
   pr( " Read After: rc = " ); pr_d( rc ); pr( NL );
   dump8( gbuf_b, nd );
+  status = memspi.status(); pr_shx( status ); pr( NL );
 
   rc = memspi.read( (uint8_t*)gbuf_b, 0x03, nd );
   pr( " Read After with offset 3: rc = " ); pr_d( rc ); pr( NL );
   dump8( gbuf_b, nd );
+  status = memspi.status(); pr_shx( status ); pr( NL );
 
   return 0;
 }
 
 int cmd_spimem_erase( int argc, const char * const * argv )
 {
-  pr( NL "Erase chips " NL );
-
   int rc = memspi.erase_chip();
 
   return rc;
@@ -163,16 +126,15 @@ int cmd_spimem_erase( int argc, const char * const * argv )
 
 int cmd_spimem_sector0_erase( int argc, const char * const * argv )
 {
-  pr( NL "Erase sector 0 " NL );
-
   int rc = memspi.erase_sector( 0x000000 );
 
   return rc;
 }
 
+
+
 //  ----------------------------- configs ----------------
 
-FreeRTOS_to_stm32cube_tick_hook;
 
 // vim: path=.,/usr/share/stm32lib/inc/,/usr/arm-none-eabi/include,../../../inc
 

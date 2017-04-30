@@ -7,6 +7,7 @@
 // not so default default LEDS is C0:C3 - external subboard
 #define BOARD_N_LEDS 4
 #define BOARD_LEDS_GPIO GPIOC
+#define BOARD_LEDS_GPIO_ON __GPIOC_CLK_ENABLE()
 #define BOARD_LEDS_OFS  0
 #define BOARD_LEDS_MASK 0x000F
 // unshifted

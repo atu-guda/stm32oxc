@@ -73,7 +73,7 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
   vTaskDelete(NULL);
 }
 
-#define DLY_T delay_mcs( 10 );
+// #define DLY_T delay_mcs( 10 );
 
 // TEST0
 int cmd_test0( int argc, const char * const * argv )

@@ -19,12 +19,15 @@ const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
+int cmd_setaddr( int argc, const char * const * argv );
+CmdInfo CMDINFO_SETADDR { "setaddr", 0, cmd_setaddr, " addr - set device addr (see 'C')"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
   DEBUG_I2C_CMDS,
 
   &CMDINFO_TEST0,
+  &CMDINFO_SETADDR,
   nullptr
 };
 
@@ -92,12 +95,23 @@ int cmd_test0( int argc, const char * const * argv )
     adc.setOut( i & 0xFF );
     pr( NL );
     vTaskDelayUntil( &tc0, t_step );
-    // delay_ms( t_step );
   }
   adc.setOut( v_end );
 
   return 0;
 }
+
+int cmd_setaddr( int argc, const char * const * argv )
+{
+  if( argc < 2 ) {
+    pr( "Need addr [1-127]" NL );
+    return 1;
+  }
+  uint8_t addr  = (uint8_t)arg2long_d( 1, argc, argv, 0x0, 0,   127 );
+  adc.setAddr( addr );
+  return 0;
+}
+
 
 //  ----------------------------- configs ----------------
 

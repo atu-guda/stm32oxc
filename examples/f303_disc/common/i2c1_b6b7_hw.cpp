@@ -1,16 +1,17 @@
-#include <stm32f3xx_hal.h>
+#include <oxc_base.h>
+#include <oxc_gpio.h>
 
-void MX_I2C1_Init(I2C_HandleTypeDef &i2c )
+void MX_I2C1_Init( I2C_HandleTypeDef &i2c )
 {
-  i2c.Instance = I2C1;
-  i2c.Init.Timing = 0x10808DD3;
-  i2c.Init.OwnAddress1 = 0;
-  i2c.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
-  i2c.Init.DualAddressMode = I2C_DUALADDRESS_DISABLED;
-  i2c.Init.OwnAddress2 = 0;
+  i2c.Instance              = I2C1;
+  i2c.Init.Timing           = 0x10808DD3;
+  i2c.Init.OwnAddress1      = 0;
+  i2c.Init.AddressingMode   = I2C_ADDRESSINGMODE_7BIT;
+  i2c.Init.DualAddressMode  = I2C_DUALADDRESS_DISABLED;
+  i2c.Init.OwnAddress2      = 0;
   i2c.Init.OwnAddress2Masks = I2C_OA2_NOMASK;
-  i2c.Init.GeneralCallMode = I2C_GENERALCALL_DISABLED;
-  i2c.Init.NoStretchMode = I2C_NOSTRETCH_DISABLED;
+  i2c.Init.GeneralCallMode  = I2C_GENERALCALL_DISABLED;
+  i2c.Init.NoStretchMode    = I2C_NOSTRETCH_DISABLED;
   HAL_I2C_Init( &i2c );
 
   HAL_I2CEx_AnalogFilter_Config( &i2c, I2C_ANALOGFILTER_ENABLED );

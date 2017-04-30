@@ -7,17 +7,15 @@ using namespace std;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
-
-// PinsOut p1 { GPIOE, 8, 8 };
+FreeRTOS_to_stm32cube_tick_hook;
 BOARD_DEFINE_LEDS;
 
+BOARD_CONSOLE_DEFINES;
 
 TIM_HandleTypeDef tim_h;
 void init_usonic();
 
 const int def_stksz = 1 * configMINIMAL_STACK_SIZE;
-
-SmallRL srl( smallrl_exec );
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -36,60 +34,26 @@ void task_main( void *prm UNUSED_ARG );
 }
 
 
-UART_HandleTypeDef uah;
-UsartIO usartio( &uah, USART2 );
-int init_uart( UART_HandleTypeDef *uahp, int baud = 115200 );
 
-STD_USART2_SEND_TASK( usartio );
-// STD_USART2_RECV_TASK( usartio );
-STD_USART2_IRQ( usartio );
 
 int main(void)
 {
-  HAL_Init();
-
-  leds.initHW();
-  leds.write( BOARD_LEDS_ALL );
-
-  int rc = SystemClockCfg();
-  if( rc ) {
-    die4led( BOARD_LEDS_ALL );
-    return 0;
-  }
-
-  delay_bad_ms( 200 );  leds.write( 0 );
-
-  if( !init_uart( &uah ) ) {
-    die4led( 0x08 );
-  }
-  leds.write( 0x0A );  delay_bad_ms( 200 );
-
-  leds.write( 0x00 );
-
+  BOARD_PROLOG;
 
   UVAR('t') = 1000;
   UVAR('n') = 20;
 
-  global_smallrl = &srl;
 
-  //           code               name    stack_sz      param  prty TaskHandle_t*
-  xTaskCreate( task_leds,        "leds", 1*def_stksz, nullptr,   1, nullptr );
-  xTaskCreate( task_usart2_send, "send", 1*def_stksz, nullptr,   2, nullptr );  // 2
-  xTaskCreate( task_main,        "main", 1*def_stksz, nullptr,   1, nullptr );
-  xTaskCreate( task_gchar,      "gchar", 2*def_stksz, nullptr,   1, nullptr );
+  BOARD_POST_INIT_BLINK;
 
-  leds.write( 0x00 );
-  ready_to_start_scheduler = 1;
-  vTaskStartScheduler();
+  BOARD_CREATE_STD_TASKS;
 
-  die4led( 0xFF );
+  SCHEDULER_START;
   return 0;
 }
 
 void task_main( void *prm UNUSED_ARG ) // TMAIN
 {
-  SET_UART_AS_STDIO( usartio );
-
   init_usonic();
 
   default_main_loop();
@@ -200,7 +164,6 @@ void HAL_TIM_IC_CaptureCallback( TIM_HandleTypeDef *htim )
 
 //  ----------------------------- configs ----------------
 
-FreeRTOS_to_stm32cube_tick_hook;
 
 // vim: path=.,/usr/share/stm32lib/inc/,/usr/arm-none-eabi/include,../../../inc
 

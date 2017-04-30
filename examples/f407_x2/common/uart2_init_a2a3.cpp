@@ -10,6 +10,7 @@ int init_uart( UART_HandleTypeDef *uah, int baud )
   uah->Init.HwFlowCtl    = UART_HWCONTROL_NONE;
   uah->Init.Mode         = UART_MODE_TX_RX;
   uah->Init.OverSampling = UART_OVERSAMPLING_16;
+  // advance for f3
   return( HAL_UART_Init( uah ) == HAL_OK );
 }
 
@@ -29,11 +30,10 @@ void HAL_UART_MspInit( UART_HandleTypeDef* uah )
     gio.Alternate = GPIO_AF7_USART2;
     HAL_GPIO_Init( GPIOA, &gio );
 
-    /* Peripheral interrupt init*/
+    // IRQ
     HAL_NVIC_SetPriority( USART2_IRQn, configKERNEL_INTERRUPT_PRIORITY, 0 );
     HAL_NVIC_EnableIRQ( USART2_IRQn );
   }
-
 }
 
 void HAL_UART_MspDeInit( UART_HandleTypeDef* uah )

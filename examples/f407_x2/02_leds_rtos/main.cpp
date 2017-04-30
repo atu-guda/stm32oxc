@@ -48,18 +48,16 @@ void task_leds( void *prm UNUSED_ARG )
   {
     leds.write( i );
     ++i;
-    i &= 0x0F;
+    i &= BOARD_LEDS_ALL;
     delay_ms( led_delay );
     // HAL_Delay( 1000 );
   }
 }
 
-// // configs
+// configs
 void MX_GPIO_Init(void)
 {
-  // putput init moved to PinsOut initHW
-
-  __HAL_RCC_SYSCFG_CLK_ENABLE();
+  // __HAL_RCC_SYSCFG_CLK_ENABLE();
   __GPIOA_CLK_ENABLE();
   GPIO_InitTypeDef gpi;
 

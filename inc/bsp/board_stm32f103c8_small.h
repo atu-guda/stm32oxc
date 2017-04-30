@@ -7,6 +7,7 @@
 // signle onboard LED is C13
 #define BOARD_N_LEDS 1
 #define BOARD_LEDS_GPIO GPIOC
+#define BOARD_LEDS_GPIO_ON __GPIOC_CLK_ENABLE()
 #define BOARD_LEDS_OFS  13
 #define BOARD_LEDS_MASK 0x6000
 // unshifted

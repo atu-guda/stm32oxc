@@ -256,7 +256,7 @@ $(info SRCPATHS is $(SRCPATHS) )
 
 ###################################################
 
-.PHONY: proj
+.PHONY: proj flash clean subclean
 
 all: proj dirs
 
@@ -301,7 +301,6 @@ subclean:
 clean: subclean
 	rm -f $(PROJ_NAME).bin
 
-.PHONY: clean subclean
 
 #
 

@@ -15,7 +15,7 @@ SRCS += system_stm32f3xx.c
 SRCS += startup_stm32f303xc.s
 
 ifneq "$(REQUIRE_SPECIAL_CLOCK)" "y"
-  SRCS += stm32f3_clock_HSE072b.c
+  SRCS += stm32f3_clock_HSE072_bc.c
 endif
 
 # base hal files

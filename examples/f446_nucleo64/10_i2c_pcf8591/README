@@ -22,7 +22,7 @@ Out:
 
 Used USART2 with VCP on ST_LInk V2-1
 
-PA2  = USART1_TX
-PA3  = USART1_RX
+A2  = USART1_TX
+A3  = USART1_RX
 
 

@@ -10,6 +10,7 @@ USE_FREERTOS = y
 # FREERTOS_HEAP = heap_2.c
 # # default: heap_3.c
 # USE_USB_DEFAULT_CDC = y
+# REQUIRE_SPECIAL_CLOCK = y
 
 USE_FONTS = y
 
@@ -18,7 +19,7 @@ OXCDIR = /home/atu/proj/stm32/oxc
 
 
 SRCS  = main.cpp
-SRCS += uart2_a2a3_hw.cpp
+SRCS += uart2_init_a2a3.cpp
 SRCS += i2c1_b6b7_hw.cpp
 
 SRCS += oxc_pixbuf.cpp
@@ -27,6 +28,7 @@ SRCS += oxc_ssd1306.cpp
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
 # list: see ../common/f3_modules.mk
+
 
 SRCS += stm32f3xx_hal_i2c_ex.c
 

@@ -1,8 +1,3 @@
-/**
-  * File Name          : i2c1_init_b8b9.cpp
-  * Description        : Initialization for I2C1 on B8:SCL,B9:SDA
-  */
-
 #include <oxc_base.h>
 #include <oxc_gpio.h>
 

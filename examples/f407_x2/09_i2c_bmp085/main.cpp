@@ -27,6 +27,7 @@ const CmdInfo* global_cmds[] = {
   DEBUG_I2C_CMDS,
 
   &CMDINFO_TEST0,
+  &CMDINFO_SETADDR,
   nullptr
 };
 

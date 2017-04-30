@@ -7,6 +7,7 @@
 // default LEDS is E8:E15
 #define BOARD_N_LEDS 8
 #define BOARD_LEDS_GPIO GPIOE
+#define BOARD_LEDS_GPIO_ON __GPIOE_CLK_ENABLE()
 #define BOARD_LEDS_OFS  8
 #define BOARD_LEDS_MASK 0xFF00
 // unshifted
@@ -51,5 +52,10 @@
 #define TIM_EXA_CLKDIS __TIM8_CLK_DISABLE();
 #define TIM_EXA_GPIOAF GPIO_AF4_TIM8
 #define TIM_EXA_IRQ    TIM8_CC_IRQn
+
+#define BOARD_CONSOLE_DEFINES UART_CONSOLE_DEFINES( USART2 );
+#define BOARD_PROLOG  STD_PROLOG_UART;
+#define BOARD_CREATE_STD_TASKS CREATE_STD_TASKS( task_usart2_send );
+#define BOARD_POST_INIT_BLINK delay_ms( PROLOG_LED_TIME ); leds.write( 0x01 ); delay_ms( PROLOG_LED_TIME );
 
 #endif
