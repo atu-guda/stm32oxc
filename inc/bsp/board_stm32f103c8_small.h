@@ -4,6 +4,8 @@
 // definition of resoures on atu first STM32F103 small board
 // headers must be included manualy in C/CPP file
 
+#define def_stksz 256
+
 // signle onboard LED is C13
 #define BOARD_N_LEDS 1
 #define BOARD_LEDS_GPIO GPIOC

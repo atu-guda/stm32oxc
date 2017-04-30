@@ -12,8 +12,6 @@ BOARD_DEFINE_LEDS;
 
 USBCDC_CONSOLE_DEFINES;
 
-const int def_stksz = 1 * configMINIMAL_STACK_SIZE;
-
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );

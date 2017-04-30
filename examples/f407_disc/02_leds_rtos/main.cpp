@@ -9,12 +9,8 @@ void MX_GPIO_Init(void);
 
 BOARD_DEFINE_LEDS;
 
-const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
-
 extern "C" {
-
 void task_leds( void *prm UNUSED_ARG );
-
 } // extern "C"
 
 volatile int led_delay = 1000;

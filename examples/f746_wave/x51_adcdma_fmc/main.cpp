@@ -59,8 +59,6 @@ TIM_HandleTypeDef tim2h;
 void tim2_init( uint16_t presc = 49, uint32_t arr = 100 ); // 1MHz, 10 kHz
 void tim2_deinit();
 
-const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
-
 SmallRL srl( smallrl_exec );
 
 // --- local commands;

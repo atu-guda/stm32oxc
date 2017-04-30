@@ -1,6 +1,8 @@
 #ifndef _BOARD_STM32F429DISCOVERY_H
 #define _BOARD_STM32F429DISCOVERY_H
 
+#define def_stksz 512
+
 // definition of resoures on atu first STM32F429I discovery board
 // headers must be included manualy in C/CPP file
 

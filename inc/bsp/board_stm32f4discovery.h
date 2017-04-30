@@ -1,6 +1,8 @@
 #ifndef _BOARD_STM32F4DISCOVERY_H
 #define _BOARD_STM32F4DISCOVERY_H
 
+#define def_stksz 512
+
 // definition of resoures on atu first STM32F407GE discovery
 // headers must be included manualy in C/CPP file
 //

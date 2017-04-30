@@ -16,8 +16,6 @@ ADC_HandleTypeDef hadc1;
 int v_adc_ref = 3250; // in mV, measured before test
 
 
-const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
-
 SmallRL srl( smallrl_exec );
 
 // --- local commands;

@@ -1,6 +1,8 @@
 #ifndef _BOARD_STM32F427_NETDU_H
 #define _BOARD_STM32F427_NETDU_H
 
+#define def_stksz 512
+
 // definition of resoures on STM32F427 netduino 3 board
 // headers must be included manualy in C/CPP file
 

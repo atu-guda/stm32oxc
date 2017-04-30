@@ -20,8 +20,6 @@ BOARD_DEFINE_LEDS;
 SDRAM_HandleTypeDef hsdram;
 extern LTDC_HandleTypeDef hltdc;
 
-const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
-
 SmallRL srl( smallrl_exec );
 
 // --- local commands;

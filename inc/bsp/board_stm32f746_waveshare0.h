@@ -1,6 +1,8 @@
 #ifndef _BOARD_STM32F746_WAVESHARE0_H
 #define _BOARD_STM32F746_WAVESHARE0_H
 
+#define def_stksz 512
+
 // definition of resoures on STM32F746IGT WaveShare board
 // headers must be included manualy in C/CPP file
 

@@ -17,8 +17,6 @@ BOARD_DEFINE_LEDS;
 BOARD_CONSOLE_DEFINES;
 
 
-const int def_stksz = 1 * configMINIMAL_STACK_SIZE;
-
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };

@@ -1,6 +1,8 @@
 #ifndef _BOARD_STM32F429DISCOVERY_SDRAM_H
 #define _BOARD_STM32F429DISCOVERY_SDRAM_H
 
+#define def_stksz 512
+
 // ---------------- SDRAM -------------------------------------------------------------------------
 #define REFRESH_COUNT       ((uint32_t)0x056A)   /* SDRAM refresh counter (90MHz SDRAM clock) */
 #define SDRAM_BANK_ADDR                 ((uint32_t)0xD0000000)

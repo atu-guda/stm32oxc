@@ -16,8 +16,6 @@ BOARD_CONSOLE_DEFINES;
 
 
 
-const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
-
 extern DAC_HandleTypeDef hdac;
 int MX_DAC_Init();
 const int dacbuf_sz = 64;

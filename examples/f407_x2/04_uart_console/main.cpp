@@ -11,8 +11,6 @@ FreeRTOS_to_stm32cube_tick_hook;
 BOARD_DEFINE_LEDS;
 
 
-const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
-
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };

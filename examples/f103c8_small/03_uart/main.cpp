@@ -12,13 +12,9 @@ USE_DIE4LED_ERROR_HANDLER;
 // BOARD_DEFINE_LEDS;
 BOARD_DEFINE_LEDS_EXTRA;
 
-const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
-
 extern "C" {
-
 void task_leds( void *prm UNUSED_ARG );
 void task_send( void *prm UNUSED_ARG );
-
 }
 
 UART_HandleTypeDef uah;

@@ -19,8 +19,6 @@ void pwm_recalc();
 void pwm_update();
 void pwm_print_cfg();
 
-const int def_stksz = 1 * configMINIMAL_STACK_SIZE;
-
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };

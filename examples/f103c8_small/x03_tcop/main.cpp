@@ -15,13 +15,9 @@ int MX_USART1_UART_Init(void);
 PinsOut led0( GPIOC, 13, 1 );
 BOARD_DEFINE_LEDS_EXTRA;
 
-const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
-
 extern "C" {
-
 void task_leds( void *prm UNUSED_ARG );
 void task_send( void *prm UNUSED_ARG );
-
 }
 
 UART_HandleTypeDef uah;

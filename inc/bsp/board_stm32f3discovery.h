@@ -4,6 +4,8 @@
 // definition of resoures on atu first STM32F303 discovery board
 // headers must be included manualy in C/CPP file
 
+#define def_stksz 256
+
 // default LEDS is E8:E15
 #define BOARD_N_LEDS 8
 #define BOARD_LEDS_GPIO GPIOE

@@ -16,8 +16,6 @@ extern SD_HandleTypeDef hsd;
 void MX_SDIO_SD_Init();
 uint8_t sd_buf[512]; // one sector
 
-const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
-
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };

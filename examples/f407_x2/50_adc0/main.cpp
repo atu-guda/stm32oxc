@@ -17,8 +17,6 @@ ADC_HandleTypeDef hadc1;
 int v_adc_ref = 3250; // in mV, measured before test
 
 
-const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
-
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };

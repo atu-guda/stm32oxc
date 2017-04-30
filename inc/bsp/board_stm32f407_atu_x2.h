@@ -4,6 +4,8 @@
 // definition of resoures on atu first STM32F407VE based board (named X2)
 // headers must be included manualy in C/CPP file
 
+#define def_stksz 512
+
 // default LEDS is C0:C3
 #define BOARD_N_LEDS 4
 #define BOARD_LEDS_GPIO GPIOC

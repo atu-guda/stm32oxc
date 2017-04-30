@@ -15,8 +15,6 @@ BOARD_CONSOLE_DEFINES;
 TIM_HandleTypeDef tim_h;
 void init_usonic();
 
-const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
-
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };

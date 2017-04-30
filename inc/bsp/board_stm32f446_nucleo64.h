@@ -1,6 +1,8 @@
 #ifndef _BOARD_STM32F446_NUCLEO64_H
 #define _BOARD_STM32F446_NUCLEO64_H
 
+#define def_stksz 512
+
 // definition of resoures STM32F446R nucleo 64 board
 // headers must be included manualy in C/CPP file
 

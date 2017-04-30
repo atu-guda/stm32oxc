@@ -23,8 +23,6 @@ FATFS fs;
 const int fspath_sz = 32;
 char fspath[fspath_sz];
 
-const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
-
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };

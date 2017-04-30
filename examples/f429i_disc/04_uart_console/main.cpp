@@ -12,8 +12,6 @@ USE_DIE4LED_ERROR_HANDLER;
 
 BOARD_DEFINE_LEDS;
 
-const int def_stksz = 2 * configMINIMAL_STACK_SIZE;
-
 SmallRL srl( smallrl_exec );
 
 // --- local commands;
