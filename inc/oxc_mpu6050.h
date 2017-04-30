@@ -7,7 +7,7 @@
 
 // inner regs: 1-byte addr
 
-class MPU6050 {
+class MPU6050 : public I2CClient {
   public:
    enum {
      mpu6050_def_addr     = 0x68,
@@ -51,9 +51,7 @@ class MPU6050 {
    };
 
    MPU6050( DevI2C &a_dev, uint8_t d_addr = mpu6050_def_addr )
-     : dev( a_dev ), addr( d_addr ) {};
-   void setAddr( uint8_t d_addr ) { addr = d_addr; };
-   uint8_t getAddr() const { return addr; }
+     : I2CClient( a_dev, d_addr ) {};
    void init();
    void sleep() {  dev.send_reg1( mpu6050_reg_pwr1, pll_sleep, addr ); }
    void wake( PLL_source sou ){ dev.send_reg1( mpu6050_reg_pwr1, sou, addr ); }
@@ -77,8 +75,6 @@ class MPU6050 {
      all_data[3] = (int16_t)( fixTemp( all_data[3] ));
    }
   private:
-   DevI2C &dev;
-   uint8_t addr;
 };
 
 #endif

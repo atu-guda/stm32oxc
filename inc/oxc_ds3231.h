@@ -6,7 +6,7 @@
 // inner regs: 1-byte addr
 
 
-class DS3231 {
+class DS3231 : public I2CClient {
   public:
    enum {
      def_addr     = 0x68,
@@ -37,10 +37,7 @@ class DS3231 {
    };
 
    DS3231( DevI2C &a_dev, uint8_t d_addr = def_addr )
-     : dev( a_dev ), addr( d_addr ) {};
-   void setAddr( uint8_t d_addr ) { addr = d_addr; };
-   uint8_t getAddr() const { return addr; }
-   void resetDev() { dev.resetDev(); }
+     : I2CClient( a_dev, d_addr ) {};
    int setCtl( uint8_t ctl ) { return dev.send_reg1( reg_ctl, ctl, addr ); };
    uint8_t getStatus();
    int setTime( uint8_t  hour,  uint8_t min, uint8_t  sec );
@@ -50,8 +47,6 @@ class DS3231 {
    int getDate( int16_t *year, uint8_t *month, uint8_t *day );
    int getDateStr( char *s ); // YYYY:MM:DD = 11 bytes minimum
   protected:
-   DevI2C &dev;
-   uint8_t addr;
 };
 
 #endif

@@ -20,26 +20,26 @@ void HD44780_i2c::wr4( uint8_t v, bool is_data )
   b |= led_state;
   uint8_t v1 = ( v & 0xF0 );
   uint8_t d = v1 | lcd_bit_e | b;
-  dev.send( d, addr );
+  send( d );
   delay_mcs( 1 );
   d = v1 | led_state | b;
-  dev.send( d, addr );
+  send( d );
   delay_mcs( 1 );
   v1 = v << 4;
   d = v1 | lcd_bit_e | b;
-  dev.send( d, addr );
+  send( d );
   delay_mcs( 1 );
   d = v1 | b;
-  dev.send( d, addr );
+  send( d );
 }
 
 void HD44780_i2c::strobe( uint8_t v )
 {
   uint8_t d = v | lcd_bit_e | led_state;
-  dev.send( d, addr );
+  send( d );
   delay_mcs( 2 );
   d = v | led_state;
-  dev.send( d, addr );
+  send( d );
 }
 
 void HD44780_i2c::puts( const char *s )
@@ -58,11 +58,6 @@ void HD44780_i2c::gotoxy( uint8_t x, uint8_t y )
     return;
   }
   uint8_t ofs = x + line_addr[y];
-  // if( y > 1 ) {
-  //   ofs += cpl/2;
-  //   y &= 1;
-  // }
-  // ofs += y * cpl;
   ofs |= 0x80; // cmd
   cmd( ofs );
 }

@@ -4,7 +4,7 @@
 uint8_t DS3231::getStatus()
 {
   uint8_t v = 0;
-  dev.recv_reg1( reg_status, &v, 1, addr );
+  recv_reg1( reg_status, &v, 1 );
   return v;
 }
 
@@ -17,13 +17,13 @@ int DS3231::setTime( uint8_t  hour,  uint8_t min, uint8_t  sec )
   buf[0] = uint8_to_bcd( sec );
   buf[1] = uint8_to_bcd( min );
   buf[2] = uint8_to_bcd( hour );
-  return dev.send_reg1( reg_sec, buf, 3, addr );
+  return send_reg1( reg_sec, buf, 3 );
 }
 
 int DS3231::getTime( uint8_t *hour, uint8_t *min, uint8_t *sec )
 {
   uint8_t buf[4];
-  auto rc = dev.recv_reg1( reg_sec, buf, 3, addr );
+  auto rc = recv_reg1( reg_sec, buf, 3 );
   if( rc < 1  ) {
     return 0;
   }
@@ -39,7 +39,7 @@ int DS3231::getTimeStr( char *s )
 {
   uint8_t buf[4];
   if( !s ) { return HAL_ERROR; }
-  auto rc = dev.recv_reg1( reg_sec, buf, 3, addr );
+  auto rc = recv_reg1( reg_sec, buf, 3 );
   if( rc < 1 ) {
     return 0;
   }
@@ -60,13 +60,13 @@ int DS3231::setDate( int16_t  year,  uint8_t month, uint8_t  day )
   buf[0] = uint8_to_bcd( day );
   buf[1] = uint8_to_bcd( month );
   buf[2] = uint8_to_bcd( (uint8_t)year );
-  return dev.send_reg1( reg_day, buf, 3, addr );
+  return send_reg1( reg_day, buf, 3 );
 }
 
 int DS3231::getDate( int16_t *year, uint8_t *month, uint8_t *day )
 {
   uint8_t buf[4];
-  auto rc = dev.recv_reg1( reg_day, buf, 3, addr );
+  auto rc = recv_reg1( reg_day, buf, 3 );
   if( rc < 0 ) {
     return 0;
   }
@@ -87,7 +87,7 @@ int DS3231::getDateStr( char *s )
 {
   uint8_t buf[4];
   if( !s ) { return 0; }
-  auto rc = dev.recv_reg1( reg_day, buf, 3, addr );
+  auto rc = recv_reg1( reg_day, buf, 3 );
   if( rc < 1 ) {
     return 0;
   }

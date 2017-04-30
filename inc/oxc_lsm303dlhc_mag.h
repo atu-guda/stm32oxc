@@ -6,7 +6,7 @@
 // inner regs: 1-byte addr
 // here only magnetometer
 
-class LSM303DHLC_Mag {
+class LSM303DHLC_Mag : public I2CClient {
   public:
    enum {
      def_addr     = 0x1E,
@@ -41,10 +41,7 @@ class LSM303DHLC_Mag {
    };
 
    LSM303DHLC_Mag( DevI2C &a_dev, uint8_t d_addr = def_addr )
-     : dev( a_dev ), addr( d_addr ) {};
-   void setAddr( uint8_t d_addr ) { addr = d_addr; };
-   uint8_t getAddr() const { return addr; }
-   void resetDev() { dev.resetDev(); }
+     : I2CClient( a_dev, d_addr ) {};
    bool init( uint8_t odr = cra_odr_75_Hz | cra_temp_en, uint8_t sens = crb_sens_1_9 );
    int16_t getReg( uint8_t reg ); // reg is 16-bit
    void    getRegs( uint8_t reg1, uint8_t n, int16_t *data );
@@ -54,8 +51,6 @@ class LSM303DHLC_Mag {
    void    getMagAll( int16_t *mag ){ return getRegs( reg_m_xh, 3, mag ); }
    int16_t getTemp() { return getReg( reg_temp_h ); }
   private:
-   DevI2C &dev;
-   uint8_t addr;
 };
 
 #endif

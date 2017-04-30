@@ -7,7 +7,7 @@
 
 // inner regs: 1-byte addr
 
-class HMC5983 {
+class HMC5983 : public I2CClient {
   public:
    enum RegNums {
      def_addr     = 0x1E,
@@ -83,11 +83,7 @@ class HMC5983 {
    };
 
    HMC5983( DevI2C &a_dev, uint8_t d_addr = def_addr )
-     : dev( a_dev ), addr( d_addr ) {};
-   void setAddr( uint8_t d_addr ) { addr = d_addr; };
-   uint8_t getAddr() const { return addr; }
-   void resetDev() { dev.resetDev(); }
-   int  getErr() const { return dev.getErr(); };
+     : I2CClient( a_dev, d_addr ) {};
    bool init( CRA odr = cra_odr_75_Hz, Scales scale = scale_1_9 );
    bool read1( int32_t wait_ms = -1 ); // per 1  wait loop, def=no wait, max_loops
    bool startAuto();
@@ -107,8 +103,6 @@ class HMC5983 {
    int16_t getTemp() { int16_t v = getReg( reg_temp_h );  v /= 128; v += 25; return v; } // TODO: calibrate!
    uint32_t get_mcGa_LSb() const { return mcGa_LSb; }
   private:
-   DevI2C &dev;
-   uint8_t addr;
    bool wait_read( int32_t wait_ms  = -1 );
    //
    int32_t mcGa_LSb = 0;

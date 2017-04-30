@@ -6,7 +6,7 @@
 // inner regs: 1-byte addr, need to set bit 7 to continous access
 // rehe only accelerometer, magnetometer in another file
 
-class LSM303DHLC_Accel {
+class LSM303DHLC_Accel : public I2CClient {
   public:
    enum {
      def_addr     = 0x19,
@@ -88,10 +88,7 @@ class LSM303DHLC_Accel {
    };
 
    LSM303DHLC_Accel( DevI2C &a_dev, uint8_t d_addr = def_addr )
-     : dev( a_dev ), addr( d_addr ) {};
-   void setAddr( uint8_t d_addr ) { addr = d_addr; };
-   uint8_t getAddr() const { return addr; }
-   void resetDev() { dev.resetDev(); }
+     : I2CClient( a_dev, d_addr ) {};
    bool check_id();
    bool init( Ctl4_val c4 = ctl4_def, Ctl2_val c2 = ctl2_def, Ctl1_val c1 = ctl1_def );
    void rebootMem();
@@ -102,9 +99,7 @@ class LSM303DHLC_Accel {
    int16_t getAccY() { return getReg( reg_a_yl ); }
    int16_t getAccZ() { return getReg( reg_a_zl ); }
    void    getAccAll( int16_t *acc ){ return getRegs( reg_a_xl, 3, acc ); }
-  private:
-   DevI2C &dev;
-   uint8_t addr;
+  protected:
 };
 
 #endif

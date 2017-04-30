@@ -7,7 +7,7 @@
 bool BMP085::readCalibrData()
 {
 #ifndef BMP_DEBUG
-  int rc = dev.recv_reg1( reg_calibr_start, (uint8_t*)(&calibr), sizeof(calibr), addr );
+  int rc = recv_reg1( reg_calibr_start, (uint8_t*)(&calibr), sizeof(calibr) );
   if( rc < (int)sizeof(calibr) ) {
     return false;
   }
@@ -28,10 +28,10 @@ int  BMP085::get_T_uncons( bool do_get )
 {
 #ifndef BMP_DEBUG
   if( do_get ) {
-    dev.send_reg1( reg_cmd,  cmd_read_T, addr );
+    send_reg1( reg_cmd,  cmd_read_T );
     delay_ms( t_wait_T );
     uint8_t tt[2];
-    dev.recv_reg1( reg_out, tt, sizeof(tt), addr );
+    recv_reg1( reg_out, tt, sizeof(tt) );
     t_uncons = ( (tt[0]<<8) + tt[1] );
   }
 #else
@@ -46,10 +46,10 @@ int  BMP085::get_P_uncons( bool do_get )
 #ifndef BMP_DEBUG
   if( do_get ) {
     uint8_t cmd = cmd_read_P0 | ( oss << 6 );
-    dev.send_reg1( reg_cmd, cmd, addr );
+    send_reg1( reg_cmd, cmd );
     delay_ms( t_wait_P );
     uint8_t tp[3];
-    dev.recv_reg1( reg_out, tp, sizeof(tp), addr );
+    recv_reg1( reg_out, tp, sizeof(tp) );
     p_uncons = ( (tp[0]<<16) + (tp[1]<<8) + tp[2] ) >> (8-oss);
   }
 #else

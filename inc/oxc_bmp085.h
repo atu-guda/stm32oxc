@@ -3,7 +3,7 @@
 
 #include <oxc_i2c.h>
 
-class BMP085 {
+class BMP085 : public I2CClient {
   public:
    enum {
      def_i2c_addr = 0x77,
@@ -27,9 +27,7 @@ class BMP085 {
    } __attribute__((packed));
    static_assert( sizeof(CalibrData) == n_calibr_data*sizeof(uint16_t), "Bad CalibrData size" );
    BMP085( DevI2C &a_dev, uint8_t d_addr = def_i2c_addr )
-     : dev( a_dev ), addr( d_addr ) {};
-   void setAddr( uint8_t d_addr ) { addr = d_addr; };
-   uint8_t getAddr() const { return addr; }
+     : I2CClient( a_dev,  d_addr ) {};
    void init() { readCalibrData(); };
    bool readCalibrData();
    int  get_T_uncons( bool do_get = false );
@@ -40,8 +38,6 @@ class BMP085 {
    int  get_P()   { return p;   }
    const int16_t* getCalibr() const { return (const int16_t*)(&calibr); }
   protected:
-   DevI2C &dev;
-   uint8_t addr;
    CalibrData calibr;
    int32_t t_uncons = 0, t10 = 0;
    int32_t p_uncons = 0, p = 0;

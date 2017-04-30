@@ -3,7 +3,7 @@
 
 #include <oxc_i2c.h>
 
-class HD44780_i2c {
+class HD44780_i2c : public I2CClient {
   public:
     enum {
       lcd_8b_mode   = 0x30,
@@ -22,10 +22,7 @@ class HD44780_i2c {
       lcd_def_addr  = 0x27
     };
     HD44780_i2c( DevI2C &a_dev, uint8_t d_addr = lcd_def_addr )
-     : dev( a_dev ), addr( d_addr ) {};
-    void setAddr( uint8_t d_addr ) { addr = d_addr; };
-    uint8_t getAddr() const { return addr; }
-    int  getState() const { return dev.getState(); };
+     : I2CClient( a_dev, d_addr ) {};
     void init_4b( bool is_2row = true );
     void wr4( uint8_t v, bool is_data );
     void strobe( uint8_t v );
@@ -44,8 +41,6 @@ class HD44780_i2c {
     void led_off()  { led_state = 0;          cmd( mod | lcd_cmd_onoff ); }
 
   protected:
-   DevI2C &dev;
-   uint8_t addr;
    uint8_t mod = 0;
    uint8_t led_state = lcd_bit_led;
    static const constexpr uint8_t n_lines { 4 };
