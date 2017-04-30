@@ -1,1 +1,1 @@
-../../f407_x2/common/usbd_desc.h
+#include <bsp/usbd_desc_vcp.h>
