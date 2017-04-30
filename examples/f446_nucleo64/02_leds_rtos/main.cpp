@@ -9,9 +9,10 @@ void MX_GPIO_Init(void);
 
 BOARD_DEFINE_LEDS;
 
+
 extern "C" {
 void task_leds( void *prm UNUSED_ARG );
-}
+} // extern "C"
 
 volatile int led_delay = 1000;
 
@@ -39,22 +40,19 @@ int main(void)
 
 void task_leds( void *prm UNUSED_ARG )
 {
-  int i=8;
-  while (1)
-  {
+  int i=1;
+  while(1) {
     leds.write( i );
     ++i;
-    i &= 0x0F;
+    i &= BOARD_LEDS_ALL;
     delay_ms( led_delay );
     // HAL_Delay( 1000 );
   }
 }
 
-// // configs
+// configs
 void MX_GPIO_Init(void)
 {
-  // putput init moved to PinsOut initHW
-
   __HAL_RCC_SYSCFG_CLK_ENABLE();
   __GPIOC_CLK_ENABLE();
   GPIO_InitTypeDef gpi;

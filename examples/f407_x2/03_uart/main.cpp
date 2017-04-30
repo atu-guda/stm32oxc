@@ -37,13 +37,13 @@ void task_send( void *prm UNUSED_ARG )
   int ssz = strlen( tx_buf );
   char c = '?';
 
-  while( 1 )  {
+  while( 1 ) {
     // leds.toggle( BIT2 );
     if( HAL_UART_Receive( &uah, (uint8_t*)&c, 1, 0 ) == HAL_OK ) {
       leds.toggle( BIT2 );
       tx_buf[7] = c;
     }
-    if( HAL_UART_Transmit( &uah, (uint8_t*)tx_buf, ssz, 100 )!= HAL_OK ) {
+    if( HAL_UART_Transmit( &uah, (uint8_t*)tx_buf, ssz, 100 ) != HAL_OK ) {
       // leds.toggle( BIT3 );
     }
     delay_ms( 1000 );

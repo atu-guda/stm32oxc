@@ -1,9 +1,10 @@
 #include <oxc_auto.h>
 
 void MX_GPIO_Init(void);
-int delay_bad(void);
+int  delay_bad(void);
 
 USE_DIE_ERROR_HANDLER;
+
 
 
 int main(void)
@@ -17,6 +18,7 @@ int main(void)
   }
 
   MX_GPIO_Init();
+
 
   int i=0x04,  j = 0;
   // GPIOE->ODR = 0x0F;
@@ -40,9 +42,9 @@ int delay_bad()
   return k;
 }
 
-
-
 // configs
+
+
 
 
 

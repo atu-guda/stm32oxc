@@ -4,20 +4,22 @@
 
 using namespace std;
 
+USE_DIE4LED_ERROR_HANDLER;
+FreeRTOS_to_stm32cube_tick_hook;
+// BOARD_DEFINE_LEDS;
+BOARD_DEFINE_LEDS_EXTRA;
+
 void MX_GPIO_Init(void);
 int MX_USART1_UART_Init(void);
 
-USE_DIE4LED_ERROR_HANDLER;
-
-// BOARD_DEFINE_LEDS;
-BOARD_DEFINE_LEDS_EXTRA;
 
 extern "C" {
 void task_leds( void *prm UNUSED_ARG );
 void task_send( void *prm UNUSED_ARG );
-}
+} // extern "C"
 
 UART_HandleTypeDef uah;
+
 const int TX_BUF_SZ = 128;
 char tx_buf[TX_BUF_SZ];
 
@@ -45,11 +47,7 @@ int main(void)
   xTaskCreate( task_leds, "leds", 1*def_stksz, 0, 1, 0 );
   xTaskCreate( task_send, "send", 2*def_stksz, 0, 1, 0 );
 
-  leds.write( 0x00 );
-  ready_to_start_scheduler = 1;
-  vTaskStartScheduler();
-
-  die4led( 0xFF );
+  SCHEDULER_START;
   return 0;
 }
 
@@ -57,12 +55,12 @@ int main(void)
 void task_send( void *prm UNUSED_ARG )
 {
   strcpy( tx_buf, "ABCDE <.> 0123\r\n" );
+  //               0123456789ABCDEF1011
   int ssz = strlen( tx_buf );
   char c = '?';
   uint8_t rc;
 
-  while (1)
-  {
+  while( 1 ) {
     // leds.toggle( BIT2 );
     // really useless: delay_ms(1000) provokes overrun
     if( __HAL_UART_GET_FLAG( &uah, UART_FLAG_RXNE) ) {
@@ -89,7 +87,6 @@ void task_send( void *prm UNUSED_ARG )
 }
 
 
-FreeRTOS_to_stm32cube_tick_hook;
 
 // vim: path=.,/usr/share/stm32lib/inc/,/usr/arm-none-eabi/include,../../../inc
 

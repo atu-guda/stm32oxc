@@ -40,7 +40,7 @@ void MX_ADC1_Init(void)
 void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
 {
   GPIO_InitTypeDef GPIO_InitStruct;
-  if( adcHandle->Instance==ADC1 )  {
+  if( adcHandle->Instance == ADC1 ) {
     __HAL_RCC_ADC1_CLK_ENABLE();
     __GPIOA_CLK_ENABLE();
 
@@ -55,7 +55,7 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
 
 void HAL_ADC_MspDeInit( ADC_HandleTypeDef* adcHandle )
 {
-  if( adcHandle->Instance == ADC1 )  {
+  if( adcHandle->Instance == ADC1 ) {
     __HAL_RCC_ADC1_CLK_DISABLE();
     HAL_GPIO_DeInit( GPIOA, GPIO_PIN_1 );
     // HAL_DMA_DeInit(adcHandle->DMA_Handle);

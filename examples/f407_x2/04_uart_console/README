@@ -1,5 +1,5 @@
 Using  USART as console via SmallRL.
-Used USART2 with FT232RL board.
+Used USART2 with USB_UART board.
 
 A2  = USART2_TX
 A3  = USART2_RX

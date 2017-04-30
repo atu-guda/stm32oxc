@@ -8,17 +8,17 @@ using namespace std;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
-
+FreeRTOS_to_stm32cube_tick_hook;
 BOARD_DEFINE_LEDS;
 
-UsbcdcIO usbcdc;
+BOARD_CONSOLE_DEFINES;
 
-
-SmallRL srl( smallrl_exec );
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
+int cmd_setaddr( int argc, const char * const * argv );
+CmdInfo CMDINFO_SETADDR { "setaddr", 0, cmd_setaddr, " addr - set device addr (see 'C')"  };
 
 int cmd_set_time( int argc, const char * const * argv );
 CmdInfo CMDINFO_SET_TIME { "stime", 0, cmd_set_time, " hour min sec - set RTC time "  };
@@ -32,6 +32,7 @@ const CmdInfo* global_cmds[] = {
 
   &CMDINFO_SET_TIME,
   &CMDINFO_SET_DATE,
+  &CMDINFO_SETADDR,
   &CMDINFO_TEST0,
   nullptr
 };
@@ -42,56 +43,32 @@ void task_main( void *prm UNUSED_ARG );
 }
 
 I2C_HandleTypeDef i2ch;
-DS3231 rtc( &i2ch );
+DevI2C i2cd( &i2ch, 0 );
+DS3231 rtc( i2cd );
 
 void MX_I2C1_Init( I2C_HandleTypeDef &i2c, uint32_t speed = 100000 );
 
 
-STD_USBCDC_SEND_TASK( usbcdc );
-
 int main(void)
 {
-  HAL_Init();
-
-  leds.initHW();
-  leds.write( BOARD_LEDS_ALL );
-
-  int rc = SystemClockCfg();
-  if( rc ) {
-    die4led( BOARD_LEDS_ALL );
-    return 0;
-  }
-
-  delay_bad_ms( 200 );  leds.write( 0 );
-
-  MX_I2C1_Init( i2ch );
-  i2c_dbg = &rtc;
-
-  leds.write( BOARD_LEDS_ALL );  HAL_Delay( 200 );
+  BOARD_PROLOG;
 
   UVAR('t') = 1000;
   UVAR('n') = 10;
 
-  global_smallrl = &srl;
+  MX_I2C1_Init( i2ch );
+  i2c_dbg = &i2cd;
 
-  //           code               name    stack_sz      param  prty TaskHandle_t*
-  xTaskCreate( task_leds,        "leds", 1*def_stksz, nullptr,   1, nullptr );
-  xTaskCreate( task_usbcdc_send, "send", 2*def_stksz, nullptr,   2, nullptr );  // 2
-  xTaskCreate( task_main,        "main", 2*def_stksz, nullptr,   1, nullptr );
-  xTaskCreate( task_gchar,      "gchar", 2*def_stksz, nullptr,   1, nullptr );
+  BOARD_POST_INIT_BLINK;
 
-  leds.write( 0x00 );
-  ready_to_start_scheduler = 1;
-  vTaskStartScheduler();
+  BOARD_CREATE_STD_TASKS;
 
-  die4led( 0xFF );
+  SCHEDULER_START;
   return 0;
 }
 
 void task_main( void *prm UNUSED_ARG ) // TMAIN
 {
-  SET_USBCDC_AS_STDIO(usbcdc);
-
   default_main_loop();
   vTaskDelete(NULL);
 }
@@ -158,10 +135,20 @@ int cmd_set_date( int argc, const char * const * argv )
   return rtc.setDate( year, mon, day );
 }
 
+int cmd_setaddr( int argc, const char * const * argv )
+{
+  if( argc < 2 ) {
+    pr( "Need addr [1-127]" NL );
+    return 1;
+  }
+  uint8_t addr  = (uint8_t)arg2long_d( 1, argc, argv, 0x0, 0,   127 );
+  rtc.setAddr( addr );
+  return 0;
+}
+
 
 //  ----------------------------- configs ----------------
 
-FreeRTOS_to_stm32cube_tick_hook;
 
 // vim: path=.,/usr/share/stm32lib/inc/,/usr/arm-none-eabi/include,../../../inc
 

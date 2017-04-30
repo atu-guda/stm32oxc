@@ -9,11 +9,11 @@ USE_FREERTOS = y
 # FREERTOS_HEAP = heap_2.c
 # # default: heap_3.c
 # USE_USB_DEFAULT_CDC = y
+# REQUIRE_SPECIAL_CLOCK = y
 
 
 # TODO: copy to main location
 OXCDIR = /home/atu/proj/stm32/oxc
-
 
 SRCS  = main.cpp
 SRCS += uart1_init_b6b7.cpp

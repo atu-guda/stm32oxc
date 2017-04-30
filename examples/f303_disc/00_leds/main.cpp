@@ -20,13 +20,13 @@ int main(void)
   MX_GPIO_Init();
 
 
-  int i=0x04,  j = 0;
-  // GPIOE->ODR = 0x0F;
-  while(1) {
-    j = i << 8;
-    GPIO_WriteBits( BOARD_LEDS_GPIO, j, BOARD_LEDS_MASK );
+  int i=0x04;
+  BOARD_LEDS_GPIO->ODR = BOARD_LEDS_MASK;
+  HAL_Delay( 1500 );
+  while( 1 ) {
+    GPIO_WriteBits( BOARD_LEDS_GPIO, i<<BOARD_LEDS_OFS, BOARD_LEDS_MASK );
     ++i;
-    i &= 0x0FF;
+    i &= BOARD_LEDS_ALL;
     HAL_Delay( 200 );
     // delay_bad();
   }
@@ -59,7 +59,7 @@ void MX_GPIO_Init(void)
   // __GPIOH_CLK_ENABLE();
   BOARD_LEDS_GPIO_ON;
 
-  GPIO_InitStruct.Pin   = BOARD_LEDS_MASK; // 0xFF00; // 8-15
+  GPIO_InitStruct.Pin   = BOARD_LEDS_MASK;
   GPIO_InitStruct.Mode  = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull  = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_HIGH;

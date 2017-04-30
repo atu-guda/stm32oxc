@@ -1,10 +1,10 @@
 #ifndef _BOARD_STM32F746_WAVESHARE0_H
 #define _BOARD_STM32F746_WAVESHARE0_H
 
-#define def_stksz 512
-
 // definition of resoures on STM32F746IGT WaveShare board
 // headers must be included manualy in C/CPP file
+
+#define def_stksz 512
 
 // default LEDS is C0:C3
 #define BOARD_N_LEDS 4
@@ -35,5 +35,10 @@
 #define LED_BSP_RX        LED_BSP_GREEN
 #define LED_BSP_ERR       LED_BSP_BLUE
 
+
+#define BOARD_CONSOLE_DEFINES UART_CONSOLE_DEFINES( USART1 );
+#define BOARD_PROLOG  STD_PROLOG_UART;
+#define BOARD_CREATE_STD_TASKS CREATE_STD_TASKS( task_usart1_send );
+#define BOARD_POST_INIT_BLINK delay_ms( PROLOG_LED_TIME ); leds.write( 0x01 ); delay_ms( PROLOG_LED_TIME );
 
 #endif

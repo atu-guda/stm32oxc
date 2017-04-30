@@ -20,7 +20,7 @@ OXCDIR = /home/atu/proj/stm32/oxc
 SRCS  = main.cpp
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
-# see ../common/f7_modules.mk
+# list: see ../common/f7_modules.mk
 
 
 

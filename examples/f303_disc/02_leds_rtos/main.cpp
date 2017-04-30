@@ -12,7 +12,7 @@ BOARD_DEFINE_LEDS;
 
 extern "C" {
 void task_leds( void *prm UNUSED_ARG );
-}
+} // extern "C"
 
 volatile int led_delay = 1000;
 
@@ -40,9 +40,8 @@ int main(void)
 
 void task_leds( void *prm UNUSED_ARG )
 {
-  int i=8;
-  while (1)
-  {
+  int i=1;
+  while(1) {
     leds.write( i );
     ++i;
     i &= BOARD_LEDS_ALL;

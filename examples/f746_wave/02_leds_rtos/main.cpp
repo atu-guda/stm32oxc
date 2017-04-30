@@ -1,4 +1,3 @@
-#include "stm32f7xx_hal.h"
 #include <oxc_auto.h>
 
 using namespace std;
@@ -13,24 +12,13 @@ BOARD_DEFINE_LEDS;
 
 extern "C" {
 void task_leds( void *prm UNUSED_ARG );
-}
+} // extern "C"
 
 volatile int led_delay = 1000;
 
 int main(void)
 {
-  HAL_Init();
-
-  leds.initHW();
-  leds.write( BOARD_LEDS_ALL );
-
-  int rc = SystemClockCfg();
-  if( rc ) {
-    die4led( BOARD_LEDS_ALL );
-    return 0;
-  }
-
-  delay_bad_ms( 200 );  leds.write( 0 );
+  STD_PROLOG_START;
 
   MX_GPIO_Init();
 
@@ -52,24 +40,20 @@ int main(void)
 
 void task_leds( void *prm UNUSED_ARG )
 {
-  int i=8;
-  while (1)
-  {
+  int i=1;
+  while(1) {
     leds.write( i );
     ++i;
-    i &= 0x0F;
+    i &= BOARD_LEDS_ALL;
     delay_ms( led_delay );
     // HAL_Delay( 1000 );
   }
 }
 
-
-// // configs
+// configs
 void MX_GPIO_Init(void)
 {
-  // putput init moved to PinsOut initHW
-
-  __HAL_RCC_SYSCFG_CLK_ENABLE();
+  // __HAL_RCC_SYSCFG_CLK_ENABLE();
   __GPIOA_CLK_ENABLE();
   GPIO_InitTypeDef gpi;
 
@@ -101,13 +85,15 @@ void EXTI1_IRQHandler(void)
 void HAL_GPIO_EXTI_Callback( uint16_t pin )
 {
   if( pin == BIT0 )  {
-    leds.set( 0x0F );
+    leds.reset( BOARD_LEDS_ALL );
     led_delay = 1000;
   }
   if( pin == BIT1 )  {
     leds.reset( 0x0F );
     led_delay >>= 1;
-    ++led_delay;
+    if( led_delay < 1 ) {
+      led_delay = 1000;
+    }
   }
   leds.toggle( 0x01 );
 }

@@ -7,9 +7,9 @@ using namespace std;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
-
-// PinsOut p1 { GPIOC, 0, 4 };
+FreeRTOS_to_stm32cube_tick_hook;
 BOARD_DEFINE_LEDS;
+
 uint8_t *sdram_mem = (uint8_t *)(0xD0000000);
 extern "C" {
  void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc );
@@ -54,12 +54,12 @@ const uint32_t sampl_times_cycles[n_sampl_times] = { // sample+conv(12)
 };
 
 
+BOARD_CONSOLE_DEFINES;
 
 TIM_HandleTypeDef tim2h;
 void tim2_init( uint16_t presc = 49, uint32_t arr = 100 ); // 1MHz, 10 kHz
 void tim2_deinit();
 
-SmallRL srl( smallrl_exec );
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -81,41 +81,13 @@ void task_main( void *prm UNUSED_ARG );
 }
 
 
-UART_HandleTypeDef uah;
-UsartIO usartio( &uah, USART1 );
-int init_uart( UART_HandleTypeDef *uahp, int baud = 115200 );
-
-
-
 void MX_FMC_Init(void);
 void BSP_SDRAM_Initialization_sequence( uint32_t RefreshCount );
 
-STD_USART1_SEND_TASK( usartio );
-// STD_USART1_RECV_TASK( usartio );
-STD_USART1_IRQ( usartio );
-
 int main(void)
 {
-  HAL_Init();
+  BOARD_PROLOG;
 
-  leds.initHW();
-  leds.write( BOARD_LEDS_ALL );
-
-  int rc = SystemClockCfg();
-  if( rc ) {
-    die4led( BOARD_LEDS_ALL );
-    return 0;
-  }
-
-  HAL_Delay( 200 ); // delay_bad_ms( 200 );
-  leds.write( 0x00 ); delay_ms( 200 );
-  leds.write( BOARD_LEDS_ALL );  HAL_Delay( 200 );
-
-  if( ! init_uart( &uah ) ) {
-      die4led( 1 );
-  }
-  leds.write( 0x0A );  delay_bad_ms( 200 );
-  delay_bad_ms( 200 );  leds.write( 0 );
 
   UVAR('t') = 1000; // 1 s extra wait
   UVAR('v') = v_adc_ref;
@@ -129,37 +101,22 @@ int main(void)
   MX_FMC_Init();
   leds.write( 0x01 );  delay_bad_ms( 200 );
   BSP_SDRAM_Initialization_sequence( 0 ); // 0 if fake
-  leds.write( 0x0A );  delay_bad_ms( 500 );
+
+  BOARD_CREATE_STD_TASKS;
 
   // MX_ADC1_Init( 4, ADC_SAMPLETIME_28CYCLES );
   delay_bad_ms( 10 );
   // tim2_init( UVAR('p'), UVAR('a') );
   leds.write( 0x0A );  delay_bad_ms( 200 );
 
+  BOARD_CREATE_STD_TASKS;
 
-  global_smallrl = &srl;
-
-  //           code               name    stack_sz      param  prty TaskHandle_t*
-  xTaskCreate( task_leds,        "leds", 1*def_stksz, nullptr,   1, nullptr );
-  xTaskCreate( task_usart1_send, "send", 2*def_stksz, nullptr,   2, nullptr );  // 2
-  xTaskCreate( task_main,        "main", 2*def_stksz, nullptr,   1, nullptr );
-  xTaskCreate( task_gchar,      "gchar", 2*def_stksz, nullptr,   1, nullptr );
-
-  leds.write( 0x00 );
-  ready_to_start_scheduler = 1;
-  vTaskStartScheduler();
-
-  die4led( 0xFF );
+  SCHEDULER_START;
   return 0;
 }
 
 void task_main( void *prm UNUSED_ARG ) // TMAIN
 {
-  SET_UART_AS_STDIO( usartio );
-
-  usartio.sendStrSync( "0123456789ABCDEF" NL );
-  delay_ms( 10 );
-
   default_main_loop();
   vTaskDelete(NULL);
 }
@@ -375,8 +332,8 @@ void HAL_ADCEx_InjectedConvCpltCallback( ADC_HandleTypeDef * /*hadc*/ )
 {
 }
 
-// // configs
-FreeRTOS_to_stm32cube_tick_hook;
+//  ----------------------------- configs ----------------
+
 
 // vim: path=.,/usr/share/stm32lib/inc/,/usr/arm-none-eabi/include,../../../inc
 

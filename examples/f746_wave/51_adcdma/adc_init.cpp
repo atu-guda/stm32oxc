@@ -5,6 +5,7 @@ extern ADC_HandleTypeDef hadc1;
 //ADC_HandleTypeDef hadc2;
 //ADC_HandleTypeDef hadc3;
 extern DMA_HandleTypeDef hdma_adc1;
+extern uint32_t adc_clk;
 
 void ADC_DMA_REINIT();
 

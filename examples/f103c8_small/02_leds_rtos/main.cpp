@@ -2,33 +2,23 @@
 
 using namespace std;
 
+USE_DIE4LED_ERROR_HANDLER;
+
 void MX_GPIO_Init(void);
 
-USE_DIE4LED_ERROR_HANDLER;
 
 // BOARD_DEFINE_LEDS;
 BOARD_DEFINE_LEDS_EXTRA;
 
 extern "C" {
 void task_leds( void *prm UNUSED_ARG );
-}
+} // extern "C"
 
 volatile int led_delay = 1000;
 
 int main(void)
 {
-  HAL_Init();
-
-  leds.initHW();
-  leds.write( BOARD_LEDS_ALL );
-
-  int rc = SystemClockCfg();
-  if( rc ) {
-    die4led( BOARD_LEDS_ALL );
-    return 0;
-  }
-
-  delay_bad_ms( 200 );  leds.write( 0 );
+  STD_PROLOG_START;
 
   MX_GPIO_Init();
 
@@ -46,16 +36,15 @@ int main(void)
 
 void task_leds( void *prm UNUSED_ARG )
 {
-  int i=8;
-  while (1)
-  {
+  int i=1;
+  while(1) {
     leds.write( i );
     ++i;
     i &= 0xFF;
     delay_ms( led_delay );
+    // HAL_Delay( 1000 );
   }
 }
-
 
 // configs
 void MX_GPIO_Init(void)
@@ -86,7 +75,9 @@ void HAL_GPIO_EXTI_Callback( uint16_t pin )
   if( pin == BIT0 )  {
     leds.reset( 0xFF );
     led_delay >>= 1;
-    ++led_delay;
+    if( led_delay < 1 ) {
+      led_delay = 1000;
+    }
   }
   if( pin == BIT1 )  {
     leds.set( 0xAA );

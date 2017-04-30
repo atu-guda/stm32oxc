@@ -9,6 +9,7 @@ USE_FREERTOS = y
 # FREERTOS_HEAP = heap_2.c
 # # default: heap_3.c
 # USE_USB_DEFAULT_CDC = y
+# REQUIRE_SPECIAL_CLOCK = y # if special clock init is required
 
 
 # TODO: copy to main location
@@ -19,7 +20,7 @@ SRCS  = main.cpp
 SRCS += uart1_init_b6b7.cpp
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
-# see ../common/f7_modules.mk
+# list: see ../common/f7_modules.mk
 
 
 include ../common/board_add.mk

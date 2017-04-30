@@ -10,29 +10,21 @@ BOARD_DEFINE_LEDS_EXTRA;
 
 int main(void)
 {
-  HAL_Init();
-
-  leds.initHW();
-  leds.write( BOARD_LEDS_ALL );
-
-  int rc = SystemClockCfg();
-  if( rc ) {
-    die4led( BOARD_LEDS_ALL );
-    return 0;
-  }
-
-  delay_bad_ms( 200 );  leds.write( 0 );
+  STD_PROLOG_START;
 
   int i=0x04;
 
   // write/set test
   leds.write( 0x0F );
-  delay_ms(  200 );
+  // delay_ms(  200 );
+  HAL_Delay(  500 );
   leds.write( 0x00 );
   delay_ms(  100 );
   leds.set( 0x0A );
   delay_ms( 1000 );
   leds.set( 0x01 );
+  delay_ms( 1000 );
+  leds.set( 0x11 );
   delay_ms( 2000 );
 
   // reset test
@@ -53,22 +45,16 @@ int main(void)
 
   // die4led( 0x0C );
 
-  while (1)
-  {
+  while(1) {
     leds.write( i );
     ++i;
     i &= 0xFF;
-    // delay_ms( 128 );
-    delay_ms( 10 );
+    delay_ms( 200 );
   }
   return 0;
 }
 
-void _exit( int rc )
-{
-  exit_rc = rc;
-  for( ;; );
-}
+// configs
 
 // vim: path=.,/usr/share/stm32lib/inc/,/usr/arm-none-eabi/include,../../../inc
 

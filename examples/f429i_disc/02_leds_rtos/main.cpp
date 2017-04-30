@@ -9,34 +9,24 @@ void MX_GPIO_Init(void);
 
 BOARD_DEFINE_LEDS;
 
+
 extern "C" {
 void task_leds( void *prm UNUSED_ARG );
 } // extern "C"
 
 volatile int led_delay = 1000;
-void HAL_GPIO_EXTI_Callback( uint16_t pin );
 
 int main(void)
 {
-  HAL_Init();
-
-  leds.initHW();
-  leds.write( BOARD_LEDS_ALL );
-
-  int rc = SystemClockCfg();
-  if( rc ) {
-    die4led( BOARD_LEDS_ALL );
-    return 0;
-  }
-
-  delay_bad_ms( 200 );  leds.write( 0 );
+  STD_PROLOG_START;
 
   MX_GPIO_Init();
 
-  // delay_bad_ms( 500 );
-  HAL_Delay( 1000 );
+  leds.write( 0x0A );
+  delay_bad_ms( 500 );
+  // HAL_Delay( 500 );
   // delay_ms( 500 );
-  leds.write( 0x00 );
+  leds.write( 0x0F );
   delay_bad_ms( 500 );
 
   xTaskCreate( task_leds, "leds", 2*def_stksz, 0, 1, 0 );
@@ -60,8 +50,7 @@ void task_leds( void *prm UNUSED_ARG )
   }
 }
 
-
-// // configs
+// configs
 void MX_GPIO_Init(void)
 {
   // output init moved to PinsOut initHW
@@ -100,7 +89,9 @@ void HAL_GPIO_EXTI_Callback( uint16_t pin )
   if( pin == BIT0 )  {
     leds.reset( BOARD_LEDS_ALL );
     led_delay >>= 1;
-    ++led_delay;
+    if( led_delay < 1 ) {
+      led_delay = 1000;
+    }
   }
   leds.toggle( 0x01 );
 }
