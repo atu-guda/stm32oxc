@@ -6,49 +6,37 @@
  #define SET_BIT_REG   BSRR
  #define RESET_BIT_REG BRR
  #define RESET_BIT_SHIFT 0
- #define USART_TX_REG TDR
- #define USART_RX_REG RDR
- #define USART_SR_REG ISR
+ #define GPIO_SPEED_MAX GPIO_SPEED_FREQ_HIGH
 #elif defined (STM32F1)
  #include <stm32f1xx_hal.h>
  #define SET_BIT_REG   BSRR
  #define RESET_BIT_REG BRR
  #define RESET_BIT_SHIFT 0
- #define USART_TX_REG DR
- #define USART_RX_REG DR
- #define USART_SR_REG SR
+ #define GPIO_SPEED_MAX GPIO_SPEED_FREQ_HIGH
 #elif defined (STM32F2)
  #include <stm32f2xx_hal.h>
  #define SET_BIT_REG   BSRR
  #define RESET_BIT_REG BSRR
  #define RESET_BIT_SHIFT 16
- #define USART_TX_REG DR
- #define USART_RX_REG DR
- #define USART_SR_REG SR
+ #define GPIO_SPEED_MAX GPIO_SPEED_FREQ_VERY_HIGH
 #elif defined (STM32F3)
  #include <stm32f3xx_hal.h>
  #define SET_BIT_REG   BSRR
  #define RESET_BIT_REG BRR
  #define RESET_BIT_SHIFT 0
- #define USART_TX_REG TDR
- #define USART_RX_REG RDR
- #define USART_SR_REG ISR
+ #define GPIO_SPEED_MAX GPIO_SPEED_FREQ_HIGH
 #elif defined (STM32F4)
  #include <stm32f4xx_hal.h>
  #define SET_BIT_REG   BSRR
  #define RESET_BIT_REG BSRR
  #define RESET_BIT_SHIFT 16
- #define USART_TX_REG DR
- #define USART_RX_REG DR
- #define USART_SR_REG SR
+ #define GPIO_SPEED_MAX GPIO_SPEED_FREQ_VERY_HIGH
 #elif defined(STM32F7)
  #include <stm32f7xx_hal.h>
  #define SET_BIT_REG   BSRR
  #define RESET_BIT_REG BSRR
  #define RESET_BIT_SHIFT 16
- #define USART_TX_REG TDR
- #define USART_RX_REG RDR
- #define USART_SR_REG ISR
+ #define GPIO_SPEED_MAX GPIO_SPEED_FREQ_VERY_HIGH
 #else
   #error "Unsupported MCU"
 #endif

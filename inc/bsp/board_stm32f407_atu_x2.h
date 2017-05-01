@@ -31,6 +31,22 @@
 #define LED_BSP_RX        LED_BSP_GREEN
 #define LED_BSP_ERR       LED_BSP_BLUE
 
+#define BOARD_BTN0_EXIST  1
+#define BOARD_BTN0_GPIO   GPIOA
+#define BOARD_BTN0_EN     __GPIOA_CLK_ENABLE();
+#define BOARD_BTN0_N      0
+#define BOARD_BTN0_BIT    ( 1 << BOARD_BTN0_N )
+#define BOARD_BTN0_IRQ    EXTI0_IRQn
+#define BOARD_BTN0_IRQHANDLER EXTI0_IRQHandler
+
+#define BOARD_BTN1_EXIST  1
+#define BOARD_BTN1_GPIO   GPIOA
+#define BOARD_BTN1_EN     __GPIOA_CLK_ENABLE();
+#define BOARD_BTN1_N      1
+#define BOARD_BTN1_BIT    ( 1 << BOARD_BTN0_N )
+#define BOARD_BTN1_IRQ    EXTI1_IRQn
+#define BOARD_BTN1_IRQHANDLER EXTI1_IRQHandler
+
 
 #define TIM_EXA        TIM1
 #define TIM_EXA_STR    "TIM1"

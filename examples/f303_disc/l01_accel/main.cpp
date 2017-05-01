@@ -235,7 +235,7 @@ void COMPASSACCELERO_IO_Init(void)
   // GPIO_InitStructure.Pin = ACCELERO_DRDY_PIN;
   // GPIO_InitStructure.Mode = GPIO_MODE_INPUT;
   // GPIO_InitStructure.Pull  = GPIO_NOPULL;
-  // GPIO_InitStructure.Speed = GPIO_SPEED_HIGH;
+  // GPIO_InitStructure.Speed = GPIO_SPEED_MAX;
   // HAL_GPIO_Init(ACCELERO_DRDY_GPIO_PORT, &GPIO_InitStructure);
 
   /* Enable and set Button EXTI Interrupt to the lowest priority */
@@ -245,7 +245,7 @@ void COMPASSACCELERO_IO_Init(void)
   // /* Configure GPIO PINs to detect Interrupts */
   // GPIO_InitStructure.Pin = ACCELERO_INT1_PIN | ACCELERO_INT2_PIN;
   // GPIO_InitStructure.Mode = GPIO_MODE_INPUT;
-  // GPIO_InitStructure.Speed = GPIO_SPEED_HIGH;
+  // GPIO_InitStructure.Speed = GPIO_SPEED_MAX;
   // GPIO_InitStructure.Pull  = GPIO_NOPULL;
   // HAL_GPIO_Init( ACCELERO_INT_GPIO_PORT, &GPIO_InitStructure );
 
@@ -262,7 +262,7 @@ void COMPASSACCELERO_IO_ITConfig(void)
   // /* Configure GPIO PINs to detect Interrupts */
   // GPIO_InitStructure.Pin = ACCELERO_INT1_PIN | ACCELERO_INT2_PIN;
   // GPIO_InitStructure.Mode = GPIO_MODE_IT_RISING;
-  // GPIO_InitStructure.Speed = GPIO_SPEED_HIGH;
+  // GPIO_InitStructure.Speed = GPIO_SPEED_MAX;
   // GPIO_InitStructure.Pull  = GPIO_NOPULL;
   // HAL_GPIO_Init( ACCELERO_INT_GPIO_PORT, &GPIO_InitStructure );
   //

@@ -2,23 +2,23 @@
 
 #include <oxc_auto.h>
 
-USE_DIE4LED_ERROR_HANDLER;
-
 using namespace std;
+
+USE_DIE4LED_ERROR_HANDLER;
+FreeRTOS_to_stm32cube_tick_hook;
+BOARD_DEFINE_LEDS;
 
 void MX_GPIO_Init(void);
 void MX_inp_Init();
 int MX_USART1_UART_Init(void);
 
 
-// BOARD_DEFINE_LEDS;
 PinsOut led0( GPIOC, 13, 1 );
-BOARD_DEFINE_LEDS_EXTRA;
 
 extern "C" {
 void task_leds( void *prm UNUSED_ARG );
 void task_send( void *prm UNUSED_ARG );
-}
+} // extern "C"
 
 UART_HandleTypeDef uah;
 const int TX_BUF_SZ = 128;
@@ -172,8 +172,6 @@ void task_send( void *prm UNUSED_ARG )
   }
 }
 
-
-FreeRTOS_to_stm32cube_tick_hook;
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,../../../inc
 

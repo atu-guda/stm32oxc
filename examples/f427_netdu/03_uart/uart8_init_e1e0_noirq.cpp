@@ -26,7 +26,7 @@ void HAL_UART_MspInit( UART_HandleTypeDef* huart )
     gio.Pin = GPIO_PIN_0 | GPIO_PIN_1;
     gio.Mode = GPIO_MODE_AF_PP;
     gio.Pull = GPIO_NOPULL;
-    gio.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    gio.Speed = GPIO_SPEED_MAX;
     gio.Alternate = GPIO_AF8_UART8;
     HAL_GPIO_Init( GPIOE, &gio );
   }

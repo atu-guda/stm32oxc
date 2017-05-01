@@ -20,7 +20,7 @@ void default_USBFS_MspInit(void)
   gpi.Pin = GPIO_PIN_11 | GPIO_PIN_12; // D-, D+
   gpi.Mode = GPIO_MODE_AF_PP;
   gpi.Pull = GPIO_NOPULL;
-  gpi.Speed = GPIO_SPEED_HIGH;
+  gpi.Speed = GPIO_SPEED_MAX;
   gpi.Alternate = GPIO_AF14_USB;
   HAL_GPIO_Init( GPIOA, &gpi );
 

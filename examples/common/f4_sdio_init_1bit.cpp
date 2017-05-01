@@ -22,7 +22,7 @@ void HAL_SD_MspInit( SD_HandleTypeDef* /* sdHandle */ )
   gio.Pin       = SD_EXA_CK_PIN;
   gio.Mode      = GPIO_MODE_AF_PP;
   gio.Pull      = GPIO_NOPULL;
-  gio.Speed     = GPIO_SPEED_FREQ_VERY_HIGH;
+  gio.Speed     = GPIO_SPEED_MAX;
   gio.Alternate = SD_EXA_GPIOAF;
   HAL_GPIO_Init( SD_EXA_CK_GPIO, &gio );
 

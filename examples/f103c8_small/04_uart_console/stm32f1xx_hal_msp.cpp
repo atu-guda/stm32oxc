@@ -29,7 +29,7 @@ void HAL_UART_MspInit( UART_HandleTypeDef* uartHandle )
   //  PA10 ---> USART1_RX
   GPIO_InitStruct.Pin   = GPIO_PIN_9;
   GPIO_InitStruct.Mode  = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+  GPIO_InitStruct.Speed = GPIO_SPEED_MAX;
   HAL_GPIO_Init( GPIOA, &GPIO_InitStruct );
 
   GPIO_InitStruct.Pin = GPIO_PIN_10;

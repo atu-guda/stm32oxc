@@ -62,7 +62,7 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pin   = BOARD_LEDS_MASK;
   GPIO_InitStruct.Mode  = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull  = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_HIGH;
+  GPIO_InitStruct.Speed = GPIO_SPEED_MAX;
   HAL_GPIO_Init( BOARD_LEDS_GPIO, &GPIO_InitStruct );
 
   /*Configure GPIO pins : PA0 PA1 */

@@ -10,6 +10,8 @@
 #define REQ_MCBASE STM32F1
 #define REQ_SYSCLK_FREQ 72
 
+#define NEED_LEDS_EXTRA 1
+
 #include <bsp/board_stm32f103c8_small.h>
 
 #define STD_SYSTICK_HANDLER 1
@@ -22,5 +24,6 @@
 //
 
 #include "../common/stm32f1xx_hal_conf_common.h"
+
 
 #endif /* __STM32F1xx_HAL_CONF_H */

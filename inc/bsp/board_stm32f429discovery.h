@@ -37,5 +37,18 @@
 #define LED_BSP_RX        LED_BSP_GREEN
 #define LED_BSP_ERR       LED_BSP_RED
 
+#define BOARD_BTN0_EXIST  1
+#define BOARD_BTN0_GPIO   GPIOA
+#define BOARD_BTN0_EN     __GPIOA_CLK_ENABLE();
+#define BOARD_BTN0_N      0
+#define BOARD_BTN0_BIT    ( 1 << BOARD_BTN0_N )
+#define BOARD_BTN0_IRQ    EXTI0_IRQn
+#define BOARD_BTN0_IRQHANDLER EXTI0_IRQHandler
+
+
+#define BOARD_CONSOLE_DEFINES UART_CONSOLE_DEFINES( USART2 );
+#define BOARD_PROLOG  STD_PROLOG_UART;
+#define BOARD_CREATE_STD_TASKS CREATE_STD_TASKS( task_usart2_send );
+#define BOARD_POST_INIT_BLINK delay_ms( PROLOG_LED_TIME ); leds.write( 0x01 ); delay_ms( PROLOG_LED_TIME );
 
 #endif

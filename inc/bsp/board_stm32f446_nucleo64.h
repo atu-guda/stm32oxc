@@ -43,6 +43,14 @@
 #define LED_BSP_RX        LED_BSP_GREEN
 #define LED_BSP_ERR       LED_BSP_YELLOW
 
+#define BOARD_BTN0_EXIST  1
+#define BOARD_BTN0_GPIO   GPIOC
+#define BOARD_BTN0_EN     __GPIOC_CLK_ENABLE();
+#define BOARD_BTN0_N      13
+#define BOARD_BTN0_BIT    ( 1 << BOARD_BTN0_N )
+#define BOARD_BTN0_IRQ    EXTI15_10_IRQn
+#define BOARD_BTN0_IRQHANDLER EXTI15_10_IRQHandler
+
 
 #define TIM_EXA        TIM1
 #define TIM_EXA_STR    "TIM1"

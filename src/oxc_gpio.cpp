@@ -55,6 +55,12 @@ void GPIO_enableClk( GPIO_TypeDef* gp )
     return;
   }
   #endif
+  #ifdef GPIOJ
+  if( gp == GPIOJ ) {
+    __GPIOJ_CLK_ENABLE();
+    return;
+  }
+  #endif
 }
 
 
@@ -72,7 +78,7 @@ void PinsOut::initHW()
   gpi.Pin = mask;
   gpi.Mode = GPIO_MODE_OUTPUT_PP;
   gpi.Pull = GPIO_NOPULL;
-  gpi.Speed = GPIO_SPEED_HIGH;
+  gpi.Speed = GPIO_SPEED_MAX;
   HAL_GPIO_Init( gpio, &gpi );
 };
 
@@ -96,7 +102,7 @@ void IoPin::initHW()
   gio.Pin   = pin;
   gio.Mode  = GPIO_MODE_OUTPUT_OD;
   gio.Pull  = GPIO_NOPULL;
-  gio.Speed = GPIO_SPEED_HIGH;
+  gio.Speed = GPIO_SPEED_MAX;
   HAL_GPIO_Init( gpio, &gio );
 }
 

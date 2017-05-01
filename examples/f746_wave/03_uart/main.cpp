@@ -34,34 +34,36 @@ void task_send( void *prm UNUSED_ARG )
 {
   strcpy( tx_buf, "ABC <.> ------\r\n" );
   //               0123456789ABCDEF1011
-  int ssz = strlen( tx_buf );
+  int ssz = strlen( tx_buf ), n = 0;
   char c = '?', cn = '0';
 
   while( 1 ) {
+    bool was_action = false;
     leds.toggle( BIT1 );
     tx_buf[5]  = ' ';
     tx_buf[9] = cn; tx_buf[11] = '.';
     ++cn;
     if( cn >= 0x7F ) { cn = ' '; }
-    // if( HAL_UART_Receive( &uah, (uint8_t*)&c, 1, 0 ) == HAL_OK ) {
-    //   leds.toggle( BIT2 );
-    //   tx_buf[5]  = c; tx_buf[11] = 'R';
-    // }
     if( uah.Instance->USART_SR_REG & UART_FLAG_RXNE ) {
       c = uah.Instance->USART_RX_REG;
       leds.toggle( BIT2 );
-      tx_buf[5]  = c; tx_buf[11] = 'R';
+      tx_buf[5]  = c; tx_buf[11] = 'R'; was_action = true;
     }
     if( uah.Instance->USART_SR_REG & UART_FLAG_ORE ) { // overrun
       uah.Instance->ICR |= UART_CLEAR_OREF;
       c = uah.Instance->USART_RX_REG;
       tx_buf[11] = 'O';
-      leds.toggle( BIT0 );
+      leds.toggle( BIT0 ); was_action = true;
     }
-    if( HAL_UART_Transmit( &uah, (uint8_t*)tx_buf, ssz, 100 )!= HAL_OK ) {
-      leds.toggle( BIT0 );
+    if( ( n % 20 ) == 0 || was_action ) {
+      if( HAL_UART_Transmit( &uah, (uint8_t*)tx_buf, ssz, 100 ) != HAL_OK ) {
+        leds.toggle( BIT0 );
+      }
     }
-    delay_ms( 1000 );
+    ++n;
+    if( ! was_action ) {
+      delay_ms( 50 );
+    }
   }
 }
 

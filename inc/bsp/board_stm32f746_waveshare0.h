@@ -6,7 +6,7 @@
 
 #define def_stksz 512
 
-// default LEDS is C0:C3
+// default LEDS is C0:C3 TODO: move
 #define BOARD_N_LEDS 4
 #define BOARD_LEDS_GPIO GPIOC
 #define BOARD_LEDS_GPIO_ON __GPIOC_CLK_ENABLE()
@@ -35,6 +35,13 @@
 #define LED_BSP_RX        LED_BSP_GREEN
 #define LED_BSP_ERR       LED_BSP_BLUE
 
+#define BOARD_BTN0_EXIST  1
+#define BOARD_BTN0_GPIO   GPIOA
+#define BOARD_BTN0_EN     __GPIOA_CLK_ENABLE();
+#define BOARD_BTN0_N      0
+#define BOARD_BTN0_BIT    ( 1 << BOARD_BTN0_N )
+#define BOARD_BTN0_IRQ    EXTI0_IRQn
+#define BOARD_BTN0_IRQHANDLER EXTI0_IRQHandler
 
 #define BOARD_CONSOLE_DEFINES UART_CONSOLE_DEFINES( USART1 );
 #define BOARD_PROLOG  STD_PROLOG_UART;

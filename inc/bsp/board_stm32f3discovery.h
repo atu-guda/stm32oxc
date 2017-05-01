@@ -41,6 +41,15 @@
 #define LED_BSP_RX        LED_BSP_GREEN_0
 #define LED_BSP_ERR       LED_BSP_RED_1
 
+#define BOARD_BTN0_EXIST  1
+#define BOARD_BTN0_GPIO   GPIOA
+#define BOARD_BTN0_EN     __GPIOA_CLK_ENABLE();
+#define BOARD_BTN0_N      0
+#define BOARD_BTN0_BIT    ( 1 << BOARD_BTN0_N )
+#define BOARD_BTN0_IRQ    EXTI0_IRQn
+#define BOARD_BTN0_IRQHANDLER EXTI0_IRQHandler
+
+
 
 #define TIM_EXA        TIM8
 #define TIM_EXA_STR    "TIM8"

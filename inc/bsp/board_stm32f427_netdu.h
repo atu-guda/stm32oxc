@@ -31,6 +31,14 @@
 #define LED_BSP_RX        LED_BSP_GREEN
 #define LED_BSP_ERR       LED_BSP_BLUE
 
+#define BOARD_BTN0_EXIST  1
+#define BOARD_BTN0_GPIO   GPIOB
+#define BOARD_BTN0_EN     __GPIOB_CLK_ENABLE();
+#define BOARD_BTN0_N      5
+#define BOARD_BTN0_BIT    ( 1 << BOARD_BTN0_N )
+#define BOARD_BTN0_IRQ    EXTI9_5_IRQn
+#define BOARD_BTN0_IRQHANDLER EXTI9_5_IRQHandler
+
 #define BOARD_DEFINE_GO_LEDS \
   PinsOut led_go1( GPIOE,  9, 1 ); \
   PinsOut led_go2( GPIOE, 11, 1 ); \

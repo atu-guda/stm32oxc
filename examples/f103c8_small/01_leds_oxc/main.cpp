@@ -4,9 +4,7 @@ using namespace std;
 
 USE_DIE4LED_ERROR_HANDLER;
 
-// PinsOut p1 { GPIOB, 12, 4 };
-// BOARD_DEFINE_LEDS;
-BOARD_DEFINE_LEDS_EXTRA;
+BOARD_DEFINE_LEDS;
 
 int main(void)
 {
@@ -56,5 +54,5 @@ int main(void)
 
 // configs
 
-// vim: path=.,/usr/share/stm32lib/inc/,/usr/arm-none-eabi/include,../../../inc
+// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,../../../inc
 

@@ -10,9 +10,9 @@ void MX_GPIO_Init(void);
 int MX_USART1_UART_Init(void);
 
 USE_DIE4LED_ERROR_HANDLER;
+FreeRTOS_to_stm32cube_tick_hook;
+BOARD_DEFINE_LEDS;
 
-// BOARD_DEFINE_LEDS;
-BOARD_DEFINE_LEDS_EXTRA;
 
 SmallRL srl( smallrl_exec );
 
@@ -95,7 +95,6 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
 
 
 
-FreeRTOS_to_stm32cube_tick_hook;
 
-// vim: path=.,/usr/share/stm32lib/inc/,/usr/arm-none-eabi/include,../../../inc
+// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,../../../inc
 

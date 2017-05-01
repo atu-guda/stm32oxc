@@ -28,6 +28,7 @@ SUBDIRS = \
   50_adc0 \
   51_adcdma \
   53_adcdma_sd \
+  55_dac0 \
 
 ALL : examples_f407_x2
 

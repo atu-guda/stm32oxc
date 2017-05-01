@@ -34,7 +34,7 @@ void HAL_SPI_MspInit( SPI_HandleTypeDef *spi_h )
     gio.Pin = GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15;
     gio.Mode = GPIO_MODE_AF_PP;
     gio.Pull = GPIO_NOPULL;
-    gio.Speed = GPIO_SPEED_HIGH;
+    gio.Speed = GPIO_SPEED_MAX;
     gio.Alternate = GPIO_AF5_SPI2;
     HAL_GPIO_Init( GPIOB, &gio );
   }

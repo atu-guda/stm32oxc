@@ -66,6 +66,8 @@ int SystemClockCfg(void)
     return  1004;
   }
 
+  __HAL_RCC_SYSCFG_CLK_ENABLE();
+
   HAL_SYSTICK_Config( HAL_RCC_GetHCLKFreq()/1000 ); // to HAL_delay work even before FreeRTOS start
   HAL_SYSTICK_CLKSourceConfig( SYSTICK_CLKSOURCE_HCLK );
   HAL_NVIC_SetPriority( SysTick_IRQn, 0, 0 ); // will be readjusted by FreeRTOS

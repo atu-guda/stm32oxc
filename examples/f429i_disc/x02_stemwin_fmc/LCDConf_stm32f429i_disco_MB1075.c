@@ -280,7 +280,7 @@ void HAL_LTDC_MspInit(LTDC_HandleTypeDef *hltdc)
                            GPIO_PIN_11 | GPIO_PIN_12;
   GPIO_Init_Structure.Mode = GPIO_MODE_AF_PP;
   GPIO_Init_Structure.Pull = GPIO_NOPULL;
-  GPIO_Init_Structure.Speed = GPIO_SPEED_FAST;
+  GPIO_Init_Structure.Speed = GPIO_SPEED_MAX;
   GPIO_Init_Structure.Alternate= GPIO_AF14_LTDC;
   HAL_GPIO_Init(GPIOA, &GPIO_Init_Structure);
 
