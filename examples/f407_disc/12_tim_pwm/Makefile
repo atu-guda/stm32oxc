@@ -1,15 +1,15 @@
-PROJ_NAME=tim8_pwm
+PROJ_NAME=tim1_pwm
 
 USE_OXC = y
 # USE_OXC_DEVIO = y
 USE_OXC_DEBUG = y
-USE_OXC_CONSOLE_USART = y
-USE_OXC_CONSOLE_USB_CDC = n
+USE_OXC_CONSOLE_USART = n
+USE_OXC_CONSOLE_USB_CDC = y
 # USE_OXC_I2C = y
 USE_FREERTOS = y
 # FREERTOS_HEAP = heap_2.c
 # # default: heap_3.c
-# USE_USB_DEFAULT_CDC = y
+USE_USB_DEFAULT_CDC = y
 # REQUIRE_SPECIAL_CLOCK = y
 
 
@@ -18,16 +18,16 @@ OXCDIR = /home/atu/proj/stm32/oxc
 
 
 SRCS  = main.cpp
-SRCS += uart2_init_a2a3.cpp
+SRCS += usbfs_init.cpp
 
-SRCS += tim8_init_hw.cpp
+SRCS += tim1_init.cpp
 SRCS += timer_common.cpp
 
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
-# list: see ../common/f3_modules.mk
+# list: see ../common/f4_modules.mk
 
-SRCS += stm32f3xx_hal_tim.c
+SRCS += stm32f4xx_hal_tim.c
 
 
 

@@ -10,10 +10,11 @@ user vars:
  t - unused
 T val1 val2 val3 val4
 
-Attension: TIM inner input clock is 2 * APB2 = 144 MHz
+Attension: TIM inner input clock is 2 * PLL = 144 MHz
+if  PeriphClkInit.Tim1ClockSelection   = RCC_TIM1CLK_PLLCLK; in clockconfig
 
 For servo:
- p = PSC = 144 -> freq1 = 1MHz
+ p = PSC = 143 -> freq1 = 1MHz
  a = ARR = 9999 -> freq2 = 100Hz (10 ms)
  so values in 'T' command is in microseconds,
   typicaly 500 -- 2500 (may vary)

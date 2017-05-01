@@ -57,8 +57,8 @@ int SystemClockCfg(void)
   PeriphClkInit.Adc34ClockSelection  = RCC_ADC34PLLCLK_DIV1;
   PeriphClkInit.I2c1ClockSelection   = RCC_I2C1CLKSOURCE_SYSCLK;
   PeriphClkInit.USBClockSelection    = RCC_USBCLKSOURCE_PLL_DIV1_5;
-  PeriphClkInit.Tim1ClockSelection   = RCC_TIM1CLK_HCLK;
-  PeriphClkInit.Tim8ClockSelection   = RCC_TIM8CLK_HCLK;
+  PeriphClkInit.Tim1ClockSelection   = RCC_TIM1CLK_PLLCLK;
+  PeriphClkInit.Tim8ClockSelection   = RCC_TIM8CLK_PLLCLK;
   if( HAL_RCCEx_PeriphCLKConfig( &PeriphClkInit ) != HAL_OK ) {
     errno = 1004;
     return  1004;
