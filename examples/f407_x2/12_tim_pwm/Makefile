@@ -18,7 +18,8 @@ OXCDIR = /home/atu/proj/stm32/oxc
 
 SRCS  = main.cpp
 SRCS += usbfs_init.cpp
-SRCS += tim1_init.cpp
+
+SRCS += tim18_pwm4_exa_init.cpp
 
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )

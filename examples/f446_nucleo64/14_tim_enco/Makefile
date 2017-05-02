@@ -20,7 +20,7 @@ OXCDIR = /home/atu/proj/stm32/oxc
 SRCS  = main.cpp
 SRCS += uart2_init_a2a3.cpp
 
-SRCS += tim1_init.cpp
+SRCS += tim18_enco_exa_init.cpp
 
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
