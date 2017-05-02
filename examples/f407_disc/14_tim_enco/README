@@ -1,0 +1,12 @@
+Test TIM1 as encoder input
+in: E9,11
+Not so stable work.
+Dont forget about capacitors.
+
+Console: USB FS:
+A11 = D-
+A12 = D+
+
+A9  = Vbus - unused?
+A10 = Id   - unused
+

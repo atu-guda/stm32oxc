@@ -1,4 +1,4 @@
-PROJ_NAME=tim1_pwm
+PROJ_NAME=tim1_usonic
 
 USE_OXC = y
 # USE_OXC_DEVIO = y
@@ -20,7 +20,7 @@ OXCDIR = /home/atu/proj/stm32/oxc
 SRCS  = main.cpp
 SRCS += usbfs_init.cpp
 
-SRCS += tim18_pwm4_exa_init.cpp
+SRCS += tim18_uson_exa_init.cpp
 SRCS += timer_common.cpp
 
 
@@ -28,6 +28,7 @@ SRCS += timer_common.cpp
 # list: see ../common/f4_modules.mk
 
 SRCS += stm32f4xx_hal_tim.c
+SRCS += stm32f4xx_hal_tim_ex.c
 
 
 

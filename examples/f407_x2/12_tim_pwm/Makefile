@@ -5,6 +5,7 @@ USE_OXC = y
 USE_OXC_DEBUG = y
 USE_OXC_CONSOLE_USART = n
 USE_OXC_CONSOLE_USB_CDC = y
+# USE_OXC_I2C = y
 USE_FREERTOS = y
 # FREERTOS_HEAP = heap_2.c
 # # default: heap_3.c
@@ -20,6 +21,7 @@ SRCS  = main.cpp
 SRCS += usbfs_init.cpp
 
 SRCS += tim18_pwm4_exa_init.cpp
+SRCS += timer_common.cpp
 
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )

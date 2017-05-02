@@ -40,9 +40,6 @@ extern "C" {
 void task_main( void *prm UNUSED_ARG );
 }
 
-
-
-
 int main(void)
 {
   BOARD_PROLOG;

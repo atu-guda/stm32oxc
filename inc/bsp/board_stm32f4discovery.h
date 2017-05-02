@@ -1,7 +1,6 @@
 #ifndef _BOARD_STM32F4DISCOVERY_H
 #define _BOARD_STM32F4DISCOVERY_H
 
-#define def_stksz 512
 
 // definition of resoures on atu first STM32F407GE discovery
 // headers must be included manualy in C/CPP file
@@ -9,6 +8,8 @@
 // Free pins:
 //  A1,A2,A3,A8,A15, B0,B1,B2,B4,B5,B7,B8,B11-B15, C1,C2,C4-C6,C8,C9, C11, C13-C15?
 //  D0-D3, D6-D11, E3-E15,
+
+#define def_stksz 512
 
 // default LEDS is D12:D15
 #define BOARD_N_LEDS 4
@@ -43,6 +44,29 @@
 #define BOARD_BTN0_IRQ    EXTI0_IRQn
 #define BOARD_BTN0_IRQHANDLER EXTI0_IRQHandler
 
+
+#define TIM_EXA        TIM1
+#define TIM_EXA_STR    "TIM1"
+#define TIM_EXA_GPIO   GPIOE
+#define TIM_EXA_PIN1   GPIO_PIN_9
+#define TIM_EXA_PIN2   GPIO_PIN_11
+#define TIM_EXA_PIN3   GPIO_PIN_13
+#define TIM_EXA_PIN4   GPIO_PIN_14
+#define TIM_EXA_PINS   ( TIM_EXA_PIN1 | TIM_EXA_PIN2 | TIM_EXA_PIN3 | TIM_EXA_PIN4 )
+#define TIM_EXA_CLKEN  __GPIOE_CLK_ENABLE(); __TIM1_CLK_ENABLE();
+#define TIM_EXA_CLKDIS __TIM1_CLK_DISABLE();
+#define TIM_EXA_GPIOAF GPIO_AF1_TIM1
+#define TIM_EXA_IRQ    TIM1_BRK_TIM9_IRQn
+
+#define SD_EXA_CK_GPIO   GPIOC
+#define SD_EXA_CK_PIN    GPIO_PIN_12
+#define SD_EXA_D0_GPIO   GPIOC
+#define SD_EXA_D0_PIN    GPIO_PIN_8
+#define SD_EXA_CMD_GPIO  GPIOD
+#define SD_EXA_CMD_PIN   GPIO_PIN_2
+#define SD_EXA_CLKEN     __HAL_RCC_SDIO_CLK_ENABLE();  __HAL_RCC_GPIOC_CLK_ENABLE();  __HAL_RCC_GPIOD_CLK_ENABLE();
+#define SD_EXA_CLKDIS    __HAL_RCC_SDIO_CLK_DISABLE();
+#define SD_EXA_GPIOAF    GPIO_AF12_SDIO
 
 #define BOARD_CONSOLE_DEFINES USBCDC_CONSOLE_DEFINES;
 #define BOARD_PROLOG  STD_PROLOG_USBCDC;

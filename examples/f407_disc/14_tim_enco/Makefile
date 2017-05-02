@@ -1,4 +1,4 @@
-PROJ_NAME=tim1_pwm
+PROJ_NAME=tim1_enco
 
 USE_OXC = y
 # USE_OXC_DEVIO = y
@@ -20,8 +20,7 @@ OXCDIR = /home/atu/proj/stm32/oxc
 SRCS  = main.cpp
 SRCS += usbfs_init.cpp
 
-SRCS += tim18_pwm4_exa_init.cpp
-SRCS += timer_common.cpp
+SRCS += tim18_enco_exa_init.cpp
 
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )

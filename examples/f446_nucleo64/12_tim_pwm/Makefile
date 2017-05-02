@@ -21,6 +21,7 @@ SRCS  = main.cpp
 SRCS += uart2_init_a2a3.cpp
 
 SRCS += tim18_pwm4_exa_init.cpp
+SRCS += timer_common.cpp
 
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )

@@ -18,6 +18,7 @@ void tim_cfg();
 void pwm_recalc();
 void pwm_update();
 void pwm_print_cfg();
+uint32_t get_TIM1_8_in_freq(); // from timer_common.cpp
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -39,20 +40,15 @@ extern "C" {
 void task_main( void *prm UNUSED_ARG );
 }
 
-
-
-
 int main(void)
 {
   BOARD_PROLOG;
 
-
   UVAR('t') = 1000;
   UVAR('n') = 10;
-  UVAR('p') = 16799;// prescaler, 168MHz->10kHz
+  UVAR('p') = get_TIM1_8_in_freq() / 10000 - 1; // 16799;// prescaler, 168MHz->10kHz
   UVAR('a') = 9999; // ARR, 10kHz->1Hz
   UVAR('r') = 0;    // flag: raw values
-
 
   BOARD_POST_INIT_BLINK;
 
@@ -105,11 +101,11 @@ int cmd_tinit( int argc, const char * const * argv )
 
 void tim_cfg()
 {
-  tim_h.Instance = TIM_EXA;
-  tim_h.Init.Prescaler = UVAR('p');
-  tim_h.Init.Period    = UVAR('a');
-  tim_h.Init.ClockDivision = 0;
-  tim_h.Init.CounterMode = TIM_COUNTERMODE_UP;
+  tim_h.Instance               = TIM_EXA;
+  tim_h.Init.Prescaler         = UVAR('p');
+  tim_h.Init.Period            = UVAR('a');
+  tim_h.Init.ClockDivision     = 0;
+  tim_h.Init.CounterMode       = TIM_COUNTERMODE_UP;
   tim_h.Init.RepetitionCounter = 0;
   if( HAL_TIM_PWM_Init( &tim_h ) != HAL_OK ) {
     UVAR('e') = 1; // like error
@@ -121,7 +117,6 @@ void tim_cfg()
   HAL_TIM_ConfigClockSource( &tim_h, &sClockSourceConfig );
 
   pwm_recalc();
-
 }
 
 void pwm_recalc()
@@ -165,19 +160,17 @@ void pwm_update()
   tim_h.Instance->CCR4 = pwm_vals[3] * scl / 100;
 }
 
+
 void pwm_print_cfg()
 {
   int presc = UVAR('p');
   int arr   = UVAR('a');
-  uint32_t hclk  = HAL_RCC_GetHCLKFreq();
-  uint32_t pclk2 = HAL_RCC_GetPCLK2Freq(); // for TIM1
-  if( hclk != pclk2 ) { // *2 : if APB2 prescaler != 1 (=2)
-    pclk2 *= 2;
-  }
+  uint32_t freq_in = get_TIM1_8_in_freq();
 
-  int freq1 = pclk2  / ( presc + 1 );
+  int freq1 = freq_in  / ( presc + 1 );
   int freq2 = freq1 / ( arr + 1 );
-  pr( NL TIM_EXA_STR " reinit: prescale: " ); pr_d( presc );
+  pr( NL TIM_EXA_STR " reinit: freq_in: " ); pr_d( freq_in );
+  pr( " prescale: " ); pr_d( presc );
   pr( " ARR: " ); pr_d( arr );
   pr( " freq1: " ); pr_d( freq1 );
   pr( " freq2: " ); pr_d( freq2 ); pr( NL );
