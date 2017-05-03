@@ -1,0 +1,10 @@
+Test TIM9 as encoder input
+in: E5, E6
+Not tested really
+Not so stable work.
+Dont forget about capacitors.
+
+A2  = USART1_TX
+A3  = USART1_RX
+
+

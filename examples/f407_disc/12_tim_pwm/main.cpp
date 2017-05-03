@@ -46,7 +46,7 @@ int main(void)
 
   UVAR('t') = 1000;
   UVAR('n') = 10;
-  UVAR('p') = get_TIM1_8_in_freq() / 10000 - 1; // 16799;// prescaler, 168MHz->10kHz
+  UVAR('p') = get_TIM1_8_in_freq() / 10000 - 1; // ->10kHz
   UVAR('a') = 9999; // ARR, 10kHz->1Hz
   UVAR('r') = 0;    // flag: raw values
 

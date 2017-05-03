@@ -133,15 +133,15 @@ void init_usonic()
     return;
   }
 
-  HAL_NVIC_SetPriority( TIM1_CC_IRQn, 5, 0 );
-  HAL_NVIC_EnableIRQ( TIM1_CC_IRQn );
+  HAL_NVIC_SetPriority( TIM_EXA_IRQ, 5, 0 );
+  HAL_NVIC_EnableIRQ( TIM_EXA_IRQ );
 
   if( HAL_TIM_IC_Start_IT( &tim_h, TIM_CHANNEL_2 ) != HAL_OK ) {
     UVAR('e') = 23;
   }
 }
 
-void TIM1_CC_IRQHandler(void)
+void TIM_EXA_IRQHANDLER(void)
 {
   HAL_TIM_IRQHandler( &tim_h );
 }
@@ -151,7 +151,7 @@ void HAL_TIM_IC_CaptureCallback( TIM_HandleTypeDef *htim )
   uint32_t cap2;
   static uint32_t c_old = 0xFFFFFFFF;
   if( htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2 )  {
-    leds.toggle( BIT2 );
+    leds.toggle( BIT1 );
     cap2 = HAL_TIM_ReadCapturedValue( htim, TIM_CHANNEL_2 );
     if( cap2 > c_old ) {
       UVAR('l') = cap2 - c_old ;

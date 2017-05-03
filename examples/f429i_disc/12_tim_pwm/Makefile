@@ -1,4 +1,4 @@
-PROJ_NAME=tim_pwm
+PROJ_NAME=tim1_pwm
 
 USE_OXC = y
 # USE_OXC_DEVIO = y
@@ -12,13 +12,12 @@ USE_FREERTOS = y
 # USE_USB_DEFAULT_CDC = y
 # REQUIRE_SPECIAL_CLOCK = y
 
-
 # TODO: copy to main location
 OXCDIR = /home/atu/proj/stm32/oxc
 
 
 SRCS  = main.cpp
-SRCS += uart2_init_a2a3.cpp
+SRCS += uart1_init_a9a10.cpp
 
 SRCS += tim18_pwm4_exa_init.cpp
 SRCS += timer_common.cpp

@@ -1,4 +1,4 @@
-PROJ_NAME=tim8_pwm
+PROJ_NAME=tim_pwm
 
 USE_OXC = y
 # USE_OXC_DEVIO = y

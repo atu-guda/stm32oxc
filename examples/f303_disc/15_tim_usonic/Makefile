@@ -1,4 +1,4 @@
-PROJ_NAME=tim8_usonic
+PROJ_NAME=tim_usonic
 
 USE_OXC = y
 # USE_OXC_DEVIO = y

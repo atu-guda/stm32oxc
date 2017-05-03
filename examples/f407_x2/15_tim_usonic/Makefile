@@ -1,4 +1,4 @@
-PROJ_NAME=tim1_usonic
+PROJ_NAME=tim_usonic
 
 USE_OXC = y
 # USE_OXC_DEVIO = y
@@ -21,6 +21,7 @@ SRCS  = main.cpp
 SRCS += usbfs_init.cpp
 
 SRCS += tim18_uson_exa_init.cpp
+SRCS += timer_common.cpp
 
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
