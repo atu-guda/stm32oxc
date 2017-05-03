@@ -3,7 +3,7 @@
 
 #define def_stksz 512
 
-// definition of resoures on atu first STM32F429I discovery board
+// definition of resoures on STM32F429I discovery board.
 // headers must be included manualy in C/CPP file
 
 // Free pins:
@@ -12,8 +12,9 @@
 //   SPI3( B3, C11, C12, [-] )
 //   SPI4( E2,  E5,  E6,  E4 )
 //   TIM2(ch1,ch2)( A5,  B3 )
+//   TIM9(ch1,ch2)( E5, E6 )
 //   UART5
-// Used internally, but can be used soveware:
+// Used internally, but can be used someware:
 //   USART1->STLINK.VCP(A9,A10)
 
 // default LEDS is G13 (Green), G14 (Red)
@@ -46,9 +47,22 @@
 #define BOARD_BTN0_IRQHANDLER EXTI0_IRQHandler
 
 
-#define BOARD_CONSOLE_DEFINES UART_CONSOLE_DEFINES( USART2 );
+#define TIM_EXA        TIM9
+#define TIM_EXA_STR    "TIM9"
+#define TIM_EXA_GPIO   GPIOE
+#define TIM_EXA_PIN1   GPIO_PIN_5
+#define TIM_EXA_PIN2   GPIO_PIN_6
+// #define TIM_EXA_PIN3   0
+// #define TIM_EXA_PIN4   0
+#define TIM_EXA_PINS   ( TIM_EXA_PIN1 | TIM_EXA_PIN2  )
+#define TIM_EXA_CLKEN  __GPIOE_CLK_ENABLE(); __TIM9_CLK_ENABLE();
+#define TIM_EXA_CLKDIS __TIM9_CLK_DISABLE();
+#define TIM_EXA_GPIOAF GPIO_AF3_TIM9
+#define TIM_EXA_IRQ    TIM9_IRQn
+
+#define BOARD_CONSOLE_DEFINES UART_CONSOLE_DEFINES( USART1 );
 #define BOARD_PROLOG  STD_PROLOG_UART;
-#define BOARD_CREATE_STD_TASKS CREATE_STD_TASKS( task_usart2_send );
+#define BOARD_CREATE_STD_TASKS CREATE_STD_TASKS( task_usart1_send );
 #define BOARD_POST_INIT_BLINK delay_ms( PROLOG_LED_TIME ); leds.write( 0x01 ); delay_ms( PROLOG_LED_TIME );
 
 #endif

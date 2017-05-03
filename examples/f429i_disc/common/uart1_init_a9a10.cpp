@@ -10,14 +10,14 @@ int init_uart( UART_HandleTypeDef *uah, int baud )
   uah->Init.HwFlowCtl    = UART_HWCONTROL_NONE;
   uah->Init.Mode         = UART_MODE_TX_RX;
   uah->Init.OverSampling = UART_OVERSAMPLING_16;
+  // advance for f3
   return( HAL_UART_Init( uah ) == HAL_OK );
 }
 
-void HAL_UART_MspInit( UART_HandleTypeDef* huart )
+void HAL_UART_MspInit( UART_HandleTypeDef* uah )
 {
-
   GPIO_InitTypeDef gio;
-  if( huart->Instance == USART1 ) {
+  if( uah->Instance == USART1 ) {
     __USART1_CLK_ENABLE();
     __GPIOA_CLK_ENABLE();
 
@@ -30,19 +30,17 @@ void HAL_UART_MspInit( UART_HandleTypeDef* huart )
     gio.Alternate = GPIO_AF7_USART1;
     HAL_GPIO_Init( GPIOA, &gio );
 
-    /* Peripheral interrupt init*/
+    // IRQ
     HAL_NVIC_SetPriority( USART1_IRQn, configKERNEL_INTERRUPT_PRIORITY, 0 );
     HAL_NVIC_EnableIRQ( USART1_IRQn );
   }
-
 }
 
-void HAL_UART_MspDeInit( UART_HandleTypeDef* huart )
+void HAL_UART_MspDeInit( UART_HandleTypeDef* uah )
 {
-  if( huart->Instance == USART1 )  {
+  if( uah->Instance == USART1 )  {
     __USART1_CLK_DISABLE();
     HAL_GPIO_DeInit( GPIOA, GPIO_PIN_9 | GPIO_PIN_10 );
-    /* Peripheral interrupt Deinit*/
     HAL_NVIC_DisableIRQ( USART1_IRQn );
   }
 

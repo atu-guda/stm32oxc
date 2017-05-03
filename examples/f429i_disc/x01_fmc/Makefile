@@ -1,7 +1,5 @@
 PROJ_NAME=fmc_test
 
-# REQUIRE_SPECIAL_CLOCK = y
-
 USE_OXC = y
 # USE_OXC_DEVIO = y
 USE_OXC_DEBUG = y
@@ -11,6 +9,7 @@ USE_FREERTOS = y
 # FREERTOS_HEAP = heap_2.c
 # # default: heap_3.c
 # USE_USB_DEFAULT_CDC = y
+# REQUIRE_SPECIAL_CLOCK = y # if special clock init is required
 
 
 # TODO: copy to main location
@@ -18,11 +17,9 @@ OXCDIR = /home/atu/proj/stm32/oxc
 
 
 SRCS  = main.cpp
-#SRCS += stm32f4_clock_HSE180.c
 SRCS += uart1_init_a9a10.cpp
 SRCS += oxc_bsp_f429i_disc_sdram.cpp
 
-# SRCS += empty_test0_function.cpp
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
 # list: see ../common/f4_modules.mk
@@ -31,8 +28,6 @@ SRCS += stm32f4xx_hal_dma.c
 SRCS += stm32f4xx_hal_sdram.c
 SRCS += stm32f4xx_ll_fmc.c
 
-# from BSP
-#SRCS += stm32f429i_discovery_sdram.c
 
 
 include ../common/board_add.mk

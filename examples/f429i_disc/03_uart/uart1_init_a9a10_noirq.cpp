@@ -14,11 +14,10 @@ int init_uart( UART_HandleTypeDef *uah, int baud )
   return( HAL_UART_Init( uah ) == HAL_OK );
 }
 
-void HAL_UART_MspInit( UART_HandleTypeDef* huart )
+void HAL_UART_MspInit( UART_HandleTypeDef* uah )
 {
-
   GPIO_InitTypeDef gio;
-  if( huart->Instance == USART1 ) {
+  if( uah->Instance == USART1 ) {
     __USART1_CLK_ENABLE();
     __GPIOA_CLK_ENABLE();
 
@@ -39,12 +38,11 @@ void HAL_UART_MspInit( UART_HandleTypeDef* huart )
 
 }
 
-void HAL_UART_MspDeInit( UART_HandleTypeDef* huart )
+void HAL_UART_MspDeInit( UART_HandleTypeDef* uah )
 {
-  if( huart->Instance == USART1 )  {
+  if( uah->Instance == USART1 )  {
     __USART1_CLK_DISABLE();
     HAL_GPIO_DeInit( GPIOA, GPIO_PIN_9 | GPIO_PIN_10 );
-    /* Peripheral interrupt Deinit*/
     HAL_NVIC_DisableIRQ( USART1_IRQn );
   }
 

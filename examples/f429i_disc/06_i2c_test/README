@@ -5,7 +5,7 @@ SDA = C9 + 4.7k pullUp
 
 Used USART1 with VCP on ST_LInk V2-1
 
-PA10  = USART2_TX
-PA11  = USART2_RX
+A10  = USART2_TX
+A11  = USART2_RX
 
 

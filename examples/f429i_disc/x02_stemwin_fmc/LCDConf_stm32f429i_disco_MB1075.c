@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    lcdconf.c
-  * @author  MCD Application Team
+  * @author  MCD Application Team, mod by atu
   * @version V1.4.0
   * @date    17-February-2017
   * @brief   This file implements the configuration for the GUI library
@@ -46,6 +46,7 @@
   */
 
 /* Includes ------------------------------------------------------------------*/
+#include <oxc_base.h>
 #include "LCDConf.h"
 #include "GUI_Private.h"
 

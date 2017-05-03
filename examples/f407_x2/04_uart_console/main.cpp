@@ -25,7 +25,7 @@ const CmdInfo* global_cmds[] = {
 
 extern "C" {
 void task_main( void *prm UNUSED_ARG );
-}
+} // extern "C"
 
 
 UART_CONSOLE_DEFINES( USART2 );
