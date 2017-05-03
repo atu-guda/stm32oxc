@@ -1,10 +1,11 @@
 #ifndef _BOARD_STM32F429DISCOVERY_H
 #define _BOARD_STM32F429DISCOVERY_H
 
-#define def_stksz 512
 
 // definition of resoures on STM32F429I discovery board.
 // headers must be included manualy in C/CPP file
+
+#define def_stksz 512
 
 // Free pins:
 //   A5, B4, B7, C3, C8, C11-13-?15, D2, D4, D5, D7, E1-E6, G1, G2, G9
@@ -61,9 +62,22 @@
 #define TIM_EXA_IRQ    TIM1_BRK_TIM9_IRQn
 #define TIM_EXA_IRQHANDLER    TIM1_BRK_TIM9_IRQHandler
 
-#define BOARD_CONSOLE_DEFINES UART_CONSOLE_DEFINES( USART1 );
-#define BOARD_PROLOG  STD_PROLOG_UART;
-#define BOARD_CREATE_STD_TASKS CREATE_STD_TASKS( task_usart1_send );
-#define BOARD_POST_INIT_BLINK delay_ms( PROLOG_LED_TIME ); leds.write( 0x01 ); delay_ms( PROLOG_LED_TIME );
+#define BOARD_UART_DEFAULT            USART1
+#define BOARD_UART_DEFAULT_NAME       "USART1"
+#define BOARD_UART_DEFAULT_GPIO       GPIOA
+#define BOARD_UART_DEFAULT_GPIO_PINS  ( GPIO_PIN_9 | GPIO_PIN_10 )
+#define BOARD_UART_DEFAULT_GPIO_AF    GPIO_AF7_USART1
+#define BOARD_UART_DEFAULT_ENABLE     __USART1_CLK_ENABLE(); __GPIOA_CLK_ENABLE();
+#define BOARD_UART_DEFAULT_DISABLE    __USART1_CLK_DISABLE();
+#define BOARD_UART_DEFAULT_IRQ        USART1_IRQn
+#define BOARD_UART_DEFAULT_IRQHANDLER USART1_IRQHandler
+
+
+#define BOARD_CONSOLE_DEFINES         UART_CONSOLE_DEFINES( USART1 );
+#define BOARD_CONSOLE_DEFINES_UART    UART_CONSOLE_DEFINES( USART1 );
+#define BOARD_PROLOG                  STD_PROLOG_UART;
+#define BOARD_CREATE_STD_TASKS        CREATE_STD_TASKS( task_usart1_send );
+#define BOARD_CREATE_STD_TASKS_UART   CREATE_STD_TASKS( task_usart1_send );
+#define BOARD_POST_INIT_BLINK         delay_ms( PROLOG_LED_TIME ); leds.write( 0x01 ); delay_ms( PROLOG_LED_TIME );
 
 #endif

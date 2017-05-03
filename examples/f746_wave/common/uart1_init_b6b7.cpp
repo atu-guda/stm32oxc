@@ -3,12 +3,12 @@
 int init_uart( UART_HandleTypeDef *uah, int baud )
 {
   uah->Instance                    = USART1;
-  uah->Init.BaudRate               = 115200;
+  uah->Init.BaudRate               = baud;
   uah->Init.WordLength             = UART_WORDLENGTH_8B;
   uah->Init.StopBits               = UART_STOPBITS_1;
   uah->Init.Parity                 = UART_PARITY_NONE;
-  uah->Init.Mode                   = UART_MODE_TX_RX;
   uah->Init.HwFlowCtl              = UART_HWCONTROL_NONE;
+  uah->Init.Mode                   = UART_MODE_TX_RX;
   uah->Init.OverSampling           = UART_OVERSAMPLING_16;
   uah->Init.OneBitSampling         = UART_ONE_BIT_SAMPLE_DISABLE;
   uah->AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
@@ -46,4 +46,5 @@ void HAL_UART_MspDeInit( UART_HandleTypeDef* uah )
   HAL_GPIO_DeInit( GPIOB, GPIO_PIN_6 | GPIO_PIN_7 );
   HAL_NVIC_DisableIRQ( USART1_IRQn );
 }
+
 

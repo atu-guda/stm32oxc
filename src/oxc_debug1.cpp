@@ -236,7 +236,11 @@ int cmd_info( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
     { SysTick_IRQn, "SysTick" },
     { EXTI0_IRQn,   "EXTI0  " },
     { I2C1_EV_IRQn, "I2C1_EV" },
+    #if defined( BOARD_UART_DEFAULT_NAME ) && defined( BOARD_UART_DEFAULT_IRQ )
+    { BOARD_UART_DEFAULT_IRQ,  BOARD_UART_DEFAULT_NAME },
+    #else
     { USART2_IRQn,  "USART2 " },
+    #endif
     // { OTG_FS_IRQn,  "OTG_FS " }, TODO: depend in MCU type
     { SPI1_IRQn,    "SPI1   " }
   };

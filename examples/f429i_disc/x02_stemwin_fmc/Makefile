@@ -21,11 +21,11 @@ OXCDIR = /home/atu/proj/stm32/oxc
 
 
 SRCS  = main.cpp
+
 # SRCS += BASIC_HelloWorld.c
 SRCS += GUIConf.c
 SRCS += LCDConf_stm32f429i_disco_MB1075.c
 
-SRCS += uart1_init_a9a10.cpp
 SRCS += oxc_bsp_f429i_disc_sdram.cpp
 
 # SRCS += empty_test0_function.cpp

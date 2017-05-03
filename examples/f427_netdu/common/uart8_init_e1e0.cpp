@@ -43,6 +43,6 @@ void HAL_UART_MspDeInit( UART_HandleTypeDef* uah )
     HAL_GPIO_DeInit( GPIOE, GPIO_PIN_0 | GPIO_PIN_1 );
     HAL_NVIC_DisableIRQ( UART8_IRQn );
   }
-
 }
+
 

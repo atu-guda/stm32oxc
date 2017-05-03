@@ -38,11 +38,11 @@ void HAL_UART_MspInit( UART_HandleTypeDef* uah )
 
 void HAL_UART_MspDeInit( UART_HandleTypeDef* uah )
 {
-  if( uah->Instance==USART2 )  {
+  if( uah->Instance == USART2 )  {
     __USART2_CLK_DISABLE();
     HAL_GPIO_DeInit( GPIOA, GPIO_PIN_2 | GPIO_PIN_3 );
     HAL_NVIC_DisableIRQ( USART2_IRQn );
   }
-
 }
+
 

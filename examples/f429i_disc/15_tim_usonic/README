@@ -9,7 +9,9 @@ TIM1.CH1: pulser
 TIM1.CH2: both edge receiver: IRQ
 Vcc for sensor: 5v required: with 3.3: no good return pulse
 
-A2  = USART1_TX
-A3  = USART1_RX
+Used USART1 with VCP on ST_LInk V2-1
+
+A9   = USART1_TX
+A10  = USART1_RX
 
 

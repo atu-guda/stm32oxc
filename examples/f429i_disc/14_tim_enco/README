@@ -4,7 +4,9 @@ Not tested really
 Not so stable work.
 Dont forget about capacitors.
 
-A2  = USART1_TX
-A3  = USART1_RX
 
+Used USART1 with VCP on ST_LInk V2-1
+
+A9   = USART1_TX
+A10  = USART1_RX
 

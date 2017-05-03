@@ -121,6 +121,9 @@ ifeq "$(USE_OXC_CONSOLE_USART)" "y"
   USE_OXC_CONSOLE = y
   SRCS += oxc_usartio.cpp
   SRCS += stm32$(MCSUFF)xx_hal_uart.c
+  ifneq "$(NOUSE_DEFAULT_UART_INIT)" "y"
+    SRCS  += oxc_uart_default_init.cpp
+  endif
   ALLFLAGS += -DUSE_OXC_CONSOLE_USART
 endif
 

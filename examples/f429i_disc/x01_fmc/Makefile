@@ -17,7 +17,7 @@ OXCDIR = /home/atu/proj/stm32/oxc
 
 
 SRCS  = main.cpp
-SRCS += uart1_init_a9a10.cpp
+
 SRCS += oxc_bsp_f429i_disc_sdram.cpp
 
 
