@@ -26,10 +26,11 @@ void MX_ADC1_Init(void)
     Error_Handler( 2 );
   }
 
-  /**Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.  */
+  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.  */
   sConfig.Channel = ADC_CHANNEL_1;
   sConfig.Rank = 1;
   sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
+  // sConfig.SamplingTime = ADC_SAMPLETIME_144CYCLES;
   if( HAL_ADC_ConfigChannel( &hadc1 , &sConfig ) != HAL_OK )  {
     Error_Handler( 3 );
   }

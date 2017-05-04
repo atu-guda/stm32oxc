@@ -107,8 +107,6 @@ int main(void)
 
   BOARD_POST_INIT_BLINK;
 
-
-
   BOARD_CREATE_STD_TASKS;
 
   SCHEDULER_START;
@@ -182,8 +180,6 @@ int cmd_test0( int argc, const char * const * argv )
   HAL_ADC_MspInit( &hadc1 );
   MX_ADC1_Init( n_ch, sampl_t_idx );
   delay_ms( 10 );
-
-  // log_add( "Test0 " );
 
   uint32_t n_ADC_bytes = n * n_ch;
   uint32_t n_ADC_bytes_guard = n_ADC_bytes + n_ch * 2;
@@ -292,7 +288,7 @@ void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc )
   hadc1.Instance->SR = 0;
   // HAL_ADC_Stop_DMA( hadc );
   adc_end_dma |= 1;
-  leds.toggle( BIT2 );
+  leds.set( BIT2 );
   ++UVAR('g'); // 'g' means good
 }
 
@@ -306,7 +302,7 @@ void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc )
   hadc1.Instance->SR = 0;
   hadc->DMA_Handle->ErrorCode = 0;
   adc_end_dma |= 2;
-  // leds.toggle( BIT0 );
+  leds.set( BIT0 );
   ++UVAR('e');
 }
 
@@ -335,8 +331,7 @@ void HAL_ADCEx_InjectedConvCpltCallback( ADC_HandleTypeDef * /*hadc*/ )
 {
 }
 
-//  ----------------------------- configs ----------------
-
+// configs
 
 // vim: path=.,/usr/share/stm32lib/inc/,/usr/arm-none-eabi/include,../../../inc
 

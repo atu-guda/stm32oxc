@@ -6,9 +6,8 @@ TODO: delta near 0 is huge (0xFFFF), may be with irq?
 
 
 
-Using  UART as console via SmallRL.
-Used USART2 with FT232RL-alike board.
 
-PA2  = USART2_TX
-PA3  = USART2_RX
+Used USART2 with USB_UART board.
+A2  = USART2_TX
+A3  = USART2_RX
 

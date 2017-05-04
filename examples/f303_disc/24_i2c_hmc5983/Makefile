@@ -13,12 +13,13 @@ USE_FREERTOS = y
 # USE_USB_DEFAULT_CDC = y
 # REQUIRE_SPECIAL_CLOCK = y
 
+
 # TODO: copy to main location
 OXCDIR = /home/atu/proj/stm32/oxc
 
 
 SRCS  = main.cpp
-SRCS += uart2_init_a2a3.cpp
+
 SRCS += i2c1_b6b7_hw.cpp
 
 SRCS += oxc_hmc5983.cpp

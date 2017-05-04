@@ -50,6 +50,7 @@ extern "C" {
 void task_main( void *prm UNUSED_ARG );
 }
 
+
 int SPI2_Init_common( uint32_t baud_presc  = SPI_BAUDRATEPRESCALER_256 );
 PinsOut nss_pin( GPIOB, 5, 1 );
 PinsOut rst_dc_pins( GPIOB, 10, 2 );

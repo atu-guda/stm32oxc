@@ -15,7 +15,8 @@ For servo:
  so values in 'T' command is in microseconds,
   typicaly 500 -- 2500 (may vary)
 
-PA2  = USART1_TX
-PA3  = USART1_RX
 
+Used USART2 with ST_Link VCP
+A2  = USART2_TX
+A3  = USART2_RX
 

@@ -20,9 +20,7 @@ To use logic analizer,
   spi1_h.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;
   and add priliminary drop before.
 
-Used USART2 with VCP on ST_LInk V2-1
-
-PA2  = USART1_TX
-PA3  = USART1_RX
-
+Used USART2 with ST_Link VCP
+A2  = USART2_TX
+A3  = USART2_RX
 

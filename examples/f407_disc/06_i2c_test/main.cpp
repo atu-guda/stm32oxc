@@ -38,7 +38,7 @@ void MX_I2C1_Init( I2C_HandleTypeDef &i2c, uint32_t speed = 100000 );
 
 int main(void)
 {
-  HAL_Init();
+  BOARD_PROLOG;
 
   UVAR('t') = 1000;
   UVAR('n') = 10;

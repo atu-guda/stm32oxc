@@ -85,6 +85,7 @@ void task_main( void *prm UNUSED_ARG );
 void MX_FMC_Init(void);
 void BSP_SDRAM_Initialization_sequence( uint32_t RefreshCount );
 
+
 int main(void)
 {
   BOARD_PROLOG;
@@ -104,7 +105,6 @@ int main(void)
   BSP_SDRAM_Initialization_sequence( 0 ); // 0 if fake
   leds.write( 0x0A );  delay_bad_ms( 500 );
 
-  BOARD_CREATE_STD_TASKS;
 
   // MX_ADC1_Init( 4, ADC_SAMPLETIME_28CYCLES );
   delay_bad_ms( 10 );

@@ -1,6 +1,6 @@
 Using  USART as console via SmallRL.
-Used USART1 with UART-USB convertor board
 
-B6  = USART1_TX
-B7  = USART1_RX
+Used USART1 with UART-USB convertor board
+B6  = USART2_TX
+B7  = USART2_RX
 

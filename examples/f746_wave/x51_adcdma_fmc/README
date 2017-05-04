@@ -1,9 +1,7 @@
 Try ADC with DMA to external SDRAM
 4 channel: a0-a3
 
-Using  USART as console via SmallRL.
 Used USART1 with UART-USB convertor board
-
 B6  = USART1_TX
 B7  = USART1_RX
 

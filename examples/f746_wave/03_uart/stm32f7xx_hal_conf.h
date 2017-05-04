@@ -26,6 +26,7 @@
 
 #include "../common/stm32f7xx_hal_conf_common.h"
 
+#define UART_DEFALT_NO_IRQ 1
 
 #endif /* __STM32F7xx_HAL_CONF_H */
 

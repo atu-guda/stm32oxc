@@ -10,7 +10,7 @@ USE_DIE4LED_ERROR_HANDLER;
 FreeRTOS_to_stm32cube_tick_hook;
 BOARD_DEFINE_LEDS;
 
-BOARD_CONSOLE_DEFINES;
+BOARD_CONSOLE_DEFINES_UART;
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -26,13 +26,13 @@ const CmdInfo* global_cmds[] = {
 
 extern "C" {
 void task_main( void *prm UNUSED_ARG );
-}
+} // extern "C"
 
 
 
 int main(void)
 {
-  BOARD_PROLOG;
+  STD_PROLOG_UART;
 
   // HAL_UART_Transmit( &uah, (uint8_t*)"START\r\n", 7, 100 );
   // usartio.sendStrSync( "0123456789---main()---ABCDEF" NL );
@@ -42,7 +42,7 @@ int main(void)
 
   BOARD_POST_INIT_BLINK;
 
-  BOARD_CREATE_STD_TASKS;
+  BOARD_CREATE_STD_TASKS_UART;
 
   SCHEDULER_START;
   return 0;

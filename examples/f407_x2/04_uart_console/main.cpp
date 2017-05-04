@@ -10,6 +10,7 @@ USE_DIE4LED_ERROR_HANDLER;
 FreeRTOS_to_stm32cube_tick_hook;
 BOARD_DEFINE_LEDS;
 
+BOARD_CONSOLE_DEFINES_UART;
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -28,7 +29,6 @@ void task_main( void *prm UNUSED_ARG );
 } // extern "C"
 
 
-UART_CONSOLE_DEFINES( USART2 );
 
 int main(void)
 {
@@ -42,7 +42,7 @@ int main(void)
 
   BOARD_POST_INIT_BLINK;
 
-  CREATE_STD_TASKS( task_usart2_send );
+  BOARD_CREATE_STD_TASKS_UART;
 
   SCHEDULER_START;
   return 0;

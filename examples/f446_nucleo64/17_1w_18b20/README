@@ -2,8 +2,8 @@ use: 1-wire 18B20 (initial) on C:4
 Pull-up (4.7k) required!
 
 Pin used simultaneously for input and output.
-Used USART2 with ST_Link VCP
 
+Used USART2 with ST_Link VCP
 A2  = USART2_TX
 A3  = USART2_RX
 

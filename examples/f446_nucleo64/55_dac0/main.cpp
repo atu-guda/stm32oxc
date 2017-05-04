@@ -149,8 +149,8 @@ int cmd_fun( int argc, const char * const * argv )
 }
 
 
-//  ----------------------------- configs ----------------
 
+// configs
 
 // vim: path=.,/usr/share/stm32lib/inc/,/usr/arm-none-eabi/include,../../../inc
 

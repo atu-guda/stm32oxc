@@ -21,8 +21,8 @@
 
 // AUX modules : full list: ../common/hal_modules_list.h
 //
-#define HAL_DMA_MODULE_ENABLED
 #define HAL_UART_MODULE_ENABLED
+#define HAL_DMA_MODULE_ENABLED
 
 #define UART_DEFALT_NO_IRQ 1
 
@@ -30,5 +30,4 @@
 
 
 #endif /* __STM32F4xx_HAL_CONF_H */
-
 

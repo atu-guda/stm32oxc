@@ -1,6 +1,6 @@
 Simple usage of UART.
-Used USART2 with ST_Link VCP
 
+Used USART2 with ST_Link VCP
 A2  = USART2_TX
 A3  = USART2_RX
 

@@ -42,7 +42,6 @@ HMC5983 mag( i2cd );
 void MX_I2C1_Init( I2C_HandleTypeDef &i2c, uint32_t speed = 100000 );
 
 
-
 int main(void)
 {
   BOARD_PROLOG;

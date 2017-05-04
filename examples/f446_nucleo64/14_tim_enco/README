@@ -3,7 +3,9 @@ in: A8,A9
 Not so stable work.
 Dont forget about capacitors.
 
-PA2  = USART1_TX
-PA3  = USART1_RX
 
+
+Used USART2 with ST_Link VCP
+A2  = USART2_TX
+A3  = USART2_RX
 

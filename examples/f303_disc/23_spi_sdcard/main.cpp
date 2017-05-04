@@ -35,6 +35,7 @@ extern "C" {
 void task_main( void *prm UNUSED_ARG );
 }
 
+
 int MX_SPI2_Init( uint32_t prescal = SPI_BAUDRATEPRESCALER_64 );
 PinsOut nss_pin( GPIOB, 12, 1 ); // 4 - to test GPIO
 SPI_HandleTypeDef spi2_h;
@@ -68,10 +69,6 @@ int main(void)
 
 void task_main( void *prm UNUSED_ARG ) // TMAIN
 {
-  SET_UART_AS_STDIO(usartio);
-
-  delay_ms( 10 );
-
   default_main_loop();
   vTaskDelete(NULL);
 }

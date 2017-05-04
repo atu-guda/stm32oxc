@@ -23,7 +23,10 @@
 #define HAL_UART_MODULE_ENABLED
 #define HAL_DMA_MODULE_ENABLED
 
+#define UART_DEFALT_NO_IRQ 1
+
 #include "../common/stm32f3xx_hal_conf_common.h"
 
 
 #endif /* __STM32F3xx_HAL_CONF_H */
+

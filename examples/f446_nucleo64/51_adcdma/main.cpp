@@ -91,6 +91,7 @@ void task_main( void *prm UNUSED_ARG );
 int main(void)
 {
   BOARD_PROLOG;
+
   tim_freq_in = HAL_RCC_GetPCLK1Freq(); // to TIM2
   uint32_t hclk_freq = HAL_RCC_GetHCLKFreq();
   if( tim_freq_in < hclk_freq ) {
@@ -106,8 +107,6 @@ int main(void)
   UVAR('s') = 1; // sampling time index
 
   BOARD_POST_INIT_BLINK;
-
-
 
   BOARD_CREATE_STD_TASKS;
 
@@ -182,8 +181,6 @@ int cmd_test0( int argc, const char * const * argv )
   HAL_ADC_MspInit( &hadc1 );
   MX_ADC1_Init( n_ch, sampl_t_idx );
   delay_ms( 10 );
-
-  // log_add( "Test0 " );
 
   uint32_t n_ADC_bytes = n * n_ch;
   uint32_t n_ADC_bytes_guard = n_ADC_bytes + n_ch * 2;

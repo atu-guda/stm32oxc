@@ -65,8 +65,6 @@ SSD1306 screen( i2cd );
 void MX_I2C1_Init( I2C_HandleTypeDef &i2c, uint32_t speed = 100000 );
 
 
-
-
 int main(void)
 {
   BOARD_PROLOG;
@@ -78,7 +76,6 @@ int main(void)
   i2c_dbg = &i2cd;
 
   BOARD_POST_INIT_BLINK;
-
 
   BOARD_CREATE_STD_TASKS;
 

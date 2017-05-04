@@ -59,8 +59,6 @@ int main(void)
 
   BOARD_POST_INIT_BLINK;
 
-
-
   BOARD_CREATE_STD_TASKS;
 
   SCHEDULER_START;

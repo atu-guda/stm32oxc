@@ -32,19 +32,36 @@ int main(void)
 
 void task_send( void *prm UNUSED_ARG )
 {
-  strcpy( tx_buf, "ABCDE <.> 0123\r\n" );
+  strcpy( tx_buf, "ABCDE <.> -----\r\n" );
   //               0123456789ABCDEF1011
   int ssz = strlen( tx_buf );
-  char c = '?';
+  char c = '?', cn = '0';
 
-  while( 1 )  {
-    // leds.toggle( BIT2 );
-    if( HAL_UART_Receive( &uah, (uint8_t*)&c, 1, 0 ) == HAL_OK ) {
+  while( 1 ) {
+    leds.toggle( BIT1 );
+    tx_buf[5]  = ' ';
+    tx_buf[10] = cn; tx_buf[11] = '.';
+    ++cn;
+    if( cn >= 0x7F ) { cn = ' '; }
+    // if( HAL_UART_Receive( &uah, (uint8_t*)&c, 1, 0 ) == HAL_OK ) {
+    //   leds.toggle( BIT2 );
+    //   tx_buf[5]  = c; tx_buf[11] = 'R';
+    // }
+    if( uah.Instance->USART_SR_REG & UART_FLAG_RXNE ) {
+      c = uah.Instance->USART_RX_REG;
       leds.toggle( BIT2 );
-      tx_buf[7] = c;
+      tx_buf[7]  = c; tx_buf[11] = 'R';
     }
-    if( HAL_UART_Transmit( &uah, (uint8_t*)tx_buf, ssz, 100 )!= HAL_OK ) {
-      // leds.toggle( BIT3 );
+    if( uah.Instance->USART_SR_REG & UART_FLAG_ORE ) { // overrun
+      #ifdef UART_CLEAR_OREF
+        uah.Instance->ICR |= UART_CLEAR_OREF;
+      #endif
+      c = uah.Instance->USART_RX_REG;
+      tx_buf[12] = 'O';
+      leds.toggle( BIT0 );
+    }
+    if( HAL_UART_Transmit( &uah, (uint8_t*)tx_buf, ssz, 100 ) != HAL_OK ) {
+      // leds.toggle( BIT0 );
     }
     delay_ms( 1000 );
   }

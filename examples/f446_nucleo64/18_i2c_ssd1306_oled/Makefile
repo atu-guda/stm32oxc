@@ -19,7 +19,7 @@ OXCDIR = /home/atu/proj/stm32/oxc
 
 
 SRCS  = main.cpp
-SRCS += uart2_init_a2a3.cpp
+
 SRCS += i2c1_init_b8b9.cpp
 
 SRCS += oxc_pixbuf.cpp
@@ -28,8 +28,6 @@ SRCS += oxc_ssd1306.cpp
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
 # list: see ../common/f4_modules.mk
-
-
 
 
 include ../common/board_add.mk
