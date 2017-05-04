@@ -5,35 +5,37 @@
 
 
 #if defined (STM32F0)
- #include <stm32f0xx_hal.h>
+ #include <stm32f0xx_hal_usart.h>
  #define USART_TX_REG TDR
  #define USART_RX_REG RDR
  #define USART_SR_REG ISR
 #elif defined (STM32F1)
- #include <stm32f1xx_hal.h>
+ #include <stm32f1xx_hal_usart.h>
  #define USART_TX_REG DR
  #define USART_RX_REG DR
  #define USART_SR_REG SR
 #elif defined (STM32F2)
- #include <stm32f2xx_hal.h>
+ #include <stm32f2xx_hal_usart.h>
  #define USART_TX_REG DR
  #define USART_RX_REG DR
  #define USART_SR_REG SR
 #elif defined (STM32F3)
- #include <stm32f3xx_hal.h>
+ #include <stm32f3xx_hal_usart.h>
  #define USART_TX_REG TDR
  #define USART_RX_REG RDR
  #define USART_SR_REG ISR
 #elif defined (STM32F4)
- #include <stm32f4xx_hal.h>
+ #include <stm32f4xx_hal_usart.h>
  #define USART_TX_REG DR
  #define USART_RX_REG DR
  #define USART_SR_REG SR
 #elif defined(STM32F7)
- #include <stm32f7xx_hal.h>
+ #include <stm32f7xx_hal_usart.h>
  #define USART_TX_REG TDR
  #define USART_RX_REG RDR
  #define USART_SR_REG ISR
+ #define __HAL_USART_CLEAR_FLAG(__HANDLE__, __FLAG__) ((__HANDLE__)->Instance->ICR = (uint32_t)(__FLAG__))
+ #define __HAL_USART_CLEAR_OREFLAG(__HANDLE__) ((__HANDLE__)->Instance->ICR = (uint32_t)(USART_CLEAR_OREF))
 #else
   #error "Unsupported MCU"
 #endif
@@ -148,4 +150,4 @@ extern "C" {
   SmallRL srl( smallrl_exec );
 
 #endif
-// vim: path=.,/usr/share/stm32lib/inc/,/usr/arm-none-eabi/include
+// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include

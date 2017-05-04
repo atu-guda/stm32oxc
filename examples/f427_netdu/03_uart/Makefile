@@ -17,7 +17,6 @@ OXCDIR = /home/atu/proj/stm32/oxc
 
 
 SRCS  = main.cpp
-SRCS += uart8_init_e1e0_noirq.cpp
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
 # list: see ../common/f4_modules.mk

@@ -32,21 +32,37 @@ int main(void)
 
 void task_send( void *prm UNUSED_ARG )
 {
-  strcpy( tx_buf, "ABCDE <.> 0123\r\n" );
-  //               0123456789ABCDEF1011
-  int ssz = strlen( tx_buf );
-  char c = '?';
+  char c = '?', cn = '0';
 
   while( 1 ) {
-    // leds.toggle( LED_BSP_RED );
-    if( HAL_UART_Receive( &uah, (uint8_t*)&c, 1, 0 ) == HAL_OK ) {
-      leds.toggle( LED_BSP_GREEN );
-      tx_buf[7] = c;
+    bool was_action = false;
+    strcpy( tx_buf, "ABCDE <.> -----\r\n" );
+    //               0123456789ABCDEF1011
+    int ssz = strlen( tx_buf );
+    // leds.toggle( BIT2 );
+    tx_buf[10] = cn++;
+    if( cn >= 0x7F ) { cn = ' '; }
+
+    if( __HAL_USART_GET_FLAG( &uah, UART_FLAG_ORE ) ) { // overrun
+      __HAL_USART_CLEAR_OREFLAG( &uah );
+      tx_buf[13] = 'O';
+      leds.toggle( BIT1 );
     }
+
+    if( __HAL_USART_GET_FLAG( &uah, UART_FLAG_RXNE ) ) {
+      c = uah.Instance->USART_RX_REG;
+      was_action = true;
+      // leds.toggle( BIT2 );
+      if( int8_t(c) >= ' ' ) {
+        tx_buf[7]  = c;
+      }
+      tx_buf[12] = 'R';
+    }
+
     if( HAL_UART_Transmit( &uah, (uint8_t*)tx_buf, ssz, 100 ) != HAL_OK ) {
-      // leds.toggle( LED_BSP_YELLOW );
+      // leds.toggle( BIT0 );
     }
-    delay_ms( 1000 );
+    delay_ms( was_action ? 50 : 1000 );
   }
 }
 
