@@ -41,28 +41,29 @@ volatile int adc_dma_error = 0;
 volatile uint32_t n_series = 0;
 uint32_t n_series_todo = 0;
 const uint32_t n_sampl_times = 7; // current number - in UVAR('s')
-const uint32_t sampl_times_codes[n_sampl_times] = { // all for 25 MHz ADC clock
-  ADC_SAMPLETIME_3CYCLES   , //  15  tick: 1.6 MSa,  0.6  us
-  ADC_SAMPLETIME_15CYCLES  , //  27  tick: 925 kSa,  1.08 us
-  ADC_SAMPLETIME_28CYCLES  , //  40  tick: 615 kSa,  1.6  us
-  ADC_SAMPLETIME_56CYCLES  , //  68  tick: 367 kSa,  2.72 us
-  ADC_SAMPLETIME_84CYCLES  , //  96  tick: 260 kSa,  3.84 us
-  ADC_SAMPLETIME_144CYCLES , // 156  tick: 160 kSa,  6.24 us
-  ADC_SAMPLETIME_480CYCLES   // 492  tick:  50 kSa, 19.68 us
+const uint32_t sampl_times_codes[n_sampl_times] = { // all for 36 MHz ADC clock
+  ADC_SAMPLETIME_3CYCLES   , //  15  tick: 2.40 MSa,  0.42 us
+  ADC_SAMPLETIME_15CYCLES  , //  27  tick: 1.33 MSa,  0.75 us
+  ADC_SAMPLETIME_28CYCLES  , //  40  tick:  900 kSa,  1.11 us
+  ADC_SAMPLETIME_56CYCLES  , //  68  tick:  529 kSa,  1.89 us
+  ADC_SAMPLETIME_84CYCLES  , //  96  tick:  375 kSa,  2.67 us
+  ADC_SAMPLETIME_144CYCLES , // 156  tick:  231 kSa,  4.33 us
+  ADC_SAMPLETIME_480CYCLES   // 492  tick:   73 kSa, 13.67 us
 };
 const uint32_t sampl_times_cycles[n_sampl_times] = { // sample+conv(12)
-    15,  // ADC_SAMPLETIME_3CYCLES     tick: 1.6 MSa,  0.6  us
-    27,  // ADC_SAMPLETIME_15CYCLES    tick: 925 kSa,  1.08 us
-    40,  // ADC_SAMPLETIME_28CYCLES    tick: 615 kSa,  1.6  us
-    68,  // ADC_SAMPLETIME_56CYCLES    tick: 367 kSa,  2.72 us
-    96,  // ADC_SAMPLETIME_84CYCLES    tick: 260 kSa,  3.84 us
-   156,  // ADC_SAMPLETIME_144CYCLES   tick: 160 kSa,  6.24 us
-   492,  // ADC_SAMPLETIME_480CYCLES   tick:  50 kSa, 19.68 us
+    15,  // ADC_SAMPLETIME_3CYCLES
+    27,  // ADC_SAMPLETIME_15CYCLES
+    40,  // ADC_SAMPLETIME_28CYCLES
+    68,  // ADC_SAMPLETIME_56CYCLES
+    96,  // ADC_SAMPLETIME_84CYCLES
+   156,  // ADC_SAMPLETIME_144CYCLES
+   492,  // ADC_SAMPLETIME_480CYCLES
 };
+
 
 
 TIM_HandleTypeDef tim2h;
-void tim2_init( uint16_t presc = 49, uint32_t arr = 100 ); // 1MHz, 10 kHz
+void tim2_init( uint16_t presc = 36, uint32_t arr = 100 ); // 1MHz, 10 kHz
 void tim2_deinit();
 
 const int pbufsz = 128;
@@ -99,7 +100,7 @@ int main(void)
 
   UVAR('t') = 1000; // 1 s extra wait
   UVAR('v') = v_adc_ref;
-  UVAR('p') = 99; // timer PSC, for 1MHz
+  UVAR('p') = (tim_freq_in/1000000)-1; // timer PSC, for 1MHz
   UVAR('a') = 99999; // timer ARR, for 10Hz
   UVAR('c') = n_ADC_ch_max;
   UVAR('n') = 8; // number of series
@@ -167,8 +168,10 @@ int cmd_test0( int argc, const char * const * argv )
 
   if( n > n_ADC_series_max ) { n = n_ADC_series_max; };
 
-  snprintf( pbuf, pbufsz-1, "Test0: n= %lu; n_ch= %u; tim_f= %lu Hz; t_step= %.8g s; f_sampl_ser= %lu Hz; t_wait0= %lu ms" NL,
-                                       n,      n_ch,      tim_f,       t_step_f,        f_sampl_ser,      t_wait0  );
+  snprintf( pbuf, pbufsz-1, "Test0: n= %lu; n_ch= %u; tim_f= %lu Hz; tim_freq_in= %lu Hz" NL
+                            "t_step= %#.7g s; f_sampl_ser= %lu Hz; t_wait0= %lu ms" NL,
+                                       n,      n_ch,      tim_f,         tim_freq_in,
+                                   t_step_f,        f_sampl_ser,      t_wait0  );
 
   pr( pbuf ); delay_ms( 10 );
   tim2_deinit();
@@ -257,7 +260,7 @@ void out_to_curr( uint32_t n, uint32_t st )
   for( uint32_t i=0; i< n; ++i ) {
     uint32_t ii = i + st;
     t = t_step_f * ii;
-    snprintf( pbuf, pbufsz-1, "%12.7g  ", t );
+    snprintf( pbuf, pbufsz-1, "%#12.7g  ", t );
     for( int j=0; j< n_ch; ++j ) {
       int vv = adc_v0[ii*n_ch+j] * 10 * UVAR('v') / 4096;
       ifcvt( vv, 10000, buf, 4 );

@@ -12,13 +12,14 @@ void ADC_DMA_REINIT();
 void MX_ADC1_Init( uint8_t n_ch, uint32_t sampl_time )
 {
   __HAL_RCC_ADC1_CLK_ENABLE();
-  __HAL_RCC_DAC_CLK_ENABLE(); // !!!!!!!!!!!!! ?????????? see errata
+  __HAL_RCC_DAC_CLK_ENABLE(); // !!!!!!!!!!!!! see errata - need for timer interaction
   ADC_ChannelConfTypeDef sConfig;
   if( n_ch > 4 ) { n_ch = 4; }
   if( n_ch < 1 ) { n_ch = 1; }
 
   hadc1.Instance                   = ADC1;
-  hadc1.Init.ClockPrescaler        = ADC_CLOCK_SYNC_PCLK_DIV4; // 100/4 = 25 Mhz, max 36
+  hadc1.Init.ClockPrescaler        = ADC_CLOCK_SYNC_PCLK_DIV2; // 72/2 = 36 MHz  = MAX
+  adc_clk = 36000000;
   hadc1.Init.Resolution            = ADC_RESOLUTION_12B;
   hadc1.Init.ScanConvMode          = ENABLE;  // if disabled, only first channel works
   // hadc1.Init.ScanConvMode          = DISABLE;

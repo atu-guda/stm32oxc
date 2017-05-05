@@ -8,7 +8,7 @@
 
 // for oxc lib: just to check
 #define REQ_MCBASE STM32F7
-#define REQ_SYSCLK_FREQ 200
+#define REQ_SYSCLK_FREQ 144
 
 #include <bsp/board_stm32f746_waveshare0.h>
 

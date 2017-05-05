@@ -18,16 +18,15 @@
 // base modules
 #define USE_COMMON_HAL_MODULES
 
-#define HAL_DMA_MODULE_ENABLED
-#define HAL_UART_MODULE_ENABLED
-
 // AUX modules : full list: ../common/hal_modules_list.h
 //
-
-#include "../common/stm32f7xx_hal_conf_common.h"
+#define HAL_UART_MODULE_ENABLED
+#define HAL_DMA_MODULE_ENABLED
 
 #define UART_DEFALT_NO_IRQ 1
 
-#endif /* __STM32F7xx_HAL_CONF_H */
+#include "../common/stm32f7xx_hal_conf_common.h"
 
+
+#endif /* __STM32F7xx_HAL_CONF_H */
 

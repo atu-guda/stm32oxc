@@ -1,6 +1,8 @@
 #include <oxc_base.h>
 #include <oxc_gpio.h>
 
+// unused for now. use TIM2: 32-bit counter
+
 // use tim6 as ADC start tick:
 // APB1: V1: 2*50MHz /(1+99)   = 1MHz   (1-50000 ARR)=(1MHz-20Hz)  too fast start, generic - good, working range good
 //       V2: 2*50MHz /(1+999)  = 100kHz (1-50000 ARR)=(100kHz-2Hz) normal start, show end

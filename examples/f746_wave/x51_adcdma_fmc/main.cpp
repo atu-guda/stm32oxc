@@ -1,5 +1,6 @@
 #include <cstring>
 #include <cstdlib>
+#include <cstdio>
 
 #include <oxc_auto.h>
 
@@ -11,6 +12,11 @@ FreeRTOS_to_stm32cube_tick_hook;
 BOARD_DEFINE_LEDS;
 
 uint8_t *sdram_mem = (uint8_t *)(0xD0000000);
+
+void print_curr( const char *s );
+void out_to_curr( uint32_t n, uint32_t st );
+
+
 extern "C" {
  void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc );
  void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc );
@@ -21,8 +27,10 @@ void ADC_DMA_REINIT();
 void pr_ADC_state();
 ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
-const uint32_t tim_freq_in = 100000000; // depend in MCU, freq TODO: calculate
-uint32_t t_step = 100000; // in us, recalculated before measurement
+uint32_t tim_freq_in; // timer input freq
+uint32_t adc_clk = 36000000;     // depend in MCU, set in MX_ADC1_Init
+// uint32_t t_step = 100000; // in us, recalculated before measurement
+float t_step_f = 0.1; // in s, recalculated before measurement
 int v_adc_ref = 3250; // in mV, measured before test, adjust as UVAR('v')
 const uint32_t n_ADC_ch_max = 4; // current - in UVAR('c')
 const uint32_t n_ADC_mem  = 1024*4096; // SDRAM: 4MB
@@ -34,32 +42,34 @@ volatile int adc_dma_error = 0;
 volatile uint32_t n_series = 0;
 uint32_t n_series_todo = 0;
 const uint32_t n_sampl_times = 7; // current number - in UVAR('s')
-const uint32_t sampl_times_codes[n_sampl_times] = { // all for 25 MHz ADC clock
-  ADC_SAMPLETIME_3CYCLES   , //  15  tick: 1.6 MSa,  0.6  us
-  ADC_SAMPLETIME_15CYCLES  , //  27  tick: 925 kSa,  1.08 us
-  ADC_SAMPLETIME_28CYCLES  , //  40  tick: 615 kSa,  1.6  us
-  ADC_SAMPLETIME_56CYCLES  , //  68  tick: 367 kSa,  2.72 us
-  ADC_SAMPLETIME_84CYCLES  , //  96  tick: 260 kSa,  3.84 us
-  ADC_SAMPLETIME_144CYCLES , // 156  tick: 160 kSa,  6.24 us
-  ADC_SAMPLETIME_480CYCLES   // 492  tick:  50 kSa, 19.68 us
+const uint32_t sampl_times_codes[n_sampl_times] = { // all for 36 MHz ADC clock
+  ADC_SAMPLETIME_3CYCLES   , //  15  tick: 2.40 MSa,  0.42 us
+  ADC_SAMPLETIME_15CYCLES  , //  27  tick: 1.33 MSa,  0.75 us
+  ADC_SAMPLETIME_28CYCLES  , //  40  tick:  900 kSa,  1.11 us
+  ADC_SAMPLETIME_56CYCLES  , //  68  tick:  529 kSa,  1.89 us
+  ADC_SAMPLETIME_84CYCLES  , //  96  tick:  375 kSa,  2.67 us
+  ADC_SAMPLETIME_144CYCLES , // 156  tick:  231 kSa,  4.33 us
+  ADC_SAMPLETIME_480CYCLES   // 492  tick:   73 kSa, 13.67 us
 };
 const uint32_t sampl_times_cycles[n_sampl_times] = { // sample+conv(12)
-    15,  // ADC_SAMPLETIME_3CYCLES     tick: 1.6 MSa,  0.6  us
-    27,  // ADC_SAMPLETIME_15CYCLES    tick: 925 kSa,  1.08 us
-    40,  // ADC_SAMPLETIME_28CYCLES    tick: 615 kSa,  1.6  us
-    68,  // ADC_SAMPLETIME_56CYCLES    tick: 367 kSa,  2.72 us
-    96,  // ADC_SAMPLETIME_84CYCLES    tick: 260 kSa,  3.84 us
-   156,  // ADC_SAMPLETIME_144CYCLES   tick: 160 kSa,  6.24 us
-   492,  // ADC_SAMPLETIME_480CYCLES   tick:  50 kSa, 19.68 us
+    15,  // ADC_SAMPLETIME_3CYCLES
+    27,  // ADC_SAMPLETIME_15CYCLES
+    40,  // ADC_SAMPLETIME_28CYCLES
+    68,  // ADC_SAMPLETIME_56CYCLES
+    96,  // ADC_SAMPLETIME_84CYCLES
+   156,  // ADC_SAMPLETIME_144CYCLES
+   492,  // ADC_SAMPLETIME_480CYCLES
 };
 
 
 BOARD_CONSOLE_DEFINES;
 
 TIM_HandleTypeDef tim2h;
-void tim2_init( uint16_t presc = 49, uint32_t arr = 100 ); // 1MHz, 10 kHz
+void tim2_init( uint16_t presc = 36, uint32_t arr = 100 ); // 1MHz, 10 kHz
 void tim2_deinit();
 
+const int pbufsz = 128;
+// FIL out_file;
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -89,24 +99,25 @@ int main(void)
 {
   BOARD_PROLOG;
 
+  tim_freq_in = HAL_RCC_GetPCLK1Freq(); // to TIM2
+  uint32_t hclk_freq = HAL_RCC_GetHCLKFreq();
+  if( tim_freq_in < hclk_freq ) {
+    tim_freq_in *= 2;
+  }
 
   UVAR('t') = 1000; // 1 s extra wait
   UVAR('v') = v_adc_ref;
-  UVAR('p') = 99; // timer PSC, for 1MHz
+  UVAR('p') = (tim_freq_in/1000000)-1; // timer PSC, for 1MHz
   UVAR('a') = 99999; // timer ARR, for 10Hz
   UVAR('c') = n_ADC_ch_max;
   UVAR('n') = 8; // number of series
   UVAR('s') = 1; // sampling time index
 
-  leds.write( 0x0F );  delay_bad_ms( 200 );
   MX_FMC_Init();
   leds.write( 0x01 );  delay_bad_ms( 200 );
   BSP_SDRAM_Initialization_sequence( 0 ); // 0 if fake
 
-  // MX_ADC1_Init( 4, ADC_SAMPLETIME_28CYCLES );
-  delay_bad_ms( 10 );
-  // tim2_init( UVAR('p'), UVAR('a') );
-  leds.write( 0x0A );  delay_bad_ms( 200 );
+  BOARD_POST_INIT_BLINK;
 
   BOARD_CREATE_STD_TASKS;
 
@@ -149,36 +160,31 @@ void pr_TIM_state( TIM_TypeDef *htim )
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  char buf[32];
+  char pbuf[pbufsz];
   uint8_t n_ch = UVAR('c');
   if( n_ch > n_ADC_ch_max ) { n_ch = n_ADC_ch_max; };
   if( n_ch < 1 ) { n_ch = 1; };
 
   const uint32_t n_ADC_series_max  = n_ADC_mem / ( 2 * n_ch ); // 2 is 16bit/sample
-  pr_sdx( n_ADC_series_max );
   uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 0, n_ADC_series_max ); // number of series
 
   uint32_t sampl_t_idx = UVAR('s');
   if( sampl_t_idx >= n_sampl_times ) { sampl_t_idx = n_sampl_times-1; };
-  uint32_t f_sampl_ser = 25000000 / ( sampl_times_cycles[sampl_t_idx] * n_ch );
+  uint32_t f_sampl_ser = adc_clk / ( sampl_times_cycles[sampl_t_idx] * n_ch );
 
-  t_step =  (UVAR('a')+1) * (UVAR('p')+1); // in timer input ticks
-  uint32_t tim_f = tim_freq_in / t_step; // timer update freq
-  t_step /= 100; // * 1e6 / 1e8
-  uint32_t t_wait0 = n  * t_step / 1000;
-  if( t_wait0 < 1 ) { t_wait0 = 1; }
+  uint32_t t_step_tick =  (UVAR('a')+1) * (UVAR('p')+1); // in timer input ticks
+  uint32_t tim_f = tim_freq_in / t_step_tick; // timer update freq, Hz
+  t_step_f = (float)t_step_tick / tim_freq_in; // in s
+  uint32_t t_wait0 = 1 + uint32_t( n * t_step_f * 1000 ); // in ms
 
   if( n > n_ADC_series_max ) { n = n_ADC_series_max; };
 
-  pr( NL "Test0: n= " ); pr_d( n ); pr( " n_ch= " ); pr_d( n_ch );
-  pr( " tim_f= " ); pr_d( tim_f );
-  pr( " t_step= " ); pr_d( t_step );
-  pr( " us;  f_sampl_ser= " ); pr_d( f_sampl_ser );
-  pr( " t_wait0= " ); pr_d( t_wait0 );  pr( NL );
-  ifcvt( t_step, 1000000, buf, 6 );
-  pr( " t_step= " ); pr( buf );
-  pr( NL );
-  // uint16_t v = 0;
+  snprintf( pbuf, pbufsz-1, "Test0: n= %lu; n_ch= %u; tim_f= %lu Hz; tim_freq_in= %lu Hz" NL
+                            "t_step= %#.7g s; f_sampl_ser= %lu Hz; t_wait0= %lu ms" NL,
+                                       n,      n_ch,      tim_f,         tim_freq_in,
+                                   t_step_f,        f_sampl_ser,      t_wait0  );
+
+  pr( pbuf ); delay_ms( 10 );
   tim2_deinit();
 
   pr_ADC_state();
@@ -189,8 +195,6 @@ int cmd_test0( int argc, const char * const * argv )
   MX_ADC1_Init( n_ch, sampl_t_idx );
   delay_ms( 10 );
 
-  // log_add( "Test0 " );
-
   uint32_t n_ADC_bytes = n * n_ch;
   uint32_t n_ADC_bytes_guard = n_ADC_bytes + n_ch * 2;
   for( uint32_t i=0; i<n_ADC_bytes_guard;  ++i ) { // TODO: memset
@@ -198,11 +202,11 @@ int cmd_test0( int argc, const char * const * argv )
   }
   adc_end_dma = 0; adc_dma_error = 0; n_series = 0; n_series_todo = n;
   TickType_t tc0 = xTaskGetTickCount(), tc00 = tc0;
+  leds.reset( BIT0 | BIT1 | BIT2 );
   if( HAL_ADC_Start_DMA( &hadc1, (uint32_t*)adc_v0, n_ADC_bytes ) != HAL_OK )   {
     pr( "ADC_Start_DMA error" NL );
   }
   tim2_init( UVAR('p'), UVAR('a') );
-  // ADC1->CR2 |= 0x40000000; // SWSTART???
 
   delay_ms( t_wait0 );
   for( uint32_t ti=0; adc_end_dma == 0 && ti<(uint32_t)UVAR('t'); ++ti ) {
@@ -221,23 +225,12 @@ int cmd_test0( int argc, const char * const * argv )
   pr( "  tick: "); pr_d( tcc - tc00 );
   pr( NL );
 
-  bool was_hole = false;
-  for( uint32_t i=0; i< (n_series_todo+2); ++i ) { // +2 = show guard
-    if( i > 2 && i < n_series_todo - 2 ) {
-      if( ! was_hole ) {
-        was_hole = true;
-        pr( "....." NL );
-      }
-      continue;
-    }
-    for( int j=0; j< n_ch; ++j ) {
-      // pr_d( adc_v0[i*n_ch+j] ) ; pr( "\t" );
-      int vv = adc_v0[i*n_ch+j] * 10 * UVAR('v') / 4096;
-      ifcvt( vv, 10000, buf, 4 );
-      pr( buf ); pr( "\t" );
-    }
-    pr( NL );
+  out_to_curr( 2, 0 );
+  if( n_series_todo > 2 ) {
+    pr( "....." NL );
+    out_to_curr( 4, n_series_todo-2 );
   }
+
   pr( NL );
 
   pr_ADC_state();
@@ -249,37 +242,57 @@ int cmd_test0( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_out( int argc, const char * const * argv )
+void print_curr( const char *s )
+{
+  if( !s ) {
+    return;
+  }
+  // if( out_file.fs == nullptr ) {
+    pr( s );
+    delay_ms( 2 );
+  //  return;
+  //}
+  // f_puts( s, &out_file );
+}
+
+void out_to_curr( uint32_t n, uint32_t st )
 {
   char buf[32];
+  char pbuf[pbufsz];
   uint8_t n_ch = UVAR('c');
   if( n_ch > n_ADC_ch_max ) { n_ch = n_ADC_ch_max; };
   if( n_ch < 1 ) { n_ch = 1; };
-  uint32_t n = arg2long_d( 1, argc, argv, n_series_todo, 0, n_series_todo+1 ); // number output series
-  uint32_t st= arg2long_d( 2, argc, argv,             0, 0, n_series_todo-2 );
 
   if( n+st >= n_series_todo+1 ) {
     n = 1 + n_series_todo - st;
   }
 
-  uint32_t t = st * t_step;
+  float t = st * t_step_f;
   for( uint32_t i=0; i< n; ++i ) {
     uint32_t ii = i + st;
-    ifcvt( t, 1000000, buf, 6 );
-    pr( buf ); pr( "   " );
+    t = t_step_f * ii;
+    snprintf( pbuf, pbufsz-1, "%#12.7g  ", t );
     for( int j=0; j< n_ch; ++j ) {
       int vv = adc_v0[ii*n_ch+j] * 10 * UVAR('v') / 4096;
       ifcvt( vv, 10000, buf, 4 );
-      pr( buf ); pr( "  " );
+      strcat( pbuf, buf ); strcat( pbuf, "  " );
     }
-    t += t_step;
-    pr( NL );
-    delay_ms( 5 );
+    strcat( pbuf, NL );
+    print_curr( pbuf );
   }
-  pr( NL );
+}
+
+int cmd_out( int argc, const char * const * argv )
+{
+  // out_file.fs = nullptr;
+  uint32_t n = arg2long_d( 1, argc, argv, n_series_todo, 0, n_series_todo+1 ); // number output series
+  uint32_t st= arg2long_d( 2, argc, argv,             0, 0, n_series_todo-2 );
+
+  out_to_curr( n, st );
 
   return 0;
 }
+
 
 
 void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc )
@@ -287,8 +300,9 @@ void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc )
   // tim2_deinit();
   UVAR('x') = hadc1.Instance->SR;
   hadc1.Instance->SR = 0;
+  // HAL_ADC_Stop_DMA( hadc );
   adc_end_dma |= 1;
-  leds.toggle( BIT2 );
+  leds.set( BIT2 );
   ++UVAR('g'); // 'g' means good
 }
 
@@ -302,7 +316,7 @@ void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc )
   hadc1.Instance->SR = 0;
   hadc->DMA_Handle->ErrorCode = 0;
   adc_end_dma |= 2;
-  // leds.toggle( BIT0 );
+  leds.set( BIT0 );
   ++UVAR('e');
 }
 
@@ -331,8 +345,7 @@ void HAL_ADCEx_InjectedConvCpltCallback( ADC_HandleTypeDef * /*hadc*/ )
 {
 }
 
-//  ----------------------------- configs ----------------
-
+// configs
 
 // vim: path=.,/usr/share/stm32lib/inc/,/usr/arm-none-eabi/include,../../../inc
 

@@ -13,7 +13,6 @@ USE_FREERTOS = y
 # USE_USB_DEFAULT_CDC = y
 # REQUIRE_SPECIAL_CLOCK = y # if special clock init is required
 
-
 # TODO: copy to main location
 OXCDIR = /home/atu/proj/stm32/oxc
 

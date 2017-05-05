@@ -69,6 +69,7 @@ int cmd_test0( int argc, const char * const * argv )
   pr( NL );
 
   uint8_t *mem = (uint8_t *)(0xD0000000);
+  strcpy( (char*)mem, "ABCDE" );
   dump8( mem, 0x40, true );
 
   return 0;

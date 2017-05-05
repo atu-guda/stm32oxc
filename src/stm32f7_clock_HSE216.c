@@ -5,8 +5,8 @@
 #error This SystemClock_Config is for stm32f7xx only
 #endif
 
-#if REQ_SYSCLK_FREQ != 200
-#error This SystemClock_Config in for 200 MHz only
+#if REQ_SYSCLK_FREQ != 216
+#error This SystemClock_Config in for 216 MHz only
 #endif
 
 
@@ -24,9 +24,9 @@ int SystemClockCfg(void)
   RCC_OscInitStruct.PLL.PLLState   = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource  = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLM       = 8;
-  RCC_OscInitStruct.PLL.PLLN       = 400;
+  RCC_OscInitStruct.PLL.PLLN       = 432;
   RCC_OscInitStruct.PLL.PLLP       = RCC_PLLP_DIV2;
-  RCC_OscInitStruct.PLL.PLLQ       = 10;
+  RCC_OscInitStruct.PLL.PLLQ       = 9;
   if( HAL_RCC_OscConfig( &RCC_OscInitStruct ) != HAL_OK )  {
     errno = 1001;
     return  1001;
@@ -45,7 +45,7 @@ int SystemClockCfg(void)
   RCC_ClkInitStruct.AHBCLKDivider  = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
-  if( HAL_RCC_ClockConfig( &RCC_ClkInitStruct, FLASH_LATENCY_6 ) != HAL_OK ) {
+  if( HAL_RCC_ClockConfig( &RCC_ClkInitStruct, FLASH_LATENCY_7 ) != HAL_OK ) {
     errno = 1003;
     return  1003;
   }

@@ -11,7 +11,7 @@ USE_FREERTOS = y
 # FREERTOS_HEAP = heap_2.c
 # # default: heap_3.c
 # USE_USB_DEFAULT_CDC = y
-# REQUIRE_SPECIAL_CLOCK = y
+REQUIRE_SPECIAL_CLOCK = y
 
 # TODO: copy to main location
 OXCDIR = /home/atu/proj/stm32/oxc
@@ -22,9 +22,11 @@ SRCS  = main.cpp
 SRCS += adc_init.cpp
 SRCS += tim2_init.cpp
 
+SRCS += stm32f7_clock_HSE144.c
+
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
-# list: see ../common/f7_modules.mk
+# see ../common/f7_modules.mk
 
 SRCS += stm32f7xx_hal_adc.c
 SRCS += stm32f7xx_hal_adc_ex.c
@@ -32,7 +34,6 @@ SRCS += stm32f7xx_hal_tim.c
 SRCS += stm32f7xx_hal_tim_ex.c
 SRCS += stm32f7xx_hal_dma.c
 
-SRCS += stm32f7xx_hal_uart.c
 
 include ../common/board_add.mk
 include $(OXCDIR)/mk/common_cortex.mk
