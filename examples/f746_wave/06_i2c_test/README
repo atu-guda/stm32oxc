@@ -3,7 +3,9 @@ Test I2C devices on I2C1
 SCL = B8
 SDA = B9
 
-Used USART1 with UART-USB convertor board
-B6  = USART2_TX
-B7  = USART2_RX
+
+
+Used USART1 with UART-USB board
+B6  = USART1_TX
+B7  = USART1_RX
 

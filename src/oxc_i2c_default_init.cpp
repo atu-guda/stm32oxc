@@ -11,18 +11,18 @@ int i2c_default_init( I2C_HandleTypeDef &i2c, int speed )
   } else {
     i2c.Init.Timing           = BOARD_I2C_DEFAULT_TIMING_100;
   }
-  i2c.Init.OwnAddress2Masks = I2C_OA2_NOMASK;
+  i2c.Init.OwnAddress2Masks   = I2C_OA2_NOMASK;
   #else
-  i2c.Init.speed            = speed;
-  i2c.Init.DutyCycle        = I2C_DUTYCYCLE_16_9;
+  i2c.Init.ClockSpeed         = speed;
+  i2c.Init.DutyCycle          = I2C_DUTYCYCLE_16_9;
   #endif
-  i2c.State                 = HAL_I2C_STATE_RESET;
-  i2c.Init.AddressingMode   = I2C_ADDRESSINGMODE_7BIT;
-  i2c.Init.DualAddressMode  = I2C_DUALADDRESS_DISABLE;
-  i2c.Init.GeneralCallMode  = I2C_GENERALCALL_DISABLE;
-  i2c.Init.NoStretchMode    = I2C_NOSTRETCH_DISABLE;
-  i2c.Init.OwnAddress1      = 0;
-  i2c.Init.OwnAddress2      = 0;
+  i2c.State                   = HAL_I2C_STATE_RESET;
+  i2c.Init.AddressingMode     = I2C_ADDRESSINGMODE_7BIT;
+  i2c.Init.DualAddressMode    = I2C_DUALADDRESS_DISABLE;
+  i2c.Init.GeneralCallMode    = I2C_GENERALCALL_DISABLE;
+  i2c.Init.NoStretchMode      = I2C_NOSTRETCH_DISABLE;
+  i2c.Init.OwnAddress1        = 0;
+  i2c.Init.OwnAddress2        = 0;
   if( HAL_I2C_Init( &i2c ) != HAL_OK ) {
     return 0;
   }

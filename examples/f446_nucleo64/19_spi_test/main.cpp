@@ -43,7 +43,7 @@ CmdInfo CMDINFO_RESETSPI { "reset_spi", 'Z', cmd_reset_spi, " - reset spi"  };
 
 extern "C" {
 void task_main( void *prm UNUSED_ARG );
-}
+} // extern "C"
 
 
 int SPI2_Init_common( uint32_t baud_presc  = SPI_BAUDRATEPRESCALER_256 );
@@ -208,8 +208,6 @@ int cmd_reset_spi( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
   return 0;
 }
 
-
-//  ----------------------------- configs ----------------
 
 
 // vim: path=.,/usr/share/stm32lib/inc/,/usr/arm-none-eabi/include,../../../inc

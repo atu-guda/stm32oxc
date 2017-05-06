@@ -38,7 +38,7 @@ const CmdInfo* global_cmds[] = {
 
 extern "C" {
 void task_main( void *prm UNUSED_ARG );
-}
+} // extern "C"
 
 int main(void)
 {
@@ -177,7 +177,6 @@ void pwm_print_cfg()
   pr( "CCR1: " );   pr_d( tim_h.Instance->CCR1 ); pr( NL );
 }
 
-//  ----------------------------- configs ----------------
 
 
 // vim: path=.,/usr/share/stm32lib/inc/,/usr/arm-none-eabi/include,../../../inc

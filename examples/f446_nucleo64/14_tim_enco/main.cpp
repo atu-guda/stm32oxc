@@ -29,7 +29,7 @@ const CmdInfo* global_cmds[] = {
 
 extern "C" {
 void task_main( void *prm UNUSED_ARG );
-}
+} // extern "C"
 
 
 int main(void)
@@ -120,7 +120,6 @@ void init_enco()
 
 
 
-//  ----------------------------- configs ----------------
 
 
 // vim: path=.,/usr/share/stm32lib/inc/,/usr/arm-none-eabi/include,../../../inc

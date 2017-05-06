@@ -128,7 +128,6 @@ int cmd_test0( int argc, const char * const * argv )
   return 0;
 }
 
-//  ----------------------------- configs ----------------
 
 
 // vim: path=.,/usr/share/stm32lib/inc/,/usr/arm-none-eabi/include,../../../inc

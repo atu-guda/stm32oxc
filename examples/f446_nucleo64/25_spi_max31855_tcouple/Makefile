@@ -13,6 +13,7 @@ USE_FREERTOS = y
 # USE_USB_DEFAULT_CDC = y
 # REQUIRE_SPECIAL_CLOCK = y
 
+
 # TODO: copy to main location
 OXCDIR = /home/atu/proj/stm32/oxc
 
@@ -23,7 +24,7 @@ SRCS += init_spi2_common_master_b131415.cpp
 
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
-# list: see ../common/f4_modules.mk
+# see ../common/f4_modules.mk
 
 
 include ../common/board_add.mk

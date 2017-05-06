@@ -34,6 +34,7 @@ void task_main( void *prm UNUSED_ARG );
 } // extern "C"
 
 
+
 int main(void)
 {
   BOARD_PROLOG;
@@ -103,7 +104,6 @@ int cmd_test0( int argc, const char * const * argv )
 }
 
 
-//  ----------------------------- configs ----------------
 
 
 // vim: path=.,/usr/share/stm32lib/inc/,/usr/arm-none-eabi/include,../../../inc

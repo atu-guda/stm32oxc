@@ -28,12 +28,10 @@ const CmdInfo* global_cmds[] = {
 
 extern "C" {
 void task_main( void *prm UNUSED_ARG );
-}
+} // extern "C"
 
 I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 ); // zero add means no real device
-
-void MX_I2C1_Init( I2C_HandleTypeDef &i2c, uint32_t speed = 100000 );
 
 
 int main(void)
@@ -43,7 +41,7 @@ int main(void)
   UVAR('t') = 1000;
   UVAR('n') = 10;
 
-  MX_I2C1_Init( i2ch );
+  UVAR('e') = i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
 
   BOARD_POST_INIT_BLINK;
@@ -85,7 +83,6 @@ int cmd_test0( int argc, const char * const * argv )
   return 0;
 }
 
-//  ----------------------------- configs ----------------
 
 
 // vim: path=.,/usr/share/stm32lib/inc/,/usr/arm-none-eabi/include,../../../inc

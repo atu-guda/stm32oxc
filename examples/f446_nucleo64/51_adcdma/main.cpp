@@ -86,7 +86,9 @@ const CmdInfo* global_cmds[] = {
 
 extern "C" {
 void task_main( void *prm UNUSED_ARG );
-}
+} // extern "C"
+
+
 
 int main(void)
 {
@@ -333,8 +335,6 @@ void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
 void HAL_ADCEx_InjectedConvCpltCallback( ADC_HandleTypeDef * /*hadc*/ )
 {
 }
-
-// configs
 
 // vim: path=.,/usr/share/stm32lib/inc/,/usr/arm-none-eabi/include,../../../inc
 
