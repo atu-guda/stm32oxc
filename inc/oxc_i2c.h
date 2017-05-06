@@ -3,6 +3,7 @@
 
 #include <oxc_miscfun.h>
 
+int i2c_default_init( I2C_HandleTypeDef &i2c, int speed = 100000 );
 
 class DevI2C  {
   public:
@@ -25,7 +26,7 @@ class DevI2C  {
    // returns: >0 = N of send/recv bytes, <0 - error
    int  send( uint8_t ds, uint8_t addr = 0 );
    int  send( const uint8_t *ds, int ns, uint8_t addr = 0 );
-   int  send_reg12(  uint8_t reg,  const uint8_t *ds, int ns, bool is2byte, uint8_t addr = 0 );
+   int  send_reg12( uint8_t reg,  const uint8_t *ds, int ns, bool is2byte, uint8_t addr = 0 );
    int  send_reg1(  uint8_t reg,  const uint8_t *ds, int ns, uint8_t addr = 0  );
    int  send_reg1(  uint8_t reg,  uint8_t d, uint8_t addr = 0 )
      { return send_reg1( reg, &d, 1, addr ); }

@@ -6,7 +6,8 @@
 /*-----------------------------------------------------------------------------/
 / Additional user header to be used
 /-----------------------------------------------------------------------------*/
-#include <stm32f4xx_hal.h>
+// #include <stm32f4xx_hal.h>
+#include <oxc_base.h>
 // #include "cmsis_os.h"    /* _FS_REENTRANT set to 1 */
 #include <bsp_driver_sd.h>
 

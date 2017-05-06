@@ -33,8 +33,6 @@ void task_main( void *prm UNUSED_ARG );
 I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 ); // zero add means no real device
 
-void MX_I2C1_Init( I2C_HandleTypeDef &i2c );
-
 
 int main(void)
 {
@@ -43,7 +41,7 @@ int main(void)
   UVAR('t') = 1000;
   UVAR('n') = 10;
 
-  MX_I2C1_Init( i2ch );
+  UVAR('e') = i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
 
   BOARD_POST_INIT_BLINK;
