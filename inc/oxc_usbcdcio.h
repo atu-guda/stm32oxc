@@ -69,4 +69,4 @@ extern "C" {
   SmallRL srl( smallrl_exec );
 
 #endif
-// vim: path=.,/usr/share/stm32lib/inc/,/usr/arm-none-eabi/include
+// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include

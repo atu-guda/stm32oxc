@@ -133,5 +133,5 @@ int cmd_spimem_sector0_erase( int argc, const char * const * argv )
 
 
 
-// vim: path=.,/usr/share/stm32lib/inc/,/usr/arm-none-eabi/include,../../../inc
+// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

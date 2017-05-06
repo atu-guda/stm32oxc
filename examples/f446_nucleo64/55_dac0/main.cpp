@@ -153,5 +153,5 @@ int cmd_fun( int argc, const char * const * argv )
 
 
 
-// vim: path=.,/usr/share/stm32lib/inc/,/usr/arm-none-eabi/include,../../../inc
+// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

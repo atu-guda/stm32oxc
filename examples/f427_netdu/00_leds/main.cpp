@@ -73,5 +73,5 @@ void MX_GPIO_Init(void)
 
 }
 
-// vim: path=.,/usr/share/stm32lib/inc/,/usr/arm-none-eabi/include,ox/inc
+// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,ox/inc
 

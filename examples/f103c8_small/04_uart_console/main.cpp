@@ -96,5 +96,5 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
 
 
 
-// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,../../../inc
+// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

@@ -207,5 +207,5 @@ int cmd_contr( int argc, const char * const * argv )
 //  ----------------------------- configs ----------------
 
 
-// vim: path=.,/usr/share/stm32lib/inc/,/usr/arm-none-eabi/include,../../../inc
+// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

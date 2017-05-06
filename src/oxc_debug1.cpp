@@ -496,4 +496,4 @@ int cmd_pin_info( int argc, const char * const * argv )
 CmdInfo CMDINFO_PIN_INFO { "pinfo",  0, cmd_pin_info,       " [A-I] [0-15] - info about pin" };
 
 
-// vim: path=.,/usr/share/stm32lib/inc/,/usr/arm-none-eabi/include,../inc
+// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
