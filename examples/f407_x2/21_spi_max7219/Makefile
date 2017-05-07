@@ -25,8 +25,7 @@ SRCS += init_spi1_common_master_a567.cpp
 SRCS += oxc_spi_max7219.cpp
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
-# list: see ../common/f4_modules.mk
-
+# see ../common/f4_modules.mk
 
 
 include ../common/board_add.mk

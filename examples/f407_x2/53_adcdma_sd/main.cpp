@@ -99,7 +99,9 @@ const CmdInfo* global_cmds[] = {
 
 extern "C" {
 void task_main( void *prm UNUSED_ARG );
-}
+} // extern "C"
+
+
 
 int main(void)
 {
@@ -192,8 +194,10 @@ int cmd_test0( int argc, const char * const * argv )
 
   if( n > n_ADC_series_max ) { n = n_ADC_series_max; };
 
-  snprintf( pbuf, pbufsz-1, "Test0: n= %lu; n_ch= %u; tim_f= %lu Hz; t_step= %.8g s; f_sampl_ser= %lu Hz; t_wait0= %lu ms" NL,
-                                       n,      n_ch,      tim_f,       t_step_f,        f_sampl_ser,      t_wait0  );
+  snprintf( pbuf, pbufsz-1, "Test0: n= %lu; n_ch= %u; tim_f= %lu Hz; tim_freq_in= %lu Hz" NL
+                            "t_step= %#.7g s; f_sampl_ser= %lu Hz; t_wait0= %lu ms" NL,
+                                       n,      n_ch,      tim_f,         tim_freq_in,
+                                   t_step_f,        f_sampl_ser,      t_wait0  );
 
   pr( pbuf ); delay_ms( 10 );
   tim2_deinit();
@@ -282,7 +286,7 @@ void out_to_curr( uint32_t n, uint32_t st )
   for( uint32_t i=0; i< n; ++i ) {
     uint32_t ii = i + st;
     t = t_step_f * ii;
-    snprintf( pbuf, pbufsz-1, "%12.7g  ", t );
+    snprintf( pbuf, pbufsz-1, "%#12.7g  ", t );
     for( int j=0; j< n_ch; ++j ) {
       int vv = adc_v0[ii*n_ch+j] * 10 * UVAR('v') / 4096;
       ifcvt( vv, 10000, buf, 4 );
@@ -378,8 +382,6 @@ void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
 void HAL_ADCEx_InjectedConvCpltCallback( ADC_HandleTypeDef * /*hadc*/ )
 {
 }
-
-// configs
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

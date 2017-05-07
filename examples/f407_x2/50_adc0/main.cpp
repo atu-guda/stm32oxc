@@ -31,7 +31,9 @@ const CmdInfo* global_cmds[] = {
 
 extern "C" {
 void task_main( void *prm UNUSED_ARG );
-}
+} // extern "C"
+
+
 
 int main(void)
 {
@@ -54,6 +56,9 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
   default_main_loop();
   vTaskDelete(NULL);
 }
+
+
+
 
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
@@ -99,7 +104,6 @@ int cmd_test0( int argc, const char * const * argv )
 }
 
 
-//  ----------------------------- configs ----------------
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

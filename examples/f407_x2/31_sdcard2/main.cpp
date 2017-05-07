@@ -23,6 +23,7 @@ FATFS fs;
 const int fspath_sz = 32;
 char fspath[fspath_sz];
 
+
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
@@ -61,7 +62,7 @@ const CmdInfo* global_cmds[] = {
 
 extern "C" {
 void task_main( void *prm UNUSED_ARG );
-}
+} // extern "C"
 
 
 int main(void)
@@ -82,7 +83,6 @@ int main(void)
   fspath[0] = '\0';
 
   BOARD_POST_INIT_BLINK;
-
 
   BOARD_CREATE_STD_TASKS;
 
@@ -324,9 +324,6 @@ int cmd_rm( int argc, const char * const * argv )
   return r;
 }
 
-
-
-//  ----------------------------- configs ----------------
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

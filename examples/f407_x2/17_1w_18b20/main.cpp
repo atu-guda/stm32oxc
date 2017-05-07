@@ -51,8 +51,6 @@ int main(void)
 
   BOARD_POST_INIT_BLINK;
 
-
-
   BOARD_CREATE_STD_TASKS;
 
   SCHEDULER_START;
@@ -170,7 +168,6 @@ int cmd_1wire0( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
   return 0;
 }
 
-//  ----------------------------- configs ----------------
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

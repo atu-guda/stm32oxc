@@ -22,7 +22,7 @@ void MX_ADC1_Init(void)
   hadc1.Init.NbrOfConversion       = 1;
   hadc1.Init.DMAContinuousRequests = DISABLE;
   hadc1.Init.EOCSelection          = ADC_EOC_SINGLE_CONV;
-  if( HAL_ADC_Init( &hadc1 ) != HAL_OK )  {
+  if( HAL_ADC_Init( &hadc1 ) != HAL_OK ) {
     Error_Handler( 2 );
   }
 

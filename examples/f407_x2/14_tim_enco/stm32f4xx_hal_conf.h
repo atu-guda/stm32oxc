@@ -24,7 +24,6 @@
 #define HAL_DMA_MODULE_ENABLED
 #define HAL_PCD_MODULE_ENABLED
 #define HAL_TIM_MODULE_ENABLED
-//#define HAL_WWDG_MODULE_ENABLED
 
 #include "../common/stm32f4xx_hal_conf_common.h"
 

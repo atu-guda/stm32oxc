@@ -1,10 +1,12 @@
 #ifndef _BOARD_STM32F407_ATU_X2_H
 #define _BOARD_STM32F407_ATU_X2_H
 
+
 // definition of resoures on atu first STM32F407VE based board (named X2)
 // headers must be included manualy in C/CPP file
 
 #define def_stksz 512
+
 
 // default LEDS is C0:C3
 #define BOARD_N_LEDS 4
@@ -81,6 +83,20 @@
 #define BOARD_UART_DEFAULT_DISABLE    __USART2_CLK_DISABLE();
 #define BOARD_UART_DEFAULT_IRQ        USART2_IRQn
 #define BOARD_UART_DEFAULT_IRQHANDLER USART2_IRQHandler
+
+#define BOARD_I2C_DEFAULT               I2C1
+#define BOARD_I2C_DEFAULT_NAME          "I2C1"
+#define BOARD_I2C_DEFAULT_SPEED         100000;
+#define BOARD_I2C_DEFAULT_GPIO_SCL      GPIOB
+#define BOARD_I2C_DEFAULT_GPIO_SDA      GPIOB
+#define BOARD_I2C_DEFAULT_GPIO_PIN_SCL  GPIO_PIN_6
+#define BOARD_I2C_DEFAULT_GPIO_PIN_SDA  GPIO_PIN_7
+#define BOARD_I2C_DEFAULT_GPIO_AF       GPIO_AF4_I2C1
+#define BOARD_I2C_DEFAULT_ENABLE        __I2C1_CLK_ENABLE(); __GPIOB_CLK_ENABLE();
+#define BOARD_I2C_DEFAULT_DISABLE       __I2C1_CLK_DISABLE();
+#define BOARD_I2C_DEFAULT_IRQ           I2C1_EV_IRQn
+#define BOARD_I2C_DEFAULT_IRQHANDLER    I2C1_EV_IRQHandler
+
 
 
 #define BOARD_CONSOLE_DEFINES         USBCDC_CONSOLE_DEFINES;

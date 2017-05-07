@@ -37,7 +37,7 @@ const CmdInfo* global_cmds[] = {
 
 extern "C" {
 void task_main( void *prm UNUSED_ARG );
-}
+} // extern "C"
 
 
 int SPI1_Init_common( uint32_t baud_presc  = SPI_BAUDRATEPRESCALER_256 );
@@ -131,7 +131,6 @@ int cmd_spimem_sector0_erase( int argc, const char * const * argv )
 
 
 
-//  ----------------------------- configs ----------------
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

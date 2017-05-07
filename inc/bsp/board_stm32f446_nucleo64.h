@@ -1,10 +1,11 @@
 #ifndef _BOARD_STM32F446_NUCLEO64_H
 #define _BOARD_STM32F446_NUCLEO64_H
 
-#define def_stksz 512
-
 // definition of resoures STM32F446R nucleo 64 board
 // headers must be included manualy in C/CPP file
+
+#define def_stksz 512
+
 
 // default: single LED on A5
 #define BOARD_N_LEDS_MINI 1
@@ -28,15 +29,14 @@
 
 #define LED_BSP_YELLOW_MINI 1
 
-#define LED_BSP_RED         1
-#define LED_BSP_RED         1
-#define LED_BSP_RED_0       1
-#define LED_BSP_YELLOW      2
-#define LED_BSP_YELLOW_0    2
-#define LED_BSP_GREEN       4
-#define LED_BSP_GREEN_0     4
-#define LED_BSP_BLUE        8
-#define LED_BSP_BLUE_0      8
+#define LED_BSP_RED       1
+#define LED_BSP_RED_0     1
+#define LED_BSP_YELLOW    2
+#define LED_BSP_YELLOW_0  2
+#define LED_BSP_GREEN     4
+#define LED_BSP_GREEN_0   4
+#define LED_BSP_BLUE      8
+#define LED_BSP_BLUE_0    8
 
 #define LED_BSP_IDLE      LED_BSP_BLUE
 #define LED_BSP_TX        LED_BSP_RED
@@ -86,7 +86,6 @@
 #define BOARD_UART_DEFAULT_IRQ        USART2_IRQn
 #define BOARD_UART_DEFAULT_IRQHANDLER USART2_IRQHandler
 
-
 #define BOARD_I2C_DEFAULT               I2C1
 #define BOARD_I2C_DEFAULT_NAME          "I2C1"
 #define BOARD_I2C_DEFAULT_SPEED         100000;
@@ -99,6 +98,7 @@
 #define BOARD_I2C_DEFAULT_DISABLE       __I2C1_CLK_DISABLE();
 #define BOARD_I2C_DEFAULT_IRQ           I2C1_EV_IRQn
 #define BOARD_I2C_DEFAULT_IRQHANDLER    I2C1_EV_IRQHandler
+
 
 
 #define BOARD_CONSOLE_DEFINES         UART_CONSOLE_DEFINES( USART2 );
