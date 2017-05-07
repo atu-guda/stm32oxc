@@ -14,12 +14,10 @@ USE_USB_DEFAULT_CDC = y
 # REQUIRE_SPECIAL_CLOCK = y
 
 
-# TODO: copy to main location
-OXCDIR = /home/atu/proj/stm32/oxc
+OXCDIR = /usr/share/stm32oxc
 
 
 SRCS  = main.cpp
-SRCS += usbfs_init.cpp
 
 SRCS += tim18_enco_exa_init.cpp
 SRCS += timer_common.cpp

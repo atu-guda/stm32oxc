@@ -6,6 +6,9 @@ SUBDIRS = \
   03_uart \
   04_uart_console \
   06_i2c_test \
+  12_tim_pwm \
+  14_tim_enco \
+  15_tim_usonic \
   x01_fmc \
   x02_stemwin_fmc
 
@@ -18,9 +21,6 @@ SUBDIRS = \
 #  09_i2c_bmp085 \
 #  10_i2c_pcf8591 \
 #  11_i2c_ds3231 \
-#  12_tim_pwm \
-#  14_tim_enco \
-#  15_tim_usonic \
 #  16_step1 \
 #  17_1w_18b20 \
 #  18_i2c_ssd1306_oled \

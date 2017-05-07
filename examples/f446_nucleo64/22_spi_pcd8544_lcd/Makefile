@@ -15,8 +15,7 @@ USE_FREERTOS = y
 
 USE_FONTS = y
 
-# TODO: copy to main location
-OXCDIR = /home/atu/proj/stm32/oxc
+OXCDIR = /usr/share/stm32oxc
 
 
 SRCS  = main.cpp

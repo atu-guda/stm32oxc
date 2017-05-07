@@ -13,8 +13,7 @@ NOUSE_OXC_OSFUN = y
 # USE_USB_DEFAULT_CDC = y
 
 
-# TODO: copy to main location
-OXCDIR = /home/atu/proj/stm32/oxc
+OXCDIR = /usr/share/stm32oxc
 
 
 SRCS  = main.cpp

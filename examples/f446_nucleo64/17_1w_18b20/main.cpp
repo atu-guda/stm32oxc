@@ -31,10 +31,6 @@ const CmdInfo* global_cmds[] = {
 };
 
 
-extern "C" {
-void task_main( void *prm UNUSED_ARG );
-}
-
 IoPin pin_wire1( GPIOC, GPIO_PIN_4 );
 OneWire wire1( pin_wire1 );
 

@@ -3,7 +3,7 @@ Test on-board LSM303DHLC accelerometerpart
 SCL = B6 + 10k pullUp on board
 SDA = B7 + 10k pullUp on board
 
-Used USART2 with USB_UART board.
+Used USART2 with USB-UART board.
 A2  = USART2_TX
 A3  = USART2_RX
 

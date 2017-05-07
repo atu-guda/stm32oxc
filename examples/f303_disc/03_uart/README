@@ -1,4 +1,5 @@
 Simple usage of UART.
+IRQ disabled in stm32f3xx_hal_conf.h file
 
 Used USART2 with USB_UART board.
 A2  = USART2_TX

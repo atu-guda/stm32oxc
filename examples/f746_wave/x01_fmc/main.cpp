@@ -24,10 +24,6 @@ const CmdInfo* global_cmds[] = {
 };
 
 
-extern "C" {
-void task_main( void *prm UNUSED_ARG );
-}
-
 
 
 void MX_FMC_Init(void);
@@ -46,7 +42,6 @@ int main(void)
   leds.write( 0x02 );  delay_bad_ms( 200 );
   BSP_SDRAM_Initialization_sequence( 0 ); // 0 if fake
 
-  BOARD_POST_INIT_BLINK;
 
   BOARD_POST_INIT_BLINK;
 
@@ -76,7 +71,6 @@ int cmd_test0( int argc, const char * const * argv )
 }
 
 
-//  ----------------------------- configs ----------------
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

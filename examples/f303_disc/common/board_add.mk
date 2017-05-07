@@ -25,8 +25,5 @@ SRCS += stm32f3xx_hal_gpio.c
 SRCS += stm32f3xx_hal_rcc.c
 SRCS += stm32f3xx_hal_rcc_ex.c
 
-ifeq "$(USE_USB)" "y"
-  SRCS += usbfs_init.cpp
-endif
 
 

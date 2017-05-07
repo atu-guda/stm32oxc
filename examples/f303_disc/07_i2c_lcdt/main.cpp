@@ -39,15 +39,9 @@ const CmdInfo* global_cmds[] = {
 };
 
 
-extern "C" {
-void task_main( void *prm UNUSED_ARG );
-}
-
 I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );
 HD44780_i2c lcdt( i2cd, 0x27 );
-
-void MX_I2C1_Init( I2C_HandleTypeDef &i2c );
 
 
 int main(void)
@@ -57,7 +51,7 @@ int main(void)
   UVAR('t') = 1000;
   UVAR('n') = 10;
 
-  MX_I2C1_Init( i2ch );
+  UVAR('e') = i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
 
   BOARD_POST_INIT_BLINK;
@@ -152,7 +146,6 @@ int cmd_puts( int argc, const char * const * argv )
   return 0;
 }
 
-//  ----------------------------- configs ----------------
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

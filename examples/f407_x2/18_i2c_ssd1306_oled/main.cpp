@@ -49,10 +49,6 @@ const CmdInfo* global_cmds[] = {
 };
 
 
-extern "C" {
-void task_main( void *prm UNUSED_ARG );
-} // extern "C"
-
 I2C_HandleTypeDef i2ch;
 
 const uint16_t xmax = SSD1306::X_SZ, ymax = SSD1306::Y_SZ;

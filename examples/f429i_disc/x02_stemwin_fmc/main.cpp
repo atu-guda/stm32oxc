@@ -17,11 +17,10 @@ USE_DIE4LED_ERROR_HANDLER;
 FreeRTOS_to_stm32cube_tick_hook;
 BOARD_DEFINE_LEDS;
 
-BOARD_CONSOLE_DEFINES;
-
 SDRAM_HandleTypeDef hsdram;
 extern LTDC_HandleTypeDef hltdc;
 
+BOARD_CONSOLE_DEFINES;
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -50,7 +49,6 @@ uint8_t GUI_Initialized = 0;
 void BSP_Pointer_Update();
 
 extern "C" {
-void task_main( void *prm UNUSED_ARG );
 void task_grout( void *prm UNUSED_ARG );
 } // extern "C"
 
@@ -79,7 +77,6 @@ int main(void)
   UVAR('n') = 10;
 
   BOARD_POST_INIT_BLINK;
-
 
   BOARD_CREATE_STD_TASKS;
   xTaskCreate( task_grout,      "grout", 2*def_stksz, nullptr,   1, nullptr );
@@ -197,8 +194,6 @@ void LTDC_IRQHandler(void)
   HAL_LTDC_IRQHandler( &hltdc );
 }
 
-
-//  ----------------------------- configs ----------------
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

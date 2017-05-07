@@ -15,12 +15,10 @@ USE_USB_DEFAULT_CDC = y
 
 USE_FONTS = y
 
-# TODO: copy to main location
-OXCDIR = /home/atu/proj/stm32/oxc
+OXCDIR = /usr/share/stm32oxc
 
 
 SRCS  = main.cpp
-SRCS += usbfs_init.cpp
 
 SRCS += oxc_i2c_default_init.cpp
 

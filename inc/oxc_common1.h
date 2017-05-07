@@ -21,6 +21,7 @@ extern "C" {
 
 void task_leds( void *prm UNUSED_ARG ) __weak;
 void task_gchar( void *prm UNUSED_ARG ) __weak;
+void task_main( void *prm UNUSED_ARG );
 
 }
 

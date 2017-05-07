@@ -1,7 +1,6 @@
 Using  USART as console via SmallRL.
-Used UART8 with USB-UART board. via GoBus port 3
 
-// beware
+Used UART8 with USB-UART board. via GoBus port 3. beware!
 E0  = UART8_RX
 E1  = UART8_TX
 

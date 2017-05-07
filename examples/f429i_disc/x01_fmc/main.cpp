@@ -28,26 +28,22 @@ const CmdInfo* global_cmds[] = {
 };
 
 
-extern "C" {
-void task_main( void *prm UNUSED_ARG );
-} // extern "C"
-
 
 
 int main(void)
 {
   BOARD_PROLOG;
 
-  bsp_init_sdram( &hsdram );
-  leds.write( 0x03 );  delay_bad_ms( 200 );
-
-
   UVAR('t') = 1000;
   UVAR('n') = 10;
 
+  leds.write( 0x03 );  delay_bad_ms( 200 );
+  bsp_init_sdram( &hsdram );
+
+
   BOARD_POST_INIT_BLINK;
 
-   BOARD_CREATE_STD_TASKS;
+  BOARD_CREATE_STD_TASKS;
 
   SCHEDULER_START;
   return 0;
@@ -55,7 +51,6 @@ int main(void)
 
 void task_main( void *prm UNUSED_ARG ) // TMAIN
 {
-
   default_main_loop();
   vTaskDelete(NULL);
 }
@@ -77,8 +72,6 @@ int cmd_test0( int argc, const char * const * argv )
 }
 
 
-
-//  ----------------------------- configs ----------------
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

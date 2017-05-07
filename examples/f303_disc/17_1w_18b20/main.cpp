@@ -31,10 +31,6 @@ const CmdInfo* global_cmds[] = {
 };
 
 
-extern "C" {
-void task_main( void *prm UNUSED_ARG );
-}
-
 IoPin pin_wire1( GPIOC, GPIO_PIN_0 );
 OneWire wire1( pin_wire1 );
 
@@ -168,7 +164,6 @@ int cmd_1wire0( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
   return 0;
 }
 
-//  ----------------------------- configs ----------------
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

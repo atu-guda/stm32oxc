@@ -11,22 +11,21 @@ USE_FREERTOS = y
 # FREERTOS_HEAP = heap_2.c
 # # default: heap_3.c
 # USE_USB_DEFAULT_CDC = y
-# REQUIRE_SPECIAL_CLOCK = y # if special clock init is required
+# REQUIRE_SPECIAL_CLOCK = y
 
 
-# TODO: copy to main location
-OXCDIR = /home/atu/proj/stm32/oxc
+OXCDIR = /usr/share/stm32oxc
 
 CFLAGS_ADD += -I$(STMDIR)/bsp/Components/lsm303dlhc
 ADDSRC     +=   $(STMDIR)/bsp/Components/lsm303dlhc
 
 SRCS  = main.cpp
 
-SRCS += i2c1_b6b7_hw.cpp
+SRCS += oxc_i2c_default_init.cpp
 
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
-# list: see ../common/f3_modules.mk
+# see ../common/f3_modules.mk
 
 SRCS += stm32f3xx_hal_i2c_ex.c
 

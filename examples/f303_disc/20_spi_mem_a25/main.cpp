@@ -35,11 +35,6 @@ const CmdInfo* global_cmds[] = {
 };
 
 
-extern "C" {
-void task_main( void *prm UNUSED_ARG );
-}
-
-
 int MX_SPI2_Init( uint32_t prescal = SPI_BAUDRATEPRESCALER_64 );
 PinsOut nss_pin( GPIOB, 12, 1 );
 SPI_HandleTypeDef spi2_h;
@@ -131,7 +126,6 @@ int cmd_spimem_sector0_erase( int argc, const char * const * argv )
 
 
 
-//  ----------------------------- configs ----------------
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

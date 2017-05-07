@@ -8,7 +8,7 @@ B15 = MOSI
 
 
 
-Used USART2 with USB_UART board.
+Used USART2 with USB-UART board.
 A2  = USART2_TX
 A3  = USART2_RX
 

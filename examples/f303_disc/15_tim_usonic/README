@@ -11,7 +11,7 @@ Vcc for sensor: 5v required: with 3.3: no good return pulse
 
 TODO: calibrate
 
-Used USART2 with USB_UART board.
+Used USART2 with USB-UART board.
 A2  = USART2_TX
 A3  = USART2_RX
 

@@ -2,7 +2,6 @@ Using  USART as console via SmallRL.
 
 
 Used USART1 with VCP on ST_LInk V2-1
-
 A9   = USART1_TX
 A10  = USART1_RX
 

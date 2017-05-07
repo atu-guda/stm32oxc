@@ -49,10 +49,6 @@ const CmdInfo* global_cmds[] = {
 };
 
 
-extern "C" {
-void task_main( void *prm UNUSED_ARG );
-}
-
 I2C_HandleTypeDef i2ch;
 
 const uint16_t xmax = SSD1306::X_SZ, ymax = SSD1306::Y_SZ;
@@ -62,10 +58,6 @@ PixBuf1V pb0( xmax, ymax );
 DevI2C i2cd( &i2ch, 0 );
 SSD1306 screen( i2cd );
 
-void MX_I2C1_Init( I2C_HandleTypeDef &i2c );
-
-
-
 
 int main(void)
 {
@@ -74,12 +66,10 @@ int main(void)
   UVAR('t') = 1000;
   UVAR('n') = 20;
 
-  // MX_I2C1_Init( i2ch, 400000 );
-  MX_I2C1_Init( i2ch );
+  UVAR('e') = i2c_default_init( i2ch, 400000 );
   i2c_dbg = &i2cd;
 
   BOARD_POST_INIT_BLINK;
-
 
   BOARD_CREATE_STD_TASKS;
 
@@ -228,8 +218,6 @@ int cmd_setaddr( int argc, const char * const * argv )
   return 0;
 }
 
-
-//  ----------------------------- configs ----------------
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

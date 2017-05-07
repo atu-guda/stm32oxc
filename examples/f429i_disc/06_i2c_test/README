@@ -4,7 +4,6 @@ SCL = A8 + 4.7k pullUp
 SDA = C9 + 4.7k pullUp
 
 Used USART1 with VCP on ST_LInk V2-1
-
 A9   = USART2_TX
 A10  = USART2_RX
 

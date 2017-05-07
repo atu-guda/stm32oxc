@@ -24,6 +24,8 @@
 #define HAL_DMA_MODULE_ENABLED
 #define HAL_UART_MODULE_ENABLED
 
+#define UART_DEFALT_NO_IRQ 1
+
 #include "../common/stm32f4xx_hal_conf_common.h"
 
 

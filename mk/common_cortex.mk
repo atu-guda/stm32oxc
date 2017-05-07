@@ -132,6 +132,7 @@ ifeq "$(USE_OXC_CONSOLE_USB_CDC)" "y"
   USE_USB = y
   USE_OXC_CONSOLE = y
   SRCS += oxc_usbcdcio.cpp
+  SRCS += usbfs_init.cpp
   ALLFLAGS += -DUSE_OXC_CONSOLE_USB_CDC
 endif
 
@@ -182,6 +183,14 @@ ifeq "$(USE_OXC_I2C)" "y"
   SRCS += stm32$(MCSUFF)xx_hal_i2c.c
   ifeq "$(USE_OXC_DEBUG)" "y"
     SRCS += oxc_debug_i2c.cpp
+  endif
+  # f3 special case
+  ifeq "$(MCSUFF)" "f3"
+    SRCS += stm32$(MCSUFF)xx_hal_i2c_ex.c
+  endif
+  # f7 special case
+  ifeq "$(MCSUFF)" "f7"
+    SRCS += stm32$(MCSUFF)xx_hal_i2c_ex.c
   endif
 endif
 

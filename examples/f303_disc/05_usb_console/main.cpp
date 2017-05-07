@@ -25,10 +25,6 @@ const CmdInfo* global_cmds[] = {
 };
 
 
-extern "C" {
-void task_main( void *prm UNUSED_ARG );
-}
-
 int main(void)
 {
   STD_PROLOG_USBCDC;
@@ -51,7 +47,7 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
 }
 
 
-//  ----------------------------- configs ----------------
+
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

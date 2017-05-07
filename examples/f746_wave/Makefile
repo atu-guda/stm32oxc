@@ -5,6 +5,9 @@ SUBDIRS = \
   02_leds_rtos \
   03_uart \
   04_uart_console \
+  06_i2c_test \
+  30_sdcard1 \
+  31_sdcard2 \
   50_adc0 \
   51_adcdma \
   x01_fmc \

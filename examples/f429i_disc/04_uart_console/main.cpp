@@ -24,10 +24,6 @@ const CmdInfo* global_cmds[] = {
 };
 
 
-extern "C" {
-void task_main( void *prm UNUSED_ARG );
-} // extern "C"
-
 
 
 int main(void)
@@ -50,8 +46,8 @@ int main(void)
 
 void task_main( void *prm UNUSED_ARG ) // TMAIN
 {
-  // usartio.sendStrSync( "0123456789ABCDEF" NL );
-  // delay_ms( 10 );
+  usartio.sendStrSync( "0123456789ABCDEF" NL );
+  delay_ms( 10 );
 
   default_main_loop();
   vTaskDelete(NULL);

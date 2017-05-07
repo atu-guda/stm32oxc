@@ -3,7 +3,7 @@ Test hmc5983 magnitometr on I2C1
 SCL = B6 ? 4.7k pullUp
 SDA = B7 ? 4.7k pullUp
 
-Used USART2 with USB_UART board.
+Used USART2 with USB-UART board.
 A2  = USART2_TX
 A3  = USART2_RX
 

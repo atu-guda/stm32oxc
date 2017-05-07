@@ -12,7 +12,7 @@
 
 #include <bsp/board_stm32f429discovery.h>
 
-// not use with FreeRTOS
+// now even for FreeRTOS
 #define STD_SYSTICK_HANDLER 1
 
 // ########################## Module Selection ##############################

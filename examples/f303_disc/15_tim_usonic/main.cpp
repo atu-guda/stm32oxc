@@ -28,13 +28,6 @@ const CmdInfo* global_cmds[] = {
 };
 
 
-extern "C" {
-void task_main( void *prm UNUSED_ARG );
-}
-
-
-
-
 int main(void)
 {
   BOARD_PROLOG;
@@ -163,7 +156,6 @@ void HAL_TIM_IC_CaptureCallback( TIM_HandleTypeDef *htim )
   }
 }
 
-//  ----------------------------- configs ----------------
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

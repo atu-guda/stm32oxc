@@ -12,12 +12,13 @@ USE_FREERTOS = y
 # USE_USB_DEFAULT_CDC = y
 
 
-# TODO: copy to main location
-OXCDIR = /home/atu/proj/stm32/oxc
+OXCDIR = /usr/share/stm32oxc
 
 
 SRCS  = main.cpp
 
+# for now
+NOUSE_DEFAULT_UART_INIT = y
 SRCS += stm32f1xx_hal_msp.cpp
 
 SRCS += oxc_common1.cpp

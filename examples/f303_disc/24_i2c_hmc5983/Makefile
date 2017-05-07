@@ -14,21 +14,17 @@ USE_FREERTOS = y
 # REQUIRE_SPECIAL_CLOCK = y
 
 
-# TODO: copy to main location
-OXCDIR = /home/atu/proj/stm32/oxc
+OXCDIR = /usr/share/stm32oxc
 
 
 SRCS  = main.cpp
 
-SRCS += i2c1_b6b7_hw.cpp
+SRCS += oxc_i2c_default_init.cpp
 
 SRCS += oxc_hmc5983.cpp
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
-# list: see ../common/f3_modules.mk
-
-# f3 special case
-SRCS += stm32f3xx_hal_i2c_ex.c
+# see ../common/f3_modules.mk
 
 
 include ../common/board_add.mk

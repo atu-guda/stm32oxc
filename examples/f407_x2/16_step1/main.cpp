@@ -44,10 +44,6 @@ MotorMode m_modes[] = {
 const int n_modes = sizeof(m_modes)/sizeof(MotorMode);
 
 
-extern "C" {
-void task_main( void *prm UNUSED_ARG );
-} // extern "C"
-
 int main(void)
 {
   BOARD_PROLOG;

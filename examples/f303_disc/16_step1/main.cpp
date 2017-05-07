@@ -44,10 +44,6 @@ MotorMode m_modes[] = {
 const int n_modes = sizeof(m_modes)/sizeof(MotorMode);
 
 
-extern "C" {
-void task_main( void *prm UNUSED_ARG );
-}
-
 int main(void)
 {
   BOARD_PROLOG;
@@ -126,7 +122,6 @@ int cmd_test0( int argc, const char * const * argv )
   return 0;
 }
 
-//  ----------------------------- configs ----------------
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
