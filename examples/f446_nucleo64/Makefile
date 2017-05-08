@@ -23,6 +23,7 @@ SUBDIRS = \
   22_spi_pcd8544_lcd \
   24_i2c_hmc5983 \
   25_spi_max31855_tcouple \
+  26_i2c_pca9685 \
   30_sdcard1 \
   31_sdcard2 \
   50_adc0 \

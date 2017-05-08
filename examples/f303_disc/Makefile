@@ -25,6 +25,7 @@ SUBDIRS = \
   23_spi_sdcard \
   24_i2c_hmc5983 \
   25_spi_max31855_tcouple \
+  26_i2c_pca9685 \
   l01_accel \
   l02_accel \
   l03_mag
