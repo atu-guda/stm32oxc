@@ -39,7 +39,7 @@ void MX_ADC1_Init( uint8_t n_ch, uint32_t sampl_time )
   }
 
   /**Configure for the selected ADC regular channels its corresponding rank in the sequencer and its sample time.  */
-  decltype(ADC_CHANNEL_0) static const constexpr chs[]  { ADC_CHANNEL_0, ADC_CHANNEL_1, ADC_CHANNEL_6, ADC_CHANNEL_7 };
+  decltype(ADC_CHANNEL_0) static const constexpr chs[]  { ADC_CHANNEL_5, ADC_CHANNEL_13, ADC_CHANNEL_4, ADC_CHANNEL_15 };
   sConfig.SamplingTime = sampl_time;
 
   int rank = 1;
@@ -55,16 +55,18 @@ void MX_ADC1_Init( uint8_t n_ch, uint32_t sampl_time )
 
 void HAL_ADC_MspInit( ADC_HandleTypeDef* adcHandle )
 {
-  GPIO_InitTypeDef GPIO_InitStruct;
+  GPIO_InitTypeDef gio;
   if( adcHandle->Instance == ADC1 ) {
     __HAL_RCC_ADC1_CLK_ENABLE();
     __GPIOA_CLK_ENABLE();
 
-    //* ADC1 GPIO Configuration        PA1   ------> ADC1_IN1....
-    GPIO_InitStruct.Pin  = GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_6  | GPIO_PIN_7;
-    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init( GPIOA, &GPIO_InitStruct );
+    //* ADC1 GPIO Configuration        A5, C4, C5, C6
+    gio.Pin  = GPIO_PIN_5;
+    gio.Mode = GPIO_MODE_ANALOG;
+    gio.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init( GPIOA, &gio );
+    gio.Pin  = GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_6;
+    HAL_GPIO_Init( GPIOC, &gio );
 
     // DMA part
     __HAL_RCC_DMA2_CLK_ENABLE();
