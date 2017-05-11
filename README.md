@@ -1,3 +1,5 @@
-Port of OX (small stm32 library) to stm32 cube
+C++ library and examples for STM32.
+STM32Cube is used as backend.
 
-Under pre-alpha stage!!!!!
+Alpha stage.
+

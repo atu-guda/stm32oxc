@@ -1,13 +1,19 @@
-1wire return codes test
-declare all/most IRQ handlers as extern "C"
-BitField debug print
+Fix task_gchar / executor logic
+Split SPI/SPI client with own softNSS.
 SPI debug
+Test 2 I2C clients on one device
+SWO
+Cmd buffer alloc
+I2C, SPI: from buf to device, fill buf.
+str2addr: some common addrs: GPIOA.. USARTx, SPIx, I2Cx, ..... (debug only)
+Common timer info
+1wire return codes test
 Keepalive LED with more data.
 Common graphics tests.
 DevIO : public Dev ?
 IO on idle / manual flush.
 Errno of fd check
-Common UART init (perf board or per MCU/UART_N)
+F3: OA
 Test: float, sprintf, queue cost. TODO: iprintf!
  Results:
   queue: =~ size * n + fixed; (RAM)
@@ -15,14 +21,16 @@ Test: float, sprintf, queue cost. TODO: iprintf!
   sin: +4k
   sqrt: +0.5;
   arm_sin_f32: up to 2x faster
-  printf: +16k
+  printf: +26k
 
 Move more common code to common dir.
 
 devices:
-ADC
-DAC
-PCA9685 - for Servo
+external ADC
+USB mass storage
+USB data streams
+CAN
+PS/2
 DHT11 - humidity
 IRDA
 Color screen

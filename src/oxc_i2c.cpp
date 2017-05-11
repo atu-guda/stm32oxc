@@ -119,3 +119,36 @@ int  DevI2C::recv_reg2(  int16_t reg, uint8_t *dd, int nd, uint8_t addr )
   return recv_reg12( reg, dd, nd, true, addr );
 }
 
+// --------------- I2CClient functions -------------------------
+
+
+uint8_t I2CClient::recv_reg1_byte(  int8_t reg,  uint8_t defVal )
+{
+  uint8_t v = defVal, vx;
+  if( dev.recv_reg1( reg, &vx, 1, addr ) == 1 ) {
+    v = vx;
+  }
+  return v;
+}
+
+uint16_t I2CClient::recv_reg1_16bit(  int8_t reg,  uint16_t defVal )
+{
+  uint16_t v = defVal, vx;
+  if( dev.recv_reg1( reg, (uint8_t*)(&vx), 2, addr ) == 2 ) {
+    v = vx;
+  }
+  return v;
+}
+
+uint16_t I2CClient::recv_reg1_16bit_rev(  int8_t reg,  uint16_t defVal )
+{
+  uint16_t v = defVal, vx;
+  if( dev.recv_reg1( reg, (uint8_t*)(&vx), 2, addr ) == 2 ) {
+    v = rev16( vx );
+  }
+  return v;
+}
+
+
+
+

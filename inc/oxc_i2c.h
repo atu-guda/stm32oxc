@@ -65,6 +65,10 @@ class I2CClient {
       { return dev.send_reg1( reg, ds, ns, addr ); };
    int  send_reg1(  uint8_t reg,  uint8_t d )
       { return dev.send_reg1( reg, d, addr ); }
+   int  send_reg1(  uint8_t reg,  uint16_t d )
+      { return dev.send_reg1( reg, (const uint8_t*)(&d), 2, addr ); }
+   int  send_reg1_rev(  uint8_t reg,  uint16_t d )
+      { d = rev16( d ); return dev.send_reg1( reg, (const uint8_t*)(&d), 2, addr ); }
    int  send_reg2(  uint16_t reg, const uint8_t *ds, int ns )
      { return dev.send_reg2( reg, ds, ns, addr ); }
    int  send_reg2(  uint8_t reg,  uint8_t d )
@@ -77,6 +81,9 @@ class I2CClient {
      { return dev.recv_reg12( reg, dd, nd, is2byte, addr ); }
    int  recv_reg1(  int8_t reg,  uint8_t *dd, int nd )
      { return dev.recv_reg1( reg, dd, nd, addr ); }
+   uint8_t recv_reg1_byte(  int8_t reg,  uint8_t defVal = 0 );
+   uint16_t recv_reg1_16bit(  int8_t reg,  uint16_t defVal = 0 );
+   uint16_t recv_reg1_16bit_rev(  int8_t reg,  uint16_t defVal = 0 );
    int  recv_reg2(  int16_t reg, uint8_t *dd, int nd )
      { return dev.recv_reg2( reg, dd, nd, addr ); }
    int  getErr() const { return dev.getErr(); };
