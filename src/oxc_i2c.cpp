@@ -2,17 +2,7 @@
 
 void DevI2C::initI2C( uint32_t speed, uint8_t own_addr )
 {
-  // i2c.Instance = I2C1;
-  // i2c.Init.Timing = 0x10808DD3;
-  // i2c.Init.OwnAddress1 = 0;
-  // i2c.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
-  // i2c.Init.DualAddressMode = I2C_DUALADDRESS_DISABLED;
-  // i2c.Init.OwnAddress2 = 0;
-  // i2c.Init.OwnAddress2Masks = I2C_OA2_NOMASK;
-  // i2c.Init.GeneralCallMode = I2C_GENERALCALL_DISABLED;
-  // i2c.Init.NoStretchMode = I2C_NOSTRETCH_DISABLED;
-  // HAL_I2C_Init( i2ch );
-  __HAL_I2C_ENABLE( i2ch );
+  resetDev();
 }
 
 void DevI2C::deInit()
@@ -122,7 +112,7 @@ int  DevI2C::recv_reg2(  int16_t reg, uint8_t *dd, int nd, uint8_t addr )
 // --------------- I2CClient functions -------------------------
 
 
-uint8_t I2CClient::recv_reg1_byte(  int8_t reg,  uint8_t defVal )
+uint8_t I2CClient::recv_reg1_8bit(  int8_t reg,  uint8_t defVal )
 {
   uint8_t v = defVal, vx;
   if( dev.recv_reg1( reg, &vx, 1, addr ) == 1 ) {
@@ -150,5 +140,18 @@ uint16_t I2CClient::recv_reg1_16bit_rev(  int8_t reg,  uint16_t defVal )
 }
 
 
+int I2CClient::recv_reg1_16bit_n(  int8_t reg, uint16_t *d, int n )
+{
+  return dev.recv_reg1( reg, (uint8_t*)(d), n*2, addr ) / 2;
+}
+
+int I2CClient::recv_reg1_16bit_n_rev(  int8_t reg, uint16_t *d, int n )
+{
+  int n_o = recv_reg1_16bit_n( reg, d, n );
+  for( int i=0; i<n_o; ++i ) {
+    d[i] = rev16( d[i] );
+  }
+  return n_o;
+}
 
 

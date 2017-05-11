@@ -14,7 +14,7 @@ uint16_t ADS1115::readReg( uint8_t reg )
 bool ADS1115::writeReg( uint8_t reg, uint16_t val )
 {
   reg &= 0x03; // limit to 0-3
-  return send_reg1_rev( reg, val ) == 2;
+  return send_reg1_16bit_rev( reg, val ) == 2;
 }
 
 int16_t ADS1115::getOneShot()

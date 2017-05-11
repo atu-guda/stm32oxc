@@ -53,22 +53,24 @@ class MPU6050 : public I2CClient {
    MPU6050( DevI2C &a_dev, uint8_t d_addr = mpu6050_def_addr )
      : I2CClient( a_dev, d_addr ) {};
    void init();
-   void sleep() {  dev.send_reg1( mpu6050_reg_pwr1, pll_sleep, addr ); }
-   void wake( PLL_source sou ){ dev.send_reg1( mpu6050_reg_pwr1, sou, addr ); }
-   void setDLP( DLP_BW dlp_bw ) { dev.send_reg1( mpu6050_reg_cfg, dlp_bw, addr ); }
-   void setAccScale( ACC_scale accs ) { dev.send_reg1( mpu6050_reg_cfg_acc, accs, addr ); }
-   void setGyroScale( Gyro_scale gyros ) { dev.send_reg1( mpu6050_reg_cfg_gyro, gyros, addr ); }
-   int fixTemp( int v ) { return v*10/34 + 3653; };
-   int16_t getReg( uint8_t reg ); // reg is 16-bit
-   void    getRegs( uint8_t reg1, uint8_t n, int16_t *data );
+   void sleep() {  send_reg1_8bit( mpu6050_reg_pwr1, pll_sleep ); }
+   void wake( PLL_source sou ){ send_reg1_8bit( mpu6050_reg_pwr1, sou ); }
+   void setDLP( DLP_BW dlp_bw ) { send_reg1_8bit( mpu6050_reg_cfg, dlp_bw ); }
+   void setAccScale( ACC_scale accs ) { send_reg1_8bit( mpu6050_reg_cfg_acc, accs ); }
+   void setGyroScale( Gyro_scale gyros ) { send_reg1_8bit( mpu6050_reg_cfg_gyro, gyros ); }
+   static int fixTemp( int v ) { return v*10/34 + 3653; };
+   int16_t getReg( uint8_t reg )
+     { return recv_reg1_16bit_rev( reg, 0 ); };
+   int    getRegs( uint8_t reg1, uint8_t n, int16_t *data )
+     { return recv_reg1_16bit_n_rev( reg1, (uint16_t*)data, n ); }
    int16_t getAccX() { return getReg( mpu6050_reg_a_xh ); }
    int16_t getAccY() { return getReg( mpu6050_reg_a_yh ); }
    int16_t getAccZ() { return getReg( mpu6050_reg_a_zh ); }
-   void    getAccAll( int16_t *acc ){ return getRegs( mpu6050_reg_a_xh, 3, acc ); }
+   int     getAccAll( int16_t *acc ){ return getRegs( mpu6050_reg_a_xh, 3, acc ); }
    int16_t getGyroX() { return getReg( mpu6050_reg_g_xh ); }
    int16_t getGyroY() { return getReg( mpu6050_reg_g_yh ); }
    int16_t getGyroZ() { return getReg( mpu6050_reg_g_zh ); }
-   void    getGyroAll( int16_t *gyro ){ return getRegs( mpu6050_reg_g_xh, 3, gyro ); }
+   int     getGyroAll( int16_t *gyro ){ return getRegs( mpu6050_reg_g_xh, 3, gyro ); }
    int16_t getTemp() { return fixTemp( getReg( mpu6050_reg_temph )); }
    void    getAll( int16_t *all_data ){
      getRegs( mpu6050_reg_a_xh, 8, all_data );

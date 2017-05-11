@@ -7,10 +7,10 @@ bool PCA9685::init( uint8_t presc_new )
   }
 
   sleep(); // prescale can only be set while sleep
-  if( send_reg1( reg_prescale, presc ) < 1 ) {
+  if( send_reg1_8bit( reg_prescale, presc ) < 1 ) {
     return false;
   }
-  if( send_reg1( reg_mode0, cmd_on_inc ) < 1 ) {
+  if( send_reg1_8bit( reg_mode0, cmd_on_inc ) < 1 ) {
     return false;
   }
   return true;
@@ -18,7 +18,7 @@ bool PCA9685::init( uint8_t presc_new )
 
 void PCA9685::sleep()
 {
-  send_reg1( reg_mode0, cmd_off );
+  send_reg1_8bit( reg_mode0, cmd_off );
 }
 
 void PCA9685::set( uint8_t ch, uint16_t on, uint16_t off )
@@ -50,7 +50,7 @@ void PCA9685::setServo( uint8_t ch, int val )
 void PCA9685::off( uint8_t ch )
 {
   uint8_t reg = ch2regOff( ch ) + 1;
-  send_reg1( reg, bit_onoff );
+  send_reg1_8bit( reg, bit_onoff );
 }
 
 void PCA9685::setAllServo( int val )
@@ -76,7 +76,7 @@ uint8_t PCA9685::freq2prec( uint32_t freq ) // static
 void PCA9685::offAll()
 {
   uint8_t reg = reg_all_s + 3;
-  send_reg1( reg, bit_onoff );
+  send_reg1_8bit( reg, bit_onoff );
 }
 
 uint32_t PCA9685::servo2t( int a )

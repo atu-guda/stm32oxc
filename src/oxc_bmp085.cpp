@@ -7,11 +7,7 @@
 bool BMP085::readCalibrData()
 {
 #ifndef BMP_DEBUG
-  int rc = recv_reg1( reg_calibr_start, (uint8_t*)(&calibr), sizeof(calibr) );
-  if( rc < (int)sizeof(calibr) ) {
-    return false;
-  }
-  rev16( (uint16_t*)(&calibr), n_calibr_data );
+  return recv_reg1_16bit_n_rev( reg_calibr_start, (uint16_t*)(&calibr), n_calibr_data ) == n_calibr_data;
 #else
   calibr.ac1 = 408;   calibr.ac2 = -72;   calibr.ac3 = -14383;
   calibr.ac4 = 32741; calibr.ac5 = 32757; calibr.ac6 =  23153;
@@ -20,15 +16,15 @@ bool BMP085::readCalibrData()
   calibr.mb = -32768;
   calibr.mc = -8711;
   calibr.md = 2868;
-#endif
   return true;
+#endif
 }
 
 int  BMP085::get_T_uncons( bool do_get )
 {
 #ifndef BMP_DEBUG
   if( do_get ) {
-    send_reg1( reg_cmd,  cmd_read_T );
+    send_reg1_8bit( reg_cmd, cmd_read_T );
     delay_ms( t_wait_T );
     uint8_t tt[2];
     recv_reg1( reg_out, tt, sizeof(tt) );
@@ -46,7 +42,7 @@ int  BMP085::get_P_uncons( bool do_get )
 #ifndef BMP_DEBUG
   if( do_get ) {
     uint8_t cmd = cmd_read_P0 | ( oss << 6 );
-    send_reg1( reg_cmd, cmd );
+    send_reg1_8bit( reg_cmd, cmd );
     delay_ms( t_wait_P );
     uint8_t tp[3];
     recv_reg1( reg_out, tp, sizeof(tp) );

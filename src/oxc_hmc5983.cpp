@@ -33,23 +33,12 @@ bool HMC5983::init( CRA odr, Scales scale )
 
 int16_t HMC5983::getReg( uint8_t reg )
 {
-  int32_t v;
-  int rc = recv_reg1( reg, (uint8_t*)(&v), 2 );
-  if( rc < 1 ) {
-    return 0;
-  }
-  v = rev16( v ); // swap bytes in 16-bits
-  return (int16_t)(v);
+  return recv_reg1_16bit_rev( reg );
 }
 
 bool HMC5983::getRegs( uint8_t reg1, uint8_t n, int16_t *data )
 {
-  int rc = recv_reg1( reg1 /*| 0x80 */, (uint8_t*)(data), 2*n );
-  if( rc < 1 ) {
-    return false;
-  }
-  rev16( (uint16_t*)data, n );
-  return true;
+  return recv_reg1_16bit_n_rev( reg1, (uint16_t*)(data), n ) == n;
 }
 
 // workhorse for read1 and readNextAuto
@@ -83,7 +72,7 @@ bool HMC5983::wait_read( int32_t wait_ms )
 bool HMC5983::read1( int32_t wait_ms )
 {
   regsXYZ[0] = regsXYZ[1] = regsXYZ[2] = 0;
-  if( send_reg1( reg_mode, mode_single ) != 1 ) {
+  if( send_reg1_8bit( reg_mode, mode_single ) != 1 ) {
     return false;
   }
   return wait_read( wait_ms );
@@ -91,7 +80,7 @@ bool HMC5983::read1( int32_t wait_ms )
 
 bool HMC5983::startAuto()
 {
-  if( send_reg1( reg_mode, mode_cont ) != 1 ) {
+  if( send_reg1_8bit( reg_mode, mode_cont ) != 1 ) {
     return false;
   }
   return true;
@@ -104,7 +93,7 @@ bool HMC5983::readNextAuto( int32_t wait_ms )
 
 bool HMC5983::stopAuto()
 {
-  if( send_reg1( reg_mode, mode_idle ) != 1 ) {
+  if( send_reg1_8bit( reg_mode, mode_idle ) != 1 ) {
     return false;
   }
   return true;
