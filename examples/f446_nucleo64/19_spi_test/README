@@ -17,7 +17,7 @@ s r 0 - to not send 00 bytes
 S 0x55 - set value
 
 To use logic analizer,
-  spi1_h.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;
+  spi_h.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;
   and add priliminary drop before.
 
 Used USART2 with ST_Link VCP

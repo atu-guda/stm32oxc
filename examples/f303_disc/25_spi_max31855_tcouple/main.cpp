@@ -33,8 +33,8 @@ CmdInfo CMDINFO_RESETSPI { "reset_spi", 'Z', cmd_reset_spi, " - reset spi"  };
 
 int MX_SPI2_Init( uint32_t prescal = SPI_BAUDRATEPRESCALER_64 );
 PinsOut nss_pin( GPIOB, 12, 1 ); // 4 - to test GPIO
-SPI_HandleTypeDef spi2_h;
-DevSPI spi_d( &spi2_h, &nss_pin );
+SPI_HandleTypeDef spi_h;
+DevSPI spi_d( &spi_h, &nss_pin );
 
 const uint32_t MAX31855_FAIL = 0x00010000;
 const uint32_t MAX31855_BRK  = 0x00000001;

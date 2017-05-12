@@ -44,8 +44,8 @@ CmdInfo CMDINFO_RESETSPI { "reset_spi", 'Z', cmd_reset_spi, " - reset spi"  };
 
 int SPI2_Init_common( uint32_t baud_presc  = SPI_BAUDRATEPRESCALER_256 );
 PinsOut nss_pin( GPIOB, 1, 1 ); //  to test GPIO
-SPI_HandleTypeDef spi2_h;
-DevSPI spi_d( &spi2_h, &nss_pin );
+SPI_HandleTypeDef spi_h;
+DevSPI spi_d( &spi_h, &nss_pin );
 
 int main(void)
 {
@@ -195,7 +195,7 @@ int cmd_duplex_spi( int argc, const char * const * argv )
 int cmd_reset_spi( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
 {
   // int rc = MX_SPI1_Init();
-  // HAL_SPI_MspInit( &spi1_h );
+  // HAL_SPI_MspInit( &spi_h );
   // pr_sdx( rc );
   spi_d.resetDev();
 

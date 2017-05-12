@@ -33,8 +33,8 @@ const CmdInfo* global_cmds[] = {
 
 int MX_SPI2_Init( uint32_t prescal = SPI_BAUDRATEPRESCALER_64 );
 PinsOut nss_pin( GPIOB, 12, 1 ); // 4 - to test GPIO
-SPI_HandleTypeDef spi2_h;
-DevSPI spi_d( &spi2_h, &nss_pin );
+SPI_HandleTypeDef spi_h;
+DevSPI spi_d( &spi_h, &nss_pin );
 
 DevSPI_SdCard card( spi_d );
 uint8_t cardbuf[512];

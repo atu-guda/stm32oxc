@@ -34,8 +34,8 @@ const CmdInfo* global_cmds[] = {
 
 int SPI1_Init_common( uint32_t baud_presc  = SPI_BAUDRATEPRESCALER_256 );
 PinsOut nss_pin( GPIOA, 4, 1 ); //  to test GPIO
-SPI_HandleTypeDef spi1_h;
-DevSPI spi_d( &spi1_h, &nss_pin );
+SPI_HandleTypeDef spi_h;
+DevSPI spi_d( &spi_h, &nss_pin );
 DevSPI_MAX7219 max7219( spi_d );
 
 int main(void)

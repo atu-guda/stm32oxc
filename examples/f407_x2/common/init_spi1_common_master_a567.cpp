@@ -3,23 +3,23 @@
 
 // --------------------------- SPI --------------------------------------
 
-extern SPI_HandleTypeDef spi1_h; // in main.c
+extern SPI_HandleTypeDef spi_h; // in main.c
 
 int SPI1_Init_common( uint32_t baud_presc )
 {
-  spi1_h.Instance = SPI1;
-  spi1_h.Init.Mode = SPI_MODE_MASTER;
-  spi1_h.Init.Direction = SPI_DIRECTION_2LINES;
-  spi1_h.Init.DataSize = SPI_DATASIZE_8BIT;
-  spi1_h.Init.CLKPolarity = SPI_POLARITY_LOW;
-  spi1_h.Init.CLKPhase = SPI_PHASE_1EDGE;
-  spi1_h.Init.NSS = SPI_NSS_SOFT;
-  // spi1_h.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2; ... _256
-  spi1_h.Init.BaudRatePrescaler = baud_presc;
-  spi1_h.Init.FirstBit = SPI_FIRSTBIT_MSB;
-  spi1_h.Init.TIMode = SPI_TIMODE_DISABLED;
-  spi1_h.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLED;
-  return HAL_SPI_Init( &spi1_h );
+  spi_h.Instance = SPI1;
+  spi_h.Init.Mode = SPI_MODE_MASTER;
+  spi_h.Init.Direction = SPI_DIRECTION_2LINES;
+  spi_h.Init.DataSize = SPI_DATASIZE_8BIT;
+  spi_h.Init.CLKPolarity = SPI_POLARITY_LOW;
+  spi_h.Init.CLKPhase = SPI_PHASE_1EDGE;
+  spi_h.Init.NSS = SPI_NSS_SOFT;
+  // spi_h.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2; ... _256
+  spi_h.Init.BaudRatePrescaler = baud_presc;
+  spi_h.Init.FirstBit = SPI_FIRSTBIT_MSB;
+  spi_h.Init.TIMode = SPI_TIMODE_DISABLED;
+  spi_h.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLED;
+  return HAL_SPI_Init( &spi_h );
 }
 
 void HAL_SPI_MspInit( SPI_HandleTypeDef *hspi )

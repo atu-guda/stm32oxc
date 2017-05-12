@@ -2,8 +2,7 @@ Fix task_gchar / executor logic
 Split SPI/SPI client with own softNSS.
 SPI debug
 Test 2 I2C clients on one device
-SWO
-Cmd buffer alloc
+Cmd buffer alloc - use for data storage (ADC, sensors ... )
 I2C, SPI: from buf to device, fill buf.
 str2addr: some common addrs: GPIOA.. USARTx, SPIx, I2Cx, ..... (debug only)
 Common timer info
@@ -22,6 +21,7 @@ Test: float, sprintf, queue cost. TODO: iprintf!
   sqrt: +0.5;
   arm_sin_f32: up to 2x faster
   printf: +26k
+SWO
 
 Move more common code to common dir.
 
@@ -32,7 +32,7 @@ USB data streams
 CAN
 PS/2
 DHT11 - humidity
-IRDA
+IR ctl recv - RC5,  ...
 Color screen
 Ether
 GPS
