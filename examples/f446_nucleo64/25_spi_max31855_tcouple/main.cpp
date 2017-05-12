@@ -31,8 +31,7 @@ CmdInfo CMDINFO_RESETSPI { "reset_spi", 'Z', cmd_reset_spi, " - reset spi"  };
 
 
 
-int SPI2_Init_common( uint32_t baud_presc  = SPI_BAUDRATEPRESCALER_256 );
-PinsOut nss_pin( GPIOB, 1, 1 ); //  to test GPIO
+PinsOut nss_pin( BOARD_SPI_DEFAULT_GPIO_SNSS, BOARD_SPI_DEFAULT_GPIO_PIN_SNSS, 1 );
 SPI_HandleTypeDef spi_h;
 DevSPI spi_d( &spi_h, &nss_pin );
 
@@ -48,7 +47,7 @@ int main(void)
   UVAR('t') = 1000;
   UVAR('n') = 10;
 
-  if( SPI2_Init_common( SPI_BAUDRATEPRESCALER_256 ) != HAL_OK ) {
+  if( SPI_init_default( SPI_BAUDRATEPRESCALER_256 ) != HAL_OK ) {
     die4led( 0x04 );
   }
   // nss_pin.initHW();

@@ -32,8 +32,7 @@ const CmdInfo* global_cmds[] = {
 
 
 
-int SPI2_Init_common( uint32_t baud_presc  = SPI_BAUDRATEPRESCALER_256 );
-PinsOut nss_pin( GPIOB, 1, 1 ); //  to test GPIO
+PinsOut nss_pin( BOARD_SPI_DEFAULT_GPIO_SNSS, BOARD_SPI_DEFAULT_GPIO_PIN_SNSS, 1 );
 SPI_HandleTypeDef spi_h;
 DevSPI spi_d( &spi_h, &nss_pin );
 DevSPI_MAX7219 max7219( spi_d );
@@ -46,7 +45,7 @@ int main(void)
   UVAR('n') = 20;
   UVAR('r') = 0; // default bytes to read
 
-  if( SPI2_Init_common( SPI_BAUDRATEPRESCALER_256 ) != HAL_OK ) {
+  if( SPI_init_default( SPI_BAUDRATEPRESCALER_256 ) != HAL_OK ) {
     die4led( 0x04 );
   }
   // nss_pin.initHW();

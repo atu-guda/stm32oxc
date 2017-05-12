@@ -20,8 +20,6 @@ OXCDIR = /usr/share/stm32oxc
 
 SRCS  = main.cpp
 
-SRCS += init_spi2_common_master_b131415.cpp
-
 SRCS += oxc_pixbuf.cpp
 SRCS += oxc_pixbuf1v.cpp
 SRCS += oxc_pcd8544.cpp

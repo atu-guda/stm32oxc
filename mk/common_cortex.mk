@@ -197,6 +197,9 @@ endif
 ifeq "$(USE_OXC_SPI)" "y"
   SRCS += oxc_spi.cpp
   SRCS += stm32$(MCSUFF)xx_hal_spi.c
+  ifneq "$(NOUSE_DEFAULT_SPI_INIT)" "y"
+    SRCS  += oxc_spi_init_default.cpp
+  endif
   # ifeq "$(USE_OXC_DEBUG)" "y"
   #   SRCS += oxc_debug_spi.cpp
   # endif

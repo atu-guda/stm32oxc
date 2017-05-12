@@ -4,6 +4,8 @@
 #include <oxc_gpio.h>
 #include <oxc_miscfun.h>
 
+int SPI_init_default( uint32_t baud_presc  = SPI_BAUDRATEPRESCALER_256 );
+extern SPI_HandleTypeDef spi_h;
 
 class DevSPI  {
   public:

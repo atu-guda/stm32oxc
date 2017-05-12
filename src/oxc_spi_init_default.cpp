@@ -1,5 +1,4 @@
-#include <oxc_base.h>
-#include <oxc_gpio.h>
+#include <oxc_auto.h>
 
 // --------------------------- SPI --------------------------------------
 
