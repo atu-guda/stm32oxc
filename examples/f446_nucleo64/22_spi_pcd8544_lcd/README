@@ -1,5 +1,4 @@
 Test PCD8544 (Nokia 5110) LCD display driver on SPI
-Seems not work on this board: TODO: retest
 
 Used: SPI2:
 B13 = SCK
@@ -7,9 +6,9 @@ B14 = MISO
 B15 = MOSI
 +B1 = Soft NSS
 
-More:
-B10: !RST
-B5:  D/!C
+More: must be successive
+B4: !RST
+B5  D/!C
 
 
 Used USART2 with ST_Link VCP

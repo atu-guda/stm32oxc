@@ -46,9 +46,9 @@ const CmdInfo* global_cmds[] = {
 };
 
 
-int MX_SPI2_Init( uint32_t prescal = SPI_BAUDRATEPRESCALER_64 );
-PinsOut nss_pin( GPIOB, 12, 1 );
-PinsOut rst_dc_pins( GPIOB, 10, 2 );
+
+PinsOut nss_pin( BOARD_SPI_DEFAULT_GPIO_SNSS, BOARD_SPI_DEFAULT_GPIO_PIN_SNSS, 1 );
+PinsOut rst_dc_pins( BOARD_SPI_DEFAULT_GPIO_EXT1, BOARD_SPI_DEFAULT_GPIO_PIN_EXT1, 2 );
 SPI_HandleTypeDef spi_h;
 DevSPI spi_d( &spi_h, &nss_pin );
 
@@ -65,7 +65,9 @@ int main(void)
   UVAR('t') = 1000;
   UVAR('n') = 10;
 
-  MX_SPI2_Init();
+  if( SPI_init_default( SPI_BAUDRATEPRESCALER_16 ) != HAL_OK ) {
+    die4led( 0x04 );
+  }
   screen.init();
 
   BOARD_POST_INIT_BLINK;
