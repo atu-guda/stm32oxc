@@ -47,7 +47,6 @@ SRCS += stm32f4xx_hal_tim.c
 SRCS += stm32f4xx_hal_tim_ex.c
 SRCS += stm32f4xx_hal_dma.c
 
-# USB modules added automaticaly  if USE_OXC_CONSOLE_USB_CDC = y
 
 include ../common/board_add.mk
 include $(OXCDIR)/mk/common_cortex.mk

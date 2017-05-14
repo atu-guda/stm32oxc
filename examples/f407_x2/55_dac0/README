@@ -3,11 +3,10 @@ A4,
 A5
 
 
-Using  USBCDC as console via SmallRL.
+Console:  USBCDC via SmallRL.
 used USB FS:
 A11 = D-
 A12 = D+
-
 A9  = Vbus - unused?
 A10 = Id   - unused
 

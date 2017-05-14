@@ -8,10 +8,11 @@ TIM1.CH1: pulser
 TIM1.CH2: both edge receiver: IRQ
 Vcc for sensor: 5v required: with 3.3: no good return pulse
 
-Console: USB FS:
+
+Console:  USBCDC via SmallRL.
+used USB FS:
 A11 = D-
 A12 = D+
-
 A9  = Vbus - unused?
 A10 = Id   - unused
 

@@ -27,7 +27,6 @@ SRCS += adc_init.cpp
 
 SRCS += stm32f4xx_hal_adc.c
 
-# USB modules added automaticaly  if USE_OXC_CONSOLE_USB_CDC = y
 
 include ../common/board_add.mk
 include $(OXCDIR)/mk/common_cortex.mk

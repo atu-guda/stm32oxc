@@ -1,20 +1,19 @@
 Test SPI AT25F512/1024 memory
 !WD=p3 and !!HOLD=p7 = 1
 
- NOT WORK: Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256; _2 - TOO!!
+NOT WORK: Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256; _2 - TOO!!
 
 Used: SPI1:
 A5 = SCK
 A6 = MISO
 A7 = MOSI
-+A4 = Soft NSS
+A4 = Soft NSS
 
 
-
+Console:  USBCDC via SmallRL.
 used USB FS:
 A11 = D-
 A12 = D+
-
 A9  = Vbus - unused?
 A10 = Id   - unused
 

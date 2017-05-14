@@ -22,8 +22,8 @@
 // AUX modules : full list: ../common/hal_modules_list.h
 //
 #define HAL_DMA_MODULE_ENABLED
-#define HAL_I2C_MODULE_ENABLED
 #define HAL_PCD_MODULE_ENABLED
+#define HAL_I2C_MODULE_ENABLED
 
 #include "../common/stm32f4xx_hal_conf_common.h"
 

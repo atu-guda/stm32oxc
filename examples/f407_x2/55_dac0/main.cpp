@@ -39,6 +39,8 @@ const CmdInfo* global_cmds[] = {
 };
 
 
+
+
 int main(void)
 {
   BOARD_PROLOG;
@@ -145,7 +147,6 @@ int cmd_fun( int argc, const char * const * argv )
 }
 
 
-//  ----------------------------- configs ----------------
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

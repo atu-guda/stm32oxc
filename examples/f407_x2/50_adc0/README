@@ -2,14 +2,13 @@ Try ADC usage
 Clock: APB2/4 = 84/4 = 21
 
 Channels:
- A1
- CH1
+ A1, //  A2,  A3,  B0
+ CH1,// Ch2, Ch3, Ch8
 
-Using  USBCDC as console via SmallRL.
+Console:  USBCDC via SmallRL.
 used USB FS:
 A11 = D-
 A12 = D+
-
 A9  = Vbus - unused?
 A10 = Id   - unused
 

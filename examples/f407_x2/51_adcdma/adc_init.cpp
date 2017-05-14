@@ -69,7 +69,6 @@ void HAL_ADC_MspInit( ADC_HandleTypeDef* adcHandle )
     // DMA part
     __HAL_RCC_DMA2_CLK_ENABLE();
 
-
     ADC_DMA_REINIT();
 
     // HAL_NVIC_SetPriority( DMA2_Stream0_IRQn, configKERNEL_INTERRUPT_PRIORITY, 0 );
@@ -78,7 +77,6 @@ void HAL_ADC_MspInit( ADC_HandleTypeDef* adcHandle )
 
     HAL_NVIC_SetPriority( ADC_IRQn, 2, 0 );
     HAL_NVIC_EnableIRQ( ADC_IRQn );
-
   }
 }
 
@@ -109,7 +107,6 @@ void HAL_ADC_MspDeInit( ADC_HandleTypeDef* adcHandle )
     HAL_GPIO_DeInit( GPIOA, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_6  | GPIO_PIN_7 );
     HAL_DMA_DeInit( adcHandle->DMA_Handle );
   }
-
 }
 
 void ADC_IRQHandler(void)

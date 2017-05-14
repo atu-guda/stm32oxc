@@ -5,11 +5,10 @@ Channels:
  A0,   A1,  A6,  A7
  CH0, Ch1, Ch6, Ch7
 
-Using  USBCDC as console via SmallRL.
+Console:  USBCDC via SmallRL.
 used USB FS:
 A11 = D-
 A12 = D+
-
 A9  = Vbus - unused?
 A10 = Id   - unused
 

@@ -5,7 +5,6 @@ SCL = B6 + 4.7k pullUp
 SDA = B7 + 4.7k pullUp
 
 Console:  USBCDC via SmallRL.
-
 used USB FS:
 A11 = D-
 A12 = D+
