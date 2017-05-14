@@ -12,7 +12,7 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
-void MX_ADC1_Init(void);
+int adc_init_exa_1ch_manual( uint32_t presc, uint32_t sampl_cycl );
 ADC_HandleTypeDef hadc1;
 int v_adc_ref = 3250; // in mV, measured before test
 
@@ -39,6 +39,8 @@ int main(void)
   UVAR('n') = 20;
   UVAR('v') = v_adc_ref;
 
+  UVAR('e') =  adc_init_exa_1ch_manual( ADC_CLOCK_SYNC_PCLK_DIV4, ADC_SAMPLETIME_144CYCLES );
+
   BOARD_POST_INIT_BLINK;
 
   BOARD_CREATE_STD_TASKS;
@@ -60,7 +62,6 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
 int cmd_test0( int argc, const char * const * argv )
 {
   char buf[32];
-  MX_ADC1_Init();
   int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
   uint32_t t_step = UVAR('t');
   pr( NL "Test0: n= " ); pr_d( n ); pr( " t= " ); pr_d( t_step );
@@ -90,11 +91,9 @@ int cmd_test0( int argc, const char * const * argv )
 
     pr( NL );
     vTaskDelayUntil( &tc0, t_step );
-    // delay_ms( t_step );
   }
 
   pr( NL );
-  __HAL_RCC_ADC1_CLK_DISABLE();
 
   return 0;
 }

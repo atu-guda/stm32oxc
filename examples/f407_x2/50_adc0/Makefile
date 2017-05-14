@@ -19,7 +19,7 @@ OXCDIR = /usr/share/stm32oxc
 
 SRCS  = main.cpp
 
-SRCS += adc_init.cpp
+SRCS += adc_init_exa_1ch_manual.cpp
 
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
