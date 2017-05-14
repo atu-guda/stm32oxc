@@ -1,7 +1,7 @@
 Control different stepmotors.
-A8:A11
-bipolar 2 coil: mode0,mode1 A8:A10 coil1 A9:A11 coil2 (via LM298 or so)
-monopolar 4 coil: A8:A9:A10:A11
+A8-11
+bipolar 2 coil: mode0,mode1 A(8:10) coil1 A(9:11) coil2 (via LM298 or so)
+monopolar 4 coil: A(8:9:10:11)
 
 
 

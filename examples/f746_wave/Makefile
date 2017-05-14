@@ -6,6 +6,7 @@ SUBDIRS = \
   03_uart \
   04_uart_console \
   06_i2c_test \
+  16_step1 \
   30_sdcard1 \
   31_sdcard2 \
   50_adc0 \
@@ -26,7 +27,6 @@ SUBDIRS = \
 #  12_tim_pwm \
 #  14_tim_enco \
 #  15_tim_usonic \
-#  16_step1 \
 #  17_1w_18b20 \
 #  18_i2c_ssd1306_oled \
 #  19_spi_test \

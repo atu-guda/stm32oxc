@@ -1,7 +1,7 @@
 Control different stepmotors.
-C0:C3
-bipolar 2 coil: mode0,mode1 C0:C2 coil1 C1:C3 coil2 (via LM298 or so)
-monopolar 4 coil: C0:C1:C2:C3
+D0:D3
+bipolar 2 coil: mode0,mode1 D0:D2 coil1 D1:D3 coil2 (via LM298 or so)
+monopolar 4 coil: D0:D1:D2:D3
 
 Optocouplers suggested.
 

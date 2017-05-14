@@ -1,7 +1,7 @@
 Control different stepmotors.
-E0-3
-bipolar 2 coil: mode0,mode1 E(0:2) coil1 E(1:3) coil2 (via LM298 or so)
-monopolar 4 coil: E(0:1:2:3)
+E1-4
+bipolar 2 coil: mode0,mode1 E(1:3) coil1 E(2:4) coil2 (via LM298 or so)
+monopolar 4 coil: E(1:2:3:4)
 
 
 Console:  USBCDC via SmallRL.
