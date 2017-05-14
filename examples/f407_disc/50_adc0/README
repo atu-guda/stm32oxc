@@ -2,8 +2,8 @@ Try ADC usage: manual conversion mode
 Clock: APB2/4 = 84/4 = 21
 
 Channels:
- A1, //  A2,  A3,  B0
- CH1,// Ch2, Ch3, Ch8
+ B0, //  B1,   C4,   C5
+ CH8,// Ch9, Ch14, Ch15
 
 Console:  USBCDC via SmallRL.
 used USB FS:

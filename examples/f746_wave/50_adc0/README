@@ -1,4 +1,10 @@
-Try ADC usage
+Try ADC usage: manual conversion mode
+Clock: APB2/4 = 100/4 = 25
+
+TODO: change to C0:C3
+Channels:
+  A0, //  A1,  A2,  A3
+ CH0, // Ch1, Ch2, Ch3
 
 Used USART1 with UART-USB convertor board
 B6  = USART2_TX

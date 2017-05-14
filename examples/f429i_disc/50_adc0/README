@@ -2,8 +2,8 @@ Try ADC usage: manual conversion mode
 Clock: APB2/4 = 84/4 = 21
 
 Channels:
- A0, //  A1,  A6,  A7
- CH0,// Ch1, Ch6, Ch7
+  A5, //  C3,  A5,   C3
+ CH5,// Ch13, Ch5, Ch13
 
 
 Used USART2 with ST_Link VCP

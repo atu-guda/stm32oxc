@@ -13,16 +13,17 @@ USE_FREERTOS = y
 # USE_USB_DEFAULT_CDC = y
 # REQUIRE_SPECIAL_CLOCK = y
 
+
 OXCDIR = /usr/share/stm32oxc
 
 
 SRCS  = main.cpp
 
-SRCS += adc_init.cpp
+SRCS += adc_init_exa_1ch_manual.cpp
 
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
-# list: see ../common/f7_modules.mk
+# see ../common/f7_modules.mk
 
 SRCS += stm32f7xx_hal_adc.c
 
