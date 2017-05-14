@@ -126,7 +126,7 @@
 #define BOARD_MOTOR_DEFAULT_PIN0        8
 
 #define BOARD_1W_DEFAULT_GPIO           GPIOC
-#define BOARD_1W_DEFAULT_PIN            4
+#define BOARD_1W_DEFAULT_PIN            GPIO_PIN_4
 
 #define BOARD_ADC_DEFAULT_GPIO0         GPIOA
 #define BOARD_ADC_DEFAULT_PIN0          GPIO_PIN_0

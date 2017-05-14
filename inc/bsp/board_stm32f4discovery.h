@@ -119,7 +119,7 @@
 #define BOARD_MOTOR_DEFAULT_PIN0        0
 
 #define BOARD_1W_DEFAULT_GPIO           GPIOD
-#define BOARD_1W_DEFAULT_PIN            0
+#define BOARD_1W_DEFAULT_PIN            GPIO_PIN_0
 
 #define BOARD_ADC_DEFAULT_GPIO0         GPIOB
 #define BOARD_ADC_DEFAULT_PIN0          GPIO_PIN_0
