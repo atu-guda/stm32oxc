@@ -1,0 +1,1 @@
+../common/usbd_desc.h

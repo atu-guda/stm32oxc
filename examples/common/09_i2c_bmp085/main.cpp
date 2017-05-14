@@ -74,21 +74,22 @@ int cmd_test0( int argc, const char * const * argv )
   TickType_t tc0 = xTaskGetTickCount();
 
   char buf[buf_sz];
-  int p_old = 0;
+  int p_old = 0, p_00 = 0;
 
   for( int i=0; i<n && !break_flag ; ++i ) {
     baro.getAllCalc( 3 );
     int t10 = baro.get_T10();
     int p   = baro.get_P();
     if( i == 0 ) {
-      p_old = p;
+      p_old = p_00 = p;
     }
-    int dp  = p - p_old;
+    int dp   = p - p_old;
+    int dp0  = p - p_00;
     p_old   = p;
     // int t_u = baro.get_T_uncons();
     // int p_u = baro.get_P_uncons();
     ifcvt( t10, 10, buf, 1 );
-    pr( "T= " ); pr( buf ); pr( "  P= " ); pr_d( p ); pr( " dp= " ); pr_d( dp ); pr( NL );
+    pr( "T= " ); pr( buf ); pr( "  P= " ); pr_d( p ); pr( " dp= " ); pr_d( dp );  pr( " dp0= " ); pr_d( dp0 ); pr( NL );
     vTaskDelayUntil( &tc0, t_step );
   }
 

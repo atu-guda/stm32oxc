@@ -1,0 +1,16 @@
+Test MAX31855 thermocouple drv via SPI
+Untested on this board.
+
+Used: SPI1:
+A5 = SCK
+A6 = MISO
+A7 = MOSI
+A4 = Soft NSS
+
+Console:  USBCDC via SmallRL.
+used USB FS:
+A11 = D-
+A12 = D+
+A9  = Vbus - unused?
+A10 = Id   - unused
+

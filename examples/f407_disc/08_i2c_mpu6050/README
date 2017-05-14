@@ -1,0 +1,13 @@
+Use MPU-6050 accel + gyro via I2C
+"D" command - 1 measurement
+
+SCL = B6
+SDA = B9
+
+Console:  USBCDC via SmallRL.
+used USB FS:
+A11 = D-
+A12 = D+
+A9  = Vbus - unused?
+A10 = Id   - unused
+

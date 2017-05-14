@@ -19,8 +19,6 @@ OXCDIR = /usr/share/stm32oxc
 
 SRCS  = main.cpp
 
-SRCS += spi2_b13b14b15_hw.cpp
-
 SRCS += oxc_spimem_at.cpp
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )

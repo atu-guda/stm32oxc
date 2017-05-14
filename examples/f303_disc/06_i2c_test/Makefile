@@ -19,8 +19,6 @@ OXCDIR = /usr/share/stm32oxc
 
 SRCS  = main.cpp
 
-SRCS += oxc_i2c_default_init.cpp
-
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
 # list: see ../common/f3_modules.mk
 

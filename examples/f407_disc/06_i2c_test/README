@@ -4,7 +4,6 @@ SCL = B6
 SDA = B9
 
 Console:  USBCDC via SmallRL.
-
 used USB FS:
 A11 = D-
 A12 = D+

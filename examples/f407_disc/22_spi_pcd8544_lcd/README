@@ -1,0 +1,19 @@
+Test PCD8544 (Nokia 5110) LCD display driver on SPI
+
+Used: SPI1:
+A5 = SCK
+A6 = MISO
+A7 = MOSI
+A4 = Soft NSS
+
+More: must be successive
+C4: !RST
+C5  D/!C
+
+Console:  USBCDC via SmallRL.
+used USB FS:
+A11 = D-
+A12 = D+
+A9  = Vbus - unused?
+A10 = Id   - unused
+

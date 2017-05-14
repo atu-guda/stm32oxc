@@ -7,22 +7,32 @@ SUBDIRS = \
   04_uart_console \
   05_usb_console \
   06_i2c_test \
+  08_i2c_mpu6050 \
   09_i2c_bmp085 \
+  10_i2c_pcf8591 \
   11_i2c_ds3231 \
   12_tim_pwm \
   14_tim_enco \
   15_tim_usonic \
+  18_i2c_ssd1306_oled \
+  19_spi_test \
+  20_spi_mem_a25 \
+  21_spi_max7219 \
+  22_spi_pcd8544_lcd \
+  24_i2c_hmc5983 \
+  25_spi_max31855_tcouple \
+  26_i2c_pca9685 \
+  27_i2c_ads1115 \
+  30_sdcard1 \
+  31_sdcard2 \
+  50_adc0 \
+  51_adcdma \
+  53_adcdma_sd \
+  55_dac0 \
 
 #  07_i2c_lcdt \
-#  08_i2c_mpu6050 \
-#  10_i2c_pcf8591 \
 #  16_step1 \
 #  17_1w_18b20 \
-#  18_i2c_ssd1306_oled \
-#  19_spi_test \
-#  20_spi_mem_a25 \
-#  21_spi_max7219 \
-#  22_spi_pcd8544_lcd \
 
 
 ALL : examples_f4_disc

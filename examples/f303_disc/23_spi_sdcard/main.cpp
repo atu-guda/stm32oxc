@@ -47,7 +47,7 @@ int main(void)
   UVAR('n') = 10;
   UVAR('r') = 0x20; // default bytes to read
 
-  if( MX_SPI2_Init() != HAL_OK ) {
+  if( SPI_init_default( SPI_BAUDRATEPRESCALER_16 ) != HAL_OK ) {
     die4led( 0x04 );
   }
   // nss_pin.initHW();

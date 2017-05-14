@@ -181,6 +181,9 @@ endif
 ifeq "$(USE_OXC_I2C)" "y"
   SRCS += oxc_i2c.cpp
   SRCS += stm32$(MCSUFF)xx_hal_i2c.c
+  ifneq "$(NOUSE_DEFAULT_I2C_INIT)" "y"
+    SRCS  += oxc_i2c_default_init.cpp
+  endif
   ifeq "$(USE_OXC_DEBUG)" "y"
     SRCS += oxc_debug_i2c.cpp
   endif

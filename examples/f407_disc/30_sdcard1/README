@@ -1,0 +1,13 @@
+Try to use SD card via SDIO 1 bit wire
+
+C8  = dat0 (MISO)
+B2  = CK   (SCK)
+D2  = CMD  (MOSI)
+
+Console:  USBCDC via SmallRL.
+used USB FS:
+A11 = D-
+A12 = D+
+A9  = Vbus - unused?
+A10 = Id   - unused
+
