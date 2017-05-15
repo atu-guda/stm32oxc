@@ -22,13 +22,15 @@ extern "C" {
  void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc );
  void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim );
 }
-void MX_ADC1_Init( uint8_t n_ch, uint32_t sampl_time );
+int adc_init_exa_4ch_dma( uint32_t presc, uint32_t sampl_cycl, uint8_t n_ch );
+//void MX_ADC1_Init( uint8_t n_ch, uint32_t sampl_time );
+uint32_t hint_ADC_presc();
 void ADC_DMA_REINIT();
 void pr_ADC_state();
 ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
 uint32_t tim_freq_in; // timer input freq
-uint32_t adc_clk = 36000000;     // depend in MCU, set in MX_ADC1_Init
+uint32_t adc_clk = 36000000;     // depend in MCU, set in adc_init_exa_4ch_dma
 // uint32_t t_step = 100000; // in us, recalculated before measurement
 float t_step_f = 0.1; // in s, recalculated before measurement
 int v_adc_ref = 3250; // in mV, measured before test, adjust as UVAR('v')
@@ -179,7 +181,8 @@ int cmd_test0( int argc, const char * const * argv )
   HAL_ADC_MspDeInit( &hadc1 );
   delay_ms( 10 );
   HAL_ADC_MspInit( &hadc1 );
-  MX_ADC1_Init( n_ch, sampl_t_idx );
+  UVAR('i') =  adc_init_exa_4ch_dma( ADC_CLOCK_SYNC_PCLK_DIV2, sampl_times_codes[sampl_t_idx], n_ch );
+  // MX_ADC1_Init( n_ch, sampl_t_idx );
   delay_ms( 10 );
 
   uint32_t n_ADC_bytes = n * n_ch;
