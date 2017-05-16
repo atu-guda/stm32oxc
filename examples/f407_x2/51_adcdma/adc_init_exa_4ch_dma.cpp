@@ -5,7 +5,7 @@ extern ADC_HandleTypeDef hadc1;
 extern DMA_HandleTypeDef hdma_adc1;
 extern uint32_t adc_clk;
 void ADC_DMA_REINIT();
-uint32_t calc_ADC_clk( uint32_t presc );
+uint32_t calc_ADC_clk( uint32_t presc, int *div_val );
 uint32_t hint_ADC_presc();
 
 int adc_init_exa_4ch_dma( uint32_t presc, uint32_t sampl_cycl, uint8_t n_ch )
@@ -19,7 +19,7 @@ int adc_init_exa_4ch_dma( uint32_t presc, uint32_t sampl_cycl, uint8_t n_ch )
 
   hadc1.Instance                   = BOARD_ADC_DEFAULT_DEV;
   hadc1.Init.ClockPrescaler        = presc;
-  adc_clk                          = calc_ADC_clk( presc );
+  adc_clk                          = calc_ADC_clk( presc, nullptr );
   hadc1.Init.Resolution            = ADC_RESOLUTION_12B;
   hadc1.Init.ScanConvMode          = ENABLE;  // if disabled, only first channel works
   hadc1.Init.ContinuousConvMode    = DISABLE; // to start at trigger
@@ -136,23 +136,30 @@ void DMA2_Stream0_IRQHandler(void)
 }
 
 
-uint32_t calc_ADC_clk( uint32_t presc )
+uint32_t calc_ADC_clk( uint32_t presc, int *div_val )
 {
-  uint32_t clk =  HAL_RCC_GetPCLK1Freq();
+  int dv_fake = 0;
+  if( div_val == nullptr ) {
+    div_val = &dv_fake;
+  }
+  *div_val = 1;
+
+  uint32_t clk =  HAL_RCC_GetPCLK2Freq();
   switch( presc ) {
-    case ADC_CLOCK_SYNC_PCLK_DIV2: clk /= 2; break;
-    case ADC_CLOCK_SYNC_PCLK_DIV4: clk /= 4; break;
-    case ADC_CLOCK_SYNC_PCLK_DIV6: clk /= 6; break;
-    case ADC_CLOCK_SYNC_PCLK_DIV8: clk /= 8; break;
+    case ADC_CLOCK_SYNC_PCLK_DIV2: *div_val = 2; break;
+    case ADC_CLOCK_SYNC_PCLK_DIV4: *div_val = 4; break;
+    case ADC_CLOCK_SYNC_PCLK_DIV6: *div_val = 6; break;
+    case ADC_CLOCK_SYNC_PCLK_DIV8: *div_val = 8; break;
     default: break; // newer
   }
+  clk /= *div_val = 2;
   return clk;
 }
 
 uint32_t hint_ADC_presc()
 {
-  uint32_t clk =  HAL_RCC_GetPCLK1Freq();
-  const uint32_t max_ADC_Clk = 36000000;
+  uint32_t clk =  HAL_RCC_GetPCLK2Freq();
+  const uint32_t max_ADC_Clk = 36000000; // MCU series dependent
   if( ( clk / 2 ) >= max_ADC_Clk ) {
     return ADC_CLOCK_SYNC_PCLK_DIV2;
   }
@@ -164,3 +171,4 @@ uint32_t hint_ADC_presc()
   }
   return ADC_CLOCK_SYNC_PCLK_DIV8;
 }
+

@@ -1,6 +1,9 @@
 #include <cstring>
 #include <cstdlib>
 #include <cstdio>
+#include <cerrno>
+
+// #include <vector>
 
 #include <oxc_auto.h>
 
@@ -23,10 +26,11 @@ extern "C" {
  void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim );
 }
 int adc_init_exa_4ch_dma( uint32_t presc, uint32_t sampl_cycl, uint8_t n_ch );
-//void MX_ADC1_Init( uint8_t n_ch, uint32_t sampl_time );
+uint32_t calc_ADC_clk( uint32_t presc, int *div_val );
 uint32_t hint_ADC_presc();
 void ADC_DMA_REINIT();
 void pr_ADC_state();
+
 ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
 uint32_t tim_freq_in; // timer input freq
@@ -35,9 +39,12 @@ uint32_t adc_clk = 36000000;     // depend in MCU, set in adc_init_exa_4ch_dma
 float t_step_f = 0.1; // in s, recalculated before measurement
 int v_adc_ref = 3250; // in mV, measured before test, adjust as UVAR('v')
 const uint32_t n_ADC_ch_max = 4; // current - in UVAR('c')
-const uint32_t n_ADC_mem  = 1024*32; // MCU dependent, in 16-bit samples
+const uint32_t n_ADC_mem  = 1024*32; // MCU dependent, in byter for 16-bit samples
 const uint32_t n_ADC_mem_guard  = n_ADC_mem + 2 * n_ADC_ch_max; // 2 lines for guard
 uint16_t adc_v0[ n_ADC_mem_guard ];
+
+// vector<uint16_t> ADC_buf;
+
 volatile int adc_end_dma = 0;
 volatile int adc_dma_error = 0;
 volatile uint32_t n_series = 0;
@@ -159,34 +166,45 @@ int cmd_test0( int argc, const char * const * argv )
 
   uint32_t sampl_t_idx = UVAR('s');
   if( sampl_t_idx >= n_sampl_times ) { sampl_t_idx = n_sampl_times-1; };
-  uint32_t f_sampl_ser = adc_clk / ( sampl_times_cycles[sampl_t_idx] * n_ch );
+  uint32_t f_sampl_max = adc_clk / ( sampl_times_cycles[sampl_t_idx] * n_ch );
 
   uint32_t t_step_tick =  (UVAR('a')+1) * (UVAR('p')+1); // in timer input ticks
-  uint32_t tim_f = tim_freq_in / t_step_tick; // timer update freq, Hz
+  float tim_f = tim_freq_in / t_step_tick; // timer update freq, Hz
   t_step_f = (float)t_step_tick / tim_freq_in; // in s
   uint32_t t_wait0 = 1 + uint32_t( n * t_step_f * 1000 ); // in ms
 
   if( n > n_ADC_series_max ) { n = n_ADC_series_max; };
 
-  snprintf( pbuf, pbufsz-1, "Test0: n= %lu; n_ch= %u; tim_f= %lu Hz; tim_freq_in= %lu Hz" NL
-                            "t_step= %#.7g s; f_sampl_ser= %lu Hz; t_wait0= %lu ms" NL,
-                                       n,      n_ch,      tim_f,         tim_freq_in,
-                                   t_step_f,        f_sampl_ser,      t_wait0  );
 
-  pr( pbuf ); delay_ms( 10 );
   tim2_deinit();
-
   pr_ADC_state();
   hadc1.Instance->SR = 0;
   HAL_ADC_MspDeInit( &hadc1 );
   delay_ms( 10 );
+
   HAL_ADC_MspInit( &hadc1 );
-  UVAR('i') =  adc_init_exa_4ch_dma( ADC_CLOCK_SYNC_PCLK_DIV2, sampl_times_codes[sampl_t_idx], n_ch );
-  // MX_ADC1_Init( n_ch, sampl_t_idx );
-  delay_ms( 10 );
+  uint32_t presc = hint_ADC_presc();
+  UVAR('i') =  adc_init_exa_4ch_dma( presc, sampl_times_codes[sampl_t_idx], n_ch );
+  delay_ms( 1 );
+  if( ! UVAR('i') ) {
+    pr( "ADC init failed, errno= " ); pr_d( errno ); pr( NL );
+    return 1;
+  }
+
+  snprintf( pbuf, pbufsz-1, "Timer: tim_freq_in= %lu Hz / ( (%u+1)*(%u+1)) = %#.7g Hz; t_step = %#.7g s " NL,
+                                    tim_freq_in,       UVAR('p'), UVAR('a'), tim_f,    t_step_f );
+  pr( pbuf ); delay_ms( 1 );
+
+  int div_val = -1;
+  adc_clk = calc_ADC_clk( presc, &div_val );
+  snprintf( pbuf, pbufsz-1, "ADC: n_ch= %d n=%lu adc_clk= %lu div_val= %d s_idx= %lu sampl= %lu; f_sampl_max= %lu Hz; t_wait0= %lu ms" NL,
+                                  n_ch,    n,    adc_clk,     div_val,  sampl_t_idx, sampl_times_cycles[sampl_t_idx],
+                                  f_sampl_max, t_wait0 );
+  pr( pbuf ); delay_ms( 10 );
 
   uint32_t n_ADC_bytes = n * n_ch;
   uint32_t n_ADC_bytes_guard = n_ADC_bytes + n_ch * 2;
+  // ADC_buf.assign( (n+2) * n_ch, 0 );
   for( uint32_t i=0; i<n_ADC_bytes_guard;  ++i ) { // TODO: memset
     adc_v0[i] = 0;
   }
