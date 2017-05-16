@@ -277,7 +277,6 @@ void out_to_curr( uint32_t n, uint32_t st )
     t = t_step_f * ii;
     snprintf( pbuf, pbufsz-1, "%#12.7g  ", t );
     for( int j=0; j< n_ch; ++j ) {
-      // int vv = adc_v0[ii*n_ch+j] * 10 * UVAR('v') / 4096;
       int vv = ADC_buf[ii*n_ch+j] * 10 * UVAR('v') / 4096;
       ifcvt( vv, 10000, buf, 4 );
       strcat( pbuf, buf ); strcat( pbuf, "  " );

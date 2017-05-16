@@ -1,4 +1,6 @@
-PROJ_NAME=adcdma
+PROJ_NAME=adcdma_sd
+
+ADDSRC += $(STMSRC)/FatFs
 
 USE_OXC = y
 # USE_OXC_DEVIO = y
@@ -24,9 +26,20 @@ SRCS += tim2_init.cpp
 
 SRCS += stm32f7_clock_HSE144.c
 
+SRCS += f4_sdio_init_1bit.cpp
+SRCS += bsp_driver_sd.c
+# SRCS += ccsbcs.c
+SRCS += fatfs.c
+SRCS += ff.c
+SRCS += ff_gen_drv.c
+SRCS += diskio.c
+SRCS += sd_diskio.c
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
 # see ../common/f7_modules.mk
+
+SRCS += stm32f7xx_hal_sd.c
+SRCS += stm32f7xx_ll_sdmmc.c
 
 SRCS += stm32f7xx_hal_adc.c
 SRCS += stm32f7xx_hal_adc_ex.c

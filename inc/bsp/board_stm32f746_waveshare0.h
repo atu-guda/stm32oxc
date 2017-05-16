@@ -118,6 +118,7 @@
 #define BOARD_1W_DEFAULT_GPIO           GPIOG
 #define BOARD_1W_DEFAULT_PIN            GPIO_PIN_13
 
+// TODO: change, for now A0-A3, (0-3)
 #define BOARD_ADC_DEFAULT_DEV           ADC1
 #define BOARD_ADC_DEFAULT_EN            __HAL_RCC_ADC1_CLK_ENABLE();
 #define BOARD_ADC_DEFAULT_DIS           __HAL_RCC_ADC1_CLK_DISABLE();
@@ -133,6 +134,7 @@
 #define BOARD_ADC_DEFAULT_GPIO3         GPIOA
 #define BOARD_ADC_DEFAULT_PIN3          GPIO_PIN_3
 #define BOARD_ADC_DEFAULT_CH3           ADC_CHANNEL_3
+#define BOARD_ADC_MEM_MAX               (1024*256)
 
 
 #define BOARD_CONSOLE_DEFINES         UART_CONSOLE_DEFINES( USART1 );
