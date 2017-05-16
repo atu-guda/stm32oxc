@@ -3,7 +3,7 @@
 #include <cstdio>
 #include <cerrno>
 
-// #include <vector>
+#include <vector>
 
 #include <oxc_auto.h>
 
@@ -34,16 +34,14 @@ void pr_ADC_state();
 ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
 uint32_t tim_freq_in; // timer input freq
-uint32_t adc_clk = 36000000;     // depend in MCU, set in adc_init_exa_4ch_dma
+uint32_t adc_clk = ADC_FREQ_MAX;     // depend in MCU, set in adc_init_exa_4ch_dma
 // uint32_t t_step = 100000; // in us, recalculated before measurement
 float t_step_f = 0.1; // in s, recalculated before measurement
 int v_adc_ref = 3250; // in mV, measured before test, adjust as UVAR('v')
 const uint32_t n_ADC_ch_max = 4; // current - in UVAR('c')
-const uint32_t n_ADC_mem  = 1024*32; // MCU dependent, in byter for 16-bit samples
-const uint32_t n_ADC_mem_guard  = n_ADC_mem + 2 * n_ADC_ch_max; // 2 lines for guard
-uint16_t adc_v0[ n_ADC_mem_guard ];
+const uint32_t n_ADC_mem  = BOARD_ADC_MEM_MAX; // MCU dependent, in byter for 16-bit samples
 
-// vector<uint16_t> ADC_buf;
+vector<uint16_t> ADC_buf;
 
 volatile int adc_end_dma = 0;
 volatile int adc_dma_error = 0;
@@ -203,15 +201,13 @@ int cmd_test0( int argc, const char * const * argv )
   pr( pbuf ); delay_ms( 10 );
 
   uint32_t n_ADC_bytes = n * n_ch;
-  uint32_t n_ADC_bytes_guard = n_ADC_bytes + n_ch * 2;
-  // ADC_buf.assign( (n+2) * n_ch, 0 );
-  for( uint32_t i=0; i<n_ADC_bytes_guard;  ++i ) { // TODO: memset
-    adc_v0[i] = 0;
-  }
+  ADC_buf.assign( (n+2) * n_ch, 0 ); // + 2 is guard, may be remove
   adc_end_dma = 0; adc_dma_error = 0; n_series = 0; n_series_todo = n;
-  TickType_t tc0 = xTaskGetTickCount(), tc00 = tc0;
+
   leds.reset( BIT0 | BIT1 | BIT2 );
-  if( HAL_ADC_Start_DMA( &hadc1, (uint32_t*)adc_v0, n_ADC_bytes ) != HAL_OK )   {
+  TickType_t tc0 = xTaskGetTickCount(), tc00 = tc0;
+
+  if( HAL_ADC_Start_DMA( &hadc1, (uint32_t*)ADC_buf.data(), n_ADC_bytes ) != HAL_OK )   {
     pr( "ADC_Start_DMA error" NL );
   }
   tim2_init( UVAR('p'), UVAR('a') );
@@ -281,7 +277,8 @@ void out_to_curr( uint32_t n, uint32_t st )
     t = t_step_f * ii;
     snprintf( pbuf, pbufsz-1, "%#12.7g  ", t );
     for( int j=0; j< n_ch; ++j ) {
-      int vv = adc_v0[ii*n_ch+j] * 10 * UVAR('v') / 4096;
+      // int vv = adc_v0[ii*n_ch+j] * 10 * UVAR('v') / 4096;
+      int vv = ADC_buf[ii*n_ch+j] * 10 * UVAR('v') / 4096;
       ifcvt( vv, 10000, buf, 4 );
       strcat( pbuf, buf ); strcat( pbuf, "  " );
     }

@@ -159,7 +159,7 @@ uint32_t calc_ADC_clk( uint32_t presc, int *div_val )
 uint32_t hint_ADC_presc()
 {
   uint32_t clk =  HAL_RCC_GetPCLK2Freq();
-  const uint32_t max_ADC_Clk = 36000000; // MCU series dependent
+  const uint32_t max_ADC_Clk = ADC_FREQ_MAX;
   if( ( clk / 2 ) >= max_ADC_Clk ) {
     return ADC_CLOCK_SYNC_PCLK_DIV2;
   }
