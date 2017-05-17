@@ -18,6 +18,8 @@
 // Used internally, but can be used someware:
 //   USART1->STLINK.VCP(A9,A10)
 
+// my by board A1, A2 is not connected to MEMS, so bay be used as ADC...
+
 // default LEDS is G13 (Green), G14 (Red)
 #define BOARD_N_LEDS 2
 #define BOARD_LEDS_GPIO GPIOG
@@ -93,23 +95,23 @@
 #define BOARD_1W_DEFAULT_GPIO           GPIOG
 #define BOARD_1W_DEFAULT_PIN            GPIO_PIN_9
 
-// ADC: A5, C3 (5,13)
+// ADC: A1, A2, A5, C3 (1,2,5,13)
 #define BOARD_ADC_DEFAULT_DEV           ADC1
 #define BOARD_ADC_DEFAULT_EN            __HAL_RCC_ADC1_CLK_ENABLE();
 #define BOARD_ADC_DEFAULT_DIS           __HAL_RCC_ADC1_CLK_DISABLE();
 #define BOARD_ADC_DEFAULT_GPIO0         GPIOA
-#define BOARD_ADC_DEFAULT_PIN0          GPIO_PIN_5
-#define BOARD_ADC_DEFAULT_CH0           ADC_CHANNEL_5
-#define BOARD_ADC_DEFAULT_GPIO1         GPIOC
-#define BOARD_ADC_DEFAULT_PIN1          GPIO_PIN_3
-#define BOARD_ADC_DEFAULT_CH1           ADC_CHANNEL_13
+#define BOARD_ADC_DEFAULT_PIN0          GPIO_PIN_1
+#define BOARD_ADC_DEFAULT_CH0           ADC_CHANNEL_1
+#define BOARD_ADC_DEFAULT_GPIO1         GPIOA
+#define BOARD_ADC_DEFAULT_PIN1          GPIO_PIN_2
+#define BOARD_ADC_DEFAULT_CH1           ADC_CHANNEL_2
 #define BOARD_ADC_DEFAULT_GPIO2         GPIOA
 #define BOARD_ADC_DEFAULT_PIN2          GPIO_PIN_5
 #define BOARD_ADC_DEFAULT_CH2           ADC_CHANNEL_5
 #define BOARD_ADC_DEFAULT_GPIO3         GPIOC
 #define BOARD_ADC_DEFAULT_PIN3          GPIO_PIN_3
 #define BOARD_ADC_DEFAULT_CH3           ADC_CHANNEL_13
-#define BOARD_ADC_MEM_MAX               (1024*80)
+#define BOARD_ADC_MEM_MAX               (1024*130)
 
 
 #define BOARD_CONSOLE_DEFINES         UART_CONSOLE_DEFINES( USART1 );

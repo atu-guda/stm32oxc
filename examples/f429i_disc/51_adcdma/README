@@ -2,8 +2,8 @@ Try ADC usage: DMA conversion mode.
 Clock: APB2/2 = 72/4 = 36: max <- use special clock
 
 Channels:
- A0,   A1,  A6,  A7
- CH0, Ch1, Ch6, Ch7
+ A5,   A1,  A6,  A7
+ CH5, Ch1, Ch6, Ch7
 
 
 Used USART2 with ST_Link VCP
