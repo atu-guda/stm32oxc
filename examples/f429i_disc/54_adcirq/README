@@ -1,0 +1,11 @@
+Try ADC with IRQ
+Clock: APB2/2 = 72/4 = 36: max <- use special clock
+
+Channels:
+ A5,   A1,  A6,  A7
+ CH5, Ch1, Ch6, Ch7
+
+
+Used USART2 with ST_Link VCP
+A2  = USART2_TX
+A3  = USART2_RX
