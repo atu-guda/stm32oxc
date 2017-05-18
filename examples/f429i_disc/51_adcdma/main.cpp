@@ -130,12 +130,11 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
 void pr_ADC_state()
 {
   if( UVAR('d') > 0 ) {
-    pr_shx( ADC1->SR );
-    pr_shx( ADC1->CR1 );
-    pr_shx( ADC1->CR2 );
-    pr_shx( ADC1->SMPR2 );
-    pr_shx( ADC1->SQR1 );
-    pr_shx( ADC1->SQR3 );
+    pr( " ADC: SR= " ); pr_h( BOARD_ADC_DEFAULT_DEV->SR );
+    pr( "  CR1= " ); pr_h( BOARD_ADC_DEFAULT_DEV->CR1 );
+    pr( "  CR2= " ); pr_h( BOARD_ADC_DEFAULT_DEV->CR2 );
+    pr( "  CR2= " ); pr_h( BOARD_ADC_DEFAULT_DEV->CR2 );
+    pr( NL );
   }
 }
 
@@ -175,14 +174,8 @@ int cmd_test0( int argc, const char * const * argv )
 
   if( n > n_ADC_series_max ) { n = n_ADC_series_max; };
 
-
   tim2_deinit();
-  // pr_ADC_state();
-  // hadc1.Instance->SR = 0;
-  // HAL_ADC_MspDeInit( &hadc1 );
-  // delay_ms( 10 );
 
-  // HAL_ADC_MspInit( &hadc1 );
   uint32_t presc = hint_ADC_presc();
   UVAR('i') =  adc_init_exa_4ch_dma( presc, sampl_times_codes[sampl_t_idx], n_ch );
   delay_ms( 1 );
@@ -230,7 +223,8 @@ int cmd_test0( int argc, const char * const * argv )
   TickType_t tcc = xTaskGetTickCount();
   delay_ms( 10 ); // to settle all
 
-  HAL_ADC_Stop_DMA( &hadc1 );
+  tim2_deinit();
+  HAL_ADC_Stop_DMA( &hadc1 ); // needed
   if( adc_end_dma == 0 ) {
     pr( "Fail to wait DMA end " NL );
   }
@@ -253,7 +247,6 @@ int cmd_test0( int argc, const char * const * argv )
   pr( NL );
 
   delay_ms( 10 );
-  // pr_TIM_state( TIM2 );
 
   return 0;
 }

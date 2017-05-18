@@ -2,7 +2,7 @@
 #include <oxc_gpio.h>
 
 // use tim2 as ADC start tick:
-// APB1: V1: 2*42MHz /(1+83)   = 1MHz   (1-2^32-1 ARR)=(1MHz-2.3E-4Hz)  32-bit timer is great!
+// APB1: V1: 2*36MHz /(1+71)   = 1MHz   (1-2^32-1 ARR)=(1MHz-2.3E-4Hz)  32-bit timer is great!
 //  ARR:freq  1:1MHz 10:100kHz 100:10kHz 1000:1kHz 10000:100Hz 100000:10Hz 1000000:1Hz 1e7:0.1Hz
 
 extern TIM_HandleTypeDef tim2h;

@@ -29,9 +29,10 @@ int adc_init_exa_4ch_dma( uint32_t presc, uint32_t sampl_cycl, uint8_t n_ch )
 
   hadc1.Init.DataAlign             = ADC_DATAALIGN_RIGHT;
   hadc1.Init.NbrOfConversion       = n_ch;
-  // hadc1.Init.DMAContinuousRequests = DISABLE; // ???
-  hadc1.Init.DMAContinuousRequests = ENABLE; // ???
-  hadc1.Init.EOCSelection          = ADC_EOC_SINGLE_CONV; // test
+  hadc1.Init.DMAContinuousRequests = DISABLE;
+  // hadc1.Init.DMAContinuousRequests = ENABLE; // for double-buffer DMA?
+  // hadc1.Init.EOCSelection          = ADC_EOC_SINGLE_CONV; // test: multiple errors after conversion
+  hadc1.Init.EOCSelection          = ADC_EOC_SEQ_CONV;
   if( HAL_ADC_Init( &hadc1 ) != HAL_OK )  {
     errno = 3000;
     return 0;
@@ -89,7 +90,7 @@ void HAL_ADC_MspInit( ADC_HandleTypeDef* adcHandle )
     HAL_NVIC_EnableIRQ( DMA2_Stream0_IRQn );
 
     HAL_NVIC_SetPriority( ADC_IRQn, 2, 0 );
-    HAL_NVIC_EnableIRQ( ADC_IRQn );
+    // HAL_NVIC_EnableIRQ( ADC_IRQn );
   }
 }
 
@@ -102,9 +103,12 @@ void ADC_DMA_REINIT()
   hdma_adc1.Init.MemInc              = DMA_MINC_ENABLE;
   hdma_adc1.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
   hdma_adc1.Init.MemDataAlignment    = DMA_MDATAALIGN_HALFWORD;
-  hdma_adc1.Init.Mode                = DMA_NORMAL;
-  hdma_adc1.Init.Priority            = DMA_PRIORITY_HIGH;
+  hdma_adc1.Init.Mode                = DMA_NORMAL; // DMA_CIRCULAR, DMA_PFCTRL
+  hdma_adc1.Init.Priority            = DMA_PRIORITY_HIGH; // DMA_PRIORITY_LOW, DMA_PRIORITY_MEDIUM, DMA_PRIORITY_HIGH, DMA_PRIORITY_VERY_HIGH
   hdma_adc1.Init.FIFOMode            = DMA_FIFOMODE_DISABLE;
+  // hdma_adc1.Init.FIFOThreshold    = DMA_FIFO_THRESHOLD_HALFFULL;
+  // hdma_adc1.Init.MemBurst         = DMA_MBURST_SINGLE;
+  // hdma_adc1.Init.PeriphBurst      = DMA_PBURST_SINGLE;
   if( HAL_DMA_Init( &hdma_adc1 ) != HAL_OK )   {
     Error_Handler( 6 );
   }
@@ -124,11 +128,12 @@ void HAL_ADC_MspDeInit( ADC_HandleTypeDef* adcHandle )
   }
 }
 
-void ADC_IRQHandler(void)
-{
-  HAL_ADC_IRQHandler( &hadc1 );
-  // leds.toggle( BIT0 );
-}
+// not used in sigle DMA
+// void ADC_IRQHandler(void)
+// {
+//   HAL_ADC_IRQHandler( &hadc1 );
+//   // leds.toggle( BIT0 );
+// }
 
 void DMA2_Stream0_IRQHandler(void)
 {
