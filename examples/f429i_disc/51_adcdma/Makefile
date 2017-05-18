@@ -21,7 +21,7 @@ SRCS  = main.cpp
 
 SRCS += adc_init_exa_4ch_dma.cpp
 # SRCS += adc_init_xx.cpp
-SRCS += tim2_init.cpp
+SRCS += tim2_adcdma_init.cpp
 
 SRCS += stm32f4_clock_HSE144.c
 
