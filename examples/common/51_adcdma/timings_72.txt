@@ -1,0 +1,16 @@
+Timings for using 72 MHz timer for ADC tacting
+
+p (prescaler) = 17; per one channel
+
+a (arr)   Samlerate
+1         2 MS/s
+3         1 MS/s
+7         500 kS/s
+15        250 kS/s
+19        200 kS/s
+39        100 kS/s
+79         50 kS/s
+399        10 kS/s
+3999        1 kS/s
+39999     100 S/s
+

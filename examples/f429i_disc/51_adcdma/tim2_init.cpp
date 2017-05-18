@@ -1,20 +1,22 @@
+#include <errno.h>
+
 #include <oxc_base.h>
 #include <oxc_gpio.h>
 
 // use tim2 as ADC start tick:
-// APB1: V1: 2*42MHz /(1+83)   = 1MHz   (1-2^32-1 ARR)=(1MHz-2.3E-4Hz)  32-bit timer is great!
+// APB1: V1: 2*36MHz /(1+71)   = 1MHz   (1-2^32-1 ARR)=(1MHz-2.3E-4Hz)  32-bit timer is great!
 //  ARR:freq  1:1MHz 10:100kHz 100:10kHz 1000:1kHz 10000:100Hz 100000:10Hz 1000000:1Hz 1e7:0.1Hz
 
 extern TIM_HandleTypeDef tim2h;
 
-void tim2_init( uint16_t presc, uint32_t arr )
+int tim2_init( uint16_t presc, uint32_t arr )
 {
   __TIM2_CLK_ENABLE();
 
   // just for debug ???
   // HAL_NVIC_SetPriority( TIM2_IRQn, configKERNEL_INTERRUPT_PRIORITY, 0 );
-  HAL_NVIC_SetPriority( TIM2_IRQn, 1, 0 );
-  HAL_NVIC_EnableIRQ( TIM2_IRQn );
+  // HAL_NVIC_SetPriority( TIM2_IRQn, 1, 0 );
+  // HAL_NVIC_EnableIRQ( TIM2_IRQn );
 
   tim2h.Instance               = TIM2;
   tim2h.Init.Prescaler         = presc;
@@ -26,15 +28,16 @@ void tim2_init( uint16_t presc, uint32_t arr )
   //TIM2->CR2 = 0x20;  // UPDATE->TRGO
 
   if( HAL_TIM_Base_Init( &tim2h ) != HAL_OK ) {
-    Error_Handler( 4 );
-    return;
+    errno = 4000;
+    return 0;
   }
 
   TIM_MasterConfigTypeDef sMasterConfig;
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   if( HAL_TIMEx_MasterConfigSynchronization( &tim2h, &sMasterConfig ) != HAL_OK )  {
-    Error_Handler( 11 );
+    errno = 4001;
+    return 0;
   }
 
   // if( HAL_TIM_Base_Start_IT( &tim2h ) != HAL_OK ) {
@@ -42,10 +45,10 @@ void tim2_init( uint16_t presc, uint32_t arr )
   //   return;
   // }
   if( HAL_TIM_Base_Start( &tim2h ) != HAL_OK ) {
-    Error_Handler( 4 );
-    return;
+    errno = 4002;
+    return 0;
   }
-
+  return 1;
 }
 
 void tim2_deinit()

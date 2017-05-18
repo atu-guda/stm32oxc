@@ -29,8 +29,8 @@ int adc_init_exa_4ch_dma( uint32_t presc, uint32_t sampl_cycl, uint8_t n_ch )
 
   hadc1.Init.DataAlign             = ADC_DATAALIGN_RIGHT;
   hadc1.Init.NbrOfConversion       = n_ch;
-  hadc1.Init.DMAContinuousRequests = DISABLE; // ???
-  /// hadc1.Init.DMAContinuousRequests = ENABLE; // ???
+  // hadc1.Init.DMAContinuousRequests = DISABLE; // ???
+  hadc1.Init.DMAContinuousRequests = ENABLE; // ???
   hadc1.Init.EOCSelection          = ADC_EOC_SINGLE_CONV; // test
   if( HAL_ADC_Init( &hadc1 ) != HAL_OK )  {
     errno = 3000;

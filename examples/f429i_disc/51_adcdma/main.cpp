@@ -70,7 +70,7 @@ const uint32_t sampl_times_cycles[n_sampl_times] = { // sample+conv(12)
 
 
 TIM_HandleTypeDef tim2h;
-void tim2_init( uint16_t presc = 36, uint32_t arr = 99 ); // 1MHz, 10 kHz
+void tim2_init( uint16_t presc = 36, uint32_t arr = 100 ); // 1MHz, 10 kHz
 void tim2_deinit();
 
 const int pbufsz = 128;
@@ -175,12 +175,12 @@ int cmd_test0( int argc, const char * const * argv )
 
 
   tim2_deinit();
-  pr_ADC_state();
-  hadc1.Instance->SR = 0;
-  HAL_ADC_MspDeInit( &hadc1 );
-  delay_ms( 10 );
+  // pr_ADC_state();
+  // hadc1.Instance->SR = 0;
+  // HAL_ADC_MspDeInit( &hadc1 );
+  // delay_ms( 10 );
 
-  HAL_ADC_MspInit( &hadc1 );
+  // HAL_ADC_MspInit( &hadc1 );
   uint32_t presc = hint_ADC_presc();
   UVAR('i') =  adc_init_exa_4ch_dma( presc, sampl_times_codes[sampl_t_idx], n_ch );
   delay_ms( 1 );
@@ -313,7 +313,7 @@ void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc )
   hadc1.Instance->SR = 0;
   // HAL_ADC_Stop_DMA( hadc );
   adc_end_dma |= 1;
-  leds.set( BIT2 );
+  // leds.set( BIT2 );
   ++UVAR('g'); // 'g' means good
 }
 
@@ -323,34 +323,34 @@ void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc )
   UVAR('z') = HAL_ADC_GetError( hadc );
   adc_dma_error = hadc->DMA_Handle->ErrorCode;
   UVAR('y') = hadc1.Instance->SR;
-  HAL_ADC_Stop_DMA( hadc );
+  // HAL_ADC_Stop_DMA( hadc );
   hadc1.Instance->SR = 0;
   hadc->DMA_Handle->ErrorCode = 0;
   adc_end_dma |= 2;
-  leds.set( BIT0 );
+  // leds.set( BIT0 );
   ++UVAR('e');
 }
 
 
-void TIM2_IRQHandler(void)
-{
-  HAL_TIM_IRQHandler( &tim2h );
-}
-
-// not used for now: only TRGO
-void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
-{
-  ++UVAR('i');
-  UVAR('j') = htim->Instance->CNT;
-  ++n_series;
-  if( n_series < n_series_todo ) {
-    // ADC1->CR2 |= 0x40000000; // SWSTART???
-  } else {
-    htim->Instance->CR1 &= ~1u;
-    // STOP?
-  }
-  leds.toggle( BIT1 );
-}
+// void TIM2_IRQHandler(void)
+// {
+//   HAL_TIM_IRQHandler( &tim2h );
+// }
+//
+// // not used for now: only TRGO
+// void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
+// {
+//   ++UVAR('i');
+//   UVAR('j') = htim->Instance->CNT;
+//   ++n_series;
+//   if( n_series < n_series_todo ) {
+//     // ADC1->CR2 |= 0x40000000; // SWSTART???
+//   } else {
+//     htim->Instance->CR1 &= ~1u;
+//     // STOP?
+//   }
+//   leds.toggle( BIT1 );
+// }
 
 void HAL_ADCEx_InjectedConvCpltCallback( ADC_HandleTypeDef * /*hadc*/ )
 {
