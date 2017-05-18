@@ -105,9 +105,11 @@ int main(void)
 
   UVAR('t') = 1000; // 1 s extra wait
   UVAR('v') = v_adc_ref;
-  UVAR('p') = (tim_freq_in/1000000)-1; // timer PSC, for 1MHz
-  UVAR('a') = 9999; // timer ARR, for 100Hz
-  UVAR('c') = 4;
+  // UVAR('p') = (tim_freq_in/1000000)-1; // timer PSC, for 1MHz
+  UVAR('p') = 17; // timer PSC, for 1MHz
+  // UVAR('a') = 9999; // timer ARR, for 100Hz
+  UVAR('a') = 3; // timer ARR, for 1 MHz
+  UVAR('c') = 1;
   UVAR('n') = 8; // number of series
   UVAR('s') = 0; // sampling time index
 
@@ -251,7 +253,7 @@ int cmd_test0( int argc, const char * const * argv )
   pr( NL );
 
   delay_ms( 10 );
-  pr_TIM_state( TIM2 );
+  // pr_TIM_state( TIM2 );
 
   return 0;
 }
@@ -314,8 +316,7 @@ void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc )
   adc_end_dma |= 1;
   // tim2_deinit();
   UVAR('x') = hadc1.Instance->SR;
-  hadc1.Instance->SR = 0;
-  UVAR('u') = hadc1.Instance->SR;
+  // hadc1.Instance->SR = 0;
   if( UVAR('b') == 0 ) {
     UVAR('b') = 1;
   }
@@ -335,7 +336,7 @@ void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc )
   adc_dma_error = hadc->DMA_Handle->ErrorCode;
   hadc->DMA_Handle->ErrorCode = 0;
   UVAR('y') = hadc1.Instance->SR;
-  hadc1.Instance->SR = 0;
+  // hadc1.Instance->SR = 0;
   // HAL_ADC_Stop_DMA( hadc );
   // leds.set( BIT0 );
   ++UVAR('e');
