@@ -1,5 +1,9 @@
 #include <errno.h>
+
 #include <oxc_gpio.h>
+#include <oxc_debug1.h>
+
+extern  PinsOut ledsx; // debug
 
 extern ADC_HandleTypeDef hadc1;
 extern DMA_HandleTypeDef hdma_adc1;
@@ -8,7 +12,7 @@ void ADC_DMA_REINIT();
 uint32_t calc_ADC_clk( uint32_t presc, int *div_val );
 uint32_t hint_ADC_presc();
 
-int adc_init_exa_4ch_dma( uint32_t presc, uint32_t sampl_cycl, uint8_t n_ch )
+int adc_init_exa_4ch_dma_n( uint32_t presc, uint32_t sampl_cycl, uint8_t n_ch )
 {
   BOARD_ADC_DEFAULT_EN;
   #if defined(STM32F7)
@@ -90,7 +94,7 @@ void HAL_ADC_MspInit( ADC_HandleTypeDef* adcHandle )
     HAL_NVIC_EnableIRQ( DMA2_Stream0_IRQn );
 
     HAL_NVIC_SetPriority( ADC_IRQn, 2, 0 );
-    // HAL_NVIC_EnableIRQ( ADC_IRQn );
+    HAL_NVIC_EnableIRQ( ADC_IRQn );
   }
 }
 
@@ -129,15 +133,18 @@ void HAL_ADC_MspDeInit( ADC_HandleTypeDef* adcHandle )
 }
 
 // not used in sigle DMA
-// void ADC_IRQHandler(void)
-// {
-//   HAL_ADC_IRQHandler( &hadc1 );
-//   // leds.toggle( BIT0 );
-// }
+void ADC_IRQHandler(void)
+{
+  HAL_ADC_IRQHandler( &hadc1 );
+  log_add( "IRQA" NL );
+  ledsx.set( BIT1 );
+}
 
 void DMA2_Stream0_IRQHandler(void)
 {
   HAL_DMA_IRQHandler( &hdma_adc1 );
+  log_add( "IRQD" NL );
+  ledsx.set( BIT3 );
 }
 
 

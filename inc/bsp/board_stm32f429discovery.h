@@ -30,6 +30,7 @@
 #define BOARD_LEDS_ALL  0x03
 
 #define BOARD_DEFINE_LEDS PinsOut leds( BOARD_LEDS_GPIO, BOARD_LEDS_OFS, BOARD_N_LEDS );
+#define BOARD_DEFINE_LEDS_EXTRA PinsOut ledsx( GPIOE, 1, 6 ); // E1-E6
 
 #define LED_BSP_GREEN     1
 #define LED_BSP_GREEN_0   1

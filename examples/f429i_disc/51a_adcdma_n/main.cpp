@@ -16,6 +16,8 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
+BOARD_DEFINE_LEDS_EXTRA; //  PinsOut ledsx( GPIOE, 1, 6 ); // E1-E6
+
 void print_curr( const char *s );
 void out_to_curr( uint32_t n, uint32_t st );
 
@@ -25,9 +27,9 @@ extern "C" {
  void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc );
  void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim );
 }
-const uint32_t ADCDMA_chunk_size = 1024; // in bytes, for for now. may be up to 64k-small
+const uint32_t ADCDMA_chunk_size = 2048; // in bytes, for for now. may be up to 64k-small
 HAL_StatusTypeDef ADC_Start_DMA_n( ADC_HandleTypeDef* hadc, uint32_t* pData, uint32_t Length, uint32_t chunkLength );
-int adc_init_exa_4ch_dma( uint32_t presc, uint32_t sampl_cycl, uint8_t n_ch );
+int adc_init_exa_4ch_dma_n( uint32_t presc, uint32_t sampl_cycl, uint8_t n_ch );
 uint32_t calc_ADC_clk( uint32_t presc, int *div_val );
 uint32_t hint_ADC_presc();
 void ADC_DMA_REINIT();
@@ -36,7 +38,7 @@ void pr_ADC_state();
 ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
 uint32_t tim_freq_in; // timer input freq
-uint32_t adc_clk = ADC_FREQ_MAX;     // depend in MCU, set in adc_init_exa_4ch_dma
+uint32_t adc_clk = ADC_FREQ_MAX;     // depend in MCU, set in adc_init_exa_4ch_dma*
 // uint32_t t_step = 100000; // in us, recalculated before measurement
 float t_step_f = 0.1; // in s, recalculated before measurement
 int v_adc_ref = 3250; // in mV, measured before test, adjust as UVAR('v')
@@ -99,6 +101,10 @@ int main(void)
 {
   BOARD_PROLOG;
 
+  // debug
+  ledsx.initHW();
+  ledsx.set( 0xFF ); delay_ms( 200 ); ledsx.reset( 0xFF );
+
   tim_freq_in = HAL_RCC_GetPCLK1Freq(); // to TIM2
   uint32_t hclk_freq = HAL_RCC_GetHCLKFreq();
   if( tim_freq_in < hclk_freq ) {
@@ -107,8 +113,9 @@ int main(void)
 
   UVAR('t') = 1000; // 1 s extra wait
   UVAR('v') = v_adc_ref;
-  UVAR('p') = (tim_freq_in/1000000)-1; // timer PSC, for 1MHz
-  UVAR('a') = 99999; // timer ARR, for 10Hz
+  // UVAR('p') = (tim_freq_in/1000000)-1; // timer PSC, for 1MHz
+  UVAR('p') = 17;  // for high freq, form 2MS/s (a=1) to 100 S/s (a=39999)
+  UVAR('a') = 19; // timer ARR, 200 kHz, *4= 800 kS/s
   UVAR('c') = n_ADC_ch_max;
   UVAR('n') = 8; // number of series
   UVAR('s') = 0; // sampling time index
@@ -180,8 +187,13 @@ int cmd_test0( int argc, const char * const * argv )
 
   tim2_deinit();
 
+  leds.reset( BIT0 | BIT1 | BIT2 );
+  ledsx.reset( 0xFF );
+  log_reset();
+  delay_ms( 100 );
+
   uint32_t presc = hint_ADC_presc();
-  UVAR('i') =  adc_init_exa_4ch_dma( presc, sampl_times_codes[sampl_t_idx], n_ch );
+  UVAR('i') =  adc_init_exa_4ch_dma_n( presc, sampl_times_codes[sampl_t_idx], n_ch );
   delay_ms( 1 );
   if( ! UVAR('i') ) {
     pr( "ADC init failed, errno= " ); pr_d( errno ); pr( NL );
@@ -212,7 +224,6 @@ int cmd_test0( int argc, const char * const * argv )
     return 2;
   }
 
-  leds.reset( BIT0 | BIT1 | BIT2 );
   TickType_t tc0 = xTaskGetTickCount(), tc00 = tc0;
 
   if( ADC_Start_DMA_n( &hadc1, (uint32_t*)ADC_buf.data(), n_ADC_bytes, ADCDMA_chunk_size ) != HAL_OK )   {
@@ -310,6 +321,8 @@ int cmd_out( int argc, const char * const * argv )
 
 void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc )
 {
+  ledsx.toggle( BIT2 );
+  log_add( "ACC" NL );
   adc_end_dma |= 1;
   // tim2_deinit();
   UVAR('x') = hadc1.Instance->SR;
@@ -324,7 +337,9 @@ void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc )
 
 void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc )
 {
+  ledsx.toggle( BIT0 );
   adc_end_dma |= 2;
+  log_add( "AEC" NL );
   // tim2_deinit();
   if( UVAR('b') == 0 ) {
     UVAR('b') = 2;

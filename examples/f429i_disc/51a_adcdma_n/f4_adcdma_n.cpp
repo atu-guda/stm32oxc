@@ -2,6 +2,10 @@
 // base on file    stm32f4xx_hal_adc.c
 
 #include <oxc_base.h>
+#include <oxc_gpio.h>
+#include <oxc_debug1.h>
+
+extern  PinsOut ledsx; // debug
 
 
 //
@@ -36,26 +40,14 @@ HAL_StatusTypeDef ADC_Start_DMA_n( ADC_HandleTypeDef* hadc, uint32_t* pData, uin
                       HAL_ADC_STATE_READY | HAL_ADC_STATE_REG_EOC | HAL_ADC_STATE_REG_OVR,
                       HAL_ADC_STATE_REG_BUSY );
 
-    // If conversions on group regular are also triggering group injected,
-    // update ADC state.
-    if( READ_BIT( hadc->Instance->CR1, ADC_CR1_JAUTO ) != RESET ) {
-      ADC_STATE_CLR_SET( hadc->State, HAL_ADC_STATE_INJ_EOC, HAL_ADC_STATE_INJ_BUSY );
-    }
-
-    // State machine update: Check if an injected conversion is ongoing
-    if( HAL_IS_BIT_SET( hadc->State, HAL_ADC_STATE_INJ_BUSY ) )  {
-      // Reset ADC error code fields related to conversions on group regular
-      CLEAR_BIT( hadc->ErrorCode, ( HAL_ADC_ERROR_OVR | HAL_ADC_ERROR_DMA ) );
-    } else {
-      // Reset ADC all error code fields
-      ADC_CLEAR_ERRORCODE( hadc );
-    }
+    // injected group ignored,
+    // Reset ADC all error code fields
+    ADC_CLEAR_ERRORCODE( hadc );
 
     __HAL_UNLOCK( hadc );
 
     // Pointer to the common control register to which is belonging hadc
-    // ( Depending on STM32F4 product, there may be up to 3 ADCs and 1 common
-    // control register )
+    // ( Depending on STM32F4 product, there may be up to 3 ADCs and 1 common control register )
     tmpADC_Common = ADC_COMMON_REGISTER( hadc );
 
     // Set the DMA transfer complete callback
@@ -112,12 +104,12 @@ HAL_StatusTypeDef ADC_Start_DMA_n( ADC_HandleTypeDef* hadc, uint32_t* pData, uin
   */
 static void ADC_DMAConvCplt_n( DMA_HandleTypeDef *hdma )
 {
+  log_add( "ADCC" NL );
   // Retrieve ADC handle corresponding to current DMA handle
   ADC_HandleTypeDef* hadc = ( ADC_HandleTypeDef* )( ( DMA_HandleTypeDef* )hdma )->Parent;
 
   // Update state machine on conversion status if not in error state
-  if ( HAL_IS_BIT_CLR( hadc->State, HAL_ADC_STATE_ERROR_INTERNAL | HAL_ADC_STATE_ERROR_DMA ) )
-  {
+  if ( HAL_IS_BIT_CLR( hadc->State, HAL_ADC_STATE_ERROR_INTERNAL | HAL_ADC_STATE_ERROR_DMA ) ) {
     // Update ADC state machine
     SET_BIT( hadc->State, HAL_ADC_STATE_REG_EOC );
 
@@ -160,6 +152,7 @@ static void ADC_DMAConvCplt_n( DMA_HandleTypeDef *hdma )
   */
 static void ADC_DMAHalfConvCplt_n( DMA_HandleTypeDef *hdma )
 {
+  log_add( "ADC2" NL );
   ADC_HandleTypeDef* hadc = ( ADC_HandleTypeDef* )( ( DMA_HandleTypeDef* )hdma )->Parent;
   // Conversion complete callback
   HAL_ADC_ConvHalfCpltCallback( hadc );
@@ -167,6 +160,7 @@ static void ADC_DMAHalfConvCplt_n( DMA_HandleTypeDef *hdma )
 
 static void ADC_DMAError_n( DMA_HandleTypeDef *hdma )
 {
+  log_add( "ADCE" NL );
   ADC_HandleTypeDef* hadc = ( ADC_HandleTypeDef* )( (DMA_HandleTypeDef* )hdma )->Parent;
   hadc->State= HAL_ADC_STATE_ERROR_DMA;
   // Set ADC error code to DMA error
