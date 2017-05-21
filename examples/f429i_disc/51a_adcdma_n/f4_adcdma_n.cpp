@@ -14,7 +14,7 @@ static void ADC_DMAError_n( DMA_HandleTypeDef *hdma );
 static void ADC_DMAHalfConvCplt_n( DMA_HandleTypeDef *hdma );
 
 
-HAL_StatusTypeDef ADC_Start_DMA_n( ADC_HandleTypeDef* hadc, uint32_t* pData, uint32_t Length, uint32_t /* chunkLength */ )
+HAL_StatusTypeDef ADC_Start_DMA_n( ADC_HandleTypeDef* hadc, uint32_t* pData, uint32_t Length, uint32_t chunkLength, uint8_t elSz )
 {
   __IO uint32_t counter = 0U;
   ADC_Common_TypeDef *tmpADC_Common;
@@ -74,7 +74,12 @@ HAL_StatusTypeDef ADC_Start_DMA_n( ADC_HandleTypeDef* hadc, uint32_t* pData, uin
     hadc->Instance->CR2 |= ADC_CR2_DMA;
 
     // Start the DMA channel // atu: TODO: here!
-    HAL_DMA_Start_IT( hadc->DMA_Handle, ( uint32_t )&hadc->Instance->DR, ( uint32_t )pData, Length );
+    uint32_t dat1 = (uint32_t)(pData);
+    uint32_t dat2 = dat1 + chunkLength; // + 8; // 8 is for debug:  one line of 4 samples
+    uint32_t l_lim = ( Length > chunkLength ) ? chunkLength : Length;
+    l_lim /= elSz; // in elements
+    // HAL_DMA_Start_IT( hadc->DMA_Handle, ( uint32_t )&hadc->Instance->DR, ( uint32_t )pData, l_lim );
+    HAL_DMAEx_MultiBufferStart( hadc->DMA_Handle, ( uint32_t )&hadc->Instance->DR, dat1, dat2, l_lim );
 
     // Check if Multimode enabled
     if( HAL_IS_BIT_CLR( tmpADC_Common->CCR, ADC_CCR_MULTI ) ) {

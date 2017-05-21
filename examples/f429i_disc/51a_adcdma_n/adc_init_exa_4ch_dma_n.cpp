@@ -33,8 +33,8 @@ int adc_init_exa_4ch_dma_n( uint32_t presc, uint32_t sampl_cycl, uint8_t n_ch )
 
   hadc1.Init.DataAlign             = ADC_DATAALIGN_RIGHT;
   hadc1.Init.NbrOfConversion       = n_ch;
-  hadc1.Init.DMAContinuousRequests = DISABLE;
-  // hadc1.Init.DMAContinuousRequests = ENABLE; // for double-buffer DMA?
+  // hadc1.Init.DMAContinuousRequests = DISABLE;
+  hadc1.Init.DMAContinuousRequests = ENABLE; // for double-buffer DMA?
   // hadc1.Init.EOCSelection          = ADC_EOC_SINGLE_CONV; // test: multiple errors after conversion
   hadc1.Init.EOCSelection          = ADC_EOC_SEQ_CONV;
   if( HAL_ADC_Init( &hadc1 ) != HAL_OK )  {
@@ -107,7 +107,8 @@ void ADC_DMA_REINIT()
   hdma_adc1.Init.MemInc              = DMA_MINC_ENABLE;
   hdma_adc1.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
   hdma_adc1.Init.MemDataAlignment    = DMA_MDATAALIGN_HALFWORD;
-  hdma_adc1.Init.Mode                = DMA_NORMAL; // DMA_CIRCULAR, DMA_PFCTRL
+  // hdma_adc1.Init.Mode                = DMA_NORMAL; // DMA_CIRCULAR, DMA_PFCTRL
+  hdma_adc1.Init.Mode                = DMA_CIRCULAR;
   hdma_adc1.Init.Priority            = DMA_PRIORITY_HIGH; // DMA_PRIORITY_LOW, DMA_PRIORITY_MEDIUM, DMA_PRIORITY_HIGH, DMA_PRIORITY_VERY_HIGH
   hdma_adc1.Init.FIFOMode            = DMA_FIFOMODE_DISABLE;
   // hdma_adc1.Init.FIFOThreshold    = DMA_FIFO_THRESHOLD_HALFFULL;

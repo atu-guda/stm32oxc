@@ -27,8 +27,8 @@ extern "C" {
  void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc );
  void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim );
 }
-const uint32_t ADCDMA_chunk_size = 2048; // in bytes, for for now. may be up to 64k-small
-HAL_StatusTypeDef ADC_Start_DMA_n( ADC_HandleTypeDef* hadc, uint32_t* pData, uint32_t Length, uint32_t chunkLength );
+const uint32_t ADCDMA_chunk_size = 1024; // in bytes, for for now. may be up to 64k-small
+HAL_StatusTypeDef ADC_Start_DMA_n( ADC_HandleTypeDef* hadc, uint32_t* pData, uint32_t Length, uint32_t chunkLength, uint8_t elSz );
 int adc_init_exa_4ch_dma_n( uint32_t presc, uint32_t sampl_cycl, uint8_t n_ch );
 uint32_t calc_ADC_clk( uint32_t presc, int *div_val );
 uint32_t hint_ADC_presc();
@@ -215,7 +215,8 @@ int cmd_test0( int argc, const char * const * argv )
   uint32_t n_ADC_bytes = n * n_ch;
   ADC_buf.resize( 0, 0 );
   ADC_buf.shrink_to_fit();
-  ADC_buf.assign( (n+2) * n_ch, 0 ); // + 2 is guard, may be remove
+  // ADC_buf.assign( (n+2) * n_ch, 0 ); // + 2 is guard, may be remove
+  ADC_buf.assign( 136 * 1024 / 2, 0 ); // tmp:
   pr( "ADC_buf.size= " ); pr_d( ADC_buf.size() );  pr( " data= " ); pr_h( (uint32_t)(ADC_buf.data()) ); pr( NL );
   adc_end_dma = 0; adc_dma_error = 0; n_series = 0; n_series_todo = n;
   UVAR('b') = 0; UVAR('g') = 0; UVAR('e') = 0;   UVAR('x') = 0; UVAR('y') = 0; UVAR('z') = 0;
@@ -226,7 +227,7 @@ int cmd_test0( int argc, const char * const * argv )
 
   TickType_t tc0 = xTaskGetTickCount(), tc00 = tc0;
 
-  if( ADC_Start_DMA_n( &hadc1, (uint32_t*)ADC_buf.data(), n_ADC_bytes, ADCDMA_chunk_size ) != HAL_OK )   {
+  if( ADC_Start_DMA_n( &hadc1, (uint32_t*)ADC_buf.data(), n_ADC_bytes, ADCDMA_chunk_size, 2 ) != HAL_OK )   {
     pr( "ADC_Start_DMA error" NL );
   }
   tim2_init( UVAR('p'), UVAR('a') );

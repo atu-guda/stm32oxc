@@ -36,6 +36,7 @@ SRCS += stm32f4xx_hal_adc_ex.c
 SRCS += stm32f4xx_hal_tim.c
 SRCS += stm32f4xx_hal_tim_ex.c
 SRCS += stm32f4xx_hal_dma.c
+SRCS += stm32f4xx_hal_dma_ex.c
 
 
 include ../common/board_add.mk
