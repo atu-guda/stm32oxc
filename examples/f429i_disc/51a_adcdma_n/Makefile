@@ -19,8 +19,10 @@ OXCDIR = /usr/share/stm32oxc
 
 SRCS  = main.cpp
 
-SRCS += adc_init_exa_4ch_dma.cpp
-# SRCS += adc_init_xx.cpp
+SRCS += adc_init_exa_4ch_dma_n.cpp
+
+SRCS += f4_adcdma_n.cpp
+
 SRCS += tim2_adcdma_init.cpp
 
 SRCS += stm32f4_clock_HSE144.c
