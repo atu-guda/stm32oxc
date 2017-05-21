@@ -136,15 +136,17 @@ void HAL_ADC_MspDeInit( ADC_HandleTypeDef* adcHandle )
 // not used in sigle DMA
 void ADC_IRQHandler(void)
 {
-  HAL_ADC_IRQHandler( &hadc1 );
+  UVAR('u') = hadc1.Instance->SR;
+  ++UVAR('j');
   log_add( "IRQA" NL );
+  HAL_ADC_IRQHandler( &hadc1 );
   ledsx.set( BIT1 );
 }
 
 void DMA2_Stream0_IRQHandler(void)
 {
-  HAL_DMA_IRQHandler( &hdma_adc1 );
   log_add( "IRQD" NL );
+  HAL_DMA_IRQHandler( &hdma_adc1 );
   ledsx.set( BIT3 );
 }
 
