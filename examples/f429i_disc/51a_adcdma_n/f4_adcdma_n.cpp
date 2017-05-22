@@ -12,7 +12,12 @@ extern  PinsOut ledsx; // debug
 static void ADC_DMAConvCplt_n( DMA_HandleTypeDef *hdma );
 static void ADC_DMAError_n( DMA_HandleTypeDef *hdma );
 static void ADC_DMAHalfConvCplt_n( DMA_HandleTypeDef *hdma );
-static void ADC_DMAM1ConvCplt_n( DMA_HandleTypeDef *hdma );
+// static void ADC_DMAM1ConvCplt_n( DMA_HandleTypeDef *hdma );
+
+static uint32_t base_dma_addr = 0;
+static uint32_t next_dma_ofs  = 0;
+static uint32_t step_dma_addr = 0;
+static uint32_t dma_total_sz  = 0;
 
 
 HAL_StatusTypeDef ADC_Start_DMA_n( ADC_HandleTypeDef* hadc, uint32_t* pData, uint32_t Length, uint32_t chunkLength, uint8_t elSz )
@@ -58,7 +63,8 @@ HAL_StatusTypeDef ADC_Start_DMA_n( ADC_HandleTypeDef* hadc, uint32_t* pData, uin
     hadc->DMA_Handle->XferHalfCpltCallback = ADC_DMAHalfConvCplt_n;
 
     // Set the DMA M1 transfer complete callback
-    hadc->DMA_Handle->XferM1CpltCallback = ADC_DMAM1ConvCplt_n;
+    //hadc->DMA_Handle->XferM1CpltCallback = ADC_DMAM1ConvCplt_n;
+    hadc->DMA_Handle->XferM1CpltCallback = ADC_DMAConvCplt_n;
 
     // Set the DMA error callback
     hadc->DMA_Handle->XferErrorCallback = ADC_DMAError_n;
@@ -80,11 +86,15 @@ HAL_StatusTypeDef ADC_Start_DMA_n( ADC_HandleTypeDef* hadc, uint32_t* pData, uin
     // Start the DMA channel // atu: TODO: here!
     uint32_t dat1 = (uint32_t)(pData);
     uint32_t dat2 = dat1 + chunkLength; //  + 8; // 8 is for debug:  one line of 4 samples
+    base_dma_addr = dat1;
+    next_dma_ofs  = chunkLength;
+    step_dma_addr = chunkLength;
+    dma_total_sz = Length;
     uint32_t l_lim = ( Length > chunkLength ) ? chunkLength : Length;
     l_lim /= elSz; // in elements
-    // HAL_DMA_Start_IT( hadc->DMA_Handle, ( uint32_t )&hadc->Instance->DR, ( uint32_t )pData, l_lim );
     // HAL_DMAEx_MultiBufferStart( hadc->DMA_Handle, ( uint32_t )&hadc->Instance->DR, dat1, dat2, l_lim );
     if(  HAL_DMAEx_MultiBufferStart_IT( hadc->DMA_Handle, ( uint32_t )&hadc->Instance->DR, dat1, dat2, l_lim ) != HAL_OK ) {
+      base_dma_addr = next_dma_ofs = step_dma_addr = dma_total_sz  = 0;
       return HAL_ERROR;
     }
 
@@ -113,17 +123,34 @@ HAL_StatusTypeDef ADC_Start_DMA_n( ADC_HandleTypeDef* hadc, uint32_t* pData, uin
   * @param  hdma: pointer to a DMA_HandleTypeDef structure that contains
   *                the configuration information for the specified DMA module.
   * @retval None
+  * atu: both buffers
   */
 static void ADC_DMAConvCplt_n( DMA_HandleTypeDef *hdma )
 {
+  char buf[32];
+  ADC_HandleTypeDef* hadc = ( ADC_HandleTypeDef* )( ( DMA_HandleTypeDef* )hdma )->Parent;
+  bool is_mem1 = hdma->Instance->CR & DMA_SxCR_CT;
+  next_dma_ofs += step_dma_addr;
+  bool is_final = next_dma_ofs > dma_total_sz;
   char lb[8];
-  lb[0] = 'A'; lb[1] = 'D'; lb[2] = 'C'; lb[3] = 'C'; lb[4] = '0'; lb[5] = '\r'; lb[6] = '\n'; lb[7] = '\0';
-  if( hdma->Instance->CR & DMA_SxCR_CT ) {
+  lb[0] = 'A'; lb[1] = 'D'; lb[2] = 'C'; lb[3] = 'C'; lb[4] = '0'; lb[5] = ' '; lb[6] = '\0'; lb[7] = '\0';
+  if( is_mem1 ) {
     lb[4] = '1';
   }
+  if( is_final ) {
+    lb[4] = '-';
+    HAL_ADC_Stop_DMA( hadc );
+    base_dma_addr = next_dma_ofs = step_dma_addr = dma_total_sz  = 0;
+  }
   log_add( lb );
-  // Retrieve ADC handle corresponding to current DMA handle
-  ADC_HandleTypeDef* hadc = ( ADC_HandleTypeDef* )( ( DMA_HandleTypeDef* )hdma )->Parent;
+  log_add( word2hex( next_dma_ofs, buf ) );
+  log_add( NL );
+
+  if( is_mem1 ) {
+    hdma->Instance->M0AR = base_dma_addr + next_dma_ofs;
+  } else {
+    hdma->Instance->M1AR = base_dma_addr + next_dma_ofs;
+  }
 
   // Update state machine on conversion status if not in error state
   if ( HAL_IS_BIT_CLR( hadc->State, HAL_ADC_STATE_ERROR_INTERNAL | HAL_ADC_STATE_ERROR_DMA ) ) {
@@ -169,23 +196,23 @@ static void ADC_DMAConvCplt_n( DMA_HandleTypeDef *hdma )
   */
 static void ADC_DMAHalfConvCplt_n( DMA_HandleTypeDef *hdma )
 {
-  log_add( "ADC2" NL );
+  // log_add( "ADC2" NL );
   ADC_HandleTypeDef* hadc = ( ADC_HandleTypeDef* )( ( DMA_HandleTypeDef* )hdma )->Parent;
   // Conversion complete callback
   HAL_ADC_ConvHalfCpltCallback( hadc );
 }
 
-static void ADC_DMAM1ConvCplt_n( DMA_HandleTypeDef *hdma )
-{
-  char lb[8];
-  lb[0] = 'A'; lb[1] = 'M'; lb[2] = '1'; lb[3] = 'C'; lb[4] = '0'; lb[5] = '\r'; lb[6] = '\n'; lb[7] = '\0';
-  if( hdma->Instance->CR & DMA_SxCR_CT ) {
-    lb[4] = '1';
-  }
-  log_add( lb );
-  // ADC_HandleTypeDef* hadc = ( ADC_HandleTypeDef* )( ( DMA_HandleTypeDef* )hdma )->Parent;
-  // HAL_ADC_ConvHalfCpltCallback( hadc );
-}
+// static void ADC_DMAM1ConvCplt_n( DMA_HandleTypeDef *hdma )
+// {
+//   char lb[8];
+//   lb[0] = 'A'; lb[1] = 'M'; lb[2] = '1'; lb[3] = 'C'; lb[4] = '0'; lb[5] = '\r'; lb[6] = '\n'; lb[7] = '\0';
+//   if( hdma->Instance->CR & DMA_SxCR_CT ) {
+//     lb[4] = '1';
+//   }
+//   log_add( lb );
+//   // ADC_HandleTypeDef* hadc = ( ADC_HandleTypeDef* )( ( DMA_HandleTypeDef* )hdma )->Parent;
+//   // HAL_ADC_ConvHalfCpltCallback( hadc );
+// }
 
 
 static void ADC_DMAError_n( DMA_HandleTypeDef *hdma )

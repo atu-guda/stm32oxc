@@ -117,6 +117,7 @@ void ADC_DMA_REINIT()
   if( HAL_DMA_Init( &hdma_adc1 ) != HAL_OK )   {
     Error_Handler( 6 );
   }
+  hdma_adc1.Instance->CR &=  ~DMA_SxCR_CT;
 
   __HAL_LINKDMA( &hadc1, DMA_Handle, hdma_adc1 );
 }
