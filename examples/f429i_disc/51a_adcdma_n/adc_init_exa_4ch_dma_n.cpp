@@ -3,7 +3,7 @@
 #include <oxc_gpio.h>
 #include <oxc_debug1.h>
 
-extern  PinsOut ledsx; // debug
+// extern  PinsOut ledsx; // debug
 
 extern ADC_HandleTypeDef hadc1;
 extern DMA_HandleTypeDef hdma_adc1;
@@ -140,14 +140,14 @@ void ADC_IRQHandler(void)
   ++UVAR('j');
   log_add( "IRQA" NL );
   HAL_ADC_IRQHandler( &hadc1 );
-  ledsx.set( BIT1 );
+  // ledsx.set( BIT1 );
 }
 
 void DMA2_Stream0_IRQHandler(void)
 {
   log_add( "IRQD" NL );
   HAL_DMA_IRQHandler( &hdma_adc1 );
-  ledsx.set( BIT3 );
+  // ledsx.set( BIT3 );
 }
 
 

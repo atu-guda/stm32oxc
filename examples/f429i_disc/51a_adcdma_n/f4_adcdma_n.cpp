@@ -3,9 +3,9 @@
 
 #include <oxc_base.h>
 #include <oxc_gpio.h>
-#include <oxc_debug1.h>
+// #include <oxc_debug1.h>
 
-extern  PinsOut ledsx; // debug
+// extern  PinsOut ledsx; // debug
 
 
 //
@@ -128,24 +128,22 @@ HAL_StatusTypeDef ADC_Start_DMA_n( ADC_HandleTypeDef* hadc, uint32_t* pData, uin
   */
 static void ADC_DMAConvCplt_n( DMA_HandleTypeDef *hdma )
 {
-  char buf[32];
+  // char buf[32];
   ADC_HandleTypeDef* hadc = ( ADC_HandleTypeDef* )( ( DMA_HandleTypeDef* )hdma )->Parent;
   bool is_mem1 = hdma->Instance->CR & DMA_SxCR_CT;
   next_dma_ofs += step_dma_addr;
   bool is_final = next_dma_ofs > dma_total_sz;
-  char lb[8];
-  lb[0] = 'A'; lb[1] = 'D'; lb[2] = 'C'; lb[3] = 'C'; lb[4] = '0'; lb[5] = ' '; lb[6] = '\0'; lb[7] = '\0';
-  if( is_mem1 ) {
-    lb[4] = '1';
-  }
+  // char lb[8];
+  // lb[0] = 'A'; lb[1] = 'D'; lb[2] = 'C'; lb[3] = 'C'; lb[4] = '0'; lb[5] = ' '; lb[6] = '\0'; lb[7] = '\0';
+  // if( is_mem1 ) {
+  //   lb[4] = '1';
+  // }
   if( is_final ) {
-    lb[4] = '-';
+    // lb[4] = '-';
     HAL_ADC_Stop_DMA( hadc );
     base_dma_addr = next_dma_ofs = step_dma_addr = dma_total_sz  = 0;
   }
-  log_add( lb );
-  log_add( word2hex( next_dma_ofs, buf ) );
-  log_add( NL );
+  // log_add( lb ); log_add( word2hex( next_dma_ofs, buf ) ); log_add( NL );
 
   if( is_mem1 ) {
     hdma->Instance->M0AR = base_dma_addr + next_dma_ofs;
@@ -218,7 +216,7 @@ static void ADC_DMAHalfConvCplt_n( DMA_HandleTypeDef *hdma )
 
 static void ADC_DMAError_n( DMA_HandleTypeDef *hdma )
 {
-  log_add( "ADCE" NL );
+  // log_add( "ADCE" NL );
   ADC_HandleTypeDef* hadc = ( ADC_HandleTypeDef* )( (DMA_HandleTypeDef* )hdma )->Parent;
   hadc->State= HAL_ADC_STATE_ERROR_DMA;
   // Set ADC error code to DMA error

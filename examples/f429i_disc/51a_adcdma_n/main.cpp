@@ -16,7 +16,7 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
-BOARD_DEFINE_LEDS_EXTRA; //  PinsOut ledsx( GPIOE, 1, 6 ); // E1-E6
+// BOARD_DEFINE_LEDS_EXTRA; //  PinsOut ledsx( GPIOE, 1, 6 ); // E1-E6
 
 void print_curr( const char *s );
 void out_to_curr( uint32_t n, uint32_t st );
@@ -102,8 +102,8 @@ int main(void)
   BOARD_PROLOG;
 
   // debug
-  ledsx.initHW();
-  ledsx.set( 0xFF ); delay_ms( 200 ); ledsx.reset( 0xFF );
+  // ledsx.initHW();
+  // ledsx.set( 0xFF ); delay_ms( 200 ); ledsx.reset( 0xFF );
 
   tim_freq_in = HAL_RCC_GetPCLK1Freq(); // to TIM2
   uint32_t hclk_freq = HAL_RCC_GetHCLKFreq();
@@ -119,7 +119,7 @@ int main(void)
   UVAR('c') = n_ADC_ch_max;
   UVAR('n') = 8; // number of series
   UVAR('s') = 0; // sampling time index
-  UVAR('d') = 2; // debug level
+  // UVAR('d') = 0; // debug level
 
   #ifdef PWR_CR1_ADCDC1
   PWR->CR1 |= PWR_CR1_ADCDC1;
@@ -209,7 +209,7 @@ int cmd_test0( int argc, const char * const * argv )
   tim2_deinit();
 
   leds.reset( BIT0 | BIT1 | BIT2 );
-  ledsx.reset( 0xFF );
+  // ledsx.reset( 0xFF );
   log_reset();
   delay_ms( 100 );
 
@@ -248,7 +248,7 @@ int cmd_test0( int argc, const char * const * argv )
 
   TickType_t tc0 = xTaskGetTickCount(), tc00 = tc0;
 
-  log_add( "start" NL );
+  // log_add( "start" NL );
   if( ADC_Start_DMA_n( &hadc1, (uint32_t*)ADC_buf.data(), n_ADC_bytes, ADCDMA_chunk_size, 2 ) != HAL_OK )   {
     pr( "ADC_Start_DMA_n error = "  ); pr_h( hdma_adc1.ErrorCode );  pr( NL );
     pr( " XferCpltCallback= "   ); pr_a( hdma_adc1.XferCpltCallback   );
@@ -258,9 +258,9 @@ int cmd_test0( int argc, const char * const * argv )
     return 1;
   }
   pr_DMA_state();
-  log_add( "TI_0" NL );
+  // log_add( "TI_0" NL );
   tim2_init( UVAR('p'), UVAR('a') );
-  log_add( "TI_1" NL );
+  // log_add( "TI_1" NL );
 
   delay_ms( t_wait0 );
   for( uint32_t ti=0; adc_end_dma == 0 && ti<(uint32_t)UVAR('t'); ++ti ) {
@@ -270,7 +270,7 @@ int cmd_test0( int argc, const char * const * argv )
   delay_ms( 10 ); // to settle all
 
   tim2_deinit();
-  log_add( "TD" NL );
+  // log_add( "TD" NL );
   pr_DMA_state();
   pr_DMA_state();
   HAL_ADC_Stop_DMA( &hadc1 ); // needed
@@ -356,8 +356,8 @@ int cmd_out( int argc, const char * const * argv )
 
 void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc )
 {
-  ledsx.toggle( BIT2 );
-  log_add( "ACC" NL );
+  // ledsx.toggle( BIT2 );
+  // log_add( "ACC" NL );
   adc_end_dma |= 1;
   // tim2_deinit();
   UVAR('x') = hadc1.Instance->SR;
@@ -373,9 +373,9 @@ void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc )
 void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc )
 {
   UVAR('y') = hadc1.Instance->SR;
-  ledsx.toggle( BIT0 );
+  // ledsx.toggle( BIT0 );
   adc_end_dma |= 2;
-  log_add( "AEC" NL );
+  // log_add( "AEC" NL );
   // tim2_deinit();
   if( UVAR('b') == 0 ) {
     UVAR('b') = 2;
