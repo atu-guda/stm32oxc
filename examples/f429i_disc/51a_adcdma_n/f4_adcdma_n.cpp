@@ -83,7 +83,7 @@ HAL_StatusTypeDef ADC_Start_DMA_n( ADC_HandleTypeDef* hadc, uint32_t* pData, uin
     // Enable ADC DMA mode
     hadc->Instance->CR2 |= ADC_CR2_DMA;
 
-    // Start the DMA channel // atu: TODO: here!
+    // Start the DMA channel
     uint32_t dat1 = (uint32_t)(pData);
     uint32_t dat2 = dat1 + chunkLength; //  + 8; // 8 is for debug:  one line of 4 samples
     base_dma_addr = dat1;
@@ -93,6 +93,7 @@ HAL_StatusTypeDef ADC_Start_DMA_n( ADC_HandleTypeDef* hadc, uint32_t* pData, uin
     uint32_t l_lim = ( Length > chunkLength ) ? chunkLength : Length;
     l_lim /= elSz; // in elements
     // HAL_DMAEx_MultiBufferStart( hadc->DMA_Handle, ( uint32_t )&hadc->Instance->DR, dat1, dat2, l_lim );
+    hadc->DMA_Handle->Instance->CR &= ~DMA_SxCR_CT;
     if(  HAL_DMAEx_MultiBufferStart_IT( hadc->DMA_Handle, ( uint32_t )&hadc->Instance->DR, dat1, dat2, l_lim ) != HAL_OK ) {
       base_dma_addr = next_dma_ofs = step_dma_addr = dma_total_sz  = 0;
       return HAL_ERROR;

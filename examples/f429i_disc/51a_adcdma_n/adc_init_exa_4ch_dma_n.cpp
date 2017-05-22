@@ -114,10 +114,9 @@ void ADC_DMA_REINIT()
   // hdma_adc1.Init.FIFOThreshold    = DMA_FIFO_THRESHOLD_HALFFULL;
   // hdma_adc1.Init.MemBurst         = DMA_MBURST_SINGLE;
   // hdma_adc1.Init.PeriphBurst      = DMA_PBURST_SINGLE;
-  if( HAL_DMA_Init( &hdma_adc1 ) != HAL_OK )   {
+  if( HAL_DMA_Init( &hdma_adc1 ) != HAL_OK ) {
     Error_Handler( 6 );
   }
-  hdma_adc1.Instance->CR &=  ~DMA_SxCR_CT;
 
   __HAL_LINKDMA( &hadc1, DMA_Handle, hdma_adc1 );
 }

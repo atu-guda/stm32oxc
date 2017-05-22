@@ -188,7 +188,7 @@ int cmd_test0( int argc, const char * const * argv )
   if( n_ch < 1 ) { n_ch = 1; };
 
   const uint32_t n_ADC_series_max  = n_ADC_mem / ( 2 * n_ch ); // 2 is 16bit/sample
-  uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 0, n_ADC_series_max ); // number of series
+  uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, n_ADC_series_max ); // number of series
 
   uint32_t sampl_t_idx = UVAR('s');
   if( sampl_t_idx >= n_sampl_times ) { sampl_t_idx = n_sampl_times-1; };
@@ -198,6 +198,11 @@ int cmd_test0( int argc, const char * const * argv )
   float tim_f = tim_freq_in / t_step_tick; // timer update freq, Hz
   t_step_f = (float)t_step_tick / tim_freq_in; // in s
   uint32_t t_wait0 = 1 + uint32_t( n * t_step_f * 1000 ); // in ms
+
+  // make n a multimple of ADCDMA_chunk_size
+  uint32_t lines_per_chunk = ADCDMA_chunk_size / ( n_ch * 2 );
+  n = ( ( n - 1 ) / lines_per_chunk + 1 ) * lines_per_chunk;
+  uint32_t n_ADC_bytes = n * n_ch * 2;
 
   if( n > n_ADC_series_max ) { n = n_ADC_series_max; };
 
@@ -228,11 +233,10 @@ int cmd_test0( int argc, const char * const * argv )
                                   f_sampl_max, t_wait0 );
   pr( pbuf ); delay_ms( 10 );
 
-  uint32_t n_ADC_bytes = n * n_ch * 2;
   ADC_buf.resize( 0, 0 );
   ADC_buf.shrink_to_fit();
-  // ADC_buf.assign( (n+2) * n_ch, 0 ); // + 2 is guard, may be remove
-  ADC_buf.assign( 136 * 1024 / 2, 0 ); // tmp: to catch overruns
+  ADC_buf.assign( n * n_ch + ADCDMA_chunk_size, 0 ); // 2 reserved chunks
+  // ADC_buf.assign( 136 * 1024 / 2, 0 ); // tmp: to catch overruns
   pr( "ADC_buf.size= " ); pr_d( ADC_buf.size() );  pr( " data= " ); pr_h( (uint32_t)(ADC_buf.data()) );
   pr( " n_ADC_bytes= " ); pr_d( n_ADC_bytes ); pr( NL );
   adc_end_dma = 0; adc_dma_error = 0; n_series = 0; n_series_todo = n;
