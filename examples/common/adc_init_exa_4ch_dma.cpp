@@ -1,5 +1,7 @@
 #include <errno.h>
+
 #include <oxc_gpio.h>
+
 
 extern ADC_HandleTypeDef hadc1;
 extern DMA_HandleTypeDef hdma_adc1;
@@ -109,7 +111,7 @@ void ADC_DMA_REINIT()
   // hdma_adc1.Init.FIFOThreshold    = DMA_FIFO_THRESHOLD_HALFFULL;
   // hdma_adc1.Init.MemBurst         = DMA_MBURST_SINGLE;
   // hdma_adc1.Init.PeriphBurst      = DMA_PBURST_SINGLE;
-  if( HAL_DMA_Init( &hdma_adc1 ) != HAL_OK )   {
+  if( HAL_DMA_Init( &hdma_adc1 ) != HAL_OK ) {
     Error_Handler( 6 );
   }
 
@@ -128,7 +130,7 @@ void HAL_ADC_MspDeInit( ADC_HandleTypeDef* adcHandle )
   }
 }
 
-// not used in sigle DMA
+// not used in single DMA
 // void ADC_IRQHandler(void)
 // {
 //   HAL_ADC_IRQHandler( &hadc1 );

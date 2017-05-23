@@ -11,13 +11,16 @@ SUBDIRS = \
   15_tim_usonic \
   16_step1 \
   17_1w_18b20 \
+  30_sdcard1 \
+  31_sdcard2 \
+  50_adc0 \
+  51_adcdma \
+  51a_adcdma_n \
+  54_adcirq \
   x01_fmc \
   x02_stemwin_fmc
 
-#  03_uart \
-#  04_uart_console \
 #  05_usb_console \
-#  06_i2c_test \
 #  07_i2c_lcdt \
 #  08_i2c_mpu6050 \
 #  09_i2c_bmp085 \

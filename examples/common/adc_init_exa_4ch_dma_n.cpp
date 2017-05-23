@@ -1,9 +1,7 @@
 #include <errno.h>
 
 #include <oxc_gpio.h>
-#include <oxc_debug1.h>
-
-// extern  PinsOut ledsx; // debug
+// #include <oxc_debug1.h>
 
 extern ADC_HandleTypeDef hadc1;
 extern DMA_HandleTypeDef hdma_adc1;
@@ -133,21 +131,15 @@ void HAL_ADC_MspDeInit( ADC_HandleTypeDef* adcHandle )
   }
 }
 
-// not used in sigle DMA
+// may be used
 void ADC_IRQHandler(void)
 {
-  UVAR('u') = hadc1.Instance->SR;
-  ++UVAR('j');
-  log_add( "IRQA" NL );
   HAL_ADC_IRQHandler( &hadc1 );
-  // ledsx.set( BIT1 );
 }
 
 void DMA2_Stream0_IRQHandler(void)
 {
-  log_add( "IRQD" NL );
   HAL_DMA_IRQHandler( &hdma_adc1 );
-  // ledsx.set( BIT3 );
 }
 
 
