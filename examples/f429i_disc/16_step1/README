@@ -4,10 +4,7 @@ bipolar 2 coil: mode0,mode1 E(1:3) coil1 E(2:4) coil2 (via LM298 or so)
 monopolar 4 coil: E(1:2:3:4)
 
 
-Console:  USBCDC via SmallRL.
-used USB FS:
-A11 = D-
-A12 = D+
-A9  = Vbus - unused?
-A10 = Id   - unused
+Used USART1 with VCP on ST_LInk V2-1
+A9   = USART1_TX
+A10  = USART1_RX
 

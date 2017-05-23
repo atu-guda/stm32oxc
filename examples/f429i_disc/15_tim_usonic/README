@@ -10,8 +10,6 @@ TIM1.CH2: both edge receiver: IRQ
 Vcc for sensor: 5v required: with 3.3: no good return pulse
 
 Used USART1 with VCP on ST_LInk V2-1
-
 A9   = USART1_TX
 A10  = USART1_RX
-
 

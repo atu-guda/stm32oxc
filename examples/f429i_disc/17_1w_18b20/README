@@ -3,10 +3,7 @@ Pull-up (4.7k) required!
 
 Pin used simultaneously for input and output.
 
-Console:  USBCDC via SmallRL.
-used USB FS:
-A11 = D-
-A12 = D+
-A9  = Vbus - unused?
-A10 = Id   - unused
+Used USART1 with VCP on ST_LInk V2-1
+A9   = USART1_TX
+A10  = USART1_RX
 
