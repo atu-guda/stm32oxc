@@ -495,5 +495,14 @@ int cmd_pin_info( int argc, const char * const * argv )
 }
 CmdInfo CMDINFO_PIN_INFO { "pinfo",  0, cmd_pin_info,       " [A-I] [0-15] - info about pin" };
 
+int cmd_set_leds_step( int argc, const char * const * argv )
+{
+  uint32_t nstep = arg2long_d( 1, argc, argv, 50, 1, 100000 ); // number output series
+  task_leds_step = nstep;
+  pr( "LEDS step is set to " ); pr_d( task_leds_step ); pr( " = " ); pr_d( task_leds_step * TASK_LEDS_QUANT );
+  pr( " ms" NL );
+  return 0;
+}
+CmdInfo CMDINFO_LSTEP { "set_leds_step", 'L', cmd_set_leds_step, " [N] - set leds step in 10 ms "  };
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

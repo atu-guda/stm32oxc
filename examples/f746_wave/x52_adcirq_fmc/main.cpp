@@ -64,15 +64,12 @@ int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test ADC"  };
 int cmd_out( int argc, const char * const * argv );
 CmdInfo CMDINFO_OUT { "out", 'O', cmd_out, " [N [start]]- output data "  };
-int cmd_set_leds_step( int argc, const char * const * argv );
-CmdInfo CMDINFO_LSTEP { "set_leds_step", 'L', cmd_set_leds_step, " [N] - set leds step in 10 ms "  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
 
   &CMDINFO_TEST0,
   &CMDINFO_OUT,
-  &CMDINFO_LSTEP,
   nullptr
 };
 
@@ -279,15 +276,6 @@ int cmd_out( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_set_leds_step( int argc, const char * const * argv )
-{
-  uint32_t nstep = arg2long_d( 1, argc, argv, 50, 1, 100000 ); // number output series
-  task_leds_step = nstep;
-  pr( "LEDS step is set to " ); pr_d( task_leds_step ); pr( " = " ); pr_d( task_leds_step * TASK_LEDS_QUANT );
-  pr( " ms" NL );
-  return 0;
-}
-
 
 void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc )
 {
@@ -299,11 +287,6 @@ void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc )
     ++UVAR('g'); // 'g' means good
     leds.toggle( BIT2 );
   }
-  // tim2_deinit();
-  // UVAR('x') = hadc->Instance->SR;
-  // hadc1.Instance->SR = 0;
-  // leds.toggle( BIT2 );
-  // ++UVAR('g'); // 'g' means good
 }
 
 void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc )

@@ -7,6 +7,8 @@
 
 #include <oxc_auto.h>
 
+#include <bsp/board_stm32f429discovery_sdram.h>
+
 #include <ff.h>
 #include <fatfs.h>
 
@@ -18,6 +20,8 @@ FreeRTOS_to_stm32cube_tick_hook;
 BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
+
+SDRAM_HandleTypeDef hsdram;
 
 // BOARD_DEFINE_LEDS_EXTRA; //  PinsOut ledsx( GPIOE, 1, 6 ); // E1-E6
 
@@ -51,11 +55,12 @@ uint32_t tim_freq_in; // timer input freq
 uint32_t adc_clk = ADC_FREQ_MAX;     // depend in MCU, set in adc_init_exa_4ch_dma*
 // uint32_t t_step = 100000; // in us, recalculated before measurement
 float t_step_f = 0.1; // in s, recalculated before measurement
-int v_adc_ref = 3250; // in mV, measured before test, adjust as UVAR('v')
+int v_adc_ref = BOARD_ADC_COEFF; // in mV, measured before test, adjust as UVAR('v')
 const uint32_t n_ADC_ch_max = 4; // current - in UVAR('c')
-const uint32_t n_ADC_mem  = BOARD_ADC_MEM_MAX; // MCU dependent, in byter for 16-bit samples
+const uint32_t n_ADC_mem  = BOARD_ADC_MEM_MAX_FMC; // MCU dependent, in bytes for 16-bit samples
 
-vector<uint16_t> ADC_buf;
+// vector<uint16_t> ADC_buf;
+uint16_t *ADC_buf_x = (uint16_t*)(SDRAM_ADDR);
 
 volatile int adc_end_dma = 0;
 volatile int adc_dma_error = 0;
@@ -113,6 +118,8 @@ const CmdInfo* global_cmds[] = {
 int main(void)
 {
   BOARD_PROLOG;
+
+  bsp_init_sdram( &hsdram );
 
   MX_SDIO_SD_Init();
   UVAR('e') = HAL_SD_Init( &hsd );
@@ -249,23 +256,25 @@ int cmd_test0( int argc, const char * const * argv )
                                   f_sampl_max, t_wait0 );
   pr( pbuf ); delay_ms( 10 );
 
-  ADC_buf.resize( 0, 0 );
-  ADC_buf.shrink_to_fit();
-  ADC_buf.assign( n * n_ch + ADCDMA_chunk_size, 0 ); // 2 reserved chunks
-  // ADC_buf.assign( 136 * 1024 / 2, 0 ); // tmp: to catch overruns
-  pr( "ADC_buf.size= " ); pr_d( ADC_buf.size() );  pr( " data= " ); pr_h( (uint32_t)(ADC_buf.data()) );
+  // ADC_buf.resize( 0, 0 );
+  // ADC_buf.shrink_to_fit();
+  // ADC_buf.assign( n * n_ch + ADCDMA_chunk_size, 0 ); // 2 reserved chunks
+  memset( ADC_buf_x, n_ADC_bytes + ADCDMA_chunk_size, 0 );
+
+  // pr( "ADC_buf.size= " ); pr_d( ADC_buf.size() );  pr( " data= " ); pr_h( (uint32_t)(ADC_buf.data()) );
+  pr( "ADC data= " ); pr_h( (uint32_t)(ADC_buf_x) );
   pr( " n_ADC_bytes= " ); pr_d( n_ADC_bytes ); pr( NL );
   adc_end_dma = 0; adc_dma_error = 0; n_series = 0; n_series_todo = n;
   UVAR('b') = 0; UVAR('g') = 0; UVAR('e') = 0;   UVAR('x') = 0; UVAR('y') = 0; UVAR('z') = 0;
-  if( ADC_buf.data() == nullptr ) {
-    pr( "Error: fail to allocate memory" NL );
-    return 2;
-  }
+  // if( ADC_buf.data() == nullptr ) {
+  //   pr( "Error: fail to allocate memory" NL );
+  //   return 2;
+  // }
 
   TickType_t tc0 = xTaskGetTickCount(), tc00 = tc0;
 
   // log_add( "start" NL );
-  if( ADC_Start_DMA_n( &hadc1, (uint32_t*)ADC_buf.data(), n_ADC_bytes, ADCDMA_chunk_size, 2 ) != HAL_OK )   {
+  if( ADC_Start_DMA_n( &hadc1, (uint32_t*)ADC_buf_x, n_ADC_bytes, ADCDMA_chunk_size, 2 ) != HAL_OK )   {
     pr( "ADC_Start_DMA_n error = "  ); pr_h( hdma_adc1.ErrorCode );  pr( NL );
     pr( " XferCpltCallback= "   ); pr_a( hdma_adc1.XferCpltCallback   );
     pr( " XferM1CpltCallback= " ); pr_a( hdma_adc1.XferM1CpltCallback );
@@ -341,18 +350,25 @@ void out_to_curr( uint32_t n, uint32_t st )
   }
 
   float t = st * t_step_f;
+  TickType_t tc0 = xTaskGetTickCount(), tc00 = tc0;
   for( uint32_t i=0; i< n; ++i ) {
     uint32_t ii = i + st;
     t = t_step_f * ii;
     snprintf( pbuf, pbufsz-1, "%#12.7g  ", t );
     for( int j=0; j< n_ch; ++j ) {
-      int vv = ADC_buf[ii*n_ch+j] * 10 * UVAR('v') / 4096;
+      int vv = ADC_buf_x[ii*n_ch+j] * 10 * UVAR('v') / 4096;
       ifcvt( vv, 10000, buf, 4 );
       strcat( pbuf, buf ); strcat( pbuf, "  " );
     }
     strcat( pbuf, i2dec( ii, buf ) );
     strcat( pbuf, NL );
     print_curr( pbuf );
+    idle_flag = 1;
+    if( ( i % 100000 ) == 0 && i > 0 && out_file.fs != nullptr ) {
+      tc0 = xTaskGetTickCount();
+      pr( "written " ); pr_d( i ); pr( " lines, "  ); pr_d( tc0 - tc00 ); pr( " ms" NL );
+      delay_ms( 10 );
+    }
   }
 }
 

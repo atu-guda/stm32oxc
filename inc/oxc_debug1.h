@@ -2,6 +2,7 @@
 #define _OXC_DEBUG1_H
 
 #include <oxc_console.h>
+#include <oxc_common1.h>
 
 #ifdef __cplusplus
  extern "C" {
@@ -59,6 +60,8 @@ int cmd_log_reset( int argc, const char * const * argv );
 extern CmdInfo CMDINFO_LOG_RESET;
 int cmd_pin_info( int argc, const char * const * argv );
 extern CmdInfo CMDINFO_PIN_INFO;
+int cmd_set_leds_step( int argc, const char * const * argv );
+extern CmdInfo CMDINFO_LSTEP;
 
 #define DEBUG_CMDS \
   &CMDINFO_HELP, \
@@ -72,7 +75,8 @@ extern CmdInfo CMDINFO_PIN_INFO;
   &CMDINFO_LOG_RESET, \
   &CMDINFO_PVAR, \
   &CMDINFO_SVAR, \
-  &CMDINFO_PIN_INFO \
+  &CMDINFO_PIN_INFO, \
+  &CMDINFO_LSTEP \
 
 #ifdef __cplusplus
 }
