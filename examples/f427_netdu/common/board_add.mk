@@ -8,9 +8,7 @@ BOARDNAME = STM32F427-netdu # none
 ADDSRC += ../common ../../common
 
 #
-#LDSCRIPT = $(STMLD)/STM32F427VITx_FLASH.ld
-# TMP, untill add
-LDSCRIPT = $(STMLD)/STM32F417IG_FLASH.ld
+LDSCRIPT = $(STMLD)/STM32F427VITx_FLASH.ld
 HSE_VALUE = 25000000
 
 SRCS += system_stm32f4xx.c

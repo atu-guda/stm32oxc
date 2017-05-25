@@ -80,8 +80,6 @@ int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test ADC"  };
 int cmd_out( int argc, const char * const * argv );
 CmdInfo CMDINFO_OUT { "out", 'O', cmd_out, " [N [start]]- output data "  };
-int cmd_set_leds_step( int argc, const char * const * argv );
-CmdInfo CMDINFO_LSTEP { "set_leds_step", 'L', cmd_set_leds_step, " [N] - set leds step in 10 ms "  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -312,15 +310,6 @@ int cmd_out( int argc, const char * const * argv )
 
   out_to_curr( n, st );
 
-  return 0;
-}
-
-int cmd_set_leds_step( int argc, const char * const * argv )
-{
-  uint32_t nstep = arg2long_d( 1, argc, argv, 50, 1, 100000 ); // number output series
-  task_leds_step = nstep;
-  pr( "LEDS step is set to " ); pr_d( task_leds_step ); pr( " = " ); pr_d( task_leds_step * TASK_LEDS_QUANT );
-  pr( " ms" NL );
   return 0;
 }
 

@@ -350,7 +350,7 @@ void out_to_curr( uint32_t n, uint32_t st )
   }
 
   float t = st * t_step_f;
-  TickType_t tc0 = xTaskGetTickCount(), tc00 = tc0;
+  TickType_t tc0 = xTaskGetTickCount(), tc00 = tc0, tc1 = tc0;
   for( uint32_t i=0; i< n; ++i ) {
     uint32_t ii = i + st;
     t = t_step_f * ii;
@@ -364,9 +364,10 @@ void out_to_curr( uint32_t n, uint32_t st )
     strcat( pbuf, NL );
     print_curr( pbuf );
     idle_flag = 1;
-    if( ( i % 100000 ) == 0 && i > 0 && out_file.fs != nullptr ) {
+    if( ( i % 1000 ) == 0 && i > 0 && out_file.fs != nullptr ) {
       tc0 = xTaskGetTickCount();
-      pr( "written " ); pr_d( i ); pr( " lines, "  ); pr_d( tc0 - tc00 ); pr( " ms" NL );
+      pr( "written " ); pr_d( i ); pr( " lines, "  ); pr_d( tc0 - tc00 ); pr( " ms, dlt = " ); pr_d( tc0 - tc1 ); pr( NL );
+      tc1 = tc0;
       delay_ms( 10 );
     }
   }
