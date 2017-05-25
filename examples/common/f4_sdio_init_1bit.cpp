@@ -26,7 +26,7 @@ void MX_SDIO_SD_Init()
   hsd.Init.ClockPowerSave      = SDIO_PS_X;
   hsd.Init.BusWide             = SDIO_BUS_X;
   hsd.Init.HardwareFlowControl = SDIO_FLOW_X;
-  hsd.Init.ClockDiv            = 0; // 200?
+  hsd.Init.ClockDiv            = 2; // 200?
 }
 
 void HAL_SD_MspInit( SD_HandleTypeDef* /* sdHandle */ )

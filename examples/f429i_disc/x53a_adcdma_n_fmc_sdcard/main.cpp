@@ -32,8 +32,20 @@ HAL_SD_CardInfoTypeDef cardInfo;
 FATFS fs;
 const int fspath_sz = 32;
 char fspath[fspath_sz];
-void print_curr( const char *s );
+int  print_curr( const char *s );
 void out_to_curr( uint32_t n, uint32_t st );
+
+// buffer to file output
+const uint32_t fbuf_wr_k   = 8;
+const uint32_t fbuf_size   = ( fbuf_wr_k + 1 ) * 1024;
+const uint32_t fbuf_hwmark = ( fbuf_wr_k ) * 1024;
+const uint32_t fbuf_maxlinesz = 512;
+char  fbuf[fbuf_size];
+char* fbuf_h = fbuf + fbuf_hwmark;
+uint32_t fbuf_pos = 0;
+void reset_filebuf();
+int  add_to_file( const char *s );
+int  flush_file();
 
 
 extern "C" {
@@ -324,17 +336,23 @@ int cmd_test0( int argc, const char * const * argv )
   return 0;
 }
 
-void print_curr( const char *s )
+int  print_curr( const char *s )
 {
-  if( !s ) {
-    return;
+  if( !s  || !*s ) {
+    return 0;
   }
+  UINT l = strlen( s );
   if( out_file.fs == nullptr ) {
     pr( s );
     delay_ms( 2 );
-    return;
+    return l;
   }
-  f_puts( s, &out_file );
+  // f_puts( s, &out_file );
+  int rc = add_to_file( s );
+  if( rc < 1 ) {
+    return 0;
+  }
+  return rc;
 }
 
 void out_to_curr( uint32_t n, uint32_t st )
@@ -362,7 +380,11 @@ void out_to_curr( uint32_t n, uint32_t st )
     }
     strcat( pbuf, i2dec( ii, buf ) );
     strcat( pbuf, NL );
-    print_curr( pbuf );
+    int l_w = print_curr( pbuf );
+    if( l_w < 1 ) {
+      pr( "Write error: errno = " ); pr_d( errno ); pr( NL );
+      break;
+    }
     idle_flag = 1;
     if( ( i % 1000 ) == 0 && i > 0 && out_file.fs != nullptr ) {
       tc0 = xTaskGetTickCount();
@@ -384,6 +406,53 @@ int cmd_out( int argc, const char * const * argv )
   return 0;
 }
 
+void reset_filebuf()
+{
+  fbuf_pos = 0;
+}
+
+int add_to_file( const char *s )
+{
+  if( !s || !*s ) {
+    return 0;
+  }
+  uint32_t l = strlen( s );
+  if( l >= fbuf_maxlinesz ) {
+    return 0;
+  }
+  memcpy( fbuf + fbuf_pos, s, l );
+  fbuf_pos += l;
+  if( fbuf_pos < fbuf_hwmark ) {
+    return l;
+  }
+  UINT l_w;
+  FRESULT rc = f_write( &out_file, fbuf, fbuf_hwmark, &l_w );
+  fbuf_pos -= fbuf_hwmark;
+  memmove( fbuf, fbuf + fbuf_hwmark, fbuf_pos );
+
+  if( rc == FR_OK ) {
+    return l;
+  }
+  errno = 5000 + rc;
+  return 0;
+}
+
+
+int flush_file()
+{
+  if( fbuf_pos < 1 ) {
+    return 0;
+  }
+  UINT l_w;
+  FRESULT rc = f_write( &out_file, fbuf, fbuf_pos, &l_w );
+  if( rc == FR_OK ) {
+    return l_w;
+  }
+  errno = 5000 + rc;
+  fbuf_pos = 0;
+  return 0;
+}
+
 int cmd_outsd( int argc, const char * const * argv )
 {
   if( argc < 2 ) {
@@ -398,7 +467,9 @@ int cmd_outsd( int argc, const char * const * argv )
   const char *fn = argv[1];
   FRESULT r = f_open( &out_file, fn, FA_WRITE | FA_OPEN_ALWAYS );
   if( r == FR_OK ) {
+    reset_filebuf();
     out_to_curr( n, st );
+    flush_file();
     f_close( &out_file );
   } else {
     pr( "f_open error: " ); pr_d( r ); pr( NL );
