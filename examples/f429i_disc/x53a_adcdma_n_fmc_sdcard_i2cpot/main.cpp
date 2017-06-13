@@ -64,6 +64,9 @@ uint32_t calc_ADC_clk( uint32_t presc, int *div_val );
 uint32_t hint_ADC_presc();
 void ADC_DMA_REINIT();
 void pr_ADC_state();
+int do_one_run( uint32_t n );
+int do_potctl( int v1, int v2, int t );
+int do_outsd( const char *afn, uint32_t n, uint32_t st );
 
 ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
@@ -111,7 +114,11 @@ void tim2_deinit();
 const int pbufsz = 128;
 FIL out_file;
 
+const int pot_r_0 = 47100, add_r_0 = 10000; // initial full scale and additional resistance
 volatile int pot_v1 = 128, pot_v2 = 128, pot_t = 1000, pot_tick = 0;
+int pot_r1 = add_r_0 + pot_v1 * pot_r_0 / 256;
+int pot_r2 = add_r_0 + pot_v2 * pot_r_0 / 256;
+char fn_auto[32];
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -122,6 +129,8 @@ int cmd_outsd( int argc, const char * const * argv );
 CmdInfo CMDINFO_OUTSD { "outsd", 'X', cmd_outsd, "filename [N [start]]- output data to SD"  };
 int cmd_potctl( int argc, const char * const * argv );
 CmdInfo CMDINFO_POTCTL { "potctl", 'P', cmd_potctl, "v1 [ v2 T ] - set pot resistance params"  };
+int cmd_iterrun( int argc, const char * const * argv );
+CmdInfo CMDINFO_ITERRRUN { "iterrun", 'Z', cmd_iterrun, "v1 n step=1 - run series of measurement"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -130,6 +139,7 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_POTCTL,
   &CMDINFO_OUT,
   &CMDINFO_OUTSD,
+  &CMDINFO_ITERRRUN,
   nullptr
 };
 
@@ -171,6 +181,8 @@ int main(void)
   UVAR('c') = n_ADC_ch_max;
   UVAR('n') = 8; // number of series
   UVAR('s') = 3; // sampling time index
+  UVAR('r') = 47100; // POT full scale resistance
+  UVAR('o') = 10000; // Initial R_b
 
   #ifdef PWR_CR1_ADCDC1
   PWR->CR1 |= PWR_CR1_ADCDC1;
@@ -178,6 +190,8 @@ int main(void)
 
   i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
+
+  strcpy( fn_auto, "d_xxx.txt" );
 
   BOARD_POST_INIT_BLINK;
 
@@ -236,13 +250,20 @@ void pr_TIM_state( TIM_TypeDef *htim )
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
+  uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 100000000 ); // number of series
+  //                                  limited by n_ADC_series_max
+
+  return do_one_run( n );
+}
+
+int do_one_run( uint32_t n )
+{
   char pbuf[pbufsz];
   uint8_t n_ch = UVAR('c');
   if( n_ch > n_ADC_ch_max ) { n_ch = n_ADC_ch_max; };
   if( n_ch < 1 ) { n_ch = 1; };
 
   const uint32_t n_ADC_series_max  = n_ADC_mem / ( 2 * n_ch ); // 2 is 16bit/sample
-  uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, n_ADC_series_max ); // number of series
 
   uint32_t sampl_t_idx = UVAR('s');
   if( sampl_t_idx >= n_sampl_times ) { sampl_t_idx = n_sampl_times-1; };
@@ -466,18 +487,13 @@ int flush_file()
   return 0;
 }
 
-int cmd_outsd( int argc, const char * const * argv )
+int do_outsd( const char *afn, uint32_t n, uint32_t st )
 {
-  if( argc < 2 ) {
-    pr( "Error: need filename [n [start]]" NL );
-    return 1;
-  }
+  const char *fn = afn ? afn : fn_auto;
 
   out_file.fs = nullptr;
-  uint32_t n = arg2long_d( 2, argc, argv, n_series_todo, 0, n_series_todo+1 ); // number output series
-  uint32_t st= arg2long_d( 3, argc, argv,             0, 0, n_series_todo-2 );
 
-  const char *fn = argv[1];
+  pr( "Output to \"" ); pr( fn ); pr( "\" n= " ); pr_d( n ); pr( "st= ") ; pr_d( st ); pr( NL );
   FRESULT r = f_open( &out_file, fn, FA_WRITE | FA_OPEN_ALWAYS );
   if( r == FR_OK ) {
     reset_filebuf();
@@ -492,16 +508,47 @@ int cmd_outsd( int argc, const char * const * argv )
   return r;
 }
 
+int cmd_outsd( int argc, const char * const * argv )
+{
+  const char *fn = fn_auto;
+  if( argc > 1 ) {
+    fn = argv[1];
+  }
+
+  uint32_t n = arg2long_d( 2, argc, argv, n_series_todo, 0, n_series_todo+1 ); // number output series
+  uint32_t st= arg2long_d( 3, argc, argv,             0, 0, n_series_todo-2 );
+
+  return do_outsd( fn, n, st );
+}
+
 int cmd_potctl( int argc, const char * const * argv )
 {
   if( argc < 2 ) {
     pr( "Error: need  V1 [ V2 T ]" NL );
     return 1;
   }
-  pot_v1 = arg2long_d( 1, argc, argv, 128,    0, 255 );
-  pot_v2 = arg2long_d( 2, argc, argv, pot_v1, 0, 255 );
-  pot_t  = arg2long_d( 3, argc, argv, 1000,   1, 100000 );
-  pr( "v1 = " ); pr_d( pot_v1 ); pr( " v2 = " ); pr_d( pot_v2 ); pr( " pot_t = " ); pr_d( pot_t ); pr( NL );
+  int v1 = arg2long_d( 1, argc, argv, 128,    0, 255 );
+  int v2 = arg2long_d( 2, argc, argv, pot_v1, 0, 255 );
+  int t  = arg2long_d( 3, argc, argv, 1000,   1, 100000 );
+  return do_potctl( v1, v2, t );
+}
+
+int do_potctl( int v1, int v2, int t )
+{
+  pot_v1 = v1;
+  pot_v2 = v2;
+  pot_t  = t;
+  pot_r1 = add_r_0 + pot_v1 * pot_r_0 / 256;
+  pot_r2 = add_r_0 + pot_v2 * pot_r_0 / 256;
+
+  fn_auto[0] = ( pot_v1 == pot_v2 ) ? 'r' : 'm';
+  fn_auto[1] = '_'; fn_auto[2] = '\0';
+  i2dec( pot_r1, fn_auto + 2, 6, '0' );
+  strcat( fn_auto, ".txt" );
+
+  pr( "v1 = " ); pr_d( pot_v1 ); pr( " v2 = " ); pr_d( pot_v2 ); pr( " pot_t = " ); pr_d( pot_t );  pr( NL );
+  pr( "R1 = " ); pr_d( pot_r1 ); pr( " R2 = " ); pr_d( pot_r2 );
+  pr( " fn=\"" ); pr( fn_auto ); pr( "\"" NL );
   return 0;
 }
 
@@ -523,6 +570,32 @@ void task_pot( void *prm UNUSED_ARG )
   vTaskDelete(NULL);
 }
 
+int cmd_iterrun( int argc, const char * const * argv )
+{
+  int st    = arg2long_d( 1, argc, argv, 0, 0, 255 );
+  int n     = arg2long_d( 2, argc, argv, 5, 1, 255 );
+  int step  = arg2long_d( 3, argc, argv, 1, 0, 128 );
+
+  if( st + n * step > 255 ) {
+    n = ( 255 - st ) / step;
+  }
+  pr( "iterrun: st=" ); pr_d( st ); pr( " n= " ); pr_d( n ); pr( " step= " ); pr_d( step ); pr( NL );
+
+  int v = st, rc;
+  for( int i=0; i < n; ++i ) {
+    do_potctl( v, v, 1000 );
+    rc = do_one_run( UVAR('n') );
+    if( rc != 0 ) {
+      return rc;
+    }
+    rc = do_outsd( nullptr, n_series_todo, 0 );
+    if( rc != 0 ) {
+      return rc;
+    }
+    v += step;
+  }
+  return 0;
+}
 
 void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc )
 {
