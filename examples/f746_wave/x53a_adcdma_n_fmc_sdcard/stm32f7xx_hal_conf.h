@@ -8,7 +8,7 @@
 
 // for oxc lib: just to check
 #define REQ_MCBASE STM32F7
-#define REQ_SYSCLK_FREQ 200
+#define REQ_SYSCLK_FREQ 144
 
 #include <bsp/board_stm32f746_waveshare0.h>
 
@@ -18,10 +18,13 @@
 // base modules
 #define USE_COMMON_HAL_MODULES
 
-#define HAL_DMA_MODULE_ENABLED
-#define HAL_UART_MODULE_ENABLED
+// AUX modules : full list: ../common/hal_modules_list.h
+//
 #define HAL_ADC_MODULE_ENABLED
 #define HAL_TIM_MODULE_ENABLED
+#define HAL_DMA_MODULE_ENABLED
+#define HAL_UART_MODULE_ENABLED
+#define HAL_SD_MODULE_ENABLED
 #define HAL_SDRAM_MODULE_ENABLED
 
 #include "../common/stm32f7xx_hal_conf_common.h"

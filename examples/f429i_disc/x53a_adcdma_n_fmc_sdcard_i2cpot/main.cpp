@@ -21,6 +21,10 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
+extern "C" {
+void task_pot( void *prm UNUSED_ARG );
+}
+
 SDRAM_HandleTypeDef hsdram;
 
 // BOARD_DEFINE_LEDS_EXTRA; //  PinsOut ledsx( GPIOE, 1, 6 ); // E1-E6
@@ -107,6 +111,8 @@ void tim2_deinit();
 const int pbufsz = 128;
 FIL out_file;
 
+volatile int pot_v1 = 128, pot_v2 = 128, pot_t = 1000, pot_tick = 0;
+
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test ADC"  };
@@ -114,17 +120,23 @@ int cmd_out( int argc, const char * const * argv );
 CmdInfo CMDINFO_OUT { "out", 'O', cmd_out, " [N [start]]- output data "  };
 int cmd_outsd( int argc, const char * const * argv );
 CmdInfo CMDINFO_OUTSD { "outsd", 'X', cmd_outsd, "filename [N [start]]- output data to SD"  };
+int cmd_potctl( int argc, const char * const * argv );
+CmdInfo CMDINFO_POTCTL { "potctl", 'P', cmd_potctl, "v1 [ v2 T ] - set pot resistance params"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
 
   &CMDINFO_TEST0,
+  &CMDINFO_POTCTL,
   &CMDINFO_OUT,
   &CMDINFO_OUTSD,
   nullptr
 };
 
 
+I2C_HandleTypeDef i2ch;
+DevI2C i2cd( &i2ch, 0 ); // zero add means no real device
+I2CClient digpot( i2cd, 0x2C );
 
 
 int main(void)
@@ -164,9 +176,13 @@ int main(void)
   PWR->CR1 |= PWR_CR1_ADCDC1;
   #endif
 
+  i2c_default_init( i2ch /*, 400000 */ );
+  i2c_dbg = &i2cd;
+
   BOARD_POST_INIT_BLINK;
 
   BOARD_CREATE_STD_TASKS;
+  xTaskCreate( task_pot,  "pot", def_stksz, nullptr,   1, nullptr );
 
   SCHEDULER_START;
   return 0;
@@ -269,9 +285,6 @@ int cmd_test0( int argc, const char * const * argv )
                                   f_sampl_max, t_wait0 );
   pr( pbuf ); delay_ms( 10 );
 
-  // ADC_buf.resize( 0, 0 );
-  // ADC_buf.shrink_to_fit();
-  // ADC_buf.assign( n * n_ch + ADCDMA_chunk_size, 0 ); // 2 reserved chunks
   memset( ADC_buf_x, n_ADC_bytes + ADCDMA_chunk_size, 0 );
 
   // pr( "ADC_buf.size= " ); pr_d( ADC_buf.size() );  pr( " data= " ); pr_h( (uint32_t)(ADC_buf.data()) );
@@ -279,10 +292,6 @@ int cmd_test0( int argc, const char * const * argv )
   pr( " n_ADC_bytes= " ); pr_d( n_ADC_bytes ); pr( NL );
   adc_end_dma = 0; adc_dma_error = 0; n_series = 0; n_series_todo = n;
   UVAR('b') = 0; UVAR('g') = 0; UVAR('e') = 0;   UVAR('x') = 0; UVAR('y') = 0; UVAR('z') = 0;
-  // if( ADC_buf.data() == nullptr ) {
-  //   pr( "Error: fail to allocate memory" NL );
-  //   return 2;
-  // }
 
   TickType_t tc0 = xTaskGetTickCount(), tc00 = tc0;
 
@@ -297,6 +306,9 @@ int cmd_test0( int argc, const char * const * argv )
   }
   pr_DMA_state();
   // log_add( "TI_0" NL );
+  pr( "Waiting for pot state change 0->1" NL );
+  while(  pot_tick ) { delay_ms( 1 ); }
+  while( !pot_tick ) { delay_ms( 1 ); }
   tim2_init( UVAR('p'), UVAR('a') );
   // log_add( "TI_1" NL );
 
@@ -478,6 +490,37 @@ int cmd_outsd( int argc, const char * const * argv )
   out_file.fs = nullptr;
 
   return r;
+}
+
+int cmd_potctl( int argc, const char * const * argv )
+{
+  if( argc < 2 ) {
+    pr( "Error: need  V1 [ V2 T ]" NL );
+    return 1;
+  }
+  pot_v1 = arg2long_d( 1, argc, argv, 128,    0, 255 );
+  pot_v2 = arg2long_d( 2, argc, argv, pot_v1, 0, 255 );
+  pot_t  = arg2long_d( 3, argc, argv, 1000,   1, 100000 );
+  pr( "v1 = " ); pr_d( pot_v1 ); pr( " v2 = " ); pr_d( pot_v2 ); pr( " pot_t = " ); pr_d( pot_t ); pr( NL );
+  return 0;
+}
+
+void task_pot( void *prm UNUSED_ARG )
+{
+  TickType_t tc0 = xTaskGetTickCount();
+  while( 1 ) {
+    if( pot_tick ) {
+      digpot.send_reg1_8bit( 0, pot_v2 );
+      leds.reset( BIT1 );
+      pot_tick = 0;
+    } else {
+      digpot.send_reg1_8bit( 0, pot_v1 );
+      leds.set( BIT1 );
+      pot_tick = 1;
+    }
+    vTaskDelayUntil( &tc0, pot_t );
+  }
+  vTaskDelete(NULL);
 }
 
 

@@ -64,7 +64,7 @@ void pr_ADC_state();
 ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
 uint32_t tim_freq_in; // timer input freq
-uint32_t adc_clk = ADC_FREQ_MAX;     // depend in MCU, set in adc_init_exa_4ch_dma*
+uint32_t adc_clk = ADC_FREQ_MAX;     // depend in MCU, set in adc_init_exa_4ch_dma
 // uint32_t t_step = 100000; // in us, recalculated before measurement
 float t_step_f = 0.1; // in s, recalculated before measurement
 int v_adc_ref = BOARD_ADC_COEFF; // in mV, measured before test, adjust as UVAR('v')
@@ -126,12 +126,16 @@ const CmdInfo* global_cmds[] = {
 
 
 
+void MX_FMC_Init(void);
+void BSP_SDRAM_Initialization_sequence( uint32_t RefreshCount );
+
 
 int main(void)
 {
   BOARD_PROLOG;
 
-  bsp_init_sdram( &hsdram );
+  MX_FMC_Init();
+  BSP_SDRAM_Initialization_sequence( 0 ); // 0 if fake
 
   MX_SDIO_SD_Init();
   UVAR('e') = HAL_SD_Init( &hsd );
@@ -151,14 +155,13 @@ int main(void)
   }
 
   UVAR('t') = 1000; // 1 s extra wait
-  // UVAR('v') = v_adc_ref;
   UVAR('v') = v_adc_ref;
   // UVAR('p') = (tim_freq_in/1000000)-1; // timer PSC, for 1MHz
   UVAR('p') = 17;  // for high freq, form 2MS/s (a=1) to 100 S/s (a=39999)
-  UVAR('a') = 39; // timer ARR, 100 kHz, *4= 400 kS/s
+  UVAR('a') = 19; // timer ARR, 200 kHz, *4= 800 kS/s
   UVAR('c') = n_ADC_ch_max;
   UVAR('n') = 8; // number of series
-  UVAR('s') = 3; // sampling time index
+  UVAR('s') = 0; // sampling time index
 
   #ifdef PWR_CR1_ADCDC1
   PWR->CR1 |= PWR_CR1_ADCDC1;
@@ -435,6 +438,11 @@ int add_to_file( const char *s )
     return l;
   }
   errno = 5000 + rc;
+  pr( "Error state: fs= " ); pr_a( out_file.fs ); pr( " id= " ); pr_d( out_file.id );
+  pr( " flag= " ); pr_d( out_file.flag ); pr( " err= " ); pr_d( out_file.err );
+  pr( " fptr= " ); pr_d( out_file.fptr ); pr( " fsize= " ); pr_d( out_file.fsize );
+  pr( NL );
+
   return 0;
 }
 
