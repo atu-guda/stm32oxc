@@ -85,6 +85,7 @@ volatile int adc_end_dma = 0;
 volatile int adc_dma_error = 0;
 volatile uint32_t n_series = 0;
 uint32_t n_series_todo = 0;
+volatile int on_save_state = 0;
 const uint32_t n_sampl_times = 7; // current number - in UVAR('s')
 const uint32_t sampl_times_codes[n_sampl_times] = { // all for 36 MHz ADC clock
   ADC_SAMPLETIME_3CYCLES   , //  15  tick: 2.40 MSa,  0.42 us
@@ -114,11 +115,12 @@ void tim2_deinit();
 const int pbufsz = 128;
 FIL out_file;
 
+const int pot_steps = 256;
 const int pot_r_0 = 47100, add_r_0 = 10000; // initial full scale and additional resistance
 volatile int pot_v1 = 128, pot_v2 = 128, pot_t = 1000, pot_tick = 0;
-int pot_r1 = add_r_0 + pot_v1 * pot_r_0 / 256;
-int pot_r2 = add_r_0 + pot_v2 * pot_r_0 / 256;
-char fn_auto[32];
+int pot_r1 = add_r_0 + pot_v1 * pot_r_0 / pot_steps;
+int pot_r2 = add_r_0 + pot_v2 * pot_r_0 / pot_steps;
+char fn_auto[64];
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -181,8 +183,8 @@ int main(void)
   UVAR('c') = n_ADC_ch_max;
   UVAR('n') = 8; // number of series
   UVAR('s') = 3; // sampling time index
-  UVAR('r') = 47100; // POT full scale resistance
-  UVAR('o') = 10000; // Initial R_b
+  UVAR('r') = pot_r_0; // POT full scale resistance
+  UVAR('o') = add_r_0; // Initial R_b
 
   #ifdef PWR_CR1_ADCDC1
   PWR->CR1 |= PWR_CR1_ADCDC1;
@@ -476,9 +478,11 @@ int flush_file()
 {
   if( fbuf_pos < 1 ) {
     return 0;
+    on_save_state = 0;
   }
   UINT l_w;
   FRESULT rc = f_write( &out_file, fbuf, fbuf_pos, &l_w );
+  on_save_state = 0;
   if( rc == FR_OK ) {
     return l_w;
   }
@@ -493,9 +497,10 @@ int do_outsd( const char *afn, uint32_t n, uint32_t st )
 
   out_file.fs = nullptr;
 
-  pr( "Output to \"" ); pr( fn ); pr( "\" n= " ); pr_d( n ); pr( "st= ") ; pr_d( st ); pr( NL );
+  pr( "Output to \"" ); pr( fn ); pr( "\" n= " ); pr_d( n ); pr( " st= ") ; pr_d( st ); pr( NL );
   FRESULT r = f_open( &out_file, fn, FA_WRITE | FA_OPEN_ALWAYS );
   if( r == FR_OK ) {
+    on_save_state = 1;
     reset_filebuf();
     out_to_curr( n, st );
     flush_file();
@@ -527,8 +532,8 @@ int cmd_potctl( int argc, const char * const * argv )
     pr( "Error: need  V1 [ V2 T ]" NL );
     return 1;
   }
-  int v1 = arg2long_d( 1, argc, argv, 128,    0, 255 );
-  int v2 = arg2long_d( 2, argc, argv, pot_v1, 0, 255 );
+  int v1 = arg2long_d( 1, argc, argv, 128,    0, pot_steps-1 );
+  int v2 = arg2long_d( 2, argc, argv, pot_v1, 0, pot_steps-1 );
   int t  = arg2long_d( 3, argc, argv, 1000,   1, 100000 );
   return do_potctl( v1, v2, t );
 }
@@ -538,8 +543,8 @@ int do_potctl( int v1, int v2, int t )
   pot_v1 = v1;
   pot_v2 = v2;
   pot_t  = t;
-  pot_r1 = add_r_0 + pot_v1 * pot_r_0 / 256;
-  pot_r2 = add_r_0 + pot_v2 * pot_r_0 / 256;
+  pot_r1 = UVAR('o') + pot_v1 * UVAR('r') / pot_steps;
+  pot_r2 = UVAR('o') + pot_v2 * UVAR('r') / pot_steps;
 
   fn_auto[0] = ( pot_v1 == pot_v2 ) ? 'r' : 'm';
   fn_auto[1] = '_'; fn_auto[2] = '\0';
@@ -556,6 +561,10 @@ void task_pot( void *prm UNUSED_ARG )
 {
   TickType_t tc0 = xTaskGetTickCount();
   while( 1 ) {
+    if( on_save_state ) {
+      delay_ms( 1000 );
+      continue;
+    }
     if( pot_tick ) {
       digpot.send_reg1_8bit( 0, pot_v2 );
       leds.reset( BIT1 );
@@ -572,12 +581,12 @@ void task_pot( void *prm UNUSED_ARG )
 
 int cmd_iterrun( int argc, const char * const * argv )
 {
-  int st    = arg2long_d( 1, argc, argv, 0, 0, 255 );
-  int n     = arg2long_d( 2, argc, argv, 5, 1, 255 );
-  int step  = arg2long_d( 3, argc, argv, 1, 0, 128 );
+  int st    = arg2long_d( 1, argc, argv, 0, 0, pot_steps  );
+  int n     = arg2long_d( 2, argc, argv, 5, 1, pot_steps  );
+  int step  = arg2long_d( 3, argc, argv, 1, 0, pot_steps-1 );
 
-  if( st + n * step > 255 ) {
-    n = ( 255 - st ) / step;
+  if( st + n * step >= pot_steps ) {
+    n = ( pot_steps - 1 - st ) / step;
   }
   pr( "iterrun: st=" ); pr_d( st ); pr( " n= " ); pr_d( n ); pr( " step= " ); pr_d( step ); pr( NL );
 
