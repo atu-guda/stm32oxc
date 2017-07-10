@@ -48,6 +48,7 @@ int main(void)
   UVAR('t') = 1000;
   UVAR('n') = 20;
 
+  MX_DAC_Init();
 
   BOARD_POST_INIT_BLINK;
 
