@@ -1,0 +1,13 @@
+Try ADC usage: DMA double-buffer approach + FMC SDRAM + SDCARD + digital POT
+Clock: APB2/2 = 72/4 = 36: max <- use special clock
+
+Channels:
+  A0   A1,  A2,   A3
+ Ch0, Ch1, Ch2,  Ch3
+
+I2C1: B8=SCL, B9 = SDA
+
+Used USART1 with UART-USB convertor board
+B6  = USART1_TX
+B7  = USART1_RX
+

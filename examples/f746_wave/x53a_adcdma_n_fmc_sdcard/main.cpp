@@ -135,13 +135,13 @@ int main(void)
   BOARD_PROLOG;
 
   MX_FMC_Init();
-  BSP_SDRAM_Initialization_sequence( 0 ); // 0 if fake
+  BSP_SDRAM_Initialization_sequence( 0 ); // 0 is fake
 
   MX_SDIO_SD_Init();
   UVAR('e') = HAL_SD_Init( &hsd );
   delay_ms( 10 );
   MX_FATFS_Init();
-  UVAR('x') = HAL_SD_GetState( &hsd );
+  UVAR('x') = HAL_SD_GetState( &hsd ); // 0 = HAL_OK, 1 = HAL_ERROR, 2 = HAL_BUSY, 3 = HAL_TIMEOUT
   UVAR('y') = HAL_SD_GetCardInfo( &hsd, &cardInfo );
   fs.fs_type = 0; // none
   fspath[0] = '\0';

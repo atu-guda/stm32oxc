@@ -43,6 +43,10 @@ int cmd_wblocks( int argc, const char * const * argv );
 CmdInfo CMDINFO_WBLOCKS { "wblocks", 'W', cmd_wblocks, " file [n_blocks]  - write blocks to file"  };
 int cmd_rm( int argc, const char * const * argv );
 CmdInfo CMDINFO_RM { "rm", 0, cmd_rm, " file - remove file"  };
+int cmd_sdinit( int argc, const char * const * argv );
+CmdInfo CMDINFO_SDINIT { "sdinit", 0, cmd_sdinit, " - init SDIO"  };
+int cmd_sddeinit( int argc, const char * const * argv );
+CmdInfo CMDINFO_SDDEINIT { "sddeinit", 0, cmd_sddeinit, " - deinit SDIO"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -56,6 +60,8 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_APPSTR,
   &CMDINFO_WBLOCKS,
   &CMDINFO_RM,
+  &CMDINFO_SDINIT,
+  &CMDINFO_SDDEINIT,
   nullptr
 };
 
@@ -318,6 +324,30 @@ int cmd_rm( int argc, const char * const * argv )
   }
 
   return r;
+}
+
+int cmd_sdinit( int /*argc*/, const char * const * /*argv*/ )
+{
+  MX_SDIO_SD_Init();
+
+  int rc_i =  HAL_SD_Init( &hsd );
+  UVAR('e') = rc_i;
+  delay_ms( 10 );
+  MX_FATFS_Init();
+  UVAR('s') = HAL_SD_GetState( &hsd );
+  UVAR('z') = HAL_SD_GetCardInfo( &hsd, &cardInfo );
+  fs.fs_type = 0; // none
+  fspath[0] = '\0';
+  return rc_i;
+}
+
+
+int cmd_sddeinit( int /*argc*/, const char * const * /*argv*/ )
+{
+  int rc_d =  HAL_SD_DeInit( &hsd );
+  UVAR('e') = rc_d;
+  delay_ms( 10 );
+  return rc_d;
 }
 
 

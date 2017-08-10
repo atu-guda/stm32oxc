@@ -71,7 +71,7 @@ int do_outsd( const char *afn, uint32_t n, uint32_t st );
 ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
 uint32_t tim_freq_in; // timer input freq
-uint32_t adc_clk = ADC_FREQ_MAX;     // depend in MCU, set in adc_init_exa_4ch_dma*
+uint32_t adc_clk = ADC_FREQ_MAX;     // depend in MCU, set in adc_init_exa_4ch_dma
 // uint32_t t_step = 100000; // in us, recalculated before measurement
 float t_step_f = 0.1; // in s, recalculated before measurement
 int v_adc_ref = BOARD_ADC_COEFF; // in mV, measured before test, adjust as UVAR('v')
@@ -148,14 +148,19 @@ const CmdInfo* global_cmds[] = {
 
 I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 ); // zero add means no real device
-I2CClient digpot( i2cd, 0x2C );
+I2CClient digpot( i2cd, 0x2D );
+
+void MX_FMC_Init(void);
+void BSP_SDRAM_Initialization_sequence( uint32_t RefreshCount );
+
 
 
 int main(void)
 {
   BOARD_PROLOG;
 
-  bsp_init_sdram( &hsdram );
+  MX_FMC_Init();
+  BSP_SDRAM_Initialization_sequence( 0 ); // 0 if fake
 
   MX_SDIO_SD_Init();
   UVAR('e') = HAL_SD_Init( &hsd );
@@ -566,11 +571,11 @@ void task_pot( void *prm UNUSED_ARG )
     }
     if( pot_tick ) {
       digpot.send_reg1_8bit( 0, pot_v2 );
-      leds.reset( BIT1 );
+      leds.reset( BIT2 );
       pot_tick = 0;
     } else {
       digpot.send_reg1_8bit( 0, pot_v1 );
-      leds.set( BIT1 );
+      leds.set( BIT2 );
       pot_tick = 1;
     }
     vTaskDelayUntil( &tc0, pot_t );
