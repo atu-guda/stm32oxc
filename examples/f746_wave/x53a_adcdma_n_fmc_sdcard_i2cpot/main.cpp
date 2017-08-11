@@ -34,6 +34,8 @@ void MX_SDIO_SD_Init();
 uint8_t sd_buf[512]; // one sector
 HAL_SD_CardInfoTypeDef cardInfo;
 FATFS fs;
+FIL out_file;
+const int pbufsz = 128;
 const int fspath_sz = 32;
 char fspath[fspath_sz];
 int  print_curr( const char *s );
@@ -50,6 +52,8 @@ uint32_t fbuf_pos = 0;
 void reset_filebuf();
 int  add_to_file( const char *s );
 int  flush_file();
+void print_file_info( const FIL *f );
+void print_fsinfo( const FATFS *fs );
 
 
 extern "C" {
@@ -112,8 +116,6 @@ TIM_HandleTypeDef tim2h;
 void tim2_init( uint16_t presc = 36, uint32_t arr = 100 ); // 1MHz, 10 kHz
 void tim2_deinit();
 
-const int pbufsz = 128;
-FIL out_file;
 
 const int pot_steps = 256;
 const int pot_r_0 = 47100, add_r_0 = 10000; // initial full scale and additional resistance
@@ -153,6 +155,8 @@ I2CClient digpot( i2cd, 0x2D );
 void MX_FMC_Init(void);
 void BSP_SDRAM_Initialization_sequence( uint32_t RefreshCount );
 
+int SDIO_on();  // 0 = ok (hard+fatfs)
+int SDIO_off(); // 0 = ok
 
 
 int main(void)
@@ -162,16 +166,6 @@ int main(void)
   MX_FMC_Init();
   BSP_SDRAM_Initialization_sequence( 0 ); // 0 if fake
 
-  MX_SDIO_SD_Init();
-  UVAR('e') = HAL_SD_Init( &hsd );
-  delay_ms( 10 );
-  MX_FATFS_Init();
-  UVAR('x') = HAL_SD_GetState( &hsd );
-  UVAR('y') = HAL_SD_GetCardInfo( &hsd, &cardInfo );
-  fs.fs_type = 0; // none
-  fspath[0] = '\0';
-  UVAR('z') = f_mount( &fs, "", 1 );
-  out_file.fs = nullptr;
 
   tim_freq_in = HAL_RCC_GetPCLK1Freq(); // to TIM2
   uint32_t hclk_freq = HAL_RCC_GetHCLKFreq();
@@ -185,7 +179,7 @@ int main(void)
   UVAR('p') = 17;  // for high freq, form 2MS/s (a=1) to 100 S/s (a=39999)
   UVAR('a') = 39; // timer ARR, 100 kHz, *4= 400 kS/s
   UVAR('c') = n_ADC_ch_max;
-  UVAR('n') = 8; // number of series
+  UVAR('n') = 500000; // number of series
   UVAR('s') = 3; // sampling time index
   UVAR('r') = pot_r_0; // POT full scale resistance
   UVAR('o') = add_r_0; // Initial R_b
@@ -206,6 +200,41 @@ int main(void)
 
   SCHEDULER_START;
   return 0;
+}
+
+int SDIO_on()
+{
+  MX_SDIO_SD_Init();
+  int rc_i =  HAL_SD_Init( &hsd );
+  UVAR('e') = rc_i;
+  if( rc_i != HAL_OK ) {
+    pr( "Fail in HAL_SD_Init: rc= " ); pr_d( rc_i ); pr( NL );
+    return 1;
+  }
+  delay_ms( 20 );
+  MX_FATFS_Init();
+  UVAR('j') = HAL_SD_GetState( &hsd );
+  UVAR('i') = HAL_SD_GetCardInfo( &hsd, &cardInfo );
+  fs.fs_type = 0; // none
+  fspath[0] = '\0';
+  delay_ms( 10 );
+  FRESULT fr = f_mount( &fs, "", 1 );
+  UVAR('f') = fr;
+  if( fr != FR_OK ) {
+    pr( "Fail to mount fs: " ); pr_d( fr ); pr( NL );
+  }
+  out_file.fs = nullptr;
+  return fr;
+}
+
+int SDIO_off()
+{
+  int rc_d =  HAL_SD_DeInit( &hsd );
+  UVAR('e') = rc_d;
+  delay_ms( 20 );
+  out_file.fs = nullptr;
+  fs.fs_type = 0; // none
+  return rc_d;
 }
 
 void task_main( void *prm UNUSED_ARG ) // TMAIN
@@ -325,10 +354,6 @@ int do_one_run( uint32_t n )
   // log_add( "start" NL );
   if( ADC_Start_DMA_n( &hadc1, (uint32_t*)ADC_buf_x, n_ADC_bytes, ADCDMA_chunk_size, 2 ) != HAL_OK )   {
     pr( "ADC_Start_DMA_n error = "  ); pr_h( hdma_adc1.ErrorCode );  pr( NL );
-    pr( " XferCpltCallback= "   ); pr_a( hdma_adc1.XferCpltCallback   );
-    pr( " XferM1CpltCallback= " ); pr_a( hdma_adc1.XferM1CpltCallback );
-    pr( " XferErrorCallback= "  ); pr_a( hdma_adc1.XferErrorCallback  );
-    pr( NL );
     return 1;
   }
   pr_DMA_state();
@@ -387,7 +412,11 @@ int  print_curr( const char *s )
     delay_ms( 2 );
     return l;
   }
-  // f_puts( s, &out_file );
+
+  // TMP: test old unbuffered
+  // int rc = f_puts( s, &out_file );
+  // return rc;
+
   int rc = add_to_file( s );
   if( rc < 1 ) {
     return 0;
@@ -422,7 +451,9 @@ void out_to_curr( uint32_t n, uint32_t st )
     strcat( pbuf, NL );
     int l_w = print_curr( pbuf );
     if( l_w < 1 ) {
-      pr( "Write error: errno = " ); pr_d( errno ); pr( NL );
+      pr( "Write error: errno = " ); pr_d( errno ); pr( " i= " ); pr_d( i ); pr( NL );
+      print_file_info( &out_file );
+      print_fsinfo( &fs );
       break;
     }
     idle_flag = 1;
@@ -499,12 +530,20 @@ int do_outsd( const char *afn, uint32_t n, uint32_t st )
 {
   const char *fn = afn ? afn : fn_auto;
 
-  out_file.fs = nullptr;
+  // out_file.fs = nullptr;
 
   pr( "Output to \"" ); pr( fn ); pr( "\" n= " ); pr_d( n ); pr( " st= ") ; pr_d( st ); pr( NL );
+  on_save_state = 1;
+  delay_ms( 10 );
+  if( SDIO_on() != 0 ) {
+    SDIO_off();
+    on_save_state = 0;
+    return 1;
+  }
   FRESULT r = f_open( &out_file, fn, FA_WRITE | FA_OPEN_ALWAYS );
   if( r == FR_OK ) {
-    on_save_state = 1;
+    print_file_info( &out_file );
+    print_fsinfo( &fs );
     reset_filebuf();
     out_to_curr( n, st );
     flush_file();
@@ -512,6 +551,7 @@ int do_outsd( const char *afn, uint32_t n, uint32_t st )
   } else {
     pr( "f_open error: " ); pr_d( r ); pr( NL );
   }
+  SDIO_off();
   out_file.fs = nullptr;
 
   return r;
@@ -559,6 +599,83 @@ int do_potctl( int v1, int v2, int t )
   pr( "R1 = " ); pr_d( pot_r1 ); pr( " R2 = " ); pr_d( pot_r2 );
   pr( " fn=\"" ); pr( fn_auto ); pr( "\"" NL );
   return 0;
+}
+
+void print_file_info( const FIL *f )
+{
+  pr( "FIL info: " );
+  if( !f ) {
+    pr( "zero ptr!" NL );
+    return;
+  }
+  pr( " fs= " )         ; pr_a( f->fs )       ;
+  pr( " id= " )         ; pr_h( f->id )       ;
+  pr( " flag= " )       ; pr_h( f->flag )     ;
+  pr( " err= " )        ; pr_h( f->err )      ;
+  pr( " fptr= " )       ; pr_d( f->fptr )     ; pr( NL );
+  pr( " fsize= " )      ; pr_d( f->fsize )    ;
+  pr( " sclust= " )     ; pr_d( f->sclust )   ;
+  pr( " clust= " )      ; pr_d( f->clust )    ;
+  pr( " dsect= " )      ; pr_d( f->dsect )    ; pr( NL );
+
+  #if !_FS_READONLY
+    pr( " dir_sect= " ) ; pr_d( f->dir_sect ) ;
+    pr( " dir_ptr= " )  ; pr_a( f->dir_ptr )  ;
+  #endif
+  #if _USE_FASTSEEK
+    pr( " cltbl= " )    ; pr_a( f->cltbl )    ;
+  #endif
+  #if _FS_LOCK
+    pr( " lockid= " )   ; pr_d( f->lockid )   ;
+  #endif
+
+  pr( NL );
+}
+
+void print_fsinfo( const FATFS *fs )
+{
+  pr( "FATFS info: " );
+  if( !fs ) {
+    pr( "zero ptr!" NL );
+    return;
+  }
+  pr( " fs_type= " )    ; pr_d( fs->fs_type )    ;
+  pr( " drv= " )        ; pr_d( fs->drv )        ;
+  pr( " csize= " )      ; pr_d( fs->csize )      ;
+  pr( " n_fats= " )     ; pr_d( fs->n_fats )     ; pr( NL ) ;
+  pr( " wflag= " )      ; pr_d( fs->wflag )      ;
+  pr( " fsi_flag= " )   ; pr_d( fs->fsi_flag )   ;
+  pr( " id= " )         ; pr_d( fs->id )         ; pr( NL ) ;
+
+  #if _FS_REENTRANT
+  pr( "  sobj= " )      ; pr_a( fs->sobj )       ;
+  #endif
+  #if !_FS_READONLY
+  pr( " last_clust= " ) ; pr_d( fs->last_clust ) ;
+  pr( " free_clust= " ) ; pr_d( fs->free_clust ) ;
+  #endif
+  #if _FS_RPATH
+  pr( " cdir= " )       ; pr_d( fs->cdir )       ; pr( NL ) ;
+  #endif
+
+  pr( " n_fatent= " )   ; pr_d( fs->n_fatent )   ;
+  pr( " fsize= " )      ; pr_d( fs->fsize )      ;
+  pr( " volbase= " )    ; pr_d( fs->volbase )    ;
+  pr( " fatbase= " )    ; pr_d( fs->fatbase )    ;
+  pr( " dirbase= " )    ; pr_d( fs->dirbase )    ; pr( NL ) ;
+  pr( " database= " )   ; pr_d( fs->database )   ;
+  pr( " winsect= " )    ; pr_d( fs->winsect )    ; pr( NL ) ;
+
+  // char vol_buf[32]; vol_buf[0] = '\0';
+  // uint32_t vsn = 0, n_f_clust = 0;
+  // FATFS *lfs;
+  // if( fs.fs_type > 0 ) {
+  //   f_getlabel( fsn, vol_buf, &vsn );
+  //   pr( "volume_label: \"" ); pr( vol_buf ); pr( "\" vsn=" ); pr_d( vsn ); pr( NL );
+  //   f_getfree( fsn, &n_f_clust, &lfs );
+  //   pr( "free_clust: " ); pr_d( n_f_clust ); pr( " kB:" ); pr_d( n_f_clust * fs.csize / 2 ) ;pr( NL );
+  // }
+
 }
 
 void task_pot( void *prm UNUSED_ARG )
