@@ -39,7 +39,7 @@ const int pbufsz = 128;
 const int fspath_sz = 32;
 char fspath[fspath_sz];
 int  print_curr( const char *s );
-void out_to_curr( uint32_t n, uint32_t st );
+int out_to_curr( uint32_t n, uint32_t st ); // 0 = ok
 
 // buffer to file output
 const uint32_t fbuf_wr_k   = 8;
@@ -195,6 +195,8 @@ int main(void)
 
   BOARD_POST_INIT_BLINK;
 
+  MX_FATFS_Init();
+
   BOARD_CREATE_STD_TASKS;
   xTaskCreate( task_pot,  "pot", def_stksz, nullptr,   1, nullptr );
 
@@ -211,24 +213,28 @@ int SDIO_on()
     pr( "Fail in HAL_SD_Init: rc= " ); pr_d( rc_i ); pr( NL );
     return 1;
   }
-  delay_ms( 20 );
-  MX_FATFS_Init();
+  delay_ms( 50 );
+  // MX_FATFS_Init();
   UVAR('j') = HAL_SD_GetState( &hsd );
   UVAR('i') = HAL_SD_GetCardInfo( &hsd, &cardInfo );
   fs.fs_type = 0; // none
   fspath[0] = '\0';
-  delay_ms( 10 );
+  delay_ms( 20 );
   FRESULT fr = f_mount( &fs, "", 1 );
   UVAR('f') = fr;
   if( fr != FR_OK ) {
     pr( "Fail to mount fs: " ); pr_d( fr ); pr( NL );
   }
+  pr( "FS mounted" NL );
+  delay_ms( 20 );
   out_file.fs = nullptr;
   return fr;
 }
 
 int SDIO_off()
 {
+  FRESULT fr = f_mount( nullptr, "", 1 );
+  pr( "umount: fr= " ); pr_d( fr ); pr( NL ); delay_ms( 10 );
   int rc_d =  HAL_SD_DeInit( &hsd );
   UVAR('e') = rc_d;
   delay_ms( 20 );
@@ -424,7 +430,7 @@ int  print_curr( const char *s )
   return rc;
 }
 
-void out_to_curr( uint32_t n, uint32_t st )
+int out_to_curr( uint32_t n, uint32_t st )
 {
   char buf[32];
   char pbuf[pbufsz];
@@ -438,6 +444,7 @@ void out_to_curr( uint32_t n, uint32_t st )
 
   float t = st * t_step_f;
   TickType_t tc0 = xTaskGetTickCount(), tc00 = tc0, tc1 = tc0;
+  int rc = 0;
   for( uint32_t i=0; i< n; ++i ) {
     uint32_t ii = i + st;
     t = t_step_f * ii;
@@ -451,9 +458,10 @@ void out_to_curr( uint32_t n, uint32_t st )
     strcat( pbuf, NL );
     int l_w = print_curr( pbuf );
     if( l_w < 1 ) {
-      pr( "Write error: errno = " ); pr_d( errno ); pr( " i= " ); pr_d( i ); pr( NL );
+      pr( NL "Write error: errno = " ); pr_d( errno ); pr( " i= " ); pr_d( i ); pr( NL );
       print_file_info( &out_file );
       print_fsinfo( &fs );
+      rc = 1;
       break;
     }
     idle_flag = 1;
@@ -464,6 +472,7 @@ void out_to_curr( uint32_t n, uint32_t st )
       delay_ms( 10 );
     }
   }
+  return rc;
 }
 
 int cmd_out( int argc, const char * const * argv )
@@ -513,11 +522,11 @@ int flush_file()
 {
   if( fbuf_pos < 1 ) {
     return 0;
-    on_save_state = 0;
+    // on_save_state = 0;
   }
   UINT l_w;
   FRESULT rc = f_write( &out_file, fbuf, fbuf_pos, &l_w );
-  on_save_state = 0;
+  // on_save_state = 0;
   if( rc == FR_OK ) {
     return l_w;
   }
@@ -541,20 +550,22 @@ int do_outsd( const char *afn, uint32_t n, uint32_t st )
     return 1;
   }
   FRESULT r = f_open( &out_file, fn, FA_WRITE | FA_OPEN_ALWAYS );
+  int rc = r;
   if( r == FR_OK ) {
     print_file_info( &out_file );
     print_fsinfo( &fs );
     reset_filebuf();
-    out_to_curr( n, st );
+    rc = out_to_curr( n, st );
     flush_file();
     f_close( &out_file );
   } else {
     pr( "f_open error: " ); pr_d( r ); pr( NL );
   }
   SDIO_off();
+  on_save_state = 0;
   out_file.fs = nullptr;
 
-  return r;
+  return rc;
 }
 
 int cmd_outsd( int argc, const char * const * argv )
@@ -608,15 +619,15 @@ void print_file_info( const FIL *f )
     pr( "zero ptr!" NL );
     return;
   }
-  pr( " fs= " )         ; pr_a( f->fs )       ;
-  pr( " id= " )         ; pr_h( f->id )       ;
-  pr( " flag= " )       ; pr_h( f->flag )     ;
-  pr( " err= " )        ; pr_h( f->err )      ;
-  pr( " fptr= " )       ; pr_d( f->fptr )     ; pr( NL );
-  pr( " fsize= " )      ; pr_d( f->fsize )    ;
+  pr( " fs= "     )     ; pr_a( f->fs )       ;
+  pr( " id= "     )     ; pr_h( f->id )       ;
+  pr( " flag= "   )     ; pr_h( f->flag )     ;
+  pr( " err= "    )     ; pr_h( f->err )      ;
+  pr( " fptr= "   )     ; pr_d( f->fptr )     ; pr( NL );
+  pr( " fsize= "  )     ; pr_d( f->fsize )    ;
   pr( " sclust= " )     ; pr_d( f->sclust )   ;
-  pr( " clust= " )      ; pr_d( f->clust )    ;
-  pr( " dsect= " )      ; pr_d( f->dsect )    ; pr( NL );
+  pr( " clust= "  )     ; pr_d( f->clust )    ;
+  pr( " dsect= "  )     ; pr_d( f->dsect )    ; pr( NL );
 
   #if !_FS_READONLY
     pr( " dir_sect= " ) ; pr_d( f->dir_sect ) ;
@@ -709,15 +720,18 @@ int cmd_iterrun( int argc, const char * const * argv )
   if( st + n * step >= pot_steps ) {
     n = ( pot_steps - 1 - st ) / step;
   }
-  pr( "iterrun: st=" ); pr_d( st ); pr( " n= " ); pr_d( n ); pr( " step= " ); pr_d( step ); pr( NL );
+  pr( NL "iterrun: st=" ); pr_d( st ); pr( " n= " ); pr_d( n ); pr( " step= " ); pr_d( step ); pr( NL );
 
   int v = st, rc;
   for( int i=0; i < n; ++i ) {
     do_potctl( v, v, 1000 );
+    delay_ms( 50 );
     rc = do_one_run( UVAR('n') );
     if( rc != 0 ) {
       return rc;
     }
+    pr( "Measurement done..." NL );
+    delay_ms( 50 );
     rc = do_outsd( nullptr, n_series_todo, 0 );
     if( rc != 0 ) {
       return rc;
