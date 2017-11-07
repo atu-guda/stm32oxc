@@ -14,6 +14,7 @@ USE_FREERTOS = y
 # # default: heap_3.c
 USE_USB_DEFAULT_CDC = y
 REQUIRE_SPECIAL_CLOCK = y
+USE_DEFAULT_SDIO_FAT = y
 
 
 OXCDIR = /usr/share/stm32oxc
@@ -27,14 +28,6 @@ SRCS += tim2_adcdma_init.cpp
 SRCS += stm32f4_clock_HSE144.c
 
 SRCS += f4_sdio_init_1bit.cpp
-SRCS += bsp_driver_sd.c
-# SRCS += ccsbcs.c
-SRCS += fatfs.c
-SRCS += ff.c
-SRCS += ff_gen_drv.c
-SRCS += diskio.c
-SRCS += sd_diskio.c
-SRCS += oxc_ff_syncobj.cpp
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
 # see ../common/f4_modules.mk

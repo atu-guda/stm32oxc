@@ -254,6 +254,15 @@ ifeq "$(USE_USB_DEFAULT_CDC)" "y"
   SRCS += usbd_ioreq.c
 endif
 
+ifeq "$(USE_DEFAULT_SDIO_FAT)" "y"
+  SRCS += bsp_driver_sd.c
+  SRCS += fatfs.c
+  SRCS += ff.c
+  SRCS += ff_gen_drv.c
+  SRCS += diskio.c
+  SRCS += sd_diskio.c
+  SRCS += oxc_ff_syncobj.cpp
+endif
 
 vpath %.c   $(SRCPATHS) $(OXCSRC)/startup
 vpath %.cpp $(SRCPATHS)

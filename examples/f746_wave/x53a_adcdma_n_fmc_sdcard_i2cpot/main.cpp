@@ -39,7 +39,7 @@ const int pbufsz = 128;
 const int fspath_sz = 32;
 char fspath[fspath_sz];
 int  print_curr( const char *s );
-int out_to_curr( uint32_t n, uint32_t st ); // 0 = ok
+int  out_to_curr( uint32_t n, uint32_t st ); // 0 = ok
 
 // buffer to file output
 const uint32_t fbuf_wr_k   = 8;

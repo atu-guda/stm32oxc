@@ -33,7 +33,7 @@ FATFS fs;
 const int fspath_sz = 32;
 char fspath[fspath_sz];
 int  print_curr( const char *s );
-void out_to_curr( uint32_t n, uint32_t st );
+int  out_to_curr( uint32_t n, uint32_t st );
 
 // buffer to file output
 const uint32_t fbuf_wr_k   = 8;
@@ -359,7 +359,7 @@ int  print_curr( const char *s )
   return rc;
 }
 
-void out_to_curr( uint32_t n, uint32_t st )
+int out_to_curr( uint32_t n, uint32_t st )
 {
   char buf[32];
   char pbuf[pbufsz];
@@ -373,6 +373,7 @@ void out_to_curr( uint32_t n, uint32_t st )
 
   float t = st * t_step_f;
   TickType_t tc0 = xTaskGetTickCount(), tc00 = tc0, tc1 = tc0;
+  int rc = 0;
   for( uint32_t i=0; i< n; ++i ) {
     uint32_t ii = i + st;
     t = t_step_f * ii;
@@ -397,6 +398,7 @@ void out_to_curr( uint32_t n, uint32_t st )
       delay_ms( 10 );
     }
   }
+  return rc;
 }
 
 int cmd_out( int argc, const char * const * argv )
