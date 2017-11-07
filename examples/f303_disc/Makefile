@@ -27,6 +27,7 @@ SUBDIRS = \
   25_spi_max31855_tcouple \
   26_i2c_pca9685 \
   27_i2c_ads1115 \
+  28_spi_ad9833 \
   l01_accel \
   l02_accel \
   l03_mag
