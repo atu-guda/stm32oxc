@@ -5,14 +5,14 @@
 
 extern SPI_HandleTypeDef spi_h; // in main.c
 
-int SPI_init_default( uint32_t baud_presc )
+int SPI_init_default( uint32_t baud_presc, SPI_lmode::lmode_enum lmode /* = SPI_lmode::low_1e */ )
 {
   spi_h.Instance               = BOARD_SPI_DEFAULT;
   spi_h.Init.Mode              = SPI_MODE_MASTER;
   spi_h.Init.Direction         = SPI_DIRECTION_2LINES;
   spi_h.Init.DataSize          = SPI_DATASIZE_8BIT;
-  spi_h.Init.CLKPolarity       = SPI_POLARITY_LOW;
-  spi_h.Init.CLKPhase          = SPI_PHASE_1EDGE;
+  spi_h.Init.CLKPolarity       = ( lmode & SPI_lmode::high_1e ) ? SPI_POLARITY_HIGH : SPI_POLARITY_LOW;
+  spi_h.Init.CLKPhase          = ( lmode & SPI_lmode::low_2e  ) ? SPI_PHASE_2EDGE   : SPI_PHASE_1EDGE;
   spi_h.Init.NSS               = SPI_NSS_SOFT;
   spi_h.Init.BaudRatePrescaler = baud_presc; // SPI_BAUDRATEPRESCALER_2; ... _256
   spi_h.Init.FirstBit          = SPI_FIRSTBIT_MSB;

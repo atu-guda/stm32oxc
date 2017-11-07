@@ -21,8 +21,6 @@ OXCDIR = /usr/share/stm32oxc
 
 SRCS  = main.cpp
 
-SRCS += ff_syncobj.cpp
-
 SRCS += adc_init_exa_4ch_dma_n.cpp
 
 SRCS += f7_adcdma_n.cpp
@@ -39,6 +37,7 @@ SRCS += ff.c
 SRCS += ff_gen_drv.c
 SRCS += diskio.c
 SRCS += sd_diskio.c
+SRCS += oxc_ff_syncobj.cpp
 
 SRCS += fmc_sdram_init.cpp
 

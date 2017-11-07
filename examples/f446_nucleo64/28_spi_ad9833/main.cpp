@@ -160,21 +160,6 @@ DevSPI spi_d( &spi_h, &nss_pin );
 
 DevAD9833 gener( spi_d );
 
-int SPI_init_clockhigh( uint32_t baud_presc )
-{
-  spi_h.Instance               = BOARD_SPI_DEFAULT;
-  spi_h.Init.Mode              = SPI_MODE_MASTER;
-  spi_h.Init.Direction         = SPI_DIRECTION_2LINES;
-  spi_h.Init.DataSize          = SPI_DATASIZE_8BIT;
-  spi_h.Init.CLKPolarity       = SPI_POLARITY_HIGH;
-  spi_h.Init.CLKPhase          = SPI_PHASE_1EDGE;
-  spi_h.Init.NSS               = SPI_NSS_SOFT;
-  spi_h.Init.BaudRatePrescaler = baud_presc; // SPI_BAUDRATEPRESCALER_2; ... _256
-  spi_h.Init.FirstBit          = SPI_FIRSTBIT_MSB;
-  spi_h.Init.TIMode            = SPI_TIMODE_DISABLED;
-  spi_h.Init.CRCCalculation    = SPI_CRCCALCULATION_DISABLED;
-  return HAL_SPI_Init( &spi_h );
-}
 
 int main(void)
 {
@@ -184,7 +169,7 @@ int main(void)
   UVAR('n') = 10;
   UVAR('r') = 0x0; // default bytes to read
 
-  if( SPI_init_clockhigh( SPI_BAUDRATEPRESCALER_256 ) != HAL_OK ) {
+  if( SPI_init_default( SPI_BAUDRATEPRESCALER_256, SPI_lmode::high_1e ) != HAL_OK ) {
     die4led( 0x04 );
   }
   // nss_pin.initHW();

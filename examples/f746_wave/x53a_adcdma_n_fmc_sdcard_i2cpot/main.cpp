@@ -164,7 +164,7 @@ int main(void)
   BOARD_PROLOG;
 
   MX_FMC_Init();
-  BSP_SDRAM_Initialization_sequence( 0 ); // 0 if fake
+  BSP_SDRAM_Initialization_sequence( 0 ); // 0 is fake
 
 
   tim_freq_in = HAL_RCC_GetPCLK1Freq(); // to TIM2

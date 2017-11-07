@@ -4,7 +4,16 @@
 #include <oxc_gpio.h>
 #include <oxc_miscfun.h>
 
-int SPI_init_default( uint32_t baud_presc  = SPI_BAUDRATEPRESCALER_256 );
+namespace SPI_lmode {
+  enum lmode_enum {
+  low_1e = 0,
+  high_1e = 1,
+  low_2e = 2,
+  high_2e = 3
+  };
+};
+
+int SPI_init_default( uint32_t baud_presc  = SPI_BAUDRATEPRESCALER_256, SPI_lmode::lmode_enum lmode = SPI_lmode::low_1e );
 extern SPI_HandleTypeDef spi_h;
 
 class DevSPI  {

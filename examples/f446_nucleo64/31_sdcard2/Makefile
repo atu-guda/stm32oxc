@@ -28,6 +28,7 @@ SRCS += ff.c
 SRCS += ff_gen_drv.c
 SRCS += diskio.c
 SRCS += sd_diskio.c
+SRCS += oxc_ff_syncobj.cpp
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
 # see ../common/f4_modules.mk
