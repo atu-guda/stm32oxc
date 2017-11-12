@@ -12,6 +12,8 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES_UART;
 
+volatile uint16_t sensors_state;
+void init_exti_pins();
 PinsOut ctlEn( GPIOA, 8, 1 );
 PinsOut ctlAB( GPIOA, 9, 2 );
 
@@ -32,12 +34,14 @@ int main(void)
 {
   STD_PROLOG_UART;
 
-  UVAR('t') = 1000;
+  UVAR('t') = 10;
   UVAR('g') = 10;
   UVAR('n') = 1;
 
   ctlEn.initHW();  ctlEn.write( 0 );
   ctlAB.initHW();  ctlAB.write( 0 );
+  sensors_state = 0;
+  init_exti_pins();
 
   BOARD_POST_INIT_BLINK;
 
@@ -56,6 +60,48 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
   vTaskDelete(NULL);
 }
 
+// EXTI IRQ sensors B1, B2:
+void init_exti_pins()
+{
+  GPIO_enableClk( GPIOB );
+  GPIO_InitTypeDef gpi;
+  gpi.Mode  = GPIO_MODE_IT_RISING_FALLING;
+  gpi.Pull  = GPIO_PULLDOWN;
+  gpi.Speed = GPIO_SPEED_MAX;
+
+  gpi.Pin = GPIO_PIN_1 | GPIO_PIN_2;
+  HAL_GPIO_Init( GPIOB, &gpi );
+  HAL_NVIC_SetPriority( EXTI1_IRQn, /* configKERNEL_INTERRUPT_PRIORITY + */ 1, 0 );
+  HAL_NVIC_EnableIRQ( EXTI1_IRQn );
+  HAL_NVIC_SetPriority( EXTI2_IRQn, /* configKERNEL_INTERRUPT_PRIORITY + */ 1, 0 );
+  HAL_NVIC_EnableIRQ( EXTI2_IRQn );
+}
+
+void EXTI1_IRQHandler()
+{
+  if( GPIOB->IDR & GPIO_PIN_1 ) {
+    leds.set( 2 );
+    sensors_state |= 1;
+  } else {
+    leds.reset( 2 );
+    sensors_state &= ~1;
+  }
+
+  HAL_GPIO_EXTI_IRQHandler( GPIO_PIN_1 );
+}
+
+void EXTI2_IRQHandler()
+{
+  if( GPIOB->IDR & GPIO_PIN_2 ) {
+    leds.set( 4 );
+    sensors_state |= 2;
+  } else {
+    leds.reset( 4 );
+    sensors_state &= ~2;
+  }
+  HAL_GPIO_EXTI_IRQHandler( GPIO_PIN_2 );
+}
+
 
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
@@ -67,18 +113,18 @@ int cmd_test0( int argc, const char * const * argv )
   pr( NL "Test0: tg= " ); pr_d( tg ); pr( " t= " ); pr_d( t_step ); pr( " n_step= " ); pr_d( n_step );
   pr( NL );
 
-  leds.reset( 1 ); leds.reset( 6 );
+  leds.reset( 1 );
   ctlEn.write( 0 );
-  ctlAB.write( dir ? 1 : 2 ); leds.set( dir ? 2 : 4 );
+  ctlAB.write( dir ? 1 : 2 );
 
-  TickType_t tc0 = xTaskGetTickCount(), tc00 = tc0;
+  TickType_t tc0 = xTaskGetTickCount(); // , tc00 = tc0;
 
   break_flag = 0;
   for( int i=0; i<n_step && !break_flag; ++i ) {
-    TickType_t tcc = xTaskGetTickCount();
-    pr( " step i= " ); pr_d( i );
-    pr( "  tick: "); pr_d( tcc - tc00 );
-    pr( NL );
+    // TickType_t tcc = xTaskGetTickCount();
+    // pr( " step i= " ); pr_d( i );
+    // pr( "  tick: "); pr_d( tcc - tc00 );
+    // pr( NL );
     leds.set( 1 ); ctlEn.set( 1 );
     delay_ms( tg );
     leds.reset( 1 ); ctlEn.reset( 1 );
@@ -86,7 +132,8 @@ int cmd_test0( int argc, const char * const * argv )
   }
 
   ctlEn.write( 0 );  ctlAB.write( 0 );
-  leds.reset( 1 ); leds.reset( 6 );
+  leds.reset( 1 );
+  pr_sdx( sensors_state );
 
   return 0;
 }
