@@ -1,0 +1,17 @@
+Control DC motor board with feedback.
+
+Control via L293:
+A8  - En1 (may be T1.CH1)
+A9  - A
+A10 - B
+Sensors via optocouples:
+A0  - tick sensor (T8.ETR)
+B1  - Top switch sensor
+B2  - Bottom switch sensor
+
+C0:C3 - leds
+
+Used USART2 with ST_Link VCP
+A2  = USART2_TX
+A3  = USART2_RX
+
