@@ -35,6 +35,10 @@ const CmdInfo* global_cmds[] = {
   nullptr
 };
 
+const unsigned n_countmodes = 5;
+const uint32_t countmodes[n_countmodes] = { TIM_COUNTERMODE_UP, TIM_COUNTERMODE_DOWN, TIM_COUNTERMODE_CENTERALIGNED1,
+ TIM_COUNTERMODE_CENTERALIGNED2, TIM_COUNTERMODE_CENTERALIGNED3 };
+
 
 int main(void)
 {
@@ -45,6 +49,8 @@ int main(void)
   UVAR('p') = get_TIM1_8_in_freq() / 10000 - 1; // ->10kHz
   UVAR('a') = 9999; // ARR, 10kHz->1Hz
   UVAR('r') = 0;    // flag: raw values
+  UVAR('m') = 0;    // mode: 0: up, 1: down, 2: updown
+  UVAR('o') = 0;    // pOlarity 0: high 1: low
 
   BOARD_POST_INIT_BLINK;
 
@@ -101,7 +107,11 @@ void tim_cfg()
   tim_h.Init.Prescaler         = UVAR('p');
   tim_h.Init.Period            = UVAR('a');
   tim_h.Init.ClockDivision     = 0;
-  tim_h.Init.CounterMode       = TIM_COUNTERMODE_UP;
+  unsigned cmode = UVAR('m');
+  if( cmode > n_countmodes ) {
+    cmode = 0;
+  }
+  tim_h.Init.CounterMode       = countmodes[cmode];
   tim_h.Init.RepetitionCounter = 0;
   if( HAL_TIM_PWM_Init( &tim_h ) != HAL_OK ) {
     UVAR('e') = 1; // like error
@@ -120,7 +130,7 @@ void pwm_recalc()
   int pbase = UVAR('a');
   TIM_OC_InitTypeDef tim_oc_cfg;
   tim_oc_cfg.OCMode       = TIM_OCMODE_PWM1;
-  tim_oc_cfg.OCPolarity   = TIM_OCPOLARITY_HIGH;
+  tim_oc_cfg.OCPolarity   = UVAR('o') ? TIM_OCPOLARITY_LOW : TIM_OCPOLARITY_HIGH;
   tim_oc_cfg.OCNPolarity  = TIM_OCNPOLARITY_HIGH;
   tim_oc_cfg.OCFastMode   = TIM_OCFAST_DISABLE;
   tim_oc_cfg.OCIdleState  = TIM_OCIDLESTATE_RESET;
