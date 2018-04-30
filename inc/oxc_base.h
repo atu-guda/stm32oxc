@@ -24,6 +24,7 @@
  #define ADC_FREQ_MAX 36000000
 #elif defined (STM32F3)
  #include <stm32f3xx_hal.h>
+ #include <Legacy/stm32_hal_legacy.h>
  #define SET_BIT_REG   BSRR
  #define RESET_BIT_REG BRR
  #define RESET_BIT_SHIFT 0

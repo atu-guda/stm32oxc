@@ -264,7 +264,7 @@ int cmd_appstr( int argc, const char * const * argv )
   FRESULT r = f_open( &f, fn, FA_WRITE | FA_OPEN_ALWAYS );
   // float zz = 0.123456;
   if( r == FR_OK ) {
-    r = f_lseek( &f, f.fsize );
+    r = f_lseek( &f, f_size(&f) );
     was_wr = f_puts( s, &f );
     // f_printf( &f, "more %d %f string\r\n", f.fsize, zz );
     f_close( &f );

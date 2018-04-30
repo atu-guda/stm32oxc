@@ -69,7 +69,7 @@ void task_send( void *prm UNUSED_ARG )
       } else {
         uint8_t st = HAL_UART_GetState( &uah );
         if( st == HAL_UART_STATE_TIMEOUT ) {
-          uah.State = HAL_UART_STATE_READY;
+          uah.gState = HAL_UART_STATE_READY;
         } else {
           st <<= 1;
           leds.write( 0 );

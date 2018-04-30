@@ -1,7 +1,7 @@
 PROJ_NAME=stemwin_test
 
 ADDINC = -I$(STMINC)/STemWin -I$(STMCOMPONENTS)/ili9341 -I$(STMSRC)
-ADDSRC =  $(STMSRC)/fonts $(STMCOMPONENTS)/stmpe811 $(STMCOMPONENTS)/ili9341 $(STMSRC)/STemWin/OS
+ADDSRC =  $(STMSRC)/fonts $(STMCOMPONENTS)/stmpe811 $(STMCOMPONENTS)/ili9341  $(STMSRC)/STemWin $(STMSRC)/STemWin/OS
 
 # REQUIRE_SPECIAL_CLOCK = y
 
@@ -53,7 +53,8 @@ SRCS += stm32f429i_discovery_ts.c
 # STemWin
 SRCS += GUI_X.c
 
-LIBS += $(STMDIR)/lib/STemWin/STemWin532_CM4_GCC.a
+# TODO: version auto
+LIBS += $(STMDIR)/lib/STemWin/STemWin540_CM4_GCC.a
 
 
 include ../common/board_add.mk

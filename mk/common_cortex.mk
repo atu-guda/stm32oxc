@@ -33,7 +33,7 @@ RTINC=$(RTDIR)/include
 ALLFLAGS  = -g3 -O2
 ALLFLAGS += -Wall -Wextra -Wundef
 ALLFLAGS += -fno-common -ffunction-sections -fdata-sections
-ALLFLAGS += -D$(MCINCTYPE) -DHSE_VALUE=$(HSE_VALUE)
+ALLFLAGS += -D$(MCINCTYPE) -DHSE_VALUE=$(HSE_VALUE) -DUSE_HAL_LEGACY
 CWARNFLAGS := -Wimplicit-function-declaration -Wmissing-prototypes -Wstrict-prototypes -Wno-unused-parameter
 CXXWARNFLAGS := -Wno-unused-parameter
 
