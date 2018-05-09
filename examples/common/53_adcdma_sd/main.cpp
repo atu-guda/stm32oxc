@@ -119,7 +119,7 @@ int main(void)
   fs.fs_type = 0; // none
   fspath[0] = '\0';
   UVAR('z') = f_mount( &fs, "", 1 );
-  out_file.fs = nullptr;
+  out_file.obj.fs = nullptr;
 
   tim_freq_in = HAL_RCC_GetPCLK1Freq(); // to TIM2
   uint32_t hclk_freq = HAL_RCC_GetHCLKFreq();
@@ -296,7 +296,7 @@ void print_curr( const char *s )
   if( !s ) {
     return;
   }
-  if( out_file.fs == nullptr ) {
+  if( out_file.obj.fs == nullptr ) {
     pr( s );
     delay_ms( 2 );
     return;
@@ -333,7 +333,7 @@ void out_to_curr( uint32_t n, uint32_t st )
 
 int cmd_out( int argc, const char * const * argv )
 {
-  out_file.fs = nullptr;
+  out_file.obj.fs = nullptr;
   uint32_t n = arg2long_d( 1, argc, argv, n_series_todo, 0, n_series_todo+1 ); // number output series
   uint32_t st= arg2long_d( 2, argc, argv,             0, 0, n_series_todo-2 );
 
@@ -349,7 +349,7 @@ int cmd_outsd( int argc, const char * const * argv )
     return 1;
   }
 
-  out_file.fs = nullptr;
+  out_file.obj.fs = nullptr;
   uint32_t n = arg2long_d( 2, argc, argv, n_series_todo, 0, n_series_todo+1 ); // number output series
   uint32_t st= arg2long_d( 3, argc, argv,             0, 0, n_series_todo-2 );
 
@@ -361,7 +361,7 @@ int cmd_outsd( int argc, const char * const * argv )
   } else {
     pr( "f_open error: " ); pr_d( r ); pr( NL );
   }
-  out_file.fs = nullptr;
+  out_file.obj.fs = nullptr;
 
   return r;
 }
