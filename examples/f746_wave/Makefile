@@ -15,6 +15,8 @@ SUBDIRS = \
   x01_fmc \
   x51_adcdma_fmc \
   x52_adcirq_fmc \
+  x53a_adcdma_n_fmc_sdcard \
+  x53a_adcdma_n_fmc_sdcard_i2cpot
 
 #  03_uart \
 #  04_uart_console \

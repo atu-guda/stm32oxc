@@ -18,7 +18,9 @@ SUBDIRS = \
   51a_adcdma_n \
   54_adcirq \
   x01_fmc \
-  x02_stemwin_fmc
+  x02_stemwin_fmc \
+  x53a_adcdma_n_fmc_sdcard \
+  x53a_adcdma_n_fmc_sdcard_i2cpot 
 
 #  05_usb_console \
 #  07_i2c_lcdt \

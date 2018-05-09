@@ -22,6 +22,8 @@ OXCDIR = /usr/share/stm32oxc
 
 SRCS  = main.cpp
 
+SRCS += oxc_fs_cmd0.cpp
+
 SRCS += f4_sdio_init_1bit.cpp
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )

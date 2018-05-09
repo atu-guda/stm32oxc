@@ -166,7 +166,7 @@ int main(void)
   fs.fs_type = 0; // none
   fspath[0] = '\0';
   UVAR('z') = f_mount( &fs, "", 1 );
-  out_file.fs = nullptr;
+  out_file.obj.fs = nullptr;
 
   tim_freq_in = HAL_RCC_GetPCLK1Freq(); // to TIM2
   uint32_t hclk_freq = HAL_RCC_GetHCLKFreq();
@@ -377,7 +377,7 @@ int  print_curr( const char *s )
     return 0;
   }
   UINT l = strlen( s );
-  if( out_file.fs == nullptr ) {
+  if( out_file.obj.fs == nullptr ) {
     pr( s );
     delay_ms( 2 );
     return l;
@@ -421,7 +421,7 @@ void out_to_curr( uint32_t n, uint32_t st )
       break;
     }
     idle_flag = 1;
-    if( ( i % 1000 ) == 0 && i > 0 && out_file.fs != nullptr ) {
+    if( ( i % 1000 ) == 0 && i > 0 && out_file.obj.fs != nullptr ) {
       tc0 = xTaskGetTickCount();
       pr( "written " ); pr_d( i ); pr( " lines, "  ); pr_d( tc0 - tc00 ); pr( " ms, dlt = " ); pr_d( tc0 - tc1 ); pr( NL );
       tc1 = tc0;
@@ -432,7 +432,7 @@ void out_to_curr( uint32_t n, uint32_t st )
 
 int cmd_out( int argc, const char * const * argv )
 {
-  out_file.fs = nullptr;
+  out_file.obj.fs = nullptr;
   uint32_t n = arg2long_d( 1, argc, argv, n_series_todo, 0, n_series_todo+1 ); // number output series
   uint32_t st= arg2long_d( 2, argc, argv,             0, 0, n_series_todo-2 );
 
@@ -494,7 +494,7 @@ int do_outsd( const char *afn, uint32_t n, uint32_t st )
 {
   const char *fn = afn ? afn : fn_auto;
 
-  out_file.fs = nullptr;
+  out_file.obj.fs = nullptr;
 
   pr( "Output to \"" ); pr( fn ); pr( "\" n= " ); pr_d( n ); pr( " st= ") ; pr_d( st ); pr( NL );
   FRESULT r = f_open( &out_file, fn, FA_WRITE | FA_OPEN_ALWAYS );
@@ -507,7 +507,7 @@ int do_outsd( const char *afn, uint32_t n, uint32_t st )
   } else {
     pr( "f_open error: " ); pr_d( r ); pr( NL );
   }
-  out_file.fs = nullptr;
+  out_file.obj.fs = nullptr;
 
   return r;
 }

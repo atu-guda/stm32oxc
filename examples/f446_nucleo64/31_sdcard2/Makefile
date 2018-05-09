@@ -24,6 +24,8 @@ SRCS  = main.cpp
 
 SRCS += f4_sdio_init_1bit.cpp
 
+SRCS += oxc_fs_cmd0.cpp
+
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
 # see ../common/f4_modules.mk
 

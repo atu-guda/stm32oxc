@@ -227,7 +227,7 @@ int SDIO_on()
   }
   pr( "FS mounted" NL );
   delay_ms( 20 );
-  out_file.fs = nullptr;
+  out_file.obj.fs = nullptr;
   return fr;
 }
 
@@ -238,7 +238,7 @@ int SDIO_off()
   int rc_d =  HAL_SD_DeInit( &hsd );
   UVAR('e') = rc_d;
   delay_ms( 20 );
-  out_file.fs = nullptr;
+  out_file.obj.fs = nullptr;
   fs.fs_type = 0; // none
   return rc_d;
 }
@@ -413,7 +413,7 @@ int  print_curr( const char *s )
     return 0;
   }
   UINT l = strlen( s );
-  if( out_file.fs == nullptr ) {
+  if( out_file.obj.fs == nullptr ) {
     pr( s );
     delay_ms( 2 );
     return l;
@@ -465,7 +465,7 @@ int out_to_curr( uint32_t n, uint32_t st )
       break;
     }
     idle_flag = 1;
-    if( ( i % 1000 ) == 0 && i > 0 && out_file.fs != nullptr ) {
+    if( ( i % 1000 ) == 0 && i > 0 && out_file.obj.fs != nullptr ) {
       tc0 = xTaskGetTickCount();
       pr( "written " ); pr_d( i ); pr( " lines, "  ); pr_d( tc0 - tc00 ); pr( " ms, dlt = " ); pr_d( tc0 - tc1 ); pr( NL );
       tc1 = tc0;
@@ -477,7 +477,7 @@ int out_to_curr( uint32_t n, uint32_t st )
 
 int cmd_out( int argc, const char * const * argv )
 {
-  out_file.fs = nullptr;
+  out_file.obj.fs = nullptr;
   uint32_t n = arg2long_d( 1, argc, argv, n_series_todo, 0, n_series_todo+1 ); // number output series
   uint32_t st= arg2long_d( 2, argc, argv,             0, 0, n_series_todo-2 );
 
@@ -539,7 +539,7 @@ int do_outsd( const char *afn, uint32_t n, uint32_t st )
 {
   const char *fn = afn ? afn : fn_auto;
 
-  // out_file.fs = nullptr;
+  // out_file.obj.fs = nullptr;
 
   pr( "Output to \"" ); pr( fn ); pr( "\" n= " ); pr_d( n ); pr( " st= ") ; pr_d( st ); pr( NL );
   on_save_state = 1;
@@ -563,7 +563,7 @@ int do_outsd( const char *afn, uint32_t n, uint32_t st )
   }
   SDIO_off();
   on_save_state = 0;
-  out_file.fs = nullptr;
+  out_file.obj.fs = nullptr;
 
   return rc;
 }
@@ -619,15 +619,14 @@ void print_file_info( const FIL *f )
     pr( "zero ptr!" NL );
     return;
   }
-  pr( " fs= "     )     ; pr_a( f->fs )       ;
-  pr( " id= "     )     ; pr_h( f->id )       ;
+  pr( " fs= "     )     ; pr_a( f->obj.fs )   ;
+  pr( " id= "     )     ; pr_h( f->obj.id )   ;
   pr( " flag= "   )     ; pr_h( f->flag )     ;
   pr( " err= "    )     ; pr_h( f->err )      ;
   pr( " fptr= "   )     ; pr_d( f->fptr )     ; pr( NL );
-  pr( " fsize= "  )     ; pr_d( f->fsize )    ;
-  pr( " sclust= " )     ; pr_d( f->sclust )   ;
-  pr( " clust= "  )     ; pr_d( f->clust )    ;
-  pr( " dsect= "  )     ; pr_d( f->dsect )    ; pr( NL );
+  pr( " fsize= "  )     ; pr_d( f->obj.objsize ) ;
+  pr( " sclust= " )     ; pr_d( f->obj.sclust )  ;
+  pr( " clust= "  )     ; pr_d( f->clust )   ; pr( NL );
 
   #if !_FS_READONLY
     pr( " dir_sect= " ) ; pr_d( f->dir_sect ) ;
@@ -637,7 +636,7 @@ void print_file_info( const FIL *f )
     pr( " cltbl= " )    ; pr_a( f->cltbl )    ;
   #endif
   #if _FS_LOCK
-    pr( " lockid= " )   ; pr_d( f->lockid )   ;
+    pr( " lockid= " )   ; pr_d( f->obj.lockid )   ;
   #endif
 
   pr( NL );
@@ -662,8 +661,8 @@ void print_fsinfo( const FATFS *fs )
   pr( "  sobj= " )      ; pr_a( fs->sobj )       ;
   #endif
   #if !_FS_READONLY
-  pr( " last_clust= " ) ; pr_d( fs->last_clust ) ;
-  pr( " free_clust= " ) ; pr_d( fs->free_clust ) ;
+  pr( " last_clust= " ) ; pr_d( fs->last_clst ) ;
+  pr( " free_clust= " ) ; pr_d( fs->free_clst ) ;
   #endif
   #if _FS_RPATH
   pr( " cdir= " )       ; pr_d( fs->cdir )       ; pr( NL ) ;
