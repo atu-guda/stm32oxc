@@ -1,4 +1,7 @@
+Use FreeRTOS 10 features for console I/O
 Fix task_gchar / executor logic
+New SDIO with DMA.
+Fast data communications with computer: USB, ether, WiFi, serial
 Split SPI/SPI client with own softNSS.
 SPI debug
 Test 2 I2C clients on one device
