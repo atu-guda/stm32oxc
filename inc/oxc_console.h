@@ -106,6 +106,7 @@ int cmdline_split( char *cmd, char** argv, int max_args );
 int exec_direct( const char *s, int l );
 void pr_bitnames( uint32_t b, const BitNames *bn );
 
+
 // ------------------------ BarHText ----------------------------------
 
 class BarHText {
