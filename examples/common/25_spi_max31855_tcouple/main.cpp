@@ -83,7 +83,7 @@ int cmd_test0( int argc, const char * const * argv )
   spi_d.setTssDelay( 200 );
   TickType_t tc0 = xTaskGetTickCount(), tc00 = tc0;
 
-  for( int i=0; i<n; ++i ) {
+  for( int i=0; i<n && !break_flag; ++i ) {
     rc = spi_d.recv( (uint8_t*)(v), sizeof(v) );
     TickType_t tcc = xTaskGetTickCount();
     pr_d( tcc - tc00 ); pr( " " );
@@ -127,7 +127,7 @@ int cmd_test0( int argc, const char * const * argv )
     }
 
     pr( NL );
-    vTaskDelayUntil( &tc0, t_step );
+    delay_ms_until_brk( &tc0, t_step );
   }
 
   spi_d.pr_info();

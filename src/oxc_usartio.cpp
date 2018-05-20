@@ -58,7 +58,7 @@ void UsartIO::handleIRQ()
     if( status & ( UART_FLAG_ORE | UART_FLAG_FE /*| UART_FLAG_LBD*/ ) ) { // TODO: on MCU
       err = status;
     } else {
-      ibuf.sendFromISR( &cr, &wake  );
+      charsFromIrq( &cr,  1 );
     }
     // leds.reset( BIT2 );
   }

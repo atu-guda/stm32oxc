@@ -96,7 +96,7 @@ int cmd_test0( int argc, const char * const * argv )
     int xxv = scale_mv * v / 32678;
     pr( "[" ); pr_d( i ); pr( "]  " ); pr_d( v ); pr( "  xxv= " ); pr_d( xxv );
     pr( NL );
-    vTaskDelayUntil( &tc0, t_step );
+    delay_ms_until_brk( &tc0, t_step );
   }
   if( is_cont ) {
     adc.stopCont();

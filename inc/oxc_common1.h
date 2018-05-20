@@ -8,6 +8,7 @@
 #endif
 // delay is TASK_LEDS_QUANT * task_leds_step,
 extern volatile int task_leds_step; // initial = 50
+extern volatile int sigint_count;
 
 // SmallRL storage and config
 int smallrl_print( const char *s, int l ) __weak;

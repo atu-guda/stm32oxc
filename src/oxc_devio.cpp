@@ -87,15 +87,14 @@ void DevIO::task_recv()
   // leds.reset( BIT2 );
 }
 
-void DevIO::charsFromIrq( const char *s, int l )
+void DevIO::charsFromIrq( const char *s, int l ) // called from IRQ!
 {
   BaseType_t wake = pdFALSE;
   for( int i=0; i<l; ++i ) {
     if( s[i] == 3  && onSigInt ) { // handle Ctrl-C = 3
       onSigInt( s[i] );
-    } else {
-      ibuf.sendFromISR( s+i, &wake  );
     }
+    ibuf.sendFromISR( s+i, &wake  );
   }
   portEND_SWITCHING_ISR( wake );
 }

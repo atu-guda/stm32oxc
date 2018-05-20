@@ -92,8 +92,7 @@ int cmd_test0( int argc, const char * const * argv )
       pr_d( (int)(adata[j]) ); pr( " " );
     }
     pr( NL );
-    vTaskDelayUntil( &tc0, t_step );
-    // delay_ms( t_step );
+    delay_ms_until_brk( &tc0, t_step );
   }
 
   return 0;

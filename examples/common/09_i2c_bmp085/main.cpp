@@ -90,7 +90,7 @@ int cmd_test0( int argc, const char * const * argv )
     // int p_u = baro.get_P_uncons();
     ifcvt( t10, 10, buf, 1 );
     pr( "T= " ); pr( buf ); pr( "  P= " ); pr_d( p ); pr( " dp= " ); pr_d( dp );  pr( " dp0= " ); pr_d( dp0 ); pr( NL );
-    vTaskDelayUntil( &tc0, t_step );
+    delay_ms_until_brk( &tc0, t_step );
   }
 
   return 0;

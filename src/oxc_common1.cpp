@@ -9,6 +9,7 @@
 using namespace SMLRL;
 
 volatile int task_leds_step = 50; // 500 ms def
+volatile int sigint_count   =  0;
 
 void task_leds( void *prm UNUSED_ARG )
 {
@@ -45,7 +46,7 @@ void default_main_loop()
     die( 0x01 );
   }
 
-  global_smallrl->setSigFun( smallrl_sigint );
+  // global_smallrl->setSigFun( smallrl_sigint );
   global_smallrl->set_ps1( PS1_STRING, PS1_OUTSZ );
   global_smallrl->re_ps();
   global_smallrl->set_print_cmd( true );
@@ -103,8 +104,11 @@ void sigint( int v UNUSED_ARG )
 
 void smallrl_sigint(void)
 {
+  ++sigint_count;
   break_flag = 1;
   idle_flag = 1;
+#if defined(LED_BSP_ERR)
   leds.toggle( LED_BSP_ERR );
+#endif
 }
 

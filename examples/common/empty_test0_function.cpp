@@ -29,8 +29,9 @@ int cmd_test0( int argc, const char * const * argv )
     pr( "  tick: "); pr_d( tcc - tc00 );
     pr( "  ms_tick: "); pr_d( tmc - tm0 );
     pr( NL );
-    vTaskDelayUntil( &tc0, t_step );
-    // delay_ms( t_step );
+    // vTaskDelayUntil( &tc0, t_step );
+    // delay_ms_brk( t_step );
+    delay_ms_until_brk( &tc0, t_step );
   }
 
   return 0;

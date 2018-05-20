@@ -90,7 +90,7 @@ int cmd_test0( int argc, const char * const * argv )
     }
 
     pr( NL );
-    vTaskDelayUntil( &tc0, t_step );
+    delay_ms_until_brk( &tc0, t_step );
   }
 
   pr( NL );

@@ -29,6 +29,7 @@ namespace SMLRL {
      static const constexpr int bufsz = CMDLINE_MAXSZ;
      static const constexpr int histsz = SMLRL_HISTSZ;
      static const constexpr int ps1sz = 32;
+     static const constexpr int max_hist_out_lines = 22;
      const char *get() const { return buf; }
      void print_ps1() const { prl( ps1, ps1_len, fd ); }
      void redraw() const;

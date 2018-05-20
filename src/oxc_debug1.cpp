@@ -209,7 +209,7 @@ int cmd_info( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
   pr( "  HSE_VALUE: " ); pr_d( HSE_VALUE );
   pr_sdx( SystemCoreClock );
 
-  pr( NL "errno= "); pr_d( errno );
+  pr( NL "errno= "); pr_d( errno ); pr( " sigint_count=" ); pr_d( sigint_count );
   pr( NL "dbg_val0= 0x" ); pr_h( dbg_val0 ); pr( " = " ); pr_d( dbg_val0 );
   pr(   " dbg_val1= 0x" ); pr_h( dbg_val1 ); pr( " = " ); pr_d( dbg_val1 );
   pr( NL "dbg_val2= 0x" ); pr_h( dbg_val2 ); pr( " = " ); pr_d( dbg_val2 );

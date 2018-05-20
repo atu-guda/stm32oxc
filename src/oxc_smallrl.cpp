@@ -135,8 +135,15 @@ int SMLRL::SmallRL::cmd_redraw()
 
 int SMLRL::SmallRL::cmd_sigint()
 {
-  if( !sigf ) { return 0; }
-  sigf();
+  char sc[2] = "0";
+  if( sigf ) {
+    sigf();
+    sc[0] = '1';
+  }
+  cmd_home();
+  cmd_kill_eol();
+  pr( NL "SIGINT ",  fd );
+  pr( sc, fd );
   pr( NL, fd );
   redraw();
   return 1;
@@ -385,7 +392,7 @@ void SMLRL::SmallRL::history_print() const
   pr( NL "HISTORY:" NL, fd );
   int c = h_cur;
 
-  for( int i=0; i<22; ++i ) {
+  for( int i=0; i<max_hist_out_lines; ++i ) {
     int l = strlen( hist + c );
     if( l < 1 ) {   return;   }
     prl( hist+c, l, fd ); pr( NL, fd );

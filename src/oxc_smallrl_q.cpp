@@ -13,14 +13,16 @@ void task_smallrl_cmd( void * /*prm*/ )
   struct SmallRlCmd cmd;  BaseType_t ts;
   while(1) {
     ts = xQueueReceive( smallrl_cmd_queue, &cmd, 2000 );
-    if( ts == pdTRUE ) {
-      // pr( NL "task_smallrl_cmd:" NL );
-      // dump8( cmd.cmdline,  cmd.l+1 );
-      exec_direct( cmd.cmdline, cmd.l );
-      delay_ms( 10 );
-      if( global_smallrl ) {
-        global_smallrl->redraw();
-      }
+    if( ts != pdTRUE ) {
+      continue;
+    }
+
+    // pr( NL "task_smallrl_cmd:" NL );
+    // dump8( cmd.cmdline,  cmd.l+1 );
+    exec_direct( cmd.cmdline, cmd.l );
+    delay_ms( 10 );
+    if( global_smallrl ) {
+      global_smallrl->redraw();
     }
   }
   vTaskDelete(0);

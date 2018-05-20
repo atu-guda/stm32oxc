@@ -96,6 +96,62 @@ void delay_ms( uint32_t ms )
   #endif
 }
 
+int delay_ms_brk( uint32_t ms )
+{
+  #ifdef USE_FREERTOS
+
+  while( ms > 0 ) {
+    if( break_flag ) {
+      return 1;
+    }
+    uint32_t cms = ( ms > 10 ) ? 10 : ms;
+    if( xTaskGetSchedulerState() == taskSCHEDULER_RUNNING ) {
+      vTaskDelay( cms / ( ( TickType_t ) 1000 / configTICK_RATE_HZ ) );
+    } else {
+      delay_bad_ms( cms );
+    }
+    ms -= cms;
+  }
+
+  #else
+
+  while( ms > 0 ) {
+    if( break_flag ) {
+      return 1;
+    }
+    uint32_t cms = ( ms > 10 ) ? 10 : ms;
+    HAL_Delay( cms );
+    ms -= cms;
+  }
+  // delay_bad_ms( ms ); // TODO: config
+  #endif
+  return 0;
+}
+
+int delay_ms_until_brk( uint32_t *tc0, uint32_t ms )
+{
+  #ifdef USE_FREERTOS
+
+  while( ms > 0 ) {
+    if( break_flag ) {
+      return 1;
+    }
+    uint32_t cms = ( ms > 10 ) ? 10 : ms;
+    if( xTaskGetSchedulerState() == taskSCHEDULER_RUNNING ) {
+      vTaskDelayUntil( tc0, cms );
+    } else {
+      delay_bad_ms( cms );
+    }
+    ms -= cms;
+  }
+  return 0;
+
+  #else
+  return delay_ms_brk( ms ); // TODO: real?
+  #endif
+}
+
+
 
 void delay_bad_n( uint32_t dly )
 {
