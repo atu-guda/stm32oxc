@@ -21,6 +21,8 @@ SRCS  = main.cpp
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
 # see ../common/f4_modules.mk
+SRCS += stm32f4xx_hal_tim.c
+SRCS += stm32f4xx_hal_tim_ex.c
 
 
 include ../common/board_add.mk
