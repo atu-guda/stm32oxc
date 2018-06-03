@@ -19,6 +19,8 @@ OXCDIR = /usr/share/stm32oxc
 
 SRCS  = main.cpp
 
+SRCS += oxc_tim.cpp
+
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
 # see ../common/f4_modules.mk
 SRCS += stm32f4xx_hal_tim.c

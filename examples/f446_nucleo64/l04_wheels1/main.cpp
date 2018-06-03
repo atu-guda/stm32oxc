@@ -2,6 +2,7 @@
 #include <cstdlib>
 
 #include <oxc_auto.h>
+#include <oxc_tim.h>
 
 #include "wheels_pins.h"
 
@@ -22,10 +23,6 @@ const int motor_bits_l = 0x18;
 const int motor_bits   = motor_bits_r | motor_bits_l;
 
 void HAL_TIM_MspPostInit( TIM_HandleTypeDef* timHandle );
-uint32_t get_TIM_in_freq( TIM_TypeDef *tim ); // TODO: to lib
-uint32_t get_TIM_cnt_freq( TIM_TypeDef *tim );
-uint32_t calc_TIM_psc_for_cnt_freq( TIM_TypeDef *tim, uint32_t cnt_freq );
-uint32_t get_TIM_base_freq( TIM_TypeDef *tim );
 TIM_HandleTypeDef tim1_h, tim3_h, tim4_h;
 void tim1_cfg(); // PWM (1,2), US: (pulse: 3, echo: 4 )
 void tim3_cfg(); // count( 1, 2 )
@@ -35,6 +32,9 @@ void set_motor_pwm( int r, int l );
 void set_us_dir( int dir ); // -90:90
 int us_dir_zero = 1420;
 int us_dir_scale = 10;
+const int us_scan_min = -80, us_scan_max = 80, us_scan_step = 10,
+          us_scan_n = 1 + ( (us_scan_max - us_scan_min) / us_scan_step ) ;
+int us_scans[ us_scan_n ];
 
 volatile int us_dir = 0;
 
@@ -45,6 +45,8 @@ int cmd_go( int argc, const char * const * argv );
 CmdInfo CMDINFO_GO { "go", 'g', cmd_go, " time [right=50] [left=right]"  };
 int cmd_us_dir( int argc, const char * const * argv );
 CmdInfo CMDINFO_US_DIR { "us_dir", 0, cmd_us_dir, " [dir=0] (-90:90)"  };
+int cmd_us_scan( int argc, const char * const * argv );
+CmdInfo CMDINFO_US_SCAN { "us_scan", 'U', cmd_us_scan, " - scan via US sensor"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -53,6 +55,7 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_TEST0,
   &CMDINFO_GO,
   &CMDINFO_US_DIR,
+  &CMDINFO_US_SCAN,
   nullptr
 };
 
@@ -148,7 +151,10 @@ int cmd_go( int argc, const char * const * argv )
   bits        |= l_w > 0 ?    8 : 0;
   bits        |= l_w < 0 ? 0x10 : 0;
 
-  set_us_dir( 0 );
+  if( us_dir != 0 ) {
+    set_us_dir( 0 );
+    delay_ms( 500 );
+  }
   set_motor_pwm( r_w, l_w );
 
   motor_dir.write( bits );
@@ -192,47 +198,23 @@ int cmd_us_dir( int argc, const char * const * argv )
   return 0;
 }
 
-uint32_t get_TIM_in_freq( TIM_TypeDef *tim )
+int cmd_us_scan( int argc, const char * const * argv )
 {
-  #ifdef APB2PERIPH_BASE
-  if( (uint32_t)(tim) >= APB2PERIPH_BASE ) { // TIM1, TIM8
-    uint32_t hclk  = HAL_RCC_GetHCLKFreq();
-    uint32_t pclk2 = HAL_RCC_GetPCLK2Freq();
-    if( hclk != pclk2 ) { // *2 : if APB2 prescaler != 1 (=2)
-      pclk2 *= 2;
-    }
-    return pclk2;
+  pr( NL "us_scan: " ); pr_d( us_dir );  pr ( NL );
+  set_us_dir( us_scan_min ); // to settle before
+  delay_ms( 300 );
+  for( int i=0, d = us_scan_min; i < us_scan_n && d <= us_scan_max; ++i, d += us_scan_step ) {
+    set_us_dir( d );
+    delay_ms( 200 );
+    int l = UVAR('c');
+    us_scans[ i ] = l;
+    pr_d( d ); pr( " " ); pr_d( l ); pr( NL );
   }
-  #endif
-  uint32_t hclk  = HAL_RCC_GetHCLKFreq();
-  uint32_t pclk1 = HAL_RCC_GetPCLK1Freq();
-  if( hclk != pclk1 ) { // *2 : if APB1 prescaler != 1 (=2)
-    pclk1 *= 2;
-  }
-  return pclk1;
-}
+  set_us_dir( 0 );
+  delay_ms( 500 );
 
-uint32_t get_TIM_cnt_freq( TIM_TypeDef *tim )
-{
-  uint32_t freq = get_TIM_in_freq( tim ); // in_freq
-  uint32_t psc = 1 + tim->PSC;
-  return freq / psc;
+  return 0;
 }
-
-uint32_t calc_TIM_psc_for_cnt_freq( TIM_TypeDef *tim, uint32_t cnt_freq )
-{
-  uint32_t freq = get_TIM_in_freq( tim ); // in_freq
-  uint32_t psc = freq / cnt_freq - 1;
-  return psc;
-}
-
-uint32_t get_TIM_base_freq( TIM_TypeDef *tim )
-{
-  uint32_t freq = get_TIM_cnt_freq( tim );
-  uint32_t arr = 1 + tim->ARR;
-  return freq / arr;
-}
-
 
 void tim1_cfg()
 {
