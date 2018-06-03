@@ -2,6 +2,7 @@
 #include <cstdlib>
 
 #include <oxc_auto.h>
+#include <oxc_tim.h>
 
 using namespace std;
 using namespace SMLRL;
@@ -18,7 +19,6 @@ void tim_cfg();
 void pwm_recalc();
 void pwm_update();
 void pwm_print_cfg();
-uint32_t get_TIM1_8_in_freq(); // from timer_common.cpp
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -46,7 +46,7 @@ int main(void)
 
   UVAR('t') = 1000;
   UVAR('n') = 10;
-  UVAR('p') = get_TIM1_8_in_freq() / 10000 - 1; // ->10kHz
+  UVAR('p') = calc_TIM_psc_for_cnt_freq( TIM_EXA, 10000  ); // ->10kHz
   UVAR('a') = 9999; // ARR, 10kHz->1Hz
   UVAR('r') = 0;    // flag: raw values
   UVAR('m') = 0;    // mode: 0: up, 1: down, 2: updown
@@ -171,7 +171,7 @@ void pwm_print_cfg()
 {
   int presc = UVAR('p');
   int arr   = UVAR('a');
-  uint32_t freq_in = get_TIM1_8_in_freq();
+  uint32_t freq_in = get_TIM_in_freq( TIM_EXA );
 
   int freq1 = freq_in  / ( presc + 1 );
   int freq2 = freq1 / ( arr + 1 );

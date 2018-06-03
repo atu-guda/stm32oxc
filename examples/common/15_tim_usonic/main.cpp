@@ -2,6 +2,7 @@
 #include <cstdlib>
 
 #include <oxc_auto.h>
+#include <oxc_tim.h>
 
 using namespace std;
 using namespace SMLRL;
@@ -14,7 +15,6 @@ BOARD_CONSOLE_DEFINES;
 
 TIM_HandleTypeDef tim_h;
 void init_usonic();
-uint32_t get_TIM1_8_in_freq(); // from timer_common.cpp
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -80,7 +80,7 @@ int cmd_test0( int argc, const char * const * argv )
 void init_usonic()
 {
   // 5.8 mks approx 1mm 170000 = v_c/2 in mm/s, 998 or 846
-  UVAR('p') = get_TIM1_8_in_freq() / 170000 - 1;
+  tim_h.Init.Prescaler         = calc_TIM_psc_for_cnt_freq( TIM_EXA, 170000 );
   tim_h.Instance               = TIM_EXA;
   tim_h.Init.Prescaler         = UVAR('p');
   tim_h.Init.Period            = 8500; // F approx 20Hz: for future motor PWM

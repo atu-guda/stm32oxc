@@ -20,7 +20,6 @@ OXCDIR = /usr/share/stm32oxc
 SRCS  = main.cpp
 
 SRCS += tim18_enco_exa_init.cpp
-SRCS += timer_common.cpp
 
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
