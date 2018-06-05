@@ -131,21 +131,8 @@ int cmd_test0( int argc, const char * const * argv )
 
 void set_motor_pwm( int r, int l )
 {
-  HAL_TIM_PWM_Stop( &tim1_h, TIM_CHANNEL_1 ); // TODO: use like us_dir: CCR1, CCR2
-  HAL_TIM_PWM_Stop( &tim1_h, TIM_CHANNEL_2 );
-  TIM_OC_InitTypeDef tim_oc_cfg;
-  tim_oc_cfg.OCMode       = TIM_OCMODE_PWM1;
-  tim_oc_cfg.OCPolarity   = TIM_OCPOLARITY_HIGH;
-  tim_oc_cfg.OCNPolarity  = TIM_OCNPOLARITY_LOW;
-  tim_oc_cfg.OCFastMode   = TIM_OCFAST_DISABLE;
-  tim_oc_cfg.OCIdleState  = TIM_OCIDLESTATE_RESET;
-  tim_oc_cfg.OCNIdleState = TIM_OCNIDLESTATE_RESET;
-  tim_oc_cfg.Pulse = tim1_period * abs(r) / 100;
-  HAL_TIM_PWM_ConfigChannel( &tim1_h, &tim_oc_cfg, TIM_CHANNEL_1 );
-  tim_oc_cfg.Pulse = tim1_period * abs(l) / 100;
-  HAL_TIM_PWM_ConfigChannel( &tim1_h, &tim_oc_cfg, TIM_CHANNEL_2 );
-  HAL_TIM_PWM_Start( &tim1_h, TIM_CHANNEL_1 );
-  HAL_TIM_PWM_Start( &tim1_h, TIM_CHANNEL_2 );
+  TIM1->CCR1 = tim1_period * abs(r) / 100;
+  TIM1->CCR2 = tim1_period * abs(l) / 100;
 }
 
 int cmd_go( int argc, const char * const * argv )
@@ -263,12 +250,24 @@ void tim1_cfg()
 
   HAL_TIM_PWM_Init( &tim1_h );
 
+  HAL_TIM_PWM_Stop( &tim1_h, TIM_CHANNEL_1 );
+  HAL_TIM_PWM_Stop( &tim1_h, TIM_CHANNEL_2 );
 
-  set_motor_pwm( 0, 0 );
+  TIM_OC_InitTypeDef tim_oc_cfg;
+  tim_oc_cfg.OCMode       = TIM_OCMODE_PWM1;
+  tim_oc_cfg.OCPolarity   = TIM_OCPOLARITY_HIGH;
+  tim_oc_cfg.OCNPolarity  = TIM_OCNPOLARITY_LOW;
+  tim_oc_cfg.OCFastMode   = TIM_OCFAST_DISABLE;
+  tim_oc_cfg.OCIdleState  = TIM_OCIDLESTATE_RESET;
+  tim_oc_cfg.OCNIdleState = TIM_OCNIDLESTATE_RESET;
+  tim_oc_cfg.Pulse = 0;
+  HAL_TIM_PWM_ConfigChannel( &tim1_h, &tim_oc_cfg, TIM_CHANNEL_1 );
+  HAL_TIM_PWM_ConfigChannel( &tim1_h, &tim_oc_cfg, TIM_CHANNEL_2 );
+  HAL_TIM_PWM_Start( &tim1_h, TIM_CHANNEL_1 );
+  HAL_TIM_PWM_Start( &tim1_h, TIM_CHANNEL_2 );
 
   HAL_TIM_PWM_Stop( &tim1_h, TIM_CHANNEL_3 );
 
-  TIM_OC_InitTypeDef tim_oc_cfg;
   tim_oc_cfg.OCMode       = TIM_OCMODE_PWM1;
   tim_oc_cfg.OCPolarity   = TIM_OCPOLARITY_HIGH;
   tim_oc_cfg.OCNPolarity  = TIM_OCNPOLARITY_LOW;
