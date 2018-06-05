@@ -28,6 +28,7 @@ enum {
   PROXY_FA = PROXY_FL | PROXY_FR,
   PROXY_BA = PROXY_BL | PROXY_BR
 };
+const int us_forward_min = 100; // minimal distance via US while forward movind
 
 void HAL_TIM_MspPostInit( TIM_HandleTypeDef* timHandle );
 TIM_HandleTypeDef tim1_h, tim3_h, tim4_h;
@@ -169,6 +170,12 @@ int cmd_go( int argc, const char * const * argv )
 
   bool proxy_flag = false;
   for( ; t > 0 && !break_flag && !proxy_flag; t -= go_tick ) {
+
+    if( ( r_w + l_w ) > 0 && UVAR('l') < us_forward_min ) {
+      pr( "Minimal forward US distance detected " ); pr_d( UVAR('l') ); pr( NL );
+          break;
+    }
+
     uint16_t prox = ~proxy_sens.read() & 0x0F; // inverse senors
     if( prox ) {
       pr( "Prox: " ); pr_h( prox ); pr( NL );
