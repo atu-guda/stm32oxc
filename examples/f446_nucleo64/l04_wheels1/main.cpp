@@ -156,6 +156,9 @@ int cmd_go( int argc, const char * const * argv )
   motor_dir.write( bits );
 
   bool proxy_flag = false;
+  uint16_t cnt_l0 = TIM3->CCR1, cnt_r0 = TIM3->CCR2;
+  uint16_t cnt_l, cnt_r;
+
   for( ; t > 0 && !break_flag && !proxy_flag; t -= go_tick ) {
 
     if( ( r_w + l_w ) > 0 && UVAR('l') < us_forward_min ) {
@@ -182,6 +185,10 @@ int cmd_go( int argc, const char * const * argv )
   if( break_flag ) {
     pr( "Break!" NL );
   }
+
+  cnt_l = TIM3->CCR1 - cnt_l0, cnt_r = TIM3->CCR2 - cnt_r0; // TODO: * direction
+  pr( "Counts: left: " ); pr_d( cnt_l ); pr( " right: " ), pr_d( cnt_r ); pr( NL );
+
 
   return 0;
 }
@@ -325,6 +332,33 @@ void HAL_TIM_IC_CaptureCallback( TIM_HandleTypeDef *htim )
 
 void tim3_cfg()
 {
+  tim3_h.Instance               = TIM3;
+  // cnt_freq: 1MHz,
+  tim3_h.Init.Prescaler         = calc_TIM_psc_for_cnt_freq( TIM3, 1000000 );
+  tim3_h.Init.Period            = 0xFFFF; // max: unused
+  tim3_h.Init.ClockDivision     = 0;
+  tim3_h.Init.CounterMode       = TIM_COUNTERMODE_UP;
+  tim3_h.Init.RepetitionCounter = 0;
+  if( HAL_TIM_Base_Init( &tim3_h ) != HAL_OK ) {
+    UVAR('e') = 113; // like error
+    return;
+  }
+
+  TIM_ClockConfigTypeDef sClockSourceConfig;
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  HAL_TIM_ConfigClockSource( &tim3_h, &sClockSourceConfig );
+
+  HAL_TIM_IC_Init( &tim3_h );
+
+  TIM_IC_InitTypeDef sConfigIC;
+  sConfigIC.ICPolarity  = TIM_INPUTCHANNELPOLARITY_RISING;
+  sConfigIC.ICSelection = TIM_ICSELECTION_DIRECTTI;
+  sConfigIC.ICPrescaler = TIM_ICPSC_DIV1;
+  sConfigIC.ICFilter    = 0;
+  HAL_TIM_IC_ConfigChannel( &tim3_h, &sConfigIC, TIM_CHANNEL_1 );
+  HAL_TIM_IC_ConfigChannel( &tim3_h, &sConfigIC, TIM_CHANNEL_2 );
+  HAL_TIM_IC_Start_IT( &tim3_h, TIM_CHANNEL_1 );
+  HAL_TIM_IC_Start_IT( &tim3_h, TIM_CHANNEL_2 );
 }
 
 void tim4_cfg()
@@ -386,8 +420,8 @@ void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* tim_baseHandle )
     gio.Alternate = GPIO_AF2_TIM3;
     HAL_GPIO_Init( GPIOA, &gio );
 
-    HAL_NVIC_SetPriority( TIM3_IRQn, 5, 0 );
-    HAL_NVIC_EnableIRQ(TIM3_IRQn);
+    // HAL_NVIC_SetPriority( TIM3_IRQn, 5, 0 );
+    // HAL_NVIC_EnableIRQ(TIM3_IRQn);
   }
   else if( tim_baseHandle->Instance == TIM4 ) {
     __HAL_RCC_TIM4_CLK_ENABLE();
