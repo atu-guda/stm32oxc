@@ -22,6 +22,13 @@ const int motor_bits_r = 0x03; // bit 0x04 is reserved
 const int motor_bits_l = 0x18;
 const int motor_bits   = motor_bits_r | motor_bits_l;
 
+PinsIn proxy_sens( GPIOB, 12, 4 );
+enum {
+  PROXY_FL = 1, PROXY_FR = 2, PROXY_BR = 4, PROXY_BL = 8,
+  PROXY_FA = PROXY_FL | PROXY_FR,
+  PROXY_BA = PROXY_BL | PROXY_BR
+};
+
 void HAL_TIM_MspPostInit( TIM_HandleTypeDef* timHandle );
 TIM_HandleTypeDef tim1_h, tim3_h, tim4_h;
 void tim1_cfg(); // PWM (1,2), US: (pulse: 3, echo: 4 )
@@ -75,6 +82,7 @@ int main(void)
 
   motor_dir.initHW();
   motor_dir.reset( 0x1F );
+  proxy_sens.initHW();
 
   // UVAR('e') = i2c_default_init( i2ch /*, 400000 */ );
   // i2c_dbg = &i2cd;
@@ -159,7 +167,19 @@ int cmd_go( int argc, const char * const * argv )
 
   motor_dir.write( bits );
 
-  for( ; t > 0 && !break_flag; t -= go_tick ) {
+  bool proxy_flag = false;
+  for( ; t > 0 && !break_flag && !proxy_flag; t -= go_tick ) {
+    uint16_t prox = ~proxy_sens.read() & 0x0F; // inverse senors
+    if( prox ) {
+      pr( "Prox: " ); pr_h( prox ); pr( NL );
+      if( ( r_w > 0 && prox & PROXY_FR ) ||
+          ( r_w < 0 && prox & PROXY_BR ) ||
+          ( l_w > 0 && prox & PROXY_FL ) ||
+          ( l_w < 0 && prox & PROXY_BL ) )
+      {
+        proxy_flag = true; // break?
+      }
+    }
     delay_ms( t > go_tick ? go_tick : t );
   }
 

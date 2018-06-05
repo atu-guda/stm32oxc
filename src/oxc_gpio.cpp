@@ -72,7 +72,7 @@ void GPIO_WriteBits( GPIO_TypeDef* GPIOx, uint16_t PortVal, uint16_t mask )
 
 void PinsOut::initHW()
 {
-  GPIO_enableClk( gpio );
+  Pins::initHW();
   GPIO_InitTypeDef gpi;
 
   gpi.Pin = mask;
@@ -94,6 +94,22 @@ void die4led( uint16_t n )
     leds.toggle( LED_BSP_ERR );
   }
 }
+
+// ----------------------------- PinsOut -----------------------------
+
+void PinsIn::initHW()
+{
+  Pins::initHW();
+  GPIO_InitTypeDef gpi;
+
+  gpi.Pin   = mask;
+  gpi.Mode  = GPIO_MODE_INPUT;
+  gpi.Pull  = pull;
+  gpi.Speed = GPIO_SPEED_LOW; // unused
+  HAL_GPIO_Init( gpio, &gpi );
+};
+
+// ----------------------------- IoPin -----------------------------
 
 void IoPin::initHW()
 {
