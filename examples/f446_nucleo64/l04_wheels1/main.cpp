@@ -31,10 +31,11 @@ enum {
 const int us_forward_min = 100; // minimal distance via US while forward movind
 
 void HAL_TIM_MspPostInit( TIM_HandleTypeDef* timHandle );
-TIM_HandleTypeDef tim1_h, tim3_h, tim4_h;
+TIM_HandleTypeDef tim1_h, tim3_h, tim4_h, tim14_h;
 void tim1_cfg(); // PWM (1,2), US: (pulse: 3, echo: 4 )
-void tim3_cfg(); // count( 1, 2 )
-void tim4_cfg(); // servo( 1 )
+void tim3_cfg(); // count( R )
+void tim4_cfg();  // count( L )
+void tim14_cfg(); // servo( 1 )
 const int tim1_period = 8500; // approx 20Hz
 void set_motor_pwm( int r, int l );
 void set_us_dir( int dir ); // -90:90
@@ -101,31 +102,31 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
   tim1_cfg();
   tim3_cfg();
   tim4_cfg();
+  tim14_cfg();
 
   default_main_loop();
   vTaskDelete(NULL);
+}
+
+void print_tim_info( TIM_TypeDef *tim, const char *tname )
+{
+  pr( tname ); pr( ": in_freq= "); pr_d( get_TIM_in_freq( tim ) );
+  pr( " cnt_freq= " ); pr_d( get_TIM_cnt_freq( tim ) );
+  pr( " base_freq= " ); pr_d( get_TIM_base_freq( tim ) );
+  pr( " ARR= " ); pr_d( tim->ARR );
+  pr( " CNT= " ); pr_d( tim->CNT );
+  pr( NL );
 }
 
 
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  int st_a = arg2long_d( 1, argc, argv,   2,    0, 127 );
-  int en_a = arg2long_d( 2, argc, argv, 127, st_a, 127 );
-  pr( NL "Test0: st_a= " ); pr_h( st_a ); pr( " en_a= " ); pr_h( en_a );
-  pr( NL "TIM1: in_freq= "); pr_d( get_TIM_in_freq( TIM1 ) );
-  pr( " cnt_freq= " ); pr_d( get_TIM_cnt_freq( TIM1 ) );
-  pr( " base_freq= " ); pr_d( get_TIM_base_freq( TIM1 ) );
-  pr( NL );
-  pr( NL "TIM3: in_freq= "); pr_d( get_TIM_in_freq( TIM3 ) );
-  pr( " cnt_freq= " ); pr_d( get_TIM_cnt_freq( TIM3 ) );
-  pr( " base_freq= " ); pr_d( get_TIM_base_freq( TIM3 ) );
-  pr( NL );
-  pr( NL "TIM4: in_freq= "); pr_d( get_TIM_in_freq( TIM4 ) );
-  pr( " cnt_freq= " ); pr_d( get_TIM_cnt_freq( TIM4 ) );
-  pr( " base_freq= " ); pr_d( get_TIM_base_freq( TIM4 ) );
-  pr( NL );
-
+  pr( NL "Test0: " NL );
+  print_tim_info( TIM1, "TIM1" );
+  print_tim_info( TIM3, "TIM3" );
+  print_tim_info( TIM4, "TIM4" );
+  print_tim_info( TIM14, "TIM14" );
   return 0;
 }
 
@@ -156,7 +157,7 @@ int cmd_go( int argc, const char * const * argv )
   motor_dir.write( bits );
 
   bool proxy_flag = false;
-  uint16_t cnt_l0 = TIM3->CCR1, cnt_r0 = TIM3->CCR2;
+  uint16_t cnt_l0 = TIM4->CNT, cnt_r0 = TIM3->CNT;
   uint16_t cnt_l, cnt_r;
 
   for( ; t > 0 && !break_flag && !proxy_flag; t -= go_tick ) {
@@ -186,7 +187,7 @@ int cmd_go( int argc, const char * const * argv )
     pr( "Break!" NL );
   }
 
-  cnt_l = TIM3->CCR1 - cnt_l0, cnt_r = TIM3->CCR2 - cnt_r0; // TODO: * direction
+  cnt_l = TIM4->CNT - cnt_l0, cnt_r = TIM3->CNT - cnt_r0; // TODO: * direction
   pr( "Counts: left: " ); pr_d( cnt_l ); pr( " right: " ), pr_d( cnt_r ); pr( NL );
 
 
@@ -199,7 +200,7 @@ void set_us_dir( int dir )
   if( dir >  100 ) { dir =  100; }
   uint32_t d = us_dir_zero + dir * us_dir_scale; // TODO: calibrate
 
-  TIM4->CCR1 = d;
+  TIM14->CCR1 = d;
   delay_ms( 10 );
 
   UVAR('d') = d;
@@ -214,7 +215,6 @@ int cmd_us_dir( int argc, const char * const * argv )
   set_us_dir( dir );
 
   pr( NL "us_dir: " ); pr_d( us_dir );  pr ( NL );
-
 
   return 0;
 }
@@ -306,7 +306,6 @@ void tim1_cfg()
 void TIM1_CC_IRQHandler(void)
 {
   HAL_TIM_IRQHandler( &tim1_h );
-  // leds.toggle( BIT2 );
 }
 
 void HAL_TIM_IC_CaptureCallback( TIM_HandleTypeDef *htim )
@@ -325,8 +324,6 @@ void HAL_TIM_IC_CaptureCallback( TIM_HandleTypeDef *htim )
       // leds.toggle( BIT2 );
     }
     c_old = cap2;
-    // UVAR('m') = cap2;
-    // UVAR('z') = htim->Instance->CNT;
   }
 }
 
@@ -396,6 +393,39 @@ void tim4_cfg()
   HAL_TIM_PWM_Start( &tim4_h, TIM_CHANNEL_1 );
 }
 
+
+void tim14_cfg()
+{
+  tim14_h.Instance               = TIM14;
+  // cnt_freq: 1MHz,
+  tim14_h.Init.Prescaler         = calc_TIM_psc_for_cnt_freq( TIM14, 1000000 );
+  tim14_h.Init.Period            = 9999; // 100 Hz, pwm in us 500:2500
+  tim14_h.Init.ClockDivision     = 0;
+  tim14_h.Init.CounterMode       = TIM_COUNTERMODE_UP;
+  tim14_h.Init.RepetitionCounter = 0;
+  if( HAL_TIM_Base_Init( &tim14_h ) != HAL_OK ) {
+    UVAR('e') = 119; // like error
+    return;
+  }
+
+  // TIM_ClockConfigTypeDef sClockSourceConfig;
+  // sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  // HAL_TIM_ConfigClockSource( &tim14_h, &sClockSourceConfig );
+
+  HAL_TIM_PWM_Init( &tim14_h );
+
+  HAL_TIM_PWM_Stop( &tim14_h, TIM_CHANNEL_1 );
+
+  TIM_OC_InitTypeDef tim_oc_cfg;
+  tim_oc_cfg.OCMode       = TIM_OCMODE_PWM1;
+  tim_oc_cfg.OCPolarity   = TIM_OCPOLARITY_HIGH;
+  tim_oc_cfg.OCFastMode   = TIM_OCFAST_DISABLE;
+  tim_oc_cfg.Pulse = us_dir_zero;
+  HAL_TIM_PWM_ConfigChannel( &tim14_h, &tim_oc_cfg, TIM_CHANNEL_1 );
+
+  HAL_TIM_PWM_Start( &tim14_h, TIM_CHANNEL_1 );
+}
+
 void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* tim_baseHandle )
 {
   GPIO_InitTypeDef gio;
@@ -412,19 +442,34 @@ void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* tim_baseHandle )
   }
   else if( tim_baseHandle->Instance == TIM3 ) {
     __HAL_RCC_TIM3_CLK_ENABLE();
-    /**TIM3:  PA6     ------> TIM3_CH1    PA7     ------> TIM3_CH2    */
-    gio.Pin       = T3_1_M_count_R_Pin | T3_2_count_l_Pin;
+    /** TIM4:  A6     ------> TIM3_CH1  */
+    gio.Pin       = T3_1_M_count_R_Pin;
     gio.Mode      = GPIO_MODE_AF_PP;
     gio.Pull      = GPIO_NOPULL;
     gio.Speed     = GPIO_SPEED_FREQ_LOW;
     gio.Alternate = GPIO_AF2_TIM3;
     HAL_GPIO_Init( GPIOA, &gio );
 
-    // HAL_NVIC_SetPriority( TIM3_IRQn, 5, 0 );
-    // HAL_NVIC_EnableIRQ(TIM3_IRQn);
   }
   else if( tim_baseHandle->Instance == TIM4 ) {
     __HAL_RCC_TIM4_CLK_ENABLE();
+    /** TIM4:  B6     ------> TIM4_CH1  */
+    gio.Pin       = T4_1_count_l_Pin;
+    gio.Mode      = GPIO_MODE_AF_PP;
+    gio.Pull      = GPIO_NOPULL;
+    gio.Speed     = GPIO_SPEED_FREQ_LOW;
+    gio.Alternate = GPIO_AF2_TIM4;
+    HAL_GPIO_Init( T4_1_count_l_GPIO_Port, &gio );
+  }
+  else if( tim_baseHandle->Instance == TIM14 ) {
+    __HAL_RCC_TIM14_CLK_ENABLE();
+    /** TIM14 GPIO Configuration   A7     ------> TIM14_CH1     */
+    gio.Pin       = T14_1_servo_Pin;
+    gio.Mode      = GPIO_MODE_AF_PP;
+    gio.Pull      = GPIO_NOPULL;
+    gio.Speed     = GPIO_SPEED_FREQ_VERY_HIGH;
+    gio.Alternate = GPIO_AF9_TIM14;
+    HAL_GPIO_Init( T14_1_servo_GPIO_Port, &gio );
   }
   HAL_TIM_MspPostInit( tim_baseHandle );
 }
@@ -445,12 +490,13 @@ void HAL_TIM_MspPostInit( TIM_HandleTypeDef* timHandle )
     HAL_GPIO_Init( GPIOA, &gio );
   } else if( timHandle->Instance == TIM4 )  {
     /** TIM4 GPIO Configuration   PB6     ------> TIM4_CH1     */
-    gio.Pin       = T4_1_servo_Pin;
-    gio.Mode      = GPIO_MODE_AF_PP;
-    gio.Pull      = GPIO_NOPULL;
-    gio.Speed     = GPIO_SPEED_FREQ_HIGH;
-    gio.Alternate = GPIO_AF2_TIM4;
-    HAL_GPIO_Init( T4_1_servo_GPIO_Port, &gio );
+    // gio.Pin       = T4_1_servo_Pin;
+    // gio.Mode      = GPIO_MODE_AF_PP;
+    // gio.Pull      = GPIO_NOPULL;
+    // gio.Speed     = GPIO_SPEED_FREQ_HIGH;
+    // gio.Alternate = GPIO_AF2_TIM4;
+    // HAL_GPIO_Init( T4_1_servo_GPIO_Port, &gio );
+  } else if( timHandle->Instance == TIM14 )  {
   }
 }
 
@@ -461,11 +507,14 @@ void HAL_TIM_Base_MspDeInit( TIM_HandleTypeDef* tim_baseHandle )
     __HAL_RCC_TIM1_CLK_DISABLE();
     HAL_GPIO_DeInit( GPIOA, T1_1_M_Right_Pin | T1_2_M_Left_Pin | T1_3_US_Pulse_Pin | T1_4_US_Echo_Pin );
   } else if(tim_baseHandle->Instance == TIM3 ) {
-    HAL_NVIC_DisableIRQ(TIM3_IRQn);
     __HAL_RCC_TIM3_CLK_DISABLE();
-    HAL_GPIO_DeInit(GPIOA, T3_1_M_count_R_Pin|T3_2_count_l_Pin);
+    HAL_GPIO_DeInit(GPIOA, T3_1_M_count_R_Pin );
   } else if( tim_baseHandle->Instance == TIM4 ) {
     __HAL_RCC_TIM4_CLK_DISABLE();
+    HAL_GPIO_DeInit( GPIOB, T4_1_count_l_Pin );
+  } else if( tim_baseHandle->Instance == TIM14 ) {
+    __HAL_RCC_TIM14_CLK_DISABLE();
+    HAL_GPIO_DeInit( T14_1_servo_GPIO_Port, T14_1_servo_Pin );
   }
 }
 
