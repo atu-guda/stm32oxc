@@ -30,7 +30,6 @@ enum {
 };
 const int us_forward_min = 100; // minimal distance via US while forward movind
 
-void HAL_TIM_MspPostInit( TIM_HandleTypeDef* timHandle );
 TIM_HandleTypeDef tim1_h, tim3_h, tim4_h, tim14_h;
 void tim1_cfg(); // PWM (1,2), US: (pulse: 3, echo: 4 )
 void tim3_cfg(); // count( R )
@@ -330,8 +329,7 @@ void HAL_TIM_IC_CaptureCallback( TIM_HandleTypeDef *htim )
 void tim3_cfg()
 {
   tim3_h.Instance               = TIM3;
-  // cnt_freq: 1MHz,
-  tim3_h.Init.Prescaler         = calc_TIM_psc_for_cnt_freq( TIM3, 1000000 );
+  tim3_h.Init.Prescaler         = 0;
   tim3_h.Init.Period            = 0xFFFF; // max: unused
   tim3_h.Init.ClockDivision     = 0;
   tim3_h.Init.CounterMode       = TIM_COUNTERMODE_UP;
@@ -341,10 +339,25 @@ void tim3_cfg()
     return;
   }
 
-  TIM_ClockConfigTypeDef sClockSourceConfig;
-  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  HAL_TIM_ConfigClockSource( &tim3_h, &sClockSourceConfig );
+  TIM_SlaveConfigTypeDef sSlaveConfig;
+  sSlaveConfig.SlaveMode = TIM_SLAVEMODE_DISABLE;
+  sSlaveConfig.InputTrigger = TIM_TS_TI1F_ED;
+  sSlaveConfig.TriggerFilter = 0;
+  if( HAL_TIM_SlaveConfigSynchronization( &tim3_h, &sSlaveConfig ) != HAL_OK ) {
+    UVAR('e') = 1113;
+  }
 
+  TIM_MasterConfigTypeDef sMasterConfig;
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if( HAL_TIMEx_MasterConfigSynchronization( &tim3_h, &sMasterConfig ) != HAL_OK)  {
+    UVAR('e') = 1123;
+  }
+
+  // TIM_ClockConfigTypeDef sClockSourceConfig;
+  // sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  // HAL_TIM_ConfigClockSource( &tim3_h, &sClockSourceConfig );
+  //
   HAL_TIM_IC_Init( &tim3_h );
 
   TIM_IC_InitTypeDef sConfigIC;
@@ -353,17 +366,14 @@ void tim3_cfg()
   sConfigIC.ICPrescaler = TIM_ICPSC_DIV1;
   sConfigIC.ICFilter    = 0;
   HAL_TIM_IC_ConfigChannel( &tim3_h, &sConfigIC, TIM_CHANNEL_1 );
-  HAL_TIM_IC_ConfigChannel( &tim3_h, &sConfigIC, TIM_CHANNEL_2 );
-  HAL_TIM_IC_Start_IT( &tim3_h, TIM_CHANNEL_1 );
-  HAL_TIM_IC_Start_IT( &tim3_h, TIM_CHANNEL_2 );
+  // HAL_TIM_IC_Start_IT( &tim3_h, TIM_CHANNEL_1 );
 }
 
 void tim4_cfg()
 {
   tim4_h.Instance               = TIM4;
-  // cnt_freq: 1MHz,
-  tim4_h.Init.Prescaler         = calc_TIM_psc_for_cnt_freq( TIM4, 1000000 );
-  tim4_h.Init.Period            = 9999; // 100 Hz, pwm in us 500:2500
+  tim4_h.Init.Prescaler         = 0;
+  tim4_h.Init.Period            = 0xFFFF;
   tim4_h.Init.ClockDivision     = 0;
   tim4_h.Init.CounterMode       = TIM_COUNTERMODE_UP;
   tim4_h.Init.RepetitionCounter = 0;
@@ -408,10 +418,6 @@ void tim14_cfg()
     return;
   }
 
-  // TIM_ClockConfigTypeDef sClockSourceConfig;
-  // sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  // HAL_TIM_ConfigClockSource( &tim14_h, &sClockSourceConfig );
-
   HAL_TIM_PWM_Init( &tim14_h );
 
   HAL_TIM_PWM_Stop( &tim14_h, TIM_CHANNEL_1 );
@@ -431,14 +437,13 @@ void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* tim_baseHandle )
   GPIO_InitTypeDef gio;
   if( tim_baseHandle->Instance == TIM1 ) {
     __HAL_RCC_TIM1_CLK_ENABLE();
-    /** TIM1:  PA11     ------> TIM1_CH4     */
-    gio.Pin       = T1_4_US_Echo_Pin;
+    /** TIM1:  A8 ---> TIM1_CH1,  A9  ---> TIM1_CH2,  A10  ---> TIM1_CH3,  PA11 ---> TIM1_CH4   */
+    gio.Pin = T1_1_M_Right_Pin | T1_2_M_Left_Pin | T1_3_US_Pulse_Pin | T1_4_US_Echo_Pin;
     gio.Mode      = GPIO_MODE_AF_PP;
     gio.Pull      = GPIO_NOPULL;
-    gio.Speed     = GPIO_SPEED_FREQ_HIGH;
+    gio.Speed     = GPIO_SPEED_FREQ_VERY_HIGH;
     gio.Alternate = GPIO_AF1_TIM1;
-    HAL_GPIO_Init( T1_4_US_Echo_GPIO_Port, &gio );
-
+    HAL_GPIO_Init( T1_ALL_GPIO_Port, &gio );
   }
   else if( tim_baseHandle->Instance == TIM3 ) {
     __HAL_RCC_TIM3_CLK_ENABLE();
@@ -454,12 +459,12 @@ void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* tim_baseHandle )
   else if( tim_baseHandle->Instance == TIM4 ) {
     __HAL_RCC_TIM4_CLK_ENABLE();
     /** TIM4:  B6     ------> TIM4_CH1  */
-    gio.Pin       = T4_1_count_l_Pin;
+    gio.Pin       = T4_1_M_count_l_Pin;
     gio.Mode      = GPIO_MODE_AF_PP;
     gio.Pull      = GPIO_NOPULL;
     gio.Speed     = GPIO_SPEED_FREQ_LOW;
     gio.Alternate = GPIO_AF2_TIM4;
-    HAL_GPIO_Init( T4_1_count_l_GPIO_Port, &gio );
+    HAL_GPIO_Init( T4_1_M_count_l_GPIO_Port, &gio );
   }
   else if( tim_baseHandle->Instance == TIM14 ) {
     __HAL_RCC_TIM14_CLK_ENABLE();
@@ -471,47 +476,21 @@ void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* tim_baseHandle )
     gio.Alternate = GPIO_AF9_TIM14;
     HAL_GPIO_Init( T14_1_servo_GPIO_Port, &gio );
   }
-  HAL_TIM_MspPostInit( tim_baseHandle );
 }
 
-void HAL_TIM_MspPostInit( TIM_HandleTypeDef* timHandle )
-{
-  GPIO_InitTypeDef gio;
-  if( timHandle->Instance == TIM1 )  {
-    /**TIM1 GPIO Configuration
-     PA8     ------> TIM1_CH1
-     PA9     ------> TIM1_CH2
-     PA10     ------> TIM1_CH3     */
-    gio.Pin = T1_1_M_Right_Pin | T1_2_M_Left_Pin | T1_3_US_Pulse_Pin;
-    gio.Mode      = GPIO_MODE_AF_PP;
-    gio.Pull      = GPIO_NOPULL;
-    gio.Speed     = GPIO_SPEED_FREQ_VERY_HIGH;
-    gio.Alternate = GPIO_AF1_TIM1;
-    HAL_GPIO_Init( GPIOA, &gio );
-  } else if( timHandle->Instance == TIM4 )  {
-    /** TIM4 GPIO Configuration   PB6     ------> TIM4_CH1     */
-    // gio.Pin       = T4_1_servo_Pin;
-    // gio.Mode      = GPIO_MODE_AF_PP;
-    // gio.Pull      = GPIO_NOPULL;
-    // gio.Speed     = GPIO_SPEED_FREQ_HIGH;
-    // gio.Alternate = GPIO_AF2_TIM4;
-    // HAL_GPIO_Init( T4_1_servo_GPIO_Port, &gio );
-  } else if( timHandle->Instance == TIM14 )  {
-  }
-}
 
 void HAL_TIM_Base_MspDeInit( TIM_HandleTypeDef* tim_baseHandle )
 {
   if( tim_baseHandle->Instance == TIM1 )   {
     HAL_NVIC_DisableIRQ( TIM1_CC_IRQn );
     __HAL_RCC_TIM1_CLK_DISABLE();
-    HAL_GPIO_DeInit( GPIOA, T1_1_M_Right_Pin | T1_2_M_Left_Pin | T1_3_US_Pulse_Pin | T1_4_US_Echo_Pin );
+    HAL_GPIO_DeInit( T1_ALL_GPIO_Port, T1_1_M_Right_Pin | T1_2_M_Left_Pin | T1_3_US_Pulse_Pin | T1_4_US_Echo_Pin );
   } else if(tim_baseHandle->Instance == TIM3 ) {
     __HAL_RCC_TIM3_CLK_DISABLE();
-    HAL_GPIO_DeInit(GPIOA, T3_1_M_count_R_Pin );
+    HAL_GPIO_DeInit( T3_1_M_count_R_GPIO_Port, T3_1_M_count_R_Pin );
   } else if( tim_baseHandle->Instance == TIM4 ) {
     __HAL_RCC_TIM4_CLK_DISABLE();
-    HAL_GPIO_DeInit( GPIOB, T4_1_count_l_Pin );
+    HAL_GPIO_DeInit( T4_1_M_count_l_GPIO_Port, T4_1_M_count_l_Pin );
   } else if( tim_baseHandle->Instance == TIM14 ) {
     __HAL_RCC_TIM14_CLK_DISABLE();
     HAL_GPIO_DeInit( T14_1_servo_GPIO_Port, T14_1_servo_Pin );

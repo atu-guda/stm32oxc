@@ -29,14 +29,15 @@
 #define T1_3_US_Pulse_GPIO_Port GPIOA
 #define T1_4_US_Echo_Pin GPIO_PIN_11
 #define T1_4_US_Echo_GPIO_Port GPIOA
+#define T1_ALL_GPIO_Port GPIOA
 
 // TIM3: 1 = A6 = right wheel counter
 #define T3_1_M_count_R_Pin GPIO_PIN_6
 #define T3_1_M_count_R_GPIO_Port GPIOA
 
 // TIM4: 1 = B6 = left wheel counter
-#define T4_1_count_l_Pin GPIO_PIN_6
-#define T4_1_count_l_GPIO_Port GPIOB
+#define T4_1_M_count_l_Pin GPIO_PIN_6
+#define T4_1_M_count_l_GPIO_Port GPIOB
 
 // TIM14: 1 = A7 = servo contorl PIN
 #define T14_1_servo_Pin GPIO_PIN_7
