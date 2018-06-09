@@ -110,10 +110,14 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
 void print_tim_info( TIM_TypeDef *tim, const char *tname )
 {
   pr( tname ); pr( ": in_freq= "); pr_d( get_TIM_in_freq( tim ) );
-  pr( " cnt_freq= " ); pr_d( get_TIM_cnt_freq( tim ) );
+  pr( " cnt_freq= " );  pr_d( get_TIM_cnt_freq( tim ) );
   pr( " base_freq= " ); pr_d( get_TIM_base_freq( tim ) );
-  pr( " ARR= " ); pr_d( tim->ARR );
-  pr( " CNT= " ); pr_d( tim->CNT );
+  pr( " CR1= " );     pr_h( tim->CR1 );
+  pr( " CR2= " );     pr_h( tim->CR2 );
+  pr( " SMCR= " );    pr_h( tim->SMCR );
+  pr( " CCMR1= " );   pr_h( tim->CCMR1 );
+  pr( " ARR= " );     pr_d( tim->ARR );
+  pr( " CNT= " );     pr_d( tim->CNT );
   pr( NL );
 }
 
@@ -330,7 +334,7 @@ void tim3_cfg()
 {
   tim3_h.Instance               = TIM3;
   tim3_h.Init.Prescaler         = 0;
-  tim3_h.Init.Period            = 0xFFFF; // max: unused
+  tim3_h.Init.Period            = 0xFFFF; // max: unused ? or 0?
   tim3_h.Init.ClockDivision     = 0;
   tim3_h.Init.CounterMode       = TIM_COUNTERMODE_UP;
   tim3_h.Init.RepetitionCounter = 0;
@@ -340,8 +344,9 @@ void tim3_cfg()
   }
 
   TIM_SlaveConfigTypeDef sSlaveConfig;
-  sSlaveConfig.SlaveMode = TIM_SLAVEMODE_DISABLE;
-  sSlaveConfig.InputTrigger = TIM_TS_TI1F_ED;
+  sSlaveConfig.SlaveMode = TIM_SLAVEMODE_EXTERNAL1;
+  sSlaveConfig.InputTrigger = TIM_TS_TI1FP1;
+  sSlaveConfig.TriggerPolarity = TIM_TRIGGERPOLARITY_RISING;
   sSlaveConfig.TriggerFilter = 0;
   if( HAL_TIM_SlaveConfigSynchronization( &tim3_h, &sSlaveConfig ) != HAL_OK ) {
     UVAR('e') = 1113;
@@ -350,23 +355,19 @@ void tim3_cfg()
   TIM_MasterConfigTypeDef sMasterConfig;
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if( HAL_TIMEx_MasterConfigSynchronization( &tim3_h, &sMasterConfig ) != HAL_OK)  {
+  if( HAL_TIMEx_MasterConfigSynchronization( &tim3_h, &sMasterConfig ) != HAL_OK )  {
     UVAR('e') = 1123;
   }
 
-  // TIM_ClockConfigTypeDef sClockSourceConfig;
-  // sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  // HAL_TIM_ConfigClockSource( &tim3_h, &sClockSourceConfig );
-  //
-  HAL_TIM_IC_Init( &tim3_h );
-
   TIM_IC_InitTypeDef sConfigIC;
   sConfigIC.ICPolarity  = TIM_INPUTCHANNELPOLARITY_RISING;
-  sConfigIC.ICSelection = TIM_ICSELECTION_DIRECTTI;
+  sConfigIC.ICSelection = TIM_ICSELECTION_TRC;
   sConfigIC.ICPrescaler = TIM_ICPSC_DIV1;
   sConfigIC.ICFilter    = 0;
   HAL_TIM_IC_ConfigChannel( &tim3_h, &sConfigIC, TIM_CHANNEL_1 );
-  // HAL_TIM_IC_Start_IT( &tim3_h, TIM_CHANNEL_1 );
+  HAL_TIM_IC_Init( &tim3_h );
+
+  TIM3->CR1 = 1; // test
 }
 
 void tim4_cfg()
@@ -382,25 +383,24 @@ void tim4_cfg()
     return;
   }
 
-  TIM_ClockConfigTypeDef sClockSourceConfig;
-  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  HAL_TIM_ConfigClockSource( &tim4_h, &sClockSourceConfig );
+  TIM_SlaveConfigTypeDef sSlaveConfig;
+  sSlaveConfig.SlaveMode = TIM_SLAVEMODE_EXTERNAL1;
+  sSlaveConfig.InputTrigger = TIM_TS_TI1FP1;
+  sSlaveConfig.TriggerPolarity = TIM_TRIGGERPOLARITY_RISING;
+  sSlaveConfig.TriggerFilter = 0;
+  if( HAL_TIM_SlaveConfigSynchronization( &tim4_h, &sSlaveConfig ) != HAL_OK ) {
+    UVAR('e') = 1114;
+  }
 
-  HAL_TIM_PWM_Init( &tim4_h );
+  TIM_MasterConfigTypeDef sMasterConfig;
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if( HAL_TIMEx_MasterConfigSynchronization( &tim4_h, &sMasterConfig ) != HAL_OK )  {
+    UVAR('e') = 1123;
+  }
 
-  HAL_TIM_PWM_Stop( &tim4_h, TIM_CHANNEL_1 );
+  TIM4->CR1 = 1; // test
 
-  TIM_OC_InitTypeDef tim_oc_cfg;
-  tim_oc_cfg.OCMode       = TIM_OCMODE_PWM1;
-  tim_oc_cfg.OCPolarity   = TIM_OCPOLARITY_HIGH;
-  tim_oc_cfg.OCNPolarity  = TIM_OCNPOLARITY_LOW;
-  tim_oc_cfg.OCFastMode   = TIM_OCFAST_DISABLE;
-  tim_oc_cfg.OCIdleState  = TIM_OCIDLESTATE_RESET;
-  tim_oc_cfg.OCNIdleState = TIM_OCNIDLESTATE_RESET;
-  tim_oc_cfg.Pulse = us_dir_zero;
-  HAL_TIM_PWM_ConfigChannel( &tim4_h, &tim_oc_cfg, TIM_CHANNEL_1 );
-
-  HAL_TIM_PWM_Start( &tim4_h, TIM_CHANNEL_1 );
 }
 
 
