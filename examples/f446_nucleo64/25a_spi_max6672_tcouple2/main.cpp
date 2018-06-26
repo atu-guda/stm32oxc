@@ -84,7 +84,7 @@ int cmd_test0( int argc, const char * const * argv )
   int rc1, rc2;
   spi_d1.setTssDelay( 200 );
   spi_d2.setTssDelay( 200 );
-  TickType_t tc0 = xTaskGetTickCount(), tc00 = tc0;
+  TickType_t tc0, tc00 = tc0;
 
   for( int i=0; i<n && !break_flag; ++i ) {
 
@@ -93,9 +93,10 @@ int cmd_test0( int argc, const char * const * argv )
     v1 = rev16( v1 ); v2 = rev16( v2 );
 
     TickType_t tcc = xTaskGetTickCount();
+    if( i == 0 ) {
+      tc0 = tc00 = tcc;
+    }
     pr_d( tcc - tc00 ); pr( " " );
-    pr_d( rc1 ); pr( " " );
-    pr_d( rc2 ); pr( " " );
 
     uint16_t t1_i = v1 >> 5, t2_i = v2 >> 5;
     uint16_t t1_f = ( v1 >> 3 ) & 0x03, t2_f = ( v2 >> 3 ) & 0x03 ;
@@ -110,10 +111,10 @@ int cmd_test0( int argc, const char * const * argv )
       pr( " B2 " );
     }
 
-    pr( " " );
-
     if( UVAR('d') > 0 ) {
-      pr( NL ); pr_h ( v1, 2 ); pr( " " ); pr_h( v2 ); pr( NL );
+      pr( NL ); pr_h ( v1, 2 ); pr( " " ); pr_h( v2 );
+      pr_d( rc1 ); pr( " " );
+      pr_d( rc2 ); pr( " " ); pr( NL );
     }
 
     pr( NL );
