@@ -1,6 +1,8 @@
 #include <cstring>
 #include <cstdlib>
 
+// #include <string>
+
 #include <oxc_auto.h>
 
 using namespace std;
@@ -80,6 +82,9 @@ int cmd_test0( int argc, const char * const * argv )
   pr( NL " t_step= " ); pr_d( t_step );
   pr( NL );
 
+  // string s;
+  // char bi[INT_STR_SZ_DEC];
+
   uint16_t v1, v2;
   int rc1, rc2;
   spi_d1.setTssDelay( 200 );
@@ -96,6 +101,9 @@ int cmd_test0( int argc, const char * const * argv )
     if( i == 0 ) {
       tc0 = tc00 = tcc;
     }
+    // s.clear();
+    // s += i2dec( tcc - tc00, bi );
+    // s += ' ';
     pr_d( tcc - tc00 ); pr( " " );
 
     uint16_t t1_i = v1 >> 5, t2_i = v2 >> 5;
