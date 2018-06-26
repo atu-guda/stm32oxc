@@ -1,0 +1,14 @@
+Test 2 MAX6675 thermocouple drv via SPI
+
+Used: SPI2:
+B13 = SCK
+B14 = MISO
+B15 = MOSI - unused
++B1 = Soft NSS 1
++B4 = Soft NSS 2
+
+
+Used USART2 with ST_Link VCP
+A2  = USART2_TX
+A3  = USART2_RX
+
