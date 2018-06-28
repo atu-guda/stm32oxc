@@ -74,7 +74,8 @@ extern DevIO *devio_fds[DEVIO_MAX];
 int recvByte( int fd, char *s, int w_tick = 0 );
 int sendBlock( int fd, const char *s, int l );
 int pr( const char *s, int fd = 1 );
-int prl( const char *s, int l, int fd = 1 );
+int prl( const char *s, unsigned l, int fd = 1 );
+int prl1( const char *s, unsigned l ); // fd == 1 for used as flush funcs
 
 #define STD_COMMON_RECV_TASK( name, obj ) \
   void name( void *prm UNUSED_ARG ) { while(1) {  obj.task_recv(); }  vTaskDelete(0); }

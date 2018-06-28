@@ -164,11 +164,16 @@ int pr( const char *s, int fd /* = 1 */ )
   return 0;
 }
 
-int prl( const char *s, int l, int fd /* = 1 */  )
+int prl( const char *s, unsigned l, int fd /* = 1 */  )
 {
   sendBlock( fd, s, l );
   idle_flag = 1;
   return 0;
+}
+
+int prl1( const char *s, unsigned l  )
+{
+  return prl( s, l, 1 );
 }
 
 

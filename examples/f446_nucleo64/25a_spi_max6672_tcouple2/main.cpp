@@ -78,12 +78,10 @@ int cmd_test0( int argc, const char * const * argv )
 {
   int n      = arg2long_d( 1, argc, argv,    UVAR('n'), 1, 0xFFFFFF );
   int t_step = UVAR('t');
-  pr( NL "Test0: n= " ); pr_d( n );
-  pr( NL " t_step= " ); pr_d( t_step );
-  pr( NL );
+  MSTRF( os, 128, prl1 );
 
-  // string s;
-  // char bi[INT_STR_SZ_DEC];
+  os <<  NL "Test0: n= " << n << " t_step= " <<  t_step << NL;
+  os.flush();
 
   uint16_t v1, v2;
   int rc1, rc2;
@@ -106,11 +104,13 @@ int cmd_test0( int argc, const char * const * argv )
     // s += ' ';
     pr_d( tcc - tc00 ); pr( " " );
 
-    uint16_t t1_i = v1 >> 5, t2_i = v2 >> 5;
-    uint16_t t1_f = ( v1 >> 3 ) & 0x03, t2_f = ( v2 >> 3 ) & 0x03 ;
+    os << FixedPoint2( v1 ) << ' ' << FixedPoint2( v2 ) << ' ';
 
-    pr_d( t1_i );  pr( fp_frac_02bit[t1_f] ); pr( " " );
-    pr_d( t2_i );  pr( fp_frac_02bit[t2_f] ); pr( " " );
+    // uint16_t t1_i = v1 >> 5, t2_i = v2 >> 5;
+    // uint16_t t1_f = ( v1 >> 3 ) & 0x03, t2_f = ( v2 >> 3 ) & 0x03 ;
+    //
+    // pr_d( t1_i );  pr( fp_frac_02bit[t1_f] ); pr( " " );
+    // pr_d( t2_i );  pr( fp_frac_02bit[t2_f] ); pr( " " );
 
     if( v1 & MAX6675_BRK ) {
       pr( " B1 " );
@@ -120,12 +120,12 @@ int cmd_test0( int argc, const char * const * argv )
     }
 
     if( UVAR('d') > 0 ) {
-      pr( NL ); pr_h ( v1, 2 ); pr( " " ); pr_h( v2 );
-      pr_d( rc1 ); pr( " " );
-      pr_d( rc2 ); pr( " " ); pr( NL );
+      os << NL << HexInt( v1 ) << ' ' << HexInt( v2 ) << ' '
+         << rc1 << ' ' << rc2 << ' ';
     }
 
-    pr( NL );
+    os << NL;
+    os.flush();
     delay_ms_until_brk( &tc0, t_step );
   }
 

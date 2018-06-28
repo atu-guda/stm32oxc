@@ -43,19 +43,35 @@ char* word2hex( uint32_t d,  char *s )
   return s;
 }
 
-char* i2dec( int n, char *s, unsigned min_sz, char fill_ch )
+char* short2hex( uint16_t d,  char *s )
 {
-  static char sbuf[INT_STR_SZ_DEC];
+  if( !s ) {
+    return 0;
+  }
+
+  int i;
+  for( i=4; i>=0; --i ) {
+    s[i] = hex_digits[ d & 0x0F ];
+    d >>= 4;
+  }
+  s[4] = 0;
+  return s;
+}
+
+
+unsigned i2dec_n( int n, char *s, unsigned min_sz, char fill_ch )
+{
   char tbuf[INT_STR_SZ_DEC];
   if( !s ) {
-    s = sbuf;
+    return 0;
   }
   if( min_sz < 1 ) { min_sz = 1; }
   if( min_sz > INT_STR_SZ_DEC-2 ) { min_sz = INT_STR_SZ_DEC-2; }
+
   char *bufptr = s, *tmpptr = tbuf + 1;
   *tbuf = '\0';
-
   unsigned u, nc = 0;
+
   if( n < 0 ){ //  sign
     u = ( (unsigned)(-(1+n)) ) + 1; // INT_MIN handling
     *bufptr++ = '-'; ++nc;
@@ -71,7 +87,20 @@ char* i2dec( int n, char *s, unsigned min_sz, char fill_ch )
     *tmpptr++ = fill_ch; ++nc;
   }
 
-  while( ( *bufptr++ = *--tmpptr ) != '\0' ) /* NOP */;
+  while( ( *bufptr++ = *--tmpptr ) != '\0' ) {
+    /* NOP */
+  }
+
+  return nc;
+}
+
+char* i2dec( int n, char *s, unsigned min_sz, char fill_ch )
+{
+  static char sbuf[INT_STR_SZ_DEC];
+  if( !s ) {
+    s = sbuf;
+  }
+  i2dec_n( n, s, min_sz, fill_ch );
   return s;
 }
 

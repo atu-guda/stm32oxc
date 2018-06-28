@@ -14,6 +14,7 @@
 #include <oxc_console.h>
 #include <oxc_smallrl.h>
 #include <oxc_common1.h>
+#include <oxc_ministr.h>
 #endif
 
 #if defined (USE_OXC_DEBUG)

@@ -154,6 +154,7 @@ ifeq "$(USE_OXC_DEVIO)" "y"
   # $(info "Used DEVIO" )
   USE_OXC = y
   SRCS += oxc_devio.cpp
+  SRCS += oxc_ministr.cpp
   SRCS += oxc_rtosqueue.cpp
   ALLFLAGS += -DUSE_OXC_DEVIO
   ifneq "$(USE_FREERTOS)" "y"

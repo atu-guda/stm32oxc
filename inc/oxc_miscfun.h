@@ -22,9 +22,12 @@ extern const char dec_digits[];
 // converts char to hex represenration (2 digits+EOL, store to s)
 char* char2hex( char c, char *s );
 // converts uint32 to hex represenration (8(64=16) digits+EOL, store to s)
-char* word2hex( uint32_t d,  char *s );
+char* word2hex(  uint32_t d, char *s );
+char* short2hex( uint16_t d, char *s );
 // 64/log_2[10] \approx 20
 #define INT_STR_SZ 24
+// return sumber of the appended chars
+unsigned i2dec_n( int n, char *s, unsigned min_sz = 1, char fill_ch = ' ' );
 // if s == 0 returns ptr to inner static buffer
 char* i2dec( int n, char *s, unsigned min_sz = 1, char fill_ch = ' ' );
 // fixed point intr preresentation to string
