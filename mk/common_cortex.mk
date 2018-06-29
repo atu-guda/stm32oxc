@@ -35,7 +35,7 @@ ALLFLAGS += -Wall -Wextra -Wundef
 ALLFLAGS += -fno-common -ffunction-sections -fdata-sections
 ALLFLAGS += -D$(MCINCTYPE) -DHSE_VALUE=$(HSE_VALUE) -DUSE_HAL_LEGACY
 CWARNFLAGS := -Wimplicit-function-declaration -Wmissing-prototypes -Wstrict-prototypes -Wno-unused-parameter
-CXXWARNFLAGS := -Wno-unused-parameter
+CXXWARNFLAGS := -Wno-unused-parameter -Wno-register
 
 ALLFLAGS += -DPROJ_NAME=\"$(PROJ_NAME)\"
 ALLFLAGS += -ffreestanding

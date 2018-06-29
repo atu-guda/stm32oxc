@@ -60,8 +60,9 @@ int cmd_test0( int argc, const char * const * argv )
 {
   int st_a = arg2long_d( 1, argc, argv,   2,    0, 127 );
   int en_a = arg2long_d( 2, argc, argv, 127, st_a, 127 );
-  pr( NL "Test0: st_a= " ); pr_h( st_a ); pr( " en_a= " ); pr_h( en_a );
-  pr( NL );
+  MSTRF( os, 128, prl1 );
+  os << "Test0: st_a= " << st_a << " en_a= " << en_a << NL;
+  os.flush();
   i2cd.resetDev();
 
   // uint8_t val;
@@ -73,7 +74,8 @@ int cmd_test0( int argc, const char * const * argv )
     if( !rc ) {
       continue;
     }
-    pr( "ad = " ); pr_h( ad ); pr( "  rc= " ); pr_d( rc ) ; pr( "  err= " ); pr_d( i_err ); pr(NL);
+    os << "ad = " << HexInt8( ad ) << "  rc= " << rc << "  err= " << i_err << NL;
+    os.flush();
   }
 
   return 0;
