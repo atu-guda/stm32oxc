@@ -1,5 +1,9 @@
 #include <oxc_spi.h>
 
+#ifdef USE_OXC_DEBUG
+#include <oxc_ministr.h>
+#endif
+
 void DevSPI::initSPI()
 {
   __HAL_SPI_ENABLE( spi );
@@ -313,19 +317,21 @@ const BitNames SPI_SR_bitnames[] {
 void print_SPI_info( SPI_TypeDef *spi )
 {
   if( !spi ) { return; }
-  pr( "SPI: " ); pr_a( spi );
-  pr( " CR1= " ); pr_h( spi->CR1 ); pr_bitnames( spi->CR1, SPI_CR1_bitnames );
-  pr( " CR2= " ); pr_h( spi->CR2 ); pr_bitnames( spi->CR2, SPI_CR2_bitnames );
-  pr( " SR= " );  pr_h( spi->SR );  pr_bitnames( spi->SR,  SPI_SR_bitnames  );
-  pr( " DR= " );  pr_h( spi->DR );
-  pr( NL );
+  MSTRF( os, 128, prl1 );
+
+  os << "SPI: "  << HexInt( spi ) << " CR1= " << HexInt( spi->CR1 )  //  pr_bitnames( spi->CR1, SPI_CR1_bitnames );
+     << " CR2= " << HexInt( spi->CR2 ) << BitsStr( spi->CR2, SPI_CR2_bitnames )
+     << " SR= "  << HexInt( spi->SR )  << BitsStr( spi->SR,  SPI_SR_bitnames  )
+     << " DR= "  << HexInt( spi->DR ) << NL;
 }
 
 void DevSPI::pr_info() const
 {
   print_SPI_info( spi->Instance );
-  pr( " error_code= " ); pr_d( spi->ErrorCode );
-  pr( " last_err= " ); pr_d( last_err );
-  pr( " last_rc= " ); pr_d( last_rc ); pr( NL );
+  MSTRF( os, 128, prl1 );
+  os << " error_code= " << int( spi->ErrorCode )
+     << " last_err= "   << int( last_err )
+     << " last_rc= "    << int( last_rc ) << NL;
 }
 #endif
+

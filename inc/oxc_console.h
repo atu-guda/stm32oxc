@@ -81,12 +81,6 @@ struct CmdInfo
 };
 extern const CmdInfo* global_cmds[];
 
-struct BitNames {
-  uint8_t s; //* start bit number (from 0);
-  uint8_t n; //* number of bits (0 - struct array end)
-  const char *const name; //* bit name or bitfield base (nullptr-end too)
-};
-
 extern int console_verbose;
 
 

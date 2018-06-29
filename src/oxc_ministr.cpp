@@ -32,6 +32,34 @@ bool MiniStr::ensureSpace( unsigned req )
   return sz < cap - req;
 }
 
+void MiniStr::add_bitnames( uint32_t b, const BitNames *bn )
+{
+  static int constexpr bpi = sizeof(b)*8;
+  if( !bn ) { return; }
+  append( '{' );
+  char sep = ' ';
+  for( ; bn->n !=0 && bn->name != nullptr; ++bn ) {
+    if( bn->n == 1 ) { // single bit
+      if( b & (1<<bn->s) ) {
+        append( sep ); sep = ',';
+        operator+=( bn->name );
+      }
+    } else {           // pack of bits
+      append( sep ); sep = ',';
+      operator+=( bn->name ); append( '_' );
+      uint32_t v = (b>>bn->s) & ( ~0u>>(bpi-bn->n) );
+      if( bn->n > 16 ) {
+        operator+=( HexInt( v ) );
+      } else if ( bn->n > 8 ) {
+        operator+=( HexInt16( v ) );
+      } else {
+        operator+=( HexInt8( v ) );
+      }
+    }
+  }
+  append( '}' );
+}
+
 
 
 MiniStr& MiniStr::operator+=( const char *rhs )
@@ -69,6 +97,16 @@ MiniStr& MiniStr::operator+=( HexInt rhs )
   }
   word2hex( rhs, e );
   e += 8; sz += 8; *e = '\0';
+  return *this;
+}
+
+MiniStr& MiniStr::operator+=( HexInt8 rhs )
+{
+  if( ! ensureSpace( 3 ) ) { // XX
+    return *this;
+  }
+  char2hex( rhs, e );
+  e += 2; sz += 2; *e = '\0';
   return *this;
 }
 
@@ -123,6 +161,12 @@ MiniStr& MiniStr::operator+=( FixedPoint2 rhs )
   strcat( e, FixedPoint2::fracStr[ rhs.frac() ] );
   e += 4; sz += 4;
   *e = '\0';
+  return *this;
+}
+
+MiniStr& MiniStr::operator+=( const BitsStr &rhs )
+{
+  add_bitnames( rhs.v, rhs.bn );
   return *this;
 }
 

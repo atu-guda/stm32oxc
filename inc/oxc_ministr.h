@@ -11,6 +11,7 @@
 class HexInt {
   public:
    explicit HexInt( uint32_t a ) : v(a) {};
+   explicit HexInt( void *a ) : v( reinterpret_cast<uint32_t>(a) ) {};
    operator uint32_t() { return v; }
    uint32_t v;
 };
@@ -20,6 +21,13 @@ class HexInt16 {
    explicit HexInt16( uint16_t a ) : v(a) {};
    operator uint16_t() { return v; }
    uint16_t v;
+};
+
+class HexInt8 {
+  public:
+   explicit HexInt8( uint8_t a ) : v(a) {};
+   operator uint8_t() { return v; }
+   uint8_t v;
 };
 
 class FmtInt {
@@ -49,6 +57,12 @@ class FixedPoint2 {
    static const char * const fracStr[6];
 };
 
+class BitsStr {
+  public:
+   BitsStr( uint32_t a, const BitNames *b ) : v( a ), bn( b ) {};
+   uint32_t v;
+   const BitNames *bn;
+};
 
 
 
@@ -77,23 +91,28 @@ class MiniStr {
    char& operator[] ( unsigned i ) { return s[i]; };
    MiniStr& operator=( const MiniStr &rhs ) = delete; // TODO: make it
    void append( char rhs );
+   void add_bitnames( uint32_t b, const BitNames *bn );
    MiniStr& operator+=( char rhs ) { append( rhs ); return *this; }
    MiniStr& operator<<( char rhs ) { return operator+=( rhs ); }
    MiniStr& operator+=( const char *rhs );
    MiniStr& operator<<( const char *rhs ) { return operator+=( rhs ); }
    MiniStr& operator+=( const MiniStr &rhs ) { return operator+=( rhs.s ); }
    MiniStr& operator+=( int rhs );
-   MiniStr& operator<<( int rhs ) { return operator+=( rhs ); }
+   MiniStr& operator<<( int rhs )      { return operator+=( rhs ); }
+   MiniStr& operator+=( HexInt8  rhs );
+   MiniStr& operator<<( HexInt8  rhs ) { return operator+=( rhs ); }
    MiniStr& operator+=( HexInt16 rhs );
    MiniStr& operator<<( HexInt16 rhs ) { return operator+=( rhs ); }
-   MiniStr& operator+=( HexInt rhs );
-   MiniStr& operator<<( HexInt rhs ) { return operator+=( rhs ); }
+   MiniStr& operator+=( HexInt   rhs );
+   MiniStr& operator<<( HexInt   rhs ) { return operator+=( rhs ); }
    MiniStr& operator+=( const FmtInt &rhs );
    MiniStr& operator<<( const FmtInt &rhs ) { return operator+=( rhs ); }
    MiniStr& operator+=( FixedPoint1 rhs );
    MiniStr& operator<<( FixedPoint1 rhs ) { return operator+=( rhs ); }
    MiniStr& operator+=( FixedPoint2 rhs );
    MiniStr& operator<<( FixedPoint2 rhs ) { return operator+=( rhs ); }
+   MiniStr& operator+=( const BitsStr &rhs );
+   MiniStr& operator<<( const BitsStr &rhs ) { return operator+=( rhs ); }
   private:
    unsigned cap, sz;
    char *s, *e;

@@ -33,6 +33,12 @@ char* i2dec( int n, char *s, unsigned min_sz = 1, char fill_ch = ' ' );
 // fixed point intr preresentation to string
 char* ifcvt( int v, int mult, char *s, unsigned min_sz_frac = 1,  unsigned min_sz_int = 1, char plus_ch = ' ' );
 
+struct BitNames {
+  uint8_t s; //* start bit number (from 0);
+  uint8_t n; //* number of bits (0 - struct array end)
+  const char *const name; //* bit name or bitfield base (nullptr-end too)
+};
+
 #ifdef __cplusplus
 }
 #endif
