@@ -17,7 +17,7 @@ BOARD_CONSOLE_DEFINES;
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
+CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test 2 tcoubples"  };
 
 
 int cmd_reset_spi( int argc, const char * const * argv );
@@ -71,8 +71,6 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
   vTaskDelete(NULL);
 }
 
-const char * const fp_frac_02bit[] = { ".00", ".25", ".50", ".75", ".x4", ".x5" };
-
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
@@ -91,32 +89,24 @@ int cmd_test0( int argc, const char * const * argv )
 
   for( int i=0; i<n && !break_flag; ++i ) {
 
-    rc1 = spi_d1.recv( (uint8_t*)(&v1), sizeof(v1) );
-    rc2 = spi_d2.recv( (uint8_t*)(&v2), sizeof(v2) );
-    v1 = rev16( v1 ); v2 = rev16( v2 );
-
     TickType_t tcc = xTaskGetTickCount();
     if( i == 0 ) {
       tc0 = tc00 = tcc;
     }
-    // s.clear();
-    // s += i2dec( tcc - tc00, bi );
-    // s += ' ';
-    pr_d( tcc - tc00 ); pr( " " );
 
-    os << FixedPoint2( v1 ) << ' ' << FixedPoint2( v2 ) << ' ';
+    rc1 = spi_d1.recv( (uint8_t*)(&v1), sizeof(v1) );
+    rc2 = spi_d2.recv( (uint8_t*)(&v2), sizeof(v2) );
+    v1 = rev16( v1 ); v2 = rev16( v2 );
 
-    // uint16_t t1_i = v1 >> 5, t2_i = v2 >> 5;
-    // uint16_t t1_f = ( v1 >> 3 ) & 0x03, t2_f = ( v2 >> 3 ) & 0x03 ;
-    //
-    // pr_d( t1_i );  pr( fp_frac_02bit[t1_f] ); pr( " " );
-    // pr_d( t2_i );  pr( fp_frac_02bit[t2_f] ); pr( " " );
+    os << FmtInt( tcc - tc00, 8, '0' ) << ' ';
+
+    os << FixedPoint2( v1 >> 3 ) << ' ' << FixedPoint2( v2 >> 3 ) << ' ';
 
     if( v1 & MAX6675_BRK ) {
-      pr( " B1 " );
+      os << " B1 ";
     }
-    if( v1 & MAX6675_BRK ) {
-      pr( " B2 " );
+    if( v2 & MAX6675_BRK ) {
+      os << " B2 ";
     }
 
     if( UVAR('d') > 0 ) {
