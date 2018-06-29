@@ -98,7 +98,10 @@ class MiniStr {
    MiniStr& operator<<( const char *rhs ) { return operator+=( rhs ); }
    MiniStr& operator+=( const MiniStr &rhs ) { return operator+=( rhs.s ); }
    MiniStr& operator+=( int rhs );
-   MiniStr& operator<<( int rhs )      { return operator+=( rhs ); }
+   MiniStr& operator<<( int rhs )       { return operator+=( rhs ); }
+   MiniStr& operator<<( unsigned rhs )  { return operator+=( (int)rhs ); }
+   MiniStr& operator<<( long rhs )      { return operator+=( (int)rhs ); }
+   MiniStr& operator<<( unsigned long rhs )  { return operator+=( (int)rhs ); }
    MiniStr& operator+=( HexInt8  rhs );
    MiniStr& operator<<( HexInt8  rhs ) { return operator+=( rhs ); }
    MiniStr& operator+=( HexInt16 rhs );

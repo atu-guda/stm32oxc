@@ -9,6 +9,7 @@
 #include <oxc_gpio.h>
 #include <oxc_devio.h>
 #include <oxc_debug1.h>
+#include <oxc_ministr.h>
 
 // general buffers
 char gbuf_a[GBUF_SZ];
@@ -39,44 +40,46 @@ char* str2addr( const char *str )
 
 void dump8( const void *addr, int n, bool isAbs  )
 {
-  char b[8]; // for char2hex
   unsigned const char* ad = (unsigned const char*)(addr);
   if( !ad  ||  ad == BAD_ADDR ) {
     return;
   }
   unsigned const char* ad0 = isAbs ? ad : nullptr; // left label
-  pr( NL );
+  MSTRF( os, 128, prl1 );
+  os << NL;
 
   int i, row, bs;
   int nr = (n+15) >> 4; // non-full rows counting too
   for( row = 0; row < nr; ++row ) {
-    pr_a( ad0 ); pr( ": " );
+    os << HexInt( (void*)ad0 ) << ": ";
     bs = row << 4;
     for( i=0; i<16 && (i+bs)<n; ++i ) {
-      pr( char2hex( ad[i+bs], b ) ); pr( " " );
+      os << HexInt8( ad[i+bs] ) << ' ';
       if( (i&3) == 3 ) {
-        pr( ": " );
+        os << ": ";
       }
     }
 
-    pr( "|  " );
-    b[1] = 0;
+    os << "|  ";
+    char b;
     for( i=0; i<16 && (i+bs)<n; ++i ) {
-      b[0] = '.';
+      b = '.';
       if( ad[i+bs] >= ' ' ) {
-        b[0] = ad[i+bs];
+        b = ad[i+bs];
       }
-      pr( b );
+      os.append( b );
       if( (i&3) == 3 ) {
-        pr( " " );
+        os << ' ';
       }
     }
-    pr( NL );
+    os << NL;
+    os.flush();
     ad0 += 16;
 
   }
 
-  pr( "--------------------------------------" NL );
+  os << "--------------------------------------" NL;
+  os.flush();
 }
 
 
@@ -126,14 +129,14 @@ void log_print()
 
 void print_user_var( int idx )
 {
+  MSTRF( os, 64, prl1 );
   if( idx < 0  ||  idx >= N_USER_VARS ) {
-    pr_sd( NL "err: bad var index: ", idx );
+    os << NL "err: bad var index: " << idx;
     return;
   }
   char b[4] = "0= ";
-  b[0] = (char)('a' + idx);
-  pr( b ); pr_d( user_vars[idx] ); pr( " = " );
-  pr_h( user_vars[idx] ); pr( NL );
+  b[0] = (char)( 'a' + idx );
+  os << b << ( user_vars[idx] ) << " = "  << HexInt( user_vars[idx] ) << NL;
 }
 
 //----------------------------------------------------------------------
@@ -200,32 +203,33 @@ void gpio_pin_info( GPIO_TypeDef *gi, uint16_t pin, char *s )
 //
 int cmd_info( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
 {
-  pr( NL "**** " PROJ_NAME " **** " NL );
+  MSTRF( os, 128, prl1 );
+  os << NL "**** " PROJ_NAME " **** " NL;
 
-  pr( "SYSCLK: " );  pr_d( HAL_RCC_GetSysClockFreq()  );
-  pr( "  HCLK: " );  pr_d( HAL_RCC_GetHCLKFreq()  );
-  pr( "  PCLK1: " ); pr_d( HAL_RCC_GetPCLK1Freq() );
-  pr( "  PCLK2: " ); pr_d( HAL_RCC_GetPCLK2Freq() );
-  pr( "  HSE_VALUE: " ); pr_d( HSE_VALUE );
-  pr_sdx( SystemCoreClock );
+  os << "SYSCLK: "  << HAL_RCC_GetSysClockFreq()
+     << " HCLK: "  << HAL_RCC_GetHCLKFreq()
+     << " PCLK1: " << HAL_RCC_GetPCLK1Freq()
+     << " PCLK2: " << HAL_RCC_GetPCLK2Freq()
+     << " HSE_VALUE: " << HSE_VALUE
+     << " SystemCoreClock" << SystemCoreClock << NL;
 
-  pr( NL "errno= "); pr_d( errno ); pr( " sigint_count=" ); pr_d( sigint_count );
-  pr( NL "dbg_val0= 0x" ); pr_h( dbg_val0 ); pr( " = " ); pr_d( dbg_val0 );
-  pr(   " dbg_val1= 0x" ); pr_h( dbg_val1 ); pr( " = " ); pr_d( dbg_val1 );
-  pr( NL "dbg_val2= 0x" ); pr_h( dbg_val2 ); pr( " = " ); pr_d( dbg_val2 );
-  pr(   " dbg_val3= 0x" ); pr_h( dbg_val3 ); pr( " = " ); pr_d( dbg_val3 );
+  os << "errno= " << errno << " sigint_count="  << sigint_count << NL
+     << " dbg_val0= 0x" << HexInt( dbg_val0 ) <<  " = "  << HexInt( dbg_val0 )
+     << " dbg_val1= 0x" << HexInt( dbg_val1 ) <<  " = "  << HexInt( dbg_val1 ) << NL
+     << " dbg_val2= 0x" << HexInt( dbg_val2 ) <<  " = "  << HexInt( dbg_val2 )
+     << " dbg_val3= 0x" << HexInt( dbg_val3 ) <<  " = "  << HexInt( dbg_val3 ) << NL;
 
-  pr( NL "_sdata= " ); pr_h( (int)(&_sdata) ); pr(  " _edata=  " ); pr_h( (int)(&_edata) );
-  pr( NL "_sbss=  " ); pr_h( (int)(&_sbss) );  pr(  " _ebss=   " ); pr_h( (int)(&_ebss) );
-  pr( NL "_end=   " ); pr_h( (int)(&_end) );   pr(  " _estack= " ); pr_h( (int)(&_estack) );
+  os << " _sdata= " << HexInt( (uint32_t)(&_sdata) ) << " _edata=  " << HexInt( (uint32_t)(&_edata)  )
+     << " _sbss=  " << HexInt( (uint32_t)(&_sbss)  ) << " _ebss=   " << HexInt( (uint32_t)(&_ebss)   )
+     << " _end=   " << HexInt( (uint32_t)(&_end)   ) << " _estack= " << HexInt( (uint32_t)(&_estack) );
 
   uint32_t c_msp = __get_MSP(), c_psp = __get_PSP();
-  pr( NL "MSP=   " ); pr_h( c_msp );   pr(  " PSP= " ); pr_h( c_psp );
-  pr( "  __heap_top=   " ); pr_h( (int)__heap_top );
-  pr( NL );
+  os << NL "MSP=   " << HexInt( c_msp ) <<  " PSP= " << HexInt( c_psp )
+     << "  __heap_top=   " << HexInt( (uint32_t)__heap_top )
+     << " MSP-__heap_top = " << ((unsigned)c_msp - (unsigned)(__heap_top) ) << NL;
 
   uint32_t prio_grouping = HAL_NVIC_GetPriorityGrouping();
-  pr_sdx( prio_grouping );
+  os << "prio_grouping= " << prio_grouping << NL;
 
   uint32_t prio_preempt, prio_sub;
   struct OutIrqName {
@@ -247,42 +251,16 @@ int cmd_info( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
 
   for( auto iqn : irqs ) {
     HAL_NVIC_GetPriority( iqn.IRQn, prio_grouping, &prio_preempt, &prio_sub );
-    pr( iqn.nm ); pr( " (" ); pr_d( iqn.IRQn );
-    pr( ")  preempt= " ); pr_d( prio_preempt );
-    pr( "  sub= " ); pr_d( prio_sub );
-    pr( NL );
+    os << iqn.nm << " (" << iqn.IRQn <<  ")  preempt= " <<  prio_preempt << " sub= " <<  prio_sub << NL;
   }
-  delay_ms( 100 );
+  delay_ms( 50 );
 
-  // unsigned max_malloc_sz = 0;
-  // for( unsigned sz = 1024 * 1024; sz > 1024 ; sz -= 1024 ) {
-  //   void *p = malloc( sz );
-  //   if( p == nullptr ) {
-  //     continue;
-  //   }
-  //   free( p );
-  //   max_malloc_sz = sz;
-  //   break;
-  //   // pr_sdx( sz );
-  //   // delay_ms( 50 );
-  // }
-  // pr_sdx( max_malloc_sz );
-
-  unsigned xx_malloc_sz =  (unsigned)(__get_MSP()) - (unsigned)(__heap_top) - 128 ;
-  pr_sdx( xx_malloc_sz );
 
 
   #if USE_FREERTOS != 0
     const char *nm = pcTaskGetName( 0 );
-    pr( "task: \"" ); pr( nm ); pr( "\" tick_count: "  );
-    int tick_count = xTaskGetTickCount();
-    pr_d( tick_count );
-    int prty = uxTaskPriorityGet( 0 );
-    pr( "  prty: " );    pr_d( prty );
-    // uint32_t free_heap = xPortGetFreeHeapSize(); // not in heap_3.c
-    // pr( "  free_heap: " );    pr_d( free_heap );
-    uint32_t highStackWaterMark = uxTaskGetStackHighWaterMark( 0 );
-    pr_sdx( highStackWaterMark );
+    os <<  "task: \"" <<  nm << "\" tick_count: " << xTaskGetTickCount() << "  prty: " << uxTaskPriorityGet( 0 )
+       << " highStackWaterMark= " << uxTaskGetStackHighWaterMark( 0 ) << NL;
   #endif
   errno = 0;
   return 0;
@@ -291,10 +269,10 @@ CmdInfo CMDINFO_INFO {  "info",  'i', cmd_info,       " - Output general info" }
 
 int cmd_echo( int argc, const char * const * argv )
 {
-  pr( NL ); pr_sdx( argc ); pr( NL );
-  int i;
-  for( i=0; i<argc; ++i ) {
-    pr( "  arg" ); pr_d( i ); pr( " = \"" ) ; pr( argv[i] ); pr( "\"" NL );
+  MSTRF( os, 128, prl1 );
+  os << NL << "argc= " << argc << NL;
+  for( int i=0; i<argc; ++i ) {
+    os << " arg" << i << " = \"" << argv[i] << "\"" NL;
   }
   return 0;
 }
@@ -302,23 +280,24 @@ CmdInfo CMDINFO_ECHO { "echo",  'e', cmd_echo,       " [args] - output args" };
 
 int cmd_help( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG)
 {
-  pr( "commands:" NL );
+  MSTRF( os, 128, prl1 );
+  os << "commands:" NL;
   char b1[2]; b1[0] = b1[1] = 0;
+
   for( int i=0; global_cmds[i] && i<CMDS_NMAX; ++i ) {
     if( global_cmds[i]->name == 0 ) {
       break;
     }
-    pr( global_cmds[i]->name ); pr( " " );
-    pr( global_cmds[i]->hint ); pr( " " );
+    os << global_cmds[i]->name << ' ' << global_cmds[i]->hint << ' ';
     if( global_cmds[i]->acr != 0 ) {
-      pr( " (" ); b1[0] = global_cmds[i]->acr; pr( b1 ); pr( ")" );
+      os << " (" << global_cmds[i]->acr << ')';
     }
-    pr( NL );
+    os << NL;
   }
   // see oxc_smallrl.cpp : SMLRL::SmallRL::handle_nl
-  pr( ".h - history " NL );
-  pr( ".v - more verbose " NL );
-  pr( ".q - no verbose " NL );
+  os <<  ".h - history " NL
+     <<  ".v - more verbose " NL
+     <<  ".q - no verbose " NL;
   return 0;
 }
 CmdInfo CMDINFO_HELP { "help",  'h', cmd_help, " - List of commands and arguments"  };
@@ -329,17 +308,17 @@ int cmd_dump( int argc, const char * const * argv )
     return 1;
   }
 
+  MSTRF( os, 128, prl1 );
   const char* addr = str2addr( argv[1] );
   if( addr == BAD_ADDR ) {
-    pr( "** error: dump: bad address \"" );  pr( argv[1] );  pr( "\"" NL );
+    os << "** error: dump: bad address \""  <<  argv[1] << "\"" NL;
     return 2;
   }
 
   int n = arg2long_d( 2, argc, argv, 1, 1, 0x8000 );
   int isAbs = arg2long_d( 3, argc, argv, 0, 0, 1 );
 
-  pr( NL "** dump: argc=" ); pr_d( argc ); pr( " addr=" ); pr_a( addr );
-  pr_sdx( n );
+  os << NL "** dump: argc=" << argc << " addr=" << HexInt( (void*)addr ) << " n= " << n << NL;
   dump8( addr, n, isAbs );
   return 0;
 }
@@ -351,9 +330,10 @@ int cmd_fill( int argc, const char * const * argv )
     return 1;
   }
 
+  MSTRF( os, 128, prl1 );
   char* addr = str2addr( argv[1] );
   if( addr == BAD_ADDR ) {
-    pr( "** error: fill: bad address \"" );  pr( argv[1] );  pr( "\"" NL );
+    os << "** error: fill: bad address \"" << argv[1] << "\"" NL;
     return 2;
   }
 
@@ -369,15 +349,13 @@ int cmd_fill( int argc, const char * const * argv )
   int n = arg2long_d( 3, argc, argv, 1, 1, 0xFFFF );
   uint8_t stp = (uint8_t)arg2long_d( 4, argc, argv, 0, 0, 0xFF );
 
-  pr( "** fill: addr=" ); pr_a( addr );
-  pr_sdx( v );
-  pr_sdx( n );
-  pr_sdx( stp );
+  os <<  "** fill: addr=" << HexInt( (void*)addr )
+     << " v= " << v << " n= " << n << " stp= " << stp << NL;
 
   for( int i=0; i<n; ++i, ++addr ) {
     *addr = v; v+=stp;
   }
-  pr( NL "---------- done---------------" NL );
+  os << NL "---------- done---------------" NL;
   return 0;
 }
 CmdInfo CMDINFO_FILL { "fill",  'f', cmd_fill, " {a|b|addr} val [n] [stp] - Fills memory by value"  };
@@ -478,18 +456,21 @@ int cmd_pin_info( int argc, const char * const * argv )
       #ifdef GPIOI
       case 'I': case 'i':  gi = GPIOI; pstr[0] = 'I'; break;
       #endif
+      #ifdef GPIOH
+      case 'H': case 'h':  gi = GPIOH; pstr[0] = 'H'; break;
+      #endif
     }
   }
-  pr( NL "Port "); pr( pstr );
-  pr( " addr: " ); pr_a( gi ); pr( NL );
+
+  MSTRF( os, 128, prl1 );
+  os << NL "Port " << pstr << " addr: " << HexInt( (void*)gi ) << NL;
 
   for( uint16_t p = pin, i=0; p<16 && i<n; ++p, ++i ) {
-    pr( " pin: " ); pr_d( p ); pr( ": " );
     gpio_pin_info( gi, p, s );
-    pr( s ); pr( NL );
+    os << " pin: " <<  p << ": " << s << NL;
   }
+  os.flush();
   dump8( gi, (sizeof(*gi)+15) & 0xF0 );
-
 
   return 0;
 }
@@ -499,8 +480,8 @@ int cmd_set_leds_step( int argc, const char * const * argv )
 {
   uint32_t nstep = arg2long_d( 1, argc, argv, 50, 1, 100000 ); // number output series
   task_leds_step = nstep;
-  pr( "LEDS step is set to " ); pr_d( task_leds_step ); pr( " = " ); pr_d( task_leds_step * TASK_LEDS_QUANT );
-  pr( " ms" NL );
+  MSTRF( os, 128, prl1 );
+  os << "LEDS step is set to " << task_leds_step << " = "  << task_leds_step * TASK_LEDS_QUANT << " ms" NL;
   return 0;
 }
 CmdInfo CMDINFO_LSTEP { "set_leds_step", 'L', cmd_set_leds_step, " [N] - set leds step in 10 ms "  };

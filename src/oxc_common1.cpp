@@ -1,6 +1,7 @@
 #include <oxc_gpio.h>
 #include <oxc_smallrl.h>
 #include <oxc_common1.h>
+#include <oxc_ministr.h>
 
 #if !defined USE_FREERTOS
 #error This file in only for FreeRTOS enabled projects.
@@ -38,9 +39,11 @@ void task_leds( void *prm UNUSED_ARG )
 
 void default_main_loop()
 {
-  uint32_t nl = 0;
+  int nl = 0;
+  MSTRF( os, 64, prl1 );
   delay_ms( 10 );
-  pr( "*=*** " PROJ_NAME  " main loop: ****** " NL );
+  os <<  "*=*** " PROJ_NAME  " main loop: ****** " NL;
+  os.flush();
   delay_ms( 20 );
   if( ! global_smallrl ) {
     die( 0x01 );
@@ -53,10 +56,11 @@ void default_main_loop()
 
 
   idle_flag = 1;
-  while(1) {
+  while( 1 ) {
     ++nl;
     if( idle_flag == 0 ) {
-      pr_sd( ".. main idle  ", nl );
+      os << ".. main idle  " << nl;
+      os.flush();
       global_smallrl->redraw();
     }
     idle_flag = 0;
@@ -67,7 +71,7 @@ void default_main_loop()
 void task_gchar( void *prm UNUSED_ARG )
 {
   char sc[2] = { 0, 0 };
-  while (1) {
+  while( 1 ) {
     int n = recvByte( 0, sc, 10000 );
     if( n ) {
       if( global_smallrl ) {
