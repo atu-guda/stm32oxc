@@ -52,7 +52,7 @@ int SystemClockCfg(void)
 
   RCC_PeriphCLKInitTypeDef PeriphClkInitStruct;
   PeriphClkInitStruct.PeriphClockSelection =
-      RCC_PERIPHCLK_USART1 | RCC_PERIPHCLK_USART2
+      RCC_PERIPHCLK_USART1 | RCC_PERIPHCLK_USART2 | RCC_PERIPHCLK_USART3
     | RCC_PERIPHCLK_I2C1   | RCC_PERIPHCLK_I2C2
     | RCC_PERIPHCLK_SDMMC1 | RCC_PERIPHCLK_CLK48;
   PeriphClkInitStruct.PLLSAI.PLLSAIN       = 192;
@@ -63,6 +63,7 @@ int SystemClockCfg(void)
   PeriphClkInitStruct.PLLSAIDivR           = RCC_PLLSAIDIVR_2;
   PeriphClkInitStruct.Usart1ClockSelection = RCC_USART1CLKSOURCE_SYSCLK;
   PeriphClkInitStruct.Usart2ClockSelection = RCC_USART2CLKSOURCE_SYSCLK;
+  PeriphClkInitStruct.Usart3ClockSelection = RCC_USART2CLKSOURCE_SYSCLK;
   PeriphClkInitStruct.I2c1ClockSelection   = RCC_I2C1CLKSOURCE_SYSCLK;
   PeriphClkInitStruct.I2c2ClockSelection   = RCC_I2C2CLKSOURCE_SYSCLK;
   PeriphClkInitStruct.Clk48ClockSelection  = RCC_CLK48SOURCE_PLLSAIP;

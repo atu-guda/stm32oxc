@@ -1,9 +1,9 @@
-# common Makefile part for STM32F746 wireshare board
+# common Makefile part for STM32F746 Nucleo144 board
 
 MCTYPE = STM32F746
 MCINCTYPE = $(MCTYPE)xx
 FREERTOS_ARCHNAME = ARM_CM4F
-BOARDNAME = STM32F746-wave0 # none
+BOARDNAME = STM32F7xx_Nucleo_144
 
 ADDSRC += ../common ../../common
 

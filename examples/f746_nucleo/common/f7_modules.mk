@@ -1,0 +1,1 @@
+../../../mk/f7_modules.mk
