@@ -7,11 +7,13 @@ USE_OXC_CONSOLE_USART = y
 USE_OXC_CONSOLE_USB_CDC = n
 USE_OXC_I2C = y
 # USE_OXC_SPI = y
+USE_OXC_TIM = y
 USE_FREERTOS = y
 # FREERTOS_HEAP = heap_2.c
 # # default: heap_3.c
 # USE_USB_DEFAULT_CDC = y
 # REQUIRE_SPECIAL_CLOCK = y
+# USE_DEFAULT_SDIO_FAT = y
 
 
 OXCDIR = /usr/share/stm32oxc
@@ -19,12 +21,9 @@ OXCDIR = /usr/share/stm32oxc
 
 SRCS  = main.cpp
 
-SRCS += oxc_tim.cpp
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
 # see ../common/f4_modules.mk
-SRCS += stm32f4xx_hal_tim.c
-SRCS += stm32f4xx_hal_tim_ex.c
 
 
 include ../common/board_add.mk

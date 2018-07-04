@@ -196,6 +196,7 @@ ifeq "$(USE_OXC_I2C)" "y"
   ifeq "$(MCSUFF)" "f7"
     SRCS += stm32$(MCSUFF)xx_hal_i2c_ex.c
   endif
+  ALLFLAGS += -DUSE_OXC_I2C
 endif
 
 ifeq "$(USE_OXC_SPI)" "y"
@@ -207,7 +208,16 @@ ifeq "$(USE_OXC_SPI)" "y"
   # ifeq "$(USE_OXC_DEBUG)" "y"
   #   SRCS += oxc_debug_spi.cpp
   # endif
+  ALLFLAGS += -DUSE_OXC_SPI
 endif
+
+ifeq "$(USE_OXC_TIM)" "y"
+  SRCS += oxc_tim.cpp
+  SRCS += stm32$(MCSUFF)xx_hal_tim.c
+  SRCS += stm32$(MCSUFF)xx_hal_tim_ex.c
+  ALLFLAGS += -DUSE_OXC_TIM
+endif
+
 
 
 ifeq "$(USE_FREERTOS)" "y"

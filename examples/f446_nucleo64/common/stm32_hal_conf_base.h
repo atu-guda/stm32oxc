@@ -17,6 +17,18 @@
   #define HAL_DMA_MODULE_ENABLED
 #endif
 
+#ifdef USE_OXC_I2C
+  #define HAL_I2C_MODULE_ENABLED
+#endif
+
+#ifdef USE_OXC_SPI
+  #define HAL_SPI_MODULE_ENABLED
+#endif
+
+#ifdef USE_OXC_TIM
+  #define HAL_TIM_MODULE_ENABLED
+#endif
+
 #include <bsp/board_stm32f446_nucleo64.h>
 
 #include "stm32f4xx_hal_conf_common.h"

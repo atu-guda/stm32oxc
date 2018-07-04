@@ -8,7 +8,6 @@
 
 // AUX modules : full list: ../common/hal_modules_list.h
 //
-#define HAL_TIM_MODULE_ENABLED
 
 #include "../common/stm32_hal_conf_base.h"
 

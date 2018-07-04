@@ -32,6 +32,9 @@ SUBDIRS = \
   51_adcdma \
   53_adcdma_sd \
   55_dac0 \
+  l03_motor_fb \
+  l04_wheels1 \
+  t01_iprintf \
   xx01_calibrate \
 
   # 05_usb_console \

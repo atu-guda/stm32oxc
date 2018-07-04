@@ -9,6 +9,7 @@ USE_OXC_CONSOLE_USART = y
 USE_OXC_CONSOLE_USB_CDC = n
 # USE_OXC_I2C = y
 # USE_OXC_SPI = y
+# USE_OXC_TIM = y
 USE_FREERTOS = y
 # FREERTOS_HEAP = heap_2.c
 # # default: heap_3.c
