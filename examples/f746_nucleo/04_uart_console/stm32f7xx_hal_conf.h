@@ -4,7 +4,7 @@
 // ########################## Module Selection ##############################
 // base modules
 #define USE_COMMON_HAL_MODULES
-// #define USE_COMMON_CONSOLE_MODULES
+#define USE_COMMON_CONSOLE_MODULES
 
 // AUX modules : full list: ../common/hal_modules_list.h
 //

@@ -1,6 +1,6 @@
 Simple usage of UART.
 
-Used USART3 with UART-USB on ST-Link
+Used USART3 with external UART-USB convertor, NOT on ST-Link
 D8  = USART3_RX
 D9  = USART3_TX
 
