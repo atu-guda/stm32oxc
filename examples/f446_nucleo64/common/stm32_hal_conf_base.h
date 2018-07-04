@@ -29,6 +29,22 @@
   #define HAL_TIM_MODULE_ENABLED
 #endif
 
+#ifdef USE_OXC_ADC
+  #define HAL_ADC_MODULE_ENABLED
+#endif
+
+#ifdef USE_OXC_DAC
+  #define HAL_DAC_MODULE_ENABLED
+#endif
+
+#ifdef USE_OXC_DMA
+  #define HAL_DMA_MODULE_ENABLED
+#endif
+
+#ifdef USE_OXC_SD
+  #define HAL_SD_MODULE_ENABLED
+#endif
+
 #include <bsp/board_stm32f446_nucleo64.h>
 
 #include "stm32f4xx_hal_conf_common.h"

@@ -11,8 +11,6 @@
 
 // AUX modules : full list: ../common/hal_modules_list.h
 //
-#define HAL_ADC_MODULE_ENABLED
-#define HAL_SD_MODULE_ENABLED
 
 #include "../common/stm32_hal_conf_base.h"
 

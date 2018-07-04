@@ -25,7 +25,7 @@ uint8_t sd_buf[512]; // one sector
 HAL_SD_CardInfoTypeDef cardInfo;
 FATFS fs;
 const int fspath_sz = 32;
-char fspath[fspath_sz];
+extern char fspath[fspath_sz];
 void print_curr( const char *s );
 void out_to_curr( uint32_t n, uint32_t st );
 

@@ -34,7 +34,7 @@ ALLFLAGS  = -g3 -O2
 ALLFLAGS += -Wall -Wextra -Wundef
 ALLFLAGS += -fno-common -ffunction-sections -fdata-sections
 ALLFLAGS += -D$(MCINCTYPE) -DHSE_VALUE=$(HSE_VALUE) -DUSE_HAL_LEGACY
-CWARNFLAGS := -Wimplicit-function-declaration -Wmissing-prototypes -Wstrict-prototypes -Wno-unused-parameter
+CWARNFLAGS := -Wimplicit-function-declaration -Wmissing-prototypes -Wstrict-prototypes -Wno-unused-parameter -Wno-misleading-indentation
 CXXWARNFLAGS := -Wno-unused-parameter -Wno-register
 
 ALLFLAGS += -DPROJ_NAME=\"$(PROJ_NAME)\"
@@ -219,6 +219,45 @@ ifeq "$(USE_OXC_TIM)" "y"
 endif
 
 
+ifeq "$(USE_OXC_ADC)" "y"
+  # SRCS += oxc_adc.cpp
+  SRCS += stm32$(MCSUFF)xx_hal_adc.c
+  SRCS += stm32$(MCSUFF)xx_hal_adc_ex.c
+  ALLFLAGS += -DUSE_OXC_ADC
+endif
+
+ifeq "$(USE_OXC_DAC)" "y"
+  # SRCS += oxc_dac.cpp
+  SRCS += stm32$(MCSUFF)xx_hal_dac.c
+  SRCS += stm32$(MCSUFF)xx_hal_dac_ex.c
+  ALLFLAGS += -DUSE_OXC_DAC
+endif
+
+ifeq "$(USE_OXC_DMA)" "y"
+  # SRCS += oxc_dma.cpp
+  SRCS += stm32$(MCSUFF)xx_hal_dma.c
+  ALLFLAGS += -DUSE_OXC_DMA
+endif
+
+ifeq "$(USE_OXC_SD)" "y"
+  # SRCS += oxc_sd.cpp
+  SRCS += stm32$(MCSUFF)xx_hal_sd.c
+  SRCS += stm32$(MCSUFF)xx_ll_sdmmc.c
+  ALLFLAGS += -DUSE_OXC_SD
+  ifeq "$(USE_OXC_SDFAT)"  "y"
+    ADDSRC += $(STMSRC)/FatFs
+    SRCS += oxc_fs_cmd0.cpp
+    SRCS += bsp_driver_sd.c
+    SRCS += fatfs.c
+    SRCS += ff.c
+    SRCS += ff_gen_drv.c
+    SRCS += diskio.c
+    SRCS += sd_diskio.c
+    SRCS += oxc_ff_syncobj.cpp
+  endif
+endif
+
+
 
 ifeq "$(USE_FREERTOS)" "y"
   RTARCH = $(RTDIR)/portable/GCC/$(FREERTOS_ARCHNAME)
@@ -265,7 +304,9 @@ ifeq "$(USE_USB_DEFAULT_CDC)" "y"
   SRCS += usbd_ioreq.c
 endif
 
+# TODO: remove, obsoleted
 ifeq "$(USE_DEFAULT_SDIO_FAT)" "y"
+  $(warning obsoleted option USE_DEFAULT_SDIO_FAT )
   SRCS += bsp_driver_sd.c
   SRCS += fatfs.c
   SRCS += ff.c
