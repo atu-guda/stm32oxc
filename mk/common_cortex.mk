@@ -129,6 +129,21 @@ endif
 
 ifeq "$(USE_OXC_CONSOLE_USB_CDC)" "y"
   # $(info "Used USB_CDC console" )
+  SRCPATHS += $(OXCSRC)/usb_cdc_$(MCSUFF)
+  ALLFLAGS += -I$(OXCINC)/usb_cdc_$(MCSUFF)
+  SRCS += usbd_conf.cpp
+  SRCS += usbd_desc.cpp
+  # USB: hal:
+  SRCS += stm32$(MCSUFF)xx_hal_pcd.c
+  SRCS += stm32$(MCSUFF)xx_hal_pcd_ex.c
+  ifneq "$(MCSUFF)" "f3"
+    SRCS += stm32$(MCSUFF)xx_ll_usb.c
+  endif
+  # USB: lib:
+  SRCS += usbd_core.c
+  SRCS += usbd_cdc.c
+  SRCS += usbd_ctlreq.c
+  SRCS += usbd_ioreq.c
   USE_USB = y
   USE_OXC_CONSOLE = y
   SRCS += oxc_usbcdcio.cpp
@@ -286,22 +301,8 @@ ifeq "$(USE_FONTS)" "y"
 endif
 
 
-ifeq "$(USE_USB_DEFAULT_CDC)" "y"
-  SRCPATHS += $(OXCSRC)/usb_cdc_$(MCSUFF)
-  ALLFLAGS += -I$(OXCINC)/usb_cdc_$(MCSUFF)
-  SRCS += usbd_conf.cpp
-  SRCS += usbd_desc.cpp
-  # USB: hal:
-  SRCS += stm32$(MCSUFF)xx_hal_pcd.c
-  SRCS += stm32$(MCSUFF)xx_hal_pcd_ex.c
-  ifneq "$(MCSUFF)" "f3"
-    SRCS += stm32$(MCSUFF)xx_ll_usb.c
-  endif
-  # USB: lib:
-  SRCS += usbd_core.c
-  SRCS += usbd_cdc.c
-  SRCS += usbd_ctlreq.c
-  SRCS += usbd_ioreq.c
+ifeq "$(USE_USB_DEFAULT_CDC)" "y" # obsoleted
+  $(warning obsoleted option USE_USB_DEFAULT_CDC)
 endif
 
 # TODO: remove, obsoleted
@@ -344,7 +345,7 @@ dirs:
 
 proj:  dirs $(PROJ_NAME).elf
 
-$(OBJDIR)/*.o:  Makefile $(OXCDIR)/mk/common_cortex.mk
+$(OBJDIR)/*.o:  Makefile $(OXCDIR)/mk/common_cortex.mk $(BSPMAKEFILE)
 
 
 $(OBJDIR)/%.o: %.c
