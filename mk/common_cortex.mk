@@ -116,15 +116,19 @@ ALLFLAGS += -I. -I$(STMINC) -I$(STMBOARDDIR)
 
 SRCPATHS =  $(STMSRC) $(STMSRC)/templates  $(STMBOARDDIR) $(ADDSRC)
 
-ifeq "$(USE_OXC_CONSOLE_USART)" "y"
-  # $(info "Used USART console" )
+ifeq "$(NO_COMMON_HAL_MODULES)" "y"
+  ALLFLAGS += -DNO_COMMON_HAL_MODULES
+endif
+
+ifeq "$(USE_OXC_CONSOLE_UART)" "y"
+  # $(info "Used UART console" )
   USE_OXC_CONSOLE = y
   SRCS += oxc_usartio.cpp
   SRCS += stm32$(MCSUFF)xx_hal_uart.c
   ifneq "$(NOUSE_DEFAULT_UART_INIT)" "y"
     SRCS  += oxc_uart_default_init.cpp
   endif
-  ALLFLAGS += -DUSE_OXC_CONSOLE_USART
+  ALLFLAGS += -DUSE_OXC_CONSOLE_UART
 endif
 
 ifeq "$(USE_OXC_CONSOLE_USB_CDC)" "y"

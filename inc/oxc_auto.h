@@ -21,7 +21,7 @@
 #include <oxc_debug1.h>
 #endif
 
-#if defined (USE_OXC_CONSOLE_USART)
+#if defined (USE_OXC_CONSOLE_UART)
 #include <oxc_usartio.h>
 #endif
 
