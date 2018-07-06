@@ -22,7 +22,7 @@ ifneq "$(REQUIRE_SPECIAL_CLOCK)" "y"
 endif
 
 # base hal files
-ifeq "$(NO_COMMON_HAL_MODULES)" "y"
+ifneq "$(NO_COMMON_HAL_MODULES)" "y"
   SRCS += stm32f4xx_hal.c
   SRCS += stm32f4xx_hal_cortex.c
   SRCS += stm32f4xx_hal_gpio.c

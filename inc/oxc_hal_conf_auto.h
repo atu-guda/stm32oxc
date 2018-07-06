@@ -2,10 +2,7 @@
 #define __OXC_HAL_CONF_AUTO_H
 
 // automatic converter from OXC_USE define to HAL_XXX_MODULE_ENABLED
-// + inc{switch???}
 
-
-// #define STD_SYSTICK_HANDLER 1
 
 #ifndef NO_COMMON_HAL_MODULES
   #define HAL_MODULE_ENABLED
@@ -21,7 +18,9 @@
 
 #ifdef USE_OXC_CONSOLE_UART
   #define USE_OXC_UART
-  #define USE_OXC_CONSOLE
+  #ifndef USE_OXC_CONSOLE_UART
+    #define USE_OXC_CONSOLE
+  #endif
 #endif
 
 #ifdef USE_OXC_UART

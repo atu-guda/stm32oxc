@@ -14,6 +14,7 @@ USE_OXC_TIM = y
 # USE_OXC_SD  = y
 # USE_OXC_SDFAT = y
 USE_FREERTOS = y
+# NOUSE_OXC_OSFUN = y
 # FREERTOS_HEAP = heap_2.c # # default: heap_3.c
 # REQUIRE_SPECIAL_CLOCK = y
 

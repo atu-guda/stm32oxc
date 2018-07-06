@@ -3,6 +3,8 @@
 
 // Automatic includes
 
+#include <oxc_hal_conf_auto.h>
+
 #include <oxc_gpio.h>
 #include <oxc_miscfun.h>
 

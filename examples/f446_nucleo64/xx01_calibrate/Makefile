@@ -14,16 +14,15 @@ USE_OXC_DEBUG = y
 # USE_OXC_SD  = y
 # USE_OXC_SDFAT = y
 USE_FREERTOS = y
+# NOUSE_OXC_OSFUN = y
 # FREERTOS_HEAP = heap_2.c # # default: heap_3.c
 # REQUIRE_SPECIAL_CLOCK = y
 
 
 SRCS  = main.cpp
 
-
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
 # see ../common/f4_modules.mk
-
 
 include ../common/board_add.mk
 include $(OXCDIR)/mk/common_cortex.mk
