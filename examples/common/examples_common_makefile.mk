@@ -1,7 +1,8 @@
 OXCDIR = /usr/share/stm32oxc
 
 COMMONPROJDIR = $(shell basename `pwd` )
-include ../../common/$(COMMONPROJDIR)/proj.mk
+PROJMK=../../common/$(COMMONPROJDIR)/proj.mk
+-include $(PROJMK)
 -include local.mk
 
 # aux: (hal, cortex, gpio, rcc added by bsp makefile part )
@@ -13,7 +14,9 @@ include $(OXCDIR)/mk/common_cortex.mk
 
 include $(wildcard $(DEPSDIR)/*.d)
 
+ifeq ($(PROJMK),$(wildcard $(PROJMK)))
 Makefile: ../../common/$(COMMONPROJDIR)/proj.mk
+endif
 
 #
 
