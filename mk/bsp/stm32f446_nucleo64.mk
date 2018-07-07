@@ -3,10 +3,9 @@
 MCTYPE = STM32F446
 MCINCTYPE = $(MCTYPE)xx
 FREERTOS_ARCHNAME = ARM_CM4F
-BOARDNAME = STM32F4xx-Nucleo   # see /usr/share/stm32cube/bsp/
+# see /usr/share/stm32cube/bsp/
+BOARDNAME = STM32F4xx-Nucleo
 BSPMAKEFILE= $(OXCDIR)/mk/bsp/stm32f446_nucleo64.mk   # self, for deps
-
-# $(info Board: STM32F466 Nucleo64 BOARDNAME= $(BOARDNAME) )
 
 LDSCRIPT = $(STMLD)/STM32F446RETx_FLASH.ld
 HSE_VALUE = 8000000
