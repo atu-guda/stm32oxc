@@ -17,7 +17,9 @@
 // TODO: UART + DMA, PCD(USB) + DMA
 
 #ifdef USE_OXC_CONSOLE_UART
-  #define USE_OXC_UART
+  #ifndef USE_OXC_UART
+    #define USE_OXC_UART
+  #endif
   #ifndef USE_OXC_CONSOLE
     #define USE_OXC_CONSOLE
   #endif
@@ -25,6 +27,7 @@
 
 #ifdef USE_OXC_UART
   #define HAL_UART_MODULE_ENABLED
+  #define HAL_USART_MODULE_ENABLED
   #define HAL_DMA_MODULE_ENABLED
 #endif
 

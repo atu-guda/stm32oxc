@@ -121,12 +121,18 @@ endif
 ifeq "$(USE_OXC_CONSOLE_UART)" "y"
   # $(info "Used UART console" )
   USE_OXC_CONSOLE = y
+  USE_OXC_UART = y
   SRCS += oxc_usartio.cpp
+  ALLFLAGS += -DUSE_OXC_CONSOLE_UART
+endif
+
+ifeq "$(USE_OXC_UART)" "y"
+  $(info "Used UART" $(NOUSE_DEFAULT_UART_INIT) z )
   SRCS += stm32$(MCSUFF)xx_hal_uart.c
   ifneq "$(NOUSE_DEFAULT_UART_INIT)" "y"
     SRCS  += oxc_uart_default_init.cpp
   endif
-  ALLFLAGS += -DUSE_OXC_CONSOLE_UART
+  ALLFLAGS += -DUSE_OXC_UART
 endif
 
 ifeq "$(USE_OXC_CONSOLE_USB_CDC)" "y"

@@ -1,10 +1,10 @@
 PROJ_NAME=uart
 
 USE_OXC = y
-# USE_OXC_UART = y # ??????????????????
+USE_OXC_UART = y
 # USE_OXC_DEVIO = y
 # USE_OXC_DEBUG = y
-USE_OXC_CONSOLE_UART = y
+# USE_OXC_CONSOLE_UART = y
 # USE_OXC_CONSOLE_USB_CDC = y
 # USE_OXC_CONSOLE_DEFAULT = y
 # USE_OXC_I2C = y
@@ -23,4 +23,7 @@ USE_FREERTOS = y
 # NOUSE_DEFAULT_UART_INIT = y
 
 SRCS  = main.cpp
+
+# for task_leds
+SRCS += oxc_common1.cpp
 
