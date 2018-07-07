@@ -1,11 +1,9 @@
 Test  USBCDC as console via SmallRL.
 
-Not work for now on this board?
-
 used USB FS:
 A11 = D-
 A12 = D+
 
-A9  = Vbus - unused?
+A9  = Vbus - used !
 A10 = Id   - unused
 

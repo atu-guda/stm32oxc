@@ -18,7 +18,7 @@
 
 #ifdef USE_OXC_CONSOLE_UART
   #define USE_OXC_UART
-  #ifndef USE_OXC_CONSOLE_UART
+  #ifndef USE_OXC_CONSOLE
     #define USE_OXC_CONSOLE
   #endif
 #endif
@@ -31,7 +31,7 @@
 #ifdef USE_OXC_CONSOLE_USB_CDC
   #define USE_OXC_USB_CDC
   #define HAL_PCD_MODULE_ENABLED
-  #ifndef USE_OXC_CONSOLE_UART
+  #ifndef USE_OXC_CONSOLE
     #define USE_OXC_CONSOLE
   #endif
 #endif

@@ -6,14 +6,17 @@ FREERTOS_ARCHNAME = ARM_CM4F
 BOARDNAME = STM32F4xx-Nucleo   # see /usr/share/stm32cube/bsp/
 BSPMAKEFILE= $(OXCDIR)/mk/bsp/stm32f446_nucleo64.mk   # self, for deps
 
+# $(info Board: STM32F466 Nucleo64 BOARDNAME= $(BOARDNAME) )
+
 LDSCRIPT = $(STMLD)/STM32F446RETx_FLASH.ld
 HSE_VALUE = 8000000
 
 SRCS += system_stm32f4xx.c
 SRCS += startup_stm32f446xx.s
 
-ifneq "$(OXC_NO_STD_CONSOLE)" "y"
+ifeq "$(USE_OXC_CONSOLE_DEFAULT)" "y"
   USE_OXC_CONSOLE_UART = y
+  $(info Auto: USE_OXC_CONSOLE_UART)
   # USE_OXC_CONSOLE_USB_CDC = y
 endif
 

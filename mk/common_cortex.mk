@@ -44,13 +44,11 @@ ifeq "$(NO_STDLIB)" "y"
   ALLFLAGS += -nostdlib
 endif
 
-$(info MCTYPE is $(MCTYPE) )
 # MCBASE is like "STM32F4"
 MCBASE := $(shell echo "$(MCTYPE)" | head -c 7  )
-$(info MCBASE is $(MCBASE) )
 # MCSUFF is like "f4"
 MCSUFF := $(shell m1='$(MCBASE)'; echo -n "$${m1,,*}" | tail -c 2  )
-$(info MCSUFF is $(MCSUFF) )
+$(info PROJ_NAME = $(PROJ_NAME) BOARDNAME= $(BOARDNAME)  MCTYPE is $(MCTYPE)  MCBASE is $(MCBASE)  MCSUFF is $(MCSUFF) )
 
 ALLFLAGS  += -D$(MCTYPE) -D$(MCBASE) -DMCTYPE=$(MCTYPE) -DMCBASE=$(MCBASE)
 
@@ -133,6 +131,7 @@ endif
 
 ifeq "$(USE_OXC_CONSOLE_USB_CDC)" "y"
   # $(info "Used USB_CDC console" )
+  USE_OXC_CONSOLE = y
   SRCPATHS += $(OXCSRC)/usb_cdc_$(MCSUFF)
   ALLFLAGS += -I$(OXCINC)/usb_cdc_$(MCSUFF)
   SRCS += usbd_conf.cpp
@@ -149,7 +148,6 @@ ifeq "$(USE_OXC_CONSOLE_USB_CDC)" "y"
   SRCS += usbd_ctlreq.c
   SRCS += usbd_ioreq.c
   USE_USB = y
-  USE_OXC_CONSOLE = y
   SRCS += oxc_usbcdcio.cpp
   SRCS += usbfs_init.cpp
   ALLFLAGS += -DUSE_OXC_CONSOLE_USB_CDC
