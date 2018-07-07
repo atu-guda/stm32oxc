@@ -37,6 +37,7 @@ void task_send( void *prm UNUSED_ARG )
   //                          0123456789ABCDEF1011
   static const auto sz_oszr = strlen( ostr );
 
+  int n = 0;
   while( 1 ) {
     bool was_action = false;
     strcpy( tx_buf, ostr );
@@ -61,12 +62,12 @@ void task_send( void *prm UNUSED_ARG )
       tx_buf[12] = 'R';
     }
 
-    if( HAL_UART_Transmit( &uah, (uint8_t*)tx_buf, sz_oszr, 10 ) != HAL_OK ) {
-      // leds.toggle( BIT0 );
+    if( was_action || ( n % 1000000 == 0 ) ) {
+      if( HAL_UART_Transmit( &uah, (uint8_t*)tx_buf, sz_oszr, 10 ) != HAL_OK ) {
+        leds.toggle( BIT0 );
+      }
     }
-    if( !was_action ) {
-      delay_ms( 1000 );
-    }
+    ++n;
   }
 }
 
