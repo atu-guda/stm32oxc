@@ -6,6 +6,7 @@ SUBDIRS = \
   03_uart \
   04_uart_console \
   05_usb_console \
+  05a_def_console \
   06_i2c_test \
   07_i2c_lcdt \
   08_i2c_mpu6050 \
@@ -22,9 +23,9 @@ SUBDIRS = \
   20_spi_mem_a25 \
   21_spi_max7219 \
   22_spi_pcd8544_lcd \
-  23_spi_sdcard \
   24_i2c_hmc5983 \
   25_spi_max31855_tcouple \
+  25a_spi_max6672_tcouple2 \
   26_i2c_pca9685 \
   27_i2c_ads1115 \
   28_spi_ad9833 \

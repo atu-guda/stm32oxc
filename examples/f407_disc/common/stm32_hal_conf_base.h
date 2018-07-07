@@ -1,7 +1,7 @@
-#ifndef __STM32_HAL_CONF_H
-#define __STM32_HAL_CONF_H
+#ifndef __STM32_HAL_CONF_BASE_H
+#define __STM32_HAL_CONF_BASE_H
 
-// base configuaration file for oxc f407 x2 board examples
+// base configuaration file for oxc f407 discovery board examples
 
 #define REQ_MCBASE STM32F4
 #ifndef REQ_SYSCLK_FREQ
@@ -13,6 +13,6 @@
 
 
 
-#endif /* __STM32_HAL_CONF_H */
+#endif // __STM32_HAL_CONF_BASE_H
 
 
