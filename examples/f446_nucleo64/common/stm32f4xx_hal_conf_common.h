@@ -1,1 +1,0 @@
-../../f407_x2/common/stm32f4xx_hal_conf_common.h
