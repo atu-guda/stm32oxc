@@ -27,7 +27,6 @@
 
 #ifdef USE_OXC_UART
   #define HAL_UART_MODULE_ENABLED
-  #define HAL_USART_MODULE_ENABLED
   #define HAL_DMA_MODULE_ENABLED
 #endif
 
@@ -41,31 +40,40 @@
 
 #ifdef USE_OXC_I2C
   #define HAL_I2C_MODULE_ENABLED
+  #define HAL_DMA_MODULE_ENABLED
 #endif
 
 #ifdef USE_OXC_SPI
   #define HAL_SPI_MODULE_ENABLED
+  #define HAL_DMA_MODULE_ENABLED
 #endif
 
 #ifdef USE_OXC_TIM
   #define HAL_TIM_MODULE_ENABLED
+  #define HAL_DMA_MODULE_ENABLED
 #endif
 
 #ifdef USE_OXC_ADC
   #define HAL_ADC_MODULE_ENABLED
+  #define HAL_DMA_MODULE_ENABLED
 #endif
 
 #ifdef USE_OXC_DAC
   #define HAL_DAC_MODULE_ENABLED
-#endif
-
-#ifdef USE_OXC_DMA
   #define HAL_DMA_MODULE_ENABLED
 #endif
 
 #ifdef USE_OXC_SD
   #define HAL_SD_MODULE_ENABLED
+  #define HAL_DMA_MODULE_ENABLED
 #endif
+
+#ifdef USE_OXC_DMA
+  #ifndef HAL_DMA_MODULE_ENABLED
+    #define HAL_DMA_MODULE_ENABLED
+  #endif
+#endif
+
 
 
 #if defined (STM32F0)
