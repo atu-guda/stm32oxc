@@ -139,7 +139,7 @@ ifeq "$(USE_OXC_CONSOLE_USB_CDC)" "y"
   # $(info "Used USB_CDC console" )
   USE_OXC_CONSOLE = y
   SRCPATHS += $(OXCSRC)/usb_cdc_$(MCSUFF)
-  ALLFLAGS += -I$(OXCINC)/usb_cdc_$(MCSUFF)
+  ALLFLAGS += -I$(OXCINC)/usb_cdc_$(MCSUFF) -I$(OXCINC)/usbd_descr_cdc
   SRCS += usbd_conf.cpp
   SRCS += usbd_desc.cpp
   # USB: hal:
