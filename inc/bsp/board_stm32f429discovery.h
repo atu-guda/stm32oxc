@@ -18,7 +18,7 @@
 // Used internally, but can be used someware:
 //   USART1->STLINK.VCP(A9,A10)
 
-// my by board A1, A2 is not connected to MEMS, so bay be used as ADC...
+// my by board A1, A2 is not connected to MEMS, so may be used as ADC...
 
 // default LEDS is G13 (Green), G14 (Red)
 #define BOARD_N_LEDS 2
@@ -88,7 +88,7 @@
 
 #define BOARD_I2C_DEFAULT               I2C3
 #define BOARD_I2C_DEFAULT_NAME          "I2C3"
-#define BOARD_I2C_DEFAULT_SPEED         100000;
+#define BOARD_I2C_DEFAULT_SPEED         100000
 #define BOARD_I2C_DEFAULT_GPIO_SCL      GPIOA
 #define BOARD_I2C_DEFAULT_GPIO_SDA      GPIOC
 #define BOARD_I2C_DEFAULT_GPIO_PIN_SCL  GPIO_PIN_8
@@ -98,6 +98,28 @@
 #define BOARD_I2C_DEFAULT_DISABLE       __I2C3_CLK_DISABLE();
 #define BOARD_I2C_DEFAULT_IRQ           I2C3_EV_IRQn
 #define BOARD_I2C_DEFAULT_IRQHANDLER    I2C3_EV_IRQHandler
+
+
+#define BOARD_SPI_DEFAULT               SPI5
+#define BOARD_SPI_DEFAULT_NAME          "SPI5"
+#define BOARD_SPI_DEFAULT_GPIO_SCK      GPIOF
+#define BOARD_SPI_DEFAULT_GPIO_PIN_SCK  GPIO_PIN_7
+#define BOARD_SPI_DEFAULT_GPIO_MISO     GPIOF
+#define BOARD_SPI_DEFAULT_GPIO_PIN_MISO GPIO_PIN_8
+#define BOARD_SPI_DEFAULT_GPIO_MOSI     GPIOF
+#define BOARD_SPI_DEFAULT_GPIO_PIN_MOSI GPIO_PIN_9
+#define BOARD_SPI_DEFAULT_GPIO_SNSS     GPIOF
+// here number, as input to PinsOut
+#define BOARD_SPI_DEFAULT_GPIO_PIN_SNSS 6
+#define BOARD_SPI_DEFAULT_GPIO_EXT1     GPIOF
+#define BOARD_SPI_DEFAULT_GPIO_PIN_EXT1 5
+#define BOARD_SPI_DEFAULT_GPIO_EXT2     GPIOE
+#define BOARD_SPI_DEFAULT_GPIO_PIN_EXT2 6
+#define BOARD_SPI_DEFAULT_GPIO_AF       GPIO_AF5_SPI5
+#define BOARD_SPI_DEFAULT_ENABLE        __SPI5_CLK_ENABLE(); __GPIOF_CLK_ENABLE(); __GPIOE_CLK_ENABLE();
+#define BOARD_SPI_DEFAULT_DISABLE       __SPI5_CLK_DISABLE();
+#define BOARD_SPI_DEFAULT_IRQ           SPI1_IRQn
+#define BOARD_SPI_DEFAULT_IRQHANDLER    SPI1_IRQHandler
 
 
 #define BOARD_MOTOR_DEFAULT_GPIO        GPIOE
