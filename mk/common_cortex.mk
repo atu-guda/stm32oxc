@@ -205,19 +205,12 @@ endif
 ifeq "$(USE_OXC_I2C)" "y"
   SRCS += oxc_i2c.cpp
   SRCS += stm32$(MCSUFF)xx_hal_i2c.c
+  SRCS += stm32$(MCSUFF)xx_hal_i2c_ex.c
   ifneq "$(NOUSE_DEFAULT_I2C_INIT)" "y"
     SRCS  += oxc_i2c_default_init.cpp
   endif
   ifeq "$(USE_OXC_DEBUG)" "y"
     SRCS += oxc_debug_i2c.cpp
-  endif
-  # f3 special case
-  ifeq "$(MCSUFF)" "f3"
-    SRCS += stm32$(MCSUFF)xx_hal_i2c_ex.c
-  endif
-  # f7 special case
-  ifeq "$(MCSUFF)" "f7"
-    SRCS += stm32$(MCSUFF)xx_hal_i2c_ex.c
   endif
   ALLFLAGS += -DUSE_OXC_I2C
 endif
@@ -259,6 +252,12 @@ endif
 ifeq "$(USE_OXC_DMA)" "y"
   # SRCS += oxc_dma.cpp
   SRCS += stm32$(MCSUFF)xx_hal_dma.c
+  ifeq "$(MCSUFF)" "f4"
+    SRCS += stm32$(MCSUFF)xx_hal_dma_ex.c
+  endif
+  ifeq "$(MCSUFF)" "f7"
+    SRCS += stm32$(MCSUFF)xx_hal_dma_ex.c
+  endif
   ALLFLAGS += -DUSE_OXC_DMA
 endif
 

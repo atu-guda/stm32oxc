@@ -37,9 +37,6 @@ SRCS += oxc_bsp_f429i_disc_sdram.cpp
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
 # see ../common/f4_modules.mk
 
-SRCS += stm32f4xx_hal_adc_ex.c
-SRCS += stm32f4xx_hal_tim_ex.c
-SRCS += stm32f4xx_hal_dma_ex.c
 SRCS += stm32f4xx_hal_sdram.c
 SRCS += stm32f4xx_ll_fmc.c
 

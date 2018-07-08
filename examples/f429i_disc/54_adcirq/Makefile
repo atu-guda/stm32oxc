@@ -35,12 +35,6 @@ SRCS += stm32f4_clock_HSE144.c
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
 # see ../common/f4_modules.mk
 
-SRCS += stm32f4xx_hal_adc.c
-SRCS += stm32f4xx_hal_adc_ex.c
-SRCS += stm32f4xx_hal_tim.c
-SRCS += stm32f4xx_hal_tim_ex.c
-SRCS += stm32f4xx_hal_dma.c
-
 
 include ../common/board_add.mk
 include $(OXCDIR)/mk/common_cortex.mk
