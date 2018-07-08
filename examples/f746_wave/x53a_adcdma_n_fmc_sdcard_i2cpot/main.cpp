@@ -5,6 +5,9 @@
 
 #include <vector>
 
+// todo: remove hack
+#include "local_hal_conf.h"
+
 #include <oxc_auto.h>
 
 #include <bsp/board_stm32f429discovery_sdram.h>
@@ -37,7 +40,7 @@ FATFS fs;
 FIL out_file;
 const int pbufsz = 128;
 const int fspath_sz = 32;
-char fspath[fspath_sz];
+extern char fspath[fspath_sz];
 int  print_curr( const char *s );
 int  out_to_curr( uint32_t n, uint32_t st ); // 0 = ok
 

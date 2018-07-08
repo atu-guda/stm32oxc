@@ -2,6 +2,9 @@
 #include <cstdlib>
 #include <cstdio>
 
+// todo: remove hack
+#include "local_hal_conf.h"
+
 #include <oxc_auto.h>
 
 using namespace std;

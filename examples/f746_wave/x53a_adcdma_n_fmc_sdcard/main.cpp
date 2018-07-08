@@ -5,12 +5,15 @@
 
 #include <vector>
 
-#include <oxc_auto.h>
+// todo: remove hack
+#include "local_hal_conf.h"
 
-#include <bsp/board_stm32f429discovery_sdram.h>
+#include <oxc_auto.h>
 
 #include <ff.h>
 #include <fatfs.h>
+
+#include <bsp/board_stm32f429discovery_sdram.h>
 
 using namespace std;
 using namespace SMLRL;
@@ -31,7 +34,7 @@ uint8_t sd_buf[512]; // one sector
 HAL_SD_CardInfoTypeDef cardInfo;
 FATFS fs;
 const int fspath_sz = 32;
-char fspath[fspath_sz];
+extern char fspath[fspath_sz];
 int  print_curr( const char *s );
 int  out_to_curr( uint32_t n, uint32_t st ); // 0 = ok
 
