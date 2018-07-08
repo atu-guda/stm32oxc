@@ -1,0 +1,7 @@
+Beware: 5V on dala lines may kill some onboard devices!
+Control HD44780 LCD display via i2c port expander PCF8574
+Use "test" command to send string, on/off display
+
+
+Console:  Default
+

@@ -1,6 +1,7 @@
 #ifndef __OXC_STM32F4XX_HAL_COMMON_CONF_H
 #define __OXC_STM32F4XX_HAL_COMMON_CONF_H
 
+
 #ifdef __cplusplus
  extern "C" {
 #endif

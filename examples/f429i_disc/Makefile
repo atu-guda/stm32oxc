@@ -5,7 +5,14 @@ SUBDIRS = \
   02_leds_rtos \
   03_uart \
   04_uart_console \
+  05_usb_console \
+  05a_def_console \
   06_i2c_test \
+  07_i2c_lcdt \
+  08_i2c_mpu6050 \
+  09_i2c_bmp085 \
+  10_i2c_pcf8591 \
+  11_i2c_ds3231 \
   12_tim_pwm \
   14_tim_enco \
   15_tim_usonic \
@@ -16,19 +23,13 @@ SUBDIRS = \
   50_adc0 \
   51_adcdma \
   51a_adcdma_n \
+  53_adcdma_sd \
   54_adcirq \
   x01_fmc \
   x02_stemwin_fmc \
   x53a_adcdma_n_fmc_sdcard \
-  x53a_adcdma_n_fmc_sdcard_i2cpot 
+  x53a_adcdma_n_fmc_sdcard_i2cpot
 
-#  05_usb_console \
-#  07_i2c_lcdt \
-#  08_i2c_mpu6050 \
-#  09_i2c_bmp085 \
-#  10_i2c_pcf8591 \
-#  11_i2c_ds3231 \
-#  18_i2c_ssd1306_oled \
 #  19_spi_test \
 #  20_spi_mem_a25 \
 #  21_spi_max7219 \

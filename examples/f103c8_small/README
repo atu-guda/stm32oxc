@@ -1,4 +1,4 @@
-Examples for small STM32F103C8T6 board
+Examples for small STM32F103C8T6 board (blue pill)
 Onboard:
 1 LED: C13 to Vdd
 1 Button: Reset
