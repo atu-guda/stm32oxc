@@ -1,29 +1,27 @@
+Fix oxc_auto + local include logic
+Weak help str
+Fix USB_CDC init with other pins (test on f429 discovery...)
+Commonify SDRAM init
+Commonify ADC logic
+MiniStr + iprintf
+
+
+Test 2 I2C clients on one device
 Use FreeRTOS 10 features for console I/O
-Fix task_gchar / executor logic
+Fix task_gchar / executor logic , IO on idle / manual flush.
 New SDIO with DMA.
 Fast data communications with computer: USB, ether, WiFi, serial
-Split SPI/SPI client with own softNSS.
 SPI debug
-Test 2 I2C clients on one device
 Cmd buffer alloc - use for data storage (ADC, sensors ... )
 I2C, SPI: from buf to device, fill buf.
 str2addr: some common addrs: GPIOA.. USARTx, SPIx, I2Cx, ..... (debug only)
-Common timer info
 1wire return codes test
+DAC + DMA
 Keepalive LED with more data.
 Common graphics tests.
 DevIO : public Dev ?
-IO on idle / manual flush.
 Errno of fd check
-F3: OA
-Test: float, sprintf, queue cost. TODO: iprintf!
- Results:
-  queue: =~ size * n + fixed; (RAM)
-  float: +3k (FLASH)
-  sin: +4k
-  sqrt: +0.5;
-  arm_sin_f32: up to 2x faster
-  printf: +26k
+F3: OA, ADC
 SWO
 
 Move more common code to common dir.
@@ -41,3 +39,12 @@ Ether
 GPS
 MFRX522  - RFID
 
+
+Test: float, sprintf, queue cost.
+ Results:
+  queue: =~ size * n + fixed; (RAM)
+  float: +3k (FLASH)
+  sin: +4k
+  sqrt: +0.5;
+  arm_sin_f32: up to 2x faster
+  printf: +26k
