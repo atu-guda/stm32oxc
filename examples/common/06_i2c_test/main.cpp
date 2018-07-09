@@ -12,10 +12,11 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
+const char* common_help_string = "App to find and manual control I2C devices" NL;
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
+CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - detect I2C [start [end]]"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,

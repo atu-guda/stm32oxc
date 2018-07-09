@@ -35,6 +35,8 @@ void print_user_var( int idx );
 // fill string s with information about pin config
 void gpio_pin_info( GPIO_TypeDef *gi, uint16_t pin, char *s );
 
+extern const char* common_help_string __weak;
+
 // common commands:
 int cmd_info( int argc, const char * const * argv );
 extern CmdInfo CMDINFO_INFO;

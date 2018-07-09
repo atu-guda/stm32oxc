@@ -12,6 +12,13 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
+#if defined(USE_OXC_CONSOLE_UART)
+  const char* common_help_string = "Appication to test common console with auto I/O selection: UART" NL;
+#elif defined(USE_OXC_CONSOLE_USB_CDC)
+  const char* common_help_string = "Appication to test common console with auto I/O selection: USB_CDC" NL;
+#else
+  const char* common_help_string = "Appication to test common console with auto I/O selection: Unknown" NL;
+#endif
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );

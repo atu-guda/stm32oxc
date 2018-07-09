@@ -278,10 +278,13 @@ int cmd_echo( int argc, const char * const * argv )
 }
 CmdInfo CMDINFO_ECHO { "echo",  'e', cmd_echo,       " [args] - output args" };
 
+const char* common_help_string = "Default help " NL;
+
 int cmd_help( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG)
 {
   MSTRF( os, 128, prl1 );
-  os << "commands:" NL;
+  os << common_help_string;
+  os << NL "commands:" NL;
   char b1[2]; b1[0] = b1[1] = 0;
 
   for( int i=0; global_cmds[i] && i<CMDS_NMAX; ++i ) {
