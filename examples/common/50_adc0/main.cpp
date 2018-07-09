@@ -66,11 +66,10 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  char buf[32];
+  STD_os;
   int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
   uint32_t t_step = UVAR('t');
-  pr( NL "Test0: n= " ); pr_d( n ); pr( " t= " ); pr_d( t_step );
-  pr( NL );
+  os <<  NL "Test0: n= " << n << " t= " << t_step << NL; os.flush();
   uint16_t v = 0;
 
   // log_add( "Test0 " );
@@ -78,23 +77,21 @@ int cmd_test0( int argc, const char * const * argv )
 
   for( int i=0; i<n && !break_flag; ++i ) {
     TickType_t tcc = xTaskGetTickCount();
-    pr( "ADC start  i= " ); pr_d( i );
-    pr( "  tick: "); pr_d( tcc - tc00 );
+    os << "ADC start  i= " << i << "  tick: " << ( tcc - tc00 );
     if( HAL_ADC_Start( &hadc1 ) != HAL_OK )  {
-      pr( "  !! ADC Start error" NL );
+      os << "  !! ADC Start error" NL; os.flush();
       break;
     }
     HAL_ADC_PollForConversion( &hadc1, 10 );
-    pr( " ADC1.SR= " ); pr_h( ADC1->SR );
+    os << " ADC1.SR= " << HexInt( ADC1->SR );
     v = 0;
     if( HAL_IS_BIT_SET( HAL_ADC_GetState( &hadc1 ), HAL_ADC_STATE_REG_EOC ) )  {
       v = HAL_ADC_GetValue( &hadc1 );
       int vv = v * 10 * UVAR('v') / 4096;
-      ifcvt( vv, 10000, buf, 4 );
-      pr( " v= " ); pr_d( v ); pr( " vv= " ); pr( buf );
+      os << " v= " << v <<  " vv= " << FloatMult( vv, 4 );
     }
 
-    pr( NL );
+    os << NL; os.flush();
     delay_ms_until_brk( &tc0, t_step );
   }
 

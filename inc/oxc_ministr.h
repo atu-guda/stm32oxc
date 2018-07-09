@@ -57,6 +57,16 @@ class FixedPoint2 {
    static const char * const fracStr[6];
 };
 
+class FloatMult {
+  public:
+   FloatMult( int a, unsigned a_min_sz_frac = 1,  unsigned a_min_sz_int = 1, char a_plus_ch = ' '  )
+      : v( a ), min_sz_frac( a_min_sz_frac ), min_sz_int( a_min_sz_int ), plus_ch( a_plus_ch )
+      { for( unsigned i=0; i<min_sz_frac; ++i ) { mult *= 10; } };
+   int v;
+   unsigned mult = 1, min_sz_frac, min_sz_int;
+   char plus_ch;
+};
+
 class BitsStr {
   public:
    BitsStr( uint32_t a, const BitNames *b ) : v( a ), bn( b ) {};
@@ -114,6 +124,8 @@ class MiniStr {
    MiniStr& operator<<( FixedPoint1 rhs ) { return operator+=( rhs ); }
    MiniStr& operator+=( FixedPoint2 rhs );
    MiniStr& operator<<( FixedPoint2 rhs ) { return operator+=( rhs ); }
+   MiniStr& operator+=( FloatMult rhs );
+   MiniStr& operator<<( FloatMult rhs ) { return operator+=( rhs ); }
    MiniStr& operator+=( const BitsStr &rhs );
    MiniStr& operator<<( const BitsStr &rhs ) { return operator+=( rhs ); }
   private:
@@ -125,5 +137,6 @@ class MiniStr {
 
 #define MSTR(nm,sz) static_assert( sz >= MiniStr::cap_mini ); char nm##_tmp_buf[sz]; MiniStr nm( nm##_tmp_buf, sz );
 #define MSTRF(nm,sz,fun) MSTR(nm,sz); nm.set_flush_fun( fun );
+#define STD_os MSTR(os,128); os.set_flush_fun( prl1 );
 
 #endif

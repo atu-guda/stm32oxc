@@ -5,6 +5,7 @@ Commonify SDRAM init
 Commonify ADC logic
 MiniStr + iprintf
 Check MiniStr::operator+=( const char *rhs ) bug with whole string - now masked
+Split MiniStr to MiniBuf (w/o << ) and MiniStr
 
 
 Test 2 I2C clients on one device

@@ -163,6 +163,30 @@ MiniStr& MiniStr::operator+=( FixedPoint2 rhs )
   return *this;
 }
 
+MiniStr& MiniStr::operator+=( FloatMult rhs )
+{
+  int i1 = rhs.v / rhs.mult;
+  int i2 = rhs.v - i1 * rhs.mult;
+  char sig = '-';
+  if( i1 >=0  &&  i2 >= 0 ) {
+    sig = rhs.plus_ch;
+  }
+  if( i1 < 0 ) { i1 = -i1; }
+  if( i2 < 0 ) { i2 = -i2; }
+  append( sig );
+  char int_fill = ' ';
+  if( rhs.min_sz_int > 1 ) { int_fill = '0'; };
+
+  operator+=( FmtInt( i1, rhs.min_sz_int, int_fill ) );
+  // i2dec( i1, t, min_sz_int,  int_fill );
+  // strncat( s, t, INT_STR_SZ_DEC );
+  append( '.' );
+  operator+=( FmtInt( i2, rhs.min_sz_frac, '0' ) );
+  // i2dec( i2, t, min_sz_frac, '0'     );
+  // strncat( s, t, INT_STR_SZ_DEC );
+  return *this;
+}
+
 MiniStr& MiniStr::operator+=( const BitsStr &rhs )
 {
   add_bitnames( rhs.v, rhs.bn );
