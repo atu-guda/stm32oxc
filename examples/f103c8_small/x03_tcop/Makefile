@@ -8,8 +8,6 @@ USE_OXC_CONSOLE_UART = n
 USE_OXC_CONSOLE_USB_CDC = n
 USE_FREERTOS = y
 # FREERTOS_HEAP = heap_2.c
-# # default: heap_3.c
-# USE_USB_DEFAULT_CDC = y
 
 
 OXCDIR = /usr/share/stm32oxc

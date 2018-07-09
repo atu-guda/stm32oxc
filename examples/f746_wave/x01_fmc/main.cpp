@@ -1,9 +1,6 @@
 #include <cstring>
 #include <cstdlib>
 
-// TODO: remove hack
-#include "local_hal_conf.h"
-
 #include <oxc_auto.h>
 
 using namespace std;

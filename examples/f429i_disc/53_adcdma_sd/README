@@ -2,18 +2,11 @@ Try ADC usage: DMA conversion mode + output to SD card
 Clock: APB2/2 = 72/4 = 36: max <- use special clock
 
 Channels:
- A1, //  A2,  A3,  B0
- CH1,// Ch2, Ch3, Ch8
 
 SD:
  C8  = dat0 (MISO)
  B2  = CK   (SCK)
  D2  = CMD  (MOSI)
 
-Console:  USBCDC via SmallRL.
-used USB FS:
-A11 = D-
-A12 = D+
-A9  = Vbus - unused?
-A10 = Id   - unused
+Console:  defaulr
 

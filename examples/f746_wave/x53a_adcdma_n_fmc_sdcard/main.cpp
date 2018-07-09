@@ -5,15 +5,13 @@
 
 #include <vector>
 
-// todo: remove hack
-#include "local_hal_conf.h"
-
 #include <oxc_auto.h>
+
+// TODO: replace!
+#include <bsp/board_stm32f429discovery_sdram.h>
 
 #include <ff.h>
 #include <fatfs.h>
-
-#include <bsp/board_stm32f429discovery_sdram.h>
 
 using namespace std;
 using namespace SMLRL;

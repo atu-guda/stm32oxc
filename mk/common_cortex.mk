@@ -19,6 +19,7 @@ STMCOMPONENTS=$(STMBSP)/Components
 # OXCDIR := oxc // from Makefile
 OXCINC = $(OXCDIR)/inc
 OXCSRC = $(OXCDIR)/src
+OXCBOARDDIR=$(OXCSRC)/bsp/$(BOARDNAME)
 
 DEPSDIR=.deps
 OBJDIR=.objs
@@ -112,7 +113,7 @@ LDFLAGS += -Wl,--start-group -lc -lgcc -lnosys -Wl,--end-group
 
 ALLFLAGS += -I. -I$(STMINC) -I$(STMBOARDDIR)
 
-SRCPATHS =  $(STMSRC) $(STMSRC)/templates  $(STMBOARDDIR) $(ADDSRC)
+SRCPATHS =  $(STMSRC) $(STMSRC)/templates $(OXCBOARDDIR) $(STMBOARDDIR) $(ADDSRC)
 
 ifeq "$(NO_COMMON_HAL_MODULES)" "y"
   ALLFLAGS += -DNO_COMMON_HAL_MODULES
@@ -138,6 +139,7 @@ endif
 ifeq "$(USE_OXC_CONSOLE_USB_CDC)" "y"
   # $(info "Used USB_CDC console" )
   USE_OXC_CONSOLE = y
+  # TODO: move to bsp/$(BOARDNAME) + links to common
   SRCPATHS += $(OXCSRC)/usb_cdc_$(MCSUFF)
   ALLFLAGS += -I$(OXCINC)/usb_cdc_$(MCSUFF) -I$(OXCINC)/usbd_descr_cdc
   SRCS += usbd_conf.cpp
@@ -193,7 +195,7 @@ endif
 
 ifeq "$(USE_OXC)" "y"
   SRCPATHS += $(OXCSRC)
-  ALLFLAGS += -I$(OXCINC)
+  ALLFLAGS += -I$(OXCINC) -I$(OXCINC)/fake
   SRCS += oxc_base.cpp
   SRCS += oxc_miscfun.cpp
   SRCS += oxc_gpio.cpp
@@ -307,22 +309,6 @@ ifeq "$(USE_FONTS)" "y"
   SRCS += font24.c
 endif
 
-
-ifeq "$(USE_USB_DEFAULT_CDC)" "y" # obsoleted
-  $(warning obsoleted option USE_USB_DEFAULT_CDC)
-endif
-
-# TODO: remove, obsoleted
-ifeq "$(USE_DEFAULT_SDIO_FAT)" "y"
-  $(warning obsoleted option USE_DEFAULT_SDIO_FAT )
-  SRCS += bsp_driver_sd.c
-  SRCS += fatfs.c
-  SRCS += ff.c
-  SRCS += ff_gen_drv.c
-  SRCS += diskio.c
-  SRCS += sd_diskio.c
-  SRCS += oxc_ff_syncobj.cpp
-endif
 
 vpath %.c   $(SRCPATHS) $(OXCSRC)/startup
 vpath %.cpp $(SRCPATHS)

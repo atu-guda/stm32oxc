@@ -1,8 +1,6 @@
 #include <cstring>
 #include <cstdlib>
 
-#include <local_hal_conf.h>
-
 #include <oxc_auto.h>
 
 #include <bsp/board_stm32f429discovery_sdram.h>
