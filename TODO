@@ -4,6 +4,7 @@ Fix USB_CDC init with other pins (test on f429 discovery...)
 Commonify SDRAM init
 Commonify ADC logic
 MiniStr + iprintf
+Check MiniStr::operator+=( const char *rhs ) bug with whole string - now masked
 
 
 Test 2 I2C clients on one device

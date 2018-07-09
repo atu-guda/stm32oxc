@@ -12,6 +12,11 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
+const char* common_help_string = "App to test ADC in one-shot mode one channel" NL
+ " var t - delay time in ms" NL
+ " var n - default number of measurements" NL
+ " var v - reference voltage in mV " NL;
+
 int adc_init_exa_1ch_manual( uint32_t presc, uint32_t sampl_cycl );
 ADC_HandleTypeDef hadc1;
 int v_adc_ref = 3250; // in mV, measured before test
@@ -19,7 +24,7 @@ int v_adc_ref = 3250; // in mV, measured before test
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
+CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " [n] - test ADC "  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,

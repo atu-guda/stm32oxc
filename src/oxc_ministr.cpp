@@ -72,11 +72,11 @@ MiniStr& MiniStr::operator+=( const char *rhs )
     return *this;
   }
 
-  unsigned l = strlen( rhs ); // may be overkill, but try one chunk
-  if( ensureSpace( l+1 ) ) {
-    strcat( e, rhs ); e += l; sz += l;
-    return *this;
-  }
+  // unsigned l = strlen( rhs ); // may be overkill, but try one chunk
+  // if( ensureSpace( l+1 ) ) {
+  //   strcat( e, rhs ); e += l; sz += l;
+  //   return *this;
+  // }
 
   while( *rhs ) { // long string, try by chars
     append( *rhs++ );

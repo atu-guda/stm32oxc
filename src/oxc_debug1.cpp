@@ -280,7 +280,7 @@ CmdInfo CMDINFO_ECHO { "echo",  'e', cmd_echo,       " [args] - output args" };
 
 const char* common_help_string = "Default help " NL;
 
-int cmd_help( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG)
+int cmd_help( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
 {
   MSTRF( os, 128, prl1 );
   os << common_help_string;
