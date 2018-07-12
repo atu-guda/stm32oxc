@@ -29,12 +29,25 @@ void HAL_UART_MspInit( UART_HandleTypeDef* uah )
   if( uah->Instance == BOARD_UART_DEFAULT ) {
     BOARD_UART_DEFAULT_ENABLE;
 
+    #if ! defined (STM32F1)
     gio.Pin       = BOARD_UART_DEFAULT_GPIO_PINS;
     gio.Mode      = GPIO_MODE_AF_PP;
     gio.Pull      = GPIO_NOPULL;
     gio.Speed     = GPIO_SPEED_MAX;
     gio.Alternate = BOARD_UART_DEFAULT_GPIO_AF;
     HAL_GPIO_Init( BOARD_UART_DEFAULT_GPIO, &gio );
+    #else
+    gio.Pin       = BOARD_UART_DEFAULT_GPIO_TX;
+    gio.Mode      = GPIO_MODE_AF_PP;
+    gio.Pull      = GPIO_NOPULL;
+    gio.Speed     = GPIO_SPEED_MAX;
+    HAL_GPIO_Init( BOARD_UART_DEFAULT_GPIO, &gio );
+    //
+    gio.Pin       = BOARD_UART_DEFAULT_GPIO_RX;
+    gio.Mode      = GPIO_MODE_INPUT;
+    gio.Pull      = GPIO_NOPULL;
+    HAL_GPIO_Init( BOARD_UART_DEFAULT_GPIO, &gio );
+    #endif
 
     #ifndef UART_DEFALT_NO_IRQ
     HAL_NVIC_SetPriority( BOARD_UART_DEFAULT_IRQ, configKERNEL_INTERRUPT_PRIORITY, 0 );

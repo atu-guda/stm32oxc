@@ -1,0 +1,1 @@
+../../common/02_leds_rtos/proj.mk

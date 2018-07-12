@@ -47,6 +47,7 @@ void task_send( void *prm UNUSED_ARG )
     if( cn >= 0x7F ) { cn = ' '; }
 
     if( __HAL_USART_GET_FLAG( &uah, UART_FLAG_ORE ) ) { // overrun
+      c = uah.Instance->USART_RX_REG;
       __HAL_USART_CLEAR_OREFLAG( &uah );
       was_action = true;
       tx_buf[ovr_pos] = 'O';
@@ -57,20 +58,25 @@ void task_send( void *prm UNUSED_ARG )
       c = uah.Instance->USART_RX_REG;
       was_action = true;
       leds.toggle( BIT2 );
+    }
+
+    if( was_action ) {
       char2hex( c, tx_buf + hex_pos ); tx_buf[hex_pos+2] = ']';
       if( int8_t(c) >= ' ' ) {
         tx_buf[c_pos]  = c;
       }
       tx_buf[read_pos] = 'R';
-    }
-
-    if( was_action || ( n % 1000000 == 0 ) ) {
       if( HAL_UART_Transmit( &uah, (uint8_t*)tx_buf, sz_oszr, 10 ) != HAL_OK ) {
         leds.toggle( BIT0 );
       } else {
         leds.toggle( BIT3 );
       }
+    } else if( n % ( 20*delay_calibrate_value) == 0 ) {
+      HAL_UART_Transmit( &uah, (uint8_t*)("-\r\n"), 3, 10 );
+    } else {
+      // NOP;
     }
+
     ++n;
   }
 }
