@@ -3,6 +3,8 @@
 #include <oxc_common1.h>
 #include <oxc_ministr.h>
 
+#include "board_cfg.h"
+
 #if !defined USE_FREERTOS
 #error This file in only for FreeRTOS enabled projects.
 #endif

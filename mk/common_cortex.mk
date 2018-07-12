@@ -18,6 +18,7 @@ STMCOMPONENTS=$(STMBSP)/Components
 
 # OXCDIR := oxc // from Makefile
 OXCINC = $(OXCDIR)/inc
+OXCINCBSP = $(OXCDIR)/inc/bsp/$(BOARDNAME)
 OXCSRC = $(OXCDIR)/src
 OXCBOARDDIR=$(OXCSRC)/bsp/$(BOARDNAME)
 
@@ -31,7 +32,7 @@ RTINC=$(RTDIR)/include
 
 ###################################################
 
-ALLFLAGS  = -g3 -O2
+ALLFLAGS += -g3 -O2
 ALLFLAGS += -Wall -Wextra -Wundef
 ALLFLAGS += -fno-common -ffunction-sections -fdata-sections
 ALLFLAGS += -D$(MCINCTYPE) -DHSE_VALUE=$(HSE_VALUE) -DUSE_HAL_LEGACY
@@ -70,7 +71,7 @@ ifeq "$(MCBASE)" "STM32L0"
   KNOWN_MCU := yes
 endif
 ifeq "$(MCBASE)" "STM32F1"
-  ARCHFLAGS = -mthumb -mcpu=cortex-m3 -mfix-cortex-m3-ldrd
+  ARCHFLAGS = -mthumb -mcpu=cortex-m3 -mfix-cortex-m3-ldrd -D__ARM_FEATURE_DSP=0
   KNOWN_MCU := yes
 endif
 ifeq "$(MCBASE)" "STM32L1"
@@ -82,7 +83,7 @@ ifeq "$(MCBASE)" "STM32F2"
   KNOWN_MCU := yes
 endif
 ifeq "$(MCBASE)" "STM32F3"
-  ARCHFLAGS = -mthumb -mcpu=cortex-m4 -mfloat-abi=$(FLOAT_ABI) -mfpu=fpv4-sp-d16
+  ARCHFLAGS = -mthumb -mcpu=cortex-m4 -mfloat-abi=$(FLOAT_ABI) -mfpu=fpv4-sp-d16 -DUSE_SPI_CRC=0
   KNOWN_MCU := yes
 endif
 ifeq "$(MCBASE)" "STM32F4"
@@ -195,7 +196,7 @@ endif
 
 ifeq "$(USE_OXC)" "y"
   SRCPATHS += $(OXCSRC)
-  ALLFLAGS += -I$(OXCINC) -I$(OXCINC)/fake
+  ALLFLAGS += -I$(OXCINC) -I$(OXCINCBSP) -I$(OXCINC)/fake
   SRCS += oxc_base.cpp
   SRCS += oxc_miscfun.cpp
   SRCS += oxc_gpio.cpp

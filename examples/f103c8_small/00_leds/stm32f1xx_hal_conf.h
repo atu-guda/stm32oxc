@@ -12,7 +12,6 @@
 
 #define NEED_LEDS_EXTRA 1
 
-#include <bsp/board_stm32f103c8_small.h>
 
 #define STD_SYSTICK_HANDLER 1
 

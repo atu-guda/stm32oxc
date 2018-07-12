@@ -12,7 +12,7 @@
 
 #define NEED_LEDS_EXTRA 1
 
-#include <bsp/board_stm32f103c8_small.h>
+#define USE_SPI_CRC 0
 
 #define STD_SYSTICK_HANDLER 1
 

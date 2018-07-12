@@ -1,9 +1,11 @@
 # common Makefile part for STM32F103C8 small board oxc examples.
 
 MCTYPE = STM32F103
-MCINCTYPE = STM32F103xB # realy C8
+# realy C8
+MCINCTYPE = STM32F103xB
 FREERTOS_ARCHNAME = ARM_CM3
-BOARDNAME = STM32F103-BluePill # unofficial
+# unofficial
+BOARDNAME = STM32F103-BluePill
 
 ADDSRC += ../common ../../common
 

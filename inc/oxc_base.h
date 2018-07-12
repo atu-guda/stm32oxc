@@ -1,6 +1,8 @@
 #ifndef _OXC_BASE_H
 #define _OXC_BASE_H
 
+#include "board_cfg.h"
+
 #if defined (STM32F0)
  #include <stm32f0xx_hal.h>
  #define SET_BIT_REG   BSRR

@@ -9,10 +9,5 @@
 #endif
 
 
-#include <bsp/board_stm32f746_waveshare0.h>
-
-
-
 #endif /* __STM32_HAL_CONF_H */
-
 

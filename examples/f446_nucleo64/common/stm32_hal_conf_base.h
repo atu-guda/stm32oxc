@@ -9,9 +9,6 @@
 #endif
 
 
-#include <bsp/board_stm32f446_nucleo64.h>
-
-
 
 #endif /* __STM32_HAL_CONF_H */
 

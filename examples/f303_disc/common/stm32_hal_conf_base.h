@@ -9,10 +9,5 @@
 #endif
 
 
-#include <bsp/board_stm32f3discovery.h>
-
-
-
 #endif // __STM32_HAL_CONF_BASE_H
-
 
