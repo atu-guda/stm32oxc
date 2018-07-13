@@ -11,6 +11,32 @@ int ready_to_start_scheduler = 0;
 int exit_rc = 0;
 volatile int dbg_val0 = 0, dbg_val1 = 0, dbg_val2 = 0, dbg_val3 = 0;
 
+void mu_lock( mu_t *m )
+{
+  // oxc_disable_interrupts();
+  while( !mu_trylock( m ) ) { /* NOP */ ; };
+  // oxc_enable_interrupts();
+}
+
+uint32_t mu_trylock( mu_t *m ) // returns 1 - lock is acquired
+{
+  uint32_t sta = 1;
+
+  if( oxc_ldrex( m ) == 0 ) { // unlocked
+    sta = oxc_strex( 1, m ); // try to lock
+  }
+  oxc_dmb();
+
+  return sta == 0;
+}
+
+void mu_unlock( mu_t *m )
+{
+  oxc_dmb();
+  *m = 0;
+}
+
+
 #ifndef NO_STD_SYSTICK_HANDLER
 #ifdef USE_FREERTOS
 extern "C" {

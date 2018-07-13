@@ -101,12 +101,48 @@ typedef const char *const ccstr;
 #define ARR_AND_SZ(x) x, (sizeof(x) / sizeof(x[0]))
 
 extern uint32_t delay_calibrate_value;
+typedef uint32_t mu_t; // mutex_t alike
 
 #ifdef __cplusplus
 // template<typename T> class _ShowType; // to output deducted type
 //                                       // _ShowType< decltype(XXXX) > xType;
  extern "C" {
 #endif
+
+inline void oxc_enable_interrupts()
+{
+  __asm__ volatile ( "CPSIE I\n" );
+}
+
+inline void oxc_disable_interrupts()
+{
+  __asm__ volatile ( "CPSID I\n" );
+}
+
+
+inline void oxc_dmb()
+{
+  __asm__ volatile ( "dmb" );
+}
+
+inline uint32_t oxc_ldrex( volatile uint32_t *addr )
+{
+  uint32_t rv;
+  __asm__ volatile ( "ldrex %0, [%1]" : "=r" (rv) : "r" (addr) );
+  return rv;
+}
+
+inline uint32_t oxc_strex( uint32_t val, volatile uint32_t *addr )
+{
+  uint32_t rv;
+  __asm__ volatile ( "strex %0, %2, [%1]"
+      : "=&r" (rv) : "r" (addr), "r" (val) );
+  return rv;
+}
+
+void mu_lock( mu_t *m );
+uint32_t mu_trylock( mu_t *m );
+void mu_unlock( mu_t *m );
 
 // void die4led( uint16_t n );
 void taskYieldFun(void);

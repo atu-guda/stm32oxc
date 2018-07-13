@@ -7,67 +7,6 @@ USE_DIE4LED_ERROR_HANDLER;
 TIM_HandleTypeDef htim2;
 void MX_TIM2_Init();
 
-inline void oxc_enable_interrupts()
-{
-  __asm__ volatile ( "CPSIE I\n" );
-}
-
-inline void oxc_disable_interrupts()
-{
-  __asm__ volatile ( "CPSID I\n" );
-}
-
-typedef uint32_t mu_t;
-
-inline void oxc_dmb()
-{
-  __asm__ volatile ( "dmb" );
-}
-
-inline uint32_t oxc_ldrex( volatile uint32_t *addr )
-{
-  uint32_t rv;
-  __asm__ volatile ( "ldrex %0, [%1]" : "=r" (rv) : "r" (addr) );
-  return rv;
-}
-
-inline uint32_t oxc_strex( uint32_t val, volatile uint32_t *addr )
-{
-  uint32_t rv;
-  __asm__ volatile ( "strex %0, %2, [%1]"
-      : "=&r" (rv) : "r" (addr), "r" (val) );
-  return rv;
-}
-
-void mu_lock( mu_t *m );
-uint32_t mu_trylock( mu_t *m );
-void mu_unlock( mu_t *m );
-
-void mu_lock( mu_t *m )
-{
-  // oxc_disable_interrupts();
-  while( !mu_trylock( m ) ) { /* NOP */ ; };
-  // oxc_enable_interrupts();
-}
-
-uint32_t mu_trylock( mu_t *m ) // returns 1 - lock is acquired
-{
-  uint32_t sta = 1;
-
-  if( oxc_ldrex( m ) == 0 ) { // unlocked
-    sta = oxc_strex( 1, m ); // try to lock
-  }
-  oxc_dmb();
-
-  return sta == 0;
-}
-
-void mu_unlock( mu_t *m )
-{
-  oxc_dmb();
-  *m = 0;
-}
-
 
 uint32_t xxn = 0;
 
