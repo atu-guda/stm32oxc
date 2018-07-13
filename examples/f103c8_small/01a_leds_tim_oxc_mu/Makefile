@@ -1,7 +1,8 @@
 OXCDIR = /usr/share/stm32oxc
 
-COMMONPROJDIR = $(shell basename `pwd` )
-PROJMK=../../common/$(COMMONPROJDIR)/proj.mk
+# COMMONPROJDIR = $(shell basename `pwd` )
+# PROJMK=../../common/$(COMMONPROJDIR)/proj.mk
+PROJMK=proj.mk
 -include $(PROJMK)
 -include local.mk
 

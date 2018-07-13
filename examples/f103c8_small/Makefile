@@ -5,6 +5,7 @@ SUBDIRS = \
   02_leds_rtos \
   03_uart \
   04_uart_console \
+  05a_def_console \
   x03_tcop
 
 

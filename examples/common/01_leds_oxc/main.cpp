@@ -54,7 +54,5 @@ int main(void)
   return 0;
 }
 
-// configs
-
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 
