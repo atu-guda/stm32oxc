@@ -1,1 +1,0 @@
-../../common/03_uart/proj.mk
