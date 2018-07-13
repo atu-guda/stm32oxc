@@ -176,11 +176,15 @@ else
   endif
 endif
 
+ifeq "$(OXC_FAKE_IO)" "y"
+  $(info "Used OXC_FAKE_IO" )
+  ALLFLAGS += -DOXC_FAKE_IO
+endif
+
 ifeq "$(USE_OXC_DEVIO)" "y"
   # $(info "Used DEVIO" )
   USE_OXC = y
   SRCS += oxc_devio.cpp
-  SRCS += oxc_ministr.cpp
   SRCS += oxc_rtosqueue.cpp
   ALLFLAGS += -DUSE_OXC_DEVIO
   ifneq "$(USE_FREERTOS)" "y"
@@ -199,6 +203,7 @@ ifeq "$(USE_OXC)" "y"
   ALLFLAGS += -I$(OXCINC) -I$(OXCINCBSP) -I$(OXCINC)/fake
   SRCS += oxc_base.cpp
   SRCS += oxc_miscfun.cpp
+  SRCS += oxc_ministr.cpp
   SRCS += oxc_gpio.cpp
   ifneq "$(NOUSE_OXC_OSFUN)" "y"
     SRCS += oxc_osfun.cpp

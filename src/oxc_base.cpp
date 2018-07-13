@@ -7,6 +7,9 @@
 
 #include <oxc_base.h>
 
+extern  const int _sdata, _edata, _sbss, _ebss, _end, _estack;
+char* __heap_top = (char*)(&_end);
+
 int ready_to_start_scheduler = 0;
 int exit_rc = 0;
 volatile int dbg_val0 = 0, dbg_val1 = 0, dbg_val2 = 0, dbg_val3 = 0;

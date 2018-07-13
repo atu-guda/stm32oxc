@@ -9,6 +9,7 @@
 
 #include <oxc_gpio.h>
 #include <oxc_miscfun.h>
+#include <oxc_ministr.h>
 
 #if defined (USE_OXC_DEVIO)
 #include <oxc_devio.h>
@@ -18,7 +19,6 @@
 #include <oxc_console.h>
 #include <oxc_smallrl.h>
 #include <oxc_common1.h>
-#include <oxc_ministr.h>
 #endif
 
 #if defined (USE_OXC_DEBUG)

@@ -8,8 +8,6 @@
 #endif
 
 
-extern  const int _sdata, _edata, _sbss, _ebss, _end, _estack;
-char* __heap_top = (char*)(&_end);
 
 extern "C" {
 

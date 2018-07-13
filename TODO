@@ -1,4 +1,5 @@
-Fix oxc_auto + local include logic
+delay_untill w/o FreeRTOS
+mu_wait( n ) with delay
 Fill common_help_string for examples
 Fix USB_CDC init with other pins (test on f429 discovery...)
 Commonify SDRAM init
