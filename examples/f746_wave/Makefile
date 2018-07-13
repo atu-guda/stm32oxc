@@ -2,9 +2,12 @@
 SUBDIRS = \
   00_leds \
   01_leds_oxc \
+  01a_leds_tim_oxc_mu \
   02_leds_rtos \
   03_uart \
   04_uart_console \
+  05_usb_console \
+  05a_def_console \
   06_i2c_test \
   16_step1 \
   17_1w_18b20 \
@@ -12,16 +15,13 @@ SUBDIRS = \
   31_sdcard2 \
   50_adc0 \
   51_adcdma \
+  51a_adcdma_n \
   x01_fmc \
   x51_adcdma_fmc \
   x52_adcirq_fmc \
   x53a_adcdma_n_fmc_sdcard \
   x53a_adcdma_n_fmc_sdcard_i2cpot
 
-#  03_uart \
-#  04_uart_console \
-#  05_usb_console \
-#  06_i2c_test \
 #  07_i2c_lcdt \
 #  08_i2c_mpu6050 \
 #  09_i2c_bmp085 \

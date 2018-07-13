@@ -76,7 +76,9 @@ void MX_TIM2_Init()
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim2.Init.Period = 100;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  #if defined (STM32F1) || defined (STM32F2) || defined (STM32F3) || defined (STM32F7)
+    htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  #endif
   if( HAL_TIM_Base_Init( &htim2 ) != HAL_OK ) {
     die4led( 0 );
   }
