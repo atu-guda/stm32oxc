@@ -100,6 +100,10 @@ typedef const char *const ccstr;
 #define ARR_SZ(x) (sizeof(x) / sizeof(x[0]))
 #define ARR_AND_SZ(x) x, (sizeof(x) / sizeof(x[0]))
 
+#ifndef NL
+  #define NL "\r\n"
+#endif
+
 extern uint32_t delay_calibrate_value;
 typedef uint32_t mu_t; // mutex_t alike
 

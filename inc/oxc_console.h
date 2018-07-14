@@ -3,10 +3,6 @@
 
 #include <oxc_devio.h>
 
-#ifndef NL
-  #define NL "\r\n"
-#endif
-
 #ifndef CMDLINE_MAXSZ
 #define CMDLINE_MAXSZ 128
 #endif
