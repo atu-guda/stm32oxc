@@ -12,7 +12,7 @@ USE_OXC_UART = y
 # USE_OXC_TIM = y
 USE_OXC_ADC = y
 # USE_OXC_DAC = y
-# USE_OXC_DMA = y
+USE_OXC_DMA = y
 # USE_OXC_SD  = y
 # USE_OXC_SDFAT = y
 # USE_FREERTOS = y
@@ -24,5 +24,5 @@ NOUSE_OXC_OSFUN = y
 # NOUSE_DEFAULT_UART_INIT = y
 
 SRCS  = main.cpp
-
+SRCS += adcdma0.cpp
 
