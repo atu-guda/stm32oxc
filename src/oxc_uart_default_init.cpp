@@ -50,7 +50,7 @@ void HAL_UART_MspInit( UART_HandleTypeDef* uah )
     #endif
 
     #ifndef UART_DEFALT_NO_IRQ
-    HAL_NVIC_SetPriority( BOARD_UART_DEFAULT_IRQ, configKERNEL_INTERRUPT_PRIORITY, 0 );
+    HAL_NVIC_SetPriority( BOARD_UART_DEFAULT_IRQ, OXC_DEFAULT_UART_PRTY, 0 );
     HAL_NVIC_EnableIRQ( BOARD_UART_DEFAULT_IRQ );
     #endif
   }

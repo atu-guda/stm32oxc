@@ -1,4 +1,4 @@
-PROJ_NAME=uart_x1
+PROJ_NAME=uart_x2
 
 USE_OXC = y
 USE_OXC_UART = y

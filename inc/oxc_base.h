@@ -195,6 +195,9 @@ int _execve( char *name, char **argv, char **env );
     void vApplicationTickHook() { HAL_IncTick();  }
   #include <FreeRTOS.h>
   #include <task.h>
+  #define OXC_DEFAULT_UART_PRTY configKERNEL_INTERRUPT_PRIORITY
+#else
+  #define OXC_DEFAULT_UART_PRTY 5
 #endif
 
 
