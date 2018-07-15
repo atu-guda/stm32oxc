@@ -38,6 +38,14 @@ int SystemClockCfg(void)
     return  1003;
   }
 
+  RCC_PeriphCLKInitTypeDef PeriphClkInit;
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADC;
+  PeriphClkInit.AdcClockSelection    = RCC_ADCPCLK2_DIV6; // 12 MHz
+  if( HAL_RCCEx_PeriphCLKConfig( &PeriphClkInit ) != HAL_OK )  {
+    errno = 1004;
+    return  1004;
+  }
+
   __HAL_RCC_SYSCFG_CLK_ENABLE();
 
   HAL_SYSTICK_Config( HAL_RCC_GetHCLKFreq()/1000 ); // to HAL_delay work even before FreeRTOS start
