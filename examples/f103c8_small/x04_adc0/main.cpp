@@ -60,7 +60,7 @@ int main(void)
   uint32_t tm0 = HAL_GetTick(), tmc = tm0;
 
   for( int n=0; ; ++n ) {
-    leds.toggle( BIT1 );
+    leds.toggle( BIT0 );
 
     adc_state = 0; stat_str[0] = ' '; stat_str[1] = ' '; stat_str[2] = ' '; stat_str[3] = '\0';
     // int jj = 0;
