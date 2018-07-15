@@ -23,6 +23,7 @@ int out_uart( const char *d, unsigned n )
 }
 
 const int delay_val = 100;
+int vref_mv = 3339;
 
 int main(void)
 {
@@ -33,43 +34,66 @@ int main(void)
 
   MX_DMA_Init();
   MX_ADC1_Init();
-  if( HAL_ADCEx_Calibration_Start( &hadc1 ) != HAL_OK )  {
-    os << "HAL_ADCEx_Calibration_Start failed" NL; os.flush();
-    die4led( 0 );
-  }
 
   uint32_t c_msp = __get_MSP();
   os << " MSP-__heap_top = " << ((unsigned)c_msp - (unsigned)(__heap_top) ) << NL;
   os.flush();
 
+  if( HAL_ADCEx_Calibration_Start( &hadc1 ) != HAL_OK )  {
+    os << "HAL_ADCEx_Calibration_Start failed" NL; os.flush();
+    die4led( 0 );
+  }
+
+  delay_ms( 10 );
+
+  uint16_t v[4], vbin;
+  char stat_str[4];
+
+  // if( HAL_ADC_Start_DMA( &hadc1, (uint32_t *)v, 4 ) != HAL_OK )   {
+  //   os << "Fail to start ADC_DMA" NL; os.flush();
+  //   die4led( 0 );
+  // }
+
   uint32_t tm0 = HAL_GetTick(), tmc = tm0;
-  int v[4], vbin;
 
   for( int n=0; ; ++n ) {
     leds.toggle( BIT1 );
 
-    v[0] = 1000 + (n&0x0F) * 10; // Fake values for now
-    v[1] = 2000 + (n&0x07) * 20;
-    v[2] = 3000 + (n&0x07) * 30;
-    v[3] =  100 + (n&0x07) *  1;
+    // v[0] = 1000 + (n&0x0F) * 10; // Fake values for now
+    // v[1] = 2000 + (n&0x07) * 20;
+    // v[2] = 3000 + (n&0x07) * 30;
+    // v[3] =  100 + (n&0x07) *  1;
 
-    adc_state = 0;
-    if( HAL_ADC_PollForConversion( &hadc1, 10 ) != HAL_OK )  {
-      os << "Err: HAL_ADC_PollForConversion" << NL;
-      os.flush();
+    adc_state = 0; stat_str[0] = ' '; stat_str[1] = ' '; stat_str[2] = ' '; stat_str[3] = '\0';
+    HAL_ADC_Start( &hadc1 );
+    // int jj = 0;
+
+    if( HAL_ADC_Start_DMA( &hadc1, (uint32_t *)v, 4 ) != HAL_OK )   {
+      // os << "Fail to start ADC_DMA" NL; os.flush();
+      stat_str[0] = 'S';
     }
-    if( (HAL_ADC_GetState( &hadc1 ) & HAL_ADC_STATE_EOC_REG ) == HAL_ADC_STATE_EOC_REG ) {
-      v[0] = HAL_ADC_GetValue( &hadc1 );
+    for( int j=0; adc_state == 0 && j<100; ++j ) {
+      delay_ms( 1 ); //      jj = j;
     }
+    if( adc_state != 1 )  {
+      // os << "Err: adc_state= " << adc_state << NL;
+      // os.flush();
+      stat_str[1] = 'W';
+    }
+
     vbin = n & 0x0F;
+    int vi[4];
+    for( int j=0; j<4; ++j ) {
+      vi[j] = v[j] * vref_mv / 4096;
+    }
 
     os << FmtInt( n * delay_val, 8, '0' ) << ' '
-       << FloatMult( v[0], 3 ) << ' '
-       << FloatMult( v[1], 3 ) << ' '
-       << FloatMult( v[2], 3 ) << ' '
-       << FloatMult( v[3], 3 ) << ' '
-       << HexInt8( vbin )    << ' '
-       << ( HAL_GetTick() - tmc ) << NL;
+       << FloatMult( vi[0], 3 ) << ' '
+       << FloatMult( vi[1], 3 ) << ' '
+       << FloatMult( vi[2], 3 ) << ' '
+       << FloatMult( vi[3], 3 ) << ' '
+       << HexInt8( vbin )    << ' '  // << jj << ' '
+       << ( HAL_GetTick() - tmc ) << ' ' << stat_str << NL;
     os.flush();
 
     tmc += delay_val;
@@ -83,32 +107,19 @@ int main(void)
 void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *AdcHandle )
 {
   adc_state = 1;
-  /* Report to main program that ADC sequencer has reached its end */
-  // ubSequenceCompleted = SET;
+  // leds.toggle( BIT3 );
 }
 
-/**
-  * @brief  Conversion DMA half-transfer callback in non blocking mode
-  * @param  hadc: ADC handle
-  * @retval None
-  */
 void HAL_ADC_ConvHalfCpltCallback( ADC_HandleTypeDef *hadc )
 {
-
+  // NOP
 }
 
-/**
-  * @brief  ADC error callback in non blocking mode
-  *        (ADC conversion with interruption or transfer by DMA)
-  * @param  hadc: ADC handle
-  * @retval None
-  */
 void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc )
 {
   adc_state = 2;
-  // Error_Handler();
+  leds.toggle( BIT0 );
 }
-
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
