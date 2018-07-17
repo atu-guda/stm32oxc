@@ -3,6 +3,7 @@
 
 #include <oxc_auto.h>
 
+#include <utility>
 
 using namespace std;
 
@@ -15,6 +16,35 @@ void UART_handleIRQ();
 
 // -------------------------------------------------------------------
 
+// TODO: classes for mu_t handling: movew to oxc_main or oxc_mu
+
+class MuLock {
+  public:
+   MuLock( mu_t &a_mu ) : mu( a_mu ) { mu_lock( &mu ); };
+   ~MuLock()  { mu_unlock( &mu ); };
+  protected:
+   mu_t &mu;
+};
+
+class MuTryLock {
+  public:
+   MuTryLock( mu_t &a_mu ) : mu( a_mu ), acq( mu_trylock( &mu ) ) { };
+   ~MuTryLock()  { if( acq ) { mu_unlock( &mu ); } };
+   bool wasAcq() const { return acq; }
+  protected:
+   mu_t &mu;
+   const bool acq;
+};
+
+class MuWaitLock {
+  public:
+   MuWaitLock( mu_t &a_mu, uint32_t ms = 100 ) : mu( a_mu ), acq( mu_waitlock( &mu, ms ) ) { };
+   ~MuWaitLock()  { if( acq ) { mu_unlock( &mu ); } };
+   bool wasAcq() const { return acq; }
+  protected:
+   mu_t &mu;
+   const bool acq;
+};
 
 class RingBuf {
   public:
@@ -23,10 +53,13 @@ class RingBuf {
    RingBuf( const RingBuf &r ) = delete;
    RingBuf& operator=( const RingBuf &rhs ) = delete;
    unsigned size() const { return sz; } // w/o block!
-   unsigned capacity() const { return sz; }
+   unsigned capacity() const { return cap; }
    void put( char c ); // blocks, wait
    bool tryPut( char c ); // noblocks, fail if busy
-   bool waitPut( char c, uint32_t ms = 100 ); // wait + try
+   bool waitPut( char c, uint32_t ms = 100 ); // wait + try, delay_ms(1)
+   char get(); // blocks
+   pair<char,bool> tryGet() { return make_pair( 'x', true ); } // noblocks, with flag test pair?
+   pair<char,bool> waitGet( uint32_t ms = 100 ); // wait + try
   protected:
    char *b;
    unsigned sz = 0;
@@ -107,7 +140,15 @@ int main(void)
 {
   STD_PROLOG_UART_NOCON;
 
+  char ring_x_buf[128];
+  RingBuf tring( ring_x_buf, sizeof( ring_x_buf ) );
+  auto z = tring.tryGet();
+
   char cn = '0';
+  if( z.second ) {
+    cn = z.first;
+  }
+
   leds.write( 0 );
   MSTRF( os, 128, out_uart );
 

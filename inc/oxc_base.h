@@ -105,6 +105,7 @@ typedef const char *const ccstr;
 #endif
 
 extern uint32_t delay_calibrate_value;
+
 typedef uint32_t mu_t; // mutex_t alike
 
 #ifdef __cplusplus
@@ -145,7 +146,8 @@ inline uint32_t oxc_strex( uint32_t val, volatile uint32_t *addr )
 }
 
 void mu_lock( mu_t *m );
-uint32_t mu_trylock( mu_t *m );
+bool mu_trylock( mu_t *m );
+bool mu_waitlock( mu_t *m, uint32_t ms );
 void mu_unlock( mu_t *m );
 
 // void die4led( uint16_t n );
