@@ -54,22 +54,124 @@ class RingBuf {
    RingBuf& operator=( const RingBuf &rhs ) = delete;
    unsigned size() const { return sz; } // w/o block!
    unsigned capacity() const { return cap; }
-   void put( char c ); // blocks, wait
+   bool put( char c ); // blocks, wait
    bool tryPut( char c ); // noblocks, fail if busy
    bool waitPut( char c, uint32_t ms = 100 ); // wait + try, delay_ms(1)
-   char get(); // blocks
-   pair<char,bool> tryGet() { return make_pair( 'x', true ); } // noblocks, with flag test pair?
+   bool puts( const char *s ); // blocks, in one lock
+   bool puts( const char *s, unsigned l ); // blocks, given length
+   pair<char,bool> get(); // blocks
+   pair<char,bool> tryGet(); // noblocks
    pair<char,bool> waitGet( uint32_t ms = 100 ); // wait + try
   protected:
+   bool put_nolock( char c );
+   pair<char,bool> get_nolock();
+  protected:
    char *b;
+   const unsigned cap; //* capacity
    unsigned sz = 0;
-   const unsigned cap;
+   unsigned s = 0;  //* start index
+   unsigned e = 0;  //* end index
+   // unsigned nf = ; //* number of inserted points [0;nb-1]
+   // unsigned ni; //* number of insertion after sum recalc
    mu_t mu = 0;
 };
 
 RingBuf::RingBuf( char *a_b, unsigned a_cap )
   : b( a_b ), cap( a_cap )
 {
+}
+
+bool RingBuf::put_nolock( char c )
+{
+  unsigned sn = s + 1;
+  if( sn >= cap ) {
+    sn = 0;
+  }
+  if( sn >= e ) {
+    return false;
+  }
+  s = sn; b[s] = c; ++sz;
+  return true;
+}
+
+bool RingBuf::put( char c )
+{
+  MuLock lock( mu );
+  return put_nolock( c );
+}
+
+bool RingBuf::tryPut( char c )
+{
+  MuTryLock lock( mu );
+  if( lock.wasAcq() ) {
+    return put_nolock( c );
+  }
+  return false;
+}
+
+bool RingBuf::waitPut( char c, uint32_t ms  )
+{
+  MuWaitLock lock( mu, ms );
+  if( lock.wasAcq() ) {
+    return put_nolock( c );
+  }
+  return false;
+}
+
+bool RingBuf::puts( const char *s )
+{
+  MuLock lock( mu );
+  bool r;
+  for( ; *s && ( r = put_nolock( *s ) ) ; ++s ) {
+  }
+  return r;
+}
+
+bool RingBuf::puts( const char *s, unsigned l )
+{
+  MuLock lock( mu );
+  bool r;
+  for( unsigned i=0; i<l && ( r = put_nolock( *s ) ) ; ++s ) {
+  }
+  return r;
+}
+
+pair<char,bool> RingBuf::get_nolock()
+{
+  if( s == e ) {
+    return make_pair( '\0', false );
+  }
+  char c = b[e++];
+  if( e >= cap ) {
+    e = 0;
+  }
+  --sz;
+  return make_pair( c, true );
+}
+
+
+pair<char,bool> RingBuf::get()
+{
+  MuLock lock( mu );
+  return get();
+}
+
+pair<char,bool> RingBuf::tryGet()
+{
+  MuTryLock lock( mu );
+  if( lock.wasAcq() ) {
+    return get_nolock();
+  }
+  return make_pair( '\0', false );
+}
+
+pair<char,bool> RingBuf::waitGet( uint32_t ms )
+{
+  MuWaitLock lock( mu, ms );
+  if( lock.wasAcq() ) {
+    return get_nolock();
+  }
+  return make_pair( '\0', false );
 }
 
 // -------------------------------------------------------------------
