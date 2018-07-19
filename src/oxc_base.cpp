@@ -21,7 +21,7 @@ void mu_lock( mu_t *m )
   // oxc_enable_interrupts();
 }
 
-bool mu_trylock( mu_t *m )
+int  mu_trylock( mu_t *m )
 {
   uint32_t sta = 1;
 
@@ -33,7 +33,7 @@ bool mu_trylock( mu_t *m )
   return sta == 0;
 }
 
-bool mu_waitlock( mu_t *m, uint32_t ms ) // returns 1 - lock is acquired
+int  mu_waitlock( mu_t *m, uint32_t ms ) // returns 1 - lock is acquired
 {
   for( uint32_t i=0; i<ms; ++i ) {
     if( mu_trylock( m ) ) {

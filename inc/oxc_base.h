@@ -114,18 +114,18 @@ typedef uint32_t mu_t; // mutex_t alike
  extern "C" {
 #endif
 
-inline void oxc_enable_interrupts()
+inline void oxc_enable_interrupts(void)
 {
   __asm__ volatile ( "CPSIE I\n" );
 }
 
-inline void oxc_disable_interrupts()
+inline void oxc_disable_interrupts(void)
 {
   __asm__ volatile ( "CPSID I\n" );
 }
 
 
-inline void oxc_dmb()
+inline void oxc_dmb(void)
 {
   __asm__ volatile ( "dmb" );
 }
@@ -146,8 +146,8 @@ inline uint32_t oxc_strex( uint32_t val, volatile uint32_t *addr )
 }
 
 void mu_lock( mu_t *m );
-bool mu_trylock( mu_t *m );
-bool mu_waitlock( mu_t *m, uint32_t ms );
+int  mu_trylock( mu_t *m );
+int  mu_waitlock( mu_t *m, uint32_t ms );
 void mu_unlock( mu_t *m );
 
 // void die4led( uint16_t n );

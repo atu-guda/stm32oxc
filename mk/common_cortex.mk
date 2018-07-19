@@ -329,7 +329,7 @@ OBJS  = $(OBJS0:.s=.o)
 OBJS1 = $(addprefix $(OBJDIR)/,$(OBJS))
 
 CFLAGS   = $(ALLFLAGS)  -std=c11   $(CWARNFLAGS)
-CXXFLAGS = $(ALLFLAGS)  -std=c++11 $(CXXWARNFLAGS) -fno-rtti -fno-exceptions -fno-threadsafe-statics
+CXXFLAGS = $(ALLFLAGS)  -std=c++17 $(CXXWARNFLAGS) -fno-rtti -fno-exceptions -fno-threadsafe-statics
 
 $(info SRCPATHS is $(SRCPATHS) )
 

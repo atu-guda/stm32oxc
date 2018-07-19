@@ -144,12 +144,12 @@
 * Deactivated: CRC code cleaned from driver
 */
 
-#define USE_SPI_CRC                     1U
+#define USE_SPI_CRC                     0U
 
-/* Includes ------------------------------------------------------------------*/
-/**
-  * @brief Include module's header file
-  */
+
+#include "stm32f7xx_hal_def.h"
+#undef UNUSED
+#define UNUSED(x) ((void)((uint32_t)(x)))
 
 #ifdef HAL_RCC_MODULE_ENABLED
   #include "stm32f7xx_hal_rcc.h"

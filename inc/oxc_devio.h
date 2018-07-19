@@ -64,7 +64,7 @@ class DevIO {
    char tx_buf[TX_BUF_SIZE];
 };
 
-// fd - ali
+// fd - ala
 const int DEVIO_MAX = 16;      //* Maximum number of devios
 const int DEVIO_STDIN_NO = 0;  //* Number of stdin
 const int DEVIO_STDOUT_NO = 1; //* Number of stdout

@@ -238,3 +238,12 @@ void operator delete[]( void *p ) {
   free( p );
 }
 
+
+void operator delete( void *p, unsigned /*sz*/ ) {
+  free( p );
+}
+
+void operator delete[]( void *p, unsigned /*sz*/ ) {
+  free( p );
+}
+

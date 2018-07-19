@@ -57,11 +57,15 @@ class RingBuf {
    bool put( char c ); // blocks, wait
    bool tryPut( char c ); // noblocks, fail if busy
    bool waitPut( char c, uint32_t ms = 100 ); // wait + try, delay_ms(1)
-   bool puts( const char *s ); // blocks, in one lock
-   bool puts( const char *s, unsigned l ); // blocks, given length
+   unsigned puts( const char *s ); // blocks, in one lock, ret: number of char
+   unsigned puts( const char *s, unsigned l ); // blocks, given length
+   unsigned tryPuts( const char *s ); // non-blocks
+   unsigned tryPuts( const char *s, unsigned l ); // non-blocks, given length
    pair<char,bool> get(); // blocks
    pair<char,bool> tryGet(); // noblocks
    pair<char,bool> waitGet( uint32_t ms = 100 ); // wait + try
+   void reset() { MuLock lock( mu ); reset_nolock(); };
+   void reset_nolock() { s = e = sz = 0; }
   protected:
    bool put_nolock( char c );
    pair<char,bool> get_nolock();
@@ -118,23 +122,48 @@ bool RingBuf::waitPut( char c, uint32_t ms  )
   return false;
 }
 
-bool RingBuf::puts( const char *s )
+unsigned RingBuf::puts( const char *s )
 {
   MuLock lock( mu );
-  bool r;
+  unsigned r;
   for( ; *s && ( r = put_nolock( *s ) ) ; ++s ) {
   }
   return r;
 }
 
-bool RingBuf::puts( const char *s, unsigned l )
+unsigned RingBuf::puts( const char *s, unsigned l )
 {
   MuLock lock( mu );
-  bool r;
-  for( unsigned i=0; i<l && ( r = put_nolock( *s ) ) ; ++s ) {
+  unsigned r;
+  for( r=0; r<l && put_nolock( *s ) ; ++s, ++r ) {
   }
   return r;
 }
+
+unsigned RingBuf::tryPuts( const char *s )
+{
+  MuTryLock lock( mu );
+  if( ! lock.wasAcq() ) {
+    return 0;
+  }
+  unsigned r;
+  for( r=0; *s && put_nolock( *s ) ; ++s, ++r ) {
+  }
+  return r;
+}
+
+unsigned RingBuf::tryPuts( const char *s, unsigned l )
+{
+  MuTryLock lock( mu );
+  if( ! lock.wasAcq() ) {
+    return 0;
+  }
+  unsigned r;
+  for( r=0; r<l && put_nolock( *s ) ; ++s, ++r ) {
+  }
+  return r;
+}
+
 
 pair<char,bool> RingBuf::get_nolock()
 {
@@ -173,6 +202,203 @@ pair<char,bool> RingBuf::waitGet( uint32_t ms )
   }
   return make_pair( '\0', false );
 }
+
+// -------------------------------------------------------------------
+
+
+class DevIO {
+  public:
+   using OnRecvFun = void (*)( const char *s, int l ); // to async reaction
+   using SigFun = void (*)( int v );
+   enum {
+     TX_BUF_SIZE = 256, //* low-level transmit buffer size
+     RX_BUF_SIZE = 256  //* low-level receive buffer size, buffer itself - only if required
+   };
+
+   DevIO()
+    :obuf( tx_buf_xx, sizeof( tx_buf_xx ) ),
+     ibuf( rx_buf_xx, sizeof( rx_buf_xx ) )
+    {};
+   virtual ~DevIO();
+   virtual void reset();
+   virtual int getErr() const { return err; }
+   void setWaitTx( int tx ) { wait_tx = tx; }
+   void setWaitRx( int rx ) { wait_rx = rx; }
+
+   virtual int sendBlock( const char *s, unsigned l );
+   virtual int sendBlockSync( const char *s, unsigned l ) = 0;
+   virtual int sendStr( const char *s );
+   virtual int sendStrSync( const char *s );
+   int sendByte( char b ) { return sendBlock( &b, 1 ); };
+   int sendByteSync( char b ) { return sendBlockSync( &b, 1 ); };
+   int sendInt16( int16_t v ) { return sendBlock( (const char*)(&v), sizeof(int16_t) ); };
+   int sendInt16Sync( int16_t v ) { return sendBlockSync( (const char*)(&v), sizeof(int16_t) ); };
+   int sendInt32( int32_t v ) { return sendBlock( (const char*)(&v), sizeof(int32_t) ); };
+   int sendInt32Sync( int32_t v ) { return sendBlockSync( (const char*)(&v), sizeof(int32_t) ); };
+
+   virtual int recvByte( char *s, int w_tick = 0 );
+   virtual int recvBytePoll( char *s, int w_tick = 0 ) = 0;
+   virtual int recvBlock( char *s, int l, int w_tick = 0 ); // w_tick - for every
+   virtual int recvBlockPoll( char *s, int l, int w_tick = 0 );
+   void setOnRecv( OnRecvFun a_onRecv ) { onRecv = a_onRecv; };
+   void setOnSigInt( SigFun a_onSigInt ) { onSigInt = a_onSigInt; };
+
+   virtual void task_send();
+   virtual void task_recv();
+   void charsFromIrq( const char *s, int l );
+
+   virtual int  setAddrLen( int addrLen ) = 0;
+   virtual int  getAddrLen() const = 0;
+   virtual int  setAddr( uint32_t addr ) = 0;
+   // void initIRQ( uint8_t ch, uint8_t prio ); // TODO:? store ch
+  protected:
+   // TODO: open mode + flags
+   char tx_buf_xx[TX_BUF_SIZE];
+   char rx_buf_xx[RX_BUF_SIZE];
+   RingBuf obuf;
+   RingBuf ibuf;
+   OnRecvFun onRecv = nullptr;
+   SigFun onSigInt = nullptr;
+   int err = 0;
+   int wait_tx = 1500;
+   int wait_rx = 1500;
+   bool on_transmit = false;
+   bool blocking_send = true;
+   bool blocking_recv = false;
+};
+
+DevIO::~DevIO()
+{
+  reset();
+}
+
+void DevIO::reset()
+{
+  ibuf.reset();
+  obuf.reset();
+}
+
+
+int DevIO::sendBlock( const char *s, unsigned l )
+{
+  if( !s  ||  l < 1 ) {
+    return 0;
+  }
+
+  bool ok;
+  if( blocking_send ) {
+    ok = obuf.puts( s, l );
+  } else {
+    ok = obuf.tryPuts( s, l );
+  }
+
+
+  // if( ns ) {
+  //   taskYieldFun();
+  // }
+
+  return ok;
+}
+
+int DevIO::recvByte( char *b, int w_tick )
+{
+  if( !b ) { return 0; }
+
+  char c;
+  BaseType_t r = ibuf.recv( &c, w_tick );
+  if( r == pdTRUE ) {
+    *b = c;
+    return 1;
+  }
+
+  return 0;
+}
+
+void DevIO::task_send()
+{
+  // if( on_transmit ) { return; } // handle by IRQ
+  int ns = 0;
+  int wait_now = wait_tx;
+  char ct;
+  for( ns=0; ns<TX_BUF_SIZE; ++ns ) {
+    BaseType_t ts = obuf.recv( &ct, wait_now );
+    if( ts != pdTRUE ) { break; };
+    tx_buf[ns] = ct;
+    wait_now = 0;
+  }
+  if( ns == 0 ) { return; }
+  sendBlockSync( tx_buf, ns ); // TODO: if( send_now )?
+};
+
+void DevIO::task_recv()
+{
+  // leds.set( BIT2 );
+  char cr;
+  BaseType_t ts = ibuf.recv( &cr, wait_rx );
+  if( ts == pdTRUE ) {
+    if( onRecv != nullptr ) {
+      onRecv( &cr, 1 );
+    } else {
+      // else simply eat char - if not required - dont use this task
+    }
+  }
+  // leds.reset( BIT2 );
+}
+
+void DevIO::charsFromIrq( const char *s, int l ) // called from IRQ!
+{
+  BaseType_t wake = pdFALSE;
+  for( int i=0; i<l; ++i ) {
+    if( s[i] == 3  && onSigInt ) { // handle Ctrl-C = 3
+      onSigInt( s[i] );
+    }
+    ibuf.sendFromISR( s+i, &wake  );
+  }
+  portEND_SWITCHING_ISR( wake );
+}
+
+int DevIO::sendStr( const char *s )
+{
+  if( !s ) { return 0; }
+  return sendBlock( s, strlen(s) );
+}
+
+int DevIO::sendStrSync( const char *s )
+{
+  if( !s ) { return 0; }
+  return sendBlockSync( s, strlen(s) );
+}
+
+
+int DevIO::recvBlock( char *s, int l, int w_tick )
+{
+  if( !s ) { return 0; }
+  int n;
+  for( n=0; n<l; ++n,++s ) {
+    int k = recvByte( s, w_tick );
+    if( k < 1 ) {
+      return n;
+    }
+  }
+  return n;
+}
+
+int DevIO::recvBlockPoll( char *s, int l, int w_tick )
+{
+  if( !s ) { return 0; }
+  int n;
+  for( n=0; n<l; ++n,++s ) {
+    int k = recvBytePoll( s, w_tick );
+    if( k < 1 ) {
+      return n;
+    }
+  }
+  return n;
+}
+
+
+
+// -------------------------------------------------------------------
 
 // -------------------------------------------------------------------
 
