@@ -311,45 +311,45 @@ void BOARD_UART_DEFAULT_IRQHANDLER(void) {
 }
 
 volatile char in_char = ' ';
+bool on_transmit = false;
 
 void UART_handleIRQ()
 {
   uint16_t status = BOARD_UART_DEFAULT->USART_SR_REG;
-  bool on_transmit = false;
 
-  // leds.toggle( BIT3 ); // DEBUG
+  // leds.toggle( BIT0 ); // DEBUG
 
   if( status & UART_FLAG_RXNE ) { // char recived
     leds.toggle( BIT2 );
     // ++n_work;
     // char cr = recvRaw();
     in_char = BOARD_UART_DEFAULT->USART_RX_REG;
-    // leds.set( BIT2 );
     if( status & ( UART_FLAG_ORE | UART_FLAG_FE /*| UART_FLAG_LBD*/ ) ) { // TODO: on MCU
       // err = status;
     } else {
       if( ! rx_ring.tryPut( in_char ) ) {
-         leds.toggle( BIT0 );
+         // leds.toggle( BIT0 );
       }
     }
     // leds.reset( BIT2 );
   }
 
-  if( status & UART_FLAG_TXE ) {
-    leds.toggle( BIT1 );
-  }
-  //if( on_transmit  &&  (status & UART_FLAG_TXE) ) {
-    // leds.set( BIT0 );
+  // if( status & UART_FLAG_TXE ) {
+  //   leds.toggle( BIT1 );
+  // }
+  if( on_transmit  && ( status & UART_FLAG_TXE ) ) {
     // ++n_work;
-    // qrec = obuf.recvFromISR( &cs, &wake );
-    // if( qrec == pdTRUE ) {
-    //  sendRaw( cs );
-    // } else {
-    //  itDisable( UART_IT_TXE );
-    //  on_transmit = false;
-    //}
-    // leds.reset( BIT0 );
-  //}
+    leds.toggle( BIT1 );
+    auto toOut = tx_ring.tryGet();
+    if( toOut.good() ) {
+     // sendRaw( cs );
+      BOARD_UART_DEFAULT->USART_TX_REG = toOut.c;
+    } else {
+      BOARD_UART_DEFAULT->CR1 &= ~USART_CR1_TXEIE;
+      // itDisable( UART_IT_TXE );
+      on_transmit = false;
+    }
+  }
 
 
   // if( n_work == 0 ) { // unhandled
@@ -367,14 +367,7 @@ int main(void)
 {
   STD_PROLOG_UART_NOCON;
 
-  // auto z = tring.tryGet();
-  // char cn = '0';
-  // if( z.second ) {
-  //   cn = z.first;
-  // }
-
   leds.write( 0 );
-  // MSTRF( os, 128, out_uart );
 
   // uint32_t c_msp = __get_MSP();
   // os << " MSP-__heap_top = " << ((unsigned)c_msp - (unsigned)(__heap_top) ) << "\r\n";
@@ -382,52 +375,52 @@ int main(void)
   // os << "CR1: " << HexInt16( BOARD_UART_DEFAULT->CR1 )  << "  CR2: " << HexInt16( BOARD_UART_DEFAULT->CR2 )  << "\r\n";
   // os.flush();
 
-  // char *tmp = (char*)malloc(128);
-  // char *tmp = new char[128];
-
   int n = 0;
 
-  // BOARD_UART_DEFAULT->CR1 |= USART_CR1_RE | USART_CR1_TE | USART_CR1_RXNEIE  | USART_CR1_TXEIE;
   BOARD_UART_DEFAULT->CR1 |= USART_CR1_RE | USART_CR1_TE | USART_CR1_RXNEIE;
-
-  // unsigned sz0 = rx_ring.size();
-  BOARD_UART_DEFAULT->USART_TX_REG = '<';
-  delay_ms( 10 );
-  BOARD_UART_DEFAULT->USART_TX_REG = '>';
-  delay_ms( 10 );
 
   while( 1 ) {
     // leds.toggle( BIT3 );
 
-    if( rx_ring.isFull() ) {
-      BOARD_UART_DEFAULT->USART_TX_REG = 'F';
-      delay_ms( 1 );
-    }
+    // if( rx_ring.isFull() ) {
+    //   // BOARD_UART_DEFAULT->USART_TX_REG = 'F';
+    //   delay_ms( 1 );
+    // }
+    //
+    // --------------------------- IO logic loop here
 
     auto rec = rx_ring.get();
-    //BOARD_UART_DEFAULT->USART_TX_REG = char( '0' + rec.st );
-    //delay_ms( 10 );
 
     if( rec.good() ) {
       // leds.toggle( BIT2 );
-      BOARD_UART_DEFAULT->USART_TX_REG = rec.c;
-      delay_ms( 5 );
+      // BOARD_UART_DEFAULT->USART_TX_REG = rec.c;
+      // delay_ms( 5 );
     } else if( rec.locked() ) {
-      BOARD_UART_DEFAULT->USART_TX_REG = 'L';
-      delay_ms( 5 );
+      // BOARD_UART_DEFAULT->USART_TX_REG = 'L';
+      // delay_ms( 5 );
     } else {
       // leds.toggle( BIT3 );
       delay_ms( 10 );
       // BOARD_UART_DEFAULT->USART_TX_REG = char( '0' + rec.st );
       // BOARD_UART_DEFAULT->USART_TX_REG = 'L';
     }
-    // delay_ms( 1 );
 
-    // unsigned sz1 = rx_ring.size();
-    // if( sz1 != sz0 ) {
-    //   leds.toggle( BIT2 );
-    // }
-    // sz0 = sz1;
+    if( !on_transmit ) {
+      auto toOut = tx_ring.tryGet();
+      if( toOut.good() ) {
+        on_transmit = true;
+        BOARD_UART_DEFAULT->USART_TX_REG = toOut.c;
+        BOARD_UART_DEFAULT->CR1 |= USART_CR1_TXEIE;
+      }
+    }
+    // --------------------------- IO logic loop end
+
+    if( n % ( 100 /* delay_calibrate_value */ ) == 0 ) {
+      leds.toggle( BIT3 );
+      // BOARD_UART_DEFAULT->USART_TX_REG = '+';
+      tx_ring.tryPuts( "ABCDE" NL );
+      delay_ms( 10 );
+    }
 
     ++n;
   }
