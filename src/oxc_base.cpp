@@ -17,7 +17,7 @@ volatile int dbg_val0 = 0, dbg_val1 = 0, dbg_val2 = 0, dbg_val3 = 0;
 void mu_lock( mu_t *m )
 {
   // oxc_disable_interrupts();
-  while( !mu_trylock( m ) ) { /* NOP */ ; };
+  while( mu_trylock( m ) != 0 ) { /* NOP */ ; };
   // oxc_enable_interrupts();
 }
 
@@ -30,18 +30,18 @@ int  mu_trylock( mu_t *m )
   }
   oxc_dmb();
 
-  return sta == 0;
+  return sta != 0;
 }
 
-int  mu_waitlock( mu_t *m, uint32_t ms ) // returns 1 - lock is acquired
+int  mu_waitlock( mu_t *m, uint32_t ms ) // returns 0 - lock is acquired
 {
   for( uint32_t i=0; i<ms; ++i ) {
-    if( mu_trylock( m ) ) {
-      return 1;
+    if( mu_trylock( m ) == 0 ) {
+      return 0;
     }
     delay_ms( 1 );
   }
-  return 0;
+  return 1;
 }
 
 

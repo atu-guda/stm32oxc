@@ -146,7 +146,7 @@ inline uint32_t oxc_strex( uint32_t val, volatile uint32_t *addr )
 }
 
 void mu_lock( mu_t *m );
-int  mu_trylock( mu_t *m );
+int  mu_trylock( mu_t *m ); // 0 - ok, like pthread
 int  mu_waitlock( mu_t *m, uint32_t ms );
 void mu_unlock( mu_t *m );
 

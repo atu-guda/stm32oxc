@@ -192,25 +192,8 @@ ifeq "$(USE_OXC_DEVIO)" "y"
   endif
 endif
 
-ifeq "$(USE_OXC_DEBUG)" "y"
-  SRCS += oxc_debug1.cpp
-  ALLFLAGS += -DUSE_OXC_DEBUG
-endif
-
-
-ifeq "$(USE_OXC)" "y"
-  SRCPATHS += $(OXCSRC)
-  ALLFLAGS += -I$(OXCINC) -I$(OXCINCBSP) -I$(OXCINC)/fake
-  SRCS += oxc_base.cpp
-  SRCS += oxc_miscfun.cpp
-  SRCS += oxc_ministr.cpp
-  SRCS += oxc_gpio.cpp
-  ifneq "$(NOUSE_OXC_OSFUN)" "y"
-    SRCS += oxc_osfun.cpp
-  endif
-endif
-
 ifeq "$(USE_OXC_I2C)" "y"
+  USE_OXC = y
   SRCS += oxc_i2c.cpp
   SRCS += stm32$(MCSUFF)xx_hal_i2c.c
   SRCS += stm32$(MCSUFF)xx_hal_i2c_ex.c
@@ -224,6 +207,7 @@ ifeq "$(USE_OXC_I2C)" "y"
 endif
 
 ifeq "$(USE_OXC_SPI)" "y"
+  USE_OXC = y
   SRCS += oxc_spi.cpp
   SRCS += stm32$(MCSUFF)xx_hal_spi.c
   ifneq "$(NOUSE_DEFAULT_SPI_INIT)" "y"
@@ -236,6 +220,7 @@ ifeq "$(USE_OXC_SPI)" "y"
 endif
 
 ifeq "$(USE_OXC_TIM)" "y"
+  USE_OXC = y
   SRCS += oxc_tim.cpp
   SRCS += stm32$(MCSUFF)xx_hal_tim.c
   SRCS += stm32$(MCSUFF)xx_hal_tim_ex.c
@@ -244,6 +229,7 @@ endif
 
 
 ifeq "$(USE_OXC_ADC)" "y"
+  USE_OXC = y
   # SRCS += oxc_adc.cpp
   SRCS += stm32$(MCSUFF)xx_hal_adc.c
   SRCS += stm32$(MCSUFF)xx_hal_adc_ex.c
@@ -251,6 +237,7 @@ ifeq "$(USE_OXC_ADC)" "y"
 endif
 
 ifeq "$(USE_OXC_DAC)" "y"
+  USE_OXC = y
   # SRCS += oxc_dac.cpp
   SRCS += stm32$(MCSUFF)xx_hal_dac.c
   SRCS += stm32$(MCSUFF)xx_hal_dac_ex.c
@@ -258,6 +245,7 @@ ifeq "$(USE_OXC_DAC)" "y"
 endif
 
 ifeq "$(USE_OXC_DMA)" "y"
+  USE_OXC = y
   # SRCS += oxc_dma.cpp
   SRCS += stm32$(MCSUFF)xx_hal_dma.c
   ifeq "$(MCSUFF)" "f4"
@@ -270,6 +258,7 @@ ifeq "$(USE_OXC_DMA)" "y"
 endif
 
 ifeq "$(USE_OXC_SD)" "y"
+  USE_OXC = y
   # SRCS += oxc_sd.cpp
   SRCS += stm32$(MCSUFF)xx_hal_sd.c
   SRCS += stm32$(MCSUFF)xx_ll_sdmmc.c
@@ -287,6 +276,25 @@ ifeq "$(USE_OXC_SD)" "y"
   endif
 endif
 
+
+ifeq "$(USE_OXC_DEBUG)" "y"
+  SRCS += oxc_debug1.cpp
+  ALLFLAGS += -DUSE_OXC_DEBUG
+endif
+
+
+ifeq "$(USE_OXC)" "y"
+  SRCPATHS += $(OXCSRC)
+  ALLFLAGS += -DUSE_OXC -I$(OXCINC) -I$(OXCINCBSP) -I$(OXCINC)/fake
+  SRCS += oxc_base.cpp
+  SRCS += oxc_miscfun.cpp
+  SRCS += oxc_ministr.cpp
+  SRCS += oxc_gpio.cpp
+  ifneq "$(NOUSE_OXC_OSFUN)" "y"
+    SRCS += oxc_osfun.cpp
+    ALLFLAGS += -DNOUSE_OXC_OSFUN
+  endif
+endif
 
 
 ifeq "$(USE_FREERTOS)" "y"
