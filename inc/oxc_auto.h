@@ -10,6 +10,7 @@
 #include <oxc_gpio.h>
 #include <oxc_miscfun.h>
 #include <oxc_ministr.h>
+#include <oxc_ringbuf.h>
 
 #if defined (USE_OXC_DEVIO)
 #include <oxc_devio.h>

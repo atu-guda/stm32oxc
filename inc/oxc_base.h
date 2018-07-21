@@ -211,6 +211,62 @@ int _execve( char *name, char **argv, char **env );
 }
 #endif
 
+#ifdef USE_OXC
+using Mu_t  = mu_t;
+#define Mu_lock(x)       mu_lock(x)
+#define Mu_unlock(x)     mu_unlock(x)
+#define Mu_trylock(x)    mu_trylock(x)
+#define Mu_waitlock(x,m) mu_waitlock(x,m)
+#define Mu_init          0
+#else
+#include <pthread.h>
+using Mu_t  = pthread_mutex_t;
+#define Mu_lock(x)       pthread_mutex_lock(x)
+#define Mu_unlock(x)     pthread_mutex_unlock(x)
+#define Mu_trylock(x)    pthread_mutex_trylock(x)
+#define Mu_waitlock(x,m) pthread_mutex_waitlock(x,m)
+#define Mu_init          PTHREAD_MUTEX_INITIALIZER
+int pthread_mutex_waitlock( pthread_mutex_t *mutex, unsigned ms );
+int pthread_mutex_waitlock( pthread_mutex_t *mutex, unsigned ms  )
+{
+  for( unsigned i=0; i<ms; ++i ) {
+    if( pthread_mutex_trylock( mutex ) ) {
+        return 1;
+    }
+  }
+  return 0;
+}
+
+#endif
+
+class MuLock {
+  public:
+   MuLock( Mu_t &a_mu ) : mu( a_mu ) { Mu_lock( &mu ); };
+   ~MuLock()  { Mu_unlock( &mu ); };
+  protected:
+   Mu_t &mu;
+};
+
+class MuTryLock {
+  public:
+   MuTryLock( Mu_t &a_mu ) : mu( a_mu ), acq( !Mu_trylock( &mu ) ) { };
+   ~MuTryLock()  { if( acq ) { Mu_unlock( &mu ); } };
+   bool wasAcq() const { return acq; }
+  protected:
+   Mu_t &mu;
+   const bool acq;
+};
+
+class MuWaitLock {
+  public:
+   MuWaitLock( Mu_t &a_mu, uint32_t ms = 100 ) : mu( a_mu ), acq( !Mu_waitlock( &mu, ms ) ) { };
+   ~MuWaitLock()  { if( acq ) { Mu_unlock( &mu ); } };
+   bool wasAcq() const { return acq; }
+  protected:
+   Mu_t &mu;
+   const bool acq;
+};
+
 #define USE_DIE_ERROR_HANDLER void Error_Handler( int rc ) { die( rc ); };
 #define USE_DIE4LED_ERROR_HANDLER void Error_Handler( int rc ) { die4led( rc ); };
 #define USE_DIE_EXIT void void( int rc ) { die( rc ); };

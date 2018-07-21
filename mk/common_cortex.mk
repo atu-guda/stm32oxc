@@ -289,6 +289,7 @@ ifeq "$(USE_OXC)" "y"
   SRCS += oxc_base.cpp
   SRCS += oxc_miscfun.cpp
   SRCS += oxc_ministr.cpp
+  SRCS += oxc_ringbuf.cpp
   SRCS += oxc_gpio.cpp
   ifneq "$(NOUSE_OXC_OSFUN)" "y"
     SRCS += oxc_osfun.cpp
