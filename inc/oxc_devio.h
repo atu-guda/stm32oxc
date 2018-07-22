@@ -31,10 +31,6 @@ class DevIO {
    virtual int sendStrSync( const char *s );
    int sendByte( char b ) { return sendBlock( &b, 1 ); };
    int sendByteSync( char b ) { return sendBlockSync( &b, 1 ); };
-   int sendInt16( int16_t v ) { return sendBlock( (const char*)(&v), sizeof(int16_t) ); };
-   int sendInt16Sync( int16_t v ) { return sendBlockSync( (const char*)(&v), sizeof(int16_t) ); };
-   int sendInt32( int32_t v ) { return sendBlock( (const char*)(&v), sizeof(int32_t) ); };
-   int sendInt32Sync( int32_t v ) { return sendBlockSync( (const char*)(&v), sizeof(int32_t) ); };
 
    virtual int recvByte( char *s, int w_tick = 0 );
    virtual int recvBytePoll( char *s, int w_tick = 0 ) = 0;
@@ -47,10 +43,6 @@ class DevIO {
    virtual void task_recv();
    void charsFromIrq( const char *s, int l ); // virtual?
 
-   virtual int  setAddrLen( int addrLen ) = 0;
-   virtual int  getAddrLen() const = 0;
-   virtual int  setAddr( uint32_t addr ) = 0;
-   // void initIRQ( uint8_t ch, uint8_t prio ); // TODO:? store ch
   protected:
    // TODO: open mode + flags
    RtosQueue ibuf;
@@ -91,9 +83,6 @@ class DevNull : public DevIO {
    virtual int recvByte( char *b UNUSED_ARG, int w_tick UNUSED_ARG = 0 ) override { return 0; };
    virtual int recvBytePoll( char *b UNUSED_ARG, int w_tick UNUSED_ARG = 0 ) override { return 0; };
 
-   virtual int  setAddrLen( int addrLen UNUSED_ARG ) override { return 0; };
-   virtual int  getAddrLen() const override { return 0; };
-   virtual int  setAddr( uint32_t addr UNUSED_ARG ) override { return 0; };
 };
 
 extern "C" {

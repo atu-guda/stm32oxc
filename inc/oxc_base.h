@@ -212,7 +212,7 @@ int _execve( char *name, char **argv, char **env );
 #endif
 
 #ifdef USE_OXC
-using Mu_t  = mu_t;
+#define Mu_t  mu_t
 #define Mu_lock(x)       mu_lock(x)
 #define Mu_unlock(x)     mu_unlock(x)
 #define Mu_trylock(x)    mu_trylock(x)
@@ -220,7 +220,7 @@ using Mu_t  = mu_t;
 #define Mu_init          0
 #else
 #include <pthread.h>
-using Mu_t  = pthread_mutex_t;
+#define Mu_t  pthread_mutex_t
 #define Mu_lock(x)       pthread_mutex_lock(x)
 #define Mu_unlock(x)     pthread_mutex_unlock(x)
 #define Mu_trylock(x)    pthread_mutex_trylock(x)
@@ -238,6 +238,8 @@ int pthread_mutex_waitlock( pthread_mutex_t *mutex, unsigned ms  )
 }
 
 #endif
+
+#ifdef __cplusplus
 
 class MuLock {
   public:
@@ -266,6 +268,8 @@ class MuWaitLock {
    Mu_t &mu;
    const bool acq;
 };
+
+#endif
 
 #define USE_DIE_ERROR_HANDLER void Error_Handler( int rc ) { die( rc ); };
 #define USE_DIE4LED_ERROR_HANDLER void Error_Handler( int rc ) { die4led( rc ); };

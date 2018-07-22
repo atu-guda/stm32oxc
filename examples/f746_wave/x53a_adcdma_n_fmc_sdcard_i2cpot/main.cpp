@@ -7,8 +7,7 @@
 
 #include <oxc_auto.h>
 
-// TODO: replace!
-#include <bsp/board_stm32f429discovery_sdram.h>
+#include <board_sdram.h>
 
 #include <ff.h>
 #include <fatfs.h>

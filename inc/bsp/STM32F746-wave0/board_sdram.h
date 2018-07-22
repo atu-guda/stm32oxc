@@ -1,6 +1,7 @@
 #ifndef _BOARD_SDRAM_H
 #define _BOARD_SDRAM_H
 
+
 // ---------------- SDRAM -------------------------------------------------------------------------
 #define REFRESH_COUNT       ((uint32_t)0x056A)   /* SDRAM refresh counter (90MHz SDRAM clock) */
 #define SDRAM_BANK_ADDR                 ((uint32_t)0xD0000000)

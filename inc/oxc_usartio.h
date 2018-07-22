@@ -24,10 +24,6 @@ class UsartIO : public DevIO {
    // virtual int recvByte( char *b, int w_tick = 0 ) override;
    virtual int recvBytePoll( char *b, int w_tick = 0 ) override;
 
-   virtual int  setAddrLen( int addrLen UNUSED_ARG ) override { return 0; };
-   virtual int  getAddrLen() const override { return 0; };
-   virtual int  setAddr( uint32_t addr UNUSED_ARG ) override { return 0; };
-
    void handleIRQ();
    virtual void task_send() override; // special
 

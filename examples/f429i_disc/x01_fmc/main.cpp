@@ -3,7 +3,7 @@
 
 #include <oxc_auto.h>
 
-#include <bsp/board_stm32f429discovery_sdram.h>
+#include <board_sdram.h>
 
 using namespace std;
 using namespace SMLRL;

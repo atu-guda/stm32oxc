@@ -1,6 +1,6 @@
 #include <oxc_base.h>
 
-#include <bsp/board_stm32f429discovery_sdram.h>
+#include <board_sdram.h>
 
 void HAL_SDRAM_MspInit( SDRAM_HandleTypeDef *hsdram )
 {

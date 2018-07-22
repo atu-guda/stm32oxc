@@ -3,7 +3,7 @@
 
 #include <oxc_auto.h>
 
-#include <bsp/board_stm32f429discovery_sdram.h>
+#include <board_sdram.h>
 #include <stm32f429i_discovery_ts.h>
 
 #include <GUI.h>

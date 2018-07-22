@@ -25,10 +25,6 @@ class UsbcdcIO : public DevIO {
      return recvByte( b, w_tick ); // no special
    };
 
-   virtual int  setAddrLen( int addrLen ) override { return 0; };
-   virtual int  getAddrLen() const override { return 0; };
-   virtual int  setAddr( uint32_t addr ) override { return 0; };
-
    USBD_CDC_LineCodingTypeDef* getCdcLineCoding() { return &lineCoding; }
 
    static int8_t CDC_Itf_Init();
