@@ -36,6 +36,7 @@ int UsbcdcIO::sendBlockSync( const char *s, int l )
   if( !hcdc ) {
     return 0;
   }
+
   USBD_CDC_SetTxBuffer( &usb_dev, (uint8_t*)s, l );
   uint8_t rc;
   for( int n_try = 0; n_try < wait_tx; ++n_try ) {
@@ -71,26 +72,26 @@ int8_t UsbcdcIO::CDC_Itf_DeInit()
 
 int8_t UsbcdcIO::CDC_Itf_Control ( uint8_t cmd, uint8_t* pbuf, uint16_t length UNUSED_ARG )
 {
-  switch (cmd)
-  {
+  switch( cmd ) {
     case CDC_SEND_ENCAPSULATED_COMMAND:
-      /* Add your code here */
+      // NOP
       break;
 
     case CDC_GET_ENCAPSULATED_RESPONSE:
-      /* Add your code here */
+      // NOP
       break;
 
     case CDC_SET_COMM_FEATURE:
+      // NOP
       /* Add your code here */
       break;
 
     case CDC_GET_COMM_FEATURE:
-      /* Add your code here */
+      // NOP
       break;
 
     case CDC_CLEAR_COMM_FEATURE:
-      /* Add your code here */
+      // NOP
       break;
 
     case CDC_SET_LINE_CODING:
@@ -100,26 +101,24 @@ int8_t UsbcdcIO::CDC_Itf_Control ( uint8_t cmd, uint8_t* pbuf, uint16_t length U
       static_usbcdcio->lineCoding.paritytype = pbuf[5];
       static_usbcdcio->lineCoding.datatype   = pbuf[6];
 
-      /* Set the new configuration */
-      // ComPort_Config();
       break;
 
     case CDC_GET_LINE_CODING:
-      pbuf[0] = (uint8_t)(static_usbcdcio->lineCoding.bitrate);
-      pbuf[1] = (uint8_t)(static_usbcdcio->lineCoding.bitrate >> 8);
-      pbuf[2] = (uint8_t)(static_usbcdcio->lineCoding.bitrate >> 16);
-      pbuf[3] = (uint8_t)(static_usbcdcio->lineCoding.bitrate >> 24);
+      pbuf[0] = (uint8_t)( static_usbcdcio->lineCoding.bitrate       );
+      pbuf[1] = (uint8_t)( static_usbcdcio->lineCoding.bitrate >>  8 );
+      pbuf[2] = (uint8_t)( static_usbcdcio->lineCoding.bitrate >> 16 );
+      pbuf[3] = (uint8_t)( static_usbcdcio->lineCoding.bitrate >> 24 );
       pbuf[4] = static_usbcdcio->lineCoding.format;
       pbuf[5] = static_usbcdcio->lineCoding.paritytype;
       pbuf[6] = static_usbcdcio->lineCoding.datatype;
       break;
 
     case CDC_SET_CONTROL_LINE_STATE:
-      /* Add your code here */
+      // NOP
       break;
 
     case CDC_SEND_BREAK:
-      /* Add your code here */
+      // NOP
       break;
 
     default:
@@ -136,7 +135,7 @@ int8_t UsbcdcIO::CDC_Itf_Receive( uint8_t* Buf, uint32_t *Len )
     static_usbcdcio->charsFromIrq( (char*)Buf, *Len );
   }
 
-  USBD_CDC_ReceivePacket( pusb_dev ); // ???
+  USBD_CDC_ReceivePacket( pusb_dev ); // acq
   return USBD_OK;
 }
 

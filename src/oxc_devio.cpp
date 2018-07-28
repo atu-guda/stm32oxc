@@ -79,7 +79,7 @@ int DevIO::task_recv()
     if( onRecv != nullptr ) {
       onRecv( &ts.c, 1 );
     } else {
-      // else simply eat char - if not required - dont use this task
+      // TODO: no! else simply eat char - if not required - dont use this task
     }
   }
   // leds.reset( BIT2 );
@@ -101,6 +101,8 @@ void DevIO::charFromIrq( char c ) // called from IRQ!
   ibuf.tryPut( c );
   portEND_SWITCHING_ISR( wake );
 }
+
+
 
 void DevIO::charsFromIrq( const char *s, int l ) // called from IRQ!
 {

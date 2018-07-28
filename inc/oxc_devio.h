@@ -3,16 +3,34 @@
 
 #include <oxc_base.h>
 
+// transmit mode default: waitSync( wait_tx)  + waitFlush
+//   maybe:    ASYNC_TX: wait only mutex, if buffer full: return 0, EAGAIN : may be special return type (len,err)
+//             ASYNC_MU_MU: 0, EAGAIN if fail to get mutex
+//             SYNC: auto waitFlush( ??? )
+//   atomic_add?
+//     need RingBuf:
+//       atomic puts, if available
+//       iteration puts, lock only on every char
+//     modes: see socket params
+// Recv: IRQ->buf( tryPut[s] ), so no atomic, drop
+//   default: ASYNC read
+//   more default: function callback to console
+//   maybe:  SYNC_RX_1: at least 1 + wait
+//   maybe:  SYNC_RX_all: all + wait
+
+// portEND_SWITCHING_ISR( wake );
+// taskYieldFun();
+
 class DevIO {
   public:
    using OnRecvFun = void (*)( const char *s, int l );
    using SigFun = void (*)( int v );
    enum {
-     TX_BUF_SIZE = 128, //* low-level transmit buffer size
-     RX_BUF_SIZE = 128  //* low-level receive buffer size
+     IBUF_DEF_SIZE = 128, //* low-level transmit buffer size
+     OBUF_DEF_SIZE = 128  //* low-level receive buffer size
    };
 
-   DevIO( unsigned ibuf_sz = IBUF_SZ, unsigned obuf_sz = OBUF_SZ )
+   DevIO( unsigned ibuf_sz = IBUF_DEF_SIZE, unsigned obuf_sz = OBUF_DEF_SIZE )
      : ibuf( ibuf_sz ),
        obuf( obuf_sz )
     {};
@@ -39,7 +57,8 @@ class DevIO {
    virtual int task_send();
    virtual int task_recv();
    virtual int task_io();
-   void charsFromIrq( const char *s, int l ); // virtual?
+   void charFromIrq( char c ); // called from IRQ!
+   void charsFromIrq( const char *s, int l ); //  called from IRQ!
 
   protected:
    // TODO: open mode + flags: block_send...

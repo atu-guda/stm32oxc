@@ -14,12 +14,13 @@ class Chst { // char + status
    };
    Chst( char ch ) : c( ch ), st( st_good ) {};
    Chst( char ch, uint8_t a_st ) : c( ch ), st( a_st ) {};
-   char c;
-   uint8_t st;
    bool good()   const noexcept { return st == st_good;  }
    bool full()   const noexcept { return st == st_full;  }
    bool empty()  const noexcept { return st == st_empty; }
    bool locked() const noexcept { return st == st_lock;  }
+
+   char c;
+   uint8_t st;
 };
 static_assert( sizeof(Chst) == 2 );
 
@@ -30,7 +31,7 @@ class RingBuf {
    RingBuf( const RingBuf &r ) = delete;
    ~RingBuf();
    RingBuf& operator=( const RingBuf &rhs ) = delete;
-   unsigned size() const { return sz; } // w/o block?
+   unsigned size() const { return sz; } // w/o block, only info
    unsigned capacity() const { return cap; }
    unsigned isFull() const { return sz == cap; }
    bool put( char c ); // blocks, wait
