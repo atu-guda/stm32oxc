@@ -64,7 +64,7 @@ void SysTick_Handler(void)
   if( ready_to_start_scheduler ) {
     xPortSysTickHandler();
   } else {
-    HAL_IncTick();
+    HAL_IncTick(); /// TODO: common, w/o vApplicationTickHook() { HAL_IncTick();  }
     HAL_SYSTICK_IRQHandler();
   }
 }
