@@ -1,23 +1,20 @@
 #ifndef _OXC_DEVIO_H
 #define _OXC_DEVIO_H
 
-#include <oxc_rtosqueue.h>
-
+#include <oxc_base.h>
 
 class DevIO {
   public:
    using OnRecvFun = void (*)( const char *s, int l );
    using SigFun = void (*)( int v );
    enum {
-     IBUF_SZ = 128,     //* Input queue  size
-     OBUF_SZ = 128,     //* Output queue size
-     TX_BUF_SIZE = 256, //* low-level transmit buffer size
-     RX_BUF_SIZE = 256  //* low-level receive buffer size, buffer itself - only if required
+     TX_BUF_SIZE = 128, //* low-level transmit buffer size
+     RX_BUF_SIZE = 128  //* low-level receive buffer size
    };
 
    DevIO( unsigned ibuf_sz = IBUF_SZ, unsigned obuf_sz = OBUF_SZ )
-     : ibuf( ibuf_sz, 1 ),
-       obuf( obuf_sz, 1 )
+     : ibuf( ibuf_sz ),
+       obuf( obuf_sz )
     {};
    virtual ~DevIO();
    virtual void reset();
@@ -29,31 +26,31 @@ class DevIO {
    virtual int sendBlockSync( const char *s, int l ) = 0;
    virtual int sendStr( const char *s );
    virtual int sendStrSync( const char *s );
-   int sendByte( char b ) { return sendBlock( &b, 1 ); };
+   int sendByte( char b )     { return sendBlock( &b, 1 ); };
    int sendByteSync( char b ) { return sendBlockSync( &b, 1 ); };
 
-   virtual int recvByte( char *s, int w_tick = 0 );
+   virtual int recvByte( char *s, int w_tick = 0 ); // TODO: Chst
    virtual int recvBytePoll( char *s, int w_tick = 0 ) = 0;
    virtual int recvBlock( char *s, int l, int w_tick = 0 ); // w_tick - for every
    virtual int recvBlockPoll( char *s, int l, int w_tick = 0 );
    virtual void setOnRecv( OnRecvFun a_onRecv ) { onRecv = a_onRecv; };
    virtual void setOnSigInt( SigFun a_onSigInt ) { onSigInt = a_onSigInt; };
 
-   virtual void task_send();
-   virtual void task_recv();
+   virtual int task_send();
+   virtual int task_recv();
+   virtual int task_io();
    void charsFromIrq( const char *s, int l ); // virtual?
 
   protected:
-   // TODO: open mode + flags
-   RtosQueue ibuf;
-   RtosQueue obuf;
+   // TODO: open mode + flags: block_send...
+   RingBuf ibuf;
+   RingBuf obuf;
    OnRecvFun onRecv = nullptr;
    SigFun onSigInt = nullptr;
    int err = 0;
    int wait_tx = 1500;
    int wait_rx = 1500;
    bool on_transmit = false;
-   char tx_buf[TX_BUF_SIZE];
 };
 
 // fd - ala
@@ -85,7 +82,7 @@ class DevNull : public DevIO {
 
 };
 
-extern "C" {
+extern "C" { // TODO: move to base
 // defines from newlib: hidden by some macros
 int  asprintf( char **__restrict, const char *__restrict, ... )
                _ATTRIBUTE( (__format__( __printf__, 2, 3)));

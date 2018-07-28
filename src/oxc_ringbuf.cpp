@@ -22,6 +22,18 @@ RingBuf::RingBuf( char *a_b, unsigned a_cap )
 {
 }
 
+RingBuf::RingBuf( unsigned a_cap )
+  : b( new char[a_cap] ), cap( a_cap ), was_alloc( b != nullptr )
+{
+}
+
+RingBuf::~RingBuf()
+{
+  if( was_alloc ) {
+    delete[] b; b = nullptr; s = e = sz = 0;
+  }
+}
+
 bool RingBuf::put_nolock( char c )
 {
   if( sz >= cap ) {

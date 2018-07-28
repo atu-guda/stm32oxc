@@ -26,8 +26,9 @@ static_assert( sizeof(Chst) == 2 );
 class RingBuf {
   public:
    RingBuf( char *a_b, unsigned a_cap ); // used external buf
-   // may be with dynamic buffer ?
+   explicit RingBuf( unsigned a_cap );   // dynamic buffer ?
    RingBuf( const RingBuf &r ) = delete;
+   ~RingBuf();
    RingBuf& operator=( const RingBuf &rhs ) = delete;
    unsigned size() const { return sz; } // w/o block?
    unsigned capacity() const { return cap; }
@@ -59,6 +60,7 @@ class RingBuf {
    volatile unsigned s  = 0;  //* start index (over the head)
    volatile unsigned e  = 0;  //* end index
    Mu_t mu = Mu_init;
+   bool was_alloc = false;
 };
 
 #endif
