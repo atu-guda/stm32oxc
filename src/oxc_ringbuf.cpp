@@ -1,21 +1,10 @@
+#include <cstring>
+
 #include <oxc_ringbuf.h>
 
 using namespace std;
 
-#ifndef USE_OXC
-#include <pthread.h>
-using Mu_t  = pthread_mutex_t;
-int pthread_mutex_waitlock( pthread_mutex_t *mutex, unsigned ms  )
-{
-  for( unsigned i=0; i<ms; ++i ) {
-    if( pthread_mutex_trylock( mutex ) ) {
-        return 1;
-    }
-  }
-  return 0;
-}
-#endif
-
+void (*RingBuf::wait_fun)(void) = default_wait1;
 
 RingBuf::RingBuf( char *a_b, unsigned a_cap )
   : b( a_b ), cap( a_cap )
@@ -34,44 +23,46 @@ RingBuf::~RingBuf()
   }
 }
 
-bool RingBuf::put_nolock( char c )
+int RingBuf::put_nolock( char c )
 {
   if( sz >= cap ) {
-    return false;
+    return 0;
   }
   unsigned sn = s + 1;
   if( sn >= cap ) {
     sn = 0;
   }
   b[s] = c; s = sn;  ++sz;
-  return true;
+  return 1;
 }
 
-bool RingBuf::put( char c )
+int RingBuf::put( char c )
 {
-  MuLock lock( mu );
-  return put_nolock( c );
+  for( unsigned i=0; i<n_wait; ++i ) {
+    {
+      MuTryLock lock( mu );
+      if( lock.wasAcq() ) {
+        if( put_nolock( c ) > 0 ) {
+          return 1;
+        }
+      }
+    }
+    wait_fun();
+  }
+  return -1;
 }
 
-bool RingBuf::tryPut( char c )
+int RingBuf::tryPut( char c )
 {
   MuTryLock lock( mu );
   if( lock.wasAcq() ) {
     return put_nolock( c );
   }
-  return false;
+  return -1;
 }
 
-bool RingBuf::waitPut( char c, uint32_t ms  )
-{
-  MuWaitLock lock( mu, ms );
-  if( lock.wasAcq() ) {
-    return put_nolock( c );
-  }
-  return false;
-}
 
-unsigned RingBuf::puts_nolock( const char *s )
+int RingBuf::puts_nolock( const char *s )
 {
   unsigned r;
   for( r=0; *s && put_nolock( *s ) ; ++s, ++r ) {
@@ -79,41 +70,92 @@ unsigned RingBuf::puts_nolock( const char *s )
   return r;
 }
 
-unsigned RingBuf::puts_nolock( const char *s, unsigned l )
+int RingBuf::puts_nolock( const char *s, unsigned l )
 {
-  unsigned r;
-  for( r=0; r<l && put_nolock( *s ) ; ++s, ++r ) {
+  int r;
+  for( r=0; (unsigned)r<l && put_nolock( *s ) ; ++s, ++r ) {
   }
   return r;
 }
 
 
-unsigned RingBuf::puts( const char *s )
+int RingBuf::puts( const char *s )
 {
-  MuLock lock( mu );
-  return puts_nolock( s );
+  if( !s ) {
+    return 0;
+  }
+  unsigned l = strlen( s );
+  return puts( s, l );
 }
 
-unsigned RingBuf::puts( const char *s, unsigned l )
+int RingBuf::puts( const char *s, unsigned l )
 {
-  MuLock lock( mu );
-  return puts_nolock( s, l );
+  int w = 0;
+  unsigned np;
+  for( np=0; np<l; np += w ) {
+    unsigned to_put = l - np;
+    unsigned l_cur = (to_put > cap ) ? cap : to_put;
+    w = puts_ato( s + np, l_cur );
+    if( w < 1 ) {
+      return np;
+    }
+  }
+  return np;
 }
 
-unsigned RingBuf::tryPuts( const char *s )
+
+int RingBuf::puts_ato( const char *s )
+{
+  if( !s ) {
+    return 0;
+  }
+  unsigned l = strlen( s );
+  return puts_ato( s, l );
+}
+
+int RingBuf::puts_ato( const char *s, unsigned l )
+{
+  if( !s || l < 1 ) {
+    return 0;
+  }
+  if( l > cap ) {
+    return -5;
+  }
+
+  for( unsigned nw = 0; nw < n_wait; ++nw ) {
+    {
+      MuTryLock lock( mu );
+      if( !lock.wasAcq() ) {
+        continue;
+      }
+      auto n_free = cap - sz;
+      if( l <= n_free ) {
+        for( unsigned r=0; r<l; ++s, ++r ) {
+          put_nolock( *s );
+        }
+        return l;
+      }
+    }
+    wait_fun();
+    continue;
+  }
+  return -4;
+}
+
+int RingBuf::tryPuts( const char *s )
 {
   MuTryLock lock( mu );
   if( ! lock.wasAcq() ) {
-    return 0;
+    return -1;
   }
   return puts_nolock( s );
 }
 
-unsigned RingBuf::tryPuts( const char *s, unsigned l )
+int RingBuf::tryPuts( const char *s, unsigned l )
 {
   MuTryLock lock( mu );
   if( ! lock.wasAcq() ) {
-    return 0;
+    return -1;
   }
   return puts_nolock( s, l );
 }
@@ -148,22 +190,14 @@ Chst RingBuf::tryGet()
   return Chst( '\0', Chst::st_lock );
 }
 
-Chst RingBuf::waitGet( uint32_t ms )
-{
-  MuWaitLock lock( mu, ms );
-  if( lock.wasAcq() ) {
-    return get_nolock();
-  }
-  return Chst( '\0', Chst::st_lock );
-}
 
-unsigned RingBuf::gets_nolock( char *d, unsigned max_len )
+int RingBuf::gets_nolock( char *d, unsigned max_len )
 {
   if( !s  || max_len < 1 ) {
     return 0;
   }
-  unsigned i;
-  for( i=0; i<max_len; ++i ) {
+  int i;
+  for( i=0; (unsigned)i<max_len; ++i ) {
     auto x = get_nolock();
     if( !x.good() ) {
       break;
@@ -188,5 +222,9 @@ unsigned RingBuf::tryGets( char *d, unsigned max_len )
     return 0;
   }
   MuTryLock lock( mu );
-  return gets_nolock( d, max_len );
+  if( lock.wasAcq() ) {
+    return gets_nolock( d, max_len );
+  }
+  return 0;
 }
+

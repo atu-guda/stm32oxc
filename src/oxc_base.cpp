@@ -51,7 +51,10 @@ void mu_unlock( mu_t *m )
   *m = 0;
 }
 
-
+void default_wait1()
+{
+  delay_ms( 1 );
+}
 
 
 #ifndef NO_STD_SYSTICK_HANDLER
@@ -223,10 +226,12 @@ void delay_mcs( uint32_t mcs )
 {
   int ms = mcs / 1000;
   int mcs_r = mcs % 1000;
-  if( ms )
+  if( ms ) {
     delay_ms( ms );
-  if( mcs_r )
+  }
+  if( mcs_r ) {
     delay_bad_mcs( mcs_r );
+  }
 }
 
 
