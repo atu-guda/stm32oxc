@@ -32,11 +32,10 @@ RingBuf rx_ring( ring_rx_buf, sizeof( ring_rx_buf ) );
 void BOARD_UART_DEFAULT_IRQHANDLER(void) {
   // leds.toggle( BIT3 ); // DEBUG
   UART_handleIRQ();
-  HAL_UART_IRQHandler( &uah );
+  // HAL_UART_IRQHandler( &uah );
 }
 
-volatile char in_char = ' ';
-bool on_transmit = false;
+volatile bool on_transmit = false;
 
 void UART_handleIRQ()
 {
@@ -45,23 +44,20 @@ void UART_handleIRQ()
   // leds.toggle( BIT0 ); // DEBUG
 
   if( status & UART_FLAG_RXNE ) { // char recived
-    leds.toggle( BIT2 );
+    // leds.toggle( BIT2 );
     // ++n_work;
     // char cr = recvRaw();
-    in_char = BOARD_UART_DEFAULT->USART_RX_REG;
+    char in_char = BOARD_UART_DEFAULT->USART_RX_REG; // TODO: link to given object
     if( status & ( UART_FLAG_ORE | UART_FLAG_FE /*| UART_FLAG_LBD*/ ) ) { // TODO: on MCU
       // err = status;
     } else {
       if( ! rx_ring.tryPut( in_char ) ) {
          // leds.toggle( BIT0 );
-      }
+      } // TODO: else
     }
     // leds.reset( BIT2 );
   }
 
-  // if( status & UART_FLAG_TXE ) {
-  //   leds.toggle( BIT1 );
-  // }
   if( on_transmit  && ( status & UART_FLAG_TXE ) ) {
     // ++n_work;
     leds.toggle( BIT1 );
@@ -75,7 +71,7 @@ void UART_handleIRQ()
       on_transmit = false;
       leds.reset( BIT0 );
     } else { // locked, full?
-      BOARD_UART_DEFAULT->USART_TX_REG = '?';
+      BOARD_UART_DEFAULT->USART_TX_REG = '@';
     }
   }
 
@@ -89,6 +85,38 @@ void UART_handleIRQ()
 }
 
 
+void out( const char *s )
+{
+  if( !s || !*s ) {
+    return;
+  }
+  if( on_transmit ) {
+    tx_ring.puts( s );
+    if( on_transmit ) {
+      return;
+    }
+  }
+
+  // start transmit
+  char c0 = *s;
+  ++s;
+  if( tx_ring.puts_ato( s ) > 0 ) {
+    BOARD_UART_DEFAULT->USART_TX_REG = c0;
+    on_transmit = true;
+    leds.set( BIT0 );
+    BOARD_UART_DEFAULT->CR1 |= USART_CR1_TXEIE;
+    return;
+  }
+
+  leds.toggle( BIT2 );
+  BOARD_UART_DEFAULT->USART_TX_REG = c0;
+  BOARD_UART_DEFAULT->CR1 |= USART_CR1_TXEIE;
+  on_transmit = true;
+  tx_ring.puts( s ); // bad bad solution
+}
+
+
+char huge_str[128];
 
 
 int main(void)
@@ -97,65 +125,30 @@ int main(void)
 
   leds.write( 0 );
 
-  // uint32_t c_msp = __get_MSP();
-  // os << " MSP-__heap_top = " << ((unsigned)c_msp - (unsigned)(__heap_top) ) << "\r\n";
-  // os.flush();
-  // os << "CR1: " << HexInt16( BOARD_UART_DEFAULT->CR1 )  << "  CR2: " << HexInt16( BOARD_UART_DEFAULT->CR2 )  << "\r\n";
-  // os.flush();
-
   int n = 0;
   char ou[12];
-  strcpy( ou, "ABC_0[z]" NL );
+  // strcpy( ou, "ABC_0[z] !!!" NL );
+  strcpy( ou, "ABC_0[z]"  );
+  memset( huge_str, '$', sizeof(huge_str) ); huge_str[sizeof(huge_str)-1] = '\0';
 
   BOARD_UART_DEFAULT->CR1 |= USART_CR1_RE | USART_CR1_TE | USART_CR1_RXNEIE;
 
   while( 1 ) {
-    // leds.toggle( BIT3 );
 
-    // if( rx_ring.isFull() ) {
-    //   // BOARD_UART_DEFAULT->USART_TX_REG = 'F';
-    //   delay_ms( 1 );
-    // }
-    //
-    // --------------------------- IO logic loop here
+    leds.toggle( BIT3 );
 
     auto rec = rx_ring.get();
-    bool was_input = false;
 
-    if( rec.good() ) {
-      was_input = true;
-      // leds.toggle( BIT2 );
-      // BOARD_UART_DEFAULT->USART_TX_REG = rec.c;
-      // delay_ms( 5 );
-    } else if( rec.locked() ) {
-      // BOARD_UART_DEFAULT->USART_TX_REG = 'L';
-      // delay_ms( 5 );
+    ++ou[4];
+    if( ou[4] > 'z' ) { ou[4] = '.'; }
+    ou[6] = rec.good() ?  rec.c : ' ';
+    if( ou[4] == 'L' ) {
+      out( huge_str );
     } else {
-      // leds.toggle( BIT3 );
-      // delay_ms( 10 );
-      // BOARD_UART_DEFAULT->USART_TX_REG = char( '0' + rec.st );
-      // BOARD_UART_DEFAULT->USART_TX_REG = 'L';
+      out( ou );
+      out( " !!!" NL );
     }
-
-    // --------------------------- IO logic loop end
-
-    if( was_input ) {
-      leds.toggle( BIT3 );
-      ++ou[4];
-      if( ou[4] > 'z' ) { ou[4] = '.'; }
-      ou[6] = was_input ?  rec.c : ' ';
-      // BOARD_UART_DEFAULT->USART_TX_REG = '+';
-      tx_ring.puts( ou );
-      auto tx = tx_ring.tryGet();
-      BOARD_UART_DEFAULT->USART_TX_REG = tx.c;
-      BOARD_UART_DEFAULT->CR1 |= USART_CR1_TXEIE;
-      on_transmit = true;
-      leds.set( BIT0 );
-      delay_ms( 1000 );
-    } else {
-      delay_ms( 1 );
-    }
-
+    delay_ms( 500 );
 
     ++n;
   }
