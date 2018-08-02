@@ -47,6 +47,7 @@ class RingBuf {
    int tryPuts( const char *s, unsigned l ); // try-blocks, given length
    Chst get(); // blocks
    Chst tryGet(); // noblocks
+   Chst getFromISR(); // noblocks+
    unsigned gets( char *d, unsigned max_len );
    unsigned tryGets( char *d, unsigned max_len );
    void reset() { MuLock lock( mu ); reset_nolock(); };
@@ -65,6 +66,7 @@ class RingBuf {
    volatile unsigned sz = 0;  //* size
    volatile unsigned s  = 0;  //* start index (over the head)
    volatile unsigned e  = 0;  //* end index
+   volatile int was_get_ISR = 0;  //* number of char, read by getFromISR, w/o eating
    unsigned n_wait      = 1000; //* number of wait ticks (ms by default)
    Mu_t mu = Mu_init;
    bool was_alloc = false;

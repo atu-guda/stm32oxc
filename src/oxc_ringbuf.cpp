@@ -33,6 +33,11 @@ int RingBuf::put_nolock( char c )
     sn = 0;
   }
   b[s] = c; s = sn;  ++sz;
+
+  for( int x=0; x<was_get_ISR; ++x ) { // fake get
+    (void)get_nolock();
+  }
+  was_get_ISR = 0;
   return 1;
 }
 
@@ -133,6 +138,10 @@ int RingBuf::puts_ato( const char *s, unsigned l )
         for( unsigned r=0; r<l; ++s, ++r ) {
           put_nolock( *s );
         }
+        // for( int x=0; x<was_get_ISR; ++x ) { // fake get
+        //   (void)get_nolock();
+        // }
+        // was_get_ISR = 0;
         return l;
       }
     }
@@ -190,6 +199,18 @@ Chst RingBuf::tryGet()
   return Chst( '\0', Chst::st_lock );
 }
 
+Chst RingBuf::getFromISR()
+{
+  auto r = tryGet();
+  if( ! r.locked() ) {
+    return r;
+  }
+  if( sz == 0 ) {
+    return Chst( '\0', Chst::st_empty );
+  }
+  ++was_get_ISR;
+  return b[e];
+}
 
 int RingBuf::gets_nolock( char *d, unsigned max_len )
 {

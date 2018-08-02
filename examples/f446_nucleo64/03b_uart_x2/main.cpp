@@ -61,7 +61,7 @@ void UART_handleIRQ()
   if( on_transmit  && ( status & UART_FLAG_TXE ) ) {
     // ++n_work;
     leds.toggle( BIT1 );
-    auto toOut = tx_ring.tryGet();
+    auto toOut = tx_ring.getFromISR();
     if( toOut.good() ) { // TODO: all cases
      // sendRaw( cs );
       BOARD_UART_DEFAULT->USART_TX_REG = toOut.c;
@@ -92,7 +92,7 @@ void out( const char *s )
   }
   if( on_transmit ) {
     tx_ring.puts( s );
-    if( on_transmit ) {
+    if( on_transmit ) { // TODO: better: restart
       return;
     }
   }
@@ -103,8 +103,8 @@ void out( const char *s )
   if( tx_ring.puts_ato( s ) > 0 ) {
     BOARD_UART_DEFAULT->USART_TX_REG = c0;
     on_transmit = true;
-    leds.set( BIT0 );
     BOARD_UART_DEFAULT->CR1 |= USART_CR1_TXEIE;
+    leds.set( BIT0 );
     return;
   }
 
