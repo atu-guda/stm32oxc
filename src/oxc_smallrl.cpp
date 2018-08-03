@@ -263,7 +263,9 @@ void SMLRL::SmallRL::handle_nl()
   if( print_cmd ) {
     prl( NL "CMD: \"", 8, fd ); prl( buf, epos, fd ); prl( "\"" NL, 3, fd );
   }
-  if( exf && epos > 0 ) {
+  int rc = 0;
+
+  if( epos > 0 ) {
 
     if( buf[0] == '.' ) { // DEBUG
       switch( buf[1] ) {
@@ -279,9 +281,15 @@ void SMLRL::SmallRL::handle_nl()
     } else { // ordinary command
       history_add_cur();
       // dump8( buf, epos );
-      exf( buf, epos );
+      if( exf ) {
+        rc = exf( buf, epos );
+      }
     }
 
+  }
+
+  if( post_exf ) {
+    post_exf( rc );
   }
   cpos = epos = 0; buf[0] = 0;
   re_ps();

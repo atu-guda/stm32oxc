@@ -1,7 +1,8 @@
 #ifndef _OXC_CONSOLE_H
 #define _OXC_CONSOLE_H
 
-#include <oxc_devio.h>
+#include <oxc_base.h>
+#include <oxc_miscfun.h>
 
 #ifndef CMDLINE_MAXSZ
 #define CMDLINE_MAXSZ 128

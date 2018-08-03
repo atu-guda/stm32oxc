@@ -13,6 +13,10 @@ char* __heap_top = (char*)(&_end);
 int ready_to_start_scheduler = 0;
 int exit_rc = 0;
 volatile int dbg_val0 = 0, dbg_val1 = 0, dbg_val2 = 0, dbg_val3 = 0;
+volatile int idle_flag = 0;
+volatile int break_flag = 0;
+volatile int sigint_count   =  0;
+volatile int task_leds_step = 50; // 500 ms def
 
 void mu_lock( mu_t *m )
 {
@@ -212,15 +216,16 @@ int delay_ms_brk( uint32_t ms )
 
   #else
 
-  while( ms > 0 ) {
+  uint32_t t0 = HAL_GetTick();
+  uint32_t w = ms;
+
+  while( ( HAL_GetTick() - t0 ) < w ) {
     if( break_flag ) {
       return 1;
     }
-    uint32_t cms = ( ms > 10 ) ? 10 : ms;
-    HAL_Delay( cms );
-    ms -= cms;
+    // TODO: idle
   }
-  // delay_bad_ms( ms ); // TODO: config
+
   #endif
   return 0;
 }
@@ -244,7 +249,18 @@ int delay_ms_until_brk( uint32_t *tc0, uint32_t ms )
   return 0;
 
   #else
-  return delay_ms_brk( ms ); // TODO: real?
+
+  uint32_t t0 = *tc0;
+  uint32_t w = ms;
+  *tc0 += w;
+
+  while( ( HAL_GetTick() - t0 ) < w ) {
+    if( break_flag ) {
+      return 1;
+    }
+    // TODO: idle
+  }
+  return 0;
   #endif
 }
 

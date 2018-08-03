@@ -1,6 +1,5 @@
 #include <string.h>
 #include <oxc_console.h>
-#include <oxc_devio.h>
 
 int console_verbose = 1;
 
@@ -215,10 +214,11 @@ int exec_direct( const char *s, int l )
     }
   }
 
+  pr( NL );
   if( f != 0 ) {
       int rc = 0;
       if( console_verbose > 0 ) {
-        pr( NL "=== CMD: \"" ); pr( nm ); pr( "\"" NL );
+        pr( "=== CMD: \"" ); pr( nm ); pr( "\"" NL );
         delay_ms( 1 );
       }
       break_flag = 0;

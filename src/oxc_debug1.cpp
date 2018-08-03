@@ -1,13 +1,13 @@
 #include <stdlib.h>
 #include <errno.h>
 
-#if USE_FREERTOS != 0
+#if defined(USE_FREERTOS)  &&  ( USE_FREERTOS != 0 )
 #include <FreeRTOS.h>
 #include <task.h>
 #endif
 
 #include <oxc_gpio.h>
-#include <oxc_devio.h>
+// #include <oxc_devio.h>
 #include <oxc_debug1.h>
 #include <oxc_ministr.h>
 
@@ -257,7 +257,7 @@ int cmd_info( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
 
 
 
-  #if USE_FREERTOS != 0
+  #if defined(USE_FREERTOS) && ( USE_FREERTOS != 0 )
     const char *nm = pcTaskGetName( 0 );
     os <<  "task: \"" <<  nm << "\" tick_count: " << xTaskGetTickCount() << "  prty: " << uxTaskPriorityGet( 0 )
        << " highStackWaterMark= " << uxTaskGetStackHighWaterMark( 0 ) << NL;

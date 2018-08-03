@@ -3,6 +3,7 @@
 
 #include <oxc_console.h>
 
+
 #ifndef SMLRL_HISTSZ
 #define SMLRL_HISTSZ (CMDLINE_MAXSZ*3)
 #endif
@@ -15,6 +16,7 @@ namespace SMLRL {
   };
 
   using ExecFun  = int (*)( const char *s, int len );
+  using PostExecFun  = int (*)( int rc );
   using SigFun   = void(*)();
 
 
@@ -24,6 +26,7 @@ namespace SMLRL {
      SmallRL( const SmallRL &r ) = delete;
      int addChar( char c );                    // input stream
      void setSigFun( SigFun a_sigf ) { sigf = a_sigf; } // on Ctrl-C
+     void setPostExecFun( PostExecFun a_post_exf ) { post_exf = a_post_exf; }
      void reset();
      void re_ps() const;
      static const constexpr int bufsz = CMDLINE_MAXSZ;
@@ -65,6 +68,7 @@ namespace SMLRL {
      int ps1_len = 2, ps1_vlen = 2; // real and visual ps1 sizes
      bool print_cmd = false;
      ExecFun exf;
+     PostExecFun post_exf = nullptr;
      int fd;
      SigFun  sigf = nullptr;
 

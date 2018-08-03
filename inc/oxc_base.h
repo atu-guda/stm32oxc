@@ -86,12 +86,18 @@
 #define BIT14 0x4000
 #define BIT15 0x8000
 
+extern char* __heap_top;
 extern int ready_to_start_scheduler;
 extern int exit_rc;
 extern volatile int dbg_val0, dbg_val1, dbg_val2, dbg_val3;
 extern volatile int idle_flag;
 extern volatile int break_flag;
-extern char* __heap_top;
+extern volatile int sigint_count;
+#ifndef TASK_LEDS_QUANT
+  #define TASK_LEDS_QUANT 10
+#endif
+// delay is TASK_LEDS_QUANT * task_leds_step,
+extern volatile int task_leds_step; // initial = 50
 
 typedef __IO uint32_t reg32;
 typedef const char *const ccstr;
@@ -253,8 +259,16 @@ class MuTryLock {
    const bool acq;
 };
 
+// for devio, but may be defined by other means
+int recvByte( int fd, char *s, int w_tick = 0 );
+int sendBlock( int fd, const char *s, int l );
+int pr( const char *s, int fd = 1 );
+int prl( const char *s, unsigned l, int fd = 1 );
+int prl1( const char *s, unsigned l ); // fd == 1 for used as flush funcs
+
 
 #endif
+
 
 void default_wait1();
 

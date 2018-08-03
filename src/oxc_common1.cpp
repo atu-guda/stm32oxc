@@ -11,8 +11,6 @@
 
 using namespace SMLRL;
 
-volatile int task_leds_step = 50; // 500 ms def
-volatile int sigint_count   =  0;
 
 void task_leds( void *prm UNUSED_ARG )
 {
