@@ -138,10 +138,6 @@ int RingBuf::puts_ato( const char *s, unsigned l )
         for( unsigned r=0; r<l; ++s, ++r ) {
           put_nolock( *s );
         }
-        // for( int x=0; x<was_get_ISR; ++x ) { // fake get
-        //   (void)get_nolock();
-        // }
-        // was_get_ISR = 0;
         return l;
       }
     }
