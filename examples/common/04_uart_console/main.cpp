@@ -7,7 +7,6 @@ using namespace std;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
-FreeRTOS_to_stm32cube_tick_hook;
 BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES_UART;

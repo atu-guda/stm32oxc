@@ -30,7 +30,9 @@ static_assert( sizeof(Chst) == 2, "Bad size of Chst struct, !=2" );
 class RingBuf {
   public:
    RingBuf( char *a_b, unsigned a_cap ); // used external buf
+   #ifndef OXC_NO_OSFUN
    explicit RingBuf( unsigned a_cap );   // dynamic buffer ?
+   #endif
    RingBuf( const RingBuf &r ) = delete;
    ~RingBuf();
    RingBuf& operator=( const RingBuf &rhs ) = delete;

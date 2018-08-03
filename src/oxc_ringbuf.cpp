@@ -11,6 +11,8 @@ RingBuf::RingBuf( char *a_b, unsigned a_cap )
 {
 }
 
+
+#ifndef OXC_NO_OSFUN
 RingBuf::RingBuf( unsigned a_cap )
   : b( new char[a_cap] ), cap( a_cap ), was_alloc( b != nullptr )
 {
@@ -22,6 +24,11 @@ RingBuf::~RingBuf()
     delete[] b; b = nullptr; s = e = sz = 0;
   }
 }
+#else
+RingBuf::~RingBuf()
+{
+}
+#endif
 
 int RingBuf::put_nolock( char c )
 {

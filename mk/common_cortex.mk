@@ -288,12 +288,17 @@ ifeq "$(USE_OXC)" "y"
   ALLFLAGS += -DUSE_OXC -I$(OXCINC) -I$(OXCINCBSP) -I$(OXCINC)/fake
   SRCS += oxc_base.cpp
   SRCS += oxc_miscfun.cpp
-  SRCS += oxc_ministr.cpp
-  SRCS += oxc_ringbuf.cpp
   SRCS += oxc_gpio.cpp
-  ifneq "$(NOUSE_OXC_OSFUN)" "y"
+  ifneq "$(OXC_NO_RINGBUF)" "y"
+  SRCS += oxc_ministr.cpp
+  endif
+  ifneq "$(OXC_NO_RINGBUF)" "y"
+    SRCS += oxc_ringbuf.cpp
+  endif
+  ifneq "$(OXC_NO_OSFUN)" "y"
     SRCS += oxc_osfun.cpp
-    ALLFLAGS += -DNOUSE_OXC_OSFUN
+  else
+    ALLFLAGS += -DOXC_NO_OSFUN
   endif
 endif
 
@@ -351,7 +356,7 @@ all: proj dirs
 dirs:
 	mkdir -p $(DEPSDIR) $(OBJDIR)
 
-proj:  dirs $(PROJ_NAME).elf
+proj:  dirs $(PROJ_NAME).bin
 
 $(OBJDIR)/*.o:  Makefile $(OXCDIR)/mk/common_cortex.mk $(BSPMAKEFILE)
 
@@ -368,11 +373,12 @@ $(OBJDIR)/%.o: %.s
 	$(CC) $(CFLAGS) -I$(OXCSRC)/startup -c -o $@ $<
 
 
-$(PROJ_NAME).elf: $(OBJS1)
-	$(LINK) $^ $(LDFLAGS) $(LIBS) -o $@
-	$(OBJCOPY) -O ihex $(PROJ_NAME).elf $(PROJ_NAME).hex
+$(PROJ_NAME).bin: $(OBJS1)
+	$(LINK) $^ $(LDFLAGS) $(LIBS) -o $(PROJ_NAME).elf
 	$(OBJCOPY) -O binary $(PROJ_NAME).elf $(PROJ_NAME).bin
 	$(OBJDUMP) -h -f -d -S $(PROJ_NAME).elf > $(PROJ_NAME).lst
+
+#	$(OBJCOPY) -O ihex $(PROJ_NAME).elf $(PROJ_NAME).hex
 
 flash: $(PROJ_NAME).bin
 	st-flash --reset write  $(PROJ_NAME).bin 0x8000000
