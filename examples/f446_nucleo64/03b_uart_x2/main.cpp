@@ -13,7 +13,6 @@ BOARD_DEFINE_LEDS;
 UART_HandleTypeDef uah;
 int out_uart( const char *d, unsigned n );
 void UART_handleIRQ();
-void wait_on_put();
 
 // -------------------------------------------------------------------
 
@@ -36,14 +35,15 @@ void BOARD_UART_DEFAULT_IRQHANDLER(void) {
 }
 
 volatile bool on_transmit = false;
-int  start_transmit();
+void start_transmit();
 void wait_eot();
+
 
 void UART_handleIRQ()
 {
   uint16_t status = BOARD_UART_DEFAULT->USART_SR_REG;
 
-  leds.set( BIT3 ); // DEBUG
+  // leds.set( BIT3 ); // DEBUG
 
   if( status & UART_FLAG_RXNE ) { // char recived
     // leds.toggle( BIT2 );
@@ -82,15 +82,10 @@ void UART_handleIRQ()
   // }
 
   //portEND_SWITCHING_ISR( wake );
-  leds.reset( BIT3 ); // DEBUG
+  // leds.reset( BIT3 ); // DEBUG
 
 }
 
-void wait_on_put()
-{
-  start_transmit();
-  delay_ms( 1 );
-}
 
 void out( const char *s )
 {
@@ -110,24 +105,19 @@ void out( const char *s )
   leds.reset( BIT2 );
 }
 
-int start_transmit()
+void start_transmit()
 {
   if( on_transmit ) {
-    return 2;
+    return;
   }
 
   auto v = tx_ring.tryGet();
-  // if( v.empty() ) {
-  //   return 0;
-  // }
   if( v.good() ) {
     BOARD_UART_DEFAULT->USART_TX_REG = v.c;
     on_transmit = true;
     BOARD_UART_DEFAULT->CR1 |= USART_CR1_TXEIE;
     leds.set( BIT0 );
-    return 1;
   }
-  return 0;
 }
 
 void wait_eot()
@@ -152,7 +142,8 @@ int main(void)
   strcpy( ou, "ABC_a[?]"  );
   strcpy( huge_str, "0123456789-ABCDEFGHIJKLMNOPQRTUVWXYZ-abcdefghijklmnopqrtuvwxyz>" NL );
 
-  tx_ring.set_wait_fun( wait_on_put );
+  oxc_add_aux_tick_fun( start_transmit );
+
   tx_ring.set_n_wait( 1000 );
 
 
@@ -167,13 +158,15 @@ int main(void)
     ++ou[4];
     if( ou[4] > 'z' ) { ou[4] = 'a'; }
     ou[6] = rec.good() ?  rec.c : ' ';
+    if( ou[6] < ' ' ) {
+      ou[6] = '\xAA';
+    }
     if( ou[4] == 'l' ) {
       out( huge_str );
     } else {
       out( ou );
-      // wait_eot();
       out( " !!!" NL );
-      // out( " !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" NL );
+      /// out( " !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!." NL );
     }
 
     if( ! rec.good() ) {

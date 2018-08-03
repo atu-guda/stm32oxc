@@ -145,6 +145,7 @@ inline uint32_t oxc_strex( uint32_t val, volatile uint32_t *addr )
   return rv;
 }
 
+
 void mu_lock( mu_t *m );
 int  mu_trylock( mu_t *m ); // 0 - ok, like pthread
 int  mu_waitlock( mu_t *m, uint32_t ms );
@@ -194,6 +195,14 @@ int _stat( const char *file, struct stat *st );
 int _link( const char *oldname, const char *newname );
 int _fork(void);
 int _execve( char *name, char **argv, char **env );
+
+typedef void (*AuxTickFun)(void);
+#define AUX_TICK_FUN_N 4
+extern AuxTickFun oxc_aux_tick_funcs[AUX_TICK_FUN_N];
+int  oxc_add_aux_tick_fun( AuxTickFun f );
+int  oxc_del_aux_tick_fun( AuxTickFun f );
+void oxc_clear_aux_tick_funs();
+void oxc_call_aux_tick_funcs();
 
 #ifdef USE_FREERTOS
 

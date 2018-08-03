@@ -56,6 +56,55 @@ void default_wait1()
   delay_ms( 1 );
 }
 
+AuxTickFun oxc_aux_tick_funcs[AUX_TICK_FUN_N];
+
+int  oxc_add_aux_tick_fun( AuxTickFun f )
+{
+  int rc = -1;
+  oxc_disable_interrupts(); // TODO: store/restore
+  for( int i=0; i< AUX_TICK_FUN_N; ++i ) {
+    if( oxc_aux_tick_funcs[i]  == nullptr ) {
+      oxc_aux_tick_funcs[i] = f;
+      rc = i;
+      break;
+    }
+  }
+  oxc_enable_interrupts();
+  return rc;
+}
+
+int  oxc_del_aux_tick_fun( AuxTickFun f )
+{
+  int rc = -1;
+  oxc_disable_interrupts(); // TODO: store/restore
+  for( int i=0; i< AUX_TICK_FUN_N; ++i ) {
+    if( oxc_aux_tick_funcs[i]  == f ) {
+      oxc_aux_tick_funcs[i] = nullptr;
+      rc = i;
+      break;
+    }
+  }
+  oxc_enable_interrupts();
+  return rc;
+}
+
+void oxc_clear_aux_tick_funs()
+{
+  oxc_disable_interrupts(); // TODO: store/restore
+  for( int i=0; i< AUX_TICK_FUN_N; ++i ) {
+    oxc_aux_tick_funcs[i] = nullptr;
+  }
+  oxc_enable_interrupts();
+}
+
+void oxc_call_aux_tick_funcs()
+{
+  for( int i=0; i< AUX_TICK_FUN_N; ++i ) {
+    if( oxc_aux_tick_funcs[i]  != nullptr ) {
+      oxc_aux_tick_funcs[i]();
+    }
+  }
+}
 
 #ifndef NO_STD_SYSTICK_HANDLER
 #ifdef USE_FREERTOS
@@ -70,11 +119,13 @@ void SysTick_Handler(void)
   } else {
     HAL_SYSTICK_IRQHandler();
   }
+  oxc_call_aux_tick_funcs();
 }
 #else
 void SysTick_Handler(void)
 {
   HAL_IncTick();
+  oxc_call_aux_tick_funcs();
   HAL_SYSTICK_IRQHandler();
 }
 #endif
