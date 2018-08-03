@@ -13,6 +13,7 @@ BOARD_DEFINE_LEDS;
 UART_HandleTypeDef uah;
 int out_uart( const char *d, unsigned n );
 void UART_handleIRQ();
+void wait_on_put();
 
 // -------------------------------------------------------------------
 
@@ -67,13 +68,7 @@ void UART_handleIRQ()
     if( toOut.good() ) { // TODO: all cases
      // sendRaw( cs );
       BOARD_UART_DEFAULT->USART_TX_REG = toOut.c;
-    } else if ( toOut.empty() ) {
-      BOARD_UART_DEFAULT->CR1 &= ~USART_CR1_TXEIE;
-      // itDisable( UART_IT_TXE );
-      on_transmit = false;
-      leds.reset( BIT0 );
-    } else { // locked, full?
-      // BOARD_UART_DEFAULT->USART_TX_REG = '@';
+    } else  {
       BOARD_UART_DEFAULT->CR1 &= ~USART_CR1_TXEIE;
       // itDisable( UART_IT_TXE );
       on_transmit = false;
@@ -81,7 +76,6 @@ void UART_handleIRQ()
     }
     leds.reset( BIT1 );
   }
-
 
   // if( n_work == 0 ) { // unhandled
   //   // leds_toggle( BIT1 );
@@ -92,34 +86,24 @@ void UART_handleIRQ()
 
 }
 
+void wait_on_put()
+{
+  start_transmit();
+  delay_ms( 1 );
+}
 
 void out( const char *s )
 {
   if( !s || !*s ) {
     return;
   }
-  if( on_transmit ) {
-    tx_ring.puts( s );
-    if( on_transmit ) { // TODO: better: restart
-      return;
-    }
-  }
 
-  // start transmit
-  // char c0 = *s;
-  // ++s;
   if( tx_ring.puts_ato( s ) > 0 ) {
     start_transmit();
-    // BOARD_UART_DEFAULT->USART_TX_REG = c0;
-    // on_transmit = true;
-    // BOARD_UART_DEFAULT->CR1 |= USART_CR1_TXEIE;
-    // leds.set( BIT0 );
     return;
   }
 
   leds.set( BIT2 );
-  wait_eot();
-  tx_ring.tryPut( *s++ );
   tx_ring.tryPut( *s++ );
   start_transmit();
   tx_ring.puts( s );
@@ -128,23 +112,22 @@ void out( const char *s )
 
 int start_transmit()
 {
-  for( ; ; ) {
-    auto v = tx_ring.tryGet();
-    if( v.empty() ) {
-      return 0;
-    }
-    if( v.locked() ) {
-      delay_mcs(1);
-      continue;
-    }
-    if( v.good() ) {
-      BOARD_UART_DEFAULT->USART_TX_REG = v.c;
-      on_transmit = true;
-      BOARD_UART_DEFAULT->CR1 |= USART_CR1_TXEIE;
-      leds.set( BIT0 );
-      return 1;
-    }
-  };
+  if( on_transmit ) {
+    return 2;
+  }
+
+  auto v = tx_ring.tryGet();
+  // if( v.empty() ) {
+  //   return 0;
+  // }
+  if( v.good() ) {
+    BOARD_UART_DEFAULT->USART_TX_REG = v.c;
+    on_transmit = true;
+    BOARD_UART_DEFAULT->CR1 |= USART_CR1_TXEIE;
+    leds.set( BIT0 );
+    return 1;
+  }
+  return 0;
 }
 
 void wait_eot()
@@ -166,10 +149,10 @@ int main(void)
   int n = 0;
   char ou[12];
   // strcpy( ou, "ABC_0[z] !!!" NL );
-  strcpy( ou, "ABC_0[?]"  );
+  strcpy( ou, "ABC_a[?]"  );
   strcpy( huge_str, "0123456789-ABCDEFGHIJKLMNOPQRTUVWXYZ-abcdefghijklmnopqrtuvwxyz>" NL );
-  // memset( huge_str, '$', sizeof(huge_str) ); huge_str[sizeof(huge_str)-1] = '\0';
 
+  tx_ring.set_wait_fun( wait_on_put );
   tx_ring.set_n_wait( 1000 );
 
 
@@ -182,9 +165,9 @@ int main(void)
     auto rec = rx_ring.get();
 
     ++ou[4];
-    if( ou[4] > 'Z' ) { ou[4] = '0'; }
+    if( ou[4] > 'z' ) { ou[4] = 'a'; }
     ou[6] = rec.good() ?  rec.c : ' ';
-    if( ou[4] == 'L' ) {
+    if( ou[4] == 'l' ) {
       out( huge_str );
     } else {
       out( ou );
@@ -192,7 +175,10 @@ int main(void)
       out( " !!!" NL );
       // out( " !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" NL );
     }
-    delay_ms( 500 );
+
+    if( ! rec.good() ) {
+      delay_ms( 500 );
+    }
 
     ++n;
   }
