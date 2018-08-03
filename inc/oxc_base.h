@@ -197,9 +197,6 @@ int _execve( char *name, char **argv, char **env );
 
 #ifdef USE_FREERTOS
 
-  // TODO: common prty, hook func
-  #define FreeRTOS_to_stm32cube_tick_hook \
-    void vApplicationTickHook() { HAL_IncTick();  }
   #include <FreeRTOS.h>
   #include <task.h>
   #define OXC_DEFAULT_UART_PRTY configKERNEL_INTERRUPT_PRIORITY
