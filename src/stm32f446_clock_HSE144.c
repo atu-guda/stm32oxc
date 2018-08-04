@@ -41,6 +41,7 @@ int SystemClockCfg(void)
   //
   // No overdrive
   //
+  //
 
   RCC_ClkInitTypeDef RCC_ClkInitStruct;
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK

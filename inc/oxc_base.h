@@ -207,8 +207,8 @@ typedef void (*AuxTickFun)(void);
 extern AuxTickFun oxc_aux_tick_funcs[AUX_TICK_FUN_N];
 int  oxc_add_aux_tick_fun( AuxTickFun f );
 int  oxc_del_aux_tick_fun( AuxTickFun f );
-void oxc_clear_aux_tick_funs();
-void oxc_call_aux_tick_funcs();
+void oxc_clear_aux_tick_funs(void);
+void oxc_call_aux_tick_funcs(void);
 
 #ifdef USE_FREERTOS
 
@@ -259,18 +259,11 @@ class MuTryLock {
    const bool acq;
 };
 
-// for devio, but may be defined by other means
-int recvByte( int fd, char *s, int w_tick = 0 );
-int sendBlock( int fd, const char *s, int l );
-int pr( const char *s, int fd = 1 );
-int prl( const char *s, unsigned l, int fd = 1 );
-int prl1( const char *s, unsigned l ); // fd == 1 for used as flush funcs
-
 
 #endif
 
 
-void default_wait1();
+void default_wait1(void);
 
 #define USE_DIE_ERROR_HANDLER void Error_Handler( int rc ) { die( rc ); };
 #define USE_DIE4LED_ERROR_HANDLER void Error_Handler( int rc ) { die4led( rc ); };

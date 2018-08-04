@@ -2,6 +2,7 @@
 #define _OXC_CONSOLE_H
 
 #include <oxc_base.h>
+#include <oxc_io.h>
 #include <oxc_miscfun.h>
 
 #ifndef CMDLINE_MAXSZ

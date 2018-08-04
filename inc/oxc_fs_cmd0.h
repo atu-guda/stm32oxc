@@ -34,6 +34,7 @@ extern CmdInfo CMDINFO_RM;
   &CMDINFO_WBLOCKS, \
   &CMDINFO_RM
 
+//
 
 #endif
 

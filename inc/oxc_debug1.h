@@ -4,9 +4,6 @@
 #include <oxc_console.h>
 // #include <oxc_common1.h>
 
-#ifdef __cplusplus
- extern "C" {
-#endif
 
 // number of user one-char vars
 #define N_USER_VARS  ('z' - 'a' + 1 )
@@ -36,6 +33,10 @@ void print_user_var( int idx );
 void gpio_pin_info( GPIO_TypeDef *gi, uint16_t pin, char *s );
 
 extern const char* common_help_string __weak;
+
+#ifdef __cplusplus
+ extern "C" {
+#endif
 
 // common commands:
 int cmd_info( int argc, const char * const * argv );

@@ -1,6 +1,7 @@
 #ifndef _OXC_DEVIO_H
 #define _OXC_DEVIO_H
 
+#include <oxc_io.h>
 #include <oxc_rtosqueue.h>
 
 

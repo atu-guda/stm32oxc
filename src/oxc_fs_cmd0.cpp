@@ -5,6 +5,7 @@
 
 #include <oxc_fs_cmd0.h>
 
+
 CmdInfo CMDINFO_MOUNT { "mount", 'M', cmd_mount, " [path] - mount FAT filesystem"  };
 CmdInfo CMDINFO_UMOUNT { "umount", 'U', cmd_umount, " - umount FAT filesystem"  };
 CmdInfo CMDINFO_FSINFO { "fsinfo", 'I', cmd_fsinfo, " info about FAT filesystem"  };
@@ -213,4 +214,5 @@ int cmd_rm( int argc, const char * const * argv )
 }
 
 
+// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 
