@@ -25,7 +25,9 @@ class UsartIO : public DevIO {
    virtual int recvBytePoll( char *b, int w_tick = 0 ) override;
 
    void handleIRQ();
-   virtual void task_send() override; // special
+   virtual void on_tick_action_tx() override; // special
+   // virtual void on_tick_action_rx() override;
+   // virtual void on_tick_action() override;
 
    void sendRaw( uint16_t v ) { us->USART_TX_REG = ( v & (uint16_t)0x01FF); };
    int16_t recvRaw() { return (uint16_t)( us->USART_RX_REG & (uint16_t)0x01FF ); };
@@ -40,6 +42,7 @@ class UsartIO : public DevIO {
    uint16_t getCR1() { return us->CR1; }
    // ITStatus getITStatus( uint16_t it ) { return USART_GetITStatus( us, it ); };
    // void clearITPendingBit( uint16_t it ) { return USART_ClearITPendingBit( us, it );} ;
+   virtual void start_transmit() override;
 
   protected:
    UART_HandleTypeDef *uah;
@@ -49,30 +52,14 @@ class UsartIO : public DevIO {
 // common declarations
 //
 
-#define STD_USART1_SEND_TASK( obj ) STD_COMMON_SEND_TASK( task_usart1_send, obj )
-#define STD_USART2_SEND_TASK( obj ) STD_COMMON_SEND_TASK( task_usart2_send, obj )
-#define STD_USART3_SEND_TASK( obj ) STD_COMMON_SEND_TASK( task_usart3_send, obj )
-#define STD_USART4_SEND_TASK( obj ) STD_COMMON_SEND_TASK( task_usart4_send, obj )
-#define STD_USART5_SEND_TASK( obj ) STD_COMMON_SEND_TASK( task_usart5_send, obj )
-#define STD_USART6_SEND_TASK( obj ) STD_COMMON_SEND_TASK( task_usart6_send, obj )
-#define STD_UART7_SEND_TASK( obj )  STD_COMMON_SEND_TASK( task_uart7_send,  obj )
-#define STD_UART8_SEND_TASK( obj )  STD_COMMON_SEND_TASK( task_uart8_send,  obj )
-//
-#define STD_USART1_RECV_TASK( obj ) STD_COMMON_RECV_TASK( task_usart1_recv, obj )
-#define STD_USART2_RECV_TASK( obj ) STD_COMMON_RECV_TASK( task_usart2_recv, obj )
-#define STD_USART3_RECV_TASK( obj ) STD_COMMON_RECV_TASK( task_usart3_recv, obj )
-#define STD_USART4_RECV_TASK( obj ) STD_COMMON_RECV_TASK( task_usart4_recv, obj )
-#define STD_USART5_RECV_TASK( obj ) STD_COMMON_RECV_TASK( task_usart5_recv, obj )
-#define STD_USART6_RECV_TASK( obj ) STD_COMMON_RECV_TASK( task_usart6_recv, obj )
-#define STD_UART7_RECV_TASK( obj )  STD_COMMON_RECV_TASK( task_uart7_recv,  obj )
-#define STD_UART8_RECV_TASK( obj )  STD_COMMON_RECV_TASK( task_uart8_recv,  obj )
 
 #define UART_CONSOLE_DEFINES( dev ) \
   UART_HandleTypeDef uah; \
   UsartIO usartio( &uah, dev ); \
-  STD_ ## dev ## _SEND_TASK( usartio ); \
-  STD_ ## dev ## _IRQ( usartio ); \
   SmallRL srl( smallrl_exec );
+
+//    STD_ ## dev ## _SEND_TASK( usartio ); // --
+//    STD_ ## dev ## _IRQ( usartio );       // --
 
 #endif
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include

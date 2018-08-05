@@ -185,11 +185,7 @@ ifeq "$(USE_OXC_DEVIO)" "y"
   # $(info "Used DEVIO" )
   USE_OXC = y
   SRCS += oxc_devio.cpp
-  SRCS += oxc_rtosqueue.cpp
   ALLFLAGS += -DUSE_OXC_DEVIO
-  ifneq "$(USE_FREERTOS)" "y"
-    $(warning "FreeRTOS must be used if DevIO is in use")
-  endif
 endif
 
 ifeq "$(USE_OXC_I2C)" "y"

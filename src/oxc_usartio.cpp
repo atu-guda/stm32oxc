@@ -42,10 +42,7 @@ int UsartIO::recvBytePoll( char *b, int w_tick )
 
 void UsartIO::handleIRQ()
 {
-  char cr, cs;
   int n_work = 0;
-  BaseType_t wake = pdFALSE;
-  BaseType_t qrec;
   uint32_t status = us->USART_SR_REG;
 
   // leds.set( BIT3 ); // DEBUG
@@ -53,12 +50,14 @@ void UsartIO::handleIRQ()
   if( status & UART_FLAG_RXNE ) { // char recived
     // leds.set( BIT2 );
     ++n_work;
-    cr = recvRaw();
+    char cr = recvRaw();
+    charFromIrq( cr );
+    if( /* TODO: handle_cbreak && */ cr == 3 ) {
+      break_flag = 1;
+    }
     // leds.set( BIT2 );
     if( status & ( UART_FLAG_ORE | UART_FLAG_FE /*| UART_FLAG_LBD*/ ) ) { // TODO: on MCU
       err = status;
-    } else {
-      charsFromIrq( &cr,  1 );
     }
     // leds.reset( BIT2 );
   }
@@ -67,9 +66,9 @@ void UsartIO::handleIRQ()
   if( on_transmit  &&  (status & UART_FLAG_TXE) ) {
     // leds.set( BIT0 );
     ++n_work;
-    qrec = obuf.recvFromISR( &cs, &wake );
-    if( qrec == pdTRUE ) {
-      sendRaw( cs );
+    auto v = obuf.tryGet();
+    if( v.good() ) {
+      sendRaw( v.c );
     } else {
       itDisable( UART_IT_TXE );
       on_transmit = false;
@@ -82,28 +81,27 @@ void UsartIO::handleIRQ()
     // leds_toggle( BIT1 );
   }
 
-  portEND_SWITCHING_ISR( wake );
+  // portEND_SWITCHING_ISR( wake ); // TODO: revive
 
 }
 
-void UsartIO::task_send()
+void UsartIO::start_transmit()
 {
-  // leds.set( BIT0 );
   if( on_transmit ) { // handle by IRQ
-    // leds.reset( BIT0 );
     return;
   }
 
-  char ct;
-  BaseType_t ts = obuf.recv( &ct, wait_tx );
-  if( ts == pdTRUE ) {
+  auto v = obuf.tryGet();
+  if( v.good() ) {
     on_transmit = true;
-    // leds.toggle( BIT1 ); // DEBUG
-    sendRaw( ct );
+    sendRaw( v.c );
     itEnable( UART_IT_TXE );
   }
-  // leds.reset( BIT0 );
+}
 
+void UsartIO::on_tick_action_tx()
+{
+  start_transmit();
 }
 
 

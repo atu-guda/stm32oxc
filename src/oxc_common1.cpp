@@ -5,12 +5,18 @@
 
 #include "board_cfg.h"
 
-#if !defined USE_FREERTOS
-#error This file in only for FreeRTOS enabled projects.
-#endif
-
 using namespace SMLRL;
 
+#ifndef MAIN_LOOP_WAIT
+#define MAIN_LOOP_WAIT 60000
+#endif
+
+#ifndef PS1_STRING
+#define PS1_STRING "\033[32m#\033[0m "
+#define PS1_OUTSZ  2
+#endif
+
+#if defined USE_FREERTOS
 
 void task_leds( void *prm UNUSED_ARG )
 {
@@ -27,15 +33,6 @@ void task_leds( void *prm UNUSED_ARG )
   }
   vTaskDelete(NULL);
 }
-
-#ifndef MAIN_LOOP_WAIT
-#define MAIN_LOOP_WAIT 60000
-#endif
-
-#ifndef PS1_STRING
-#define PS1_STRING "\033[32m#\033[0m "
-#define PS1_OUTSZ  2
-#endif
 
 void default_main_loop()
 {
@@ -84,6 +81,8 @@ void task_gchar( void *prm UNUSED_ARG )
 }
 
 
+#endif
+// FreeRTOS
 
 
 // ---------------------------- smallrl -----------------------

@@ -5,9 +5,17 @@ using namespace std;
 
 DevIO* devio_fds[DEVIO_MAX];
 
+DevIO::DevIO( unsigned ibuf_sz, unsigned obuf_sz  )
+     : ibuf( ibuf_sz ),
+       obuf( obuf_sz )
+{
+  // TODO: register in devio_fds, get_fd();
+}
+
 DevIO::~DevIO()
 {
   reset();
+  // unregister();
 }
 
 void DevIO::reset()
@@ -22,17 +30,14 @@ int DevIO::sendBlock( const char *s, int l )
     return 0;
   }
 
-  int ns = 0, sst;
-
-  for( int i=0; i<l; ++i ) {
-    sst = obuf.send( &(s[i]), wait_tx );
-    if( sst != pdTRUE ) {
-      err = 10;
-      break;
-    }
-    ++ns;
+  int ns = 0;
+  if( ( ns = obuf.puts_ato( s, l ) ) <= 0 ) {
+    ns = obuf.puts( s, l );
   }
-  if( ns ) {
+
+  start_transmit();
+
+  if( ns >0 ) {
     taskYieldFun();
   }
 
@@ -44,57 +49,71 @@ int DevIO::recvByte( char *b, int w_tick )
 {
   if( !b ) { return 0; }
 
-  char c;
-  BaseType_t r = ibuf.recv( &c, w_tick );
-  if( r == pdTRUE ) {
-    *b = c;
-    return 1;
+  for( int i=0; i <= w_tick; ++i ) { // at least one
+    auto v = ibuf.tryGet();
+    if( v.good() ) {
+      *b = v.c;
+      return 1;
+    }
   }
 
   return 0;
 }
 
-void DevIO::task_send()
+void DevIO::on_tick_action_tx()
 {
   // if( on_transmit ) { return; } // handle by IRQ
-  int ns = 0;
-  int wait_now = wait_tx;
-  char ct;
-  for( ns=0; ns<TX_BUF_SIZE; ++ns ) {
-    BaseType_t ts = obuf.recv( &ct, wait_now );
-    if( ts != pdTRUE ) { break; };
-    tx_buf[ns] = ct;
-    wait_now = 0;
+  char tbuf[64];
+  unsigned ns = obuf.tryGets( tbuf, sizeof(tbuf ) );
+  if( ns > 0 ) {
+    sendBlockSync( tbuf, ns ); // TODO: if( send_now )?
   }
-  if( ns == 0 ) { return; }
-  sendBlockSync( tx_buf, ns ); // TODO: if( send_now )?
-};
 
-void DevIO::task_recv()
+}
+
+
+void DevIO::on_tick_action_rx() // really a fallback, may be called from IRQ!
 {
-  // leds.set( BIT2 );
-  char cr;
-  BaseType_t ts = ibuf.recv( &cr, wait_rx );
-  if( ts == pdTRUE ) {
-    if( onRecv != nullptr ) {
-      onRecv( &cr, 1 );
-    } else {
-      // else simply eat char - if not required - dont use this task
+  if( onRecv != nullptr ) {
+    auto v = ibuf.tryGet();
+    if( v.good() ) {
+      onRecv( &v.c, 1 );
     }
   }
-  // leds.reset( BIT2 );
+}
+
+
+void DevIO::on_tick_action() // really a fallback, may be called from IRQ!
+{
+  on_tick_action_rx();
+  on_tick_action_tx();
+}
+
+void DevIO::charFromIrq( char c ) // called from IRQ!
+{
+  if( c == 3  && onSigInt ) { // handle Ctrl-C = 3
+    onSigInt( c );
+  }
+  ibuf.tryPut( c );
+  // portEND_SWITCHING_ISR( wake );
 }
 
 void DevIO::charsFromIrq( const char *s, int l ) // called from IRQ!
 {
-  BaseType_t wake = pdFALSE;
   for( int i=0; i<l; ++i ) {
     if( s[i] == 3  && onSigInt ) { // handle Ctrl-C = 3
       onSigInt( s[i] );
     }
-    ibuf.sendFromISR( s+i, &wake  );
+    ibuf.tryPut( s[i] );
   }
-  portEND_SWITCHING_ISR( wake );
+  // portEND_SWITCHING_ISR( wake );
+}
+
+void DevIO::wait_eot()
+{
+  while( on_transmit ) {
+    delay_mcs( 100 );
+  }
 }
 
 int DevIO::sendStr( const char *s )

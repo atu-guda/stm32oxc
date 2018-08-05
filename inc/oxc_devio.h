@@ -1,8 +1,8 @@
 #ifndef _OXC_DEVIO_H
 #define _OXC_DEVIO_H
 
+#include <oxc_ringbuf.h>
 #include <oxc_io.h>
-#include <oxc_rtosqueue.h>
 
 
 class DevIO {
@@ -10,16 +10,11 @@ class DevIO {
    using OnRecvFun = void (*)( const char *s, int l );
    using SigFun = void (*)( int v );
    enum {
-     IBUF_SZ = 128,     //* Input queue  size
-     OBUF_SZ = 128,     //* Output queue size
      TX_BUF_SIZE = 256, //* low-level transmit buffer size
-     RX_BUF_SIZE = 256  //* low-level receive buffer size, buffer itself - only if required
+     RX_BUF_SIZE = 128  //* low-level receive buffer size
    };
 
-   DevIO( unsigned ibuf_sz = IBUF_SZ, unsigned obuf_sz = OBUF_SZ )
-     : ibuf( ibuf_sz, 1 ),
-       obuf( obuf_sz, 1 )
-    {};
+   DevIO( unsigned ibuf_sz = RX_BUF_SIZE, unsigned obuf_sz = TX_BUF_SIZE );
    virtual ~DevIO();
    virtual void reset();
    virtual int getErr() const { return err; }
@@ -40,21 +35,25 @@ class DevIO {
    virtual void setOnRecv( OnRecvFun a_onRecv ) { onRecv = a_onRecv; };
    virtual void setOnSigInt( SigFun a_onSigInt ) { onSigInt = a_onSigInt; };
 
-   virtual void task_send();
-   virtual void task_recv();
+   virtual void on_tick_action_tx();
+   virtual void on_tick_action_rx();
+   virtual void on_tick_action();
+   void charFromIrq( char c );
    void charsFromIrq( const char *s, int l ); // virtual?
+   void wait_eot();
+
+   virtual void start_transmit() {};
 
   protected:
    // TODO: open mode + flags
-   RtosQueue ibuf;
-   RtosQueue obuf;
+   RingBuf ibuf;
+   RingBuf obuf;
    OnRecvFun onRecv = nullptr;
    SigFun onSigInt = nullptr;
    int err = 0;
    int wait_tx = 1500;
    int wait_rx = 1500;
    bool on_transmit = false;
-   char tx_buf[TX_BUF_SIZE];
 };
 
 // fd - ala
@@ -78,58 +77,6 @@ class DevNull : public DevIO {
    virtual int recvByte( char *b UNUSED_ARG, int w_tick UNUSED_ARG = 0 ) override { return 0; };
    virtual int recvBytePoll( char *b UNUSED_ARG, int w_tick UNUSED_ARG = 0 ) override { return 0; };
 
-};
-
-extern "C" {
-// defines from newlib: hidden by some macros
-int  asprintf( char **__restrict, const char *__restrict, ... )
-               _ATTRIBUTE( (__format__( __printf__, 2, 3)));
-int  vasprintf( char **, const char *, __VALIST )
-               _ATTRIBUTE( (__format__( __printf__, 2, 0)));
-int  asiprintf( char **, const char *, ... )
-               _ATTRIBUTE( (__format__( __printf__, 2, 3)));
-char *  asniprintf( char *, size_t *, const char *, ... )
-               _ATTRIBUTE( (__format__( __printf__, 3, 4)));
-char *  asnprintf( char *__restrict, size_t *__restrict, const char *__restrict, ... )
-               _ATTRIBUTE( (__format__( __printf__, 3, 4)));
-int  diprintf( int, const char *, ... )
-               _ATTRIBUTE( (__format__( __printf__, 2, 3)));
-int  fiprintf( FILE *, const char *, ... )
-               _ATTRIBUTE( (__format__( __printf__, 2, 3)));
-int  fiscanf( FILE *, const char *, ... )
-               _ATTRIBUTE( (__format__( __scanf__, 2, 3)));
-int  iprintf( const char *, ... )
-               _ATTRIBUTE( (__format__( __printf__, 1, 2)));
-int  iscanf( const char *, ... )
-               _ATTRIBUTE( (__format__( __scanf__, 1, 2)));
-int  siprintf( char *, const char *, ... )
-               _ATTRIBUTE( (__format__( __printf__, 2, 3)));
-int  siscanf( const char *, const char *, ... )
-               _ATTRIBUTE( (__format__( __scanf__, 2, 3)));
-int  sniprintf( char *, size_t, const char *, ... )
-               _ATTRIBUTE( (__format__( __printf__, 3, 4)));
-int  vasiprintf( char **, const char *, __VALIST )
-               _ATTRIBUTE( (__format__( __printf__, 2, 0)));
-char *  vasniprintf( char *, size_t *, const char *, __VALIST )
-               _ATTRIBUTE( (__format__( __printf__, 3, 0)));
-char *  vasnprintf( char *, size_t *, const char *, __VALIST )
-               _ATTRIBUTE( (__format__( __printf__, 3, 0)));
-int  vdiprintf( int, const char *, __VALIST )
-               _ATTRIBUTE( (__format__( __printf__, 2, 0)));
-int  vfiprintf( FILE *, const char *, __VALIST )
-               _ATTRIBUTE( (__format__( __printf__, 2, 0)));
-int  vfiscanf( FILE *, const char *, __VALIST )
-               _ATTRIBUTE( (__format__( __scanf__, 2, 0)));
-int  viprintf( const char *, __VALIST )
-               _ATTRIBUTE( (__format__( __printf__, 1, 0)));
-int  viscanf( const char *, __VALIST )
-               _ATTRIBUTE( (__format__( __scanf__, 1, 0)));
-int  vsiprintf( char *, const char *, __VALIST )
-               _ATTRIBUTE( (__format__( __printf__, 2, 0)));
-int  vsiscanf( const char *, const char *, __VALIST )
-               _ATTRIBUTE( (__format__( __scanf__, 2, 0)));
-int  vsniprintf( char *, size_t, const char *, __VALIST )
-               _ATTRIBUTE( (__format__( __printf__, 3, 0)));
 };
 
 #endif
