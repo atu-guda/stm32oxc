@@ -201,7 +201,7 @@ Chst RingBuf::tryGet()
 
 int RingBuf::gets_nolock( char *d, unsigned max_len )
 {
-  if( !s  || max_len < 1 ) {
+  if( !d  || max_len < 1 ) {
     return 0;
   }
   int i;
@@ -217,7 +217,7 @@ int RingBuf::gets_nolock( char *d, unsigned max_len )
 
 unsigned RingBuf::gets( char *d, unsigned max_len )
 {
-  if( !s  || max_len < 1 ) {
+  if( !d  || max_len < 1 ) {
     return 0;
   }
   MuLock lock( mu );
@@ -226,7 +226,7 @@ unsigned RingBuf::gets( char *d, unsigned max_len )
 
 unsigned RingBuf::tryGets( char *d, unsigned max_len )
 {
-  if( !s  || max_len < 1 ) {
+  if( !d  || max_len < 1 ) {
     return 0;
   }
   MuTryLock lock( mu );

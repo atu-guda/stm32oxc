@@ -41,6 +41,7 @@ class UsbcdcIO : public DevIO {
    { 115200, /* baud rate*/ 0x00, /* stop bits-1*/  0x00,   /* parity - none*/  0x08 /* nb. of bits 8*/
    };
    char rx_buf[TX_BUF_SIZE];
+   char tx_buf[TX_BUF_SIZE];
    USBD_CDC_ItfTypeDef cdc_fops =
    {
      CDC_Itf_Init,
@@ -50,26 +51,19 @@ class UsbcdcIO : public DevIO {
    };
 };
 
-// common declarations
-extern "C" {
-  void task_usbcdc_send( void *prm UNUSED_ARG );
-  void task_usbcdc_recv( void *prm UNUSED_ARG );
-}
-
-#define STD_USBCDC_RECV_TASK( obj ) STD_COMMON_RECV_TASK( task_usbcdc_recv, obj )
-#define STD_USBCDC_SEND_TASK( obj ) STD_COMMON_SEND_TASK( task_usbcdc_send, obj )
-
-#define SET_USBCDC_AS_STDIO(usbcdc) \
-  usbcdc.setOnSigInt( sigint ); \
-  devio_fds[0] = &usbcdc;  \
-  devio_fds[1] = &usbcdc;  \
-  devio_fds[2] = &usbcdc;  \
-  delay_ms( 50 );
 
 #define USBCDC_CONSOLE_DEFINES \
-  UsbcdcIO usbcdc; \
-  STD_USBCDC_SEND_TASK( usbcdc ); \
-  SmallRL srl( smallrl_exec );
+  UsbcdcIO dev_console; \
+  SmallRL srl( smallrl_exec ); \
+  STD_POST_EXEC;
+
+#define SET_USBCDC_AS_STDIO(dev_console) \
+  dev_console.setOnSigInt( sigint ); \
+  devio_fds[0] = &dev_console;  \
+  devio_fds[1] = &dev_console;  \
+  devio_fds[2] = &dev_console;  \
+  srl.setPostExecFun( standart_post_exec ); \
+  delay_ms( 50 );
 
 #endif
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include

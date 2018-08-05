@@ -320,12 +320,12 @@ void default_wait1(void);
 #define STD_PROLOG_USBCDC \
   STD_PROLOG_START; \
   delay_ms( PROLOG_LED_TIME ); leds.write( 0x00 ); delay_ms( PROLOG_LED_TIME ); \
-  if( ! usbcdc.init() ) { \
+  if( ! dev_console.init() ) { \
     die4led( 1 ); \
   } \
   leds.write( BOARD_LEDS_ALL );  HAL_Delay( PROLOG_LED_TIME ); \
   global_smallrl = &srl; \
-  SET_USBCDC_AS_STDIO( usbcdc );
+  SET_USBCDC_AS_STDIO( dev_console );
 
 
 

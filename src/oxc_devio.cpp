@@ -48,7 +48,7 @@ int DevIO::sendBlock( const char *s, int l )
     ns = obuf.puts( s, l );
   }
 
-  start_transmit();
+  // start_transmit();
 
   if( ns >0 ) {
     taskYieldFun();
@@ -75,8 +75,9 @@ int DevIO::recvByte( char *b, int w_tick )
 
 void DevIO::on_tick_action_tx()
 {
-  // if( on_transmit ) { return; } // handle by IRQ
-  char tbuf[64];
+  if( on_transmit ) { return; } // handle by IRQ?
+  // char tbuf[512]; // TODO: BUG: why so?
+  char tbuf[128];
   unsigned ns = obuf.tryGets( tbuf, sizeof(tbuf ) );
   if( ns > 0 ) {
     sendBlockSync( tbuf, ns ); // TODO: if( send_now )?

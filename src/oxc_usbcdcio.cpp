@@ -37,32 +37,39 @@ int UsbcdcIO::sendBlockSync( const char *s, int l )
     return 0;
   }
 
+  on_transmit = true;
   USBD_CDC_SetTxBuffer( &usb_dev, (uint8_t*)s, l );
   uint8_t rc;
   for( int n_try = 0; n_try < wait_tx; ++n_try ) {
     if( hcdc->TxState ) {
-      delay_ms( 1 );
+      delay_bad_mcs( 100 );
       continue;
     }
     rc = USBD_CDC_TransmitPacket( &usb_dev );
     if( rc == USBD_OK ) {
+      on_transmit = false;
       return l;
     }
     if( rc != USBD_BUSY ) {
       err = rc;
+      on_transmit = false;
       return 0;
     }
-    delay_ms( 1 );
+    delay_bad_mcs( 100 );
   }
   err = USBD_BUSY;
+  on_transmit = false;
   return 0;
 }
 
 int8_t UsbcdcIO::CDC_Itf_Init()
 {
-  USBD_CDC_SetTxBuffer( pusb_dev, (uint8_t*)static_usbcdcio->tx_buf, 0 );
-  USBD_CDC_SetRxBuffer( pusb_dev, (uint8_t*)static_usbcdcio->rx_buf );
-  return USBD_OK;
+  if( pusb_dev ) {
+    USBD_CDC_SetTxBuffer( pusb_dev, (uint8_t*)static_usbcdcio->tx_buf, 0 );
+    USBD_CDC_SetRxBuffer( pusb_dev, (uint8_t*)static_usbcdcio->rx_buf );
+    return USBD_OK;
+  }
+  return USBD_BUSY;
 }
 
 int8_t UsbcdcIO::CDC_Itf_DeInit()
@@ -130,8 +137,7 @@ int8_t UsbcdcIO::CDC_Itf_Control ( uint8_t cmd, uint8_t* pbuf, uint16_t length U
 
 int8_t UsbcdcIO::CDC_Itf_Receive( uint8_t* Buf, uint32_t *Len )
 {
-  // leds.toggle( 0x08 );
-  if( static_usbcdcio && Buf && Len ) {
+  if( static_usbcdcio && Buf && Len && *Len ) {
     static_usbcdcio->charsFromIrq( (char*)Buf, *Len );
   }
 
