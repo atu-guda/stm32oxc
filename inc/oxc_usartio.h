@@ -57,13 +57,15 @@ class UsartIO : public DevIO {
   UART_HandleTypeDef uah_console; \
   UsartIO dev_console( &uah_console, dev ); \
   STD_ ## dev ## _IRQ( dev_console );  \
-  SmallRL srl( smallrl_exec );
+  SmallRL srl( smallrl_exec ); \
+  STD_POST_EXEC;
 
 //    STD_ ## dev ## _SEND_TASK( dev_console ); // --
 
 #define SET_UART_AS_STDIO( io ) \
   io.itEnable( UART_IT_RXNE ); \
   io.setOnSigInt( sigint ); \
+  srl.setPostExecFun( standart_post_exec ); \
   devio_fds[0] = &io; \
   devio_fds[1] = &io; \
   devio_fds[2] = &io; \

@@ -15,31 +15,6 @@ USE_DIE4LED_ERROR_HANDLER;
 BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES_UART;  // (from bsp/BOARDNAME/board_cfg.h):
-// =  UART_CONSOLE_DEFINES( USART2 )
-// BOARD_UART_DEFAULT = USART2
-// BOARD_UART_DEFAULT_NAME       "USART2"
-// BOARD_UART_DEFAULT_IRQ        USART2_IRQn
-// BOARD_UART_DEFAULT_GPIO_AF    GPIO_AF7_USART2
-// BOARD_UART_DEFAULT_ENABLE     __USART2_CLK_ENABLE(); __GPIOA_CLK_ENABLE();
-// BOARD_UART_DEFAULT_DISABLE    __USART2_CLK_DISABLE();
-// BOARD_UART_DEFAULT_IRQHANDLER USART2_IRQHandler
-
-// oxc_usartbase.h
-//  void USART2_IRQHandler(void); extern "C"
-//  void task_usart2_send( void *prm UNUSED_ARG );
-//  void task_usart2_recv( void *prm UNUSED_ARG );
-//  STD_USART2_IRQ( obj ) void USART2_IRQHandler(void) { obj.handleIRQ(); }
-
-
-// oxc_usartio.h:
-//  UART_CONSOLE_DEFINES( dev ) =
-//    UART_HandleTypeDef uah_console;
-//    UsartIO dev_console( &uah_console, dev );
-//    STD_ ## dev ## _SEND_TASK( dev_console ); // --
-//    STD_ ## dev ## _IRQ( dev_console );
-//    SmallRL srl( smallrl_exec );
-// #define STD_USART2_SEND_TASK( obj ) STD_COMMON_SEND_TASK( task_usart2_send, obj ) // --
-// #define STD_USART2_RECV_TASK( obj ) STD_COMMON_RECV_TASK( task_usart2_recv, obj ) // --
 
 // -------------------------------------------------------------------
 
@@ -57,14 +32,6 @@ const CmdInfo* global_cmds[] = {
 
 
 
-int post_exec( int rc )
-{
-  dev_console.reset_in();
-  return rc;
-}
-
-
-
 int main(void)
 {
   STD_PROLOG_UART; // <oxc_base.h>
@@ -76,17 +43,13 @@ int main(void)
 
   leds.write( 0 );
 
-  int n = 0;
-
   pr( PROJ_NAME NL );
 
-  srl.setPostExecFun( post_exec );
-
   srl.re_ps();
+  OxcTicker led_tick( &task_leds_step, TASK_LEDS_QUANT );
 
   while( 1 ) {
 
-    leds.toggle( BIT3 );
     auto v = dev_console.tryGet();
 
     if( v.good() ) {
@@ -95,9 +58,10 @@ int main(void)
       delay_ms( 10 );
     }
 
-    ++n;
-    // dev_console.sendBlock( "ABCD" NL, 6 );
-    // delay_ms( 1000 );
+    if( led_tick.isTick() ) {
+      leds.toggle( LED_BSP_IDLE );
+    }
+
   }
 
 

@@ -78,8 +78,7 @@ void UsartIO::handleIRQ()
     // leds_toggle( BIT1 );
   }
 
-  // portEND_SWITCHING_ISR( wake ); // TODO: revive
-
+  wakeFromIRQ( 1 );
 }
 
 void UsartIO::start_transmit()

@@ -65,6 +65,7 @@ class DevIO {
    static DevIO* devios[DEVIO_MAX];
 };
 
+
 // fd - ala
 const int DEVIO_STDIN_NO = 0;  //* Number of stdin
 const int DEVIO_STDOUT_NO = 1; //* Number of stdout

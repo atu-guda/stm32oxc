@@ -85,5 +85,7 @@ namespace SMLRL {
 
 }; // namespace SMLRL
 
+#define STD_POST_EXEC int standart_post_exec( int rc ) {   dev_console.reset_in();   return rc; }
+
 #endif
 

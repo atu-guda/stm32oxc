@@ -159,6 +159,7 @@ void mu_unlock( mu_t *m );
 
 // void die4led( uint16_t n );
 void taskYieldFun(void);
+void wakeFromIRQ( long wake );
 void vApplicationIdleHook(void);
 void vApplicationTickHook(void);
 // misc functions
@@ -259,6 +260,18 @@ class MuTryLock {
    const bool acq;
 };
 
+class OxcTicker {
+  public:
+    explicit OxcTicker( int aw )   : w( aw ),    pw( &w )           { start(); } ;
+    OxcTicker( volatile int *apw, int qsz ) : w( *apw ), pw( apw ), q( qsz ) { start(); } ;
+    bool isTick();
+    void start();
+    void setW( int aw ) { w = aw; }
+  protected:
+    int w, next;
+    volatile int *pw;
+    int q = 1;
+};
 
 #endif
 
