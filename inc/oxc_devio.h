@@ -4,6 +4,7 @@
 #include <oxc_ringbuf.h>
 #include <oxc_io.h>
 
+const int DEVIO_MAX = 16;      //* Maximum number of devios
 
 class DevIO {
   public:
@@ -11,7 +12,7 @@ class DevIO {
    using SigFun = void (*)( int v );
    enum {
      TX_BUF_SIZE = 256, //* low-level transmit buffer size
-     RX_BUF_SIZE = 128  //* low-level receive buffer size
+     RX_BUF_SIZE = 128 //* low-level receive buffer size
    };
 
    DevIO( unsigned ibuf_sz = RX_BUF_SIZE, unsigned obuf_sz = TX_BUF_SIZE );
@@ -22,6 +23,7 @@ class DevIO {
    void setWaitRx( int rx ) { wait_rx = rx; }
    void setHandleCbreak( bool h ) { handle_cbreak = h; }
 
+   void reset_out() { obuf.reset(); }
    virtual int sendBlock( const char *s, int l );
    virtual int sendBlockSync( const char *s, int l ) = 0;
    virtual int sendStr( const char *s );
@@ -29,6 +31,7 @@ class DevIO {
    int sendByte( char b ) { return sendBlock( &b, 1 ); };
    int sendByteSync( char b ) { return sendBlockSync( &b, 1 ); };
 
+   void reset_in() { ibuf.reset(); }
    Chst tryGet() { return ibuf.tryGet(); }
    virtual int recvByte( char *s, int w_tick = 0 );
    virtual int recvBytePoll( char *s, int w_tick = 0 ) = 0;
@@ -40,6 +43,7 @@ class DevIO {
    virtual void on_tick_action_tx();
    virtual void on_tick_action_rx();
    virtual void on_tick_action();
+   static void tick_actions_all();
    void charFromIrq( char c );
    void charsFromIrq( const char *s, int l ); // virtual?
    int wait_eot( int w = 0 ); // w=0 means forewer, 1 - ok 0 - overtime
@@ -58,19 +62,15 @@ class DevIO {
    int wait_rx = 1500;
    bool on_transmit = false;
    bool handle_cbreak = true;
+   static DevIO* devios[DEVIO_MAX];
 };
 
 // fd - ala
-const int DEVIO_MAX = 16;      //* Maximum number of devios
 const int DEVIO_STDIN_NO = 0;  //* Number of stdin
 const int DEVIO_STDOUT_NO = 1; //* Number of stdout
 const int DEVIO_STDERR_NO = 2; //* Number of stderr
 extern DevIO *devio_fds[DEVIO_MAX];
 
-#define STD_COMMON_RECV_TASK( name, obj ) \
-  void name( void *prm UNUSED_ARG ) { while(1) {  obj.task_recv(); }  vTaskDelete(0); }
-#define STD_COMMON_SEND_TASK( name, obj ) \
-  void name( void *prm UNUSED_ARG ) { while(1) {  obj.task_send(); }  vTaskDelete(0); }
 
 class DevNull : public DevIO {
   public:

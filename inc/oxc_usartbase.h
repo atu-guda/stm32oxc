@@ -51,7 +51,7 @@ extern "C" {
   void USART6_IRQHandler(void);
   void UART7_IRQHandler(void);
   void UART8_IRQHandler(void);
-  void task_usart1_send( void *prm UNUSED_ARG );
+  void task_usart1_send( void *prm UNUSED_ARG ); // UNUSED now
   void task_usart1_recv( void *prm UNUSED_ARG );
   void task_usart2_send( void *prm UNUSED_ARG );
   void task_usart2_recv( void *prm UNUSED_ARG );

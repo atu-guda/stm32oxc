@@ -3,19 +3,32 @@
 
 using namespace std;
 
-DevIO* devio_fds[DEVIO_MAX];
+DevIO* devio_fds[DEVIO_MAX];     // for fd-based access, may be dupes or empty at all
+DevIO* DevIO::devios[DEVIO_MAX]; // for inner array action
 
 DevIO::DevIO( unsigned ibuf_sz, unsigned obuf_sz  )
      : ibuf( ibuf_sz ),
        obuf( obuf_sz )
 {
-  // TODO: register in devio_fds, get_fd();
+  // register
+  for( int i=0; i< DEVIO_MAX; ++i ) {
+    if( devios[i] == nullptr ) {
+      devios[i] = this;
+      break;
+    }
+  }
 }
 
 DevIO::~DevIO()
 {
   reset();
-  // unregister();
+  // unregister
+  for( int i=0; i< DEVIO_MAX; ++i ) {
+    if( devios[i] == this ) {
+      devios[i] = nullptr;
+      break;
+    }
+  }
 }
 
 void DevIO::reset()
@@ -89,6 +102,14 @@ void DevIO::on_tick_action() // really a fallback, may be called from IRQ!
   on_tick_action_tx();
 }
 
+void DevIO::tick_actions_all()
+{
+  for( int i=0; i< DEVIO_MAX; ++i ) {
+    if( devios[i] != nullptr ) {
+      devios[i]->on_tick_action();
+    }
+  }
+}
 
 void DevIO::testCbreak( char c )
 {

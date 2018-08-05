@@ -274,6 +274,12 @@ void default_wait1(void);
 #define PROLOG_LED_TIME 200
 #endif
 
+#ifdef USE_OXC_DEVIO
+#define ADD_DEVIO_TICKFUN oxc_add_aux_tick_fun( DevIO::tick_actions_all )
+#else
+#define ADD_DEVIO_TICKFUN
+#endif
+
 #define STD_PROLOG_START \
   HAL_Init(); \
   leds.initHW(); \
@@ -282,12 +288,13 @@ void default_wait1(void);
   if( rc ) { \
     die4led( BOARD_LEDS_ALL ); \
     return 1; \
-  }
+  } \
+  ADD_DEVIO_TICKFUN;
 
 #define STD_PROLOG_UART_NOCON \
   STD_PROLOG_START; \
   delay_ms( PROLOG_LED_TIME ); leds.write( 0x00 ); delay_ms( PROLOG_LED_TIME ); \
-  if( ! init_uart( &uah ) ) { \
+  if( ! init_uart( &uah_console ) ) { \
     die4led( 1 ); \
   } \
   leds.write( BOARD_LEDS_ALL );  HAL_Delay( PROLOG_LED_TIME );
@@ -295,7 +302,7 @@ void default_wait1(void);
 #define STD_PROLOG_UART \
   STD_PROLOG_UART_NOCON; \
   global_smallrl = &srl; \
-  SET_UART_AS_STDIO( usartio );
+  SET_UART_AS_STDIO( dev_console );
 
 #define STD_PROLOG_USBCDC \
   STD_PROLOG_START; \

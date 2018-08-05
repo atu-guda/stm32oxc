@@ -54,12 +54,20 @@ class UsartIO : public DevIO {
 
 
 #define UART_CONSOLE_DEFINES( dev ) \
-  UART_HandleTypeDef uah; \
-  UsartIO usartio( &uah, dev ); \
+  UART_HandleTypeDef uah_console; \
+  UsartIO dev_console( &uah_console, dev ); \
+  STD_ ## dev ## _IRQ( dev_console );  \
   SmallRL srl( smallrl_exec );
 
-//    STD_ ## dev ## _SEND_TASK( usartio ); // --
-//    STD_ ## dev ## _IRQ( usartio );       // --
+//    STD_ ## dev ## _SEND_TASK( dev_console ); // --
+
+#define SET_UART_AS_STDIO( io ) \
+  io.itEnable( UART_IT_RXNE ); \
+  io.setOnSigInt( sigint ); \
+  devio_fds[0] = &io; \
+  devio_fds[1] = &io; \
+  devio_fds[2] = &io; \
+  delay_ms( 10 );
 
 #endif
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include

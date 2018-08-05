@@ -33,10 +33,10 @@ BOARD_CONSOLE_DEFINES_UART;  // (from bsp/BOARDNAME/board_cfg.h):
 
 // oxc_usartio.h:
 //  UART_CONSOLE_DEFINES( dev ) =
-//    UART_HandleTypeDef uah;
-//    UsartIO usartio( &uah, dev );
-//    STD_ ## dev ## _SEND_TASK( usartio ); // --
-//    STD_ ## dev ## _IRQ( usartio );       // --
+//    UART_HandleTypeDef uah_console;
+//    UsartIO dev_console( &uah_console, dev );
+//    STD_ ## dev ## _SEND_TASK( dev_console ); // --
+//    STD_ ## dev ## _IRQ( dev_console );
 //    SmallRL srl( smallrl_exec );
 // #define STD_USART2_SEND_TASK( obj ) STD_COMMON_SEND_TASK( task_usart2_send, obj ) // --
 // #define STD_USART2_RECV_TASK( obj ) STD_COMMON_RECV_TASK( task_usart2_recv, obj ) // --
@@ -55,31 +55,21 @@ const CmdInfo* global_cmds[] = {
   nullptr
 };
 
-void BOARD_UART_DEFAULT_IRQHANDLER(void) {
-  leds.set( BIT0 ); // DEBUG
-  usartio.handleIRQ();
-  leds.reset( BIT0 ); // DEBUG
-}
 
 
 int post_exec( int rc )
 {
-  // rx_ring.reset();
+  dev_console.reset_in();
   return rc;
 }
 
-void start_transmit()
-{
-  usartio.start_transmit();
-}
 
 
 int main(void)
 {
-  // STD_PROLOG_UART_NOCON;
-  STD_PROLOG_UART;
+  STD_PROLOG_UART; // <oxc_base.h>
 
-  usartio.sendStrSync( NL "0123456789ABCDEF" NL  );
+  dev_console.sendStrSync( NL "0123456789ABCDEF" NL  );
 
   UVAR('t') = 100;
   UVAR('n') =  20;
@@ -87,9 +77,6 @@ int main(void)
   leds.write( 0 );
 
   int n = 0;
-
-
-  oxc_add_aux_tick_fun( start_transmit );
 
   pr( PROJ_NAME NL );
 
@@ -100,7 +87,7 @@ int main(void)
   while( 1 ) {
 
     leds.toggle( BIT3 );
-    auto v = usartio.tryGet();
+    auto v = dev_console.tryGet();
 
     if( v.good() ) {
       srl.addChar( v.c );
@@ -109,7 +96,7 @@ int main(void)
     }
 
     ++n;
-    // usartio.sendBlock( "ABCD" NL, 6 );
+    // dev_console.sendBlock( "ABCD" NL, 6 );
     // delay_ms( 1000 );
   }
 
@@ -120,21 +107,21 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
+  STD_os;
   int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
   uint32_t t_step = UVAR('t');
-  pr( NL "Test0: n= " ); pr_d( n ); pr( " t= " ); pr_d( t_step );
-  pr( NL );
+  os << NL "Test0: n= " <<  n <<  " t= " << t_step << NL;
+  os.flush();
 
   uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
 
   break_flag = 0;
   for( int i=0; i<n && !break_flag; ++i ) {
     uint32_t tmc = HAL_GetTick();
-    pr( " Fake Action i= " ); pr_d( i );
-    pr( "  ms_tick: "); pr_d( tmc - tm00 );
-    pr( NL );
+    os << " Fake Action i= "  << i <<  " tick: " << ( tmc - tm00 ) << NL;
+    os.flush();
     if( UVAR('w') ) {
-       usartio.wait_eot();
+       dev_console.wait_eot();
     }
     // delay_ms( 3 );
     delay_ms_until_brk( &tm0, t_step );

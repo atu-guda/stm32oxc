@@ -59,6 +59,13 @@ extern "C" {
 #define STD_USBCDC_RECV_TASK( obj ) STD_COMMON_RECV_TASK( task_usbcdc_recv, obj )
 #define STD_USBCDC_SEND_TASK( obj ) STD_COMMON_SEND_TASK( task_usbcdc_send, obj )
 
+#define SET_USBCDC_AS_STDIO(usbcdc) \
+  usbcdc.setOnSigInt( sigint ); \
+  devio_fds[0] = &usbcdc;  \
+  devio_fds[1] = &usbcdc;  \
+  devio_fds[2] = &usbcdc;  \
+  delay_ms( 50 );
+
 #define USBCDC_CONSOLE_DEFINES \
   UsbcdcIO usbcdc; \
   STD_USBCDC_SEND_TASK( usbcdc ); \
