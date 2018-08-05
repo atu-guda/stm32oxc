@@ -52,9 +52,6 @@ void UsartIO::handleIRQ()
     ++n_work;
     char cr = recvRaw();
     charFromIrq( cr );
-    if( /* TODO: handle_cbreak && */ cr == 3 ) {
-      break_flag = 1;
-    }
     // leds.set( BIT2 );
     if( status & ( UART_FLAG_ORE | UART_FLAG_FE /*| UART_FLAG_LBD*/ ) ) { // TODO: on MCU
       err = status;

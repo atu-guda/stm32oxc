@@ -20,6 +20,7 @@ class DevIO {
    virtual int getErr() const { return err; }
    void setWaitTx( int tx ) { wait_tx = tx; }
    void setWaitRx( int rx ) { wait_rx = rx; }
+   void setHandleCbreak( bool h ) { handle_cbreak = h; }
 
    virtual int sendBlock( const char *s, int l );
    virtual int sendBlockSync( const char *s, int l ) = 0;
@@ -28,6 +29,7 @@ class DevIO {
    int sendByte( char b ) { return sendBlock( &b, 1 ); };
    int sendByteSync( char b ) { return sendBlockSync( &b, 1 ); };
 
+   Chst tryGet() { return ibuf.tryGet(); }
    virtual int recvByte( char *s, int w_tick = 0 );
    virtual int recvBytePoll( char *s, int w_tick = 0 ) = 0;
    virtual int recvBlock( char *s, int l, int w_tick = 0 ); // w_tick - for every
@@ -40,9 +42,10 @@ class DevIO {
    virtual void on_tick_action();
    void charFromIrq( char c );
    void charsFromIrq( const char *s, int l ); // virtual?
-   void wait_eot();
+   int wait_eot( int w = 0 ); // w=0 means forewer, 1 - ok 0 - overtime
 
    virtual void start_transmit() {};
+   void testCbreak( char c ); // called from funcs, called from IRQ!
 
   protected:
    // TODO: open mode + flags
@@ -54,6 +57,7 @@ class DevIO {
    int wait_tx = 1500;
    int wait_rx = 1500;
    bool on_transmit = false;
+   bool handle_cbreak = true;
 };
 
 // fd - ala

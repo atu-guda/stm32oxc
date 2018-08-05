@@ -49,7 +49,7 @@ int DevIO::recvByte( char *b, int w_tick )
 {
   if( !b ) { return 0; }
 
-  for( int i=0; i <= w_tick; ++i ) { // at least one
+  for( int i=0; i < w_tick || w_tick == 0; ++i ) { // w_tick == 0 means forever
     auto v = ibuf.tryGet();
     if( v.good() ) {
       *b = v.c;
@@ -89,11 +89,20 @@ void DevIO::on_tick_action() // really a fallback, may be called from IRQ!
   on_tick_action_tx();
 }
 
+
+void DevIO::testCbreak( char c )
+{
+  if( handle_cbreak && c == 3 ) {
+      break_flag = 1;
+    if( onSigInt ) {
+      onSigInt( c );
+    }
+  }
+}
+
 void DevIO::charFromIrq( char c ) // called from IRQ!
 {
-  if( c == 3  && onSigInt ) { // handle Ctrl-C = 3
-    onSigInt( c );
-  }
+  testCbreak( c );
   ibuf.tryPut( c );
   // portEND_SWITCHING_ISR( wake );
 }
@@ -101,19 +110,21 @@ void DevIO::charFromIrq( char c ) // called from IRQ!
 void DevIO::charsFromIrq( const char *s, int l ) // called from IRQ!
 {
   for( int i=0; i<l; ++i ) {
-    if( s[i] == 3  && onSigInt ) { // handle Ctrl-C = 3
-      onSigInt( s[i] );
-    }
+    testCbreak( s[i] );
     ibuf.tryPut( s[i] );
   }
   // portEND_SWITCHING_ISR( wake );
 }
 
-void DevIO::wait_eot()
+int DevIO::wait_eot( int w )
 {
-  while( on_transmit ) {
-    delay_mcs( 100 );
+  for( auto i = 0; i < w; ++i ) {
+    if( ! on_transmit ) {
+      return 1;
+    }
+    delay_ms( 1 );
   }
+  return 0;
 }
 
 int DevIO::sendStr( const char *s )

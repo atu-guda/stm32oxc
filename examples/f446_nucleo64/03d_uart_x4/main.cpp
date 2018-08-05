@@ -93,26 +93,21 @@ int main(void)
 
   pr( PROJ_NAME NL );
 
-  // BOARD_UART_DEFAULT->CR1 |= USART_CR1_RE | USART_CR1_TE | USART_CR1_RXNEIE;
+  srl.setPostExecFun( post_exec );
 
-  SmallRL cworker( exec_direct );
-  cworker.setPostExecFun( post_exec );
-
-  cworker.re_ps();
+  srl.re_ps();
 
   while( 1 ) {
 
-    char rb;
     leds.toggle( BIT3 );
-    int nr = usartio.recvByte( &rb, 0 );
+    auto v = usartio.tryGet();
 
-    if( nr > 0 ) {
-      cworker.addChar( rb );
+    if( v.good() ) {
+      srl.addChar( v.c );
     } else {
       delay_ms( 10 );
     }
 
-  //
     ++n;
     // usartio.sendBlock( "ABCD" NL, 6 );
     // delay_ms( 1000 );
@@ -139,7 +134,7 @@ int cmd_test0( int argc, const char * const * argv )
     pr( "  ms_tick: "); pr_d( tmc - tm00 );
     pr( NL );
     if( UVAR('w') ) {
-      // wait_eot();
+       usartio.wait_eot();
     }
     // delay_ms( 3 );
     delay_ms_until_brk( &tm0, t_step );
