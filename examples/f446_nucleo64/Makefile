@@ -8,8 +8,11 @@ SUBDIRS = \
   03a_uart_x1 \
   03b_uart_x2 \
   03c_uart_x3 \
+  03d_uart_x4 \
   04_uart_console \
   05_usb_console \
+  05a_def_console \
+  05c_def_cons_nort \
   06_i2c_test \
   07_i2c_lcdt \
   08_i2c_mpu6050 \

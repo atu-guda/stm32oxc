@@ -8,6 +8,7 @@ SUBDIRS = \
   04_uart_console \
   05_usb_console \
   05a_def_console \
+  05c_def_cons_nort \
   06_i2c_test \
   16_step1 \
   17_1w_18b20 \

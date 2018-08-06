@@ -7,6 +7,7 @@ SUBDIRS = \
   03_uart \
   04_uart_console \
   05a_def_console \
+  05c_def_cons_nort \
   x03_tcop
 
 
