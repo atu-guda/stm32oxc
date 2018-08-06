@@ -33,7 +33,7 @@ int main(void)
 
   BOARD_POST_INIT_BLINK;
 
-  CREATE_STD_TASKS( task_usbcdc_send );
+  CREATE_STD_TASKS;
 
   SCHEDULER_START;
   return 0;

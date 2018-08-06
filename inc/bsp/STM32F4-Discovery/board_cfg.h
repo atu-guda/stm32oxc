@@ -154,8 +154,7 @@
 #define BOARD_CONSOLE_DEFINES         USBCDC_CONSOLE_DEFINES;
 #define BOARD_CONSOLE_DEFINES_UART    UART_CONSOLE_DEFINES( USART2 );
 #define BOARD_PROLOG                  STD_PROLOG_USBCDC;
-#define BOARD_CREATE_STD_TASKS        CREATE_STD_TASKS( task_usbcdc_send );
-#define BOARD_CREATE_STD_TASKS_UART   CREATE_STD_TASKS( task_usart2_send );
+#define BOARD_CREATE_STD_TASKS        CREATE_STD_TASKS;
 #define BOARD_POST_INIT_BLINK         delay_ms( PROLOG_LED_TIME ); leds.write( 0x01 ); delay_ms( PROLOG_LED_TIME );
 
 #endif

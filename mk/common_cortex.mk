@@ -129,7 +129,7 @@ ifeq "$(USE_OXC_CONSOLE_UART)" "y"
 endif
 
 ifeq "$(USE_OXC_UART)" "y"
-  $(info "Used UART" $(NOUSE_DEFAULT_UART_INIT) z )
+  # $(info "Used UART" $(NOUSE_DEFAULT_UART_INIT) z )
   SRCS += stm32$(MCSUFF)xx_hal_uart.c
   ifneq "$(NOUSE_DEFAULT_UART_INIT)" "y"
     SRCS  += oxc_uart_default_init.cpp
