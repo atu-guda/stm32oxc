@@ -76,7 +76,6 @@ int DevIO::recvByte( char *b, int w_tick )
 void DevIO::on_tick_action_tx()
 {
   if( on_transmit ) { return; } // handle by IRQ?
-  // char tbuf[512]; // TODO: BUG: why so?
   char tbuf[128];
   unsigned ns = obuf.tryGets( tbuf, sizeof(tbuf ) );
   if( ns > 0 ) {
@@ -197,6 +196,12 @@ int recvByte( int fd, char *s, int w_tick )
 {
   COMMON_FD_TEST( fd );
   return devio_fds[fd]->recvByte( s, w_tick );
+}
+
+Chst tryGet( int fd )
+{
+  COMMON_FD_TEST( fd );
+  return devio_fds[fd]->tryGet();
 }
 
 int sendBlock( int fd, const char *s, int l )

@@ -1,5 +1,4 @@
 #include <oxc_gpio.h>
-#include <oxc_smallrl.h>
 #include <oxc_common1.h>
 #include <oxc_ministr.h>
 
@@ -87,6 +86,36 @@ void task_gchar( void *prm UNUSED_ARG )
   vTaskDelete(NULL);
 }
 
+#else
+
+void led_task_nortos()
+{
+#ifdef LED_BSP_IDLE
+  static OxcTicker led_tick( &task_leds_step, TASK_LEDS_QUANT );
+  if( led_tick.isTick() ) {
+    leds.toggle( LED_BSP_IDLE );
+  }
+#endif
+}
+
+void std_main_loop_nortos( SmallRL *sm, AuxTickFun f_idle )
+{
+  if( !sm ) {
+    die4led( 0 );
+  }
+  while( 1 ) {
+    auto v = tryGet( 0 );
+
+    if( v.good() ) {
+      sm->addChar( v.c );
+    } else {
+      if( f_idle ) {
+        f_idle();
+      }
+      delay_ms( 10 );
+    }
+  }
+}
 
 #endif
 // FreeRTOS

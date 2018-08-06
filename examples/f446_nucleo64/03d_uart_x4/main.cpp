@@ -2,10 +2,6 @@
 
 
 #include <oxc_auto.h>
-#include <oxc_usartio.h> // FOR vim open
-#include <oxc_console.h>
-#include <oxc_smallrl.h>
-#include <oxc_debug1.h>
 
 using namespace std;
 using namespace SMLRL;
@@ -30,40 +26,31 @@ const CmdInfo* global_cmds[] = {
   nullptr
 };
 
+void idle_main_task()
+{
+  leds.toggle( 1 );
+}
+
 
 
 int main(void)
 {
   STD_PROLOG_UART; // <oxc_base.h>
 
-  dev_console.sendStrSync( NL "0123456789ABCDEF" NL  );
+  // dev_console.sendStrSync( NL "0123456789ABCDEF" NL  );
 
   UVAR('t') = 100;
   UVAR('n') =  20;
 
   leds.write( 0 );
 
-  pr( PROJ_NAME NL );
+  pr( NL "##################### " PROJ_NAME NL );
 
   srl.re_ps();
-  OxcTicker led_tick( &task_leds_step, TASK_LEDS_QUANT );
 
-  while( 1 ) {
+  oxc_add_aux_tick_fun( led_task_nortos );
 
-    auto v = dev_console.tryGet();
-
-    if( v.good() ) {
-      srl.addChar( v.c );
-    } else {
-      delay_ms( 10 );
-    }
-
-    if( led_tick.isTick() ) {
-      leds.toggle( LED_BSP_IDLE );
-    }
-
-  }
-
+  std_main_loop_nortos( &srl, idle_main_task );
 
   return 0;
 }
