@@ -10,33 +10,33 @@ void default_USBFS_MspInit(void);
 void default_USBFS_MspInit(void)
 {
   GPIO_InitTypeDef  gpi;
-  __HAL_RCC_GPIOA_CLK_ENABLE();
+  BOARD_USB_DEFAULT_ENABLE;
 
-  gpi.Pin = GPIO_PIN_11 | GPIO_PIN_12; // D-, D+
-  gpi.Mode = GPIO_MODE_AF_PP;
-  gpi.Pull = GPIO_NOPULL;
-  gpi.Speed = GPIO_SPEED_MAX;
-  gpi.Alternate = GPIO_AF10_OTG_FS;
-  HAL_GPIO_Init( GPIOA, &gpi );
+  gpi.Pin       = BOARD_USB_DEFAULT_DPDM_PINS; // GPIO_PIN_11 | GPIO_PIN_12; // D-, D+
+  gpi.Mode      = GPIO_MODE_AF_PP;
+  gpi.Pull      = GPIO_NOPULL;
+  gpi.Speed     = GPIO_SPEED_MAX;
+  gpi.Alternate = BOARD_USB_DEFAULT_GPIO_AF;
+  HAL_GPIO_Init( BOARD_USB_DEFAULT_GPIO, &gpi );
 
-  gpi.Pin = GPIO_PIN_9; // VBUS ??
+#ifdef BOARD_USB_DEFAULT_VBUS_PIN
+  gpi.Pin  = BOARD_USB_DEFAULT_VBUS_PIN;
   gpi.Mode = GPIO_MODE_INPUT;
   gpi.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init( BOARD_USB_DEFAULT_GPIO, &gpi );
+#endif
+
+#ifdef BOARD_USB_DEFAULT_ID_PIN
+  gpi.Pin       = BOARD_USB_DEFAULT_ID_PIN;
+  gpi.Mode      = GPIO_MODE_AF_OD;
+  gpi.Pull      = GPIO_PULLUP;
+  gpi.Alternate = BOARD_USB_DEFAULT_GPIO_AF;
   HAL_GPIO_Init( GPIOA, &gpi );
+#endif
 
-  gpi.Pin = GPIO_PIN_10; // ID ?
-  gpi.Mode = GPIO_MODE_AF_OD;
-  gpi.Pull = GPIO_PULLUP;
-  gpi.Alternate = GPIO_AF10_OTG_FS;
-  HAL_GPIO_Init( GPIOA, &gpi );
+  HAL_NVIC_SetPriority( BOARD_USB_DEFAULT_IRQ, BOARD_USB_DEFAULT_IRQ_PRTY, 0 );
 
-  __HAL_RCC_USB_OTG_FS_CLK_ENABLE();
-  __HAL_RCC_SYSCFG_CLK_ENABLE();
-
-  HAL_NVIC_SetPriority( OTG_FS_IRQn, 14, 0 ); // TODO: ???=configLIBRARY_KERNEL_INTERRUPT_PRIORITY
-
-  /* Enable USBFS Interrupt */
-  HAL_NVIC_EnableIRQ( OTG_FS_IRQn );
+  HAL_NVIC_EnableIRQ( BOARD_USB_DEFAULT_IRQ );
 
 }
 
@@ -132,7 +132,7 @@ USBD_StatusTypeDef  USBD_LL_Init( USBD_HandleTypeDef *pdev )
   hpcd.Init.phy_itface = PCD_PHY_EMBEDDED;
   hpcd.Init.Sof_enable = 0;
   hpcd.Init.speed = PCD_SPEED_FULL;
-  hpcd.Init.vbus_sensing_enable = 1; // TODO: no?
+  hpcd.Init.vbus_sensing_enable = 1; // TODO: param?
   /* Link The driver to the stack */
   hpcd.pData = pdev;
   pdev->pData = &hpcd;
