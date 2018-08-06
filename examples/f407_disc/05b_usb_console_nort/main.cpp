@@ -30,7 +30,6 @@ const CmdInfo* global_cmds[] = {
 int main(void)
 {
   STD_PROLOG_USBCDC;
-  HAL_NVIC_SetPriority( SysTick_IRQn, 15, 0 );
 
   UVAR('t') = 100;
   UVAR('n') = 20;

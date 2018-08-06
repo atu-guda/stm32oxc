@@ -3,6 +3,9 @@
 
 // automatic converter from OXC_USE define to HAL_XXX_MODULE_ENABLED
 
+#ifndef OXC_SYSTICK_PRTY
+  #define OXC_SYSTICK_PRTY 15
+#endif
 
 #ifndef NO_COMMON_HAL_MODULES
   #define HAL_MODULE_ENABLED
