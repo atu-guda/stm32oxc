@@ -50,6 +50,7 @@ void default_main_loop()
   global_smallrl->set_ps1( PS1_STRING, PS1_OUTSZ );
   global_smallrl->re_ps();
   global_smallrl->set_print_cmd( true );
+  global_smallrl->reset();
 
 
   idle_flag = 1;
@@ -67,14 +68,20 @@ void default_main_loop()
 
 void task_gchar( void *prm UNUSED_ARG )
 {
-  char sc[2] = { 0, 0 };
+  DevIO *cons = devio_fds[0];
   while( 1 ) {
-    int n = recvByte( 0, sc, 10000 );
-    if( n ) {
-      if( global_smallrl ) {
-        global_smallrl->addChar( sc[0] );
+    if( cons ) {
+      auto v = cons->tryGet();
+      if( v.good() ) {
+        if( global_smallrl ) {
+          global_smallrl->addChar( v.c );
+        }
+        idle_flag = 1;
+      } else {
+        delay_ms( 10 );
       }
-      idle_flag = 1;
+    } else {
+      delay_ms( 1000 );
     }
   }
   vTaskDelete(NULL);

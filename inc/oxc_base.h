@@ -337,7 +337,6 @@ void default_wait1(void);
 
 #define CREATE_STD_TASKS( SEND_TASK ) \
   xTaskCreate( task_leds,        "leds", 1*def_stksz, nullptr,   1, nullptr ); \
-  xTaskCreate( SEND_TASK,        "send", 2*def_stksz, nullptr,   2, nullptr ); \
   xTaskCreate( task_main,        "main", 2*def_stksz, nullptr,   1, nullptr ); \
   xTaskCreate( task_gchar,      "gchar", 2*def_stksz, nullptr,   1, nullptr );
   //           code               name    stack_sz      param  prty TaskHandle_t*

@@ -36,13 +36,16 @@ int main(void)
 
   BOARD_POST_INIT_BLINK;
 
-  pr( PROJ_NAME NL );
-  delay_ms( 10 );
 
   leds.reset( 0xFF );
 
   srl.re_ps();
+  srl.reset();
   OxcTicker led_tick( &task_leds_step, TASK_LEDS_QUANT );
+
+  pr( NL "------------------ " PROJ_NAME NL );
+  delay_ms( 10 );
+  dev_console.reset_in();
 
   while( 1 ) {
 
