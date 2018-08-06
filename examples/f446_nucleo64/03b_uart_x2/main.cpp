@@ -10,17 +10,12 @@ using namespace std;
 USE_DIE4LED_ERROR_HANDLER;
 BOARD_DEFINE_LEDS;
 
-UART_HandleTypeDef uah;
+UART_HandleTypeDef uah_console;
 int out_uart( const char *d, unsigned n );
 void UART_handleIRQ();
 
 // -------------------------------------------------------------------
 
-
-// int out_uart( const char *d, unsigned n )
-// {
-//   return HAL_UART_Transmit( &uah, (uint8_t*)d, n, 10 ) == HAL_OK;
-// }
 
 const unsigned buf_sz = 32;
 

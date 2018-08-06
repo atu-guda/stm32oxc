@@ -7,12 +7,12 @@ using namespace std;
 USE_DIE4LED_ERROR_HANDLER;
 BOARD_DEFINE_LEDS;
 
-UART_HandleTypeDef uah;
+UART_HandleTypeDef uah_console;
 int out_uart( const char *d, unsigned n );
 
 int out_uart( const char *d, unsigned n )
 {
-  return HAL_UART_Transmit( &uah, (uint8_t*)d, n, 10 ) == HAL_OK;
+  return HAL_UART_Transmit( &uah_console, (uint8_t*)d, n, 10 ) == HAL_OK;
 }
 
 
@@ -35,16 +35,16 @@ int main(void)
     char c = '?', c_err = '-';
     os.clear();
 
-    if( __HAL_USART_GET_FLAG( &uah, UART_FLAG_ORE ) ) { // overrun
-      c = uah.Instance->USART_RX_REG;
-      __HAL_USART_CLEAR_OREFLAG( &uah );
+    if( __HAL_USART_GET_FLAG( &uah_console, UART_FLAG_ORE ) ) { // overrun
+      c = uah_console.Instance->USART_RX_REG;
+      __HAL_USART_CLEAR_OREFLAG( &uah_console );
       was_action = true;
       c_err = 'O';
       leds.toggle( BIT0 );
     }
 
-    if( __HAL_USART_GET_FLAG( &uah, UART_FLAG_RXNE ) ) {
-      c = uah.Instance->USART_RX_REG;
+    if( __HAL_USART_GET_FLAG( &uah_console, UART_FLAG_RXNE ) ) {
+      c = uah_console.Instance->USART_RX_REG;
       was_action = true;
       leds.toggle( BIT2 );
     }

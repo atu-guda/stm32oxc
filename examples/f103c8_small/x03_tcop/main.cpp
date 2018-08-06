@@ -19,7 +19,7 @@ void task_leds( void *prm UNUSED_ARG );
 void task_send( void *prm UNUSED_ARG );
 } // extern "C"
 
-UART_HandleTypeDef uah;
+UART_HandleTypeDef uah_console;
 const int TX_BUF_SZ = 128;
 char tx_buf[TX_BUF_SZ];
 int prs( const char *s );
@@ -81,7 +81,7 @@ int prs( const char *s )
   }
   int l = strlen( s );
   int rc;
-  if( ( rc = HAL_UART_Transmit( &uah, (uint8_t*)(s), l, tx_wait )) != HAL_OK ) {
+  if( ( rc = HAL_UART_Transmit( &uah_console, (uint8_t*)(s), l, tx_wait )) != HAL_OK ) {
     // leds.toggle( BIT3 );
     return 0;
   }
@@ -97,7 +97,7 @@ void task_send( void *prm UNUSED_ARG )
   unsigned n = 0;
   uint16_t ipo;
 
-  prs( "Start\r\n" );
+  prs( "# Start\r\n" );
 
   TickType_t tc0 = xTaskGetTickCount(), tc00 = tc0;
   while( 1 )

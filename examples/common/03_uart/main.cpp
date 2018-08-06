@@ -12,7 +12,7 @@ void task_leds( void *prm UNUSED_ARG );
 void task_send( void *prm UNUSED_ARG );
 } // extern "C"
 
-UART_HandleTypeDef uah;
+UART_HandleTypeDef uah_console;
 
 const int TX_BUF_SZ = 128;
 char tx_buf[TX_BUF_SZ];
@@ -45,16 +45,16 @@ void task_send( void *prm UNUSED_ARG )
     tx_buf[i_pos] = cn++;
     if( cn >= 0x7F ) { cn = ' '; }
 
-    if( __HAL_USART_GET_FLAG( &uah, UART_FLAG_ORE ) ) { // overrun
-      c = uah.Instance->USART_RX_REG;
-      __HAL_USART_CLEAR_OREFLAG( &uah );
+    if( __HAL_USART_GET_FLAG( &uah_console, UART_FLAG_ORE ) ) { // overrun
+      c = uah_console.Instance->USART_RX_REG;
+      __HAL_USART_CLEAR_OREFLAG( &uah_console );
       was_action = true;
       tx_buf[ovr_pos] = 'O';
       leds.toggle( BIT1 );
     }
 
-    if( __HAL_USART_GET_FLAG( &uah, UART_FLAG_RXNE ) ) {
-      c = uah.Instance->USART_RX_REG;
+    if( __HAL_USART_GET_FLAG( &uah_console, UART_FLAG_RXNE ) ) {
+      c = uah_console.Instance->USART_RX_REG;
       was_action = true;
       leds.toggle( BIT2 );
     }
@@ -65,13 +65,13 @@ void task_send( void *prm UNUSED_ARG )
         tx_buf[c_pos]  = c;
       }
       tx_buf[read_pos] = 'R';
-      if( HAL_UART_Transmit( &uah, (uint8_t*)tx_buf, sz_oszr, 10 ) != HAL_OK ) {
+      if( HAL_UART_Transmit( &uah_console, (uint8_t*)tx_buf, sz_oszr, 10 ) != HAL_OK ) {
         leds.toggle( BIT0 );
       } else {
         leds.toggle( BIT3 );
       }
     } else if( n % ( 20*delay_calibrate_value) == 0 ) {
-      HAL_UART_Transmit( &uah, (uint8_t*)("-\r\n"), 3, 10 );
+      HAL_UART_Transmit( &uah_console, (uint8_t*)("-\r\n"), 3, 10 );
     } else {
       // NOP;
     }

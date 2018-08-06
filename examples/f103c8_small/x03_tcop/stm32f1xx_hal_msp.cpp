@@ -12,21 +12,21 @@ void MX_inp_Init()
   HAL_GPIO_Init( GPIOA, &GPIO_InitStruct );
 }
 
-extern UART_HandleTypeDef uah;
+extern UART_HandleTypeDef uah_console;
 
 /* USART1 init function */
 
 int MX_USART1_UART_Init(void)
 {
-  uah.Instance          = USART1;
-  uah.Init.BaudRate     = 115200;
-  uah.Init.WordLength   = UART_WORDLENGTH_8B;
-  uah.Init.StopBits     = UART_STOPBITS_1;
-  uah.Init.Parity       = UART_PARITY_NONE;
-  uah.Init.Mode         = UART_MODE_TX_RX;
-  uah.Init.HwFlowCtl    = UART_HWCONTROL_NONE;
-  uah.Init.OverSampling = UART_OVERSAMPLING_16;
-  return( HAL_UART_Init( &uah ) == HAL_OK );
+  uah_console.Instance          = USART1;
+  uah_console.Init.BaudRate     = 115200;
+  uah_console.Init.WordLength   = UART_WORDLENGTH_8B;
+  uah_console.Init.StopBits     = UART_STOPBITS_1;
+  uah_console.Init.Parity       = UART_PARITY_NONE;
+  uah_console.Init.Mode         = UART_MODE_TX_RX;
+  uah_console.Init.HwFlowCtl    = UART_HWCONTROL_NONE;
+  uah_console.Init.OverSampling = UART_OVERSAMPLING_16;
+  return( HAL_UART_Init( &uah_console ) == HAL_OK );
 }
 
 void HAL_UART_MspInit( UART_HandleTypeDef* uartHandle )
