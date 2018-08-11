@@ -23,20 +23,21 @@ class DevIO {
    void setWaitRx( int rx ) { wait_rx = rx; }
    void setHandleCbreak( bool h ) { handle_cbreak = h; }
 
-   void reset_out() { obuf.reset(); }
-   virtual int sendBlock( const char *s, int l );
-   virtual int sendBlockSync( const char *s, int l ) = 0;
-   virtual int sendStr( const char *s );
-   virtual int sendStrSync( const char *s );
-   int sendByte( char b ) { return sendBlock( &b, 1 ); };
-   int sendByteSync( char b ) { return sendBlockSync( &b, 1 ); };
+   virtual void reset_out() { obuf.reset(); } // TODO: override
+   virtual int write( const char *s, int l );
+   virtual int write_s( const char *s, int l ) = 0;
+   virtual int puts( const char *s );
+   virtual int puts_s( const char *s );
+   int putc( char b ) { return write( &b, 1 ); };
+   int putc_s( char b ) { return write_s( &b, 1 ); };
 
-   void reset_in() { ibuf.reset(); }
+   virtual void reset_in() { ibuf.reset(); } // TODO: override
    Chst tryGet() { return ibuf.tryGet(); }
-   virtual int recvByte( char *s, int w_tick = 0 );
-   virtual int recvBytePoll( char *s, int w_tick = 0 ) = 0;
-   virtual int recvBlock( char *s, int l, int w_tick = 0 ); // w_tick - for every
-   virtual int recvBlockPoll( char *s, int l, int w_tick = 0 );
+   virtual Chst getc( int w_tick = 0 );
+   virtual Chst getc_p( int w_tick = 0 ) = 0;
+   virtual int read( char *s, int l, int w_tick = 0 ); // w_tick - for every
+   virtual int read_poll( char *s, int l, int w_tick = 0 );
+   void unget( char c ) { ibuf.tryPut( c ); }
    virtual void setOnRecv( OnRecvFun a_onRecv ) { onRecv = a_onRecv; };
    virtual void setOnSigInt( SigFun a_onSigInt ) { onSigInt = a_onSigInt; };
 
@@ -76,11 +77,11 @@ extern DevIO *devio_fds[DEVIO_MAX];
 class DevNull : public DevIO {
   public:
    DevNull() {};
-   virtual int sendBlock( const char *s UNUSED_ARG, int l ) override { return l; };
-   virtual int sendBlockSync( const char *s UNUSED_ARG, int l ) override { return l; };
+   virtual int write( const char *s UNUSED_ARG, int l ) override { return l; };
+   virtual int write_s( const char *s UNUSED_ARG, int l ) override { return l; };
 
-   virtual int recvByte( char *b UNUSED_ARG, int w_tick UNUSED_ARG = 0 ) override { return 0; };
-   virtual int recvBytePoll( char *b UNUSED_ARG, int w_tick UNUSED_ARG = 0 ) override { return 0; };
+   virtual Chst getc( int w_tick UNUSED_ARG = 0 ) override { return Chst( '\0', Chst::st_empty ); };
+   virtual Chst getc_p( int w_tick UNUSED_ARG = 0 ) override { return Chst( '\0', Chst::st_empty ); };
 
 };
 

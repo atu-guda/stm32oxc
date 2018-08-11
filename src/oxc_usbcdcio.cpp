@@ -27,7 +27,7 @@ int UsbcdcIO::init()
   return 1;
 }
 
-int UsbcdcIO::sendBlockSync( const char *s, int l )
+int UsbcdcIO::write_s( const char *s, int l )
 {
   if( !s || l < 1 ) {
     return 0;

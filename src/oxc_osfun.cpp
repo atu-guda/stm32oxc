@@ -87,31 +87,24 @@ int _open( char *path, int flags, ... )
     return -1; \
   }
 
-int _read( int fd, char *buf, int len ) // TODO: make better
+int _read( int fd, char *buf, int len )
 {
   COMMON_FD_TEST( fd );
-  int r = 0;
-  for( int i=0; i < len;  ++i ) {
-    int t = recvByte( fd, buf, 0 );
-    if( t < 1 ) {
-      break;
-    }
-    ++r;
-  }
-  return r;
+  return devio_fds[fd]->read( buf, len );
 }
 
 int _write( int fd, const char *buf, int len )
 {
   COMMON_FD_TEST( fd );
-  return sendBlock( fd, buf, len );
+  return devio_fds[fd]->write( buf, len );
 }
 
 
 int _close( int fd )
 {
   COMMON_FD_TEST( fd );
-  return -1;
+  devio_fds[fd]->reset();
+  return 0;
 }
 
 

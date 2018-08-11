@@ -1,7 +1,7 @@
 #include <oxc_usartio.h>
 // #include <oxc_gpio.h> // debug
 
-int UsartIO::sendBlockSync( const char *s, int l )
+int UsartIO::write_s( const char *s, int l )
 {
   if( !s  ||  l < 1 ) {
     return 0;
@@ -24,19 +24,17 @@ int UsartIO::sendBlockSync( const char *s, int l )
   return ns;
 }
 
-int UsartIO::recvBytePoll( char *b, int w_tick )
+Chst UsartIO::getc_p( int w_tick )
 {
-  if( !b ) { return 0; }
-
   for( int i=0; i<w_tick || w_tick == 0; ++i ) { // w_tick == 0 means forever
     if( checkFlag( UART_FLAG_RXNE ) ) {
-      *b = recvRaw();
-      return 1;
+      char c = recvRaw();
+      return c;
     }
     taskYieldFun();
   }
 
-  return 0;
+  return Chst( '\0', Chst::st_full );
 }
 
 

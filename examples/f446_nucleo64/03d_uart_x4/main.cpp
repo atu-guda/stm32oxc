@@ -37,7 +37,7 @@ int main(void)
 {
   STD_PROLOG_UART; // <oxc_base.h>
 
-  // dev_console.sendStrSync( NL "0123456789ABCDEF" NL  );
+  // dev_console.puts( NL "0123456789ABCDEF" NL  );
 
   UVAR('t') = 100;
   UVAR('n') =  20;

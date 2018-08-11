@@ -122,7 +122,7 @@ int cmd_cat( int argc, const char * const * argv )
         break;
       }
       if( do_out ) {
-        sendBlock( 1, (const char*)sd_buf, was_read );
+        write( 1, (const char*)sd_buf, was_read );
       }
       nr += was_read;
     }

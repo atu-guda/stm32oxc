@@ -37,7 +37,7 @@ void DevIO::reset()
   obuf.reset();
 }
 
-int DevIO::sendBlock( const char *s, int l )
+int DevIO::write( const char *s, int l )
 {
   if( !s  ||  l < 1 ) {
     return 0;
@@ -58,15 +58,12 @@ int DevIO::sendBlock( const char *s, int l )
 }
 
 
-int DevIO::recvByte( char *b, int w_tick )
+Chst DevIO::getc( int w_tick )
 {
-  if( !b ) { return 0; }
-
   for( int i=0; i < w_tick || w_tick == 0; ++i ) { // w_tick == 0 means forever
     auto v = ibuf.tryGet();
     if( v.good() ) {
-      *b = v.c;
-      return 1;
+      return v;
     }
   }
 
@@ -79,7 +76,7 @@ void DevIO::on_tick_action_tx()
   char tbuf[128];
   unsigned ns = obuf.tryGets( tbuf, sizeof(tbuf ) );
   if( ns > 0 ) {
-    sendBlockSync( tbuf, ns ); // TODO: if( send_now )?
+    write_s( tbuf, ns ); // TODO: if( send_now )?
   }
 
 }
@@ -148,41 +145,42 @@ int DevIO::wait_eot( int w )
   return 0;
 }
 
-int DevIO::sendStr( const char *s )
+int DevIO::puts( const char *s )
 {
   if( !s ) { return 0; }
-  return sendBlock( s, strlen(s) );
+  return write( s, strlen(s) );
 }
 
-int DevIO::sendStrSync( const char *s )
+int DevIO::puts_s( const char *s )
 {
   if( !s ) { return 0; }
-  return sendBlockSync( s, strlen(s) );
+  return write_s( s, strlen(s) );
 }
 
 
-int DevIO::recvBlock( char *s, int l, int w_tick )
+int DevIO::read( char *s, int l, int w_tick )
 {
   if( !s ) { return 0; }
   int n;
   for( n=0; n<l; ++n,++s ) {
-    int k = recvByte( s, w_tick );
-    if( k < 1 ) {
+    Chst k = getc( w_tick );
+    if( ! k.good() ) {
       return n;
     }
   }
   return n;
 }
 
-int DevIO::recvBlockPoll( char *s, int l, int w_tick )
+int DevIO::read_poll( char *s, int l, int w_tick )
 {
   if( !s ) { return 0; }
   int n;
   for( n=0; n<l; ++n,++s ) {
-    int k = recvBytePoll( s, w_tick );
-    if( k < 1 ) {
+    auto k = getc_p( w_tick );
+    if( ! k.good() ) {
       return n;
     }
+    *s = k.c;
   }
   return n;
 }
@@ -192,10 +190,10 @@ int DevIO::recvBlockPoll( char *s, int l, int w_tick )
     return 0; \
   }
 
-int recvByte( int fd, char *s, int w_tick )
+Chst getChar( int fd, int w_tick )
 {
   COMMON_FD_TEST( fd );
-  return devio_fds[fd]->recvByte( s, w_tick );
+  return devio_fds[fd]->getc( w_tick );
 }
 
 Chst tryGet( int fd )
@@ -204,10 +202,10 @@ Chst tryGet( int fd )
   return devio_fds[fd]->tryGet();
 }
 
-int sendBlock( int fd, const char *s, int l )
+int write( int fd, const char *s, int l )
 {
   COMMON_FD_TEST( fd );
-  return devio_fds[fd]->sendBlock( s, l );
+  return devio_fds[fd]->write( s, l );
 }
 
 int pr( const char *s, int fd /* = 1 */ )
@@ -221,7 +219,7 @@ int pr( const char *s, int fd /* = 1 */ )
 
 int prl( const char *s, unsigned l, int fd /* = 1 */  )
 {
-  sendBlock( fd, s, l );
+  write( fd, s, l );
   idle_flag = 1;
   return 0;
 }

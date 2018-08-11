@@ -17,12 +17,12 @@ class UsbcdcIO : public DevIO {
    // virtual void reset() override {}
    int init();
 
-   virtual int sendBlockSync( const char *s, int l ) override;
+   virtual int write_s( const char *s, int l ) override;
    //{ usb->transmit( s, l ); return l; } // TODO: check return status
 
-   virtual int recvBytePoll( char *b, int w_tick = 0 ) override
+   virtual Chst getc_p( int w_tick = 0 ) override
    {
-     return recvByte( b, w_tick ); // no special
+     return getc( w_tick ); // no special
    };
 
    USBD_CDC_LineCodingTypeDef* getCdcLineCoding() { return &lineCoding; }

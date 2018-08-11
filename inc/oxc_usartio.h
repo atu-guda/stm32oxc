@@ -18,11 +18,11 @@ class UsartIO : public DevIO {
    // virtual ~UsartIO() override;
    // virtual void reset() override;
 
-   // virtual int sendBlock( const char *s, int l ) override;
-   virtual int sendBlockSync( const char *s, int l ) override;
+   // virtual int write( const char *s, int l ) override;
+   virtual int write_s( const char *s, int l ) override;
 
-   // virtual int recvByte( char *b, int w_tick = 0 ) override;
-   virtual int recvBytePoll( char *b, int w_tick = 0 ) override;
+   // virtual int getc( int w_tick = 0 ) override;
+   virtual Chst getc_p( int w_tick = 0 ) override;
 
    void handleIRQ();
    virtual void on_tick_action_tx() override; // special

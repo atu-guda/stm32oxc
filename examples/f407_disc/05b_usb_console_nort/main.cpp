@@ -104,13 +104,13 @@ int cmd_test1( int argc, const char * const * argv )
   for( int i=0; i<n; ++i ) {
     b[i] = 'X';
   }
-  dev_console.sendBlockSync( b, n );
+  dev_console.write_s( b, n );
   delay_ms( 10 );
-  dev_console.sendBlockSync( NL, 2 );
+  dev_console.write_s( NL, 2 );
   delay_ms( 10 );
-  dev_console.sendBlock( b, n );
+  dev_console.write( b, n );
   delay_ms( 10 );
-  dev_console.sendBlockSync( NL, 2 );
+  dev_console.write_s( NL, 2 );
   delay_ms( 10 );
 
   return 0;
