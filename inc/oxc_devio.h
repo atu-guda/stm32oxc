@@ -6,7 +6,7 @@
 
 const int DEVIO_MAX = 16;      //* Maximum number of devios
 
-class DevIO {
+class DevIO : public DevOut, public DevIn {
   public:
    using OnRecvFun = void (*)( const char *s, int l );
    using SigFun = void (*)( int v );
@@ -23,23 +23,25 @@ class DevIO {
    void setWaitRx( int rx ) { wait_rx = rx; }
    void setHandleCbreak( bool h ) { handle_cbreak = h; }
 
-   virtual void reset_out() { obuf.reset(); } // TODO: override
-   virtual int write( const char *s, int l );
+   virtual void reset_out() override { obuf.reset(); }
+   virtual int write( const char *s, int l ) override;
    virtual int write_s( const char *s, int l ) = 0;
-   virtual int puts( const char *s );
+   virtual int puts( const char *s ) override;
    virtual int puts_s( const char *s );
-   int putc( char b ) { return write( &b, 1 ); };
+   int putc( char b )  override { return write( &b, 1 ); };
    int putc_s( char b ) { return write_s( &b, 1 ); };
+   int wait_eot( int w = 0 ); // w=0 means forewer, 1 - ok 0 - overtime
+   virtual void flush_out() override { wait_eot( wait_tx ); };
 
-   virtual void reset_in() { ibuf.reset(); } // TODO: override
-   Chst tryGet() { return ibuf.tryGet(); }
-   virtual Chst getc( int w_tick = 0 );
+   virtual void reset_in() override { ibuf.reset(); }
+   virtual Chst tryGet() override { return ibuf.tryGet(); }
+   virtual Chst getc( int w_tick = 0 ) override;
    virtual Chst getc_p( int w_tick = 0 ) = 0;
-   virtual int read( char *s, int l, int w_tick = 0 ); // w_tick - for every
+   virtual int read( char *s, int l, int w_tick = 0 ) override; // w_tick - for every
    virtual int read_poll( char *s, int l, int w_tick = 0 );
-   void unget( char c ) { ibuf.tryPut( c ); }
-   virtual void setOnRecv( OnRecvFun a_onRecv ) { onRecv = a_onRecv; };
-   virtual void setOnSigInt( SigFun a_onSigInt ) { onSigInt = a_onSigInt; };
+   void unget( char c ) override { ibuf.tryPut( c ); }
+   void setOnRecv( OnRecvFun a_onRecv ) { onRecv = a_onRecv; };
+   void setOnSigInt( SigFun a_onSigInt ) { onSigInt = a_onSigInt; };
 
    virtual void on_tick_action_tx();
    virtual void on_tick_action_rx();
@@ -47,7 +49,6 @@ class DevIO {
    static void tick_actions_all();
    void charFromIrq( char c );
    void charsFromIrq( const char *s, int l ); // virtual?
-   int wait_eot( int w = 0 ); // w=0 means forewer, 1 - ok 0 - overtime
 
    virtual void start_transmit() {};
    void testCbreak( char c ); // called from funcs, called from IRQ!
