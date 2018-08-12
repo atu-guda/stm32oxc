@@ -122,7 +122,7 @@ void DevIO::charFromIrq( char c ) // called from IRQ!
 {
   testCbreak( c );
   ibuf.tryPut( c );
-  // portEND_SWITCHING_ISR( wake );
+  wakeFromIRQ( 1 );
 }
 
 void DevIO::charsFromIrq( const char *s, int l ) // called from IRQ!
@@ -131,13 +131,13 @@ void DevIO::charsFromIrq( const char *s, int l ) // called from IRQ!
     testCbreak( s[i] );
     ibuf.tryPut( s[i] );
   }
-  // portEND_SWITCHING_ISR( wake );
+  wakeFromIRQ( 1 );
 }
 
 int DevIO::wait_eot( int w )
 {
   for( auto i = 0; i < w; ++i ) {
-    if( ! on_transmit ) {
+    if( ! on_transmit && obuf.size() == 0 ) {
       return 1;
     }
     delay_ms( 1 );

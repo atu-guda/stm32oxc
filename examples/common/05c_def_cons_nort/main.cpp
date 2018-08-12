@@ -2,6 +2,7 @@
 
 
 #include <oxc_auto.h>
+#include <oxc_outstream.h>
 
 using namespace std;
 using namespace SMLRL;
@@ -61,7 +62,7 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  STD_os;
+  STDOUT_os;
   int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
   uint32_t t_step = UVAR('t');
   os << NL "Test0: n= " <<  n <<  " t= " << t_step << NL;
@@ -73,9 +74,8 @@ int cmd_test0( int argc, const char * const * argv )
   for( int i=0; i<n && !break_flag; ++i ) {
     uint32_t tmc = HAL_GetTick();
     os << " Fake Action i= "  << i <<  " tick: " << ( tmc - tm00 ) << NL;
-    os.flush();
     if( UVAR('w') ) {
-       dev_console.wait_eot();
+      os.flush();
     }
     // delay_ms( 3 );
     delay_ms_until_brk( &tm0, t_step );

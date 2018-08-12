@@ -1,6 +1,6 @@
 #include <cstring>
 
-#include "oxc_ministr.h"
+#include <oxc_ministr.h>
 
 using namespace std;
 
