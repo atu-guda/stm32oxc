@@ -4,9 +4,6 @@
 
 using namespace std;
 
-const char * const FixedPoint1::fracStr[4] = { ".0", ".5", ".?", ".X" };
-const char * const FixedPoint2::fracStr[6] = { ".00", ".25", ".50", ".75", ".??", ".XX" };
-
 
 
 void MiniStr::append( char rhs )
@@ -68,15 +65,9 @@ void MiniStr::add_bitnames( uint32_t b, const BitNames *bn )
 
 MiniStr& MiniStr::operator+=( const char *rhs )
 {
-  if( !rhs || !*rhs ) {
+  if( !rhs ) {
     return *this;
   }
-
-  // unsigned l = strlen( rhs ); // may be overkill, but try one chunk
-  // if( ensureSpace( l+1 ) ) {
-  //   strcat( e, rhs ); e += l; sz += l;
-  //   return *this;
-  // }
 
   while( *rhs ) { // long string, try by chars
     append( *rhs++ );
