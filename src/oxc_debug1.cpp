@@ -7,9 +7,9 @@
 #endif
 
 #include <oxc_gpio.h>
-// #include <oxc_devio.h>
 #include <oxc_debug1.h>
-#include <oxc_ministr.h>
+#include <oxc_devio.h>
+#include <oxc_outstream.h>
 
 // general buffers
 char gbuf_a[GBUF_SZ];
@@ -45,7 +45,7 @@ void dump8( const void *addr, int n, bool isAbs  )
     return;
   }
   unsigned const char* ad0 = isAbs ? ad : nullptr; // left label
-  MSTRF( os, 128, prl1 );
+  STDOUT_os;
   os << NL;
 
   int i, row, bs;
@@ -119,17 +119,15 @@ void log_reset()
 void log_print()
 {
   if( log_buf_idx > 0 ) {
-    pr( gbuf_b );
-    pr( NL );
-    pr_sd( "log_buf_idx", log_buf_idx );
-    pr( NL );
+    STDOUT_os;
+    os <<  gbuf_b <<  NL <<  "log_buf_idx " <<  log_buf_idx << NL;
     delay_ms( 100 );
   }
 }
 
 void print_user_var( int idx )
 {
-  MSTRF( os, 64, prl1 );
+  STDOUT_os;
   if( idx < 0  ||  idx >= N_USER_VARS ) {
     os << NL "err: bad var index: " << idx;
     return;
@@ -203,15 +201,15 @@ void gpio_pin_info( GPIO_TypeDef *gi, uint16_t pin, char *s )
 //
 int cmd_info( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
 {
-  MSTRF( os, 128, prl1 );
+  STDOUT_os;
   os << NL "**** " PROJ_NAME " **** " NL;
 
-  os << "SYSCLK: "  << HAL_RCC_GetSysClockFreq()
+  os << "SYSCLK: " << HAL_RCC_GetSysClockFreq()
      << " HCLK: "  << HAL_RCC_GetHCLKFreq()
      << " PCLK1: " << HAL_RCC_GetPCLK1Freq()
      << " PCLK2: " << HAL_RCC_GetPCLK2Freq()
      << " HSE_VALUE: " << HSE_VALUE
-     << " SystemCoreClock" << SystemCoreClock << NL;
+     << " SystemCoreClock: " << SystemCoreClock << NL;
 
   os << "errno= " << errno << " sigint_count="  << sigint_count << NL
      << " dbg_val0= 0x" << HexInt( dbg_val0 ) <<  " = "  << HexInt( dbg_val0 )
@@ -239,14 +237,19 @@ int cmd_info( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
   const OutIrqName irqs[] = {
     { SysTick_IRQn, "SysTick" },
     { EXTI0_IRQn,   "EXTI0  " },
-    { I2C1_EV_IRQn, "I2C1_EV" },
     #if defined( BOARD_UART_DEFAULT_NAME ) && defined( BOARD_UART_DEFAULT_IRQ )
     { BOARD_UART_DEFAULT_IRQ,  BOARD_UART_DEFAULT_NAME },
     #else
     { USART2_IRQn,  "USART2 " },
     #endif
+    #ifdef TIM_EXA_IRQ
+    { TIM_EXA_IRQ, TIM_EXA_STR },
+    #endif
     // { OTG_FS_IRQn,  "OTG_FS " }, TODO: depend in MCU type
-    { SPI1_IRQn,    "SPI1   " }
+    #ifdef BOARD_SPI_DEFAULT_IRQ
+    { BOARD_SPI_DEFAULT_IRQ,  BOARD_SPI_DEFAULT_NAME  },
+    #endif
+    { I2C1_EV_IRQn, "I2C1_EV" }
   };
 
   for( auto iqn : irqs ) {
@@ -269,7 +272,7 @@ CmdInfo CMDINFO_INFO {  "info",  'i', cmd_info,       " - Output general info" }
 
 int cmd_echo( int argc, const char * const * argv )
 {
-  MSTRF( os, 128, prl1 );
+  STDOUT_os;
   os << NL << "argc= " << argc << NL;
   for( int i=0; i<argc; ++i ) {
     os << " arg" << i << " = \"" << argv[i] << "\"" NL;
@@ -282,7 +285,7 @@ const char* common_help_string = "Default help " NL;
 
 int cmd_help( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
 {
-  MSTRF( os, 128, prl1 );
+  STDOUT_os;
   os << common_help_string;
   os << NL "commands:" NL;
   char b1[2]; b1[0] = b1[1] = 0;
@@ -311,7 +314,7 @@ int cmd_dump( int argc, const char * const * argv )
     return 1;
   }
 
-  MSTRF( os, 128, prl1 );
+  STDOUT_os;
   const char* addr = str2addr( argv[1] );
   if( addr == BAD_ADDR ) {
     os << "** error: dump: bad address \""  <<  argv[1] << "\"" NL;
@@ -333,7 +336,7 @@ int cmd_fill( int argc, const char * const * argv )
     return 1;
   }
 
-  MSTRF( os, 128, prl1 );
+  STDOUT_os;
   char* addr = str2addr( argv[1] );
   if( addr == BAD_ADDR ) {
     os << "** error: fill: bad address \"" << argv[1] << "\"" NL;
@@ -465,7 +468,7 @@ int cmd_pin_info( int argc, const char * const * argv )
     }
   }
 
-  MSTRF( os, 128, prl1 );
+  STDOUT_os;
   os << NL "Port " << pstr << " addr: " << HexInt( (void*)gi ) << NL;
 
   for( uint16_t p = pin, i=0; p<16 && i<n; ++p, ++i ) {
@@ -483,7 +486,7 @@ int cmd_set_leds_step( int argc, const char * const * argv )
 {
   uint32_t nstep = arg2long_d( 1, argc, argv, 50, 1, 100000 ); // number output series
   task_leds_step = nstep;
-  MSTRF( os, 128, prl1 );
+  STDOUT_os;
   os << "LEDS step is set to " << task_leds_step << " = "  << task_leds_step * TASK_LEDS_QUANT << " ms" NL;
   return 0;
 }

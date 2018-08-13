@@ -60,7 +60,7 @@ int cmd_test0( int argc, const char * const * argv )
 {
   int st_a = arg2long_d( 1, argc, argv,   2,    0, 127 );
   int en_a = arg2long_d( 2, argc, argv, 127, st_a, 127 );
-  MSTRF( os, 128, prl1 );
+  STDOUT_os;
   os << "Test0: st_a= " << st_a << " en_a= " << en_a << NL;
   os.flush();
   i2cd.resetDev();

@@ -37,7 +37,7 @@ int main(void)
   STD_PROLOG_UART_NOCON;
 
   leds.write( 0 );
-  MSTRF( os, 128, out_uart );
+  STDOUT_os;
 
   MX_DigitalIn_Init();
   MX_DMA_Init();

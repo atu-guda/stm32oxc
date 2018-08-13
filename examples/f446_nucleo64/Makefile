@@ -5,9 +5,7 @@ SUBDIRS = \
   01a_leds_tim_oxc_mu \
   02_leds_rtos \
   03_uart \
-  03a_uart_x1 \
   03b_uart_x2 \
-  03c_uart_x3 \
   03d_uart_x4 \
   04_uart_console \
   05_usb_console \
@@ -45,6 +43,8 @@ SUBDIRS = \
   t01_iprintf \
   xx01_calibrate \
 
+#  03c_uart_x3 \
+#  03a_uart_x1 \
 
 ALL : examples_f446_nucleo64
 

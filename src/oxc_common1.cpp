@@ -1,6 +1,6 @@
 #include <oxc_gpio.h>
 #include <oxc_common1.h>
-#include <oxc_ministr.h>
+#include <oxc_outstream.h>
 
 #include "board_cfg.h"
 
@@ -36,7 +36,7 @@ void task_leds( void *prm UNUSED_ARG )
 void default_main_loop()
 {
   int nl = 0;
-  MSTRF( os, 64, prl1 );
+  STDOUT_os;
   delay_ms( 10 );
   os <<  "*=*** " PROJ_NAME  " main loop: ****** " NL;
   os.flush();

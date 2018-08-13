@@ -1,7 +1,8 @@
 #include <oxc_spi.h>
 
 #ifdef USE_OXC_DEBUG
-#include <oxc_ministr.h>
+#include <oxc_devio.h>
+#include <oxc_outstream.h>
 #endif
 
 void DevSPI::initSPI()
@@ -317,7 +318,7 @@ const BitNames SPI_SR_bitnames[] {
 void print_SPI_info( SPI_TypeDef *spi )
 {
   if( !spi ) { return; }
-  MSTRF( os, 128, prl1 );
+  STDOUT_os;
 
   os << "SPI: "  << HexInt( spi ) << " CR1= " << HexInt( spi->CR1 )  //  pr_bitnames( spi->CR1, SPI_CR1_bitnames );
      << " CR2= " << HexInt( spi->CR2 ) << BitsStr( spi->CR2, SPI_CR2_bitnames )
@@ -328,7 +329,7 @@ void print_SPI_info( SPI_TypeDef *spi )
 void DevSPI::pr_info() const
 {
   print_SPI_info( spi->Instance );
-  MSTRF( os, 128, prl1 );
+  STDOUT_os;
   os << " error_code= " << int( spi->ErrorCode )
      << " last_err= "   << int( last_err )
      << " last_rc= "    << int( last_rc ) << NL;

@@ -65,7 +65,7 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  STD_os;
+  STDOUT_os;
   int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
   uint32_t t_step = UVAR('t');
   os <<  NL "Test0: n= " << n << " t= " << t_step << NL; os.flush();

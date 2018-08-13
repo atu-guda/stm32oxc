@@ -66,7 +66,7 @@ int cmd_test0( int argc, const char * const * argv )
   int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
   uint32_t t_step = UVAR('t');
 
-  MSTRF( os, 128, prl1 );
+  STDOUT_os;
   os << NL "Test0: n= " <<  n << " t= " << t_step << NL;
   os.flush();
 

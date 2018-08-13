@@ -285,8 +285,8 @@ ifeq "$(USE_OXC)" "y"
   SRCS += oxc_base.cpp
   SRCS += oxc_miscfun.cpp
   SRCS += oxc_gpio.cpp
-  ifneq "$(OXC_NO_RINGBUF)" "y"
-  SRCS += oxc_ministr.cpp
+  ifneq "$(OXC_NO_OUTSTREAM)" "y"
+  SRCS += oxc_outstream.cpp
   endif
   ifneq "$(OXC_NO_RINGBUF)" "y"
     SRCS += oxc_ringbuf.cpp

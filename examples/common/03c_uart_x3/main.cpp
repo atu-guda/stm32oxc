@@ -6,7 +6,6 @@
 #include <oxc_smallrl.h>
 #include <oxc_debug1.h>
 
-#include <utility>
 
 using namespace std;
 using namespace SMLRL;

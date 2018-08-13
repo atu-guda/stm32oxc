@@ -23,5 +23,3 @@ USE_OXC_CONSOLE_DEFAULT = y
 
 SRCS  = main.cpp
 
-SRCS += oxc_outstream.cpp
-
