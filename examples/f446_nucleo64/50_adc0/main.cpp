@@ -1,2 +1,1 @@
-#include "../../common/50_adc0/main.cpp"
-
+../../common/50_adc0/main.cpp

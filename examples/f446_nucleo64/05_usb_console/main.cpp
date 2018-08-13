@@ -1,2 +1,1 @@
-#include "../../common/05_usb_console/main.cpp"
-
+../../common/05_usb_console/main.cpp

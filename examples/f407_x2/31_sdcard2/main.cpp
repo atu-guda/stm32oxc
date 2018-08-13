@@ -1,2 +1,1 @@
-#include "../../common/31_sdcard2/main.cpp"
-
+../../common/31_sdcard2/main.cpp

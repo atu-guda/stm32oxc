@@ -1,2 +1,1 @@
-#include "../../common/16_step1/main.cpp"
-
+../../common/16_step1/main.cpp

@@ -1,2 +1,1 @@
-#include "../../common/02_leds_rtos/main.cpp"
-
+../../common/02_leds_rtos/main.cpp

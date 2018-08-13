@@ -1,2 +1,1 @@
-#include "../../common/51a_adcdma_n/main.cpp"
-
+../../common/51a_adcdma_n/main.cpp
