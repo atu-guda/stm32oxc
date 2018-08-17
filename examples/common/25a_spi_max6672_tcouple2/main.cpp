@@ -1,8 +1,6 @@
 #include <cstring>
 #include <cstdlib>
 
-// #include <string>
-
 #include <oxc_auto.h>
 
 using namespace std;
@@ -13,10 +11,11 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
+const char* common_help_string = "App to use pair of MAX6675 thermocouple control device" NL;
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test 2 tcoubples"  };
+CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test 2 thermocouples"  };
 
 
 int cmd_reset_spi( int argc, const char * const * argv );
@@ -58,17 +57,17 @@ int main(void)
 
   BOARD_POST_INIT_BLINK;
 
-  BOARD_CREATE_STD_TASKS;
+  pr( NL "##################### " PROJ_NAME NL );
 
-  SCHEDULER_START;
+  srl.re_ps();
+
+  oxc_add_aux_tick_fun( led_task_nortos );
+
+  std_main_loop_nortos( &srl, nullptr );
+
   return 0;
 }
 
-void task_main( void *prm UNUSED_ARG ) // TMAIN
-{
-  default_main_loop();
-  vTaskDelete(NULL);
-}
 
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
@@ -84,20 +83,22 @@ int cmd_test0( int argc, const char * const * argv )
   int rc1, rc2;
   spi_d1.setTssDelay( 200 );
   spi_d2.setTssDelay( 200 );
-  TickType_t tc0, tc00 = tc0;
 
+  uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
+
+  break_flag = 0;
   for( int i=0; i<n && !break_flag; ++i ) {
 
-    TickType_t tcc = xTaskGetTickCount();
+    uint32_t tcc = HAL_GetTick();
     if( i == 0 ) {
-      tc0 = tc00 = tcc;
+      tm0 = tm00 = tcc;
     }
 
     rc1 = spi_d1.recv( (uint8_t*)(&v1), sizeof(v1) );
     rc2 = spi_d2.recv( (uint8_t*)(&v2), sizeof(v2) );
     v1 = rev16( v1 ); v2 = rev16( v2 );
 
-    os << FmtInt( tcc - tc00, 8, '0' ) << ' ';
+    os << FmtInt( tcc - tm00, 8, '0' ) << ' ';
 
     os << FixedPoint2( v1 >> 3 ) << ' ' << FixedPoint2( v2 >> 3 ) << ' ';
 
@@ -113,9 +114,8 @@ int cmd_test0( int argc, const char * const * argv )
          << rc1 << ' ' << rc2 << ' ';
     }
 
-    os << NL;
-    os.flush();
-    delay_ms_until_brk( &tc0, t_step );
+    os << NL; os.flush();
+    delay_ms_until_brk( &tm0, t_step );
   }
 
   spi_d1.pr_info();
@@ -133,9 +133,6 @@ int cmd_reset_spi( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
 
   return 0;
 }
-
-
-
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

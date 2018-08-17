@@ -11,6 +11,7 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
+const char* common_help_string = "App to manual control SPI devices" NL;
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -63,17 +64,17 @@ int main(void)
 
   BOARD_POST_INIT_BLINK;
 
-  BOARD_CREATE_STD_TASKS;
+  pr( NL "##################### " PROJ_NAME NL );
 
-  SCHEDULER_START;
+  srl.re_ps();
+
+  oxc_add_aux_tick_fun( led_task_nortos );
+
+  std_main_loop_nortos( &srl, nullptr );
+
   return 0;
 }
 
-void task_main( void *prm UNUSED_ARG ) // TMAIN
-{
-  default_main_loop();
-  vTaskDelete(NULL);
-}
 
 #define DLY_T delay_mcs( 10 );
 
@@ -82,8 +83,8 @@ int cmd_test0( int argc, const char * const * argv )
 {
   uint8_t sv = arg2long_d( 1, argc, argv, 0x15, 0, 0xFF );
   int nd     = arg2long_d( 2, argc, argv,    2, 0, sizeof(gbuf_a) );
-  pr( NL "Test0: sv= " ); pr_h( sv ); pr( " nd= " ); pr_d( nd );
-  pr( NL );
+  STDOUT_os;
+  os << NL "Test0: sv= "  << HexInt8( sv ) << " nd= "  <<  nd  <<  NL;
 
   if( UVAR('d') > 0 ) { // debug: for logic analizer start
     nss_pin.write( 0 );
@@ -100,7 +101,7 @@ int cmd_test0( int argc, const char * const * argv )
   // int rc = spi_d.recv( (uint8_t*)gbuf_a, imin(UVAR('r'),sizeof(gbuf_a)) );
 
 
-  pr_sdx( rc );
+  os << "rc = " << rc << NL;
   if( rc > 0 ) {
     dump8( gbuf_a, rc );
   }
@@ -120,18 +121,18 @@ int cmd_sendr_spi( int argc, const char * const * argv )
   }
 
   int nd = imin( UVAR('r'), sizeof(gbuf_a) );
-  pr( NL "Send/recv: ns= " ); pr_d( ns ); pr( " nd= " ); pr_d( nd );
-  pr( "* to send: " NL );
+  STDOUT_os;
+  os <<  NL "Send/recv: ns= "  <<  ns  <<  " nd= "  <<  nd  <<  "* to send: " NL;
   dump8( sbuf, ns );
 
   int rc = spi_d.send_recv( sbuf, ns, (uint8_t*)gbuf_a, nd );
 
   pr_sdx( rc );
   if( rc > 0 ) {
-    pr( "* recv: " NL );
+    os <<  "* recv: " NL ;
     dump8( gbuf_a, rc );
   } else {
-    pr( "** Error, code= " ); pr_d( spi_d.getErr() ); pr( NL );
+    os <<  "** Error, code= "  << spi_d.getErr() <<  NL;
   }
   delay_ms( 10 );
 
@@ -144,8 +145,8 @@ int cmd_recv_spi( int argc, const char * const * argv )
 {
   int nd = arg2long_d( 1, argc, argv, UVAR('r'), 1, sizeof(gbuf_a) );
 
-  pr( NL "Recv: nd= " ); pr_d( nd );
-  pr( NL );
+  STDOUT_os;
+  os <<  NL "Recv: nd= "  <<  nd  <<  NL;
 
   int rc = spi_d.recv( (uint8_t*)gbuf_a, nd );
 
@@ -153,7 +154,7 @@ int cmd_recv_spi( int argc, const char * const * argv )
   if( rc > 0 ) {
     dump8( gbuf_a, rc );
   } else {
-    pr( "** Error, code= " ); pr_d( spi_d.getErr() ); pr( NL );
+    os <<  "** Error, code= "  << spi_d.getErr()<<  NL;
   }
   delay_ms( 10 );
 
@@ -172,17 +173,17 @@ int cmd_duplex_spi( int argc, const char * const * argv )
     sbuf[i] = t;
   }
 
-  pr( NL "Duplex: ns= " ); pr_d( ns );
-  pr( NL );
+  STDOUT_os;
+  os <<  NL "Duplex: ns= "  <<  ns  <<  NL;
   dump8( sbuf, ns );
 
   int rc = spi_d.duplex( sbuf, (uint8_t*)gbuf_a, ns );
 
-  pr_sdx( rc );
+  os << "rc = " << rc << NL;
   if( rc > 0 ) {
     dump8( gbuf_a, rc );
   } else {
-    pr( "** Error, code= " ); pr_d( spi_d.getErr() ); pr( NL );
+    os <<  "** Error, code= "  << spi_d.getErr() <<  NL;
   }
   delay_ms( 10 );
 
@@ -200,7 +201,6 @@ int cmd_reset_spi( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
 
   return 0;
 }
-
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

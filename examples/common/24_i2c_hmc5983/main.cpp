@@ -13,6 +13,7 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
+const char* common_help_string = "App to test HMC5983 compas" NL;
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -47,16 +48,15 @@ int main(void)
 
   BOARD_POST_INIT_BLINK;
 
-  BOARD_CREATE_STD_TASKS;
+  pr( NL "##################### " PROJ_NAME NL );
 
-  SCHEDULER_START;
+  srl.re_ps();
+
+  oxc_add_aux_tick_fun( led_task_nortos );
+
+  std_main_loop_nortos( &srl, nullptr );
+
   return 0;
-}
-
-void task_main( void *prm UNUSED_ARG ) // TMAIN
-{
-  default_main_loop();
-  vTaskDelete(NULL);
 }
 
 
@@ -68,9 +68,9 @@ int cmd_test0( int argc, const char * const * argv )
   int scale = arg2long_d( 2, argc, argv, 1, 0, n_scales-1 );
   uint32_t t_step = UVAR('t');
 
-  pr( NL "Test0: n= " ); pr_d( n ); pr( " t= " ); pr_d( t_step );
-  pr( " scale= " ); pr_d( scale );
-  pr( NL );
+  STDOUT_os;
+  os <<  NL "Test0: n= "  <<  n  <<  " t= "  <<  t_step
+     <<  " scale= "  <<  scale   <<  NL;
 
   int scale_min = -1000000; // INT16_MIN
   int scale_max =  1000000; // INT16_MAX
@@ -82,49 +82,50 @@ int cmd_test0( int argc, const char * const * argv )
   // mag.resetDev();
 
   if( ! mag.init(  HMC5983::cra_odr_75_Hz, HMC5983::Scales( scale ) ) ) {
-    pr( "Fail to init HMC5983, Error= "  );
-    pr_d( mag.getErr() ); pr( NL );
+    os <<  "Fail to init HMC5983, Error= " <<  mag.getErr() << NL;
     return 1;
   }
 
-  TickType_t tc0 = xTaskGetTickCount(), tc00 = tc0;
   int16_t temp;
   const int32_t *xyz;
 
   term_clear();
 
+  uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
+
+  break_flag = 0;
   for( int i=0; i<n && !break_flag; ++i ) {
+
     mag.read1( 10 );
     xyz = mag.getMagAllmcGa();
     temp = mag.getTemp();
-    TickType_t tcc = xTaskGetTickCount();
+    uint32_t tcc = HAL_GetTick();
     bar_x.draw( xyz[0] );
     bar_y.draw( xyz[1] );
     bar_z.draw( xyz[2] );
     term_set_xy( 10, 5 );
-    pr( "i= " ); pr_d( i );
-    pr( "  tick: "); pr_d( tcc - tc00 );
-    pr( " [ " ); pr_d( xyz[0] );
-    pr( " ; " ); pr_d( xyz[1] );
-    pr( " ; " ); pr_d( xyz[2] );
-    pr( " ] T= " /* NL  */ ); pr_d( temp ); pr( " " NL );
-    delay_ms_until_brk( &tc0, t_step );
+    os <<  "i= "  <<  i  <<  "  tick: " <<  (tcc - tm00 )
+       <<  " [ "  <<  xyz[0] <<  " ; "  <<  xyz[1]  <<  " ; "  <<  xyz[2]
+       <<  " ] T= " /* NL  */  <<  temp  <<  " " NL;
+
+    os.flush();
+    delay_ms_until_brk( &tm0, t_step );
   }
 
   return 0;
 }
+
 int cmd_setaddr( int argc, const char * const * argv )
 {
   if( argc < 2 ) {
-    pr( "Need addr [1-127]" NL );
+    STDOUT_os;
+    os <<  "Need addr [1-127]" NL;
     return 1;
   }
   uint8_t addr  = (uint8_t)arg2long_d( 1, argc, argv, 0x0, 0,   127 );
   mag.setAddr( addr );
   return 0;
 }
-
-
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

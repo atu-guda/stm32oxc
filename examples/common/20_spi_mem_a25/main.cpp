@@ -13,6 +13,7 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
+const char* common_help_string = "App to SPI based flash memory" NL;
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -56,17 +57,17 @@ int main(void)
 
   BOARD_POST_INIT_BLINK;
 
-  BOARD_CREATE_STD_TASKS;
+  pr( NL "##################### " PROJ_NAME NL );
 
-  SCHEDULER_START;
+  srl.re_ps();
+
+  oxc_add_aux_tick_fun( led_task_nortos );
+
+  std_main_loop_nortos( &srl, nullptr );
+
   return 0;
 }
 
-void task_main( void *prm UNUSED_ARG ) // TMAIN
-{
-  default_main_loop();
-  vTaskDelete(NULL);
-}
 
 #define DLY_T delay_mcs( 2 );
 
@@ -74,8 +75,8 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
 int cmd_test0( int argc, const char * const * argv )
 {
   int nd     = imin( UVAR('r'), sizeof(gbuf_b) );
-  pr( NL "Test0: nd= " ); pr_d( nd );
-  pr( NL );
+  STDOUT_os;
+  os <<  NL "Test0: nd= "  <<  nd  <<  NL;
 
   if( UVAR('d') > 0 ) { // debug: for logic analizer start
     nss_pin.write( 0 );
@@ -93,26 +94,30 @@ int cmd_test0( int argc, const char * const * argv )
   memset( gbuf_b, '\x00', sizeof( gbuf_b ) );
 
   int rc = memspi.read( (uint8_t*)gbuf_b, 0x00, nd );
-  pr( " Read Before: rc = " ); pr_d( rc ); pr( NL );
+  os <<  " Read Before: rc = "  <<  rc  <<  NL;
   dump8( gbuf_b, nd );
-  status = memspi.status(); pr_shx( status ); pr( NL );
+  status = memspi.status();
+  os << "status= " << status  <<  NL;
 
   for( int i=0; i<nd; ++i ) {
     gbuf_a[i] = (char)( '0' + i );
   }
   rc = memspi.write( (uint8_t*)gbuf_a, 0x00, nd );
-  pr( NL "Write: rc= " ); pr_d( rc ); pr( NL );
-  status = memspi.status(); pr_shx( status ); pr( NL );
+  os <<  NL "Write: rc= "  <<  rc  <<  NL;
+  status = memspi.status();
+  os << "status= " << status  <<  NL;
 
   rc = memspi.read( (uint8_t*)gbuf_b, 0x00, nd );
-  pr( " Read After: rc = " ); pr_d( rc ); pr( NL );
+  os <<  " Read After: rc = "  <<  rc  <<  NL;
   dump8( gbuf_b, nd );
-  status = memspi.status(); pr_shx( status ); pr( NL );
+  status = memspi.status();
+  os << "status= " << status  <<  NL;
 
   rc = memspi.read( (uint8_t*)gbuf_b, 0x03, nd );
-  pr( " Read After with offset 3: rc = " ); pr_d( rc ); pr( NL );
+  os <<  " Read After with offset 3: rc = "  <<  rc  <<  NL;
   dump8( gbuf_b, nd );
-  status = memspi.status(); pr_shx( status ); pr( NL );
+  status = memspi.status();
+  os << "status= " << status  <<  NL;
 
   return 0;
 }
@@ -130,9 +135,6 @@ int cmd_spimem_sector0_erase( int argc, const char * const * argv )
 
   return rc;
 }
-
-
-
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

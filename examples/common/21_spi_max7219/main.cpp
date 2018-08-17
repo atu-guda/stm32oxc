@@ -13,6 +13,7 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
+const char* common_help_string = "App to test MAX7219 LED SPI screen controller" NL;
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -54,17 +55,17 @@ int main(void)
 
   BOARD_POST_INIT_BLINK;
 
-  BOARD_CREATE_STD_TASKS;
+  pr( NL "##################### " PROJ_NAME NL );
 
-  SCHEDULER_START;
+  srl.re_ps();
+
+  oxc_add_aux_tick_fun( led_task_nortos );
+
+  std_main_loop_nortos( &srl, nullptr );
+
   return 0;
 }
 
-void task_main( void *prm UNUSED_ARG ) // TMAIN
-{
-  default_main_loop();
-  vTaskDelete(NULL);
-}
 
 #define DLY_T delay_mcs( 2 );
 
@@ -76,8 +77,9 @@ int cmd_test0( int argc, const char * const * argv )
   uint8_t pos = arg2long_d( 2, argc, argv,  1, 0, 7 );
   uint8_t l = arg2long_d( 3, argc, argv,  3, 1, 8 );
   uint8_t v0[] = { 1, 2, 3, 4, 0x0E, 6, 7, 8 };
-  pr( NL "Test0: v= " ); pr_d( v ); pr( " = " ); pr_h( v ); pr( "  pos= " ); pr_d( pos );
-  pr( NL );
+
+  STDOUT_os;
+  os << NL "Test0: v= " << v  <<  " = " << HexInt( v ) << " pos= " << pos << NL;
 
   if( UVAR('d') > 0 ) { // debug: for logic analizer start
     nss_pin.write( 0 );
@@ -97,43 +99,43 @@ int cmd_test0( int argc, const char * const * argv )
   max7219.setDigit( 0, 0xC9 );
 
   max7219.test_on();
-  pr( "setDigit + test_on" NL ); delay_ms( def_delay );
+  os <<  "setDigit + test_on" NL;  delay_ms( def_delay );
 
   max7219.test_off();
-  pr( "test_off" NL ); delay_ms( def_delay );
+  os <<  "test_off" NL;  delay_ms( def_delay );
 
   max7219.off();
-  pr( "off" NL ); delay_ms( def_delay );
+  os <<  "off" NL;  delay_ms( def_delay );
   max7219.on();
-  pr( "on" NL ); delay_ms( def_delay );
+  os <<  "on" NL;  delay_ms( def_delay );
 
   max7219.setIntens( 3 );
-  pr( "setIntens 3" NL ); delay_ms( def_delay );
+  os <<  "setIntens 3" NL;  delay_ms( def_delay );
 
   max7219.setIntens( 5 );
-  pr( "setIntens 5" NL ); delay_ms( def_delay );
+  os <<  "setIntens 5" NL;  delay_ms( def_delay );
 
   max7219.setIntens( 7 );
-  pr( "setIntens 7" NL ); delay_ms( def_delay );
+  os <<  "setIntens 7" NL;  delay_ms( def_delay );
 
   max7219.setIntens( 0 );
-  pr( "setIntens 0" NL ); delay_ms( def_delay );
+  os <<  "setIntens 0" NL;  delay_ms( def_delay );
 
   max7219.setLimit( 4 );
-  pr( "setLinit 4" NL ); delay_ms( def_delay );
+  os <<  "setLinit 4" NL;  delay_ms( def_delay );
 
   max7219.setLimit( 7 );
-  pr( "setLinit 7" NL ); delay_ms( def_delay );
+  os <<  "setLinit 7" NL;  delay_ms( def_delay );
 
   max7219.setDecode( 0xFF ); // all = digits
   max7219.setDigits( v0, 3, 0, 5 );
-  pr( "setDecode 0xFF, setDigits c0 3 0 5" NL ); delay_ms( def_delay );
+  os <<  "setDecode 0xFF, setDigits c0 3 0 5" NL; delay_ms( def_delay );
 
   max7219.setUVal( 12345678, 7, 0, 8 );
-  pr( "setUVal 12345678" NL ); delay_ms( def_delay );
+  os <<  "setUVal 12345678" NL; delay_ms( def_delay );
 
   max7219.clsDig();
-  pr( "clsDig " NL ); delay_ms( def_delay );
+  os <<  "clsDig " NL; delay_ms( def_delay );
 
   max7219.setVal( v, 1, pos, l );
 
@@ -174,21 +176,19 @@ int cmd_sendr_spi( int argc, const char * const * argv )
   }
 
   int nd = imin( UVAR('r'), sizeof(gbuf_a) );
-  pr( NL "Send/recv: ns= " ); pr_d( ns ); pr( " nd= " ); pr_d( nd );
-  pr( NL );
+  STDOUT_os;
+  os <<  NL "Send/recv: ns= "  <<  ns  <<  " nd= "  <<  nd   <<  NL;
   dump8( sbuf, ns );
 
   int rc = spi_d.send_recv( sbuf, ns, (uint8_t*)gbuf_a, nd );
 
-  pr_sdx( rc );
+  os << "rc= " << rc << NL;
   if( rc > 0 ) {
     dump8( gbuf_a, rc );
   }
 
   return 0;
 }
-
-
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

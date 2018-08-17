@@ -16,6 +16,7 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
+const char* common_help_string = "App to test PCD8544 (nokia 3311) LCD screen" NL;
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -71,17 +72,19 @@ int main(void)
 
   BOARD_POST_INIT_BLINK;
 
-  BOARD_CREATE_STD_TASKS;
+  pr( NL "##################### " PROJ_NAME NL );
 
-  SCHEDULER_START;
+  srl.re_ps();
+
+  oxc_add_aux_tick_fun( led_task_nortos );
+
+  std_main_loop_nortos( &srl, nullptr );
+
+
+
   return 0;
 }
 
-void task_main( void *prm UNUSED_ARG ) // TMAIN
-{
-  default_main_loop();
-  vTaskDelete(NULL);
-}
 
 
 // TEST0
@@ -157,7 +160,8 @@ int cmd_vline( int argc, const char * const * argv )
 {
   uint16_t y0 = arg2long_d( 1, argc, argv,    0,  0, ymax );
   uint16_t y1 = arg2long_d( 2, argc, argv, ymax, y0, ymax );
-  pr( NL "vline: y0= " ); pr_d( y0 ); pr( " y1= " ); pr_h( y1 );
+  STDOUT_os;
+  os <<  NL "vline: y0= "  <<  y0  <<  " y1= "  << y1;
 
   for( uint16_t y = y0; y<= y1; ++y ) {
     pb0.vline( y, y/2, y, (y&1) );
@@ -172,7 +176,8 @@ int cmd_line( int argc, const char * const * argv )
 {
   uint16_t nl = arg2long_d( 1, argc, argv,  36, 0, 1024 );
   uint16_t dn = arg2long_d( 2, argc, argv,  360/nl, 1, 512 );
-  pr( NL "lines: nl = " ); pr_d( nl ); pr( " dn= " ); pr_d( dn );
+  STDOUT_os;
+  os <<  NL "lines: nl = "  <<  nl  <<  " dn= "  <<  dn;
 
   pb0.box( xcen, ystp, xmax-ystp, ymax-ystp, 1 );
 
@@ -180,8 +185,7 @@ int cmd_line( int argc, const char * const * argv )
     float alp = an * dn * 3.1415926f / 180;
     uint16_t x1 = xcen + 8 * ystp * cosf( alp );
     uint16_t y1 = ycen + 8 * ystp * sinf( alp );
-    // pr( "x1= " ); pr_d( x1 );
-    // pr( " y1= " ); pr_d( y1 ); pr( NL );
+    // os <<  "x1= "  <<  x1 <<  " y1= "  <<  y1  <<  NL;
     pb0.line( xcen, ycen, x1, y1, (an&1) );
   }
 
@@ -193,13 +197,13 @@ int cmd_line( int argc, const char * const * argv )
 int cmd_contr( int argc, const char * const * argv )
 {
   uint8_t co = arg2long_d( 1, argc, argv,  0x48, 0, 0x7F );
-  pr( NL "contrast: co=" ); pr_d( co );
+  STDOUT_os;
+  os <<  NL "contrast: co="  <<  co << NL;
 
   screen.contrast( co );
 
   return 0;
 }
-
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
