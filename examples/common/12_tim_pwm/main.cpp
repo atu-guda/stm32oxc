@@ -17,7 +17,6 @@ int pwm_vals[] = { 25, 50, 75, 90 };
 void tim_cfg();
 void pwm_recalc();
 void pwm_update();
-void pwm_print_cfg();
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -53,18 +52,17 @@ int main(void)
 
   BOARD_POST_INIT_BLINK;
 
-  BOARD_CREATE_STD_TASKS;
+  pr( NL "##################### " PROJ_NAME NL );
 
-  SCHEDULER_START;
-  return 0;
-}
-
-void task_main( void *prm UNUSED_ARG ) // TMAIN
-{
   tim_cfg();
 
-  default_main_loop();
-  vTaskDelete(NULL);
+  srl.re_ps();
+
+  oxc_add_aux_tick_fun( led_task_nortos );
+
+  std_main_loop_nortos( &srl, nullptr );
+
+  return 0;
 }
 
 
@@ -77,13 +75,14 @@ int cmd_test0( int argc, const char * const * argv )
     }
   }
 
-  pr( NL "Test0: pwm_vals[]= " );
+  STDOUT_os;
+  os << NL "Test0: pwm_vals[]= ";
   for( int i=0; i<4; ++i ) {
-    pr_d( pwm_vals[i] ); pr( " " );
+    os << pwm_vals[i] <<  ' ';
   }
-  pr( NL );
+  os <<  NL ;
 
-  pwm_print_cfg();
+  tim_print_cfg( TIM_EXA );
   // pwm_recalc();
   pwm_update();
 
@@ -92,8 +91,8 @@ int cmd_test0( int argc, const char * const * argv )
 
 int cmd_tinit( int argc, const char * const * argv )
 {
-  pwm_print_cfg();
   tim_cfg();
+  tim_print_cfg( TIM_EXA );
 
   return 0;
 }
@@ -164,25 +163,6 @@ void pwm_update()
   tim_h.Instance->CCR3 = pwm_vals[2] * scl / 100;
   tim_h.Instance->CCR4 = pwm_vals[3] * scl / 100;
 }
-
-
-void pwm_print_cfg()
-{
-  int presc = UVAR('p');
-  int arr   = UVAR('a');
-  uint32_t freq_in = get_TIM_in_freq( TIM_EXA );
-
-  int freq1 = freq_in  / ( presc + 1 );
-  int freq2 = freq1 / ( arr + 1 );
-  pr( NL TIM_EXA_STR " reinit: freq_in: " ); pr_d( freq_in );
-  pr( " prescale: " ); pr_d( presc );
-  pr( " ARR: " ); pr_d( arr );
-  pr( " freq1: " ); pr_d( freq1 );
-  pr( " freq2: " ); pr_d( freq2 ); pr( NL );
-  pr( "CCR1: " );   pr_d( tim_h.Instance->CCR1 ); pr( NL );
-}
-
-
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

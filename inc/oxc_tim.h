@@ -10,4 +10,8 @@ uint32_t get_TIM_cnt_freq( TIM_TypeDef *tim );
 uint32_t calc_TIM_psc_for_cnt_freq( TIM_TypeDef *tim, uint32_t cnt_freq );
 uint32_t get_TIM_base_freq( TIM_TypeDef *tim );
 
+#ifdef USE_OXC_DEBUG
+void tim_print_cfg( TIM_TypeDef *tim );
+#endif
+
 #endif

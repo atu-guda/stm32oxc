@@ -161,6 +161,6 @@
 #define BOARD_CONSOLE_DEFINES_UART    UART_CONSOLE_DEFINES( USART2 );
 #define BOARD_PROLOG                  STD_PROLOG_UART;
 #define BOARD_CREATE_STD_TASKS        CREATE_STD_TASKS;
-#define BOARD_POST_INIT_BLINK         delay_ms( PROLOG_LED_TIME ); leds.write( 0x01 ); delay_ms( PROLOG_LED_TIME );
+#define BOARD_POST_INIT_BLINK         delay_ms( PROLOG_LED_TIME ); leds.write( 0x00 ); delay_ms( PROLOG_LED_TIME );
 
 #endif

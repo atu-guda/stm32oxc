@@ -12,6 +12,7 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
+const char* common_help_string = "App to use BMP085 barometer" NL;
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -46,38 +47,39 @@ int main(void)
 
   BOARD_POST_INIT_BLINK;
 
-  BOARD_CREATE_STD_TASKS;
+  pr( NL "##################### " PROJ_NAME NL );
 
-  SCHEDULER_START;
+  srl.re_ps();
+
+  oxc_add_aux_tick_fun( led_task_nortos );
+
+  std_main_loop_nortos( &srl, nullptr );
+
   return 0;
-}
-
-void task_main( void *prm UNUSED_ARG ) // TMAIN
-{
-  default_main_loop();
-  vTaskDelete(NULL);
 }
 
 
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  const int buf_sz = 80;
   int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
   uint32_t t_step = UVAR('t');
 
   STDOUT_os;
-  os << NL "Test0: n= " <<  n << " t= " << t_step << NL;
+  os << NL "Test0: n= " << n << " t= " << t_step << NL;
   os.flush();
 
   baro.readCalibrData();
 
-  TickType_t tc0 = xTaskGetTickCount();
-
-  char buf[buf_sz];
+  // const int buf_sz = 80;
+  // char buf[buf_sz];
   int p_old = 0, p_00 = 0;
 
-  for( int i=0; i<n && !break_flag ; ++i ) {
+  uint32_t tm0 = HAL_GetTick();
+
+  break_flag = 0;
+  for( int i=0; i<n && !break_flag; ++i ) {
+
     baro.getAllCalc( 3 );
     int t10 = baro.get_T10();
     int p   = baro.get_P();
@@ -89,10 +91,11 @@ int cmd_test0( int argc, const char * const * argv )
     p_old   = p;
     // int t_u = baro.get_T_uncons();
     // int p_u = baro.get_P_uncons();
-    ifcvt( t10, 10, buf, 1 );
-    os << "T= " <<  buf << "  P= " << p << " dp= " << dp << " dp0= " << dp0 << NL;
+    // ifcvt( t10, 10, buf, 1 );
+    os << "T= " <<  FloatMult( t10, 10, 1 ) << "  P= " << p << " dp= " << dp << " dp0= " << dp0 << NL;
+
     os.flush();
-    delay_ms_until_brk( &tc0, t_step );
+    delay_ms_until_brk( &tm0, t_step );
   }
 
   return 0;
@@ -108,7 +111,6 @@ int cmd_setaddr( int argc, const char * const * argv )
   baro.setAddr( addr );
   return 0;
 }
-
 
 
 

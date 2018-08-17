@@ -37,18 +37,16 @@ int main(void)
 
   BOARD_POST_INIT_BLINK;
 
-  BOARD_CREATE_STD_TASKS;
+  pr( NL "##################### " PROJ_NAME NL );
 
-  SCHEDULER_START;
-  return 0;
-}
+  srl.re_ps();
 
-void task_main( void *prm UNUSED_ARG ) // TMAIN
-{
   init_usonic();
+  delay_ms( 50 );
 
-  default_main_loop();
-  vTaskDelete(NULL);
+  std_main_loop_nortos( &srl, nullptr );
+
+  return 0;
 }
 
 
@@ -57,19 +55,22 @@ int cmd_test0( int argc, const char * const * argv )
 {
   int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
   uint32_t t_step = UVAR('t');
-  pr( NL "Test0: n= " ); pr_d( n ); pr( " t= " ); pr_d( t_step );
-  pr( NL );
-
-  TickType_t tc0 = xTaskGetTickCount();
+  STDOUT_os;
+  os <<  NL "Test0: n= "  <<  n  <<  " t= "  <<  t_step  <<  NL;
 
   delay_ms( 10 );
 
+  uint32_t tm0 = HAL_GetTick();
+
+  break_flag = 0;
   for( int i=0; i<n && !break_flag; ++i ) {
-    pr( "[" ); pr_d( i );
-    pr( "]  l= " ); pr_d( UVAR('l') );
-    pr( NL );
-    delay_ms_until_brk( &tc0, t_step );
+
+    os <<  "["  <<  i  <<  "]  l= "  << UVAR('l')  <<  NL;
+    os.flush();
+    delay_ms_until_brk( &tm0, t_step );
   }
+
+  tim_print_cfg( TIM_EXA );
 
   return 0;
 }
@@ -153,8 +154,6 @@ void HAL_TIM_IC_CaptureCallback( TIM_HandleTypeDef *htim )
     UVAR('z') = htim->Instance->CNT;
   }
 }
-
-
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

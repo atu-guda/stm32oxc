@@ -12,6 +12,7 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
+const char* common_help_string = "App to use MPU6050 accel + gyro" NL;
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -50,21 +51,20 @@ int main(void)
 
   BOARD_POST_INIT_BLINK;
 
-  BOARD_CREATE_STD_TASKS;
+  pr( NL "##################### " PROJ_NAME NL );
 
-  SCHEDULER_START;
-  return 0;
-}
+  srl.re_ps();
 
-void task_main( void *prm UNUSED_ARG ) // TMAIN
-{
   accel.init();
   accel.setAccScale( MPU6050::ACC_scale::accs_8g );
   accel.setDLP( MPU6050::DLP_BW::bw_44 );
   delay_ms( 50 );
 
-  default_main_loop();
-  vTaskDelete(NULL);
+  oxc_add_aux_tick_fun( led_task_nortos );
+
+  std_main_loop_nortos( &srl, nullptr );
+
+  return 0;
 }
 
 
@@ -73,8 +73,10 @@ int cmd_test0( int argc, const char * const * argv )
 {
   int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
   uint32_t t_step = UVAR('t');
-  pr( NL "Test0: n= " ); pr_d( n ); pr( " t= " ); pr_d( t_step );
-  pr( NL );
+
+  STDOUT_os;
+  os << NL "Test0: n= " << n << " t= " << t_step << NL;
+  os.flush();
 
   int16_t adata[MPU6050::mpu6050_alldata_sz];
   // accel.sleep();
@@ -82,16 +84,20 @@ int cmd_test0( int argc, const char * const * argv )
   accel.setDLP( MPU6050::DLP_BW::bw_10 );
   accel.init();
 
-  TickType_t tc0 = xTaskGetTickCount();
+  uint32_t tm0 = HAL_GetTick();
 
+  break_flag = 0;
   for( int i=0; i<n && !break_flag; ++i ) {
+
     for( auto &d : adata ) { d = 0; };
     accel.getAll( adata );
     for( int j=0; j<MPU6050::mpu6050_alldata_sz; ++j ) {
-      pr_d( (int)(adata[j]) ); pr( " " );
+      os << (int)(adata[j]) << ' ';
     }
-    pr( NL );
-    delay_ms_until_brk( &tc0, t_step );
+
+    os << NL;
+    os.flush();
+    delay_ms_until_brk( &tm0, t_step );
   }
 
   return 0;
@@ -113,7 +119,7 @@ int cmd_setaddr( int argc, const char * const * argv )
 int cmd_data0( int argc UNUSED_ARG , const char * const * argv  UNUSED_ARG )
 {
   int16_t adata[MPU6050::mpu6050_alldata_sz];
-  int tick_c = xTaskGetTickCount();
+  int tick_c = HAL_GetTick();
 
   pr( "@0 " ); pr_d( tick_c ); pr( " " );
 
@@ -125,7 +131,6 @@ int cmd_data0( int argc UNUSED_ARG , const char * const * argv  UNUSED_ARG )
   pr( NL );
   return 0;
 }
-
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

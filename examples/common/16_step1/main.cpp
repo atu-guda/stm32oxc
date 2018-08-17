@@ -54,16 +54,15 @@ int main(void)
 
   BOARD_POST_INIT_BLINK;
 
-  BOARD_CREATE_STD_TASKS;
+  pr( NL "##################### " PROJ_NAME NL );
 
-  SCHEDULER_START;
+  srl.re_ps();
+
+  oxc_add_aux_tick_fun( led_task_nortos );
+
+  std_main_loop_nortos( &srl, nullptr );
+
   return 0;
-}
-
-void task_main( void *prm UNUSED_ARG ) // TMAIN
-{
-  default_main_loop();
-  vTaskDelete(NULL);
 }
 
 
@@ -87,39 +86,36 @@ int cmd_test0( int argc, const char * const * argv )
   if( argc > 2  && argv[2][0] == '-' ) {
     d = ns - 1; // % no zero
   }
-  pr( NL "Test0: n= " ); pr_d( n ); pr( " t= " ); pr_d( t_step );
-  pr( " m= " ); pr_d( m );
-  pr( " d= " ); pr_d( d );
-  pr( NL );
+  STDOUT_os;
+  os << NL "Test0: n= " << n << " t= " << t_step << " m= "  << m << " d= "  << d <<  NL;
 
   if( n < 1 ) {
     motor.write( 0 );
     ph = 0;
-    pr( NL "Motor off." NL );
+    os <<  NL "Motor off." NL;
     return 0;
   }
 
 
-  TickType_t tc0 = xTaskGetTickCount(), tc00 = tc0;
+  uint32_t tm0 = HAL_GetTick();
 
+  break_flag = 0;
   for( int i=0; i<n && !break_flag; ++i ) {
-    TickType_t tcc = xTaskGetTickCount();
+
     if( t_step > 500 ) {
-      pr( " Step  i= " ); pr_d( i );
-      pr( " ph: " ); pr_d( ph );
-      pr( " v: " ); pr_h( steps[ph] );
-      pr( "  tick: "); pr_d( tcc - tc00 );
-      pr( NL );
+      os <<  " Step  i= " <<  i <<  " ph: "  <<  ph  <<  " v: "  <<  steps[ph]
+         <<  "  tick: " << ( HAL_GetTick() - tm0 )   <<  NL;
+      os.flush();
     }
     motor.write( steps[ph] );
     ph += d;
     ph %= ns;
-    delay_ms_until_brk( &tc0, t_step );
+
+    delay_ms_until_brk( &tm0, t_step );
   }
 
   return 0;
 }
-
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

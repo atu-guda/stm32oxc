@@ -12,6 +12,7 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
+const char* common_help_string = "App to control DS3231 - RTC" NL;
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -54,16 +55,15 @@ int main(void)
 
   BOARD_POST_INIT_BLINK;
 
-  BOARD_CREATE_STD_TASKS;
+  pr( NL "##################### " PROJ_NAME NL );
 
-  SCHEDULER_START;
+  srl.re_ps();
+
+  oxc_add_aux_tick_fun( led_task_nortos );
+
+  std_main_loop_nortos( &srl, nullptr );
+
   return 0;
-}
-
-void task_main( void *prm UNUSED_ARG ) // TMAIN
-{
-  default_main_loop();
-  vTaskDelete(NULL);
 }
 
 
@@ -72,28 +72,30 @@ int cmd_test0( int argc, const char * const * argv )
 {
   int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
   uint32_t t_step = UVAR('t');
-  pr( NL "Test0: n= " ); pr_d( n ); pr( " t= " ); pr_d( t_step );
-  pr( NL );
+  STDOUT_os;
+  os << NL "Test0: n= " <<  n  <<  " t= "  <<  t_step <<  NL; os.flush();
 
   rtc.resetDev();
   char time_buf[10], date_buf[14];
   uint8_t t_hour, t_min, t_sec;
 
-  TickType_t tc0 = xTaskGetTickCount();
-
   rtc.setCtl( 0 ); // enable only clock on bat
 
-  for( int i=0; i<n && !break_flag ; ++i ) {
+  uint32_t tm0 = HAL_GetTick();
 
-    pr( "[" ); pr_d( i ); pr( "]  " );
+  break_flag = 0;
+  for( int i=0; i<n && !break_flag; ++i ) {
+
+    // action
+    os <<  '['  <<  i <<  "]  ";
     rtc.getTime( &t_hour, &t_min, &t_sec );
     rtc.getTimeStr( time_buf );
-    pr( time_buf );
-    pr( "   =   " ); pr_d( t_hour ); pr( ":" ); pr_d( t_min ); pr( ":" ); pr_d( t_sec );
     rtc.getDateStr( date_buf );
-    pr( "  / " ); pr( date_buf );
-    pr( NL );
-    delay_ms_until_brk( &tc0, t_step );
+    os << time_buf  <<  "   =   "  <<  t_hour <<  ":" << t_min <<  ":" <<  t_sec
+       <<  "  / "   <<  date_buf   <<  NL ;
+
+    os.flush();
+    delay_ms_until_brk( &tm0, t_step );
   }
 
   return 0;
@@ -103,7 +105,8 @@ int cmd_set_time( int argc, const char * const * argv )
 {
   uint8_t t_hour, t_min, t_sec;
   if( argc < 4 ) {
-    pr( "3 args required" NL );
+    STDOUT_os;
+    os <<  "3 args required" NL ;
     return 1;
   }
   t_hour = atoi( argv[1] );
@@ -118,7 +121,8 @@ int cmd_set_date( int argc, const char * const * argv )
   uint16_t year;
   uint8_t mon, day;
   if( argc < 4 ) {
-    pr( "3 args required" NL );
+    STDOUT_os;
+    os <<  "3 args required" NL;
     return 1;
   }
   year = atoi( argv[1] );
@@ -130,7 +134,8 @@ int cmd_set_date( int argc, const char * const * argv )
 int cmd_setaddr( int argc, const char * const * argv )
 {
   if( argc < 2 ) {
-    pr( "Need addr [1-127]" NL );
+    STDOUT_os;
+    os << "Need addr [1-127]" NL;
     return 1;
   }
   uint8_t addr  = (uint8_t)arg2long_d( 1, argc, argv, 0x0, 0,   127 );

@@ -12,6 +12,7 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
+const char* common_help_string = "App to control PCF8591 - ADC (4ch) + DAC (1ch)" NL;
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -46,16 +47,15 @@ int main(void)
 
   BOARD_POST_INIT_BLINK;
 
-  BOARD_CREATE_STD_TASKS;
+  pr( NL "##################### " PROJ_NAME NL );
 
-  SCHEDULER_START;
+  srl.re_ps();
+
+  oxc_add_aux_tick_fun( led_task_nortos );
+
+  std_main_loop_nortos( &srl, nullptr );
+
   return 0;
-}
-
-void task_main( void *prm UNUSED_ARG ) // TMAIN
-{
-  default_main_loop();
-  vTaskDelete(NULL);
 }
 
 
@@ -64,28 +64,30 @@ int cmd_test0( int argc, const char * const * argv )
 {
   int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
   uint32_t t_step = UVAR('t');
-  pr( NL "Test0: n= " ); pr_d( n ); pr( " t= " ); pr_d( t_step );
-  pr( NL );
+  STDOUT_os;
+  os << NL "Test0: n= " << n << " t= " << t_step << NL; os.flush();
 
   int v_end = UVAR('e');
 
   adc.setMode( PCF8591::autoinc | PCF8591::mode_4in | PCF8591::out_en );
 
-  TickType_t tc0 = xTaskGetTickCount();
-
   constexpr const int n_ch = 4;
   uint8_t d_in[n_ch] = { 0, 0, 0, 0 };
 
-  for( int i=0; i<n && !break_flag ; ++i ) {
+  uint32_t tm0 = HAL_GetTick();
+
+  break_flag = 0;
+  for( int i=0; i<n && !break_flag; ++i ) {
 
     adc.getIn( d_in, n_ch );
-    pr( "[" ); pr_d( i ); pr( "]  " );
+    os << "[" << i << "]  ";
     for( int j=0; j<n_ch; ++j ) {
-      pr_d( d_in[j] ); pr( "  " );
+      os << d_in[j] << ' ';
     }
     adc.setOut( i & 0xFF );
-    pr( NL );
-    delay_ms_until_brk( &tc0, t_step );
+
+    os << NL; os.flush();
+    delay_ms_until_brk( &tm0, t_step );
   }
   adc.setOut( v_end );
 
@@ -94,16 +96,15 @@ int cmd_test0( int argc, const char * const * argv )
 
 int cmd_setaddr( int argc, const char * const * argv )
 {
+  STDOUT_os;
   if( argc < 2 ) {
-    pr( "Need addr [1-127]" NL );
+    os<< "Need addr [1-127]" NL;
     return 1;
   }
   uint8_t addr  = (uint8_t)arg2long_d( 1, argc, argv, 0x0, 0,   127 );
   adc.setAddr( addr );
   return 0;
 }
-
-
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

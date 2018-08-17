@@ -2,6 +2,7 @@
 #include <cstdlib>
 
 #include <oxc_auto.h>
+#include <oxc_tim.h>
 
 using namespace std;
 using namespace SMLRL;
@@ -38,19 +39,19 @@ int main(void)
 
   BOARD_POST_INIT_BLINK;
 
-  BOARD_CREATE_STD_TASKS;
 
-  SCHEDULER_START;
+  pr( NL "##################### " PROJ_NAME NL );
+
+  srl.re_ps();
+
+  init_enco();
+  delay_ms( 50 );
+
+  std_main_loop_nortos( &srl, nullptr );
+
   return 0;
 }
 
-void task_main( void *prm UNUSED_ARG ) // TMAIN
-{
-  init_enco();
-
-  default_main_loop();
-  vTaskDelete(NULL);
-}
 
 
 // TEST0
@@ -58,28 +59,27 @@ int cmd_test0( int argc, const char * const * argv )
 {
   int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
   uint32_t t_step = UVAR('t');
-  pr( NL "Test0: n= " ); pr_d( n ); pr( " t= " ); pr_d( t_step );
-  pr( NL );
-
-  TickType_t tc0 = xTaskGetTickCount();
+  STDOUT_os;
+  os <<  NL "Test0: n= "  <<  n  <<  " t= "  <<  t_step <<  NL;
 
   delay_ms( 10 );
 
   int old_cnt = -1;
+  uint32_t tm0 = HAL_GetTick();
+
+  break_flag = 0;
   for( int i=0; i<n && !break_flag; ++i ) {
+
     uint16_t t_cnt = tim_h.Instance->CNT;
-    // uint16_t t_ccr1 = tim_h.Instance->CCR1;
     if( t_cnt != old_cnt ) {
-      pr( "[" ); pr_d( i );
-      pr( "]  CNT= " ); pr_d( t_cnt );
-      pr( "  D= " ); pr_d( t_cnt - old_cnt );
-      // pr( "  CCR1= " ); pr_d( t_ccr1 );
-      pr( NL );
+      os <<  "["  <<  i <<  "]  CNT= "  <<  t_cnt <<  "  D= "  <<  t_cnt - old_cnt << NL;
     }
-    delay_ms_until_brk( &tc0, t_step );
     old_cnt = t_cnt;
-    // delay_ms( t_step );
+
+    delay_ms_until_brk( &tm0, t_step );
   }
+
+  tim_print_cfg( TIM_EXA );
 
   return 0;
 }
@@ -112,9 +112,6 @@ void init_enco()
   }
   HAL_TIM_Encoder_Start( &tim_h, TIM_CHANNEL_ALL );
 }
-
-
-
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

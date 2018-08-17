@@ -5,7 +5,6 @@
 using namespace std;
 using namespace SMLRL;
 
-
 USE_DIE4LED_ERROR_HANDLER;
 BOARD_DEFINE_LEDS;
 
@@ -57,6 +56,7 @@ int main(void)
   return 0;
 }
 
+
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
@@ -82,6 +82,7 @@ int cmd_test0( int argc, const char * const * argv )
 
   return 0;
 }
+
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 
