@@ -14,6 +14,8 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
+const char* common_help_string = "Test model car: motors, sensors...." NL;
+
 const int go_tick = 100; // 0.1 s
 
 PinsOut motor_dir( GPIOC, 5, 5 );
@@ -87,44 +89,37 @@ int main(void)
   // UVAR('e') = i2c_default_init( i2ch /*, 400000 */ );
   // i2c_dbg = &i2cd;
 
-  BOARD_POST_INIT_BLINK;
-
-  BOARD_CREATE_STD_TASKS;
-
-  SCHEDULER_START;
-  return 0;
-}
-
-void task_main( void *prm UNUSED_ARG ) // TMAIN
-{
   tim1_cfg();
   tim3_cfg();
   tim4_cfg();
   tim14_cfg();
 
-  default_main_loop();
-  vTaskDelete(NULL);
+  BOARD_POST_INIT_BLINK;
+
+  pr( NL "##################### " PROJ_NAME NL );
+
+  srl.re_ps();
+
+  oxc_add_aux_tick_fun( led_task_nortos );
+
+  std_main_loop_nortos( &srl, nullptr );
+  return 0;
 }
+
 
 void print_tim_info( TIM_TypeDef *tim, const char *tname )
 {
-  pr( tname ); pr( ": in_freq= "); pr_d( get_TIM_in_freq( tim ) );
-  pr( " cnt_freq= " );  pr_d( get_TIM_cnt_freq( tim ) );
-  pr( " base_freq= " ); pr_d( get_TIM_base_freq( tim ) );
-  pr( " CR1= " );     pr_h( tim->CR1 );
-  pr( " CR2= " );     pr_h( tim->CR2 );
-  pr( " SMCR= " );    pr_h( tim->SMCR );
-  pr( " CCMR1= " );   pr_h( tim->CCMR1 );
-  pr( " ARR= " );     pr_d( tim->ARR );
-  pr( " CNT= " );     pr_d( tim->CNT );
-  pr( NL );
+  STDOUT_os;
+  os << "# " << tname;
+  tim_print_cfg( tim );
 }
 
 
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  pr( NL "Test0: " NL );
+  STDOUT_os;
+  os <<  NL "Test0: " NL;
   print_tim_info( TIM1, "TIM1" );
   print_tim_info( TIM3, "TIM3" );
   print_tim_info( TIM4, "TIM4" );
@@ -143,7 +138,9 @@ int cmd_go( int argc, const char * const * argv )
   int t    = arg2long_d( 1, argc, argv, 1000,  0, 10000 );
   int r_w  = arg2long_d( 2, argc, argv,   50, -100, 100 );
   int l_w  = arg2long_d( 3, argc, argv,  r_w, -100, 100 );
-  pr( NL "go: t= " ); pr_d( t ); pr( " r= " ); pr_d( r_w ); pr( " l= " ); pr_d( l_w ); pr ( NL );
+
+  STDOUT_os;
+  os <<  NL "go: t= "  <<  t  <<  " r= "  <<  r_w  <<  " l= "  <<  l_w  << NL;
 
   uint8_t bits = r_w > 0 ?    1 : 0;
   bits        |= r_w < 0 ?    2 : 0;
@@ -165,13 +162,13 @@ int cmd_go( int argc, const char * const * argv )
   for( ; t > 0 && !break_flag && !proxy_flag; t -= go_tick ) {
 
     if( ( r_w + l_w ) > 0 && UVAR('l') < us_forward_min ) {
-      pr( "Minimal forward US distance detected " ); pr_d( UVAR('l') ); pr( NL );
-          break;
+      os <<  "Minimal forward US distance detected "  << UVAR('l') <<  NL;
+      break;
     }
 
     uint16_t prox = ~proxy_sens.read() & 0x0F; // inverse senors
     if( prox ) {
-      pr( "Prox: " ); pr_h( prox ); pr( NL );
+      os <<  "Prox: "  << HexInt(  prox )  <<  NL;
       if( ( r_w > 0 && prox & PROXY_FR ) ||
           ( r_w < 0 && prox & PROXY_BR ) ||
           ( l_w > 0 && prox & PROXY_FL ) ||
@@ -186,11 +183,11 @@ int cmd_go( int argc, const char * const * argv )
   motor_dir.reset( motor_bits );
   set_motor_pwm( 0, 0 );
   if( break_flag ) {
-    pr( "Break!" NL );
+    os <<  "Break!" NL;
   }
 
   cnt_l = TIM4->CNT - cnt_l0, cnt_r = TIM3->CNT - cnt_r0; // TODO: * direction
-  pr( "Counts: left: " ); pr_d( cnt_l ); pr( " right: " ), pr_d( cnt_r ); pr( NL );
+  os <<  "Counts: left: "  <<  cnt_l << " right: " <<  cnt_r  <<  NL;
 
 
   return 0;
@@ -216,14 +213,16 @@ int cmd_us_dir( int argc, const char * const * argv )
 
   set_us_dir( dir );
 
-  pr( NL "us_dir: " ); pr_d( us_dir );  pr ( NL );
+  STDOUT_os;
+  os <<  NL "us_dir: "  <<  us_dir << NL;
 
   return 0;
 }
 
 int cmd_us_scan( int argc, const char * const * argv )
 {
-  pr( NL "us_scan: " ); pr_d( us_dir );  pr ( NL );
+  STDOUT_os;
+  os <<  NL "us_scan: "  <<  us_dir << NL;
   set_us_dir( us_scan_min ); // to settle before
   delay_ms( 300 );
   for( int i=0, d = us_scan_min; i < us_scan_n && d <= us_scan_max; ++i, d += us_scan_step ) {
@@ -231,7 +230,7 @@ int cmd_us_scan( int argc, const char * const * argv )
     delay_ms( 200 );
     int l = UVAR('c');
     us_scans[ i ] = l;
-    pr_d( d ); pr( " " ); pr_d( l ); pr( NL );
+    os <<  d  <<  ' '  <<  l  <<  NL;
   }
   set_us_dir( 0 );
   delay_ms( 500 );
@@ -296,7 +295,7 @@ void tim1_cfg()
     UVAR('e') = 21;
     return;
   }
-  HAL_NVIC_SetPriority(TIM1_CC_IRQn, 5, 0); // TODO: coorect for FreeRTOS
+  HAL_NVIC_SetPriority( TIM1_CC_IRQn, 5, 0 );
   HAL_NVIC_EnableIRQ( TIM1_CC_IRQn );
   if( HAL_TIM_IC_Start_IT( &tim1_h, TIM_CHANNEL_4 ) != HAL_OK ) {
     UVAR('e') = 23;

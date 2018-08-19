@@ -1,5 +1,7 @@
 SmallRl, console: set output funcs to unbind
 Make  examples w/o FreeRTOS ?
+Move SPI common funcs from 28 to oxc lib
+Move ADC common fuctions (some to bsp)
 
 Fill common_help_string for examples
 Fix USB_CDC init with other pins (test on f429 discovery...)

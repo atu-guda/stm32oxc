@@ -12,6 +12,7 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
+const char* common_help_string = "App to test ADS155 ADC I2C device" NL;
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -46,16 +47,15 @@ int main(void)
 
   BOARD_POST_INIT_BLINK;
 
-  BOARD_CREATE_STD_TASKS;
+  pr( NL "##################### " PROJ_NAME NL );
 
-  SCHEDULER_START;
+  srl.re_ps();
+
+  oxc_add_aux_tick_fun( led_task_nortos );
+
+  std_main_loop_nortos( &srl, nullptr );
+
   return 0;
-}
-
-void task_main( void *prm UNUSED_ARG ) // TMAIN
-{
-  default_main_loop();
-  vTaskDelete(NULL);
 }
 
 
@@ -66,26 +66,31 @@ int cmd_test0( int argc, const char * const * argv )
   uint32_t t_step = UVAR('t');
   int v = 0;
   uint16_t x_cfg = adc.getDeviceCfg();
-  pr( NL "Test0: n= " ); pr_d( n ); pr( " t= " ); pr_d( t_step );
-  pr( "  cfg= " ); pr_h( x_cfg );
-  pr( NL );
+  STDOUT_os;
+  os <<  NL "Test0: n= " <<  n <<  " t= " <<  t_step <<  "  cfg= " <<  HexInt16( x_cfg ) << NL;
   bool is_cont = UVAR('c');
 
   adc.setDefault();
 
   UVAR('e') = adc.setCfg( ADS1115::cfg_in_0 | ADS1115::cfg_pga_4096 | ADS1115::cfg_rate_860 | ADS1115::cfg_oneShot );
-  x_cfg = adc.getDeviceCfg();   pr( "  cfg= " ); pr_h( x_cfg );   pr( NL );
+  x_cfg = adc.getDeviceCfg();
+  os <<  "  cfg= " << HexInt16( x_cfg ) <<  NL;
 
   if( is_cont ) {
     adc.startCont();
   }
-  x_cfg = adc.getDeviceCfg();   pr( "  cfg= " ); pr_h( x_cfg );   pr( NL );
+  x_cfg = adc.getDeviceCfg();
+  os <<  "  cfg= " <<  HexInt16( x_cfg ) <<  NL;
 
-  TickType_t tc0 = xTaskGetTickCount();
 
   int scale_mv = adc.getScale_mV();
-  pr_sdx( scale_mv );
-  for( int i=0; i<n && !break_flag ; ++i ) {
+  os << "scale_mv = " << scale_mv << NL;
+
+  uint32_t tm0 = HAL_GetTick();
+
+  break_flag = 0;
+  for( int i=0; i<n && !break_flag; ++i ) {
+
     if( is_cont ) {
       v = adc.getContValue();
     } else {
@@ -93,14 +98,17 @@ int cmd_test0( int argc, const char * const * argv )
     }
 
     int xxv = scale_mv * v / 32678;
-    pr( "[" ); pr_d( i ); pr( "]  " ); pr_d( v ); pr( "  xxv= " ); pr_d( xxv );
-    pr( NL );
-    delay_ms_until_brk( &tc0, t_step );
+    os <<  "[" <<  i <<  "]  " <<  v <<  "  xxv= " <<  xxv <<  NL;
+    os.flush();
+
+    delay_ms_until_brk( &tm0, t_step );
   }
+
   if( is_cont ) {
     adc.stopCont();
   }
-  x_cfg = adc.getDeviceCfg();   pr( "  cfg= " ); pr_h( x_cfg );   pr( NL );
+  x_cfg = adc.getDeviceCfg();
+  os <<  "  cfg= " << HexInt16( x_cfg ) <<  NL;
 
   return 0;
 }
@@ -108,15 +116,14 @@ int cmd_test0( int argc, const char * const * argv )
 int cmd_setaddr( int argc, const char * const * argv )
 {
   if( argc < 2 ) {
-    pr( "Need addr [1-127]" NL );
+    STDOUT_os;
+    os <<  "Need addr [1-127]" NL;
     return 1;
   }
   uint8_t addr  = (uint8_t)arg2long_d( 1, argc, argv, 0x0, 0,   127 );
   adc.setAddr( addr );
   return 0;
 }
-
-
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

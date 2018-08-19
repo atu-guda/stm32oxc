@@ -9,7 +9,9 @@ using namespace SMLRL;
 USE_DIE4LED_ERROR_HANDLER;
 BOARD_DEFINE_LEDS;
 
-BOARD_CONSOLE_DEFINES_UART;
+BOARD_CONSOLE_DEFINES;
+
+const char* common_help_string = "App to control motor with feedback" NL;
 
 TIM_HandleTypeDef htim8;
 int  MX_TIM8_Init(void);
@@ -39,7 +41,7 @@ const CmdInfo* global_cmds[] = {
 
 int main(void)
 {
-  STD_PROLOG_UART;
+  BOARD_PROLOG;
 
   UVAR('t') = 10;
   UVAR('g') = 10;
@@ -56,20 +58,17 @@ int main(void)
 
   BOARD_POST_INIT_BLINK;
 
-  BOARD_CREATE_STD_TASKS;
+  pr( NL "##################### " PROJ_NAME NL );
 
-  SCHEDULER_START;
+  srl.re_ps();
+
+  oxc_add_aux_tick_fun( led_task_nortos );
+
+  std_main_loop_nortos( &srl, nullptr );
+
   return 0;
 }
 
-void task_main( void *prm UNUSED_ARG ) // TMAIN
-{
-  // dev_console.puts( "0123456789ABCDEF" NL );
-  delay_ms( 10 );
-
-  default_main_loop();
-  vTaskDelete(NULL);
-}
 
 // EXTI IRQ sensors B1, B2:
 void init_exti_pins()
@@ -116,7 +115,7 @@ void EXTI2_IRQHandler()
 uint32_t wait_with_cond( uint32_t ms, uint16_t n_hwticks, uint32_t *rc, uint32_t *dp, uint32_t ign_bits )
 {
   uint32_t lrc = 0x10, w = 0, ldp = 0; // 0x10 bit = to many loops
-  TickType_t tc0 = xTaskGetTickCount();
+  uint32_t tc0 = HAL_GetTick();
   ign_bits = ~ign_bits;
 
   TIM8->CNT = 0;
@@ -131,7 +130,7 @@ uint32_t wait_with_cond( uint32_t ms, uint16_t n_hwticks, uint32_t *rc, uint32_t
       lrc = sensors_state; break;
     }
     if( (i & 0xFF) == 0xFF ) {
-      if( ( w = xTaskGetTickCount() - tc0 ) >= ms ) {
+      if( ( w = HAL_GetTick() - tc0 ) >= ms ) {
         lrc = 0x20; break; // overtime
       }
     }
@@ -157,9 +156,9 @@ int cmd_test0( int argc, const char * const * argv )
   int dir    = arg2long_d( 3, argc, argv, 0, 0, 1 );
   int n_step = arg2long_d( 4, argc, argv, UVAR('n'), 1, 10000 );
   uint32_t t_step = UVAR('t');
-  pr( NL "Test0: ts= " ); pr_d( ts ); pr( " tg= " ); pr_d( tg );
-  pr( " t= " ); pr_d( t_step ); pr( " n_step= " ); pr_d( n_step );
-  pr( NL );
+  STDOUT_os;
+  os <<  NL "Test0: ts= " <<  ts << " tg= " <<  tg << " t= " <<  t_step
+     <<  " n_step= " << n_step << NL;
 
   leds.reset( 1 );
   ctlEn.write( 0 );

@@ -47,18 +47,16 @@ int main(void)
 
   BOARD_POST_INIT_BLINK;
 
-  BOARD_CREATE_STD_TASKS;
+  pr( NL "##################### " PROJ_NAME NL );
 
-  SCHEDULER_START;
+  srl.re_ps();
+
+  oxc_add_aux_tick_fun( led_task_nortos );
+
+  std_main_loop_nortos( &srl, nullptr );
+
   return 0;
 }
-
-void task_main( void *prm UNUSED_ARG ) // TMAIN
-{
-  default_main_loop();
-  vTaskDelete(NULL);
-}
-
 
 
 
@@ -71,12 +69,13 @@ int cmd_test0( int argc, const char * const * argv )
   os <<  NL "Test0: n= " << n << " t= " << t_step << NL; os.flush();
   uint16_t v = 0;
 
-  // log_add( "Test0 " );
-  TickType_t tc0 = xTaskGetTickCount(), tc00 = tc0;
+  uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
 
+  break_flag = 0;
   for( int i=0; i<n && !break_flag; ++i ) {
-    TickType_t tcc = xTaskGetTickCount();
-    os << "ADC start  i= " << i << "  tick: " << ( tcc - tc00 );
+
+    uint32_t tcc = HAL_GetTick();
+    os << "ADC start  i= " << i << "  tick: " << ( tcc - tm00 );
     if( HAL_ADC_Start( &hadc1 ) != HAL_OK )  {
       os << "  !! ADC Start error" NL; os.flush();
       break;
@@ -91,15 +90,13 @@ int cmd_test0( int argc, const char * const * argv )
     }
 
     os << NL; os.flush();
-    delay_ms_until_brk( &tc0, t_step );
+    delay_ms_until_brk( &tm0, t_step );
   }
 
   pr( NL );
 
   return 0;
 }
-
-
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

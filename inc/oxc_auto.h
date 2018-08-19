@@ -12,6 +12,10 @@
 #include <oxc_outstream.h>
 #include <oxc_ringbuf.h>
 
+#if defined (USE_OXC_TIM)
+#include <oxc_tim.h>
+#endif
+
 #if defined (USE_OXC_DEVIO)
 #include <oxc_devio.h>
 #endif

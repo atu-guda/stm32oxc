@@ -11,6 +11,8 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
+const char* common_help_string = "App to test SDIO in low-level model" NL;
+
 extern SD_HandleTypeDef hsd;
 void MX_SDIO_SD_Init();
 uint8_t sd_buf[512]; // one sector
@@ -41,18 +43,16 @@ int main(void)
 
   BOARD_POST_INIT_BLINK;
 
-  BOARD_CREATE_STD_TASKS;
+  pr( NL "##################### " PROJ_NAME NL );
 
-  SCHEDULER_START;
+  srl.re_ps();
+
+  oxc_add_aux_tick_fun( led_task_nortos );
+
+  std_main_loop_nortos( &srl, nullptr );
+
   return 0;
 }
-
-void task_main( void *prm UNUSED_ARG ) // TMAIN
-{
-  default_main_loop();
-  vTaskDelete(NULL);
-}
-
 
 
 
@@ -61,8 +61,9 @@ int cmd_test0( int argc, const char * const * argv )
 {
   int start = arg2long_d( 1, argc, argv, 0, 0 );
   // uint32_t t_step = UVAR('t');
-  pr( NL "Test0: start= " ); pr_d( start ); // pr( " t= " ); pr_d( t_step );
-  pr( NL );
+
+  STDOUT_os;
+  os <<  NL "Test0: start= "  <<  start <<  NL;
 
   HAL_StatusTypeDef rc;
   __HAL_SD_ENABLE( &hsd );
@@ -81,22 +82,16 @@ int cmd_test0( int argc, const char * const * argv )
   __HAL_SD_DISABLE( &hsd );
 
   dump8( sd_buf, sizeof(sd_buf) );
-  pr_sdx( rc );
-  pr_sdx( sd_state );
-  pr_sdx( card_state );
-  pr( "sd_err= " ); pr_h( sd_err ); pr( NL );
-  pr_sdx( sd_state2 );
-  pr( "type= " ); pr_d( cardInfo.CardType );
-  pr( " ver= " ); pr_d( cardInfo.CardVersion );
-  pr( " class = " ); pr_d( cardInfo.Class );
-  pr( " blocks = " ); pr_d( cardInfo.BlockNbr );
-  pr( " bsz = " ); pr_d( cardInfo.BlockSize );
-
+  os << "rc= " << rc << " sd_state= " << sd_state << " card_state= " << card_state << NL;
+  os <<  "sd_err= "  << HexInt(  sd_err )  <<  " sd_state2= " << sd_state2
+     <<  "type= "  <<  cardInfo.CardType
+     <<  " ver= "  <<  cardInfo.CardVersion
+     <<  " class = "  <<  cardInfo.Class
+     <<  " blocks = "  <<  cardInfo.BlockNbr
+     <<  " bsz = "  <<  cardInfo.BlockSize << NL;
 
   return 0;
 }
-
-
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

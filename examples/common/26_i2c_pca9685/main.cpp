@@ -13,6 +13,7 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
+const char* common_help_string = "App to control pca9685 I2C PWM" NL;
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -56,25 +57,24 @@ int main(void)
 
   BOARD_POST_INIT_BLINK;
 
-  BOARD_CREATE_STD_TASKS;
+  pr( NL "##################### " PROJ_NAME NL );
 
-  SCHEDULER_START;
+  srl.re_ps();
+
+  oxc_add_aux_tick_fun( led_task_nortos );
+
+  std_main_loop_nortos( &srl, nullptr );
+
   return 0;
-}
-
-void task_main( void *prm UNUSED_ARG ) // TMAIN
-{
-  default_main_loop();
-  vTaskDelete(NULL);
 }
 
 
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
+  STDOUT_os;
   if( ! pwmc.init() ) {
-    pr( "Fail to init PCA9685, Error= "  );
-    pr_d( pwmc.getErr() ); pr( NL );
+    os <<  "Fail to init PCA9685, Error= " << pwmc.getErr() <<  NL;
     return 1;
   }
 
@@ -85,14 +85,10 @@ int cmd_test0( int argc, const char * const * argv )
   // pwmc.setFreq( 100 );
   // pwmc.setPresc( 3 );
   auto pre = pwmc.getPresc();
-  pr( "presc= " ); pr_d( pre );
   auto freq = pwmc.getFreq();
-  pr( ", freq= " ); pr_d( freq );
   auto peri = pwmc.getPeriod_us();
-  pr( ", period= " ); pr_d( peri );
-  pr( " us, on= " );  pr_d( on );
-  pr( ", off= " ); pr_d( off );
-  pr( NL );
+  os << "presc= "   << pre << " freq= " << freq << " period= " << peri
+     << " us, on= " << on  << " off= "  <<  off <<  NL;
 
   // pwmc.setServo( 0, -50 );
   pwmc.set( 0, 0, pwmc.us2v( puls ) );
@@ -106,12 +102,10 @@ int cmd_setFreq( int argc, const char * const * argv )
   int freq  = arg2long_d( 1, argc, argv,   50, 1 );
   pwmc.setFreq( freq );
   auto pre = pwmc.getPresc();
-  pr( "presc= " ); pr_d( pre );
   auto freq_get = pwmc.getFreq();
-  pr( ", freq= " ); pr_d( freq_get );
   auto peri = pwmc.getPeriod_us();
-  pr( ", period= " ); pr_d( peri );
-  pr( NL );
+  STDOUT_os;
+  os << "presc= " << pre << " freq= " << freq_get <<  " period= " <<  peri <<  NL;
   return 0;
 }
 
@@ -119,12 +113,10 @@ int cmd_setPulse( int argc, const char * const * argv )
 {
   int n  = arg2long_d( 1, argc, argv, 0, 0, PCA9685::n_ch-1 );
   int v  = arg2long_d( 2, argc, argv, 0, 0 );
-  pr( "Pulse: n= " ); pr_d( n );
-  pr( ", v= " ); pr_d( v );
   uint16_t va = pwmc.us2v( v );
-  pr( ", va= " ); pr_d( va );
+  STDOUT_os;
+  os <<  "Pulse: n= " <<  n <<  " v= " <<  v << " va= " <<  va << NL;
   pwmc.set( n, 0, va );
-  pr( NL );
   return 0;
 }
 
@@ -132,30 +124,25 @@ int cmd_setServo( int argc, const char * const * argv )
 {
   int n  = arg2long_d( 1, argc, argv, 0, 0,  PCA9685::n_ch-1 );
   int v  = arg2long_d( 2, argc, argv, 0, -PCA9685::servo_in_max, PCA9685::servo_in_max );
-  pr( "Pulse: n= " ); pr_d( n );
-  pr( ", v= " ); pr_d( v );
   uint16_t va = pwmc.servo2v( v );
-  pr( ", va= " ); pr_d( va );
-  uint16_t t = pwmc.servo2t( v );
-  pr( ", t= " ); pr_d( t );
+  uint16_t t  = pwmc.servo2t( v );
+  STDOUT_os;
+  os << "Pulse: n= " << n <<  " v= " << v <<  " va= " << va << " t= " << t << NL;
   pwmc.setServo( n, v );
-  // pwmc.set( n, 0, va );
-  pr( NL );
   return 0;
 }
 
 int cmd_setaddr( int argc, const char * const * argv )
 {
   if( argc < 2 ) {
-    pr( "Need addr [1-127]" NL );
+    STDOUT_os;
+    os <<  "Need addr [1-127]" NL;
     return 1;
   }
   uint8_t addr  = (uint8_t)arg2long_d( 1, argc, argv, 0x0, 0,   127 );
   pwmc.setAddr( addr );
   return 0;
 }
-
-
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

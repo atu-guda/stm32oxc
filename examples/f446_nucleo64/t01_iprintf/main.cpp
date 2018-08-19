@@ -38,19 +38,15 @@ int main(void)
 
   BOARD_POST_INIT_BLINK;
 
-  BOARD_CREATE_STD_TASKS;
+  pr( NL "##################### " PROJ_NAME NL );
 
-  SCHEDULER_START;
+  srl.re_ps();
+
+  oxc_add_aux_tick_fun( led_task_nortos );
+
+  std_main_loop_nortos( &srl, nullptr );
+
   return 0;
-}
-
-void task_main( void *prm UNUSED_ARG ) // TMAIN
-{
-  dev_console.puts( "0123456789ABCDEF" NL );
-  delay_ms( 10 );
-
-  default_main_loop();
-  vTaskDelete(NULL);
 }
 
 
@@ -61,24 +57,19 @@ int cmd_test0( int argc, const char * const * argv )
   uint32_t t_step = UVAR('t');
   iprintf( NL "Test0: n= %u t= %lu", n, t_step );
 
-  int prty = uxTaskPriorityGet( 0 );
-  pr_sdx( prty );
-  const char *nm = pcTaskGetName( 0 );
-  iprintf( "name: \"%s\"" NL, nm );
-
   iprintf( "iprintf test: '%c' %d %ld %u " NL, 'z', 123, 1000000000L, -1 );
   // ecvt( 3.1415926, 5, 0, 0 ); // costs like full printf
 
-  // log_add( "Test0 " );
-  TickType_t tc0 = xTaskGetTickCount(), tc00 = tc0;
-  uint32_t tm0 = HAL_GetTick();
+  uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
 
   break_flag = 0;
   for( int i=0; i<n && !break_flag; ++i ) {
-    TickType_t tcc = xTaskGetTickCount();
+
+    // action
     uint32_t tmc = HAL_GetTick();
-    iprintf( " Fake Action i= %d  tick: %lu   ms_tick: %lu" NL, i, tcc - tc00, tmc - tm0 );
-    delay_ms_until_brk( &tc0, t_step );
+    iprintf( " Fake Action i= %d  tick: %lu " NL, i, tmc - tm00 );
+
+    delay_ms_until_brk( &tm0, t_step );
   }
 
   return 0;

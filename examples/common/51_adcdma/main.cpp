@@ -96,15 +96,11 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  tim_freq_in = HAL_RCC_GetPCLK1Freq(); // to TIM2
-  uint32_t hclk_freq = HAL_RCC_GetHCLKFreq();
-  if( tim_freq_in < hclk_freq ) {
-    tim_freq_in *= 2;
-  }
+  tim_freq_in = get_TIM_in_freq( TIM2 );
 
   UVAR('t') = 1000; // 1 s extra wait
   UVAR('v') = v_adc_ref;
-  UVAR('p') = (tim_freq_in/1000000)-1; // timer PSC, for 1MHz
+  UVAR('p') = ( tim_freq_in / 1000000 ) - 1; // timer PSC, for 1MHz
   UVAR('a') = 99999; // timer ARR, for 10Hz
   UVAR('c') = n_ADC_ch_max;
   UVAR('n') = 8; // number of series
@@ -116,42 +112,30 @@ int main(void)
 
   BOARD_POST_INIT_BLINK;
 
-  BOARD_CREATE_STD_TASKS;
+  pr( NL "##################### " PROJ_NAME NL );
 
-  SCHEDULER_START;
+  srl.re_ps();
+
+  oxc_add_aux_tick_fun( led_task_nortos );
+
+  std_main_loop_nortos( &srl, nullptr );
+
   return 0;
 }
 
-void task_main( void *prm UNUSED_ARG ) // TMAIN
-{
-  default_main_loop();
-  vTaskDelete(NULL);
-}
 
 void pr_ADC_state()
 {
   if( UVAR('d') > 0 ) {
-    pr( " ADC: SR= " ); pr_h( BOARD_ADC_DEFAULT_DEV->SR );
-    pr( "  CR1= " ); pr_h( BOARD_ADC_DEFAULT_DEV->CR1 );
-    pr( "  CR2= " ); pr_h( BOARD_ADC_DEFAULT_DEV->CR2 );
-    pr( "  CR2= " ); pr_h( BOARD_ADC_DEFAULT_DEV->CR2 );
-    pr( NL );
+    STDOUT_os;
+    os <<  " ADC: SR= " << HexInt( BOARD_ADC_DEFAULT_DEV->SR  )
+       <<  "  CR1= "    << HexInt( BOARD_ADC_DEFAULT_DEV->CR1 )
+       <<  "  CR2= "    << HexInt( BOARD_ADC_DEFAULT_DEV->CR2 )
+       <<  "  CR2= "    << HexInt( BOARD_ADC_DEFAULT_DEV->CR2 )
+       <<  NL;
   }
 }
 
-void pr_TIM_state( TIM_TypeDef *htim )
-{
-  if( UVAR('d') > 1 ) {
-    pr_sdx( htim->CNT  );
-    pr_sdx( htim->ARR  );
-    pr_sdx( htim->PSC  );
-    pr_shx( htim->CR1  );
-    pr_shx( htim->CR2  );
-    pr_shx( htim->SMCR );
-    pr_shx( htim->DIER );
-    pr_shx( htim->SR   );
-  }
-}
 
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
@@ -175,45 +159,53 @@ int cmd_test0( int argc, const char * const * argv )
 
   if( n > n_ADC_series_max ) { n = n_ADC_series_max; };
 
+  STDOUT_os;
+
   tim2_deinit();
 
   uint32_t presc = hint_ADC_presc();
   UVAR('i') =  adc_init_exa_4ch_dma( presc, sampl_times_codes[sampl_t_idx], n_ch );
   delay_ms( 1 );
   if( ! UVAR('i') ) {
-    pr( "ADC init failed, errno= " ); pr_d( errno ); pr( NL );
+    os <<  "ADC init failed, errno= " << errno << NL;
     return 1;
   }
   pr_ADC_state();
 
-  snprintf( pbuf, pbufsz-1, "Timer: tim_freq_in= %lu Hz / ( (%u+1)*(%u+1)) = %#.7g Hz; t_step = %#.7g s " NL,
-                                    tim_freq_in,       UVAR('p'), UVAR('a'), tim_f,    t_step_f );
-  pr( pbuf ); delay_ms( 1 );
+  snprintf( pbuf, pbufsz-1, "# Timer: tim_freq_in= %lu Hz / ( (%u+1)*(%u+1)) = %#.7g Hz; t_step = %#.7g s " NL,
+                                      tim_freq_in,       UVAR('p'), UVAR('a'), tim_f,    t_step_f );
+  os <<  pbuf;
+  delay_ms( 1 );
 
   int div_val = -1;
   adc_clk = calc_ADC_clk( presc, &div_val );
-  snprintf( pbuf, pbufsz-1, "ADC: n_ch= %d n=%lu adc_clk= %lu div_val= %d s_idx= %lu sampl= %lu; f_sampl_max= %lu Hz; t_wait0= %lu ms" NL,
-                                  n_ch,    n,    adc_clk,     div_val,  sampl_t_idx, sampl_times_cycles[sampl_t_idx],
-                                  f_sampl_max, t_wait0 );
-  pr( pbuf ); delay_ms( 10 );
+  snprintf( pbuf, pbufsz-1, "# ADC: n_ch= %d n=%lu adc_clk= %lu div_val= %d s_idx= %lu sampl= %lu; f_sampl_max= %lu Hz; t_wait0= %lu ms" NL,
+                                    n_ch,    n,    adc_clk,     div_val,  sampl_t_idx, sampl_times_cycles[sampl_t_idx],
+                                    f_sampl_max, t_wait0 );
+  os << pbuf;
+  delay_ms( 10 );
 
   uint32_t n_ADC_bytes = n * n_ch;
   ADC_buf.resize( 0, 0 );
   ADC_buf.shrink_to_fit();
   ADC_buf.assign( (n+2) * n_ch, 0 ); // + 2 is guard, may be remove
-  pr( "ADC_buf.size= " ); pr_d( ADC_buf.size() );  pr( " data= " ); pr_h( (uint32_t)(ADC_buf.data()) ); pr( NL );
+  os << "# ADC_buf.size= " << ADC_buf.size() << " data= " << HexInt( ADC_buf.data() ) << NL;
+
   adc_end_dma = 0; adc_dma_error = 0; n_series = 0; n_series_todo = n;
   UVAR('b') = 0; UVAR('g') = 0; UVAR('e') = 0;   UVAR('x') = 0; UVAR('y') = 0; UVAR('z') = 0;
   if( ADC_buf.data() == nullptr ) {
-    pr( "Error: fail to allocate memory" NL );
+    os <<  "Error: fail to allocate memory" NL;
     return 2;
   }
 
   leds.reset( BIT0 | BIT1 | BIT2 );
-  TickType_t tc0 = xTaskGetTickCount(), tc00 = tc0;
+  // TickType_t tc0 = xTaskGetTickCount(), tc00 = tc0;
+
+  uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
+
 
   if( HAL_ADC_Start_DMA( &hadc1, (uint32_t*)ADC_buf.data(), n_ADC_bytes ) != HAL_OK )   {
-    pr( "ADC_Start_DMA error" NL );
+    os <<  "ADC_Start_DMA error" NL;
   }
   tim2_init( UVAR('p'), UVAR('a') );
 
@@ -221,31 +213,29 @@ int cmd_test0( int argc, const char * const * argv )
   for( uint32_t ti=0; adc_end_dma == 0 && ti<(uint32_t)UVAR('t'); ++ti ) {
     delay_ms(1);
   }
-  TickType_t tcc = xTaskGetTickCount();
+  uint32_t tcc = HAL_GetTick();
   delay_ms( 10 ); // to settle all
 
   tim2_deinit();
   HAL_ADC_Stop_DMA( &hadc1 ); // needed
   if( adc_end_dma == 0 ) {
-    pr( "Fail to wait DMA end " NL );
+    os <<  "Fail to wait DMA end " NL;
   }
   if( adc_dma_error != 0 ) {
-    pr( "Found DMA error "  ); pr_h( adc_dma_error ); pr( NL );
+    os <<  "Found DMA error " << HexInt( adc_dma_error ) <<  NL;
   }
-  pr( "  tick: "); pr_d( tcc - tc00 );
-  pr( " good= " ); pr_d( UVAR('g') );   pr( " err= " ); pr_d( UVAR('e') );
-  pr( NL );
+  os <<  "#  tick: " <<  ( tcc - tm00 ) <<  " good= " << UVAR('g') << " err= " << UVAR('e') <<  NL;
 
   out_to_curr( 2, 0 );
   if( n_series_todo > 2 ) {
-    pr( "....." NL );
+    os <<  "....." NL;
     out_to_curr( 4, n_series_todo-2 );
   }
 
-  pr( NL );
+  os <<  NL;
 
   pr_ADC_state();
-  pr( NL );
+  os <<  NL;
 
   delay_ms( 10 );
 
@@ -257,8 +247,9 @@ void print_curr( const char *s )
   if( !s ) {
     return;
   }
+  STDOUT_os;
   // if( out_file.fs == nullptr ) {
-    pr( s );
+    os <<  s;
     delay_ms( 2 );
   //  return;
   //}
@@ -308,19 +299,16 @@ int cmd_out( int argc, const char * const * argv )
 void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc )
 {
   adc_end_dma |= 1;
-  // tim2_deinit();
   UVAR('x') = hadc1.Instance->SR;
-  // hadc1.Instance->SR = 0;
   if( UVAR('b') == 0 ) {
     UVAR('b') = 1;
   }
-  // HAL_ADC_Stop_DMA( hadc );
-  // leds.set( BIT2 );
   ++UVAR('g'); // 'g' means good
 }
 
 void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc )
 {
+  UVAR('y') = hadc1.Instance->SR;
   adc_end_dma |= 2;
   // tim2_deinit();
   if( UVAR('b') == 0 ) {
@@ -330,9 +318,6 @@ void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc )
   adc_dma_error = hadc->DMA_Handle->ErrorCode;
   hadc->DMA_Handle->ErrorCode = 0;
   UVAR('y') = hadc1.Instance->SR;
-  // hadc1.Instance->SR = 0;
-  // HAL_ADC_Stop_DMA( hadc );
-  // leds.set( BIT0 );
   ++UVAR('e');
 }
 
