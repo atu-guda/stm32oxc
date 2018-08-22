@@ -1,5 +1,6 @@
 #include <cstring>
 #include <cstdlib>
+#include <cstdio>
 
 #include <oxc_auto.h>
 #include <oxc_hd44780_i2c.h>
@@ -38,11 +39,16 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 1000;
+  UVAR('t') = 100;
   UVAR('n') = 10;
 
   UVAR('e') = i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
+
+  lcdt.init_4b();
+  lcdt.cls();
+  lcdt.putch( 'X' );
+  lcdt.puts( " ptn-hlo!" );
 
   BOARD_POST_INIT_BLINK;
 
@@ -61,30 +67,77 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  // int n = UVAR('n');
+  int n  = arg2long_d( 1, argc, argv, UVAR('n'), 1,   100000000 );
   uint32_t t_step = UVAR('t');
-  uint16_t ch_st = (uint8_t)arg2long_d( 1, argc, argv, 0x30, 0, 256-16 );
-  uint16_t ch_en = ch_st + 0x10;
 
-  lcdt.init_4b();
-  int state = lcdt.getState();
-  pr_sdx( state );
 
-  lcdt.cls();
-  lcdt.putch( 'X' );
-  lcdt.puts( " ptn-hlo!\n\t" );
-  lcdt.curs_on();
-  delay_ms( t_step );
-  lcdt.off();
-  delay_ms( t_step );
-  lcdt.led_off();
-  delay_ms( t_step );
-  lcdt.led_on();
-  delay_ms( t_step );
-  lcdt.on();
-  lcdt.gotoxy( 2, 1 );
-  for( uint16_t ch = ch_st; ch < ch_en; ++ch ) {
-    lcdt.putch( (uint8_t)ch );
+  STDOUT_os;
+  os << "# n= " << n << " t= " << t_step << NL; os.flush();
+
+  char buf0[32], buf1[32];
+
+  const int n_adc_ch = 4;
+  float vf[n_adc_ch];
+  char adc_txt_bufs[n_adc_ch][16];
+  const int n_din_ch = 4;
+  int  d_in[n_din_ch];
+
+  bool show_lcd = true;
+  if( t_step < 50 ) {
+    show_lcd = false;
+    lcdt.cls();
+    lcdt.puts( "t < 50 ms!  " );
+  }
+
+  uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
+  break_flag = 0;
+  for( int i=0; i<n && !break_flag; ++i ) {
+
+    // fake data
+    for( int j=0; j<n_adc_ch; ++j ) {
+      vf[j] = 0.001f * ( i % 1000 ) + j;
+    }
+    for( int j=0; j<n_din_ch; ++j ) {
+      d_in[j] = ( i & (1<<j) ) ? 1 : 0;
+    }
+
+    for( int j=0; j<n_adc_ch; ++j ) {
+      snprintf( adc_txt_bufs[j],   sizeof(adc_txt_bufs[j]),  "%6.4f ", vf[j] );
+    }
+
+
+    uint32_t ct = HAL_GetTick();
+    os << i << ' ' << ( ct - tm00 ) << ' ';
+    for( int j=0; j<n_adc_ch; ++j ) {
+      os << adc_txt_bufs[j] << ' ';
+    }
+    for( int j=0; j<n_din_ch; ++j ) {
+      os << d_in[j] << ' ';
+    }
+    os << NL;
+
+    if( show_lcd ) {
+      strcpy( buf0, adc_txt_bufs[0] );
+      strcat( buf0, adc_txt_bufs[1] );
+      strcpy( buf1, adc_txt_bufs[2] );
+      strcat( buf1, adc_txt_bufs[3] );
+      buf0[14] = d_in[0] ? '$' : '.';
+      buf0[15] = d_in[1] ? '$' : '.';
+      buf1[14] = d_in[2] ? '$' : '.';
+      buf1[15] = d_in[3] ? '$' : '.';
+      buf0[16] = '\0';  buf1[16] = '\0';
+      lcdt.gotoxy( 0, 0 );
+      lcdt.puts( buf0 );
+      lcdt.gotoxy( 0, 1 );
+      lcdt.puts( buf1 );
+    }
+
+    leds.toggle( BIT1 );
+
+
+
+    os.flush();
+    delay_ms_until_brk( &tm0, t_step );
   }
 
   pr( NL );
@@ -92,17 +145,6 @@ int cmd_test0( int argc, const char * const * argv )
   return 0;
 }
 
-// int cmd_setaddr( int argc, const char * const * argv )
-// {
-//   if( argc < 2 ) {
-//     pr( "Need addr [1-127]" NL );
-//     return 1;
-//   }
-//   uint8_t addr  = (uint8_t)arg2long_d( 1, argc, argv, 0x0, 0,   127 );
-//   lcdt.setAddr( addr );
-//   return 0;
-// }
-//
 // int cmd_xychar( int argc, const char * const * argv )
 // {
 //   uint8_t x  = (uint8_t)arg2long_d( 1, argc, argv, 0x0, 0,   64 );
