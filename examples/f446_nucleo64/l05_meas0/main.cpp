@@ -29,6 +29,19 @@ const CmdInfo* global_cmds[] = {
   nullptr
 };
 
+struct D_in_sources {
+  decltype( GPIOA ) gpio;
+  uint16_t           bit;
+};
+
+const int n_adc_ch = 4;
+const int n_din_ch = 4;
+D_in_sources d_ins[n_din_ch] = {
+  { GPIOA, BIT6 },
+  { GPIOA, BIT7 },
+  { GPIOB, BIT0 },
+  { GPIOB, BIT1 }
+};
 
 I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );
@@ -76,10 +89,8 @@ int cmd_test0( int argc, const char * const * argv )
 
   char buf0[32], buf1[32];
 
-  const int n_adc_ch = 4;
   float vf[n_adc_ch];
   char adc_txt_bufs[n_adc_ch][16];
-  const int n_din_ch = 4;
   int  d_in[n_din_ch];
 
   bool show_lcd = true;
@@ -97,8 +108,9 @@ int cmd_test0( int argc, const char * const * argv )
     for( int j=0; j<n_adc_ch; ++j ) {
       vf[j] = 0.001f * ( i % 1000 ) + j;
     }
+
     for( int j=0; j<n_din_ch; ++j ) {
-      d_in[j] = ( i & (1<<j) ) ? 1 : 0;
+      d_in[j] = ( d_ins[j].gpio->IDR & d_ins[j].bit ) ? 1 : 0;
     }
 
     for( int j=0; j<n_adc_ch; ++j ) {
@@ -145,37 +157,6 @@ int cmd_test0( int argc, const char * const * argv )
   return 0;
 }
 
-// int cmd_xychar( int argc, const char * const * argv )
-// {
-//   uint8_t x  = (uint8_t)arg2long_d( 1, argc, argv, 0x0, 0,   64 );
-//   uint8_t y  = (uint8_t)arg2long_d( 2, argc, argv, 0x0, 0,    3 );
-//   uint8_t ch = (uint8_t)arg2long_d( 3, argc, argv, 'Z', 0, 0xFF );
-//
-//   // lcdt.gotoxy( x, y );
-//   lcdt.putxych( x, y, (uint8_t)ch );
-//
-//   return 0;
-// }
-//
-// int cmd_gotoxy( int argc, const char * const * argv )
-// {
-//   uint8_t x  = (uint8_t)arg2long_d( 1, argc, argv, 0x0, 0,   64 );
-//   uint8_t y  = (uint8_t)arg2long_d( 2, argc, argv, 0x0, 0,    3 );
-//
-//   lcdt.gotoxy( x, y );
-//   return 0;
-// }
-//
-// int cmd_puts( int argc, const char * const * argv )
-// {
-//   const char *s = "Z";
-//   if( argc > 1 ) {
-//     s = argv[1];
-//   }
-//   lcdt.puts( s );
-//
-//   return 0;
-// }
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
