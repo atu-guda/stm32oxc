@@ -1,0 +1,7 @@
+Measure and control analog and digital io
+
+SCL = B8 ? 4.7k pullUp
+SDA = B9 ? 4.7k pullUp
+
+
+

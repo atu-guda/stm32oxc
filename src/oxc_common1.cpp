@@ -26,7 +26,7 @@ void task_leds( void *prm UNUSED_ARG )
     #ifdef LED_BSP_IDLE
       leds.toggle( LED_BSP_IDLE );
     #else
-      #waring LED_BSP_IDLE is not defined
+      #warning "LED_BSP_IDLE is not defined"
     #endif
     delay_ms( dly );
   }
@@ -95,6 +95,8 @@ void led_task_nortos()
   if( led_tick.isTick() ) {
     leds.toggle( LED_BSP_IDLE );
   }
+#else
+  #warning "LED_BSP_IDLE is not defined"
 #endif
 }
 
