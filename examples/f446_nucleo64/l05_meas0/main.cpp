@@ -130,11 +130,7 @@ int cmd_test0( int argc, const char * const * argv )
     // TODO:
 
     // output data
-
-    HAL_DAC_SetValue( &hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, (int)( vf[0] / vref * 4095 ) );
-    HAL_DAC_SetValue( &hdac, DAC_CHANNEL_2, DAC_ALIGN_12B_R, (int)( vf[2] / vref * 4095 ) );
-    HAL_DAC_Start( &hdac, DAC_CHANNEL_1 );
-    HAL_DAC_Start( &hdac, DAC_CHANNEL_2 );
+    dac_out( vf[0], vf[2] );
 
     // output info
 
@@ -186,23 +182,7 @@ int cmd_dac( int argc, const char * const * argv )
     sscanf( argv[2], "%f", &v1 );
   }
 
-  if( v0 < 0 ) {
-    v0 = 0;
-  }
-  if( v0 > vref  ) {
-    v0 = vref;
-  }
-  if( v1 < 0 ) {
-    v1 = 0;
-  }
-  if( v1 > vref  ) {
-    v1 = vref;
-  }
-
-  HAL_DAC_SetValue( &hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, (int)( v0 / vref * 4095 ) );
-  HAL_DAC_SetValue( &hdac, DAC_CHANNEL_2, DAC_ALIGN_12B_R, (int)( v1 / vref * 4095 ) );
-  HAL_DAC_Start( &hdac, DAC_CHANNEL_1 );
-  HAL_DAC_Start( &hdac, DAC_CHANNEL_2 );
+  dac_out( v0, v1 );
 
   STDOUT_os;
   char buf0[16], buf1[16];

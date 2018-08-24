@@ -14,6 +14,7 @@ extern D_in_sources d_ins[n_din_ch];
 
 extern DAC_HandleTypeDef hdac;
 int MX_DAC_Init(void);
+void dac_out( float v0, float v1 );
 
 extern ADC_HandleTypeDef hadc1;
 int MX_ADC1_Init();

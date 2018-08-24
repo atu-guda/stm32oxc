@@ -73,3 +73,24 @@ void HAL_ADC_MspDeInit( ADC_HandleTypeDef* adcHandle )
   }
 }
 
+void dac_out( float v0, float v1 )
+{
+  if( v0 < 0 ) {
+    v0 = 0;
+  }
+  if( v0 > vref  ) {
+    v0 = vref;
+  }
+  if( v1 < 0 ) {
+    v1 = 0;
+  }
+  if( v1 > vref  ) {
+    v1 = vref;
+  }
+
+  HAL_DAC_SetValue( &hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, (int)( v0 / vref * 4095 ) );
+  HAL_DAC_SetValue( &hdac, DAC_CHANNEL_2, DAC_ALIGN_12B_R, (int)( v1 / vref * 4095 ) );
+  HAL_DAC_Start( &hdac, DAC_CHANNEL_1 );
+  HAL_DAC_Start( &hdac, DAC_CHANNEL_2 );
+}
+
