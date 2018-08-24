@@ -24,6 +24,8 @@ USE_OXC_DMA = y
 # NOUSE_DEFAULT_UART_INIT = y
 
 SRCS  = main.cpp
+SRCS += dac.cpp
+SRCS += adc.cpp
 
 SRCS += oxc_hd44780_i2c.cpp
 

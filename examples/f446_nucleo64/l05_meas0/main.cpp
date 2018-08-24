@@ -5,6 +5,8 @@
 #include <oxc_auto.h>
 #include <oxc_hd44780_i2c.h>
 
+#include "meas0.h"
+
 using namespace std;
 using namespace SMLRL;
 
@@ -17,25 +19,21 @@ BOARD_CONSOLE_DEFINES;
 const char* common_help_string = "App measure and control analog and digital signals" NL;
 
 // --- local commands;
+int cmd_dac( int argc, const char * const * argv );
+CmdInfo CMDINFO_DAC { "dac", 'D', cmd_dac, " v0 v1 - output values to dac"  };
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
-int cmd_setaddr( int argc, const char * const * argv );
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
   DEBUG_I2C_CMDS,
 
+  &CMDINFO_DAC,
   &CMDINFO_TEST0,
   nullptr
 };
 
-struct D_in_sources {
-  decltype( GPIOA ) gpio;
-  uint16_t           bit;
-};
 
-const int n_adc_ch = 4;
-const int n_din_ch = 4;
 D_in_sources d_ins[n_din_ch] = {
   { GPIOA, BIT6 },
   { GPIOA, BIT7 },
@@ -47,6 +45,7 @@ I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );
 HD44780_i2c lcdt( i2cd, 0x27 );
 
+float vref = 3.2256;
 
 int main(void)
 {
@@ -60,12 +59,19 @@ int main(void)
 
   lcdt.init_4b();
   lcdt.cls();
-  lcdt.putch( 'X' );
-  lcdt.puts( " ptn-hlo!" );
+  lcdt.putch( '.' );
+
+  if( MX_DAC_Init() ) {
+    lcdt.putch( 'D' );
+  }
+  if( MX_ADC1_Init() ) {
+    lcdt.putch( 'A' );
+  }
 
   BOARD_POST_INIT_BLINK;
 
   pr( NL "##################### " PROJ_NAME NL );
+  lcdt.gotoxy( 0, 1 ); lcdt.puts( PROJ_NAME );
 
   srl.re_ps();
 
@@ -104,6 +110,8 @@ int cmd_test0( int argc, const char * const * argv )
   break_flag = 0;
   for( int i=0; i<n && !break_flag; ++i ) {
 
+    // collect input data
+
     // fake data
     for( int j=0; j<n_adc_ch; ++j ) {
       vf[j] = 0.001f * ( i % 1000 ) + j;
@@ -117,6 +125,18 @@ int cmd_test0( int argc, const char * const * argv )
       snprintf( adc_txt_bufs[j],   sizeof(adc_txt_bufs[j]),  "%6.4f ", vf[j] );
     }
 
+    // process data
+
+    // TODO:
+
+    // output data
+
+    HAL_DAC_SetValue( &hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, (int)( vf[0] / vref * 4095 ) );
+    HAL_DAC_SetValue( &hdac, DAC_CHANNEL_2, DAC_ALIGN_12B_R, (int)( vf[2] / vref * 4095 ) );
+    HAL_DAC_Start( &hdac, DAC_CHANNEL_1 );
+    HAL_DAC_Start( &hdac, DAC_CHANNEL_2 );
+
+    // output info
 
     uint32_t ct = HAL_GetTick();
     os << i << ' ' << ( ct - tm00 ) << ' ';
@@ -146,8 +166,6 @@ int cmd_test0( int argc, const char * const * argv )
 
     leds.toggle( BIT1 );
 
-
-
     os.flush();
     delay_ms_until_brk( &tm0, t_step );
   }
@@ -157,6 +175,43 @@ int cmd_test0( int argc, const char * const * argv )
   return 0;
 }
 
+int cmd_dac( int argc, const char * const * argv )
+{
+  float v0 = 0, v1 = 0;
+
+  if( argc > 1 ) {
+    sscanf( argv[1], "%f", &v0 );
+  }
+  if( argc > 2 ) {
+    sscanf( argv[2], "%f", &v1 );
+  }
+
+  if( v0 < 0 ) {
+    v0 = 0;
+  }
+  if( v0 > vref  ) {
+    v0 = vref;
+  }
+  if( v1 < 0 ) {
+    v1 = 0;
+  }
+  if( v1 > vref  ) {
+    v1 = vref;
+  }
+
+  HAL_DAC_SetValue( &hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, (int)( v0 / vref * 4095 ) );
+  HAL_DAC_SetValue( &hdac, DAC_CHANNEL_2, DAC_ALIGN_12B_R, (int)( v1 / vref * 4095 ) );
+  HAL_DAC_Start( &hdac, DAC_CHANNEL_1 );
+  HAL_DAC_Start( &hdac, DAC_CHANNEL_2 );
+
+  STDOUT_os;
+  char buf0[16], buf1[16];
+  snprintf( buf0, sizeof(buf0), "%f", v0 );
+  snprintf( buf1, sizeof(buf1), "%f", v1 );
+  os << "# DAC output: v0= " << buf0 << " v1= " << buf1 << NL; os.flush();
+
+  return 0;
+}
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
