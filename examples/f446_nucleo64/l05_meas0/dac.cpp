@@ -48,8 +48,9 @@ void HAL_DAC_MspDeInit( DAC_HandleTypeDef* dacHandle )
   HAL_GPIO_DeInit( GPIOA, GPIO_PIN_4 | GPIO_PIN_5 );
 }
 
-void dac_output( float v0, float v1 )
+void dac_output()
 {
+  float v0 = dac_out[0], v1 = dac_out[1];
   if( v0 < 0 ) {
     v0 = 0;
   }

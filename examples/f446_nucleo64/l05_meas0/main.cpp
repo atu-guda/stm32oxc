@@ -59,14 +59,16 @@ uint16_t adc_buf[n_adc_ch];
 volatile uint32_t adc_state = 0; // 0 - pre, 1 - done, 2 + -  error
 
 float pwm_out[n_pwm_ch] = { 0, 0, 0, 0 };
-float dac_out[2] = { 0, 0 };
+float dac_out[n_dac_ch] = { 0, 0 };
+
 
 int main(void)
 {
   BOARD_PROLOG;
 
   UVAR('t') = 100;
-  UVAR('n') = 10;
+  UVAR('n') = 20;
+  UVAR('f') = 10;
 
   UVAR('e') = i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
@@ -175,9 +177,16 @@ int cmd_test0( int argc, const char * const * argv )
     // process data
 
     // TODO:
+    // fake:
+    dac_out[0] = 2.0 - vf[0];
+    dac_out[1] = vf[0] - vf[1];
+    pwm_out[0] = 0.25 * vf[0];
+    pwm_out[1] = 0.5;
+    UVAR('f') = 2 + (int)( vf[0] * 100 );
 
     // output data
-    dac_output( vf[0], vf[2] );
+    dac_output();
+    pwm_output();
 
     // output info
 
@@ -221,7 +230,7 @@ int cmd_dac( int argc, const char * const * argv )
 {
   parse_floats( max(argc-1,2) , argv+1, dac_out );
 
-  dac_output( dac_out[0], dac_out[1] );
+  dac_output();
 
   STDOUT_os;
   char buf0[16], buf1[16];
@@ -234,13 +243,27 @@ int cmd_dac( int argc, const char * const * argv )
 
 int cmd_pwm( int argc, const char * const * argv )
 {
-  static decltype( &TIM2->CCR1 ) ccrs[] = { &TIM2->CCR1, &TIM2->CCR2, &TIM2->CCR3, &TIM2->CCR4  };
   parse_floats( max(argc-1,4) , argv+1, pwm_out );
+  pwm_output();
+  tim_print_cfg( TIM2 );
+  return 0;
+}
+
+void pwm_output()
+{
+  static decltype( &TIM2->CCR1 ) ccrs[] = { &TIM2->CCR1, &TIM2->CCR2, &TIM2->CCR3, &TIM2->CCR4  };
   uint32_t arr = TIM2->ARR;
+  uint32_t new_arr = calc_TIM_arr_for_base_freq( TIM2, UVAR('f') );
+  if( arr != new_arr ) {
+    TIM2->ARR = new_arr;
+    if( TIM2->CNT > new_arr - 2 ) {
+      TIM2->CNT = new_arr - 2;
+    }
+    arr = new_arr;
+  }
   for( int i = 0; i<n_pwm_ch; ++i ) {
     *ccrs[i] = (uint32_t) ( pwm_out[i] * arr );
   }
-  return 0;
 }
 
 // TODO: to common float funcs

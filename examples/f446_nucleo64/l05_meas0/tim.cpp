@@ -30,9 +30,9 @@ int tim_base_config( TIM_HandleTypeDef *th )
 int MX_TIM2_Init()
 {
   htim2.Instance           = TIM2;
-  htim2.Init.Prescaler     = 167;
+  htim2.Init.Prescaler     = 41;
   htim2.Init.CounterMode   = TIM_COUNTERMODE_UP;
-  htim2.Init.Period        = 100000; // TODO: param
+  htim2.Init.Period        = 200000; // TODO: param
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   if( HAL_TIM_Base_Init( &htim2 ) != HAL_OK ) {
     return 0;
@@ -58,7 +58,6 @@ int MX_TIM2_Init()
   }
 
   return 1;
-
 }
 
 int MX_TIM3_Init()

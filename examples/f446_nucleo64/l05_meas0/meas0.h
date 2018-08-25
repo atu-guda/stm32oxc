@@ -11,6 +11,7 @@ extern TIM_HandleTypeDef htim3;
 extern TIM_HandleTypeDef htim8;
 
 inline const int n_adc_ch = 4;
+inline const int n_dac_ch = 2;
 inline const int n_din_ch = 4;
 inline const int n_pwm_ch = 4;
 extern float vref_in;
@@ -22,9 +23,13 @@ int MX_TIM2_Init();
 int MX_TIM3_Init();
 int MX_TIM8_Init();
 
+extern float pwm_out[n_pwm_ch];
+void pwm_output();
+
 extern DAC_HandleTypeDef hdac;
 int  MX_DAC_Init(void);
-void dac_output( float v0, float v1 );
+void dac_output();
+extern float dac_out[n_dac_ch];
 
 extern ADC_HandleTypeDef hadc1;
 extern DMA_HandleTypeDef hdma_adc1;

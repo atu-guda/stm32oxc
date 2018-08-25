@@ -33,6 +33,13 @@ uint32_t get_TIM_cnt_freq( TIM_TypeDef *tim )
   return freq / psc;
 }
 
+uint32_t get_TIM_base_freq( TIM_TypeDef *tim )
+{
+  uint32_t freq = get_TIM_cnt_freq( tim );
+  uint32_t arr = 1 + tim->ARR;
+  return freq / arr;
+}
+
 uint32_t calc_TIM_psc_for_cnt_freq( TIM_TypeDef *tim, uint32_t cnt_freq )
 {
   uint32_t freq = get_TIM_in_freq( tim ); // in_freq
@@ -40,11 +47,11 @@ uint32_t calc_TIM_psc_for_cnt_freq( TIM_TypeDef *tim, uint32_t cnt_freq )
   return psc;
 }
 
-uint32_t get_TIM_base_freq( TIM_TypeDef *tim )
+uint32_t calc_TIM_arr_for_base_freq( TIM_TypeDef *tim, uint32_t base_freq )
 {
-  uint32_t freq = get_TIM_cnt_freq( tim );
-  uint32_t arr = 1 + tim->ARR;
-  return freq / arr;
+  uint32_t freq = get_TIM_cnt_freq( tim ); // cnf_freq
+  uint32_t arr = freq / base_freq - 1;
+  return arr;
 }
 
 #ifdef USE_OXC_DEBUG
