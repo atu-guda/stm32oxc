@@ -6,18 +6,26 @@ struct D_in_sources {
   uint16_t           bit;
 };
 
+extern TIM_HandleTypeDef htim2;
+extern TIM_HandleTypeDef htim3;
+extern TIM_HandleTypeDef htim8;
+
 inline const int n_adc_ch = 4;
 inline const int n_din_ch = 4;
-extern float vref;
+extern float vref_in;
+extern float vref_out;
 
 extern D_in_sources d_ins[n_din_ch];
 
 extern DAC_HandleTypeDef hdac;
-int MX_DAC_Init(void);
+int  MX_DAC_Init(void);
 void dac_out( float v0, float v1 );
 
 extern ADC_HandleTypeDef hadc1;
-int MX_ADC1_Init();
+extern DMA_HandleTypeDef hdma_adc1;
+int  MX_ADC1_Init();
+int  MX_DMA_Init(); // used for ADC
+int  dma_subinit();
 
 #endif
 

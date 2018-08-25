@@ -33,6 +33,9 @@ const CmdInfo* global_cmds[] = {
   nullptr
 };
 
+TIM_HandleTypeDef htim2;
+TIM_HandleTypeDef htim3;
+TIM_HandleTypeDef htim8;
 
 D_in_sources d_ins[n_din_ch] = {
   { GPIOA, BIT6 },
@@ -45,7 +48,10 @@ I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );
 HD44780_i2c lcdt( i2cd, 0x27 );
 
-float vref = 3.2256;
+float vref_out = 3.2256;
+float vref_in  = 3.3270;
+uint16_t adc_buf[n_adc_ch];
+volatile uint32_t adc_state = 0; // 0 - pre, 1 - done, 2 + -  error
 
 int main(void)
 {
@@ -61,6 +67,9 @@ int main(void)
   lcdt.cls();
   lcdt.putch( '.' );
 
+  if( MX_DMA_Init() ) {
+    lcdt.putch( 'D' );
+  }
   if( MX_DAC_Init() ) {
     lcdt.putch( 'D' );
   }
@@ -75,7 +84,7 @@ int main(void)
 
   srl.re_ps();
 
-  oxc_add_aux_tick_fun( led_task_nortos );
+  // oxc_add_aux_tick_fun( led_task_nortos );
 
   std_main_loop_nortos( &srl, nullptr );
 
@@ -111,11 +120,32 @@ int cmd_test0( int argc, const char * const * argv )
   for( int i=0; i<n && !break_flag; ++i ) {
 
     // collect input data
+    adc_state = 0;
+    uint32_t ct = HAL_GetTick();
 
     // fake data
+    // for( int j=0; j<n_adc_ch; ++j ) {
+    //   vf[j] = 0.001f * ( i % 1000 ) + j;
+    // }
     for( int j=0; j<n_adc_ch; ++j ) {
-      vf[j] = 0.001f * ( i % 1000 ) + j;
+      adc_buf[j] = 0;
     }
+
+    // dma_subinit();
+    // delay_ms( 1 );
+    if( HAL_ADC_Start_DMA( &hadc1, (uint32_t *)adc_buf, n_adc_ch ) != HAL_OK )   {
+      os << "## E Fail to start ADC_DMA" << NL;
+    }
+    for( int j=0; adc_state == 0 && j<50; ++j ) {
+      delay_ms( 1 ); //      jj = j;
+    }
+    if( adc_state != 1 )  {
+      os << "## E Fail to wait ADC_DMA " << adc_state << NL;
+    }
+    for( int j=0; j<n_adc_ch; ++j ) {
+      vf[j] = vref_in * adc_buf[j] / 4095;
+    }
+    HAL_ADC_Stop_DMA( &hadc1 );
 
     for( int j=0; j<n_din_ch; ++j ) {
       d_in[j] = ( d_ins[j].gpio->IDR & d_ins[j].bit ) ? 1 : 0;
@@ -134,7 +164,6 @@ int cmd_test0( int argc, const char * const * argv )
 
     // output info
 
-    uint32_t ct = HAL_GetTick();
     os << i << ' ' << ( ct - tm00 ) << ' ';
     for( int j=0; j<n_adc_ch; ++j ) {
       os << adc_txt_bufs[j] << ' ';
@@ -144,7 +173,7 @@ int cmd_test0( int argc, const char * const * argv )
     }
     os << NL;
 
-    if( show_lcd ) {
+    if( show_lcd || i == (n-1) ) {
       strcpy( buf0, adc_txt_bufs[0] );
       strcat( buf0, adc_txt_bufs[1] );
       strcpy( buf1, adc_txt_bufs[2] );
@@ -193,6 +222,33 @@ int cmd_dac( int argc, const char * const * argv )
   return 0;
 }
 
+void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *AdcHandle )
+{
+  adc_state = 1;
+  // leds.toggle( BIT0 );
+}
+
+void HAL_ADC_ConvHalfCpltCallback( ADC_HandleTypeDef *hadc )
+{
+  // NOP
+}
+
+void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc )
+{
+  adc_state = 2;
+  // leds.toggle( BIT0 );
+}
+
+
+void DMA2_Stream0_IRQHandler(void)
+{
+  HAL_DMA_IRQHandler( &hdma_adc1 );
+}
+
+void TIM3_IRQHandler(void)
+{
+  HAL_TIM_IRQHandler( &htim3 );
+}
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

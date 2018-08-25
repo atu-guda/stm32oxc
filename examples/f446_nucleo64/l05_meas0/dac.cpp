@@ -48,3 +48,24 @@ void HAL_DAC_MspDeInit( DAC_HandleTypeDef* dacHandle )
   HAL_GPIO_DeInit( GPIOA, GPIO_PIN_4 | GPIO_PIN_5 );
 }
 
+void dac_out( float v0, float v1 )
+{
+  if( v0 < 0 ) {
+    v0 = 0;
+  }
+  if( v0 > vref_out  ) {
+    v0 = vref_out;
+  }
+  if( v1 < 0 ) {
+    v1 = 0;
+  }
+  if( v1 > vref_out  ) {
+    v1 = vref_out;
+  }
+
+  HAL_DAC_SetValue( &hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, (int)( v0 / vref_out * 4095 ) );
+  HAL_DAC_SetValue( &hdac, DAC_CHANNEL_2, DAC_ALIGN_12B_R, (int)( v1 / vref_out * 4095 ) );
+  HAL_DAC_Start( &hdac, DAC_CHANNEL_1 );
+  HAL_DAC_Start( &hdac, DAC_CHANNEL_2 );
+}
+
