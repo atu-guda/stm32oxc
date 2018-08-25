@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cstring>
 #include <cstdlib>
 #include <cstdio>
@@ -18,9 +19,15 @@ BOARD_CONSOLE_DEFINES;
 
 const char* common_help_string = "App measure and control analog and digital signals" NL;
 
+//* helper to parse float params in cmdline ('=' = the same),
+// argc and argv - relative, start on first (0) argv
+int parse_floats( int argc, const char * const * argv, float *d );
+
 // --- local commands;
 int cmd_dac( int argc, const char * const * argv );
 CmdInfo CMDINFO_DAC { "dac", 'D', cmd_dac, " v0 v1 - output values to dac"  };
+int cmd_pwm( int argc, const char * const * argv );
+CmdInfo CMDINFO_PWM { "pwm", 'W', cmd_pwm, " v0 v1 v2 v3 - set pwm output"  };
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
 
@@ -29,13 +36,11 @@ const CmdInfo* global_cmds[] = {
   DEBUG_I2C_CMDS,
 
   &CMDINFO_DAC,
+  &CMDINFO_PWM,
   &CMDINFO_TEST0,
   nullptr
 };
 
-TIM_HandleTypeDef htim2;
-TIM_HandleTypeDef htim3;
-TIM_HandleTypeDef htim8;
 
 D_in_sources d_ins[n_din_ch] = {
   { GPIOA, BIT6 },
@@ -53,6 +58,9 @@ float vref_in  = 3.3270;
 uint16_t adc_buf[n_adc_ch];
 volatile uint32_t adc_state = 0; // 0 - pre, 1 - done, 2 + -  error
 
+float pwm_out[n_pwm_ch] = { 0, 0, 0, 0 };
+float dac_out[2] = { 0, 0 };
+
 int main(void)
 {
   BOARD_PROLOG;
@@ -68,13 +76,22 @@ int main(void)
   lcdt.putch( '.' );
 
   if( MX_DMA_Init() ) {
-    lcdt.putch( 'D' );
+    lcdt.putch( 'd' );
   }
   if( MX_DAC_Init() ) {
     lcdt.putch( 'D' );
   }
   if( MX_ADC1_Init() ) {
     lcdt.putch( 'A' );
+  }
+  if( MX_TIM2_Init() ) {
+    lcdt.putch( '2' );
+  }
+  if( MX_TIM3_Init() ) {
+    lcdt.putch( '3' );
+  }
+  if( MX_TIM8_Init() ) {
+    lcdt.putch( '8' );
   }
 
   BOARD_POST_INIT_BLINK;
@@ -160,7 +177,7 @@ int cmd_test0( int argc, const char * const * argv )
     // TODO:
 
     // output data
-    dac_out( vf[0], vf[2] );
+    dac_output( vf[0], vf[2] );
 
     // output info
 
@@ -202,24 +219,63 @@ int cmd_test0( int argc, const char * const * argv )
 
 int cmd_dac( int argc, const char * const * argv )
 {
-  float v0 = 0, v1 = 0;
+  parse_floats( max(argc-1,2) , argv+1, dac_out );
 
-  if( argc > 1 ) {
-    sscanf( argv[1], "%f", &v0 );
-  }
-  if( argc > 2 ) {
-    sscanf( argv[2], "%f", &v1 );
-  }
-
-  dac_out( v0, v1 );
+  dac_output( dac_out[0], dac_out[1] );
 
   STDOUT_os;
   char buf0[16], buf1[16];
-  snprintf( buf0, sizeof(buf0), "%f", v0 );
-  snprintf( buf1, sizeof(buf1), "%f", v1 );
+  snprintf( buf0, sizeof(buf0), "%f", dac_out[0] );
+  snprintf( buf1, sizeof(buf1), "%f", dac_out[1] );
   os << "# DAC output: v0= " << buf0 << " v1= " << buf1 << NL; os.flush();
 
   return 0;
+}
+
+int cmd_pwm( int argc, const char * const * argv )
+{
+  static decltype( &TIM2->CCR1 ) ccrs[] = { &TIM2->CCR1, &TIM2->CCR2, &TIM2->CCR3, &TIM2->CCR4  };
+  parse_floats( max(argc-1,4) , argv+1, pwm_out );
+  uint32_t arr = TIM2->ARR;
+  for( int i = 0; i<n_pwm_ch; ++i ) {
+    *ccrs[i] = (uint32_t) ( pwm_out[i] * arr );
+  }
+  return 0;
+}
+
+// TODO: to common float funcs
+int parse_floats( int argc, const char * const * argv, float *d )
+{
+  if( !argv || !d ) {
+    return 0;
+  }
+
+  int n = 0;
+  for( int i=0; i<argc; ++i ) {
+    if( !argv[i] ) {
+      break;
+    }
+    const char *s = argv[i];
+    if( !s ) {
+      break;
+    }
+    if( s[0] == '=' ) {
+      if( s[1] == '\0' ) { // the same value
+        ++n;
+        continue;
+      }
+      // TODO: more variants
+      continue;
+    }
+    // TODO: 0xNNNNNN
+    float v;
+    int rc = sscanf( s, "%f", &v );
+    if( rc == 1 ) {
+      d[i] = v;
+      ++n;
+    }
+  }
+  return n;
 }
 
 void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *AdcHandle )

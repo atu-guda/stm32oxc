@@ -26,6 +26,7 @@ USE_OXC_DMA = y
 SRCS  = main.cpp
 SRCS += dac.cpp
 SRCS += adc.cpp
+SRCS += tim.cpp
 
 SRCS += oxc_hd44780_i2c.cpp
 
