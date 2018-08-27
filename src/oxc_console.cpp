@@ -1,7 +1,10 @@
 #include <string.h>
 #include <oxc_console.h>
+#include <oxc_devio.h>
+#include <oxc_outstream.h>
 
 int console_verbose = 1;
+volatile int on_cmd_handler = 0;
 
 void term_cmd1( int n, char c, int fd )
 {
@@ -153,7 +156,9 @@ int cmdline_split( char *cmd, char** argv, int max_args )
   }
   for( int i=j; i<=l; ++i ) { cmd[i] = '\0'; } // <= !!!
 
-  if( was_quo ) { return 0; }
+  if( was_quo ) {
+    return 0;
+  }
 
 
   bool was_nul = true; // start assumed as nul
@@ -171,7 +176,6 @@ int cmdline_split( char *cmd, char** argv, int max_args )
     was_nul = is_nul;
   };
 
-
   argv[nc] = nullptr;
   return nc;
 }
@@ -181,6 +185,7 @@ int exec_direct( const char *s, int l )
   if( l<0 || l >= CMDLINE_MAXSZ ) {
     return 0;
   }
+  on_cmd_handler = 1;
   // dump8( s,  l+1 );
   char ss[l+1];
   // static char ss[SMLRL_BUFSZ+2]; // TODO: lock!
@@ -188,12 +193,17 @@ int exec_direct( const char *s, int l )
   memmove( ss, s, l+1 );
   // dump8( ss, l+1 );
 
+  STDOUT_os;
+
   char *argv[MAX_ARGS];
   int argc = cmdline_split( ss, argv, MAX_ARGS );
   // DEBUG
   // dump8( ss, l+1 );
 
-  if( argc < 1 ) { return 1; }
+  if( argc < 1 ) {
+    on_cmd_handler = 0;
+    return 1;
+  }
 
   CmdFun f = 0;
   const char *nm = "???";
@@ -218,7 +228,7 @@ int exec_direct( const char *s, int l )
   if( f != 0 ) {
       int rc = 0;
       if( console_verbose > 0 ) {
-        pr( "=== CMD: \"" ); pr( nm ); pr( "\"" NL );
+        os << "#== CMD: \"" << nm << "\"" NL;
         delay_ms( 1 );
       }
       break_flag = 0;
@@ -227,13 +237,14 @@ int exec_direct( const char *s, int l )
       uint32_t tm1 = HAL_GetTick();
       break_flag = 0;  idle_flag = 1;
       if( console_verbose > 0 ) {
-        pr( NL "=== END: \"" ); pr( nm ); pr( "\" rc=" );  pr_d( rc ); pr( " t= " ); pr_d( tm1 - tm0 ); pr( NL );
+        os << NL "#== END: \"" << nm << "\" rc=" <<  rc << " t= " << tm1 - tm0 << NL;
         delay_ms( 1 );
       }
   } else {
-    pr( "ERR:  Unknown command \"" );  pr( argv[0] );   pr( "\"" NL );
+    os << "# ERR:  Unknown command \"" << argv[0] << "\"" NL;
   }
 
+  on_cmd_handler = 0;
   return 0;
 }
 

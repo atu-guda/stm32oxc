@@ -3,6 +3,11 @@
 #include <cstdlib>
 #include <cstdio>
 
+// test code consumption
+// #include <vector>
+// #include <string>
+// #include <map>
+
 #include <oxc_auto.h>
 #include <oxc_hd44780_i2c.h>
 
@@ -117,8 +122,20 @@ int cmd_test0( int argc, const char * const * argv )
   int n  = arg2long_d( 1, argc, argv, UVAR('n'), 1,   100000000 );
   uint32_t t_step = UVAR('t');
 
-
   STDOUT_os;
+
+  // test code size comsumptind for STL parts
+  // vector<char> tmp_x1;
+  // tmp_x1.assign( 100, 'x' ); // + 100
+  // os << tmp_x1[5] << NL;
+  // string s1 = "xdfg";        // + 100
+  // os << s1.c_str() << NL;
+  // map<string, int> m_x;      // + 11k
+  // m_x[s1] = 12;
+
+
+
+
   os << "# n= " << n << " t= " << t_step << NL; os.flush();
 
   char buf0[32], buf1[32];

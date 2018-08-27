@@ -80,6 +80,7 @@ struct CmdInfo
 extern const CmdInfo* global_cmds[];
 
 extern int console_verbose;
+volatile extern int on_cmd_handler;
 
 
 inline int pr_c( char c, int fd = 1 ) { return prl( &c, 1, fd ); }
