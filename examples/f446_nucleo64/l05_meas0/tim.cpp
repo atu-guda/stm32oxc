@@ -135,7 +135,7 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* tim_baseHandle)
     gio.Pin       = GPIO_PIN_6 | GPIO_PIN_7;
     gio.Mode      = GPIO_MODE_AF_PP;
     gio.Pull      = GPIO_NOPULL;
-    gio.Speed     = GPIO_SPEED_FREQ_HIGH;
+    gio.Speed     = GPIO_SPEED_FREQ_VERY_HIGH;
     gio.Alternate = GPIO_AF2_TIM3;
     HAL_GPIO_Init( GPIOA, &gio );
 

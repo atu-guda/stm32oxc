@@ -19,6 +19,8 @@ extern float vref_out;
 
 extern D_in_sources d_ins[n_din_ch];
 
+int MX_BTN_Init();
+
 int MX_TIM2_Init();
 int MX_TIM3_Init();
 int MX_TIM8_Init();

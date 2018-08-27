@@ -100,6 +100,7 @@ int main(void)
   if( MX_TIM8_Init() ) {
     lcdt.putch( '8' );
   }
+  MX_BTN_Init();
 
   BOARD_POST_INIT_BLINK;
 
@@ -316,6 +317,50 @@ int parse_floats( int argc, const char * const * argv, float *d )
     }
   }
   return n;
+}
+
+int MX_BTN_Init()
+{
+  __GPIOC_CLK_ENABLE();
+  GPIO_InitTypeDef gio;
+  gio.Pin       = GPIO_PIN_13;
+  gio.Mode      = GPIO_MODE_IT_FALLING;
+  gio.Pull      = GPIO_PULLUP;
+  gio.Speed     = GPIO_SPEED_MAX;
+  HAL_GPIO_Init( GPIOC, &gio );
+
+  HAL_NVIC_SetPriority( EXTI15_10_IRQn, 10, 0 );
+  HAL_NVIC_EnableIRQ(   EXTI15_10_IRQn );
+  return 1;
+}
+
+void EXTI15_10_IRQHandler()
+{
+  HAL_GPIO_EXTI_IRQHandler( BIT13 );
+}
+
+void HAL_GPIO_EXTI_Callback( uint16_t pin )
+{
+  static uint32_t last_exti_tick = 0;
+  uint32_t curr_tick = HAL_GetTick();
+  const char go_cmd[] = "T 100000000\n";
+  if( curr_tick - last_exti_tick < 200 ) {
+    return; // ignore too fast events
+  }
+
+  if( pin == BIT13 )  {
+    leds.toggle( BIT0 );
+    if( ! on_cmd_handler ) {
+      if( devio_fds[0] ) {
+        for( const char *s = go_cmd; *s; ++s ) {
+          devio_fds[0]->unget( *s );
+        }
+      }
+    } else {
+      break_flag = 1;
+    }
+  }
+  last_exti_tick = curr_tick;
 }
 
 void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *AdcHandle )
