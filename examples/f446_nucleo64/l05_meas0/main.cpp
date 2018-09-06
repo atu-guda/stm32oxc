@@ -48,10 +48,10 @@ const CmdInfo* global_cmds[] = {
 
 
 D_in_sources d_ins[n_din_ch] = {
+  { GPIOA, BIT0 },
   { GPIOA, BIT6 },
-  { GPIOA, BIT7 },
-  { GPIOB, BIT0 },
-  { GPIOB, BIT1 }
+  { GPIOB, BIT6 },
+  { GPIOA, BIT8 }
 };
 
 I2C_HandleTypeDef i2ch;
@@ -91,11 +91,17 @@ int main(void)
   if( MX_ADC1_Init() ) {
     lcdt.putch( 'A' );
   }
+  if( MX_TIM1_Init() ) {
+    lcdt.putch( '1' );
+  }
   if( MX_TIM2_Init() ) {
     lcdt.putch( '2' );
   }
   if( MX_TIM3_Init() ) {
     lcdt.putch( '3' );
+  }
+  if( MX_TIM5_Init() ) {
+    lcdt.putch( '5' );
   }
   if( MX_TIM8_Init() ) {
     lcdt.putch( '8' );

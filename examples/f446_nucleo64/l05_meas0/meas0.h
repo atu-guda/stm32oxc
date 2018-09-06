@@ -6,8 +6,11 @@ struct D_in_sources {
   uint16_t           bit;
 };
 
+extern TIM_HandleTypeDef htim1;
 extern TIM_HandleTypeDef htim2;
 extern TIM_HandleTypeDef htim3;
+extern TIM_HandleTypeDef htim4;
+extern TIM_HandleTypeDef htim5;
 extern TIM_HandleTypeDef htim8;
 
 inline const int n_adc_ch = 4;
@@ -21,8 +24,11 @@ extern D_in_sources d_ins[n_din_ch];
 
 int MX_BTN_Init();
 
+int MX_TIM1_Init();
 int MX_TIM2_Init();
 int MX_TIM3_Init();
+int MX_TIM4_Init();
+int MX_TIM5_Init();
 int MX_TIM8_Init();
 
 extern float pwm_out[n_pwm_ch];
