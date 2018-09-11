@@ -74,7 +74,8 @@ void tim_print_cfg( TIM_TypeDef *tim )
      <<  " freq1: " <<  freq1
      <<  " freq2: " <<  freq2
      <<  " CNT: "   <<  tim->CNT
-     <<  " CCR1: "  <<  tim->CCR1 << NL ;
+     <<  " CCR1: "  <<  tim->CCR1
+     <<  " CR1: "   <<  HexInt(tim->CR1) << NL ;
 }
 #endif
 

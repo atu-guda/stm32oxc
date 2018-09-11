@@ -34,6 +34,9 @@ int cmd_dac( int argc, const char * const * argv );
 CmdInfo CMDINFO_DAC { "dac", 'D', cmd_dac, " v0 v1 - output values to dac"  };
 int cmd_pwm( int argc, const char * const * argv );
 CmdInfo CMDINFO_PWM { "pwm", 'W', cmd_pwm, " v0 v1 v2 v3 - set pwm output"  };
+
+int cmd_tim_info( int argc, const char * const * argv );
+CmdInfo CMDINFO_TIMINFO { "tim_info", 0, cmd_tim_info, " - info about timers"  };
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
 
@@ -43,6 +46,7 @@ const CmdInfo* global_cmds[] = {
 
   &CMDINFO_DAC,
   &CMDINFO_PWM,
+  &CMDINFO_TIMINFO,
   &CMDINFO_TEST0,
   nullptr
 };
@@ -422,6 +426,20 @@ int cmd_pwm( int argc, const char * const * argv )
   tim_print_cfg( TIM2 );
   return 0;
 }
+
+int cmd_tim_info( int argc, const char * const * argv )
+{
+  STDOUT_os;
+  os << "TIM1: ";  tim_print_cfg( TIM1 );
+  os << "TIM2: ";  tim_print_cfg( TIM2 );
+  os << "TIM3: ";  tim_print_cfg( TIM3 );
+  os << "TIM4: ";  tim_print_cfg( TIM4 );
+  os << "TIM5: ";  tim_print_cfg( TIM5 );
+  return 0;
+}
+
+
+// -------------------- misc functions ----------------------------------
 
 void pwm_output()
 {
