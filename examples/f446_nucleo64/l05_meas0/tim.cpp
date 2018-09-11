@@ -132,12 +132,27 @@ int MX_TIM3_Init()
 
 int MX_TIM5_Init()
 {
-  htim5.Instance = TIM5;
+  htim5.Instance           = TIM5;
   htim5.Init.Prescaler     = 0;
   htim5.Init.CounterMode   = TIM_COUNTERMODE_UP;
-  htim5.Init.Period        = 0;
+  htim5.Init.Period        = 0xFFFFFFFF;
   htim5.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  if( HAL_TIM_Base_Init( &htim5 ) != HAL_OK ) {
+  if( HAL_TIM_IC_Init( &htim5 ) != HAL_OK ) {
+    return 0;
+  }
+
+  TIM_IC_InitTypeDef sConfig;
+  sConfig.ICPrescaler = TIM_ICPSC_DIV1;
+  sConfig.ICFilter    = 0;
+  sConfig.ICPolarity  = TIM_INPUTCHANNELPOLARITY_RISING;
+  sConfig.ICSelection = TIM_ICSELECTION_DIRECTTI;
+  if( HAL_TIM_IC_ConfigChannel( &htim5, &sConfig, TIM_CHANNEL_1 ) != HAL_OK ) {
+    return 0;
+  }
+
+  sConfig.ICPolarity  = TIM_INPUTCHANNELPOLARITY_FALLING;
+  sConfig.ICSelection = TIM_ICSELECTION_INDIRECTTI;
+  if( HAL_TIM_IC_ConfigChannel( &htim5, &sConfig, TIM_CHANNEL_2 ) != HAL_OK ) {
     return 0;
   }
 
@@ -151,33 +166,21 @@ int MX_TIM5_Init()
     return 0;
   }
 
-  TIM_IC_InitTypeDef sConfigIC;
-  sConfigIC.ICPolarity  = TIM_INPUTCHANNELPOLARITY_RISING;
-  sConfigIC.ICSelection = TIM_ICSELECTION_DIRECTTI;
-  sConfigIC.ICPrescaler = TIM_ICPSC_DIV1;
-  sConfigIC.ICFilter    = 0;
-  if( HAL_TIM_IC_ConfigChannel( &htim5, &sConfigIC, TIM_CHANNEL_1 ) != HAL_OK ) {
+
+
+  // TIM_MasterConfigTypeDef sMasterConfig;
+  // sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  // sMasterConfig.MasterSlaveMode     = TIM_MASTERSLAVEMODE_DISABLE;
+  // if( HAL_TIMEx_MasterConfigSynchronization( &htim5, &sMasterConfig ) != HAL_OK ) {
+  //   return 0;
+  // }
+
+  if( HAL_TIM_IC_Start_IT( &htim5, TIM_CHANNEL_1 ) != HAL_OK ) {
     return 0;
   }
-
-  sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_FALLING;
-  sConfigIC.ICSelection = TIM_ICSELECTION_INDIRECTTI;
-  if( HAL_TIM_IC_ConfigChannel( &htim5, &sConfigIC, TIM_CHANNEL_2 ) != HAL_OK ) {
+  if( HAL_TIM_IC_Start_IT( &htim5, TIM_CHANNEL_2 ) != HAL_OK ) {
     return 0;
   }
-
-  TIM_MasterConfigTypeDef sMasterConfig;
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-  sMasterConfig.MasterSlaveMode     = TIM_MASTERSLAVEMODE_DISABLE;
-  if( HAL_TIMEx_MasterConfigSynchronization( &htim5, &sMasterConfig ) != HAL_OK ) {
-    return 0;
-  }
-
-  if( HAL_TIM_IC_Init( &htim5 ) != HAL_OK ) {
-    return 0;
-  }
-
-  HAL_TIM_IC_Start( &htim5, TIM_CHANNEL_1 );
 
   return 1;
 }
@@ -244,8 +247,8 @@ void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* tim_baseHandle )
     gio.Pin       = GPIO_PIN_0;
     gio.Alternate = GPIO_AF2_TIM5;
     HAL_GPIO_Init( GPIOA, &gio );
-    // HAL_NVIC_SetPriority( TIM5_IRQn, 2, 0 );
-    // HAL_NVIC_EnableIRQ( TIM5_IRQn );
+    HAL_NVIC_SetPriority( TIM5_IRQn, 2, 0 );
+    HAL_NVIC_EnableIRQ( TIM5_IRQn );
 
   } else if( tim_baseHandle->Instance == TIM8 ) {
     __HAL_RCC_TIM8_CLK_ENABLE();

@@ -565,6 +565,33 @@ void TIM3_IRQHandler(void)
   HAL_TIM_IRQHandler( &htim3 );
 }
 
+void TIM5_IRQHandler(void)
+{
+  leds.toggle( BIT0 );
+  HAL_TIM_IRQHandler( &htim5 );
+}
+
+void HAL_TIM_IC_CaptureCallback( TIM_HandleTypeDef *htim )
+{
+  // if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2 )   {
+  //   #<{(| Get the Input Capture value |)}>#
+  //   uwIC2Value = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2);
+  //   if (uwIC2Value != 0)
+  //   {
+  //     #<{(| Duty cycle computation |)}>#
+  //     uwDutyCycle = ((HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1)) * 100) / uwIC2Value;
+  //     #<{(| uwFrequency computation
+  //        TIM4 counter clock = (RCC_Clocks.HCLK_Frequency)/2 |)}>#
+  //     uwFrequency = (HAL_RCC_GetHCLKFreq())/2 / uwIC2Value;
+  //   }
+  //   else
+  //   {
+  //     uwDutyCycle = 0;
+  //     uwFrequency = 0;
+  //   }
+  // }
+}
+
   // test code size consumption for STL parts
   // vector<char> tmp_x1;
   // tmp_x1.assign( 100, 'x' ); // + 100
