@@ -2,6 +2,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <cstdio>
+#include <cerrno>
 
 // test code consumption
 // #include <vector>
@@ -60,6 +61,9 @@ HD44780_i2c lcdt( i2cd, 0x27 );
 
 volatile uint32_t adc_state = 0; // 0 - pre, 1 - done, 2 + -  error
 
+float    time_f = 0;
+int      time_i = 0;
+
 float uin[n_uin];
 unsigned nu_uin  = 4;
 int uin_i[n_uin_i];
@@ -89,6 +93,17 @@ float lcd[n_lcd];
 int   lcd_b[n_lcd_b];
 float tmp[n_tmp];
 
+int measure_adc();
+int measure_din();
+int measure_din_tim();
+int measure_uin();
+
+int process_mode0();
+int process_mode1();
+int process_mode2();
+
+int tty_output();
+int lcd_output();
 
 int main(void)
 {
@@ -153,24 +168,7 @@ int cmd_test0( int argc, const char * const * argv )
   uint32_t t_step = UVAR('t');
 
   STDOUT_os;
-
-  // test code size comsumptind for STL parts
-  // vector<char> tmp_x1;
-  // tmp_x1.assign( 100, 'x' ); // + 100
-  // os << tmp_x1[5] << NL;
-  // string s1 = "xdfg";        // + 100
-  // os << s1.c_str() << NL;
-  // map<string, int> m_x;      // + 11k
-  // m_x[s1] = 12;
-
-
-
-
   os << "# n= " << n << " t= " << t_step << NL; os.flush();
-
-  char buf0[32], buf1[32];
-
-  char adc_txt_bufs[n_adc][16];
 
   bool show_lcd = true;
   if( t_step < 50 ) {
@@ -179,98 +177,61 @@ int cmd_test0( int argc, const char * const * argv )
     lcdt.puts( "t < 50 ms!  " );
   }
 
+  switch( UVAR('m') ) {
+    case 0: // ADC/DAC mode
+      nu_uout = 4; nu_uout_i = 4;
+      break;
+    case 1: // freq/duty cycle/counter mode
+      nu_uout = 4; nu_uout_i = 6;
+      break;
+    default: // script mode
+      break;
+  }
+
   uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
   break_flag = 0;
   for( int i=0; i<n && !break_flag; ++i ) {
 
-    // collect input data
-    adc_state = 0;
     uint32_t ct = HAL_GetTick();
+    time_i = ct - tm00;
+    time_f = time_i * 0.001;
+    int proc_rc = 0;
 
-    // fake data
-    // for( int j=0; j<n_adc; ++j ) {
-    //   adc[j] = 0.001f * ( i % 1000 ) + j;
-    // }
-    for( int j=0; j<n_adc; ++j ) {
-      adc_u16[j] = 0;
-    }
+    measure_adc();
+    measure_din();
+    measure_din_tim();
+    measure_uin();
 
-    // dma_subinit();
-    // delay_ms( 1 );
-    if( HAL_ADC_Start_DMA( &hadc1, (uint32_t *)adc_u16, n_adc ) != HAL_OK )   {
-      os << "## E Fail to start ADC_DMA" << NL;
-    }
-    for( int j=0; adc_state == 0 && j<50; ++j ) {
-      delay_ms( 1 ); //      jj = j;
-    }
-    if( adc_state != 1 )  {
-      os << "## E Fail to wait ADC_DMA " << adc_state << NL;
-    }
-    for( int j=0; j<n_adc; ++j ) {
-      adc_i[j] = adc_u16[j];
-      adc[j]   = vref_in * adc_u16[j] / 4095;
-    }
-    HAL_ADC_Stop_DMA( &hadc1 );
-
-    dins = 0;
-    for( int j=0; j<n_din; ++j ) {
-      if ( d_ins[j].gpio->IDR & d_ins[j].bit ) {
-        din[j] = 1;
-        dins |= 1 << j;
-      } else {
-        din[j] = 0;
-      }
-    }
-
-    for( int j=0; j<n_adc; ++j ) {
-      snprintf( adc_txt_bufs[j],   sizeof(adc_txt_bufs[j]),  "%6.4f ", adc[j] );
-    }
 
     // process data
+    switch( UVAR('m') ) {
+      case 0: // ADC/DAC mode:
+        proc_rc = process_mode0();
+        break;
+      case 1: // freq/duty cycle/counter mode
+        proc_rc = process_mode1();
+        break;
+      default: // script mode
+        proc_rc = process_mode2();
+        break;
+    }
 
-    // TODO:
-    // fake:
-    dac[0] = 2.0 - adc[0];
-    dac[1] = adc[0] - adc[1];
-    pwm[0] = 0.25 * adc[0];
-    pwm[1] = 0.5;
-    pwm_f =  2 + (int)( adc[0] * 100 ); // TODO: use it!
-    UVAR('f') = pwm_f;
+    if( proc_rc < 1 ) {
+      os << "# err: proc_rc = " << proc_rc << NL;
+      break;
+    }
 
     // output data
+
     dac_output();
     pwm_output();
-
-    // output info
-
-    os << i << ' ' << ( ct - tm00 ) << ' ';
-    for( int j=0; j<n_adc; ++j ) {
-      os << adc_txt_bufs[j] << ' ';
-    }
-    for( int j=0; j<n_din; ++j ) {
-      os << din[j] << ' ';
-    }
-    os << NL;
-
+    tty_output();
     if( show_lcd || i == (n-1) ) {
-      strcpy( buf0, adc_txt_bufs[0] );
-      strcat( buf0, adc_txt_bufs[1] );
-      strcpy( buf1, adc_txt_bufs[2] );
-      strcat( buf1, adc_txt_bufs[3] );
-      buf0[14] = din[0] ? '$' : '.';
-      buf0[15] = din[1] ? '$' : '.';
-      buf1[14] = din[2] ? '$' : '.';
-      buf1[15] = din[3] ? '$' : '.';
-      buf0[16] = '\0';  buf1[16] = '\0';
-      lcdt.gotoxy( 0, 0 );
-      lcdt.puts( buf0 );
-      lcdt.gotoxy( 0, 1 );
-      lcdt.puts( buf1 );
+      lcd_output();
     }
 
     leds.toggle( BIT1 );
 
-    os.flush();
     delay_ms_until_brk( &tm0, t_step );
   }
 
@@ -278,6 +239,166 @@ int cmd_test0( int argc, const char * const * argv )
 
   return 0;
 }
+
+int process_mode0()
+{
+  for( int j=0; j<n_adc; ++j ) {
+    uout[j] = lcd[j] = adc[j];
+    uout_i[j] = lcd_b[j] = din[j];
+  }
+  // TODO: dac,
+  // dac[0] = uin[0]; dac[1] = uin[1];
+  // here test only
+  dac[0] = 2.0 - adc[0];
+  dac[1] = adc[0] - adc[1];
+  pwm[0] = 0.25 * adc[0];
+  pwm[1] = 0.5;
+  pwm_f =  2 + (int)( adc[0] * 100 ); // TODO: use it!
+  UVAR('f') = pwm_f;
+  return 1;
+}
+
+int process_mode1()
+{
+  lcd[0] = uout[0] = din_f[0];
+  lcd[1] = uout[1] = din_dc[0];
+  uout[2] = din_f[1]; uout[3] = din_dc[1];
+  lcd[2] = uout_i[0] = din_c[0]; lcd[3] = uout_i[1] = din_c[1];
+  for( int j=0; j<n_adc; ++j ) {
+    uout_i[j+2] = lcd_b[j] = din[j];
+  }
+  return 1;
+}
+
+int process_mode2()
+{
+  return 0;
+}
+
+
+int measure_adc()
+{
+  adc_state = 0;
+  for( auto &v : adc_u16 ) {
+    v = 0;
+  }
+
+  if( HAL_ADC_Start_DMA( &hadc1, (uint32_t *)adc_u16, n_adc ) != HAL_OK )   {
+    errno = 10000;
+    // os << "## E Fail to start ADC_DMA" << NL;
+    return 0;
+  }
+  for( int j=0; adc_state == 0 && j<50; ++j ) {
+    delay_ms( 1 ); //      jj = j;
+  }
+  if( adc_state != 1 )  {
+    errno = 10001;
+    // os << "## E Fail to wait ADC_DMA " << adc_state << NL;
+    return 0;
+  }
+
+  for( int j=0; j<n_adc; ++j ) {
+    adc_i[j] = adc_u16[j];
+    adc[j]   = vref_in * adc_u16[j] / 4095;
+  }
+  HAL_ADC_Stop_DMA( &hadc1 );
+  return 1;
+}
+
+int measure_din()
+{
+  dins = 0;
+  for( int j=0; j<n_din; ++j ) {
+    if ( d_ins[j].gpio->IDR & d_ins[j].bit ) {
+      din[j] = 1;
+      dins |= 1 << j;
+    } else {
+      din[j] = 0;
+    }
+  }
+  return 1;
+}
+
+int measure_din_tim()
+{
+  // fake for now
+  din_f[0] = 123.456;
+  din_f[1] = 98.7654;
+  din_dc[0] = 0.2;
+  din_dc[1] = 0.7;
+  din_c[0] = TIM4->CCR1;
+  din_c[1] = TIM1->CCR1;
+  TIM4->CCR1 = 0;
+  TIM1->CCR1 = 0;
+
+  return 1;
+}
+
+int measure_uin()
+{
+  // fake for now
+  for( unsigned i=0; i < nu_uin; ++i ) {
+    uin[i] = 0.1 * i;
+  }
+  for( unsigned i=0; i < nu_uin_i; ++i ) {
+    uin_i[i] = 10 - i;
+  }
+  return 1;
+}
+
+int tty_output()
+{
+  STDOUT_os;
+  char buf[32];
+
+  snprintf( buf, sizeof(buf), "%g ", time_f );
+  os << buf;
+
+  for( unsigned i=0; i < nu_uout; ++i ) {
+    snprintf( buf, sizeof(buf), "%g", uout[i] );
+    os << buf << ' ';
+  }
+
+  for( unsigned i=0; i < nu_uout_i; ++i ) {
+    os << uout_i[i] << ' ';
+  }
+  os << NL;
+  os.flush();
+
+  return 1;
+}
+
+int lcd_output()
+{
+  char buf_v[16], buf[32];
+
+  snprintf( buf_v, sizeof(buf_v), "%6.4f ", lcd[0] );
+  strcpy( buf, buf_v );
+  snprintf( buf_v, sizeof(buf_v), "%6.4f ", lcd[1] );
+  strcat( buf, buf_v );
+
+  buf[14] = lcd_b[0] ? '$' : '.';
+  buf[15] = lcd_b[1] ? '$' : '.';
+  buf[16] = '\0';
+  lcdt.gotoxy( 0, 0 );
+  lcdt.puts( buf );
+
+  snprintf( buf_v, sizeof(buf_v), "%6.4f ", lcd[2] );
+  strcpy( buf, buf_v );
+  snprintf( buf_v, sizeof(buf_v), "%6.4f ", lcd[3] );
+  strcat( buf, buf_v );
+
+  buf[14] = lcd_b[2] ? '$' : '.';
+  buf[15] = lcd_b[3] ? '$' : '.';
+  buf[16] = '\0';
+  lcdt.gotoxy( 0, 1 );
+  lcdt.puts( buf );
+
+  return 1;
+}
+
+// ----------------------- commands ---------
+
 
 int cmd_dac( int argc, const char * const * argv )
 {
@@ -425,6 +546,18 @@ void TIM3_IRQHandler(void)
 {
   HAL_TIM_IRQHandler( &htim3 );
 }
+
+  // test code size consumption for STL parts
+  // vector<char> tmp_x1;
+  // tmp_x1.assign( 100, 'x' ); // + 100
+  // os << tmp_x1[5] << NL;
+  // string s1 = "xdfg";        // + 100
+  // os << s1.c_str() << NL;
+  // map<string, int> m_x;      // + 11k
+  // m_x[s1] = 12;
+
+
+
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

@@ -8,6 +8,8 @@ struct D_in_sources {
 
 // global in, out, ... vars : part of datas (TODO)
 
+extern float    time_f;
+extern int      time_i;
 
 inline const int n_uin = 8;
 extern float    uin[n_uin];     // user input float
