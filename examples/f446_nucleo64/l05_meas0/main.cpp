@@ -47,7 +47,7 @@ const CmdInfo* global_cmds[] = {
 };
 
 
-D_in_sources d_ins[n_din_ch] = {
+D_in_sources d_ins[n_din] = {
   { GPIOA, BIT0 },
   { GPIOA, BIT6 },
   { GPIOB, BIT6 },
@@ -58,13 +58,36 @@ I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );
 HD44780_i2c lcdt( i2cd, 0x27 );
 
-float vref_out = 3.2256;
-float vref_in  = 3.3270;
-uint16_t adc_buf[n_adc_ch];
 volatile uint32_t adc_state = 0; // 0 - pre, 1 - done, 2 + -  error
 
-float pwm_out[n_pwm_ch] = { 0, 0, 0, 0 };
-float dac_out[n_dac_ch] = { 0, 0 };
+float uin[n_uin];
+unsigned nu_uin  = 4;
+int uin_i[n_uin_i];
+unsigned nu_uin_i = 4;
+float uout[n_uout];
+unsigned nu_uout = 4;
+int uout_i[n_uout_i];
+unsigned nu_uout_i = 4;
+
+float vref_out = 3.2256;
+float vref_in  = 3.3270;
+
+float    adc[n_adc];
+int      adc_i[n_adc];
+uint16_t adc_u16[n_adc];
+
+float pwm[n_pwm] = { 0, 0, 0, 0 };
+float pwm_f = 10.0;
+float dac[n_dac] = { 0, 0 };
+
+int   din[n_din];
+int   dins;
+float din_f[n_din_f];
+float din_dc[n_din_dc];
+int   din_c[n_din_c];
+float lcd[n_lcd];
+int   lcd_b[n_lcd_b];
+float tmp[n_tmp];
 
 
 int main(void)
@@ -147,9 +170,7 @@ int cmd_test0( int argc, const char * const * argv )
 
   char buf0[32], buf1[32];
 
-  float vf[n_adc_ch];
-  char adc_txt_bufs[n_adc_ch][16];
-  int  d_in[n_din_ch];
+  char adc_txt_bufs[n_adc][16];
 
   bool show_lcd = true;
   if( t_step < 50 ) {
@@ -167,16 +188,16 @@ int cmd_test0( int argc, const char * const * argv )
     uint32_t ct = HAL_GetTick();
 
     // fake data
-    // for( int j=0; j<n_adc_ch; ++j ) {
-    //   vf[j] = 0.001f * ( i % 1000 ) + j;
+    // for( int j=0; j<n_adc; ++j ) {
+    //   adc[j] = 0.001f * ( i % 1000 ) + j;
     // }
-    for( int j=0; j<n_adc_ch; ++j ) {
-      adc_buf[j] = 0;
+    for( int j=0; j<n_adc; ++j ) {
+      adc_u16[j] = 0;
     }
 
     // dma_subinit();
     // delay_ms( 1 );
-    if( HAL_ADC_Start_DMA( &hadc1, (uint32_t *)adc_buf, n_adc_ch ) != HAL_OK )   {
+    if( HAL_ADC_Start_DMA( &hadc1, (uint32_t *)adc_u16, n_adc ) != HAL_OK )   {
       os << "## E Fail to start ADC_DMA" << NL;
     }
     for( int j=0; adc_state == 0 && j<50; ++j ) {
@@ -185,28 +206,36 @@ int cmd_test0( int argc, const char * const * argv )
     if( adc_state != 1 )  {
       os << "## E Fail to wait ADC_DMA " << adc_state << NL;
     }
-    for( int j=0; j<n_adc_ch; ++j ) {
-      vf[j] = vref_in * adc_buf[j] / 4095;
+    for( int j=0; j<n_adc; ++j ) {
+      adc_i[j] = adc_u16[j];
+      adc[j]   = vref_in * adc_u16[j] / 4095;
     }
     HAL_ADC_Stop_DMA( &hadc1 );
 
-    for( int j=0; j<n_din_ch; ++j ) {
-      d_in[j] = ( d_ins[j].gpio->IDR & d_ins[j].bit ) ? 1 : 0;
+    dins = 0;
+    for( int j=0; j<n_din; ++j ) {
+      if ( d_ins[j].gpio->IDR & d_ins[j].bit ) {
+        din[j] = 1;
+        dins |= 1 << j;
+      } else {
+        din[j] = 0;
+      }
     }
 
-    for( int j=0; j<n_adc_ch; ++j ) {
-      snprintf( adc_txt_bufs[j],   sizeof(adc_txt_bufs[j]),  "%6.4f ", vf[j] );
+    for( int j=0; j<n_adc; ++j ) {
+      snprintf( adc_txt_bufs[j],   sizeof(adc_txt_bufs[j]),  "%6.4f ", adc[j] );
     }
 
     // process data
 
     // TODO:
     // fake:
-    dac_out[0] = 2.0 - vf[0];
-    dac_out[1] = vf[0] - vf[1];
-    pwm_out[0] = 0.25 * vf[0];
-    pwm_out[1] = 0.5;
-    UVAR('f') = 2 + (int)( vf[0] * 100 );
+    dac[0] = 2.0 - adc[0];
+    dac[1] = adc[0] - adc[1];
+    pwm[0] = 0.25 * adc[0];
+    pwm[1] = 0.5;
+    pwm_f =  2 + (int)( adc[0] * 100 ); // TODO: use it!
+    UVAR('f') = pwm_f;
 
     // output data
     dac_output();
@@ -215,11 +244,11 @@ int cmd_test0( int argc, const char * const * argv )
     // output info
 
     os << i << ' ' << ( ct - tm00 ) << ' ';
-    for( int j=0; j<n_adc_ch; ++j ) {
+    for( int j=0; j<n_adc; ++j ) {
       os << adc_txt_bufs[j] << ' ';
     }
-    for( int j=0; j<n_din_ch; ++j ) {
-      os << d_in[j] << ' ';
+    for( int j=0; j<n_din; ++j ) {
+      os << din[j] << ' ';
     }
     os << NL;
 
@@ -228,10 +257,10 @@ int cmd_test0( int argc, const char * const * argv )
       strcat( buf0, adc_txt_bufs[1] );
       strcpy( buf1, adc_txt_bufs[2] );
       strcat( buf1, adc_txt_bufs[3] );
-      buf0[14] = d_in[0] ? '$' : '.';
-      buf0[15] = d_in[1] ? '$' : '.';
-      buf1[14] = d_in[2] ? '$' : '.';
-      buf1[15] = d_in[3] ? '$' : '.';
+      buf0[14] = din[0] ? '$' : '.';
+      buf0[15] = din[1] ? '$' : '.';
+      buf1[14] = din[2] ? '$' : '.';
+      buf1[15] = din[3] ? '$' : '.';
       buf0[16] = '\0';  buf1[16] = '\0';
       lcdt.gotoxy( 0, 0 );
       lcdt.puts( buf0 );
@@ -252,14 +281,14 @@ int cmd_test0( int argc, const char * const * argv )
 
 int cmd_dac( int argc, const char * const * argv )
 {
-  parse_floats( max(argc-1,2) , argv+1, dac_out );
+  parse_floats( max(argc-1,2) , argv+1, dac );
 
   dac_output();
 
   STDOUT_os;
   char buf0[16], buf1[16];
-  snprintf( buf0, sizeof(buf0), "%f", dac_out[0] );
-  snprintf( buf1, sizeof(buf1), "%f", dac_out[1] );
+  snprintf( buf0, sizeof(buf0), "%f", dac[0] );
+  snprintf( buf1, sizeof(buf1), "%f", dac[1] );
   os << "# DAC output: v0= " << buf0 << " v1= " << buf1 << NL; os.flush();
 
   return 0;
@@ -267,7 +296,7 @@ int cmd_dac( int argc, const char * const * argv )
 
 int cmd_pwm( int argc, const char * const * argv )
 {
-  parse_floats( max(argc-1,4) , argv+1, pwm_out );
+  parse_floats( max(argc-1,4) , argv+1, pwm );
   pwm_output();
   tim_print_cfg( TIM2 );
   return 0;
@@ -277,7 +306,7 @@ void pwm_output()
 {
   static decltype( &TIM2->CCR1 ) ccrs[] = { &TIM2->CCR1, &TIM2->CCR2, &TIM2->CCR3, &TIM2->CCR4  };
   uint32_t arr = TIM2->ARR;
-  uint32_t new_arr = calc_TIM_arr_for_base_freq( TIM2, UVAR('f') );
+  uint32_t new_arr = calc_TIM_arr_for_base_freq( TIM2, UVAR('f') ); // TODO: pwm_f
   if( arr != new_arr ) {
     TIM2->ARR = new_arr;
     if( TIM2->CNT > new_arr - 2 ) {
@@ -285,8 +314,8 @@ void pwm_output()
     }
     arr = new_arr;
   }
-  for( int i = 0; i<n_pwm_ch; ++i ) {
-    *ccrs[i] = (uint32_t) ( pwm_out[i] * arr );
+  for( int i = 0; i<n_pwm; ++i ) {
+    *ccrs[i] = (uint32_t) ( pwm[i] * arr );
   }
 }
 

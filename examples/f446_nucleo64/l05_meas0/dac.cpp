@@ -40,7 +40,7 @@ void HAL_DAC_MspInit( DAC_HandleTypeDef* dacHandle )
 
 void HAL_DAC_MspDeInit( DAC_HandleTypeDef* dacHandle )
 {
-  if( dacHandle->Instance !=DAC ) {
+  if( dacHandle->Instance != DAC ) {
     return;
   }
 
@@ -50,7 +50,7 @@ void HAL_DAC_MspDeInit( DAC_HandleTypeDef* dacHandle )
 
 void dac_output()
 {
-  float v0 = dac_out[0], v1 = dac_out[1];
+  float v0 = dac[0], v1 = dac[1];
   if( v0 < 0 ) {
     v0 = 0;
   }

@@ -17,7 +17,7 @@ int MX_ADC1_Init()
   hadc1.Init.ExternalTrigConvEdge  = ADC_EXTERNALTRIGCONVEDGE_NONE;
   hadc1.Init.ExternalTrigConv      = ADC_SOFTWARE_START;
   hadc1.Init.DataAlign             = ADC_DATAALIGN_RIGHT;
-  hadc1.Init.NbrOfConversion       = 4;
+  hadc1.Init.NbrOfConversion       = n_adc;
   hadc1.Init.DMAContinuousRequests = DISABLE;
   hadc1.Init.EOCSelection          = ADC_EOC_SEQ_CONV;
   if( HAL_ADC_Init( &hadc1 ) != HAL_OK ) {
@@ -46,7 +46,7 @@ int MX_ADC1_Init()
 
   sConfig.Channel = ADC_CHANNEL_13;
   sConfig.Rank = 4;
-  if(HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK) {
+  if( HAL_ADC_ConfigChannel( &hadc1, &sConfig ) != HAL_OK) {
     return 0;
   }
   return 1;
