@@ -64,6 +64,7 @@ DevI2C i2cd( &i2ch, 0 );
 HD44780_i2c lcdt( i2cd, 0x27 );
 
 volatile uint32_t adc_state = 0; // 0 - pre, 1 - done, 2 + -  error
+volatile uint32_t  t3freq = 84000000, t3ccr1, t3ccr2, t5freq = 84000000, t5ccr1, t5ccr2;
 
 float    time_f = 0;
 int      time_i = 0;
@@ -149,6 +150,10 @@ int main(void)
     lcdt.putch( '8' );
   }
   MX_BTN_Init();
+
+  t3freq = get_TIM_cnt_freq( TIM3 );
+  t5freq = get_TIM_cnt_freq( TIM5 );
+
 
   BOARD_POST_INIT_BLINK;
 
@@ -325,11 +330,20 @@ int measure_din()
 
 int measure_din_tim()
 {
-  // fake for now
-  din_f[0] = 123.456;
-  din_f[1] = 98.7654;
-  din_dc[0] = 0.2;
-  din_dc[1] = 0.7;
+  if( t5ccr1 > 0 ) {
+    din_f[0]  = (float)(t5freq)   / t5ccr1;
+    din_dc[0] = (float)( t5ccr2 ) / t5ccr1;
+  } else {
+    din_f[0] = 0;
+    din_dc[0] = 0;
+  }
+  if( t3ccr1 > 0 ) {
+    din_f[1]  = (float)(t3freq)   / t3ccr1;
+    din_dc[1] = (float)( t3ccr2 ) / t3ccr1;
+  } else {
+    din_f[1] = 0;
+    din_dc[1] = 0;
+  }
   din_c[0] = TIM4->CCR1;
   din_c[1] = TIM1->CCR1;
   TIM4->CCR1 = 0;
@@ -374,12 +388,13 @@ int tty_output()
 
 int lcd_output()
 {
-  char buf_v[16], buf[32];
+  char buf[32];
+  memset( buf, ' ', sizeof(buf)-1 ); buf[sizeof(buf)-1] = '\0';
 
-  snprintf( buf_v, sizeof(buf_v), "%6.4f ", lcd[0] );
-  strcpy( buf, buf_v );
-  snprintf( buf_v, sizeof(buf_v), "%6.4f ", lcd[1] );
-  strcat( buf, buf_v );
+  snprintf( buf, 8, "%6g ", lcd[0] );
+  buf[6] = ' ';
+  snprintf( buf+7, 8, "%6g ", lcd[1] );
+  buf[13] = ' ';
 
   buf[14] = lcd_b[0] ? '$' : '.';
   buf[15] = lcd_b[1] ? '$' : '.';
@@ -387,10 +402,11 @@ int lcd_output()
   lcdt.gotoxy( 0, 0 );
   lcdt.puts( buf );
 
-  snprintf( buf_v, sizeof(buf_v), "%6.4f ", lcd[2] );
-  strcpy( buf, buf_v );
-  snprintf( buf_v, sizeof(buf_v), "%6.4f ", lcd[3] );
-  strcat( buf, buf_v );
+  memset( buf, ' ', sizeof(buf)-1 ); buf[sizeof(buf)-1] = '\0';
+  snprintf( buf, 8, "%6g ", lcd[2] );
+  buf[6] = ' ';
+  snprintf( buf+7, 8, "%6g ", lcd[3] );
+  buf[13] = ' ';
 
   buf[14] = lcd_b[2] ? '$' : '.';
   buf[15] = lcd_b[3] ? '$' : '.';
@@ -435,6 +451,7 @@ int cmd_tim_info( int argc, const char * const * argv )
   os << "TIM3: ";  tim_print_cfg( TIM3 );
   os << "TIM4: ";  tim_print_cfg( TIM4 );
   os << "TIM5: ";  tim_print_cfg( TIM5 );
+  dump8( TIM5, 0x80 );
   return 0;
 }
 
@@ -567,29 +584,22 @@ void TIM3_IRQHandler(void)
 
 void TIM5_IRQHandler(void)
 {
-  leds.toggle( BIT0 );
   HAL_TIM_IRQHandler( &htim5 );
 }
 
 void HAL_TIM_IC_CaptureCallback( TIM_HandleTypeDef *htim )
 {
-  // if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2 )   {
-  //   #<{(| Get the Input Capture value |)}>#
-  //   uwIC2Value = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2);
-  //   if (uwIC2Value != 0)
-  //   {
-  //     #<{(| Duty cycle computation |)}>#
-  //     uwDutyCycle = ((HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1)) * 100) / uwIC2Value;
-  //     #<{(| uwFrequency computation
-  //        TIM4 counter clock = (RCC_Clocks.HCLK_Frequency)/2 |)}>#
-  //     uwFrequency = (HAL_RCC_GetHCLKFreq())/2 / uwIC2Value;
-  //   }
-  //   else
-  //   {
-  //     uwDutyCycle = 0;
-  //     uwFrequency = 0;
-  //   }
-  // }
+  if( htim->Instance == TIM3 ) {
+    if( htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1 ) {
+      t3ccr1 = TIM3->CCR1;
+      t3ccr2 = TIM3->CCR2;
+    }
+  } else if( htim->Instance == TIM5 ) {
+    if( htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1 ) {
+      t5ccr1 = TIM5->CCR1;
+      t5ccr2 = TIM5->CCR2;
+    }
+  }
 }
 
   // test code size consumption for STL parts

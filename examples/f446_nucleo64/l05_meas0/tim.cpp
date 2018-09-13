@@ -137,6 +137,9 @@ int MX_TIM5_Init()
   htim5.Init.CounterMode   = TIM_COUNTERMODE_UP;
   htim5.Init.Period        = 0xFFFFFFFF;
   htim5.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  if( HAL_TIM_Base_Init( &htim5 ) != HAL_OK ) { // tmp: to call init
+    return 0;
+  }
   if( HAL_TIM_IC_Init( &htim5 ) != HAL_OK ) {
     return 0;
   }
@@ -181,6 +184,10 @@ int MX_TIM5_Init()
   if( HAL_TIM_IC_Start_IT( &htim5, TIM_CHANNEL_2 ) != HAL_OK ) {
     return 0;
   }
+  dbg_val0 = TIM5->CR1;
+  TIM5->CR1 |= 1; // try to start manualy
+  dbg_val1 = TIM5->CR1;
+  dbg_val3 = 555;
 
   return 1;
 }
@@ -214,10 +221,12 @@ void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* tim_baseHandle )
 
   if( tim_baseHandle->Instance == TIM1 )  { // A8: Ch1,Ch2 pwm in
     __HAL_RCC_TIM1_CLK_ENABLE();
+    dbg_val2 |= 0x01;
     gio.Pin       = GPIO_PIN_8;
     gio.Alternate = GPIO_AF1_TIM1;
     HAL_GPIO_Init( GPIOA, &gio );
   } else if( tim_baseHandle->Instance == TIM2 )  { // PWM output
+    dbg_val2 |= 0x02;
     __HAL_RCC_TIM2_CLK_ENABLE();
     //* A15 --> TIM2_CH1, A1 --> TIM2_CH2, B2 --> TIM2_CH4, B10 --> TIM2_CH3
     gio.Pin       = GPIO_PIN_1 | GPIO_PIN_15;
@@ -228,6 +237,7 @@ void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* tim_baseHandle )
     gio.Alternate = GPIO_AF1_TIM2;
     HAL_GPIO_Init( GPIOB, &gio);
   } else if( tim_baseHandle->Instance == TIM3 ) {
+    dbg_val2 |= 0x04;
     __HAL_RCC_TIM3_CLK_ENABLE();
     //* A6 --> TIM3_CH1,CH2 pwm
     gio.Pin       = GPIO_PIN_6;
@@ -237,12 +247,14 @@ void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* tim_baseHandle )
     // HAL_NVIC_SetPriority(TIM3_IRQn, 3, 0);
     // HAL_NVIC_EnableIRQ(TIM3_IRQn);
   } else if( tim_baseHandle->Instance == TIM4 ) {
+    dbg_val2 |= 0x08;
     __HAL_RCC_TIM4_CLK_ENABLE();
     gio.Pin       = GPIO_PIN_6;
     gio.Alternate = GPIO_AF2_TIM4;
     HAL_GPIO_Init( GPIOB, &gio );
 
   } else if( tim_baseHandle->Instance == TIM5 ) {
+    dbg_val2 |= 0x10;
     __HAL_RCC_TIM5_CLK_ENABLE();
     gio.Pin       = GPIO_PIN_0;
     gio.Alternate = GPIO_AF2_TIM5;
@@ -251,6 +263,7 @@ void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* tim_baseHandle )
     HAL_NVIC_EnableIRQ( TIM5_IRQn );
 
   } else if( tim_baseHandle->Instance == TIM8 ) {
+    dbg_val2 |= 0x20;
     __HAL_RCC_TIM8_CLK_ENABLE();
   }
 }
