@@ -331,21 +331,25 @@ int measure_din()
 int measure_din_tim()
 {
   if( t5ccr1 > 0 ) {
-    din_f[0]  = (float)(t5freq)   / t5ccr1;
-    din_dc[0] = (float)( t5ccr2 ) / t5ccr1;
+    din_f[0]  = (float)(t5freq) / t5ccr1;
+    din_dc[0] = (float)(t5ccr2) / t5ccr1;
   } else {
-    din_f[0] = 0;
+    din_f[0]  = 0;
     din_dc[0] = 0;
   }
+
   if( t3ccr1 > 0 ) {
-    din_f[1]  = (float)(t3freq)   / t3ccr1;
-    din_dc[1] = (float)( t3ccr2 ) / t3ccr1;
+    din_f[1]  = (float)(t3freq) / t3ccr1;
+    din_dc[1] = (float)(t3ccr2) / t3ccr1;
   } else {
-    din_f[1] = 0;
+    din_f[1]  = 0;
     din_dc[1] = 0;
   }
-  din_c[0] = TIM4->CCR1;
-  din_c[1] = TIM1->CCR1;
+
+  din_c[0] = t3ccr1;
+  din_c[1] = t3ccr2;
+  // din_c[0] = TIM4->CCR1;
+  // din_c[1] = TIM1->CCR1;
   TIM4->CCR1 = 0;
   TIM1->CCR1 = 0;
 
@@ -369,11 +373,11 @@ int tty_output()
   STDOUT_os;
   char buf[32];
 
-  snprintf( buf, sizeof(buf), "%g ", time_f );
+  snprintf( buf, sizeof(buf), "%#g ", time_f );
   os << buf;
 
   for( unsigned i=0; i < nu_uout; ++i ) {
-    snprintf( buf, sizeof(buf), "%g", uout[i] );
+    snprintf( buf, sizeof(buf), "%#g", uout[i] );
     os << buf << ' ';
   }
 
@@ -391,9 +395,9 @@ int lcd_output()
   char buf[32];
   memset( buf, ' ', sizeof(buf)-1 ); buf[sizeof(buf)-1] = '\0';
 
-  snprintf( buf, 8, "%6g ", lcd[0] );
+  snprintf( buf, 8, "%#6g ", lcd[0] );
   buf[6] = ' ';
-  snprintf( buf+7, 8, "%6g ", lcd[1] );
+  snprintf( buf+7, 8, "%#6g ", lcd[1] );
   buf[13] = ' ';
 
   buf[14] = lcd_b[0] ? '$' : '.';
@@ -403,9 +407,9 @@ int lcd_output()
   lcdt.puts( buf );
 
   memset( buf, ' ', sizeof(buf)-1 ); buf[sizeof(buf)-1] = '\0';
-  snprintf( buf, 8, "%6g ", lcd[2] );
+  snprintf( buf, 8, "%#6g ", lcd[2] );
   buf[6] = ' ';
-  snprintf( buf+7, 8, "%6g ", lcd[3] );
+  snprintf( buf+7, 8, "%#6g ", lcd[3] );
   buf[13] = ' ';
 
   buf[14] = lcd_b[2] ? '$' : '.';
@@ -451,7 +455,8 @@ int cmd_tim_info( int argc, const char * const * argv )
   os << "TIM3: ";  tim_print_cfg( TIM3 );
   os << "TIM4: ";  tim_print_cfg( TIM4 );
   os << "TIM5: ";  tim_print_cfg( TIM5 );
-  dump8( TIM5, 0x80 );
+  dump8( TIM3, 0x40 );
+  dump8( TIM5, 0x40 );
   return 0;
 }
 
