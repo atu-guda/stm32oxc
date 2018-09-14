@@ -51,7 +51,7 @@ int MX_TIM1_Init()
   TIM_SlaveConfigTypeDef sSlaveConfig;
   sSlaveConfig.SlaveMode     = TIM_SLAVEMODE_DISABLE;
   sSlaveConfig.InputTrigger  = TIM_TS_TI1F_ED;
-  sSlaveConfig.TriggerFilter = 0;
+  sSlaveConfig.TriggerFilter = 2;
   if( HAL_TIM_SlaveConfigSynchronization( &htim1, &sSlaveConfig ) != HAL_OK ) {
     return 0;
   }
@@ -60,6 +60,10 @@ int MX_TIM1_Init()
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
   sMasterConfig.MasterSlaveMode     = TIM_MASTERSLAVEMODE_DISABLE;
   if( HAL_TIMEx_MasterConfigSynchronization( &htim1, &sMasterConfig ) != HAL_OK ) {
+    return 0;
+  }
+
+  if( HAL_TIM_Base_Start( &htim1 ) != HAL_OK ) {
     return 0;
   }
 
@@ -125,7 +129,7 @@ int MX_TIM3_Init()
 
   TIM_IC_InitTypeDef sConfig;
   sConfig.ICPrescaler = TIM_ICPSC_DIV1;
-  sConfig.ICFilter    = 0;
+  sConfig.ICFilter    = 4;
   sConfig.ICPolarity  = TIM_INPUTCHANNELPOLARITY_RISING;
   sConfig.ICSelection = TIM_ICSELECTION_DIRECTTI;
   if( HAL_TIM_IC_ConfigChannel( &htim3, &sConfig, TIM_CHANNEL_1 ) != HAL_OK ) {
@@ -149,6 +153,47 @@ int MX_TIM3_Init()
 
   return 1;
 }
+
+int MX_TIM4_Init()
+{
+  htim4.Instance               = TIM4;
+  htim4.Init.Prescaler         = 0;
+  htim4.Init.CounterMode       = TIM_COUNTERMODE_UP;
+  htim4.Init.Period            = 0xFFFF;
+  htim4.Init.ClockDivision     = TIM_CLOCKDIVISION_DIV1;
+  htim4.Init.RepetitionCounter = 0;
+  if( HAL_TIM_IC_Init( &htim4 ) != HAL_OK ) {
+    return 0;
+  }
+
+  TIM_ClockConfigTypeDef sClockSourceConfig;
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if( HAL_TIM_ConfigClockSource( &htim4, &sClockSourceConfig ) != HAL_OK ) {
+    return 0;
+  }
+
+  TIM_SlaveConfigTypeDef sSlaveConfig;
+  sSlaveConfig.SlaveMode     = TIM_SLAVEMODE_DISABLE;
+  sSlaveConfig.InputTrigger  = TIM_TS_TI1F_ED;
+  sSlaveConfig.TriggerFilter = 2;
+  if( HAL_TIM_SlaveConfigSynchronization( &htim4, &sSlaveConfig ) != HAL_OK ) {
+    return 0;
+  }
+
+  TIM_MasterConfigTypeDef sMasterConfig;
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode     = TIM_MASTERSLAVEMODE_DISABLE;
+  if( HAL_TIMEx_MasterConfigSynchronization( &htim4, &sMasterConfig ) != HAL_OK ) {
+    return 0;
+  }
+
+  if( HAL_TIM_IC_Start( &htim4, TIM_CHANNEL_1 ) != HAL_OK ) {
+    return 0;
+  }
+
+  return 1;
+}
+
 
 int MX_TIM5_Init()
 {
@@ -181,19 +226,18 @@ int MX_TIM5_Init()
   sSlaveConfig.InputTrigger     = TIM_TS_TI1FP1;
   sSlaveConfig.TriggerPolarity  = TIM_INPUTCHANNELPOLARITY_RISING;
   sSlaveConfig.TriggerPrescaler = TIM_ICPSC_DIV1;
-  sSlaveConfig.TriggerFilter    = 0;
+  sSlaveConfig.TriggerFilter    = 2;
   if( HAL_TIM_SlaveConfigSynchronization( &htim5, &sSlaveConfig ) != HAL_OK ) {
     return 0;
   }
 
 
-
-  // TIM_MasterConfigTypeDef sMasterConfig;
-  // sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-  // sMasterConfig.MasterSlaveMode     = TIM_MASTERSLAVEMODE_DISABLE;
-  // if( HAL_TIMEx_MasterConfigSynchronization( &htim5, &sMasterConfig ) != HAL_OK ) {
-  //   return 0;
-  // }
+  TIM_MasterConfigTypeDef sMasterConfig;
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode     = TIM_MASTERSLAVEMODE_DISABLE;
+  if( HAL_TIMEx_MasterConfigSynchronization( &htim5, &sMasterConfig ) != HAL_OK ) {
+    return 0;
+  }
 
   if( HAL_TIM_IC_Start_IT( &htim5, TIM_CHANNEL_1 ) != HAL_OK ) {
     return 0;

@@ -143,12 +143,15 @@ int main(void)
   if( MX_TIM3_Init() ) {
     lcdt.putch( '3' );
   }
+  if( MX_TIM4_Init() ) {
+    lcdt.putch( '4' );
+  }
   if( MX_TIM5_Init() ) {
     lcdt.putch( '5' );
   }
-  if( MX_TIM8_Init() ) {
-    lcdt.putch( '8' );
-  }
+  // if( MX_TIM8_Init() ) {
+  //   lcdt.putch( '8' );
+  // }
   MX_BTN_Init();
 
   t3freq = get_TIM_cnt_freq( TIM3 );
@@ -346,12 +349,10 @@ int measure_din_tim()
     din_dc[1] = 0;
   }
 
-  din_c[0] = t3ccr1;
-  din_c[1] = t3ccr2;
-  // din_c[0] = TIM4->CCR1;
-  // din_c[1] = TIM1->CCR1;
-  TIM4->CCR1 = 0;
-  TIM1->CCR1 = 0;
+  din_c[0] = TIM4->CNT;
+  din_c[1] = TIM1->CNT;
+  TIM4->CNT = 0;
+  TIM1->CNT = 0;
 
   return 1;
 }
@@ -455,8 +456,8 @@ int cmd_tim_info( int argc, const char * const * argv )
   os << "TIM3: ";  tim_print_cfg( TIM3 );
   os << "TIM4: ";  tim_print_cfg( TIM4 );
   os << "TIM5: ";  tim_print_cfg( TIM5 );
-  dump8( TIM3, 0x40 );
-  dump8( TIM5, 0x40 );
+  dump8( TIM1, 0x60 );
+  dump8( TIM5, 0x60 );
   return 0;
 }
 
