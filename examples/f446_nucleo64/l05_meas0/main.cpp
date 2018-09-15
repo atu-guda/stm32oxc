@@ -199,6 +199,7 @@ int cmd_test0( int argc, const char * const * argv )
     default: // script mode
       break;
   }
+  TIM1->CNT = 0; TIM3->CNT = 0; TIM4->CNT = 0; TIM5->CNT = 0;
 
   uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
   break_flag = 0;
