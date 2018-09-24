@@ -17,6 +17,8 @@ static const decltype( TIM_CHANNEL_1 ) all_chs[4] =
 static TIM_MasterConfigTypeDef sMasterConfig_def =
 { .MasterOutputTrigger = TIM_TRGO_RESET, .MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE };
 
+static int MX_TIM_MeasureFreq_Init(  TIM_HandleTypeDef *th, uint32_t presc );
+
 static int tim_base_config( TIM_HandleTypeDef *th );
 
 int tim_base_config( TIM_HandleTypeDef *th )
@@ -111,53 +113,9 @@ int MX_TIM2_Init()
 int MX_TIM3_Init()
 {
   htim3.Instance = TIM3;
-  htim3.Init.Prescaler     = calc_TIM_psc_for_cnt_freq( TIM3, 200000 ); // 0-20000 for 0.1s
-  htim3.Init.CounterMode   = TIM_COUNTERMODE_UP;
-  htim3.Init.Period        = 0xFFFF;
-  htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  if( HAL_TIM_IC_Init( &htim3 ) != HAL_OK ) {
-    return 0;
-  }
-
-  TIM_ClockConfigTypeDef sClockSourceConfig;
-  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  if( HAL_TIM_ConfigClockSource( &htim3, &sClockSourceConfig ) != HAL_OK )  {
-    return 0;
-  }
-
-  TIM_SlaveConfigTypeDef sSlaveConfig;
-  sSlaveConfig.SlaveMode        = TIM_SLAVEMODE_RESET;
-  sSlaveConfig.InputTrigger     = TIM_TS_TI1FP1;
-  sSlaveConfig.TriggerPolarity  = TIM_INPUTCHANNELPOLARITY_RISING;
-  sSlaveConfig.TriggerPrescaler = TIM_ICPSC_DIV1;
-  sSlaveConfig.TriggerFilter    = 0;
-  if( HAL_TIM_SlaveConfigSynchronization( &htim3, &sSlaveConfig ) != HAL_OK ) {
-    return 0;
-  }
-
-  TIM_IC_InitTypeDef sConfig;
-  sConfig.ICPrescaler = TIM_ICPSC_DIV1;
-  sConfig.ICFilter    = 4;
-  sConfig.ICPolarity  = TIM_INPUTCHANNELPOLARITY_RISING;
-  sConfig.ICSelection = TIM_ICSELECTION_DIRECTTI;
-  if( HAL_TIM_IC_ConfigChannel( &htim3, &sConfig, TIM_CHANNEL_1 ) != HAL_OK ) {
-    return 0;
-  }
-
-  sConfig.ICPolarity  = TIM_INPUTCHANNELPOLARITY_FALLING;
-  sConfig.ICSelection = TIM_ICSELECTION_INDIRECTTI;
-  if( HAL_TIM_IC_ConfigChannel( &htim3, &sConfig, TIM_CHANNEL_2 ) != HAL_OK ) {
-    return 0;
-  }
-
-  if( HAL_TIM_IC_Start_IT( &htim3, TIM_CHANNEL_1 ) != HAL_OK ) {
-    return 0;
-  }
-  if( HAL_TIM_IC_Start_IT( &htim3, TIM_CHANNEL_2 ) != HAL_OK ) {
-    return 0;
-  }
-
-  return 1;
+  // uint32_t presc = calc_TIM_psc_for_cnt_freq( TIM3, 200000 ); // 0-20000 for 0.1s
+  uint32_t presc = calc_TIM_psc_for_cnt_freq( TIM3, 200000 );
+  return MX_TIM_MeasureFreq_Init( &htim3, presc );
 }
 
 int MX_TIM4_Init()
@@ -201,15 +159,17 @@ int MX_TIM4_Init()
   return 1;
 }
 
-
-int MX_TIM5_Init()
+int MX_TIM_MeasureFreq_Init(  TIM_HandleTypeDef *th, uint32_t presc )
 {
-  htim5.Instance           = TIM5;
-  htim5.Init.Prescaler     = 0;
-  htim5.Init.CounterMode   = TIM_COUNTERMODE_UP;
-  htim5.Init.Period        = 0xFFFFFFFF;
-  htim5.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  if( HAL_TIM_IC_Init( &htim5 ) != HAL_OK ) {
+  if( !th ) {
+    return 0;
+  }
+  // th->Instance           = TIMn;
+  th->Init.Prescaler     = presc;
+  th->Init.CounterMode   = TIM_COUNTERMODE_UP;
+  th->Init.Period        = 0xFFFFFFFF;
+  th->Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  if( HAL_TIM_IC_Init( th ) != HAL_OK ) {
     return 0;
   }
 
@@ -218,13 +178,13 @@ int MX_TIM5_Init()
   sConfig.ICFilter    = 0;
   sConfig.ICPolarity  = TIM_INPUTCHANNELPOLARITY_RISING;
   sConfig.ICSelection = TIM_ICSELECTION_DIRECTTI;
-  if( HAL_TIM_IC_ConfigChannel( &htim5, &sConfig, TIM_CHANNEL_1 ) != HAL_OK ) {
+  if( HAL_TIM_IC_ConfigChannel( th, &sConfig, TIM_CHANNEL_1 ) != HAL_OK ) {
     return 0;
   }
 
   sConfig.ICPolarity  = TIM_INPUTCHANNELPOLARITY_FALLING;
   sConfig.ICSelection = TIM_ICSELECTION_INDIRECTTI;
-  if( HAL_TIM_IC_ConfigChannel( &htim5, &sConfig, TIM_CHANNEL_2 ) != HAL_OK ) {
+  if( HAL_TIM_IC_ConfigChannel( th, &sConfig, TIM_CHANNEL_2 ) != HAL_OK ) {
     return 0;
   }
 
@@ -233,27 +193,34 @@ int MX_TIM5_Init()
   sSlaveConfig.InputTrigger     = TIM_TS_TI1FP1;
   sSlaveConfig.TriggerPolarity  = TIM_INPUTCHANNELPOLARITY_RISING;
   sSlaveConfig.TriggerPrescaler = TIM_ICPSC_DIV1;
-  sSlaveConfig.TriggerFilter    = 2;
-  if( HAL_TIM_SlaveConfigSynchronization( &htim5, &sSlaveConfig ) != HAL_OK ) {
+  sSlaveConfig.TriggerFilter    = 4;
+  if( HAL_TIM_SlaveConfigSynchronization( th, &sSlaveConfig ) != HAL_OK ) {
     return 0;
   }
-
 
   TIM_MasterConfigTypeDef sMasterConfig;
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
   sMasterConfig.MasterSlaveMode     = TIM_MASTERSLAVEMODE_DISABLE;
-  if( HAL_TIMEx_MasterConfigSynchronization( &htim5, &sMasterConfig ) != HAL_OK ) {
+  if( HAL_TIMEx_MasterConfigSynchronization( th, &sMasterConfig ) != HAL_OK ) {
     return 0;
   }
 
-  if( HAL_TIM_IC_Start_IT( &htim5, TIM_CHANNEL_1 ) != HAL_OK ) {
+  if( HAL_TIM_IC_Start_IT( th, TIM_CHANNEL_1 ) != HAL_OK ) {
     return 0;
   }
-  if( HAL_TIM_IC_Start_IT( &htim5, TIM_CHANNEL_2 ) != HAL_OK ) {
+  if( HAL_TIM_IC_Start_IT( th, TIM_CHANNEL_2 ) != HAL_OK ) {
     return 0;
   }
 
   return 1;
+}
+
+
+
+int MX_TIM5_Init()
+{
+  htim5.Instance = TIM5;
+  return MX_TIM_MeasureFreq_Init( &htim5, 0 );
 }
 
 
@@ -322,8 +289,9 @@ void HAL_TIM_IC_MspInit( TIM_HandleTypeDef* tim_baseHandle )
 {
   GPIO_InitTypeDef gio;
   gio.Mode  = GPIO_MODE_AF_PP;
-  gio.Pull  = GPIO_NOPULL;
-  gio.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+  // gio.Pull  = GPIO_NOPULL;
+  gio.Pull  = GPIO_PULLDOWN;
+  gio.Speed = GPIO_SPEED_FREQ_LOW;
 
   if( tim_baseHandle->Instance == TIM3 ) {
     __HAL_RCC_TIM3_CLK_ENABLE();
@@ -332,7 +300,7 @@ void HAL_TIM_IC_MspInit( TIM_HandleTypeDef* tim_baseHandle )
     gio.Alternate = GPIO_AF2_TIM3;
     HAL_GPIO_Init( GPIOA, &gio );
 
-    HAL_NVIC_SetPriority( TIM3_IRQn, 3, 0 );
+    HAL_NVIC_SetPriority( TIM3_IRQn, 2, 0 );
     HAL_NVIC_EnableIRQ( TIM3_IRQn );
 
   } else if( tim_baseHandle->Instance == TIM5 ) {

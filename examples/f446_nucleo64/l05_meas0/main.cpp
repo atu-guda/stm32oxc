@@ -65,6 +65,7 @@ HD44780_i2c lcdt( i2cd, 0x27 );
 
 volatile uint32_t adc_state = 0; // 0 - pre, 1 - done, 2 + -  error
 volatile uint32_t  t3freq = 84000000, t3ccr1, t3ccr2, t5freq = 84000000, t5ccr1, t5ccr2;
+volatile uint32_t  t3_i = 0, t5_i = 0;
 
 float    time_f = 0;
 int      time_i = 0;
@@ -117,8 +118,9 @@ int main(void)
   UVAR('t') = 100;
   UVAR('n') = 20;
   UVAR('f') = 10;
+  UVAR('m') = 1; // for debug: freq
 
-  UVAR('e') = i2c_default_init( i2ch /*, 400000 */ );
+  i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
 
   lcdt.init_4b();
@@ -334,21 +336,26 @@ int measure_din()
 
 int measure_din_tim()
 {
-  if( t5ccr1 > 0 ) {
+  static uint32_t old_t3_i = 0, old_t5_i = 0;
+  if( t5ccr1 > 0  &&  old_t5_i != t5_i ) {
     din_f[0]  = (float)(t5freq) / t5ccr1;
     din_dc[0] = (float)(t5ccr2) / t5ccr1;
   } else {
     din_f[0]  = 0;
     din_dc[0] = 0;
   }
+  old_t5_i = t5_i;
 
-  if( t3ccr1 > 0 ) {
+  if( t3ccr1 > 0  &&  old_t3_i != t3_i ) {
     din_f[1]  = (float)(t3freq) / t3ccr1;
     din_dc[1] = (float)(t3ccr2) / t3ccr1;
   } else {
     din_f[1]  = 0;
     din_dc[1] = 0;
   }
+  old_t3_i = t3_i;
+  UVAR('i') = t3ccr1;
+  UVAR('j') = t3ccr2;
 
   din_c[0] = TIM4->CNT;
   din_c[1] = TIM1->CNT;
@@ -457,7 +464,7 @@ int cmd_tim_info( int argc, const char * const * argv )
   os << "TIM3: ";  tim_print_cfg( TIM3 );
   os << "TIM4: ";  tim_print_cfg( TIM4 );
   os << "TIM5: ";  tim_print_cfg( TIM5 );
-  dump8( TIM1, 0x60 );
+  dump8( TIM3, 0x60 );
   dump8( TIM5, 0x60 );
   return 0;
 }
@@ -587,6 +594,7 @@ void DMA2_Stream0_IRQHandler(void)
 void TIM3_IRQHandler(void)
 {
   HAL_TIM_IRQHandler( &htim3 );
+  // HAL_TIM_IC_CaptureCallback( &htim3 );
 }
 
 void TIM5_IRQHandler(void)
@@ -596,17 +604,49 @@ void TIM5_IRQHandler(void)
 
 void HAL_TIM_IC_CaptureCallback( TIM_HandleTypeDef *htim )
 {
-  if( htim->Instance == TIM3 ) {
+  uint32_t sr;
+  auto tim = htim->Instance;
+  if( tim == TIM3 ) {
     if( htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1 ) {
-      t3ccr1 = TIM3->CCR1;
-      t3ccr2 = TIM3->CCR2;
+      sr = TIM3->SR;
+      UVAR('a') = sr;
+      if( ! ( sr & ( TIM_SR_CC2OF | TIM_SR_CC2OF ) ) ) {
+        t3ccr1 = TIM3->CCR1;
+        t3ccr2 = TIM3->CCR2;
+        UVAR('b') = 1;
+      } else {
+        t3ccr1 = 0;
+        t3ccr2 = 0;
+        UVAR('b') = 0;
+        UVAR('k') = sr;
+        ++UVAR('g');
+      }
+      ++t3_i;
+      TIM3->SR = 0;
     }
-  } else if( htim->Instance == TIM5 ) {
-    if( htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1 ) {
-      t5ccr1 = TIM5->CCR1;
-      t5ccr2 = TIM5->CCR2;
-    }
+    return;
   }
+
+  if( tim == TIM5 ) {
+    if( htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1 ) {
+      sr = TIM5->SR;
+      UVAR('c') = sr;
+      if(  sr & ( TIM_SR_CC2OF | TIM_SR_CC2OF ) ) {
+        t5ccr1 = 0;
+        t5ccr2 = 0;
+        UVAR('d') = 0;
+        UVAR('l') = sr;
+      } else {
+        t5ccr1 = TIM5->CCR1;
+        t5ccr2 = TIM5->CCR2;
+        UVAR('d') = 1;
+      }
+      TIM5->SR = 0;
+      ++t5_i;
+    }
+    return;
+  }
+  ++UVAR('e');
 }
 
   // test code size consumption for STL parts
