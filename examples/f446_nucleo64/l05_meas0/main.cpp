@@ -19,7 +19,8 @@ using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
 BOARD_DEFINE_LEDS;
-// PinsOut leds( BOARD_LEDS_GPIO, BOARD_LEDS_OFS, BOARD_N_LEDS );
+
+// PinsOut ldbg( GPIOB, 13, 3 ); // B13:B15 (hides SPI2, but used onlt for debug)
 
 BOARD_CONSOLE_DEFINES;
 
@@ -114,6 +115,7 @@ int lcd_output();
 int main(void)
 {
   BOARD_PROLOG;
+  // ldbg.initHW();
 
   UVAR('t') = 100;
   UVAR('n') = 20;
@@ -336,24 +338,24 @@ int measure_din()
 
 int measure_din_tim()
 {
-  static uint32_t old_t3_i = 0, old_t5_i = 0;
-  if( t5ccr1 > 0  &&  old_t5_i != t5_i ) {
+  // static uint32_t old_t3_i = 0, old_t5_i = 0; // TODO: more correct
+  if( t5ccr1 > 0 /*  &&  old_t5_i != t5_i */ ) {
     din_f[0]  = (float)(t5freq) / t5ccr1;
     din_dc[0] = (float)(t5ccr2) / t5ccr1;
   } else {
     din_f[0]  = 0;
     din_dc[0] = 0;
   }
-  old_t5_i = t5_i;
+  // old_t5_i = t5_i;
 
-  if( t3ccr1 > 0  &&  old_t3_i != t3_i ) {
+  if( t3ccr1 > 0  /* &&  old_t3_i != t3_i */ ) {
     din_f[1]  = (float)(t3freq) / t3ccr1;
     din_dc[1] = (float)(t3ccr2) / t3ccr1;
   } else {
     din_f[1]  = 0;
     din_dc[1] = 0;
   }
-  old_t3_i = t3_i;
+  // old_t3_i = t3_i;
   UVAR('i') = t3ccr1;
   UVAR('j') = t3ccr2;
 
@@ -593,17 +595,22 @@ void DMA2_Stream0_IRQHandler(void)
 
 void TIM3_IRQHandler(void)
 {
+  // ldbg.set( BIT0 );
   HAL_TIM_IRQHandler( &htim3 );
   // HAL_TIM_IC_CaptureCallback( &htim3 );
+  // ldbg.reset( BIT0 );
 }
 
 void TIM5_IRQHandler(void)
 {
+  // ldbg.set( BIT1 );
   HAL_TIM_IRQHandler( &htim5 );
+  // ldbg.reset( BIT1 );
 }
 
 void HAL_TIM_IC_CaptureCallback( TIM_HandleTypeDef *htim )
 {
+  // ldbg.set( BIT2 );
   uint32_t sr;
   auto tim = htim->Instance;
   if( tim == TIM3 ) {
@@ -624,6 +631,7 @@ void HAL_TIM_IC_CaptureCallback( TIM_HandleTypeDef *htim )
       ++t3_i;
       TIM3->SR = 0;
     }
+    // ldbg.reset( BIT2 );
     return;
   }
 
@@ -644,8 +652,10 @@ void HAL_TIM_IC_CaptureCallback( TIM_HandleTypeDef *htim )
       TIM5->SR = 0;
       ++t5_i;
     }
+    // ldbg.reset( BIT2 );
     return;
   }
+  // ldbg.reset( BIT2 );
   ++UVAR('e');
 }
 
