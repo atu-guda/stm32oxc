@@ -39,7 +39,9 @@ CmdInfo CMDINFO_PWM { "pwm", 'W', cmd_pwm, " v0 v1 v2 v3 - set pwm output"  };
 int cmd_tim_info( int argc, const char * const * argv );
 CmdInfo CMDINFO_TIMINFO { "tim_info", 0, cmd_tim_info, " - info about timers"  };
 int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
+CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - start loop"  };
+int cmd_exch( int argc, const char * const * argv );
+CmdInfo CMDINFO_EXCH { "exch", 'X', cmd_exch, "[user_in_data] - one step"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -49,6 +51,7 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_PWM,
   &CMDINFO_TIMINFO,
   &CMDINFO_TEST0,
+  &CMDINFO_EXCH,
   nullptr
 };
 
@@ -99,6 +102,10 @@ int   din_c[n_din_c];
 float lcd[n_lcd];
 int   lcd_b[n_lcd_b];
 float tmp[n_tmp];
+
+bool show_lcd = true;
+
+int one_step();
 
 int measure_adc();
 int measure_din();
@@ -176,6 +183,44 @@ int main(void)
   return 0;
 }
 
+int one_step()
+{
+  int proc_rc;
+  measure_adc();
+  measure_din_tim();
+  measure_uin();
+
+
+  // process data
+  switch( UVAR('m') ) {
+    case 0: // ADC/DAC mode:
+      proc_rc = process_mode0();
+      break;
+    case 1: // freq/duty cycle/counter mode
+      proc_rc = process_mode1();
+      break;
+    default: // script mode
+      proc_rc = process_mode2();
+      break;
+  }
+
+  if( proc_rc < 1 ) {
+    return 0;
+  }
+
+  // output data
+
+  dac_output();
+  pwm_output();
+  tty_output();
+  if( show_lcd ) {
+    lcd_output();
+  }
+
+  leds.toggle( BIT0 );
+  return 1;
+}
+
 
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
@@ -186,7 +231,7 @@ int cmd_test0( int argc, const char * const * argv )
   STDOUT_os;
   os << "# n= " << n << " t= " << t_step << NL; os.flush();
 
-  bool show_lcd = true;
+  show_lcd = true;
   if( t_step < 50 ) {
     show_lcd = false;
     lcdt.cls();
@@ -212,45 +257,19 @@ int cmd_test0( int argc, const char * const * argv )
     uint32_t ct = HAL_GetTick();
     time_i = ct - tm00;
     time_f = time_i * 0.001;
-    int proc_rc = 0;
 
-    measure_adc();
     measure_din();
-    measure_din_tim();
-    measure_uin();
-
-
-    // process data
-    switch( UVAR('m') ) {
-      case 0: // ADC/DAC mode:
-        proc_rc = process_mode0();
-        break;
-      case 1: // freq/duty cycle/counter mode
-        proc_rc = process_mode1();
-        break;
-      default: // script mode
-        proc_rc = process_mode2();
-        break;
-    }
+    int proc_rc = one_step();
 
     if( proc_rc < 1 ) {
       os << "# err: proc_rc = " << proc_rc << NL;
       break;
     }
 
-    // output data
-
-    dac_output();
-    pwm_output();
-    tty_output();
-    if( show_lcd || i == (n-1) ) {
-      lcd_output();
-    }
-
-    leds.toggle( BIT1 );
-
     delay_ms_until_brk( &tm0, t_step );
   }
+
+  lcd_output();
 
   pr( NL );
 
@@ -434,6 +453,33 @@ int lcd_output()
 
 // ----------------------- commands ---------
 
+int cmd_exch( int argc, const char * const * argv )
+{
+  // int n  = arg2long_d( 1, argc, argv, UVAR('n'), 1,   100000000 );
+  // uint32_t t_step = UVAR('t');
+
+  STDOUT_os;
+
+  // TODO: config / start
+
+  uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
+  break_flag = 0;
+
+  uint32_t ct = HAL_GetTick();
+  time_i = ct - tm00;
+  time_f = time_i * 0.001;
+
+  measure_din();
+  int proc_rc = one_step();
+
+  if( proc_rc < 1 ) {
+    os << "# err: proc_rc = " << proc_rc << NL;
+    return 1;
+  }
+
+  pr( NL );
+  return 0;
+}
 
 int cmd_dac( int argc, const char * const * argv )
 {
