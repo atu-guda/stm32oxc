@@ -71,8 +71,9 @@ volatile uint32_t adc_state = 0; // 0 - pre, 1 - done, 2 + -  error
 volatile uint32_t  t3freq = 84000000, t3ccr1, t3ccr2, t5freq = 84000000, t5ccr1, t5ccr2;
 volatile uint32_t  t3_i = 0, t5_i = 0;
 
-float    time_f = 0;
-int      time_i = 0;
+float    time_f  = 0;
+int      time_i  = 0;
+uint32_t ttick_0 = 0; // time in ticks ( ms, start value)
 
 float uin[n_uin];
 unsigned nu_uin  = 4;
@@ -104,8 +105,10 @@ int   lcd_b[n_lcd_b];
 float tmp[n_tmp];
 
 bool show_lcd = true;
+bool meas_inited = false;
 
 int one_step();
+int init_meas();
 
 int measure_adc();
 int measure_din();
@@ -221,6 +224,24 @@ int one_step()
   return 1;
 }
 
+int init_meas()
+{
+  switch( UVAR('m') ) {
+    case 0: // ADC/DAC mode
+      nu_uout = 4; nu_uout_i = 4;
+      break;
+    case 1: // freq/duty cycle/counter mode
+      nu_uout = 4; nu_uout_i = 6;
+      break;
+    default: // script mode
+      break;
+  }
+  TIM1->CNT = 0; TIM3->CNT = 0; TIM4->CNT = 0; TIM5->CNT = 0;
+
+  ttick_0  = HAL_GetTick();
+  meas_inited = true;
+  return 1;
+}
 
 
 int process_mode0()
@@ -415,24 +436,15 @@ int cmd_tloop( int argc, const char * const * argv )
     lcdt.puts( "t < 50 ms!  " );
   }
 
-  switch( UVAR('m') ) {
-    case 0: // ADC/DAC mode
-      nu_uout = 4; nu_uout_i = 4;
-      break;
-    case 1: // freq/duty cycle/counter mode
-      nu_uout = 4; nu_uout_i = 6;
-      break;
-    default: // script mode
-      break;
-  }
-  TIM1->CNT = 0; TIM3->CNT = 0; TIM4->CNT = 0; TIM5->CNT = 0;
+  init_meas();
 
-  uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
+  uint32_t ttick_base = ttick_0;
+
   break_flag = 0;
   for( int i=0; i<n && !break_flag; ++i ) {
 
     uint32_t ct = HAL_GetTick();
-    time_i = ct - tm00;
+    time_i = ct - ttick_0;
     time_f = time_i * 0.001;
 
     measure_din();
@@ -443,10 +455,11 @@ int cmd_tloop( int argc, const char * const * argv )
       break;
     }
 
-    delay_ms_until_brk( &tm0, t_step );
+    delay_ms_until_brk( &ttick_base, t_step );
   }
 
   lcd_output();
+  meas_inited = false;
 
   pr( NL );
 
@@ -460,16 +473,15 @@ int cmd_exch( int argc, const char * const * argv )
 
   STDOUT_os;
 
-  // TODO: config / start
-
-  uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
-  break_flag = 0;
+  if( ! meas_inited ) {
+    init_meas();
+  }
 
   uint32_t ct = HAL_GetTick();
-  time_i = ct - tm00;
+  time_i = ct - ttick_0;
   time_f = time_i * 0.001;
 
-  measure_din();
+  measure_din(); // NOT, convert cmdline
   int proc_rc = one_step();
 
   if( proc_rc < 1 ) {
@@ -477,7 +489,7 @@ int cmd_exch( int argc, const char * const * argv )
     return 1;
   }
 
-  pr( NL );
+  // pr( NL );
   return 0;
 }
 
