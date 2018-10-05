@@ -38,8 +38,8 @@ CmdInfo CMDINFO_PWM { "pwm", 'W', cmd_pwm, " v0 v1 v2 v3 - set pwm output"  };
 
 int cmd_tim_info( int argc, const char * const * argv );
 CmdInfo CMDINFO_TIMINFO { "tim_info", 0, cmd_tim_info, " - info about timers"  };
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - start loop"  };
+int cmd_tloop( int argc, const char * const * argv );
+CmdInfo CMDINFO_TEST0 { "tloop", 'T', cmd_tloop, " - start loop"  };
 int cmd_exch( int argc, const char * const * argv );
 CmdInfo CMDINFO_EXCH { "exch", 'X', cmd_exch, "[user_in_data] - one step"  };
 
@@ -222,59 +222,6 @@ int one_step()
 }
 
 
-// TEST0
-int cmd_test0( int argc, const char * const * argv )
-{
-  int n  = arg2long_d( 1, argc, argv, UVAR('n'), 1,   100000000 );
-  uint32_t t_step = UVAR('t');
-
-  STDOUT_os;
-  os << "# n= " << n << " t= " << t_step << NL; os.flush();
-
-  show_lcd = true;
-  if( t_step < 50 ) {
-    show_lcd = false;
-    lcdt.cls();
-    lcdt.puts( "t < 50 ms!  " );
-  }
-
-  switch( UVAR('m') ) {
-    case 0: // ADC/DAC mode
-      nu_uout = 4; nu_uout_i = 4;
-      break;
-    case 1: // freq/duty cycle/counter mode
-      nu_uout = 4; nu_uout_i = 6;
-      break;
-    default: // script mode
-      break;
-  }
-  TIM1->CNT = 0; TIM3->CNT = 0; TIM4->CNT = 0; TIM5->CNT = 0;
-
-  uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
-  break_flag = 0;
-  for( int i=0; i<n && !break_flag; ++i ) {
-
-    uint32_t ct = HAL_GetTick();
-    time_i = ct - tm00;
-    time_f = time_i * 0.001;
-
-    measure_din();
-    int proc_rc = one_step();
-
-    if( proc_rc < 1 ) {
-      os << "# err: proc_rc = " << proc_rc << NL;
-      break;
-    }
-
-    delay_ms_until_brk( &tm0, t_step );
-  }
-
-  lcd_output();
-
-  pr( NL );
-
-  return 0;
-}
 
 int process_mode0()
 {
@@ -452,6 +399,59 @@ int lcd_output()
 }
 
 // ----------------------- commands ---------
+
+int cmd_tloop( int argc, const char * const * argv )
+{
+  int n  = arg2long_d( 1, argc, argv, UVAR('n'), 1,   100000000 );
+  uint32_t t_step = UVAR('t');
+
+  STDOUT_os;
+  os << "# n= " << n << " t= " << t_step << NL; os.flush();
+
+  show_lcd = true;
+  if( t_step < 50 ) {
+    show_lcd = false;
+    lcdt.cls();
+    lcdt.puts( "t < 50 ms!  " );
+  }
+
+  switch( UVAR('m') ) {
+    case 0: // ADC/DAC mode
+      nu_uout = 4; nu_uout_i = 4;
+      break;
+    case 1: // freq/duty cycle/counter mode
+      nu_uout = 4; nu_uout_i = 6;
+      break;
+    default: // script mode
+      break;
+  }
+  TIM1->CNT = 0; TIM3->CNT = 0; TIM4->CNT = 0; TIM5->CNT = 0;
+
+  uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
+  break_flag = 0;
+  for( int i=0; i<n && !break_flag; ++i ) {
+
+    uint32_t ct = HAL_GetTick();
+    time_i = ct - tm00;
+    time_f = time_i * 0.001;
+
+    measure_din();
+    int proc_rc = one_step();
+
+    if( proc_rc < 1 ) {
+      os << "# err: proc_rc = " << proc_rc << NL;
+      break;
+    }
+
+    delay_ms_until_brk( &tm0, t_step );
+  }
+
+  lcd_output();
+
+  pr( NL );
+
+  return 0;
+}
 
 int cmd_exch( int argc, const char * const * argv )
 {
