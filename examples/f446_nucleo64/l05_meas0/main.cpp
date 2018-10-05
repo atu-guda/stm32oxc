@@ -113,6 +113,7 @@ int init_meas();
 int measure_adc();
 int measure_din();
 int measure_din_tim();
+int convert_uin( int argc, const char * const * argv );
 int measure_uin();
 
 int process_mode0();
@@ -130,7 +131,7 @@ int main(void)
   UVAR('t') = 100;
   UVAR('n') = 20;
   UVAR('f') = 10;
-  UVAR('m') = 1; // for debug: freq
+  UVAR('m') = 0;
 
   i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
@@ -191,7 +192,6 @@ int one_step()
   int proc_rc;
   measure_adc();
   measure_din_tim();
-  measure_uin();
 
 
   // process data
@@ -228,10 +228,10 @@ int init_meas()
 {
   switch( UVAR('m') ) {
     case 0: // ADC/DAC mode
-      nu_uout = 4; nu_uout_i = 4;
+      nu_uout = 4; nu_uout_i = 4; nu_uin = 6; nu_uin_i = 0; // 6 = 2 DAC + 2 PWM
       break;
     case 1: // freq/duty cycle/counter mode
-      nu_uout = 4; nu_uout_i = 6;
+      nu_uout = 4; nu_uout_i = 6; nu_uin = 2; nu_uin_i = 4; // TODO: fix uin
       break;
     default: // script mode
       break;
@@ -250,15 +250,15 @@ int process_mode0()
     uout[j] = lcd[j] = adc[j];
     uout_i[j] = lcd_b[j] = din[j];
   }
-  // TODO: dac,
-  // dac[0] = uin[0]; dac[1] = uin[1];
+  dac[0] = uin[0]; dac[1] = uin[1];
+  pwm[0] = uin[2]; pwm[1] = uin[3]; pwm[2] = uin[4]; pwm[3] = uin[5];
   // here test only
-  dac[0] = 2.0 - adc[0];
-  dac[1] = adc[0] - adc[1];
-  pwm[0] = 0.25 * adc[0];
-  pwm[1] = 0.5;
-  pwm_f =  2 + (int)( adc[0] * 100 ); // TODO: use it!
-  UVAR('f') = pwm_f;
+  // dac[0] = 2.0 - adc[0];
+  // dac[1] = adc[0] - adc[1];
+  // pwm[0] = 0.25 * adc[0];
+  // pwm[1] = 0.5;
+  // pwm_f =  2 + (int)( adc[0] * 100 ); // TODO: use it!
+  // UVAR('f') = pwm_f;
   return 1;
 }
 
@@ -366,6 +366,19 @@ int measure_uin()
   return 1;
 }
 
+int convert_uin( int argc, const char * const * argv )
+{
+  int carg = 1;
+
+  for( unsigned i=0; carg < argc  &&  i < nu_uin; ++i, ++carg ) {
+    uin[i] = strtof( argv[carg], 0 );
+  }
+  for( unsigned i=0; carg < argc  &&  i < nu_uin_i; ++i, ++carg ) {
+    uin_i[i] = strtol( argv[carg], 0, 0 );
+  }
+  return carg - 1;
+}
+
 int tty_output()
 {
   STDOUT_os;
@@ -468,9 +481,6 @@ int cmd_tloop( int argc, const char * const * argv )
 
 int cmd_exch( int argc, const char * const * argv )
 {
-  // int n  = arg2long_d( 1, argc, argv, UVAR('n'), 1,   100000000 );
-  // uint32_t t_step = UVAR('t');
-
   STDOUT_os;
 
   if( ! meas_inited ) {
@@ -481,7 +491,7 @@ int cmd_exch( int argc, const char * const * argv )
   time_i = ct - ttick_0;
   time_f = time_i * 0.001;
 
-  measure_din(); // NOT, convert cmdline
+  convert_uin( argc, argv );
   int proc_rc = one_step();
 
   if( proc_rc < 1 ) {
@@ -489,7 +499,6 @@ int cmd_exch( int argc, const char * const * argv )
     return 1;
   }
 
-  // pr( NL );
   return 0;
 }
 
