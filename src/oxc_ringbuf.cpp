@@ -182,11 +182,25 @@ Chst RingBuf::get_nolock()
   return c;
 }
 
+Chst RingBuf::peek_nolock()
+{
+  if( sz < 1 ) {
+    return Chst( '\0', Chst::st_empty );
+  }
+  return b[e];
+}
+
 
 Chst RingBuf::get()
 {
   MuLock lock( mu );
   return get_nolock();
+}
+
+Chst RingBuf::peek()
+{
+  MuLock lock( mu );
+  return peek_nolock();
 }
 
 Chst RingBuf::tryGet()
@@ -197,6 +211,16 @@ Chst RingBuf::tryGet()
   }
   return Chst( '\0', Chst::st_lock );
 }
+
+Chst RingBuf::tryPeek()
+{
+  MuTryLock lock( mu );
+  if( lock.wasAcq() ) {
+    return peek_nolock();
+  }
+  return Chst( '\0', Chst::st_lock );
+}
+
 
 
 int RingBuf::gets_nolock( char *d, unsigned max_len )
@@ -234,5 +258,44 @@ unsigned RingBuf::tryGets( char *d, unsigned max_len )
     return gets_nolock( d, max_len );
   }
   return 0;
+}
+
+unsigned RingBuf::tryGetLine( char *d, unsigned max_len )
+{
+  if( !d  || max_len < 1 ) {
+    return 0;
+  }
+  MuTryLock lock( mu );
+  if( !lock.wasAcq() ) {
+    return 0;
+  }
+
+  if( sz < 1 ) {
+    return 0;
+  }
+
+  unsigned line_sz = 0, cc = e;
+  for( unsigned j=0; j<sz; ++j ) {
+    char c = b[cc];
+    if( c == 13 ) { // KEY_CR
+      line_sz = j; break;
+    }
+    ++cc;
+    if( cc >= cap ) {
+      cc = 0;
+    }
+  }
+
+  if( line_sz < 1  ||  line_sz >= max_len ) {
+    return 0;
+  }
+
+  for( unsigned j=0; j<line_sz; ++j ) {
+    auto c = get_nolock();
+    *d++ = c.c;
+  }
+  get_nolock(); // eat CR
+  *d = '\0';
+  return line_sz;
 }
 

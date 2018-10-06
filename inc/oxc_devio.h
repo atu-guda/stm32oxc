@@ -35,6 +35,7 @@ class DevIO : public DevOut, public DevIn {
 
    virtual void reset_in() override { ibuf.reset(); }
    virtual Chst tryGet() override { return ibuf.tryGet(); }
+   virtual unsigned tryGetLine( char *d, unsigned max_len ) override { return ibuf.tryGetLine( d, max_len ); } ;
    virtual Chst getc( int w_tick = 0 ) override;
    virtual Chst getc_p( int w_tick = 0 ) = 0;
    virtual int read( char *s, int l, int w_tick = 0 ) override; // w_tick - for every

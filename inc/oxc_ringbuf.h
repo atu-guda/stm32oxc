@@ -32,9 +32,12 @@ class RingBuf {
    int tryPuts( const char *s ); // try-blocks, as many as possible
    int tryPuts( const char *s, unsigned l ); // try-blocks, given length
    Chst get(); // blocks
+   Chst peek(); // blocks
    Chst tryGet(); // noblocks
-   unsigned gets( char *d, unsigned max_len );
+   Chst tryPeek(); // noblocks
+   unsigned gets( char *d, unsigned max_len ); // TODO: move to base class
    unsigned tryGets( char *d, unsigned max_len );
+   unsigned tryGetLine( char *d, unsigned max_len ); // only if CR or LF present
    void reset() { MuLock lock( mu ); reset_nolock(); };
    void reset_nolock() { s = e = sz = 0; }
    unsigned set_n_wait( unsigned n ) { unsigned tmp = n_wait; n_wait = n; return tmp; }
@@ -42,11 +45,12 @@ class RingBuf {
   protected:
    int  put_nolock( char c ); // false = fail due to full
    Chst get_nolock();
+   Chst peek_nolock();
    int puts_nolock( const char *s );
    int puts_nolock( const char *s, unsigned l );
    int gets_nolock( char *d, unsigned max_len );
   protected:
-   char *b;
+   char *b;                   //* buffer
    const unsigned cap;        //* capacity
    volatile unsigned sz = 0;  //* size
    volatile unsigned s  = 0;  //* start index (over the head)

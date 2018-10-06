@@ -356,14 +356,40 @@ int measure_din_tim()
 
 int measure_uin()
 {
-  // fake for now
+  char buf[128];
+  unsigned sz = tryGetLine( 0, buf, sizeof(buf) );
+  if( sz < 2  ||  buf[0] != '=' ) {
+    return 0;
+  }
+
+  char *b = buf+1;
+  char *eptr;
+  int ncvt = 0;
+
   for( unsigned i=0; i < nu_uin; ++i ) {
-    uin[i] = 0.1 * i;
+    float v = strtof( b, &eptr );
+    if( b == eptr ) {
+      return ncvt;
+    }
+    uin[i] = v; ++ncvt;
+    if( *eptr == '\0' ) {
+      return ncvt;
+    }
+    b = eptr;
   }
+
   for( unsigned i=0; i < nu_uin_i; ++i ) {
-    uin_i[i] = 10 - i;
+    int v = strtol( b, &eptr, 0 );
+    if( b == eptr ) {
+      return ncvt;
+    }
+    uin_i[i] = v; ++ncvt;
+    if( *eptr == '\0' ) {
+      return ncvt;
+    }
+    b = eptr;
   }
-  return 1;
+  return ncvt;
 }
 
 int convert_uin( int argc, const char * const * argv )
@@ -460,7 +486,7 @@ int cmd_tloop( int argc, const char * const * argv )
     time_i = ct - ttick_0;
     time_f = time_i * 0.001;
 
-    measure_din();
+    measure_uin();
     int proc_rc = one_step();
 
     if( proc_rc < 1 ) {
