@@ -13,6 +13,7 @@
 #include <oxc_hd44780_i2c.h>
 
 #include "meas0.h"
+#include "tcalclang.h"
 
 using namespace std;
 using namespace SMLRL;
@@ -185,6 +186,15 @@ int main(void)
   std_main_loop_nortos( &srl, nullptr );
 
   return 0;
+}
+
+OutStream& operator<<( OutStream &os, float rhs )
+{
+  char buf[32];
+
+  snprintf( buf, sizeof(buf), "%#g", rhs );
+  os << buf;
+  return os;
 }
 
 int one_step()
@@ -408,14 +418,11 @@ int convert_uin( int argc, const char * const * argv )
 int tty_output()
 {
   STDOUT_os;
-  char buf[32];
 
-  snprintf( buf, sizeof(buf), "%#g ", time_f );
-  os << buf;
+  os << time_f << ' ';
 
   for( unsigned i=0; i < nu_uout; ++i ) {
-    snprintf( buf, sizeof(buf), "%#g", uout[i] );
-    os << buf << ' ';
+    os << uout[i] << ' ';
   }
 
   for( unsigned i=0; i < nu_uout_i; ++i ) {
@@ -535,10 +542,7 @@ int cmd_dac( int argc, const char * const * argv )
   dac_output();
 
   STDOUT_os;
-  char buf0[16], buf1[16];
-  snprintf( buf0, sizeof(buf0), "%f", dac[0] );
-  snprintf( buf1, sizeof(buf1), "%f", dac[1] );
-  os << "# DAC output: v0= " << buf0 << " v1= " << buf1 << NL; os.flush();
+  os << "# DAC output: v0= " << dac[0] << " v1= " << dac[1] << NL; os.flush();
 
   return 0;
 }

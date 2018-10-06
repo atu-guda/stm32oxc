@@ -1,6 +1,8 @@
 #ifndef _MEAS0_H
 #define _MEAS0_H
 
+OutStream& operator<<( OutStream &os, float rhs );
+
 struct D_in_sources {
   decltype( GPIOA ) gpio;
   uint16_t           bit;
