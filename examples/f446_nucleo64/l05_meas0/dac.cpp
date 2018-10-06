@@ -13,7 +13,7 @@ int MX_DAC_Init(void)
 
   DAC_ChannelConfTypeDef sConfig;
   sConfig.DAC_Trigger      = DAC_TRIGGER_NONE;
-  sConfig.DAC_OutputBuffer = DAC_OUTPUTBUFFER_ENABLE;
+  sConfig.DAC_OutputBuffer = DAC_OUTPUTBUFFER_DISABLE;
   if( HAL_DAC_ConfigChannel( &hdac, &sConfig, DAC_CHANNEL_1 ) != HAL_OK ) {
     return 0;
   }
