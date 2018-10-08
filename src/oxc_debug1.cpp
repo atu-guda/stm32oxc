@@ -268,7 +268,7 @@ int cmd_info( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
   errno = 0;
   return 0;
 }
-CmdInfo CMDINFO_INFO {  "info",  'i', cmd_info,       " - Output general info" };
+CmdInfo CMDINFO_INFO {  "info",  0, cmd_info,       " - Output general info" };
 
 int cmd_echo( int argc, const char * const * argv )
 {
@@ -279,7 +279,7 @@ int cmd_echo( int argc, const char * const * argv )
   }
   return 0;
 }
-CmdInfo CMDINFO_ECHO { "echo",  'e', cmd_echo,       " [args] - output args" };
+CmdInfo CMDINFO_ECHO { "echo",  0, cmd_echo,       " [args] - output args" };
 
 const char* common_help_string = "Default help " NL;
 
@@ -328,7 +328,7 @@ int cmd_dump( int argc, const char * const * argv )
   dump8( addr, n, isAbs );
   return 0;
 }
-CmdInfo CMDINFO_DUMP { "dump",  'd', cmd_dump, " {a|b|addr} [n] [abs:0:1]- HexDumps given area"  };
+CmdInfo CMDINFO_DUMP { "hd",  0, cmd_dump, " {a|b|addr} [n] [abs:0:1]- HexDumps given area"  };
 
 int cmd_fill( int argc, const char * const * argv )
 {
@@ -364,7 +364,7 @@ int cmd_fill( int argc, const char * const * argv )
   os << NL "---------- done---------------" NL;
   return 0;
 }
-CmdInfo CMDINFO_FILL { "fill",  'f', cmd_fill, " {a|b|addr} val [n] [stp] - Fills memory by value"  };
+CmdInfo CMDINFO_FILL { "fill",  0, cmd_fill, " {a|b|addr} val [n] [stp] - Fills memory by value"  };
 
 int cmd_pvar( int argc, const char * const * argv )
 {
@@ -490,6 +490,6 @@ int cmd_set_leds_step( int argc, const char * const * argv )
   os << "LEDS step is set to " << task_leds_step << " = "  << task_leds_step * TASK_LEDS_QUANT << " ms" NL;
   return 0;
 }
-CmdInfo CMDINFO_LSTEP { "set_leds_step", 'L', cmd_set_leds_step, " [N] - set leds step in 10 ms "  };
+CmdInfo CMDINFO_LSTEP { "leds_step", 0, cmd_set_leds_step, " [N] - set leds step in 10 ms "  };
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

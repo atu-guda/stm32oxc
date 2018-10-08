@@ -50,7 +50,7 @@ int cmd_i2c_scan( int argc, const char * const * argv )
   return 0;
 }
 CmdInfo CMDINFO_I2C_SCAN {
-  "scan",  'C', cmd_i2c_scan, "[start [end]] - scan I2C in range"
+  "i2c_scan",  0, cmd_i2c_scan, "[start [end]] - scan I2C in range"
 };
 
 
@@ -75,7 +75,7 @@ int cmd_i2c_send( int argc, const char * const * argv )
   return 0;
 }
 CmdInfo CMDINFO_I2C_SEND {
-  "send",  'S', cmd_i2c_send,   "val [addr] - send to I2C (def addr=var[p])"
+  "i2c_send",  0, cmd_i2c_send,   "val [addr] - send to I2C (def addr=var[p])"
 };
 
 int subcmd_i2c_send_rx( int argc, const char * const * argv, bool is2byte )
@@ -111,7 +111,7 @@ int cmd_i2c_send_r1( int argc, const char * const * argv )
   return subcmd_i2c_send_rx( argc, argv, false );
 }
 CmdInfo CMDINFO_I2C_SEND_R1 {
-  "send1", 0, cmd_i2c_send_r1, "reg val - send to I2C(reg), reg_sz=1 (addr=var[p])"
+  "i2c_send1", 0, cmd_i2c_send_r1, "reg val - send to I2C(reg), reg_sz=1 (addr=var[p])"
 };
 
 int cmd_i2c_send_r2( int argc, const char * const * argv )
@@ -119,7 +119,7 @@ int cmd_i2c_send_r2( int argc, const char * const * argv )
   return subcmd_i2c_send_rx( argc, argv, true );
 }
 CmdInfo CMDINFO_I2C_SEND_R2 {
-  "send2",  0,  cmd_i2c_send_r2, "reg val - send to I2C(reg), reg_sz=2 (addr=var[p])"
+  "i2c_send2",  0,  cmd_i2c_send_r2, "reg val - send to I2C(reg), reg_sz=2 (addr=var[p])"
 };
 
 
@@ -147,7 +147,7 @@ int cmd_i2c_recv( int argc, const char * const * argv )
   return 0;
 }
 CmdInfo CMDINFO_I2C_RECV {
-  "recv",  'R', cmd_i2c_recv,    "[addr [nr]] - recv from I2C (def addr=var[p])"
+  "i2c_recv",  0, cmd_i2c_recv,    "[addr [nr]] - recv from I2C (def addr=var[p])"
 };
 
 int subcmd_i2c_recv_rx( int argc, const char * const * argv, bool is2byte )
@@ -179,7 +179,7 @@ int cmd_i2c_recv_r1( int argc, const char * const * argv )
   return subcmd_i2c_recv_rx( argc, argv, false );
 }
 CmdInfo CMDINFO_I2C_RECV_R1 {
-  "recv1",  0,  cmd_i2c_recv_r1, "reg [n] - recv from I2C(reg), reg_sz=1 (addr=var[p])"
+  "i2c_recv1",  0,  cmd_i2c_recv_r1, "reg [n] - recv from I2C(reg), reg_sz=1 (addr=var[p])"
 };
 
 
@@ -189,7 +189,7 @@ int cmd_i2c_recv_r2( int argc, const char * const * argv )
   return subcmd_i2c_recv_rx( argc, argv, true );
 }
 CmdInfo CMDINFO_I2C_RECV_R2 {
-  "recv2",  0,  cmd_i2c_recv_r2, "reg [n] - recv from I2C(reg), reg_sz=2 (addr=var[p])"
+  "i2c_recv2",  0,  cmd_i2c_recv_r2, "reg [n] - recv from I2C(reg), reg_sz=2 (addr=var[p])"
 };
 
 #undef CHECK_I2C_DEV
