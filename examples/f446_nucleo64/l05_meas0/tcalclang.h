@@ -112,7 +112,7 @@ namespace tcalclang {
      int parse_arg( const char *s, Cmd &cmd ) const;
      // for debug
      void list() const;
-     void dump( const char *nm ) const;
+     int dump( const char *nm ) const;
     protected:
      void* ptr( const char *nmi , DataType &dt ) const;
      std::vector<DataInfo> d;

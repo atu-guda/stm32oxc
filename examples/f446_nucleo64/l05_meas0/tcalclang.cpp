@@ -379,26 +379,29 @@ int Datas::set( const char *nmi, const char *sval )
   }
 
   char *eptr;
+  int rc = 0;
   switch( dt ) {
    case DataType::t_int :
      {
        int v = strtol( sval, &eptr, 0 );
-       if( *eptr == '\0' ) {
+       if( *eptr == '\0' || *eptr == ' ' || *eptr == ';'  || *eptr == '#' ) {
          (*(int*)p) = v;
+         rc = 1;
        }
      }
      break;
    case DataType::t_float :
      {
        float v = strtof( sval, &eptr );
-       if( *eptr == '\0' ) {
+       if( *eptr == '\0' || *eptr == ' ' || *eptr == ';'  || *eptr == '#' ) {
          (*(float*)p) = v;
+         rc = 1;
        }
      }
      break;
    default: return 0;
   }
-  return 1;
+  return rc;
 }
 
 int Datas::parse_arg( const char *s, Cmd &cmd ) const
@@ -505,7 +508,7 @@ void Datas::list() const
   }
 }
 
-void Datas::dump( const char *nm ) const
+int Datas::dump( const char *nm ) const
 {
   STDOUT_os;
   if( !nm || !*nm ) {
@@ -513,17 +516,39 @@ void Datas::dump( const char *nm ) const
       os << "# " << p.name << "= [ ";
       dump_inner( &p );
     }
-    return;
+    return 1;
   }
 
-  os << "#  " << nm << " = [ ";
+  // TODO: single val[idx]
 
   auto p = find_nm( nm );
-  if( p == d.end() ) {
-    os << " not_found ]" << NL;
-  } else {
+  if( p != d.end() ) {
+    os << "#  " << nm << " = [ ";
     dump_inner( &(*p) );
+    return 1;
   }
+
+  DataType dt;
+  void *pv = ptr( nm, dt );
+  if( pv ) {
+    os << "#  " << nm << " =  ";
+    switch( dt ) {
+      case DataType::t_int :
+            os << (*(int*)pv);
+            break;
+      case DataType::t_float :
+            os << (*(float*)pv);
+            break;
+      default:
+            os << "Unknown type " << (int)dt << NL;
+            return 0;
+    }
+
+    return 1;
+  }
+
+  os << "# error: \"" << nm << "\" not found" << NL;
+  return 0;
 }
 
 void Datas::dump_inner( const DataInfo *p ) const

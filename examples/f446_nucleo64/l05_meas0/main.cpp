@@ -43,6 +43,8 @@ CmdInfo CMDINFO_TIMINFO { "tim_info", 0, cmd_tim_info, " - info about timers"  }
 
 int cmd_ld( int argc, const char * const * argv );
 CmdInfo CMDINFO_LD { "ld", 0, cmd_ld, "[name] - list data"  };
+int cmd_sd( int argc, const char * const * argv );
+CmdInfo CMDINFO_SD { "sd", 0, cmd_sd, "name value - set data value"  };
 
 int cmd_tloop( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "tloop", 'T', cmd_tloop, " - start loop"  };
@@ -57,6 +59,7 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_PWM,
   &CMDINFO_TIMINFO,
   &CMDINFO_LD,
+  &CMDINFO_SD,
   &CMDINFO_TEST0,
   &CMDINFO_EXCH,
   nullptr
@@ -573,8 +576,18 @@ int cmd_exch( int argc, const char * const * argv )
 
 int cmd_ld( int argc, const char * const * argv )
 {
-  datas.dump( argv[1] );
-  return 0;
+  return !datas.dump( argv[1] );
+}
+
+int cmd_sd( int argc, const char * const * argv )
+{
+  STDOUT_os;
+  if( argc < 3 ) {
+    os << "# Error: need 2 arguments" << NL;
+    return 1;
+  }
+  int rc = datas.set( argv[1], argv[2] );
+  return !rc;
 }
 
 int cmd_dac( int argc, const char * const * argv )
