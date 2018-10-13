@@ -71,13 +71,13 @@ namespace tcalclang {
       float *d_f;
       int   *d_i;
     };
-    const char *name; // owning only if dyn - not now
+    const char *name;
     uint32_t n;
     DataType dtype = DataType::t_bad;
-    bool dyn = false;
+    bool ro = false;
     //
-    DataInfo( float *pv, const char *nm, uint32_t sz = 1 );
-    DataInfo( int   *pv, const char *nm, uint32_t sz = 1 );
+    DataInfo( float *pv, const char *nm, uint32_t sz = 1, bool isRo = false );
+    DataInfo( int   *pv, const char *nm, uint32_t sz = 1, bool isRo = false );
     // ~DataInfo();
   };
 
@@ -104,6 +104,8 @@ namespace tcalclang {
      Datas() = default;
      int addDatas( float *pv, const char *nm, uint32_t sz = 1 );
      int addDatas( int   *pv, const char *nm, uint32_t sz = 1 );
+     int addDatasRo( const float *pv, const char *nm, uint32_t sz = 1 );
+     int addDatasRo( const int   *pv, const char *nm, uint32_t sz = 1 );
      const DataInfo* findData( const char *nm ) const;
      const DataInfo* findPtr( const void *ptr, int &idx ) const;
      // int* ptr_i( const char *nmi ) const; // nmi = name or name[idx]
@@ -115,7 +117,8 @@ namespace tcalclang {
      void list() const;
      int dump( const char *nm ) const;
     protected:
-     void* ptr( const char *nmi , DataType &dt ) const;
+     int checkAtAdd( const char *nm ) const;
+     void* ptr( const char *nmi , DataType &dt, bool rw ) const;
      std::vector<DataInfo> d;
      std::vector<DataInfo>::const_iterator find_nm( const char *nm ) const
        { return find_if( d.begin(), d.end(), [nm](auto &v) { return ( std::strcmp( nm, v.name ) == 0 ); }  ); };
@@ -126,7 +129,12 @@ namespace tcalclang {
 #define ADD_DATAS(d) datas.addDatas( d, #d, size(d) )
 #define ADD_DATA(d)  datas.addDatas( &d, #d, 1 )
 #define ADD_DATAS_NM(d,name) datas.addDatas( d, name, size(d) )
-#define ADD_DATA_NM(d,name)  datas.addDatas( d, name, 1 )
+#define ADD_DATA_NM(d,name)  datas.addDatas( &d, name, 1 )
+
+#define ADD_DATAS_RO(d) datas.addDatasRo( d, #d, size(d) )
+#define ADD_DATA_RO(d)  datas.addDatasRo( &d, #d, 1 )
+#define ADD_DATAS_NM_RO(d,name) datas.addDatasRo( d, name, size(d) )
+#define ADD_DATA_NM_RO(d,name)  datas.addDatasRo( &d, name, 1 )
 
 
 

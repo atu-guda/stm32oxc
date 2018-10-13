@@ -1,8 +1,10 @@
+#define _GNU_SOURCE
 #include <algorithm>
 #include <cstring>
 #include <cstdlib>
 #include <cstdio>
 #include <cerrno>
+#include <cmath>
 
 // test code consumption
 // #include <vector>
@@ -98,6 +100,7 @@ HD44780_i2c lcdt( i2cd, 0x27 );
 
 Datas datas;
 Engine eng( datas );
+const float eng_M_PI = (float)(M_PI);
 
 volatile uint32_t adc_state = 0; // 0 - pre, 1 - done, 2 + -  error
 volatile uint32_t  t3freq = 84000000, t3ccr1, t3ccr2, t5freq = 84000000, t5ccr1, t5ccr2;
@@ -170,8 +173,9 @@ int main(void)
   i2c_dbg = &i2cd;
 
   ADD_DATAS_NM( user_vars, "UVAR"  );
-  ADD_DATA( time_i );
-  ADD_DATA( time_f );
+  ADD_DATA_RO( time_i );
+  ADD_DATA_RO( time_f );
+  ADD_DATA_NM_RO( eng_M_PI, "M_PI" );
   ADD_DATA( vref_in );
   ADD_DATA( vref_out );
   ADD_DATAS( uin );
@@ -663,10 +667,11 @@ int cmd_testPgm( int argc, const char * const * argv )
     "+ 2.1",
     "S pwm_f",
     "L uin[2]",
-    "S pmw[0]",
+    "S pwm[0]",
     "* 2",
+    "* M_PI",
     "S pwm[1]",
-    "M_PI"
+    // "S time_f", // bad: ro
   };
   for( auto s : t ) {
     eng.addCmd( s );

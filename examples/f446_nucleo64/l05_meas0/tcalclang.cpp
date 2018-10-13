@@ -46,7 +46,6 @@ const CmdOpInfo tcalclang::cmdOpInfos[] = {
   { CmdOp::fun1  , -1 , ""      } ,
   { CmdOp::fun2  , -2 , ""      } ,
   { CmdOp::fun3  , -3 , ""      } ,
-  { CmdOp::pi    ,  0 , "M_PI"  } ,
 };
 
 const CmdOpInfo* tcalclang::findCmdOp( const char *s, const char** eptr )
@@ -253,39 +252,62 @@ bool tcalclang::checkName( const char *s, char *d, unsigned bname_max, int *idx 
 
 // ------------------------- DataInfo ---------------------------
 
-DataInfo::DataInfo( float *pv, const char *nm, uint32_t sz )
-  : d_f( pv ),  name( nm ), n( sz ), dtype( DataType::t_float )
+DataInfo::DataInfo( float *pv, const char *nm, uint32_t sz, bool isRo )
+  : d_f( pv ),  name( nm ), n( sz ), dtype( DataType::t_float ), ro ( isRo )
 {
 }
 
-DataInfo::DataInfo( int   *pv, const char *nm, uint32_t sz )
-  : d_i( pv ),  name( nm ), n( sz ), dtype( DataType::t_int   )
+DataInfo::DataInfo( int   *pv, const char *nm, uint32_t sz, bool isRo )
+  : d_i( pv ),  name( nm ), n( sz ), dtype( DataType::t_int ), ro ( isRo )
 {
 }
 
 // ------------------------- Datas ---------------------------
 
-int Datas::addDatas( float *pv, const char *nm, uint32_t sz )
+int Datas::checkAtAdd( const char *nm ) const
 {
   if( ! checkNameOnly( nm ) ) {
-      return 0;
+    return 0;
   }
   if( findData( nm ) ) {
     return 0;
   }
-  d.emplace_back( pv, nm, sz );
+  return 1;
+}
+
+int Datas::addDatas( float *pv, const char *nm, uint32_t sz )
+{
+  if( ! checkAtAdd( nm )  ) {
+    return 0;
+  }
+  d.emplace_back( pv, nm, sz, false );
   return d.size();
 }
 
 int Datas::addDatas( int   *pv, const char *nm, uint32_t sz )
 {
-  if( ! checkNameOnly( nm ) ) {
-      return 0;
-  }
-  if( findData( nm ) ) {
+  if( ! checkAtAdd( nm )  ) {
     return 0;
   }
-  d.emplace_back( pv, nm, sz );
+  d.emplace_back( pv, nm, sz, false );
+  return d.size();
+}
+
+int Datas::addDatasRo( const float *pv, const char *nm, uint32_t sz )
+{
+  if( ! checkAtAdd( nm )  ) {
+    return 0;
+  }
+  d.emplace_back( const_cast<float*>(pv), nm, sz, true );
+  return d.size();
+}
+
+int Datas::addDatasRo( const int   *pv, const char *nm, uint32_t sz )
+{
+  if( ! checkAtAdd( nm )  ) {
+    return 0;
+  }
+  d.emplace_back( const_cast<int*>(pv), nm, sz, true );
   return d.size();
 }
 
@@ -321,7 +343,7 @@ const DataInfo* Datas::findPtr( const void *ptr, int &idx ) const
 
 
 
-void* Datas::ptr( const char *nmi, DataType &dt ) const
+void* Datas::ptr( const char *nmi, DataType &dt, bool rw ) const
 {
   char nm1[max_nm_expr_len];
   int idx = 0;
@@ -332,12 +354,10 @@ void* Datas::ptr( const char *nmi, DataType &dt ) const
   }
 
   auto p = find_nm( nm1 );
-  if( p == d.end() ) {
+  if( p == d.end()  ||  idx >= int(p->n) ||  ( rw && p->ro ) ) {
     return nullptr;
   }
-  if( idx >= int(p->n) ) {
-    return nullptr;
-  }
+
   switch( p->dtype ) {
     case DataType::t_int:
       dt = DataType::t_int;
@@ -350,30 +370,11 @@ void* Datas::ptr( const char *nmi, DataType &dt ) const
   return nullptr;
 }
 
-// int* Datas::ptr_i( const char *nmi ) const
-// {
-//   DataType dt;
-//   void *p = ptr( nmi, dt );
-//   if( !p || dt != DataType::t_int ) {
-//     return nullptr;
-//   }
-//   return static_cast<int*>( p );
-// }
-
-// float* Datas::ptr_f( const char *nmi ) const
-// {
-//   DataType dt;
-//   void *p = ptr( nmi, dt );
-//   if( !p || dt != DataType::t_int ) {
-//     return nullptr;
-//   }
-//   return static_cast<float*>( p );
-// }
 
 float Datas::val( const char *nmi ) const
 {
   DataType dt;
-  void *p = ptr( nmi, dt );
+  void *p = ptr( nmi, dt, false );
   if( !p  ) {
     return 0;
   }
@@ -390,8 +391,8 @@ float Datas::val( const char *nmi ) const
 int Datas::set( const char *nmi, const char *sval )
 {
   DataType dt;
-  void *p = ptr( nmi, dt );
-  if( !p  ) {
+  void *p = ptr( nmi, dt, true );
+  if( !p ) {
     return 0;
   }
 
@@ -423,6 +424,7 @@ int Datas::set( const char *nmi, const char *sval )
 
 int Datas::parse_arg( const char *s, Cmd &cmd ) const
 {
+  STDOUT_os;
   if( !s ) {
     return 0;
   }
@@ -444,7 +446,7 @@ int Datas::parse_arg( const char *s, Cmd &cmd ) const
   }
 
   if( ! isNameChar1( *s ) ) {
-    // cerr << "... Bad first char '" << *s << '\'' << endl;
+    os << "# err:  Bad first char '" << *s << '\'' << NL;
     return 0;
   }
   string nm0; nm0.reserve( 64 ); // pure name w/o index
@@ -463,7 +465,7 @@ int Datas::parse_arg( const char *s, Cmd &cmd ) const
   if( ! ( *s == '\0' || *s == ';' || *s == '#'  ) ) { // not only name
 
     if( *s != '[' ) {
-      // cerr << "... [ required: '" << s << '"' << endl;
+      os << "# err: ... [ required: \"" << s << '"' << NL;
       return 0;
     }
 
@@ -473,33 +475,38 @@ int Datas::parse_arg( const char *s, Cmd &cmd ) const
     // convert index
     idx = strtol( s, &eptr, 0 );
     if( eptr == s ) {
-      // cerr << "... bad index '" << s << '"' << endl;
+      os << "# err: bad index \"" << s << '"' << NL;
       return 0;
     }
     s = eptr;
 
     skip_ws( s );
     if( *s != ']' ) {
-      // cerr << "... ] required: '" << s << '"' << endl;
+      os << "# err:  ] required: \"" << s << '"' << NL;
       return 0;
     }
     ++s;
 
     skip_ws( s );
     if( *s != '\0' && *s != ';' ) {
-      // cerr << "... strange tail found: \"" << s << '"' << endl;
+      os << "# err:  strange tail found: \"" << s << '"' << NL;
       return 0;
     }
   }
 
   auto p = find_nm( nm0.c_str() );
   if( p == d.end() ) {
-    // cerr << "... name not found: \"" << nm0 << '"' << endl;
+    os << "# err: name not found: \"" << nm0.c_str() << '"' << NL;
     return 0;
   }
 
   if( idx >= int(p->n) ) {
-    // cerr << "... bad index " << idx <<  endl;
+    os << "# err: bad index " << idx <<  NL;
+    return 0;
+  }
+
+  if( cmd.op == CmdOp::stor  &&  p->ro ) {
+    os << "# err: R/O \"" << nm0.c_str() << '"' <<  NL;
     return 0;
   }
 
@@ -513,7 +520,7 @@ int Datas::parse_arg( const char *s, Cmd &cmd ) const
     default: break;
   }
 
-  // cerr << "... unknown type " << int(p->dtype) <<  endl;
+  // cerr << "... unknown type " << int(p->dtype) <<  NL;
   return 0;
 }
 
@@ -546,7 +553,7 @@ int Datas::dump( const char *nm ) const
   }
 
   DataType dt;
-  void *pv = ptr( nm, dt );
+  void *pv = ptr( nm, dt, false );
   if( pv ) {
     os << "#  " << nm << " =  ";
     switch( dt ) {
@@ -588,7 +595,8 @@ void Datas::dump_inner( const DataInfo *p ) const
   } else {
     os << " ?type_ " << int(p->dtype );
   }
-  os << "] " << dtype2name( p->dtype ) << " [" << p->n << "] " << NL;
+  os << "] " << dtype2name( p->dtype ) << " [" << p->n << "] "
+     << ( (p->ro) ? "ro" : "" ) << NL;
 }
 
 // ------------------------ Engine -------------------------------
@@ -608,14 +616,14 @@ int Engine::parseCmd( const char *s, Cmd &cmd )
   const char *eptr;
   auto fi = findFunc( s, &eptr );
   if( fi ) {
-    // cout << "# debug: found function \"" << fi->nm << "\" " << fi->narg << endl;
+    // cout << "# debug: found function \"" << fi->nm << "\" " << fi->narg << NL;
     switch( fi->narg ) {
       case 0: cmd.op = CmdOp::fun0; break;
       case 1: cmd.op = CmdOp::fun1; break;
       case 2: cmd.op = CmdOp::fun2; break;
       case 3: cmd.op = CmdOp::fun3; break;
       default:
-              // cerr << "# err: bad func argns number " << fi->narg << endl;
+              os << "# err: bad func argns number " << fi->narg << NL;
               return 0;
     }
     cmd.d_i = reinterpret_cast<int*>( fi->ptr );
@@ -629,15 +637,16 @@ int Engine::parseCmd( const char *s, Cmd &cmd )
   }
   s = eptr;
 
+  cmd.op = oi->op; // for correct ro in parse_arg
   if( oi->narg > 0 ) {
     skip_ws( s );
     int rc = datas.parse_arg( s, cmd );
     if( !rc ) {
-      // cerr << ".. fail to parse arg: \"" << s << "\" " << endl;
+      os << "# err: fail to parse arg: \"" << s << "\" " << NL;
       return 0;
     }
   }
-  cmd.op = oi->op;
+  cmd.op = oi->op; // restore after parse_arg
 
   return 1;
 }
@@ -681,14 +690,11 @@ int Engine::execCmd( const Cmd &cmd )
     case CmdOp::fun3:
                      x = (reinterpret_cast<Func3Arg>( cmd.d_i ))( x, y, z );
                      break;
-    case CmdOp::pi:
-                     x = (float)(3.141592654);
-                     break;
     default:
-                     // cerr << "# err: Unknown command " << (char)(op) << endl;
+                     // cerr << "# err: Unknown command " << (char)(op) << NL;
                      rc = 0; break;
   }
-  // cout << x << " rc= " << rc << endl;
+  // cout << x << " rc= " << rc << NL;
   return rc;
 }
 
