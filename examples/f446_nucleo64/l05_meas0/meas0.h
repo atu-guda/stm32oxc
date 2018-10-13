@@ -29,6 +29,8 @@ inline const int n_uout_i = 8;
 extern int       uout_i[n_uout_i]; // user output int
 extern int        nu_uout_i;        // number of used uout_i elements
 
+extern int        show_eq;        // output "= " before tty data
+
 extern float vref_in;
 extern float vref_out;
 

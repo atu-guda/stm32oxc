@@ -46,6 +46,15 @@ CmdInfo CMDINFO_LD { "ld", 0, cmd_ld, "[name] - list data"  };
 int cmd_sd( int argc, const char * const * argv );
 CmdInfo CMDINFO_SD { "sd", 0, cmd_sd, "name value - set data value"  };
 
+int cmd_addCmd( int argc, const char * const * argv );
+CmdInfo CMDINFO_ADDCMD { "addCmd", 'A', cmd_addCmd, "\"command [args]\" - append command to program"  };
+int cmd_clearPgm( int argc, const char * const * argv );
+CmdInfo CMDINFO_CLEARPGM { "clearPgm", 0, cmd_clearPgm, " - clear program"  };
+int cmd_execPgm( int argc, const char * const * argv );
+CmdInfo CMDINFO_EXECPGM { "execPgm", 0, cmd_execPgm, " - exec program"  };
+int cmd_execCmd( int argc, const char * const * argv );
+CmdInfo CMDINFO_EXECCMD { "ec", 0, cmd_execCmd, "\"command [args]\" - exec single command"  };
+
 int cmd_tloop( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "tloop", 'T', cmd_tloop, " - start loop"  };
 int cmd_exch( int argc, const char * const * argv );
@@ -60,6 +69,10 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_TIMINFO,
   &CMDINFO_LD,
   &CMDINFO_SD,
+  &CMDINFO_ADDCMD,
+  &CMDINFO_CLEARPGM,
+  &CMDINFO_EXECPGM,
+  &CMDINFO_EXECCMD,
   &CMDINFO_TEST0,
   &CMDINFO_EXCH,
   nullptr
@@ -96,6 +109,7 @@ float uout[n_uout];
 int   nu_uout = 4;
 int uout_i[n_uout_i];
 int   nu_uout_i = 4;
+int   show_eq = 0;
 
 float vref_out = 3.2256;
 float vref_in  = 3.3270;
@@ -143,8 +157,8 @@ int main(void)
 
   UVAR('t') = 100;
   UVAR('n') = 20;
-  UVAR('f') = 10;
   UVAR('m') = 0;
+  pwm_f = 10.0;
 
   i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
@@ -162,6 +176,7 @@ int main(void)
   ADD_DATA( nu_uout );
   ADD_DATAS( uout_i );
   ADD_DATA( nu_uout_i );
+  ADD_DATA( show_eq );
   ADD_DATAS( adc );
   ADD_DATAS( adc_i );
   ADD_DATAS( dac );
@@ -307,7 +322,6 @@ int process_mode0()
   // pwm[0] = 0.25 * adc[0];
   // pwm[1] = 0.5;
   // pwm_f =  2 + (int)( adc[0] * 100 ); // TODO: use it!
-  // UVAR('f') = pwm_f;
   return 1;
 }
 
@@ -325,7 +339,7 @@ int process_mode1()
 
 int process_mode2()
 {
-  return 0;
+  return eng.exec();
 }
 
 
@@ -458,6 +472,9 @@ int tty_output()
 {
   STDOUT_os;
 
+  if( show_eq ) {
+    os << "= ";
+  }
   os << time_f << ' ';
 
   for( int i=0; i < nu_uout; ++i ) {
@@ -590,6 +607,32 @@ int cmd_sd( int argc, const char * const * argv )
   return !rc;
 }
 
+int cmd_addCmd( int argc, const char * const * argv )
+{
+  int rc = eng.addCmd( argv[1] );
+  STDOUT_os;
+  os << "# pgm count << " << eng.pgmSize() << NL;
+  return !rc;
+}
+
+int cmd_clearPgm( int argc, const char * const * argv )
+{
+  eng.clear();
+  return 0;
+}
+
+int cmd_execPgm( int argc, const char * const * argv )
+{
+  return !eng.exec();
+}
+
+int cmd_execCmd( int argc, const char * const * argv )
+{
+  int rc = eng.execCmdStr( argv[1] );
+  eng.dumpState();
+  return !rc;
+}
+
 int cmd_dac( int argc, const char * const * argv )
 {
   parse_floats( max(argc-1,2) , argv+1, dac );
@@ -630,7 +673,7 @@ void pwm_output()
 {
   static decltype( &TIM2->CCR1 ) ccrs[] = { &TIM2->CCR1, &TIM2->CCR2, &TIM2->CCR3, &TIM2->CCR4  };
   uint32_t arr = TIM2->ARR;
-  uint32_t new_arr = calc_TIM_arr_for_base_freq( TIM2, UVAR('f') ); // TODO: pwm_f
+  uint32_t new_arr = calc_TIM_arr_for_base_freq( TIM2, pwm_f );
   if( arr != new_arr ) {
     TIM2->ARR = new_arr;
     if( TIM2->CNT > new_arr - 2 ) {

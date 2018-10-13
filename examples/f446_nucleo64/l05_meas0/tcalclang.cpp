@@ -696,6 +696,12 @@ int Engine::execCmdStr( const char *s )
   return execCmd( cmd );
 }
 
+void Engine::dumpState() const
+{
+  STDOUT_os;
+  os << "# state: x= " << x << " y= " << y << " z= " << z << " tmp= " << tmp << NL;
+}
+
 
 int Engine::load( const Cmd &c )
 {

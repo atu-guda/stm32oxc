@@ -135,10 +135,12 @@ namespace tcalclang {
      Engine( Datas &d ) : datas( d ) { clear(); };
      int parseCmd( const char *s, Cmd &cmd );
      int addCmd( const char *s );
+     int pgmSize() const { return pgm.size(); };
      void clear();
      int exec();
      int execCmd( Cmd cmd );
      int execCmdStr( const char *s );
+     void dumpState() const;
 
     protected:
      int load( const Cmd &c ); // to tmp
