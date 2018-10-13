@@ -54,6 +54,10 @@ int cmd_execPgm( int argc, const char * const * argv );
 CmdInfo CMDINFO_EXECPGM { "execPgm", 0, cmd_execPgm, " - exec program"  };
 int cmd_execCmd( int argc, const char * const * argv );
 CmdInfo CMDINFO_EXECCMD { "ec", 0, cmd_execCmd, "\"command [args]\" - exec single command"  };
+int cmd_listPgm( int argc, const char * const * argv );
+CmdInfo CMDINFO_LISTPGM { "lpgm", 0, cmd_listPgm, " - list current program"  };
+int cmd_testPgm( int argc, const char * const * argv );
+CmdInfo CMDINFO_TESTPGM { "tpgm", 0, cmd_testPgm, " - load test program"  };
 
 int cmd_tloop( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "tloop", 'T', cmd_tloop, " - start loop"  };
@@ -73,6 +77,8 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_CLEARPGM,
   &CMDINFO_EXECPGM,
   &CMDINFO_EXECCMD,
+  &CMDINFO_LISTPGM,
+  &CMDINFO_TESTPGM,
   &CMDINFO_TEST0,
   &CMDINFO_EXCH,
   nullptr
@@ -623,7 +629,9 @@ int cmd_clearPgm( int argc, const char * const * argv )
 
 int cmd_execPgm( int argc, const char * const * argv )
 {
-  return !eng.exec();
+  int rc = eng.exec();
+  eng.dumpState();
+  return !rc;
 }
 
 int cmd_execCmd( int argc, const char * const * argv )
@@ -631,6 +639,39 @@ int cmd_execCmd( int argc, const char * const * argv )
   int rc = eng.execCmdStr( argv[1] );
   eng.dumpState();
   return !rc;
+}
+
+int cmd_listPgm( int argc, const char * const * argv )
+{
+  eng.listPgm();
+  return 0;
+}
+
+int cmd_testPgm( int argc, const char * const * argv )
+{
+  eng.clear();
+  static const char *t[] = {
+    "L adc[0]",
+    "+ adc[1]",
+    "/ 2",
+    "S dac[0]",
+    "L uin[0]",
+    "fabs",
+    "S dac[1]",
+    "L uin[1]",
+    "* 10",
+    "+ 2.1",
+    "S pwm_f",
+    "L uin[2]",
+    "S pmw[0]",
+    "* 2",
+    "S pwm[1]",
+    "M_PI"
+  };
+  for( auto s : t ) {
+    eng.addCmd( s );
+  }
+  return 0;
 }
 
 int cmd_dac( int argc, const char * const * argv )

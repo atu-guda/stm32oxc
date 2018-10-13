@@ -105,6 +105,7 @@ namespace tcalclang {
      int addDatas( float *pv, const char *nm, uint32_t sz = 1 );
      int addDatas( int   *pv, const char *nm, uint32_t sz = 1 );
      const DataInfo* findData( const char *nm ) const;
+     const DataInfo* findPtr( const void *ptr, int &idx ) const;
      // int* ptr_i( const char *nmi ) const; // nmi = name or name[idx]
      // float* ptr_f( const char *nmi ) const;
      float val( const char *nmi ) const;
@@ -138,13 +139,18 @@ namespace tcalclang {
      int pgmSize() const { return pgm.size(); };
      void clear();
      int exec();
-     int execCmd( Cmd cmd );
+     int execCmd( const Cmd &cmd );
      int execCmdStr( const char *s );
      void dumpState() const;
+     void listPgm() const;
+     void dumpArg( const Cmd &cmd ) const;
+     Datas& getDatas() { return datas; };
+     const Datas& getDatas() const { return datas; };
 
     protected:
      int load( const Cmd &c ); // to tmp
      int stor( const Cmd &c ); // from x
+     void dumpCmd( const Cmd &c ) const;
      std::vector<Cmd> pgm;
      float x, y, z, tmp;
      Datas &datas;

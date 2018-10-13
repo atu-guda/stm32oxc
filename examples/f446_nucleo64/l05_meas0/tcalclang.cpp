@@ -41,7 +41,7 @@ const CmdOpInfo tcalclang::cmdOpInfos[] = {
   { CmdOp::load  ,  1 , "L"     } ,
   { CmdOp::loady ,  1 , "LY"    } ,
   { CmdOp::loadz ,  1 , "LZ"    } ,
-  { CmdOp::loadn ,  1 , "LN"    } ,
+  //{ CmdOp::loadn ,  1 , "LN"    } ,
   { CmdOp::fun0  ,  0 , ""      } ,
   { CmdOp::fun1  , -1 , ""      } ,
   { CmdOp::fun2  , -2 , ""      } ,
@@ -298,6 +298,23 @@ const DataInfo* Datas::findData( const char *nm ) const
   auto p = find_nm( nm );
   if( p != d.end() ) {
     return &(*p);
+  }
+  return nullptr;
+}
+
+const DataInfo* Datas::findPtr( const void *ptr, int &idx ) const
+{
+  static_assert( sizeof(int) == sizeof(float) ); // TODO sizeof in DataInfo
+  for( const auto &di : d ) {
+    ptrdiff_t st = (ptrdiff_t)(di.d_i);
+    if( (ptrdiff_t)(ptr) < st ) {
+      continue;
+    }
+    ptrdiff_t ofs = ( (ptrdiff_t)(ptr) - st ) / sizeof(float); // here
+    if( ofs < (ptrdiff_t)di.n ) {
+      idx = (int)(ofs);
+      return &di;
+    }
   }
   return nullptr;
 }
@@ -636,7 +653,7 @@ int Engine::addCmd( const char *s )
   return pgm.size();
 }
 
-int Engine::execCmd( Cmd cmd )
+int Engine::execCmd( const Cmd &cmd )
 {
   int rc = 1;
   auto op = cmd.op;
@@ -700,6 +717,86 @@ void Engine::dumpState() const
 {
   STDOUT_os;
   os << "# state: x= " << x << " y= " << y << " z= " << z << " tmp= " << tmp << NL;
+}
+
+void Engine::listPgm() const
+{
+  STDOUT_os;
+  os << "# program: " << NL;
+  int n = 0;
+  for( const auto &c : pgm ) {
+    os << "# " << n << ' ';
+    dumpCmd( c );
+    ++n;
+    os << NL;
+  };
+}
+
+void Engine::dumpCmd( const Cmd &c ) const
+{
+  STDOUT_os;
+
+  const CmdOpInfo *poi = nullptr;
+  for( const auto &oi : cmdOpInfos ) {
+    if( c.op == oi.op ) {
+      poi = &oi;
+      os << oi.nm;
+      break;
+    }
+  }
+  if( ! poi ) {
+    os << "??? " << (int)(c.op) << NL;
+    return;
+  }
+
+  // function: special case
+  if(    poi->op == CmdOp::fun0 || poi->op == CmdOp::fun1
+      || poi->op == CmdOp::fun2 || poi->op == CmdOp::fun3 ) {
+    bool fun_found = false;
+    for( const auto &fi : funcInfos ) {
+      if( (void*)(c.d_i) == (void*)(fi.ptr) ) {
+        os << fi.nm; fun_found = true;
+        break;
+      }
+    }
+    if( ! fun_found ) {
+      os << "Unknown_fun";
+    }
+    return; // no
+  }
+
+  if( poi->narg != 1 ) {
+    return; // all non-one arg: special case
+  }
+
+  // os << " 0x" << HexInt( c.d_i );
+  os << ' ';
+  auto dt = c.dtype;
+  switch( dt ) {
+    case DataType::t_int:
+    case DataType::t_float:
+      dumpArg( c );
+      break;
+    case DataType::t_int_i:
+      os << c.i; break;
+    case DataType::t_float_i:
+      os << c.f; break;
+    default:
+      os <<  "?type " << (int)(dt); break;
+  }
+}
+
+void Engine::dumpArg( const Cmd &c ) const
+{
+  STDOUT_os;
+  int idx = 0;
+  if( auto di = datas.findPtr( c.d_i, idx ) ) {
+    os << di->name;
+    if( di->n > 1 ) {
+      os << '[' << idx << ']';
+    }
+  }
+  os << " ;   0x" << HexInt( c.d_i ) << ' ' << dtype2name( c.dtype );
 }
 
 
