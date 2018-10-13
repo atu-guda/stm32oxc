@@ -17,11 +17,12 @@
 
 using namespace std;
 using namespace SMLRL;
+using namespace tcalclang;
 
 USE_DIE4LED_ERROR_HANDLER;
 BOARD_DEFINE_LEDS;
 
-// PinsOut ldbg( GPIOB, 13, 3 ); // B13:B15 (hides SPI2, but used onlt for debug)
+// PinsOut ldbg( GPIOB, 13, 3 ); // B13:B15 (hides SPI2, but used only for debug)
 
 BOARD_CONSOLE_DEFINES;
 
@@ -39,6 +40,10 @@ CmdInfo CMDINFO_PWM { "pwm", 'W', cmd_pwm, " v0 v1 v2 v3 - set pwm output"  };
 
 int cmd_tim_info( int argc, const char * const * argv );
 CmdInfo CMDINFO_TIMINFO { "tim_info", 0, cmd_tim_info, " - info about timers"  };
+
+int cmd_ld( int argc, const char * const * argv );
+CmdInfo CMDINFO_LD { "ld", 0, cmd_ld, "[name] - list data"  };
+
 int cmd_tloop( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "tloop", 'T', cmd_tloop, " - start loop"  };
 int cmd_exch( int argc, const char * const * argv );
@@ -51,6 +56,7 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_DAC,
   &CMDINFO_PWM,
   &CMDINFO_TIMINFO,
+  &CMDINFO_LD,
   &CMDINFO_TEST0,
   &CMDINFO_EXCH,
   nullptr
@@ -67,6 +73,9 @@ D_in_sources d_ins[n_din] = {
 I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );
 HD44780_i2c lcdt( i2cd, 0x27 );
+
+Datas datas;
+Engine eng( datas );
 
 volatile uint32_t adc_state = 0; // 0 - pre, 1 - done, 2 + -  error
 volatile uint32_t  t3freq = 84000000, t3ccr1, t3ccr2, t5freq = 84000000, t5ccr1, t5ccr2;
@@ -136,6 +145,29 @@ int main(void)
 
   i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
+
+  ADD_DATA( time_i );
+  ADD_DATA( time_f );
+  ADD_DATA( vref_in );
+  ADD_DATA( vref_out );
+  ADD_DATAS( uin );
+  ADD_DATAS( uin_i );
+  ADD_DATAS( uout );
+  ADD_DATAS( uout_i );
+  ADD_DATAS( adc );
+  ADD_DATAS( adc_i );
+  ADD_DATAS( dac );
+  ADD_DATAS( din );
+  ADD_DATA(  dins );
+  ADD_DATAS( pwm );
+  ADD_DATA(  pwm_f );
+  ADD_DATAS( din_f );
+  ADD_DATAS( din_dc );
+  ADD_DATAS( din_c );
+  ADD_DATAS( lcd );
+  ADD_DATAS( lcd_b );
+  ADD_DATAS( tmp );
+  // ADD_DATAS_NM( usr_in, "uin"  );
 
   lcdt.init_4b();
   lcdt.cls();
@@ -532,6 +564,12 @@ int cmd_exch( int argc, const char * const * argv )
     return 1;
   }
 
+  return 0;
+}
+
+int cmd_ld( int argc, const char * const * argv )
+{
+  datas.dump( argv[1] );
   return 0;
 }
 

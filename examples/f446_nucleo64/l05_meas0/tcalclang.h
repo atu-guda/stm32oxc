@@ -105,8 +105,8 @@ namespace tcalclang {
      int addDatas( float *pv, const char *nm, uint32_t sz = 1 );
      int addDatas( int   *pv, const char *nm, uint32_t sz = 1 );
      const DataInfo* findData( const char *nm ) const;
-     int* ptr_i( const char *nmi ) const; // nmi = name or name[idx]
-     float* ptr_f( const char *nmi ) const;
+     // int* ptr_i( const char *nmi ) const; // nmi = name or name[idx]
+     // float* ptr_f( const char *nmi ) const;
      float val( const char *nmi ) const;
      int set( const char *nmi, const char *sval );
      int parse_arg( const char *s, Cmd &cmd ) const;

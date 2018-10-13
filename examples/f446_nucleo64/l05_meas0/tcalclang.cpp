@@ -333,25 +333,25 @@ void* Datas::ptr( const char *nmi, DataType &dt ) const
   return nullptr;
 }
 
-int* Datas::ptr_i( const char *nmi ) const
-{
-  DataType dt;
-  void *p = ptr( nmi, dt );
-  if( !p || dt != DataType::t_int ) {
-    return nullptr;
-  }
-  return static_cast<int*>( p );
-}
+// int* Datas::ptr_i( const char *nmi ) const
+// {
+//   DataType dt;
+//   void *p = ptr( nmi, dt );
+//   if( !p || dt != DataType::t_int ) {
+//     return nullptr;
+//   }
+//   return static_cast<int*>( p );
+// }
 
-float* Datas::ptr_f( const char *nmi ) const
-{
-  DataType dt;
-  void *p = ptr( nmi, dt );
-  if( !p || dt != DataType::t_int ) {
-    return nullptr;
-  }
-  return static_cast<float*>( p );
-}
+// float* Datas::ptr_f( const char *nmi ) const
+// {
+//   DataType dt;
+//   void *p = ptr( nmi, dt );
+//   if( !p || dt != DataType::t_int ) {
+//     return nullptr;
+//   }
+//   return static_cast<float*>( p );
+// }
 
 float Datas::val( const char *nmi ) const
 {
