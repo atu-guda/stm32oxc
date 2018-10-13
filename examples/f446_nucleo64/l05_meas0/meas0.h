@@ -14,20 +14,20 @@ extern float    time_f;
 extern int      time_i;
 
 inline const int n_uin = 8;
-extern float    uin[n_uin];     // user input float
-extern unsigned nu_uin;         // number of used uin elements
+extern float     uin[n_uin];     // user input float
+extern int       nu_uin;         // number of used uin elements
 
 inline const int n_uin_i = 8;
-extern int      uin_i[n_uin_i]; // user input int
-extern unsigned nu_uin_i;       // number of used uin_i elements
+extern int       uin_i[n_uin_i]; // user input int
+extern int       nu_uin_i;       // number of used uin_i elements
 
 inline const int n_uout = 8;
-extern float    uout[n_uout];     // user output float
-extern unsigned nu_uout;          // number of used uout elements
+extern float     uout[n_uout];     // user output float
+extern int       nu_uout;          // number of used uout elements
 
 inline const int n_uout_i = 8;
-extern int      uout_i[n_uout_i]; // user output int
-extern unsigned nu_uout_i;        // number of used uout_i elements
+extern int       uout_i[n_uout_i]; // user output int
+extern int        nu_uout_i;        // number of used uout_i elements
 
 extern float vref_in;
 extern float vref_out;

@@ -86,13 +86,13 @@ int      time_i  = 0;
 uint32_t ttick_0 = 0; // time in ticks ( ms, start value)
 
 float uin[n_uin];
-unsigned nu_uin  = 4;
+int   nu_uin  = 4;
 int uin_i[n_uin_i];
-unsigned nu_uin_i = 4;
+int   nu_uin_i = 4;
 float uout[n_uout];
-unsigned nu_uout = 4;
+int   nu_uout = 4;
 int uout_i[n_uout_i];
-unsigned nu_uout_i = 4;
+int   nu_uout_i = 4;
 
 float vref_out = 3.2256;
 float vref_in  = 3.3270;
@@ -146,14 +146,19 @@ int main(void)
   i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
 
+  ADD_DATAS_NM( user_vars, "UVAR"  );
   ADD_DATA( time_i );
   ADD_DATA( time_f );
   ADD_DATA( vref_in );
   ADD_DATA( vref_out );
   ADD_DATAS( uin );
+  ADD_DATA( nu_uin );
   ADD_DATAS( uin_i );
+  ADD_DATA( nu_uin_i );
   ADD_DATAS( uout );
+  ADD_DATA( nu_uout );
   ADD_DATAS( uout_i );
+  ADD_DATA( nu_uout_i );
   ADD_DATAS( adc );
   ADD_DATAS( adc_i );
   ADD_DATAS( dac );
@@ -167,7 +172,6 @@ int main(void)
   ADD_DATAS( lcd );
   ADD_DATAS( lcd_b );
   ADD_DATAS( tmp );
-  // ADD_DATAS_NM( usr_in, "uin"  );
 
   lcdt.init_4b();
   lcdt.cls();
@@ -408,7 +412,7 @@ int measure_uin()
   char *eptr;
   int ncvt = 0;
 
-  for( unsigned i=0; i < nu_uin; ++i ) {
+  for( int i=0; i < nu_uin; ++i ) {
     float v = strtof( b, &eptr );
     if( b == eptr ) {
       return ncvt;
@@ -420,7 +424,7 @@ int measure_uin()
     b = eptr;
   }
 
-  for( unsigned i=0; i < nu_uin_i; ++i ) {
+  for( int i=0; i < nu_uin_i; ++i ) {
     int v = strtol( b, &eptr, 0 );
     if( b == eptr ) {
       return ncvt;
@@ -438,10 +442,10 @@ int convert_uin( int argc, const char * const * argv )
 {
   int carg = 1;
 
-  for( unsigned i=0; carg < argc  &&  i < nu_uin; ++i, ++carg ) {
+  for( int i=0; carg < argc  &&  i < nu_uin; ++i, ++carg ) {
     uin[i] = strtof( argv[carg], 0 );
   }
-  for( unsigned i=0; carg < argc  &&  i < nu_uin_i; ++i, ++carg ) {
+  for( int i=0; carg < argc  &&  i < nu_uin_i; ++i, ++carg ) {
     uin_i[i] = strtol( argv[carg], 0, 0 );
   }
   return carg - 1;
@@ -453,11 +457,11 @@ int tty_output()
 
   os << time_f << ' ';
 
-  for( unsigned i=0; i < nu_uout; ++i ) {
+  for( int i=0; i < nu_uout; ++i ) {
     os << uout[i] << ' ';
   }
 
-  for( unsigned i=0; i < nu_uout_i; ++i ) {
+  for( int i=0; i < nu_uout_i; ++i ) {
     os << uout_i[i] << ' ';
   }
   os << NL;
