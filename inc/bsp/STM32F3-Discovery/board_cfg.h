@@ -1,7 +1,7 @@
 #ifndef _BOARD_STM32F3DISCOVERY
 #define _BOARD_STM32F3DISCOVERY
 
-// definition of resoures on atu first STM32F303 discovery board
+// definition of resoures for STM32F303 discovery board
 // headers must be included manualy in C/CPP file
 
 #define def_stksz 256
@@ -41,12 +41,15 @@
 #define LED_BSP_RX        LED_BSP_GREEN_0
 #define LED_BSP_ERR       LED_BSP_RED_1
 
-#define BOARD_BTN0_EXIST  1
-#define BOARD_BTN0_GPIO   GPIOA
-#define BOARD_BTN0_EN     __GPIOA_CLK_ENABLE();
-#define BOARD_BTN0_N      0
-#define BOARD_BTN0_BIT    ( 1 << BOARD_BTN0_N )
-#define BOARD_BTN0_IRQ    EXTI0_IRQn
+#define BOARD_BTN0_EXIST   1
+#define BOARD_BTN0_GPIO    GPIOA
+#define BOARD_BTN0_EN      __GPIOA_CLK_ENABLE();
+#define BOARD_BTN0_N       0
+#define BOARD_BTN0_BIT     ( 1 << BOARD_BTN0_N )
+#define BOARD_BTN0_PULL    GPIO_PULLDOWN
+#define BOARD_BTN0_MODE    GPIO_MODE_IT_RISING
+#define BOARD_BTN0_IRQ     EXTI0_IRQn
+#define BOARD_BTN0_IRQPRTY 14
 #define BOARD_BTN0_IRQHANDLER EXTI0_IRQHandler
 
 

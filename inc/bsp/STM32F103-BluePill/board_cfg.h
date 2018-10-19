@@ -55,7 +55,10 @@
 #define BOARD_BTN0_EN     __GPIOA_CLK_ENABLE();
 #define BOARD_BTN0_N      0
 #define BOARD_BTN0_BIT    ( 1 << BOARD_BTN0_N )
+#define BOARD_BTN0_PULL    GPIO_PULLDOWN
+#define BOARD_BTN0_MODE    GPIO_MODE_IT_RISING
 #define BOARD_BTN0_IRQ    EXTI0_IRQn
+#define BOARD_BTN0_IRQPRTY 14
 #define BOARD_BTN0_IRQHANDLER EXTI0_IRQHandler
 
 // TODO: move to B6, B7 after tcouple project redesign

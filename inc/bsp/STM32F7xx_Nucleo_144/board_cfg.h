@@ -36,22 +36,18 @@
 #define LED_BSP_RX        LED_BSP_GREEN
 #define LED_BSP_ERR       LED_BSP_BLUE
 
-#define BOARD_BTN0_EXIST  1
-#define BOARD_BTN0_GPIO   GPIOC
-#define BOARD_BTN0_EN     __GPIOC_CLK_ENABLE();
 // TODO: fix
-#define BOARD_BTN0_N      13
-#define BOARD_BTN0_BIT    ( 1 << BOARD_BTN0_N )
-#define BOARD_BTN0_IRQ    EXTI15_10_IRQn
+#define BOARD_BTN0_EXIST   1
+#define BOARD_BTN0_GPIO    GPIOC
+#define BOARD_BTN0_EN      __GPIOC_CLK_ENABLE();
+#define BOARD_BTN0_N       13
+#define BOARD_BTN0_BIT     ( 1 << BOARD_BTN0_N )
+#define BOARD_BTN0_PULL    GPIO_PULLDOWN
+#define BOARD_BTN0_MODE    GPIO_MODE_IT_RISING
+#define BOARD_BTN0_IRQ     EXTI15_10_IRQn
+#define BOARD_BTN0_IRQPRTY 14
 #define BOARD_BTN0_IRQHANDLER EXTI15_10_IRQHandler
 
-// #define BOARD_BTN1_EXIST  1
-// #define BOARD_BTN1_GPIO   GPIOH
-// #define BOARD_BTN1_EN     __GPIOH_CLK_ENABLE();
-// #define BOARD_BTN1_N      3
-// #define BOARD_BTN1_BIT    ( 1 << BOARD_BTN1_N )
-// #define BOARD_BTN1_IRQ    EXTI3_IRQn
-// #define BOARD_BTN1_IRQHANDLER EXTI3_IRQHandler
 
 
 #define SD_EXA_CK_GPIO   GPIOC

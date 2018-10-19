@@ -6,6 +6,7 @@
 
 void GPIO_WriteBits( GPIO_TypeDef* GPIOx, uint16_t PortVal, uint16_t mask );
 void GPIO_enableClk( GPIO_TypeDef* gp );
+void board_def_btn_init( bool needIRQ );
 
 
 class Pins

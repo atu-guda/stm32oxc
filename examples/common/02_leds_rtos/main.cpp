@@ -45,27 +45,7 @@ void task_leds( void *prm UNUSED_ARG )
 // configs
 void MX_GPIO_Init(void)
 {
-  GPIO_InitTypeDef gpi;
-  gpi.Mode  = GPIO_MODE_IT_RISING;
-  gpi.Pull  = GPIO_PULLDOWN;
-  gpi.Speed = GPIO_SPEED_MAX;
-
-#ifdef BOARD_BTN0_EXIST
-  GPIO_enableClk( BOARD_BTN0_GPIO );
-  gpi.Pin = BOARD_BTN0_BIT;
-  HAL_GPIO_Init( BOARD_BTN0_GPIO, &gpi );
-  HAL_NVIC_SetPriority( BOARD_BTN0_IRQ, configKERNEL_INTERRUPT_PRIORITY, 0 );
-  HAL_NVIC_EnableIRQ( BOARD_BTN0_IRQ );
-#endif
-
-#ifdef BOARD_BTN1_EXIST
-  GPIO_enableClk( BOARD_BTN1_GPIO );
-  gpi.Pin  = BOARD_BTN1_BIT;
-  HAL_GPIO_Init( BOARD_BTN1_GPIO, &gpi );
-  HAL_NVIC_SetPriority( BOARD_BTN1_IRQ, configKERNEL_INTERRUPT_PRIORITY, 0 );
-  HAL_NVIC_EnableIRQ( BOARD_BTN1_IRQ );
-#endif
-
+  board_def_btn_init( true );
 }
 
 
