@@ -1,0 +1,9 @@
+Test MAX31855 thermocouple drv via SPI
+
+
+Used: SPI1:
+B3 = SCK
+B4 = MISO
+B5 = MOSI
+G7 = Soft NSS
+

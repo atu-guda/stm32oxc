@@ -1,0 +1,14 @@
+Use ADC/DAC PCF8591 via I2C (addr: 0x48-ox4F, used  0x48)
+4 channel: ADC
+1 channel: DAC
+Send seq:
+addr, cfg_byte, [DAC data....]
+
+SCL = B8 ? 4.7k pullUp
+SDA = B9 ? 4.7k pullUp
+
+
+Used USART2 with ST_Link VCP
+A2  = USART2_TX
+A3  = USART2_RX
+

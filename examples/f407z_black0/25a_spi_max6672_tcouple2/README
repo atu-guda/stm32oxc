@@ -1,0 +1,14 @@
+Test 2 MAX6675 thermocouple drv via SPI
+
+
+Used: SPI1:
+B3 = SCK
+B4 = MISO
+B5 = MOSI
+G7 = Soft NSS1
+G8 = Soft NSS2 ?
+
+Untested on this platform
+Need SPI assignment
+
+

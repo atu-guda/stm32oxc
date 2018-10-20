@@ -1,0 +1,5 @@
+Try ADC usage: manual conversion mode
+Clock: APB2/4 = 84/4 = 21
+
+Channels: C0:C3 = Ch10:Ch13
+

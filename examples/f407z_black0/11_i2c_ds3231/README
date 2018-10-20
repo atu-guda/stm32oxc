@@ -1,0 +1,11 @@
+Use RTC DS3231 via I2C
+
+SCL = B8 ? 4.7k pullUp
+SDA = B9 ? 4.7k pullUp
+
+
+
+Used USART2 with ST_Link VCP
+A2  = USART2_TX
+A3  = USART2_RX
+
