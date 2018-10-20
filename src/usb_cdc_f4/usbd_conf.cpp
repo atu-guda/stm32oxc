@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <oxc_base.h>
 
 #include <usbd_core.h>
@@ -119,25 +120,30 @@ void HAL_PCD_DisconnectCallback( PCD_HandleTypeDef *hpcd )
   */
 USBD_StatusTypeDef  USBD_LL_Init( USBD_HandleTypeDef *pdev )
 {
-  /* Change Systick prioity */
-  // NVIC_SetPriority ( SysTick_IRQn, 0 ); // TODO: atu: check!
+  hpcd.pData                  = pdev;
+  pdev->pData                 = &hpcd;
 
-  /*Set LL Driver parameters */
-  hpcd.Instance = USB_OTG_FS;
-  hpcd.Init.dev_endpoints = 4;
-  hpcd.Init.use_dedicated_ep1 = 0;
-  hpcd.Init.ep0_mps = 0x40;
-  hpcd.Init.dma_enable = 0;
-  hpcd.Init.low_power_enable = 0;
-  hpcd.Init.phy_itface = PCD_PHY_EMBEDDED;
-  hpcd.Init.Sof_enable = 0;
-  hpcd.Init.speed = PCD_SPEED_FULL;
-  hpcd.Init.vbus_sensing_enable = 1; // TODO: param?
-  /* Link The driver to the stack */
-  hpcd.pData = pdev;
-  pdev->pData = &hpcd;
-  /*Initialize LL Driver */
-  HAL_PCD_Init( &hpcd );
+  hpcd.Instance               = USB_OTG_FS;
+  hpcd.Init.dev_endpoints     = 4;
+  hpcd.Init.speed             = PCD_SPEED_FULL;
+  hpcd.Init.dma_enable        = DISABLE;
+  hpcd.Init.ep0_mps           = DEP0CTL_MPS_64; // 0x40; ?
+  hpcd.Init.phy_itface        = PCD_PHY_EMBEDDED;
+  hpcd.Init.Sof_enable        = DISABLE;
+  hpcd.Init.low_power_enable  = DISABLE;
+  hpcd.Init.lpm_enable        = DISABLE;
+  hpcd.Init.use_dedicated_ep1 = DISABLE;
+
+  #ifdef BOARD_USB_DEFAULT_VBUS_PIN
+  hpcd.Init.vbus_sensing_enable = ENABLE;
+  #else
+  hpcd.Init.vbus_sensing_enable = DISABLE;
+  #endif
+
+  if( HAL_PCD_Init( &hpcd ) != HAL_OK ) {
+    errno = 50000;
+    return USBD_FAIL;
+  };
 
   HAL_PCDEx_SetRxFiFo( &hpcd, 0x80 );
   HAL_PCDEx_SetTxFiFo( &hpcd, 0, 0x40 );
