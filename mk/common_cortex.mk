@@ -268,7 +268,9 @@ ifeq "$(USE_OXC_SD)" "y"
     SRCS += ff_gen_drv.c
     SRCS += diskio.c
     SRCS += sd_diskio.c
-    SRCS += oxc_ff_syncobj.cpp
+    ifeq "$(USE_FREERTOS)" "y"
+      SRCS += oxc_ff_syncobj.cpp
+    endif
   endif
 endif
 

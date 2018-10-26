@@ -15,8 +15,6 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
-const char* common_help_string = "App to test SDIO with FATFS w/o FreeRTOS" NL;
-
 extern SD_HandleTypeDef hsd;
 void MX_SDIO_SD_Init();
 uint8_t sd_buf[512]; // one sector
@@ -44,7 +42,6 @@ const CmdInfo* global_cmds[] = {
 
 
 
-
 int main(void)
 {
   BOARD_PROLOG;
@@ -64,16 +61,18 @@ int main(void)
 
   BOARD_POST_INIT_BLINK;
 
-  pr( NL "##################### " PROJ_NAME NL );
+  BOARD_CREATE_STD_TASKS;
 
-  srl.re_ps();
-
-  oxc_add_aux_tick_fun( led_task_nortos );
-
-  std_main_loop_nortos( &srl, nullptr );
-
+  SCHEDULER_START;
   return 0;
 }
+
+void task_main( void *prm UNUSED_ARG ) // TMAIN
+{
+  default_main_loop();
+  vTaskDelete(NULL);
+}
+
 
 
 

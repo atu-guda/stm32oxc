@@ -109,7 +109,7 @@ int cmd_cat( int argc, const char * const * argv )
   unsigned nr = 0, to_read, was_read; // number of read bytes
   FIL f;
   FRESULT r = f_open( &f, fn, FA_READ );
-  TickType_t tc0 = xTaskGetTickCount(), tc1 = tc0;
+  uint32_t tc0 = HAL_GetTick(), tc1 = tc0;
   if( r == FR_OK ) {
     while( nr < max_sz ) { // or break
       to_read = max_sz - nr;
@@ -127,7 +127,7 @@ int cmd_cat( int argc, const char * const * argv )
       nr += was_read;
     }
     f_close( &f );
-    tc1 = xTaskGetTickCount();
+    tc1 = HAL_GetTick();
   } else {
     pr( "f_open error: " ); pr_d( r ); pr( NL );
   }
@@ -177,7 +177,7 @@ int cmd_wblocks( int argc, const char * const * argv )
   memset( sd_buf, '1', sizeof( sd_buf ) );
   FIL f;
   FRESULT r = f_open( &f, fn, FA_WRITE | FA_OPEN_ALWAYS );
-  TickType_t tc0 = xTaskGetTickCount(), tc1 = tc0;
+  uint32_t tc0 = HAL_GetTick(), tc1 = tc0;
   if( r == FR_OK ) {
     for( unsigned i=0; i < n_sect; ++i ) {
       r = f_write( &f, sd_buf, sizeof( sd_buf ), &w );
@@ -186,7 +186,7 @@ int cmd_wblocks( int argc, const char * const * argv )
         break;
       }
     }
-    tc1 = xTaskGetTickCount();
+    tc1 = HAL_GetTick();
     f_close( &f );
   } else {
     pr( "f_open error: " ); pr_d( r ); pr( NL );
