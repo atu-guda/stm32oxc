@@ -1,4 +1,4 @@
-PROJ_NAME=sdcard1a
+PROJ_NAME=sdcard1
 
 USE_OXC = y
 # USE_OXC_DEVIO = y
