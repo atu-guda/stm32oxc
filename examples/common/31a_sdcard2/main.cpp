@@ -4,7 +4,7 @@
 #include <oxc_auto.h>
 #include <oxc_fs_cmd0.h>
 
-#include <fatfs.h>
+#include <fatfs_sd_st.h>
 #include <ff.h>
 
 using namespace std;
@@ -14,6 +14,8 @@ USE_DIE4LED_ERROR_HANDLER;
 BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
+
+const char* common_help_string = "App to test SDIO with FATFS w/o FreeRTOS" NL;
 
 extern SD_HandleTypeDef hsd;
 void MX_SDIO_SD_Init();
@@ -53,7 +55,7 @@ int main(void)
 
   UVAR('e') = HAL_SD_Init( &hsd );
   delay_ms( 10 );
-  MX_FATFS_Init();
+  MX_FATFS_SD_Init();
   UVAR('s') = HAL_SD_GetState( &hsd );
   UVAR('z') = HAL_SD_GetCardInfo( &hsd, &cardInfo );
   fs.fs_type = 0; // none
@@ -61,18 +63,16 @@ int main(void)
 
   BOARD_POST_INIT_BLINK;
 
-  BOARD_CREATE_STD_TASKS;
+  pr( NL "##################### " PROJ_NAME NL );
 
-  SCHEDULER_START;
+  srl.re_ps();
+
+  oxc_add_aux_tick_fun( led_task_nortos );
+
+  std_main_loop_nortos( &srl, nullptr );
+
   return 0;
 }
-
-void task_main( void *prm UNUSED_ARG ) // TMAIN
-{
-  default_main_loop();
-  vTaskDelete(NULL);
-}
-
 
 
 
@@ -115,7 +115,7 @@ int cmd_sdinit( int /*argc*/, const char * const * /*argv*/ )
   int rc_i =  HAL_SD_Init( &hsd );
   UVAR('e') = rc_i;
   delay_ms( 10 );
-  MX_FATFS_Init();
+  MX_FATFS_SD_Init();
   UVAR('s') = HAL_SD_GetState( &hsd );
   UVAR('z') = HAL_SD_GetCardInfo( &hsd, &cardInfo );
   fs.fs_type = 0; // none

@@ -23,6 +23,5 @@ USE_OXC_SDFAT = y
 SRCS  = main.cpp
 
 SRCS += f4_sdio_init_1bit.cpp
-SRCS += ccsbcs.c
 
 

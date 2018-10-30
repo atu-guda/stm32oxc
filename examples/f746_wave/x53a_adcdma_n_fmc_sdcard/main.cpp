@@ -6,11 +6,12 @@
 #include <vector>
 
 #include <oxc_auto.h>
+#include <oxc_fs_cmd0.h>
 
 #include <board_sdram.h>
 
+#include <fatfs_sd_st.h>
 #include <ff.h>
-#include <fatfs.h>
 
 using namespace std;
 using namespace SMLRL;
@@ -22,6 +23,8 @@ BOARD_CONSOLE_DEFINES;
 
 SDRAM_HandleTypeDef hsdram;
 
+const char* common_help_string = "App to measure ADC data (4ch) to SDRAM and store to SD card" NL;
+
 // BOARD_DEFINE_LEDS_EXTRA; //  PinsOut ledsx( GPIOE, 1, 6 ); // E1-E6
 
 extern SD_HandleTypeDef hsd;
@@ -29,8 +32,6 @@ void MX_SDIO_SD_Init();
 uint8_t sd_buf[512]; // one sector
 HAL_SD_CardInfoTypeDef cardInfo;
 FATFS fs;
-const int fspath_sz = 32;
-extern char fspath[fspath_sz];
 int  print_curr( const char *s );
 int  out_to_curr( uint32_t n, uint32_t st ); // 0 = ok
 
@@ -63,7 +64,7 @@ void pr_ADC_state();
 ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
 uint32_t tim_freq_in; // timer input freq
-uint32_t adc_clk = ADC_FREQ_MAX;     // depend in MCU, set in adc_init_exa_4ch_dma
+uint32_t adc_clk = ADC_FREQ_MAX;     // depend in MCU, set in adc_init_exa_4ch_dma*
 // uint32_t t_step = 100000; // in us, recalculated before measurement
 float t_step_f = 0.1; // in s, recalculated before measurement
 int v_adc_ref = BOARD_ADC_COEFF; // in mV, measured before test, adjust as UVAR('v')
@@ -118,6 +119,7 @@ const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
 
   &CMDINFO_TEST0,
+  FS_CMDS0,
   &CMDINFO_OUT,
   &CMDINFO_OUTSD,
   nullptr
@@ -139,7 +141,7 @@ int main(void)
   MX_SDIO_SD_Init();
   UVAR('e') = HAL_SD_Init( &hsd );
   delay_ms( 10 );
-  MX_FATFS_Init();
+  MX_FATFS_SD_Init();
   UVAR('x') = HAL_SD_GetState( &hsd ); // 0 = HAL_OK, 1 = HAL_ERROR, 2 = HAL_BUSY, 3 = HAL_TIMEOUT
   UVAR('y') = HAL_SD_GetCardInfo( &hsd, &cardInfo );
   fs.fs_type = 0; // none

@@ -6,11 +6,12 @@
 #include <vector>
 
 #include <oxc_auto.h>
+#include <oxc_fs_cmd0.h>
 
 #include <board_sdram.h>
 
+#include <fatfs_sd_st.h>
 #include <ff.h>
-#include <fatfs.h>
 
 using namespace std;
 using namespace SMLRL;
@@ -26,6 +27,8 @@ void task_pot( void *prm UNUSED_ARG );
 
 SDRAM_HandleTypeDef hsdram;
 
+const char* common_help_string = "App to measure ADC data (4ch) to SDRAM and store to SD card while digital POT ctl via I2C" NL;
+
 // BOARD_DEFINE_LEDS_EXTRA; //  PinsOut ledsx( GPIOE, 1, 6 ); // E1-E6
 
 extern SD_HandleTypeDef hsd;
@@ -35,8 +38,6 @@ HAL_SD_CardInfoTypeDef cardInfo;
 FATFS fs;
 FIL out_file;
 const int pbufsz = 128;
-const int fspath_sz = 32;
-extern char fspath[fspath_sz];
 int  print_curr( const char *s );
 int  out_to_curr( uint32_t n, uint32_t st ); // 0 = ok
 
@@ -139,6 +140,7 @@ const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
 
   &CMDINFO_TEST0,
+  FS_CMDS0,
   &CMDINFO_POTCTL,
   &CMDINFO_OUT,
   &CMDINFO_OUTSD,
@@ -194,7 +196,7 @@ int main(void)
 
   BOARD_POST_INIT_BLINK;
 
-  MX_FATFS_Init();
+  MX_SDIO_SD_Init();
 
   BOARD_CREATE_STD_TASKS;
   xTaskCreate( task_pot,  "pot", def_stksz, nullptr,   1, nullptr );
@@ -627,14 +629,14 @@ void print_file_info( const FIL *f )
   pr( " sclust= " )     ; pr_d( f->obj.sclust )  ;
   pr( " clust= "  )     ; pr_d( f->clust )   ; pr( NL );
 
-  #if !_FS_READONLY
+  #if !FF_FS_READONLY
     pr( " dir_sect= " ) ; pr_d( f->dir_sect ) ;
     pr( " dir_ptr= " )  ; pr_a( f->dir_ptr )  ;
   #endif
-  #if _USE_FASTSEEK
+  #if FF_USE_FASTSEEK
     pr( " cltbl= " )    ; pr_a( f->cltbl )    ;
   #endif
-  #if _FS_LOCK
+  #if FF_FS_LOCK
     pr( " lockid= " )   ; pr_d( f->obj.lockid )   ;
   #endif
 
@@ -649,21 +651,20 @@ void print_fsinfo( const FATFS *fs )
     return;
   }
   pr( " fs_type= " )    ; pr_d( fs->fs_type )    ;
-  pr( " drv= " )        ; pr_d( fs->drv )        ;
   pr( " csize= " )      ; pr_d( fs->csize )      ;
   pr( " n_fats= " )     ; pr_d( fs->n_fats )     ; pr( NL ) ;
   pr( " wflag= " )      ; pr_d( fs->wflag )      ;
   pr( " fsi_flag= " )   ; pr_d( fs->fsi_flag )   ;
   pr( " id= " )         ; pr_d( fs->id )         ; pr( NL ) ;
 
-  #if _FS_REENTRANT
+  #if FF_FS_REENTRANT
   pr( "  sobj= " )      ; pr_a( fs->sobj )       ;
   #endif
-  #if !_FS_READONLY
+  #if !FF_FS_READONLY
   pr( " last_clust= " ) ; pr_d( fs->last_clst ) ;
   pr( " free_clust= " ) ; pr_d( fs->free_clst ) ;
   #endif
-  #if _FS_RPATH
+  #if FF_FS_RPATH
   pr( " cdir= " )       ; pr_d( fs->cdir )       ; pr( NL ) ;
   #endif
 

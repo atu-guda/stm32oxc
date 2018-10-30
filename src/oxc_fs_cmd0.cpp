@@ -1,7 +1,7 @@
 #include <string.h>
 
 #include <ff.h>
-#include <fatfs.h>
+#include <fatfs_sd_st.h>
 
 #include <oxc_fs_cmd0.h>
 
@@ -76,7 +76,6 @@ int cmd_fsinfo( int argc, const char * const * argv )
     fsn = argv[1];
   }
   pr( "fsinfo about \"" ); pr( fsn ); pr( "\"" NL "fs_type= " ); pr_d( fs.fs_type ); pr( NL );
-  pr( "drv= " ); pr_d( fs.drv ); pr( NL );
   pr( "csize= " ); pr_d( fs.csize ); pr( NL );
   pr( "n_fats= " ); pr_d( fs.n_fats ); pr( NL );
   pr( "wflag= " ); pr_d( fs.wflag ); pr( NL );

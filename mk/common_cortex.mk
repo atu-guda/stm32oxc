@@ -259,15 +259,18 @@ ifeq "$(USE_OXC_SD)" "y"
   SRCS += stm32$(MCSUFF)xx_hal_sd.c
   SRCS += stm32$(MCSUFF)xx_ll_sdmmc.c
   ALLFLAGS += -DUSE_OXC_SD
+  # TODO: USE_FATFS
   ifeq "$(USE_OXC_SDFAT)"  "y"
-    ADDSRC += $(STMSRC)/FatFs
-    SRCS += oxc_fs_cmd0.cpp
+    ADDSRC +=     /usr/share/fatfs/source
+    ALLFLAGS += -I/usr/share/fatfs/source
     SRCS += bsp_driver_sd.c
-    SRCS += fatfs.c
     SRCS += ff.c
-    SRCS += ff_gen_drv.c
-    SRCS += diskio.c
+    SRCS += ffunicode.c
+    SRCS += ff_gen_drv_st.c
+    SRCS += diskio_st.c
     SRCS += sd_diskio.c
+    SRCS += fatfs_sd_st.c
+    SRCS += oxc_fs_cmd0.cpp
     ifeq "$(USE_FREERTOS)" "y"
       SRCS += oxc_ff_syncobj.cpp
     endif

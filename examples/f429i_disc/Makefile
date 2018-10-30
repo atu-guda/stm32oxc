@@ -22,6 +22,7 @@ SUBDIRS = \
   17_1w_18b20 \
   30_sdcard1 \
   31_sdcard2 \
+  31a_sdcard2 \
   50_adc0 \
   51_adcdma \
   51a_adcdma_n \

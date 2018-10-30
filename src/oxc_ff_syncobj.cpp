@@ -4,13 +4,13 @@
 
 // functions for FreeRTOS sync for FATFS
 
-int ff_cre_syncobj ( BYTE vol, _SYNC_t *sobj ) // 0 = fail
+int ff_cre_syncobj ( BYTE vol, FF_SYNC_t *sobj ) // 0 = fail
 {
   *sobj = xSemaphoreCreateMutex();
   return ( sobj != nullptr );
 }
 
-int ff_del_syncobj( _SYNC_t sobj )
+int ff_del_syncobj( FF_SYNC_t sobj )
 {
   if( !sobj ) {
     return false;
@@ -20,13 +20,13 @@ int ff_del_syncobj( _SYNC_t sobj )
 }
 
 
-int ff_req_grant( _SYNC_t sobj )
+int ff_req_grant( FF_SYNC_t sobj )
 {
-  return xSemaphoreTake( sobj, _FS_TIMEOUT );
+  return xSemaphoreTake( sobj, FF_FS_TIMEOUT );
 }
 
 
-void ff_rel_grant( _SYNC_t sobj )
+void ff_rel_grant( FF_SYNC_t sobj )
 {
   xSemaphoreGive( sobj );
 }

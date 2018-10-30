@@ -33,6 +33,7 @@ SUBDIRS = \
   28_spi_ad9833 \
   30_sdcard1 \
   31_sdcard2 \
+  31a_sdcard2 \
   50_adc0 \
   51_adcdma \
   53_adcdma_sd \

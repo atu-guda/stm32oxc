@@ -6,11 +6,12 @@
 #include <vector>
 
 #include <oxc_auto.h>
+#include <oxc_fs_cmd0.h>
 
 #include <board_sdram.h>
 
+#include <fatfs_sd_st.h>
 #include <ff.h>
-#include <fatfs.h>
 
 using namespace std;
 using namespace SMLRL;
@@ -33,8 +34,6 @@ void MX_SDIO_SD_Init();
 uint8_t sd_buf[512]; // one sector
 HAL_SD_CardInfoTypeDef cardInfo;
 FATFS fs;
-const int fspath_sz = 32;
-extern char fspath[fspath_sz];
 int  print_curr( const char *s );
 void out_to_curr( uint32_t n, uint32_t st );
 
@@ -159,7 +158,7 @@ int main(void)
   MX_SDIO_SD_Init();
   UVAR('e') = HAL_SD_Init( &hsd );
   delay_ms( 10 );
-  MX_FATFS_Init();
+  MX_FATFS_SD_Init();
   UVAR('x') = HAL_SD_GetState( &hsd );
   UVAR('y') = HAL_SD_GetCardInfo( &hsd, &cardInfo );
   fs.fs_type = 0; // none

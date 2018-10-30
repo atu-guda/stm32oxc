@@ -6,11 +6,12 @@
 #include <vector>
 
 #include <oxc_auto.h>
+#include <oxc_fs_cmd0.h>
 
 #include <board_sdram.h>
 
+#include <fatfs_sd_st.h>
 #include <ff.h>
-#include <fatfs.h>
 
 using namespace std;
 using namespace SMLRL;
@@ -22,6 +23,8 @@ BOARD_CONSOLE_DEFINES;
 
 SDRAM_HandleTypeDef hsdram;
 
+const char* common_help_string = "App to measure ADC data (4ch) to SDRAM and store to SD card" NL;
+
 // BOARD_DEFINE_LEDS_EXTRA; //  PinsOut ledsx( GPIOE, 1, 6 ); // E1-E6
 
 extern SD_HandleTypeDef hsd;
@@ -29,10 +32,8 @@ void MX_SDIO_SD_Init();
 uint8_t sd_buf[512]; // one sector
 HAL_SD_CardInfoTypeDef cardInfo;
 FATFS fs;
-const int fspath_sz = 32;
-extern char fspath[fspath_sz];
 int  print_curr( const char *s );
-void out_to_curr( uint32_t n, uint32_t st );
+int  out_to_curr( uint32_t n, uint32_t st ); // 0 = ok
 
 // buffer to file output
 const uint32_t fbuf_wr_k   = 8;
@@ -118,11 +119,11 @@ const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
 
   &CMDINFO_TEST0,
+  FS_CMDS0,
   &CMDINFO_OUT,
   &CMDINFO_OUTSD,
   nullptr
 };
-
 
 
 
@@ -135,8 +136,8 @@ int main(void)
   MX_SDIO_SD_Init();
   UVAR('e') = HAL_SD_Init( &hsd );
   delay_ms( 10 );
-  MX_FATFS_Init();
-  UVAR('x') = HAL_SD_GetState( &hsd );
+  MX_FATFS_SD_Init();
+  UVAR('x') = HAL_SD_GetState( &hsd ); // 0 = HAL_OK, 1 = HAL_ERROR, 2 = HAL_BUSY, 3 = HAL_TIMEOUT
   UVAR('y') = HAL_SD_GetCardInfo( &hsd, &cardInfo );
   fs.fs_type = 0; // none
   fspath[0] = '\0';
@@ -150,7 +151,6 @@ int main(void)
   }
 
   UVAR('t') = 1000; // 1 s extra wait
-  // UVAR('v') = v_adc_ref;
   UVAR('v') = v_adc_ref;
   // UVAR('p') = (tim_freq_in/1000000)-1; // timer PSC, for 1MHz
   UVAR('p') = 17;  // for high freq, form 2MS/s (a=1) to 100 S/s (a=39999)
@@ -355,7 +355,7 @@ int  print_curr( const char *s )
   return rc;
 }
 
-void out_to_curr( uint32_t n, uint32_t st )
+int out_to_curr( uint32_t n, uint32_t st )
 {
   char buf[32];
   char pbuf[pbufsz];
@@ -369,6 +369,7 @@ void out_to_curr( uint32_t n, uint32_t st )
 
   float t = st * t_step_f;
   TickType_t tc0 = xTaskGetTickCount(), tc00 = tc0, tc1 = tc0;
+  int rc = 0;
   for( uint32_t i=0; i< n; ++i ) {
     uint32_t ii = i + st;
     t = t_step_f * ii;
@@ -393,6 +394,7 @@ void out_to_curr( uint32_t n, uint32_t st )
       delay_ms( 10 );
     }
   }
+  return rc;
 }
 
 int cmd_out( int argc, const char * const * argv )
@@ -434,6 +436,11 @@ int add_to_file( const char *s )
     return l;
   }
   errno = 5000 + rc;
+  pr( "Error state: fs= " ); pr_a( out_file.obj.fs ); pr( " id= " ); pr_d( out_file.obj.id );
+  pr( " flag= " ); pr_d( out_file.flag ); pr( " err= " ); pr_d( out_file.err );
+  pr( " fptr= " ); pr_d( out_file.fptr ); pr( " fsize= " ); pr_d( out_file.obj.objsize );
+  pr( NL );
+
   return 0;
 }
 

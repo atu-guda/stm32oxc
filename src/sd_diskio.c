@@ -3,7 +3,7 @@
   * @file    sd_diskio.c
   * @author  MCD Application Team, mod by atu
   * @version V1.4.0
-  * @date    09-September-2016, mod 2018.05.05
+  * @date    09-September-2016, mod 2018.10.30
   * @brief   SD Disk I/O driver
   ******************************************************************************
   * @attention
@@ -46,7 +46,9 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include <string.h>
-#include "ff_gen_drv.h"
+#include <oxc_base.h>
+#include <bsp_driver_sd.h>
+#include <ff_gen_drv_st.h>
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -58,26 +60,17 @@ static volatile DSTATUS Stat = STA_NOINIT;
 DSTATUS SD_initialize( BYTE );
 DSTATUS SD_status( BYTE );
 DRESULT SD_read( BYTE lun, BYTE *buff, DWORD sector, UINT count );
-#if _USE_WRITE == 1
 DRESULT SD_write( BYTE lun, const BYTE *buff, DWORD sector, UINT count );
-#endif /* _USE_WRITE == 1 */
 
-#if _USE_IOCTL == 1
 DRESULT SD_ioctl( BYTE lun, BYTE cmd, void *buff );
-#endif  /* _USE_IOCTL == 1 */
 
 const Diskio_drvTypeDef  SD_Driver =
 {
   SD_initialize,
   SD_status,
   SD_read,
-#if  _USE_WRITE == 1
   SD_write,
-#endif /* _USE_WRITE == 1 */
-
-#if  _USE_IOCTL == 1
   SD_ioctl,
-#endif /* _USE_IOCTL == 1 */
 };
 
 /* Private functions ---------------------------------------------------------*/
@@ -145,7 +138,6 @@ DRESULT SD_read( BYTE lun, BYTE *buff, DWORD sector, UINT count )
   * @param  count: Number of sectors to write (1..128)
   * @retval DRESULT: Operation result
   */
-#if _USE_WRITE == 1
 DRESULT SD_write( BYTE lun, const BYTE *buff, DWORD sector, UINT count )
 {
   uint32_t timeout = 100000;
@@ -161,7 +153,6 @@ DRESULT SD_write( BYTE lun, const BYTE *buff, DWORD sector, UINT count )
   }
   return RES_OK;
 }
-#endif /* _USE_WRITE == 1 */
 
 /**
   * @brief  I/O control operation
@@ -170,7 +161,6 @@ DRESULT SD_write( BYTE lun, const BYTE *buff, DWORD sector, UINT count )
   * @param  *buff: Buffer to send/receive control data
   * @retval DRESULT: Operation result
   */
-#if _USE_IOCTL == 1
 DRESULT SD_ioctl( BYTE lun, BYTE cmd, void *buff )
 {
   DRESULT res = RES_ERROR;
@@ -212,7 +202,6 @@ DRESULT SD_ioctl( BYTE lun, BYTE cmd, void *buff )
 
   return res;
 }
-#endif /* _USE_IOCTL == 1 */
 
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+/************************ (C) COPYRIGHT STMicroelectronics, atu *****END OF FILE****/
 

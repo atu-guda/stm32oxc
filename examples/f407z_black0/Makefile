@@ -8,7 +8,6 @@ SUBDIRS = \
   04_uart_console \
   05_usb_console \
   05a_def_console \
-  # 05b_usb_console_nort \
   05c_def_cons_nort \
   06_i2c_test \
   07_i2c_lcdt \
@@ -34,6 +33,7 @@ SUBDIRS = \
   28_spi_ad9833 \
   30_sdcard1 \
   31_sdcard2 \
+  31a_sdcard2 \
   50_adc0 \
   51_adcdma \
   53_adcdma_sd \
