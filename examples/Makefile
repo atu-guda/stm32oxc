@@ -4,6 +4,8 @@ SUBDIRS = \
   f303_disc \
   f407_x2 \
   f407_disc \
+  f407v_bb0 \
+  f407z_black0 \
   f446_nucleo64 \
   f429i_disc \
   f746_wave
