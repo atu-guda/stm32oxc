@@ -1,6 +1,8 @@
 #ifndef _BOARD_STM32F3DISCOVERY
 #define _BOARD_STM32F3DISCOVERY
 
+#define _BOARD_CFG_DEFINED
+
 // definition of resoures for STM32F303 discovery board
 // headers must be included manualy in C/CPP file
 
@@ -8,14 +10,9 @@
 
 // default LEDS is E8:E15
 #define BOARD_N_LEDS 8
-#define BOARD_LEDS_GPIO GPIOE
-#define BOARD_LEDS_GPIO_ON __GPIOE_CLK_ENABLE()
+#define BOARD_LEDS_GPIOX E
 #define BOARD_LEDS_OFS  8
-#define BOARD_LEDS_MASK 0xFF00
-// unshifted
-#define BOARD_LEDS_ALL  0x00FF
 
-#define BOARD_DEFINE_LEDS PinsOut leds( BOARD_LEDS_GPIO, BOARD_LEDS_OFS, BOARD_N_LEDS );
 
 // mini LEDS is E12:E15
 #define BOARD_N_LEDS_MINI 4
@@ -42,15 +39,10 @@
 #define LED_BSP_ERR       LED_BSP_RED_1
 
 #define BOARD_BTN0_EXIST   1
-#define BOARD_BTN0_GPIO    GPIOA
-#define BOARD_BTN0_EN      __GPIOA_CLK_ENABLE();
+#define BOARD_BTN0_GPIOX   A
 #define BOARD_BTN0_N       0
-#define BOARD_BTN0_BIT     ( 1 << BOARD_BTN0_N )
-#define BOARD_BTN0_PULL    GPIO_PULLDOWN
-#define BOARD_BTN0_MODE    GPIO_MODE_IT_RISING
-#define BOARD_BTN0_IRQ     EXTI0_IRQn
-#define BOARD_BTN0_IRQPRTY 14
-#define BOARD_BTN0_IRQHANDLER EXTI0_IRQHandler
+#define BOARD_BTN0_ACTIVE_DOWN 0
+#define BOARD_BTN0_IRQNAME    EXTI0
 
 
 

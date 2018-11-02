@@ -1,0 +1,67 @@
+Make files order:
+
+1. Makefile
+   examples: link to examples/common/examples_common_makefile.mk
+   must be set: OXCDIR
+
+2. Examples:
+  COMMONPROJDIR = $(shell basename `pwd` )
+  PROJMK=../../common/$(COMMONPROJDIR)/proj.mk  # main example makefile config
+
+3. -include local.mk # for local overrides
+
+4. ../common/board_add.mk
+   ADDSRC += ../common ../../common
+   include $(OXCDIR)/mk/bsp/<boardname>.mk
+     MCTYPE = STM32F407
+     MCINCTYPE = $(MCTYPE)xx
+     FREERTOS_ARCHNAME = ARM_CM4F
+     BOARDNAME = STM32F407Z-black0
+     BSPMAKEFILE= $(OXCDIR)/mk/bsp/stm32f407z_black0.mk # self
+     LDSCRIPT=STM32F407ZETx_FLASH.ld
+     HSE_VALUE = 8000000
+     SRCS += system_stm32f4xx.c
+     SRCS += startup_stm32f407xx.s
+     USE_OXC_CONSOLE_UART = y # or USB
+     SRCS += stm32f4_clock_HSE168.c # if not REQUIRE_SPECIAL_CLOCK
+     SRCS += stm32f4xx_hal.c .... # common hal modules
+
+5. $(OXCDIR)/mk/common_cortex.mk - main oxc makefile rules
+   main dir, flags ...
+   ALLFLAGS += -DPROJ_NAME=\"$(PROJ_NAME)\"
+   MCBASE = STM32F4 # ....
+   MCSUFF is like "f4"
+   ALLFLAGS += -I. -I$(STMINC) -I$(STMBOARDDIR)
+   ?IXC ALLFLAGS += -DUSE_OXC -I$(OXCINC) -I$(OXCINCBSP) -I$(OXCINC)/fake # last - to catch missing board_cfg.h
+   SRCPATHS =  $(STMSRC) $(STMSRC)/templates $(OXCBOARDDIR) $(STMBOARDDIR) $(ADDSRC)
+   ifeq "$(USE_OXC_CONSOLE_UART)" "y" ...
+   ifeq "$(USE_OXC_UART)" "y" ...
+   ifeq "$(USE_OXC_CONSOLE_USB_CDC)" "y"
+   ifeq "$(USE_OXC_CONSOLE)" "y"
+   ... USE_OXC_...
+
+-----------------------------------------------------------------------------------------------------
+
+main includes order:
+
+project files:
+
+<oxc_auto.h>
+  "local_hal_conf.h" # local overrides, default in inc/fake/
+  <oxc_hal_conf_auto.h>
+    # auto set HAL_*_MODULE_ENABLED
+    <oxc_stm32fNNN_hal_common_conf.h> # defs + auto include "stm32fXxx_hal_*.h
+  <oxc_gpio.h>
+    <oxc_base.h>
+      # many defs, vars TODO: split
+      "board_cfg.h" # default in inc/fake/ - to catch missing
+      <oxc_post_board_cfg.h>
+  ....
+  ? <oxc_spi.h>
+
+
+stm32cube files:
+stm32fxxx_hal_conf.h (link to examples/common/examples_hal_conf.h)
+  "local_hal_conf.h" // if not exist, included from $(OXCDIR)/inc
+  <oxc_hal_conf_auto.h> # see above
+

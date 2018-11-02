@@ -1,6 +1,8 @@
 #ifndef _BOARD_STM32F746_WAVESHARE0_H
 #define _BOARD_STM32F746_WAVESHARE0_H
 
+#define _BOARD_CFG_DEFINED
+
 // definition of resoures on STM32F746IGT WaveShare board
 // headers must be included manualy in C/CPP file
 
@@ -9,17 +11,12 @@
 
 // default LEDS is C0:C3 TODO: move
 #define BOARD_N_LEDS 4
-#define BOARD_LEDS_GPIO GPIOC
-#define BOARD_LEDS_GPIO_ON __GPIOC_CLK_ENABLE()
+#define BOARD_LEDS_GPIOX C
 #define BOARD_LEDS_OFS  0
-#define BOARD_LEDS_MASK 0x000F
-// unshifted
-#define BOARD_LEDS_ALL  0x0F
 
 // extra is C0:C7
 #define BOARD_N_LEDS_EXTRA 8
 
-#define BOARD_DEFINE_LEDS PinsOut leds( BOARD_LEDS_GPIO, BOARD_LEDS_OFS, BOARD_N_LEDS );
 #define BOARD_DEFINE_LEDS_EXTRA PinsOut leds( BOARD_LEDS_GPIO, BOARD_LEDS_OFS, BOARD_N_LEDS_EXTRA );
 
 #define LED_BSP_RED       1
@@ -37,26 +34,16 @@
 #define LED_BSP_ERR       LED_BSP_BLUE
 
 #define BOARD_BTN0_EXIST   1
-#define BOARD_BTN0_GPIO    GPIOH
-#define BOARD_BTN0_EN      __GPIOH_CLK_ENABLE();
+#define BOARD_BTN0_GPIOX   H
 #define BOARD_BTN0_N       2
-#define BOARD_BTN0_BIT     ( 1 << BOARD_BTN0_N )
-#define BOARD_BTN0_PULL    GPIO_PULLDOWN
-#define BOARD_BTN0_MODE    GPIO_MODE_IT_RISING
-#define BOARD_BTN0_IRQ     EXTI2_IRQn
-#define BOARD_BTN0_IRQPRTY 14
-#define BOARD_BTN0_IRQHANDLER EXTI2_IRQHandler
+#define BOARD_BTN0_ACTIVE_DOWN 0
+#define BOARD_BTN0_IRQNAME EXTI2
 
 #define BOARD_BTN1_EXIST   1
-#define BOARD_BTN1_GPIO    GPIOH
-#define BOARD_BTN1_EN      __GPIOH_CLK_ENABLE();
+#define BOARD_BTN1_GPIOX   H
 #define BOARD_BTN1_N       3
-#define BOARD_BTN1_BIT     ( 1 << BOARD_BTN1_N )
-#define BOARD_BTN1_PULL    GPIO_PULLDOWN
-#define BOARD_BTN1_MODE    GPIO_MODE_IT_RISING
-#define BOARD_BTN1_IRQ     EXTI3_IRQn
-#define BOARD_BTN1_IRQPRTY 14
-#define BOARD_BTN1_IRQHANDLER EXTI3_IRQHandler
+#define BOARD_BTN1_ACTIVE_DOWN 0
+#define BOARD_BTN1_IRQNAME   EXTI3
 
 
 #define SD_EXA_CK_GPIO   GPIOC
@@ -146,7 +133,6 @@
 #define BOARD_ADC_MEM_MAX               (1024*256)
 #define BOARD_ADC_MEM_MAX_FMC           (1024*1024*8)
 #define BOARD_ADC_COEFF                 3250
-
 
 #define BOARD_USB_DEFAULT_GPIO       GPIOA
 #define BOARD_USB_DEFAULT_DPDM_PINS  ( GPIO_PIN_11 | GPIO_PIN_12 )

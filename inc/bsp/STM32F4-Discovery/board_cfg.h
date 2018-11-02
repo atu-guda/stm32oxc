@@ -1,7 +1,9 @@
 #ifndef _BOARD_STM32F4DISCOVERY_H
 #define _BOARD_STM32F4DISCOVERY_H
 
-// definition of resoures for STM32F407GE discovery
+#define _BOARD_CFG_DEFINED
+
+// definition of resoures for STM32F407GE discovery board
 // headers must be included manualy in C/CPP file
 //
 // Free pins:
@@ -13,14 +15,9 @@
 
 // default LEDS is D12:D15
 #define BOARD_N_LEDS 4
-#define BOARD_LEDS_GPIO GPIOD
-#define BOARD_LEDS_GPIO_ON __GPIOD_CLK_ENABLE()
+#define BOARD_LEDS_GPIOX D
 #define BOARD_LEDS_OFS  12
-#define BOARD_LEDS_MASK 0xF000
-// unshifted
-#define BOARD_LEDS_ALL  0x0F
 
-#define BOARD_DEFINE_LEDS PinsOut leds( GPIOD, BOARD_LEDS_OFS, BOARD_N_LEDS );
 
 #define LED_BSP_GREEN     1
 #define LED_BSP_GREEN_0   1
@@ -37,15 +34,10 @@
 #define LED_BSP_ERR       LED_BSP_ORANGE
 
 #define BOARD_BTN0_EXIST   1
-#define BOARD_BTN0_GPIO    GPIOA
-#define BOARD_BTN0_EN      __GPIOA_CLK_ENABLE();
+#define BOARD_BTN0_GPIOX   A
 #define BOARD_BTN0_N       0
-#define BOARD_BTN0_BIT     ( 1 << BOARD_BTN0_N )
-#define BOARD_BTN0_PULL    GPIO_PULLDOWN
-#define BOARD_BTN0_MODE    GPIO_MODE_IT_RISING
-#define BOARD_BTN0_IRQ     EXTI0_IRQn
-#define BOARD_BTN0_IRQPRTY 14
-#define BOARD_BTN0_IRQHANDLER EXTI0_IRQHandler
+#define BOARD_BTN0_ACTIVE_DOWN 0
+#define BOARD_BTN0_IRQNAME    EXTI0
 
 
 #define TIM_EXA        TIM1

@@ -1,6 +1,8 @@
 #ifndef _BOARD_STM32F446_NUCLEO64_H
 #define _BOARD_STM32F446_NUCLEO64_H
 
+#define _BOARD_CFG_DEFINED
+
 // definition of resoures STM32F446R nucleo 64 board
 // headers must be included manualy in C/CPP file
 
@@ -17,14 +19,9 @@
 
 // not so-extra LEDS is C0:C3
 #define BOARD_N_LEDS 4
-#define BOARD_LEDS_GPIO GPIOC
-#define BOARD_LEDS_GPIO_ON __GPIOC_CLK_ENABLE()
+#define BOARD_LEDS_GPIOX C
 #define BOARD_LEDS_OFS  0
-#define BOARD_LEDS_MASK 0x000F
-// unshifted
-#define BOARD_LEDS_ALL  0x0F
 
-#define BOARD_DEFINE_LEDS PinsOut leds( BOARD_LEDS_GPIO, BOARD_LEDS_OFS, BOARD_N_LEDS );
 #define BOARD_DEFINE_LEDS_MINI PinsOut leds( BOARD_LEDS_GPIO_MINI, BOARD_LEDS_OFS_MINI, BOARD_N_LEDS_MINI );
 
 #define LED_BSP_YELLOW_MINI 1
@@ -44,15 +41,10 @@
 #define LED_BSP_ERR       LED_BSP_YELLOW
 
 #define BOARD_BTN0_EXIST   1
-#define BOARD_BTN0_GPIO    GPIOC
-#define BOARD_BTN0_EN      __GPIOC_CLK_ENABLE();
+#define BOARD_BTN0_GPIOX   C
 #define BOARD_BTN0_N       13
-#define BOARD_BTN0_BIT     ( 1 << BOARD_BTN0_N )
-#define BOARD_BTN0_PULL    GPIO_PULLDOWN
-#define BOARD_BTN0_MODE    GPIO_MODE_IT_RISING
-#define BOARD_BTN0_IRQ     EXTI15_10_IRQn
-#define BOARD_BTN0_IRQPRTY 14
-#define BOARD_BTN0_IRQHANDLER EXTI15_10_IRQHandler
+#define BOARD_BTN0_ACTIVE_DOWN 0
+#define BOARD_BTN0_IRQNAME  EXTI15_10
 
 
 #define TIM_EXA        TIM1

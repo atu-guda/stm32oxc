@@ -1,6 +1,8 @@
 #ifndef _BOARD_STM32F746_NUCLEO_H
 #define _BOARD_STM32F746_NUCLEO_H
 
+#define _BOARD_CFG_DEFINED
+
 // definition of resoures on STM32F746IGT Nucleo144 board
 // headers must be included manualy in C/CPP file
 
@@ -9,17 +11,12 @@
 
 // main MY LEDS is D4:D7
 #define BOARD_N_LEDS 4
-#define BOARD_LEDS_GPIO GPIOD
-#define BOARD_LEDS_GPIO_ON __GPIOD_CLK_ENABLE()
+#define BOARD_LEDS_GPIOX D
 #define BOARD_LEDS_OFS  4
-#define BOARD_LEDS_MASK 0x00F0
-// unshifted
-#define BOARD_LEDS_ALL  0x0F
 
 // extra is first on-board user LED B0, more : B7, B14
 #define BOARD_N_LEDS_EXTRA 1
 
-#define BOARD_DEFINE_LEDS PinsOut leds( BOARD_LEDS_GPIO, BOARD_LEDS_OFS, BOARD_N_LEDS );
 #define BOARD_DEFINE_LEDS_EXTRA PinsOut leds( GPIOB, 0, BOARD_N_LEDS_EXTRA );
 
 #define LED_BSP_RED       1
@@ -38,15 +35,10 @@
 
 // TODO: fix
 #define BOARD_BTN0_EXIST   1
-#define BOARD_BTN0_GPIO    GPIOC
-#define BOARD_BTN0_EN      __GPIOC_CLK_ENABLE();
+#define BOARD_BTN0_GPIOX   C
 #define BOARD_BTN0_N       13
-#define BOARD_BTN0_BIT     ( 1 << BOARD_BTN0_N )
-#define BOARD_BTN0_PULL    GPIO_PULLDOWN
-#define BOARD_BTN0_MODE    GPIO_MODE_IT_RISING
-#define BOARD_BTN0_IRQ     EXTI15_10_IRQn
-#define BOARD_BTN0_IRQPRTY 14
-#define BOARD_BTN0_IRQHANDLER EXTI15_10_IRQHandler
+#define BOARD_BTN0_ACTIVE_DOWN 0
+#define BOARD_BTN0_IRQNAME  EXTI15_10
 
 
 

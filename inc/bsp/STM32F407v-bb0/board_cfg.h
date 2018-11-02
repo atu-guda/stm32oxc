@@ -1,6 +1,8 @@
 #ifndef _BOARD_STM32F407V_BB0_H
 #define _BOARD_STM32F407V_BB0_H
 
+#define _BOARD_CFG_DEFINED
+
 // definition of resoures for STM32F407VET black board
 // headers must be included manualy in C/CPP file
 
@@ -8,14 +10,10 @@
 
 
 // default LEDS is D7:D10
-#define BOARD_N_LEDS 4
-#define BOARD_LEDS_GPIO GPIOD
-#define BOARD_LEDS_GPIO_ON __GPIOD_CLK_ENABLE()
+#define BOARD_N_LEDS    4
 #define BOARD_LEDS_OFS  7
-#define BOARD_LEDS_ALL  0x000F
-#define BOARD_LEDS_MASK ( BOARD_LEDS_ALL << BOARD_LEDS_OFS )
+#define BOARD_LEDS_GPIOX D
 
-#define BOARD_DEFINE_LEDS PinsOut leds( BOARD_LEDS_GPIO, BOARD_LEDS_OFS, BOARD_N_LEDS );
 
 #define LED_BSP_RED       1
 #define LED_BSP_RED_0     1
@@ -32,26 +30,16 @@
 #define LED_BSP_ERR       LED_BSP_BLUE
 
 #define BOARD_BTN0_EXIST   1
-#define BOARD_BTN0_GPIO    GPIOC
-#define BOARD_BTN0_EN      __GPIOC_CLK_ENABLE();
+#define BOARD_BTN0_GPIOX   C
 #define BOARD_BTN0_N       7
-#define BOARD_BTN0_BIT     ( 1 << BOARD_BTN0_N )
-#define BOARD_BTN0_PULL    GPIO_PULLDOWN
-#define BOARD_BTN0_MODE    GPIO_MODE_IT_RISING
-#define BOARD_BTN0_IRQ     EXTI9_5_IRQn
-#define BOARD_BTN0_IRQPRTY 14
-#define BOARD_BTN0_IRQHANDLER EXTI9_5_IRQHandler
+#define BOARD_BTN0_ACTIVE_DOWN 0
+#define BOARD_BTN0_IRQNAME EXTI9_5
 
 #define BOARD_BTN1_EXIST   1
-#define BOARD_BTN1_GPIO    GPIOC
-#define BOARD_BTN1_EN      __GPIOC_CLK_ENABLE();
+#define BOARD_BTN1_GPIOX   C
 #define BOARD_BTN1_N       1
-#define BOARD_BTN1_PULL    GPIO_PULLDOWN
-#define BOARD_BTN1_MODE    GPIO_MODE_IT_RISING
-#define BOARD_BTN1_BIT     ( 1 << BOARD_BTN1_N )
-#define BOARD_BTN1_IRQ     EXTI1_IRQn
-#define BOARD_BTN1_IRQPRTY 14
-#define BOARD_BTN1_IRQHANDLER EXTI1_IRQHandler
+#define BOARD_BTN1_ACTIVE_DOWN 0
+#define BOARD_BTN1_IRQNAME  EXTI1
 
 
 #define TIM_EXA        TIM1
