@@ -33,11 +33,12 @@ int main(void)
 
 void task_leds( void *prm UNUSED_ARG )
 {
-  int i=1;
+  // int i=1;
   while(1) {
-    leds.write( i );
-    ++i;
-    i &= BOARD_LEDS_ALL;
+    leds.toggle( BIT0 );
+    // leds.write( i );
+    // ++i;
+    // i &= BOARD_LEDS_ALL;
     delay_mcs( led_delay );
   }
 }
@@ -72,21 +73,23 @@ void BOARD_BTN1_IRQHANDLER(void)
 void HAL_GPIO_EXTI_Callback( uint16_t pin )
 {
   uint32_t curr_tick = HAL_GetTick();
+  leds.toggle( BIT3 );
   if( curr_tick - last_exti_tick < btn_deadtime ) {
     return; // ignore too fast events
   }
-  if( pin == EXTI_BIT0 )  {
-    leds.reset( BOARD_LEDS_ALL );
+  if( pin == BOARD_BTN0_BIT )  {
+    leds.toggle( BIT1 );
     led_delay >>= 1;
     if( led_delay < 1 ) {
       led_delay = led_delay_init;
     }
   }
-  if( pin == EXTI_BIT1 )  {
-    leds.set( 0xAA );
+  if( pin == BOARD_BTN1_BIT )  {
+    leds.toggle( BIT2 );
+    // leds.set( 0xAA );
     led_delay = led_delay_init;
   }
-  leds.toggle( BIT0 );
+  // leds.toggle( BIT0 );
   last_exti_tick = curr_tick;
 }
 
