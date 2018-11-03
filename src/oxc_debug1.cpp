@@ -237,8 +237,8 @@ int cmd_info( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
   const OutIrqName irqs[] = {
     { SysTick_IRQn, "SysTick" },
     { EXTI0_IRQn,   "EXTI0  " },
-    #if defined( BOARD_UART_DEFAULT_NAME ) && defined( BOARD_UART_DEFAULT_IRQ )
-    { BOARD_UART_DEFAULT_IRQ,  BOARD_UART_DEFAULT_NAME },
+    #if defined( BOARD_UART_DEFAULT_IRQ )
+    { BOARD_UART_DEFAULT_IRQ,  oxc_uart_name(BOARD_UART_DEFAULT) },
     #else
     { USART2_IRQn,  "USART2 " },
     #endif

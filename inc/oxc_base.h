@@ -1,9 +1,6 @@
 #ifndef _OXC_BASE_H
 #define _OXC_BASE_H
 
-#include "board_cfg.h"
-
-#include <oxc_post_board_cfg.h>
 
 #if defined (STM32F0)
  #include <stm32f0xx_hal.h>
@@ -68,6 +65,10 @@
 #endif
 
 #include <oxc_irqlist.h>
+
+#include "board_cfg.h"
+
+#include <oxc_post_board_cfg.h>
 
 
 #define PORT_BITS 16

@@ -1,5 +1,4 @@
 #include <oxc_usartio.h>
-// #include <oxc_gpio.h> // debug
 
 int UsartIO::write_s( const char *s, int l )
 {

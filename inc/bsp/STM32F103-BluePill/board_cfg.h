@@ -51,7 +51,6 @@
 
 // TODO: move to B6, B7 after tcouple project redesign
 #define BOARD_UART_DEFAULT            USART1
-#define BOARD_UART_DEFAULT_NAME       "USART1"
 #define BOARD_UART_DEFAULT_GPIO       GPIOA
 #define BOARD_UART_DEFAULT_GPIO_PINS  ( GPIO_PIN_9 | GPIO_PIN_10 )
 #define BOARD_UART_DEFAULT_GPIO_TX    GPIO_PIN_9

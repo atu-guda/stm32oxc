@@ -1,0 +1,4 @@
+Simple usage of UART.
+IRQ disabled in stm32f4xx_hal_conf.h file
+
+
