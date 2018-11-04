@@ -1,0 +1,6 @@
+Test SPI AT25F512/1024 memory
+!WD=p3 and !!HOLD=p7 = 1
+
+NOT WORK: Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256; _2 - TOO!!
+
+

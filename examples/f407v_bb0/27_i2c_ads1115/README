@@ -1,0 +1,12 @@
+Use ADC ADS1115 via I2C (addr: 0x48)
+
+SCL = B6 + 4.7k pullUp
+SDA = B7 + 4.7k pullUp
+
+Console:  USBCDC via SmallRL.
+used USB FS:
+A11 = D-
+A12 = D+
+A9  = Vbus - unused?
+A10 = Id   - unused
+

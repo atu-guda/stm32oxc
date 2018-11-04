@@ -74,6 +74,9 @@
 #define BOARD_BTN1_BIT     0
 #endif // BOARD_BTN1_EXIST
 
+
+#ifdef __cplusplus
+
 inline constexpr const char* oxc_uart_name( const void *u )
 {
   if( u == USART1 ) { return "USART1"; }
@@ -119,6 +122,7 @@ inline constexpr const char* oxc_uart_name( const void *u )
   #endif
   return "?u?";
 }
+#endif
 
 
 #endif
