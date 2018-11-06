@@ -2,8 +2,8 @@ Try ADC witn DMA, may be with timer
 Clock: APB2/2 = 72/4 = 36: max <- use special clock
 
 Channels:
- A0,   A1,  A6,  A7
- CH0, Ch1, Ch6, Ch7
+ B0,   B1,   C4,   C5
+ CH8, Ch9, Ch14, Ch15
 
 Console:  USBCDC via SmallRL.
 used USB FS:

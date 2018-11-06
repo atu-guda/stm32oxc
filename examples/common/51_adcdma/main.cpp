@@ -4,6 +4,7 @@
 #include <cerrno>
 
 #include <vector>
+#include <string>
 
 #include <oxc_auto.h>
 
@@ -18,14 +19,26 @@ BOARD_CONSOLE_DEFINES;
 void print_curr( const char *s );
 void out_to_curr( uint32_t n, uint32_t st );
 
+OutStream& operator<<( OutStream &os, float rhs );
+
+OutStream& operator<<( OutStream &os, float rhs ) // TODO: to library
+{
+  char buf[32];
+
+  // snprintf( buf, sizeof(buf), "%#g", (double)rhs );
+  snprintf( buf, sizeof(buf), "%16.6e", rhs );
+  os << buf;
+  return os;
+}
+
 
 extern "C" {
  void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc );
  void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc );
  void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim );
 }
-int adc_init_exa_4ch_dma( uint32_t presc, uint32_t sampl_cycl, uint8_t n_ch );
-uint32_t calc_ADC_clk( uint32_t presc, int *div_val );
+int adc_init_exa_4ch_dma( uint32_t adc_presc, uint32_t sampl_cycl, uint8_t n_ch );
+uint32_t calc_ADC_clk( uint32_t adc_presc, int *div_val );
 uint32_t hint_ADC_presc();
 void ADC_DMA_REINIT();
 void pr_ADC_state();
@@ -80,12 +93,15 @@ int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test ADC"  };
 int cmd_out( int argc, const char * const * argv );
 CmdInfo CMDINFO_OUT { "out", 'O', cmd_out, " [N [start]]- output data "  };
+int cmd_to( int argc, const char * const * argv );
+CmdInfo CMDINFO_TO { "to", 0, cmd_to, " - test float output "  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
 
   &CMDINFO_TEST0,
   &CMDINFO_OUT,
+  &CMDINFO_TO,
   nullptr
 };
 
@@ -100,6 +116,7 @@ int main(void)
 
   UVAR('t') = 1000; // 1 s extra wait
   UVAR('v') = v_adc_ref;
+  UVAR('j') = tim_freq_in;
   UVAR('p') = ( tim_freq_in / 1000000 ) - 1; // timer PSC, for 1MHz
   UVAR('a') = 99999; // timer ARR, for 10Hz
   UVAR('c') = n_ADC_ch_max;
@@ -140,10 +157,14 @@ void pr_ADC_state()
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
+  STDOUT_os;
   char pbuf[pbufsz];
   uint8_t n_ch = UVAR('c');
   if( n_ch > n_ADC_ch_max ) { n_ch = n_ADC_ch_max; };
   if( n_ch < 1 ) { n_ch = 1; };
+
+  uint32_t tim_psc = UVAR('p');
+  uint32_t tim_arr = UVAR('a');
 
   const uint32_t n_ADC_series_max  = n_ADC_mem / ( 2 * n_ch ); // 2 is 16bit/sample
   uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 0, n_ADC_series_max ); // number of series
@@ -152,19 +173,22 @@ int cmd_test0( int argc, const char * const * argv )
   if( sampl_t_idx >= n_sampl_times ) { sampl_t_idx = n_sampl_times-1; };
   uint32_t f_sampl_max = adc_clk / ( sampl_times_cycles[sampl_t_idx] * n_ch );
 
-  uint32_t t_step_tick =  (UVAR('a')+1) * (UVAR('p')+1); // in timer input ticks
-  float tim_f = tim_freq_in / t_step_tick; // timer update freq, Hz
-  t_step_f = (float)t_step_tick / tim_freq_in; // in s
+  uint32_t t_step_tick =  (tim_arr+1) * (tim_psc+1); // in timer input ticks
+  float tim_f = (float)tim_freq_in / t_step_tick; // timer update freq, Hz
+  uint32_t tim_fi = (uint32_t)( tim_f * 1000000 );
+  t_step_f    = (float)t_step_tick / tim_freq_in; // in s
   uint32_t t_wait0 = 1 + uint32_t( n * t_step_f * 1000 ); // in ms
+
+  os << "# t_step_tick= " << t_step_tick << " [t2ticks] tim_f= " << tim_f << " Hz"
+     << " tim_fi = " << tim_fi << " uHz"
+     << " t_step_f= " << t_step_f << " Hz  t_wait0= " << t_wait0 << " ms" NL;
 
   if( n > n_ADC_series_max ) { n = n_ADC_series_max; };
 
-  STDOUT_os;
-
   tim2_deinit();
 
-  uint32_t presc = hint_ADC_presc();
-  UVAR('i') =  adc_init_exa_4ch_dma( presc, sampl_times_codes[sampl_t_idx], n_ch );
+  uint32_t adc_presc = hint_ADC_presc();
+  UVAR('i') =  adc_init_exa_4ch_dma( adc_presc, sampl_times_codes[sampl_t_idx], n_ch );
   delay_ms( 1 );
   if( ! UVAR('i') ) {
     os <<  "ADC init failed, errno= " << errno << NL;
@@ -172,13 +196,13 @@ int cmd_test0( int argc, const char * const * argv )
   }
   pr_ADC_state();
 
-  snprintf( pbuf, pbufsz-1, "# Timer: tim_freq_in= %lu Hz / ( (%u+1)*(%u+1)) = %#.7g Hz; t_step = %#.7g s " NL,
-                                      tim_freq_in,       UVAR('p'), UVAR('a'), tim_f,    t_step_f );
-  os <<  pbuf;
+
+  os << "# Timer: tim_freq_in= " << tim_freq_in << "  Hz / (( " << tim_psc
+     << "+1)*( " << tim_arr << "+1)) =" << tim_f << " Hz; t_step = " << t_step_f << " s" NL;
   delay_ms( 1 );
 
   int div_val = -1;
-  adc_clk = calc_ADC_clk( presc, &div_val );
+  adc_clk = calc_ADC_clk( adc_presc, &div_val );
   snprintf( pbuf, pbufsz-1, "# ADC: n_ch= %d n=%lu adc_clk= %lu div_val= %d s_idx= %lu sampl= %lu; f_sampl_max= %lu Hz; t_wait0= %lu ms" NL,
                                     n_ch,    n,    adc_clk,     div_val,  sampl_t_idx, sampl_times_cycles[sampl_t_idx],
                                     f_sampl_max, t_wait0 );
@@ -239,6 +263,19 @@ int cmd_test0( int argc, const char * const * argv )
 
   delay_ms( 10 );
 
+  return 0;
+}
+
+int cmd_to( int /*argc*/, const char * const * /*argv*/ )
+{
+  STDOUT_os;
+  // char b[128];
+  for( float v = 1.2e-6; v < 1e7; v *=10 ) {
+    // int np = snprintf( b, sizeof(b), "i= %d f= %lf e= %le g= %lg" , (int)( v*1000000), v, v, v );
+    // o_chars( b, end(b), v );
+    string s = to_string( v );
+    os << s.c_str() << NL;
+  }
   return 0;
 }
 
