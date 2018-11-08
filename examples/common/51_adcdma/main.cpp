@@ -4,7 +4,7 @@
 #include <cerrno>
 
 #include <vector>
-#include <string>
+// #include <string>
 
 #include <oxc_auto.h>
 
@@ -25,8 +25,8 @@ OutStream& operator<<( OutStream &os, float rhs ) // TODO: to library
 {
   char buf[32];
 
-  // snprintf( buf, sizeof(buf), "%#g", (double)rhs );
-  snprintf( buf, sizeof(buf), "%16.6e", rhs );
+  snprintf( buf, sizeof(buf), "%#g", (double)rhs );
+  // snprintf( buf, sizeof(buf), "%16.6e", rhs );
   os << buf;
   return os;
 }
@@ -269,12 +269,13 @@ int cmd_test0( int argc, const char * const * argv )
 int cmd_to( int /*argc*/, const char * const * /*argv*/ )
 {
   STDOUT_os;
-  // char b[128];
-  for( float v = 1.2e-6; v < 1e7; v *=10 ) {
-    // int np = snprintf( b, sizeof(b), "i= %d f= %lf e= %le g= %lg" , (int)( v*1000000), v, v, v );
-    // o_chars( b, end(b), v );
-    string s = to_string( v );
-    os << s.c_str() << NL;
+  char b[128];
+  for( float v = 1.987654e-6; v < 1e7; v *= -10 ) {
+    snprintf( b, sizeof(b), "f= %f e= %e g= %g i= %d ", v, v, v, (int)( v*1000000) );
+    // to_chars( b, end(b), v );
+    os << b << NL;
+    // string s = to_string( v );
+    // os << s.c_str() << NL;
   }
   return 0;
 }

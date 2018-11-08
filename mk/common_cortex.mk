@@ -21,6 +21,7 @@ OXCINC = $(OXCDIR)/inc
 OXCINCBSP = $(OXCDIR)/inc/bsp/$(BOARDNAME)
 OXCSRC = $(OXCDIR)/src
 OXCBOARDDIR=$(OXCSRC)/bsp/$(BOARDNAME)
+OXCLD = $(OXCDIR)/ld
 
 DEPSDIR=.deps
 OBJDIR=.objs
@@ -104,6 +105,7 @@ ALLFLAGS += $(CFLAGS_ADD) $(ADDINC)
 
 LDFLAGS  = --static # -nostartfiles
 LDFLAGS += -g3
+LDFLAGS += -L$(OXCLD)
 LDFLAGS += -T$(LDSCRIPT)
 LDFLAGS += -Wl,-Map=$(PROJ_NAME).map
 LDFLAGS += -Wl,--gc-sections
@@ -336,6 +338,7 @@ vpath %.cpp $(SRCPATHS)
 vpath %.s   $(OXCSRC)/startup $(STMSRC)/startup
 vpath %.o   $(OBJDIR)
 vpath %.d   $(DEPSDIR)
+vpath %.ld  $(OXCLD)
 
 
 OBJS0a = $(SRCS:.cpp=.o)
@@ -359,7 +362,7 @@ dirs:
 
 proj:  dirs $(PROJ_NAME).bin
 
-$(OBJDIR)/*.o:  Makefile $(OXCDIR)/mk/common_cortex.mk $(BSPMAKEFILE)
+$(OBJDIR)/*.o:  $(MAKEFILE_LIST)
 
 
 $(OBJDIR)/%.o: %.c
@@ -373,11 +376,12 @@ $(OBJDIR)/%.o: %.cpp
 $(OBJDIR)/%.o: %.s
 	$(CC) $(CFLAGS) -I$(OXCSRC)/startup -c -o $@ $<
 
-
-$(PROJ_NAME).bin: $(OBJS1)
-	$(LINK) $^ $(LDFLAGS) $(LIBS) -o $(PROJ_NAME).elf
-	$(OBJCOPY) -O binary $(PROJ_NAME).elf $(PROJ_NAME).bin
+$(PROJ_NAME).elf: $(OBJS1) $(LDSCRIPT)
+	$(LINK) $(OBJS1) $(LDFLAGS) $(LIBS) -o $(PROJ_NAME).elf
 	$(OBJDUMP) -h -f -d -S $(PROJ_NAME).elf > $(PROJ_NAME).lst
+
+$(PROJ_NAME).bin: $(PROJ_NAME).elf
+	$(OBJCOPY) -O binary $(PROJ_NAME).elf $(PROJ_NAME).bin
 
 #	$(OBJCOPY) -O ihex $(PROJ_NAME).elf $(PROJ_NAME).hex
 

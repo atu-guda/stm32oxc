@@ -7,7 +7,6 @@
 
 #include <oxc_base.h>
 
-extern  const int _sdata, _edata, _sbss, _ebss, _end, _estack;
 char* __heap_top = (char*)(&_end);
 
 int ready_to_start_scheduler = 0;

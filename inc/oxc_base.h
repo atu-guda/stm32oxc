@@ -89,6 +89,9 @@
 #define BIT14 0x4000
 #define BIT15 0x8000
 
+// extern  const int _RAM_SIZE, _FLASH_SIZE, _CCMRAM_SIZE; // not work? 0xFFFFFFFF
+extern  const int _sdata, _edata, _sbss, _ebss, _end, _estack;
+
 extern char* __heap_top;
 extern int ready_to_start_scheduler;
 extern int exit_rc;
