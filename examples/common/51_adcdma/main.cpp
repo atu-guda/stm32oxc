@@ -4,7 +4,6 @@
 #include <cerrno>
 
 #include <vector>
-// #include <string>
 
 #include <oxc_auto.h>
 
@@ -107,7 +106,6 @@ const CmdInfo* global_cmds[] = {
 
 
 
-
 int main(void)
 {
   BOARD_PROLOG;
@@ -167,7 +165,7 @@ int cmd_test0( int argc, const char * const * argv )
   uint32_t tim_arr = UVAR('a');
 
   const uint32_t n_ADC_series_max  = n_ADC_mem / ( 2 * n_ch ); // 2 is 16bit/sample
-  uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 0, n_ADC_series_max ); // number of series
+  uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, n_ADC_series_max ); // number of series
 
   uint32_t sampl_t_idx = UVAR('s');
   if( sampl_t_idx >= n_sampl_times ) { sampl_t_idx = n_sampl_times-1; };
