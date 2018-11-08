@@ -1,6 +1,8 @@
 #ifndef _BOARD_STM32F446_NUCLEO64_H
 #define _BOARD_STM32F446_NUCLEO64_H
 
+#define _BOARD_CFG_DEFINED
+
 // special config - unusual pins usage
 
 
@@ -8,14 +10,9 @@
 
 // special leds C10:C11
 #define BOARD_N_LEDS 2
-#define BOARD_LEDS_GPIO GPIOC
-#define BOARD_LEDS_GPIO_ON __GPIOC_CLK_ENABLE()
+#define BOARD_LEDS_GPIOX C
 #define BOARD_LEDS_OFS  10
-#define BOARD_LEDS_MASK ( 0x03 << 10 )
-// unshifted
-#define BOARD_LEDS_ALL  0x03
 
-#define BOARD_DEFINE_LEDS PinsOut leds( BOARD_LEDS_GPIO, BOARD_LEDS_OFS, BOARD_N_LEDS );
 
 #define LED_BSP_GREEN     1
 #define LED_BSP_YELLOW    2
@@ -26,12 +23,10 @@
 #define LED_BSP_ERR       LED_BSP_YELLOW
 
 #define BOARD_BTN0_EXIST  1
-#define BOARD_BTN0_GPIO   GPIOC
-#define BOARD_BTN0_EN     __GPIOC_CLK_ENABLE();
+#define BOARD_BTN0_GPIOX   C
 #define BOARD_BTN0_N      13
-#define BOARD_BTN0_BIT    ( 1 << BOARD_BTN0_N )
-#define BOARD_BTN0_IRQ    EXTI15_10_IRQn
-#define BOARD_BTN0_IRQHANDLER EXTI15_10_IRQHandler
+#define BOARD_BTN0_ACTIVE_DOWN 0
+#define BOARD_BTN0_IRQNAME  EXTI15_10
 
 
 #define SD_EXA_CK_GPIO   GPIOC
@@ -45,7 +40,6 @@
 #define SD_EXA_GPIOAF    GPIO_AF12_SDIO
 
 #define BOARD_UART_DEFAULT            USART2
-#define BOARD_UART_DEFAULT_NAME       "USART2"
 #define BOARD_UART_DEFAULT_GPIO       GPIOA
 #define BOARD_UART_DEFAULT_GPIO_PINS  ( GPIO_PIN_2 | GPIO_PIN_3 )
 #define BOARD_UART_DEFAULT_GPIO_AF    GPIO_AF7_USART2
@@ -124,7 +118,5 @@
 #define BOARD_PROLOG                  STD_PROLOG_UART;
 #define BOARD_CREATE_STD_TASKS        CREATE_STD_TASKS;
 #define BOARD_POST_INIT_BLINK         delay_ms( PROLOG_LED_TIME ); leds.write( 0x00 ); delay_ms( PROLOG_LED_TIME );
-
-
 
 #endif

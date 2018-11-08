@@ -23,4 +23,5 @@ USE_OXC_I2C = y
 SRCS  = main.cpp
 
 SRCS += oxc_hmc5983.cpp
+SRCS += oxc_bartext.cpp
 

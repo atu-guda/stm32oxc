@@ -37,7 +37,8 @@ SUBDIRS = \
   50_adc0 \
   51_adcdma \
   53_adcdma_sd \
-  55_dac0
+  55_dac0 \
+  l20_spi_mem_a25_onboard
 
 
 

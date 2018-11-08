@@ -41,6 +41,7 @@ SUBDIRS = \
   55_dac0 \
   l03_motor_fb \
   l04_wheels1 \
+  l05_meas0 \
   t01_iprintf \
   xx01_calibrate \
 
