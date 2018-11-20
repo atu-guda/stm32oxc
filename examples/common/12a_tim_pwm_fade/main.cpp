@@ -15,40 +15,30 @@ BOARD_CONSOLE_DEFINES;
 TIM_HandleTypeDef tim_h;
 int pwm_vals[] = { 25, 50, 75, 90 };
 void tim_cfg();
-void pwm_recalc();
 void pwm_update();
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
 
-int cmd_tinit( int argc, const char * const * argv );
-CmdInfo CMDINFO_TINIT { "tinit", 'I', cmd_tinit, " - reinit timer"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
 
   &CMDINFO_TEST0,
-  &CMDINFO_TINIT,
   nullptr
 };
-
-const unsigned n_countmodes = 5;
-const uint32_t countmodes[n_countmodes] = { TIM_COUNTERMODE_UP, TIM_COUNTERMODE_DOWN, TIM_COUNTERMODE_CENTERALIGNED1,
- TIM_COUNTERMODE_CENTERALIGNED2, TIM_COUNTERMODE_CENTERALIGNED3 };
 
 
 int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 1000;
-  UVAR('n') = 10;
-  UVAR('p') = calc_TIM_psc_for_cnt_freq( TIM_EXA, 10000  ); // ->10kHz
-  UVAR('a') = 9999; // ARR, 10kHz->1Hz
-  UVAR('r') = 0;    // flag: raw values
+  UVAR('t') = 10;
+  UVAR('n') = 1000;
+  UVAR('p') = calc_TIM_psc_for_cnt_freq( TIM_EXA, 1000000  ); // ->1 MHz
+  UVAR('a') = 999; // ARR, 1 MHz -> 1 kHz
   UVAR('m') = 0;    // mode: 0: up, 1: down, 2: updown
-  UVAR('o') = 0;    // pOlarity 0: high 1: low
 
   BOARD_POST_INIT_BLINK;
 
@@ -89,14 +79,6 @@ int cmd_test0( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_tinit( int argc, const char * const * argv )
-{
-  tim_cfg();
-  tim_print_cfg( TIM_EXA );
-
-  return 0;
-}
-
 //  ----------------------------- configs ----------------
 
 void tim_cfg()
@@ -105,11 +87,7 @@ void tim_cfg()
   tim_h.Init.Prescaler         = UVAR('p');
   tim_h.Init.Period            = UVAR('a');
   tim_h.Init.ClockDivision     = 0;
-  unsigned cmode = UVAR('m');
-  if( cmode > n_countmodes ) {
-    cmode = 0;
-  }
-  tim_h.Init.CounterMode       = countmodes[cmode];
+  tim_h.Init.CounterMode       = TIM_COUNTERMODE_UP;
   tim_h.Init.RepetitionCounter = 0;
   if( HAL_TIM_PWM_Init( &tim_h ) != HAL_OK ) {
     UVAR('e') = 1; // like error
@@ -120,15 +98,10 @@ void tim_cfg()
   sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
   HAL_TIM_ConfigClockSource( &tim_h, &sClockSourceConfig );
 
-  pwm_recalc();
-}
-
-void pwm_recalc()
-{
   int pbase = UVAR('a');
   TIM_OC_InitTypeDef tim_oc_cfg;
   tim_oc_cfg.OCMode       = TIM_OCMODE_PWM1;
-  tim_oc_cfg.OCPolarity   = UVAR('o') ? TIM_OCPOLARITY_LOW : TIM_OCPOLARITY_HIGH;
+  tim_oc_cfg.OCPolarity   = TIM_OCPOLARITY_HIGH;
   tim_oc_cfg.OCNPolarity  = TIM_OCNPOLARITY_HIGH;
   tim_oc_cfg.OCFastMode   = TIM_OCFAST_DISABLE;
   tim_oc_cfg.OCIdleState  = TIM_OCIDLESTATE_RESET;
@@ -146,8 +119,8 @@ void pwm_recalc()
     }
     HAL_TIM_PWM_Start( &tim_h, channels[i] );
   }
-
 }
+
 
 void pwm_update()
 {
@@ -155,13 +128,10 @@ void pwm_update()
   int pbase = UVAR('a');
   tim_h.Instance->ARR  = pbase;
   int scl = pbase;
-  if( UVAR('r') ) { // raw values
-    scl = 100;
-  }
-  tim_h.Instance->CCR1 = pwm_vals[0] * scl / 100;
-  tim_h.Instance->CCR2 = pwm_vals[1] * scl / 100;
-  tim_h.Instance->CCR3 = pwm_vals[2] * scl / 100;
-  tim_h.Instance->CCR4 = pwm_vals[3] * scl / 100;
+  tim_h.Instance->CCR1 = pwm_vals[0] * scl / 1000;
+  tim_h.Instance->CCR2 = pwm_vals[1] * scl / 1000;
+  tim_h.Instance->CCR3 = pwm_vals[2] * scl / 1000;
+  tim_h.Instance->CCR4 = pwm_vals[3] * scl / 1000;
 }
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
