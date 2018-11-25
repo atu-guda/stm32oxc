@@ -3,36 +3,83 @@
 using namespace std;
 using namespace SMLRL;
 
+int cmd_test0( int argc, const char * const * argv );
+int cmd_test_rate( int argc, const char * const * argv );
 
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
   int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
   uint32_t t_step = UVAR('t');
-  pr( NL "Test0: n= " ); pr_d( n ); pr( " t= " ); pr_d( t_step );
-  pr( NL );
+  STDOUT_os;
+  os <<  "# Test0: n= " << n << " t= " << t_step << NL;
 
+  // log_add( "Test0 " );
+  uint32_t tm0 = HAL_GetTick();
+
+  #ifdef USE_FREERTOS
   int prty = uxTaskPriorityGet( 0 );
   pr_sdx( prty );
   const char *nm = pcTaskGetName( 0 );
-  pr( "name: \"" ); pr( nm ); pr( "\"" NL );
+  os << "name: \"" << nm << "\"" NL;
 
-  // log_add( "Test0 " );
   TickType_t tc0 = xTaskGetTickCount(), tc00 = tc0;
-  uint32_t tm0 = HAL_GetTick();
+  #else
+  uint32_t tc0 = tm0, tc00 = tm0;
+  #endif
+
 
   break_flag = 0;
   for( int i=0; i<n && !break_flag; ++i ) {
+    #ifdef USE_FREERTOS
     TickType_t tcc = xTaskGetTickCount();
+    #else
+    uint32_t  tcc = HAL_GetTick();
+    #endif
     uint32_t tmc = HAL_GetTick();
-    pr( " Fake Action i= " ); pr_d( i );
-    pr( "  tick: "); pr_d( tcc - tc00 );
-    pr( "  ms_tick: "); pr_d( tmc - tm0 );
-    pr( NL );
+    os <<  " Fake Action i= " << i << "  tick: " << ( tcc - tc00 )
+       << "  ms_tick: " << ( tmc - tm0 ) << NL;
+    if( UVAR('w') ) {
+      os.flush();
+    }
     // vTaskDelayUntil( &tc0, t_step );
     // delay_ms_brk( t_step );
     delay_ms_until_brk( &tc0, t_step );
   }
+
+  return 0;
+}
+
+
+int cmd_test_rate( int argc, const char * const * argv )
+{
+  const int max_len = 256;
+  int n  = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
+  int sl = arg2long_d( 2, argc, argv, 64, 0, max_len );
+  STDOUT_os;
+  os << "test_rate: n= " << n << " sl= " << sl << NL;
+  char buf[max_len+4]; // for ends and align
+
+  for( int i=0; i<sl-2; ++i ) {
+    buf[i] = (char)( '@' + ( i & 0x3F ) );
+  }
+  buf[sl-2] = '\r';
+  buf[sl-1] = '\n';
+  buf[sl]   = '\0'; // sic, transfer sl bytes,
+
+  uint32_t tm0 = HAL_GetTick();
+
+  break_flag = 0;
+  for( int i=0; i<n && !break_flag; ++i ) {
+    buf[0] =  (char)( '@' + ( i & 0x3F ) );
+    os << buf;
+    if( UVAR('w') ) {
+      os.flush();
+    }
+  }
+  uint32_t tm1 = HAL_GetTick();
+  delay_ms( 1000 );
+  os << NL "dt= " << ( tm1 - tm0 ) << " ms" << NL;
 
   return 0;
 }
