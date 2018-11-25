@@ -1,0 +1,22 @@
+Console output rates, measured by 05c_def_cons_nort on
+f446_nucleop64 board (on-board USB-UART convertor) and
+f407v_bb0 (USBCDC)
+In every test outputs 10000 lines with different lengths,
+with (time1) and without (time2) os.flush();
+
+f446:
+# size   time1   time2    lps1    lps2    cps1   cps2
+32       28.72   41.09    344     243    11081   7800
+64       58.32   81.00    171     121    10874   7744
+80       71.91  181.09    138     123    11111   9876
+128     121.09  141.01     81      70    10491   9078
+
+
+
+f407v:
+# size   time1   time2    lps1    lps2   cps1    cps2
+32       2.500   20.00    4000     500   128000  16000
+64       5.000   20.00    2000     500   128000  32000
+80       6.667   20.00    1500     500   120000  40000
+128     10.000   20.00    1000     500   128000  64000
+
