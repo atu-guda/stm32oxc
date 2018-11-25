@@ -25,6 +25,8 @@ int cmd_xychar( int argc, const char * const * argv );
 CmdInfo CMDINFO_XYCHAR{ "xychar", 'X', cmd_xychar, " x y code - put char at x y"  };
 int cmd_puts( int argc, const char * const * argv );
 CmdInfo CMDINFO_PUTS{ "puts", 'P', cmd_puts, "string - put string at cur pos"  };
+int cmd_lcd_rate( int argc, const char * const * argv );
+CmdInfo CMDINFO_LCD_RATE{ "lcd_rate", 0, cmd_lcd_rate, "[N] - measure output rate"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -35,6 +37,7 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_XYCHAR,
   &CMDINFO_GOTOXY,
   &CMDINFO_PUTS,
+  &CMDINFO_LCD_RATE,
   nullptr
 };
 
@@ -142,6 +145,47 @@ int cmd_puts( int argc, const char * const * argv )
   }
   lcdt.puts( s );
 
+  return 0;
+}
+
+// results:
+// gotoxy + puts (16) = 13.722 ms/line
+// puts (16) = 12.915 ms/line
+// gotoxy costs 0.81 ms
+
+int cmd_lcd_rate( int argc, const char * const * argv )
+{
+  int n  = arg2long_d( 1, argc, argv, 100, 1,  10000 );
+  int nl = arg2long_d( 2, argc, argv,   2, 1,      4 );
+  STDOUT_os;
+  os << "lcd_rate: n= " << n << " nl= " << nl << NL;
+  char buf[32];
+
+  buf[16] = '\0';
+
+  uint32_t tm0 = HAL_GetTick();
+
+  break_flag = 0;
+  for( int i=0; i<n && !break_flag; ++i ) {
+    for( int j=0; j<16; ++j ) {
+      buf[j] = (char)( '@' + ( ( j + i ) & 0x3F ) );
+    }
+    for( int l=0; l<nl; ++l ) {
+      if( UVAR('a') < 1 ) {
+        lcdt.gotoxy( 0, l );
+      }
+      lcdt.puts( buf );
+      ++buf[0];
+      buf[1]  +=  2;
+      buf[15] ^=  0x0F;
+    }
+  }
+
+  uint32_t tm1 = HAL_GetTick();
+  delay_ms( 500 );
+  int dlt = tm1 - tm0;
+  int mcs_l = 1000 * dlt / ( n * nl );
+  os << NL "dt= " << dlt << " ms, so " << mcs_l << " us/line" NL;
   return 0;
 }
 
