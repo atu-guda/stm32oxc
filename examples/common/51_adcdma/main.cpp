@@ -31,8 +31,8 @@ OutStream& operator<<( OutStream &os, float rhs ) // TODO: to library
 }
 
 
-int adc_init_exa_4ch_dma( uint32_t adc_presc, uint32_t sampl_cycl, uint8_t n_ch );
-void ADC_DMA_REINIT();
+int adc_init_exa_4ch_dma( ADC_Info &adc, uint32_t adc_presc, uint32_t sampl_cycl, uint8_t n_ch );
+void ADC_DMA_reinit( ADC_Info &adc );
 
 ADC_Info adc;
 
@@ -137,7 +137,7 @@ int cmd_test0( int argc, const char * const * argv )
   tim2_deinit();
 
   uint32_t adc_presc = hint_ADC_presc();
-  UVAR('i') =  adc_init_exa_4ch_dma( adc_presc, sampl_times_codes[sampl_t_idx], n_ch );
+  UVAR('i') =  adc_init_exa_4ch_dma( adc, adc_presc, sampl_times_codes[sampl_t_idx], n_ch );
   delay_ms( 1 );
   if( ! UVAR('i') ) {
     os <<  "ADC init failed, errno= " << errno << NL;
@@ -172,12 +172,10 @@ int cmd_test0( int argc, const char * const * argv )
   }
 
   leds.reset( BIT0 | BIT1 | BIT2 );
-  // TickType_t tc0 = xTaskGetTickCount(), tc00 = tc0;
 
   uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
 
-
-  if( HAL_ADC_Start_DMA( &hadc1, (uint32_t*)ADC_buf.data(), n_ADC_bytes ) != HAL_OK )   {
+  if( HAL_ADC_Start_DMA( &adc.hadc, (uint32_t*)ADC_buf.data(), n_ADC_bytes ) != HAL_OK )   {
     os <<  "ADC_Start_DMA error" NL;
   }
   tim2_init( UVAR('p'), UVAR('a') );
@@ -190,7 +188,7 @@ int cmd_test0( int argc, const char * const * argv )
   delay_ms( 10 ); // to settle all
 
   tim2_deinit();
-  HAL_ADC_Stop_DMA( &hadc1 ); // needed
+  HAL_ADC_Stop_DMA( &adc.hadc ); // needed
   if( adc.end_dma == 0 ) {
     os <<  "Fail to wait DMA end " NL;
   }
@@ -237,9 +235,10 @@ void print_curr( const char *s )
     return;
   }
   STDOUT_os;
+  os <<  s;
+
   // if( out_file.fs == nullptr ) {
-    os <<  s;
-    // delay_ms( 2 );
+    // os <<  s;
   //  return;
   //}
   // f_puts( s, &out_file );
@@ -289,7 +288,7 @@ int cmd_out( int argc, const char * const * argv )
 void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc )
 {
   adc.end_dma |= 1;
-  adc.good_SR =  adc.last_SR = hadc1.Instance->SR;
+  adc.good_SR =  adc.last_SR = adc.hadc.Instance->SR;
   adc.last_end = 1;
   adc.last_error = 0;
   ++adc.n_good;
@@ -298,7 +297,7 @@ void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc )
 void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc )
 {
   adc.end_dma |= 2;
-  adc.bad_SR = adc.last_SR = hadc1.Instance->SR;
+  adc.bad_SR = adc.last_SR = adc.hadc.Instance->SR;
   // tim2_deinit();
   adc.last_end  = 2;
   adc.last_error = HAL_ADC_GetError( hadc );
@@ -307,6 +306,10 @@ void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc )
   ++adc.n_bad;
 }
 
+void DMA2_Stream0_IRQHandler(void)
+{
+  HAL_DMA_IRQHandler( &adc.hdma_adc );
+}
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 
