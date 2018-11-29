@@ -133,6 +133,7 @@
 #define BOARD_ADC_DEFAULT_GPIO3         GPIOC
 #define BOARD_ADC_DEFAULT_PIN3          GPIO_PIN_3
 #define BOARD_ADC_DEFAULT_CH3           ADC_CHANNEL_9
+#define BOARD_ADC_COEFF                 3250
 
 
 #define BOARD_USB_DEFAULT_GPIO       GPIOA

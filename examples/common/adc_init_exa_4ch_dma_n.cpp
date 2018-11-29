@@ -1,6 +1,7 @@
 #include <errno.h>
 
 #include <oxc_gpio.h>
+#include <oxc_adc.h>
 // #include <oxc_debug1.h>
 
 extern ADC_HandleTypeDef hadc1;
@@ -140,42 +141,5 @@ void ADC_IRQHandler(void)
 void DMA2_Stream0_IRQHandler(void)
 {
   HAL_DMA_IRQHandler( &hdma_adc1 );
-}
-
-
-uint32_t calc_ADC_clk( uint32_t presc, int *div_val )
-{
-  int dv_fake = 0;
-  if( div_val == nullptr ) {
-    div_val = &dv_fake;
-  }
-  *div_val = 1;
-
-  uint32_t clk =  HAL_RCC_GetPCLK2Freq();
-  switch( presc ) {
-    case ADC_CLOCK_SYNC_PCLK_DIV2: *div_val = 2; break;
-    case ADC_CLOCK_SYNC_PCLK_DIV4: *div_val = 4; break;
-    case ADC_CLOCK_SYNC_PCLK_DIV6: *div_val = 6; break;
-    case ADC_CLOCK_SYNC_PCLK_DIV8: *div_val = 8; break;
-    default: break; // newer
-  }
-  clk /= *div_val = 2;
-  return clk;
-}
-
-uint32_t hint_ADC_presc()
-{
-  uint32_t clk =  HAL_RCC_GetPCLK2Freq();
-  const uint32_t max_ADC_Clk = ADC_FREQ_MAX;
-  if( ( clk / 2 ) >= max_ADC_Clk ) {
-    return ADC_CLOCK_SYNC_PCLK_DIV2;
-  }
-  if( ( clk / 4 ) >= max_ADC_Clk ) {
-    return ADC_CLOCK_SYNC_PCLK_DIV4;
-  }
-  if( ( clk / 6 ) >= max_ADC_Clk ) {
-    return ADC_CLOCK_SYNC_PCLK_DIV6;
-  }
-  return ADC_CLOCK_SYNC_PCLK_DIV8;
 }
 

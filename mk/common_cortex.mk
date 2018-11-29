@@ -228,9 +228,9 @@ endif
 
 ifeq "$(USE_OXC_ADC)" "y"
   USE_OXC = y
-  # SRCS += oxc_adc.cpp
   SRCS += stm32$(MCSUFF)xx_hal_adc.c
   SRCS += stm32$(MCSUFF)xx_hal_adc_ex.c
+  SRCS += oxc_adc.cpp
   ALLFLAGS += -DUSE_OXC_ADC
 endif
 

@@ -16,6 +16,10 @@
 #include <oxc_tim.h>
 #endif
 
+#if defined (USE_OXC_ADC)
+#include <oxc_adc.h>
+#endif
+
 #if defined (USE_OXC_DEVIO)
 #include <oxc_devio.h>
 #endif

@@ -134,6 +134,7 @@
 #define BOARD_ADC_DEFAULT_PIN3          GPIO_PIN_5
 #define BOARD_ADC_DEFAULT_CH3           ADC_CHANNEL_15
 #define BOARD_ADC_MEM_MAX               (1024*64)
+#define BOARD_ADC_COEFF                 3250
 
 #define BOARD_USB_DEFAULT_GPIO       GPIOA
 #define BOARD_USB_DEFAULT_DPDM_PINS  ( GPIO_PIN_11 | GPIO_PIN_12 )
