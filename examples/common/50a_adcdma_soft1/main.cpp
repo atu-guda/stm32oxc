@@ -35,7 +35,6 @@ ADC_Info adc;
 
 int v_adc_ref = BOARD_ADC_COEFF; // in mV, measured before test, adjust as UVAR('v')
 const uint32_t n_ADC_ch_max = 4; // current - in UVAR('c')
-
 uint16_t ADC_buf[32];
 
 
@@ -128,6 +127,7 @@ int cmd_test0( int argc, const char * const * argv )
   int rc = 0;
 
   for( unsigned i=0; i<n && !break_flag; ++i ) {
+    adc.end_dma = 0;
     if( HAL_ADC_Start_DMA( &adc.hadc, (uint32_t*)(&ADC_buf), n_ADC_sampl ) != HAL_OK )   {
       os <<  "ADC_Start_DMA error" NL;
       rc = 1;
@@ -139,7 +139,7 @@ int cmd_test0( int argc, const char * const * argv )
     }
     uint32_t tcc = HAL_GetTick();
     if( i == 0 ) {
-      tm0 = HAL_GetTick(); tm00 = tm0;
+      tm0 = tcc; tm00 = tm0;
     }
 
     HAL_ADC_Stop_DMA( &adc.hadc ); // needed
@@ -155,7 +155,8 @@ int cmd_test0( int argc, const char * const * argv )
     } else {
       adc.n_series = 1;
     }
-    os <<  0.001f * ( tcc - tm00 )  << ' ';
+    int dt = tcc - tm00; // ms
+    os <<  0.001f * dt << ' ';
     for( int j=0; j<n_ch; ++j ) {
       os << ' ' << ( 0.001f * UVAR('v')  * ADC_buf[j] / 4096 );
     }

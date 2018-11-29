@@ -42,6 +42,10 @@ void tim_cfg();
 void pwm_recalc();
 void set_pwm(); // uses pwm_val
 int pwm_val = 10;
+int pwm_t = 0;
+int pwm_t_mul = 1;
+
+void handle_keys();
 
 
 
@@ -149,12 +153,14 @@ int cmd_test0( int argc, const char * const * argv )
 
   pwm_val  = UVAR('l');
   int pwm_step = UVAR('y');
-  int pwm_t = 0;
+  pwm_t = 0;
   int pwm_n = 0;
   uint32_t tm0, tm00;
   int rc = 0;
 
   for( unsigned i=0; i<n && !break_flag; ++i ) {
+
+    handle_keys();
 
     if( pwm_t >= UVAR('x') ) {
       pwm_t = 0;
@@ -166,6 +172,7 @@ int cmd_test0( int argc, const char * const * argv )
       set_pwm();
     }
 
+    adc.end_dma = 0;
     if( HAL_ADC_Start_DMA( &adc.hadc, (uint32_t*)(&ADC_buf), n_ADC_sampl ) != HAL_OK )   {
       os <<  "ADC_Start_DMA error" NL;
       rc = 1;
@@ -177,7 +184,7 @@ int cmd_test0( int argc, const char * const * argv )
     }
     uint32_t tcc = HAL_GetTick();
     if( i == 0 ) {
-      tm0 = HAL_GetTick(); tm00 = tm0;
+      tm0 = tcc; tm00 = tm0;
     }
 
     HAL_ADC_Stop_DMA( &adc.hadc ); // needed
@@ -200,7 +207,7 @@ int cmd_test0( int argc, const char * const * argv )
     }
     os << ' ' << pwm_val <<  NL;
 
-    pwm_t += t_step;
+    pwm_t += t_step * pwm_t_mul;
     delay_ms_until_brk( &tm0, t_step );
   }
 
@@ -312,6 +319,39 @@ int cmd_tinit( int argc, const char * const * argv )
   tim_print_cfg( TIM_EXA );
 
   return 0;
+}
+
+void handle_keys()
+{
+  auto v = tryGet( 0 );
+  if( !v.good() ) {
+    return;
+  }
+  bool need_set_pwm = false;
+
+  switch( v.c ) {
+    case 'w': pwm_val += 1; need_set_pwm = true; break;
+    case 'W': pwm_val += 5; need_set_pwm = true; break;
+    case 's': pwm_val -= 1; need_set_pwm = true; break;
+    case 'S': pwm_val -= 5; need_set_pwm = true; break;
+    case 'a': pwm_t   -=  2000;  break;
+    case 'A': pwm_t   -= 10000;  break;
+    case 'd': pwm_t   +=  2000;  break;
+    case 'D': pwm_t   += 10000;  break;
+    case '0': pwm_val =  0; need_set_pwm = true; break;
+    case '1': pwm_val = 10; need_set_pwm = true; break;
+    case '2': pwm_val = 20; need_set_pwm = true; break;
+    case '3': pwm_val = 30; need_set_pwm = true; break;
+    case '4': pwm_val = 40; need_set_pwm = true; break;
+    case '5': pwm_val = 50; need_set_pwm = true; break;
+    case 'g': pwm_t_mul = 0; break;
+    case 'G': pwm_t_mul = 1; break;
+    default: break;
+  }
+
+  if( need_set_pwm ) {
+    set_pwm();
+  }
 }
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
