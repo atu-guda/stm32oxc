@@ -135,6 +135,7 @@ bool arg2long( int narg, int argc, const char * const * argv, long *v,
   if( narg >= argc || !argv || !v ) {
     return false;
   }
+  // TODO: callback
   char *eptr;
   long l = strtol( argv[narg], &eptr, 0 );
   if( *eptr != 0 ) {

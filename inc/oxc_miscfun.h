@@ -55,6 +55,7 @@ bool arg2long( int narg, int argc, const char * const * argv, long *v,
 // the same with default value
 long arg2long_d( int narg, int argc, const char * const * argv, long def,
                  long vmin = INT32_MIN, long vmax = INT32_MAX );
+// TODO: callback for parameter parsing
 
  // swap bytes in 16-bits
 inline uint16_t rev16( uint16_t v ) { return (uint16_t)__REV16( v );}

@@ -1,6 +1,8 @@
 #ifndef _OXC_FLOATFUN_H
 #define _OXC_FLOATFUN_H
 
+#include <float.h>
+
 #include <oxc_miscfun.h>
 #include <oxc_outstream.h>
 
@@ -23,5 +25,10 @@ class FloatFmt : public OutStreamFmt {
 };
 
 OutStream& operator<<( OutStream &os, float rhs );
+
+float str2float_d( const char *s, float def, float vmin = -3.402e+38F, float vmax = 3.402e+38F );
+float arg2float_d( int narg, int argc, const char * const * argv, float def,
+                 float vmin = -3.402e+38F, float vmax = 3.402e+38F );
+// TODO: callback for parameter parsing
 
 #endif

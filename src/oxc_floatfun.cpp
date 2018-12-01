@@ -1,4 +1,5 @@
 #include <cstring>
+#include <stdlib.h>
 
 #include <oxc_floatfun.h>
 
@@ -28,3 +29,30 @@ OutStream& operator<<( OutStream &os, float rhs ) {
   FloatFmt( rhs ).out( os );
   return os;
 }
+
+
+float str2float_d( const char *s, float def, float vmin, float vmax )
+{
+  float v = def;
+  char *eptr;
+  if( s && *s ) {
+    // TODO: callback
+    float t = strtof( s, &eptr );
+    if( *eptr == '\0' ) {
+      v = t;
+    }
+  }
+  if( v < vmin ) { v = vmin; };
+  if( v > vmax ) { v = vmax; };
+  return v;
+}
+
+float arg2float_d( int narg, int argc, const char * const * argv, float def, float vmin, float vmax )
+{
+  float v = def;
+  if(  narg < argc && argv != nullptr ) {
+    v = str2float_d( argv[narg], def, vmin, vmax );
+  }
+  return v;
+}
+
