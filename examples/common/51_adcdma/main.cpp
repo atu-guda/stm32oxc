@@ -21,7 +21,6 @@ void out_to_curr( uint32_t n, uint32_t st );
 
 
 int adc_init_exa_4ch_dma( ADC_Info &adc, uint32_t adc_presc, uint32_t sampl_cycl, uint8_t n_ch );
-void ADC_DMA_reinit( ADC_Info &adc );
 
 ADC_Info adc;
 
@@ -29,7 +28,7 @@ uint32_t tim_freq_in; // timer input freq
 float t_step_f = 0.1; // in s, recalculated before measurement
 int v_adc_ref = BOARD_ADC_COEFF; // in mV, measured before test, adjust as UVAR('v')
 const uint32_t n_ADC_ch_max = 4; // current - in UVAR('c')
-const uint32_t n_ADC_mem  = BOARD_ADC_MEM_MAX; // MCU dependent, in byter for 16-bit samples
+const uint32_t n_ADC_mem  = BOARD_ADC_MEM_MAX; // MCU dependent, in bytes for 16-bit samples
 
 vector<uint16_t> ADC_buf;
 
@@ -70,7 +69,7 @@ int main(void)
   UVAR('v') = v_adc_ref;
   UVAR('j') = tim_freq_in;
   UVAR('p') =  calc_TIM_psc_for_cnt_freq( TIM2, 1000000 ); // timer PSC, for 1MHz
-  UVAR('a') = 99999; // timer ARR, for 10Hz
+  UVAR('a') = 99999; // timer ARR, for 10Hz TODO: better time or freq based
   UVAR('c') = n_ADC_ch_max;
   UVAR('n') = 8; // number of series
   UVAR('s') = 0; // sampling time index
@@ -98,7 +97,6 @@ int main(void)
 int cmd_test0( int argc, const char * const * argv )
 {
   STDOUT_os;
-  char pbuf[pbufsz];
   uint8_t n_ch = UVAR('c');
   if( n_ch > n_ADC_ch_max ) { n_ch = n_ADC_ch_max; };
   if( n_ch < 1 ) { n_ch = 1; };
@@ -141,22 +139,20 @@ int cmd_test0( int argc, const char * const * argv )
 
   int div_val = -1;
   adc.adc_clk = calc_ADC_clk( adc_presc, &div_val );
-  snprintf( pbuf, pbufsz-1, "# ADC: n_ch= %d n=%lu adc_clk= %lu  div_val= %d s_idx= %lu sampl= %lu; f_sampl_max= %lu Hz; t_wait0= %lu ms" NL,
-                                    n_ch,    n,    adc.adc_clk,  div_val,   sampl_t_idx, sampl_times_cycles[sampl_t_idx],
-                                    f_sampl_max, t_wait0 );
-  os << pbuf;
+  os << "# ADC: n_ch= " << n_ch << " n= " << n << " adc_clk= " << adc.adc_clk << " div_val= " << div_val
+     << " s_idx= " << sampl_t_idx << " sampl= " << sampl_times_cycles[sampl_t_idx] 
+     << " f_sampl_max= " << f_sampl_max << " Hz" NL;
   delay_ms( 10 );
 
-  uint32_t n_ADC_bytes = n * n_ch;
+  uint32_t n_ADC_sampl = n * n_ch;
   ADC_buf.resize( 0, 0 );
   ADC_buf.shrink_to_fit();
   ADC_buf.assign( (n+2) * n_ch, 0 ); // + 2 is guard, may be remove
-  os << "# ADC_buf.size= " << ADC_buf.size() << " data= " << HexInt( ADC_buf.data() ) << NL;
+  os << "# ADC_buf.size= " << ADC_buf.size() << " data= " << HexInt( ADC_buf.data(), true ) << NL;
 
   adc.reset_cnt();
-  UVAR('b') = 0; UVAR('g') = 0; UVAR('e') = 0;   UVAR('x') = 0; UVAR('y') = 0; UVAR('z') = 0;
   if( ADC_buf.data() == nullptr ) {
-    os <<  "Error: fail to allocate memory" NL;
+    os <<  "# Error: fail to allocate memory" NL;
     return 2;
   }
 
@@ -164,13 +160,13 @@ int cmd_test0( int argc, const char * const * argv )
 
   uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
 
-  if( HAL_ADC_Start_DMA( &adc.hadc, (uint32_t*)ADC_buf.data(), n_ADC_bytes ) != HAL_OK )   {
+  if( HAL_ADC_Start_DMA( &adc.hadc, (uint32_t*)ADC_buf.data(), n_ADC_sampl ) != HAL_OK )   {
     os <<  "ADC_Start_DMA error" NL;
   }
   tim2_init( UVAR('p'), UVAR('a') );
 
-  delay_ms( t_wait0 );
-  for( uint32_t ti=0; adc.end_dma == 0 && ti<(uint32_t)UVAR('t'); ++ti ) {
+  delay_ms_brk( t_wait0 );
+  for( uint32_t ti=0; adc.end_dma == 0 && ti<(uint32_t)UVAR('t') && !break_flag;  ++ti ) {
     delay_ms(1);
   }
   uint32_t tcc = HAL_GetTick();

@@ -31,51 +31,18 @@ FATFS fs;
 void print_curr( const char *s );
 void out_to_curr( uint32_t n, uint32_t st );
 
-extern "C" {
- void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc );
- void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc );
- void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim );
-}
-int adc_init_exa_4ch_dma( uint32_t adc_presc, uint32_t sampl_cycl, uint8_t n_ch );
-uint32_t calc_ADC_clk( uint32_t adc_presc, int *div_val );
-uint32_t hint_ADC_presc();
-void ADC_DMA_REINIT();
-void pr_ADC_state();
 
-ADC_HandleTypeDef hadc1;
-DMA_HandleTypeDef hdma_adc1;
+int adc_init_exa_4ch_dma( ADC_Info &adc, uint32_t adc_presc, uint32_t sampl_cycl, uint8_t n_ch );
+
+ADC_Info adc;
+
 uint32_t tim_freq_in; // timer input freq
 float t_step_f = 0.1; // in s, recalculated before measurement
-int v_adc_ref = 3250; // in mV, measured before test, adjust as UVAR('v')
+int v_adc_ref = BOARD_ADC_COEFF; // in mV, measured before test, adjust as UVAR('v')
 const uint32_t n_ADC_ch_max = 4; // current - in UVAR('c')
 const uint32_t n_ADC_mem  = BOARD_ADC_MEM_MAX; // MCU dependent, in bytes for 16-bit samples
 
 vector<uint16_t> ADC_buf;
-
-volatile int adc_end_dma = 0;
-volatile int adc_dma_error = 0;
-volatile uint32_t n_series = 0;
-uint32_t n_series_todo = 0;
-const uint32_t n_sampl_times = 7; // current number - in UVAR('s')
-const uint32_t sampl_times_codes[n_sampl_times] = { // all for 36 MHz ADC clock
-  ADC_SAMPLETIME_3CYCLES   , //  15  tick: 2.40 MSa,  0.42 us
-  ADC_SAMPLETIME_15CYCLES  , //  27  tick: 1.33 MSa,  0.75 us
-  ADC_SAMPLETIME_28CYCLES  , //  40  tick:  900 kSa,  1.11 us
-  ADC_SAMPLETIME_56CYCLES  , //  68  tick:  529 kSa,  1.89 us
-  ADC_SAMPLETIME_84CYCLES  , //  96  tick:  375 kSa,  2.67 us
-  ADC_SAMPLETIME_144CYCLES , // 156  tick:  231 kSa,  4.33 us
-  ADC_SAMPLETIME_480CYCLES   // 492  tick:   73 kSa, 13.67 us
-};
-const uint32_t sampl_times_cycles[n_sampl_times] = { // sample+conv(12)
-    15,  // ADC_SAMPLETIME_3CYCLES
-    27,  // ADC_SAMPLETIME_15CYCLES
-    40,  // ADC_SAMPLETIME_28CYCLES
-    68,  // ADC_SAMPLETIME_56CYCLES
-    96,  // ADC_SAMPLETIME_84CYCLES
-   156,  // ADC_SAMPLETIME_144CYCLES
-   492,  // ADC_SAMPLETIME_480CYCLES
-};
-
 
 
 TIM_HandleTypeDef tim2h;
@@ -125,7 +92,7 @@ int main(void)
   UVAR('t') = 1000; // 1 s extra wait
   UVAR('v') = v_adc_ref;
   UVAR('j') = tim_freq_in;
-  UVAR('p') = calc_TIM_psc_for_cnt_freq( TIM2, 1000000 ); // timer PSC, for 1MHz
+  UVAR('p') =  calc_TIM_psc_for_cnt_freq( TIM2, 1000000 ); // timer PSC, for 1MHz
   UVAR('a') = 99999; // timer ARR, for 10Hz TODO: better time or freq based
   UVAR('c') = n_ADC_ch_max;
   UVAR('n') = 8; // number of series
@@ -150,28 +117,18 @@ int main(void)
 }
 
 
-void pr_ADC_state()
-{
-  if( UVAR('d') > 0 ) {
-    STDOUT_os;
-    os <<  "# ADC: SR= " << HexInt( BOARD_ADC_DEFAULT_DEV->SR  )
-       <<  "  CR1= "     << HexInt( BOARD_ADC_DEFAULT_DEV->CR1 )
-       <<  "  CR2= "     << HexInt( BOARD_ADC_DEFAULT_DEV->CR2 )
-       <<  "  CR2= "     << HexInt( BOARD_ADC_DEFAULT_DEV->CR2 )
-       <<  NL;
-  }
-}
 
+// TODO: move
 void pr_DMA_state()
 {
   if( UVAR('d') > 0 ) {
     STDOUT_os;
-    os <<  "# DMA: CR= " << HexInt( hdma_adc1.Instance->CR )
-       << " NDTR= "      << hdma_adc1.Instance->NDTR
-       << " PAR= "       << HexInt( hdma_adc1.Instance->PAR )
-       << " M0AR= "      << HexInt( hdma_adc1.Instance->M0AR )
-       << " M1AR= "      << HexInt( hdma_adc1.Instance->M1AR )
-       << " FCR= "       << HexInt( hdma_adc1.Instance->FCR )
+    os <<  "# DMA: CR= " << HexInt( adc.hdma_adc.Instance->CR, true )
+       << " NDTR= "      << adc.hdma_adc.Instance->NDTR
+       << " PAR= "       << HexInt( adc.hdma_adc.Instance->PAR, true )
+       << " M0AR= "      << HexInt( adc.hdma_adc.Instance->M0AR, true )
+       << " M1AR= "      << HexInt( adc.hdma_adc.Instance->M1AR, true )
+       << " FCR= "       << HexInt( adc.hdma_adc.Instance->FCR, true )
        << NL;
   }
 }
@@ -192,52 +149,49 @@ int cmd_test0( int argc, const char * const * argv )
   uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, n_ADC_series_max ); // number of series
 
   uint32_t sampl_t_idx = UVAR('s');
-  if( sampl_t_idx >= n_sampl_times ) { sampl_t_idx = n_sampl_times-1; };
-  uint32_t f_sampl_max = adc_clk / ( sampl_times_cycles[sampl_t_idx] * n_ch );
+  if( sampl_t_idx >= adc_n_sampl_times ) { sampl_t_idx = adc_n_sampl_times-1; };
+  uint32_t f_sampl_max = adc.adc_clk / ( sampl_times_cycles[sampl_t_idx] * n_ch );
 
   uint32_t t_step_tick =  (tim_arr+1) * (tim_psc+1); // in timer input ticks
   float tim_f = (float)tim_freq_in / t_step_tick; // timer update freq, Hz
   t_step_f    = (float)t_step_tick / tim_freq_in; // in s
   uint32_t t_wait0 = 1 + uint32_t( n * t_step_f * 1000 ); // in ms
 
-  if( UVAR('d') > 0 ) {
-    os << "# t_step_tick= " << t_step_tick << " [t2ticks] tim_f= " << tim_f << " Hz"
-       << " t_step_f= " << t_step_f << " s  t_wait0= " << t_wait0 << " ms" NL;
-  }
+  os << "# t_step_tick= " << t_step_tick << " [t2ticks] tim_f= " << tim_f << " Hz"
+     << " t_step_f= " << t_step_f << " s  t_wait0= " << t_wait0 << " ms" NL;
 
   if( n > n_ADC_series_max ) { n = n_ADC_series_max; };
 
   tim2_deinit();
 
   uint32_t adc_presc = hint_ADC_presc();
-  UVAR('i') =  adc_init_exa_4ch_dma( adc_presc, sampl_times_codes[sampl_t_idx], n_ch );
+  UVAR('i') =  adc_init_exa_4ch_dma( adc, adc_presc, sampl_times_codes[sampl_t_idx], n_ch );
   delay_ms( 1 );
   if( ! UVAR('i') ) {
     os <<  "ADC init failed, errno= " << errno << NL;
     return 1;
   }
-  pr_ADC_state();
+  if( UVAR('d') > 1 ) { pr_ADC_state( adc );  }
 
 
-  os << "# Timer: tim_freq_in= " << tim_freq_in << " Hz / ((" << tim_psc
-     << "+1)*(" << tim_arr << "+1)) =" << tim_f << " Hz; t_step = " << t_step_f << " s" NL;
+  os << "# Timer: tim_freq_in= " << tim_freq_in << "  Hz / (( " << tim_psc
+     << "+1)*( " << tim_arr << "+1)) =" << tim_f << " Hz; t_step = " << t_step_f << " s" NL;
   delay_ms( 1 );
 
   int div_val = -1;
-  adc_clk = calc_ADC_clk( adc_presc, &div_val );
-  os << "# ADC: n_ch= " << n_ch << " n= " << n << " adc_clk= " << adc_clk << " div_val= " << div_val
-     << " sampl_t_idx= " << sampl_t_idx << " sampl= " << sampl_times_cycles[sampl_t_idx]
-     <<  " f_sampl_max= " << f_sampl_max << " Hz; t_wait0= " << t_wait0 << " ms" NL;
+  adc.adc_clk = calc_ADC_clk( adc_presc, &div_val );
+  os << "# ADC: n_ch= " << n_ch << " n= " << n << " adc_clk= " << adc.adc_clk << " div_val= " << div_val
+     << " s_idx= " << sampl_t_idx << " sampl= " << sampl_times_cycles[sampl_t_idx] 
+     << " f_sampl_max= " << f_sampl_max << " Hz" NL;
   delay_ms( 10 );
 
   uint32_t n_ADC_sampl = n * n_ch;
   ADC_buf.resize( 0, 0 );
   ADC_buf.shrink_to_fit();
   ADC_buf.assign( (n+2) * n_ch, 0 ); // + 2 is guard, may be remove
-  os << "# ADC_buf.size= " << ADC_buf.size() << " data= 0x" << HexInt( ADC_buf.data() ) << NL;
+  os << "# ADC_buf.size= " << ADC_buf.size() << " data= " << HexInt( ADC_buf.data(), true ) << NL;
 
-  adc_end_dma = 0; adc_dma_error = 0; n_series = 0; n_series_todo = n;
-  UVAR('b') = 0; UVAR('g') = 0; UVAR('e') = 0;   UVAR('x') = 0; UVAR('y') = 0; UVAR('z') = 0;
+  adc.reset_cnt();
   if( ADC_buf.data() == nullptr ) {
     os <<  "# Error: fail to allocate memory" NL;
     return 2;
@@ -247,40 +201,39 @@ int cmd_test0( int argc, const char * const * argv )
 
   uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
 
-  if( HAL_ADC_Start_DMA( &hadc1, (uint32_t*)ADC_buf.data(), n_ADC_sampl ) != HAL_OK )   {
-    os <<  "# Error: ADC_Start_DMA error" NL;
-    return 3;
+  if( HAL_ADC_Start_DMA( &adc.hadc, (uint32_t*)ADC_buf.data(), n_ADC_sampl ) != HAL_OK )   {
+    os <<  "ADC_Start_DMA error" NL;
   }
   tim2_init( UVAR('p'), UVAR('a') );
 
   delay_ms_brk( t_wait0 );
-  for( uint32_t ti=0; adc_end_dma == 0 && ti<(uint32_t)UVAR('t') && !break_flag;  ++ti ) {
+  for( uint32_t ti=0; adc.end_dma == 0 && ti<(uint32_t)UVAR('t') && !break_flag;  ++ti ) {
     delay_ms(1);
   }
   uint32_t tcc = HAL_GetTick();
   delay_ms( 10 ); // to settle all
 
   tim2_deinit();
-  HAL_ADC_Stop_DMA( &hadc1 ); // needed
-  if( adc_end_dma == 0 ) {
-    os <<  "# Error: Fail to wait DMA end " NL;
+  HAL_ADC_Stop_DMA( &adc.hadc ); // needed
+  if( adc.end_dma == 0 ) {
+    os <<  "Fail to wait DMA end " NL;
   }
-  if( adc_dma_error != 0 ) {
-    os <<  "# Error: Found DMA error " << HexInt( adc_dma_error ) <<  NL;
-  }
-  os <<  "#  tick: " <<  ( tcc - tm00 ) <<  " good= " << UVAR('g') << " err= " << UVAR('e') <<  NL;
-
-  if( n_series_todo > 8 ) {
-    out_to_curr( 6, 0 );
-    os <<  "....." NL;
-    out_to_curr( 4, n_series_todo-2 );
+  if( adc.dma_error != 0 ) {
+    os <<  "Found DMA error " << HexInt( adc.dma_error ) <<  NL;
   } else {
-    out_to_curr( n_series_todo+2, 0 );
+    adc.n_series = n;
+  }
+  os <<  "#  tick: " <<  ( tcc - tm00 )  <<  NL;
+
+  out_to_curr( 2, 0 );
+  if( adc.n_series > 2 ) {
+    os <<  "....." NL;
+    out_to_curr( 4, adc.n_series-2 );
   }
 
   os <<  NL;
 
-  pr_ADC_state();
+  if( UVAR('d') > 1 ) { pr_ADC_state( adc );  }
   os <<  NL;
 
   delay_ms( 10 );
@@ -310,8 +263,8 @@ void out_to_curr( uint32_t n, uint32_t st )
   if( n_ch > n_ADC_ch_max ) { n_ch = n_ADC_ch_max; };
   if( n_ch < 1 ) { n_ch = 1; };
 
-  if( n+st >= n_series_todo+1 ) {
-    n = 1 + n_series_todo - st;
+  if( n+st >= adc.n_series+1 ) {
+    n = 1 + adc.n_series - st;
   }
 
   float t = st * t_step_f;
@@ -332,8 +285,9 @@ void out_to_curr( uint32_t n, uint32_t st )
 int cmd_out( int argc, const char * const * argv )
 {
   out_file.obj.fs = nullptr;
-  uint32_t n = arg2long_d( 1, argc, argv, n_series_todo, 0, n_series_todo+1 ); // number output series
-  uint32_t st= arg2long_d( 2, argc, argv,             0, 0, n_series_todo-2 );
+  auto ns = adc.n_series;
+  uint32_t n = arg2long_d( 1, argc, argv, ns, 0, ns+1 ); // number output series
+  uint32_t st= arg2long_d( 2, argc, argv,  0, 0, ns-2 );
 
   out_to_curr( n, st );
 
@@ -349,8 +303,8 @@ int cmd_outsd( int argc, const char * const * argv )
   }
 
   out_file.obj.fs = nullptr;
-  uint32_t n = arg2long_d( 2, argc, argv, n_series_todo, 0, n_series_todo+1 ); // number output series
-  uint32_t st= arg2long_d( 3, argc, argv,             0, 0, n_series_todo-2 );
+  uint32_t n = arg2long_d( 2, argc, argv, adc.n_series, 0, adc.n_series+1 ); // number output series
+  uint32_t st= arg2long_d( 3, argc, argv,            0, 0, adc.n_series-2 );
 
   const char *fn = argv[1];
   FRESULT r = f_open( &out_file, fn, FA_WRITE | FA_OPEN_ALWAYS );
@@ -368,32 +322,28 @@ int cmd_outsd( int argc, const char * const * argv )
 
 void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc )
 {
-  adc_end_dma |= 1;
-  UVAR('x') = hadc1.Instance->SR;
-  if( UVAR('b') == 0 ) {
-    UVAR('b') = 1;
-  }
-  ++UVAR('g'); // 'g' means good
+  adc.end_dma |= 1;
+  adc.good_SR =  adc.last_SR = adc.hadc.Instance->SR;
+  adc.last_end = 1;
+  adc.last_error = 0;
+  ++adc.n_good;
 }
 
 void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc )
 {
-  UVAR('y') = hadc1.Instance->SR;
-  adc_end_dma |= 2;
+  adc.end_dma |= 2;
+  adc.bad_SR = adc.last_SR = adc.hadc.Instance->SR;
   // tim2_deinit();
-  if( UVAR('b') == 0 ) {
-    UVAR('b') = 2;
-  }
-  UVAR('z') = HAL_ADC_GetError( hadc );
-  adc_dma_error = hadc->DMA_Handle->ErrorCode;
+  adc.last_end  = 2;
+  adc.last_error = HAL_ADC_GetError( hadc );
+  adc.dma_error = hadc->DMA_Handle->ErrorCode;
   hadc->DMA_Handle->ErrorCode = 0;
-  UVAR('y') = hadc1.Instance->SR;
-  ++UVAR('e');
+  ++adc.n_bad;
 }
 
-
-void HAL_ADCEx_InjectedConvCpltCallback( ADC_HandleTypeDef * /*hadc*/ )
+void DMA2_Stream0_IRQHandler(void)
 {
+  HAL_DMA_IRQHandler( &adc.hdma_adc );
 }
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
