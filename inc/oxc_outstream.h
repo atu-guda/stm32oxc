@@ -7,6 +7,12 @@
 #include <oxc_outfmt.h>
 #include <oxc_io.h>
 
+class OutStream;
+
+class OutStreamFmt {
+  public:
+   virtual void out( OutStream &os ) const = 0;
+};
 
 //* minimal class for outout to given DevOut
 
@@ -44,10 +50,12 @@ class OutStream {
    OutStream& operator<<( FloatMult rhs ) { return operator+=( rhs ); }
    OutStream& operator+=( const BitsStr &rhs );
    OutStream& operator<<( const BitsStr &rhs ) { return operator+=( rhs ); }
+   OutStream& operator<<( const OutStreamFmt &rhs ) { rhs.out( *this ); return *this; }
   private:
    DevOut *out = nullptr;
 };
 
+// require <oxc_devio.h>
 #define STDOUT_os  OutStream os( devio_fds[1] )
 
 #endif

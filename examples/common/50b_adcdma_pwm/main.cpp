@@ -6,6 +6,7 @@
 #include <vector>
 
 #include <oxc_auto.h>
+#include <oxc_floatfun.h>
 
 using namespace std;
 using namespace SMLRL;
@@ -16,17 +17,7 @@ BOARD_DEFINE_LEDS;
 BOARD_CONSOLE_DEFINES;
 
 
-OutStream& operator<<( OutStream &os, float rhs );
 
-OutStream& operator<<( OutStream &os, float rhs ) // TODO: to library
-{
-  char buf[32];
-
-  snprintf( buf, sizeof(buf), "%#g", (double)rhs );
-  // snprintf( buf, sizeof(buf), "%16.6e", rhs );
-  os << buf;
-  return os;
-}
 
 
 int adc_init_exa_4ch_manual( ADC_Info &adc, uint32_t adc_presc, uint32_t sampl_cycl, uint8_t n_ch );
@@ -115,7 +106,6 @@ int main(void)
 int cmd_test0( int argc, const char * const * argv )
 {
   STDOUT_os;
-  char pbuf[pbufsz];
   int t_step = UVAR('t');
   uint8_t n_ch = UVAR('c');
   if( n_ch > n_ADC_ch_max ) { n_ch = n_ADC_ch_max; };
@@ -139,10 +129,9 @@ int cmd_test0( int argc, const char * const * argv )
 
   int div_val = -1;
   adc.adc_clk = calc_ADC_clk( adc_presc, &div_val );
-  snprintf( pbuf, pbufsz-1, "# ADC: n_ch= %d n=%lu adc_clk= %lu  div_val= %d s_idx= %lu sampl= %lu; f_sampl_max= %lu Hz" NL,
-                                    n_ch,    n,    adc.adc_clk,  div_val,   sampl_t_idx, sampl_times_cycles[sampl_t_idx],
-                                    f_sampl_max );
-  os << pbuf;
+  os << "# ADC: n_ch= " << n_ch << " n= " << n << " adc_clk= " << adc.adc_clk << " div_val= " << div_val
+     << " s_idx= " << sampl_t_idx << " sampl= " << sampl_times_cycles[sampl_t_idx] 
+     << " f_sampl_max= " << f_sampl_max << " Hz" NL;
   delay_ms( 10 );
 
   uint32_t n_ADC_sampl = n_ch;
@@ -159,6 +148,11 @@ int cmd_test0( int argc, const char * const * argv )
   int rc = 0;
 
   for( unsigned i=0; i<n && !break_flag; ++i ) {
+
+    uint32_t tcc = HAL_GetTick();
+    if( i == 0 ) {
+      tm0 = tcc; tm00 = tm0;
+    }
 
     handle_keys();
 
@@ -179,12 +173,8 @@ int cmd_test0( int argc, const char * const * argv )
       break;
     }
 
-    for( uint32_t ti=0; adc.end_dma == 0 && ti<100; ++ti ) {
-      delay_ms(1);
-    }
-    uint32_t tcc = HAL_GetTick();
-    if( i == 0 ) {
-      tm0 = tcc; tm00 = tm0;
+    for( uint32_t ti=0; adc.end_dma == 0 && ti<1000; ++ti ) {
+      delay_mcs( 10 );
     }
 
     HAL_ADC_Stop_DMA( &adc.hadc ); // needed
@@ -200,8 +190,9 @@ int cmd_test0( int argc, const char * const * argv )
     } else {
       adc.n_series = 1;
     }
+
     int dt = tcc - tm00; // ms
-    os <<  0.001f * dt << ' ';
+    os <<  FloatFmt( 0.001f * dt, "%-10.4f "  );
     for( int j=0; j<n_ch; ++j ) {
       os << ' ' << ( 0.001f * UVAR('v')  * ADC_buf[j] / 4096 );
     }
