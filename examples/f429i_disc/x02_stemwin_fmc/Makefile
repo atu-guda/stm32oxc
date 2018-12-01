@@ -1,7 +1,7 @@
 OXCDIR = /usr/share/stm32oxc
 PROJ_NAME=stemwin_test
 
-ADDINC = -I$(STMINC)/STemWin -I$(STMCOMPONENTS)/ili9341 -I$(STMSRC)
+ADDINC = -I$(STMINC)/STemWin -I$(STMCOMPONENTS)/ili9341 -I$(STMSRC) -I$(STMINC)/fonts
 ADDSRC =  $(STMSRC)/fonts $(STMCOMPONENTS)/stmpe811 $(STMCOMPONENTS)/ili9341  $(STMSRC)/STemWin $(STMSRC)/STemWin/OS
 
 
@@ -32,9 +32,6 @@ SRCS += LCDConf_stm32f429i_disco_MB1075.c
 
 SRCS += oxc_bsp_f429i_disc_sdram.cpp
 
-SRCS += oxc_bsp_f429i_disc_sdram.cpp
-
-SRCS += stm32f4xx_hal_sdram.c
 SRCS += stm32f4xx_ll_fmc.c
 SRCS += stm32f4xx_hal_spi.c
 

@@ -26,6 +26,7 @@ USE_FREERTOS = y
 
 SRCS  = main.cpp
 
+SRCS += oxc_bartext.cpp
 SRCS += oxc_lsm303dlhc_accel.cpp
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )

@@ -57,15 +57,11 @@ void print_fsinfo( const FATFS *fs );
 
 
 extern "C" {
- void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc );
- void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc );
  void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim );
 }
 const uint32_t ADCDMA_chunk_size = 1024; // in bytes, for for now. may be up to 64k-small
 HAL_StatusTypeDef ADC_Start_DMA_n( ADC_HandleTypeDef* hadc, uint32_t* pData, uint32_t Length, uint32_t chunkLength, uint8_t elSz );
 int adc_init_exa_4ch_dma_n( uint32_t presc, uint32_t sampl_cycl, uint8_t n_ch );
-uint32_t calc_ADC_clk( uint32_t presc, int *div_val );
-uint32_t hint_ADC_presc();
 void ADC_DMA_REINIT();
 void pr_ADC_state();
 int do_one_run( uint32_t n );
@@ -90,25 +86,6 @@ volatile int adc_dma_error = 0;
 volatile uint32_t n_series = 0;
 uint32_t n_series_todo = 0;
 volatile int on_save_state = 0;
-const uint32_t n_sampl_times = 7; // current number - in UVAR('s')
-const uint32_t sampl_times_codes[n_sampl_times] = { // all for 36 MHz ADC clock
-  ADC_SAMPLETIME_3CYCLES   , //  15  tick: 2.40 MSa,  0.42 us
-  ADC_SAMPLETIME_15CYCLES  , //  27  tick: 1.33 MSa,  0.75 us
-  ADC_SAMPLETIME_28CYCLES  , //  40  tick:  900 kSa,  1.11 us
-  ADC_SAMPLETIME_56CYCLES  , //  68  tick:  529 kSa,  1.89 us
-  ADC_SAMPLETIME_84CYCLES  , //  96  tick:  375 kSa,  2.67 us
-  ADC_SAMPLETIME_144CYCLES , // 156  tick:  231 kSa,  4.33 us
-  ADC_SAMPLETIME_480CYCLES   // 492  tick:   73 kSa, 13.67 us
-};
-const uint32_t sampl_times_cycles[n_sampl_times] = { // sample+conv(12)
-    15,  // ADC_SAMPLETIME_3CYCLES
-    27,  // ADC_SAMPLETIME_15CYCLES
-    40,  // ADC_SAMPLETIME_28CYCLES
-    68,  // ADC_SAMPLETIME_56CYCLES
-    96,  // ADC_SAMPLETIME_84CYCLES
-   156,  // ADC_SAMPLETIME_144CYCLES
-   492,  // ADC_SAMPLETIME_480CYCLES
-};
 
 
 
@@ -308,7 +285,7 @@ int do_one_run( uint32_t n )
   const uint32_t n_ADC_series_max  = n_ADC_mem / ( 2 * n_ch ); // 2 is 16bit/sample
 
   uint32_t sampl_t_idx = UVAR('s');
-  if( sampl_t_idx >= n_sampl_times ) { sampl_t_idx = n_sampl_times-1; };
+  if( sampl_t_idx >= adc_n_sampl_times ) { sampl_t_idx = adc_n_sampl_times-1; };
   uint32_t f_sampl_max = adc_clk / ( sampl_times_cycles[sampl_t_idx] * n_ch );
 
   uint32_t t_step_tick =  (UVAR('a')+1) * (UVAR('p')+1); // in timer input ticks

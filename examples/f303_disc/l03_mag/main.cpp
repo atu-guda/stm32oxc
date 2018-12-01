@@ -3,6 +3,7 @@
 
 #include <oxc_auto.h>
 
+#include <oxc_bartext.h>
 #include <oxc_lsm303dlhc_mag.h>
 
 using namespace std;

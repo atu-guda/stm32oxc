@@ -27,6 +27,8 @@ void task_pot( void *prm UNUSED_ARG );
 
 SDRAM_HandleTypeDef hsdram;
 
+const char* common_help_string = "App to measure ADC data (4ch) to SDRAM and store to SD card = POT ctl" NL;
+
 // BOARD_DEFINE_LEDS_EXTRA; //  PinsOut ledsx( GPIOE, 1, 6 ); // E1-E6
 
 extern SD_HandleTypeDef hsd;
@@ -35,7 +37,7 @@ uint8_t sd_buf[512]; // one sector
 HAL_SD_CardInfoTypeDef cardInfo;
 FATFS fs;
 int  print_curr( const char *s );
-void out_to_curr( uint32_t n, uint32_t st );
+int  out_to_curr( uint32_t n, uint32_t st ); // 0 = ok
 
 // buffer to file output
 const uint32_t fbuf_wr_k   = 8;
@@ -51,8 +53,6 @@ int  flush_file();
 
 
 extern "C" {
- void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc );
- void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc );
  void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim );
 }
 const uint32_t ADCDMA_chunk_size = 1024; // in bytes, for for now. may be up to 64k-small
@@ -84,25 +84,6 @@ volatile int adc_dma_error = 0;
 volatile uint32_t n_series = 0;
 uint32_t n_series_todo = 0;
 volatile int on_save_state = 0;
-const uint32_t n_sampl_times = 7; // current number - in UVAR('s')
-const uint32_t sampl_times_codes[n_sampl_times] = { // all for 36 MHz ADC clock
-  ADC_SAMPLETIME_3CYCLES   , //  15  tick: 2.40 MSa,  0.42 us
-  ADC_SAMPLETIME_15CYCLES  , //  27  tick: 1.33 MSa,  0.75 us
-  ADC_SAMPLETIME_28CYCLES  , //  40  tick:  900 kSa,  1.11 us
-  ADC_SAMPLETIME_56CYCLES  , //  68  tick:  529 kSa,  1.89 us
-  ADC_SAMPLETIME_84CYCLES  , //  96  tick:  375 kSa,  2.67 us
-  ADC_SAMPLETIME_144CYCLES , // 156  tick:  231 kSa,  4.33 us
-  ADC_SAMPLETIME_480CYCLES   // 492  tick:   73 kSa, 13.67 us
-};
-const uint32_t sampl_times_cycles[n_sampl_times] = { // sample+conv(12)
-    15,  // ADC_SAMPLETIME_3CYCLES
-    27,  // ADC_SAMPLETIME_15CYCLES
-    40,  // ADC_SAMPLETIME_28CYCLES
-    68,  // ADC_SAMPLETIME_56CYCLES
-    96,  // ADC_SAMPLETIME_84CYCLES
-   156,  // ADC_SAMPLETIME_144CYCLES
-   492,  // ADC_SAMPLETIME_480CYCLES
-};
 
 
 
@@ -265,7 +246,7 @@ int do_one_run( uint32_t n )
   const uint32_t n_ADC_series_max  = n_ADC_mem / ( 2 * n_ch ); // 2 is 16bit/sample
 
   uint32_t sampl_t_idx = UVAR('s');
-  if( sampl_t_idx >= n_sampl_times ) { sampl_t_idx = n_sampl_times-1; };
+  if( sampl_t_idx >= adc_n_sampl_times ) { sampl_t_idx = adc_n_sampl_times-1; };
   uint32_t f_sampl_max = adc_clk / ( sampl_times_cycles[sampl_t_idx] * n_ch );
 
   uint32_t t_step_tick =  (UVAR('a')+1) * (UVAR('p')+1); // in timer input ticks
@@ -388,7 +369,7 @@ int  print_curr( const char *s )
   return rc;
 }
 
-void out_to_curr( uint32_t n, uint32_t st )
+int out_to_curr( uint32_t n, uint32_t st )
 {
   char buf[32];
   char pbuf[pbufsz];
@@ -402,6 +383,7 @@ void out_to_curr( uint32_t n, uint32_t st )
 
   float t = st * t_step_f;
   TickType_t tc0 = xTaskGetTickCount(), tc00 = tc0, tc1 = tc0;
+  int rc = 0;
   for( uint32_t i=0; i< n; ++i ) {
     uint32_t ii = i + st;
     t = t_step_f * ii;
@@ -426,6 +408,7 @@ void out_to_curr( uint32_t n, uint32_t st )
       delay_ms( 10 );
     }
   }
+  return rc;
 }
 
 int cmd_out( int argc, const char * const * argv )

@@ -11,8 +11,6 @@ BOARD_DEFINE_LEDS;
 
 uint8_t *sdram_mem = (uint8_t *)(0xD0000000);
 extern "C" {
- void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc );
- void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc );
  void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim );
 }
 void MX_ADC1_Init( uint8_t n_ch, uint32_t sampl_time );
@@ -30,26 +28,6 @@ volatile uint32_t n_cvt = 0;
 volatile uint32_t n_series = 0;
 uint32_t n_cvt_todo = 0;
 uint32_t n_series_todo = 0;
-const uint32_t n_sampl_times = 7; // current number - in UVAR('s')
-const uint32_t sampl_times_codes[n_sampl_times] = { // all for 25 MHz ADC clock
-  ADC_SAMPLETIME_3CYCLES   , //  15  tick: 1.6 MSa,  0.6  us
-  ADC_SAMPLETIME_15CYCLES  , //  27  tick: 925 kSa,  1.08 us
-  ADC_SAMPLETIME_28CYCLES  , //  40  tick: 615 kSa,  1.6  us
-  ADC_SAMPLETIME_56CYCLES  , //  68  tick: 367 kSa,  2.72 us
-  ADC_SAMPLETIME_84CYCLES  , //  96  tick: 260 kSa,  3.84 us
-  ADC_SAMPLETIME_144CYCLES , // 156  tick: 160 kSa,  6.24 us
-  ADC_SAMPLETIME_480CYCLES   // 492  tick:  50 kSa, 19.68 us
-};
-const uint32_t sampl_times_cycles[n_sampl_times] = { // sample+conv(12)
-    15,  // ADC_SAMPLETIME_3CYCLES     tick: 1.6 MSa,  0.6  us
-    27,  // ADC_SAMPLETIME_15CYCLES    tick: 925 kSa,  1.08 us
-    40,  // ADC_SAMPLETIME_28CYCLES    tick: 615 kSa,  1.6  us
-    68,  // ADC_SAMPLETIME_56CYCLES    tick: 367 kSa,  2.72 us
-    96,  // ADC_SAMPLETIME_84CYCLES    tick: 260 kSa,  3.84 us
-   156,  // ADC_SAMPLETIME_144CYCLES   tick: 160 kSa,  6.24 us
-   492,  // ADC_SAMPLETIME_480CYCLES   tick:  50 kSa, 19.68 us
-};
-
 
 BOARD_CONSOLE_DEFINES;
 
@@ -154,7 +132,7 @@ int cmd_test0( int argc, const char * const * argv )
   uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 0, n_ADC_series_max ); // number of series
 
   uint32_t sampl_t_idx = UVAR('s');
-  if( sampl_t_idx >= n_sampl_times ) { sampl_t_idx = n_sampl_times-1; };
+  if( sampl_t_idx >= adc_n_sampl_times ) { sampl_t_idx = adc_n_sampl_times-1; };
   uint32_t f_sampl_ser = 25000000 / ( sampl_times_cycles[sampl_t_idx] * n_ch );
 
   t_step =  (UVAR('a')+1) * (UVAR('p')+1); // in timer input ticks

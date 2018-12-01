@@ -51,25 +51,6 @@ volatile int adc_end_dma = 0;
 volatile int adc_dma_error = 0;
 volatile uint32_t n_series = 0;
 uint32_t n_series_todo = 0;
-const uint32_t n_sampl_times = 7; // current number - in UVAR('s')
-const uint32_t sampl_times_codes[n_sampl_times] = { // all for 36 MHz ADC clock
-  ADC_SAMPLETIME_3CYCLES   , //  15  tick: 2.40 MSa,  0.42 us
-  ADC_SAMPLETIME_15CYCLES  , //  27  tick: 1.33 MSa,  0.75 us
-  ADC_SAMPLETIME_28CYCLES  , //  40  tick:  900 kSa,  1.11 us
-  ADC_SAMPLETIME_56CYCLES  , //  68  tick:  529 kSa,  1.89 us
-  ADC_SAMPLETIME_84CYCLES  , //  96  tick:  375 kSa,  2.67 us
-  ADC_SAMPLETIME_144CYCLES , // 156  tick:  231 kSa,  4.33 us
-  ADC_SAMPLETIME_480CYCLES   // 492  tick:   73 kSa, 13.67 us
-};
-const uint32_t sampl_times_cycles[n_sampl_times] = { // sample+conv(12)
-    15,  // ADC_SAMPLETIME_3CYCLES
-    27,  // ADC_SAMPLETIME_15CYCLES
-    40,  // ADC_SAMPLETIME_28CYCLES
-    68,  // ADC_SAMPLETIME_56CYCLES
-    96,  // ADC_SAMPLETIME_84CYCLES
-   156,  // ADC_SAMPLETIME_144CYCLES
-   492,  // ADC_SAMPLETIME_480CYCLES
-};
 
 
 
@@ -170,7 +151,7 @@ int cmd_test0( int argc, const char * const * argv )
   uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, n_ADC_series_max ); // number of series
 
   uint32_t sampl_t_idx = UVAR('s');
-  if( sampl_t_idx >= n_sampl_times ) { sampl_t_idx = n_sampl_times-1; };
+  if( sampl_t_idx >= adc_n_sampl_times ) { sampl_t_idx = adc_n_sampl_times-1; };
   uint32_t f_sampl_max = adc_clk / ( sampl_times_cycles[sampl_t_idx] * n_ch );
 
   uint32_t t_step_tick =  (UVAR('a')+1) * (UVAR('p')+1); // in timer input ticks
