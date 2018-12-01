@@ -6,6 +6,7 @@
 #include <vector>
 
 #include <oxc_auto.h>
+#include <oxc_floatfun.h>
 
 using namespace std;
 using namespace SMLRL;

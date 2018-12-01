@@ -6,6 +6,7 @@
 #include <vector>
 
 #include <oxc_auto.h>
+#include <oxc_floatfun.h>
 
 using namespace std;
 using namespace SMLRL;
@@ -16,17 +17,6 @@ BOARD_DEFINE_LEDS;
 BOARD_CONSOLE_DEFINES;
 
 
-OutStream& operator<<( OutStream &os, float rhs );
-
-OutStream& operator<<( OutStream &os, float rhs ) // TODO: to library
-{
-  char buf[32];
-
-  snprintf( buf, sizeof(buf), "%#g", (double)rhs );
-  // snprintf( buf, sizeof(buf), "%16.6e", rhs );
-  os << buf;
-  return os;
-}
 
 
 int adc_init_exa_4ch_manual( ADC_Info &adc, uint32_t adc_presc, uint32_t sampl_cycl, uint8_t n_ch );

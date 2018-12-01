@@ -13,6 +13,7 @@
 
 #include <oxc_auto.h>
 #include <oxc_hd44780_i2c.h>
+#include <oxc_floatfun.h>
 
 #include "meas0.h"
 #include "tcalclang.h"
@@ -250,15 +251,6 @@ int main(void)
   std_main_loop_nortos( &srl, nullptr );
 
   return 0;
-}
-
-OutStream& operator<<( OutStream &os, float rhs )
-{
-  char buf[32];
-
-  snprintf( buf, sizeof(buf), "%#g", rhs );
-  os << buf;
-  return os;
 }
 
 int one_step()

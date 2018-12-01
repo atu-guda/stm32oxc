@@ -29,6 +29,8 @@ SRCS += adc.cpp
 SRCS += tim.cpp
 SRCS += tcalclang.cpp
 
+SRCS += oxc_floatfun.cpp
+
 SRCS += oxc_hd44780_i2c.cpp
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )

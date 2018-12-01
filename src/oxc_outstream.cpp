@@ -26,11 +26,11 @@ void OutStream::add_bitnames( uint32_t b, const BitNames *bn )
       operator+=( bn->name ); append( '_' );
       uint32_t v = (b>>bn->s) & ( ~0u>>(bpi-bn->n) );
       if( bn->n > 16 ) {
-        operator+=( HexInt( v ) );
+        HexInt( v ).out( *this );
       } else if ( bn->n > 8 ) {
-        operator+=( HexInt16( v ) );
+        HexInt16( v ).out( *this );
       } else {
-        operator+=( HexInt8( v ) );
+        HexInt8( v ).out( *this );
       }
     }
   }
@@ -42,91 +42,89 @@ OutStream& OutStream::operator+=( int rhs )
 {
   char buf[INT_STR_SZ_DEC];
   i2dec_n( rhs, buf );
-  operator+=( buf );
+  append( buf );
   return *this;
 }
 
-OutStream& OutStream::operator+=( HexInt rhs )
+void HexInt::out( OutStream &os ) const
 {
-  char buf[9];  // AABBCCDD
-  word2hex( rhs, buf );
-  operator+=( buf );
-  return *this;
+  char buf[12];  // 0xAABBCCDD
+  if( pr ) {
+    os.append( "0x" );
+  }
+  word2hex( v, buf );
+  os.append( buf );
 }
 
-OutStream& OutStream::operator+=( HexInt8 rhs )
+void HexInt8::out( OutStream &os ) const
 {
-  char buf[3];  // AA
-  char2hex( rhs, buf );
-  operator+=( buf );
-  return *this;
+  char buf[4];  // AA
+  char2hex( v, buf );
+  os.append( buf );
 }
 
-OutStream& OutStream::operator+=( HexInt16 rhs )
+void HexInt16::out( OutStream &os ) const
 {
-  char buf[5];  // AABB
-  short2hex( rhs, buf );
-  operator+=( buf );
-  return *this;
+  char buf[8];  // AABB
+  short2hex( v, buf );
+  os.append( buf );
 }
 
-OutStream& OutStream::operator+=( const FmtInt &rhs )
+
+void FmtInt::out( OutStream &os ) const
 {
   char buf[INT_STR_SZ_DEC];
-  i2dec_n( rhs.v, buf, rhs.min_sz, rhs.fill_ch );
-  operator+=( buf );
-  return *this;
+  i2dec_n( v, buf, min_sz, fill_ch );
+  os.append( buf );
 }
 
-OutStream& OutStream::operator+=( FixedPoint1 rhs )
+void FixedPoint1::out( OutStream &os ) const
 {
   char buf[INT_STR_SZ_DEC+2];
-  int vi = rhs.toInt();
+  int vi = toInt();
   if( vi < 0 ) {
-    append( '-' ); vi = -vi;
+    os.append( '-' ); vi = -vi;
   }
   i2dec_n( vi, buf );
-  operator+=( buf );
-  operator+=( FixedPoint1::fracStr[ rhs.frac() ] );
-  return *this;
+  os.append( buf );
+  os.append(  FixedPoint1::fracStr[ frac() ] );
 }
 
-OutStream& OutStream::operator+=( FixedPoint2 rhs )
+void FixedPoint2::out( OutStream &os ) const
 {
   char buf[INT_STR_SZ_DEC+3];
-  int vi = rhs.toInt();
+  int vi = toInt();
   if( vi < 0 ) {
-    append( '-' ); vi = -vi;
+    os.append( '-' ); vi = -vi;
   }
   i2dec_n( vi, buf );
-  operator+=( buf );
-  operator+=( FixedPoint2::fracStr[ rhs.frac() ] );
-  return *this;
+  os.append( buf );
+  os.append( FixedPoint2::fracStr[ frac() ] );
 }
 
-OutStream& OutStream::operator+=( FloatMult rhs )
+void FloatMult::out( OutStream &os ) const
 {
-  int i1 = rhs.v / rhs.mult;
-  int i2 = rhs.v - i1 * rhs.mult;
+  int i1 = v / mult;
+  int i2 = v - i1 * mult;
   char sig = '-';
   if( i1 >=0  &&  i2 >= 0 ) {
-    sig = rhs.plus_ch;
+    sig = plus_ch;
   }
   if( i1 < 0 ) { i1 = -i1; }
   if( i2 < 0 ) { i2 = -i2; }
-  append( sig );
+  os.append( sig );
   char int_fill = ' ';
-  if( rhs.min_sz_int > 1 ) { int_fill = '0'; };
+  if( min_sz_int > 1 ) { int_fill = '0'; };
 
-  operator+=( FmtInt( i1, rhs.min_sz_int, int_fill ) );
-  append( '.' );
-  operator+=( FmtInt( i2, rhs.min_sz_frac, '0' ) );
-  return *this;
+  os << FmtInt( i1, min_sz_int, int_fill );
+  os.append( '.' );
+  os << FmtInt( i2, min_sz_frac, '0' );
 }
 
-OutStream& OutStream::operator+=( const BitsStr &rhs )
+
+void BitsStr::out( OutStream &os ) const
 {
-  add_bitnames( rhs.v, rhs.bn );
-  return *this;
+  os.add_bitnames( v, bn );
 }
+
 

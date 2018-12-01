@@ -6,6 +6,7 @@
 #include <vector>
 
 #include <oxc_auto.h>
+#include <oxc_floatfun.h>
 
 #include <fatfs_sd_st.h>
 #include <ff.h>
@@ -29,19 +30,6 @@ HAL_SD_CardInfoTypeDef cardInfo;
 FATFS fs;
 void print_curr( const char *s );
 void out_to_curr( uint32_t n, uint32_t st );
-
-OutStream& operator<<( OutStream &os, float rhs );
-
-OutStream& operator<<( OutStream &os, float rhs ) // TODO: to library
-{
-  char buf[32];
-
-  snprintf( buf, sizeof(buf), "%#g", (double)rhs );
-  // snprintf( buf, sizeof(buf), "%16.6e", rhs );
-  os << buf;
-  return os;
-}
-
 
 extern "C" {
  void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc );

@@ -132,7 +132,7 @@ void print_user_var( int idx )
   }
   char b[4] = "0= ";
   b[0] = (char)( 'a' + idx );
-  os << b << ( user_vars[idx] ) << " = "  << HexInt( user_vars[idx] ) << NL;
+  os << b << ( user_vars[idx] ) << " = "  << HexInt( user_vars[idx], true ) << NL;
 }
 
 //----------------------------------------------------------------------
@@ -210,18 +210,18 @@ int cmd_info( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
      << " SystemCoreClock: " << SystemCoreClock << NL;
 
   os << "errno= " << errno << " sigint_count="  << sigint_count << NL
-     << "dbg_val0= 0x"  << HexInt( dbg_val0 ) <<  " = "  << HexInt( dbg_val0 )
-     << " dbg_val1= 0x" << HexInt( dbg_val1 ) <<  " = "  << HexInt( dbg_val1 ) << NL
-     << "dbg_val2= 0x"  << HexInt( dbg_val2 ) <<  " = "  << HexInt( dbg_val2 )
-     << " dbg_val3= 0x" << HexInt( dbg_val3 ) <<  " = "  << HexInt( dbg_val3 ) << NL;
+     << "dbg_val0= "  << dbg_val0 <<  " = "  << HexInt( dbg_val0, true )
+     << " dbg_val1= " << dbg_val1 <<  " = "  << HexInt( dbg_val1, true ) << NL
+     << "dbg_val2= "  << dbg_val2 <<  " = "  << HexInt( dbg_val2, true )
+     << " dbg_val3= " << dbg_val3 <<  " = "  << HexInt( dbg_val3, true ) << NL;
 
   os << "_sdata= 0x" << HexInt( (uint32_t)(&_sdata) ) << " _edata= 0x"  << HexInt( (uint32_t)(&_edata)  )
      << " _sbss= 0x" << HexInt( (uint32_t)(&_sbss)  ) << " _ebss=  0x"  << HexInt( (uint32_t)(&_ebss)   )
      << " _end= 0x"  << HexInt( (uint32_t)(&_end)   ) << " _estack= 0x" << HexInt( (uint32_t)(&_estack) );
 
   uint32_t c_msp = __get_MSP(), c_psp = __get_PSP();
-  os << NL "MSP=   " << HexInt( c_msp ) <<  " PSP= " << HexInt( c_psp )
-     << "  __heap_top=   " << HexInt( (uint32_t)__heap_top )
+  os << NL "MSP=   " << HexInt( c_msp, true ) <<  " PSP= " << HexInt( c_psp, true )
+     << "  __heap_top=   " << HexInt( (uint32_t)__heap_top, true )
      << " MSP-__heap_top = " << ((unsigned)c_msp - (unsigned)(__heap_top) )
      << NL;
 
