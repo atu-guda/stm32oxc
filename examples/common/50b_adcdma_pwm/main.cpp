@@ -19,7 +19,6 @@ BOARD_CONSOLE_DEFINES;
 
 
 
-
 int adc_init_exa_4ch_manual( ADC_Info &adc, uint32_t adc_presc, uint32_t sampl_cycl, uint8_t n_ch );
 
 ADC_Info adc;
