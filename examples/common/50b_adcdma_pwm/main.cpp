@@ -3,7 +3,7 @@
 #include <cstdio>
 #include <cerrno>
 
-#include <vector>
+#include <algorithm>
 
 #include <oxc_auto.h>
 #include <oxc_floatfun.h>
@@ -136,14 +136,11 @@ int cmd_test0( int argc, const char * const * argv )
 {
   STDOUT_os;
   int t_step = UVAR('t');
-  uint8_t n_ch = UVAR('c');
-  if( n_ch > n_ADC_ch_max ) { n_ch = n_ADC_ch_max; };
-  if( n_ch < 1 ) { n_ch = 1; };
+  uint8_t n_ch = clamp( UVAR('c'), 1, (int)n_ADC_ch_max );
 
   uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 1000000 ); // number of series
 
-  uint32_t sampl_t_idx = UVAR('s');
-  if( sampl_t_idx >= adc_n_sampl_times ) { sampl_t_idx = adc_n_sampl_times-1; };
+  uint32_t sampl_t_idx = clamp( UVAR('s'), 0, (int)adc_n_sampl_times-1 );
   uint32_t f_sampl_max = adc.adc_clk / ( sampl_times_cycles[sampl_t_idx] * n_ch );
 
   uint32_t adc_presc = hint_ADC_presc();
@@ -169,14 +166,16 @@ int cmd_test0( int argc, const char * const * argv )
 
   leds.reset( BIT0 | BIT1 | BIT2 );
 
-  pwm_val  = pwm_min; pwm_hand = 0;
-  int pwm_step = UVAR('y');
+  float pwm_val0  = pwms[0].v; pwm_val = pwm_val0; pwm_hand = 0;
+  float pwm_dt = pwms[0].t;
+  float pwm_k = ( pwms[0].tp == 1 ) ? ( ( pwms[1].v - pwm_val0 ) / pwm_dt ): 0;
   pwm_t = 0;
-  int pwm_n = 0;
-  uint32_t tm0, tm00;
-  int rc = 0;
+  unsigned step_n = 0;
 
-  for( unsigned i=0; i<n && !break_flag; ++i ) {
+  int rc = 0;
+  uint32_t tm0, tm00;
+
+  for( unsigned i=0; i<n && !break_flag ; ++i ) {
 
     uint32_t tcc = HAL_GetTick();
     if( i == 0 ) {
@@ -185,13 +184,21 @@ int cmd_test0( int argc, const char * const * argv )
 
     handle_keys();
 
-    if( pwm_t >= UVAR('x') ) {
+    if( pwm_t >= pwm_dt ) { // next step
       pwm_t = 0;
-      ++pwm_n;
-      pwm_val += pwm_step;
-      if( pwm_n == UVAR('m') ) {
-        pwm_step = - pwm_step;
+      ++step_n;
+      if( step_n >= n_steps ) {
+        break;
       }
+      pwm_val0  = pwms[step_n].v; pwm_val = pwm_val0;
+      pwm_dt = pwms[step_n].t;
+      pwm_k = ( pwms[step_n].tp == 1 ) ? ( ( pwms[step_n+1].v - pwm_val0 ) / pwm_dt ): 0;
+    }
+
+    float pwm_old = pwm_val;
+    pwm_val = pwm_val0 + pwm_k * pwm_t;
+    // calc
+    if( abs( pwm_old - pwm_val ) > 0.01 ) {
       set_pwm();
     }
 
@@ -394,9 +401,8 @@ void mk_rect( float v, int t )
 void mk_ladder( float dv, int t, unsigned n_up )
 {
   unsigned n_up_max = max_steps / 2 - 1;
-  if( n_up > n_up_max ) {
-    n_up = n_up_max;
-  }
+  n_up = clamp( n_up, 1u, n_up_max );
+
   pwms[0].v = pwm_min; pwms[0].t = 10000; pwms[0].tp = 0;
   unsigned i = 1;
   float cv = pwm_min;
@@ -430,7 +436,7 @@ void show_steps()
   os << "# pwm_min= " << pwm_min << "  pwm_max= " << pwm_max << " n_steps= " << n_steps << NL;
   int tc = 0;
   for( unsigned i=0; i<n_steps; ++i ) {
-    os << '[' << i << "] " <<tc << ' ' << pwms[i].t << ' ' << pwms[i].v << ' ' << pwms[i].tp << NL;
+    os << '[' << i << "] " << tc << ' ' << pwms[i].t << ' ' << pwms[i].v << ' ' << pwms[i].tp << NL;
     tc += pwms[i].t;
   }
 }
