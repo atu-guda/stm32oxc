@@ -32,9 +32,11 @@ using tim_ccr_t = decltype( tim_h.Instance->CCR1 );
 void tim_cfg();
 void pwm_recalc();
 void set_pwm(); // uses pwm_val
-float pwm_val = 10.0f;
+float pwm_val = 10.0f;     // unrestricted
+float pwm_val_1 = pwm_val; // w/o hand
+float pwm_val_r = pwm_val; // real
 float pwm_min = 10.0f, pwm_max = 50.0f;
-float pwm_hand = 0;
+float pwm_hand = 0;       // adjusted by hand (handle_keys)
 
 const unsigned max_steps = 32;
 struct StepInfo {
@@ -44,7 +46,7 @@ struct StepInfo {
 StepInfo pwms[max_steps];
 unsigned n_steps  = 0;
 int pwm_t = 0;
-int pwm_t_mul = 1;
+float pwm_t_mul = 1;
 void reset_steps();
 void mk_rect( float v, int t );
 void mk_ladder( float dv, int dt, unsigned n_up );
@@ -99,14 +101,11 @@ int main(void)
   UVAR('t') = 10; // 10 ms
   UVAR('v') = v_adc_ref;
   UVAR('c') = 2; // n_ADC_ch_max;
-  UVAR('n') = 50000; // number of series (10ms 't' each)
+  UVAR('n') = 1000000; // number of series (10ms 't' each): limited by steps
   UVAR('s') = 6; // sampling time index
 
   UVAR('p') = 0;     // PSC,  - max output freq
   UVAR('a') = 1439;  // ARR, to get 100 kHz with PSC = 0
-  UVAR('x') = 30000; // time step in PWM, ms
-  UVAR('y') = 5;     // value step in pwm, %
-  UVAR('m') = 10;    // number of steps
 
   reset_steps();
 
@@ -166,10 +165,11 @@ int cmd_test0( int argc, const char * const * argv )
 
   leds.reset( BIT0 | BIT1 | BIT2 );
 
-  float pwm_val0  = pwms[0].v; pwm_val = pwm_val0; pwm_hand = 0;
+  float pwm_val0  = pwms[0].v; pwm_val = pwm_val_r = pwm_val_1 = pwm_val0; pwm_hand = 0;
   float pwm_dt = pwms[0].t;
   float pwm_k = ( pwms[0].tp == 1 ) ? ( ( pwms[1].v - pwm_val0 ) / pwm_dt ): 0;
   pwm_t = 0;
+  pwm_t_mul = 1;
   unsigned step_n = 0;
 
   int rc = 0;
@@ -195,12 +195,9 @@ int cmd_test0( int argc, const char * const * argv )
       pwm_k = ( pwms[step_n].tp == 1 ) ? ( ( pwms[step_n+1].v - pwm_val0 ) / pwm_dt ): 0;
     }
 
-    float pwm_old = pwm_val;
-    pwm_val = pwm_val0 + pwm_k * pwm_t;
-    // calc
-    if( abs( pwm_old - pwm_val ) > 0.01 ) {
-      set_pwm();
-    }
+    pwm_val_1 = pwm_val0 + pwm_k * pwm_t;
+    pwm_val = pwm_val_1 + pwm_hand;
+    set_pwm();
 
     adc.end_dma = 0;
     if( HAL_ADC_Start_DMA( &adc.hadc, (uint32_t*)(&ADC_buf), n_ADC_sampl ) != HAL_OK )   {
@@ -232,13 +229,20 @@ int cmd_test0( int argc, const char * const * argv )
     for( int j=0; j<n_ch; ++j ) {
       os << ' ' << ( 0.001f * UVAR('v')  * ADC_buf[j] / 4096 );
     }
-    os << ' ' << pwm_val <<  NL;
+
+    UVAR('x') = step_n;
+    UVAR('y') = pwm_t;
+    if( UVAR('d') > 0 ) {
+      os << ' ' << pwm_val_r <<  ' ' << ' ' << pwm_val << ' ' << pwm_hand << ' ' << pwm_t << ' ' << step_n << NL;
+    } else {
+      os << ' ' << pwm_val_r <<  NL;
+    }
 
     pwm_t += t_step * pwm_t_mul;
     delay_ms_until_brk( &tm0, t_step );
   }
 
-  pwm_val = pwm_min;
+  pwm_val = pwm_min; pwm_hand = 0; pwm_t = 0; step_n = 0;
   set_pwm();
 
 
@@ -323,19 +327,22 @@ void pwm_recalc()
 int cmd_pwm( int argc, const char * const * argv )
 {
   pwm_val = arg2float_d( 1, argc, argv, 10, 1, 100 );
+  pwm_hand = 0;
   STDOUT_os;
   set_pwm();
   tim_print_cfg( TIM_EXA );
-  os << NL "PWM:  " << pwm_val << NL;
+  os << NL "PWM:  in: " << pwm_val << "  real: " << pwm_val_r << NL;
   return 0;
 }
 
 void set_pwm()
 {
-  if( pwm_val > pwm_max ) { pwm_val = pwm_max; };
-  if( pwm_val < pwm_min ) { pwm_val = pwm_min; };
+  pwm_val_r = clamp( pwm_val, pwm_min, pwm_max );
   uint32_t scl = tim_h.Instance->ARR;
-  tim_h.Instance->CCR1 = (tim_ccr_t)( pwm_val * scl / 100 );
+  tim_ccr_t nv = (tim_ccr_t)( pwm_val_r * scl / 100 );
+  if( nv != tim_h.Instance->CCR1 ) {
+    tim_h.Instance->CCR1 =nv;
+  }
 }
 
 
@@ -354,32 +361,28 @@ void handle_keys()
   if( !v.good() ) {
     return;
   }
-  bool need_set_pwm = false;
 
   switch( v.c ) {
-    case 'w': pwm_hand += 1; need_set_pwm = true; break;
-    case 'W': pwm_hand += 5; need_set_pwm = true; break;
-    case 's': pwm_hand -= 1; need_set_pwm = true; break;
-    case 'S': pwm_hand -= 5; need_set_pwm = true; break;
-    case 'z': pwm_hand  = 0; need_set_pwm = true; break;
-    case 'a': pwm_t   -=  2000;  break;
-    case 'A': pwm_t   -= 10000;  break;
-    case 'd': pwm_t   +=  2000;  break;
-    case 'D': pwm_t   += 10000;  break;
-    case '0': pwm_val =  0; need_set_pwm = true; break;
-    case '1': pwm_val = 10; need_set_pwm = true; break;
-    case '2': pwm_val = 20; need_set_pwm = true; break;
-    case '3': pwm_val = 30; need_set_pwm = true; break;
-    case '4': pwm_val = 40; need_set_pwm = true; break;
-    case '5': pwm_val = 50; need_set_pwm = true; break;
+    case 'w': pwm_hand += 1;  break;
+    case 'W': pwm_hand += 5;  break;
+    case 's': pwm_hand -= 1;  break;
+    case 'S': pwm_hand -= 5;  break;
+    case 'z': pwm_hand  = 0;  break;
+    case '0': pwm_hand =    - pwm_val_1;  break;
+    case '1': pwm_hand = 10 - pwm_val_1;  break;
+    case '2': pwm_hand = 20 - pwm_val_1;  break;
+    case '3': pwm_hand = 30 - pwm_val_1;  break;
+    case '4': pwm_hand = 40 - pwm_val_1;  break;
+    case '5': pwm_hand = 50 - pwm_val_1;  break;
+    case 'a': pwm_t    -=  2000;  break;
+    case 'A': pwm_t    -= 10000;  break;
+    case 'd': pwm_t    +=  2000;  break;
+    case 'D': pwm_t    += 10000;  break;
     case 'g': pwm_t_mul = 0; break;
     case 'G': pwm_t_mul = 1; break;
     default: break;
   }
 
-  if( need_set_pwm ) {
-    set_pwm();
-  }
 }
 
 void reset_steps()
@@ -394,7 +397,7 @@ void mk_rect( float v, int t )
 {
   pwms[0].v = pwm_min; pwms[0].t = 10000; pwms[0].tp = 0;
   pwms[1].v = v;       pwms[1].t = t;     pwms[1].tp = 0;
-  pwms[2].v = pwm_min; pwms[2].t = 60000; pwms[2].tp = 0;
+  pwms[2].v = pwm_min; pwms[2].t = 30000; pwms[2].tp = 0;
   n_steps = 3;
 }
 
@@ -426,7 +429,7 @@ void mk_trap( float v, int t1, int t2, int t3 )
   pwms[1].v = pwm_min; pwms[1].t = t1;    pwms[1].tp = 1;
   pwms[2].v = v;       pwms[2].t = t2;    pwms[2].tp = 0;
   pwms[3].v = v;       pwms[3].t = t3;    pwms[3].tp = 1;
-  pwms[4].v = pwm_min; pwms[4].t = 60000; pwms[4].tp = 0;
+  pwms[4].v = pwm_min; pwms[4].t = 30000; pwms[4].tp = 0;
   n_steps = 5;
 }
 
@@ -439,6 +442,7 @@ void show_steps()
     os << '[' << i << "] " << tc << ' ' << pwms[i].t << ' ' << pwms[i].v << ' ' << pwms[i].tp << NL;
     tc += pwms[i].t;
   }
+  os << "# Total: " << tc << " ms" NL;
 }
 
 int cmd_show_steps( int /*argc*/, const char * const * /*argv*/ )
