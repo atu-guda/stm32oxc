@@ -1,0 +1,7 @@
+Test TIM5 as counter and TIM1.1 as PWM
+
+IN: T5.1 = A0
+OUT T1.1 = A8
+
+
+
