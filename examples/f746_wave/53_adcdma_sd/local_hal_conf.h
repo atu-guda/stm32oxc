@@ -4,5 +4,8 @@
 // for fastest ADC 36MHz clocking
 #define REQ_SYSCLK_FREQ 144
 
+// To test ADC noise
+// #define  PREFETCH_ENABLE              0
+
 #endif
 

@@ -84,7 +84,7 @@ ifeq "$(MCBASE)" "STM32F2"
   KNOWN_MCU := yes
 endif
 ifeq "$(MCBASE)" "STM32F3"
-  ARCHFLAGS = -mthumb -mcpu=cortex-m4 -mfloat-abi=$(FLOAT_ABI) -mfpu=fpv4-sp-d16 -DUSE_SPI_CRC=0
+  ARCHFLAGS = -mthumb -mcpu=cortex-m4 -mfloat-abi=$(FLOAT_ABI) -mfpu=fpv4-sp-d16
   KNOWN_MCU := yes
 endif
 ifeq "$(MCBASE)" "STM32F4"
