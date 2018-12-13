@@ -59,7 +59,7 @@ void handle_keys();
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test ADC"  };
+CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " [n] [skip_pwm] - measure ADC + control PWM"  };
 int cmd_tinit( int argc, const char * const * argv );
 CmdInfo CMDINFO_TINIT { "tinit", 'I', cmd_tinit, " - reinit timer"  };
 int cmd_pwm( int argc, const char * const * argv );
@@ -139,6 +139,8 @@ int cmd_test0( int argc, const char * const * argv )
 
   uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 1000000 ); // number of series
 
+  bool skip_pwm = arg2long_d( 2, argc, argv, 0, 1, 1 ); // dont touch PWM
+
   uint32_t sampl_t_idx = clamp( UVAR('s'), 0, (int)adc_n_sampl_times-1 );
   uint32_t f_sampl_max = adc.adc_clk / ( sampl_times_cycles[sampl_t_idx] * n_ch );
 
@@ -184,20 +186,22 @@ int cmd_test0( int argc, const char * const * argv )
 
     handle_keys();
 
-    if( pwm_t >= pwm_dt ) { // next step
-      pwm_t = 0;
-      ++step_n;
-      if( step_n >= n_steps ) {
-        break;
+    if( ! skip_pwm ) {
+      if( pwm_t >= pwm_dt ) { // next step
+        pwm_t = 0;
+        ++step_n;
+        if( step_n >= n_steps ) {
+          break;
+        }
+        pwm_val0  = pwms[step_n].v; pwm_val = pwm_val0;
+        pwm_dt = pwms[step_n].t;
+        pwm_k = ( pwms[step_n].tp == 1 ) ? ( ( pwms[step_n+1].v - pwm_val0 ) / pwm_dt ): 0;
       }
-      pwm_val0  = pwms[step_n].v; pwm_val = pwm_val0;
-      pwm_dt = pwms[step_n].t;
-      pwm_k = ( pwms[step_n].tp == 1 ) ? ( ( pwms[step_n+1].v - pwm_val0 ) / pwm_dt ): 0;
-    }
 
-    pwm_val_1 = pwm_val0 + pwm_k * pwm_t;
-    pwm_val = pwm_val_1 + pwm_hand;
-    set_pwm();
+      pwm_val_1 = pwm_val0 + pwm_k * pwm_t;
+      pwm_val = pwm_val_1 + pwm_hand;
+      set_pwm();
+    }
 
     adc.end_dma = 0;
     if( HAL_ADC_Start_DMA( &adc.hadc, (uint32_t*)(&ADC_buf), n_ADC_sampl ) != HAL_OK )   {
@@ -242,8 +246,10 @@ int cmd_test0( int argc, const char * const * argv )
     delay_ms_until_brk( &tm0, t_step );
   }
 
-  pwm_val = pwm_min; pwm_hand = 0; pwm_t = 0; step_n = 0;
-  set_pwm();
+  if( ! skip_pwm ) {
+    pwm_val = pwm_min; pwm_hand = 0; pwm_t = 0; step_n = 0;
+    set_pwm();
+  }
 
 
   delay_ms( 10 );
