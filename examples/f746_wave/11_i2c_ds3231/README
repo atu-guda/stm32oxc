@@ -1,0 +1,5 @@
+Use RTC DS3231 via I2C
+
+SCL = B8 ? 4.7k pullUp
+SDA = B9 ? 4.7k pullUp
+

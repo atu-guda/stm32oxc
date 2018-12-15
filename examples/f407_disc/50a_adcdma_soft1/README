@@ -1,0 +1,7 @@
+ADC up to 4 channels usage with DMA, but manual start
+Clock: APB2/2 = 72/2 = 36
+
+Channels:
+   C2, //  C3,   C4,   C5
+ Ch12,// Ch13, Ch14, Ch15
+

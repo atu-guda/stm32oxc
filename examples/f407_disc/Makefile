@@ -36,6 +36,8 @@ SUBDIRS = \
   31_sdcard2 \
   31a_sdcard2 \
   50_adc0 \
+  50a_adcdma_soft1 \
+  50b_adcdma_pwm \
   51_adcdma \
   53_adcdma_sd \
 

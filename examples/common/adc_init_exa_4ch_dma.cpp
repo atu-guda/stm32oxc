@@ -27,10 +27,8 @@ int adc_init_exa_4ch_dma( ADC_Info &adc, uint32_t presc, uint32_t sampl_cycl, ui
 
   adc.hadc.Init.DataAlign             = ADC_DATAALIGN_RIGHT;
   adc.hadc.Init.NbrOfConversion       = n_ch;
-  adc.hadc.Init.DMAContinuousRequests = DISABLE;
-  // adc.hadc.Init.DMAContinuousRequests = ENABLE; // for double-buffer DMA?
-  // adc.hadc.Init.EOCSelection          = ADC_EOC_SINGLE_CONV; // test: multiple errors after conversion
-  adc.hadc.Init.EOCSelection          = ADC_EOC_SEQ_CONV;
+  adc.hadc.Init.DMAContinuousRequests = DISABLE; // ENABLE for double-buffer DMA?
+  adc.hadc.Init.EOCSelection          = ADC_EOC_SEQ_CONV; // ADC_EOC_SINGLE_CONV; // only for single channel
   if( HAL_ADC_Init( &adc.hadc ) != HAL_OK ) {
     errno = 3000;
     return 0;

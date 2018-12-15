@@ -7,9 +7,6 @@
 extern ADC_HandleTypeDef hadc1;
 extern DMA_HandleTypeDef hdma_adc1;
 extern uint32_t adc_clk;
-void ADC_DMA_REINIT();
-uint32_t calc_ADC_clk( uint32_t presc, int *div_val );
-uint32_t hint_ADC_presc();
 
 int adc_init_exa_4ch_dma_n( uint32_t presc, uint32_t sampl_cycl, uint8_t n_ch )
 {
@@ -88,7 +85,6 @@ void HAL_ADC_MspInit( ADC_HandleTypeDef* adcHandle )
 
     ADC_DMA_REINIT();
 
-    // HAL_NVIC_SetPriority( DMA2_Stream0_IRQn, configKERNEL_INTERRUPT_PRIORITY, 0 );
     HAL_NVIC_SetPriority( DMA2_Stream0_IRQn, 1, 0 );
     HAL_NVIC_EnableIRQ( DMA2_Stream0_IRQn );
 
