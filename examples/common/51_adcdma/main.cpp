@@ -1,8 +1,10 @@
 #include <cstring>
 #include <cstdlib>
 #include <cstdio>
+#include <cmath>
 #include <cerrno>
 
+#include <algorithm>
 #include <vector>
 
 #include <oxc_auto.h>
@@ -97,9 +99,7 @@ int main(void)
 int cmd_test0( int argc, const char * const * argv )
 {
   STDOUT_os;
-  uint8_t n_ch = UVAR('c');
-  if( n_ch > n_ADC_ch_max ) { n_ch = n_ADC_ch_max; };
-  if( n_ch < 1 ) { n_ch = 1; };
+  uint8_t n_ch = clamp( UVAR('c'), 1, (int)n_ADC_ch_max );
 
   uint32_t tim_psc = UVAR('p');
   uint32_t tim_arr = UVAR('a');
@@ -140,7 +140,7 @@ int cmd_test0( int argc, const char * const * argv )
   int div_val = -1;
   adc.adc_clk = calc_ADC_clk( adc_presc, &div_val );
   os << "# ADC: n_ch= " << n_ch << " n= " << n << " adc_clk= " << adc.adc_clk << " div_val= " << div_val
-     << " s_idx= " << sampl_t_idx << " sampl= " << sampl_times_cycles[sampl_t_idx] 
+     << " s_idx= " << sampl_t_idx << " sampl= " << sampl_times_cycles[sampl_t_idx]
      << " f_sampl_max= " << f_sampl_max << " Hz" NL;
   delay_ms( 10 );
 

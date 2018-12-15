@@ -1,9 +1,10 @@
 #include <cstring>
 #include <cstdlib>
 #include <cstdio>
+#include <cmath>
 #include <cerrno>
 
-#include <vector>
+#include <algorithm>
 
 #include <oxc_auto.h>
 #include <oxc_floatfun.h>
@@ -28,12 +29,10 @@ const uint32_t n_ADC_ch_max = 4; // current - in UVAR('c')
 uint16_t ADC_buf[32];
 
 
-const int pbufsz = 128;
-// FIL out_file;
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test ADC"  };
+CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " [n] - measure ADC"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -55,7 +54,7 @@ int main(void)
   UVAR('s') = 6; // sampling time index
 
   #ifdef PWR_CR1_ADCDC1
-  PWR->CR1 |= PWR_CR1_ADCDC1;
+  // PWR->CR1 |= PWR_CR1_ADCDC1;
   #endif
 
   BOARD_POST_INIT_BLINK;
@@ -78,14 +77,22 @@ int cmd_test0( int argc, const char * const * argv )
 {
   STDOUT_os;
   int t_step = UVAR('t');
-  uint8_t n_ch = UVAR('c');
-  if( n_ch > n_ADC_ch_max ) { n_ch = n_ADC_ch_max; };
-  if( n_ch < 1 ) { n_ch = 1; };
+  uint8_t n_ch = clamp( UVAR('c'), 1, (int)n_ADC_ch_max );
 
   uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 1000000 ); // number of series
 
-  uint32_t sampl_t_idx = UVAR('s');
-  if( sampl_t_idx >= adc_n_sampl_times ) { sampl_t_idx = adc_n_sampl_times-1; };
+
+  double adc_min[n_ADC_ch_max], adc_max[n_ADC_ch_max], adc_mean[n_ADC_ch_max],
+         adc_sum[n_ADC_ch_max], adc_sum2[n_ADC_ch_max];
+  for( unsigned j=0; j<n_ADC_ch_max; ++j ) {
+    adc_min[j] = 5.1e37; adc_max[j] = -5.1e37; adc_mean[j] = 0;
+    adc_sum[j] = adc_sum2[j] = 0;
+  }
+  unsigned adc_n = 0;
+
+  os << "# n = " << n << " n_ch= " << n_ch << " t_step= " << t_step << NL;
+
+  uint32_t sampl_t_idx = clamp( UVAR('s'), 0, (int)adc_n_sampl_times-1 );
   uint32_t f_sampl_max = adc.adc_clk / ( sampl_times_cycles[sampl_t_idx] * n_ch );
 
   uint32_t adc_presc = hint_ADC_presc();
@@ -101,7 +108,7 @@ int cmd_test0( int argc, const char * const * argv )
   int div_val = -1;
   adc.adc_clk = calc_ADC_clk( adc_presc, &div_val );
   os << "# ADC: n_ch= " << n_ch << " n= " << n << " adc_clk= " << adc.adc_clk << " div_val= " << div_val
-     << " s_idx= " << sampl_t_idx << " sampl= " << sampl_times_cycles[sampl_t_idx] 
+     << " s_idx= " << sampl_t_idx << " sampl= " << sampl_times_cycles[sampl_t_idx]
      << " f_sampl_max= " << f_sampl_max << " Hz" NL;
   delay_ms( 10 );
 
@@ -113,13 +120,15 @@ int cmd_test0( int argc, const char * const * argv )
 
   uint32_t tm0, tm00;
   int rc = 0;
+  bool do_out = ! UVAR('b');
 
-  for( unsigned i=0; i<n && !break_flag; ++i ) {
+  for( unsigned i=0; i<n && !break_flag ; ++i ) {
 
     uint32_t tcc = HAL_GetTick();
     if( i == 0 ) {
       tm0 = tcc; tm00 = tm0;
     }
+    if( UVAR('l') ) {  leds.set( BIT2 ); }
     adc.end_dma = 0;
     if( HAL_ADC_Start_DMA( &adc.hadc, (uint32_t*)(&ADC_buf), n_ADC_sampl ) != HAL_OK )   {
       os <<  "ADC_Start_DMA error" NL;
@@ -127,11 +136,12 @@ int cmd_test0( int argc, const char * const * argv )
       break;
     }
 
-    for( uint32_t ti=0; adc.end_dma == 0 && ti<1000; ++ti ) {
-      delay_mcs( 10 );
+    for( uint32_t ti=0; adc.end_dma == 0 && ti<5000; ++ti ) { // 11
+      delay_mcs( 2 );
     }
 
     HAL_ADC_Stop_DMA( &adc.hadc ); // needed
+    if( UVAR('l') ) {  leds.reset( BIT2 ); }
     if( adc.end_dma == 0 ) {
       os <<  "Fail to wait DMA end " NL;
       rc = 2;
@@ -146,16 +156,57 @@ int cmd_test0( int argc, const char * const * argv )
     }
 
     int dt = tcc - tm00; // ms
-    os <<  FloatFmt( 0.001f * dt, "%-10.4f "  );
-    for( int j=0; j<n_ch; ++j ) {
-      os << ' ' << ( 0.001f * UVAR('v')  * ADC_buf[j] / 4096 );
+    if( do_out ) {
+      os <<  FloatFmt( 0.001f * dt, "%-10.4f "  );
     }
-    os  <<  NL;
+    UVAR('z') = ADC_buf[0];
+    for( int j=0; j<n_ch; ++j ) {
+      double cv = ( 0.001f * UVAR('v')  * ADC_buf[j] / 4096 );
+      if( cv < adc_min[j] ) { adc_min[j] = cv; }
+      if( cv > adc_max[j] ) { adc_max[j] = cv; }
+      adc_sum[j]  += cv;
+      adc_sum2[j] += cv * cv;
+      if( do_out ) {
+        os << ' ' << cv;
+      }
+    }
 
+    if( do_out ) {
+      os  <<  NL;
+    }
+    ++adc_n;
     delay_ms_until_brk( &tm0, t_step );
   }
 
 
+  os << NL "# n_real= " << adc_n;
+  os << NL "# mean ";
+  for( int j=0; j<n_ch; ++j ) {
+    adc_mean[j] = adc_sum[j] / adc_n;
+    os << ' ' << adc_mean[j];
+  }
+  os << NL "# min  ";
+  for( int j=0; j<n_ch; ++j ) {
+    os << ' ' << adc_min[j];
+  }
+  os << NL "# max  ";
+  for( int j=0; j<n_ch; ++j ) {
+    os << ' ' << adc_max[j];
+  }
+  os << NL "# sum  ";
+  for( int j=0; j<n_ch; ++j ) {
+    os << ' ' << adc_sum[j];
+  }
+  os << NL "# sum2 ";
+  for( int j=0; j<n_ch; ++j ) {
+    os << ' ' << adc_sum2[j];
+  }
+  os << NL "# sd  ";
+  for( int j=0; j<n_ch; ++j ) {
+    os << ' ' << (sqrt(  adc_sum2[j] * adc_n - adc_sum[j] * adc_sum[j] ) / adc_n );
+  }
+
+  os << NL;
   delay_ms( 10 );
 
   return rc;

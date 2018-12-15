@@ -19,14 +19,13 @@ BOARD_CONSOLE_DEFINES;
 
 
 
-
 int adc_init_exa_4ch_manual( ADC_Info &adc, uint32_t adc_presc, uint32_t sampl_cycl, uint8_t n_ch );
 
 ADC_Info adc;
 
 int v_adc_ref = BOARD_ADC_COEFF; // in mV, measured before test, adjust as UVAR('v')
 const uint32_t n_ADC_ch_max = 4; // current - in UVAR('c')
-uint16_t ADC_buf[16];
+uint16_t ADC_buf[32];
 
 TIM_HandleTypeDef tim_h;
 using tim_ccr_t = decltype( tim_h.Instance->CCR1 );
@@ -39,12 +38,12 @@ float pwm_val_r = pwm_val; // real
 float pwm_min = 10.0f, pwm_max = 50.0f;
 float pwm_hand = 0;       // adjusted by hand (handle_keys)
 
-const unsigned max_steps = 32;
+const unsigned max_pwm_steps = 32;
 struct StepInfo {
   float v;
   int t, tp;
 };
-StepInfo pwms[max_steps];
+StepInfo pwms[max_pwm_steps];
 unsigned n_steps  = 0;
 int pwm_t = 0;
 float pwm_t_mul = 1;
@@ -135,22 +134,23 @@ int main(void)
 int cmd_test0( int argc, const char * const * argv )
 {
   STDOUT_os;
-  int t_step = UVAR('t');
   uint8_t n_ch = clamp( UVAR('c'), 1, (int)n_ADC_ch_max );
+  int t_step = UVAR('t');
 
   uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 1000000 ); // number of series
 
   bool skip_pwm = arg2long_d( 2, argc, argv, 0, 1, 1 ); // dont touch PWM
 
   double adc_min[n_ADC_ch_max], adc_max[n_ADC_ch_max], adc_mean[n_ADC_ch_max],
-        adc_sum[n_ADC_ch_max], adc_sum2[n_ADC_ch_max];
+         adc_sum[n_ADC_ch_max], adc_sum2[n_ADC_ch_max];
   for( unsigned j=0; j<n_ADC_ch_max; ++j ) {
     adc_min[j] = 5.1e37; adc_max[j] = -5.1e37; adc_mean[j] = 0;
     adc_sum[j] = adc_sum2[j] = 0;
   }
   unsigned adc_n = 0;
 
-  os << "n = " << n << " n_ch= " << n_ch << " skip_pwm= " << skip_pwm << " t_step= " << t_step << NL;
+  os << "# n = " << n << " n_ch= " << n_ch << " t_step= " << t_step << NL;
+  os << "# skip_pwm= " << skip_pwm << NL;
 
   uint32_t sampl_t_idx = clamp( UVAR('s'), 0, (int)adc_n_sampl_times-1 );
   uint32_t f_sampl_max = adc.adc_clk / ( sampl_times_cycles[sampl_t_idx] * n_ch );
@@ -186,10 +186,11 @@ int cmd_test0( int argc, const char * const * argv )
   }
   pwm_t = 0;
   pwm_t_mul = 1;
-  unsigned step_n = 0;
+  unsigned pwm_step_n = 0;
 
-  int rc = 0;
   uint32_t tm0, tm00;
+  int rc = 0;
+  bool do_out = ! UVAR('b');
 
   for( unsigned i=0; i<n && !break_flag ; ++i ) {
 
@@ -203,13 +204,13 @@ int cmd_test0( int argc, const char * const * argv )
     if( ! skip_pwm ) {
       if( pwm_t >= pwm_dt ) { // next step
         pwm_t = 0;
-        ++step_n;
-        if( step_n >= n_steps ) {
+        ++pwm_step_n;
+        if( pwm_step_n >= n_steps ) {
           break;
         }
-        pwm_val0  = pwms[step_n].v; pwm_val = pwm_val0;
-        pwm_dt = pwms[step_n].t;
-        pwm_k = ( pwms[step_n].tp == 1 ) ? ( ( pwms[step_n+1].v - pwm_val0 ) / pwm_dt ): 0;
+        pwm_val0  = pwms[pwm_step_n].v; pwm_val = pwm_val0;
+        pwm_dt = pwms[pwm_step_n].t;
+        pwm_k = ( pwms[pwm_step_n].tp == 1 ) ? ( ( pwms[pwm_step_n+1].v - pwm_val0 ) / pwm_dt ): 0;
       }
 
       pwm_val_1 = pwm_val0 + pwm_k * pwm_t;
@@ -225,7 +226,7 @@ int cmd_test0( int argc, const char * const * argv )
       break;
     }
 
-    for( uint32_t ti=0; adc.end_dma == 0 && ti<5000; ++ti ) {
+    for( uint32_t ti=0; adc.end_dma == 0 && ti<5000; ++ti ) { // 11
       delay_mcs( 2 );
     }
 
@@ -245,7 +246,9 @@ int cmd_test0( int argc, const char * const * argv )
     }
 
     int dt = tcc - tm00; // ms
-    os <<  FloatFmt( 0.001f * dt, "%-10.4f "  );
+    if( do_out ) {
+      os <<  FloatFmt( 0.001f * dt, "%-10.4f "  );
+    }
     UVAR('z') = ADC_buf[0];
     for( int j=0; j<n_ch; ++j ) {
       double cv = ( 0.001f * UVAR('v')  * ADC_buf[j] / 4096 );
@@ -253,14 +256,12 @@ int cmd_test0( int argc, const char * const * argv )
       if( cv > adc_max[j] ) { adc_max[j] = cv; }
       adc_sum[j]  += cv;
       adc_sum2[j] += cv * cv;
-      os << ' ' << cv;
+      if( do_out ) {
+        os << ' ' << cv;
+      }
     }
 
-    UVAR('x') = step_n;
-    UVAR('y') = pwm_t;
-    if( UVAR('d') > 0 ) {
-      os << ' ' << pwm_val_r <<  ' ' << ' ' << pwm_val << ' ' << pwm_hand << ' ' << pwm_t << ' ' << step_n << NL;
-    } else {
+    if( do_out ) {
       os << ' ' << pwm_val_r <<  NL;
     }
 
@@ -270,7 +271,7 @@ int cmd_test0( int argc, const char * const * argv )
   }
 
   if( ! skip_pwm ) {
-    pwm_val = pwm_min; pwm_hand = 0; pwm_t = 0; step_n = 0;
+    pwm_val = pwm_min; pwm_hand = 0; pwm_t = 0; pwm_step_n = 0;
     set_pwm();
   }
 
@@ -300,9 +301,8 @@ int cmd_test0( int argc, const char * const * argv )
   for( int j=0; j<n_ch; ++j ) {
     os << ' ' << (sqrt(  adc_sum2[j] * adc_n - adc_sum[j] * adc_sum[j] ) / adc_n );
   }
+
   os << NL;
-
-
   delay_ms( 10 );
 
   return rc;
@@ -383,7 +383,7 @@ void pwm_recalc()
 
 int cmd_pwm( int argc, const char * const * argv )
 {
-  pwm_val = arg2float_d( 1, argc, argv, 10, 1, 100 );
+  pwm_val = arg2float_d( 1, argc, argv, 10, 0, 100 );
   pwm_hand = 0;
   STDOUT_os;
   set_pwm();
@@ -460,7 +460,7 @@ void mk_rect( float v, int t )
 
 void mk_ladder( float dv, int t, unsigned n_up )
 {
-  unsigned n_up_max = max_steps / 2 - 1;
+  unsigned n_up_max = max_pwm_steps / 2 - 1;
   n_up = clamp( n_up, 1u, n_up_max );
 
   pwms[0].v = pwm_min; pwms[0].t = 10000; pwms[0].tp = 0;
@@ -528,7 +528,7 @@ int cmd_mk_ladder( int argc, const char * const * argv )
 {
   float v      = arg2float_d( 1, argc, argv,    5,  1, 90 );
   unsigned  t  = arg2long_d(  2, argc, argv, 30000, 1, 10000000 );
-  unsigned  n  = arg2long_d(  3, argc, argv,     8, 1, max_steps/2-2 );
+  unsigned  n  = arg2long_d(  3, argc, argv,     8, 1, max_pwm_steps/2-2 );
   mk_ladder( v, t, n );
   show_steps();
   return 0;
@@ -547,7 +547,7 @@ int cmd_mk_trap( int argc, const char * const * argv )
 
 int cmd_edit_step( int argc, const char * const * argv )
 {
-  unsigned j = arg2long_d(1, argc, argv,     0, 0, max_steps-1 );
+  unsigned j = arg2long_d(1, argc, argv,     0, 0, max_pwm_steps-1 );
   float v  = arg2float_d( 2, argc, argv,    25, 0, 99 );
   int   t  = arg2long_d(  3, argc, argv, 30000, 1, 10000000 );
   int   tp = arg2long_d(  4, argc, argv,     0, 0, 1 );
