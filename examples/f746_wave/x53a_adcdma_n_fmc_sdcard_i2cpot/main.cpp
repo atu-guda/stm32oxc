@@ -1,11 +1,14 @@
 #include <cstring>
 #include <cstdlib>
 #include <cstdio>
+#include <cmath>
 #include <cerrno>
 
+#include <algorithm>
 #include <vector>
 
 #include <oxc_auto.h>
+#include <oxc_floatfun.h>
 #include <oxc_fs_cmd0.h>
 
 #include <board_sdram.h>
@@ -56,13 +59,9 @@ void print_file_info( const FIL *f );
 void print_fsinfo( const FATFS *fs );
 
 
-extern "C" {
- void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim );
-}
 const uint32_t ADCDMA_chunk_size = 1024; // in bytes, for for now. may be up to 64k-small
 HAL_StatusTypeDef ADC_Start_DMA_n( ADC_HandleTypeDef* hadc, uint32_t* pData, uint32_t Length, uint32_t chunkLength, uint8_t elSz );
 int adc_init_exa_4ch_dma_n( uint32_t presc, uint32_t sampl_cycl, uint8_t n_ch );
-void ADC_DMA_REINIT();
 void pr_ADC_state();
 int do_one_run( uint32_t n );
 int do_potctl( int v1, int v2, int t );
@@ -71,7 +70,7 @@ int do_outsd( const char *afn, uint32_t n, uint32_t st );
 ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
 uint32_t tim_freq_in; // timer input freq
-uint32_t adc_clk = ADC_FREQ_MAX;     // depend in MCU, set in adc_init_exa_4ch_dma
+uint32_t adc_clk = ADC_FREQ_MAX;     // depend in MCU, set in adc_init_exa_4ch_dma*
 // uint32_t t_step = 100000; // in us, recalculated before measurement
 float t_step_f = 0.1; // in s, recalculated before measurement
 int v_adc_ref = BOARD_ADC_COEFF; // in mV, measured before test, adjust as UVAR('v')
@@ -86,7 +85,6 @@ volatile int adc_dma_error = 0;
 volatile uint32_t n_series = 0;
 uint32_t n_series_todo = 0;
 volatile int on_save_state = 0;
-
 
 
 TIM_HandleTypeDef tim2h;
@@ -144,12 +142,8 @@ int main(void)
   MX_FMC_Init();
   BSP_SDRAM_Initialization_sequence( 0 ); // 0 is fake
 
+  tim_freq_in = get_TIM_in_freq( TIM2 ); // TODO: define
 
-  tim_freq_in = HAL_RCC_GetPCLK1Freq(); // to TIM2
-  uint32_t hclk_freq = HAL_RCC_GetHCLKFreq();
-  if( tim_freq_in < hclk_freq ) {
-    tim_freq_in *= 2;
-  }
 
   UVAR('t') = 1000; // 1 s extra wait
   UVAR('v') = v_adc_ref;
@@ -252,19 +246,6 @@ void pr_DMA_state()
   }
 }
 
-void pr_TIM_state( TIM_TypeDef *htim )
-{
-  if( UVAR('d') > 1 ) {
-    pr_sdx( htim->CNT  );
-    pr_sdx( htim->ARR  );
-    pr_sdx( htim->PSC  );
-    pr_shx( htim->CR1  );
-    pr_shx( htim->CR2  );
-    pr_shx( htim->SMCR );
-    pr_shx( htim->DIER );
-    pr_shx( htim->SR   );
-  }
-}
 
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
@@ -278,14 +259,11 @@ int cmd_test0( int argc, const char * const * argv )
 int do_one_run( uint32_t n )
 {
   char pbuf[pbufsz];
-  uint8_t n_ch = UVAR('c');
-  if( n_ch > n_ADC_ch_max ) { n_ch = n_ADC_ch_max; };
-  if( n_ch < 1 ) { n_ch = 1; };
+  uint8_t n_ch = clamp( UVAR('c'), 1, (int)n_ADC_ch_max );
 
   const uint32_t n_ADC_series_max  = n_ADC_mem / ( 2 * n_ch ); // 2 is 16bit/sample
 
-  uint32_t sampl_t_idx = UVAR('s');
-  if( sampl_t_idx >= adc_n_sampl_times ) { sampl_t_idx = adc_n_sampl_times-1; };
+  uint32_t sampl_t_idx = clamp( UVAR('s'), 0, (int)adc_n_sampl_times-1 );
   uint32_t f_sampl_max = adc_clk / ( sampl_times_cycles[sampl_t_idx] * n_ch );
 
   uint32_t t_step_tick =  (UVAR('a')+1) * (UVAR('p')+1); // in timer input ticks
@@ -293,7 +271,7 @@ int do_one_run( uint32_t n )
   t_step_f = (float)t_step_tick / tim_freq_in; // in s
   uint32_t t_wait0 = 1 + uint32_t( n * t_step_f * 1000 ); // in ms
 
-  // make n a multimple of ADCDMA_chunk_size
+  // make n a multiple of ADCDMA_chunk_size
   uint32_t lines_per_chunk = ADCDMA_chunk_size / ( n_ch * 2 );
   n = ( ( n - 1 ) / lines_per_chunk + 1 ) * lines_per_chunk;
   uint32_t n_ADC_bytes = n * n_ch * 2;
@@ -325,6 +303,9 @@ int do_one_run( uint32_t n )
                                   f_sampl_max, t_wait0 );
   pr( pbuf ); delay_ms( 10 );
 
+  // ADC_buf.resize( 0, 0 );
+  // ADC_buf.shrink_to_fit();
+  // ADC_buf.assign( n * n_ch + ADCDMA_chunk_size, 0 ); // 2 reserved chunks
   memset( ADC_buf_x, n_ADC_bytes + ADCDMA_chunk_size, 0 );
 
   // pr( "ADC_buf.size= " ); pr_d( ADC_buf.size() );  pr( " data= " ); pr_h( (uint32_t)(ADC_buf.data()) );
@@ -332,6 +313,10 @@ int do_one_run( uint32_t n )
   pr( " n_ADC_bytes= " ); pr_d( n_ADC_bytes ); pr( NL );
   adc_end_dma = 0; adc_dma_error = 0; n_series = 0; n_series_todo = n;
   UVAR('b') = 0; UVAR('g') = 0; UVAR('e') = 0;   UVAR('x') = 0; UVAR('y') = 0; UVAR('z') = 0;
+  // if( ADC_buf.data() == nullptr ) {
+  //   pr( "Error: fail to allocate memory" NL );
+  //   return 2;
+  // }
 
   TickType_t tc0 = xTaskGetTickCount(), tc00 = tc0;
 
@@ -750,10 +735,6 @@ void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc )
   ++UVAR('e');
 }
 
-
-void HAL_ADCEx_InjectedConvCpltCallback( ADC_HandleTypeDef * /*hadc*/ )
-{
-}
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

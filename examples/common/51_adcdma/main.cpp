@@ -70,7 +70,7 @@ int main(void)
   UVAR('t') = 1000; // 1 s extra wait
   UVAR('v') = v_adc_ref;
   UVAR('j') = tim_freq_in;
-  UVAR('p') =  calc_TIM_psc_for_cnt_freq( TIM2, 1000000 ); // timer PSC, for 1MHz
+  UVAR('p') = calc_TIM_psc_for_cnt_freq( TIM2, 1000000 ); // timer PSC, for 1MHz
   UVAR('a') = 99999; // timer ARR, for 10Hz TODO: better time or freq based
   UVAR('c') = n_ADC_ch_max;
   UVAR('n') = 8; // number of series
@@ -107,8 +107,7 @@ int cmd_test0( int argc, const char * const * argv )
   const uint32_t n_ADC_series_max  = n_ADC_mem / ( 2 * n_ch ); // 2 is 16bit/sample
   uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, n_ADC_series_max ); // number of series
 
-  uint32_t sampl_t_idx = UVAR('s');
-  if( sampl_t_idx >= adc_n_sampl_times ) { sampl_t_idx = adc_n_sampl_times-1; };
+  uint32_t sampl_t_idx = clamp( UVAR('s'), 0, (int)adc_n_sampl_times-1 );
   uint32_t f_sampl_max = adc.adc_clk / ( sampl_times_cycles[sampl_t_idx] * n_ch );
 
   uint32_t t_step_tick =  (tim_arr+1) * (tim_psc+1); // in timer input ticks
@@ -127,7 +126,7 @@ int cmd_test0( int argc, const char * const * argv )
   UVAR('i') =  adc_init_exa_4ch_dma( adc, adc_presc, sampl_times_codes[sampl_t_idx], n_ch );
   delay_ms( 1 );
   if( ! UVAR('i') ) {
-    os <<  "ADC init failed, errno= " << errno << NL;
+    os << "ADC init failed, errno= " << errno << NL;
     return 1;
   }
   if( UVAR('d') > 1 ) { pr_ADC_state( adc );  }
@@ -200,6 +199,7 @@ int cmd_test0( int argc, const char * const * argv )
   return 0;
 }
 
+// test formatted float output
 int cmd_to( int /*argc*/, const char * const * /*argv*/ )
 {
   STDOUT_os;

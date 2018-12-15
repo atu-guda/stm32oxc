@@ -1,11 +1,14 @@
 #include <cstring>
 #include <cstdlib>
 #include <cstdio>
+#include <cmath>
 #include <cerrno>
 
+#include <algorithm>
 #include <vector>
 
 #include <oxc_auto.h>
+#include <oxc_floatfun.h>
 #include <oxc_fs_cmd0.h>
 
 #include <board_sdram.h>
@@ -48,16 +51,9 @@ int  add_to_file( const char *s );
 int  flush_file();
 
 
-extern "C" {
- void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim );
-}
 const uint32_t ADCDMA_chunk_size = 1024; // in bytes, for for now. may be up to 64k-small
 HAL_StatusTypeDef ADC_Start_DMA_n( ADC_HandleTypeDef* hadc, uint32_t* pData, uint32_t Length, uint32_t chunkLength, uint8_t elSz );
 int adc_init_exa_4ch_dma_n( uint32_t presc, uint32_t sampl_cycl, uint8_t n_ch );
-uint32_t calc_ADC_clk( uint32_t presc, int *div_val );
-uint32_t hint_ADC_presc();
-void ADC_DMA_REINIT();
-void pr_ADC_state();
 
 ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
@@ -76,7 +72,6 @@ volatile int adc_end_dma = 0;
 volatile int adc_dma_error = 0;
 volatile uint32_t n_series = 0;
 uint32_t n_series_todo = 0;
-
 
 
 TIM_HandleTypeDef tim2h;
@@ -112,6 +107,8 @@ int main(void)
 
   bsp_init_sdram( &hsdram );
 
+  tim_freq_in = get_TIM_in_freq( TIM2 ); // TODO: define
+
   MX_SDIO_SD_Init();
   UVAR('e') = HAL_SD_Init( &hsd );
   delay_ms( 10 );
@@ -122,12 +119,6 @@ int main(void)
   fspath[0] = '\0';
   UVAR('z') = f_mount( &fs, "", 1 );
   out_file.obj.fs = nullptr;
-
-  tim_freq_in = HAL_RCC_GetPCLK1Freq(); // to TIM2
-  uint32_t hclk_freq = HAL_RCC_GetHCLKFreq();
-  if( tim_freq_in < hclk_freq ) {
-    tim_freq_in *= 2;
-  }
 
   UVAR('t') = 1000; // 1 s extra wait
   UVAR('v') = v_adc_ref;
@@ -199,15 +190,12 @@ void pr_TIM_state( TIM_TypeDef *htim )
 int cmd_test0( int argc, const char * const * argv )
 {
   char pbuf[pbufsz];
-  uint8_t n_ch = UVAR('c');
-  if( n_ch > n_ADC_ch_max ) { n_ch = n_ADC_ch_max; };
-  if( n_ch < 1 ) { n_ch = 1; };
+  uint8_t n_ch = clamp( UVAR('c'), 1, (int)n_ADC_ch_max );
 
   const uint32_t n_ADC_series_max  = n_ADC_mem / ( 2 * n_ch ); // 2 is 16bit/sample
   uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, n_ADC_series_max ); // number of series
 
-  uint32_t sampl_t_idx = UVAR('s');
-  if( sampl_t_idx >= adc_n_sampl_times ) { sampl_t_idx = adc_n_sampl_times-1; };
+  uint32_t sampl_t_idx = clamp( UVAR('s'), 0, (int)adc_n_sampl_times-1 );
   uint32_t f_sampl_max = adc_clk / ( sampl_times_cycles[sampl_t_idx] * n_ch );
 
   uint32_t t_step_tick =  (UVAR('a')+1) * (UVAR('p')+1); // in timer input ticks
@@ -215,7 +203,7 @@ int cmd_test0( int argc, const char * const * argv )
   t_step_f = (float)t_step_tick / tim_freq_in; // in s
   uint32_t t_wait0 = 1 + uint32_t( n * t_step_f * 1000 ); // in ms
 
-  // make n a multimple of ADCDMA_chunk_size
+  // make n a multiple of ADCDMA_chunk_size
   uint32_t lines_per_chunk = ADCDMA_chunk_size / ( n_ch * 2 );
   n = ( ( n - 1 ) / lines_per_chunk + 1 ) * lines_per_chunk;
   uint32_t n_ADC_bytes = n * n_ch * 2;
@@ -260,10 +248,6 @@ int cmd_test0( int argc, const char * const * argv )
   // log_add( "start" NL );
   if( ADC_Start_DMA_n( &hadc1, (uint32_t*)ADC_buf_x, n_ADC_bytes, ADCDMA_chunk_size, 2 ) != HAL_OK )   {
     pr( "ADC_Start_DMA_n error = "  ); pr_h( hdma_adc1.ErrorCode );  pr( NL );
-    pr( " XferCpltCallback= "   ); pr_a( hdma_adc1.XferCpltCallback   );
-    pr( " XferM1CpltCallback= " ); pr_a( hdma_adc1.XferM1CpltCallback );
-    pr( " XferErrorCallback= "  ); pr_a( hdma_adc1.XferErrorCallback  );
-    pr( NL );
     return 1;
   }
   pr_DMA_state();
@@ -434,8 +418,9 @@ int flush_file()
 
 int cmd_outsd( int argc, const char * const * argv )
 {
+  STDOUT_os;
   if( argc < 2 ) {
-    pr( "Error: need filename [n [start]]" NL );
+    os << "# Error: need filename [n [start]]" NL;
     return 1;
   }
 
@@ -451,7 +436,7 @@ int cmd_outsd( int argc, const char * const * argv )
     flush_file();
     f_close( &out_file );
   } else {
-    pr( "f_open error: " ); pr_d( r ); pr( NL );
+    os << "Error: f_open error: " << r << NL;
   }
   out_file.obj.fs = nullptr;
 
@@ -492,10 +477,6 @@ void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc )
   ++UVAR('e');
 }
 
-
-void HAL_ADCEx_InjectedConvCpltCallback( ADC_HandleTypeDef * /*hadc*/ )
-{
-}
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

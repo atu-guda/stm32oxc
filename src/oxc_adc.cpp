@@ -64,6 +64,9 @@ void pr_ADC_state( const ADC_Info &adc )
   os << "# ADC: SR= " << HexInt( BOARD_ADC_DEFAULT_DEV->SR  )
      <<  "  CR1= "    << HexInt( BOARD_ADC_DEFAULT_DEV->CR1 )
      <<  "  CR2= "    << HexInt( BOARD_ADC_DEFAULT_DEV->CR2 )
+     <<  "  SQR1= "   << HexInt( BOARD_ADC_DEFAULT_DEV->SQR1 )
+     <<  "  SQR2= "   << HexInt( BOARD_ADC_DEFAULT_DEV->SQR2 )
+     <<  "  SQR3= "   << HexInt( BOARD_ADC_DEFAULT_DEV->SQR3 )
      <<  NL;
   os << "# adc_clk= " << adc.adc_clk << " end_dma= " << adc.end_dma << " n_series= " << adc.n_series
      << " n_good= " << adc.n_good << " n_bad= " << adc.n_bad

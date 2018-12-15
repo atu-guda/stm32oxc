@@ -76,7 +76,11 @@ void tim_print_cfg( TIM_TypeDef *tim )
      <<  " CNT: "   <<  tim->CNT
      <<  " CCR1: "  <<  tim->CCR1
      <<  " CR1: "   <<  HexInt( tim->CR1, true )
-     <<  " CR2: "   <<  HexInt( tim->CR2, true ) << NL ;
+     <<  " CR2: "   <<  HexInt( tim->CR2, true )
+     <<  " SMCR: "  <<  HexInt( tim->SMCR )
+     <<  " DIER: "  <<  HexInt( tim->DIER )
+     <<  " SR: "    <<  HexInt( tim->SR )
+     << NL;
 }
 #endif
 

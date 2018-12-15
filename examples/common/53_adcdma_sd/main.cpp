@@ -1,17 +1,18 @@
 #include <cstring>
 #include <cstdlib>
 #include <cstdio>
+#include <cmath>
 #include <cerrno>
 
+#include <algorithm>
 #include <vector>
 
 #include <oxc_auto.h>
 #include <oxc_floatfun.h>
+#include <oxc_fs_cmd0.h>
 
 #include <fatfs_sd_st.h>
 #include <ff.h>
-
-#include <oxc_fs_cmd0.h>
 
 using namespace std;
 using namespace SMLRL;
@@ -78,11 +79,13 @@ int main(void)
 
   tim_freq_in = get_TIM_in_freq( TIM2 ); // TODO: define
 
+  // bsp_init_sdram( &hsdram );
+
   MX_SDIO_SD_Init(); // TODO: only during write or similar ops TODO: need generic commands rewrite
   UVAR('e') = HAL_SD_Init( &hsd );
   delay_ms( 10 );
   MX_FATFS_SD_Init();
-  UVAR('x') = HAL_SD_GetState( &hsd );
+  UVAR('x') = HAL_SD_GetState( &hsd ); // 0 = HAL_OK, 1 = HAL_ERROR, 2 = HAL_BUSY, 3 = HAL_TIMEOUT
   UVAR('y') = HAL_SD_GetCardInfo( &hsd, &cardInfo );
   fs.fs_type = 0; // none
   fspath[0] = '\0';
@@ -92,7 +95,7 @@ int main(void)
   UVAR('t') = 1000; // 1 s extra wait
   UVAR('v') = v_adc_ref;
   UVAR('j') = tim_freq_in;
-  UVAR('p') =  calc_TIM_psc_for_cnt_freq( TIM2, 1000000 ); // timer PSC, for 1MHz
+  UVAR('p') = calc_TIM_psc_for_cnt_freq( TIM2, 1000000 ); // timer PSC, for 1MHz
   UVAR('a') = 99999; // timer ARR, for 10Hz TODO: better time or freq based
   UVAR('c') = n_ADC_ch_max;
   UVAR('n') = 8; // number of series
@@ -138,9 +141,7 @@ void pr_DMA_state()
 int cmd_test0( int argc, const char * const * argv )
 {
   STDOUT_os;
-  uint8_t n_ch = UVAR('c');
-  if( n_ch > n_ADC_ch_max ) { n_ch = n_ADC_ch_max; };
-  if( n_ch < 1 ) { n_ch = 1; };
+  uint8_t n_ch = clamp( UVAR('c'), 1, (int)n_ADC_ch_max );
 
   uint32_t tim_psc = UVAR('p');
   uint32_t tim_arr = UVAR('a');
@@ -148,8 +149,7 @@ int cmd_test0( int argc, const char * const * argv )
   const uint32_t n_ADC_series_max  = n_ADC_mem / ( 2 * n_ch ); // 2 is 16bit/sample
   uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, n_ADC_series_max ); // number of series
 
-  uint32_t sampl_t_idx = UVAR('s');
-  if( sampl_t_idx >= adc_n_sampl_times ) { sampl_t_idx = adc_n_sampl_times-1; };
+  uint32_t sampl_t_idx = clamp( UVAR('s'), 0, (int)adc_n_sampl_times-1 );
   uint32_t f_sampl_max = adc.adc_clk / ( sampl_times_cycles[sampl_t_idx] * n_ch );
 
   uint32_t t_step_tick =  (tim_arr+1) * (tim_psc+1); // in timer input ticks
@@ -168,7 +168,7 @@ int cmd_test0( int argc, const char * const * argv )
   UVAR('i') =  adc_init_exa_4ch_dma( adc, adc_presc, sampl_times_codes[sampl_t_idx], n_ch );
   delay_ms( 1 );
   if( ! UVAR('i') ) {
-    os <<  "ADC init failed, errno= " << errno << NL;
+    os << "ADC init failed, errno= " << errno << NL;
     return 1;
   }
   if( UVAR('d') > 1 ) { pr_ADC_state( adc );  }
@@ -181,7 +181,7 @@ int cmd_test0( int argc, const char * const * argv )
   int div_val = -1;
   adc.adc_clk = calc_ADC_clk( adc_presc, &div_val );
   os << "# ADC: n_ch= " << n_ch << " n= " << n << " adc_clk= " << adc.adc_clk << " div_val= " << div_val
-     << " s_idx= " << sampl_t_idx << " sampl= " << sampl_times_cycles[sampl_t_idx] 
+     << " s_idx= " << sampl_t_idx << " sampl= " << sampl_times_cycles[sampl_t_idx]
      << " f_sampl_max= " << f_sampl_max << " Hz" NL;
   delay_ms( 10 );
 
@@ -249,7 +249,7 @@ void print_curr( const char *s )
   if( out_file.obj.fs == nullptr ) {
     STDOUT_os;
     os <<  s;
-    delay_ms( 2 );
+    // delay_ms( 2 );
     return;
   }
   f_puts( s, &out_file );
