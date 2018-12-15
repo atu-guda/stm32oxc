@@ -159,14 +159,12 @@
 #define BOARD_USB_DEFAULT_IRQHANDLER OTG_FS_IRQHandler
 #define BOARD_USB_DEFAULT_IRQ_PRTY   14
 
-// USB not work with this board for now
-#define BOARD_CONSOLE_DEFINES         UART_CONSOLE_DEFINES( USART1 );
+#define BOARD_CONSOLE_DEFINES         USBCDC_CONSOLE_DEFINES;
+// #define BOARD_CONSOLE_DEFINES         UART_CONSOLE_DEFINES( USART1 );
 #define BOARD_CONSOLE_DEFINES_UART    UART_CONSOLE_DEFINES( USART1 );
-#define BOARD_PROLOG                  STD_PROLOG_UART;
+#define BOARD_PROLOG                  STD_PROLOG_USBCDC;
+// #define BOARD_PROLOG                  STD_PROLOG_UART;
 #define BOARD_CREATE_STD_TASKS        CREATE_STD_TASKS;
-#define BOARD_POST_INIT_BLINK         delay_ms( PROLOG_LED_TIME ); leds.write( 0x01 ); delay_ms( PROLOG_LED_TIME );
-
-// #define BOARD_CONSOLE_DEFINES         USBCDC_CONSOLE_DEFINES;
-//#define BOARD_PROLOG                  STD_PROLOG_USBCDC;
+#define BOARD_POST_INIT_BLINK         delay_ms( PROLOG_LED_TIME ); leds.write( 0x00 ); delay_ms( PROLOG_LED_TIME );
 
 #endif

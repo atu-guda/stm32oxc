@@ -12,9 +12,9 @@ SRCS += system_stm32f4xx.c
 SRCS += startup_stm32f407xx.s
 
 ifeq "$(USE_OXC_CONSOLE_DEFAULT)" "y"
-  USE_OXC_CONSOLE_UART = y
-  $(info Auto: USE_OXC_CONSOLE_UART)
-  # USE_OXC_CONSOLE_USB_CDC = y
+  # USE_OXC_CONSOLE_UART = y
+  USE_OXC_CONSOLE_USB_CDC = y
+  $(info Auto: USE_OXC_CONSOLE_USB_CDC)
 endif
 
 ifneq "$(REQUIRE_SPECIAL_CLOCK)" "y"

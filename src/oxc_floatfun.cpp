@@ -30,6 +30,13 @@ OutStream& operator<<( OutStream &os, float rhs ) {
   return os;
 }
 
+OutStream& operator<<( OutStream &os, double rhs ) {
+  char buf[2*buf_len_float];
+  snprintf( buf, sizeof(buf), "%#g", rhs );
+  os << buf;
+  return os;
+}
+
 
 float str2float_d( const char *s, float def, float vmin, float vmax )
 {

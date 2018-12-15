@@ -25,6 +25,7 @@ class FloatFmt : public OutStreamFmt {
 };
 
 OutStream& operator<<( OutStream &os, float rhs );
+OutStream& operator<<( OutStream &os, double rhs );
 
 float str2float_d( const char *s, float def, float vmin = -3.402e+38F, float vmax = 3.402e+38F );
 float arg2float_d( int narg, int argc, const char * const * argv, float def,

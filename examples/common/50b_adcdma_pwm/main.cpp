@@ -1,6 +1,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <cstdio>
+#include <cmath>
 #include <cerrno>
 
 #include <algorithm>
@@ -110,7 +111,7 @@ int main(void)
   reset_steps();
 
   #ifdef PWR_CR1_ADCDC1
-  PWR->CR1 |= PWR_CR1_ADCDC1;
+  // PWR->CR1 |= PWR_CR1_ADCDC1;
   #endif
 
   tim_cfg();
@@ -141,6 +142,16 @@ int cmd_test0( int argc, const char * const * argv )
 
   bool skip_pwm = arg2long_d( 2, argc, argv, 0, 1, 1 ); // dont touch PWM
 
+  double adc_min[n_ADC_ch_max], adc_max[n_ADC_ch_max], adc_mean[n_ADC_ch_max],
+        adc_sum[n_ADC_ch_max], adc_sum2[n_ADC_ch_max];
+  for( unsigned j=0; j<n_ADC_ch_max; ++j ) {
+    adc_min[j] = 5.1e37; adc_max[j] = -5.1e37; adc_mean[j] = 0;
+    adc_sum[j] = adc_sum2[j] = 0;
+  }
+  unsigned adc_n = 0;
+
+  os << "n = " << n << " n_ch= " << n_ch << " skip_pwm= " << skip_pwm << " t_step= " << t_step << NL;
+
   uint32_t sampl_t_idx = clamp( UVAR('s'), 0, (int)adc_n_sampl_times-1 );
   uint32_t f_sampl_max = adc.adc_clk / ( sampl_times_cycles[sampl_t_idx] * n_ch );
 
@@ -167,9 +178,12 @@ int cmd_test0( int argc, const char * const * argv )
 
   leds.reset( BIT0 | BIT1 | BIT2 );
 
-  float pwm_val0  = pwms[0].v; pwm_val = pwm_val_r = pwm_val_1 = pwm_val0; pwm_hand = 0;
+  float pwm_val0  = pwms[0].v; pwm_val = pwm_val_1 = pwm_val0; pwm_hand = 0;
   float pwm_dt = pwms[0].t;
   float pwm_k = ( pwms[0].tp == 1 ) ? ( ( pwms[1].v - pwm_val0 ) / pwm_dt ): 0;
+  if( ! skip_pwm ) {
+    pwm_val_r = pwm_val;
+  }
   pwm_t = 0;
   pwm_t_mul = 1;
   unsigned step_n = 0;
@@ -203,6 +217,7 @@ int cmd_test0( int argc, const char * const * argv )
       set_pwm();
     }
 
+    if( UVAR('l') ) {  leds.set( BIT2 ); }
     adc.end_dma = 0;
     if( HAL_ADC_Start_DMA( &adc.hadc, (uint32_t*)(&ADC_buf), n_ADC_sampl ) != HAL_OK )   {
       os <<  "ADC_Start_DMA error" NL;
@@ -210,11 +225,12 @@ int cmd_test0( int argc, const char * const * argv )
       break;
     }
 
-    for( uint32_t ti=0; adc.end_dma == 0 && ti<1000; ++ti ) {
-      delay_mcs( 10 );
+    for( uint32_t ti=0; adc.end_dma == 0 && ti<5000; ++ti ) {
+      delay_mcs( 2 );
     }
 
     HAL_ADC_Stop_DMA( &adc.hadc ); // needed
+    if( UVAR('l') ) {  leds.reset( BIT2 ); }
     if( adc.end_dma == 0 ) {
       os <<  "Fail to wait DMA end " NL;
       rc = 2;
@@ -230,8 +246,14 @@ int cmd_test0( int argc, const char * const * argv )
 
     int dt = tcc - tm00; // ms
     os <<  FloatFmt( 0.001f * dt, "%-10.4f "  );
+    UVAR('z') = ADC_buf[0];
     for( int j=0; j<n_ch; ++j ) {
-      os << ' ' << ( 0.001f * UVAR('v')  * ADC_buf[j] / 4096 );
+      double cv = ( 0.001f * UVAR('v')  * ADC_buf[j] / 4096 );
+      if( cv < adc_min[j] ) { adc_min[j] = cv; }
+      if( cv > adc_max[j] ) { adc_max[j] = cv; }
+      adc_sum[j]  += cv;
+      adc_sum2[j] += cv * cv;
+      os << ' ' << cv;
     }
 
     UVAR('x') = step_n;
@@ -243,6 +265,7 @@ int cmd_test0( int argc, const char * const * argv )
     }
 
     pwm_t += t_step * pwm_t_mul;
+    ++adc_n;
     delay_ms_until_brk( &tm0, t_step );
   }
 
@@ -250,6 +273,34 @@ int cmd_test0( int argc, const char * const * argv )
     pwm_val = pwm_min; pwm_hand = 0; pwm_t = 0; step_n = 0;
     set_pwm();
   }
+
+  os << NL "# n_real= " << adc_n;
+  os << NL "# mean ";
+  for( int j=0; j<n_ch; ++j ) {
+    adc_mean[j] = adc_sum[j] / adc_n;
+    os << ' ' << adc_mean[j];
+  }
+  os << NL "# min  ";
+  for( int j=0; j<n_ch; ++j ) {
+    os << ' ' << adc_min[j];
+  }
+  os << NL "# max  ";
+  for( int j=0; j<n_ch; ++j ) {
+    os << ' ' << adc_max[j];
+  }
+  os << NL "# sum  ";
+  for( int j=0; j<n_ch; ++j ) {
+    os << ' ' << adc_sum[j];
+  }
+  os << NL "# sum2 ";
+  for( int j=0; j<n_ch; ++j ) {
+    os << ' ' << adc_sum2[j];
+  }
+  os << NL "# sd  ";
+  for( int j=0; j<n_ch; ++j ) {
+    os << ' ' << (sqrt(  adc_sum2[j] * adc_n - adc_sum[j] * adc_sum[j] ) / adc_n );
+  }
+  os << NL;
 
 
   delay_ms( 10 );
