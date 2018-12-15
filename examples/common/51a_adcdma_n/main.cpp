@@ -1,8 +1,10 @@
 #include <cstring>
 #include <cstdlib>
 #include <cstdio>
+#include <cmath>
 #include <cerrno>
 
+#include <algorithm>
 #include <vector>
 
 #include <oxc_auto.h>
@@ -22,18 +24,10 @@ void print_curr( const char *s );
 void out_to_curr( uint32_t n, uint32_t st );
 
 
-extern "C" {
- void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc );
- void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc );
- void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim );
-}
-const uint32_t ADCDMA_chunk_size = 1024; // in bytes, for for now. may be up to 64k-small
+const uint32_t ADCDMA_chunk_size = 1024; // in bytes, for now. may be up to 64k-small
 HAL_StatusTypeDef ADC_Start_DMA_n( ADC_HandleTypeDef* hadc, uint32_t* pData, uint32_t Length, uint32_t chunkLength, uint8_t elSz );
 int adc_init_exa_4ch_dma_n( uint32_t presc, uint32_t sampl_cycl, uint8_t n_ch );
-uint32_t calc_ADC_clk( uint32_t presc, int *div_val );
-uint32_t hint_ADC_presc();
 void ADC_DMA_REINIT();
-void pr_ADC_state();
 
 ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
@@ -53,6 +47,7 @@ volatile uint32_t n_series = 0;
 uint32_t n_series_todo = 0;
 
 
+ADC_Info adc;
 
 TIM_HandleTypeDef tim2h;
 void tim2_init( uint16_t presc = 36, uint32_t arr = 100 ); // 1MHz, 10 kHz
@@ -74,7 +69,6 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_OUT,
   nullptr
 };
-
 
 
 
@@ -112,17 +106,6 @@ int main(void)
 }
 
 
-void pr_ADC_state()
-{
-  if( UVAR('d') > 0 ) {
-    STDOUT_os;
-    os << " ADC: SR= " << HexInt( BOARD_ADC_DEFAULT_DEV->SR  )
-       << "  CR1= "    << HexInt( BOARD_ADC_DEFAULT_DEV->CR1 )
-       << "  CR2= "    << HexInt( BOARD_ADC_DEFAULT_DEV->CR2 )
-       << "  CR2= "    << HexInt( BOARD_ADC_DEFAULT_DEV->CR2 )
-       << NL;
-  }
-}
 
 void pr_DMA_state()
 {
@@ -182,7 +165,7 @@ int cmd_test0( int argc, const char * const * argv )
     os << "ADC init failed, errno= " << errno << NL;
     return 1;
   }
-  pr_ADC_state();
+  if( UVAR('d') > 1 ) { pr_ADC_state( adc );  }
 
   snprintf( pbuf, pbufsz-1, "# Timer: tim_freq_in= %lu Hz / ( (%u+1)*(%u+1)) = %#.7g Hz; t_step = %#.7g s " NL,
                                       tim_freq_in,       UVAR('p'), UVAR('a'), tim_f,    t_step_f );
@@ -214,11 +197,7 @@ int cmd_test0( int argc, const char * const * argv )
 
   // log_add( "start" NL );
   if( ADC_Start_DMA_n( &hadc1, (uint32_t*)ADC_buf.data(), n_ADC_bytes, ADCDMA_chunk_size, 2 ) != HAL_OK )   {
-    os <<  "# ADC_Start_DMA_n error = "   << HexInt(  hdma_adc1.ErrorCode )   <<  NL
-       <<  " XferCpltCallback= "    << HexInt( (void*)hdma_adc1.XferCpltCallback   )
-       <<  " XferM1CpltCallback= "  << HexInt( (void*)hdma_adc1.XferM1CpltCallback )
-       <<  " XferErrorCallback= "   << HexInt( (void*)hdma_adc1.XferErrorCallback  )
-       <<  NL;
+    os <<  "# ADC_Start_DMA_n error = "   << HexInt(  hdma_adc1.ErrorCode )   <<  NL;
     return 1;
   }
   pr_DMA_state();
@@ -250,7 +229,7 @@ int cmd_test0( int argc, const char * const * argv )
 
   os <<  NL;
 
-  pr_ADC_state();
+  if( UVAR('d') > 1 ) { pr_ADC_state( adc );  }
   os <<  NL;
 
   delay_ms( 10 );
@@ -338,10 +317,6 @@ void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc )
   ++UVAR('e');
 }
 
-
-void HAL_ADCEx_InjectedConvCpltCallback( ADC_HandleTypeDef * /*hadc*/ )
-{
-}
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

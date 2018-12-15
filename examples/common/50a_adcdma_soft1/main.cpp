@@ -99,7 +99,7 @@ int cmd_test0( int argc, const char * const * argv )
   UVAR('i') =  adc_init_exa_4ch_manual( adc, adc_presc, sampl_times_codes[sampl_t_idx], n_ch );
   delay_ms( 1 );
   if( ! UVAR('i') ) {
-    os <<  "ADC init failed, errno= " << errno << NL;
+    os << "ADC init failed, errno= " << errno << NL;
     return 1;
   }
   if( UVAR('d') > 1 ) { pr_ADC_state( adc );  }
@@ -211,7 +211,6 @@ int cmd_test0( int argc, const char * const * argv )
 
   return rc;
 }
-
 
 
 

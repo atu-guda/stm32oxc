@@ -7,6 +7,7 @@
 extern ADC_HandleTypeDef hadc1;
 extern DMA_HandleTypeDef hdma_adc1;
 extern uint32_t adc_clk;
+void ADC_DMA_REINIT();
 
 int adc_init_exa_4ch_dma_n( uint32_t presc, uint32_t sampl_cycl, uint8_t n_ch )
 {
