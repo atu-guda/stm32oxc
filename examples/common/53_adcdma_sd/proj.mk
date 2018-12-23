@@ -26,6 +26,7 @@ SRCS += oxc_io_fatfs.cpp
 
 SRCS += adc_init_exa_4ch_dma.cpp
 SRCS += tim2_adcdma_init.cpp
+SRCS += adc_common_exa_4ch.cpp
 
 
 SRCS += f4_sdio_init_1bit.cpp

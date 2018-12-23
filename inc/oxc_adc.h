@@ -8,6 +8,8 @@ struct ADC_Info {
   DMA_HandleTypeDef hdma_adc;
   int32_t n_ch_max;
   uint32_t adc_clk = -1;
+  uint16_t *data = nullptr;
+  float t_step_f = 0; // in s, recalculated before measurement
   volatile int end_dma;
   volatile int dma_error;
   volatile uint32_t n_series;
