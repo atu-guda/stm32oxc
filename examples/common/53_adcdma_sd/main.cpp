@@ -9,8 +9,8 @@
 
 #include <oxc_auto.h>
 #include <oxc_floatfun.h>
-#include <oxc_fs_cmd0.h>
 
+#include <oxc_fs_cmd0.h>
 #include <fatfs_sd_st.h>
 #include <oxc_io_fatfs.h>
 
@@ -55,10 +55,10 @@ int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test ADC"  };
 int cmd_out( int argc, const char * const * argv );
 extern CmdInfo CMDINFO_OUT;
-int cmd_outsd( int argc, const char * const * argv );
-extern CmdInfo CMDINFO_OUTSD;
 int cmd_show_stats( int argc, const char * const * argv );
 extern CmdInfo CMDINFO_SHOWSTATS;
+int cmd_outsd( int argc, const char * const * argv );
+extern CmdInfo CMDINFO_OUTSD;
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -95,12 +95,11 @@ int main(void)
   UVAR('v') = v_adc_ref;
   UVAR('j') = tim_freq_in;
   const int base_freq = 1000000;
-  UVAR('p') = calc_TIM_psc_for_cnt_freq(  TIM2, base_freq ); // timer PSC, for 1MHz
+  UVAR('p') = calc_TIM_psc_for_cnt_freq( TIM2, base_freq ); // timer PSC, for 1MHz
   UVAR('a') = ( base_freq / 10 ) - 1;
   UVAR('c') = 4; // n_ADC_ch_max;
   UVAR('n') = 8; // number of series
   UVAR('s') = 0; // sampling time index
-  UVAR('d') = 1; // debug
 
   // TODO: test on F42x, F7xx
   #ifdef PWR_CR1_ADCDC1

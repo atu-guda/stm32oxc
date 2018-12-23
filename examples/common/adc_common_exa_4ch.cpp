@@ -4,7 +4,6 @@
 
 #include <oxc_devio.h>
 #include <oxc_adc.h>
-#include <oxc_io_fatfs.h>
 #include <oxc_floatfun.h>
 #include <oxc_debug1.h>
 
