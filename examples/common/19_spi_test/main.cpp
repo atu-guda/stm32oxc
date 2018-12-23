@@ -29,6 +29,9 @@ CmdInfo CMDINFO_RECV { "recv", 'R', cmd_recv_spi, "[N] recv bytes"  };
 int cmd_reset_spi( int argc, const char * const * argv );
 CmdInfo CMDINFO_RESETSPI { "reset_spi", 'Z', cmd_reset_spi, " - reset spi"  };
 
+int cmd_sendloop_spi( int argc, const char * const * argv );
+CmdInfo CMDINFO_SENDLOOPSPI { "sendloop_spi", 'N', cmd_sendloop_spi, " N [val] - send N vals via SPI"  };
+
   const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
 
@@ -36,6 +39,7 @@ CmdInfo CMDINFO_RESETSPI { "reset_spi", 'Z', cmd_reset_spi, " - reset spi"  };
   &CMDINFO_SENDR,
   &CMDINFO_RECV,
   &CMDINFO_DUPLEX,
+  &CMDINFO_SENDLOOPSPI,
   &CMDINFO_RESETSPI,
   nullptr
 };
@@ -189,6 +193,18 @@ int cmd_duplex_spi( int argc, const char * const * argv )
 
   spi_d.pr_info();
 
+  return 0;
+}
+
+int cmd_sendloop_spi( int argc, const char * const * argv )
+{
+  int n      = arg2long_d( 1, argc, argv,    1, 1, 10000000 );
+  uint8_t sv = arg2long_d( 2, argc, argv, 0x55, 0, 0xFF );
+  STDOUT_os;
+  os << NL "sendloop_spi: sv= "  << HexInt8( sv ) << " n= "  <<  n  <<  NL;
+  for( int i=0; i<n; ++i ) {
+    spi_d.send( sv );
+  }
   return 0;
 }
 

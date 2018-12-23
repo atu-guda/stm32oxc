@@ -12,7 +12,7 @@
 #include <oxc_fs_cmd0.h>
 
 #include <fatfs_sd_st.h>
-#include <ff.h>
+#include <oxc_io_fatfs.h>
 
 using namespace std;
 using namespace SMLRL;
@@ -29,8 +29,7 @@ void MX_SDIO_SD_Init();
 uint8_t sd_buf[512]; // one sector
 HAL_SD_CardInfoTypeDef cardInfo;
 FATFS fs;
-void print_curr( const char *s );
-void out_to_curr( uint32_t n, uint32_t st );
+void out_to( OutStream &os, uint32_t n, uint32_t st );
 
 
 int adc_init_exa_4ch_dma( ADC_Info &adc, uint32_t adc_presc, uint32_t sampl_cycl, uint8_t n_ch );
@@ -49,9 +48,6 @@ vector<uint16_t> ADC_buf;
 TIM_HandleTypeDef tim2h;
 void tim2_init( uint16_t presc = 36, uint32_t arr = 100 ); // 1MHz, 10 kHz
 void tim2_deinit();
-
-const int pbufsz = 128;
-FIL out_file;
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -90,7 +86,6 @@ int main(void)
   fs.fs_type = 0; // none
   fspath[0] = '\0';
   UVAR('z') = f_mount( &fs, "", 1 );
-  out_file.obj.fs = nullptr;
 
   UVAR('t') = 1000; // 1 s extra wait
   UVAR('v') = v_adc_ref;
@@ -225,10 +220,10 @@ int cmd_test0( int argc, const char * const * argv )
   }
   os <<  "#  tick: " <<  ( tcc - tm00 )  <<  NL;
 
-  out_to_curr( 2, 0 );
+  out_to( os, 2, 0 );
   if( adc.n_series > 2 ) {
     os <<  "....." NL;
-    out_to_curr( 4, adc.n_series-2 );
+    out_to( os, 4, adc.n_series-2 );
   }
 
   os <<  NL;
@@ -241,55 +236,39 @@ int cmd_test0( int argc, const char * const * argv )
   return 0;
 }
 
-void print_curr( const char *s )
-{
-  if( !s ) {
-    return;
-  }
-  if( out_file.obj.fs == nullptr ) {
-    STDOUT_os;
-    os <<  s;
-    // delay_ms( 2 );
-    return;
-  }
-  f_puts( s, &out_file );
-}
 
-void out_to_curr( uint32_t n, uint32_t st )
+
+void out_to( OutStream &os, uint32_t n, uint32_t st )
 {
-  char buf[32];
-  char pbuf[pbufsz];
-  uint8_t n_ch = UVAR('c');
-  if( n_ch > n_ADC_ch_max ) { n_ch = n_ADC_ch_max; };
-  if( n_ch < 1 ) { n_ch = 1; };
+  uint8_t n_ch = clamp( UVAR('c'), 1, (int)n_ADC_ch_max );
 
   if( n+st >= adc.n_series+1 ) {
     n = 1 + adc.n_series - st;
   }
 
+  os << "# n= " << n << " n_ch= " << n_ch << " st= " << st << NL;
+
   float t = st * t_step_f;
   for( uint32_t i=0; i< n; ++i ) {
     uint32_t ii = i + st;
     t = t_step_f * ii;
-    snprintf( pbuf, pbufsz-1, "%#12.7g  ", t );
+    os << FloatFmt( t, "%#12.7g  " );
     for( int j=0; j< n_ch; ++j ) {
-      int vv = ADC_buf[ii*n_ch+j] * 10 * UVAR('v') / 4096;
-      ifcvt( vv, 10000, buf, 4 );
-      strcat( pbuf, buf ); strcat( pbuf, "  " );
+      float v = 0.001f * (float) ADC_buf[ii*n_ch+j] * UVAR('v') / 4096;
+      os << FloatFmt( v, " %#10.6g" );
     }
-    strcat( pbuf, NL );
-    print_curr( pbuf );
+    os << NL;
   }
 }
 
 int cmd_out( int argc, const char * const * argv )
 {
-  out_file.obj.fs = nullptr;
   auto ns = adc.n_series;
   uint32_t n = arg2long_d( 1, argc, argv, ns, 0, ns+1 ); // number output series
   uint32_t st= arg2long_d( 2, argc, argv,  0, 0, ns-2 );
 
-  out_to_curr( n, st );
+  STDOUT_os;
+  out_to( os, n, st );
 
   return 0;
 }
@@ -302,21 +281,19 @@ int cmd_outsd( int argc, const char * const * argv )
     return 1;
   }
 
-  out_file.obj.fs = nullptr;
   uint32_t n = arg2long_d( 2, argc, argv, adc.n_series, 0, adc.n_series+1 ); // number output series
   uint32_t st= arg2long_d( 3, argc, argv,            0, 0, adc.n_series-2 );
 
   const char *fn = argv[1];
-  FRESULT r = f_open( &out_file, fn, FA_WRITE | FA_OPEN_ALWAYS );
-  if( r == FR_OK ) {
-    out_to_curr( n, st );
-    f_close( &out_file );
-  } else {
-    os << "Error: f_open error: " << r << NL;
+  auto file = DevOut_FatFS( fn );
+  if( !file.isGood() ) {
+    os << "Error: f_open error: " << file.getErr() << NL;
+    return 2;
   }
-  out_file.obj.fs = nullptr;
+  OutStream os_f( &file );
+  out_to( os_f, n, st );
 
-  return r;
+  return 0;
 }
 
 

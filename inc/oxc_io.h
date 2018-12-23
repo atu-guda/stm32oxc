@@ -1,6 +1,8 @@
 #ifndef _OXC_IO_H
 #define _OXC_IO_H
 
+#include <oxc_base.h>
+
 // abstract IO classes (protocols)
 
 class DevOut {

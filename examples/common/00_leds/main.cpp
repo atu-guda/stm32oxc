@@ -49,14 +49,7 @@ void MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct;
 
-  /* GPIO Ports Clock Enable */
   //__GPIOA_CLK_ENABLE();
-  //__GPIOB_CLK_ENABLE();
-  // __GPIOC_CLK_ENABLE();
-  // __GPIOD_CLK_ENABLE();
-  // __GPIOE_CLK_ENABLE();
-  // __GPIOG_CLK_ENABLE();
-  // __GPIOH_CLK_ENABLE();
   BOARD_LEDS_GPIO_ON;
 
   GPIO_InitStruct.Pin   = BOARD_LEDS_MASK;
@@ -64,12 +57,6 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull  = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_MAX;
   HAL_GPIO_Init( BOARD_LEDS_GPIO, &GPIO_InitStruct );
-
-  /*Configure GPIO pins : PA0 PA1 */
-  // GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1;
-  // GPIO_InitStruct.Mode = GPIO_MODE_EVT_RISING;
-  // GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-  // HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
 }
 
