@@ -29,7 +29,10 @@ void MX_SDIO_SD_Init();
 uint8_t sd_buf[512]; // one sector
 HAL_SD_CardInfoTypeDef cardInfo;
 FATFS fs;
-void out_to( OutStream &os, uint32_t n, uint32_t st );
+
+void adc_out_to( OutStream &os, uint32_t n, uint32_t st );
+void adc_show_stat( OutStream &os, uint32_t n = 0xFFFFFFFF, uint32_t st = 0 );
+void pr_ADCDMA_state();
 
 
 int adc_init_exa_4ch_dma( ADC_Info &adc, uint32_t adc_presc, uint32_t sampl_cycl, uint8_t n_ch );
@@ -56,6 +59,8 @@ int cmd_out( int argc, const char * const * argv );
 CmdInfo CMDINFO_OUT { "out", 'O', cmd_out, " [N [start]]- output data "  };
 int cmd_outsd( int argc, const char * const * argv );
 CmdInfo CMDINFO_OUTSD { "outsd", 'X', cmd_outsd, "filename [N [start]]- output data to SD"  };
+int cmd_show_stats( int argc, const char * const * argv );
+CmdInfo CMDINFO_SHOWSTATS { "show_stats", 'Y', cmd_show_stats, " [N [start]]- show statistics"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -63,6 +68,7 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_TEST0,
   FS_CMDS0,
   &CMDINFO_OUT,
+  &CMDINFO_SHOWSTATS,
   &CMDINFO_OUTSD,
   nullptr
 };
@@ -90,13 +96,15 @@ int main(void)
   UVAR('t') = 1000; // 1 s extra wait
   UVAR('v') = v_adc_ref;
   UVAR('j') = tim_freq_in;
-  UVAR('p') = calc_TIM_psc_for_cnt_freq( TIM2, 1000000 ); // timer PSC, for 1MHz
-  UVAR('a') = 99999; // timer ARR, for 10Hz TODO: better time or freq based
+  const int base_freq = 1000000;
+  UVAR('p') = calc_TIM_psc_for_cnt_freq(  TIM2, base_freq ); // timer PSC, for 1MHz
+  UVAR('a') = ( base_freq / 10 ) - 1;
   UVAR('c') = n_ADC_ch_max;
   UVAR('n') = 8; // number of series
   UVAR('s') = 0; // sampling time index
   UVAR('d') = 1; // debug
 
+  // TODO: test on F42x, F7xx
   #ifdef PWR_CR1_ADCDC1
   PWR->CR1 |= PWR_CR1_ADCDC1;
   #endif
@@ -117,7 +125,7 @@ int main(void)
 
 
 // TODO: move
-void pr_DMA_state()
+void pr_ADCDMA_state()
 {
   if( UVAR('d') > 0 ) {
     STDOUT_os;
@@ -145,7 +153,6 @@ int cmd_test0( int argc, const char * const * argv )
   uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, n_ADC_series_max ); // number of series
 
   uint32_t sampl_t_idx = clamp( UVAR('s'), 0, (int)adc_n_sampl_times-1 );
-  uint32_t f_sampl_max = adc.adc_clk / ( sampl_times_cycles[sampl_t_idx] * n_ch );
 
   uint32_t t_step_tick =  (tim_arr+1) * (tim_psc+1); // in timer input ticks
   float tim_f = (float)tim_freq_in / t_step_tick; // timer update freq, Hz
@@ -169,12 +176,13 @@ int cmd_test0( int argc, const char * const * argv )
   if( UVAR('d') > 1 ) { pr_ADC_state( adc );  }
 
 
-  os << "# Timer: tim_freq_in= " << tim_freq_in << "  Hz / (( " << tim_psc
-     << "+1)*( " << tim_arr << "+1)) =" << tim_f << " Hz; t_step = " << t_step_f << " s" NL;
+  os << "# Timer: tim_freq_in= " << tim_freq_in << "  Hz / ((" << tim_psc
+     << "+1)*(" << tim_arr << "+1)) =" << tim_f << " Hz; t_step = " << t_step_f << " s" NL;
   delay_ms( 1 );
 
   int div_val = -1;
   adc.adc_clk = calc_ADC_clk( adc_presc, &div_val );
+  uint32_t f_sampl_max = adc.adc_clk / ( sampl_times_cycles[sampl_t_idx] * n_ch );
   os << "# ADC: n_ch= " << n_ch << " n= " << n << " adc_clk= " << adc.adc_clk << " div_val= " << div_val
      << " s_idx= " << sampl_t_idx << " sampl= " << sampl_times_cycles[sampl_t_idx]
      << " f_sampl_max= " << f_sampl_max << " Hz" NL;
@@ -198,6 +206,7 @@ int cmd_test0( int argc, const char * const * argv )
 
   if( HAL_ADC_Start_DMA( &adc.hadc, (uint32_t*)ADC_buf.data(), n_ADC_sampl ) != HAL_OK )   {
     os <<  "ADC_Start_DMA error" NL;
+    return 10;
   }
   tim2_init( UVAR('p'), UVAR('a') );
 
@@ -212,38 +221,37 @@ int cmd_test0( int argc, const char * const * argv )
   HAL_ADC_Stop_DMA( &adc.hadc ); // needed
   if( adc.end_dma == 0 ) {
     os <<  "Fail to wait DMA end " NL;
-  }
-  if( adc.dma_error != 0 ) {
-    os <<  "Found DMA error " << HexInt( adc.dma_error ) <<  NL;
   } else {
-    adc.n_series = n;
+    if( adc.dma_error != 0 ) {
+      os <<  "Found DMA error " << HexInt( adc.dma_error ) <<  NL;
+    } else {
+      adc.n_series = n;
+    }
   }
   os <<  "#  tick: " <<  ( tcc - tm00 )  <<  NL;
 
-  out_to( os, 2, 0 );
-  if( adc.n_series > 2 ) {
+  if( adc.n_series < 20 ) {
+    adc_out_to( os, adc.n_series, 0 );
+  } else {
+    adc_out_to( os, 4, 0 );
     os <<  "....." NL;
-    out_to( os, 4, adc.n_series-2 );
+    adc_out_to( os, 4, adc.n_series-4 );
   }
 
   os <<  NL;
 
   if( UVAR('d') > 1 ) { pr_ADC_state( adc );  }
-  os <<  NL;
-
-  delay_ms( 10 );
 
   return 0;
 }
 
 
 
-void out_to( OutStream &os, uint32_t n, uint32_t st )
+void adc_out_to( OutStream &os, uint32_t n, uint32_t st )
 {
   uint8_t n_ch = clamp( UVAR('c'), 1, (int)n_ADC_ch_max );
-
   if( n+st >= adc.n_series+1 ) {
-    n = 1 + adc.n_series - st;
+    n = adc.n_series - st;
   }
 
   os << "# n= " << n << " n_ch= " << n_ch << " st= " << st << NL;
@@ -259,6 +267,60 @@ void out_to( OutStream &os, uint32_t n, uint32_t st )
     }
     os << NL;
   }
+
+}
+
+void adc_show_stat( OutStream &os, uint32_t n, uint32_t st )
+{
+  uint8_t n_ch = clamp( UVAR('c'), 1, (int)n_ADC_ch_max );
+  if( n+st >= adc.n_series+1 ) {
+    n = adc.n_series - st;
+  }
+
+  double adc_min[n_ADC_ch_max], adc_max[n_ADC_ch_max], adc_mean[n_ADC_ch_max],
+  adc_sum[n_ADC_ch_max], adc_sum2[n_ADC_ch_max];
+  for( unsigned j=0; j<n_ADC_ch_max; ++j ) {
+    adc_min[j] = 5.1e37; adc_max[j] = -5.1e37; adc_mean[j] = 0;
+    adc_sum[j] = adc_sum2[j] = 0;
+  }
+
+  for( uint32_t i=0; i< n; ++i ) {
+    uint32_t ii = i + st;
+    for( int j=0; j< n_ch; ++j ) {
+      float v = 0.001f * (float) ADC_buf[ii*n_ch+j] * UVAR('v') / 4096;
+      if( v < adc_min[j] ) { adc_min[j] = v; }
+      if( v > adc_max[j] ) { adc_max[j] = v; }
+      adc_sum[j]  += v;
+      adc_sum2[j] += v * v;
+    }
+  }
+
+  os << NL "# mean ";
+  for( int j=0; j<n_ch; ++j ) {
+    adc_mean[j] = adc_sum[j] / n;
+    os << ' ' << adc_mean[j];
+  }
+  os << NL "# min  ";
+  for( int j=0; j<n_ch; ++j ) {
+    os << ' ' << adc_min[j];
+  }
+  os << NL "# max  ";
+  for( int j=0; j<n_ch; ++j ) {
+    os << ' ' << adc_max[j];
+  }
+  os << NL "# sum  ";
+  for( int j=0; j<n_ch; ++j ) {
+    os << ' ' << adc_sum[j];
+  }
+  os << NL "# sum2 ";
+  for( int j=0; j<n_ch; ++j ) {
+    os << ' ' << adc_sum2[j];
+  }
+  os << NL "# sd  ";
+  for( int j=0; j<n_ch; ++j ) {
+    os << ' ' << (sqrt(  adc_sum2[j] * n - adc_sum[j] * adc_sum[j] ) / n );
+  }
+
 }
 
 int cmd_out( int argc, const char * const * argv )
@@ -268,7 +330,8 @@ int cmd_out( int argc, const char * const * argv )
   uint32_t st= arg2long_d( 2, argc, argv,  0, 0, ns-2 );
 
   STDOUT_os;
-  out_to( os, n, st );
+  adc_out_to( os, n, st );
+  adc_show_stat( os, n, st );
 
   return 0;
 }
@@ -291,11 +354,23 @@ int cmd_outsd( int argc, const char * const * argv )
     return 2;
   }
   OutStream os_f( &file );
-  out_to( os_f, n, st );
+  adc_out_to( os_f, n, st );
+  adc_show_stat( os_f, n, st );
 
   return 0;
 }
 
+int cmd_show_stats( int argc, const char * const * argv )
+{
+  auto ns = adc.n_series;
+  uint32_t n = arg2long_d( 1, argc, argv, ns, 0, ns+1 ); // number output series
+  uint32_t st= arg2long_d( 2, argc, argv,  0, 0, ns-2 );
+
+  STDOUT_os;
+  adc_show_stat( os, n, st );
+
+  return 0;
+}
 
 void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc )
 {
