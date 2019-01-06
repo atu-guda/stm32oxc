@@ -10,6 +10,7 @@
 class ADS1115 : public I2CClient {
   public:
    enum {
+     n_ch_max        = 4,
      def_addr        = 0x48,
      reg_data        = 0x00,
      reg_cfg         = 0x01,
@@ -64,6 +65,7 @@ class ADS1115 : public I2CClient {
    uint16_t getDeviceCfg() { cfg_val =  readReg( reg_cfg ); return cfg_val; }
    int16_t getOneShot();
    int16_t getContValue() { return readReg( reg_data ); }
+   int getOneShotNch( uint8_t s_ch, uint8_t e_ch, int16_t *d );
    bool startCont() { cfg_val &= ~cfg_oneShot; return writeCurrCfg(); };
    bool stopCont()  { cfg_val |=  cfg_oneShot; return writeCurrCfg(); };
    int getScale_mV() const; // full scale per 32768

@@ -22,5 +22,6 @@ USE_OXC_I2C = y
 
 SRCS  = main.cpp
 
+SRCS += oxc_floatfun.cpp
 SRCS += oxc_ads1115.cpp
 
