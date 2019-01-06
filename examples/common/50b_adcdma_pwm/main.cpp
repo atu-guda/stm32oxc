@@ -9,6 +9,8 @@
 #include <oxc_auto.h>
 #include <oxc_floatfun.h>
 
+#include <../examples/common/inc/pwm1_ctl.h>
+
 using namespace std;
 using namespace SMLRL;
 
@@ -30,28 +32,8 @@ uint16_t ADC_buf[32];
 TIM_HandleTypeDef tim_h;
 using tim_ccr_t = decltype( tim_h.Instance->CCR1 );
 void tim_cfg();
-void pwm_recalc();
-void set_pwm(); // uses pwm_val
-float pwm_val = 10.0f;     // unrestricted
-float pwm_val_1 = pwm_val; // w/o hand
-float pwm_val_r = pwm_val; // real
-float pwm_min = 10.0f, pwm_max = 50.0f;
-float pwm_hand = 0;       // adjusted by hand (handle_keys)
 
-const unsigned max_pwm_steps = 32;
-struct StepInfo {
-  float v;
-  int t, tp;
-};
-StepInfo pwms[max_pwm_steps];
-unsigned n_steps  = 0;
-int pwm_t = 0;
-float pwm_t_mul = 1;
-void reset_steps();
-void mk_rect( float v, int t );
-void mk_ladder( float dv, int dt, unsigned n_up );
-void mk_trap( float v, int t1, int t2, int t3 );
-void show_steps();
+void set_pwm( const PWMData &d );
 
 void handle_keys();
 
@@ -63,19 +45,8 @@ CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " [n] [skip_pwm] - measure ADC 
 int cmd_tinit( int argc, const char * const * argv );
 CmdInfo CMDINFO_TINIT { "tinit", 'I', cmd_tinit, " - reinit timer"  };
 int cmd_pwm( int argc, const char * const * argv );
-CmdInfo CMDINFO_PWM { "pwm", 'W', cmd_pwm, " [va] - set PWM value"  };
-int cmd_set_minmax( int argc, const char * const * argv );
-CmdInfo CMDINFO_SET_MINMAX { "set_minmax", 0, cmd_set_minmax, " pwm_min pwm_max - set PWM limits"  };
-int cmd_show_steps( int argc, const char * const * argv );
-CmdInfo CMDINFO_SHOW_STEPS { "show_steps", 'S', cmd_show_steps, " - show PWM steps"  };
-int cmd_mk_rect( int argc, const char * const * argv );
-CmdInfo CMDINFO_MK_RECT { "mk_rect", 0, cmd_mk_rect, " v t - make rectangle steps"  };
-int cmd_mk_ladder( int argc, const char * const * argv );
-CmdInfo CMDINFO_MK_LADDER { "mk_ladder", 0, cmd_mk_ladder, " v t n_up - make ladder steps"  };
-int cmd_mk_trap( int argc, const char * const * argv );
-CmdInfo CMDINFO_MK_TRAP { "mk_trap", 0, cmd_mk_trap, " v t1  t2 t3 - make trapzoid steps"  };
-int cmd_edit_step( int argc, const char * const * argv );
-CmdInfo CMDINFO_EDIT_STEP { "edit_step", 'E', cmd_edit_step, " v t tp - edit given step"  };
+CmdInfo CMDINFO_PWM { "pwm", 'W', cmd_pwm, " [val] - set PWM value"  };
+
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -83,12 +54,7 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_TEST0,
   &CMDINFO_TINIT,
   &CMDINFO_PWM,
-  &CMDINFO_SET_MINMAX,
-  &CMDINFO_SHOW_STEPS,
-  &CMDINFO_MK_RECT,
-  &CMDINFO_MK_LADDER,
-  &CMDINFO_MK_TRAP,
-  &CMDINFO_EDIT_STEP,
+  CMDINFOS_PWM,
   nullptr
 };
 
@@ -107,7 +73,7 @@ int main(void)
   UVAR('p') = 0;     // PSC,  - max output freq
   UVAR('a') = 1439;  // ARR, to get 100 kHz with PSC = 0
 
-  reset_steps();
+  pwm_reset_steps( pwmdat );
 
   #ifdef PWR_CR1_ADCDC1
   // PWR->CR1 |= PWR_CR1_ADCDC1;
@@ -178,14 +144,14 @@ int cmd_test0( int argc, const char * const * argv )
 
   leds.reset( BIT0 | BIT1 | BIT2 );
 
-  float pwm_val0  = pwms[0].v; pwm_val = pwm_val_1 = pwm_val0; pwm_hand = 0;
-  float pwm_dt = pwms[0].t;
-  float pwm_k = ( pwms[0].tp == 1 ) ? ( ( pwms[1].v - pwm_val0 ) / pwm_dt ): 0;
+  float pwm_val0  = pwmdat.steps[0].v; pwmdat.val = pwmdat.val_1 = pwm_val0; pwmdat.hand = 0;
+  float pwm_dt = pwmdat.steps[0].t;
+  float pwm_k = ( pwmdat.steps[0].tp == 1 ) ? ( ( pwmdat.steps[1].v - pwm_val0 ) / pwm_dt ): 0;
   if( ! skip_pwm ) {
-    pwm_val_r = pwm_val;
+    pwmdat.val_r = pwmdat.val;
   }
-  pwm_t = 0;
-  pwm_t_mul = 1;
+  pwmdat.t = 0;
+  pwmdat.t_mul = 1;
   unsigned pwm_step_n = 0;
 
   uint32_t tm0, tm00;
@@ -202,20 +168,20 @@ int cmd_test0( int argc, const char * const * argv )
     handle_keys();
 
     if( ! skip_pwm ) {
-      if( pwm_t >= pwm_dt ) { // next step
-        pwm_t = 0;
+      if( pwmdat.t >= pwm_dt ) { // next step
+        pwmdat.t = 0;
         ++pwm_step_n;
-        if( pwm_step_n >= n_steps ) {
+        if( pwm_step_n >= pwmdat.n_steps ) {
           break;
         }
-        pwm_val0  = pwms[pwm_step_n].v; pwm_val = pwm_val0;
-        pwm_dt = pwms[pwm_step_n].t;
-        pwm_k = ( pwms[pwm_step_n].tp == 1 ) ? ( ( pwms[pwm_step_n+1].v - pwm_val0 ) / pwm_dt ): 0;
+        pwm_val0  = pwmdat.steps[pwm_step_n].v; pwmdat.val = pwm_val0;
+        pwm_dt = pwmdat.steps[pwm_step_n].t;
+        pwm_k = ( pwmdat.steps[pwm_step_n].tp == 1 ) ? ( ( pwmdat.steps[pwm_step_n+1].v - pwm_val0 ) / pwm_dt ): 0;
       }
 
-      pwm_val_1 = pwm_val0 + pwm_k * pwm_t;
-      pwm_val = pwm_val_1 + pwm_hand;
-      set_pwm();
+      pwmdat.val_1 = pwm_val0 + pwm_k * pwmdat.t;
+      pwmdat.val = pwmdat.val_1 + pwmdat.hand;
+      set_pwm( pwmdat );
     }
 
     if( UVAR('l') ) {  leds.set( BIT2 ); }
@@ -262,17 +228,17 @@ int cmd_test0( int argc, const char * const * argv )
     }
 
     if( do_out ) {
-      os << ' ' << pwm_val_r <<  NL;
+      os << ' ' << pwmdat.val_r <<  NL;
     }
 
-    pwm_t += t_step * pwm_t_mul;
+    pwmdat.t += t_step * pwmdat.t_mul;
     ++adc_n;
     delay_ms_until_brk( &tm0, t_step );
   }
 
   if( ! skip_pwm ) {
-    pwm_val = pwm_min; pwm_hand = 0; pwm_t = 0; pwm_step_n = 0;
-    set_pwm();
+    pwmdat.val = pwmdat.vmin; pwmdat.hand = 0; pwmdat.t = 0; pwmdat.n_steps = 0;
+    set_pwm( pwmdat );
   }
 
   os << NL "# n_real= " << adc_n;
@@ -356,11 +322,6 @@ void tim_cfg()
   sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
   HAL_TIM_ConfigClockSource( &tim_h, &sClockSourceConfig );
 
-  pwm_recalc();
-}
-
-void pwm_recalc()
-{
   int pbase = UVAR('a');
   TIM_OC_InitTypeDef tim_oc_cfg;
   tim_oc_cfg.OCMode       = TIM_OCMODE_PWM1;
@@ -372,7 +333,7 @@ void pwm_recalc()
 
 
   HAL_TIM_PWM_Stop( &tim_h, TIM_CHANNEL_1 );
-  tim_oc_cfg.Pulse = (tim_ccr_t)( pwm_min * pbase / 100 );
+  tim_oc_cfg.Pulse = (tim_ccr_t)( pwmdat.vmin * pbase / 100 );
   if( HAL_TIM_PWM_ConfigChannel( &tim_h, &tim_oc_cfg, TIM_CHANNEL_1 ) != HAL_OK ) {
     UVAR('e') = 11;
     return;
@@ -383,20 +344,20 @@ void pwm_recalc()
 
 int cmd_pwm( int argc, const char * const * argv )
 {
-  pwm_val = arg2float_d( 1, argc, argv, 10, 0, 100 );
-  pwm_hand = 0;
+  pwmdat.val = arg2float_d( 1, argc, argv, 10, 0, 100 );
+  pwmdat.hand = 0;
   STDOUT_os;
-  set_pwm();
+  set_pwm( pwmdat );
   tim_print_cfg( TIM_EXA );
-  os << NL "PWM:  in: " << pwm_val << "  real: " << pwm_val_r << NL;
+  os << NL "PWM:  in: " << pwmdat.val << "  real: " << pwmdat.val_r << NL;
   return 0;
 }
 
-void set_pwm()
+void set_pwm( const PWMData &d )
 {
-  pwm_val_r = clamp( pwm_val, pwm_min, pwm_max );
+  pwmdat.val_r = clamp( d.val, d.vmin, d.vmax );
   uint32_t scl = tim_h.Instance->ARR;
-  tim_ccr_t nv = (tim_ccr_t)( pwm_val_r * scl / 100 );
+  tim_ccr_t nv = (tim_ccr_t)( pwmdat.val_r * scl / 100 );
   if( nv != tim_h.Instance->CCR1 ) {
     tim_h.Instance->CCR1 =nv;
   }
@@ -420,144 +381,30 @@ void handle_keys()
   }
 
   switch( v.c ) {
-    case 'w': pwm_hand += 1;  break;
-    case 'W': pwm_hand += 5;  break;
-    case 's': pwm_hand -= 1;  break;
-    case 'S': pwm_hand -= 5;  break;
-    case 'z': pwm_hand  = 0;  break;
-    case '0': pwm_hand =    - pwm_val_1;  break;
-    case '1': pwm_hand = 10 - pwm_val_1;  break;
-    case '2': pwm_hand = 20 - pwm_val_1;  break;
-    case '3': pwm_hand = 30 - pwm_val_1;  break;
-    case '4': pwm_hand = 40 - pwm_val_1;  break;
-    case '5': pwm_hand = 50 - pwm_val_1;  break;
-    case 'a': pwm_t    -=  2000;  break;
-    case 'A': pwm_t    -= 10000;  break;
-    case 'd': pwm_t    +=  2000;  break;
-    case 'D': pwm_t    += 10000;  break;
-    case 'g': pwm_t_mul = 0; break;
-    case 'G': pwm_t_mul = 1; break;
+    case 'w': pwmdat.hand += 1;  break;
+    case 'W': pwmdat.hand += 5;  break;
+    case 's': pwmdat.hand -= 1;  break;
+    case 'S': pwmdat.hand -= 5;  break;
+    case 'z': pwmdat.hand  = 0;  break;
+    case '0': pwmdat.hand =    - pwmdat.val_1;  break;
+    case '1': pwmdat.hand = 10 - pwmdat.val_1;  break;
+    case '2': pwmdat.hand = 20 - pwmdat.val_1;  break;
+    case '3': pwmdat.hand = 30 - pwmdat.val_1;  break;
+    case '4': pwmdat.hand = 40 - pwmdat.val_1;  break;
+    case '5': pwmdat.hand = 50 - pwmdat.val_1;  break;
+    case 'a': pwmdat.t    -=  2000;  break;
+    case 'A': pwmdat.t    -= 10000;  break;
+    case 'd': pwmdat.t    +=  2000;  break;
+    case 'D': pwmdat.t    += 10000;  break;
+    case 'g': pwmdat.t_mul = 0; break;
+    case 'G': pwmdat.t_mul = 1; break;
     default: break;
   }
 
 }
 
-void reset_steps()
-{
-  for( auto &s : pwms ) {
-    s.v = pwm_min; s.t = 30000; s.tp = 0;
-  }
-  n_steps = 3;
-}
 
-void mk_rect( float v, int t )
-{
-  pwms[0].v = pwm_min; pwms[0].t = 10000; pwms[0].tp = 0;
-  pwms[1].v = v;       pwms[1].t = t;     pwms[1].tp = 0;
-  pwms[2].v = pwm_min; pwms[2].t = 30000; pwms[2].tp = 0;
-  n_steps = 3;
-}
 
-void mk_ladder( float dv, int t, unsigned n_up )
-{
-  unsigned n_up_max = max_pwm_steps / 2 - 1;
-  n_up = clamp( n_up, 1u, n_up_max );
-
-  pwms[0].v = pwm_min; pwms[0].t = 10000; pwms[0].tp = 0;
-  unsigned i = 1;
-  float cv = pwm_min;
-  for( /* NOP */; i <= n_up; ++i ) {
-    cv += dv;
-    pwms[i].v = cv;
-    pwms[i].t = t; pwms[i].tp = 0;
-  }
-  for( /* NOP */; i < n_up*2; ++i ) {
-    cv -= dv;
-    pwms[i].v = cv;
-    pwms[i].t = t; pwms[i].tp = 0;
-  }
-  pwms[i].v = pwm_min; pwms[i].t = 60000; pwms[0].tp = 0;
-  n_steps = n_up * 2 + 1;
-}
-
-void mk_trap( float v, int t1, int t2, int t3 )
-{
-  pwms[0].v = pwm_min; pwms[0].t = 10000; pwms[0].tp = 0;
-  pwms[1].v = pwm_min; pwms[1].t = t1;    pwms[1].tp = 1;
-  pwms[2].v = v;       pwms[2].t = t2;    pwms[2].tp = 0;
-  pwms[3].v = v;       pwms[3].t = t3;    pwms[3].tp = 1;
-  pwms[4].v = pwm_min; pwms[4].t = 30000; pwms[4].tp = 0;
-  n_steps = 5;
-}
-
-void show_steps()
-{
-  STDOUT_os;
-  os << "# pwm_min= " << pwm_min << "  pwm_max= " << pwm_max << " n_steps= " << n_steps << NL;
-  int tc = 0;
-  for( unsigned i=0; i<n_steps; ++i ) {
-    os << '[' << i << "] " << tc << ' ' << pwms[i].t << ' ' << pwms[i].v << ' ' << pwms[i].tp << NL;
-    tc += pwms[i].t;
-  }
-  os << "# Total: " << tc << " ms" NL;
-}
-
-int cmd_show_steps( int /*argc*/, const char * const * /*argv*/ )
-{
-  show_steps();
-  return 0;
-}
-
-int cmd_set_minmax( int argc, const char * const * argv )
-{
-  pwm_min = arg2float_d( 1, argc, argv, 10, 1, 98 );
-  pwm_max = arg2float_d( 2, argc, argv, 50, pwm_min+1, 99 );
-  return 0;
-}
-
-int cmd_mk_rect( int argc, const char * const * argv )
-{
-  float v  = arg2float_d( 1, argc, argv,    35, 1, 98 );
-  int   t  = arg2long_d(  2, argc, argv, 30000, 1, 10000000 );
-  mk_rect( v, t );
-  show_steps();
-  return 0;
-}
-
-int cmd_mk_ladder( int argc, const char * const * argv )
-{
-  float v      = arg2float_d( 1, argc, argv,    5,  1, 90 );
-  unsigned  t  = arg2long_d(  2, argc, argv, 30000, 1, 10000000 );
-  unsigned  n  = arg2long_d(  3, argc, argv,     8, 1, max_pwm_steps/2-2 );
-  mk_ladder( v, t, n );
-  show_steps();
-  return 0;
-}
-
-int cmd_mk_trap( int argc, const char * const * argv )
-{
-  float v  = arg2float_d( 1, argc, argv,    30, 0, 98 );
-  int   t1 = arg2long_d(  2, argc, argv, 30000, 1, 10000000 );
-  int   t2 = arg2long_d(  3, argc, argv, 30000, 1, 10000000 );
-  int   t3 = arg2long_d(  4, argc, argv, 30000, 1, 10000000 );
-  mk_trap( v, t1, t2, t3 );
-  show_steps();
-  return 0;
-}
-
-int cmd_edit_step( int argc, const char * const * argv )
-{
-  unsigned j = arg2long_d(1, argc, argv,     0, 0, max_pwm_steps-1 );
-  float v  = arg2float_d( 2, argc, argv,    25, 0, 99 );
-  int   t  = arg2long_d(  3, argc, argv, 30000, 1, 10000000 );
-  int   tp = arg2long_d(  4, argc, argv,     0, 0, 1 );
-  pwms[j].v = v; pwms[j].t = t; pwms[j].tp = tp;
-  if( j >= n_steps ) {
-    n_steps = j+1;
-  }
-  show_steps();
-  return 0;
-}
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
