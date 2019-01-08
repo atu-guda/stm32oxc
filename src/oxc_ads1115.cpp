@@ -25,11 +25,12 @@ int16_t ADS1115::getOneShot()
 {
   uint16_t cvx = cfg_val | cfg_os;
   writeReg( reg_cfg, cvx );
-  for( int i=0; i<200; ++i ) { // for 8 sps 200 ms is good
+  delay_mcs( 100 );
+  for( int i=0; i<2000; ++i ) { // for 8 sps 200 ms is good
     if(  getDeviceCfg() & cfg_os  ) {
       return getContValue();
     }
-    delay_ms( 1 );
+    delay_mcs( 100 );
   }
   return -1;
 }
@@ -44,17 +45,17 @@ int ADS1115::getOneShotNch( uint8_t s_ch, uint8_t e_ch, int16_t *d )
   uint16_t cfg_old  = cfg_val;
   uint16_t cfg_base = cfg_val & ~cfg_in_mask;
   for( uint8_t ch = s_ch; ch <= e_ch; ++ch ) {
-    uint16_t cvx = cfg_base | ch_bits[ch];
+    uint16_t cvx = cfg_base | ch_bits[ch] | cfg_os;
     writeReg( reg_cfg, cvx );
-    delay_mcs( 500 );
-    writeReg( reg_cfg, cvx | cfg_os);
-    for( int i=0; i<200; ++i ) { // for 8 sps 200 ms is good
+    delay_mcs( 100 );
+    for( int i=0; i<2000; ++i ) { // for 8 sps 200 ms is good
       if(  getDeviceCfg() & cfg_os  ) {
         d[n] = getContValue();
         ++n;
         break;
       }
-      delay_ms( 1 );
+      delay_mcs( 100 );
+      // delay_ms( 1 );
     }
   }
   setCfg( cfg_old );

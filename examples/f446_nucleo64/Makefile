@@ -31,6 +31,7 @@ SUBDIRS = \
   25_spi_max31855_tcouple \
   26_i2c_pca9685 \
   27_i2c_ads1115 \
+  27a_i2c_ads1115_pwm \
   28_spi_ad9833 \
   30_sdcard1 \
   31_sdcard2 \

@@ -20,6 +20,8 @@ SUBDIRS = \
   15_tim_usonic \
   16_step1 \
   17_1w_18b20 \
+  27_i2c_ads1115 \
+  27a_i2c_ads1115_pwm \
   30_sdcard1 \
   31_sdcard2 \
   31a_sdcard2 \

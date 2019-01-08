@@ -1,10 +1,12 @@
 #include <cstring>
 #include <cstdlib>
+#include <cmath>
 #include <algorithm>
 
 #include <oxc_auto.h>
 #include <oxc_floatfun.h>
 #include <oxc_ads1115.h>
+#include <oxc_statdata.h>
 
 using namespace std;
 using namespace SMLRL;
@@ -83,6 +85,7 @@ int cmd_test0( int argc, const char * const * argv )
   UVAR('e') = adc.setCfg( cfg );
   x_cfg = adc.getDeviceCfg();
   os <<  "# cfg= " << HexInt16( x_cfg ) <<  NL;
+  StatData sdat( 1 );
 
   if( is_cont ) {
     adc.startCont();
@@ -103,9 +106,9 @@ int cmd_test0( int argc, const char * const * argv )
       v0 = adc.getOneShot();
     }
 
-    float vf0 = 0.001f * scale_mv * v0 / 32678;
+    double vf0 = 0.001f * scale_mv * v0 / 32678;
+    sdat.add( &vf0 );
     os <<  "[" <<  i <<  "]  " <<  v0 <<  "  vf0= " <<  vf0 <<  NL;
-    os.flush();
 
     delay_ms_until_brk( &tm0, t_step );
   }
@@ -113,6 +116,10 @@ int cmd_test0( int argc, const char * const * argv )
   if( is_cont ) {
     adc.stopCont();
   }
+
+  sdat.calc();
+  os << sdat << NL;
+
   x_cfg = adc.getDeviceCfg();
   os <<  "# cfg= " << HexInt16( x_cfg ) <<  NL;
 
@@ -123,22 +130,25 @@ int cmd_getNch( int argc, const char * const * argv )
 {
   int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
   uint8_t e_ch = (uint8_t)clamp( ( UVAR('c') - 1 ), 0, 3 );
+  unsigned n_ch = e_ch + 1;
   uint32_t t_step = UVAR('t');
   uint16_t x_cfg = adc.getDeviceCfg();
   STDOUT_os;
-  os <<  NL "# getNch: n= " <<  n << " e_ch= " << e_ch << " t= " <<  t_step <<  "  cfg= " <<  HexInt16( x_cfg ) << NL;
+  os <<  NL "# getNch: n= " <<  n << " n_ch= " << n_ch << " t= " <<  t_step <<  "  cfg= " <<  HexInt16( x_cfg ) << NL;
+
+  StatData sdat( n_ch );
 
   adc.setDefault();
 
-  uint16_t cfg;
-  cfg =  ADS1115::cfg_pga_4096 | ADS1115::cfg_rate_860 | ADS1115::cfg_oneShot;
+  uint16_t cfg =  ADS1115::cfg_pga_4096 | ADS1115::cfg_rate_860 | ADS1115::cfg_oneShot;
   UVAR('e') = adc.setCfg( cfg );
   x_cfg = adc.getDeviceCfg();
   int scale_mv = adc.getScale_mV();
   os <<  "# cfg= " << HexInt16( x_cfg ) << " scale_mv = " << scale_mv << NL;
 
   int16_t v[4];
-  float vf[4];
+  double vf[4];
+  double kv = 0.001 * scale_mv / 0x7FFF;
 
   uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
 
@@ -151,7 +161,7 @@ int cmd_getNch( int argc, const char * const * argv )
     int no = adc.getOneShotNch( 0, e_ch, v );
     os <<  tc << ' ';
     for( int j=0; j<no; ++j ) {
-      vf[j] = 0.001f * scale_mv * v[j] / 32678;
+      vf[j] = kv * v[j];
       if( UVAR('d') ) {
         os <<  v[j] <<  ' ' <<  vf[j] <<  ' ';
       } else {
@@ -161,10 +171,14 @@ int cmd_getNch( int argc, const char * const * argv )
     if( UVAR('d') ) {
       os << no;
     }
+    sdat.add( vf );
     os << NL;
 
     delay_ms_until_brk( &tm0, t_step );
   }
+
+  sdat.calc();
+  os << sdat << NL;
 
   return 0;
 }

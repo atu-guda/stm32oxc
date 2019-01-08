@@ -8,7 +8,6 @@
 
 #include <oxc_auto.h>
 #include <oxc_floatfun.h>
-#include <oxc_ads1115.h>
 #include <oxc_statdata.h>
 
 #include <../examples/common/inc/pwm1_ctl.h>
@@ -21,9 +20,14 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
-I2C_HandleTypeDef i2ch;
-DevI2C i2cd( &i2ch, 0 );
-ADS1115 adc( i2cd );
+
+int adc_init_exa_4ch_manual( ADC_Info &adc, uint32_t adc_presc, uint32_t sampl_cycl, uint8_t n_ch );
+
+ADC_Info adc;
+
+int v_adc_ref = BOARD_ADC_COEFF; // in mV, measured before test, adjust as UVAR('v')
+const uint32_t n_ADC_ch_max = 4; // current - in UVAR('c')
+uint16_t ADC_buf[32];
 
 TIM_HandleTypeDef tim_h;
 using tim_ccr_t = decltype( tim_h.Instance->CCR1 );
@@ -61,16 +65,19 @@ int main(void)
   BOARD_PROLOG;
 
   UVAR('t') = 10; // 10 ms
+  UVAR('v') = v_adc_ref;
   UVAR('c') = 2; // n_ADC_ch_max;
   UVAR('n') = 1000000; // number of series (10ms 't' each): limited by steps
+  UVAR('s') = 6; // sampling time index
 
   UVAR('p') = 0;     // PSC,  - max output freq
   UVAR('a') = 1439;  // ARR, to get 100 kHz with PSC = 0
 
-  tim_cfg();
+  #ifdef PWR_CR1_ADCDC1
+  // PWR->CR1 |= PWR_CR1_ADCDC1;
+  #endif
 
-  UVAR('e') = i2c_default_init( i2ch /*, 400000 */ );
-  i2c_dbg = &i2cd;
+  tim_cfg();
 
   BOARD_POST_INIT_BLINK;
 
@@ -86,34 +93,46 @@ int main(void)
 }
 
 
+
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
   STDOUT_os;
   int t_step = UVAR('t');
-  uint8_t n_ch = clamp( UVAR('c'), 1, 4 );
-  uint8_t e_ch = (uint8_t)(n_ch-1);
+  uint8_t n_ch = clamp( UVAR('c'), 1, (int)n_ADC_ch_max );
 
   uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 1000000 ); // number of series
 
   bool skip_pwm = arg2long_d( 2, argc, argv, 0, 1, 1 ); // dont touch PWM
 
-  StatData sdat( n_ch );
-
-  adc.setDefault();
-
-  uint16_t cfg =  ADS1115::cfg_pga_4096 | ADS1115::cfg_rate_860 | ADS1115::cfg_oneShot;
-  UVAR('e') = adc.setCfg( cfg );
-  uint16_t x_cfg = adc.getDeviceCfg();
-  int scale_mv = adc.getScale_mV();
-  os <<  "# cfg= " << HexInt16( x_cfg ) << " scale_mv = " << scale_mv << NL;
-
-  int16_t v[4];
-  double vf[4];
-  double kv = 0.001 * scale_mv / 0x7FFF;
-
   os << "# n = " << n << " n_ch= " << n_ch << " t_step= " << t_step << NL;
   os << "# skip_pwm= " << skip_pwm << NL;
+
+  uint32_t sampl_t_idx = clamp( UVAR('s'), 0, (int)adc_n_sampl_times-1 );
+  uint32_t f_sampl_max = adc.adc_clk / ( sampl_times_cycles[sampl_t_idx] * n_ch );
+
+  uint32_t adc_presc = hint_ADC_presc();
+  UVAR('i') =  adc_init_exa_4ch_manual( adc, adc_presc, sampl_times_codes[sampl_t_idx], n_ch );
+  delay_ms( 1 );
+  if( ! UVAR('i') ) {
+    os << "ADC init failed, errno= " << errno << NL;
+    return 1;
+  }
+  if( UVAR('d') > 1 ) { pr_ADC_state( adc );  }
+
+
+  int div_val = -1;
+  adc.adc_clk = calc_ADC_clk( adc_presc, &div_val );
+  os << "# ADC: n_ch= " << n_ch << " n= " << n << " adc_clk= " << adc.adc_clk << " div_val= " << div_val
+     << " s_idx= " << sampl_t_idx << " sampl= " << sampl_times_cycles[sampl_t_idx]
+     << " f_sampl_max= " << f_sampl_max << " Hz" NL;
+  delay_ms( 10 );
+
+  uint32_t n_ADC_sampl = n_ch;
+
+  StatData sdat( n_ch );
+
+  adc.reset_cnt();
 
   leds.set(   BIT0 | BIT1 | BIT2 ); delay_ms( 100 );
   leds.reset( BIT0 | BIT1 | BIT2 );
@@ -137,24 +156,48 @@ int cmd_test0( int argc, const char * const * argv )
       break;
     }
 
-    int no = adc.getOneShotNch( 0, e_ch, v );
-    if( no != n_ch ) {
-      os << "# Error: read only " << no << " channels" << NL;
+    if( UVAR('l') ) {  leds.set( BIT2 ); }
+    adc.end_dma = 0;
+    if( HAL_ADC_Start_DMA( &adc.hadc, (uint32_t*)(&ADC_buf), n_ADC_sampl ) != HAL_OK )   {
+      os <<  "ADC_Start_DMA error" NL;
+      rc = 1;
       break;
+    }
+
+    for( uint32_t ti=0; adc.end_dma == 0 && ti<5000; ++ti ) { // 11
+      delay_mcs( 2 );
+    }
+
+    HAL_ADC_Stop_DMA( &adc.hadc ); // needed
+    if( UVAR('l') ) {  leds.reset( BIT2 ); }
+    if( adc.end_dma == 0 ) {
+      os <<  "Fail to wait DMA end " NL;
+      rc = 2;
+      break;
+    }
+    if( adc.dma_error != 0 ) {
+      os <<  "Found DMA error " << HexInt( adc.dma_error ) <<  NL;
+      rc = 3;
+      break;
+    } else {
+      adc.n_series = 1;
     }
 
     int dt = tcc - tm00; // ms
     if( do_out ) {
       os <<  FloatFmt( 0.001f * dt, "%-10.4f "  );
     }
+    UVAR('z') = ADC_buf[0];
+    double kcv = 0.001 * UVAR('v') / 4096;
+    double cvs[n_ch];
     for( int j=0; j<n_ch; ++j ) {
-      double cv = kv * v[j];
-      vf[j] = cv;
+      double cv = kcv * ADC_buf[j];
+      cvs[j] = cv;
       if( do_out ) {
         os << ' ' << cv;
       }
     }
-    sdat.add( vf );
+    sdat.add( cvs );
 
     if( do_out ) {
       os << ' ' << pwmdat.get_v_real() <<  NL;
@@ -175,6 +218,31 @@ int cmd_test0( int argc, const char * const * argv )
 
 
 
+void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc )
+{
+  adc.end_dma |= 1;
+  adc.good_SR =  adc.last_SR = adc.hadc.Instance->SR;
+  adc.last_end = 1;
+  adc.last_error = 0;
+  ++adc.n_good;
+}
+
+void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc )
+{
+  adc.end_dma |= 2;
+  adc.bad_SR = adc.last_SR = adc.hadc.Instance->SR;
+  // tim2_deinit();
+  adc.last_end  = 2;
+  adc.last_error = HAL_ADC_GetError( hadc );
+  adc.dma_error = hadc->DMA_Handle->ErrorCode;
+  hadc->DMA_Handle->ErrorCode = 0;
+  ++adc.n_bad;
+}
+
+void DMA2_Stream0_IRQHandler(void)
+{
+  HAL_DMA_IRQHandler( &adc.hdma_adc );
+}
 
 // ------------------------------------------- PWM ---------------------------------------
 
@@ -262,6 +330,7 @@ void handle_keys()
   }
 
 }
+
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
