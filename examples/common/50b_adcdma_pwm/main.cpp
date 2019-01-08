@@ -33,7 +33,7 @@ TIM_HandleTypeDef tim_h;
 using tim_ccr_t = decltype( tim_h.Instance->CCR1 );
 void tim_cfg();
 
-void set_pwm( const PWMData &d );
+PWMData pwmdat( tim_h );
 
 void handle_keys();
 
@@ -72,8 +72,6 @@ int main(void)
 
   UVAR('p') = 0;     // PSC,  - max output freq
   UVAR('a') = 1439;  // ARR, to get 100 kHz with PSC = 0
-
-  pwm_reset_steps( pwmdat );
 
   #ifdef PWR_CR1_ADCDC1
   // PWR->CR1 |= PWR_CR1_ADCDC1;
@@ -142,17 +140,10 @@ int cmd_test0( int argc, const char * const * argv )
 
   adc.reset_cnt();
 
+  leds.set(   BIT0 | BIT1 | BIT2 ); delay_ms( 100 );
   leds.reset( BIT0 | BIT1 | BIT2 );
 
-  float pwm_val0  = pwmdat.steps[0].v; pwmdat.val = pwmdat.val_1 = pwm_val0; pwmdat.hand = 0;
-  float pwm_dt = pwmdat.steps[0].t;
-  float pwm_k = ( pwmdat.steps[0].tp == 1 ) ? ( ( pwmdat.steps[1].v - pwm_val0 ) / pwm_dt ): 0;
-  if( ! skip_pwm ) {
-    pwmdat.val_r = pwmdat.val;
-  }
-  pwmdat.t = 0;
-  pwmdat.t_mul = 1;
-  unsigned pwm_step_n = 0;
+  pwmdat.prep( t_step, skip_pwm );
 
   uint32_t tm0, tm00;
   int rc = 0;
@@ -167,21 +158,8 @@ int cmd_test0( int argc, const char * const * argv )
 
     handle_keys();
 
-    if( ! skip_pwm ) {
-      if( pwmdat.t >= pwm_dt ) { // next step
-        pwmdat.t = 0;
-        ++pwm_step_n;
-        if( pwm_step_n >= pwmdat.n_steps ) {
-          break;
-        }
-        pwm_val0  = pwmdat.steps[pwm_step_n].v; pwmdat.val = pwm_val0;
-        pwm_dt = pwmdat.steps[pwm_step_n].t;
-        pwm_k = ( pwmdat.steps[pwm_step_n].tp == 1 ) ? ( ( pwmdat.steps[pwm_step_n+1].v - pwm_val0 ) / pwm_dt ): 0;
-      }
-
-      pwmdat.val_1 = pwm_val0 + pwm_k * pwmdat.t;
-      pwmdat.val = pwmdat.val_1 + pwmdat.hand;
-      set_pwm( pwmdat );
+    if( ! pwmdat.tick() ) {
+      break;
     }
 
     if( UVAR('l') ) {  leds.set( BIT2 ); }
@@ -228,18 +206,14 @@ int cmd_test0( int argc, const char * const * argv )
     }
 
     if( do_out ) {
-      os << ' ' << pwmdat.val_r <<  NL;
+      os << ' ' << pwmdat.get_v_real() <<  NL;
     }
 
-    pwmdat.t += t_step * pwmdat.t_mul;
     ++adc_n;
     delay_ms_until_brk( &tm0, t_step );
   }
 
-  if( ! skip_pwm ) {
-    pwmdat.val = pwmdat.vmin; pwmdat.hand = 0; pwmdat.t = 0; pwmdat.n_steps = 0;
-    set_pwm( pwmdat );
-  }
+  pwmdat.end_run();
 
   os << NL "# n_real= " << adc_n;
   os << NL "# mean ";
@@ -333,7 +307,7 @@ void tim_cfg()
 
 
   HAL_TIM_PWM_Stop( &tim_h, TIM_CHANNEL_1 );
-  tim_oc_cfg.Pulse = (tim_ccr_t)( pwmdat.vmin * pbase / 100 );
+  tim_oc_cfg.Pulse = (tim_ccr_t)( pwmdat.get_v_def() * pbase / 100 );
   if( HAL_TIM_PWM_ConfigChannel( &tim_h, &tim_oc_cfg, TIM_CHANNEL_1 ) != HAL_OK ) {
     UVAR('e') = 11;
     return;
@@ -344,23 +318,12 @@ void tim_cfg()
 
 int cmd_pwm( int argc, const char * const * argv )
 {
-  pwmdat.val = arg2float_d( 1, argc, argv, 10, 0, 100 );
-  pwmdat.hand = 0;
+  float v = arg2float_d( 1, argc, argv, 10, 0, 100 );
   STDOUT_os;
-  set_pwm( pwmdat );
+  pwmdat.set_v_manual( v );
   tim_print_cfg( TIM_EXA );
-  os << NL "PWM:  in: " << pwmdat.val << "  real: " << pwmdat.val_r << NL;
+  os << NL "PWM:  in: " << pwmdat.get_v() << "  real: " << pwmdat.get_v_real() << NL;
   return 0;
-}
-
-void set_pwm( const PWMData &d )
-{
-  pwmdat.val_r = clamp( d.val, d.vmin, d.vmax );
-  uint32_t scl = tim_h.Instance->ARR;
-  tim_ccr_t nv = (tim_ccr_t)( pwmdat.val_r * scl / 100 );
-  if( nv != tim_h.Instance->CCR1 ) {
-    tim_h.Instance->CCR1 =nv;
-  }
 }
 
 
@@ -381,23 +344,21 @@ void handle_keys()
   }
 
   switch( v.c ) {
-    case 'w': pwmdat.hand += 1;  break;
-    case 'W': pwmdat.hand += 5;  break;
-    case 's': pwmdat.hand -= 1;  break;
-    case 'S': pwmdat.hand -= 5;  break;
-    case 'z': pwmdat.hand  = 0;  break;
-    case '0': pwmdat.hand =    - pwmdat.val_1;  break;
-    case '1': pwmdat.hand = 10 - pwmdat.val_1;  break;
-    case '2': pwmdat.hand = 20 - pwmdat.val_1;  break;
-    case '3': pwmdat.hand = 30 - pwmdat.val_1;  break;
-    case '4': pwmdat.hand = 40 - pwmdat.val_1;  break;
-    case '5': pwmdat.hand = 50 - pwmdat.val_1;  break;
-    case 'a': pwmdat.t    -=  2000;  break;
-    case 'A': pwmdat.t    -= 10000;  break;
-    case 'd': pwmdat.t    +=  2000;  break;
-    case 'D': pwmdat.t    += 10000;  break;
-    case 'g': pwmdat.t_mul = 0; break;
-    case 'G': pwmdat.t_mul = 1; break;
+    case 'w': pwmdat.add_to_hand(  1 );  break;
+    case 'W': pwmdat.add_to_hand(  5 );  break;
+    case 's': pwmdat.add_to_hand( -1 );  break;
+    case 'S': pwmdat.add_to_hand( -5 );  break;
+    case 'z': pwmdat.set_hand( 0 );      break;
+    case '0': pwmdat.adj_hand_to(  0 );  break;
+    case '1': pwmdat.adj_hand_to( 10 );  break;
+    case '2': pwmdat.adj_hand_to( 20 );  break;
+    case '3': pwmdat.adj_hand_to( 30 );  break;
+    case '4': pwmdat.adj_hand_to( 40 );  break;
+    case '5': pwmdat.adj_hand_to( 50 );  break;
+    case 'g': pwmdat.set_t_mul( 0 ); break;
+    case 'G': pwmdat.set_t_mul( 1 ); break;
+    case 'f': pwmdat.set_t_mul( 2 ); break;
+    case 'F': pwmdat.set_t_mul( 5 ); break;
     default: break;
   }
 
