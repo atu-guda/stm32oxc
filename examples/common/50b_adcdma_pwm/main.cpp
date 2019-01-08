@@ -9,6 +9,7 @@
 
 #include <oxc_auto.h>
 #include <oxc_floatfun.h>
+#include <oxc_statdata.h>
 
 #include <../examples/common/inc/pwm1_ctl.h>
 
@@ -22,82 +23,7 @@ BOARD_CONSOLE_DEFINES;
 
 // ---------------- StatData begin ------------------------
 
-struct StatData {
-  struct Stat1 {
-    double min, max, mean, sum, sum2, sd;
-    Stat1() : min( 1e300) , max(-1e300), mean(0), sum(0), sum2(0), sd(0) {};
-  };
-  vector<Stat1> d;
-  unsigned n = 0;
-  explicit StatData( unsigned nch );
-  void add( const double *v );
-  void reset();
-  void calc();
-};
-OutStream& operator<<( OutStream &os, const StatData &sd );
 
-StatData::StatData( unsigned nch )
-{
-  d.assign( nch, Stat1() );
-}
-
-void StatData::reset()
-{
-  d.assign( d.size(), Stat1() );
-  n = 0;
-}
-
-void StatData::add( const double *v )
-{
-  for( unsigned j=0; j<d.size(); ++j ) {
-    double cv = v[j];
-    if( cv < d[j].min ) { d[j].min = cv; }
-    if( cv > d[j].max ) { d[j].max = cv; }
-    d[j].sum  += cv;
-    d[j].sum2 += cv * cv;
-  }
-  ++n;
-}
-
-void StatData::calc()
-{
-  for( auto &t : d ) {
-    t.mean = t.sum / n;
-    t.sd = sqrt(  t.sum2 * n - t.sum * t.sum ) / n;
-  }
-}
-
-OutStream& operator<<( OutStream &os, const StatData &sd )
-{
-  auto n_ch = sd.d.size();
-  using n_t = decltype( n_ch );
-  os << NL "# n_real= " << sd.n << " n_ch = " << n_ch;
-  os << NL "# mean   ";
-  for( n_t j=0; j<n_ch; ++j ) {
-    os << ' ' << sd.d[j].mean;
-  }
-  os << NL "# min    ";
-  for( n_t j=0; j<n_ch; ++j ) {
-    os << ' ' << sd.d[j].min;
-  }
-  os << NL "# max    ";
-  for( n_t j=0; j<n_ch; ++j ) {
-    os << ' ' << sd.d[j].max;
-  }
-  os << NL "# sum    ";
-  for( n_t j=0; j<n_ch; ++j ) {
-    os << ' ' << sd.d[j].sum;
-  }
-  os << NL "# sum2   ";
-  for( n_t j=0; j<n_ch; ++j ) {
-    os << ' ' << sd.d[j].sum2;
-  }
-  os << NL "# sd     ";
-  for( n_t j=0; j<n_ch; ++j ) {
-    os << ' ' << sd.d[j].sd;
-  }
-  return os;
-}
 
 // ---------------- StatData end   ------------------------
 
@@ -412,13 +338,6 @@ void handle_keys()
   }
 
 }
-
-
-// ---------------- StatData begin ------------------------
-
-// ---------------- StatData end   ------------------------
-
-
 
 
 
