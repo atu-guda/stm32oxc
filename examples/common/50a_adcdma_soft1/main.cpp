@@ -8,6 +8,7 @@
 
 #include <oxc_auto.h>
 #include <oxc_floatfun.h>
+#include <oxc_statdata.h>
 
 using namespace std;
 using namespace SMLRL;
@@ -16,8 +17,6 @@ USE_DIE4LED_ERROR_HANDLER;
 BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
-
-
 
 
 int adc_init_exa_4ch_manual( ADC_Info &adc, uint32_t adc_presc, uint32_t sampl_cycl, uint8_t n_ch );
@@ -82,14 +81,6 @@ int cmd_test0( int argc, const char * const * argv )
   uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 1000000 ); // number of series
 
 
-  double adc_min[n_ADC_ch_max], adc_max[n_ADC_ch_max], adc_mean[n_ADC_ch_max],
-         adc_sum[n_ADC_ch_max], adc_sum2[n_ADC_ch_max];
-  for( unsigned j=0; j<n_ADC_ch_max; ++j ) {
-    adc_min[j] = 5.1e37; adc_max[j] = -5.1e37; adc_mean[j] = 0;
-    adc_sum[j] = adc_sum2[j] = 0;
-  }
-  unsigned adc_n = 0;
-
   os << "# n = " << n << " n_ch= " << n_ch << " t_step= " << t_step << NL;
 
   uint32_t sampl_t_idx = clamp( UVAR('s'), 0, (int)adc_n_sampl_times-1 );
@@ -114,8 +105,11 @@ int cmd_test0( int argc, const char * const * argv )
 
   uint32_t n_ADC_sampl = n_ch;
 
+  StatData sdat( n_ch );
+
   adc.reset_cnt();
 
+  leds.set(   BIT0 | BIT1 | BIT2 ); delay_ms( 100 );
   leds.reset( BIT0 | BIT1 | BIT2 );
 
   uint32_t tm0, tm00;
@@ -160,53 +154,28 @@ int cmd_test0( int argc, const char * const * argv )
       os <<  FloatFmt( 0.001f * dt, "%-10.4f "  );
     }
     UVAR('z') = ADC_buf[0];
+    double kcv = 0.001 * UVAR('v') / 4096;
+    double cvs[n_ch];
     for( int j=0; j<n_ch; ++j ) {
-      double cv = ( 0.001f * UVAR('v')  * ADC_buf[j] / 4096 );
-      if( cv < adc_min[j] ) { adc_min[j] = cv; }
-      if( cv > adc_max[j] ) { adc_max[j] = cv; }
-      adc_sum[j]  += cv;
-      adc_sum2[j] += cv * cv;
+      double cv = kcv * ADC_buf[j];
+      cvs[j] = cv;
       if( do_out ) {
         os << ' ' << cv;
       }
     }
+    sdat.add( cvs );
 
     if( do_out ) {
       os  <<  NL;
     }
-    ++adc_n;
+
     delay_ms_until_brk( &tm0, t_step );
   }
 
 
-  os << NL "# n_real= " << adc_n;
-  os << NL "# mean ";
-  for( int j=0; j<n_ch; ++j ) {
-    adc_mean[j] = adc_sum[j] / adc_n;
-    os << ' ' << adc_mean[j];
-  }
-  os << NL "# min  ";
-  for( int j=0; j<n_ch; ++j ) {
-    os << ' ' << adc_min[j];
-  }
-  os << NL "# max  ";
-  for( int j=0; j<n_ch; ++j ) {
-    os << ' ' << adc_max[j];
-  }
-  os << NL "# sum  ";
-  for( int j=0; j<n_ch; ++j ) {
-    os << ' ' << adc_sum[j];
-  }
-  os << NL "# sum2 ";
-  for( int j=0; j<n_ch; ++j ) {
-    os << ' ' << adc_sum2[j];
-  }
-  os << NL "# sd  ";
-  for( int j=0; j<n_ch; ++j ) {
-    os << ' ' << (sqrt(  adc_sum2[j] * adc_n - adc_sum[j] * adc_sum[j] ) / adc_n );
-  }
+  sdat.calc();
+  os << sdat << NL;
 
-  os << NL;
   delay_ms( 10 );
 
   return rc;

@@ -5,7 +5,6 @@
 #include <cerrno>
 
 #include <algorithm>
-#include <vector>
 
 #include <oxc_auto.h>
 #include <oxc_floatfun.h>
@@ -20,12 +19,6 @@ USE_DIE4LED_ERROR_HANDLER;
 BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
-
-// ---------------- StatData begin ------------------------
-
-
-
-// ---------------- StatData end   ------------------------
 
 
 int adc_init_exa_4ch_manual( ADC_Info &adc, uint32_t adc_presc, uint32_t sampl_cycl, uint8_t n_ch );
@@ -105,8 +98,8 @@ int main(void)
 int cmd_test0( int argc, const char * const * argv )
 {
   STDOUT_os;
-  uint8_t n_ch = clamp( UVAR('c'), 1, (int)n_ADC_ch_max );
   int t_step = UVAR('t');
+  uint8_t n_ch = clamp( UVAR('c'), 1, (int)n_ADC_ch_max );
 
   uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 1000000 ); // number of series
 
@@ -122,7 +115,7 @@ int cmd_test0( int argc, const char * const * argv )
   UVAR('i') =  adc_init_exa_4ch_manual( adc, adc_presc, sampl_times_codes[sampl_t_idx], n_ch );
   delay_ms( 1 );
   if( ! UVAR('i') ) {
-    os <<  "ADC init failed, errno= " << errno << NL;
+    os << "ADC init failed, errno= " << errno << NL;
     return 1;
   }
   if( UVAR('d') > 1 ) { pr_ADC_state( adc );  }
@@ -222,7 +215,6 @@ int cmd_test0( int argc, const char * const * argv )
 
   return rc;
 }
-
 
 
 
