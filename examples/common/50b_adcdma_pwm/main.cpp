@@ -5,6 +5,7 @@
 #include <cerrno>
 
 #include <algorithm>
+#include <vector>
 
 #include <oxc_auto.h>
 #include <oxc_floatfun.h>
@@ -19,6 +20,86 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
+// ---------------- StatData begin ------------------------
+
+struct StatData {
+  struct Stat1 {
+    double min, max, mean, sum, sum2, sd;
+    Stat1() : min( 1e300) , max(-1e300), mean(0), sum(0), sum2(0), sd(0) {};
+  };
+  vector<Stat1> d;
+  unsigned n = 0;
+  explicit StatData( unsigned nch );
+  void add( const double *v );
+  void reset();
+  void calc();
+};
+OutStream& operator<<( OutStream &os, const StatData &sd );
+
+StatData::StatData( unsigned nch )
+{
+  d.assign( nch, Stat1() );
+}
+
+void StatData::reset()
+{
+  d.assign( d.size(), Stat1() );
+  n = 0;
+}
+
+void StatData::add( const double *v )
+{
+  for( unsigned j=0; j<d.size(); ++j ) {
+    double cv = v[j];
+    if( cv < d[j].min ) { d[j].min = cv; }
+    if( cv > d[j].max ) { d[j].max = cv; }
+    d[j].sum  += cv;
+    d[j].sum2 += cv * cv;
+  }
+  ++n;
+}
+
+void StatData::calc()
+{
+  for( auto &t : d ) {
+    t.mean = t.sum / n;
+    t.sd = sqrt(  t.sum2 * n - t.sum * t.sum ) / n;
+  }
+}
+
+OutStream& operator<<( OutStream &os, const StatData &sd )
+{
+  auto n_ch = sd.d.size();
+  using n_t = decltype( n_ch );
+  os << NL "# n_real= " << sd.n << " n_ch = " << n_ch;
+  os << NL "# mean   ";
+  for( n_t j=0; j<n_ch; ++j ) {
+    os << ' ' << sd.d[j].mean;
+  }
+  os << NL "# min    ";
+  for( n_t j=0; j<n_ch; ++j ) {
+    os << ' ' << sd.d[j].min;
+  }
+  os << NL "# max    ";
+  for( n_t j=0; j<n_ch; ++j ) {
+    os << ' ' << sd.d[j].max;
+  }
+  os << NL "# sum    ";
+  for( n_t j=0; j<n_ch; ++j ) {
+    os << ' ' << sd.d[j].sum;
+  }
+  os << NL "# sum2   ";
+  for( n_t j=0; j<n_ch; ++j ) {
+    os << ' ' << sd.d[j].sum2;
+  }
+  os << NL "# sd     ";
+  for( n_t j=0; j<n_ch; ++j ) {
+    os << ' ' << sd.d[j].sd;
+  }
+  return os;
+}
+
+// ---------------- StatData end   ------------------------
 
 
 int adc_init_exa_4ch_manual( ADC_Info &adc, uint32_t adc_presc, uint32_t sampl_cycl, uint8_t n_ch );
@@ -105,14 +186,6 @@ int cmd_test0( int argc, const char * const * argv )
 
   bool skip_pwm = arg2long_d( 2, argc, argv, 0, 1, 1 ); // dont touch PWM
 
-  double adc_min[n_ADC_ch_max], adc_max[n_ADC_ch_max], adc_mean[n_ADC_ch_max],
-         adc_sum[n_ADC_ch_max], adc_sum2[n_ADC_ch_max];
-  for( unsigned j=0; j<n_ADC_ch_max; ++j ) {
-    adc_min[j] = 5.1e37; adc_max[j] = -5.1e37; adc_mean[j] = 0;
-    adc_sum[j] = adc_sum2[j] = 0;
-  }
-  unsigned adc_n = 0;
-
   os << "# n = " << n << " n_ch= " << n_ch << " t_step= " << t_step << NL;
   os << "# skip_pwm= " << skip_pwm << NL;
 
@@ -137,6 +210,8 @@ int cmd_test0( int argc, const char * const * argv )
   delay_ms( 10 );
 
   uint32_t n_ADC_sampl = n_ch;
+
+  StatData sdat( n_ch );
 
   adc.reset_cnt();
 
@@ -194,55 +269,29 @@ int cmd_test0( int argc, const char * const * argv )
       os <<  FloatFmt( 0.001f * dt, "%-10.4f "  );
     }
     UVAR('z') = ADC_buf[0];
+    double kcv = 0.001 * UVAR('v') / 4096;
+    double cvs[n_ch];
     for( int j=0; j<n_ch; ++j ) {
-      double cv = ( 0.001f * UVAR('v')  * ADC_buf[j] / 4096 );
-      if( cv < adc_min[j] ) { adc_min[j] = cv; }
-      if( cv > adc_max[j] ) { adc_max[j] = cv; }
-      adc_sum[j]  += cv;
-      adc_sum2[j] += cv * cv;
+      double cv = kcv * ADC_buf[j];
+      cvs[j] = cv;
       if( do_out ) {
         os << ' ' << cv;
       }
     }
+    sdat.add( cvs );
 
     if( do_out ) {
       os << ' ' << pwmdat.get_v_real() <<  NL;
     }
 
-    ++adc_n;
     delay_ms_until_brk( &tm0, t_step );
   }
 
   pwmdat.end_run();
 
-  os << NL "# n_real= " << adc_n;
-  os << NL "# mean ";
-  for( int j=0; j<n_ch; ++j ) {
-    adc_mean[j] = adc_sum[j] / adc_n;
-    os << ' ' << adc_mean[j];
-  }
-  os << NL "# min  ";
-  for( int j=0; j<n_ch; ++j ) {
-    os << ' ' << adc_min[j];
-  }
-  os << NL "# max  ";
-  for( int j=0; j<n_ch; ++j ) {
-    os << ' ' << adc_max[j];
-  }
-  os << NL "# sum  ";
-  for( int j=0; j<n_ch; ++j ) {
-    os << ' ' << adc_sum[j];
-  }
-  os << NL "# sum2 ";
-  for( int j=0; j<n_ch; ++j ) {
-    os << ' ' << adc_sum2[j];
-  }
-  os << NL "# sd  ";
-  for( int j=0; j<n_ch; ++j ) {
-    os << ' ' << (sqrt(  adc_sum2[j] * adc_n - adc_sum[j] * adc_sum[j] ) / adc_n );
-  }
+  sdat.calc();
+  os << sdat << NL;
 
-  os << NL;
   delay_ms( 10 );
 
   return rc;
@@ -363,6 +412,11 @@ void handle_keys()
   }
 
 }
+
+
+// ---------------- StatData begin ------------------------
+
+// ---------------- StatData end   ------------------------
 
 
 
