@@ -145,13 +145,13 @@ int cmd_test0( int argc, const char * const * argv )
 
     int dt = tcc - tm00; // ms
     if( do_out ) {
-      os <<  FloatFmt( 0.001f * dt, "%-10.4f "  );
+      os <<  FloatFmt( 0.001 * dt, "%-10.4f "  );
     }
     for( int j=0; j<n_ch; ++j ) {
       double cv = kv * v[j];
       vf[j] = cv;
       if( do_out ) {
-        os << ' ' << cv;
+        os << FloatFmt( cv, " %#12.6g" );
       }
     }
     sdat.add( vf );

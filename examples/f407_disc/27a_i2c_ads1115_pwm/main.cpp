@@ -1,1 +1,1 @@
-../../common/50b_adcdma_pwm/main.cpp
+../../common/27a_i2c_ads1115_pwm/main.cpp
