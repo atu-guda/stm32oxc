@@ -6,16 +6,17 @@
 #include <oxc_miscfun.h>
 #include <oxc_outstream.h>
 
-const unsigned buf_len_float = 64;
+const unsigned buf_len_float = 72;
 const unsigned buf_len_fmt   = 32;
 const char* const def_float_fmt_init = "%#g";
 
-//* helper classes for stream output for float
+//* helper classes for stream output for floating point:
+// used double due to auto promotion float-double in ...
 class FloatFmt : public OutStreamFmt {
   public:
-   explicit FloatFmt( float a, const char *fmt = nullptr ) : v(a), f( fmt ) {};
-   operator float() const { return v; }
-   const float v;
+   explicit FloatFmt( double a, const char *fmt = nullptr ) : v( a ), f( fmt ) {};
+   operator double() const { return v; }
+   const double v;
    const char *f;
    static const char* get_def_fmt() { return def_fmt; };
    static void set_def_fmt( const char *fmt );
@@ -24,7 +25,6 @@ class FloatFmt : public OutStreamFmt {
    static char def_fmt[buf_len_fmt];
 };
 
-OutStream& operator<<( OutStream &os, float rhs );
 OutStream& operator<<( OutStream &os, double rhs );
 
 float str2float_d( const char *s, float def, float vmin = -3.402e+38F, float vmax = 3.402e+38F );

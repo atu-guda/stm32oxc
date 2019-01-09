@@ -25,15 +25,8 @@ void FloatFmt::out( OutStream &os ) const
   os << buf;
 }
 
-OutStream& operator<<( OutStream &os, float rhs ) {
-  FloatFmt( rhs ).out( os );
-  return os;
-}
-
 OutStream& operator<<( OutStream &os, double rhs ) {
-  char buf[2*buf_len_float];
-  snprintf( buf, sizeof(buf), "%#g", rhs );
-  os << buf;
+  FloatFmt( rhs ).out( os );
   return os;
 }
 
