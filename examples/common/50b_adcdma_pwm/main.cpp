@@ -33,6 +33,8 @@ TIM_HandleTypeDef tim_h;
 using tim_ccr_t = decltype( tim_h.Instance->CCR1 );
 void tim_cfg();
 
+float v_coeffs[n_ADC_ch_max] = { 1.0f, 1.0f, 1.0f, 1.0f };
+
 PWMData pwmdat( tim_h );
 
 void handle_keys();
@@ -46,6 +48,8 @@ int cmd_tinit( int argc, const char * const * argv );
 CmdInfo CMDINFO_TINIT { "tinit", 'I', cmd_tinit, " - reinit timer"  };
 int cmd_pwm( int argc, const char * const * argv );
 CmdInfo CMDINFO_PWM { "pwm", 'W', cmd_pwm, " [val] - set PWM value"  };
+int cmd_set_coeffs( int argc, const char * const * argv );
+CmdInfo CMDINFO_SET_COEFFS { "set_coeffs", 'K', cmd_set_coeffs, " k0 k1 k2 k3 - set ADC coeffs"  };
 
 
 const CmdInfo* global_cmds[] = {
@@ -55,6 +59,7 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_TINIT,
   &CMDINFO_PWM,
   CMDINFOS_PWM,
+  &CMDINFO_SET_COEFFS,
   nullptr
 };
 
@@ -104,8 +109,7 @@ int cmd_test0( int argc, const char * const * argv )
 
   bool skip_pwm = arg2long_d( 2, argc, argv, 0, 1, 1 ); // dont touch PWM
 
-  os << "# n = " << n << " n_ch= " << n_ch << " t_step= " << t_step << NL;
-  os << "# skip_pwm= " << skip_pwm << NL;
+  StatData sdat( n_ch );
 
   uint32_t sampl_t_idx = clamp( UVAR('s'), 0, (int)adc_n_sampl_times-1 );
   uint32_t f_sampl_max = adc.adc_clk / ( sampl_times_cycles[sampl_t_idx] * n_ch );
@@ -129,9 +133,17 @@ int cmd_test0( int argc, const char * const * argv )
 
   uint32_t n_ADC_sampl = n_ch;
 
-  StatData sdat( n_ch );
+  double vf[n_ADC_ch_max];
+  double kv = 0.001 * UVAR('v') / 4096;
 
   adc.reset_cnt();
+
+  os << "# n = " << n << " n_ch= " << n_ch << " t_step= " << t_step << NL;
+  os << "# skip_pwm= " << skip_pwm << NL << "# Coeffs: ";
+  for( decltype(n_ch) j =0; j<n_ch; ++j ) {
+    os << ' ' << v_coeffs[j];
+  }
+  os << NL;
 
   leds.set(   BIT0 | BIT1 | BIT2 ); delay_ms( 100 );
   leds.reset( BIT0 | BIT1 | BIT2 );
@@ -186,17 +198,14 @@ int cmd_test0( int argc, const char * const * argv )
     if( do_out ) {
       os <<  FloatFmt( 0.001 * dt, "%-10.4f "  );
     }
-    UVAR('z') = ADC_buf[0];
-    double kcv = 0.001 * UVAR('v') / 4096;
-    double cvs[n_ch];
     for( int j=0; j<n_ch; ++j ) {
-      double cv = kcv * ADC_buf[j];
-      cvs[j] = cv;
+      double cv = kv * ADC_buf[j] * v_coeffs[j];
+      vf[j] = cv;
       if( do_out ) {
-        os << ' ' << FloatFmt( cv, "%#12.6g" );
+        os << FloatFmt( cv, " %#12.6g" );
       }
     }
-    sdat.add( cvs );
+    sdat.add( vf );
 
     if( do_out ) {
       os << ' ' << pwmdat.get_v_real() <<  NL;
@@ -299,6 +308,20 @@ int cmd_tinit( int argc, const char * const * argv )
   tim_cfg();
   tim_print_cfg( TIM_EXA );
 
+  return 0;
+}
+
+int cmd_set_coeffs( int argc, const char * const * argv )
+{
+  if( argc > 1 ) {
+    v_coeffs[0] = arg2float_d( 1, argc, argv, 1, -1e10, 1e10 );
+    v_coeffs[1] = arg2float_d( 2, argc, argv, 1, -1e10, 1e10 );
+    v_coeffs[2] = arg2float_d( 3, argc, argv, 1, -1e10, 1e10 );
+    v_coeffs[3] = arg2float_d( 4, argc, argv, 1, -1e10, 1e10 );
+  }
+  STDOUT_os;
+  os << "# Coefficients: "
+     << v_coeffs[0] << ' ' << v_coeffs[1] << ' ' << v_coeffs[2] << ' ' << v_coeffs[3] << NL;
   return 0;
 }
 

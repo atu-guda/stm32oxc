@@ -8,8 +8,9 @@
 
 #include <oxc_auto.h>
 #include <oxc_floatfun.h>
-#include <oxc_ads1115.h>
 #include <oxc_statdata.h>
+
+#include <oxc_ads1115.h>
 
 #include <../examples/common/inc/pwm1_ctl.h>
 
@@ -24,10 +25,13 @@ BOARD_CONSOLE_DEFINES;
 I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );
 ADS1115 adc( i2cd );
+const uint32_t n_ADC_ch_max = 4; // current - in UVAR('c')
 
 TIM_HandleTypeDef tim_h;
 using tim_ccr_t = decltype( tim_h.Instance->CCR1 );
 void tim_cfg();
+
+float v_coeffs[n_ADC_ch_max] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 PWMData pwmdat( tim_h );
 
@@ -42,6 +46,8 @@ int cmd_tinit( int argc, const char * const * argv );
 CmdInfo CMDINFO_TINIT { "tinit", 'I', cmd_tinit, " - reinit timer"  };
 int cmd_pwm( int argc, const char * const * argv );
 CmdInfo CMDINFO_PWM { "pwm", 'W', cmd_pwm, " [val] - set PWM value"  };
+int cmd_set_coeffs( int argc, const char * const * argv );
+CmdInfo CMDINFO_SET_COEFFS { "set_coeffs", 'K', cmd_set_coeffs, " k0 k1 k2 k3 - set ADC coeffs"  };
 
 
 const CmdInfo* global_cmds[] = {
@@ -51,6 +57,7 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_TINIT,
   &CMDINFO_PWM,
   CMDINFOS_PWM,
+  &CMDINFO_SET_COEFFS,
   nullptr
 };
 
@@ -91,7 +98,7 @@ int cmd_test0( int argc, const char * const * argv )
 {
   STDOUT_os;
   int t_step = UVAR('t');
-  uint8_t n_ch = clamp( UVAR('c'), 1, 4 );
+  uint8_t n_ch = clamp( UVAR('c'), 1, (int)n_ADC_ch_max );
   uint8_t e_ch = (uint8_t)(n_ch-1);
 
   uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 1000000 ); // number of series
@@ -108,12 +115,16 @@ int cmd_test0( int argc, const char * const * argv )
   int scale_mv = adc.getScale_mV();
   os <<  "# cfg= " << HexInt16( x_cfg ) << " scale_mv = " << scale_mv << NL;
 
-  int16_t v[4];
-  double vf[4];
+  int16_t ADC_buf[n_ADC_ch_max];
+  double  vf[n_ADC_ch_max];
   double kv = 0.001 * scale_mv / 0x7FFF;
 
   os << "# n = " << n << " n_ch= " << n_ch << " t_step= " << t_step << NL;
-  os << "# skip_pwm= " << skip_pwm << NL;
+  os << "# skip_pwm= " << skip_pwm << NL << "# Coeffs: ";
+  for( decltype(n_ch) j =0; j<n_ch; ++j ) {
+    os << ' ' << v_coeffs[j];
+  }
+  os << NL;
 
   leds.set(   BIT0 | BIT1 | BIT2 ); delay_ms( 100 );
   leds.reset( BIT0 | BIT1 | BIT2 );
@@ -137,7 +148,9 @@ int cmd_test0( int argc, const char * const * argv )
       break;
     }
 
-    int no = adc.getOneShotNch( 0, e_ch, v );
+    if( UVAR('l') ) {  leds.set( BIT2 ); }
+    int no = adc.getOneShotNch( 0, e_ch, ADC_buf );
+    if( UVAR('l') ) {  leds.reset( BIT2 ); }
     if( no != n_ch ) {
       os << "# Error: read only " << no << " channels" << NL;
       break;
@@ -148,7 +161,7 @@ int cmd_test0( int argc, const char * const * argv )
       os <<  FloatFmt( 0.001 * dt, "%-10.4f "  );
     }
     for( int j=0; j<n_ch; ++j ) {
-      double cv = kv * v[j];
+      double cv = kv * ADC_buf[j] * v_coeffs[j];
       vf[j] = cv;
       if( do_out ) {
         os << FloatFmt( cv, " %#12.6g" );
@@ -232,6 +245,20 @@ int cmd_tinit( int argc, const char * const * argv )
   tim_cfg();
   tim_print_cfg( TIM_EXA );
 
+  return 0;
+}
+
+int cmd_set_coeffs( int argc, const char * const * argv )
+{
+  if( argc > 1 ) {
+    v_coeffs[0] = arg2float_d( 1, argc, argv, 1, -1e10, 1e10 );
+    v_coeffs[1] = arg2float_d( 2, argc, argv, 1, -1e10, 1e10 );
+    v_coeffs[2] = arg2float_d( 3, argc, argv, 1, -1e10, 1e10 );
+    v_coeffs[3] = arg2float_d( 4, argc, argv, 1, -1e10, 1e10 );
+  }
+  STDOUT_os;
+  os << "# Coefficients: "
+     << v_coeffs[0] << ' ' << v_coeffs[1] << ' ' << v_coeffs[2] << ' ' << v_coeffs[3] << NL;
   return 0;
 }
 

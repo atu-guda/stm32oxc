@@ -28,15 +28,21 @@ const uint32_t n_ADC_ch_max = 4; // current - in UVAR('c')
 uint16_t ADC_buf[32];
 
 
+float v_coeffs[n_ADC_ch_max] = { 1.0f, 1.0f, 1.0f, 1.0f };
+
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " [n] - measure ADC"  };
+int cmd_set_coeffs( int argc, const char * const * argv );
+CmdInfo CMDINFO_SET_COEFFS { "set_coeffs", 'K', cmd_set_coeffs, " k0 k1 k2 k3 - set ADC coeffs"  };
+
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
 
   &CMDINFO_TEST0,
+  &CMDINFO_SET_COEFFS,
   nullptr
 };
 
@@ -70,7 +76,6 @@ int main(void)
 }
 
 
-
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
@@ -81,7 +86,7 @@ int cmd_test0( int argc, const char * const * argv )
   uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 1000000 ); // number of series
 
 
-  os << "# n = " << n << " n_ch= " << n_ch << " t_step= " << t_step << NL;
+  StatData sdat( n_ch );
 
   uint32_t sampl_t_idx = clamp( UVAR('s'), 0, (int)adc_n_sampl_times-1 );
   uint32_t f_sampl_max = adc.adc_clk / ( sampl_times_cycles[sampl_t_idx] * n_ch );
@@ -105,9 +110,16 @@ int cmd_test0( int argc, const char * const * argv )
 
   uint32_t n_ADC_sampl = n_ch;
 
-  StatData sdat( n_ch );
+  double vf[n_ADC_ch_max];
+  double kv = 0.001 * UVAR('v') / 4096;
 
   adc.reset_cnt();
+
+  os << "# n = " << n << " n_ch= " << n_ch << " t_step= " << t_step << NL;
+  for( decltype(n_ch) j =0; j<n_ch; ++j ) {
+    os << ' ' << v_coeffs[j];
+  }
+  os << NL;
 
   leds.set(   BIT0 | BIT1 | BIT2 ); delay_ms( 100 );
   leds.reset( BIT0 | BIT1 | BIT2 );
@@ -151,19 +163,16 @@ int cmd_test0( int argc, const char * const * argv )
 
     int dt = tcc - tm00; // ms
     if( do_out ) {
-      os <<  FloatFmt( 0.001f * dt, "%-10.4f "  );
+      os <<  FloatFmt( 0.001 * dt, "%-10.4f "  );
     }
-    UVAR('z') = ADC_buf[0];
-    double kcv = 0.001 * UVAR('v') / 4096;
-    double cvs[n_ch];
     for( int j=0; j<n_ch; ++j ) {
-      double cv = kcv * ADC_buf[j];
-      cvs[j] = cv;
+      double cv = kv * ADC_buf[j] * v_coeffs[j];
+      vf[j] = cv;
       if( do_out ) {
-        os << ' ' << cv;
+        os << FloatFmt( cv, " %#12.6g" );
       }
     }
-    sdat.add( cvs );
+    sdat.add( vf );
 
     if( do_out ) {
       os  <<  NL;
@@ -207,6 +216,21 @@ void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc )
 void DMA2_Stream0_IRQHandler(void)
 {
   HAL_DMA_IRQHandler( &adc.hdma_adc );
+}
+
+
+int cmd_set_coeffs( int argc, const char * const * argv )
+{
+  if( argc > 1 ) {
+    v_coeffs[0] = arg2float_d( 1, argc, argv, 1, -1e10, 1e10 );
+    v_coeffs[1] = arg2float_d( 2, argc, argv, 1, -1e10, 1e10 );
+    v_coeffs[2] = arg2float_d( 3, argc, argv, 1, -1e10, 1e10 );
+    v_coeffs[3] = arg2float_d( 4, argc, argv, 1, -1e10, 1e10 );
+  }
+  STDOUT_os;
+  os << "# Coefficients: "
+     << v_coeffs[0] << ' ' << v_coeffs[1] << ' ' << v_coeffs[2] << ' ' << v_coeffs[3] << NL;
+  return 0;
 }
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
