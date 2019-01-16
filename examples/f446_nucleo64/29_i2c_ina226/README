@@ -1,0 +1,11 @@
+Use INA226 I/V measuring device ViA I2C
+
+SCL = B8 ? 4.7k pullUp
+Q
+SDA = B9 ? 4.7k pullUp
+
+
+Used USART2 with ST_Link VCP
+A2  = USART2_TX
+A3  = USART2_RX
+

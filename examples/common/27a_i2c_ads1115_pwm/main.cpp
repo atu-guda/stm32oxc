@@ -135,7 +135,8 @@ int cmd_test0( int argc, const char * const * argv )
   int rc = 0;
   bool do_out = ! UVAR('b');
 
-  for( unsigned i=0; i<n && !break_flag ; ++i ) {
+  break_flag = 0;
+  for( unsigned i=0; i<n && !break_flag; ++i ) {
 
     uint32_t tcc = HAL_GetTick();
     if( i == 0 ) {

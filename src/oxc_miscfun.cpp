@@ -38,7 +38,7 @@ char* word2hex( uint32_t d,  char *s )
       s[i] = hex_digits[ d & 0x0F ];
       d >>= 4;
     }
-    s[8] = 0;
+    s[8] = '\0';
   }
   return s;
 }
@@ -50,11 +50,11 @@ char* short2hex( uint16_t d,  char *s )
   }
 
   int i;
-  for( i=4; i>=0; --i ) {
+  for( i=3; i>=0; --i ) {
     s[i] = hex_digits[ d & 0x0F ];
     d >>= 4;
   }
-  s[4] = 0;
+  s[4] = '\0';
   return s;
 }
 
