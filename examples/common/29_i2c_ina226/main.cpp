@@ -94,7 +94,7 @@ bool isGoodINA226( INA226 &ina, bool print )
 int cmd_test0( int argc, const char * const * argv )
 {
   STDOUT_os;
-  int t_step = UVAR('t');
+  uint32_t t_step = UVAR('t');
   uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 1000000 ); // number of series
 
   ina226.setCfg( INA226::cfg_rst );
@@ -109,6 +109,7 @@ int cmd_test0( int argc, const char * const * argv )
   UVAR('e') = ina226.setCfg( cfg );
   x_cfg = ina226.getCfg();
   os <<  "# cfg= " << HexInt16( x_cfg ) <<  NL;
+
   StatData sdat( 2 );
 
   leds.set(   BIT0 | BIT1 | BIT2 ); delay_ms( 100 );
@@ -119,7 +120,7 @@ int cmd_test0( int argc, const char * const * argv )
   bool do_out = ! UVAR('b');
 
   break_flag = 0;
-  for( unsigned i=0; i<n && !break_flag; ++i ) {
+  for( decltype(n) i=0; i<n && !break_flag; ++i ) {
 
     uint32_t tcc = HAL_GetTick();
     if( i == 0 ) {
@@ -143,7 +144,7 @@ int cmd_test0( int argc, const char * const * argv )
     sdat.add( v );
 
     if( do_out ) {
-      os  << ' '  <<  FloatFmt( v[0], "%#12.6g" ) <<  ' ' <<  FloatFmt( v[1], "%#12.6g" )<<  NL;
+      os  << ' '  <<  FloatFmt( v[0], "%#12.6g" ) <<  ' ' <<  FloatFmt( v[1], "%#12.6g" ) << NL;
     }
 
     delay_ms_until_brk( &tm0, t_step );
@@ -158,9 +159,11 @@ int cmd_test0( int argc, const char * const * argv )
 int cmd_getVIP( int argc, const char * const * argv )
 {
   STDOUT_os;
-  int t_step = UVAR('t');
+  uint32_t t_step = UVAR('t');
   uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 1000000 ); // number of series
   unsigned n_ch = 3;
+
+  StatData sdat( n_ch );
 
   ina226.setCfg( INA226::cfg_rst );
   uint16_t x_cfg = ina226.getCfg();
@@ -176,7 +179,6 @@ int cmd_getVIP( int argc, const char * const * argv )
   os <<  "# cfg= " << HexInt16( x_cfg ) <<  NL;
   ina226.setCalibr( (uint16_t)( 0.00512 / ( calibr_I_lsb * calibr_R ) ) ); // 1 mA 0.1xxx Ohm
 
-  StatData sdat( n_ch );
 
   leds.set(   BIT0 | BIT1 | BIT2 ); delay_ms( 100 );
   leds.reset( BIT0 | BIT1 | BIT2 );
@@ -186,12 +188,13 @@ int cmd_getVIP( int argc, const char * const * argv )
   bool do_out = ! UVAR('b');
 
   break_flag = 0;
-  for( unsigned i=0; i<n && !break_flag; ++i ) {
+  for( decltype(n) i=0; i<n && !break_flag; ++i ) {
 
     uint32_t tcc = HAL_GetTick();
     if( i == 0 ) {
       tm0 = tcc; tm00 = tm0;
     }
+    float tc = 0.001f * ( tcc - tm00 );
 
     if( UVAR('l') ) {  leds.set( BIT2 ); }
     // int16_t v_sh_raw  = ina226.getVsh();
@@ -206,9 +209,8 @@ int cmd_getVIP( int argc, const char * const * argv )
     v[1] = I_raw * calibr_I_lsb;
     v[2] = P_raw;
 
-    int dt = tcc - tm00; // ms
     if( do_out ) {
-      os <<  FloatFmt( 0.001 * dt, "%-10.4f "  );
+      os <<  FloatFmt( tc, "%-10.4f "  );
     }
 
     sdat.add( v );
@@ -243,13 +245,17 @@ int cmd_setcalibr( int argc, const char * const * argv )
 
 int cmd_setaddr( int argc, const char * const * argv )
 {
+  STDOUT_os;
   if( argc < 2 ) {
-    STDOUT_os;
     os <<  "Need addr [1-127]" NL;
     return 1;
   }
+  if( !i2c_client_def ) {
+    os << "# Error: I2C default client is not set!" << NL;
+    return 2;
+  }
   uint8_t addr  = (uint8_t)arg2long_d( 1, argc, argv, 0x0, 0,   127 );
-  ina226.setAddr( addr );
+  i2c_client_def->setAddr( addr );
   return 0;
 }
 
