@@ -43,8 +43,7 @@ const CmdInfo* global_cmds[] = {
 I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );
 INA226 ina226( i2cd );
-double calibr_I_lsb = 0.001;  // 1 mA = 1 bit
-double calibr_R     = 0.1175; // shunt Ohm
+I2CClient *i2c_client_def = &ina226;
 
 bool isGoodINA226( INA226 &ina, bool print = true );
 
@@ -161,13 +160,13 @@ int cmd_getVIP( int argc, const char * const * argv )
   STDOUT_os;
   uint32_t t_step = UVAR('t');
   uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 1000000 ); // number of series
-  unsigned n_ch = 3;
+  unsigned n_ch = 4;
 
   StatData sdat( n_ch );
 
   ina226.setCfg( INA226::cfg_rst );
   uint16_t x_cfg = ina226.getCfg();
-  os <<  NL "# Test0: n= " <<  n <<  " t= " <<  t_step <<  "  cfg= " <<  HexInt16( x_cfg ) << NL;
+  os <<  NL "# getVIP: n= " <<  n <<  " t= " <<  t_step <<  "  cfg= " <<  HexInt16( x_cfg ) << NL;
 
   if( ! isGoodINA226( ina226, true ) ) {
     return 3;
@@ -176,8 +175,9 @@ int cmd_getVIP( int argc, const char * const * argv )
   uint16_t cfg = INA226::cfg_default;
   UVAR('e') = ina226.setCfg( cfg );
   x_cfg = ina226.getCfg();
-  os <<  "# cfg= " << HexInt16( x_cfg ) <<  NL;
-  ina226.setCalibr( (uint16_t)( 0.00512 / ( calibr_I_lsb * calibr_R ) ) ); // 1 mA 0.1xxx Ohm
+  ina226.calibrate();
+  os <<  "# cfg= " << HexInt16( x_cfg ) <<  " I_lsb_mA= " << ina226.get_I_lsb_mA()
+     << " R_sh_uOhm= " << ina226.get_R_sh_uOhm() << NL;
 
 
   leds.set(   BIT0 | BIT1 | BIT2 ); delay_ms( 100 );
@@ -194,20 +194,17 @@ int cmd_getVIP( int argc, const char * const * argv )
     if( i == 0 ) {
       tm0 = tcc; tm00 = tm0;
     }
+
     float tc = 0.001f * ( tcc - tm00 );
+    double v[n_ch];
 
     if( UVAR('l') ) {  leds.set( BIT2 ); }
-    // int16_t v_sh_raw  = ina226.getVsh();
-    int16_t v_bus_raw = ina226.getVbus();
-    int16_t I_raw     = ina226.getI();
-    int16_t P_raw     = ina226.getP();
-    if( UVAR('l') ) {  leds.reset( BIT2 ); }
 
-    double v[n_ch];
-    // v[0] = INA226::lsb_V_sh_nv  * v_sh_raw  * 1e-9;
-    v[0] = INA226::lsb_V_bus_nv * v_bus_raw * 1e-9;
-    v[1] = I_raw * calibr_I_lsb;
-    v[2] = P_raw;
+    v[0] = ina226.getVbus_nV() * 1e-9;
+    v[1] = ina226.getI_mA_reg() * 1e-3;
+    v[2] = ina226.getI_uA() * 1e-6;
+    v[3] = ina226.getP();
+    if( UVAR('l') ) {  leds.reset( BIT2 ); }
 
     if( do_out ) {
       os <<  FloatFmt( tc, "%-10.4f "  );
@@ -217,7 +214,7 @@ int cmd_getVIP( int argc, const char * const * argv )
 
     if( do_out ) {
       for( auto vc : v ) {
-        os  << ' '  <<  FloatFmt( vc, "%#12.6g" );
+        os  << ' '  <<  FloatFmt( vc, "%#12.7g" );
       }
     }
     os << NL;
@@ -233,10 +230,11 @@ int cmd_getVIP( int argc, const char * const * argv )
 
 int cmd_setcalibr( int argc, const char * const * argv )
 {
-  calibr_I_lsb = arg2float_d( 1, argc, argv, calibr_I_lsb, 1e-20, 1e10 );
-  calibr_R     = arg2float_d( 2, argc, argv,     calibr_R, 1e-20, 1e10 );
-  double V_sh_max =  INA226::lsb_V_sh_nv * 1e-9 * 0x7FFF;
+  float calibr_I_lsb = arg2float_d( 1, argc, argv, ina226.get_I_lsb_mA()  * 1e-3, 1e-20, 1e10 );
+  float calibr_R     = arg2float_d( 2, argc, argv, ina226.get_R_sh_uOhm() * 1e-6, 1e-20, 1e10 );
+  float V_sh_max =  INA226::lsb_V_sh_nv * 1e-9 * 0x7FFF;
   STDOUT_os;
+  ina226.set_calibr_val( (uint32_t)(calibr_R * 1e6), (uint32_t)(calibr_I_lsb * 1e3) );
   os << "# calibr_I_lsb= " << calibr_I_lsb << " calibr_R= " << calibr_R
      << " V_sh_max=  " << V_sh_max
      << " I_max= " << ( V_sh_max / calibr_R ) << " / " << ( calibr_I_lsb * 0x7FFF ) << NL;
