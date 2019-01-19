@@ -17,8 +17,6 @@ const char* common_help_string = "App to test hd4480 LCD screen" NL;
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
-int cmd_setaddr( int argc, const char * const * argv );
-CmdInfo CMDINFO_SETADDR { "setaddr", 0, cmd_setaddr, " addr - set device addr (see 'C')"  };
 int cmd_gotoxy( int argc, const char * const * argv );
 CmdInfo CMDINFO_GOTOXY{ "gotoxy", 'G', cmd_gotoxy, " x y - move pos to (x, y)"  };
 int cmd_xychar( int argc, const char * const * argv );
@@ -33,7 +31,6 @@ const CmdInfo* global_cmds[] = {
   DEBUG_I2C_CMDS,
 
   &CMDINFO_TEST0,
-  &CMDINFO_SETADDR,
   &CMDINFO_XYCHAR,
   &CMDINFO_GOTOXY,
   &CMDINFO_PUTS,
@@ -56,6 +53,7 @@ int main(void)
 
   UVAR('e') = i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
+  i2c_client_def = &lcdt;
 
   BOARD_POST_INIT_BLINK;
 
@@ -105,16 +103,6 @@ int cmd_test0( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_setaddr( int argc, const char * const * argv )
-{
-  if( argc < 2 ) {
-    pr( "Need addr [1-127]" NL );
-    return 1;
-  }
-  uint8_t addr  = (uint8_t)arg2long_d( 1, argc, argv, 0x0, 0,   127 );
-  lcdt.setAddr( addr );
-  return 0;
-}
 
 int cmd_xychar( int argc, const char * const * argv )
 {

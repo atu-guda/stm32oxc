@@ -23,8 +23,6 @@ int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test one channel"  };
 int cmd_getNch( int argc, const char * const * argv );
 CmdInfo CMDINFO_GETNCH { "getNch", 'G', cmd_getNch, " - test n ('c') channel"  };
-int cmd_setaddr( int argc, const char * const * argv );
-CmdInfo CMDINFO_SETADDR { "setaddr", 0, cmd_setaddr, " addr - set device addr (see 'C')"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -32,7 +30,6 @@ const CmdInfo* global_cmds[] = {
 
   &CMDINFO_TEST0,
   &CMDINFO_GETNCH,
-  &CMDINFO_SETADDR,
   nullptr
 };
 
@@ -40,7 +37,6 @@ const CmdInfo* global_cmds[] = {
 I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );
 ADS1115 adc( i2cd );
-I2CClient *i2c_client_def = &adc;
 
 
 int main(void)
@@ -53,6 +49,7 @@ int main(void)
 
   UVAR('e') = i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
+  i2c_client_def = &adc;
 
   BOARD_POST_INIT_BLINK;
 
@@ -214,22 +211,6 @@ int cmd_getNch( int argc, const char * const * argv )
   os << sdat << NL;
 
   return rc;
-}
-
-int cmd_setaddr( int argc, const char * const * argv )
-{
-  STDOUT_os;
-  if( argc < 2 ) {
-    os <<  "Need addr [1-127]" NL;
-    return 1;
-  }
-  if( !i2c_client_def ) {
-    os << "# Error: I2C default client is not set!" << NL;
-    return 2;
-  }
-  uint8_t addr  = (uint8_t)arg2long_d( 1, argc, argv, 0x0, 0,   127 );
-  i2c_client_def->setAddr( addr );
-  return 0;
 }
 
 

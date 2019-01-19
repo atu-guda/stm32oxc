@@ -7,6 +7,7 @@
 
 // extern I2C_HandleTypeDef *i2ch_dbg;
 extern DevI2C *i2c_dbg;
+extern I2CClient *i2c_client_def;
 
 
 int cmd_i2c_scan( int argc, const char * const * argv );
@@ -26,6 +27,9 @@ int cmd_i2c_recv_r1( int argc, const char * const * argv );
 extern CmdInfo CMDINFO_I2C_RECV_R1;
 int cmd_i2c_recv_r2( int argc, const char * const * argv );
 extern CmdInfo CMDINFO_I2C_RECV_R2;
+int cmd_i2c_setaddr( int argc, const char * const * argv );
+extern CmdInfo CMDINFO_I2C_SETADDR;
+
 #define DEBUG_I2C_CMDS \
   &CMDINFO_I2C_SCAN, \
   &CMDINFO_I2C_SEND, \
@@ -33,7 +37,8 @@ extern CmdInfo CMDINFO_I2C_RECV_R2;
   &CMDINFO_I2C_SEND_R2, \
   &CMDINFO_I2C_RECV, \
   &CMDINFO_I2C_RECV_R1, \
-  &CMDINFO_I2C_RECV_R2
+  &CMDINFO_I2C_RECV_R2, \
+  &CMDINFO_I2C_SETADDR
 
 // void i2c_print_status( I2C_HandleTypeDef *i2ch );
 

@@ -25,8 +25,6 @@ int cmd_getVIP( int argc, const char * const * argv );
 CmdInfo CMDINFO_GETVIP { "getVIP", 'G', cmd_getVIP, " - get V_bus, I_sh, P"  };
 int cmd_setcalibr( int argc, const char * const * argv );
 CmdInfo CMDINFO_SETCALIBR { "set_calibr", 'K', cmd_setcalibr, " I_lsb R_sh - calibrate for given shunt"  };
-int cmd_setaddr( int argc, const char * const * argv );
-CmdInfo CMDINFO_SETADDR { "setaddr", 0, cmd_setaddr, " addr - set device addr"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -35,15 +33,12 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_TEST0,
   &CMDINFO_GETVIP,
   &CMDINFO_SETCALIBR,
-  &CMDINFO_SETADDR,
   nullptr
 };
-
 
 I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );
 INA226 ina226( i2cd );
-I2CClient *i2c_client_def = &ina226;
 
 bool isGoodINA226( INA226 &ina, bool print = true );
 
@@ -58,6 +53,7 @@ int main(void)
 
   UVAR('e') = i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
+  i2c_client_def = &ina226;
 
   BOARD_POST_INIT_BLINK;
 
@@ -241,21 +237,6 @@ int cmd_setcalibr( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_setaddr( int argc, const char * const * argv )
-{
-  STDOUT_os;
-  if( argc < 2 ) {
-    os <<  "Need addr [1-127]" NL;
-    return 1;
-  }
-  if( !i2c_client_def ) {
-    os << "# Error: I2C default client is not set!" << NL;
-    return 2;
-  }
-  uint8_t addr  = (uint8_t)arg2long_d( 1, argc, argv, 0x0, 0,   127 );
-  i2c_client_def->setAddr( addr );
-  return 0;
-}
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

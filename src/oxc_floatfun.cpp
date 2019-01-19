@@ -30,6 +30,9 @@ OutStream& operator<<( OutStream &os, double rhs ) {
   return os;
 }
 
+OutStream& operator<<( OutStream &os, float rhs ) {
+  return os << (double)(rhs);
+};
 
 float str2float_d( const char *s, float def, float vmin, float vmax )
 {

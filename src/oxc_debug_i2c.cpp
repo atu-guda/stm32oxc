@@ -7,6 +7,7 @@
 
 
 DevI2C *i2c_dbg = nullptr;
+I2CClient *i2c_client_def = nullptr;
 
 static const char i2c_nodev_msg[] = NL "I2C debug device (i2c_dbg) is not set!" NL;
 #define CHECK_I2C_DEV \
@@ -190,6 +191,25 @@ int cmd_i2c_recv_r2( int argc, const char * const * argv )
 }
 CmdInfo CMDINFO_I2C_RECV_R2 {
   "i2c_recv2",  0,  cmd_i2c_recv_r2, "reg [n] - recv from I2C(reg), reg_sz=2 (addr=var[p])"
+};
+
+int cmd_i2c_setaddr( int argc, const char * const * argv )
+{
+  STDOUT_os;
+  if( argc < 2 ) {
+    os <<  "Need addr [1-127]" NL;
+    return 1;
+  }
+  if( !i2c_client_def ) {
+    os << "# Error: I2C default client is not set!" << NL;
+    return 2;
+  }
+  uint8_t addr  = (uint8_t)arg2long_d( 1, argc, argv, 0x0, 0,   127 );
+  i2c_client_def->setAddr( addr );
+  return 0;
+}
+CmdInfo CMDINFO_I2C_SETADDR {
+  "i2c_setaddr",  0,  cmd_i2c_setaddr, " addr - set default device addr "
 };
 
 #undef CHECK_I2C_DEV

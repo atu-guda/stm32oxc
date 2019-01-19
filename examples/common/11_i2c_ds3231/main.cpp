@@ -17,8 +17,6 @@ const char* common_help_string = "App to control DS3231 - RTC" NL;
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
-int cmd_setaddr( int argc, const char * const * argv );
-CmdInfo CMDINFO_SETADDR { "setaddr", 0, cmd_setaddr, " addr - set device addr (see 'C')"  };
 
 int cmd_set_time( int argc, const char * const * argv );
 CmdInfo CMDINFO_SET_TIME { "stime", 0, cmd_set_time, " hour min sec - set RTC time "  };
@@ -32,7 +30,6 @@ const CmdInfo* global_cmds[] = {
 
   &CMDINFO_SET_TIME,
   &CMDINFO_SET_DATE,
-  &CMDINFO_SETADDR,
   &CMDINFO_TEST0,
   nullptr
 };
@@ -52,6 +49,7 @@ int main(void)
 
   UVAR('e') = i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
+  i2c_client_def = &rtc;
 
   BOARD_POST_INIT_BLINK;
 
@@ -130,19 +128,6 @@ int cmd_set_date( int argc, const char * const * argv )
   day  = atoi( argv[3] );
   return rtc.setDate( year, mon, day );
 }
-
-int cmd_setaddr( int argc, const char * const * argv )
-{
-  if( argc < 2 ) {
-    STDOUT_os;
-    os << "Need addr [1-127]" NL;
-    return 1;
-  }
-  uint8_t addr  = (uint8_t)arg2long_d( 1, argc, argv, 0x0, 0,   127 );
-  rtc.setAddr( addr );
-  return 0;
-}
-
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

@@ -17,15 +17,12 @@ const char* common_help_string = "App to use BMP085 barometer" NL;
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
-int cmd_setaddr( int argc, const char * const * argv );
-CmdInfo CMDINFO_SETADDR { "setaddr", 0, cmd_setaddr, " addr - set device addr (see 'C')"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
   DEBUG_I2C_CMDS,
 
   &CMDINFO_TEST0,
-  &CMDINFO_SETADDR,
   nullptr
 };
 
@@ -44,6 +41,7 @@ int main(void)
 
   UVAR('e') = i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
+  i2c_client_def = &baro;
 
   BOARD_POST_INIT_BLINK;
 
@@ -100,18 +98,6 @@ int cmd_test0( int argc, const char * const * argv )
 
   return 0;
 }
-
-int cmd_setaddr( int argc, const char * const * argv )
-{
-  if( argc < 2 ) {
-    pr( "Need addr [1-127]" NL );
-    return 1;
-  }
-  uint8_t addr  = (uint8_t)arg2long_d( 1, argc, argv, 0x0, 0,   127 );
-  baro.setAddr( addr );
-  return 0;
-}
-
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

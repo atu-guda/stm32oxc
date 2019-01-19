@@ -172,6 +172,7 @@ int main(void)
 
   i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
+  i2c_client_def = &lcdt;
 
   ADD_DATAS_NM( user_vars, "UVAR"  );
   ADD_DATA_RO( time_i );

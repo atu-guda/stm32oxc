@@ -78,6 +78,7 @@ int main(void)
 
   UVAR('e') = i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
+  i2c_client_def = &adc;
 
   BOARD_POST_INIT_BLINK;
 

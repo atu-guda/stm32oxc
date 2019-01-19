@@ -24,15 +24,12 @@ int cmd_setPulse( int argc, const char * const * argv );
 CmdInfo CMDINFO_SETPULSE { "setPulse", 'U', cmd_setPulse, "n v  - set pulse value in us"  };
 int cmd_setServo( int argc, const char * const * argv );
 CmdInfo CMDINFO_SETSERVO { "setServo", 'E', cmd_setServo, "n v  - set servo value -1000:1000"  };
-int cmd_setaddr( int argc, const char * const * argv );
-CmdInfo CMDINFO_SETADDR { "setaddr", 0, cmd_setaddr, " addr - set device addr (see 'C')"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
   DEBUG_I2C_CMDS,
 
   &CMDINFO_TEST0,
-  &CMDINFO_SETADDR,
   &CMDINFO_SETFREQ,
   &CMDINFO_SETSERVO,
   &CMDINFO_SETPULSE,
@@ -54,6 +51,7 @@ int main(void)
 
   UVAR('e') = i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
+  i2c_client_def = &pwmc;
 
   BOARD_POST_INIT_BLINK;
 
@@ -129,18 +127,6 @@ int cmd_setServo( int argc, const char * const * argv )
   STDOUT_os;
   os << "Pulse: n= " << n <<  " v= " << v <<  " va= " << va << " t= " << t << NL;
   pwmc.setServo( n, v );
-  return 0;
-}
-
-int cmd_setaddr( int argc, const char * const * argv )
-{
-  if( argc < 2 ) {
-    STDOUT_os;
-    os <<  "Need addr [1-127]" NL;
-    return 1;
-  }
-  uint8_t addr  = (uint8_t)arg2long_d( 1, argc, argv, 0x0, 0,   127 );
-  pwmc.setAddr( addr );
   return 0;
 }
 
