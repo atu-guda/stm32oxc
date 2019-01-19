@@ -32,6 +32,7 @@ SUBDIRS = \
   27_i2c_ads1115 \
   27a_i2c_ads1115_pwm \
   28_spi_ad9833 \
+  29_i2c_ina226 \
   l01_accel \
   l02_accel \
   l03_mag
