@@ -18,24 +18,23 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
+const char* common_help_string = "App to measure via inner ADC" NL;
 
 int adc_init_exa_4ch_manual( ADC_Info &adc, uint32_t adc_presc, uint32_t sampl_cycl, uint8_t n_ch );
 
 ADC_Info adc;
 
 int v_adc_ref = BOARD_ADC_COEFF; // in mV, measured before test, adjust as UVAR('v')
-const uint32_t n_ADC_ch_max = 4; // current - in UVAR('c')
 uint16_t ADC_buf[32];
 
 
-float v_coeffs[n_ADC_ch_max] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " [n] - measure ADC"  };
 int cmd_set_coeffs( int argc, const char * const * argv );
-CmdInfo CMDINFO_SET_COEFFS { "set_coeffs", 'K', cmd_set_coeffs, " k0 k1 k2 k3 - set ADC coeffs"  };
+CmdInfo CMDINFO_SET_COEFFS { "set_coeffs", 'F', cmd_set_coeffs, " k0 k1 k2 k3 - set ADC coeffs"  };
 
 
 const CmdInfo* global_cmds[] = {
@@ -46,6 +45,8 @@ const CmdInfo* global_cmds[] = {
   nullptr
 };
 
+const uint32_t n_ADC_ch_max = 4; // current - in UVAR('c')
+float v_coeffs[n_ADC_ch_max] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 
 int main(void)
@@ -110,13 +111,13 @@ int cmd_test0( int argc, const char * const * argv )
 
   uint32_t n_ADC_sampl = n_ch;
 
-  double vf[n_ADC_ch_max];
   double kv = 0.001 * UVAR('v') / 4096;
 
   adc.reset_cnt();
 
   os << "# n = " << n << " n_ch= " << n_ch << " t_step= " << t_step << NL;
-  for( decltype(n_ch) j =0; j<n_ch; ++j ) {
+  os << "# Coeffs: ";
+  for( decltype(n_ch) j=0; j<n_ch; ++j ) {
     os << ' ' << v_coeffs[j];
   }
   os << NL;
@@ -128,12 +129,17 @@ int cmd_test0( int argc, const char * const * argv )
   int rc = 0;
   bool do_out = ! UVAR('b');
 
-  for( unsigned i=0; i<n && !break_flag ; ++i ) {
+  break_flag = 0;
+  for( decltype(n) i=0; i<n && !break_flag; ++i ) {
 
     uint32_t tcc = HAL_GetTick();
     if( i == 0 ) {
       tm0 = tcc; tm00 = tm0;
     }
+
+    float tc = 0.001f * ( tcc - tm00 );
+    double v[n_ch];
+
     if( UVAR('l') ) {  leds.set( BIT2 ); }
     adc.end_dma = 0;
     if( HAL_ADC_Start_DMA( &adc.hadc, (uint32_t*)(&ADC_buf), n_ADC_sampl ) != HAL_OK )   {
@@ -161,21 +167,21 @@ int cmd_test0( int argc, const char * const * argv )
       adc.n_series = 1;
     }
 
-    int dt = tcc - tm00; // ms
     if( do_out ) {
-      os <<  FloatFmt( 0.001 * dt, "%-10.4f "  );
+      os <<  FloatFmt( tc, "%-10.4f "  );
     }
-    for( int j=0; j<n_ch; ++j ) {
+    for( decltype(n_ch) j=0; j<n_ch; ++j ) {
       double cv = kv * ADC_buf[j] * v_coeffs[j];
-      vf[j] = cv;
-      if( do_out ) {
-        os << FloatFmt( cv, " %#12.6g" );
-      }
+      v[j] = cv;
     }
-    sdat.add( vf );
+    //
+    sdat.add( v );
 
     if( do_out ) {
-      os  <<  NL;
+      for( auto vc : v ) {
+        os  << ' '  <<  FloatFmt( vc, "%#12.7g" );
+      }
+      os << NL;
     }
 
     delay_ms_until_brk( &tm0, t_step );

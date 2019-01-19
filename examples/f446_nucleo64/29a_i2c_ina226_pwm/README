@@ -1,0 +1,5 @@
+Use INA226 I/V measuring device viA I2C + PWM control
+
+SCL = B8 ? 4.7k pullUp
+SDA = B9 ? 4.7k pullUp
+

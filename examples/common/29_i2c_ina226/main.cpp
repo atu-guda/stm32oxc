@@ -1,13 +1,14 @@
 #include <cstring>
 #include <cstdlib>
 #include <cmath>
+
 #include <algorithm>
 
 #include <oxc_auto.h>
 #include <oxc_floatfun.h>
-#include <oxc_ina226.h>
 #include <oxc_statdata.h>
 
+#include <oxc_ina226.h>
 using namespace std;
 using namespace SMLRL;
 
@@ -39,6 +40,8 @@ const CmdInfo* global_cmds[] = {
 I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );
 INA226 ina226( i2cd );
+const uint32_t n_ADC_ch_max = 4; // current - in UVAR('c')
+float v_coeffs[n_ADC_ch_max] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 bool isGoodINA226( INA226 &ina, bool print = true );
 
@@ -47,7 +50,7 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 10;
+  UVAR('t') = 10; // 10 ms
   UVAR('n') = 20;
   UVAR('c') = 4;
 
@@ -175,6 +178,11 @@ int cmd_getVIP( int argc, const char * const * argv )
   os <<  "# cfg= " << HexInt16( x_cfg ) <<  " I_lsb_mA= " << ina226.get_I_lsb_mA()
      << " R_sh_uOhm= " << ina226.get_R_sh_uOhm() << NL;
 
+  os << "# Coeffs: ";
+  for( decltype(n_ch) j=0; j<n_ch; ++j ) {
+    os << ' ' << v_coeffs[j];
+  }
+  os << NL;
 
   leds.set(   BIT0 | BIT1 | BIT2 ); delay_ms( 100 );
   leds.reset( BIT0 | BIT1 | BIT2 );
@@ -196,10 +204,10 @@ int cmd_getVIP( int argc, const char * const * argv )
 
     if( UVAR('l') ) {  leds.set( BIT2 ); }
 
-    v[0] = ina226.getVbus_nV() * 1e-9;
-    v[1] = ina226.getI_mA_reg() * 1e-3;
-    v[2] = ina226.getI_uA() * 1e-6;
-    v[3] = ina226.getP();
+    v[0] = ina226.getVbus_nV() * 1e-9  * v_coeffs[0];
+    v[1] = ina226.getI_mA_reg() * 1e-3 * v_coeffs[1];
+    v[2] = ina226.getI_uA() * 1e-6     * v_coeffs[2];
+    v[3] = ina226.getP()               * v_coeffs[3];
     if( UVAR('l') ) {  leds.reset( BIT2 ); }
 
     if( do_out ) {
@@ -212,8 +220,8 @@ int cmd_getVIP( int argc, const char * const * argv )
       for( auto vc : v ) {
         os  << ' '  <<  FloatFmt( vc, "%#12.7g" );
       }
+      os << NL;
     }
-    os << NL;
 
     delay_ms_until_brk( &tm0, t_step );
   }
@@ -221,8 +229,11 @@ int cmd_getVIP( int argc, const char * const * argv )
   sdat.calc();
   os << sdat << NL;
 
+  delay_ms( 10 );
+
   return rc;
 }
+
 
 int cmd_setcalibr( int argc, const char * const * argv )
 {

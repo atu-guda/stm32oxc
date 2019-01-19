@@ -1,13 +1,14 @@
 #include <cstring>
 #include <cstdlib>
 #include <cmath>
+
 #include <algorithm>
 
 #include <oxc_auto.h>
 #include <oxc_floatfun.h>
-#include <oxc_ads1115.h>
 #include <oxc_statdata.h>
 
+#include <oxc_ads1115.h>
 using namespace std;
 using namespace SMLRL;
 
@@ -23,6 +24,9 @@ int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test one channel"  };
 int cmd_getNch( int argc, const char * const * argv );
 CmdInfo CMDINFO_GETNCH { "getNch", 'G', cmd_getNch, " - test n ('c') channel"  };
+int cmd_set_coeffs( int argc, const char * const * argv );
+CmdInfo CMDINFO_SET_COEFFS { "set_coeffs", 'F', cmd_set_coeffs, " k0 k1 k2 k3 - set ADC coeffs"  };
+
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -30,20 +34,22 @@ const CmdInfo* global_cmds[] = {
 
   &CMDINFO_TEST0,
   &CMDINFO_GETNCH,
+  &CMDINFO_SET_COEFFS,
   nullptr
 };
-
 
 I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );
 ADS1115 adc( i2cd );
+const uint32_t n_ADC_ch_max = 4; // current - in UVAR('c')
+float v_coeffs[n_ADC_ch_max] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 
 int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 100;
+  UVAR('t') = 100; // 100 ms
   UVAR('n') = 20;
   UVAR('c') = 4;
 
@@ -87,6 +93,8 @@ int cmd_test0( int argc, const char * const * argv )
 
   StatData sdat( 1 );
 
+  os << "# Coeffs: " << v_coeffs[0] << NL;
+
   leds.set(   BIT0 | BIT1 | BIT2 ); delay_ms( 100 );
   leds.reset( BIT0 | BIT1 | BIT2 );
 
@@ -123,7 +131,7 @@ int cmd_test0( int argc, const char * const * argv )
       os <<  FloatFmt( 0.001 * dt, "%-10.4f "  );
     }
 
-    double vf0 = 0.001f * scale_mv * v0 / 32678;
+    double vf0 = 0.001f * scale_mv * v0  * v_coeffs[0] / 32678;
 
     sdat.add( &vf0 );
 
@@ -159,6 +167,11 @@ int cmd_getNch( int argc, const char * const * argv )
 
   StatData sdat( n_ch );
 
+  os << "# Coeffs: ";
+  for( decltype(n_ch) j=0; j<n_ch; ++j ) {
+    os << ' ' << v_coeffs[j];
+  }
+
   adc.setDefault();
 
   uint16_t cfg =  ADS1115::cfg_pga_4096 | ADS1115::cfg_rate_860 | ADS1115::cfg_oneShot;
@@ -167,8 +180,7 @@ int cmd_getNch( int argc, const char * const * argv )
   int scale_mv = adc.getScale_mV();
   os <<  "# cfg= " << HexInt16( x_cfg ) << " scale_mv = " << scale_mv << NL;
 
-  int16_t v[4];
-  double vf[4];
+  int16_t vi[4];
   double kv = 0.001 * scale_mv / 0x7FFF;
 
   leds.set(   BIT0 | BIT1 | BIT2 ); delay_ms( 100 );
@@ -186,9 +198,10 @@ int cmd_getNch( int argc, const char * const * argv )
       tm0 = tcc; tm00 = tm0;
     }
     float tc = 0.001f * ( tcc - tm00 );
+    double v[n_ch];
 
     if( UVAR('l') ) {  leds.set( BIT2 ); }
-    int no = adc.getOneShotNch( 0, e_ch, v );
+    int no = adc.getOneShotNch( 0, e_ch, vi );
     if( UVAR('l') ) {  leds.reset( BIT2 ); }
 
 
@@ -197,12 +210,17 @@ int cmd_getNch( int argc, const char * const * argv )
     }
 
     for( decltype(no) j=0; j<no; ++j ) {
-      vf[j] = kv * v[j];
-      os << vf[j] << ' ';
+      v[j] = kv * vi[j] * v_coeffs[j];
     }
 
-    sdat.add( vf );
-    os << NL;
+    sdat.add( v );
+
+    if( do_out ) {
+      for( auto vc : v ) {
+        os  << ' '  <<  FloatFmt( vc, "%#12.7g" );
+      }
+      os << NL;
+    }
 
     delay_ms_until_brk( &tm0, t_step );
   }
@@ -211,6 +229,20 @@ int cmd_getNch( int argc, const char * const * argv )
   os << sdat << NL;
 
   return rc;
+}
+
+int cmd_set_coeffs( int argc, const char * const * argv )
+{
+  if( argc > 1 ) {
+    v_coeffs[0] = arg2float_d( 1, argc, argv, 1, -1e10, 1e10 );
+    v_coeffs[1] = arg2float_d( 2, argc, argv, 1, -1e10, 1e10 );
+    v_coeffs[2] = arg2float_d( 3, argc, argv, 1, -1e10, 1e10 );
+    v_coeffs[3] = arg2float_d( 4, argc, argv, 1, -1e10, 1e10 );
+  }
+  STDOUT_os;
+  os << "# Coefficients: "
+     << v_coeffs[0] << ' ' << v_coeffs[1] << ' ' << v_coeffs[2] << ' ' << v_coeffs[3] << NL;
+  return 0;
 }
 
 

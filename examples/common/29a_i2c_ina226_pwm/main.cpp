@@ -1,13 +1,14 @@
 #include <cstring>
 #include <cstdlib>
 #include <cmath>
-#include <cerrno>
 
 #include <algorithm>
 
 #include <oxc_auto.h>
 #include <oxc_floatfun.h>
 #include <oxc_statdata.h>
+
+#include <oxc_ina226.h>
 
 #include <../examples/common/inc/pwm1_ctl.h>
 
@@ -19,14 +20,7 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
-const char* common_help_string = "App to measure via inner ADC with PWM control" NL;
-
-int adc_init_exa_4ch_manual( ADC_Info &adc, uint32_t adc_presc, uint32_t sampl_cycl, uint8_t n_ch );
-
-ADC_Info adc;
-
-int v_adc_ref = BOARD_ADC_COEFF; // in mV, measured before test, adjust as UVAR('v')
-uint16_t ADC_buf[32];
+const char* common_help_string = "App to test INA226 I2C device with  PWM control" NL;
 
 TIM_HandleTypeDef tim_h;
 using tim_ccr_t = decltype( tim_h.Instance->CCR1 );
@@ -41,7 +35,9 @@ void handle_keys();
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " [n] [skip_pwm] - measure ADC + control PWM"  };
+CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " [n] [skip_pwm] - measure V,I + control PWM"  };
+int cmd_setcalibr( int argc, const char * const * argv );
+CmdInfo CMDINFO_SETCALIBR { "set_calibr", 'K', cmd_setcalibr, " I_lsb R_sh - calibrate for given shunt"  };
 int cmd_tinit( int argc, const char * const * argv );
 CmdInfo CMDINFO_TINIT { "tinit", 'I', cmd_tinit, " - reinit timer"  };
 int cmd_pwm( int argc, const char * const * argv );
@@ -52,17 +48,23 @@ CmdInfo CMDINFO_SET_COEFFS { "set_coeffs", 'F', cmd_set_coeffs, " k0 k1 k2 k3 - 
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
+  DEBUG_I2C_CMDS,
 
   &CMDINFO_TEST0,
-  &CMDINFO_TINIT,
+  &CMDINFO_SETCALIBR,
   &CMDINFO_PWM,
   CMDINFOS_PWM,
   &CMDINFO_SET_COEFFS,
   nullptr
 };
 
+I2C_HandleTypeDef i2ch;
+DevI2C i2cd( &i2ch, 0 );
+INA226 ina226( i2cd );
 const uint32_t n_ADC_ch_max = 4; // current - in UVAR('c')
 float v_coeffs[n_ADC_ch_max] = { 1.0f, 1.0f, 1.0f, 1.0f };
+
+bool isGoodINA226( INA226 &ina, bool print = true );
 
 
 int main(void)
@@ -70,19 +72,17 @@ int main(void)
   BOARD_PROLOG;
 
   UVAR('t') = 10; // 10 ms
-  UVAR('v') = v_adc_ref;
-  UVAR('c') = 2; // n_ADC_ch_max;
   UVAR('n') = 1000000; // number of series (10ms 't' each): limited by steps
-  UVAR('s') = 6; // sampling time index
+  UVAR('c') = 2; // n_ADC_ch_max;
 
   UVAR('p') = 0;     // PSC,  - max output freq
   UVAR('a') = 1439;  // ARR, to get 100 kHz with PSC = 0
 
-  #ifdef PWR_CR1_ADCDC1
-  // PWR->CR1 |= PWR_CR1_ADCDC1;
-  #endif
-
   tim_cfg();
+
+  UVAR('e') = i2c_default_init( i2ch /*, 400000 */ );
+  i2c_dbg = &i2cd;
+  i2c_client_def = &ina226;
 
   BOARD_POST_INIT_BLINK;
 
@@ -97,47 +97,49 @@ int main(void)
   return 0;
 }
 
+bool isGoodINA226( INA226 &ina, bool print )
+{
+  STDOUT_os;
+  uint16_t id_manuf = ina.readReg( INA226::reg_id_manuf );
+  uint16_t id_dev   = ina.readReg( INA226::reg_id_dev );
+  if( print ) {
+    os << "# id_manuf= " << HexInt16( id_manuf ) << "  id_dev= " << HexInt16( id_dev ) << NL;
+  }
+  if( id_manuf != INA226::id_manuf || id_dev != INA226::id_dev ) {
+    if( print ) {
+      os << "# Error: bad ids!" << NL;
+    }
+    return false;
+  }
+  return true;
+}
 
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
   STDOUT_os;
   uint32_t t_step = UVAR('t');
-  uint32_t n_ch = clamp( UVAR('c'), 1, (int)n_ADC_ch_max );
-
+  unsigned n_ch = 2;
   uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 1000000 ); // number of series
 
   bool skip_pwm = arg2long_d( 2, argc, argv, 0, 1, 1 ); // dont touch PWM
 
   StatData sdat( n_ch );
 
-  uint32_t sampl_t_idx = clamp( UVAR('s'), 0, (int)adc_n_sampl_times-1 );
-  uint32_t f_sampl_max = adc.adc_clk / ( sampl_times_cycles[sampl_t_idx] * n_ch );
+  ina226.setCfg( INA226::cfg_rst );
+  uint16_t x_cfg = ina226.getCfg();
+  os <<  NL "# getVIP: n= " <<  n <<  " t= " <<  t_step <<  "  cfg= " <<  HexInt16( x_cfg ) << NL;
 
-  uint32_t adc_presc = hint_ADC_presc();
-  UVAR('i') =  adc_init_exa_4ch_manual( adc, adc_presc, sampl_times_codes[sampl_t_idx], n_ch );
-  delay_ms( 1 );
-  if( ! UVAR('i') ) {
-    os << "ADC init failed, errno= " << errno << NL;
-    return 1;
+  if( ! isGoodINA226( ina226, true ) ) {
+    return 3;
   }
-  if( UVAR('d') > 1 ) { pr_ADC_state( adc );  }
 
-
-  int div_val = -1;
-  adc.adc_clk = calc_ADC_clk( adc_presc, &div_val );
-  os << "# ADC: n_ch= " << n_ch << " n= " << n << " adc_clk= " << adc.adc_clk << " div_val= " << div_val
-     << " s_idx= " << sampl_t_idx << " sampl= " << sampl_times_cycles[sampl_t_idx]
-     << " f_sampl_max= " << f_sampl_max << " Hz" NL;
-  delay_ms( 10 );
-
-  uint32_t n_ADC_sampl = n_ch;
-
-  double kv = 0.001 * UVAR('v') / 4096;
-
-  adc.reset_cnt();
-
-  os << "# n = " << n << " n_ch= " << n_ch << " t_step= " << t_step << NL;
+  uint16_t cfg = INA226::cfg_default;
+  UVAR('e') = ina226.setCfg( cfg );
+  x_cfg = ina226.getCfg();
+  ina226.calibrate();
+  os <<  "# cfg= " << HexInt16( x_cfg ) <<  " I_lsb_mA= " << ina226.get_I_lsb_mA()
+     << " R_sh_uOhm= " << ina226.get_R_sh_uOhm() << NL;
   os << "# skip_pwm= " << skip_pwm << NL << "# Coeffs: ";
   for( decltype(n_ch) j=0; j<n_ch; ++j ) {
     os << ' ' << v_coeffs[j];
@@ -171,40 +173,16 @@ int cmd_test0( int argc, const char * const * argv )
     double v[n_ch+1]; // +1 for PWM
 
     if( UVAR('l') ) {  leds.set( BIT2 ); }
-    adc.end_dma = 0;
-    if( HAL_ADC_Start_DMA( &adc.hadc, (uint32_t*)(&ADC_buf), n_ADC_sampl ) != HAL_OK )   {
-      os <<  "ADC_Start_DMA error" NL;
-      rc = 1;
-      break;
-    }
 
-    for( uint32_t ti=0; adc.end_dma == 0 && ti<5000; ++ti ) { // 11
-      delay_mcs( 2 );
-    }
-
-    HAL_ADC_Stop_DMA( &adc.hadc ); // needed
+    v[0] = ina226.getVbus_nV() * 1e-9 * v_coeffs[0];
+    v[1] = ina226.getI_uA() * 1e-6    * v_coeffs[1];
+    v[2] = pwmdat.get_v_real();
     if( UVAR('l') ) {  leds.reset( BIT2 ); }
-    if( adc.end_dma == 0 ) {
-      os <<  "Fail to wait DMA end " NL;
-      rc = 2;
-      break;
-    }
-    if( adc.dma_error != 0 ) {
-      os <<  "Found DMA error " << HexInt( adc.dma_error ) <<  NL;
-      rc = 3;
-      break;
-    } else {
-      adc.n_series = 1;
-    }
 
     if( do_out ) {
       os <<  FloatFmt( tc, "%-10.4f "  );
     }
-    for( decltype(n_ch) j=0; j<n_ch; ++j ) {
-      double cv = kv * ADC_buf[j] * v_coeffs[j];
-      v[j] = cv;
-    }
-    v[n_ch] = pwmdat.get_v_real();
+
     sdat.add( v );
 
     if( do_out ) {
@@ -228,32 +206,19 @@ int cmd_test0( int argc, const char * const * argv )
 }
 
 
-
-void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc )
+int cmd_setcalibr( int argc, const char * const * argv )
 {
-  adc.end_dma |= 1;
-  adc.good_SR =  adc.last_SR = adc.hadc.Instance->SR;
-  adc.last_end = 1;
-  adc.last_error = 0;
-  ++adc.n_good;
+  float calibr_I_lsb = arg2float_d( 1, argc, argv, ina226.get_I_lsb_mA()  * 1e-3, 1e-20, 1e10 );
+  float calibr_R     = arg2float_d( 2, argc, argv, ina226.get_R_sh_uOhm() * 1e-6, 1e-20, 1e10 );
+  float V_sh_max =  INA226::lsb_V_sh_nv * 1e-9 * 0x7FFF;
+  STDOUT_os;
+  ina226.set_calibr_val( (uint32_t)(calibr_R * 1e6), (uint32_t)(calibr_I_lsb * 1e3) );
+  os << "# calibr_I_lsb= " << calibr_I_lsb << " calibr_R= " << calibr_R
+     << " V_sh_max=  " << V_sh_max
+     << " I_max= " << ( V_sh_max / calibr_R ) << " / " << ( calibr_I_lsb * 0x7FFF ) << NL;
+  return 0;
 }
 
-void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc )
-{
-  adc.end_dma |= 2;
-  adc.bad_SR = adc.last_SR = adc.hadc.Instance->SR;
-  // tim2_deinit();
-  adc.last_end  = 2;
-  adc.last_error = HAL_ADC_GetError( hadc );
-  adc.dma_error = hadc->DMA_Handle->ErrorCode;
-  hadc->DMA_Handle->ErrorCode = 0;
-  ++adc.n_bad;
-}
-
-void DMA2_Stream0_IRQHandler(void)
-{
-  HAL_DMA_IRQHandler( &adc.hdma_adc );
-}
 
 // ------------------------------------------- PWM ---------------------------------------
 

@@ -1,8 +1,6 @@
 #include <cstring>
 #include <cstdlib>
-#include <cstdio>
 #include <cmath>
-#include <cerrno>
 
 #include <algorithm>
 
@@ -22,16 +20,12 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
-I2C_HandleTypeDef i2ch;
-DevI2C i2cd( &i2ch, 0 );
-ADS1115 adc( i2cd );
-const uint32_t n_ADC_ch_max = 4; // current - in UVAR('c')
+const char* common_help_string = "App to test ADS1115 I2C ADC device with  PWM control" NL;
 
 TIM_HandleTypeDef tim_h;
 using tim_ccr_t = decltype( tim_h.Instance->CCR1 );
 void tim_cfg();
 
-float v_coeffs[n_ADC_ch_max] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 PWMData pwmdat( tim_h );
 
@@ -47,11 +41,12 @@ CmdInfo CMDINFO_TINIT { "tinit", 'I', cmd_tinit, " - reinit timer"  };
 int cmd_pwm( int argc, const char * const * argv );
 CmdInfo CMDINFO_PWM { "pwm", 'W', cmd_pwm, " [val] - set PWM value"  };
 int cmd_set_coeffs( int argc, const char * const * argv );
-CmdInfo CMDINFO_SET_COEFFS { "set_coeffs", 'K', cmd_set_coeffs, " k0 k1 k2 k3 - set ADC coeffs"  };
+CmdInfo CMDINFO_SET_COEFFS { "set_coeffs", 'F', cmd_set_coeffs, " k0 k1 k2 k3 - set ADC coeffs"  };
 
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
+  DEBUG_I2C_CMDS,
 
   &CMDINFO_TEST0,
   &CMDINFO_TINIT,
@@ -61,6 +56,11 @@ const CmdInfo* global_cmds[] = {
   nullptr
 };
 
+I2C_HandleTypeDef i2ch;
+DevI2C i2cd( &i2ch, 0 );
+ADS1115 adc( i2cd );
+const uint32_t n_ADC_ch_max = 4; // current - in UVAR('c')
+float v_coeffs[n_ADC_ch_max] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 
 int main(void)
@@ -68,8 +68,8 @@ int main(void)
   BOARD_PROLOG;
 
   UVAR('t') = 10; // 10 ms
-  UVAR('c') = 2; // n_ADC_ch_max;
   UVAR('n') = 1000000; // number of series (10ms 't' each): limited by steps
+  UVAR('c') = 2; // n_ADC_ch_max;
 
   UVAR('p') = 0;     // PSC,  - max output freq
   UVAR('a') = 1439;  // ARR, to get 100 kHz with PSC = 0
@@ -98,8 +98,9 @@ int main(void)
 int cmd_test0( int argc, const char * const * argv )
 {
   STDOUT_os;
-  int t_step = UVAR('t');
-  uint8_t n_ch = clamp( UVAR('c'), 1, (int)n_ADC_ch_max );
+  uint32_t t_step = UVAR('t');
+  uint32_t n_ch = clamp( UVAR('c'), 1, (int)n_ADC_ch_max );
+
   uint8_t e_ch = (uint8_t)(n_ch-1);
 
   uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 1000000 ); // number of series
@@ -117,12 +118,11 @@ int cmd_test0( int argc, const char * const * argv )
   os <<  "# cfg= " << HexInt16( x_cfg ) << " scale_mv = " << scale_mv << NL;
 
   int16_t ADC_buf[n_ADC_ch_max];
-  double  vf[n_ADC_ch_max];
   double kv = 0.001 * scale_mv / 0x7FFF;
 
   os << "# n = " << n << " n_ch= " << n_ch << " t_step= " << t_step << NL;
   os << "# skip_pwm= " << skip_pwm << NL << "# Coeffs: ";
-  for( decltype(n_ch) j =0; j<n_ch; ++j ) {
+  for( decltype(n_ch) j=0; j<n_ch; ++j ) {
     os << ' ' << v_coeffs[j];
   }
   os << NL;
@@ -137,7 +137,7 @@ int cmd_test0( int argc, const char * const * argv )
   bool do_out = ! UVAR('b');
 
   break_flag = 0;
-  for( unsigned i=0; i<n && !break_flag; ++i ) {
+  for( decltype(n) i=0; i<n && !break_flag; ++i ) {
 
     uint32_t tcc = HAL_GetTick();
     if( i == 0 ) {
@@ -150,29 +150,32 @@ int cmd_test0( int argc, const char * const * argv )
       break;
     }
 
+    float tc = 0.001f * ( tcc - tm00 );
+    double v[n_ch+1]; // +1 for PWM
+
     if( UVAR('l') ) {  leds.set( BIT2 ); }
-    int no = adc.getOneShotNch( 0, e_ch, ADC_buf );
+    unsigned no = adc.getOneShotNch( 0, e_ch, ADC_buf );
     if( UVAR('l') ) {  leds.reset( BIT2 ); }
     if( no != n_ch ) {
       os << "# Error: read only " << no << " channels" << NL;
       break;
     }
 
-    int dt = tcc - tm00; // ms
     if( do_out ) {
-      os <<  FloatFmt( 0.001 * dt, "%-10.4f "  );
+      os <<  FloatFmt( tc, "%-10.4f "  );
     }
-    for( int j=0; j<n_ch; ++j ) {
+    for( decltype(n_ch) j=0; j<n_ch; ++j ) {
       double cv = kv * ADC_buf[j] * v_coeffs[j];
-      vf[j] = cv;
-      if( do_out ) {
-        os << FloatFmt( cv, " %#12.6g" );
-      }
+      v[j] = cv;
     }
-    sdat.add( vf );
+    v[n_ch] = pwmdat.get_v_real();
+    sdat.add( v );
 
     if( do_out ) {
-      os << ' ' << pwmdat.get_v_real() <<  NL;
+      for( auto vc : v ) {
+        os  << ' '  <<  FloatFmt( vc, "%#12.7g" );
+      }
+      os << NL;
     }
 
     delay_ms_until_brk( &tm0, t_step );
