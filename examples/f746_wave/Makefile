@@ -32,6 +32,8 @@ SUBDIRS = \
   27_i2c_ads1115 \
   27a_i2c_ads1115_pwm \
   28_spi_ad9833 \
+  29_i2c_ina226 \
+  29a_i2c_ina226_pwm \
   30_sdcard1 \
   31_sdcard2 \
   31a_sdcard2 \
