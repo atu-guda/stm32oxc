@@ -138,7 +138,7 @@ int cmd_test0( int argc, const char * const * argv )
   UVAR('e') = ina226.setCfg( cfg );
   x_cfg = ina226.getCfg();
   ina226.calibrate();
-  os <<  "# cfg= " << HexInt16( x_cfg ) <<  " I_lsb_mA= " << ina226.get_I_lsb_mA()
+  os << "# cfg= " << HexInt16( x_cfg ) <<  " I_lsb_mA= " << ina226.get_I_lsb_mA()
      << " R_sh_uOhm= " << ina226.get_R_sh_uOhm() << NL;
   os << "# skip_pwm= " << skip_pwm << NL << "# Coeffs: ";
   for( decltype(n_ch) j=0; j<n_ch; ++j ) {
@@ -174,9 +174,10 @@ int cmd_test0( int argc, const char * const * argv )
 
     if( UVAR('l') ) {  leds.set( BIT2 ); }
 
-    v[0] = ina226.getVbus_nV() * 1e-9 * v_coeffs[0];
+    v[0] = ina226.getVbus_uV() * 1e-6 * v_coeffs[0];
     v[1] = ina226.getI_uA()    * 1e-6 * v_coeffs[1];
     v[2] = pwmdat.get_v_real();
+    UVAR('z') = ina226.get_last_Vsh();
 
     if( UVAR('l') ) {  leds.reset( BIT2 ); }
 

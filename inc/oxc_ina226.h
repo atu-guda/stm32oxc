@@ -74,7 +74,7 @@ class INA226 : public I2CClient {
    };
    enum {
      lsb_V_sh_nv         = 2500,
-     lsb_V_bus_nv        = 1250000
+     lsb_V_bus_uv        = 1250
    };
 
    INA226( DevI2C &a_dev, uint8_t d_addr = def_addr )
@@ -87,12 +87,14 @@ class INA226 : public I2CClient {
    void set_calibr_val( uint32_t R_uOhm, uint32_t I_mA ) { R_sh_uOhm = R_uOhm; I_lsb_mA = I_mA; }
    bool calibrate()  { return setCalibr( 5120000 / ( I_lsb_mA * R_sh_uOhm ) ); }
    uint16_t getCfg() { return readReg( reg_cfg ); }
-   int16_t getVsh()  { return (int16_t)readReg( reg_shunt_v ); }
-   int16_t getVbus() { return (int16_t)readReg( reg_bus_v ); }
-   int32_t getVbus_nV () { return getVbus() * lsb_V_bus_nv; }
+   int16_t getVsh()  { last_Vsh  = (int16_t)readReg( reg_shunt_v ); return last_Vsh;  }
+   int16_t getVbus() { last_Vbus = (int16_t)readReg( reg_bus_v );   return last_Vbus; }
+   int16_t get_last_Vsh()  const { return last_Vsh; }
+   int16_t get_last_Vbus() const { return last_Vbus; }
+   int32_t getVbus_uV () { return getVbus() * lsb_V_bus_uv; }
    int16_t getP()    { return (int16_t)readReg( reg_P ); }
    int16_t getI_in_lsb()    { return (int16_t)readReg( reg_I ); }
-   uint32_t Vsh2I_uA( uint16_t v_raw ) const { return v_raw * 1000 * lsb_V_sh_nv / R_sh_uOhm; }
+   int32_t Vsh2I_uA( uint16_t v_raw ) const { return (int32_t)( (long long) v_raw * 1000 * lsb_V_sh_nv / R_sh_uOhm); }
    int32_t getI_uA() { return Vsh2I_uA( getVsh() ); }
    int32_t getI_mA_reg() { return getI_in_lsb() * I_lsb_mA; }
    uint16_t readReg( uint8_t reg ) { return recv_reg1_16bit_rev( reg, 0 ); };
@@ -100,6 +102,8 @@ class INA226 : public I2CClient {
   protected:
    uint32_t R_sh_uOhm = 1500;
    uint32_t I_lsb_mA = 1;
+   int16_t  last_Vsh  = 0;
+   int16_t  last_Vbus = 0;
 };
 
 #endif

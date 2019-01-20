@@ -132,7 +132,7 @@ int cmd_test0( int argc, const char * const * argv )
 
     double v[2];
     v[0] = INA226::lsb_V_sh_nv  * v_sh_raw  * 1e-9;
-    v[1] = INA226::lsb_V_bus_nv * v_bus_raw * 1e-9;
+    v[1] = INA226::lsb_V_bus_uv * v_bus_raw * 1e-6;
 
     int dt = tcc - tm00; // ms
     if( do_out ) {
@@ -204,10 +204,11 @@ int cmd_getVIP( int argc, const char * const * argv )
 
     if( UVAR('l') ) {  leds.set( BIT2 ); }
 
-    v[0] = ina226.getVbus_nV() * 1e-9  * v_coeffs[0];
+    v[0] = ina226.getVbus_uV()  * 1e-6 * v_coeffs[0];
     v[1] = ina226.getI_mA_reg() * 1e-3 * v_coeffs[1];
     v[2] = ina226.getI_uA() * 1e-6     * v_coeffs[2];
     v[3] = ina226.getP()               * v_coeffs[3];
+
     if( UVAR('l') ) {  leds.reset( BIT2 ); }
 
     if( do_out ) {
