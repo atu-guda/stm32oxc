@@ -9,7 +9,7 @@
 
 class PWMData {
   public:
-   enum { max_pwm_steps = 32 };
+   enum { max_pwm_steps = 64 };
    struct StepInfo {
      float v;
      int t, tp;
@@ -28,6 +28,8 @@ class PWMData {
    void show_steps() const;
    bool edit_step( unsigned ns, float v, int t, int tp );
    void set_pwm();
+   float get_min() const { return vmin; }
+   float get_max() const { return vmax; }
    void set_min( float m ) { vmin = m; }
    void set_max( float m ) { vmax = m; }
    void prep( int a_t_step, bool fake );
@@ -64,10 +66,10 @@ extern PWMData pwmdat;
 
 int cmd_set_minmax( int argc, const char * const * argv );
 int cmd_show_steps( int argc, const char * const * argv );
-int cmd_mk_rect( int argc, const char * const * argv );
-int cmd_mk_ladder( int argc, const char * const * argv );
-int cmd_mk_trap( int argc, const char * const * argv );
-int cmd_edit_step( int argc, const char * const * argv );
+int cmd_mk_rect(    int argc, const char * const * argv );
+int cmd_mk_ladder(  int argc, const char * const * argv );
+int cmd_mk_trap(    int argc, const char * const * argv );
+int cmd_edit_step(  int argc, const char * const * argv );
 
 extern CmdInfo CMDINFO_SET_MINMAX;
 extern CmdInfo CMDINFO_SHOW_STEPS;

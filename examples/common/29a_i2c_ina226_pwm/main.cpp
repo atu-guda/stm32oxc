@@ -175,8 +175,9 @@ int cmd_test0( int argc, const char * const * argv )
     if( UVAR('l') ) {  leds.set( BIT2 ); }
 
     v[0] = ina226.getVbus_nV() * 1e-9 * v_coeffs[0];
-    v[1] = ina226.getI_uA() * 1e-6    * v_coeffs[1];
+    v[1] = ina226.getI_uA()    * 1e-6 * v_coeffs[1];
     v[2] = pwmdat.get_v_real();
+
     if( UVAR('l') ) {  leds.reset( BIT2 ); }
 
     if( do_out ) {
