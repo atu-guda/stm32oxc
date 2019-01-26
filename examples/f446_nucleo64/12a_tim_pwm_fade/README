@@ -1,14 +1,9 @@
 Test TIM1 as PWM output with fade
-out: A8 - A11, A12?
+out: A8 - A11
 user vars:
  p - prescaler
  a - ARR
- r - flag: 1: row CCR values 0: in % to ARR
- t - unused
- m - mode 0: up 1: down 2: center1 3: center2 4: center3
- o - polarity: 0: HIGH 1: LOW
 
 T val1 val2 val3 val4
 
-Attension: TIM inner input clock is 2 * APB2 = 168 MHz
 

@@ -12,8 +12,11 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
+const char* common_help_string = "App to test timer as PWM source" NL;
+
 TIM_HandleTypeDef tim_h;
-int pwm_vals[] = { 25, 50, 75, 90 };
+const unsigned n_pwm_ch = 4;
+int pwm_vals[n_pwm_ch] = { 25, 50, 75, 90 };
 void tim_cfg();
 void pwm_recalc();
 void pwm_update();
@@ -69,16 +72,17 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  for( int i=0; i<4; ++i ) {
-    if( argc > i+1 ) {
-      pwm_vals[i] = strtol( argv[i+1], 0, 0 );
+  for( decltype(+n_pwm_ch) i=0; i<n_pwm_ch; ++i ) {
+    if( argc <= (int)(i+1) ) {
+      break;
     }
+    pwm_vals[i] = strtol( argv[i+1], 0, 0 );
   }
 
   STDOUT_os;
-  os << NL "Test0: pwm_vals[]= ";
-  for( int i=0; i<4; ++i ) {
-    os << pwm_vals[i] <<  ' ';
+  os << NL "# Test0: pwm_vals[]= ";
+  for( auto v : pwm_vals ) {
+    os << v <<  ' ';
   }
   os <<  NL ;
 
@@ -134,10 +138,9 @@ void pwm_recalc()
   tim_oc_cfg.OCIdleState  = TIM_OCIDLESTATE_RESET;
   tim_oc_cfg.OCNIdleState = TIM_OCNIDLESTATE_RESET;
 
-  const int nch = 4;
-  const int channels[nch] = { TIM_CHANNEL_1, TIM_CHANNEL_2, TIM_CHANNEL_3, TIM_CHANNEL_4 };
+  const decltype(TIM_CHANNEL_1) channels[n_pwm_ch] = { TIM_CHANNEL_1, TIM_CHANNEL_2, TIM_CHANNEL_3, TIM_CHANNEL_4 };
 
-  for( int i=0; i<nch; ++i ) {
+  for( unsigned i=0; i<n_pwm_ch; ++i ) {
     HAL_TIM_PWM_Stop( &tim_h, channels[i] );
     tim_oc_cfg.Pulse = pwm_vals[i] * pbase / 100;
     if( HAL_TIM_PWM_ConfigChannel( &tim_h, &tim_oc_cfg, channels[i] ) != HAL_OK ) {

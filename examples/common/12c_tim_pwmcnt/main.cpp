@@ -15,6 +15,8 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
+const char* common_help_string = "App to test timer as conter" NL;
+
 TIM_HandleTypeDef tim_pwm_h;
 TIM_HandleTypeDef tim_cnt_h;
 int MX_TIM_PWM_Init();
@@ -233,7 +235,6 @@ void HAL_TIM_Base_MspDeInit( TIM_HandleTypeDef* tim_baseHandle )
     HAL_GPIO_DeInit( TIM_IN_GPIO, TIM_IN_PIN );
   }
 }
-
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 
