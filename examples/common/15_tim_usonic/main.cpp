@@ -12,12 +12,14 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
+const char* common_help_string = "App to test US-014 ultrasonic sensor with timer" NL;
+
 TIM_HandleTypeDef tim_h;
 void init_usonic();
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
+CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " [n] - test sensor"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -41,7 +43,10 @@ int main(void)
 
   srl.re_ps();
 
+  oxc_add_aux_tick_fun( led_task_nortos );
+
   init_usonic();
+
   delay_ms( 50 );
 
   std_main_loop_nortos( &srl, nullptr );
@@ -57,6 +62,7 @@ int cmd_test0( int argc, const char * const * argv )
   uint32_t t_step = UVAR('t');
   STDOUT_os;
   os <<  NL "Test0: n= "  <<  n  <<  " t= "  <<  t_step  <<  NL;
+  tim_print_cfg( TIM_EXA );
 
   delay_ms( 10 );
 
@@ -70,7 +76,6 @@ int cmd_test0( int argc, const char * const * argv )
     delay_ms_until_brk( &tm0, t_step );
   }
 
-  tim_print_cfg( TIM_EXA );
 
   return 0;
 }
@@ -82,7 +87,6 @@ void init_usonic()
   // 5.8 mks approx 1mm 170000 = v_c/2 in mm/s, 998 or 846
   tim_h.Init.Prescaler         = calc_TIM_psc_for_cnt_freq( TIM_EXA, 170000 );
   tim_h.Instance               = TIM_EXA;
-  tim_h.Init.Prescaler         = UVAR('p');
   tim_h.Init.Period            = 8500; // F approx 20Hz: for future motor PWM
   tim_h.Init.ClockDivision     = 0;
   tim_h.Init.CounterMode       = TIM_COUNTERMODE_UP;
@@ -103,7 +107,7 @@ void init_usonic()
   tim_oc_cfg.OCFastMode   = TIM_OCFAST_DISABLE;
   tim_oc_cfg.OCIdleState  = TIM_OCIDLESTATE_RESET;
   tim_oc_cfg.OCNIdleState = TIM_OCNIDLESTATE_RESET;
-  tim_oc_cfg.Pulse        = 3; // 3 = approx 16 mks
+  tim_oc_cfg.Pulse        = 3; // 3 = approx 16 us
   if( HAL_TIM_PWM_ConfigChannel( &tim_h, &tim_oc_cfg, TIM_CHANNEL_1 ) != HAL_OK ) {
     UVAR('e') = 11;
     return;
@@ -125,7 +129,7 @@ void init_usonic()
     return;
   }
 
-  HAL_NVIC_SetPriority( TIM_EXA_IRQ, 5, 0 );
+  HAL_NVIC_SetPriority( TIM_EXA_IRQ, 7, 0 );
   HAL_NVIC_EnableIRQ( TIM_EXA_IRQ );
 
   if( HAL_TIM_IC_Start_IT( &tim_h, TIM_CHANNEL_2 ) != HAL_OK ) {
@@ -143,10 +147,12 @@ void HAL_TIM_IC_CaptureCallback( TIM_HandleTypeDef *htim )
   uint32_t cap2;
   static uint32_t c_old = 0xFFFFFFFF;
   if( htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2 )  {
-    leds.toggle( BIT1 );
     cap2 = HAL_TIM_ReadCapturedValue( htim, TIM_CHANNEL_2 );
     if( cap2 > c_old ) {
       UVAR('l') = cap2 - c_old ;
+      leds.reset( BIT2 );
+    } else {
+      leds.set( BIT2 );
     }
     c_old = cap2;
 
