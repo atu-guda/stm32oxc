@@ -12,8 +12,18 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
+const char* common_help_string = "App to test timer as PWM source with fade" NL;
+
 TIM_HandleTypeDef tim_h;
-int pwm_vals[] = { 25, 50, 75, 90 };
+
+
+PwmCh pwmc[] = {
+  { 0, TIM_CHANNEL_1, (TIM_EXA->CCR1), 25 },
+  { 1, TIM_CHANNEL_2, (TIM_EXA->CCR2), 50 },
+  { 2, TIM_CHANNEL_3, (TIM_EXA->CCR3), 75 },
+  { 3, TIM_CHANNEL_4, (TIM_EXA->CCR4), 90 }
+};
+// const auto n_pwm_ch = size(pwmc);
 void tim_cfg();
 void pwm_update();
 
@@ -59,21 +69,22 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  for( int i=0; i<4; ++i ) {
-    if( argc > i+1 ) {
-      pwm_vals[i] = strtol( argv[i+1], 0, 0 );
+  for( auto &ch : pwmc ) {
+    if( argc <= (int)(ch.idx+1) ) {
+      break;
     }
+    ch.v = strtol( argv[ch.idx+1], 0, 0 );
   }
 
   STDOUT_os;
-  os << NL "Test0: pwm_vals[]= ";
-  for( int i=0; i<4; ++i ) {
-    os << pwm_vals[i] <<  ' ';
+  os << NL "# Test0: pwm_vals[]= ";
+  for( auto ch : pwmc ) {
+    os << ch.v <<  ' ';
   }
   os <<  NL ;
 
-  tim_print_cfg( TIM_EXA );
   // pwm_recalc();
+  pwm_update();
   pwm_update();
 
   return 0;
@@ -107,20 +118,17 @@ void tim_cfg()
   tim_oc_cfg.OCIdleState  = TIM_OCIDLESTATE_RESET;
   tim_oc_cfg.OCNIdleState = TIM_OCNIDLESTATE_RESET;
 
-  const int nch = 4;
-  const int channels[nch] = { TIM_CHANNEL_1, TIM_CHANNEL_2, TIM_CHANNEL_3, TIM_CHANNEL_4 };
-
-  for( int i=0; i<nch; ++i ) {
-    HAL_TIM_PWM_Stop( &tim_h, channels[i] );
-    tim_oc_cfg.Pulse = pwm_vals[i] * pbase / 100;
-    if( HAL_TIM_PWM_ConfigChannel( &tim_h, &tim_oc_cfg, channels[i] ) != HAL_OK ) {
-      UVAR('e') = 11+i;
+  for( auto ch : pwmc ) {
+    HAL_TIM_PWM_Stop( &tim_h, ch.ch );
+    tim_oc_cfg.Pulse = ch.v * pbase / 100;
+    if( HAL_TIM_PWM_ConfigChannel( &tim_h, &tim_oc_cfg, ch.ch ) != HAL_OK ) {
+      UVAR('e') = 11 + ch.idx;
       return;
     }
-    HAL_TIM_PWM_Start( &tim_h, channels[i] );
+    HAL_TIM_PWM_Start( &tim_h, ch.ch );
   }
-}
 
+}
 
 void pwm_update()
 {
@@ -128,10 +136,9 @@ void pwm_update()
   int pbase = UVAR('a');
   tim_h.Instance->ARR  = pbase;
   int scl = pbase;
-  tim_h.Instance->CCR1 = pwm_vals[0] * scl / 1000;
-  tim_h.Instance->CCR2 = pwm_vals[1] * scl / 1000;
-  tim_h.Instance->CCR3 = pwm_vals[2] * scl / 1000;
-  tim_h.Instance->CCR4 = pwm_vals[3] * scl / 1000;
+  for( auto ch : pwmc ) {
+    ch.ccr = ch.v * scl / 100;
+  }
 }
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

@@ -11,6 +11,7 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
+const char* common_help_string = "App to test stepmotor" NL;
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );

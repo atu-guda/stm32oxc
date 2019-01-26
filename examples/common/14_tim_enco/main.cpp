@@ -12,6 +12,8 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
+const char* common_help_string = "App to test encoder interface in timer" NL;
+
 TIM_HandleTypeDef tim_h;
 void init_enco();
 
@@ -39,19 +41,18 @@ int main(void)
 
   BOARD_POST_INIT_BLINK;
 
-
   pr( NL "##################### " PROJ_NAME NL );
+
+  init_enco();
 
   srl.re_ps();
 
-  init_enco();
-  delay_ms( 50 );
+  oxc_add_aux_tick_fun( led_task_nortos );
 
   std_main_loop_nortos( &srl, nullptr );
 
   return 0;
 }
-
 
 
 // TEST0

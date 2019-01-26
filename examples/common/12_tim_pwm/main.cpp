@@ -1,6 +1,8 @@
 #include <cstring>
 #include <cstdlib>
 
+#include <iterator>
+
 #include <oxc_auto.h>
 #include <oxc_tim.h>
 
@@ -15,8 +17,15 @@ BOARD_CONSOLE_DEFINES;
 const char* common_help_string = "App to test timer as PWM source" NL;
 
 TIM_HandleTypeDef tim_h;
-const unsigned n_pwm_ch = 4;
-int pwm_vals[n_pwm_ch] = { 25, 50, 75, 90 };
+
+
+PwmCh pwmc[] = {
+  { 0, TIM_CHANNEL_1, (TIM_EXA->CCR1), 25 },
+  { 1, TIM_CHANNEL_2, (TIM_EXA->CCR2), 50 },
+  { 2, TIM_CHANNEL_3, (TIM_EXA->CCR3), 75 },
+  { 3, TIM_CHANNEL_4, (TIM_EXA->CCR4), 90 }
+};
+// const auto n_pwm_ch = size(pwmc);
 void tim_cfg();
 void pwm_recalc();
 void pwm_update();
@@ -36,9 +45,14 @@ const CmdInfo* global_cmds[] = {
   nullptr
 };
 
-const unsigned n_countmodes = 5;
-const uint32_t countmodes[n_countmodes] = { TIM_COUNTERMODE_UP, TIM_COUNTERMODE_DOWN, TIM_COUNTERMODE_CENTERALIGNED1,
- TIM_COUNTERMODE_CENTERALIGNED2, TIM_COUNTERMODE_CENTERALIGNED3 };
+const uint32_t countmodes[] = {
+  TIM_COUNTERMODE_UP,
+  TIM_COUNTERMODE_DOWN,
+  TIM_COUNTERMODE_CENTERALIGNED1,
+  TIM_COUNTERMODE_CENTERALIGNED2,
+  TIM_COUNTERMODE_CENTERALIGNED3
+};
+const auto n_countmodes = size(countmodes);
 
 
 int main(void)
@@ -72,23 +86,23 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  for( decltype(+n_pwm_ch) i=0; i<n_pwm_ch; ++i ) {
-    if( argc <= (int)(i+1) ) {
+  for( auto &ch : pwmc ) {
+    if( argc <= (int)(ch.idx+1) ) {
       break;
     }
-    pwm_vals[i] = strtol( argv[i+1], 0, 0 );
+    ch.v = strtol( argv[ch.idx+1], 0, 0 );
   }
 
   STDOUT_os;
   os << NL "# Test0: pwm_vals[]= ";
-  for( auto v : pwm_vals ) {
-    os << v <<  ' ';
+  for( auto ch : pwmc ) {
+    os << ch.v <<  ' ';
   }
   os <<  NL ;
 
-  tim_print_cfg( TIM_EXA );
   // pwm_recalc();
   pwm_update();
+  tim_print_cfg( TIM_EXA );
 
   return 0;
 }
@@ -138,16 +152,14 @@ void pwm_recalc()
   tim_oc_cfg.OCIdleState  = TIM_OCIDLESTATE_RESET;
   tim_oc_cfg.OCNIdleState = TIM_OCNIDLESTATE_RESET;
 
-  const decltype(TIM_CHANNEL_1) channels[n_pwm_ch] = { TIM_CHANNEL_1, TIM_CHANNEL_2, TIM_CHANNEL_3, TIM_CHANNEL_4 };
-
-  for( unsigned i=0; i<n_pwm_ch; ++i ) {
-    HAL_TIM_PWM_Stop( &tim_h, channels[i] );
-    tim_oc_cfg.Pulse = pwm_vals[i] * pbase / 100;
-    if( HAL_TIM_PWM_ConfigChannel( &tim_h, &tim_oc_cfg, channels[i] ) != HAL_OK ) {
-      UVAR('e') = 11+i;
+  for( auto ch : pwmc ) {
+    HAL_TIM_PWM_Stop( &tim_h, ch.ch );
+    tim_oc_cfg.Pulse = ch.v * pbase / 100;
+    if( HAL_TIM_PWM_ConfigChannel( &tim_h, &tim_oc_cfg, ch.ch ) != HAL_OK ) {
+      UVAR('e') = 11 + ch.idx;
       return;
     }
-    HAL_TIM_PWM_Start( &tim_h, channels[i] );
+    HAL_TIM_PWM_Start( &tim_h, ch.ch );
   }
 
 }
@@ -161,10 +173,10 @@ void pwm_update()
   if( UVAR('r') ) { // raw values
     scl = 100;
   }
-  tim_h.Instance->CCR1 = pwm_vals[0] * scl / 100;
-  tim_h.Instance->CCR2 = pwm_vals[1] * scl / 100;
-  tim_h.Instance->CCR3 = pwm_vals[2] * scl / 100;
-  tim_h.Instance->CCR4 = pwm_vals[3] * scl / 100;
+
+  for( auto ch : pwmc ) {
+    ch.ccr = ch.v * scl / 100;
+  }
 }
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

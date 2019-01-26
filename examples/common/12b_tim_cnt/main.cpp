@@ -15,6 +15,8 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
+const char* common_help_string = "App to test timer as counter" NL;
+
 TIM_HandleTypeDef tim_cnt_h;
 int MX_TIM_IN_Init();
 

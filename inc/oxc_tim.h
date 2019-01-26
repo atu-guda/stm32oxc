@@ -5,6 +5,13 @@
 
 #include <oxc_base.h>
 
+struct PwmCh {
+  uint16_t idx;
+  const decltype(TIM_CHANNEL_1) ch;
+  __IO uint32_t &ccr;
+  unsigned v;
+};
+
 uint32_t get_TIM_in_freq( TIM_TypeDef *tim );   // from bus, before prescaler
 uint32_t get_TIM_cnt_freq( TIM_TypeDef *tim );  // after precaler
 uint32_t get_TIM_base_freq( TIM_TypeDef *tim ); // after ARR

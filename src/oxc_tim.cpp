@@ -68,18 +68,20 @@ void tim_print_cfg( TIM_TypeDef *tim )
 
   int freq1 = freq_in  / ( psc + 1 );
   int freq2 = freq1    / ( arr + 1 );
-  os <<  "# timer: f_in: "  <<  freq_in
+  os <<  "# timer " << HexInt( tim )
      <<  " PSC: "   <<  psc
      <<  " ARR: "   <<  arr
+     <<  " f_in: "  <<  freq_in
      <<  " freq1: " <<  freq1
      <<  " freq2: " <<  freq2
+     <<  NL "# CR1: "   <<  HexInt( tim->CR1, true )
+     <<  " CR2: "   <<  HexInt( tim->CR2, true )
+     <<  " SMCR: "  <<  HexInt( tim->SMCR, true )
+     <<  " DIER: "  <<  HexInt( tim->DIER, true )
+     <<  NL "# SR: "    <<  HexInt( tim->SR, true )
      <<  " CNT: "   <<  tim->CNT
      <<  " CCR1: "  <<  tim->CCR1
-     <<  " CR1: "   <<  HexInt( tim->CR1, true )
-     <<  " CR2: "   <<  HexInt( tim->CR2, true )
-     <<  " SMCR: "  <<  HexInt( tim->SMCR )
-     <<  " DIER: "  <<  HexInt( tim->DIER )
-     <<  " SR: "    <<  HexInt( tim->SR )
+     <<  " CCR2: "  <<  tim->CCR2
      << NL;
 }
 #endif
