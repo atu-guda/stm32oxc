@@ -10,6 +10,8 @@
 #include <oxc_floatfun.h>
 #include <oxc_statdata.h>
 
+using sreal = StatData::sreal;
+
 using namespace std;
 using namespace SMLRL;
 
@@ -111,7 +113,7 @@ int cmd_test0( int argc, const char * const * argv )
 
   uint32_t n_ADC_sampl = n_ch;
 
-  double kv = 0.001 * UVAR('v') / 4096;
+  sreal kv = 0.001f * UVAR('v') / 4096;
 
   adc.reset_cnt();
 
@@ -138,7 +140,7 @@ int cmd_test0( int argc, const char * const * argv )
     }
 
     float tc = 0.001f * ( tcc - tm00 );
-    double v[n_ch];
+    sreal v[n_ch];
 
     if( UVAR('l') ) {  leds.set( BIT2 ); }
     adc.end_dma = 0;
@@ -171,7 +173,7 @@ int cmd_test0( int argc, const char * const * argv )
       os <<  FloatFmt( tc, "%-10.4f "  );
     }
     for( decltype(n_ch) j=0; j<n_ch; ++j ) {
-      double cv = kv * ADC_buf[j] * v_coeffs[j];
+      sreal cv = kv * ADC_buf[j] * v_coeffs[j];
       v[j] = cv;
     }
     //
@@ -228,10 +230,10 @@ void DMA2_Stream0_IRQHandler(void)
 int cmd_set_coeffs( int argc, const char * const * argv )
 {
   if( argc > 1 ) {
-    v_coeffs[0] = arg2float_d( 1, argc, argv, 1, -1e10, 1e10 );
-    v_coeffs[1] = arg2float_d( 2, argc, argv, 1, -1e10, 1e10 );
-    v_coeffs[2] = arg2float_d( 3, argc, argv, 1, -1e10, 1e10 );
-    v_coeffs[3] = arg2float_d( 4, argc, argv, 1, -1e10, 1e10 );
+    v_coeffs[0] = arg2float_d( 1, argc, argv, 1, -1e10f, 1e10f );
+    v_coeffs[1] = arg2float_d( 2, argc, argv, 1, -1e10f, 1e10f );
+    v_coeffs[2] = arg2float_d( 3, argc, argv, 1, -1e10f, 1e10f );
+    v_coeffs[3] = arg2float_d( 4, argc, argv, 1, -1e10f, 1e10f );
   }
   STDOUT_os;
   os << "# Coefficients: "

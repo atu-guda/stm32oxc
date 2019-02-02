@@ -15,6 +15,8 @@
 using namespace std;
 using namespace SMLRL;
 
+using sreal = StatData::sreal;
+
 USE_DIE4LED_ERROR_HANDLER;
 BOARD_DEFINE_LEDS;
 
@@ -118,7 +120,7 @@ int cmd_test0( int argc, const char * const * argv )
   os <<  "# cfg= " << HexInt16( x_cfg ) << " scale_mv = " << scale_mv << NL;
 
   int16_t ADC_buf[n_ADC_ch_max];
-  double kv = 0.001 * scale_mv / 0x7FFF;
+  sreal kv = 0.001f * scale_mv / 0x7FFF;
 
   os << "# n = " << n << " n_ch= " << n_ch << " t_step= " << t_step << NL;
   os << "# skip_pwm= " << skip_pwm << NL << "# Coeffs: ";
@@ -151,7 +153,7 @@ int cmd_test0( int argc, const char * const * argv )
     }
 
     float tc = 0.001f * ( tcc - tm00 );
-    double v[n_ch+1]; // +1 for PWM
+    sreal v[n_ch+1]; // +1 for PWM
 
     if( UVAR('l') ) {  leds.set( BIT2 ); }
     unsigned no = adc.getOneShotNch( 0, e_ch, ADC_buf );
@@ -165,7 +167,7 @@ int cmd_test0( int argc, const char * const * argv )
       os <<  FloatFmt( tc, "%-10.4f "  );
     }
     for( decltype(n_ch) j=0; j<n_ch; ++j ) {
-      double cv = kv * ADC_buf[j] * v_coeffs[j];
+      sreal cv = kv * ADC_buf[j] * v_coeffs[j];
       v[j] = cv;
     }
     v[n_ch] = pwmdat.get_v_real();
@@ -235,7 +237,7 @@ void tim_cfg()
 
 int cmd_pwm( int argc, const char * const * argv )
 {
-  float v = arg2float_d( 1, argc, argv, 10, 0, 100 );
+  float v = arg2float_d( 1, argc, argv, 10.0f, 0.0f, 100.0f );
   STDOUT_os;
   pwmdat.set_v_manual( v );
   tim_print_cfg( TIM_EXA );
@@ -256,10 +258,10 @@ int cmd_tinit( int argc, const char * const * argv )
 int cmd_set_coeffs( int argc, const char * const * argv )
 {
   if( argc > 1 ) {
-    v_coeffs[0] = arg2float_d( 1, argc, argv, 1, -1e10, 1e10 );
-    v_coeffs[1] = arg2float_d( 2, argc, argv, 1, -1e10, 1e10 );
-    v_coeffs[2] = arg2float_d( 3, argc, argv, 1, -1e10, 1e10 );
-    v_coeffs[3] = arg2float_d( 4, argc, argv, 1, -1e10, 1e10 );
+    v_coeffs[0] = arg2float_d( 1, argc, argv, 1, -1e10f, 1e10f );
+    v_coeffs[1] = arg2float_d( 2, argc, argv, 1, -1e10f, 1e10f );
+    v_coeffs[2] = arg2float_d( 3, argc, argv, 1, -1e10f, 1e10f );
+    v_coeffs[3] = arg2float_d( 4, argc, argv, 1, -1e10f, 1e10f );
   }
   STDOUT_os;
   os << "# Coefficients: "

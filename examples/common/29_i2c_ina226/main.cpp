@@ -12,6 +12,8 @@
 using namespace std;
 using namespace SMLRL;
 
+using sreal = StatData::sreal;
+
 USE_DIE4LED_ERROR_HANDLER;
 BOARD_DEFINE_LEDS;
 
@@ -130,13 +132,13 @@ int cmd_test0( int argc, const char * const * argv )
     int16_t v_bus_raw = ina226.getVbus();
     if( UVAR('l') ) {  leds.reset( BIT2 ); }
 
-    double v[2];
-    v[0] = INA226::lsb_V_sh_nv  * v_sh_raw  * 1e-9;
-    v[1] = INA226::lsb_V_bus_uv * v_bus_raw * 1e-6;
+    sreal v[2];
+    v[0] = INA226::lsb_V_sh_nv  * v_sh_raw  * 1e-9f;
+    v[1] = INA226::lsb_V_bus_uv * v_bus_raw * 1e-6f;
 
     int dt = tcc - tm00; // ms
     if( do_out ) {
-      os <<  FloatFmt( 0.001 * dt, "%-10.4f "  );
+      os <<  FloatFmt( 0.001f * dt, "%-10.4f "  );
     }
 
     sdat.add( v );
@@ -200,14 +202,14 @@ int cmd_getVIP( int argc, const char * const * argv )
     }
 
     float tc = 0.001f * ( tcc - tm00 );
-    double v[n_ch];
+    sreal v[n_ch];
 
     if( UVAR('l') ) {  leds.set( BIT2 ); }
 
-    v[0] = ina226.getVbus_uV()  * 1e-6 * v_coeffs[0];
-    v[1] = ina226.getI_mA_reg() * 1e-3 * v_coeffs[1];
-    v[2] = ina226.getI_uA() * 1e-6     * v_coeffs[2];
-    v[3] = ina226.getP()               * v_coeffs[3];
+    v[0] = ina226.getVbus_uV()  * 1e-6f * v_coeffs[0];
+    v[1] = ina226.getI_mA_reg() * 1e-3f * v_coeffs[1];
+    v[2] = ina226.getI_uA() * 1e-6f     * v_coeffs[2];
+    v[3] = ina226.getP()                * v_coeffs[3];
 
     if( UVAR('l') ) {  leds.reset( BIT2 ); }
 
@@ -238,11 +240,11 @@ int cmd_getVIP( int argc, const char * const * argv )
 
 int cmd_setcalibr( int argc, const char * const * argv )
 {
-  float calibr_I_lsb = arg2float_d( 1, argc, argv, ina226.get_I_lsb_mA()  * 1e-3, 1e-20, 1e10 );
-  float calibr_R     = arg2float_d( 2, argc, argv, ina226.get_R_sh_uOhm() * 1e-6, 1e-20, 1e10 );
-  float V_sh_max =  INA226::lsb_V_sh_nv * 1e-9 * 0x7FFF;
+  float calibr_I_lsb = arg2float_d( 1, argc, argv, ina226.get_I_lsb_mA()  * 1e-3f, 1e-20f, 1e10f );
+  float calibr_R     = arg2float_d( 2, argc, argv, ina226.get_R_sh_uOhm() * 1e-6f, 1e-20f, 1e10f );
+  float V_sh_max =  INA226::lsb_V_sh_nv * 1e-9f * 0x7FFF;
   STDOUT_os;
-  ina226.set_calibr_val( (uint32_t)(calibr_R * 1e6), (uint32_t)(calibr_I_lsb * 1e3) );
+  ina226.set_calibr_val( (uint32_t)(calibr_R * 1e6f), (uint32_t)(calibr_I_lsb * 1e3f) );
   os << "# calibr_I_lsb= " << calibr_I_lsb << " calibr_R= " << calibr_R
      << " V_sh_max=  " << V_sh_max
      << " I_max= " << ( V_sh_max / calibr_R ) << " / " << ( calibr_I_lsb * 0x7FFF ) << NL;

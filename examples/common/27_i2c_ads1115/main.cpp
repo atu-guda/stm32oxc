@@ -12,6 +12,8 @@
 using namespace std;
 using namespace SMLRL;
 
+using sreal = StatData::sreal;
+
 USE_DIE4LED_ERROR_HANDLER;
 BOARD_DEFINE_LEDS;
 
@@ -128,10 +130,10 @@ int cmd_test0( int argc, const char * const * argv )
     if( UVAR('l') ) {  leds.reset( BIT2 ); }
     int dt = tcc - tm00; // ms
     if( do_out ) {
-      os <<  FloatFmt( 0.001 * dt, "%-10.4f "  );
+      os <<  FloatFmt( 0.001f * dt, "%-10.4f "  );
     }
 
-    double vf0 = 0.001f * scale_mv * v0  * v_coeffs[0] / 32678;
+    sreal vf0 = 0.001f * scale_mv * v0  * v_coeffs[0] / 32678;
 
     sdat.add( &vf0 );
 
@@ -181,7 +183,7 @@ int cmd_getNch( int argc, const char * const * argv )
   os <<  "# cfg= " << HexInt16( x_cfg ) << " scale_mv = " << scale_mv << NL;
 
   int16_t vi[4];
-  double kv = 0.001 * scale_mv / 0x7FFF;
+  sreal kv = 0.001f * scale_mv / 0x7FFF;
 
   leds.set(   BIT0 | BIT1 | BIT2 ); delay_ms( 100 );
   leds.reset( BIT0 | BIT1 | BIT2 );
@@ -198,7 +200,7 @@ int cmd_getNch( int argc, const char * const * argv )
       tm0 = tcc; tm00 = tm0;
     }
     float tc = 0.001f * ( tcc - tm00 );
-    double v[n_ch];
+    sreal v[n_ch];
 
     if( UVAR('l') ) {  leds.set( BIT2 ); }
     int no = adc.getOneShotNch( 0, e_ch, vi );
@@ -234,10 +236,10 @@ int cmd_getNch( int argc, const char * const * argv )
 int cmd_set_coeffs( int argc, const char * const * argv )
 {
   if( argc > 1 ) {
-    v_coeffs[0] = arg2float_d( 1, argc, argv, 1, -1e10, 1e10 );
-    v_coeffs[1] = arg2float_d( 2, argc, argv, 1, -1e10, 1e10 );
-    v_coeffs[2] = arg2float_d( 3, argc, argv, 1, -1e10, 1e10 );
-    v_coeffs[3] = arg2float_d( 4, argc, argv, 1, -1e10, 1e10 );
+    v_coeffs[0] = arg2float_d( 1, argc, argv, 1, -1e10f, 1e10f );
+    v_coeffs[1] = arg2float_d( 2, argc, argv, 1, -1e10f, 1e10f );
+    v_coeffs[2] = arg2float_d( 3, argc, argv, 1, -1e10f, 1e10f );
+    v_coeffs[3] = arg2float_d( 4, argc, argv, 1, -1e10f, 1e10f );
   }
   STDOUT_os;
   os << "# Coefficients: "
