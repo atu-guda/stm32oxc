@@ -27,3 +27,6 @@ SRCS += oxc_ads1115.cpp
 
 SRCS += tim18_pwm4_exa_init.cpp
 SRCS += pwm1_ctl.cpp
+
+ALLFLAGS   += -Wdouble-promotion
+
