@@ -94,7 +94,7 @@ class INA226 : public I2CClient {
    int32_t getVbus_uV () { return getVbus() * lsb_V_bus_uv; }
    int16_t getP()    { return (int16_t)readReg( reg_P ); }
    int16_t getI_in_lsb()    { return (int16_t)readReg( reg_I ); }
-   int32_t Vsh2I_uA( uint16_t v_raw ) const { return (int32_t)( (long long) v_raw * 1000 * lsb_V_sh_nv / R_sh_uOhm); }
+   int32_t Vsh2I_uA( int16_t v_raw ) const { return (int32_t)( (long long) v_raw * 1000 * lsb_V_sh_nv / R_sh_uOhm); }
    int32_t getI_uA() { return Vsh2I_uA( getVsh() ); }
    int32_t getI_mA_reg() { return getI_in_lsb() * I_lsb_mA; }
    uint16_t readReg( uint8_t reg ) { return recv_reg1_16bit_rev( reg, 0 ); };
