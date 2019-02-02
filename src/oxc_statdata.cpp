@@ -5,19 +5,22 @@
 using namespace std;
 
 StatData::StatData( unsigned nch )
+  : n_ch( min( nch, max_n_ch ) )
 {
-  d.assign( nch, Stat1() );
+  reset();
 }
 
 void StatData::reset()
 {
-  d.assign( d.size(), Stat1() );
+  for( auto &x : d ) {
+    x.reset();
+  }
   n = 0;
 }
 
 void StatData::add( const sreal *v )
 {
-  for( decltype(+d.size()) j=0; j<d.size(); ++j ) {
+  for( decltype(+n_ch) j=0; j<n_ch; ++j ) {
     auto cv = v[j];
     auto cv2 = cv * cv;
     if( cv < d[j].min ) { d[j].min = cv; }
@@ -38,14 +41,14 @@ void StatData::calc()
 void StatData::out_part( HOST_OSTREAM &os, const sreal Stat1::* pptr, const char *lbl ) const
 {
   os << NL "# " << lbl << "   ";
-  for( decltype(+d.size()) j=0; j<d.size(); ++j ) {
+  for( decltype(+n_ch) j=0; j<n_ch; ++j ) {
     os << ' ' << d[j].*pptr;
   }
 }
 
 void StatData::out_parts( HOST_OSTREAM &os ) const
 {
-  os << NL "# n_real= " << n << " n_ch = " << d.size();
+  os << NL "# n_real= " << n << " n_ch = " << n_ch;
   for( auto p : structParts ) {
     out_part( os, p.pptr, p.label );
   }

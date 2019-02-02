@@ -1,7 +1,6 @@
 #ifndef _OXC_STATDATA_H
 #define _OXC_STATDATA_H
 
-#include <vector>
 #include <limits>
 
 #ifdef USE_OXC
@@ -18,21 +17,27 @@
 
 struct StatData {
   using sreal = float;
-  // using sreal = double;
+  static const constexpr unsigned max_n_ch = 8;
   struct Stat1 {
     sreal min = std::numeric_limits<sreal>::max(), max = std::numeric_limits<sreal>::min(),
           mean = 0, mean2 = 0, sd = 0;
     Stat1() = default;
+    void reset() {
+      min = std::numeric_limits<sreal>::max();
+      max = std::numeric_limits<sreal>::min();
+      mean = 0; mean2 = 0; sd = 0;
+    }
   };
   struct StructPart {
     const sreal Stat1::* pptr;
     const char* const label;
   };
-  std::vector<Stat1> d; // TODO: fixed with max ???
+  Stat1 d[max_n_ch];
   unsigned n = 0;
+  unsigned n_ch = 0;
   //
   explicit StatData( unsigned nch );
-  auto getNch() const { return d.size(); }
+  auto getNch() const { return n_ch; }
   void add( const sreal *v );
   void reset();
   void calc();
