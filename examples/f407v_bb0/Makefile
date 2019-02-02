@@ -43,6 +43,7 @@ SUBDIRS = \
   51_adcdma \
   53_adcdma_sd \
   55_dac0 \
+  80_math_stat
 
 ALL : examples_board
 

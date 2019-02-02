@@ -43,6 +43,7 @@ SUBDIRS = \
   50b_adcdma_pwm \
   51_adcdma \
   53_adcdma_sd \
+  80_math_stat
 
 #  55_dac0 \
 

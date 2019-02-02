@@ -34,6 +34,7 @@ SUBDIRS = \
   28_spi_ad9833 \
   29_i2c_ina226 \
   29a_i2c_ina226_pwm \
+  80_math_stat \
   l01_accel \
   l02_accel \
   l03_mag

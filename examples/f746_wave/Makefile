@@ -42,6 +42,7 @@ SUBDIRS = \
   50b_adcdma_pwm \
   51_adcdma \
   51a_adcdma_n \
+  80_math_stat \
   x01_fmc \
   x51_adcdma_fmc \
   x52_adcirq_fmc \
