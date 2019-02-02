@@ -15,14 +15,15 @@ void StatData::reset()
   n = 0;
 }
 
-void StatData::add( const double *v )
+void StatData::add( const sreal *v )
 {
-  for( unsigned j=0; j<d.size(); ++j ) {
-    double cv = v[j];
+  for( decltype(+d.size()) j=0; j<d.size(); ++j ) {
+    auto cv = v[j];
+    auto cv2 = cv * cv;
     if( cv < d[j].min ) { d[j].min = cv; }
     if( cv > d[j].max ) { d[j].max = cv; }
-    d[j].sum  += cv;
-    d[j].sum2 += cv * cv;
+    d[j].mean  = ( n * d[j].mean  + cv  ) / (n+1);
+    d[j].mean2 = ( n * d[j].mean2 + cv2 ) / (n+1);
   }
   ++n;
 }
@@ -30,41 +31,24 @@ void StatData::add( const double *v )
 void StatData::calc()
 {
   for( auto &t : d ) {
-    t.mean = t.sum / n;
-    t.sd = sqrt(  t.sum2 * n - t.sum * t.sum ) / n;
+    t.sd  = sqrt(  t.mean2  - t.mean * t.mean );
   }
 }
 
-OutStream& operator<<( OutStream &os, const StatData &sd )
+void StatData::out_part( HOST_OSTREAM &os, const sreal Stat1::* pptr, const char *lbl ) const
 {
-  auto n_ch = sd.d.size();
-  using n_t = decltype( n_ch );
-  os << NL "# n_real= " << sd.n << " n_ch = " << n_ch;
-  os << NL "# mean   ";
-  for( n_t j=0; j<n_ch; ++j ) {
-    os << ' ' << sd.d[j].mean;
+  os << NL "# " << lbl << "   ";
+  for( decltype(+d.size()) j=0; j<d.size(); ++j ) {
+    os << ' ' << d[j].*pptr;
   }
-  os << NL "# min    ";
-  for( n_t j=0; j<n_ch; ++j ) {
-    os << ' ' << sd.d[j].min;
+}
+
+void StatData::out_parts( HOST_OSTREAM &os ) const
+{
+  os << NL "# n_real= " << n << " n_ch = " << d.size();
+  for( auto p : structParts ) {
+    out_part( os, p.pptr, p.label );
   }
-  os << NL "# max    ";
-  for( n_t j=0; j<n_ch; ++j ) {
-    os << ' ' << sd.d[j].max;
-  }
-  os << NL "# sum    ";
-  for( n_t j=0; j<n_ch; ++j ) {
-    os << ' ' << sd.d[j].sum;
-  }
-  os << NL "# sum2   ";
-  for( n_t j=0; j<n_ch; ++j ) {
-    os << ' ' << sd.d[j].sum2;
-  }
-  os << NL "# sd     ";
-  for( n_t j=0; j<n_ch; ++j ) {
-    os << ' ' << sd.d[j].sd;
-  }
-  return os;
 }
 
 
