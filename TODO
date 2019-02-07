@@ -1,3 +1,7 @@
+Remove all printf - like functions (except text iprintf)
+Remove double, at least from ADC statistics
+Fix 51a_adcdma_n ... examples
+
 SmallRl, console: set output funcs to unbind
 Make  examples w/o FreeRTOS ?
 Move SPI common funcs from 28 to oxc lib

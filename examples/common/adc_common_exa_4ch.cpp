@@ -42,10 +42,10 @@ void adc_out_to( OutStream &os, uint32_t n, uint32_t st )
   for( uint32_t i=0; i< n; ++i ) {
     uint32_t ii = i + st;
     t = adc.t_step_f * ii;
-    os << FloatFmt( t, "%#12.7g  " );
+    os << t << ' ';
     for( int j=0; j< n_ch; ++j ) {
       float v = 0.001f * (float) adc.data[ii*n_ch+j] * UVAR('v') / 4096;
-      os << FloatFmt( v, " %#10.6g" );
+      os << v;
     }
     os << NL;
   }
@@ -62,6 +62,7 @@ void adc_show_stat( OutStream &os, uint32_t n, uint32_t st )
 
   double adc_min[adc.n_ch_max], adc_max[adc.n_ch_max], adc_mean[adc.n_ch_max],
   adc_sum[adc.n_ch_max], adc_sum2[adc.n_ch_max];
+  // TODO: replace all with float: see StatData
   for( int j=0; j<adc.n_ch_max; ++j ) {
     adc_min[j] = 5.1e37; adc_max[j] = -5.1e37; adc_mean[j] = 0;
     adc_sum[j] = adc_sum2[j] = 0;
@@ -81,27 +82,27 @@ void adc_show_stat( OutStream &os, uint32_t n, uint32_t st )
   os << NL "# mean ";
   for( int j=0; j<n_ch; ++j ) {
     adc_mean[j] = adc_sum[j] / n;
-    os << ' ' << adc_mean[j];
+    os << ' ' << (float)adc_mean[j];
   }
   os << NL "# min  ";
   for( int j=0; j<n_ch; ++j ) {
-    os << ' ' << adc_min[j];
+    os << ' ' << (float)adc_min[j];
   }
   os << NL "# max  ";
   for( int j=0; j<n_ch; ++j ) {
-    os << ' ' << adc_max[j];
+    os << ' ' << (float)adc_max[j];
   }
   os << NL "# sum  ";
   for( int j=0; j<n_ch; ++j ) {
-    os << ' ' << adc_sum[j];
+    os << ' ' << (float)adc_sum[j];
   }
   os << NL "# sum2 ";
   for( int j=0; j<n_ch; ++j ) {
-    os << ' ' << adc_sum2[j];
+    os << ' ' << (float)adc_sum2[j];
   }
   os << NL "# sd  ";
   for( int j=0; j<n_ch; ++j ) {
-    os << ' ' << (sqrt(  adc_sum2[j] * n - adc_sum[j] * adc_sum[j] ) / n );
+    os << ' ' << (float)(sqrt(  adc_sum2[j] * n - adc_sum[j] * adc_sum[j] ) / n );
   }
 
 }

@@ -130,7 +130,7 @@ int cmd_test0( int argc, const char * const * argv )
     if( UVAR('l') ) {  leds.reset( BIT2 ); }
     int dt = tcc - tm00; // ms
     if( do_out ) {
-      os <<  FloatFmt( 0.001f * dt, "%-10.4f "  );
+      os <<  FltFmt( 0.001f * dt, cvtff_auto, 12, 4 );
     }
 
     sreal vf0 = 0.001f * scale_mv * v0  * v_coeffs[0] / 32678;
@@ -138,7 +138,7 @@ int cmd_test0( int argc, const char * const * argv )
     sdat.add( &vf0 );
 
     if( do_out ) {
-      os  << ' '  <<  v0 << ' ' << FloatFmt( vf0, "%#12.6g" ) << NL;
+      os  << ' '  <<  v0 << ' ' << vf0 << NL;
     }
 
     delay_ms_until_brk( &tm0, t_step );
@@ -208,7 +208,7 @@ int cmd_getNch( int argc, const char * const * argv )
 
 
     if( do_out ) {
-      os <<  FloatFmt( tc, "%-10.4f "  );
+      os <<  FltFmt( tc, cvtff_auto, 12, 4 );
     }
 
     for( decltype(no) j=0; j<no; ++j ) {
@@ -219,7 +219,7 @@ int cmd_getNch( int argc, const char * const * argv )
 
     if( do_out ) {
       for( auto vc : v ) {
-        os  << ' '  <<  FloatFmt( vc, "%#12.7g" );
+        os  << ' '  <<  vc;
       }
       os << NL;
     }

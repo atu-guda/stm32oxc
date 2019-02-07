@@ -184,14 +184,14 @@ int cmd_test0( int argc, const char * const * argv )
     if( UVAR('l') ) {  leds.reset( BIT2 ); }
 
     if( do_out ) {
-      os <<  FloatFmt( tc, "%-10.4f "  );
+      os <<  FltFmt( tc, cvtff_auto, 12, 4 );
     }
 
     sdat.add( v );
 
     if( do_out ) {
       for( auto vc : v ) {
-        os  << ' '  <<  FloatFmt( vc, "%#12.7g" );
+        os  << ' '  <<  vc;
       }
       os << NL;
     }

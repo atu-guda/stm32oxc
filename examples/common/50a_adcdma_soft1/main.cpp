@@ -170,7 +170,7 @@ int cmd_test0( int argc, const char * const * argv )
     }
 
     if( do_out ) {
-      os <<  FloatFmt( tc, "%-10.4f "  );
+      os <<  FltFmt( tc, cvtff_auto, 12, 4 );
     }
     for( decltype(n_ch) j=0; j<n_ch; ++j ) {
       sreal cv = kv * ADC_buf[j] * v_coeffs[j];
@@ -181,7 +181,7 @@ int cmd_test0( int argc, const char * const * argv )
 
     if( do_out ) {
       for( auto vc : v ) {
-        os  << ' '  <<  FloatFmt( vc, "%#12.7g" );
+        os  << ' '  <<  vc;
       }
       os << NL;
     }

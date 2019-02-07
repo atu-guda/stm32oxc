@@ -138,13 +138,13 @@ int cmd_test0( int argc, const char * const * argv )
 
     int dt = tcc - tm00; // ms
     if( do_out ) {
-      os <<  FloatFmt( 0.001f * dt, "%-10.4f "  );
+      os <<  FltFmt(   0.001f * dt, cvtff_auto, 12, 4 );
     }
 
     sdat.add( v );
 
     if( do_out ) {
-      os  << ' '  <<  FloatFmt( v[0], "%#12.6g" ) <<  ' ' <<  FloatFmt( v[1], "%#12.6g" ) << NL;
+      os  << ' '  <<  v[0] <<  ' ' <<  v[1] << NL;
     }
 
     delay_ms_until_brk( &tm0, t_step );
@@ -214,14 +214,14 @@ int cmd_getVIP( int argc, const char * const * argv )
     if( UVAR('l') ) {  leds.reset( BIT2 ); }
 
     if( do_out ) {
-      os <<  FloatFmt( tc, "%-10.4f "  );
+      os <<  FltFmt( tc, cvtff_auto, 12, 4 );
     }
 
     sdat.add( v );
 
     if( do_out ) {
       for( auto vc : v ) {
-        os  << ' '  <<  FloatFmt( vc, "%#12.7g" );
+        os  << ' '  <<  vc;
       }
       os << NL;
     }

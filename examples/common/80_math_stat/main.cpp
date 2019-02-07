@@ -17,12 +17,15 @@ using sreal = StatData::sreal;
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
+CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test statistics"  };
+int cmd_testout( int argc, const char * const * argv );
+CmdInfo CMDINFO_TESTOUT { "testout", 'O', cmd_testout, " - test output"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
 
   &CMDINFO_TEST0,
+  &CMDINFO_TESTOUT,
   nullptr
 };
 
@@ -49,6 +52,8 @@ int main(void)
   srl.re_ps();
 
   oxc_add_aux_tick_fun( led_task_nortos );
+
+  leds.reset( 0xFF );
 
   std_main_loop_nortos( &srl, idle_main_task );
 
@@ -84,11 +89,21 @@ int cmd_test0( int argc, const char * const * argv )
   sdat.calc();
   os << sdat << NL;
 
-  delay_ms( 10 );
-
   return 0;
 }
 
+int cmd_testout( int argc, const char * const * argv )
+{
+  STDOUT_os;
+
+  for( float f = 7.23456789e-12f; f < 1e14f; f *= -10 ) {
+    os <<        FltFmt( f )
+       << ' ' << FltFmt( f, cvtff_exp )
+       << ' ' << FltFmt( f, cvtff_fix )
+       << NL;
+  }
+  return 0;
+}
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 
