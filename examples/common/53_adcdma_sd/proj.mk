@@ -22,6 +22,7 @@ REQUIRE_SPECIAL_CLOCK = y
 SRCS  = main.cpp
 
 SRCS += oxc_floatfun.cpp
+SRCS += oxc_statdata.cpp
 SRCS += oxc_io_fatfs.cpp
 
 SRCS += adc_init_exa_4ch_dma.cpp

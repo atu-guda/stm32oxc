@@ -5,6 +5,7 @@
 #include <oxc_devio.h>
 #include <oxc_adc.h>
 #include <oxc_floatfun.h>
+#include <oxc_statdata.h>
 #include <oxc_debug1.h>
 
 #ifdef USE_OXC_SD
@@ -13,6 +14,8 @@
 #endif
 
 using namespace std;
+
+using sreal = StatData::sreal;
 
 extern ADC_Info adc;
 
@@ -60,50 +63,17 @@ void adc_show_stat( OutStream &os, uint32_t n, uint32_t st )
     n = adc.n_series - st;
   }
 
-  double adc_min[adc.n_ch_max], adc_max[adc.n_ch_max], adc_mean[adc.n_ch_max],
-  adc_sum[adc.n_ch_max], adc_sum2[adc.n_ch_max];
-  // TODO: replace all with float: see StatData
-  for( int j=0; j<adc.n_ch_max; ++j ) {
-    adc_min[j] = 5.1e37; adc_max[j] = -5.1e37; adc_mean[j] = 0;
-    adc_sum[j] = adc_sum2[j] = 0;
-  }
+  StatData sdat( n_ch );
 
   for( uint32_t i=0; i< n; ++i ) {
     uint32_t ii = i + st;
+    sreal vv[n_ch];
     for( int j=0; j< n_ch; ++j ) {
-      float v = 0.001f * (float) adc.data[ii*n_ch+j] * UVAR('v') / 4096;
-      if( v < adc_min[j] ) { adc_min[j] = v; }
-      if( v > adc_max[j] ) { adc_max[j] = v; }
-      adc_sum[j]  += v;
-      adc_sum2[j] += v * v;
+      vv[j] = 0.001f * (float) adc.data[ii*n_ch+j] * UVAR('v') / 4096;
     }
+    sdat.add( vv );
   }
-
-  os << NL "# mean ";
-  for( int j=0; j<n_ch; ++j ) {
-    adc_mean[j] = adc_sum[j] / n;
-    os << ' ' << (float)adc_mean[j];
-  }
-  os << NL "# min  ";
-  for( int j=0; j<n_ch; ++j ) {
-    os << ' ' << (float)adc_min[j];
-  }
-  os << NL "# max  ";
-  for( int j=0; j<n_ch; ++j ) {
-    os << ' ' << (float)adc_max[j];
-  }
-  os << NL "# sum  ";
-  for( int j=0; j<n_ch; ++j ) {
-    os << ' ' << (float)adc_sum[j];
-  }
-  os << NL "# sum2 ";
-  for( int j=0; j<n_ch; ++j ) {
-    os << ' ' << (float)adc_sum2[j];
-  }
-  os << NL "# sd  ";
-  for( int j=0; j<n_ch; ++j ) {
-    os << ' ' << (float)(sqrt(  adc_sum2[j] * n - adc_sum[j] * adc_sum[j] ) / n );
-  }
+  sdat.out_parts( os );
 
 }
 
