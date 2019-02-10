@@ -29,6 +29,7 @@ const auto n_pwm_ch = size(pwmc);
 void tim_cfg();
 void pwm_update();
 void pwm_update_ccr();
+extern const int8_t sin_table_8x8[256];
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -99,7 +100,7 @@ int cmd_test0( int argc, const char * const * argv )
   for( unsigned i=0; i<n && !break_flag; ++i ) {
     for( auto ch : pwmc ) {
       phas[ch.idx] += pdlt[ch.idx];
-      ch.v = phas[ch.idx] >> 24;
+      ch.v = 127 + sin_table_8x8[ phas[ch.idx] >> 24 ];
       ch.ccr = ch.v * pbase / 256;
       if( UVAR('d') > 0 ) {
         os << ch.v <<  ' ' << ch.ccr << ' ' << HexInt(phas[ch.idx]) << ' ';
