@@ -1,4 +1,5 @@
 #include <cstring>
+#include <iterator>
 #include <cstdlib>
 
 #include <oxc_auto.h>
@@ -18,14 +19,16 @@ TIM_HandleTypeDef tim_h;
 
 
 PwmCh pwmc[] = {
-  { 0, TIM_CHANNEL_1, (TIM_EXA->CCR1), 25 },
-  { 1, TIM_CHANNEL_2, (TIM_EXA->CCR2), 50 },
-  { 2, TIM_CHANNEL_3, (TIM_EXA->CCR3), 75 },
-  { 3, TIM_CHANNEL_4, (TIM_EXA->CCR4), 90 }
+ // idx          ch              ccr    v
+  { 0, TIM_CHANNEL_1, (TIM_EXA->CCR1),  1 },
+  { 1, TIM_CHANNEL_2, (TIM_EXA->CCR2),  1 },
+  { 2, TIM_CHANNEL_3, (TIM_EXA->CCR3),  1 },
+  { 3, TIM_CHANNEL_4, (TIM_EXA->CCR4),  1 }
 };
-// const auto n_pwm_ch = size(pwmc);
+const auto n_pwm_ch = size(pwmc);
 void tim_cfg();
 void pwm_update();
+void pwm_update_ccr();
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -45,10 +48,10 @@ int main(void)
   BOARD_PROLOG;
 
   UVAR('t') = 10;
-  UVAR('n') = 1000;
-  UVAR('p') = calc_TIM_psc_for_cnt_freq( TIM_EXA, 1000000  ); // ->1 MHz
-  UVAR('a') = 999; // ARR, 1 MHz -> 1 kHz
-  UVAR('m') = 0;    // mode: 0: up, 1: down, 2: updown
+  UVAR('n') = 10000;
+  UVAR('p') = calc_TIM_psc_for_cnt_freq( TIM_EXA, 10000000  ); // ->10 MHz
+  UVAR('a') = 999; // ARR, 10 MHz -> 10 kHz
+  // UVAR('m') = 0;    // mode: 0: up, 1: down, 2: updown
 
   BOARD_POST_INIT_BLINK;
 
@@ -69,23 +72,45 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
+  unsigned n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
+  unsigned t_step = UVAR('t');
   for( auto &ch : pwmc ) {
-    if( argc <= (int)(ch.idx+1) ) {
+    ch.v = 0;
+  }
+  pwm_update();
+
+  unsigned pbase = tim_h.Instance->ARR;
+  uint32_t phas[n_pwm_ch] { 0, 0, 0, 0 };
+  uint32_t pdlt[n_pwm_ch] {  0x01112222, 0x02002222, 0x01701111, 0x00705555 };
+
+  for( unsigned i=0; i<n_pwm_ch; ++i ) {
+    if( argc <= (int)(i+1) ) {
       break;
     }
-    ch.v = strtol( argv[ch.idx+1], 0, 0 );
+    pdlt[i] = strtol( argv[i+1], 0, 0 );
   }
 
   STDOUT_os;
-  os << NL "# Test0: pwm_vals[]= ";
-  for( auto ch : pwmc ) {
-    os << ch.v <<  ' ';
-  }
-  os <<  NL ;
 
-  // pwm_recalc();
-  pwm_update();
-  pwm_update();
+
+  uint32_t tm0 = HAL_GetTick();
+
+  break_flag = 0;
+  for( unsigned i=0; i<n && !break_flag; ++i ) {
+    for( auto ch : pwmc ) {
+      phas[ch.idx] += pdlt[ch.idx];
+      ch.v = phas[ch.idx] >> 24;
+      ch.ccr = ch.v * pbase / 256;
+      if( UVAR('d') > 0 ) {
+        os << ch.v <<  ' ' << ch.ccr << ' ' << HexInt(phas[ch.idx]) << ' ';
+      }
+    }
+    if( UVAR('d') > 0 ) {
+      os << NL;
+    }
+
+    delay_ms_until_brk( &tm0, t_step );
+  }
 
   return 0;
 }
@@ -133,11 +158,15 @@ void tim_cfg()
 void pwm_update()
 {
   tim_h.Instance->PSC  = UVAR('p');
-  int pbase = UVAR('a');
-  tim_h.Instance->ARR  = pbase;
-  int scl = pbase;
+  tim_h.Instance->ARR  = UVAR('a');
+  pwm_update_ccr();
+}
+
+void pwm_update_ccr()
+{
+  unsigned pbase = tim_h.Instance->ARR;
   for( auto ch : pwmc ) {
-    ch.ccr = ch.v * scl / 100;
+    ch.ccr = ch.v * pbase / 256;
   }
 }
 
