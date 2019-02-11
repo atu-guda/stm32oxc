@@ -19,6 +19,8 @@ BOARD_DEFINE_LEDS;
 BOARD_CONSOLE_DEFINES;
 
 const char* common_help_string = "App to measure ADC data (4ch)" NL;
+
+
 ADC_Info adc;
 
 void adc_out_to( OutStream &os, uint32_t n, uint32_t st );
@@ -110,7 +112,7 @@ int cmd_test0( int argc, const char * const * argv )
 
   uint32_t t_step_tick =  (tim_arr+1) * (tim_psc+1); // in timer input ticks
   float tim_f = (float)tim_freq_in / t_step_tick; // timer update freq, Hz
-  adc.t_step_f    = (float)t_step_tick / tim_freq_in; // in s
+  adc.t_step_f = (float)t_step_tick / tim_freq_in; // in s
   uint32_t t_wait0 = 1 + uint32_t( n * adc.t_step_f * 1000 ); // in ms
 
   os << "# t_step_tick= " << t_step_tick << " [t2ticks] tim_f= " << tim_f << " Hz"

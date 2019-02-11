@@ -41,14 +41,14 @@ SUBDIRS = \
   50a_adcdma_soft1 \
   50b_adcdma_pwm \
   51_adcdma \
-  51a_adcdma_n \
   80_math_stat \
   x01_fmc \
   x51_adcdma_fmc \
   x52_adcirq_fmc \
-  x53a_adcdma_n_fmc_sdcard \
-  x53a_adcdma_n_fmc_sdcard_i2cpot
 
+#  51a_adcdma_n \
+#  x53a_adcdma_n_fmc_sdcard \
+#  x53a_adcdma_n_fmc_sdcard_i2cpot
 
 
 ALL : examples_f746_wave

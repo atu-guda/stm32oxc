@@ -17,24 +17,27 @@ volatile uint32_t adc_state = 0; // 0 - pre, 1 - done, 2 + -  error
 
 
 using namespace std;
+using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
 BOARD_DEFINE_LEDS;
 
-UART_HandleTypeDef uah;
-int out_uart( const char *d, unsigned n );
+BOARD_CONSOLE_DEFINES;
 
-int out_uart( const char *d, unsigned n )
+const char* common_help_string = "Appication to test ADC on F1" NL;
+
+void idle_main_task()
 {
-  return HAL_UART_Transmit( &uah, (uint8_t*)d, n, 10 ) == HAL_OK;
+  leds.toggle( 1 );
 }
+
 
 const int delay_val = 100;
 int vref_mv = 3339;
 
 int main(void)
 {
-  STD_PROLOG_UART_NOCON;
+  BOARD_PROLOG;
 
   leds.write( 0 );
   STDOUT_os;
@@ -130,6 +133,7 @@ void MX_DigitalIn_Init()
   gio.Pull = GPIO_NOPULL;
   HAL_GPIO_Init( GPIOB, &gio );
 }
+
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

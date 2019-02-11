@@ -4,12 +4,9 @@
 #include <oxc_adc.h>
 // #include <oxc_debug1.h>
 
-extern ADC_HandleTypeDef hadc1;
-extern DMA_HandleTypeDef hdma_adc1;
-extern uint32_t adc_clk;
-void ADC_DMA_REINIT();
+void ADC_DMA_reinit( ADC_Info &adc );
 
-int adc_init_exa_4ch_dma_n( uint32_t presc, uint32_t sampl_cycl, uint8_t n_ch )
+int adc_init_exa_4ch_dma_n( ADC_Info &adc, uint32_t presc, uint32_t sampl_cycl, uint8_t n_ch )
 {
   BOARD_ADC_DEFAULT_EN;
   #if defined(STM32F7)
@@ -18,26 +15,25 @@ int adc_init_exa_4ch_dma_n( uint32_t presc, uint32_t sampl_cycl, uint8_t n_ch )
   if( n_ch > 4 ) { n_ch = 4; }
   if( n_ch < 1 ) { n_ch = 1; }
 
-  hadc1.Instance                   = BOARD_ADC_DEFAULT_DEV;
-  hadc1.Init.ClockPrescaler        = presc;
-  adc_clk                          = calc_ADC_clk( presc, nullptr );
-  hadc1.Init.Resolution            = ADC_RESOLUTION_12B;
-  hadc1.Init.ScanConvMode          = ENABLE;  // if disabled, only first channel works
-  hadc1.Init.ContinuousConvMode    = DISABLE; // to start at trigger
-  hadc1.Init.DiscontinuousConvMode = DISABLE; // if enabled, seems to not work at all
-  hadc1.Init.ExternalTrigConvEdge  = ADC_EXTERNALTRIGCONVEDGE_RISING;
-  hadc1.Init.ExternalTrigConv      = ADC_EXTERNALTRIGCONV_T2_TRGO;
+  adc.hadc.Instance                   = BOARD_ADC_DEFAULT_DEV;
+  adc.hadc.Init.ClockPrescaler        = presc;
+  adc.adc_clk                         = calc_ADC_clk( presc, nullptr );
+  adc.hadc.Init.Resolution            = ADC_RESOLUTION_12B;
+  adc.hadc.Init.ScanConvMode          = ENABLE;  // if disabled, only first channel works
+  adc.hadc.Init.ContinuousConvMode    = DISABLE; // to start at trigger or software
+  adc.hadc.Init.DiscontinuousConvMode = DISABLE; // if enabled, seems to not work at all
+  adc.hadc.Init.ExternalTrigConvEdge  = ADC_EXTERNALTRIGCONVEDGE_RISING; // or _NONE
+  adc.hadc.Init.ExternalTrigConv      = ADC_EXTERNALTRIGCONV_T2_TRGO;
 
-  hadc1.Init.DataAlign             = ADC_DATAALIGN_RIGHT;
-  hadc1.Init.NbrOfConversion       = n_ch;
-  // hadc1.Init.DMAContinuousRequests = DISABLE;
-  hadc1.Init.DMAContinuousRequests = ENABLE; // for double-buffer DMA?
-  // hadc1.Init.EOCSelection          = ADC_EOC_SINGLE_CONV; // test: multiple errors after conversion
-  hadc1.Init.EOCSelection          = ADC_EOC_SEQ_CONV;
-  if( HAL_ADC_Init( &hadc1 ) != HAL_OK )  {
+  adc.hadc.Init.DataAlign             = ADC_DATAALIGN_RIGHT;
+  adc.hadc.Init.NbrOfConversion       = n_ch;
+  adc.hadc.Init.DMAContinuousRequests = ENABLE; // for double-buffer DMA
+  adc.hadc.Init.EOCSelection          = ADC_EOC_SEQ_CONV; // ADC_EOC_SINGLE_CONV; // only for single channel
+  if( HAL_ADC_Init( &adc.hadc ) != HAL_OK ) {
     errno = 3000;
     return 0;
   }
+  ADC_DMA_reinit( adc );
 
   decltype(ADC_CHANNEL_0) static const constexpr chs[] {
     BOARD_ADC_DEFAULT_CH0,
@@ -52,7 +48,7 @@ int adc_init_exa_4ch_dma_n( uint32_t presc, uint32_t sampl_cycl, uint8_t n_ch )
   for( auto ch : chs  ) {
     sConfig.Channel = ch;
     sConfig.Rank = rank++;
-    if( HAL_ADC_ConfigChannel( &hadc1 , &sConfig ) != HAL_OK )  {
+    if( HAL_ADC_ConfigChannel( &adc.hadc , &sConfig ) != HAL_OK )  {
       errno = 3001;
       return 0;
     }
@@ -84,7 +80,7 @@ void HAL_ADC_MspInit( ADC_HandleTypeDef* adcHandle )
 
     __HAL_RCC_DMA2_CLK_ENABLE();
 
-    ADC_DMA_REINIT();
+    // ADC_DMA_reinit();
 
     HAL_NVIC_SetPriority( DMA2_Stream0_IRQn, 1, 0 );
     HAL_NVIC_EnableIRQ( DMA2_Stream0_IRQn );
@@ -94,27 +90,26 @@ void HAL_ADC_MspInit( ADC_HandleTypeDef* adcHandle )
   }
 }
 
-void ADC_DMA_REINIT()
+void ADC_DMA_reinit( ADC_Info &adc )
 {
-  hdma_adc1.Instance                 = DMA2_Stream0;
-  hdma_adc1.Init.Channel             = DMA_CHANNEL_0;
-  hdma_adc1.Init.Direction           = DMA_PERIPH_TO_MEMORY;
-  hdma_adc1.Init.PeriphInc           = DMA_PINC_DISABLE;
-  hdma_adc1.Init.MemInc              = DMA_MINC_ENABLE;
-  hdma_adc1.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
-  hdma_adc1.Init.MemDataAlignment    = DMA_MDATAALIGN_HALFWORD;
-  // hdma_adc1.Init.Mode                = DMA_NORMAL; // DMA_CIRCULAR, DMA_PFCTRL
-  hdma_adc1.Init.Mode                = DMA_CIRCULAR;
-  hdma_adc1.Init.Priority            = DMA_PRIORITY_HIGH; // DMA_PRIORITY_LOW, DMA_PRIORITY_MEDIUM, DMA_PRIORITY_HIGH, DMA_PRIORITY_VERY_HIGH
-  hdma_adc1.Init.FIFOMode            = DMA_FIFOMODE_DISABLE;
-  // hdma_adc1.Init.FIFOThreshold    = DMA_FIFO_THRESHOLD_HALFFULL;
-  // hdma_adc1.Init.MemBurst         = DMA_MBURST_SINGLE;
-  // hdma_adc1.Init.PeriphBurst      = DMA_PBURST_SINGLE;
-  if( HAL_DMA_Init( &hdma_adc1 ) != HAL_OK ) {
+  adc.hdma_adc.Instance                 = DMA2_Stream0;
+  adc.hdma_adc.Init.Channel             = DMA_CHANNEL_0;
+  adc.hdma_adc.Init.Direction           = DMA_PERIPH_TO_MEMORY;
+  adc.hdma_adc.Init.PeriphInc           = DMA_PINC_DISABLE;
+  adc.hdma_adc.Init.MemInc              = DMA_MINC_ENABLE;
+  adc.hdma_adc.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
+  adc.hdma_adc.Init.MemDataAlignment    = DMA_MDATAALIGN_HALFWORD;
+  adc.hdma_adc.Init.Mode                = DMA_CIRCULAR; // DMA_NORMAL, DMA_CIRCULAR, DMA_PFCTRL
+  adc.hdma_adc.Init.Priority            = DMA_PRIORITY_HIGH; // DMA_PRIORITY_LOW, DMA_PRIORITY_MEDIUM, DMA_PRIORITY_HIGH, DMA_PRIORITY_VERY_HIGH
+  adc.hdma_adc.Init.FIFOMode            = DMA_FIFOMODE_DISABLE;
+  // adc.hdma_adc.Init.FIFOThreshold    = DMA_FIFO_THRESHOLD_HALFFULL;
+  // adc.hdma_adc.Init.MemBurst         = DMA_MBURST_SINGLE;
+  // adc.hdma_adc.Init.PeriphBurst      = DMA_PBURST_SINGLE;
+  if( HAL_DMA_Init( &adc.hdma_adc ) != HAL_OK ) {
     Error_Handler( 6 );
   }
 
-  __HAL_LINKDMA( &hadc1, DMA_Handle, hdma_adc1 );
+  __HAL_LINKDMA( &adc.hadc, DMA_Handle, adc.hdma_adc );
 }
 
 void HAL_ADC_MspDeInit( ADC_HandleTypeDef* adcHandle )
@@ -129,14 +124,4 @@ void HAL_ADC_MspDeInit( ADC_HandleTypeDef* adcHandle )
   }
 }
 
-// may be used
-void ADC_IRQHandler(void)
-{
-  HAL_ADC_IRQHandler( &hadc1 );
-}
-
-void DMA2_Stream0_IRQHandler(void)
-{
-  HAL_DMA_IRQHandler( &hdma_adc1 );
-}
 

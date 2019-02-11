@@ -1,8 +1,6 @@
-Remove all printf - like functions (except text iprintf)
 Fix 51a_adcdma_n ... examples
 
 SmallRl, console: set output funcs to unbind
-Make  examples w/o FreeRTOS ?
 Move SPI common funcs from 28 to oxc lib
 Move ADC common fuctions (some to bsp)
 
@@ -15,8 +13,6 @@ Check MiniStr::operator+=( const char *rhs ) bug with whole string - now masked
 Split MiniStr to MiniBuf (w/o << ) and MiniStr
 
 
-Test 2 I2C clients on one device
-Use FreeRTOS 10 features for console I/O
 Fix task_gchar / executor logic , IO on idle / manual flush.
 New SDIO with DMA.
 Fast data communications with computer: USB, ether, WiFi, serial

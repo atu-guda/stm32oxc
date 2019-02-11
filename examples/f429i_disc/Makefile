@@ -38,12 +38,12 @@ SUBDIRS = \
   x01_fmc \
   x02_stemwin_fmc \
   x53a_adcdma_n_fmc_sdcard \
-  x53a_adcdma_n_fmc_sdcard_i2cpot
 
 #  19_spi_test \
 #  20_spi_mem_a25 \
 #  21_spi_max7219 \
 #  22_spi_pcd8544_lcd \
+#  x53a_adcdma_n_fmc_sdcard_i2cpot
 
 
 ALL : examples_f429i_disc

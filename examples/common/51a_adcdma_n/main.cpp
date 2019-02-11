@@ -29,13 +29,13 @@ void pr_ADCDMA_state();
 
 const uint32_t ADCDMA_chunk_size = 1024; // in bytes, for now. may be up to 64k-small
 HAL_StatusTypeDef ADC_Start_DMA_n( ADC_HandleTypeDef* hadc, uint32_t* pData, uint32_t Length, uint32_t chunkLength, uint8_t elSz );
-int adc_init_exa_4ch_dma_n( uint32_t presc, uint32_t sampl_cycl, uint8_t n_ch );
+int adc_init_exa_4ch_dma_n( ADC_Info &adc, uint32_t presc, uint32_t sampl_cycl, uint8_t n_ch );
 void ADC_DMA_REINIT();
 
 uint32_t tim_freq_in; // timer input freq
 int v_adc_ref = BOARD_ADC_COEFF; // in mV, measured before test, adjust as UVAR('v')
 const uint32_t n_ADC_ch_max = 4; // current - in UVAR('c')
-const uint32_t n_ADC_mem  = BOARD_ADC_MEM_MAX; // MCU dependent, in byter for 16-bit samples
+const uint32_t n_ADC_mem  = BOARD_ADC_MEM_MAX; // MCU dependent, in bytes for 16-bit samples
 
 vector<uint16_t> ADC_buf;
 
@@ -75,11 +75,11 @@ int main(void)
 
   UVAR('t') = 1000; // 1 s extra wait
   UVAR('v') = v_adc_ref;
-  const int base_freq = 1000000;
+  UVAR('j') = tim_freq_in;
   UVAR('p') = 17;  // for high freq, form 2MS/s (a=1) to 100 S/s (a=39999)
-  // UVAR('p') = calc_TIM_psc_for_cnt_freq( TIM2, base_freq ); // timer PSC, for 1MHz
   UVAR('a') = 19; // timer ARR, 200 kHz, *4= 800 kS/s
-  UVAR('c') = n_ADC_ch_max;
+  UVAR('c') = 4; // n_ADC_ch_max;
+  // UVAR('p') = calc_TIM_psc_for_cnt_freq( TIM2, base_freq ); // timer PSC, for 1MHz
   UVAR('n') = 8; // number of series
   UVAR('s') = 0; // sampling time index
 
@@ -133,9 +133,6 @@ int cmd_test0( int argc, const char * const * argv )
   if( n > n_ADC_series_max ) { n = n_ADC_series_max; };
 
   tim2_deinit();
-
-  leds.reset( BIT0 | BIT1 | BIT2 );
-  delay_ms( 100 );
 
   uint32_t adc_presc = hint_ADC_presc();
   UVAR('i') =  adc_init_exa_4ch_dma_n( adc, adc_presc, sampl_times_codes[sampl_t_idx], n_ch );
@@ -215,6 +212,11 @@ int cmd_test0( int argc, const char * const * argv )
   if( UVAR('d') > 1 ) { pr_ADC_state( adc );  }
 
   return 0;
+}
+
+void ADC_IRQHandler(void)
+{
+  HAL_ADC_IRQHandler( &adc.hadc );
 }
 
 

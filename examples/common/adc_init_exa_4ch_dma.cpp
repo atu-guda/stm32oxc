@@ -2,7 +2,7 @@
 
 #include <oxc_gpio.h>
 #include <oxc_adc.h>
-
+// #include <oxc_debug1.h>
 
 void ADC_DMA_reinit( ADC_Info &adc );
 
@@ -99,7 +99,7 @@ void ADC_DMA_reinit( ADC_Info &adc )
   adc.hdma_adc.Init.MemInc              = DMA_MINC_ENABLE;
   adc.hdma_adc.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
   adc.hdma_adc.Init.MemDataAlignment    = DMA_MDATAALIGN_HALFWORD;
-  adc.hdma_adc.Init.Mode                = DMA_NORMAL; // DMA_CIRCULAR, DMA_PFCTRL
+  adc.hdma_adc.Init.Mode                = DMA_NORMAL; // DMA_NORMAL, DMA_CIRCULAR, DMA_PFCTRL
   adc.hdma_adc.Init.Priority            = DMA_PRIORITY_HIGH; // DMA_PRIORITY_LOW, DMA_PRIORITY_MEDIUM, DMA_PRIORITY_HIGH, DMA_PRIORITY_VERY_HIGH
   adc.hdma_adc.Init.FIFOMode            = DMA_FIFOMODE_DISABLE;
   // adc.hdma_adc.Init.FIFOThreshold    = DMA_FIFO_THRESHOLD_HALFFULL;
