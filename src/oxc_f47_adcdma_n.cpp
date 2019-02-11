@@ -19,11 +19,23 @@ static uint32_t next_dma_ofs  = 0;
 static uint32_t step_dma_addr = 0;
 static uint32_t dma_total_sz  = 0;
 
+#if defined (STM32F4)
+#define DECL_ADC_COMMON ADC_Common_TypeDef *tmpADC_Common
+#define FILL_ADC_COMMON tmpADC_Common = ADC_COMMON_REGISTER( hadc )
+#define ADC_MULTIMODE_COMMON tmpADC_Common
+#elif defined(STM32F7)
+#define DECL_ADC_COMMON
+#define FILL_ADC_COMMON
+#define ADC_MULTIMODE_COMMON ADC
+#else
+#error "Unsupported MCU"
+#endif
+
 
 HAL_StatusTypeDef ADC_Start_DMA_n( ADC_HandleTypeDef* hadc, uint32_t* pData, uint32_t Length, uint32_t chunkLength, uint8_t elSz )
 {
   __IO uint32_t counter = 0U;
-  ADC_Common_TypeDef *tmpADC_Common;
+  DECL_ADC_COMMON;
 
   __HAL_LOCK( hadc );
 
@@ -54,7 +66,7 @@ HAL_StatusTypeDef ADC_Start_DMA_n( ADC_HandleTypeDef* hadc, uint32_t* pData, uin
 
     // Pointer to the common control register to which is belonging hadc
     // ( Depending on STM32F4 product, there may be up to 3 ADCs and 1 common control register )
-    tmpADC_Common = ADC_COMMON_REGISTER( hadc );
+    FILL_ADC_COMMON;
 
     // Set the DMA transfer complete callback
     hadc->DMA_Handle->XferCpltCallback = ADC_DMAConvCplt_n;
@@ -100,7 +112,7 @@ HAL_StatusTypeDef ADC_Start_DMA_n( ADC_HandleTypeDef* hadc, uint32_t* pData, uin
     }
 
     // Check if Multimode enabled
-    if( HAL_IS_BIT_CLR( tmpADC_Common->CCR, ADC_CCR_MULTI ) ) {
+    if( HAL_IS_BIT_CLR( ADC_MULTIMODE_COMMON->CCR, ADC_CCR_MULTI ) ) {
       // if no external trigger present enable software conversion of regular channels
       if( ( hadc->Instance->CR2 & ADC_CR2_EXTEN ) == RESET ) {
         // Enable the selected ADC software conversion for regular group

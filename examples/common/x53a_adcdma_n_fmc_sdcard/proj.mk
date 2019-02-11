@@ -1,4 +1,4 @@
-PROJ_NAME=adcdma_n
+PROJ_NAME=adcdma_nfx
 
 USE_OXC = y
 # USE_OXC_DEVIO = y
@@ -12,8 +12,8 @@ USE_OXC_TIM = y
 USE_OXC_ADC = y
 # USE_OXC_DAC = y
 USE_OXC_DMA = y
-# USE_OXC_SD  = y
-# USE_OXC_SDFAT = y
+USE_OXC_SD  = y
+USE_OXC_SDFAT = y
 # USE_FREERTOS = y
 # NOUSE_OXC_OSFUN = y
 # FREERTOS_HEAP = heap_2.c # # default: heap_3.c
@@ -21,11 +21,15 @@ REQUIRE_SPECIAL_CLOCK = y
 
 SRCS  = main.cpp
 
-SRCS += stm32f7_clock_HSE144.c
-SRCS += f7_adcdma_n.cpp
+SRCS += oxc_floatfun.cpp
+SRCS += oxc_statdata.cpp
+SRCS += oxc_io_fatfs.cpp
 
 SRCS += adc_init_exa_4ch_dma_n.cpp
+SRCS += oxc_f47_adcdma_n.cpp
 SRCS += tim2_adcdma_init.cpp
+SRCS += adc_common_exa_4ch.cpp
 
+SRCS += f4_sdio_init_1bit.cpp
 
 

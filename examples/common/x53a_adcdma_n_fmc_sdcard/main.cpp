@@ -86,16 +86,11 @@ const CmdInfo* global_cmds[] = {
 
 
 
-void MX_FMC_Init(void);
-void BSP_SDRAM_Initialization_sequence( uint32_t RefreshCount );
-
-
 int main(void)
 {
   BOARD_PROLOG;
 
-  MX_FMC_Init();
-  BSP_SDRAM_Initialization_sequence( 0 ); // 0 is fake
+  bsp_init_sdram( &hsdram );
 
   tim_freq_in = get_TIM_in_freq( TIM2 ); // TODO: define
 
