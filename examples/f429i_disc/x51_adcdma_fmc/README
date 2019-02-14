@@ -1,0 +1,4 @@
+Try ADC with DMA to external SDRAM
+4 channel: a0-a3
+Clock: APB2/2 = 72/4 = 36: max <- use special clock
+

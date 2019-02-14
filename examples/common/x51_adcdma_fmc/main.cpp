@@ -10,10 +10,6 @@
 #include <oxc_auto.h>
 #include <oxc_floatfun.h>
 
-#include <oxc_fs_cmd0.h>
-#include <fatfs_sd_st.h>
-#include <oxc_io_fatfs.h>
-
 using namespace std;
 using namespace SMLRL;
 
@@ -22,16 +18,11 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
-const char* common_help_string = "App to measure ADC data (4ch) to SDRAM and store to SD card" NL;
+const char* common_help_string = "App to measure ADC data (4ch) to SDRAM" NL;
 
 uint8_t *sdram_mem = SDRAM_ADDR;
 
 
-extern SD_HandleTypeDef hsd;
-void MX_SDIO_SD_Init();
-uint8_t sd_buf[512]; // one sector
-HAL_SD_CardInfoTypeDef cardInfo;
-FATFS fs;
 
 ADC_Info adc;
 
@@ -69,17 +60,13 @@ int cmd_out( int argc, const char * const * argv );
 extern CmdInfo CMDINFO_OUT;
 int cmd_show_stats( int argc, const char * const * argv );
 extern CmdInfo CMDINFO_SHOWSTATS;
-int cmd_outsd( int argc, const char * const * argv );
-extern CmdInfo CMDINFO_OUTSD;
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
 
   &CMDINFO_TEST0,
-  FS_CMDS0,
   &CMDINFO_OUT,
   &CMDINFO_SHOWSTATS,
-  &CMDINFO_OUTSD,
   nullptr
 };
 
@@ -91,15 +78,6 @@ int main(void)
 
   tim_freq_in = get_TIM_in_freq( TIM2 ); // TODO: define
 
-  MX_SDIO_SD_Init();
-  UVAR('e') = HAL_SD_Init( &hsd );
-  delay_ms( 10 );
-  MX_FATFS_SD_Init();
-  UVAR('x') = HAL_SD_GetState( &hsd ); // 0 = HAL_OK, 1 = HAL_ERROR, 2 = HAL_BUSY, 3 = HAL_TIMEOUT
-  UVAR('y') = HAL_SD_GetCardInfo( &hsd, &cardInfo );
-  fs.fs_type = 0; // none
-  fspath[0] = '\0';
-  UVAR('z') = f_mount( &fs, "", 1 );
 
   UVAR('t') = 1000; // 1 s extra wait
   UVAR('v') = v_adc_ref;

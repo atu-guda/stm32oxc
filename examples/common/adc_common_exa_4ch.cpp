@@ -73,6 +73,7 @@ void adc_show_stat( OutStream &os, uint32_t n, uint32_t st )
     }
     sdat.add( vv );
   }
+  sdat.calc();
   sdat.out_parts( os );
 
 }

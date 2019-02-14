@@ -37,6 +37,7 @@ SUBDIRS = \
   80_math_stat \
   x01_fmc \
   x02_stemwin_fmc \
+  x51_adcdma_fmc \
   x53a_adcdma_n_fmc_sdcard \
 
 #  19_spi_test \

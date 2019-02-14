@@ -21,6 +21,7 @@ BOARD_CONSOLE_DEFINES;
 const char* common_help_string = "App to measure ADC data (4ch) with DMA double-buffer" NL;
 
 
+
 ADC_Info adc;
 
 void adc_out_to( OutStream &os, uint32_t n, uint32_t st );
@@ -100,7 +101,6 @@ int main(void)
 
   return 0;
 }
-
 
 
 // TEST0
