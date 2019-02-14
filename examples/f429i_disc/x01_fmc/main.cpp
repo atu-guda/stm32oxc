@@ -1,5 +1,4 @@
 #include <cstring>
-#include <cstdlib>
 
 #include <oxc_auto.h>
 
@@ -15,6 +14,7 @@ SDRAM_HandleTypeDef hsdram;
 
 BOARD_CONSOLE_DEFINES;
 
+const char* common_help_string = "Appication to test SDRAM usage via FMC" NL;
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
@@ -26,6 +26,10 @@ const CmdInfo* global_cmds[] = {
   nullptr
 };
 
+void idle_main_task()
+{
+  leds.toggle( 1 );
+}
 
 
 
@@ -39,20 +43,19 @@ int main(void)
   leds.write( 0x03 );  delay_bad_ms( 200 );
   bsp_init_sdram( &hsdram );
 
-
   BOARD_POST_INIT_BLINK;
 
-  BOARD_CREATE_STD_TASKS;
+  pr( NL "##################### " PROJ_NAME NL );
 
-  SCHEDULER_START;
+  srl.re_ps();
+
+  oxc_add_aux_tick_fun( led_task_nortos );
+
+  std_main_loop_nortos( &srl, idle_main_task );
+
   return 0;
 }
 
-void task_main( void *prm UNUSED_ARG ) // TMAIN
-{
-  default_main_loop();
-  vTaskDelete(NULL);
-}
 
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
