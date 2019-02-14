@@ -281,8 +281,18 @@ endif
 
 
 ifeq "$(USE_OXC_DEBUG)" "y"
+  USE_OXC = y
   SRCS += oxc_debug1.cpp
   ALLFLAGS += -DUSE_OXC_DEBUG
+endif
+
+ifeq "$(USE_OXC_SDRAM)" "y"
+  USE_OXC = y
+  SRCS += bsp_sdram_msp.cpp
+  SRCS += oxc_sdram_common.cpp
+  SRCS += stm32$(MCSUFF)xx_hal_sdram.c
+  SRCS += stm32$(MCSUFF)xx_ll_fmc.c
+  ALLFLAGS += -DUSE_OXC_SDRAM
 endif
 
 

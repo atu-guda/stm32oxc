@@ -46,6 +46,10 @@
 #include <oxc_usbcdcio.h>
 #endif
 
+#if defined (USE_OXC_SDRAM)
+#include <oxc_sdram_common.h>
+#endif
+
 #if defined (HAL_I2C_MODULE_ENABLED)
 #include <oxc_i2c.h>
 #if defined (USE_OXC_DEBUG)

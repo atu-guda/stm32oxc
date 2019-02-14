@@ -2,15 +2,11 @@
 
 #include <oxc_auto.h>
 
-#include <board_sdram.h>
-
 using namespace std;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
 BOARD_DEFINE_LEDS;
-
-SDRAM_HandleTypeDef hsdram;
 
 BOARD_CONSOLE_DEFINES;
 
@@ -26,22 +22,16 @@ const CmdInfo* global_cmds[] = {
   nullptr
 };
 
-void idle_main_task()
-{
-  leds.toggle( 1 );
-}
-
-
 
 int main(void)
 {
   BOARD_PROLOG;
 
   UVAR('t') = 1000;
-  UVAR('n') = 10;
+  UVAR('n') = 0x60;
 
   leds.write( 0x03 );  delay_bad_ms( 200 );
-  bsp_init_sdram( &hsdram );
+  bsp_init_sdram();
 
   BOARD_POST_INIT_BLINK;
 
@@ -51,7 +41,7 @@ int main(void)
 
   oxc_add_aux_tick_fun( led_task_nortos );
 
-  std_main_loop_nortos( &srl, idle_main_task );
+  std_main_loop_nortos( &srl, nullptr );
 
   return 0;
 }
@@ -60,11 +50,11 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
-  pr( NL "Test0: n= " ); pr_d( n );
-  pr( NL );
+  unsigned n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
+  STDOUT_os;
+  os << "# Test0: n= " << n << NL;
   delay_ms( 100 );
-  for( int i=0; i<n; ++i ) {
+  for( decltype(+n) i=0; i<n; ++i ) {
     SDRAM_ADDR[i] = (uint8_t)(i+0x20);
   }
 

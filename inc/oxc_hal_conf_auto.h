@@ -71,6 +71,11 @@
   #define HAL_DMA_MODULE_ENABLED
 #endif
 
+#ifdef USE_OXC_SDRAM
+  #define HAL_SDRAM_MODULE_ENABLED
+  #define HAL_DMA_MODULE_ENABLED
+#endif
+
 #ifdef USE_OXC_DMA
   #ifndef HAL_DMA_MODULE_ENABLED
     #define HAL_DMA_MODULE_ENABLED
