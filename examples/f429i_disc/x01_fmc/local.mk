@@ -1,4 +1,5 @@
 
+SRCS += bsp_sdram_msp.cpp
 SRCS += oxc_bsp_f429i_disc_sdram.cpp
 
 SRCS += stm32f4xx_hal_sdram.c
