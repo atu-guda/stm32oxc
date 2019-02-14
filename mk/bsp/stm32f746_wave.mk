@@ -13,8 +13,8 @@ SRCS += system_stm32f7xx.c
 SRCS += startup_stm32f746xx.s
 
 ifeq "$(USE_OXC_CONSOLE_DEFAULT)" "y"
-  USE_OXC_CONSOLE_UART = y
-  # USE_OXC_CONSOLE_USB_CDC = y
+  # USE_OXC_CONSOLE_UART = y
+  USE_OXC_CONSOLE_USB_CDC = y
   # $(info Auto: USE_OXC_CONSOLE_USB_CDC)
 endif
 
