@@ -3,7 +3,6 @@
 
 // for fastest ADC 36MHz clocking
 #define REQ_SYSCLK_FREQ 144
-#define HAL_SDRAM_MODULE_ENABLED
 
 #endif
 

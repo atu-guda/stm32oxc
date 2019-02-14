@@ -14,10 +14,12 @@ USE_OXC_ADC = y
 USE_OXC_DMA = y
 USE_OXC_SD  = y
 USE_OXC_SDFAT = y
+USE_OXC_SDRAM = y
 # USE_FREERTOS = y
 # NOUSE_OXC_OSFUN = y
 # FREERTOS_HEAP = heap_2.c # # default: heap_3.c
 REQUIRE_SPECIAL_CLOCK = y
+
 
 SRCS  = main.cpp
 

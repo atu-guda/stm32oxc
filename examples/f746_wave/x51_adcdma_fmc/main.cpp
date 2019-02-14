@@ -10,7 +10,7 @@ using namespace SMLRL;
 USE_DIE4LED_ERROR_HANDLER;
 BOARD_DEFINE_LEDS;
 
-uint8_t *sdram_mem = (uint8_t *)(0xD0000000);
+uint8_t *sdram_mem = SDRAM_ADDR;
 
 void print_curr( const char *s );
 void out_to_curr( uint32_t n, uint32_t st );
@@ -65,10 +65,6 @@ const CmdInfo* global_cmds[] = {
 
 
 
-void MX_FMC_Init(void);
-void BSP_SDRAM_Initialization_sequence( uint32_t RefreshCount );
-
-
 int main(void)
 {
   BOARD_PROLOG;
@@ -87,9 +83,8 @@ int main(void)
   UVAR('n') = 8; // number of series
   UVAR('s') = 1; // sampling time index
 
-  MX_FMC_Init();
   leds.write( 0x01 );  delay_bad_ms( 200 );
-  BSP_SDRAM_Initialization_sequence( 0 ); // 0 if fake
+  bsp_init_sdram();
 
   BOARD_POST_INIT_BLINK;
 
@@ -315,11 +310,6 @@ void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
   leds.toggle( BIT1 );
 }
 
-void HAL_ADCEx_InjectedConvCpltCallback( ADC_HandleTypeDef * /*hadc*/ )
-{
-}
-
-// configs
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

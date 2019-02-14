@@ -20,6 +20,7 @@ USE_OXC_I2C = y
 USE_OXC_DMA = y
 # USE_OXC_SD  = y
 # USE_OXC_SDFAT = y
+USE_OXC_SDRAM = y
 USE_FREERTOS = y
 # FREERTOS_HEAP = heap_2.c # # default: heap_3.c
 # REQUIRE_SPECIAL_CLOCK = y
@@ -30,15 +31,11 @@ SRCS  = main.cpp
 SRCS += GUIConf.c
 SRCS += LCDConf_stm32f429i_disco_MB1075.c
 
-SRCS += oxc_bsp_f429i_disc_sdram.cpp
-
-SRCS += stm32f4xx_ll_fmc.c
 SRCS += stm32f4xx_hal_spi.c
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
 # see ../common/f4_modules.mk
 
-SRCS += stm32f4xx_hal_sdram.c
 SRCS += stm32f4xx_hal_ltdc.c
 SRCS += stm32f4xx_hal_dma2d.c
 SRCS += stm32f4xx_hal_rcc_ex.c

@@ -26,8 +26,6 @@ BOARD_CONSOLE_DEFINES;
 
 const char* common_help_string = "App to measure ADC data (4ch) to SDRAM and store to SD card" NL;
 
-SDRAM_HandleTypeDef hsdram;
-
 
 extern SD_HandleTypeDef hsd;
 void MX_SDIO_SD_Init();
@@ -90,7 +88,6 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  bsp_init_sdram( &hsdram );
 
   tim_freq_in = get_TIM_in_freq( TIM2 ); // TODO: define
 
@@ -119,6 +116,8 @@ int main(void)
   PWR->CR1 |= PWR_CR1_ADCDC1;
   #endif
 
+  bsp_init_sdram();
+
   BOARD_POST_INIT_BLINK;
 
   pr( NL "##################### " PROJ_NAME NL );
@@ -131,7 +130,6 @@ int main(void)
 
   return 0;
 }
-
 
 
 // TEST0

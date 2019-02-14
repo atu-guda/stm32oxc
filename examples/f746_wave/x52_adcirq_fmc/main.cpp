@@ -9,7 +9,7 @@ using namespace SMLRL;
 USE_DIE4LED_ERROR_HANDLER;
 BOARD_DEFINE_LEDS;
 
-uint8_t *sdram_mem = (uint8_t *)(0xD0000000);
+uint8_t *sdram_mem = SDRAM_ADDR;
 extern "C" {
  void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim );
 }
@@ -52,10 +52,6 @@ const CmdInfo* global_cmds[] = {
 
 
 
-void MX_FMC_Init(void);
-void BSP_SDRAM_Initialization_sequence( uint32_t RefreshCount );
-
-
 int main(void)
 {
   BOARD_PROLOG;
@@ -69,17 +65,16 @@ int main(void)
   UVAR('n') = 8; // number of series
   UVAR('s') = 1; // sampling time index
 
-  leds.write( 0x0F );  delay_bad_ms( 200 );
-  MX_FMC_Init();
   leds.write( 0x01 );  delay_bad_ms( 200 );
-  BSP_SDRAM_Initialization_sequence( 0 ); // 0 if fake
-  leds.write( 0x0A );  delay_bad_ms( 500 );
+  bsp_init_sdram();
 
 
   // MX_ADC1_Init( 4, ADC_SAMPLETIME_28CYCLES );
   delay_bad_ms( 10 );
   // tim2_init( UVAR('p'), UVAR('a') );
   leds.write( 0x0A );  delay_bad_ms( 200 );
+
+  BOARD_POST_INIT_BLINK;
 
   BOARD_CREATE_STD_TASKS;
 
@@ -296,12 +291,6 @@ void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
   }
   leds.toggle( BIT1 );
 }
-
-void HAL_ADCEx_InjectedConvCpltCallback( ADC_HandleTypeDef * /*hadc*/ )
-{
-}
-
-//  ----------------------------- configs ----------------
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

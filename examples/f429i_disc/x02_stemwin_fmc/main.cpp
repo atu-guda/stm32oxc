@@ -16,11 +16,11 @@ using namespace SMLRL;
 USE_DIE4LED_ERROR_HANDLER;
 BOARD_DEFINE_LEDS;
 
-SDRAM_HandleTypeDef hsdram;
 extern LTDC_HandleTypeDef hltdc;
 
 BOARD_CONSOLE_DEFINES;
 
+const char* common_help_string = "Appication to test STEMWin graph with SDRAM" NL;
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
@@ -57,7 +57,7 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  bsp_init_sdram( &hsdram );
+  bsp_init_sdram();
 
   BSP_TS_Init( 240, 320 );
   __HAL_RCC_CRC_CLK_ENABLE();

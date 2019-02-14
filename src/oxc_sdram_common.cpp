@@ -22,8 +22,6 @@ int SDRAM_Initialization_Sequence( SDRAM_HandleTypeDef *hsdram )
 
   // Configure a PALL (precharge all)
   cmd.CommandMode            = FMC_SDRAM_CMD_PALL;
-  cmd.AutoRefreshNumber      = 1;
-  cmd.ModeRegisterDefinition = 0;
   if( HAL_SDRAM_SendCommand( hsdram, &cmd, SDRAM_CMD_WAIT ) != HAL_OK ) {
     return 0;
   }
@@ -31,8 +29,7 @@ int SDRAM_Initialization_Sequence( SDRAM_HandleTypeDef *hsdram )
   // Configure a Auto-Refresh
   cmd.CommandMode            = FMC_SDRAM_CMD_AUTOREFRESH_MODE;
   cmd.AutoRefreshNumber      = 4;
-  cmd.ModeRegisterDefinition = 0;
-  if( HAL_SDRAM_SendCommand(hsdram, &cmd, 0x1000) != HAL_OK ) {
+  if( HAL_SDRAM_SendCommand( hsdram, &cmd, SDRAM_CMD_WAIT ) != HAL_OK ) {
     return 0;
   }
 
@@ -44,8 +41,8 @@ int SDRAM_Initialization_Sequence( SDRAM_HandleTypeDef *hsdram )
     return 0;
   }
 
-  /* Step 8: Set the refresh rate counter */
-  if( HAL_SDRAM_ProgramRefreshRate( hsdram, REFRESH_COUNT ) != HAL_OK ) {
+  // Set the refresh rate counter
+  if( HAL_SDRAM_ProgramRefreshRate( hsdram, SDRAM_REFRESH_COUNT ) != HAL_OK ) {
     return 0;
   }
   return 1;
