@@ -103,6 +103,8 @@ int cmd_ofast( int argc, const char * const * argv )
   return 0;
 }
 
+constexpr float M_PI_F = 3.141592653f;
+
 int cmd_fun( int argc, const char * const * argv )
 {
   int n   = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
@@ -114,13 +116,13 @@ int cmd_fun( int argc, const char * const * argv )
   switch( tp ) {
     case 0:
       for( int i=0; i<dacbuf_sz; ++i ) {
-        float vf = sinf( 2 * M_PI * (float)(i)/dacbuf_sz );
+        float vf = sinf( 2 * M_PI_F * (float)(i)/dacbuf_sz );
         dacbuf[i] = 2048 + int16_t( vf * 2047 );
       }
       break;
     case 1:
       for( int i=0; i<dacbuf_sz; ++i ) {
-        float x = (float)(i)/dacbuf_sz-0.5;
+        float x = (float)(i)/dacbuf_sz-0.5f;
         dacbuf[i] = int16_t( x * x * 4 * 4095 );
       }
       break;

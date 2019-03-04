@@ -28,5 +28,3 @@ SRCS += adc_init_exa_4ch_manual.cpp
 SRCS += tim18_pwm4_exa_init.cpp
 SRCS += pwm1_ctl.cpp
 
-ALLFLAGS   += -Wdouble-promotion
-

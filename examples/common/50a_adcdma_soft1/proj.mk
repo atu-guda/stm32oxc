@@ -26,5 +26,3 @@ SRCS += oxc_statdata.cpp
 
 SRCS += adc_init_exa_4ch_manual.cpp
 
-ALLFLAGS   += -Wdouble-promotion
-

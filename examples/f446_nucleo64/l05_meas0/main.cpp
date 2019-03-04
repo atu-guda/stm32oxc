@@ -498,9 +498,9 @@ int lcd_output()
   char buf[32];
   memset( buf, ' ', sizeof(buf)-1 ); buf[sizeof(buf)-1] = '\0';
 
-  snprintf( buf, 8, "%#6g ", lcd[0] );
+  cvtff( lcd[0], buf, 8, cvtff_auto, 6, 4 );
   buf[6] = ' ';
-  snprintf( buf+7, 8, "%#6g ", lcd[1] );
+  cvtff( lcd[1], buf+7, 8, cvtff_auto, 6, 4 );
   buf[13] = ' ';
 
   buf[14] = lcd_b[0] ? '$' : '.';
@@ -510,9 +510,9 @@ int lcd_output()
   lcdt.puts( buf );
 
   memset( buf, ' ', sizeof(buf)-1 ); buf[sizeof(buf)-1] = '\0';
-  snprintf( buf, 8, "%#6g ", lcd[2] );
+  cvtff( lcd[2], buf, 8, cvtff_auto, 6, 4 );
   buf[6] = ' ';
-  snprintf( buf+7, 8, "%#6g ", lcd[3] );
+  cvtff( lcd[3], buf+7, 8, cvtff_auto, 6, 4 );
   buf[13] = ' ';
 
   buf[14] = lcd_b[2] ? '$' : '.';
@@ -750,9 +750,10 @@ int parse_floats( int argc, const char * const * argv, float *d )
       continue;
     }
     // TODO: 0xNNNNNN
-    float v;
-    int rc = sscanf( s, "%f", &v );
-    if( rc == 1 ) {
+    char *eptr;
+    float v = strtof( s, &eptr );
+
+    if( *eptr == '\0' ) {
       d[i] = v;
       ++n;
     }

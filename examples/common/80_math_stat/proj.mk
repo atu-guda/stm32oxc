@@ -26,5 +26,3 @@ SRCS  = main.cpp
 SRCS += oxc_floatfun.cpp
 SRCS += oxc_statdata.cpp
 
-ALLFLAGS   += -Wdouble-promotion
-
