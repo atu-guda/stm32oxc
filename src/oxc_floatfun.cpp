@@ -38,6 +38,10 @@ int cvtff( float f, char *buf, unsigned bufsz, uint32_t flg, int w, int prec )
   }
   buf[w] = '\0';
 
+  if( f < 9.99999e-35f ) { // BUG: bad format. TODO: check
+    f = 0.0f;
+  }
+
   int exp1 = 0;
   if( f > __FLT_DENORM_MIN__ ) {
     exp1 = floor( log10f( f ) );
@@ -129,6 +133,8 @@ int cvtff( float f, char *buf, unsigned bufsz, uint32_t flg, int w, int prec )
 }
 
 // -------------------------------------------------------------- 
+
+int FltFmt::auto_width = float_default_width;
 
 void FltFmt::out( OutStream &os ) const
 {

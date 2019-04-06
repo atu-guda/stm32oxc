@@ -46,6 +46,8 @@ int cmd_pwm( int argc, const char * const * argv );
 CmdInfo CMDINFO_PWM { "pwm", 'W', cmd_pwm, " [val] - set PWM value"  };
 int cmd_set_coeffs( int argc, const char * const * argv );
 CmdInfo CMDINFO_SET_COEFFS { "set_coeffs", 'F', cmd_set_coeffs, " k0 k1 k2 k3 - set ADC coeffs"  };
+int cmd_test_out( int argc, const char * const * argv );
+CmdInfo CMDINFO_TEST_OUT { "test_out", 'Q', cmd_test_out, " [v] - test float output"  };
 
 
 const CmdInfo* global_cmds[] = {
@@ -57,6 +59,7 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_PWM,
   CMDINFOS_PWM,
   &CMDINFO_SET_COEFFS,
+  &CMDINFO_TEST_OUT,
   nullptr
 };
 
@@ -323,6 +326,16 @@ void handle_keys()
     default: break;
   }
 
+}
+
+// ------------------ misc tests -----------------------
+
+int cmd_test_out( int argc, const char * const * argv )
+{
+  float v = arg2float_d( 1, argc, argv, -0.12345678f, -FLT_MAX, FLT_MAX );
+  STDOUT_os;
+  os << NL "float: " << v << NL;
+  return 0;
 }
 
 

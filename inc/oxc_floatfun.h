@@ -19,7 +19,9 @@ enum cvtff_flags {
 
 extern float exp10if( int x );
 
-int cvtff( float f, char *buf, unsigned bufsz, uint32_t flg = cvtff_auto, int w = 13, int prec = 99 );
+constexpr inline  int float_default_width { 11 };
+
+int cvtff( float f, char *buf, unsigned bufsz, uint32_t flg = cvtff_auto, int w = float_default_width, int prec = 99 );
 
 const unsigned buf_len_float = 36;
 // const unsigned buf_len_float = 72;
@@ -28,14 +30,18 @@ const unsigned buf_len_float = 36;
 
 class FltFmt : public OutStreamFmt {
   public:
-   explicit FltFmt( float a, uint32_t a_flg = cvtff_auto, int a_w = 13, int a_prec = 99 ) :
-     v( a ), flg( a_flg ), w( a_w ), prec( a_prec ) {};
+   explicit FltFmt( float a, uint32_t a_flg = cvtff_auto, int a_w = float_default_width, int a_prec = 99 ) :
+     v( a ), flg( a_flg ),
+     w( ( a_w > 1 ) ? a_w : auto_width ),
+     prec( a_prec ) {};
    operator float() const { return v; }
    const float v;
    virtual void out( OutStream &os ) const override;
+   static int set_auto_width( int aw ) { auto t = auto_width; auto_width = aw; return t; }
   protected:
    uint32_t flg;
    int w, prec;
+   static int auto_width;
 };
 
 //* helper classes for stream output for floating point:
