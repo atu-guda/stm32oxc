@@ -28,6 +28,50 @@ TIM_HandleTypeDef tim_h;
 using tim_ccr_t = decltype( tim_h.Instance->CCR1 );
 void tim_cfg();
 
+struct NamedFloat {
+  float *p;
+  const char *name;
+};
+
+float W_max = 30.0f;
+float pwm_max = 60.0f;
+
+NamedFloat flts[] = {
+  {   &W_max,   "W_max"  },
+  { &pwm_max, "pwm_max"  },
+  // { ,  },
+  { nullptr, nullptr }
+};
+
+float* findFloat( const char *nm )
+{
+  for( auto f : flts ) {
+    if( strcmp( f.name, nm ) == 0 ) {
+      return f.p;
+    }
+  }
+  return nullptr;
+}
+
+bool setFloat( const char *nm, float v )
+{
+  auto *p = findFloat( nm );
+  if( !p ) {
+    return false;
+  }
+  *p = v;
+  return true;
+}
+
+float getFloat( const char *nm, float def )
+{
+  auto *p = findFloat( nm );
+  if( !p ) {
+    return def;
+  }
+  return *p;
+}
+
 
 PWMData pwmdat( tim_h );
 
@@ -46,6 +90,10 @@ int cmd_pwm( int argc, const char * const * argv );
 CmdInfo CMDINFO_PWM { "pwm", 'W', cmd_pwm, " [val] - set PWM value"  };
 int cmd_set_coeffs( int argc, const char * const * argv );
 CmdInfo CMDINFO_SET_COEFFS { "set_coeffs", 'F', cmd_set_coeffs, " k0 k1 k2 k3 - set ADC coeffs"  };
+int cmd_set_float( int argc, const char * const * argv );
+CmdInfo CMDINFO_SET_FLOAT { "sf", 0, cmd_set_float, " name val - set float value"  };
+int cmd_print_float( int argc, const char * const * argv );
+CmdInfo CMDINFO_PRINT_FLOAT { "pf", 0, cmd_print_float, " [name] - print float values"  };
 int cmd_test_out( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST_OUT { "test_out", 'Q', cmd_test_out, " [v] - test float output"  };
 
@@ -59,6 +107,8 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_PWM,
   CMDINFOS_PWM,
   &CMDINFO_SET_COEFFS,
+  &CMDINFO_SET_FLOAT,
+  &CMDINFO_PRINT_FLOAT,
   &CMDINFO_TEST_OUT,
   nullptr
 };
@@ -326,6 +376,43 @@ void handle_keys()
     default: break;
   }
 
+}
+
+// ------------------ floats -----------------------
+int cmd_set_float( int argc, const char * const * argv )
+{
+  STDOUT_os;
+  if( argc < 3 ) {
+    os << "# error: 2 arguments requred" << NL;
+    return 1;
+  }
+  float v = arg2float_d( 2, argc, argv, 0.0f, -FLT_MAX, FLT_MAX );
+  bool rc = setFloat( argv[1], v );
+  return rc ? 0 : 2;
+}
+
+int cmd_print_float( int argc, const char * const * argv )
+{
+  STDOUT_os;
+  if( argc > 1 ) {
+    const char *nm = argv[1];
+    float *p = findFloat( nm );
+    if( !p ) {
+      os << "# error: name \"" << nm << "\" not found" << NL;
+      return 1;
+    }
+    os << nm << " = " << (*p) << NL;
+    return 0;
+  }
+
+  // all vars
+  for( auto f : flts ) {
+    if( ! f.p || ! f.name ) {
+      break;
+    }
+    os << f.name << " = " << (*f.p) << NL;
+  }
+  return 0;
 }
 
 // ------------------ misc tests -----------------------
