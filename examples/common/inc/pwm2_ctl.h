@@ -18,7 +18,6 @@ class PWMData {
    ~PWMData() = default;
    float get_v()      const { return val;   }
    float get_v_real() const { return val_r; }
-   float get_v_def()  const { return vdef; }
    float get_t()  const { return t; }
    int get_c_step()  const { return c_step; }
    void reset_steps();
