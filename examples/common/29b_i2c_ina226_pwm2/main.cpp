@@ -87,15 +87,13 @@ CmdInfo CMDINFO_SETCALIBR { "set_calibr", 'K', cmd_setcalibr, " I_lsb R_sh - cal
 int cmd_tinit( int argc, const char * const * argv );
 CmdInfo CMDINFO_TINIT { "tinit", 'I', cmd_tinit, " - reinit timer"  };
 int cmd_pwm( int argc, const char * const * argv );
-CmdInfo CMDINFO_PWM { "pwm", 'W', cmd_pwm, " [val] - set PWM value"  };
+CmdInfo CMDINFO_PWM { "pwm", 0, cmd_pwm, " [val] - set PWM value"  };
 int cmd_set_coeffs( int argc, const char * const * argv );
 CmdInfo CMDINFO_SET_COEFFS { "set_coeffs", 'F', cmd_set_coeffs, " k0 k1 k2 k3 - set ADC coeffs"  };
 int cmd_set_float( int argc, const char * const * argv );
 CmdInfo CMDINFO_SET_FLOAT { "sf", 0, cmd_set_float, " name val - set float value"  };
 int cmd_print_float( int argc, const char * const * argv );
 CmdInfo CMDINFO_PRINT_FLOAT { "pf", 0, cmd_print_float, " [name] - print float values"  };
-int cmd_test_out( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST_OUT { "test_out", 'Q', cmd_test_out, " [v] - test float output"  };
 
 
 const CmdInfo* global_cmds[] = {
@@ -109,7 +107,6 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_SET_COEFFS,
   &CMDINFO_SET_FLOAT,
   &CMDINFO_PRINT_FLOAT,
-  &CMDINFO_TEST_OUT,
   nullptr
 };
 
@@ -196,7 +193,7 @@ int cmd_test0( int argc, const char * const * argv )
   os << "# cfg= " << HexInt16( x_cfg ) <<  " I_lsb_mA= " << ina226.get_I_lsb_mA()
      << " R_sh_uOhm= " << ina226.get_R_sh_uOhm() << NL;
   os << "# skip_pwm= " << skip_pwm << NL << "# Coeffs: ";
-  for( decltype(n_ch) j=0; j<n_ch; ++j ) {
+  for( decltype(+n_ch) j=0; j<n_ch; ++j ) {
     os << ' ' << v_coeffs[j];
   }
   os << NL;
@@ -211,7 +208,7 @@ int cmd_test0( int argc, const char * const * argv )
   bool do_out = ! UVAR('b');
 
   break_flag = 0;
-  for( decltype(n) i=0; i<n && !break_flag; ++i ) {
+  for( decltype(+n) i=0; i<n && !break_flag; ++i ) {
 
     uint32_t tcc = HAL_GetTick();
     if( i == 0 ) {
@@ -225,24 +222,26 @@ int cmd_test0( int argc, const char * const * argv )
     }
 
     float tc = 0.001f * ( tcc - tm00 );
-    sreal v[n_ch+1]; // +1 for PWM
+    sreal v[n_ch+3]; // +1 for PWM +2=R +3=W
 
     if( UVAR('l') ) {  leds.set( BIT2 ); }
 
-    v[0] = ina226.getVbus_uV() * 1e-6f * v_coeffs[0];
-    v[1] = ina226.getI_uA()    * 1e-6f * v_coeffs[1];
+    // _g measn 'get' or 'measured'
+    float V_g = ina226.getVbus_uV() * 1e-6f * v_coeffs[0];
+    float I_g = ina226.getI_uA()    * 1e-6f * v_coeffs[1];
+    float R_g = V_g / I_g;
+    float W_g = V_g * I_g;
+    v[0] = V_g;   v[1] = I_g;
     v[2] = pwmdat.get_v_real();
+    v[3] = R_g;  v[4] = W_g;
     UVAR('z') = ina226.get_last_Vsh();
 
     if( UVAR('l') ) {  leds.reset( BIT2 ); }
 
-    if( do_out ) {
-      os <<  FltFmt( tc, cvtff_auto, 12, 4 );
-    }
-
     sdat.add( v );
 
     if( do_out ) {
+      os <<  FltFmt( tc, cvtff_auto, 10, 3 );
       for( auto vc : v ) {
         os  << ' '  <<  vc;
       }
@@ -417,13 +416,6 @@ int cmd_print_float( int argc, const char * const * argv )
 
 // ------------------ misc tests -----------------------
 
-int cmd_test_out( int argc, const char * const * argv )
-{
-  float v = arg2float_d( 1, argc, argv, -0.12345678f, -FLT_MAX, FLT_MAX );
-  STDOUT_os;
-  os << NL "float: " << v << NL;
-  return 0;
-}
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

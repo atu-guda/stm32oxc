@@ -24,7 +24,7 @@ class PWMData {
    void reset_steps();
    void mk_rect( float v, int t );
    void mk_ladder( float dv, int dt, unsigned n_up );
-   void mk_trap( float v, int t1, int t2, int t3 );
+   void mk_ramp( float v, int t1, int t2, int t3 );
    void show_steps() const;
    bool edit_step( unsigned ns, float v, int t, int tp );
    void set_pwm();
@@ -68,17 +68,17 @@ int cmd_set_minmax( int argc, const char * const * argv );
 int cmd_show_steps( int argc, const char * const * argv );
 int cmd_mk_rect(    int argc, const char * const * argv );
 int cmd_mk_ladder(  int argc, const char * const * argv );
-int cmd_mk_trap(    int argc, const char * const * argv );
+int cmd_mk_ramp(    int argc, const char * const * argv );
 int cmd_edit_step(  int argc, const char * const * argv );
 
 extern CmdInfo CMDINFO_SET_MINMAX;
 extern CmdInfo CMDINFO_SHOW_STEPS;
 extern CmdInfo CMDINFO_MK_RECT;
 extern CmdInfo CMDINFO_MK_LADDER;
-extern CmdInfo CMDINFO_MK_TRAP;
+extern CmdInfo CMDINFO_MK_RAMP;
 extern CmdInfo CMDINFO_EDIT_STEP;
 
-#define CMDINFOS_PWM &CMDINFO_SET_MINMAX,  &CMDINFO_SHOW_STEPS,  &CMDINFO_MK_RECT,  &CMDINFO_MK_LADDER,  &CMDINFO_MK_TRAP, &CMDINFO_EDIT_STEP
+#define CMDINFOS_PWM &CMDINFO_SET_MINMAX,  &CMDINFO_SHOW_STEPS,  &CMDINFO_MK_RECT,  &CMDINFO_MK_LADDER,  &CMDINFO_MK_RAMP, &CMDINFO_EDIT_STEP
 
 #endif
 

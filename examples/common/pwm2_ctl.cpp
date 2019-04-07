@@ -51,7 +51,7 @@ void PWMData::mk_ladder( float dv, int t, unsigned n_up )
   n_steps = n_up * 2 + 1;
 }
 
-void PWMData::mk_trap( float v, int t1, int t2, int t3 )
+void PWMData::mk_ramp( float v, int t1, int t2, int t3 )
 {
   steps[0].v = vdef; steps[0].t = 10000; steps[0].tp = 0;
   steps[1].v = vdef; steps[1].t = t1;    steps[1].tp = 1;
@@ -192,15 +192,15 @@ int cmd_mk_ladder( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_mk_trap( int argc, const char * const * argv )
+int cmd_mk_ramp( int argc, const char * const * argv )
 {
   float  v = arg2float_d( 1, argc, argv,    50, 0,       99 );
   int   t1 = arg2long_d(  2, argc, argv, 30000, 1, 10000000 );
   int   t2 = arg2long_d(  3, argc, argv, 30000, 1, 10000000 );
   int   t3 = arg2long_d(  4, argc, argv, 30000, 1, 10000000 );
   STDOUT_os;
-  os << "# trap: v= " << v << " t1= " << t1 << " t2= " << t2 << " t3= " << t3  << NL;
-  pwmdat.mk_trap( v, t1, t2, t3 );
+  os << "# ramp: v= " << v << " t1= " << t1 << " t2= " << t2 << " t3= " << t3  << NL;
+  pwmdat.mk_ramp( v, t1, t2, t3 );
   pwmdat.show_steps();
   return 0;
 }
@@ -223,6 +223,6 @@ CmdInfo CMDINFO_SET_MINMAX { "set_minmax",   0, cmd_set_minmax, " pwm_min pwm_ma
 CmdInfo CMDINFO_SHOW_STEPS { "show_steps", 'S', cmd_show_steps, " - show PWM steps"  };
 CmdInfo CMDINFO_MK_RECT    { "mk_rect",      0, cmd_mk_rect,    " v t - make rectangle steps"  };
 CmdInfo CMDINFO_MK_LADDER  { "mk_ladder",    0, cmd_mk_ladder,  " v t n_up - make ladder steps"  };
-CmdInfo CMDINFO_MK_TRAP    { "mk_trap",      0, cmd_mk_trap,    " v t1  t2 t3 - make trapzoid steps"  };
+CmdInfo CMDINFO_MK_RAMP    { "mk_ramp",      0, cmd_mk_ramp,    " v t1  t2 t3 - make ramramp steps"  };
 CmdInfo CMDINFO_EDIT_STEP  { "edit_step",  'E', cmd_edit_step,  " v t tp - edit given step"  };
 
