@@ -108,30 +108,30 @@ float NamedFloats::get( const char *nm, float def, bool *ok ) const
 float W_max = 30.0f;
 
 bool set_pwm_min( float v ) {
-  pwmdat.set_min( v );
+  pwmdat.set_pwm_min( v );
   return true;
 }
 
 float get_pwm_min() {
-  return pwmdat.get_min();
+  return pwmdat.get_pwm_min();
 }
 
 bool set_pwm_max( float v ) {
-  pwmdat.set_max( v );
+  pwmdat.set_pwm_max( v );
   return true;
 }
 
 float get_pwm_max() {
-  return pwmdat.get_max();
+  return pwmdat.get_pwm_max();
 }
 
 bool set_pwm_def( float v ) {
-  pwmdat.set_def( v );
+  pwmdat.set_pwm_def( v );
   return true;
 }
 
 float get_pwm_def() {
-  return pwmdat.get_def();
+  return pwmdat.get_pwm_def();
 }
 
 NamedFloat flts[] = {
@@ -294,7 +294,7 @@ int cmd_test0( int argc, const char * const * argv )
     float R_g = V_g / I_g;
     float W_g = V_g * I_g;
     v[0] = V_g;   v[1] = I_g;
-    v[2] = pwmdat.get_v_real();
+    v[2] = pwmdat.get_pwm_real();
     v[3] = R_g;  v[4] = W_g;
     UVAR('z') = ina226.get_last_Vsh();
 
@@ -302,7 +302,8 @@ int cmd_test0( int argc, const char * const * argv )
 
     handle_keys();
 
-    if( ! pwmdat.tick() ) {
+    if( ! pwmdat.tick( v ) ) {
+      os << "# tick break!" << NL;
       break;
     }
 
@@ -374,7 +375,7 @@ void tim_cfg()
 
 
   HAL_TIM_PWM_Stop( &tim_h, TIM_CHANNEL_1 );
-  tim_oc_cfg.Pulse = (tim_ccr_t)( pwmdat.get_def() * pbase / 100 );
+  tim_oc_cfg.Pulse = (tim_ccr_t)( pwmdat.get_pwm_def() * pbase / 100 );
   if( HAL_TIM_PWM_ConfigChannel( &tim_h, &tim_oc_cfg, TIM_CHANNEL_1 ) != HAL_OK ) {
     UVAR('e') = 11;
     return;
@@ -390,9 +391,9 @@ int cmd_pwm( int argc, const char * const * argv )
   float vmax = fl.get( "pwm_max", 70.0f );
   float v = arg2float_d( 1, argc, argv, vdef, vmin, vmax );
   STDOUT_os;
-  pwmdat.set_v_manual( v );
+  pwmdat.set_pwm_manual( v );
   tim_print_cfg( TIM_EXA );
-  os << NL "# PWM:  in: " << pwmdat.get_v() << "  real: " << pwmdat.get_v_real() << NL;
+  os << NL "# PWM:  in: " << pwmdat.get_v() << "  real: " << pwmdat.get_pwm_real() << NL;
   return 0;
 }
 

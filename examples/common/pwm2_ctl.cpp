@@ -16,16 +16,17 @@ using namespace std;
 void PWMData::reset_steps()
 {
   for( auto &s : steps ) {
-    s.v = vdef; s.t = 30000; s.tp = pwm_type::pwm_const;
+    s.v = pwm_def; s.t = 30000; s.tp = pwm_type::pwm_const;
   }
   n_steps = 3;
 }
 
 void PWMData::mk_rect( float v, int t )
 {
-  steps[0].v = vdef; steps[0].t = 10000; steps[0].tp = pwm_type::pwm_const;
-  steps[1].v = v;    steps[1].t = t;     steps[1].tp = pwm_type::pwm_const;
-  steps[2].v = vdef; steps[2].t = 30000; steps[2].tp = pwm_type::pwm_const;
+  const auto b = pwm_def;
+  steps[0].v = b; steps[0].t = 10000; steps[0].tp = pwm_type::pwm_const;
+  steps[1].v = v; steps[1].t = t;     steps[1].tp = pwm_type::pwm_const;
+  steps[2].v = b; steps[2].t = 30000; steps[2].tp = pwm_type::pwm_const;
   n_steps = 3;
 }
 
@@ -34,9 +35,11 @@ void PWMData::mk_ladder( float dv, int t, unsigned n_up )
   unsigned n_up_max = max_pwm_steps / 2 - 1;
   n_up = clamp( n_up, 1u, n_up_max );
 
-  steps[0].v = vdef; steps[0].t = 10000; steps[0].tp = pwm_type::pwm_const;
+  const auto b = pwm_def;
+
+  steps[0].v = b; steps[0].t = 10000; steps[0].tp = pwm_type::pwm_const;
   unsigned i = 1;
-  float cv = vdef;
+  float cv = b;
   for( /* NOP */; i <= n_up; ++i ) {
     cv += dv;
     steps[i].v = cv;
@@ -47,24 +50,25 @@ void PWMData::mk_ladder( float dv, int t, unsigned n_up )
     steps[i].v = cv;
     steps[i].t = t; steps[i].tp = pwm_type::pwm_const;
   }
-  steps[i].v = vdef; steps[i].t = 60000; steps[0].tp = pwm_type::pwm_const;
+  steps[i].v = b; steps[i].t = 60000; steps[0].tp = pwm_type::pwm_const;
   n_steps = n_up * 2 + 1;
 }
 
 void PWMData::mk_ramp( float v, int t1, int t2, int t3 )
 {
-  steps[0].v = vdef; steps[0].t = 10000; steps[0].tp = pwm_type::pwm_const;
-  steps[1].v = vdef; steps[1].t = t1;    steps[1].tp = pwm_type::pwm_lin;
-  steps[2].v = v;    steps[2].t = t2;    steps[2].tp = pwm_type::pwm_const;
-  steps[3].v = v;    steps[3].t = t3;    steps[3].tp = pwm_type::pwm_lin;
-  steps[4].v = vdef; steps[4].t = 30000; steps[4].tp = pwm_type::pwm_const;
+  const auto b = pwm_def;
+  steps[0].v = b; steps[0].t = 10000; steps[0].tp = pwm_type::pwm_const;
+  steps[1].v = b; steps[1].t = t1;    steps[1].tp = pwm_type::pwm_lin;
+  steps[2].v = v; steps[2].t = t2;    steps[2].tp = pwm_type::pwm_const;
+  steps[3].v = v; steps[3].t = t3;    steps[3].tp = pwm_type::pwm_lin;
+  steps[4].v = b; steps[4].t = 30000; steps[4].tp = pwm_type::pwm_const;
   n_steps = 5;
 }
 
 void PWMData::show_steps() const
 {
   STDOUT_os;
-  os << "# vmin= " << vmin << "  vdef= " << vdef << "  vmax= " << vmax << " n_steps= " << n_steps << NL;
+  os << "# pwm_min= " << pwm_min << "  pwm_def= " << pwm_def << "  pwm_max= " << pwm_max << " n_steps= " << n_steps << NL;
   int tc = 0;
   for( unsigned i=0; i<n_steps; ++i ) {
     os << '[' << i << "] " << tc << ' ' << steps[i].t << ' ' << steps[i].v << ' ' << (int)steps[i].tp << NL;
@@ -79,6 +83,9 @@ bool PWMData::edit_step( unsigned ns, float v, int t, int tp )
     return false;
   }
   steps[ns].v = v; steps[ns].t = t;
+  if( tp > (int)(pwm_type::temp_lin) ) {
+    tp = 0;
+  }
   steps[ns].tp = static_cast<pwm_type>(tp);
   if( ns >= n_steps ) {
     n_steps = ns+1;
@@ -88,10 +95,11 @@ bool PWMData::edit_step( unsigned ns, float v, int t, int tp )
 
 void PWMData::set_pwm()
 {
-  val_r = clamp( val, vmin, vmax );
-  uint32_t scl = tim_h.Instance->ARR;
+  pwm_r = clamp( pwm_val, pwm_min, pwm_max );
+
+  uint32_t scl = tim_h.Instance->ARR; // TODO: external fun (ptr)
   using tim_ccr_t = decltype( tim_h.Instance->CCR1 );
-  tim_ccr_t nv = (tim_ccr_t)( val_r * scl / 100 );
+  tim_ccr_t nv = (tim_ccr_t)( pwm_r * scl / 100 );
   if( nv != tim_h.Instance->CCR1 ) {
     tim_h.Instance->CCR1 = nv;
   }
@@ -103,11 +111,11 @@ void PWMData::prep( int a_t_step, bool fake )
   t = 0; t_mul = 1;  c_step = 0; hand = 0;
   calcNextStep();
   if( ! fake_run ) {
-    val_r = val;
+    pwm_r = val;
   }
 }
 
-bool PWMData::tick()
+bool PWMData::tick( const float * /*d*/ )
 {
   t += t_step * t_mul;
   if( fake_run ) {
@@ -125,6 +133,7 @@ bool PWMData::tick()
 
   val_1 = val_0 + ks * t;
   val = val_1 + hand;
+  pwm_val = val;  // TODO: switch
   set_pwm();
 
   return true;
@@ -135,7 +144,7 @@ void PWMData::calcNextStep()
   val_0  = steps[c_step].v; val = val_0;
   step_t = steps[c_step].t;
   ks = 0;
-  if( steps[c_step].tp == pwm_type::pwm_lin  &&  step_t > 0 && c_step+1 < n_steps ) {
+  if( ( (unsigned)(steps[c_step].tp) & 1 )  &&  step_t > 0 && c_step+1 < n_steps ) { // even = *_lin
     ks = ( steps[c_step+1].v - val_0 ) / step_t;
   }
 }
@@ -143,14 +152,14 @@ void PWMData::calcNextStep()
 void PWMData::end_run()
 {
   if( ! fake_run ) {
-    val = vdef; hand = 0; t = 0; c_step = 0;
+    pwm_val = pwm_def; hand = 0; t = 0; c_step = 0;
     set_pwm();
   }
 }
 
-void PWMData::set_v_manual( float v )
+void PWMData::set_pwm_manual( float v )
 {
-  val = v; hand = 0;
+  pwm_val = v; hand = 0;
   set_pwm();
 }
 

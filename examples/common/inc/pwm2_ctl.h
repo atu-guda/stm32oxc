@@ -12,7 +12,7 @@ class PWMData {
    enum { max_pwm_steps = 64 };
    enum class pwm_type
    {
-     pwm_const  = 0, pwm_lin  = 1,
+     pwm_const  = 0, pwm_lin  = 1, // keep *_lin even! (used in calcNextStep)
      volt_const = 2, volt_lin = 3,
      curr_const = 4, curr_lin = 5,
      pwr_const =  6, pwr_lin  = 7,
@@ -26,7 +26,8 @@ class PWMData {
    PWMData( TIM_HandleTypeDef &th ) : tim_h( th ) { reset_steps(); };
    ~PWMData() = default;
    float get_v()      const { return val;   }
-   float get_v_real() const { return val_r; }
+   float get_pwm_given() const { return pwm_val; }
+   float get_pwm_real() const { return pwm_r; }
    float get_t()  const { return t; }
    int get_c_step()  const { return c_step; }
    void reset_steps();
@@ -36,25 +37,26 @@ class PWMData {
    void show_steps() const;
    bool edit_step( unsigned ns, float v, int t, int tp );
    void set_pwm();
-   float get_min() const { return vmin; }
-   float get_def() const { return vdef; }
-   float get_max() const { return vmax; }
-   void set_min( float m ) { vmin = m; }
-   void set_def( float m ) { vdef = std::clamp( vmin, m, vmax ); }
-   void set_max( float m ) { vmax = m; }
+   float get_pwm_min() const { return pwm_min; }
+   float get_pwm_def() const { return pwm_def; }
+   float get_pwm_max() const { return pwm_max; }
+   void set_pwm_min( float m ) { pwm_min = m; }
+   void set_pwm_def( float m ) { pwm_def = std::clamp( pwm_min, m, pwm_max ); }
+   void set_pwm_max( float m ) { pwm_max = m; }
    void prep( int a_t_step, bool fake );
-   bool tick(); // returns: true = continue;
+   bool tick( const float *d ); // returns: true = continue;
    void end_run();
-   void set_v_manual( float v );
+   void set_pwm_manual( float v );
    void set_hand( float v ) { hand = v; }
    void add_to_hand( float v ) { hand += v; }
    void adj_hand_to( float v ) { hand = v - val_1; }
    void set_t_mul( float tmul ) { t_mul = tmul; }
   protected:
-   float vmin = 3.0f, vdef = 5.0f, vmax = 60.0f;
-   float val =  vdef;    // unrestricted
+   float pwm_min = 3.0f, pwm_def = 5.0f, pwm_max = 60.0f;
+   float val =  pwm_def;
+   float pwm_val =  pwm_def;    // unrestricted
    float val_1 = val;    // w/o hand
-   float val_r = val;    // real
+   float pwm_r = val;    // real
    float val_0 = val;
    float step_t = 1.0f;  // current step length
    float ks    = 0;      // current step coeff
