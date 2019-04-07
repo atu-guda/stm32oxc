@@ -282,14 +282,8 @@ int cmd_test0( int argc, const char * const * argv )
     if( i == 0 ) {
       tm0 = tcc; tm00 = tm0;
     }
-
-    handle_keys();
-
-    if( ! pwmdat.tick() ) {
-      break;
-    }
-
     float tc = 0.001f * ( tcc - tm00 );
+
     sreal v[n_ch+3]; // +1 for PWM +2=R +3=W
 
     if( UVAR('l') ) {  leds.set( BIT2 ); }
@@ -305,6 +299,12 @@ int cmd_test0( int argc, const char * const * argv )
     UVAR('z') = ina226.get_last_Vsh();
 
     if( UVAR('l') ) {  leds.reset( BIT2 ); }
+
+    handle_keys();
+
+    if( ! pwmdat.tick() ) {
+      break;
+    }
 
     sdat.add( v );
 

@@ -10,9 +10,18 @@
 class PWMData {
   public:
    enum { max_pwm_steps = 64 };
+   enum class pwm_type
+   {
+     pwm_const  = 0, pwm_lin  = 1,
+     volt_const = 2, volt_lin = 3,
+     curr_const = 4, curr_lin = 5,
+     pwr_const =  6, pwr_lin  = 7,
+     temp_const = 8, temp_lin = 9
+   };
    struct StepInfo {
-     float v;
-     int t, tp;
+     float v; //* value: for *_lin = end level
+     int t;   //* time in ms
+     pwm_type tp;
    };
    PWMData( TIM_HandleTypeDef &th ) : tim_h( th ) { reset_steps(); };
    ~PWMData() = default;
