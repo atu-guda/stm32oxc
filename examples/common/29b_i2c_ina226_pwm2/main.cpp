@@ -28,55 +28,123 @@ TIM_HandleTypeDef tim_h;
 using tim_ccr_t = decltype( tim_h.Instance->CCR1 );
 void tim_cfg();
 
+PWMData pwmdat( tim_h );
+
+void handle_keys();
+
 struct NamedFloat {
-  float *p;
   const char *name;
+  float *p;
+  float (*get)();
+  bool  (*set)( float v );
+  uint32_t flags = 0;
+  enum { flg_ro = 1 };
 };
 
-float W_max = 30.0f;
-float pwm_max = 60.0f;
-
-NamedFloat flts[] = {
-  {   &W_max,   "W_max"  },
-  { &pwm_max, "pwm_max"  },
-  // { ,  },
-  { nullptr, nullptr }
+class NamedFloats {
+  public:
+   NamedFloats( NamedFloat *a_flts ) : fl( a_flts ) {};
+   const NamedFloat* find( const char *nm ) const;
+   bool  set( const char *nm, float v ) const; // changed variable, not NamedFloats object
+   float get( const char *nm, float def = 0.0f, bool *ok = nullptr ) const;
+  private:
+   NamedFloat *fl;
 };
 
-float* findFloat( const char *nm )
+const NamedFloat* NamedFloats::find( const char *nm ) const
 {
-  for( auto f : flts ) {
-    if( strcmp( f.name, nm ) == 0 ) {
-      return f.p;
+  for( const auto *f = fl; f->name != nullptr; ++f ) {
+    if( strcmp( nm, f->name ) == 0 ) {
+      return f;
     }
   }
   return nullptr;
 }
 
-bool setFloat( const char *nm, float v )
+bool  NamedFloats::set( const char *nm, float v ) const
 {
-  auto *p = findFloat( nm );
-  if( !p ) {
+  auto f = find( nm );
+  if( !f ) {
     return false;
   }
-  *p = v;
+  if( f->flags & NamedFloat::flg_ro ) {
+    return false;
+  }
+  if( f->set != nullptr ) {
+    return f->set( v );
+  }
+  if( f->p != nullptr ) {
+    *(f->p) = v;
+    return true;
+  }
+  return false;
+}
+
+float NamedFloats::get( const char *nm, float def, bool *ok ) const
+{
+  bool l_ok;
+  if( !ok ) {
+    ok = &l_ok;
+  }
+  auto f = find( nm );
+  if( !f ) {
+    *ok = false;
+    return def;
+  }
+
+  *ok = true;
+  if( f->get != nullptr ) {
+    return f->get();
+  }
+  if( f->p != nullptr ) {
+    return *(f->p);
+  }
+  *ok = false;
+  return def;
+}
+
+// ------------- floats values and get/set funcs -------------------
+
+float W_max = 30.0f;
+
+bool set_pwm_min( float v ) {
+  pwmdat.set_min( v );
   return true;
 }
 
-float getFloat( const char *nm, float def )
-{
-  auto *p = findFloat( nm );
-  if( !p ) {
-    return def;
-  }
-  return *p;
+float get_pwm_min() {
+  return pwmdat.get_min();
 }
 
+bool set_pwm_max( float v ) {
+  pwmdat.set_max( v );
+  return true;
+}
 
-PWMData pwmdat( tim_h );
+float get_pwm_max() {
+  return pwmdat.get_max();
+}
 
-void handle_keys();
+bool set_pwm_def( float v ) {
+  pwmdat.set_def( v );
+  return true;
+}
 
+float get_pwm_def() {
+  return pwmdat.get_def();
+}
+
+NamedFloat flts[] = {
+  {   "W_max",     &W_max,   nullptr,          nullptr, 0  },
+  { "pwm_min",    nullptr,   get_pwm_min,  set_pwm_min, 0  },
+  { "pwm_max",    nullptr,   get_pwm_max,  set_pwm_max, 0  },
+  { "pwm_def",    nullptr,   get_pwm_def,  set_pwm_def, 0  },
+  { nullptr, nullptr, nullptr, nullptr, 0  }
+};
+
+NamedFloats fl( flts );
+
+// ---------------------------------------------
 
 
 // --- local commands;
@@ -317,11 +385,14 @@ void tim_cfg()
 
 int cmd_pwm( int argc, const char * const * argv )
 {
-  float v = arg2float_d( 1, argc, argv, 10, 0, 100 );
+  float vmin = fl.get( "pwm_min", 3.0f );
+  float vdef = fl.get( "pwm_def", 5.0f );
+  float vmax = fl.get( "pwm_max", 70.0f );
+  float v = arg2float_d( 1, argc, argv, vdef, vmin, vmax );
   STDOUT_os;
   pwmdat.set_v_manual( v );
   tim_print_cfg( TIM_EXA );
-  os << NL "PWM:  in: " << pwmdat.get_v() << "  real: " << pwmdat.get_v_real() << NL;
+  os << NL "# PWM:  in: " << pwmdat.get_v() << "  real: " << pwmdat.get_v_real() << NL;
   return 0;
 }
 
@@ -386,7 +457,7 @@ int cmd_set_float( int argc, const char * const * argv )
     return 1;
   }
   float v = arg2float_d( 2, argc, argv, 0.0f, -FLT_MAX, FLT_MAX );
-  bool rc = setFloat( argv[1], v );
+  bool rc = fl.set( argv[1], v );
   return rc ? 0 : 2;
 }
 
@@ -395,21 +466,26 @@ int cmd_print_float( int argc, const char * const * argv )
   STDOUT_os;
   if( argc > 1 ) {
     const char *nm = argv[1];
-    float *p = findFloat( nm );
-    if( !p ) {
+    bool ok;
+    float v = fl.get( nm, 0.0f, &ok );
+    if( !ok ) {
       os << "# error: name \"" << nm << "\" not found" << NL;
       return 1;
     }
-    os << nm << " = " << (*p) << NL;
+    os << nm << " = " << v << NL;
     return 0;
   }
 
-  // all vars
+  // all vars TODO: iface
   for( auto f : flts ) {
-    if( ! f.p || ! f.name ) {
+    if( ! f.name ) {
       break;
     }
-    os << f.name << " = " << (*f.p) << NL;
+    bool ok;
+    float v = fl.get( f.name, 0.0f, &ok );
+    if( ok ) {
+      os << f.name << " = " << v << NL;
+    }
   }
   return 0;
 }

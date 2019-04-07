@@ -158,16 +158,6 @@ int cmd_show_steps( int /*argc*/, const char * const * /*argv*/ )
   return 0;
 }
 
-int cmd_set_minmax( int argc, const char * const * argv )
-{
-  float vmin = arg2float_d( 1, argc, argv, pwmdat.get_min(),  0.001, 98.00 );
-  float vmax = arg2float_d( 2, argc, argv, pwmdat.get_max(), vmin+1, 99.99 );
-  pwmdat.set_min( vmin );
-  pwmdat.set_max( vmax );
-  STDOUT_os;
-  os << "# vmin= " << pwmdat.get_min() << " vmax= " << pwmdat.get_max() << NL;
-  return 0;
-}
 
 int cmd_mk_rect( int argc, const char * const * argv )
 {
@@ -219,7 +209,6 @@ int cmd_edit_step( int argc, const char * const * argv )
   return ok ? 0 : 1;
 }
 
-CmdInfo CMDINFO_SET_MINMAX { "set_minmax",   0, cmd_set_minmax, " pwm_min pwm_max - set PWM limits"  };
 CmdInfo CMDINFO_SHOW_STEPS { "show_steps", 'S', cmd_show_steps, " - show PWM steps"  };
 CmdInfo CMDINFO_MK_RECT    { "mk_rect",      0, cmd_mk_rect,    " v t - make rectangle steps"  };
 CmdInfo CMDINFO_MK_LADDER  { "mk_ladder",    0, cmd_mk_ladder,  " v t n_up - make ladder steps"  };

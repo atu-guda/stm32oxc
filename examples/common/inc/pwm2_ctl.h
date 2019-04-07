@@ -29,8 +29,10 @@ class PWMData {
    bool edit_step( unsigned ns, float v, int t, int tp );
    void set_pwm();
    float get_min() const { return vmin; }
+   float get_def() const { return vdef; }
    float get_max() const { return vmax; }
    void set_min( float m ) { vmin = m; }
+   void set_def( float m ) { vdef = std::clamp( vmin, m, vmax ); }
    void set_max( float m ) { vmax = m; }
    void prep( int a_t_step, bool fake );
    bool tick(); // returns: true = continue;
@@ -41,7 +43,7 @@ class PWMData {
    void adj_hand_to( float v ) { hand = v - val_1; }
    void set_t_mul( float tmul ) { t_mul = tmul; }
   protected:
-   float vmin = 5.0f, vdef = 10.0f, vmax = 60.0f;
+   float vmin = 3.0f, vdef = 5.0f, vmax = 60.0f;
    float val =  vdef;    // unrestricted
    float val_1 = val;    // w/o hand
    float val_r = val;    // real
@@ -64,7 +66,6 @@ class PWMData {
 extern PWMData pwmdat;
 
 
-int cmd_set_minmax( int argc, const char * const * argv );
 int cmd_show_steps( int argc, const char * const * argv );
 int cmd_mk_rect(    int argc, const char * const * argv );
 int cmd_mk_ladder(  int argc, const char * const * argv );
@@ -78,7 +79,7 @@ extern CmdInfo CMDINFO_MK_LADDER;
 extern CmdInfo CMDINFO_MK_RAMP;
 extern CmdInfo CMDINFO_EDIT_STEP;
 
-#define CMDINFOS_PWM &CMDINFO_SET_MINMAX,  &CMDINFO_SHOW_STEPS,  &CMDINFO_MK_RECT,  &CMDINFO_MK_LADDER,  &CMDINFO_MK_RAMP, &CMDINFO_EDIT_STEP
+#define CMDINFOS_PWM  &CMDINFO_SHOW_STEPS,  &CMDINFO_MK_RECT,  &CMDINFO_MK_LADDER,  &CMDINFO_MK_RAMP, &CMDINFO_EDIT_STEP
 
 #endif
 
