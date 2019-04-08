@@ -1,0 +1,3 @@
+#!/usr/bin/bash
+gvim -p main.cpp ../../common/inc/pwm2_ctl.h ../../common/pwm2_ctl.cpp
+

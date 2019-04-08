@@ -12,14 +12,11 @@ class PWMData {
    enum { max_pwm_steps = 64 };
    enum class pwm_type
    {
-     pwm_const  = 0, pwm_lin  = 1, // keep *_lin even! (used in calcNextStep)
-     volt_const = 2, volt_lin = 3,
-     curr_const = 4, curr_lin = 5,
-     pwr_const =  6, pwr_lin  = 7,
-     temp_const = 8, temp_lin = 9
+     //          1       2     3      4    5
+     pwm  = 0, volt,  curr,  pwr,  temp,   n
    };
    struct StepInfo {
-     float v; //* value: for *_lin = end level
+     float vb, ve; //* values: begin/end
      int t;   //* time in ms
      pwm_type tp;
    };
@@ -35,7 +32,7 @@ class PWMData {
    void mk_ladder( float dv, int dt, unsigned n_up );
    void mk_ramp( float v, int t1, int t2, int t3 );
    void show_steps() const;
-   bool edit_step( unsigned ns, float v, int t, int tp );
+   bool edit_step( unsigned ns, float vb, float ve, int t, int tp );
    void set_pwm();
    float get_pwm_min() const { return pwm_min; }
    float get_pwm_def() const { return pwm_def; }
