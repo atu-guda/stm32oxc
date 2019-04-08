@@ -3,6 +3,7 @@
  *        Version:  1.0
  *        Created:  2019.04.06 13:05 as copy of pwm1_ctl.cpp
 */
+#include <cmath>
 #include <algorithm>
 
 #include <oxc_auto.h>
@@ -12,13 +13,16 @@
 
 using namespace std;
 
+float PWMInfo::hint_for_V( float V ) const {
+  return ( V > -V_00 ) ? ( ( V - V_00 ) / k_gv1 ) : sqrtf( V / k_gv2 ) ;
+};
 
 void PWMData::reset_steps()
 {
   for( auto &s : steps ) {
     s.vb = s.ve = pwm_def; s.t = 30000; s.tp = pwm_type::pwm;
   }
-  n_steps = 3;
+  n_steps = 1;
 }
 
 void PWMData::mk_rect( float v, int t )
@@ -83,7 +87,7 @@ bool PWMData::edit_step( unsigned ns, float vb, float ve, int t, int tp )
   if( ns >= max_pwm_steps ) {
     return false;
   }
-  steps[ns].vb = vb; steps[ns].vb = ve; steps[ns].t = t;
+  steps[ns].vb = vb; steps[ns].ve = ve; steps[ns].t = t;
   if( tp >= (int)(pwm_type::n) ) {
     tp = 0;
   }
@@ -135,6 +139,11 @@ bool PWMData::tick( const float * /*d*/ )
   val_1 = val_0 + ks * t;
   val = val_1 + hand;
   pwm_val = val;  // TODO: switch
+  switch( steps[c_step].tp ) {
+    case pwm_type::pwm:   pwm_val = val; break;
+    case pwm_type::volt:  pwm_val = pwminfo.hint_for_V( val );  break; // TODO: adj
+    default:              pwm_val = pwm_min; break; // fail-save
+  };
   set_pwm();
 
   return true;
@@ -212,10 +221,10 @@ int cmd_edit_step( int argc, const char * const * argv )
     return 1;
   }
   unsigned j = arg2long_d(  1, argc, argv,     0, 0, PWMData::max_pwm_steps-1 );
-  float vb   = arg2float_d( 2, argc, argv,    25, 0, 10000 );
-  float ve   = arg2float_d( 2, argc, argv,    25, 0, 10000 );
+  float vb   = arg2float_d( 2, argc, argv,     1, 0, 10000 );
+  float ve   = arg2float_d( 3, argc, argv,     3, 0, 10000 );
   int   t    = arg2long_d(  4, argc, argv, 30000, 1, 10000000 );
-  int   tp   = arg2long_d(  5, argc, argv,     0, 0, 1 );
+  int   tp   = arg2long_d(  5, argc, argv,     0, 0, (int)(PWMData::pwm_type::n)-1 );
   bool ok = pwmdat.edit_step( j, vb, ve, t, tp );
   pwmdat.show_steps();
   return ok ? 0 : 1;

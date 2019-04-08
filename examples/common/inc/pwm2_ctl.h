@@ -5,6 +5,14 @@
 #ifndef _PWM2_CTL_H
 #define _PWM2_CTL_H
 
+//* misct data about pwm. here: fallback values. need calibration
+struct PWMInfo {
+  float R_0   = 1.0f;    //* initial resistance
+  float V_00  = -0.5f;   //* V(0) for linear represenration
+  float k_gv1 = 0.12f;   //* dV/d\gamma
+  float k_gv2 = 0.006f;  //* a_2 coeff for initial part, = -k_gv1 / (4*V_00)
+  float hint_for_V( float V ) const;
+};
 
 
 class PWMData {
@@ -20,7 +28,7 @@ class PWMData {
      int t;   //* time in ms
      pwm_type tp;
    };
-   PWMData( TIM_HandleTypeDef &th ) : tim_h( th ) { reset_steps(); };
+   PWMData( TIM_HandleTypeDef &th, PWMInfo &pi ) : tim_h( th ), pwminfo( pi ) { reset_steps(); };
    ~PWMData() = default;
    float get_v()      const { return val;   }
    float get_pwm_given() const { return pwm_val; }
@@ -67,6 +75,7 @@ class PWMData {
    bool fake_run = false;
    StepInfo steps[max_pwm_steps];
    TIM_HandleTypeDef &tim_h;
+   PWMInfo &pwminfo;
    void calcNextStep();
 };
 

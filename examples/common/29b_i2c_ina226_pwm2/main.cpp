@@ -28,7 +28,8 @@ TIM_HandleTypeDef tim_h;
 using tim_ccr_t = decltype( tim_h.Instance->CCR1 );
 void tim_cfg();
 
-PWMData pwmdat( tim_h );
+PWMInfo pwminfo { 0.2135f /* R_0 */, -0.59128f /* V_00 */, 0.123227f /* k_gv1 */, 0.0064203f /* k_gv2 */ };
+PWMData pwmdat( tim_h, pwminfo );
 
 void handle_keys();
 
@@ -284,7 +285,7 @@ int cmd_test0( int argc, const char * const * argv )
     }
     float tc = 0.001f * ( tcc - tm00 );
 
-    sreal v[n_ch+3]; // +1 for PWM +2=R +3=W
+    sreal v[n_ch+4]; // +1 for PWM +2=R +3=W +4=current ctl value
 
     if( UVAR('l') ) {  leds.set( BIT2 ); }
 
@@ -295,7 +296,7 @@ int cmd_test0( int argc, const char * const * argv )
     float W_g = V_g * I_g;
     v[0] = V_g;   v[1] = I_g;
     v[2] = pwmdat.get_pwm_real();
-    v[3] = R_g;  v[4] = W_g;
+    v[3] = R_g;  v[4] = W_g; v[5] = pwmdat.get_v();
     UVAR('z') = ina226.get_last_Vsh();
 
     if( UVAR('l') ) {  leds.reset( BIT2 ); }
