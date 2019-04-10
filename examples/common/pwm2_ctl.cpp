@@ -25,47 +25,43 @@ void PWMData::reset_steps()
   n_steps = 1;
 }
 
-void PWMData::mk_rect( float v, int t )
+void PWMData::mk_rect( float vmin, float vmax, int t, pwm_type tp )
 {
-  const auto b = pwm_def;
-  steps[0].vb = steps[0].ve = b; steps[0].t = 10000; steps[0].tp = pwm_type::pwm;
-  steps[1].vb = steps[1].ve = v; steps[1].t = t;     steps[1].tp = pwm_type::pwm;
-  steps[2].vb = steps[2].ve = b; steps[2].t = 30000; steps[2].tp = pwm_type::pwm;
+  steps[0].vb = steps[0].ve = vmin; steps[0].t = 10000; steps[0].tp = tp;
+  steps[1].vb = steps[1].ve = vmax; steps[1].t = t;     steps[1].tp = tp;
+  steps[2].vb = steps[2].ve = vmin; steps[2].t = 30000; steps[2].tp = tp;
   n_steps = 3;
 }
 
-void PWMData::mk_ladder( float dv, int t, unsigned n_up )
+void PWMData::mk_ladder( float v0, float dv, int t, unsigned n_up, pwm_type tp )
 {
   unsigned n_up_max = max_pwm_steps / 2 - 1;
   n_up = clamp( n_up, 1u, n_up_max );
 
-  const auto b = pwm_def;
-
-  steps[0].vb =  steps[0].ve = b; steps[0].t = 10000; steps[0].tp = pwm_type::pwm;
+  steps[0].vb =  steps[0].ve = v0; steps[0].t = 10000; steps[0].tp = tp;
   unsigned i = 1;
-  float cv = b;
+  float cv = v0;
   for( /* NOP */; i <= n_up; ++i ) {
     cv += dv;
     steps[i].vb = steps[i].ve = cv;
-    steps[i].t = t; steps[i].tp = pwm_type::pwm;
+    steps[i].t = t; steps[i].tp = tp;
   }
   for( /* NOP */; i < n_up*2; ++i ) {
     cv -= dv;
     steps[i].vb = steps[i].ve = cv;
-    steps[i].t = t; steps[i].tp = pwm_type::pwm;
+    steps[i].t = t; steps[i].tp = tp;
   }
-  steps[i].vb = steps[i].ve = b; steps[i].t = 60000; steps[0].tp = pwm_type::pwm;
+  steps[i].vb = steps[i].ve = v0; steps[i].t = 60000; steps[i].tp = tp;
   n_steps = n_up * 2 + 1;
 }
 
-void PWMData::mk_ramp( float v, int t1, int t2, int t3 )
+void PWMData::mk_ramp( float vmin, float vmax, int t1, int t2, int t3, pwm_type tp )
 {
-  const auto b = pwm_def;
-  steps[0].vb = b; steps[0].ve = b; steps[0].t = 30000; steps[0].tp = pwm_type::pwm;
-  steps[1].vb = b; steps[1].ve = v; steps[1].t = t1;    steps[1].tp = pwm_type::pwm;
-  steps[2].vb = v; steps[2].ve = v; steps[2].t = t2;    steps[2].tp = pwm_type::pwm;
-  steps[3].vb = v; steps[3].ve = b; steps[3].t = t3;    steps[3].tp = pwm_type::pwm;
-  steps[4].vb = b; steps[4].ve = b; steps[4].t = 30000; steps[4].tp = pwm_type::pwm;
+  steps[0].vb = vmin; steps[0].ve = vmin; steps[0].t = 30000; steps[0].tp = tp;
+  steps[1].vb = vmin; steps[1].ve = vmax; steps[1].t = t1;    steps[1].tp = tp;
+  steps[2].vb = vmax; steps[2].ve = vmax; steps[2].t = t2;    steps[2].tp = tp;
+  steps[3].vb = vmax; steps[3].ve = vmin; steps[3].t = t3;    steps[3].tp = tp;
+  steps[4].vb = vmin; steps[4].ve = vmin; steps[4].t = 30000; steps[4].tp = tp;
   n_steps = 5;
 }
 
@@ -82,14 +78,14 @@ void PWMData::show_steps() const
   os << "# Total: " << tc << " ms" NL;
 }
 
-bool PWMData::edit_step( unsigned ns, float vb, float ve, int t, int tp )
+bool PWMData::edit_step( unsigned ns, float vb, float ve, int t, pwm_type tp )
 {
   if( ns >= max_pwm_steps ) {
     return false;
   }
   steps[ns].vb = vb; steps[ns].ve = ve; steps[ns].t = t;
-  if( tp >= (int)(pwm_type::n) ) {
-    tp = 0;
+  if( tp >= pwm_type::n ) {
+    tp = pwm_type::pwm;
   }
   steps[ns].tp = static_cast<pwm_type>(tp);
   if( ns >= n_steps ) {
@@ -113,16 +109,17 @@ void PWMData::set_pwm()
 void PWMData::prep( int a_t_step, bool fake )
 {
   t_step = a_t_step; fake_run = fake;
-  t = 0; t_mul = 1;  c_step = 0; hand = 0;
+  t = 0; t_mul = 1;  c_step = 0; hand = 0; last_R = pwminfo.R_0;
   calcNextStep();
   if( ! fake_run ) {
     pwm_r = val;
   }
 }
 
-bool PWMData::tick( const float * /*d*/ )
+bool PWMData::tick( const float *d )
 {
   t += t_step * t_mul;
+  last_R = d[3];
   if( fake_run ) {
     return true;
   }
@@ -138,12 +135,18 @@ bool PWMData::tick( const float * /*d*/ )
 
   val_1 = val_0 + ks * t;
   val = val_1 + hand;
-  pwm_val = val;  // TODO: switch
+  float err;
   switch( steps[c_step].tp ) {
     case pwm_type::pwm:   pwm_val = val; break;
-    case pwm_type::volt:  pwm_val = pwminfo.hint_for_V( val );  break; // TODO: adj
+    case pwm_type::volt:  err = d[0] - val;
+                          pwm_val -= pwminfo.ki_v * t_step * err;
+                          break;
+    case pwm_type::curr:  err = d[1] - val;
+                          pwm_val -= pwminfo.ki_v * last_R * t_step * err; // TODO: ki_curr
+                          break;
     default:              pwm_val = pwm_min; break; // fail-save
   };
+  pwm_val = clamp( pwm_val, pwm_min, pwm_max ); // to no-overintegrate
   set_pwm();
 
   return true;
@@ -151,9 +154,23 @@ bool PWMData::tick( const float * /*d*/ )
 
 void PWMData::calcNextStep()
 {
+  float old_val = val;
   val_0  = steps[c_step].vb; val = val_0;
   step_t = steps[c_step].t;
   ks = ( steps[c_step].ve - val_0 ) / step_t;
+  bool rehint = ( c_step == 0  ) || ( fabsf(val_0 - old_val) > 0.1f ) || ( steps[c_step].tp != steps[c_step-1].tp );
+  switch( steps[c_step].tp ) {
+    case pwm_type::pwm:   pwm_val = val; break;
+    case pwm_type::volt:  if( rehint ) {
+                            pwm_val = pwminfo.hint_for_V( val );
+                          }
+                          break;
+    case pwm_type::curr:  if( rehint ) {
+                            pwm_val = pwminfo.hint_for_V( val * last_R );
+                          }
+                          break;
+    default:              pwm_val = pwm_min; break; // fail-save
+  };
 }
 
 void PWMData::end_run()
@@ -181,36 +198,43 @@ int cmd_show_steps( int /*argc*/, const char * const * /*argv*/ )
 
 int cmd_mk_rect( int argc, const char * const * argv )
 {
-  float v  = arg2float_d( 1, argc, argv,    35, 1,       98 );
-  int   t  = arg2long_d(  2, argc, argv, 30000, 1, 10000000 );
+  float vmin  = arg2float_d( 1, argc, argv,     5, 0.1f,       98 );
+  float vmax  = arg2float_d( 2, argc, argv,    35, 0.2f,       98 );
+  int   t     = arg2long_d(  3, argc, argv, 30000,    1, 10000000 );
+  int   tp    = arg2long_d(  4, argc, argv,     0,    0, (int)(PWMData::pwm_type::n)-1 );
   STDOUT_os;
-  os << "# rect: v= " << v << " t= " << t << NL;
-  pwmdat.mk_rect( v, t );
+  os << "# rect: vmin= " << vmin << " vmax= " << vmax << " t= " << t << " tp= " << tp << NL;
+  pwmdat.mk_rect( vmin, vmax, t, (PWMData::pwm_type)(tp) );
   pwmdat.show_steps();
   return 0;
 }
 
 int cmd_mk_ladder( int argc, const char * const * argv )
 {
-  float    v  = arg2float_d( 1, argc, argv,     5, 1,       90 );
-  unsigned t  = arg2long_d(  2, argc, argv, 30000, 1, 10000000 );
-  unsigned n  = arg2long_d(  3, argc, argv,    10, 1, PWMData::max_pwm_steps/2-2 );
+  float    v0  = arg2float_d( 1, argc, argv,     3, 0.1f,       90 );
+  float    dv  = arg2float_d( 2, argc, argv,     5, 0.0f,       90 );
+  unsigned t   = arg2long_d(  3, argc, argv, 30000,    1, 10000000 );
+  unsigned n   = arg2long_d(  4, argc, argv,    10,    1, PWMData::max_pwm_steps/2-2 );
+  int   tp     = arg2long_d(  5, argc, argv,     0,    0, (int)(PWMData::pwm_type::n)-1 );
   STDOUT_os;
-  os << "# ladder: v= " << v << " t= " << t << " n= " << n << NL;
-  pwmdat.mk_ladder( v, t, n );
+  os << "# ladder: v0= " << v0 << " dv= " << dv << " t= " << t << " tp= " << tp << NL;
+  pwmdat.mk_ladder( v0, dv, t, n, (PWMData::pwm_type)(tp) );
   pwmdat.show_steps();
   return 0;
 }
 
 int cmd_mk_ramp( int argc, const char * const * argv )
 {
-  float  v = arg2float_d( 1, argc, argv,    50, 0,       99 );
-  int   t1 = arg2long_d(  2, argc, argv, 30000, 1, 10000000 );
-  int   t2 = arg2long_d(  3, argc, argv, 30000, 1, 10000000 );
-  int   t3 = arg2long_d(  4, argc, argv, 30000, 1, 10000000 );
+  float vmin  = arg2float_d( 1, argc, argv,     5, 0.1f,       98 );
+  float vmax  = arg2float_d( 2, argc, argv,    35, 0.2f,       98 );
+  int   t1    = arg2long_d(  3, argc, argv, 30000,    1, 10000000 );
+  int   t2    = arg2long_d(  4, argc, argv, 30000,    1, 10000000 );
+  int   t3    = arg2long_d(  5, argc, argv, 30000,    1, 10000000 );
+  int   tp    = arg2long_d(  6, argc, argv,     0,    0, (int)(PWMData::pwm_type::n)-1 );
   STDOUT_os;
-  os << "# ramp: v= " << v << " t1= " << t1 << " t2= " << t2 << " t3= " << t3  << NL;
-  pwmdat.mk_ramp( v, t1, t2, t3 );
+  os << "# ramp: vmin= " << vmin << " vmax= " << vmax
+     <<  " t1= " << t1 << " t2= " << t2 << " t3= " << t3  << " tp= " << tp << NL;
+  pwmdat.mk_ramp( vmin, vmax, t1, t2, t3, (PWMData::pwm_type)(tp) );
   pwmdat.show_steps();
   return 0;
 }
@@ -225,14 +249,14 @@ int cmd_edit_step( int argc, const char * const * argv )
   float ve   = arg2float_d( 3, argc, argv,     3, 0, 10000 );
   int   t    = arg2long_d(  4, argc, argv, 30000, 1, 10000000 );
   int   tp   = arg2long_d(  5, argc, argv,     0, 0, (int)(PWMData::pwm_type::n)-1 );
-  bool ok = pwmdat.edit_step( j, vb, ve, t, tp );
+  bool ok = pwmdat.edit_step( j, vb, ve, t, (PWMData::pwm_type)(tp) );
   pwmdat.show_steps();
   return ok ? 0 : 1;
 }
 
 CmdInfo CMDINFO_SHOW_STEPS { "show_steps", 'S', cmd_show_steps, " - show PWM steps"  };
-CmdInfo CMDINFO_MK_RECT    { "mk_rect",      0, cmd_mk_rect,    " v t - make rectangle steps"  };
-CmdInfo CMDINFO_MK_LADDER  { "mk_ladder",    0, cmd_mk_ladder,  " v t n_up - make ladder steps"  };
-CmdInfo CMDINFO_MK_RAMP    { "mk_ramp",      0, cmd_mk_ramp,    " v t1  t2 t3 - make ramp steps"  };
+CmdInfo CMDINFO_MK_RECT    { "mk_rect",      0, cmd_mk_rect,    " vmin vmax t tp - make rectangle steps"  };
+CmdInfo CMDINFO_MK_LADDER  { "mk_ladder",    0, cmd_mk_ladder,  " vmin dv t n_up tp - make ladder steps"  };
+CmdInfo CMDINFO_MK_RAMP    { "mk_ramp",      0, cmd_mk_ramp,    " vmin vmax v t1  t2 t3  tp - make ramp steps"  };
 CmdInfo CMDINFO_EDIT_STEP  { "edit_step",  'E', cmd_edit_step,  " vb ve t tp - edit given step"  };
 

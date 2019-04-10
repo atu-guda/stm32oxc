@@ -28,7 +28,11 @@ TIM_HandleTypeDef tim_h;
 using tim_ccr_t = decltype( tim_h.Instance->CCR1 );
 void tim_cfg();
 
-PWMInfo pwminfo { 0.2135f /* R_0 */, -0.59128f /* V_00 */, 0.123227f /* k_gv1 */, 0.0064203f /* k_gv2 */ };
+PWMInfo pwminfo {
+  0.2135f /* R_0 */, -0.59128f /* V_00 */, 0.123227f /* k_gv1 */, 0.0064203f /* k_gv2 */,
+  0.1 /* ki_v */,
+  30.0f /* W_max */
+};
 PWMData pwmdat( tim_h, pwminfo );
 
 void handle_keys();
@@ -106,8 +110,6 @@ float NamedFloats::get( const char *nm, float def, bool *ok ) const
 
 // ------------- floats values and get/set funcs -------------------
 
-float W_max = 30.0f;
-
 bool set_pwm_min( float v ) {
   pwmdat.set_pwm_min( v );
   return true;
@@ -136,10 +138,12 @@ float get_pwm_def() {
 }
 
 NamedFloat flts[] = {
-  {   "W_max",     &W_max,   nullptr,          nullptr, 0  },
-  { "pwm_min",    nullptr,   get_pwm_min,  set_pwm_min, 0  },
-  { "pwm_max",    nullptr,   get_pwm_max,  set_pwm_max, 0  },
-  { "pwm_def",    nullptr,   get_pwm_def,  set_pwm_def, 0  },
+  {   "W_max",  &pwminfo.W_max,      nullptr,      nullptr, 0  },
+  {   "V_00",   &pwminfo.V_00,       nullptr,      nullptr, 0  },
+  {   "ki_v",   &pwminfo.ki_v,       nullptr,      nullptr, 0  },
+  { "pwm_min",        nullptr,   get_pwm_min,  set_pwm_min, 0  },
+  { "pwm_max",        nullptr,   get_pwm_max,  set_pwm_max, 0  },
+  { "pwm_def",        nullptr,   get_pwm_def,  set_pwm_def, 0  },
   { nullptr, nullptr, nullptr, nullptr, 0  }
 };
 

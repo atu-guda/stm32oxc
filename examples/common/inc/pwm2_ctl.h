@@ -11,6 +11,8 @@ struct PWMInfo {
   float V_00  = -0.5f;   //* V(0) for linear represenration
   float k_gv1 = 0.12f;   //* dV/d\gamma
   float k_gv2 = 0.006f;  //* a_2 coeff for initial part, = -k_gv1 / (4*V_00)
+  float ki_v  = 0.1f;    //* intergation coeff for voltage
+  float W_max = 10.0f;   //* power limit
   float hint_for_V( float V ) const;
 };
 
@@ -36,11 +38,11 @@ class PWMData {
    float get_t()  const { return t; }
    int get_c_step()  const { return c_step; }
    void reset_steps();
-   void mk_rect( float v, int t );
-   void mk_ladder( float dv, int dt, unsigned n_up );
-   void mk_ramp( float v, int t1, int t2, int t3 );
+   void mk_rect( float vmin, float vmax, int t, pwm_type tp );
+   void mk_ladder( float v0, float dv, int dt, unsigned n_up, pwm_type tp );
+   void mk_ramp( float vmin, float vmax, int t1, int t2, int t3, pwm_type tp );
    void show_steps() const;
-   bool edit_step( unsigned ns, float vb, float ve, int t, int tp );
+   bool edit_step( unsigned ns, float vb, float ve, int t, pwm_type tp );
    void set_pwm();
    float get_pwm_min() const { return pwm_min; }
    float get_pwm_def() const { return pwm_def; }
@@ -66,6 +68,7 @@ class PWMData {
    float step_t = 1.0f;  // current step length
    float ks    = 0;      // current step coeff
    float hand = 0;       // adjusted by hand (handle_keys)
+   float last_R = 1.0f;
 
    unsigned n_steps  = 0;
    unsigned c_step   = 0;
