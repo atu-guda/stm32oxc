@@ -27,10 +27,11 @@ class PWMData {
    };
    struct StepInfo {
      float vb, ve; //* values: begin/end
-     int t;   //* time in ms
+     int t;        //* time in ms
      pwm_type tp;
    };
-   PWMData( TIM_HandleTypeDef &th, PWMInfo &pi ) : tim_h( th ), pwminfo( pi ) { reset_steps(); };
+   PWMData( PWMInfo &pi, void (*pwm_fun)(float) )
+     : pwminfo( pi ), set_pwm_real( pwm_fun )  { reset_steps(); };
    ~PWMData() = default;
    float get_v()      const { return val;   }
    float get_pwm_given() const { return pwm_val; }
@@ -77,12 +78,12 @@ class PWMData {
    float t_mul = 1;
    bool fake_run = false;
    StepInfo steps[max_pwm_steps];
-   TIM_HandleTypeDef &tim_h;
    PWMInfo &pwminfo;
+   void (*set_pwm_real)(float) = nullptr;
    void calcNextStep();
 };
 
-extern PWMData pwmdat;
+extern PWMData pwmdat; // for commands
 
 
 int cmd_show_steps( int argc, const char * const * argv );

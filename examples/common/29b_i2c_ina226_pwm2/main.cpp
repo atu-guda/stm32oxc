@@ -27,13 +27,14 @@ const char* common_help_string = "App to misc PWM control with INA226 I2C sensor
 TIM_HandleTypeDef tim_h;
 using tim_ccr_t = decltype( tim_h.Instance->CCR1 );
 void tim_cfg();
+void do_set_pwm( float v );
 
 PWMInfo pwminfo {
   0.2135f /* R_0 */, -0.59128f /* V_00 */, 0.123227f /* k_gv1 */, 0.0064203f /* k_gv2 */,
   0.1 /* ki_v */,
   30.0f /* W_max */
 };
-PWMData pwmdat( tim_h, pwminfo );
+PWMData pwmdat( pwminfo, do_set_pwm );
 
 void handle_keys();
 
@@ -387,6 +388,16 @@ void tim_cfg()
   }
   HAL_TIM_PWM_Start( &tim_h, TIM_CHANNEL_1 );
 
+}
+
+void do_set_pwm( float v )
+{
+  uint32_t scl = tim_h.Instance->ARR; // TODO: external fun (ptr)
+  using tim_ccr_t = decltype( tim_h.Instance->CCR1 );
+  tim_ccr_t nv = (tim_ccr_t)( v * scl / 100 );
+  if( nv != tim_h.Instance->CCR1 ) {
+    tim_h.Instance->CCR1 = nv;
+  }
 }
 
 int cmd_pwm( int argc, const char * const * argv )

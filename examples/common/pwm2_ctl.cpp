@@ -97,13 +97,10 @@ bool PWMData::edit_step( unsigned ns, float vb, float ve, int t, pwm_type tp )
 void PWMData::set_pwm()
 {
   pwm_r = clamp( pwm_val, pwm_min, pwm_max );
-
-  uint32_t scl = tim_h.Instance->ARR; // TODO: external fun (ptr)
-  using tim_ccr_t = decltype( tim_h.Instance->CCR1 );
-  tim_ccr_t nv = (tim_ccr_t)( pwm_r * scl / 100 );
-  if( nv != tim_h.Instance->CCR1 ) {
-    tim_h.Instance->CCR1 = nv;
+  if( set_pwm_real ) {
+    set_pwm_real( pwm_r );
   }
+
 }
 
 void PWMData::prep( int a_t_step, bool fake )
@@ -178,6 +175,8 @@ void PWMData::calcNextStep()
                           break;
     default:              pwm_val = pwm_min; break; // fail-save
   };
+  STDOUT_os;
+  os << "# @@@ " << c_step << ' ' << old_val << ' ' << val << ' ' << pwm_val << ' ' << last_R << NL;
 }
 
 void PWMData::end_run()
