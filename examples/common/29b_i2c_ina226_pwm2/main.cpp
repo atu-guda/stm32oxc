@@ -256,7 +256,7 @@ bool init_INA()
     return false;
   }
   uint16_t x_cfg = ina226.getCfg();
-  os <<  NL "# init_INA:  cfg= " <<  HexInt16( x_cfg ) << NL;
+  os <<  "# init_INA:  cfg= " <<  HexInt16( x_cfg ) << NL;
 
 
   uint16_t cfg = INA226::cfg_default;
@@ -285,7 +285,7 @@ int cmd_test0( int argc, const char * const * argv )
     return 3;
   }
 
-  os <<  NL "# test0: n= " <<  n <<  " t= " <<  t_step <<  " skip_pwm= " << skip_pwm << NL << "# Coeffs: ";
+  os <<  "# test0: n= " <<  n <<  " t= " <<  t_step <<  " skip_pwm= " << skip_pwm << NL << "# Coeffs: ";
   for( decltype(+n_ch) j=0; j<n_ch; ++j ) {
     os << ' ' << v_coeffs[j];
   }

@@ -128,24 +128,26 @@ bool PWMData::tick( const float *d )
       return false;
     }
     calcNextStep();
+  } else {
+
+    val_1 = val_0 + ks * t;
+    val = val_1 + hand;
+    float err;
+    switch( steps[c_step].tp ) {
+      case pwm_type::pwm:   pwm_val = val; break;
+      case pwm_type::volt:  err = d[0] - val;
+                            pwm_val -= pwminfo.ki_v * t_step * err;
+                            break;
+      case pwm_type::curr:  err = d[1] - val;
+                            pwm_val -= pwminfo.ki_v * last_R * t_step * err;
+                            break;
+      case pwm_type::pwr:   err = d[4] - val;
+                            pwm_val -= pwminfo.ki_v * t_step * err / ( d[1] + 0.2f ); // TODO: * what? / d[1]
+                            break;
+      default:              pwm_val = pwm_min; break; // fail-save
+    };
   }
 
-  val_1 = val_0 + ks * t;
-  val = val_1 + hand;
-  float err;
-  switch( steps[c_step].tp ) {
-    case pwm_type::pwm:   pwm_val = val; break;
-    case pwm_type::volt:  err = d[0] - val;
-                          pwm_val -= pwminfo.ki_v * t_step * err;
-                          break;
-    case pwm_type::curr:  err = d[1] - val;
-                          pwm_val -= pwminfo.ki_v * last_R * t_step * err;
-                          break;
-    case pwm_type::pwr:   err = d[4] - val;
-                          pwm_val -= pwminfo.ki_v * t_step * err; // TODO: * what?
-                          break;
-    default:              pwm_val = pwm_min; break; // fail-save
-  };
   pwm_val = clamp( pwm_val, pwm_min, pwm_max ); // to no-overintegrate
   set_pwm();
 
