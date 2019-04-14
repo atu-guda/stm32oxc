@@ -38,6 +38,7 @@ PWMData pwmdat( pwminfo, do_set_pwm );
 
 void handle_keys();
 
+// TODO: separate files
 struct NamedFloat {
   const char *name;
   float *p;
@@ -140,8 +141,11 @@ float get_pwm_def() {
 
 NamedFloat flts[] = {
   {   "W_max",  &pwminfo.W_max,      nullptr,      nullptr, 0  },
-  {   "V_00",   &pwminfo.V_00,       nullptr,      nullptr, 0  },
-  {   "ki_v",   &pwminfo.ki_v,       nullptr,      nullptr, 0  },
+  {    "V_00",   &pwminfo.V_00,      nullptr,      nullptr, 0  },
+  {     "R_0",    &pwminfo.R_0,      nullptr,      nullptr, 0  },
+  {   "k_gv1",  &pwminfo.k_gv1,      nullptr,      nullptr, 0  },
+  {   "k_gv2",  &pwminfo.k_gv2,      nullptr,      nullptr, 0  },
+  {    "ki_v",   &pwminfo.ki_v,      nullptr,      nullptr, 0  },
   { "pwm_min",        nullptr,   get_pwm_min,  set_pwm_min, 0  },
   { "pwm_max",        nullptr,   get_pwm_max,  set_pwm_max, 0  },
   { "pwm_def",        nullptr,   get_pwm_def,  set_pwm_def, 0  },
@@ -432,7 +436,7 @@ int cmd_calibrate( int argc, const char * const * argv )
 {
   float vmin = fl.get( "pwm_min", 3.0f );
   float vmax_def = fl.get( "pwm_max", 60.0f );
-  float vmax = arg2float_d( 1, argc, argv, vmax_def, 2.0f, vmax_def );
+  float vmax = arg2float_d( 1, argc, argv, 0.6f * vmax_def, 2.0f, vmax_def );
   unsigned dt  = arg2long_d( 2, argc, argv, 10000, 1000, 200000 );
 
   const unsigned n_measure = 10; // TODO: params
@@ -452,10 +456,12 @@ int cmd_calibrate( int argc, const char * const * argv )
   for( unsigned i=0; i<n_steps && !break_flag; ++i ) {
     float v = vmin + i * pwm_step;
     pwmdat.set_pwm_manual( v );
-    delay_ms_brk( dt );
+    delay_ms_brk( dt ); // TODO: break
     d_pwm[i] = pwmdat.get_pwm_real();
+    d_v[i] = d_i[i] = 0;
     for( unsigned j=0; j<n_measure; ++j ) {
       delay_ms( 50 );
+      // TODO: common code with test0: measure_calc + limits
       float V_g = ina226.getVbus_uV() * 1e-6f * v_coeffs[0];
       float I_g = ina226.getI_uA()    * 1e-6f * v_coeffs[1];
       d_v[i] += V_g;
@@ -472,11 +478,56 @@ int cmd_calibrate( int argc, const char * const * argv )
   float R_0 = d_v[0] / d_i[0];
   os << "# R_0= " << R_0 << NL;
 
-  for( unsigned i=n_steps-1; i>0; --i ) {
-    float k_l = ( d_v[i] - d_v[i-1] ) / ( d_pwm[i] - d_pwm[i-1] ) ;
-    float k_g = ( d_v[n_steps-1] - d_v[i-1] ) / ( d_pwm[n_steps-1] - d_pwm[i-1] );
-    os << "# " << i << ' ' << k_l << ' ' << k_g << NL;
+  unsigned i_lim = n_steps-1;
+  float k_g = 0.12f;
+  // find initial mode clange
+  for( unsigned i=n_steps-1; i>0; --i ) { // 
+    float diff_pwm_l =  d_pwm[i] - d_pwm[i-1];
+    float diff_pwm_g =  d_pwm[n_steps-1] - d_pwm[i-1];
+    os << "# " << i << ' ';
+    if( fabsf( diff_pwm_l ) < 0.1f || fabsf( diff_pwm_g ) < 0.1f ) {
+      continue;
+    }
+    float k_l1 = ( d_v[i] - d_v[i-1] ) / diff_pwm_l;
+    float k_g1 = ( d_v[n_steps-1] - d_v[i-1] ) / diff_pwm_g;
+    if( fabsf( ( k_g1 - k_l1 ) / k_g1 ) < 0.03f ) {
+      i_lim = i; k_g = k_g1;
+    }
+    os << "# " << i << ' ' << k_l1 << ' ' << k_g1 << NL;
   }
+  float b = d_v[n_steps-1] - k_g * d_pwm[n_steps-1];
+  float x_0 = - b / k_g;
+  float k_2 = - k_g * k_g / ( 4 * b );
+  os << "# i_lim= " << i_lim << " k_g= " << k_g << " b= " << b << " x_0= " << x_0 << " k_2= " << k_2 << NL;
+
+  // check
+
+  float err_max = 0;
+  for( unsigned i=0; i<n_steps; ++i ) {
+    float pwm = d_pwm[i];
+    float v;
+    if( pwm > 2 * x_0 ) {
+      v = k_g * pwm + b;
+    } else {
+      v = pwm * pwm * k_2;
+    }
+    float err = fabsf( v - d_v[i] );
+    if( err > err_max ) {
+      err_max = err;
+    }
+    os << "# " << i << ' ' << pwm << ' ' << d_pwm[i] << ' ' << v << err << NL;
+  }
+  os << "# err_max= " << err_max << NL;
+  if( err_max > 0.3f ) {
+    os << "# Large opprox error!!! " << NL;
+    return 5;
+  }
+
+  pwminfo.R_0 = R_0;
+  pwminfo.V_00 = b;
+  pwminfo.k_gv1 = k_g;
+  pwminfo.k_gv2 = k_2;
+
   return 0;
 }
 
