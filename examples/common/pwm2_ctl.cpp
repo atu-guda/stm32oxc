@@ -208,28 +208,28 @@ void PWMData::end_run()
 
 PWMData::check_result PWMData::check_lim( const float *d )
 {
-  STDOUT_os;
+  // STDOUT_os;
   if( d[didx_r] > pwminfo.R_max  ||  d[didx_r] < 0.001f ) {
-    os << "# Error: limit hard R: " << d[didx_r] << NL;
+    // os << "# Error: limit hard R: " << d[didx_r] << NL;
     return check_result::hard;
   }
 
   if( d[didx_v] > pwminfo.V_max ) {
     pwm_val *= 0.95f * pwminfo.V_max / d[didx_v];
     pwm_tmax = 0.99f * pwm_val;
-    os << "# limit V: " << d[didx_v] << " pwm_tmax=" << pwm_tmax << NL;
+    // os << "# limit V: " << d[didx_v] << " pwm_tmax=" << pwm_tmax << NL;
     return check_result::soft;
   }
   if( d[didx_i] > pwminfo.I_max ) {
     pwm_val *= 0.95f * pwminfo.I_max / d[didx_i];
     pwm_tmax = 0.99f * pwm_val;
-    os << "# limit I: " << d[didx_i] << " pwm_tmax=" << pwm_tmax << NL;
+    // os << "# limit I: " << d[didx_i] << " pwm_tmax=" << pwm_tmax << NL;
     return check_result::soft;
   }
   if( d[didx_w] > pwminfo.W_max ) {
     pwm_val *= 0.95f * pwminfo.W_max / d[didx_w];
     pwm_tmax = 0.99f * pwm_val;
-    os << "# limit W: " << d[didx_w] << " pwm_tmax=" << pwm_tmax << NL;
+    // os << "# limit W: " << d[didx_w] << " pwm_tmax=" << pwm_tmax << NL;
     return check_result::soft;
   }
 

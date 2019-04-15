@@ -343,17 +343,8 @@ int cmd_test0( int argc, const char * const * argv )
     }
     float tc = 0.001f * ( tcc - tm00 );
 
-
     float v[didx_n];
     measure_and_calc( v );
-
-
-    handle_keys();
-
-    if( ! pwmdat.tick( v ) ) {
-      os << "# tick break!" << NL;
-      break;
-    }
 
     sdat.add( v );
 
@@ -363,6 +354,13 @@ int cmd_test0( int argc, const char * const * argv )
         os  << ' '  <<  vc;
       }
       os << NL;
+    }
+
+    handle_keys();
+
+    if( ! pwmdat.tick( v ) ) {
+      os << "# tick break!" << NL;
+      break;
     }
 
     delay_ms_until_brk( &tm0, t_step );
