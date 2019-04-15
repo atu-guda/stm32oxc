@@ -96,7 +96,7 @@ bool PWMData::edit_step( unsigned ns, float vb, float ve, int t, pwm_type tp )
 
 void PWMData::set_pwm()
 {
-  pwm_r = clamp( pwm_val, pwm_min, pwm_max );
+  pwm_r = clamp( pwm_val, pwm_min, pwm_tmax );
   if( set_pwm_real ) {
     set_pwm_real( pwm_r );
   }
@@ -105,6 +105,7 @@ void PWMData::set_pwm()
 
 void PWMData::prep( int a_t_step, bool fake )
 {
+  pwm_tmax = pwm_max;
   t_step = a_t_step; fake_run = fake;
   t = 0; t_mul = 1;  c_step = 0; hand = 0; last_R = pwminfo.R_0;
   calcNextStep();
@@ -113,10 +114,19 @@ void PWMData::prep( int a_t_step, bool fake )
   }
 }
 
+// TODO: return reason
 bool PWMData::tick( const float *d )
 {
   t += t_step * t_mul;
-  last_R = d[3];
+  last_R = d[didx_r];
+  auto pwm_val_old = pwm_val;
+
+  auto rc = check_lim( d );
+
+  if( rc == check_result::hard ) {
+    return false;
+  }
+
   if( fake_run ) {
     return true;
   }
@@ -147,8 +157,11 @@ bool PWMData::tick( const float *d )
       default:              pwm_val = pwm_min; break; // fail-save
     };
   }
+  if( rc != check_result::ok && pwm_val > pwm_val_old ) {
+    pwm_val = pwm_val_old;
+  }
 
-  pwm_val = clamp( pwm_val, pwm_min, pwm_max ); // to no-overintegrate
+  pwm_val = clamp( pwm_val, pwm_min, pwm_tmax ); // to no-overintegrate
   set_pwm();
 
   return true;
@@ -179,7 +192,7 @@ void PWMData::calcNextStep()
                           break;
     default:              pwm_val = pwm_min; break; // fail-save
   };
-  STDOUT_os;
+  STDOUT_os; // debug. TODO: remove
   os << "# @@@ " << c_step << ' ' << old_val << ' ' << val << ' ' << pwm_val << ' '
      << last_R << ' ' << rehint << NL;
 }
@@ -190,6 +203,37 @@ void PWMData::end_run()
     pwm_val = pwm_def; hand = 0; t = 0; c_step = 0;
     set_pwm();
   }
+  pwm_tmax = pwm_max;
+}
+
+PWMData::check_result PWMData::check_lim( const float *d )
+{
+  STDOUT_os;
+  if( d[didx_r] > pwminfo.R_max  ||  d[didx_r] < 0.001f ) {
+    os << "# Error: limit hard R: " << d[didx_r] << NL;
+    return check_result::hard;
+  }
+
+  if( d[didx_v] > pwminfo.V_max ) {
+    pwm_val *= 0.95f * pwminfo.V_max / d[didx_v];
+    pwm_tmax = 0.99f * pwm_val;
+    os << "# limit V: " << d[didx_v] << " pwm_tmax=" << pwm_tmax << NL;
+    return check_result::soft;
+  }
+  if( d[didx_i] > pwminfo.I_max ) {
+    pwm_val *= 0.95f * pwminfo.I_max / d[didx_i];
+    pwm_tmax = 0.99f * pwm_val;
+    os << "# limit I: " << d[didx_i] << " pwm_tmax=" << pwm_tmax << NL;
+    return check_result::soft;
+  }
+  if( d[didx_w] > pwminfo.W_max ) {
+    pwm_val *= 0.95f * pwminfo.W_max / d[didx_w];
+    pwm_tmax = 0.99f * pwm_val;
+    os << "# limit W: " << d[didx_w] << " pwm_tmax=" << pwm_tmax << NL;
+    return check_result::soft;
+  }
+
+  return check_result::ok;
 }
 
 void PWMData::set_pwm_manual( float v )

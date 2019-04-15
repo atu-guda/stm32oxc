@@ -28,15 +28,16 @@ TIM_HandleTypeDef tim_h;
 using tim_ccr_t = decltype( tim_h.Instance->CCR1 );
 void tim_cfg();
 void do_set_pwm( float v );
+bool measure_and_calc( float *v );
 
 PWMInfo pwminfo {
   0.2135f /* R_0 */, -0.59128f /* V_00 */, 0.123227f /* k_gv1 */, 0.0064203f /* k_gv2 */,
   0.1f, /* ki_v */
   0.2f, /* rehint_lim */
   8.0f, /* V_max */
-  5.0f, /* I_max */
+  20.0f, /* I_max */
   10000.0f, /* R_max */
-  30.0f /* W_max */
+  100.0f /* W_max */
 };
 PWMData pwmdat( pwminfo, do_set_pwm );
 
@@ -276,6 +277,30 @@ bool init_INA()
   return true;
 }
 
+bool measure_and_calc( float *v )
+{
+  if( !v ) {
+    return false;
+  }
+  if( UVAR('l') ) {  leds.set( BIT2 ); }
+
+  float V_g = ina226.getVbus_uV() * 1e-6f * v_coeffs[0];
+  float I_g = ina226.getI_uA()    * 1e-6f * v_coeffs[1];
+  float R_g = V_g / I_g;
+  float W_g = V_g * I_g;
+  v[didx_v]   = V_g;
+  v[didx_i]   = I_g;
+  v[didx_pwm] = pwmdat.get_pwm_real();
+  v[didx_r]   = R_g;
+  v[didx_w]   = W_g;
+  v[didx_val] = pwmdat.get_v();
+
+  if( UVAR('l') ) {  leds.reset( BIT2 ); }
+
+  UVAR('z') = ina226.get_last_Vsh();
+  return true;
+}
+
 
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
@@ -298,6 +323,7 @@ int cmd_test0( int argc, const char * const * argv )
     os << ' ' << v_coeffs[j];
   }
   os << NL;
+  os << "#        t           V           I         pwm           R           W         val" << NL;
 
   leds.set(   BIT0 | BIT1 | BIT2 ); delay_ms( 100 );
   leds.reset( BIT0 | BIT1 | BIT2 );
@@ -317,24 +343,10 @@ int cmd_test0( int argc, const char * const * argv )
     }
     float tc = 0.001f * ( tcc - tm00 );
 
-    sreal v[didx_n];
 
-    if( UVAR('l') ) {  leds.set( BIT2 ); }
+    float v[didx_n];
+    measure_and_calc( v );
 
-    // _g measn 'get' or 'measured'
-    float V_g = ina226.getVbus_uV() * 1e-6f * v_coeffs[0];
-    float I_g = ina226.getI_uA()    * 1e-6f * v_coeffs[1];
-    float R_g = V_g / I_g;
-    float W_g = V_g * I_g;
-    v[didx_v]   = V_g;
-    v[didx_i]   = I_g;
-    v[didx_pwm] = pwmdat.get_pwm_real();
-    v[didx_r]   = R_g;
-    v[didx_w]   = W_g;
-    v[didx_val] = pwmdat.get_v();
-    UVAR('z') = ina226.get_last_Vsh();
-
-    if( UVAR('l') ) {  leds.reset( BIT2 ); }
 
     handle_keys();
 
@@ -443,6 +455,7 @@ int cmd_pwm( int argc, const char * const * argv )
   return 0;
 }
 
+// TODO: to PWMData
 int cmd_calibrate( int argc, const char * const * argv )
 {
   float vmin = fl.get( "pwm_min", 3.0f );
@@ -462,37 +475,60 @@ int cmd_calibrate( int argc, const char * const * argv )
 
   STDOUT_os;
   os << "# Calibrating: vmin=" << vmin << " vmax= " << vmax << " n_steps= " << n_steps << NL;
+  os << "# N         pwm           V           I           R           W" << NL;
 
   break_flag = 0;
   for( unsigned i=0; i<n_steps && !break_flag; ++i ) {
-    float v = vmin + i * pwm_step;
-    pwmdat.set_pwm_manual( v );
-    delay_ms_brk( dt ); // TODO: break
+    float v[didx_n];
+    float pwm_v = vmin + i * pwm_step;
+    pwmdat.set_pwm_manual( pwm_v );
+
+    for( unsigned j=0; j<dt && !break_flag; j+=10 ) { // wait for steady + check all limits
+      delay_ms_brk( 10 ); // TODO: break
+      measure_and_calc( v );
+      auto rc = pwmdat.check_lim( v );
+      if( rc != PWMData::check_result::ok ) {
+        break_flag = 2;
+        os << "# Error: limits! " << NL;
+        break;
+      }
+    }
+    if( break_flag ) { break; }
+
     d_pwm[i] = pwmdat.get_pwm_real();
     d_v[i] = d_i[i] = 0;
-    for( unsigned j=0; j<n_measure; ++j ) {
+
+    for( unsigned j=0; j<n_measure && !break_flag; ++j ) {
       delay_ms( 50 );
-      // TODO: common code with test0: measure_calc + limits
-      float V_g = ina226.getVbus_uV() * 1e-6f * v_coeffs[0];
-      float I_g = ina226.getI_uA()    * 1e-6f * v_coeffs[1];
-      d_v[i] += V_g;
-      d_i[i] += I_g;
+      measure_and_calc( v ); // TODO: check
+      auto rc = pwmdat.check_lim( v );
+      if( rc != PWMData::check_result::ok ) {
+        break_flag = 2;
+        os << "# Error: limits! " << NL;
+        break;
+      }
+      d_v[i] += v[didx_v];
+      d_i[i] += v[didx_i];
     }
+    if( break_flag ) { break; }
+
     d_v[i] /= n_measure; d_i[i] /= n_measure;
-    os << "# " << i << ' ' << v << ' ' << d_v[i] << ' ' << d_i[i] << NL;
+    os << "# " << i << ' ' << pwm_v << ' ' << d_v[i] << ' ' << d_i[i] << ' ' 
+       << v[didx_r] << ' ' << v[didx_w] << NL;
   }
+
   pwmdat.set_pwm_manual( vmin );
+
   if( break_flag ) {
     os << "# calibrtion exit by break!" << NL;
     return 2;
   }
   float R_0 = d_v[0] / d_i[0];
-  os << "# R_0= " << R_0 << NL;
 
+  // find initial mode clange
   unsigned i_lim = n_steps-1;
   float k_g = 0.12f;
-  // find initial mode clange
-  for( unsigned i=n_steps-1; i>0; --i ) { // 
+  for( unsigned i=n_steps-1; i>0; --i ) {
     float diff_pwm_l =  d_pwm[i] - d_pwm[i-1];
     float diff_pwm_g =  d_pwm[n_steps-1] - d_pwm[i-1];
     os << "# " << i << ' ';
@@ -509,9 +545,9 @@ int cmd_calibrate( int argc, const char * const * argv )
   float b = d_v[n_steps-1] - k_g * d_pwm[n_steps-1];
   float x_0 = - b / k_g;
   float k_2 = - k_g * k_g / ( 4 * b );
-  os << "# i_lim= " << i_lim << " k_g= " << k_g << " b= " << b << " x_0= " << x_0 << " k_2= " << k_2 << NL;
 
   // check
+  os << "# Check:" << NL;
 
   float err_max = 0;
   for( unsigned i=0; i<n_steps; ++i ) {
@@ -526,11 +562,14 @@ int cmd_calibrate( int argc, const char * const * argv )
     if( err > err_max ) {
       err_max = err;
     }
-    os << "# " << i << ' ' << pwm << ' ' << d_pwm[i] << ' ' << v << err << NL;
+    os << "# " << i << ' ' << pwm << ' ' << v << err << NL;
   }
   os << "# err_max= " << err_max << NL;
+  os << "# R_0= " << R_0 << " i_lim= " << i_lim << " k_g= " << k_g
+     << " b= " << b << " x_0= " << x_0 << " k_2= " << k_2 << NL;
+
   if( err_max > 0.3f ) {
-    os << "# Large opprox error!!! " << NL;
+    os << "# Large approximation error!!! " << NL;
     return 5;
   }
 

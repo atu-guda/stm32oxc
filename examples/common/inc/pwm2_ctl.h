@@ -34,6 +34,11 @@ class PWMData {
      //          1       2     3      4    5
      pwm  = 0, volt,  curr,  pwr,  temp,   n
    };
+   enum class check_result {
+     ok   = 0,
+     soft = 1,
+     hard = 2
+   };
    struct StepInfo {
      float vb, ve; //* values: begin/end
      int t;        //* time in ms
@@ -59,17 +64,18 @@ class PWMData {
    float get_pwm_max() const { return pwm_max; }
    void set_pwm_min( float m ) { pwm_min = m; }
    void set_pwm_def( float m ) { pwm_def = std::clamp( pwm_min, m, pwm_max ); }
-   void set_pwm_max( float m ) { pwm_max = m; }
+   void set_pwm_max( float m ) { pwm_max = pwm_tmax = m; }
    void prep( int a_t_step, bool fake );
    bool tick( const float *d ); // returns: true = continue;
    void end_run();
+   check_result check_lim( const float *d );
    void set_pwm_manual( float v );
    void set_hand( float v ) { hand = v; }
    void add_to_hand( float v ) { hand += v; }
    void adj_hand_to( float v ) { hand = v - val_1; }
    void set_t_mul( float tmul ) { t_mul = tmul; }
   protected:
-   float pwm_min = 3.0f, pwm_def = 5.0f, pwm_max = 60.0f;
+   float pwm_min = 3.0f, pwm_def = 5.0f, pwm_max = 60.0f, pwm_tmax = pwm_max; // tmax - tmp max for limits
    float val =  pwm_def;
    float pwm_val =  pwm_def;    // unrestricted
    float val_1 = val;    // w/o hand
