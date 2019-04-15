@@ -31,7 +31,11 @@ void do_set_pwm( float v );
 
 PWMInfo pwminfo {
   0.2135f /* R_0 */, -0.59128f /* V_00 */, 0.123227f /* k_gv1 */, 0.0064203f /* k_gv2 */,
-  0.1 /* ki_v */,
+  0.1f, /* ki_v */
+  0.2f, /* rehint_lim */
+  8.0f, /* V_max */
+  5.0f, /* I_max */
+  10000.0f, /* R_max */
   30.0f /* W_max */
 };
 PWMData pwmdat( pwminfo, do_set_pwm );
@@ -140,16 +144,20 @@ float get_pwm_def() {
 }
 
 NamedFloat flts[] = {
-  {   "W_max",  &pwminfo.W_max,      nullptr,      nullptr, 0  },
-  {    "V_00",   &pwminfo.V_00,      nullptr,      nullptr, 0  },
-  {     "R_0",    &pwminfo.R_0,      nullptr,      nullptr, 0  },
-  {   "k_gv1",  &pwminfo.k_gv1,      nullptr,      nullptr, 0  },
-  {   "k_gv2",  &pwminfo.k_gv2,      nullptr,      nullptr, 0  },
-  {    "ki_v",   &pwminfo.ki_v,      nullptr,      nullptr, 0  },
-  { "pwm_min",        nullptr,   get_pwm_min,  set_pwm_min, 0  },
-  { "pwm_max",        nullptr,   get_pwm_max,  set_pwm_max, 0  },
-  { "pwm_def",        nullptr,   get_pwm_def,  set_pwm_def, 0  },
-  { nullptr, nullptr, nullptr, nullptr, 0  }
+  {      "W_max",      &pwminfo.W_max,      nullptr,      nullptr, 0  },
+  {      "V_max",      &pwminfo.V_max,      nullptr,      nullptr, 0  },
+  {      "I_max",      &pwminfo.I_max,      nullptr,      nullptr, 0  },
+  {      "R_max",      &pwminfo.R_max,      nullptr,      nullptr, 0  },
+  {       "V_00",       &pwminfo.V_00,      nullptr,      nullptr, 0  },
+  {        "R_0",        &pwminfo.R_0,      nullptr,      nullptr, 0  },
+  {      "k_gv1",      &pwminfo.k_gv1,      nullptr,      nullptr, 0  },
+  {      "k_gv2",      &pwminfo.k_gv2,      nullptr,      nullptr, 0  },
+  {       "ki_v",       &pwminfo.ki_v,      nullptr,      nullptr, 0  },
+  { "rehint_lim", &pwminfo.rehint_lim,      nullptr,      nullptr, 0  },
+  {    "pwm_min",             nullptr,  get_pwm_min,  set_pwm_min, 0  },
+  {    "pwm_max",             nullptr,  get_pwm_max,  set_pwm_max, 0  },
+  {    "pwm_def",             nullptr,  get_pwm_def,  set_pwm_def, 0  },
+  {      nullptr, nullptr, nullptr, nullptr, 0  }
 };
 
 NamedFloats fl( flts );

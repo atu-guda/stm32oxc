@@ -12,12 +12,16 @@ enum DataIdx {
 
 //* misct data about pwm. here: fallback values. need calibration
 struct PWMInfo {
-  float R_0   = 1.0f;    //* initial resistance
-  float V_00  = -0.5f;   //* V(0) for linear represenration
-  float k_gv1 = 0.12f;   //* dV/d\gamma
-  float k_gv2 = 0.006f;  //* a_2 coeff for initial part, = -k_gv1 / (4*V_00)
-  float ki_v  = 0.1f;    //* intergation coeff for voltage
-  float W_max = 10.0f;   //* power limit
+  float R_0   = 1.0f;      //* initial resistance
+  float V_00  = -0.5f;     //* V(0) for linear represenration
+  float k_gv1 = 0.12f;     //* dV/d\gamma
+  float k_gv2 = 0.006f;    //* a_2 coeff for initial part, = -k_gv1 / (4*V_00)
+  float ki_v  = 0.1f;      //* intergation coeff for voltage
+  float rehint_lim = 0.2f; //* is rehint needed in calcNextStep
+  float V_max = 8.0f;      //* voltage limit
+  float I_max = 8.0f;      //* current limit
+  float R_max = 8.0f;      //* resistance value for break detection
+  float W_max = 90.0f;     //* power limit
   float hint_for_V( float V ) const;
 };
 

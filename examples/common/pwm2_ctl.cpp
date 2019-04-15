@@ -160,7 +160,9 @@ void PWMData::calcNextStep()
   val_0  = steps[c_step].vb; val = val_0;
   step_t = steps[c_step].t;
   ks = ( steps[c_step].ve - val_0 ) / step_t;
-  bool rehint = ( c_step == 0  ) || ( fabsf(val_0 - old_val) > 0.1f ) || ( steps[c_step].tp != steps[c_step-1].tp );
+  bool rehint = ( c_step == 0  )
+    || ( fabsf( val_0 - old_val ) > pwminfo.rehint_lim )
+    || ( steps[c_step].tp != steps[c_step-1].tp );
   switch( steps[c_step].tp ) {
     case pwm_type::pwm:   pwm_val = val; break;
     case pwm_type::volt:  if( rehint ) {
@@ -178,7 +180,8 @@ void PWMData::calcNextStep()
     default:              pwm_val = pwm_min; break; // fail-save
   };
   STDOUT_os;
-  os << "# @@@ " << c_step << ' ' << old_val << ' ' << val << ' ' << pwm_val << ' ' << last_R << NL;
+  os << "# @@@ " << c_step << ' ' << old_val << ' ' << val << ' ' << pwm_val << ' '
+     << last_R << ' ' << rehint << NL;
 }
 
 void PWMData::end_run()
