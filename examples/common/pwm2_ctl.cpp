@@ -135,13 +135,13 @@ bool PWMData::tick( const float *d )
     float err;
     switch( steps[c_step].tp ) {
       case pwm_type::pwm:   pwm_val = val; break;
-      case pwm_type::volt:  err = d[0] - val;
+      case pwm_type::volt:  err = d[didx_v] - val;
                             pwm_val -= pwminfo.ki_v * t_step * err;
                             break;
-      case pwm_type::curr:  err = d[1] - val;
+      case pwm_type::curr:  err = d[didx_i] - val;
                             pwm_val -= pwminfo.ki_v * last_R * t_step * err;
                             break;
-      case pwm_type::pwr:   err = d[4] - val;
+      case pwm_type::pwr:   err = d[didx_w] - val;
                             pwm_val -= pwminfo.ki_v * t_step * err / ( d[1] + 0.2f ); // TODO: * what? / d[1]
                             break;
       default:              pwm_val = pwm_min; break; // fail-save

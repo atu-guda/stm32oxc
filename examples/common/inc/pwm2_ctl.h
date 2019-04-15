@@ -5,6 +5,11 @@
 #ifndef _PWM2_CTL_H
 #define _PWM2_CTL_H
 
+//* named indexes in measured data arrays
+enum DataIdx {
+  didx_v = 0, didx_i = 1, didx_pwm = 2, didx_r = 3, didx_w = 4, didx_val = 5, didx_n
+};
+
 //* misct data about pwm. here: fallback values. need calibration
 struct PWMInfo {
   float R_0   = 1.0f;    //* initial resistance
