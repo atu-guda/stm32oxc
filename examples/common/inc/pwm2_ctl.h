@@ -62,9 +62,9 @@ class PWMData {
    float get_pwm_min() const { return pwm_min; }
    float get_pwm_def() const { return pwm_def; }
    float get_pwm_max() const { return pwm_max; }
-   void set_pwm_min( float m ) { pwm_min = m; }
-   void set_pwm_def( float m ) { pwm_def = std::clamp( pwm_min, m, pwm_max ); }
-   void set_pwm_max( float m ) { pwm_max = pwm_tmax = m; }
+   void set_pwm_min( float m ) { pwm_min = std::clamp( m, 0.1f, pwm_max ); }
+   void set_pwm_def( float m ) { pwm_def = std::clamp( m, pwm_min, pwm_max ); }
+   void set_pwm_max( float m ) { pwm_max = pwm_tmax = std::clamp( m, pwm_min+0.1f, 99.9f ); }
    void prep( int a_t_step, bool fake );
    bool tick( const float *d ); // returns: true = continue;
    void end_run();

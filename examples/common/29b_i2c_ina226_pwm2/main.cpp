@@ -43,6 +43,10 @@ PWMData pwmdat( pwminfo, do_set_pwm );
 
 void handle_keys();
 
+bool print_var( const char *nm );
+bool set_var( const char *nm, const char *s );
+const char* get_var_name( unsigned i );
+
 // TODO: separate files
 struct NamedFloat {
   const char *name;
@@ -55,12 +59,16 @@ struct NamedFloat {
 
 class NamedFloats {
   public:
-   NamedFloats( NamedFloat *a_flts ) : fl( a_flts ) {};
+   NamedFloats( NamedFloat *a_flts ) : fl( a_flts ), n( count_elems() ) {};
+   constexpr unsigned get_n() const { return n; }
    const NamedFloat* find( const char *nm ) const;
+   const char* getName( unsigned i ) const { return ( i<n ) ? fl[i].name : nullptr ; }
    bool  set( const char *nm, float v ) const; // changed variable, not NamedFloats object
    float get( const char *nm, float def = 0.0f, bool *ok = nullptr ) const;
   private:
    NamedFloat *fl;
+   const unsigned n;
+   constexpr unsigned count_elems() const;
 };
 
 const NamedFloat* NamedFloats::find( const char *nm ) const
@@ -115,6 +123,15 @@ float NamedFloats::get( const char *nm, float def, bool *ok ) const
   return def;
 }
 
+constexpr unsigned NamedFloats::count_elems() const
+{
+  unsigned i=0;
+  for( const auto *f = fl; f->name != nullptr; ++f ) {
+    ++i;
+  }
+  return i;
+}
+
 // ------------- floats values and get/set funcs -------------------
 
 bool set_pwm_min( float v ) {
@@ -163,6 +180,46 @@ NamedFloat flts[] = {
 
 NamedFloats fl( flts );
 
+// print/set hook functions
+
+bool print_var( const char *nm )
+{
+  if( !nm ) {
+    return false;
+  }
+
+  bool ok;
+  float x = fl.get( nm, 0.0f, &ok );
+  if( !ok ) {
+    return false;
+  }
+  STDOUT_os;
+  os << nm << " = " << x << NL;
+  return true;
+}
+
+bool set_var( const char *nm, const char *s )
+{
+  if( !nm || !s || !*s ) {
+    return false;
+  }
+  char *eptr;
+  float x = strtof( s, &eptr );
+  if( *eptr != '\0' ) {
+    return false;
+  }
+  bool ok = fl.set( nm, x );
+  if( ok ) {
+    print_var( nm );
+  }
+  return ok;
+}
+
+const char* get_var_name( unsigned i )
+{
+  return fl.getName( i );
+}
+
 // ---------------------------------------------
 
 
@@ -179,10 +236,6 @@ int cmd_calibrate( int argc, const char * const * argv );
 CmdInfo CMDINFO_CALIBRATE { "calibrate", 'C', cmd_calibrate, " [pwm_max] [dt] - calibrate PWM values"  };
 int cmd_set_coeffs( int argc, const char * const * argv );
 CmdInfo CMDINFO_SET_COEFFS { "set_coeffs", 'F', cmd_set_coeffs, " k0 k1 k2 k3 - set ADC coeffs"  };
-int cmd_set_float( int argc, const char * const * argv );
-CmdInfo CMDINFO_SET_FLOAT { "sf", 0, cmd_set_float, " name val - set float value"  };
-int cmd_print_float( int argc, const char * const * argv );
-CmdInfo CMDINFO_PRINT_FLOAT { "pf", 0, cmd_print_float, " [name] - print float values"  };
 
 
 const CmdInfo* global_cmds[] = {
@@ -195,8 +248,6 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_CALIBRATE,
   CMDINFOS_PWM,
   &CMDINFO_SET_COEFFS,
-  &CMDINFO_SET_FLOAT,
-  &CMDINFO_PRINT_FLOAT,
   nullptr
 };
 
@@ -219,6 +270,10 @@ int main(void)
 
   UVAR('p') = 0;     // PSC,  - max output freq
   UVAR('a') = 1439;  // ARR, to get 100 kHz with PSC = 0
+
+  print_var_hook = print_var;
+  set_var_hook   = set_var;
+  get_var_name_hook = get_var_name;
 
   tim_cfg();
 
@@ -286,7 +341,7 @@ bool measure_and_calc( float *v )
 
   float V_g = ina226.getVbus_uV() * 1e-6f * v_coeffs[0];
   float I_g = ina226.getI_uA()    * 1e-6f * v_coeffs[1];
-  float R_g = V_g / I_g;
+  float R_g = ( I_g > 1e-6f ) ? ( V_g / I_g ) : 1.0e9f;
   float W_g = V_g * I_g;
   v[didx_v]   = V_g;
   v[didx_i]   = I_g;
@@ -631,47 +686,6 @@ void handle_keys()
 
 }
 
-// ------------------ floats -----------------------
-int cmd_set_float( int argc, const char * const * argv )
-{
-  STDOUT_os;
-  if( argc < 3 ) {
-    os << "# error: 2 arguments requred" << NL;
-    return 1;
-  }
-  float v = arg2float_d( 2, argc, argv, 0.0f, -FLT_MAX, FLT_MAX );
-  bool rc = fl.set( argv[1], v );
-  return rc ? 0 : 2;
-}
-
-int cmd_print_float( int argc, const char * const * argv )
-{
-  STDOUT_os;
-  if( argc > 1 ) {
-    const char *nm = argv[1];
-    bool ok;
-    float v = fl.get( nm, 0.0f, &ok );
-    if( !ok ) {
-      os << "# error: name \"" << nm << "\" not found" << NL;
-      return 1;
-    }
-    os << nm << " = " << v << NL;
-    return 0;
-  }
-
-  // all vars TODO: iface
-  for( auto f : flts ) {
-    if( ! f.name ) {
-      break;
-    }
-    bool ok;
-    float v = fl.get( f.name, 0.0f, &ok );
-    if( ok ) {
-      os << f.name << " = " << v << NL;
-    }
-  }
-  return 0;
-}
 
 // ------------------ misc tests -----------------------
 

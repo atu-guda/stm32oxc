@@ -16,6 +16,10 @@ char gbuf_a[GBUF_SZ];
 char gbuf_b[GBUF_SZ]; // and log too
 int user_vars[N_USER_VARS];
 
+bool (*print_var_hook)( const char *nm ) = nullptr;
+bool (*set_var_hook)( const char *nm, const char *s ) = nullptr;
+const char* (*get_var_name_hook)( unsigned i ) = nullptr;
+
 char* str2addr( const char *str )
 {
   if( !str || !*str ) {
@@ -126,11 +130,11 @@ void log_print()
 void print_user_var( int idx )
 {
   STDOUT_os;
-  if( idx < 0  ||  idx >= N_USER_VARS ) {
+  if( idx < 0  ||  idx >= (int)N_USER_VARS ) {
     os << NL "err: bad var index: " << idx;
     return;
   }
-  char b[4] = "0= ";
+  char b[] = "0 = ";
   b[0] = (char)( 'a' + idx );
   os << b << ( user_vars[idx] ) << " = "  << HexInt( user_vars[idx], true ) << NL;
 }
@@ -365,38 +369,62 @@ int cmd_fill( int argc, const char * const * argv )
 }
 CmdInfo CMDINFO_FILL { "fill",  0, cmd_fill, " {a|b|addr} val [n] [stp] - Fills memory by value"  };
 
+
 int cmd_pvar( int argc, const char * const * argv )
 {
-  uint8_t start = 0, end = N_USER_VARS;
-  if( argc > 1 ) {
-    start = argv[1][0]-'a';
-    if( argv[1][1] >= 'a' ) {
-      end = argv[1][1]-'a';
-    } else {
-      end = 1;
+  if( argc < 2 ) {
+    for( unsigned i=0; i<N_USER_VARS; ++i ) {
+      print_user_var( i );
     }
+    if( get_var_name_hook != nullptr  && print_var_hook != nullptr ) {
+      for( unsigned i=0; ; ++i ) {
+        auto s = get_var_name_hook( i );
+        if( !s ) {
+          break;
+        }
+        print_var_hook( s );
+      }
+    }
+    return 0;
+  }
 
-  }
-  if( end <= start ) {
-    end = start+1;
+  if( print_var_hook != nullptr && print_var_hook( argv[1] ) ) {
+    return 0;
   }
 
-  for( int i=start; i<end; ++i ) {
-    print_user_var( i );
+  STDOUT_os;
+
+  // build-in int vars with one-char named
+  char c = argv[1][0];
+  if( argv[1][1] != '\0' || c < 'a' || c > 'z' ) {
+    os << "# Error: unknown var name \"" << argv[1] << '"' << NL;
+    return 2;
   }
+  int idx = c - 'a';
+  print_user_var( idx );
   return 0;
 }
 CmdInfo CMDINFO_PVAR { "print", 'p', cmd_pvar, "name - print user var a-z"  };
 
+
 int cmd_svar( int argc, const char * const * argv )
 {
-  if( argc < 3 ) {
+  STDOUT_os;
+  if( argc != 3 ) {
+    os << "# Error: bad number of arguments: s var value" << NL;
     return 1;
   }
+
+  if( set_var_hook != nullptr  &&  set_var_hook( argv[1], argv[2] ) ) {
+    return 0;
+  }
+
   int idx = argv[1][0] - 'a';
-  if( idx < 0 || idx >= N_USER_VARS ) {
+  if( idx < 0 || idx >= (int)N_USER_VARS || argv[1][1] != '\0' ) {
+    os << "# Error: unknown var name \"" << argv[1] << '"' << NL;
     return 2;
   }
+
   if( argv[2][0] == '-' ) {
     user_vars[idx] = strtol( argv[2], 0, 0 );
   } else {

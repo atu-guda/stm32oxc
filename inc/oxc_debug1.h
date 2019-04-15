@@ -6,7 +6,7 @@
 
 
 // number of user one-char vars
-#define N_USER_VARS  ('z' - 'a' + 1 )
+inline constexpr unsigned N_USER_VARS = ('z' - 'a' + 1 );
 // user vars
 extern int user_vars[N_USER_VARS];
 #define UVAR(c) (user_vars[(c)-'a'])
@@ -27,6 +27,10 @@ char* str2addr( const char *str );
 void dump8( const void *addr, int n, bool isAbs = false );
 
 void print_user_var( int idx );
+
+extern bool (*print_var_hook)( const char *nm );
+extern bool (*set_var_hook)( const char *nm, const char *s );
+extern const char* (*get_var_name_hook)( unsigned i );
 
 // arch-dependent function
 // fill string s with information about pin config
