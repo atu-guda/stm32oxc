@@ -57,25 +57,37 @@ struct NamedFloat {
   float (*get)();
   bool  (*set)( float v );
   uint32_t flags = 0;
+  uint32_t ne = 1;
   enum { flg_ro = 1 };
 };
 
 class NamedFloats {
   public:
-   NamedFloats( NamedFloat *a_flts ) : fl( a_flts ), n( count_elems() ) {};
+   NamedFloats( const NamedFloat *a_flts ) : fl( a_flts ), n( count_elems() ) {};
    constexpr unsigned get_n() const { return n; }
    const NamedFloat* find( const char *nm ) const;
+   const NamedFloat* begin() const  { return fl;   } // really const, but need for for( : )
+   const NamedFloat* end() const    { return fl+n; }
+   const NamedFloat* cbegin() const { return fl;   }
+   const NamedFloat* cend() const   { return fl+n; }
    const char* getName( unsigned i ) const { return ( i<n ) ? fl[i].name : nullptr ; }
-   bool  set( const char *nm, float v ) const; // changed variable, not NamedFloats object
+   bool  set( const char *nm, float v ) const; // change variable, not NamedFloats object
    float get( const char *nm, float def = 0.0f, bool *ok = nullptr ) const;
   private:
-   NamedFloat *fl;
+   const NamedFloat *fl;
    const unsigned n;
    constexpr unsigned count_elems() const;
 };
 
 const NamedFloat* NamedFloats::find( const char *nm ) const
 {
+  // TODO: check and use, may be with std::find
+  // for( const auto &f : *this ) {
+  //   if( strcmp( nm, f.name ) == 0 ) {
+  //     return &f;
+  //   }
+  // }
+
   for( const auto *f = fl; f->name != nullptr; ++f ) {
     if( strcmp( nm, f->name ) == 0 ) {
       return f;
@@ -164,20 +176,20 @@ float get_pwm_def() {
   return pwmdat.get_pwm_def();
 }
 
-NamedFloat flts[] = {
-  {      "W_max",      &pwminfo.W_max,      nullptr,      nullptr, 0  },
-  {      "V_max",      &pwminfo.V_max,      nullptr,      nullptr, 0  },
-  {      "I_max",      &pwminfo.I_max,      nullptr,      nullptr, 0  },
-  {      "R_max",      &pwminfo.R_max,      nullptr,      nullptr, 0  },
-  {       "V_00",       &pwminfo.V_00,      nullptr,      nullptr, 0  },
-  {        "R_0",        &pwminfo.R_0,      nullptr,      nullptr, 0  },
-  {      "k_gv1",      &pwminfo.k_gv1,      nullptr,      nullptr, 0  },
-  {      "k_gv2",      &pwminfo.k_gv2,      nullptr,      nullptr, 0  },
-  {       "ki_v",       &pwminfo.ki_v,      nullptr,      nullptr, 0  },
-  { "rehint_lim", &pwminfo.rehint_lim,      nullptr,      nullptr, 0  },
-  {    "pwm_min",             nullptr,  get_pwm_min,  set_pwm_min, 0  },
-  {    "pwm_max",             nullptr,  get_pwm_max,  set_pwm_max, 0  },
-  {    "pwm_def",             nullptr,  get_pwm_def,  set_pwm_def, 0  },
+const NamedFloat flts[] = {
+  {      "W_max",      &pwminfo.W_max,      nullptr,      nullptr, 0, 1  },
+  {      "V_max",      &pwminfo.V_max,      nullptr,      nullptr, 0, 1  },
+  {      "I_max",      &pwminfo.I_max,      nullptr,      nullptr, 0, 1  },
+  {      "R_max",      &pwminfo.R_max,      nullptr,      nullptr, 0, 1  },
+  {       "V_00",       &pwminfo.V_00,      nullptr,      nullptr, 0, 1  },
+  {        "R_0",        &pwminfo.R_0,      nullptr,      nullptr, 0, 1  },
+  {      "k_gv1",      &pwminfo.k_gv1,      nullptr,      nullptr, 0, 1  },
+  {      "k_gv2",      &pwminfo.k_gv2,      nullptr,      nullptr, 0, 1  },
+  {       "ki_v",       &pwminfo.ki_v,      nullptr,      nullptr, 0, 1  },
+  { "rehint_lim", &pwminfo.rehint_lim,      nullptr,      nullptr, 0, 1  },
+  {    "pwm_min",             nullptr,  get_pwm_min,  set_pwm_min, 0, 1  },
+  {    "pwm_max",             nullptr,  get_pwm_max,  set_pwm_max, 0, 1  },
+  {    "pwm_def",             nullptr,  get_pwm_def,  set_pwm_def, 0, 1  },
   {      nullptr, nullptr, nullptr, nullptr, 0  }
 };
 
