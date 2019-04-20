@@ -1,7 +1,9 @@
 #include <cstring>
+#include <algorithm>
 
 #include <oxc_auto.h>
 #include <oxc_statdata.h>
+#include <oxc_namedfloats.h>
 
 using namespace std;
 using namespace SMLRL;
@@ -11,7 +13,7 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
-const char* common_help_string = "Appication to test math statistics (StatData)" NL;
+const char* common_help_string = "Appication to test misc math" NL;
 
 using sreal = StatData::sreal;
 
@@ -34,6 +36,64 @@ void idle_main_task()
   leds.toggle( 1 );
 }
 
+// ---------------------- floats iface ---------------------------
+
+float W_max = 100.0f;
+float V_max =   8.0f;
+float X_c   =   1.34f;
+float pmin  =   5.0f;
+
+float get_pmin()
+{
+  return pmin;
+}
+
+bool set_pmin( float v )
+{
+  pmin = clamp( v, 2.0f, 90.0f );
+  return true;
+}
+
+
+const NamedFloat flts[] = {
+  {      "W_max",              &W_max,      nullptr,      nullptr, NamedFloat::Flags::flg_no, 1  },
+  {      "V_max",              &V_max,      nullptr,      nullptr, NamedFloat::Flags::flg_no, 1  },
+  {        "X_c",                &X_c,      nullptr,      nullptr, NamedFloat::Flags::flg_ro, 1  },
+  {    "pwm_min",             nullptr,     get_pmin,     set_pmin, NamedFloat::Flags::flg_no, 1  },
+  {      nullptr, nullptr, nullptr, nullptr, NamedFloat::Flags::flg_no, 0  }
+};
+
+NamedFloats fl( flts );
+// print/set hook functions
+
+bool print_float_var( const char *nm )
+{
+  bool ok;
+  float x = fl.get( nm, 0.0f, &ok );
+  if( !ok ) {
+    return false;
+  }
+  STDOUT_os;
+  os << nm << " = " << x << NL;
+  return true;
+}
+
+bool set_float_var( const char *nm, const char *s )
+{
+  bool ok = fl.fromText( nm, s ); // <------------- global?
+  if( ok ) {
+    print_float_var( nm );
+  }
+  return ok;
+}
+
+const char* get_float_var_name( unsigned i )
+{
+  return fl.getName( i );
+}
+
+// ---------------------------------------------------------
+
 
 
 int main(void)
@@ -44,6 +104,11 @@ int main(void)
   UVAR('b') =  10;
   UVAR('t') = 100;
   UVAR('n') = 1000000;
+
+  NamedFloats::set_global_floats( &fl );
+  print_var_hook = print_float_var;
+  set_var_hook   = set_float_var;
+  get_var_name_hook = get_float_var_name;
 
   BOARD_POST_INIT_BLINK;
 
