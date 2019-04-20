@@ -31,13 +31,16 @@ void do_set_pwm( float v );
 bool measure_and_calc( float *v );
 
 PWMInfo pwminfo {
-  0.2135f /* R_0 */, -0.59128f /* V_00 */, 0.123227f /* k_gv1 */, 0.0064203f /* k_gv2 */,
-  0.1f, /* ki_v */
-  0.2f, /* rehint_lim */
-  8.0f, /* V_max */
-  20.0f, /* I_max */
-  10000.0f, /* R_max */
-  100.0f /* W_max */
+  .R_0        = 0.09347f,
+  .V_00       = -0.671f,
+  .k_gv1      = 0.1139f,
+  .k_gv2      = 4.8339e-3f,
+  .ki_v       = 0.1f,
+  .rehint_lim = 0.2f,
+  .V_max      = 8.0f,
+  .I_max      = 50.0f,
+  .R_max      = 500.0f,
+  .W_max      = 150.0f
 };
 PWMData pwmdat( pwminfo, do_set_pwm );
 

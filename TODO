@@ -1,3 +1,10 @@
+Move NamedFloats from 29b to library
+oxc_debug1 : pin info for F1
+substitute vars in cmdline
+print full cmd before exec oxc_console
+oxc_smallrl: UTF-8 minimal handling
+common RCC init
+Increase MAX_ARGS
 Fix 51a_adcdma_n ... examples
 
 SmallRl, console: set output funcs to unbind
