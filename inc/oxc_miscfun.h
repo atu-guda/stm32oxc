@@ -5,9 +5,6 @@
 
 #include <oxc_base.h>
 
-#ifdef __cplusplus
- extern "C" {
-#endif
 
 /** return position of first setted bit LSB=0, or FF if 0 */
 uint8_t numFirstBit( uint32_t a );
@@ -39,9 +36,6 @@ struct BitNames {
   const char *const name; //* bit name or bitfield base (nullptr-end too)
 };
 
-#ifdef __cplusplus
-}
-#endif
 
 inline int sign( int x );
 inline int sign( int x ) { return (x>0) ? 1 : ( (x<0) ? -1: 0 ) ; }
