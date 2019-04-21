@@ -372,7 +372,9 @@ CmdInfo CMDINFO_FILL { "fill",  0, cmd_fill, " {a|b|addr} val [n] [stp] - Fills 
 
 int cmd_pvar( int argc, const char * const * argv )
 {
-  if( argc < 2 ) {
+  STDOUT_os;
+
+  if( argc < 2 ) { // all
     for( unsigned i=0; i<N_USER_VARS; ++i ) {
       print_user_var( i );
     }
@@ -392,7 +394,6 @@ int cmd_pvar( int argc, const char * const * argv )
     return 0;
   }
 
-  STDOUT_os;
 
   // build-in int vars with one-char named
   char c = argv[1][0];

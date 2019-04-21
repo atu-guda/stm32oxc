@@ -1,11 +1,9 @@
 Move NamedFloats from 29b to library
 Fix bug with small floats output
 oxc_debug1 : pin info for F1
-print full cmd before exec oxc_console
 substitute vars in cmdline
 oxc_smallrl: UTF-8 minimal handling
 common RCC init
-Increase MAX_ARGS
 Fix 51a_adcdma_n ... examples
 
 SmallRl, console: set output funcs to unbind

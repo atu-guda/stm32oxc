@@ -11,34 +11,67 @@ using namespace std;
 
 NamedFloats *NamedFloats::global_floats = nullptr;
 
-const NamedFloat* NamedFloats::find( const char *nm ) const
+const NamedFloat* NamedFloats::find( const char *nm, int &idx ) const
 {
   if( !nm ) {
     return nullptr;
   }
 
-  auto f = std::find_if( cbegin(), cend(), [nm](auto &p) { return ( strcmp( nm, p.name ) == 0 ); } );
+  char snm[maxSimpleNameLength];
+  const char *eptr;
+  bool ok = splitNameWithIdx( nm, snm, idx, &eptr );
+  if( !ok ) {
+    return nullptr;
+  }
 
-  return ( f != cend() ) ? f : nullptr;
+  auto f = std::find_if( cbegin(), cend(), [snm](auto &p) { return ( strcmp( snm, p.name ) == 0 ); } );
+
+  if( f == cend() ) {
+    return nullptr;
+  }
+
+  if( idx < -3 || idx >= (int)f->ne ) {
+    return nullptr;
+  }
+
+  return f;
 }
 
 bool  NamedFloats::set( const char *nm, float v ) const
 {
-  auto f = find( nm );
+  int idx;
+  auto f = find( nm, idx );
   if( !f ) {
     return false;
   }
-  if( f->flags & NamedFloat::flg_ro ) {
+  if( f->flags & NamedFloat::ro ) {
     return false;
   }
-  if( f->set != nullptr ) {
+
+  if( f->set != nullptr ) { // TODO: idx
     return f->set( v );
   }
-  if( f->p != nullptr ) {
-    *(f->p) = v;
+
+  if( f->p == nullptr ) {
+    return false;
+  }
+
+  if( idx == -2 || idx == -3 ) {
+    for( unsigned j=0; j<f->ne; ++j ) {
+      (f->p)[j] = v;
+    }
     return true;
   }
-  return false;
+
+  if( idx < 0 ) {
+    if( f->ne != 1 ) { // for arrays index required
+      return false;
+    }
+    idx = 0;
+  }
+
+  (f->p)[idx] = v;
+  return true;
 }
 
 float NamedFloats::get( const char *nm, float def, bool *ok ) const
@@ -47,21 +80,37 @@ float NamedFloats::get( const char *nm, float def, bool *ok ) const
   if( !ok ) {
     ok = &l_ok;
   }
-  auto f = find( nm );
+  *ok = false;
+
+  int idx;
+  auto f = find( nm, idx );
   if( !f ) {
-    *ok = false;
+    return def;
+  }
+
+  if( f->get != nullptr ) { // TODO: idx
+    *ok = true;
+    return f->get();
+  }
+
+  if( f->p == nullptr ) {
+    return def;
+  }
+
+  if( idx == -1 ) {
+    if( f->ne == 1 ) { // non-array
+      idx = 0;
+    } else {
+      return def;
+    }
+  }
+
+  if( idx < 0 || (unsigned)idx >= f->ne ) {
     return def;
   }
 
   *ok = true;
-  if( f->get != nullptr ) {
-    return f->get();
-  }
-  if( f->p != nullptr ) {
-    return *(f->p);
-  }
-  *ok = false;
-  return def;
+  return (f->p)[idx];
 }
 
 
@@ -71,7 +120,7 @@ bool NamedFloats::text( const char *nm, char *buf, unsigned bufsz ) const
     return false;
   }
   bool ok;
-  float v = get( nm, 0.0f, &ok );
+  float v = get( nm, 0.0f, &ok ); // TODO: array?
   if( !ok ) {
     return false;
   }
@@ -91,19 +140,54 @@ bool NamedFloats::fromText( const char *nm, const char *s ) const
   return set( nm, x );
 }
 
+bool NamedFloats::print( const char *nm ) const
+{
+  int idx;
+  auto f = find( nm, idx );
+  if( !f ) {
+    return false;
+  }
+  STDOUT_os;
+
+  if( f->ne == 1 && idx == -1 ) { // single var
+    idx = 0;
+  }
+
+  os << nm << " = ";
+
+  // single
+  if( idx >= 0 ) {
+    float x = 0.0f;
+    if( f->get != nullptr ) {
+      x = f->get();
+    } else if( f->p != nullptr ) {
+      x = (f->p)[idx];
+    }
+    os << x << NL;
+    return true;
+  }
+
+  if( f->get != nullptr ) {
+    os << "# Error: not work for now" NL;
+    return false;
+  }
+
+  os << "[";
+  for( unsigned j=0; j<f->ne; ++j ) {
+    os << ' ' << (f->p)[j];
+  }
+  os << " ]" NL;
+
+  return true;
+}
+
 bool NamedFloats::g_print( const char *nm ) // static
 {
   if( ! global_floats ) {
     return false;
   }
-  bool ok;
-  float x = global_floats->get( nm, 0.0f, &ok );
-  if( !ok ) {
-    return false;
-  }
-  STDOUT_os;
-  os << nm << " = " << x << NL;
-  return true;
+
+  return global_floats->print( nm );
 }
 
 bool NamedFloats::g_set( const char *nm, float v ) // static
@@ -122,7 +206,7 @@ float NamedFloats::g_get( const char *nm, float def, bool *ok ) // static
   return global_floats->get( nm, def, ok );
 }
 
-bool  NamedFloats::g_fromText( const char *nm, const char *s ) //static
+bool  NamedFloats::g_fromText( const char *nm, const char *s ) // static
 {
   if( ! global_floats ) {
     return false;

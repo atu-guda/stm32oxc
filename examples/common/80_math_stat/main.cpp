@@ -61,12 +61,12 @@ bool set_pmin( float v )
 
 
 const NamedFloat flts[] = {
-  {      "W_max",              &W_max,      nullptr,      nullptr, NamedFloat::Flags::flg_no, 1  },
-  {      "V_max",              &V_max,      nullptr,      nullptr, NamedFloat::Flags::flg_no, 1  },
-  {        "X_c",                &X_c,      nullptr,      nullptr, NamedFloat::Flags::flg_ro, 1  },
-  {    "pwm_min",             nullptr,     get_pmin,     set_pmin, NamedFloat::Flags::flg_no, 1  },
-  {         "va",                  va,      nullptr,      nullptr, NamedFloat::Flags::flg_no, size(va)  },
-  {      nullptr,             nullptr,      nullptr,      nullptr, NamedFloat::Flags::flg_no, 0  }
+  {      "W_max",              &W_max,      nullptr,      nullptr, NamedFloat::Flags::no, 1  },
+  {      "V_max",              &V_max,      nullptr,      nullptr, NamedFloat::Flags::no, 1  },
+  {        "X_c",                &X_c,      nullptr,      nullptr, NamedFloat::Flags::ro, 1  },
+  {    "pwm_min",             nullptr,     get_pmin,     set_pmin, NamedFloat::Flags::no, 1  },
+  {         "va",                  va,      nullptr,      nullptr, NamedFloat::Flags::no, size(va)  },
+  {      nullptr,             nullptr,      nullptr,      nullptr, NamedFloat::Flags::no, 0  }
 };
 
 NamedFloats fl( flts );
