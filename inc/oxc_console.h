@@ -10,7 +10,12 @@
 #endif
 
 #ifndef MAX_ARGS
-#define MAX_ARGS 9
+#define MAX_ARGS 15
+#endif
+
+// future: for substs
+#ifndef MAX_ARGLEN
+#define MAX_ARGLEN 64
 #endif
 
 enum TermKey {

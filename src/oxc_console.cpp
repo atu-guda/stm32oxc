@@ -188,10 +188,7 @@ int exec_direct( const char *s, int l )
   on_cmd_handler = 1;
   // dump8( s,  l+1 );
   char ss[l+1];
-  // static char ss[SMLRL_BUFSZ+2]; // TODO: lock!
-  // memcpy( ss, s, l+1 );
   memmove( ss, s, l+1 );
-  // dump8( ss, l+1 );
 
   STDOUT_os;
 
@@ -224,11 +221,17 @@ int exec_direct( const char *s, int l )
     }
   }
 
+  // TODO: substs here
+
   pr( NL );
   if( f != 0 ) {
       int rc = 0;
       if( console_verbose > 0 ) {
-        os << "#== CMD: \"" << nm << "\"" NL;
+        os << "#== CMD: " << nm;
+        for( int i=1; i<argc; ++i ) {
+          os << ' ' << argv[i];
+        }
+        os << NL;
         delay_ms( 1 );
       }
       break_flag = 0;
