@@ -1,9 +1,10 @@
+#include <cstdlib>
+#include <cstring>
+#include <algorithm>
+
 #include <oxc_auto.h>
 #include <oxc_floatfun.h>
 #include <oxc_namedfloats.h>
-
-#include <cstdlib>
-#include <cstring>
 
 using namespace std;
 
@@ -15,19 +16,10 @@ const NamedFloat* NamedFloats::find( const char *nm ) const
   if( !nm ) {
     return nullptr;
   }
-  // TODO: check and use, may be with std::find
-  // for( const auto &f : *this ) {
-  //   if( strcmp( nm, f.name ) == 0 ) {
-  //     return &f;
-  //   }
-  // }
 
-  for( const auto *f = fl; f->name != nullptr; ++f ) {
-    if( strcmp( nm, f->name ) == 0 ) {
-      return f;
-    }
-  }
-  return nullptr;
+  auto f = std::find_if( cbegin(), cend(), [nm](auto &p) { return ( strcmp( nm, p.name ) == 0 ); } );
+
+  return ( f != cend() ) ? f : nullptr;
 }
 
 bool  NamedFloats::set( const char *nm, float v ) const
@@ -97,5 +89,52 @@ bool NamedFloats::fromText( const char *nm, const char *s ) const
     return false;
   }
   return set( nm, x );
+}
+
+bool NamedFloats::g_print( const char *nm ) // static
+{
+  if( ! global_floats ) {
+    return false;
+  }
+  bool ok;
+  float x = global_floats->get( nm, 0.0f, &ok );
+  if( !ok ) {
+    return false;
+  }
+  STDOUT_os;
+  os << nm << " = " << x << NL;
+  return true;
+}
+
+bool NamedFloats::g_set( const char *nm, float v ) // static
+{
+  if( ! global_floats ) {
+    return false;
+  }
+  return global_floats->set( nm, v );
+}
+
+float NamedFloats::g_get( const char *nm, float def, bool *ok ) // static
+{
+  if( ! global_floats ) {
+    return def;
+  }
+  return global_floats->get( nm, def, ok );
+}
+
+bool  NamedFloats::g_fromText( const char *nm, const char *s ) //static
+{
+  if( ! global_floats ) {
+    return false;
+  }
+  return global_floats->fromText( nm, s );
+}
+
+const char* NamedFloats::g_getName( unsigned i ) // static
+{
+  if( ! global_floats ) {
+    return nullptr;
+  }
+  return global_floats->getName( i );
 }
 

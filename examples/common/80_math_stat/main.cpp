@@ -1,4 +1,5 @@
 #include <cstring>
+#include <iterator>
 #include <algorithm>
 
 #include <oxc_auto.h>
@@ -42,6 +43,7 @@ float W_max = 100.0f;
 float V_max =   8.0f;
 float X_c   =   1.34f;
 float pmin  =   5.0f;
+float va[4] = { 0.1f, -0.2f, 0.3f, -0.5f };
 
 float get_pmin()
 {
@@ -60,37 +62,11 @@ const NamedFloat flts[] = {
   {      "V_max",              &V_max,      nullptr,      nullptr, NamedFloat::Flags::flg_no, 1  },
   {        "X_c",                &X_c,      nullptr,      nullptr, NamedFloat::Flags::flg_ro, 1  },
   {    "pwm_min",             nullptr,     get_pmin,     set_pmin, NamedFloat::Flags::flg_no, 1  },
-  {      nullptr, nullptr, nullptr, nullptr, NamedFloat::Flags::flg_no, 0  }
+  {         "va",                  va,      nullptr,      nullptr, NamedFloat::Flags::flg_no, size(va)  },
+  {      nullptr,             nullptr,      nullptr,      nullptr, NamedFloat::Flags::flg_no, 0  }
 };
 
 NamedFloats fl( flts );
-// print/set hook functions
-
-bool print_float_var( const char *nm )
-{
-  bool ok;
-  float x = fl.get( nm, 0.0f, &ok );
-  if( !ok ) {
-    return false;
-  }
-  STDOUT_os;
-  os << nm << " = " << x << NL;
-  return true;
-}
-
-bool set_float_var( const char *nm, const char *s )
-{
-  bool ok = fl.fromText( nm, s ); // <------------- global?
-  if( ok ) {
-    print_float_var( nm );
-  }
-  return ok;
-}
-
-const char* get_float_var_name( unsigned i )
-{
-  return fl.getName( i );
-}
 
 // ---------------------------------------------------------
 
@@ -106,9 +82,9 @@ int main(void)
   UVAR('n') = 1000000;
 
   NamedFloats::set_global_floats( &fl );
-  print_var_hook = print_float_var;
-  set_var_hook   = set_float_var;
-  get_var_name_hook = get_float_var_name;
+  print_var_hook    = NamedFloats::g_print;
+  set_var_hook      = NamedFloats::g_fromText;
+  get_var_name_hook = NamedFloats::g_getName;
 
   BOARD_POST_INIT_BLINK;
 
@@ -160,6 +136,15 @@ int cmd_test0( int argc, const char * const * argv )
 int cmd_testout( int argc, const char * const * argv )
 {
   STDOUT_os;
+
+  if( argc > 1 ) {
+    float f = arg2float_d( 1, argc, argv, 1.234f, -FLT_MAX, FLT_MAX  );
+    os <<        FltFmt( f )
+       << ' ' << FltFmt( f, cvtff_exp )
+       << ' ' << FltFmt( f, cvtff_fix )
+       << NL;
+    return 0;
+  }
 
   for( float f = 7.23456789e-12f; f < 1e14f; f *= -10 ) {
     os <<        FltFmt( f )
