@@ -68,6 +68,22 @@ void bcd_to_char2( uint8_t bcd, char *s );
 // converts decimal to 3-byte string w/o null termnation
 void u2_3dig( unsigned n, char *s );
 
+//* increments s pointer: skip spaces
+inline void skip_ws( const char *& s ) { for( ; *s == ' ' ; ++s ) { /* NOP */ } }
+
+inline const unsigned maxSimpleNameLength = 32; // simple name, with [] and dots
+inline const unsigned maxExprNameLength   = 64; // with spaces, [nnn], dots
+
+bool isNameChar1( char c ); // first char in name only
+bool isNameChar( char c );  // and digits too
+
+//* try to split string in form "  name[ idx ] "
+//  spaces ignored, index optional (-1)
+//  special index values: -1 = no, -2 = '*', -3 = '@'
+//  eptr points to first unconverted char
+//  d must be maxSimpleNameLength length at least
+bool splitNameWithIdx( const char *s, char *d, int &idx, const char **eptr = nullptr );
+
 #endif
 
 // vim: path=.,/usr/share/stm32cube/inc

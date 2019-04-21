@@ -179,5 +179,101 @@ void u2_3dig( unsigned n, char *s )
   s[0] = '0' + n % 10;
 }
 
+bool isNameChar1( char c )
+{
+  if( c >= 'A' && c <= 'Z' ) {
+    return true;
+  }
+  if( c >= 'a' && c <= 'z' ) {
+    return true;
+  }
+  if( c == '_' ) {
+    return true;
+  }
+  return false;
+}
 
+bool isNameChar( char c )
+{
+  if( c >= '0' && c <= '9' ) {
+    return true;
+  }
+  return isNameChar1( c );
+}
+
+bool splitNameWithIdx( const char *s, char *d, int &idx, const char **eptr )
+{
+  const char *ep;
+  if( !eptr ) {
+    eptr = &ep;
+  }
+  if( !s || !d ) {
+    *eptr = nullptr;
+    return false;
+  }
+
+  skip_ws( s );
+
+  d[0] = '\0';
+  unsigned b_len = 0;
+  idx = -1;
+  *eptr = s;
+
+  // eat name
+  if( ! isNameChar1( *s ) ) {
+    return false;
+  }
+  d[b_len++] = *s++;
+
+  for( ; *s; ++s ) {
+    *eptr = s;
+    if( b_len >= maxSimpleNameLength-1 ) {
+      d[0] = '\0';
+      return false;
+    }
+    if( ! isNameChar( *s )  ) {
+      break;
+    }
+    d[b_len++] = *s;
+  }
+  d[b_len] = '\0';
+
+  skip_ws( s ); *eptr = s;
+
+  if( *s != '[' ) { // only name
+    return true;
+  }
+
+  ++s; skip_ws( s );
+
+  if( *s == '*' && *(s+1) == ']' ) {
+    idx = -2;
+    *eptr = s+2;
+    return true;
+  }
+  if( *s == '@' && *(s+1) == ']' ) {
+    idx = -3;
+    *eptr = s+2;
+    return true;
+  }
+
+  // convert decimal index
+  const char *epd;
+  int v = (int)strtol( s, (char**)( &epd ), 0 );
+  if( v < 0 ) {
+    *eptr = s;
+    return false;
+  }
+
+  s = epd;
+
+  skip_ws( s );
+  if( *s != ']' ) {
+    *eptr = s;
+    return false;
+  }
+  ++s; *eptr = s; idx = v;
+
+  return true;
+}
 

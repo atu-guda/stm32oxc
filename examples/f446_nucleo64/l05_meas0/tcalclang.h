@@ -15,11 +15,8 @@ namespace tcalclang {
     t_bad = 255 // + const
   };
   const char* dtype2name( DataType dt );
-  inline void skip_ws( const char *& s ) { for( ; *s == ' ' ; ++s ) { /* NOP */ } }
 
   const int max_nm_expr_len = 128;
-  bool isNameChar1( char c ); // first char only
-  bool isNameChar( char c );
   bool checkNameOnly( const char *s );
   bool checkName( const char *s, char *d, unsigned bname_max, int *idx );
 

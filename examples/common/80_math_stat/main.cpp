@@ -23,12 +23,15 @@ int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test statistics"  };
 int cmd_testout( int argc, const char * const * argv );
 CmdInfo CMDINFO_TESTOUT { "testout", 'O', cmd_testout, " - test output"  };
+int cmd_testsplit( int argc, const char * const * argv );
+CmdInfo CMDINFO_TESTSPLIT { "testspit", 'X', cmd_testsplit, " expr - test var split"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
 
   &CMDINFO_TEST0,
   &CMDINFO_TESTOUT,
+  &CMDINFO_TESTSPLIT,
   nullptr
 };
 
@@ -152,6 +155,23 @@ int cmd_testout( int argc, const char * const * argv )
        << ' ' << FltFmt( f, cvtff_fix )
        << NL;
   }
+  return 0;
+}
+
+int cmd_testsplit( int argc, const char * const * argv )
+{
+  STDOUT_os;
+  if( argc < 2 ) {
+    os << "# Error: expresssion required! " NL;
+    return 1;
+  }
+
+  int idx;
+  char nm[maxSimpleNameLength];
+  const char *eptr;
+  bool ok = splitNameWithIdx( argv[1], nm, idx, &eptr );
+  os << "ok= " << ok << " nm=\"" << nm << "\" idx= " << idx << " *eptr='" << (*eptr) << '\'' <<NL;
+  NamedFloats::g_print( nm );
   return 0;
 }
 

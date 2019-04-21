@@ -6,6 +6,7 @@
 #include <cmath>
 
 #include <oxc_auto.h>
+#include <oxc_miscfun.h>
 #include "meas0.h"
 #include "tcalclang.h"
 
@@ -137,27 +138,7 @@ const FuncInfo* tcalclang::findFunc( const char *s, const char** eptr )
   return nullptr;
 }
 
-bool tcalclang::isNameChar1( char c )
-{
-  if( c >= '@' && c <= 'Z' ) {
-    return true;
-  }
-  if( c >= 'a' && c <= 'z' ) {
-    return true;
-  }
-  if( c == '_' || c == '$' ) {
-    return true;
-  }
-  return false;
-}
 
-bool tcalclang::isNameChar( char c )
-{
-  if( c >= '0' && c <= '9' ) {
-    return true;
-  }
-  return tcalclang::isNameChar1( c );
-}
 
 bool tcalclang::checkNameOnly( const char *s )
 {
