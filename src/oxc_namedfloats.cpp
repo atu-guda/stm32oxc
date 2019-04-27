@@ -116,6 +116,35 @@ bool NamedFloat::getText( char *d, unsigned maxlen, int idx ) const
   return false;
 }
 
+
+bool NamedFloat::out( OutStream &os, int idx ) const
+{
+  if( idx >= -1 ) {
+    float x = 0.0f;
+    bool ok = do_get( x, idx );
+    if( ok ) {
+      os << x;
+      return true;
+    } else {
+      os << '?';
+      return false;
+    }
+  }
+
+  if( idx == -2  ||  idx == -3 ) {
+    os << "[ " ;
+    for( unsigned i=0; i<ne; ++i ) {
+      float x = 0.0f;
+      do_get( x, idx );
+      os << x << ' ';
+    }
+    os << " ]";
+    return true;
+  }
+
+  return false;
+}
+
 // -------------------------------------------------------------------
 
 NamedFloats *NamedFloats::global_floats = nullptr;
@@ -211,38 +240,20 @@ bool NamedFloats::fromText( const char *nm, const char *s ) const
   return set( nm, x );
 }
 
-bool NamedFloats::print( const char *nm ) const
+bool NamedFloats::out( OutStream &os, const char *nm ) const
 {
   int idx;
   auto f = find( nm, idx );
   if( !f ) {
     return false;
   }
+  return f->out( os, idx );
+}
+
+bool NamedFloats::print( const char *nm ) const
+{
   STDOUT_os;
-
-  if( f->size() == 1 && idx == -1 ) { // single var
-    idx = 0;
-  }
-
-  os << nm << " = ";
-
-  // single
-  if( idx >= 0 ) {
-    float x = 0.0f;
-    f->do_get( x, idx );
-    os << x << NL;
-    return true;
-  }
-
-  os << "[";
-  for( unsigned j=0; j<f->size(); ++j ) {
-    float x = 0.0f;
-    f->do_get( x, j );
-    os << ' ' << x;
-  }
-  os << " ]" NL;
-
-  return true;
+  return out( os, nm );
 }
 
 bool NamedFloats::g_print( const char *nm ) // static

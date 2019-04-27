@@ -1,6 +1,8 @@
 #ifndef _OXC_NAMEDFLOATS_H
 #define _OXC_NAMEDFLOATS_H
 
+class OutStream;
+
 class NamedObj {
   public:
    enum Flags { no = 0, ro = 1 };
@@ -15,7 +17,7 @@ class NamedObj {
    virtual int getInt( int idx = 0 ) const = 0;
    virtual float getFloat( int idx = 0 ) const = 0;
    virtual bool getText( char *d, unsigned maxlen, int idx = 0 ) const = 0;
-   // virtual bool print( int idx = 0 ) const = 0; // TODO? to where?
+   virtual bool out( OutStream &os, int idx = 0 ) const = 0; // TODO? to where?
   protected:
    const char *name;
    uint32_t ne = 1;
@@ -33,6 +35,7 @@ class NamedFloat : public NamedObj {
    virtual int getInt( int idx = 0 ) const override;
    virtual float getFloat( int idx = 0 ) const override;
    virtual bool getText( char *d, unsigned maxlen, int idx = 0 ) const override;
+   virtual bool out( OutStream &os, int idx = 0 ) const override;
    bool do_set( float v, int idx = 0 ) const;
    bool do_get( float &rv, int idx ) const;
   protected:
@@ -55,6 +58,7 @@ class NamedFloats {
    float get( const char *nm, float def = 0.0f, bool *ok = nullptr ) const;
    bool  text( const char *nm, char *buf, unsigned bufsz ) const;
    bool  fromText( const char *nm, const char *s ) const;
+   bool  out( OutStream &os, const char *nm ) const;
    bool  print( const char *nm ) const;
    static void set_global_floats( NamedFloats *gfl ) { global_floats = gfl; }
    static bool  g_print( const char *nm );
