@@ -34,7 +34,11 @@ void StatData::add( const sreal *v )
 void StatData::calc()
 {
   for( auto &t : d ) {
-    t.sd  = sqrt(  t.mean2  - t.mean * t.mean );
+    if constexpr ( sizeof(sreal) == sizeof(float) ) {
+      t.sd  = sqrtf( t.mean2  - t.mean * t.mean );
+    } else {
+      t.sd  = sqrt( t.mean2  - t.mean * t.mean );
+    }
   }
 }
 

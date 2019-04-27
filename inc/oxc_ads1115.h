@@ -2,6 +2,7 @@
 #define _OXC_ADS1115_H
 
 // 16-bit 4 input xx ADC I2C
+// work with ADS1015 - 12 bit ADC - anly different timings
 
 #include <oxc_i2c.h>
 
@@ -37,6 +38,8 @@ class ADS1115 : public I2CClient {
      cfg_pga_0256b   = 0x0E00,
      cfg_pga_mask    = 0x0E00,
      cfg_oneShot     = 0x0100,
+
+     // for ADS1115
      cfg_rate_008    = 0x0000,
      cfg_rate_016    = 0x0020,
      cfg_rate_032    = 0x0040,
@@ -46,6 +49,17 @@ class ADS1115 : public I2CClient {
      cfg_rate_475    = 0x00C0,
      cfg_rate_860    = 0x00E0,
      cfg_rate_mask   = 0x00E0,
+
+     // for ADS1015
+     cfg_1015_rate_0128    = 0x0000,
+     cfg_1015_rate_0250    = 0x0020,
+     cfg_1015_rate_0490    = 0x0040,
+     cfg_1015_rate_0920    = 0x0060,
+     cfg_1015_rate_1600    = 0x0080,
+     cfg_1015_rate_2400    = 0x00A0,
+     cfg_1015_rate_3300    = 0x00C0,
+     cfg_1015_rate_3301    = 0x00E0, // really 3300
+
      cfg_comp_window = 0x0010,
      cfg_comp_pol    = 0x0008, // defaut is 0 - active low
      cfg_comp_latch  = 0x0004, // defaut is 0 - active low
