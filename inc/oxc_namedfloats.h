@@ -1,36 +1,44 @@
 #ifndef _OXC_NAMEDFLOATS_H
 #define _OXC_NAMEDFLOATS_H
 
-// class NamedObj {
-//   public:
-//    enum Flags { no = 0, ro = 1 };
-//    explicit constexpr NamedObj( const char *nm, unsigned n_elm = 1, unsigned flg = Flags::no )
-//      : name( nm ), ne( n_elm ), flags( flg ) {};
-//    NamedObj( const NamedObj &rhs ) = delete;
-//    const char* getName() const { return name; };
-//    unsigned getNe() const { return ne; };
-//    virtual void* getAddr() const = 0;
-//    virtual int getInt( int idx = 0 ) const = 0;
-//    virtual float getFloat( int idx = 0 ) const = 0;
-//    virtual bool getText( char *d, unsigned maxlen, int idx = 0 ) const = 0;
-//    virtual bool print( int idx = 0 ) const = 0; // TODO? to where?
-//   protected:
-//    const char *name;
-//    uint32_t ne = 1;
-//    uint32_t flags = 0;
-//    // float *p;
-//    // float (*get)();
-//    // bool  (*set)( float v );
-// };
+class NamedObj {
+  public:
+   enum Flags { no = 0, ro = 1 };
+   explicit constexpr NamedObj( const char *nm, unsigned n_elm = 1, unsigned flg = Flags::no )
+     : name( nm ), ne( n_elm ), flags( flg ) {};
+   NamedObj( const NamedObj &rhs ) = delete;
+   constexpr const char* getName() const { return name; };
+   unsigned size() const { return ne; };
+   uint32_t getFlags() const { return flags; }
+   bool hasFlags( uint32_t flg ) const { return (flags & flg ); }
+   virtual void* getAddr() const = 0;
+   virtual int getInt( int idx = 0 ) const = 0;
+   virtual float getFloat( int idx = 0 ) const = 0;
+   virtual bool getText( char *d, unsigned maxlen, int idx = 0 ) const = 0;
+   // virtual bool print( int idx = 0 ) const = 0; // TODO? to where?
+  protected:
+   const char *name;
+   uint32_t ne = 1;
+   uint32_t flags = 0;
+};
 
-struct NamedFloat {
-  enum Flags { no = 0, ro = 1 };
-  const char *name;
-  float *p;
-  float (*get)();
-  bool  (*set)( float v );
-  uint32_t flags = 0;
-  uint32_t ne = 1;
+class NamedFloat : public NamedObj {
+  public:
+   constexpr NamedFloat( const char *nm, float *p_f, unsigned n_elm = 1, unsigned flg = Flags::no )
+     : NamedObj( nm, n_elm, flg ), p( p_f ) {};
+   constexpr NamedFloat( const char *nm, float (*p_get)(int), bool (*p_set)(float,int),
+                         unsigned n_elm = 1, unsigned flg = Flags::no )
+     : NamedObj( nm, n_elm, flg ), get( p_get ), set( p_set) {};
+   virtual void* getAddr() const override { return p; };
+   virtual int getInt( int idx = 0 ) const override;
+   virtual float getFloat( int idx = 0 ) const override;
+   virtual bool getText( char *d, unsigned maxlen, int idx = 0 ) const override;
+   bool do_set( float v, int idx = 0 ) const;
+   bool do_get( float &rv, int idx ) const;
+  protected:
+   float *p = nullptr;
+   float (*get)( int idx ) = nullptr;
+   bool  (*set)( float v, int idx ) = nullptr;
 };
 
 class NamedFloats {
@@ -42,7 +50,7 @@ class NamedFloats {
    const NamedFloat* end() const    { return fl+n; }
    const NamedFloat* cbegin() const { return fl;   }
    const NamedFloat* cend() const   { return fl+n; }
-   const char* getName( unsigned i ) const { return ( i<n ) ? fl[i].name : nullptr ; }
+   const char* getName( unsigned i ) const { return ( i<n ) ? fl[i].getName() : nullptr ; }
    bool  set( const char *nm, float v ) const; // change variable, not NamedFloats object
    float get( const char *nm, float def = 0.0f, bool *ok = nullptr ) const;
    bool  text( const char *nm, char *buf, unsigned bufsz ) const;
@@ -61,7 +69,7 @@ class NamedFloats {
    constexpr unsigned count_elems() const
    {
      unsigned i=0;
-     for( const auto *f = fl; f->name != nullptr; ++f ) {
+     for( const auto *f = fl; f->getName() != nullptr; ++f ) {
        ++i;
      }
      return i;

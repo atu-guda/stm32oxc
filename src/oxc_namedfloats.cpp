@@ -8,8 +8,118 @@
 
 using namespace std;
 
+bool NamedFloat::do_set( float v, int idx ) const
+{
+  int idx_s = idx, idx_e = idx + 1;
+  if( idx == -2 || idx == -3 ) { // arr[*] ot arr[@]
+    idx_s = 0; idx_e = ne;
+  } else if ( idx == -1 && ne == 1 ) {  // scalar
+    idx_s = 0; idx_e = 1;
+  }
+
+  if( idx_s < 0 || idx_e > (int)ne ) {
+    return false;
+  }
+
+  if( p ) {
+    for( int j=idx_s; j<idx_e; ++j ) {
+      p[j] = v;
+    }
+    return true;
+  }
+
+  if( set ) {
+    bool ok = true;
+    for( int j=idx_s; j<idx_e && ok ; ++j ) {
+      ok = set( v, j );
+    }
+    return ok;
+  }
+
+  return false;
+}
+
+bool NamedFloat::do_get( float &rv, int idx ) const
+{
+  if( idx == -1 && ne == 1 ) { // scalar;
+    idx = 0;
+  }
+
+  if( idx < 0 || idx >= (int)(ne) ) { // no ranges here
+    return false;
+  }
+
+  if( p ) {
+    rv = p[idx];
+    return true;
+  }
+
+  if( get ) {
+    return get( idx );
+  }
+
+  return false;
+
+}
+
+int NamedFloat::getInt( int idx ) const
+{
+  return int( getFloat( idx ) );
+};
+
+
+float NamedFloat::getFloat( int idx ) const
+{
+  float x = 0.0f;
+  do_get( x, idx );
+  return x;
+}
+
+
+bool NamedFloat::getText( char *d, unsigned maxlen, int idx ) const
+{
+  const int max_fp_len = 12;
+  if( !d || maxlen < max_fp_len ) {
+    return false;
+  }
+  d[0] = '\0';
+
+  if( idx >= -1 ) {
+    float x = 0.0f;
+    bool ok = do_get( x, idx );
+    if( ok ) {
+      return ( cvtff( x, d, maxlen ) > 0 );
+    } else {
+      d[0] = '?'; d[1] = '\0';
+      return false;
+    }
+  }
+
+  if( idx == -2  ||  idx == -3 ) {
+    if( maxlen < 12 * ne + 2 ) {
+      strcpy( d, "[...]" );
+      return false;
+    }
+    strcat( d, "[ " );
+    for( unsigned i=0; i<ne; ++i ) {
+      float x = 0.0f;
+      do_get( x, idx );
+      char tbuf[max_fp_len+4];
+      cvtff( x, tbuf, max_fp_len );
+      strcat( d, tbuf );
+      strcat( d, " " );
+    }
+    strcat( d, "]" );
+    return true;
+  }
+
+  return false;
+}
+
+// -------------------------------------------------------------------
 
 NamedFloats *NamedFloats::global_floats = nullptr;
+
 
 const NamedFloat* NamedFloats::find( const char *nm, int &idx ) const
 {
@@ -24,13 +134,13 @@ const NamedFloat* NamedFloats::find( const char *nm, int &idx ) const
     return nullptr;
   }
 
-  auto f = std::find_if( cbegin(), cend(), [snm](auto &p) { return ( strcmp( snm, p.name ) == 0 ); } );
+  auto f = std::find_if( cbegin(), cend(), [snm](auto &p) { return ( strcmp( snm, p.getName() ) == 0 ); } );
 
   if( f == cend() ) {
     return nullptr;
   }
 
-  if( idx < -3 || idx >= (int)f->ne ) {
+  if( idx < -3 || idx >= (int)f->size() ) {
     return nullptr;
   }
 
@@ -44,34 +154,12 @@ bool  NamedFloats::set( const char *nm, float v ) const
   if( !f ) {
     return false;
   }
-  if( f->flags & NamedFloat::ro ) {
+  if( f->hasFlags( NamedFloat::ro ) ) {
     return false;
   }
 
-  if( f->set != nullptr ) { // TODO: idx
-    return f->set( v );
-  }
+  return f->do_set( v, idx );
 
-  if( f->p == nullptr ) {
-    return false;
-  }
-
-  if( idx == -2 || idx == -3 ) {
-    for( unsigned j=0; j<f->ne; ++j ) {
-      (f->p)[j] = v;
-    }
-    return true;
-  }
-
-  if( idx < 0 ) {
-    if( f->ne != 1 ) { // for arrays index required
-      return false;
-    }
-    idx = 0;
-  }
-
-  (f->p)[idx] = v;
-  return true;
 }
 
 float NamedFloats::get( const char *nm, float def, bool *ok ) const
@@ -88,29 +176,12 @@ float NamedFloats::get( const char *nm, float def, bool *ok ) const
     return def;
   }
 
-  if( f->get != nullptr ) { // TODO: idx
-    *ok = true;
-    return f->get();
-  }
-
-  if( f->p == nullptr ) {
+  float v;
+  *ok = f->do_get( v, idx );
+  if( ! *ok ) {
     return def;
   }
-
-  if( idx == -1 ) {
-    if( f->ne == 1 ) { // non-array
-      idx = 0;
-    } else {
-      return def;
-    }
-  }
-
-  if( idx < 0 || (unsigned)idx >= f->ne ) {
-    return def;
-  }
-
-  *ok = true;
-  return (f->p)[idx];
+  return true;
 }
 
 
@@ -149,7 +220,7 @@ bool NamedFloats::print( const char *nm ) const
   }
   STDOUT_os;
 
-  if( f->ne == 1 && idx == -1 ) { // single var
+  if( f->size() == 1 && idx == -1 ) { // single var
     idx = 0;
   }
 
@@ -158,23 +229,16 @@ bool NamedFloats::print( const char *nm ) const
   // single
   if( idx >= 0 ) {
     float x = 0.0f;
-    if( f->get != nullptr ) {
-      x = f->get();
-    } else if( f->p != nullptr ) {
-      x = (f->p)[idx];
-    }
+    f->do_get( x, idx );
     os << x << NL;
     return true;
   }
 
-  if( f->get != nullptr ) {
-    os << "# Error: not work for now" NL;
-    return false;
-  }
-
   os << "[";
-  for( unsigned j=0; j<f->ne; ++j ) {
-    os << ' ' << (f->p)[j];
+  for( unsigned j=0; j<f->size(); ++j ) {
+    float x = 0.0f;
+    f->do_get( x, j );
+    os << ' ' << x;
   }
   os << " ]" NL;
 

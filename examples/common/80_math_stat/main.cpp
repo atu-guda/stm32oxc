@@ -48,25 +48,25 @@ float X_c   =   1.34f;
 float pmin  =   5.0f;
 float va[4] = { 0.1f, -0.2f, 0.3f, -0.5f };
 
-float get_pmin()
+float get_pmin( int /*idx*/ )
 {
   return pmin;
 }
 
-bool set_pmin( float v )
+bool set_pmin( float v, int /* idx */ )
 {
   pmin = clamp( v, 2.0f, 90.0f );
   return true;
 }
 
 
-const NamedFloat flts[] = {
-  {      "W_max",              &W_max,      nullptr,      nullptr, NamedFloat::Flags::no, 1  },
-  {      "V_max",              &V_max,      nullptr,      nullptr, NamedFloat::Flags::no, 1  },
-  {        "X_c",                &X_c,      nullptr,      nullptr, NamedFloat::Flags::ro, 1  },
-  {    "pwm_min",             nullptr,     get_pmin,     set_pmin, NamedFloat::Flags::no, 1  },
-  {         "va",                  va,      nullptr,      nullptr, NamedFloat::Flags::no, size(va)  },
-  {      nullptr,             nullptr,      nullptr,      nullptr, NamedFloat::Flags::no, 0  }
+constexpr NamedFloat flts[] = {
+  {      "W_max",     &W_max  },
+  {      "V_max",     &V_max  },
+  {        "X_c",     &X_c,   NamedFloat::Flags::ro  },
+  {    "pwm_min",     get_pmin, set_pmin  },
+  {         "va",        va,  NamedFloat::Flags::no, size(va)  },
+  {      nullptr,    nullptr }
 };
 
 NamedFloats fl( flts );
