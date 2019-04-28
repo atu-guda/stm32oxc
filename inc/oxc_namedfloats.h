@@ -62,10 +62,10 @@ class NamedObjs {
    explicit constexpr NamedObjs( const NamedObj *const *const a_objs ) : objs( a_objs ), n( count_elems() ) {};
    constexpr unsigned size() const { return n; }
    const NamedObj*  find( const char *nm, int &idx ) const;
-   // const NamedObj* const* begin()  const { return objs; } // really const, but need for for( : )
-   // const NamedObj* const* end()    const { return objs+n; }
-   // const NamedObj* const* cbegin() const { return objs; }
-   // const NamedObj* const* cend()   const { return objs+n; }
+   const NamedObj* const* begin()  const { return objs; } // really const, but need for for( : )
+   const NamedObj* const* end()    const { return objs+n; }
+   const NamedObj* const* cbegin() const { return objs; }
+   const NamedObj* const* cend()   const { return objs+n; }
    const char* getName( unsigned i ) const { return ( i<n ) ? objs[i]->getName() : nullptr ; }
    bool  get( const char *nm, int   &v ) const;
    bool  get( const char *nm, float &v ) const;

@@ -192,25 +192,18 @@ const NamedObj* NamedObjs::find( const char *nm, int &idx ) const
     return nullptr;
   }
 
-  // auto f = std::find_if( cbegin(), cend(), [snm](auto &p) { return ( strcmp( snm, p->getName() ) == 0 ); } );
-  const NamedObj *f = nullptr;
-  for( unsigned i=0; i<n; ++i ) {
-    auto ff = objs[i];
-    if( strcmp( snm, ff->getName() ) == 0 ) {
-      f = ff;
-      break;
-    }
-  }
+  auto f = std::find_if( cbegin(), cend(), [snm](auto &p) { return ( strcmp( snm, p->getName() ) == 0 ); } );
 
-  if( !f ) {
+  if( f == cend() ) {
     return nullptr;
   }
 
-  if( idx < -3 || idx >= (int)f->size() ) {
+  auto rf = *f;
+  if( idx < -3 || idx >= (int)rf->size() ) {
     return nullptr;
   }
 
-  return f;
+  return rf;
 }
 
 bool  NamedObjs::set( const char *nm, int v ) const
