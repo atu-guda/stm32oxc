@@ -17,7 +17,7 @@ class NamedObj {
    virtual int getInt( int idx = 0 ) const = 0;
    virtual float getFloat( int idx = 0 ) const = 0;
    virtual bool getText( char *d, unsigned maxlen, int idx = 0 ) const = 0;
-   virtual bool out( OutStream &os, int idx = 0 ) const = 0; // TODO? to where?
+   virtual bool out( OutStream &os, int idx = 0 ) const = 0;
   protected:
    const char *name;
    uint32_t ne = 1;

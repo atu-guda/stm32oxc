@@ -55,7 +55,8 @@ bool NamedFloat::do_get( float &rv, int idx ) const
   }
 
   if( get ) {
-    return get( idx );
+    rv = get( idx );
+    return true;
   }
 
   return false;
@@ -119,23 +120,26 @@ bool NamedFloat::getText( char *d, unsigned maxlen, int idx ) const
 
 bool NamedFloat::out( OutStream &os, int idx ) const
 {
+  if( idx == -1  &&  ne > 1 ) {
+    idx = -2;
+  }
+
   if( idx >= -1 ) {
     float x = 0.0f;
     bool ok = do_get( x, idx );
     if( ok ) {
       os << x;
       return true;
-    } else {
-      os << '?';
-      return false;
     }
+    os << '?';
+    return false;
   }
 
   if( idx == -2  ||  idx == -3 ) {
     os << "[ " ;
     for( unsigned i=0; i<ne; ++i ) {
       float x = 0.0f;
-      do_get( x, idx );
+      do_get( x, i );
       os << x << ' ';
     }
     os << " ]";
@@ -247,7 +251,10 @@ bool NamedFloats::out( OutStream &os, const char *nm ) const
   if( !f ) {
     return false;
   }
-  return f->out( os, idx );
+  os << nm << " = ";
+  auto ok = f->out( os, idx );
+  os << NL;
+  return ok;
 }
 
 bool NamedFloats::print( const char *nm ) const

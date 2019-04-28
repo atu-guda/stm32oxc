@@ -63,9 +63,9 @@ bool set_pmin( float v, int /* idx */ )
 constexpr NamedFloat flts[] = {
   {      "W_max",     &W_max  },
   {      "V_max",     &V_max  },
-  {        "X_c",     &X_c,   NamedFloat::Flags::ro  },
+  {        "X_c",     &X_c,  1, NamedFloat::Flags::ro  },
   {    "pwm_min",     get_pmin, set_pmin  },
-  {         "va",        va,  NamedFloat::Flags::no, size(va)  },
+  {         "va",       va,  size(va)   },
   {      nullptr,    nullptr }
 };
 
@@ -171,7 +171,7 @@ int cmd_testsplit( int argc, const char * const * argv )
   const char *eptr;
   bool ok = splitNameWithIdx( argv[1], nm, idx, &eptr );
   os << "ok= " << ok << " nm=\"" << nm << "\" idx= " << idx << " *eptr='" << (*eptr) << '\'' <<NL;
-  NamedFloats::g_print( nm );
+  NamedFloats::g_print( argv[1] );
   return 0;
 }
 
