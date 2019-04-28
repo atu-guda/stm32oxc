@@ -60,17 +60,39 @@ bool set_pmin( float v, int /* idx */ )
 }
 
 
-constexpr NamedFloat flts[] = {
-  {      "W_max",     &W_max  },
-  {      "V_max",     &V_max  },
-  {        "X_c",     &X_c,  1, NamedFloat::Flags::ro  },
-  {    "pwm_min",     get_pmin, set_pmin  },
-  {         "va",       va,  size(va)   },
-  {      nullptr,    nullptr }
+constexpr NamedFloat fl0_W_max   {   "W_max",     &W_max  };
+constexpr NamedFloat fl0_V_max   {   "V_max",     &V_max  };
+constexpr NamedFloat fl0_X_c     {     "X_c",       &X_c,  1, NamedFloat::Flags::ro  };
+constexpr NamedFloat fl0_pwm_min { "pwm_min",   get_pmin, set_pmin  };
+constexpr NamedFloat fl0_va      {      "va",         va,  size(va) };
+
+constexpr const NamedObj *const fl0_objs[] = {
+  & fl0_W_max,
+  & fl0_V_max,
+  & fl0_X_c,
+  & fl0_pwm_min,
+  & fl0_va,
+  nullptr
 };
 
-NamedFloats fl( flts );
+NamedObjs fl0( fl0_objs );
 
+bool print_var_fl( const char *nm )
+{
+  return fl0.print( nm );
+}
+
+bool set_var_fl( const char *nm, const char *s )
+{
+  auto ok =  fl0.set( nm, s );
+  print_var_fl( nm );
+  return ok;
+}
+
+const char* get_var_name_fl( unsigned i )
+{
+  return fl0.getName( i );
+}
 // ---------------------------------------------------------
 
 
@@ -84,14 +106,23 @@ int main(void)
   UVAR('t') = 100;
   UVAR('n') = 1000000;
 
-  NamedFloats::set_global_floats( &fl );
-  print_var_hook    = NamedFloats::g_print;
-  set_var_hook      = NamedFloats::g_fromText;
-  get_var_name_hook = NamedFloats::g_getName;
+  print_var_hook    = print_var_fl;
+  set_var_hook      = set_var_fl;
+  get_var_name_hook = get_var_name_fl;
 
   BOARD_POST_INIT_BLINK;
 
-  pr( NL "##################### " PROJ_NAME NL );
+  STDOUT_os;
+  os << NL "##################### " PROJ_NAME NL;
+  // os << "# fl0.size = " << fl0.size() << " name= \"" << fl0.getName( 1 ) << "\"" NL;
+  // os << "# &fl0_W_max  = " << HexInt( (void*)&fl0_W_max ) << " fl0_objs= "  << HexInt( (void*)fl0_objs )
+  //    << " fl0.begin()= " << HexInt( (void*)( fl0.begin() ) ) << NL;
+  //
+  // auto f = fl0.begin();
+  // os << "# f.getName()= \"" << f->getName() << "\"" NL;
+
+
+
 
   srl.re_ps();
 
@@ -171,7 +202,7 @@ int cmd_testsplit( int argc, const char * const * argv )
   const char *eptr;
   bool ok = splitNameWithIdx( argv[1], nm, idx, &eptr );
   os << "ok= " << ok << " nm=\"" << nm << "\" idx= " << idx << " *eptr='" << (*eptr) << '\'' <<NL;
-  NamedFloats::g_print( argv[1] );
+  fl0.print( argv[1] );
   return 0;
 }
 

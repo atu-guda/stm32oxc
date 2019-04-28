@@ -28,10 +28,10 @@ bool NamedFloat::do_set( float v, int idx ) const
     return true;
   }
 
-  if( set ) {
+  if( fun_set ) {
     bool ok = true;
     for( int j=idx_s; j<idx_e && ok ; ++j ) {
-      ok = set( v, j );
+      ok = fun_set( v, j );
     }
     return ok;
   }
@@ -54,8 +54,8 @@ bool NamedFloat::do_get( float &rv, int idx ) const
     return true;
   }
 
-  if( get ) {
-    rv = get( idx );
+  if( fun_get ) {
+    rv = fun_get( idx );
     return true;
   }
 
@@ -63,54 +63,57 @@ bool NamedFloat::do_get( float &rv, int idx ) const
 
 }
 
-int NamedFloat::getInt( int idx ) const
+bool NamedFloat::get( int &v, int idx ) const
 {
-  return int( getFloat( idx ) );
+  float fv = 0.0f;
+  auto ok =  get( fv, idx );
+  if( ok ) {
+    v = int( fv );
+  }
+  return ok;
 };
 
 
-float NamedFloat::getFloat( int idx ) const
+bool NamedFloat::get( float &v, int idx ) const
 {
-  float x = 0.0f;
-  do_get( x, idx );
-  return x;
+  return do_get( v, idx );
 }
 
 
-bool NamedFloat::getText( char *d, unsigned maxlen, int idx ) const
+bool NamedFloat::get( CStr &v, int idx ) const
 {
   const int max_fp_len = 12;
-  if( !d || maxlen < max_fp_len ) {
+  if( !v.s || v.n < max_fp_len ) {
     return false;
   }
-  d[0] = '\0';
+  v.s[0] = '\0';
 
   if( idx >= -1 ) {
     float x = 0.0f;
     bool ok = do_get( x, idx );
     if( ok ) {
-      return ( cvtff( x, d, maxlen ) > 0 );
+      return ( cvtff( x, v.s, v.n ) > 0 );
     } else {
-      d[0] = '?'; d[1] = '\0';
+      v.s[0] = '?'; v.s[1] = '\0';
       return false;
     }
   }
 
   if( idx == -2  ||  idx == -3 ) {
-    if( maxlen < 12 * ne + 2 ) {
-      strcpy( d, "[...]" );
+    if( v.n < 12 * ne + 2 ) {
+      strcpy( v.s, "[...]" );
       return false;
     }
-    strcat( d, "[ " );
+    strcat( v.s, "[ " );
     for( unsigned i=0; i<ne; ++i ) {
       float x = 0.0f;
       do_get( x, idx );
       char tbuf[max_fp_len+4];
       cvtff( x, tbuf, max_fp_len );
-      strcat( d, tbuf );
-      strcat( d, " " );
+      strcat( v.s, tbuf );
+      strcat( v.s, " " );
     }
-    strcat( d, "]" );
+    strcat( v.s, "]" );
     return true;
   }
 
@@ -149,12 +152,34 @@ bool NamedFloat::out( OutStream &os, int idx ) const
   return false;
 }
 
+bool NamedFloat::set( int v, int idx ) const
+{
+  return set( (float)(v), idx );
+}
+
+bool NamedFloat::set( float v, int idx ) const
+{
+  return do_set( v, idx );
+}
+
+bool NamedFloat::set( const char *v, int idx ) const
+{
+  if( !v || !*v ) {
+    return false;
+  }
+
+  char *eptr;
+  float x = strtof( v, &eptr );
+  if( *eptr != '\0' ) {
+    return false;
+  }
+  return set( x, idx );
+}
+
 // -------------------------------------------------------------------
 
-NamedFloats *NamedFloats::global_floats = nullptr;
 
-
-const NamedFloat* NamedFloats::find( const char *nm, int &idx ) const
+const NamedObj* NamedObjs::find( const char *nm, int &idx ) const
 {
   if( !nm ) {
     return nullptr;
@@ -167,9 +192,17 @@ const NamedFloat* NamedFloats::find( const char *nm, int &idx ) const
     return nullptr;
   }
 
-  auto f = std::find_if( cbegin(), cend(), [snm](auto &p) { return ( strcmp( snm, p.getName() ) == 0 ); } );
+  // auto f = std::find_if( cbegin(), cend(), [snm](auto &p) { return ( strcmp( snm, p->getName() ) == 0 ); } );
+  const NamedObj *f = nullptr;
+  for( unsigned i=0; i<n; ++i ) {
+    auto ff = objs[i];
+    if( strcmp( snm, ff->getName() ) == 0 ) {
+      f = ff;
+      break;
+    }
+  }
 
-  if( f == cend() ) {
+  if( !f ) {
     return nullptr;
   }
 
@@ -180,7 +213,7 @@ const NamedFloat* NamedFloats::find( const char *nm, int &idx ) const
   return f;
 }
 
-bool  NamedFloats::set( const char *nm, float v ) const
+bool  NamedObjs::set( const char *nm, int v ) const
 {
   int idx;
   auto f = find( nm, idx );
@@ -191,60 +224,77 @@ bool  NamedFloats::set( const char *nm, float v ) const
     return false;
   }
 
-  return f->do_set( v, idx );
-
+  return f->set( v, idx );
 }
 
-float NamedFloats::get( const char *nm, float def, bool *ok ) const
+bool  NamedObjs::set( const char *nm, float v ) const
 {
-  bool l_ok;
-  if( !ok ) {
-    ok = &l_ok;
-  }
-  *ok = false;
-
   int idx;
   auto f = find( nm, idx );
   if( !f ) {
-    return def;
+    return false;
+  }
+  if( f->hasFlags( NamedFloat::ro ) ) {
+    return false;
   }
 
-  float v;
-  *ok = f->do_get( v, idx );
-  if( ! *ok ) {
-    return def;
-  }
-  return true;
+  return f->set( v, idx );
 }
 
-
-bool NamedFloats::text( const char *nm, char *buf, unsigned bufsz ) const
+bool  NamedObjs::set(  const char *nm, const char *s ) const
 {
-  if( !nm  ||  !buf || bufsz < 12 ) {
+  int idx;
+  auto f = find( nm, idx );
+  if( !f ) {
     return false;
   }
-  bool ok;
-  float v = get( nm, 0.0f, &ok ); // TODO: array?
-  if( !ok ) {
+  if( f->hasFlags( NamedFloat::ro ) ) {
     return false;
   }
-  return ( cvtff( v, buf, bufsz ) > 0 );
+
+  return f->set( s, idx );
 }
 
-bool NamedFloats::fromText( const char *nm, const char *s ) const
+bool NamedObjs::get( const char *nm, int &v ) const
 {
-  if( !s || !*s ) {
+  int idx;
+  auto f = find( nm, idx );
+  if( !f ) {
     return false;
   }
-  char *eptr;
-  float x = strtof( s, &eptr );
-  if( *eptr != '\0' ) {
-    return false;
-  }
-  return set( nm, x );
+
+  return f->get( v, idx );
 }
 
-bool NamedFloats::out( OutStream &os, const char *nm ) const
+bool NamedObjs::get( const char *nm, float &v ) const
+{
+  int idx;
+  auto f = find( nm, idx );
+  if( !f ) {
+    return false;
+  }
+
+  return f->get( v, idx );
+}
+
+
+bool NamedObjs::get( const char *nm, CStr &v ) const
+{
+  if( !nm  || !v.s || v.n < 2 ) {
+    return false;
+  }
+  v.s[0] = '\0';
+  int idx;
+  auto f = find( nm, idx );
+  if( !f ) {
+    return false;
+  }
+
+  return f->get( v, idx );
+}
+
+
+bool NamedObjs::out( OutStream &os, const char *nm ) const
 {
   int idx;
   auto f = find( nm, idx );
@@ -257,50 +307,10 @@ bool NamedFloats::out( OutStream &os, const char *nm ) const
   return ok;
 }
 
-bool NamedFloats::print( const char *nm ) const
+bool NamedObjs::print( const char *nm ) const
 {
   STDOUT_os;
   return out( os, nm );
 }
 
-bool NamedFloats::g_print( const char *nm ) // static
-{
-  if( ! global_floats ) {
-    return false;
-  }
-
-  return global_floats->print( nm );
-}
-
-bool NamedFloats::g_set( const char *nm, float v ) // static
-{
-  if( ! global_floats ) {
-    return false;
-  }
-  return global_floats->set( nm, v );
-}
-
-float NamedFloats::g_get( const char *nm, float def, bool *ok ) // static
-{
-  if( ! global_floats ) {
-    return def;
-  }
-  return global_floats->get( nm, def, ok );
-}
-
-bool  NamedFloats::g_fromText( const char *nm, const char *s ) // static
-{
-  if( ! global_floats ) {
-    return false;
-  }
-  return global_floats->fromText( nm, s );
-}
-
-const char* NamedFloats::g_getName( unsigned i ) // static
-{
-  if( ! global_floats ) {
-    return nullptr;
-  }
-  return global_floats->getName( i );
-}
 
