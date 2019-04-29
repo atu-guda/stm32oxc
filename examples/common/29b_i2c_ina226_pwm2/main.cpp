@@ -3,10 +3,13 @@
 #include <cmath>
 
 #include <algorithm>
+#include <iterator>
 
 #include <oxc_auto.h>
 #include <oxc_floatfun.h>
 #include <oxc_statdata.h>
+#include <oxc_namedints.h>
+#include <oxc_namedfloats.h>
 
 #include <oxc_ina226.h>
 
@@ -30,6 +33,15 @@ void tim_cfg();
 void do_set_pwm( float v );
 bool measure_and_calc( float *v );
 
+I2C_HandleTypeDef i2ch;
+DevI2C i2cd( &i2ch, 0 );
+INA226 ina226( i2cd );
+const uint32_t n_ADC_ch_max = 4; // current - in UVAR('c')
+float v_coeffs[n_ADC_ch_max] = { 1.0f, 1.0f, 1.0f, 1.0f };
+
+bool isGoodINA226( INA226 &ina, bool print = true );
+
+
 PWMInfo pwminfo {
   .R_0        = 0.09347f,
   .V_00       = -0.671f,
@@ -50,190 +62,90 @@ bool print_var( const char *nm );
 bool set_var( const char *nm, const char *s );
 const char* get_var_name( unsigned i );
 
-// TODO: separate files
-struct NamedFloat {
-  const char *name;
-  float *p;
-  float (*get)();
-  bool  (*set)( float v );
-  uint32_t flags = 0;
-  uint32_t ne = 1;
-  enum { flg_ro = 1 };
-};
-
-class NamedFloats {
-  public:
-   NamedFloats( const NamedFloat *a_flts ) : fl( a_flts ), n( count_elems() ) {};
-   constexpr unsigned get_n() const { return n; }
-   const NamedFloat* find( const char *nm ) const;
-   const NamedFloat* begin() const  { return fl;   } // really const, but need for for( : )
-   const NamedFloat* end() const    { return fl+n; }
-   const NamedFloat* cbegin() const { return fl;   }
-   const NamedFloat* cend() const   { return fl+n; }
-   const char* getName( unsigned i ) const { return ( i<n ) ? fl[i].name : nullptr ; }
-   bool  set( const char *nm, float v ) const; // change variable, not NamedFloats object
-   float get( const char *nm, float def = 0.0f, bool *ok = nullptr ) const;
-  private:
-   const NamedFloat *fl;
-   const unsigned n;
-   constexpr unsigned count_elems() const;
-};
-
-const NamedFloat* NamedFloats::find( const char *nm ) const
-{
-  // TODO: check and use, may be with std::find
-  // for( const auto &f : *this ) {
-  //   if( strcmp( nm, f.name ) == 0 ) {
-  //     return &f;
-  //   }
-  // }
-
-  for( const auto *f = fl; f->name != nullptr; ++f ) {
-    if( strcmp( nm, f->name ) == 0 ) {
-      return f;
-    }
-  }
-  return nullptr;
-}
-
-bool  NamedFloats::set( const char *nm, float v ) const
-{
-  auto f = find( nm );
-  if( !f ) {
-    return false;
-  }
-  if( f->flags & NamedFloat::flg_ro ) {
-    return false;
-  }
-  if( f->set != nullptr ) {
-    return f->set( v );
-  }
-  if( f->p != nullptr ) {
-    *(f->p) = v;
-    return true;
-  }
-  return false;
-}
-
-float NamedFloats::get( const char *nm, float def, bool *ok ) const
-{
-  bool l_ok;
-  if( !ok ) {
-    ok = &l_ok;
-  }
-  auto f = find( nm );
-  if( !f ) {
-    *ok = false;
-    return def;
-  }
-
-  *ok = true;
-  if( f->get != nullptr ) {
-    return f->get();
-  }
-  if( f->p != nullptr ) {
-    return *(f->p);
-  }
-  *ok = false;
-  return def;
-}
-
-constexpr unsigned NamedFloats::count_elems() const
-{
-  unsigned i=0;
-  for( const auto *f = fl; f->name != nullptr; ++f ) {
-    ++i;
-  }
-  return i;
-}
 
 // ------------- floats values and get/set funcs -------------------
 
-bool set_pwm_min( float v ) {
+bool set_pwm_min( float v, int /* idx */ ) {
   pwmdat.set_pwm_min( v );
   return true;
 }
 
-float get_pwm_min() {
+float get_pwm_min( int /* idx */ ) {
   return pwmdat.get_pwm_min();
 }
 
-bool set_pwm_max( float v ) {
+bool set_pwm_max( float v, int /* idx */  ) {
   pwmdat.set_pwm_max( v );
   return true;
 }
 
-float get_pwm_max() {
+float get_pwm_max( int /* idx */ ) {
   return pwmdat.get_pwm_max();
 }
 
-bool set_pwm_def( float v ) {
+bool set_pwm_def( float v, int /* idx */  ) {
   pwmdat.set_pwm_def( v );
   return true;
 }
 
-float get_pwm_def() {
+float get_pwm_def( int /* idx */ ) {
   return pwmdat.get_pwm_def();
 }
 
-const NamedFloat flts[] = {
-  {      "W_max",      &pwminfo.W_max,      nullptr,      nullptr, 0, 1  },
-  {      "V_max",      &pwminfo.V_max,      nullptr,      nullptr, 0, 1  },
-  {      "I_max",      &pwminfo.I_max,      nullptr,      nullptr, 0, 1  },
-  {      "R_max",      &pwminfo.R_max,      nullptr,      nullptr, 0, 1  },
-  {       "V_00",       &pwminfo.V_00,      nullptr,      nullptr, 0, 1  },
-  {        "R_0",        &pwminfo.R_0,      nullptr,      nullptr, 0, 1  },
-  {      "k_gv1",      &pwminfo.k_gv1,      nullptr,      nullptr, 0, 1  },
-  {      "k_gv2",      &pwminfo.k_gv2,      nullptr,      nullptr, 0, 1  },
-  {       "ki_v",       &pwminfo.ki_v,      nullptr,      nullptr, 0, 1  },
-  { "rehint_lim", &pwminfo.rehint_lim,      nullptr,      nullptr, 0, 1  },
-  {    "pwm_min",             nullptr,  get_pwm_min,  set_pwm_min, 0, 1  },
-  {    "pwm_max",             nullptr,  get_pwm_max,  set_pwm_max, 0, 1  },
-  {    "pwm_def",             nullptr,  get_pwm_def,  set_pwm_def, 0, 1  },
-  {      nullptr, nullptr, nullptr, nullptr, 0  }
+constexpr NamedFloat ob_v_coeffs   {   "v_coeffs",            v_coeffs, size(v_coeffs)  };
+constexpr NamedFloat ob_W_max      {      "W_max",      &pwminfo.W_max  };
+constexpr NamedFloat ob_V_max      {      "V_max",      &pwminfo.V_max  };
+constexpr NamedFloat ob_I_max      {      "I_max",      &pwminfo.I_max  };
+constexpr NamedFloat ob_R_max      {      "R_max",      &pwminfo.R_max  };
+constexpr NamedFloat ob_V_00       {       "V_00",       &pwminfo.V_00  };
+constexpr NamedFloat ob_R_0        {        "R_0",        &pwminfo.R_0  };
+constexpr NamedFloat ob_k_gv1      {      "k_gv1",      &pwminfo.k_gv1  };
+constexpr NamedFloat ob_k_gv2      {      "k_gv2",      &pwminfo.k_gv2  };
+constexpr NamedFloat ob_ki_v       {       "ki_v",       &pwminfo.ki_v  };
+constexpr NamedFloat ob_rehint_lim { "rehint_lim", &pwminfo.rehint_lim  };
+constexpr NamedFloat ob_pwm_min    {    "pwm_min",         get_pwm_min,  set_pwm_min  };
+constexpr NamedFloat ob_pwm_max    {    "pwm_max",         get_pwm_max,  set_pwm_max  };
+constexpr NamedFloat ob_pwm_def    {    "pwm_def",         get_pwm_def,  set_pwm_def  };
+
+constexpr const NamedObj *const objs_info[] = {
+  & ob_v_coeffs,
+  & ob_W_max,
+  & ob_V_max,
+  & ob_I_max,
+  & ob_R_max,
+  & ob_V_00,
+  & ob_R_0,
+  & ob_k_gv1,
+  & ob_k_gv2,
+  & ob_ki_v,
+  & ob_rehint_lim,
+  & ob_pwm_min,
+  & ob_pwm_max,
+  & ob_pwm_def,
+  nullptr
 };
 
-NamedFloats fl( flts );
+NamedObjs objs( objs_info );
 
 // print/set hook functions
 
-bool print_var( const char *nm )
+bool print_var_ex( const char *nm )
 {
-  if( !nm ) {
-    return false;
-  }
-
-  bool ok;
-  float x = fl.get( nm, 0.0f, &ok );
-  if( !ok ) {
-    return false;
-  }
-  STDOUT_os;
-  os << nm << " = " << x << NL;
-  return true;
+  return objs.print( nm );
 }
 
-bool set_var( const char *nm, const char *s )
+bool set_var_ex( const char *nm, const char *s )
 {
-  if( !nm || !s || !*s ) {
-    return false;
-  }
-  char *eptr;
-  float x = strtof( s, &eptr );
-  if( *eptr != '\0' ) {
-    return false;
-  }
-  bool ok = fl.set( nm, x );
-  if( ok ) {
-    print_var( nm );
-  }
+  auto ok =  objs.set( nm, s );
+  print_var_ex( nm );
   return ok;
 }
 
-const char* get_var_name( unsigned i )
+const char* get_var_name_ex( unsigned i )
 {
-  return fl.getName( i );
+  return objs.getName( i );
 }
+
 
 // ---------------------------------------------
 
@@ -249,8 +161,6 @@ int cmd_pwm( int argc, const char * const * argv );
 CmdInfo CMDINFO_PWM { "pwm", 0, cmd_pwm, " [val] - set PWM value"  };
 int cmd_calibrate( int argc, const char * const * argv );
 CmdInfo CMDINFO_CALIBRATE { "calibrate", 'C', cmd_calibrate, " [pwm_max] [dt] - calibrate PWM values"  };
-int cmd_set_coeffs( int argc, const char * const * argv );
-CmdInfo CMDINFO_SET_COEFFS { "set_coeffs", 'F', cmd_set_coeffs, " k0 k1 k2 k3 - set ADC coeffs"  };
 
 
 const CmdInfo* global_cmds[] = {
@@ -262,18 +172,8 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_PWM,
   &CMDINFO_CALIBRATE,
   CMDINFOS_PWM,
-  &CMDINFO_SET_COEFFS,
   nullptr
 };
-
-I2C_HandleTypeDef i2ch;
-DevI2C i2cd( &i2ch, 0 );
-INA226 ina226( i2cd );
-const uint32_t n_ADC_ch_max = 4; // current - in UVAR('c')
-float v_coeffs[n_ADC_ch_max] = { 1.0f, 1.0f, 1.0f, 1.0f };
-
-bool isGoodINA226( INA226 &ina, bool print = true );
-
 
 int main(void)
 {
@@ -286,9 +186,9 @@ int main(void)
   UVAR('p') = 0;     // PSC,  - max output freq
   UVAR('a') = 1439;  // ARR, to get 100 kHz with PSC = 0
 
-  print_var_hook = print_var;
-  set_var_hook   = set_var;
-  get_var_name_hook = get_var_name;
+  print_var_hook = print_var_ex;
+  set_var_hook   = set_var_ex;
+  get_var_name_hook = get_var_name_ex;
 
   tim_cfg();
 
@@ -512,9 +412,12 @@ void do_set_pwm( float v )
 
 int cmd_pwm( int argc, const char * const * argv )
 {
-  float vmin = fl.get( "pwm_min", 3.0f );
-  float vdef = fl.get( "pwm_def", 5.0f );
-  float vmax = fl.get( "pwm_max", 70.0f );
+  float vmin = 3.0f;
+  objs.get( "pwm_min", vmin );
+  float vdef  = 5.0f;
+  objs.get( "pwm_def", vdef );
+  float vmax = 70.0f;
+  objs.get( "pwm_max", vmax );
   float v = arg2float_d( 1, argc, argv, vdef, vmin, vmax );
   STDOUT_os;
   pwmdat.set_pwm_manual( v );
@@ -526,8 +429,10 @@ int cmd_pwm( int argc, const char * const * argv )
 // TODO: to PWMData
 int cmd_calibrate( int argc, const char * const * argv )
 {
-  float vmin = fl.get( "pwm_min", 3.0f );
-  float vmax_def = fl.get( "pwm_max", 60.0f );
+  float vmin = 3.0f;
+  objs.get( "pwm_min", vmin );
+  float vmax_def = 60.0f;
+  objs.get( "pwm_max", vmax_def );
   float vmax = arg2float_d( 1, argc, argv, 0.6f * vmax_def, 2.0f, vmax_def );
   unsigned dt  = arg2long_d( 2, argc, argv, 10000, 1000, 200000 );
 
@@ -656,20 +561,6 @@ int cmd_tinit( int argc, const char * const * argv )
   tim_cfg();
   tim_print_cfg( TIM_EXA );
 
-  return 0;
-}
-
-int cmd_set_coeffs( int argc, const char * const * argv )
-{
-  if( argc > 1 ) {
-    v_coeffs[0] = arg2float_d( 1, argc, argv, 1, -1e10f, 1e10f );
-    v_coeffs[1] = arg2float_d( 2, argc, argv, 1, -1e10f, 1e10f );
-    v_coeffs[2] = arg2float_d( 3, argc, argv, 1, -1e10f, 1e10f );
-    v_coeffs[3] = arg2float_d( 4, argc, argv, 1, -1e10f, 1e10f );
-  }
-  STDOUT_os;
-  os << "# Coefficients: "
-     << v_coeffs[0] << ' ' << v_coeffs[1] << ' ' << v_coeffs[2] << ' ' << v_coeffs[3] << NL;
   return 0;
 }
 
