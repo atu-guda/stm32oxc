@@ -23,7 +23,7 @@ char* word2hex(  uint32_t d, char *s );
 char* short2hex( uint16_t d, char *s );
 // 64/log_2[10] \approx 20
 #define INT_STR_SZ 24
-// return sumber of the appended chars
+// return number of the appended chars
 unsigned i2dec_n( int n, char *s, unsigned min_sz = 1, char fill_ch = ' ' );
 // if s == 0 returns ptr to inner static buffer
 char* i2dec( int n, char *s, unsigned min_sz = 1, char fill_ch = ' ' );
@@ -34,6 +34,12 @@ struct BitNames {
   uint8_t s; //* start bit number (from 0);
   uint8_t n; //* number of bits (0 - struct array end)
   const char *const name; //* bit name or bitfield base (nullptr-end too)
+};
+
+struct CStr {
+  constexpr CStr( char *a_s, unsigned a_n ) : s( a_s ), n( a_n ) {};
+  char *s;
+  const unsigned n;
 };
 
 

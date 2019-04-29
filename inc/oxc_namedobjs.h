@@ -1,13 +1,9 @@
 #ifndef _OXC_NAMEDOBSS_H
 #define _OXC_NAMEDOBSS_H
 
-class OutStream;
+#include <oxc_miscfun.h>
 
-struct CStr {
-  constexpr CStr( char *a_s, unsigned a_n ) : s( a_s ), n( a_n ) {};
-  char *s;
-  const unsigned n;
-};
+class OutStream;
 
 class NamedObj {
   public:

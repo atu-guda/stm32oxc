@@ -398,7 +398,7 @@ int cmd_pvar( int argc, const char * const * argv )
   // build-in int vars with one-char named
   char c = argv[1][0];
   if( argv[1][1] != '\0' || c < 'a' || c > 'z' ) {
-    os << "# Error: unknown var name \"" << argv[1] << '"' << NL;
+    os << "# Error: problem with name \"" << argv[1] << '"' << NL;
     return 2;
   }
   int idx = c - 'a';
@@ -422,7 +422,7 @@ int cmd_svar( int argc, const char * const * argv )
 
   int idx = argv[1][0] - 'a';
   if( idx < 0 || idx >= (int)N_USER_VARS || argv[1][1] != '\0' ) {
-    os << "# Error: unknown var name \"" << argv[1] << '"' << NL;
+    os << "# Error: problem with name \"" << argv[1] << '"' << NL;
     return 2;
   }
 

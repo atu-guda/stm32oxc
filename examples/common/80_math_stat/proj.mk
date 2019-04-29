@@ -27,4 +27,5 @@ SRCS += oxc_floatfun.cpp
 SRCS += oxc_statdata.cpp
 SRCS += oxc_namedobjs.cpp
 SRCS += oxc_namedfloats.cpp
+SRCS += oxc_namedints.cpp
 

@@ -4,6 +4,7 @@
 
 #include <oxc_auto.h>
 #include <oxc_statdata.h>
+#include <oxc_namedints.h>
 #include <oxc_namedfloats.h>
 
 using namespace std;
@@ -40,7 +41,8 @@ void idle_main_task()
   leds.toggle( 1 );
 }
 
-// ---------------------- floats iface ---------------------------
+// ---------------------- ints + floats iface ---------------------------
+
 
 float W_max = 100.0f;
 float V_max =   8.0f;
@@ -59,6 +61,21 @@ bool set_pmin( float v, int /* idx */ )
   return true;
 }
 
+int iv = 42;
+int iva[] = { -7, 8, 9, -10, 15 };
+int ivf = 17;
+
+int get_ivf( int /*idx*/ )
+{
+  return ivf;
+}
+
+bool set_ivf( int v, int /* idx */ )
+{
+  ivf = clamp( v, -20, 20 ) & (~1u);
+  return true;
+}
+
 
 constexpr NamedFloat fl0_W_max   {   "W_max",     &W_max  };
 constexpr NamedFloat fl0_V_max   {   "V_max",     &V_max  };
@@ -66,12 +83,19 @@ constexpr NamedFloat fl0_X_c     {     "X_c",       &X_c,  1, NamedFloat::Flags:
 constexpr NamedFloat fl0_pwm_min { "pwm_min",   get_pmin, set_pmin  };
 constexpr NamedFloat fl0_va      {      "va",         va,  size(va) };
 
+constexpr NamedInt   fl0_iv      {   "iv",          &iv  };
+constexpr NamedInt   fl0_iva     {   "iva",         iva, size(iva) };
+constexpr NamedInt   fl0_ivf     {   "ivf",     get_ivf, set_ivf };
+
 constexpr const NamedObj *const fl0_objs[] = {
   & fl0_W_max,
   & fl0_V_max,
   & fl0_X_c,
   & fl0_pwm_min,
   & fl0_va,
+  & fl0_iv,
+  & fl0_iva,
+  & fl0_ivf,
   nullptr
 };
 
