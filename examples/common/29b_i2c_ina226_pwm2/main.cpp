@@ -129,15 +129,15 @@ NamedObjs objs( objs_info );
 
 // print/set hook functions
 
-bool print_var_ex( const char *nm )
+bool print_var_ex( const char *nm, int fmt )
 {
-  return objs.print( nm );
+  return objs.print( nm, fmt );
 }
 
 bool set_var_ex( const char *nm, const char *s )
 {
   auto ok =  objs.set( nm, s );
-  print_var_ex( nm );
+  print_var_ex( nm, 0 );
   return ok;
 }
 

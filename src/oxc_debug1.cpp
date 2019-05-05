@@ -16,7 +16,7 @@ char gbuf_a[GBUF_SZ];
 char gbuf_b[GBUF_SZ]; // and log too
 int user_vars[N_USER_VARS];
 
-bool (*print_var_hook)( const char *nm ) = nullptr;
+bool (*print_var_hook)( const char *nm, int fmt ) = nullptr;
 bool (*set_var_hook)( const char *nm, const char *s ) = nullptr;
 const char* (*get_var_name_hook)( unsigned i ) = nullptr;
 
@@ -384,13 +384,18 @@ int cmd_pvar( int argc, const char * const * argv )
         if( !s ) {
           break;
         }
-        print_var_hook( s );
+        print_var_hook( s, 0 );
       }
     }
     return 0;
   }
 
-  if( print_var_hook != nullptr && print_var_hook( argv[1] ) ) {
+  int fmt = 0;
+  if( argc > 2 ) {
+    fmt = strtol( argv[2], 0, 0 );
+  }
+
+  if( print_var_hook != nullptr && print_var_hook( argv[1], fmt ) ) {
     return 0;
   }
 

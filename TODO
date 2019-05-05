@@ -1,4 +1,4 @@
-Output format (index?) in print_var + Named*
+Tree-like Named*
 Fix bug with small floats output
 oxc_debug1 : pin info for F1
 substitute vars (or by any hook) in cmdline: oxc_console.cpp: exec_direct?

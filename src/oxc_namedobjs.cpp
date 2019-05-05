@@ -117,7 +117,7 @@ bool NamedObjs::get( const char *nm, CStr &v ) const
 }
 
 
-bool NamedObjs::out( OutStream &os, const char *nm ) const
+bool NamedObjs::out( OutStream &os, const char *nm, int fmt ) const
 {
   int idx;
   auto f = find( nm, idx );
@@ -125,15 +125,15 @@ bool NamedObjs::out( OutStream &os, const char *nm ) const
     return false;
   }
   os << nm << " = ";
-  auto ok = f->out( os, idx );
+  auto ok = f->out( os, idx, fmt );
   os << NL;
   return ok;
 }
 
-bool NamedObjs::print( const char *nm ) const
+bool NamedObjs::print( const char *nm, int fmt ) const
 {
   STDOUT_os;
-  return out( os, nm );
+  return out( os, nm, fmt );
 }
 
 

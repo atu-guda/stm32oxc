@@ -19,7 +19,7 @@ class NamedObj {
    virtual bool  get(   int &v, int idx = 0 ) const = 0;
    virtual bool  get( float &v, int idx = 0 ) const = 0;
    virtual bool  get(  CStr &v, int idx = 0 ) const = 0;
-   virtual bool  out( OutStream &os, int idx = 0 ) const = 0;
+   virtual bool  out( OutStream &os, int idx = 0, int fmt = 0 ) const = 0;
    virtual bool  set(         int v, int idx = 0 ) const = 0;
    virtual bool  set(       float v, int idx = 0 ) const = 0;
    virtual bool  set( const char *v, int idx = 0 ) const = 0;
@@ -46,8 +46,8 @@ class NamedObjs {
    bool  set( const char *nm,         int v ) const; // change variable, not NamedObjs object
    bool  set( const char *nm,       float v ) const;
    bool  set( const char *nm, const char *s ) const;
-   bool  out( OutStream &os, const char *nm ) const;
-   bool  print( const char *nm ) const;
+   bool  out( OutStream &os, const char *nm, int fmt = 0 ) const;
+   bool  print( const char *n, int fmt = 0 ) const;
   private:
    const NamedObj *const *const objs;
    const unsigned n;

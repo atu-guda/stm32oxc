@@ -120,8 +120,19 @@ bool NamedFloat::get( CStr &v, int idx ) const
   return false;
 }
 
+void NamedFloat::do_out( OutStream &os, float x, int fmt )
+{
+  if( fmt == 1 ) {
+    os << FltFmt( x, cvtff_fix );
+  }  else if( fmt == 2 ) {
+    os << FltFmt( x, cvtff_exp );
+  } else {
+    os << x;
+  }
+}
 
-bool NamedFloat::out( OutStream &os, int idx ) const
+
+bool NamedFloat::out( OutStream &os, int idx, int fmt ) const
 {
   if( idx == -1  &&  ne > 1 ) {
     idx = -2;
@@ -131,7 +142,7 @@ bool NamedFloat::out( OutStream &os, int idx ) const
     float x = 0.0f;
     bool ok = do_get( x, idx );
     if( ok ) {
-      os << x;
+      do_out( os, x , fmt );
       return true;
     }
     os << '?';
@@ -143,9 +154,10 @@ bool NamedFloat::out( OutStream &os, int idx ) const
     for( unsigned i=0; i<ne; ++i ) {
       float x = 0.0f;
       do_get( x, i );
-      os << x << ' ';
+      do_out( os, x , fmt );
+      os << ' ';
     }
-    os << " ]";
+    os << ']';
     return true;
   }
 

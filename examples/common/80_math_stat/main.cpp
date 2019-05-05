@@ -101,15 +101,15 @@ constexpr const NamedObj *const fl0_objs[] = {
 
 NamedObjs fl0( fl0_objs );
 
-bool print_var_fl( const char *nm )
+bool print_var_fl( const char *nm, int fmt )
 {
-  return fl0.print( nm );
+  return fl0.print( nm, fmt );
 }
 
 bool set_var_fl( const char *nm, const char *s )
 {
   auto ok =  fl0.set( nm, s );
-  print_var_fl( nm );
+  print_var_fl( nm, 0 );
   return ok;
 }
 

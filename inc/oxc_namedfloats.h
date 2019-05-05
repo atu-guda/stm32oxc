@@ -15,7 +15,7 @@ class NamedFloat : public NamedObj {
    virtual bool  get(    int &v, int idx = 0 ) const override;
    virtual bool  get(  float &v, int idx = 0 ) const override;
    virtual bool  get(   CStr &v, int idx = 0 ) const override;
-   virtual bool  out( OutStream &os, int idx = 0 ) const override;
+   virtual bool  out( OutStream &os, int idx = 0, int fmt = 0 ) const override;
    virtual bool  set( int v, int idx = 0 ) const override;
    virtual bool  set( float v, int idx = 0 ) const override;
    virtual bool  set( const char *v, int idx = 0 ) const override;
@@ -26,6 +26,7 @@ class NamedFloat : public NamedObj {
 
    bool do_set( float v, int idx = 0 ) const;
    bool do_get( float &rv, int idx ) const;
+   static void do_out( OutStream &os, float x, int fmt );
 };
 
 #endif

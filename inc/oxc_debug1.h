@@ -28,7 +28,7 @@ void dump8( const void *addr, int n, bool isAbs = false );
 
 void print_user_var( int idx );
 
-extern bool (*print_var_hook)( const char *nm );
+extern bool (*print_var_hook)( const char *nm, int fmt );
 extern bool (*set_var_hook)( const char *nm, const char *s );
 extern const char* (*get_var_name_hook)( unsigned i );
 
