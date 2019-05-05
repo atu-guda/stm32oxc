@@ -8,6 +8,9 @@ void GPIO_WriteBits( GPIO_TypeDef* GPIOx, uint16_t PortVal, uint16_t mask );
 void GPIO_enableClk( GPIO_TypeDef* gp );
 void board_def_btn_init( bool needIRQ );
 
+inline constexpr uint16_t make_gpio_mask( uint8_t start, uint8_t n ) {
+  return (uint16_t) ((uint16_t)(0xFFFF) << (PORT_BITS - n)) >> (PORT_BITS - n - start);
+}
 
 class Pins
 {
@@ -15,7 +18,7 @@ class Pins
    Pins( GPIO_TypeDef *gi, uint8_t a_start, uint8_t a_n )
      : gpio( gi ),
        start( a_start ), n( a_n ),
-       mask( (uint16_t)((uint16_t)(0xFFFF) << (PORT_BITS - n)) >> (PORT_BITS - n - start) )
+       mask( make_gpio_mask( start, n ) )
      {};
    uint16_t getMask() const { return mask; }
    void initHW() { GPIO_enableClk( gpio ); }
@@ -60,8 +63,10 @@ class PinsOut : public Pins
   protected:
    // none for now
 };
+
 extern PinsOut leds;
-void die4led( uint16_t n );
+
+[[ noreturn ]] void die4led( uint16_t n );
 
 class PinsIn : public Pins
 {
@@ -103,7 +108,7 @@ class IoPin {
 
   protected:
    GPIO_TypeDef *gpio;
-   uint16_t pin;
+   const uint16_t pin;
 };
 
 

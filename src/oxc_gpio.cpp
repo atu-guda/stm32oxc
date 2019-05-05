@@ -82,7 +82,7 @@ void PinsOut::initHW()
   HAL_GPIO_Init( gpio, &gpi );
 };
 
-void die4led( uint16_t n )
+[[ noreturn ]] void die4led( uint16_t n )
 {
   #ifdef USE_FREERTOS
   taskDISABLE_INTERRUPTS();

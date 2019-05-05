@@ -437,11 +437,10 @@ int cmd_svar( int argc, const char * const * argv )
 CmdInfo CMDINFO_SVAR { "set", 's', cmd_svar,  "name value - set var a-z"  };
 
 
-int cmd_die( int argc, const char * const * argv )
+[[ noreturn ]] int cmd_die( int argc, const char * const * argv )
 {
   int v = arg2long_d( 1, argc, argv, 0, 0, 0xFF );
   die4led( v );
-  return 0; // never ;-)
 }
 CmdInfo CMDINFO_DIE { "die",    0,  cmd_die, " [val] - die with value"  };
 

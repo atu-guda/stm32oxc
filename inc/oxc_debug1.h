@@ -57,7 +57,7 @@ int cmd_pvar( int argc, const char * const * argv );
 extern CmdInfo CMDINFO_PVAR;
 int cmd_svar( int argc, const char * const * argv );
 extern CmdInfo CMDINFO_SVAR;
-int cmd_die( int argc, const char * const * argv );
+[[ noreturn ]] int cmd_die( int argc, const char * const * argv );
 extern CmdInfo CMDINFO_DIE;
 int cmd_reboot( int argc, const char * const * argv );
 extern CmdInfo CMDINFO_REBOOT;

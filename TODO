@@ -1,9 +1,12 @@
-Move NamedFloats from 29b to library
+Stop loops on die()
+Output format (index?) in print_var + Named*
+name = expr as an alias to "set name expr"
 Fix bug with small floats output
 oxc_debug1 : pin info for F1
-substitute vars in cmdline
+substitute vars (or by any hook) in cmdline
 oxc_smallrl: UTF-8 minimal handling
 common RCC init
+STDOUT_os : replace with globals;
 Fix 51a_adcdma_n ... examples
 
 SmallRl, console: set output funcs to unbind
@@ -11,11 +14,9 @@ Move SPI common funcs from 28 to oxc lib
 Move ADC common fuctions (some to bsp)
 Rewrite Sysinit
 pkgconfig for OXC?
-Console: variable subst?
 
 Fill common_help_string for examples
 Fix USB_CDC init with other pins (test on f429 discovery...)
-MiniStr + iprintf
 Check MiniStr::operator+=( const char *rhs ) bug with whole string - now masked
 
 
@@ -24,7 +25,7 @@ Fast data communications with computer: USB, ether, WiFi, serial
 SPI debug
 Cmd buffer alloc - use for data storage (ADC, sensors ... )
 I2C, SPI: from buf to device, fill buf.
-str2addr: some common addrs: GPIOA.. USARTx, SPIx, I2Cx, ..... (debug only)
+str2addr: some common addrs: GPIOA.. USARTx, SPIx, I2Cx, ..... (debug only) - combine with substs
 1wire return codes test
 DAC + DMA
 Keepalive LED with more data.
@@ -37,7 +38,6 @@ SWO
 Move more common code to common dir.
 
 devices:
-external ADC
 USB mass storage
 USB data streams
 CAN

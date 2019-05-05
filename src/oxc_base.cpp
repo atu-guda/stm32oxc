@@ -157,7 +157,7 @@ void wakeFromIRQ( long wake )
   #endif
 }
 
-void die( uint16_t n )
+[[ noreturn ]] void die( uint16_t n )
 {
   #ifdef USE_FREERTOS
   taskDISABLE_INTERRUPTS();
