@@ -1,9 +1,8 @@
-Stop loops on die()
 Output format (index?) in print_var + Named*
 name = expr as an alias to "set name expr"
 Fix bug with small floats output
 oxc_debug1 : pin info for F1
-substitute vars (or by any hook) in cmdline
+substitute vars (or by any hook) in cmdline: oxc_console.cpp: exec_direct?
 oxc_smallrl: UTF-8 minimal handling
 common RCC init
 STDOUT_os : replace with globals;

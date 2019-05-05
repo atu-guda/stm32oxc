@@ -161,6 +161,8 @@ void wakeFromIRQ( long wake )
 {
   #ifdef USE_FREERTOS
   taskDISABLE_INTERRUPTS();
+  #else
+  oxc_disable_interrupts();
   #endif
   while(1) { delay_bad_ms( n*200 ); /* NOP */ };
 }

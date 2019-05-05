@@ -202,6 +202,8 @@ int exec_direct( const char *s, int l )
     return 1;
   }
 
+  // TODO: and substs here
+
   CmdFun f = 0;
   const char *nm = "???";
 
@@ -221,7 +223,7 @@ int exec_direct( const char *s, int l )
     }
   }
 
-  // TODO: substs here
+  // TODO: and substs here
 
   pr( NL );
   if( f != 0 ) {
@@ -232,12 +234,14 @@ int exec_direct( const char *s, int l )
           os << ' ' << argv[i];
         }
         os << NL;
-        delay_ms( 1 );
+        delay_ms( 5 );
       }
+
       break_flag = 0;
       uint32_t tm0 = HAL_GetTick();
       rc = f( argc, argv );
       uint32_t tm1 = HAL_GetTick();
+
       break_flag = 0;  idle_flag = 1;
       if( console_verbose > 0 ) {
         os << NL "#== END: \"" << nm << "\" rc=" <<  rc << " t= " << tm1 - tm0 << NL;

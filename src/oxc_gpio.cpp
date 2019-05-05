@@ -89,6 +89,7 @@ void PinsOut::initHW()
   #endif
 
   leds.set( n );
+  oxc_disable_interrupts();
   while(1) {
     delay_bad_ms( 100 );
     leds.toggle( LED_BSP_ERR );
