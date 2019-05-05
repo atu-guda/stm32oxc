@@ -190,6 +190,8 @@ int exec_direct( const char *s, int l )
   char ss[l+1];
   memmove( ss, s, l+1 );
 
+  // TODO: substs here
+
   STDOUT_os;
 
   char *argv[MAX_ARGS];
@@ -200,6 +202,13 @@ int exec_direct( const char *s, int l )
   if( argc < 1 ) {
     on_cmd_handler = 0;
     return 1;
+  }
+
+  // special case: var = expr
+  char cmd_eq_buf[2] = "s";
+  if( argc >= 3  && argv[1][0] == '=' && argv[1][1] == '\0' ) {
+    argv[1] = argv[0];
+    argv[0] = cmd_eq_buf;
   }
 
   // TODO: and substs here
