@@ -152,7 +152,7 @@ bool PWMData::tick( const float *d )
                             pwm_val -= pwminfo.ki_v * last_R * t_step * err;
                             break;
       case pwm_type::pwr:   err = d[didx_w] - val;
-                            pwm_val -= pwminfo.ki_v * t_step * err / ( d[1] + 0.2f ); // TODO: * what? / d[1]
+                            pwm_val -= pwminfo.ki_v * t_step * err / ( d[didx_i] + 0.2f ); // TODO: * what? / d[1]
                             break;
       default:              pwm_val = pwm_min; break; // fail-save
     };
