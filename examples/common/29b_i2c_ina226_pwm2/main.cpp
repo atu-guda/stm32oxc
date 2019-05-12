@@ -141,10 +141,6 @@ bool set_var_ex( const char *nm, const char *s )
   return ok;
 }
 
-const char* get_var_name_ex( unsigned i )
-{
-  return objs.getName( i );
-}
 
 
 // ---------------------------------------------
@@ -188,7 +184,6 @@ int main(void)
 
   print_var_hook = print_var_ex;
   set_var_hook   = set_var_ex;
-  get_var_name_hook = get_var_name_ex;
 
   tim_cfg();
 

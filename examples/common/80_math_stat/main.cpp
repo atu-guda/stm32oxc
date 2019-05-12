@@ -142,7 +142,6 @@ int main(void)
 
   print_var_hook    = print_var_fl;
   set_var_hook      = set_var_fl;
-  get_var_name_hook = get_var_name_fl;
 
   BOARD_POST_INIT_BLINK;
 

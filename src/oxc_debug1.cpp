@@ -18,7 +18,6 @@ int user_vars[N_USER_VARS];
 
 bool (*print_var_hook)( const char *nm, int fmt ) = nullptr;
 bool (*set_var_hook)( const char *nm, const char *s ) = nullptr;
-const char* (*get_var_name_hook)( unsigned i ) = nullptr;
 
 char* str2addr( const char *str )
 {
@@ -378,14 +377,8 @@ int cmd_pvar( int argc, const char * const * argv )
     for( unsigned i=0; i<N_USER_VARS; ++i ) {
       print_user_var( i );
     }
-    if( get_var_name_hook != nullptr  && print_var_hook != nullptr ) {
-      for( unsigned i=0; ; ++i ) {
-        auto s = get_var_name_hook( i );
-        if( !s ) {
-          break;
-        }
-        print_var_hook( s, 0 );
-      }
+    if( print_var_hook != nullptr ) {
+      print_var_hook( "", 0 );
     }
     return 0;
   }
@@ -395,8 +388,8 @@ int cmd_pvar( int argc, const char * const * argv )
     fmt = strtol( argv[2], 0, 0 );
   }
 
-  if( print_var_hook != nullptr && print_var_hook( argv[1], fmt ) ) {
-    return 0;
+  if( argv[1][1] != '\0' &&  print_var_hook != nullptr ) {
+    return print_var_hook( argv[1], fmt ) ? 0: 2;
   }
 
 

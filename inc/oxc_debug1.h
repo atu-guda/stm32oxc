@@ -30,7 +30,6 @@ void print_user_var( int idx );
 
 extern bool (*print_var_hook)( const char *nm, int fmt );
 extern bool (*set_var_hook)( const char *nm, const char *s );
-extern const char* (*get_var_name_hook)( unsigned i );
 
 // arch-dependent function
 // fill string s with information about pin config
