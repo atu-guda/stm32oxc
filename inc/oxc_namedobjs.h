@@ -4,6 +4,7 @@
 #include <oxc_miscfun.h>
 
 class OutStream;
+class NamedObjs;
 
 class NamedObj {
   public:
@@ -23,11 +24,30 @@ class NamedObj {
    virtual bool  set(         int v, int idx = 0 ) const = 0;
    virtual bool  set(       float v, int idx = 0 ) const = 0;
    virtual bool  set( const char *v, int idx = 0 ) const = 0;
+   virtual const NamedObjs*  getSubObjs() const; // for subobjects w/o = nullptr
   protected:
    const char *name;
    const uint32_t ne = 1;
    const uint32_t flags = 0;
 };
+
+class NamedSubObj : public NamedObj {
+  public:
+   constexpr NamedSubObj( const char *nm, const NamedObjs *a_no, unsigned flg = Flags::no )
+     : NamedObj( nm, 1, flg ), no( a_no ) {};
+   virtual void* getAddr() const override { return nullptr; };
+   virtual bool  get(    int &v, int idx = 0 ) const override;
+   virtual bool  get(  float &v, int idx = 0 ) const override;
+   virtual bool  get(   CStr &v, int idx = 0 ) const override;
+   virtual bool  out( OutStream &os, int idx = 0, int fmt = 0 ) const override;
+   virtual bool  set( int v, int idx = 0 ) const override;
+   virtual bool  set( float v, int idx = 0 ) const override;
+   virtual bool  set( const char *v, int idx = 0 ) const override;
+   virtual const NamedObjs*  getSubObjs() const override;
+  protected:
+   const NamedObjs *no;
+};
+
 
 
 class NamedObjs {

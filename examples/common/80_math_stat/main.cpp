@@ -79,6 +79,17 @@ bool set_ivf( int v, int /* idx */ )
 
 constexpr NamedFloat fl0_W_max   {   "W_max",     &W_max  };
 constexpr NamedFloat fl0_V_max   {   "V_max",     &V_max  };
+
+constexpr const NamedObj *const fl01_objs[] = {
+  & fl0_W_max,
+  & fl0_V_max,
+  nullptr
+};
+
+const NamedObjs fl01( fl01_objs );
+
+
+constexpr NamedSubObj fl0_sub    {     "sub",       &fl01 };
 constexpr NamedFloat fl0_X_c     {     "X_c",       &X_c,  1, NamedFloat::Flags::ro  };
 constexpr NamedFloat fl0_pwm_min { "pwm_min",   get_pmin, set_pmin  };
 constexpr NamedFloat fl0_va      {      "va",         va,  size(va) };
@@ -88,8 +99,7 @@ constexpr NamedInt   fl0_iva     {   "iva",         iva, size(iva) };
 constexpr NamedInt   fl0_ivf     {   "ivf",     get_ivf, set_ivf };
 
 constexpr const NamedObj *const fl0_objs[] = {
-  & fl0_W_max,
-  & fl0_V_max,
+  & fl0_sub,
   & fl0_X_c,
   & fl0_pwm_min,
   & fl0_va,
@@ -99,7 +109,7 @@ constexpr const NamedObj *const fl0_objs[] = {
   nullptr
 };
 
-NamedObjs fl0( fl0_objs );
+const NamedObjs fl0( fl0_objs );
 
 bool print_var_fl( const char *nm, int fmt )
 {
