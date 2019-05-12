@@ -222,10 +222,12 @@ int cmd_testsplit( int argc, const char * const * argv )
   }
 
   int idx;
-  char nm[maxSimpleNameLength];
+  char nm0[maxSimpleNameLength];
+  char nm1[maxExprNameLength];
   const char *eptr;
-  bool ok = splitNameWithIdx( argv[1], nm, idx, &eptr );
-  os << "ok= " << ok << " nm=\"" << nm << "\" idx= " << idx << " *eptr='" << (*eptr) << '\'' <<NL;
+  bool ok = splitNameWithIdx( argv[1], nm0, nm1, idx, &eptr );
+  os << "ok= " << ok << " nm=\"" << nm0 << "\" nm1=\"" << nm1
+     << "\" idx= " << idx << " *eptr='" << (*eptr) << '\'' << NL;
   fl0.print( argv[1] );
   return 0;
 }

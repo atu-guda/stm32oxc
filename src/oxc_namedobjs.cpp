@@ -15,14 +15,15 @@ const NamedObj* NamedObjs::find( const char *nm, int &idx ) const
     return nullptr;
   }
 
-  char snm[maxSimpleNameLength];
+  char snm0[maxSimpleNameLength];
+  char snm1[maxExprNameLength];
   const char *eptr;
-  bool ok = splitNameWithIdx( nm, snm, idx, &eptr );
-  if( !ok ) {
+  bool ok = splitNameWithIdx( nm, snm0, snm1, idx, &eptr );
+  if( !ok || *eptr != '\0' ) {
     return nullptr;
   }
 
-  auto f = std::find_if( cbegin(), cend(), [snm](auto &p) { return ( strcmp( snm, p->getName() ) == 0 ); } );
+  auto f = std::find_if( cbegin(), cend(), [snm0](auto &p) { return ( strcmp( snm0, p->getName() ) == 0 ); } );
 
   if( f == cend() ) {
     return nullptr;

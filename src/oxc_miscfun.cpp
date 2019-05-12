@@ -201,21 +201,23 @@ bool isNameChar( char c )
   return isNameChar1( c );
 }
 
-bool splitNameWithIdx( const char *s, char *d, int &idx, const char **eptr )
+bool splitNameWithIdx( const char *s, char *d0, char *d1, int &idx, const char **eptr )
 {
   const char *ep;
   if( !eptr ) {
     eptr = &ep;
   }
-  if( !s || !d ) {
+  if( !s || !d0 || !d1 ) {
     *eptr = nullptr;
     return false;
   }
 
   skip_ws( s );
 
-  d[0] = '\0';
-  unsigned b_len = 0;
+  d0[0] = d1[0] = '\0';
+  char *d = d0;
+  unsigned b_len = 0, max_l = maxSimpleNameLength;
+  bool first_name = true;
   idx = -1;
   *eptr = s;
 
@@ -223,18 +225,32 @@ bool splitNameWithIdx( const char *s, char *d, int &idx, const char **eptr )
   if( ! isNameChar1( *s ) ) {
     return false;
   }
-  d[b_len++] = *s++;
+  char last_c = *s++;
+  d[b_len++] = last_c;
 
-  for( ; *s; ++s ) {
+  for( char c; (c = *s) != '\0' ; ++s, last_c = c ) {
     *eptr = s;
-    if( b_len >= maxSimpleNameLength-1 ) {
-      d[0] = '\0';
-      return false;
+    if( b_len >= max_l-1 ) {
+      d0[0] = d1[0] = '\0'; return false;
     }
+
+    if( c == '.' ) {
+      if( last_c == '.' ) {
+        d0[0] = d1[0] = '\0'; return false;
+      }
+      if( first_name ) {
+        first_name = false;
+        d[b_len] = '\0'; d = d1; b_len = 0; max_l = maxExprNameLength;
+        continue;
+      }
+      d[b_len++] = c;
+      continue;
+    }
+
     if( ! isNameChar( *s )  ) {
       break;
     }
-    d[b_len++] = *s;
+    d[b_len++] = c;
   }
   d[b_len] = '\0';
 

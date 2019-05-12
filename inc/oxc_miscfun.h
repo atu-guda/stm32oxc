@@ -83,12 +83,13 @@ inline const unsigned maxExprNameLength   = 64; // with spaces, [nnn], dots
 bool isNameChar1( char c ); // first char in name only
 bool isNameChar( char c );  // and digits too
 
-//* try to split string in form "  name[ idx ] "
+//* try to split string in form "  name0.name1.name1[ idx ] "
 //  spaces ignored, index optional (-1)
 //  special index values: -1 = no, -2 = '*', -3 = '@'
 //  eptr points to first unconverted char
-//  d must be maxSimpleNameLength length at least
-bool splitNameWithIdx( const char *s, char *d, int &idx, const char **eptr = nullptr );
+//  d0 must be maxSimpleNameLength length at least
+//  d1 must be maxExprNameLength length at least
+bool splitNameWithIdx( const char *s, char *d0, char *d1, int &idx, const char **eptr = nullptr );
 
 #endif
 
