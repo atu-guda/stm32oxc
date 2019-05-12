@@ -145,14 +145,13 @@ int main(void)
 
   BOARD_POST_INIT_BLINK;
 
-  STDOUT_os;
-  os << NL "##################### " PROJ_NAME NL;
-  // os << "# fl0.size = " << fl0.size() << " name= \"" << fl0.getName( 1 ) << "\"" NL;
-  // os << "# &fl0_W_max  = " << HexInt( (void*)&fl0_W_max ) << " fl0_objs= "  << HexInt( (void*)fl0_objs )
+  std_out << NL "##################### " PROJ_NAME NL;
+  // std_out << "# fl0.size = " << fl0.size() << " name= \"" << fl0.getName( 1 ) << "\"" NL;
+  // std_out << "# &fl0_W_max  = " << HexInt( (void*)&fl0_W_max ) << " fl0_objs= "  << HexInt( (void*)fl0_objs )
   //    << " fl0.begin()= " << HexInt( (void*)( fl0.begin() ) ) << NL;
   //
   // auto f = fl0.begin();
-  // os << "# f.getName()= \"" << f->getName() << "\"" NL;
+  // std_out << "# f.getName()= \"" << f->getName() << "\"" NL;
 
 
 
@@ -170,7 +169,6 @@ int main(void)
 
 int cmd_test0( int argc, const char * const * argv )
 {
-  STDOUT_os;
   unsigned n_ch = 2;
   uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 100000000 ); // number of series
 
@@ -195,18 +193,16 @@ int cmd_test0( int argc, const char * const * argv )
 
 
   sdat.calc();
-  os << sdat << NL;
+  std_out << sdat << NL;
 
   return 0;
 }
 
 int cmd_testout( int argc, const char * const * argv )
 {
-  STDOUT_os;
-
   if( argc > 1 ) {
     float f = arg2float_d( 1, argc, argv, 1.234f, -FLT_MAX, FLT_MAX  );
-    os <<        FltFmt( f )
+    std_out <<   FltFmt( f )
        << ' ' << FltFmt( f, cvtff_exp )
        << ' ' << FltFmt( f, cvtff_fix )
        << NL;
@@ -214,7 +210,7 @@ int cmd_testout( int argc, const char * const * argv )
   }
 
   for( float f = 7.23456789e-12f; f < 1e14f; f *= -10 ) {
-    os <<        FltFmt( f )
+    std_out <<   FltFmt( f )
        << ' ' << FltFmt( f, cvtff_exp )
        << ' ' << FltFmt( f, cvtff_fix )
        << NL;
@@ -224,9 +220,8 @@ int cmd_testout( int argc, const char * const * argv )
 
 int cmd_testsplit( int argc, const char * const * argv )
 {
-  STDOUT_os;
   if( argc < 2 ) {
-    os << "# Error: expresssion required! " NL;
+    std_out << "# Error: expresssion required! " NL;
     return 1;
   }
 
@@ -235,8 +230,8 @@ int cmd_testsplit( int argc, const char * const * argv )
   char nm1[maxExprNameLength];
   const char *eptr;
   bool ok = splitNameWithIdx( argv[1], nm0, nm1, idx, &eptr );
-  os << "ok= " << ok << " nm=\"" << nm0 << "\" nm1=\"" << nm1
-     << "\" idx= " << idx << " *eptr='" << (*eptr) << '\'' << NL;
+  std_out << "ok= " << ok << " nm=\"" << nm0 << "\" nm1=\"" << nm1
+          << "\" idx= " << idx << " *eptr='" << (*eptr) << '\'' << NL;
   fl0.print( argv[1] );
   return 0;
 }

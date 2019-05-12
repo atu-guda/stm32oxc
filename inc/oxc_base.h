@@ -338,7 +338,8 @@ void default_wait1(void);
 #define STD_PROLOG_UART \
   STD_PROLOG_UART_NOCON; \
   global_smallrl = &srl; \
-  SET_UART_AS_STDIO( dev_console );
+  SET_UART_AS_STDIO( dev_console ); \
+  std_out.setOut( devio_fds[1] );
 
 #define STD_PROLOG_USBCDC \
   STD_PROLOG_START; \
@@ -348,7 +349,8 @@ void default_wait1(void);
   } \
   leds.write( BOARD_LEDS_ALL );  HAL_Delay( PROLOG_LED_TIME ); \
   global_smallrl = &srl; \
-  SET_USBCDC_AS_STDIO( dev_console );
+  SET_USBCDC_AS_STDIO( dev_console ); \
+  std_out.setOut( devio_fds[1] );
 
 
 

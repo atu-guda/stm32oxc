@@ -4,6 +4,8 @@
 
 using namespace std;
 
+OutStream std_out( nullptr );
+
 
 void OutStream::add_bitnames( uint32_t b, const BitNames *bn )
 {

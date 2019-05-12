@@ -8,13 +8,14 @@
 #include <oxc_io.h>
 
 
-//* minimal class for outout to given DevOut
+//* minimal class for output to given DevOut
 
 class OutStream {
   public:
-   OutStream( DevOut * _out ) : out( _out ) {};
+   explicit OutStream( DevOut* _out ) : out( _out ) {};
    OutStream( const OutStream &r ) = default;
    ~OutStream() { flush(); }
+   void setOut( DevOut* _out ) { out = _out ; };
    void flush() { if( out ) { out->flush_out(); } }
    OutStream& operator=( const OutStream &rhs ) = default;
    void append( char rhs ) { if( out ) { out->putc( rhs ); } }
@@ -33,6 +34,8 @@ class OutStream {
   private:
    DevOut *out = nullptr;
 };
+
+extern OutStream std_out;
 
 // require <oxc_devio.h>
 #define STDOUT_os  OutStream os( devio_fds[1] )
