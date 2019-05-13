@@ -36,10 +36,9 @@ void task_leds( void *prm UNUSED_ARG )
 void default_main_loop()
 {
   int nl = 0;
-  STDOUT_os;
   delay_ms( 10 );
-  os <<  "*=*** " PROJ_NAME  " main loop: ****** " NL;
-  os.flush();
+  std_out <<  "*=*** " PROJ_NAME  " main loop: ****** " NL;
+  std_out.flush();
   delay_ms( 20 );
   if( ! global_smallrl ) {
     die( 0x01 );
@@ -56,8 +55,8 @@ void default_main_loop()
   while( 1 ) {
     ++nl;
     if( idle_flag == 0 ) {
-      os << ".. main idle  " << nl;
-      os.flush();
+      std_out << ".. main idle  " << nl;
+      std_out.flush();
       global_smallrl->redraw();
     }
     idle_flag = 0;

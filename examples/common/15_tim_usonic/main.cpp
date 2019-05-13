@@ -60,8 +60,7 @@ int cmd_test0( int argc, const char * const * argv )
 {
   int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
   uint32_t t_step = UVAR('t');
-  STDOUT_os;
-  os <<  NL "Test0: n= "  <<  n  <<  " t= "  <<  t_step  <<  NL;
+  std_out <<  NL "Test0: n= "  <<  n  <<  " t= "  <<  t_step  <<  NL;
   tim_print_cfg( TIM_EXA );
 
   delay_ms( 10 );
@@ -71,8 +70,8 @@ int cmd_test0( int argc, const char * const * argv )
   break_flag = 0;
   for( int i=0; i<n && !break_flag; ++i ) {
 
-    os <<  "["  <<  i  <<  "]  l= "  << UVAR('l')  <<  NL;
-    os.flush();
+    std_out <<  "["  <<  i  <<  "]  l= "  << UVAR('l')  <<  NL;
+    std_out.flush();
     delay_ms_until_brk( &tm0, t_step );
   }
 

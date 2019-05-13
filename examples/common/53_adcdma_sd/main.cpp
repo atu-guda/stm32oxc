@@ -124,7 +124,6 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  STDOUT_os;
   uint8_t n_ch = clamp( UVAR('c'), 1, (int)adc.n_ch_max );
 
   uint32_t tim_psc = UVAR('p');
@@ -140,7 +139,7 @@ int cmd_test0( int argc, const char * const * argv )
   adc.t_step_f = (float)t_step_tick / tim_freq_in; // in s
   uint32_t t_wait0 = 1 + uint32_t( n * adc.t_step_f * 1000 ); // in ms
 
-  os << "# t_step_tick= " << t_step_tick << " [t2ticks] tim_f= " << tim_f << " Hz"
+  std_out << "# t_step_tick= " << t_step_tick << " [t2ticks] tim_f= " << tim_f << " Hz"
      << " t_step_f= " << adc.t_step_f << " s  t_wait0= " << t_wait0 << " ms" NL;
 
   if( n > n_ADC_series_max ) { n = n_ADC_series_max; };
@@ -151,20 +150,20 @@ int cmd_test0( int argc, const char * const * argv )
   UVAR('i') =  adc_init_exa_4ch_dma( adc, adc_presc, sampl_times_codes[sampl_t_idx], n_ch );
   delay_ms( 1 );
   if( ! UVAR('i') ) {
-    os << "ADC init failed, errno= " << errno << NL;
+    std_out << "ADC init failed, errno= " << errno << NL;
     return 1;
   }
   if( UVAR('d') > 1 ) { pr_ADC_state( adc );  }
 
 
-  os << "# Timer: tim_freq_in= " << tim_freq_in << "  Hz / ((" << tim_psc
+  std_out << "# Timer: tim_freq_in= " << tim_freq_in << "  Hz / ((" << tim_psc
      << "+1)*(" << tim_arr << "+1)) =" << tim_f << " Hz; t_step = " << adc.t_step_f << " s" NL;
   delay_ms( 1 );
 
   int div_val = -1;
   adc.adc_clk = calc_ADC_clk( adc_presc, &div_val );
   uint32_t f_sampl_max = adc.adc_clk / ( sampl_times_cycles[sampl_t_idx] * n_ch );
-  os << "# ADC: n_ch= " << n_ch << " n= " << n << " adc_clk= " << adc.adc_clk << " div_val= " << div_val
+  std_out << "# ADC: n_ch= " << n_ch << " n= " << n << " adc_clk= " << adc.adc_clk << " div_val= " << div_val
      << " s_idx= " << sampl_t_idx << " sampl= " << sampl_times_cycles[sampl_t_idx]
      << " f_sampl_max= " << f_sampl_max << " Hz" NL;
   delay_ms( 10 );
@@ -174,11 +173,11 @@ int cmd_test0( int argc, const char * const * argv )
   ADC_buf.shrink_to_fit();
   ADC_buf.assign( (n+2) * n_ch, 0 ); // + 2 is guard, may be remove
   adc.data = ADC_buf.data();
-  os << "# ADC_buf.size= " << ADC_buf.size() << " data= " << HexInt( ADC_buf.data(), true ) << NL;
+  std_out << "# ADC_buf.size= " << ADC_buf.size() << " data= " << HexInt( ADC_buf.data(), true ) << NL;
 
   adc.reset_cnt();
   if( ADC_buf.data() == nullptr ) {
-    os <<  "# Error: fail to allocate memory" NL;
+    std_out <<  "# Error: fail to allocate memory" NL;
     return 2;
   }
 
@@ -187,7 +186,7 @@ int cmd_test0( int argc, const char * const * argv )
   uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
 
   if( HAL_ADC_Start_DMA( &adc.hadc, (uint32_t*)ADC_buf.data(), n_ADC_sampl ) != HAL_OK )   {
-    os <<  "ADC_Start_DMA error" NL;
+    std_out <<  "ADC_Start_DMA error" NL;
     return 10;
   }
   tim2_init( UVAR('p'), UVAR('a') );
@@ -202,25 +201,25 @@ int cmd_test0( int argc, const char * const * argv )
   tim2_deinit();
   HAL_ADC_Stop_DMA( &adc.hadc ); // needed
   if( adc.end_dma == 0 ) {
-    os <<  "Fail to wait DMA end " NL;
+    std_out <<  "Fail to wait DMA end " NL;
   } else {
     if( adc.dma_error != 0 ) {
-      os <<  "Found DMA error " << HexInt( adc.dma_error ) <<  NL;
+      std_out <<  "Found DMA error " << HexInt( adc.dma_error ) <<  NL;
     } else {
       adc.n_series = n;
     }
   }
-  os <<  "#  tick: " <<  ( tcc - tm00 )  <<  NL;
+  std_out <<  "#  tick: " <<  ( tcc - tm00 )  <<  NL;
 
   if( adc.n_series < 20 ) {
-    adc_out_to( os, adc.n_series, 0 );
+    adc_out_to( std_out, adc.n_series, 0 );
   } else {
-    adc_out_to( os, 4, 0 );
-    os <<  "....." NL;
-    adc_out_to( os, 4, adc.n_series-4 );
+    adc_out_to( std_out, 4, 0 );
+    std_out <<  "....." NL;
+    adc_out_to( std_out, 4, adc.n_series-4 );
   }
 
-  os <<  NL;
+  std_out <<  NL;
 
   if( UVAR('d') > 1 ) { pr_ADC_state( adc );  }
 

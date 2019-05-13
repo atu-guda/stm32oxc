@@ -64,8 +64,7 @@ int cmd_test0( int argc, const char * const * argv )
 {
   int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
   uint32_t t_step = UVAR('t');
-  STDOUT_os;
-  os <<  NL "Test0: n= "  <<  n  <<  " t= "  <<  t_step  <<  NL;
+  std_out <<  NL "Test0: n= "  <<  n  <<  " t= "  <<  t_step  <<  NL;
   uint8_t buf[12];
 
 
@@ -78,25 +77,25 @@ int cmd_test0( int argc, const char * const * argv )
     // pin_wire1.set_sw0( i & 1 );
     // if( out_flag ) {
     //   uint16_t iv = pin_wire1.rw();
-    //   os <<  "i= "  <<  i   <<  "  iv= "  << HexInt( iv ) <<  NL;
+    //   std_out <<  "i= "  <<  i   <<  "  iv= "  << HexInt( iv ) <<  NL;
     // }
     ok = wire1.skipRom( 0x44, nullptr, 0 ); // convert T
     if( !ok ) {
-      os <<  "Err: 0x44 fail" NL;
+      std_out <<  "Err: 0x44 fail" NL;
     }
 
     delay_ms( 750 );
     memset( buf, 0, sizeof(buf) );
     ok = ok && wire1.skipRom( OneWire::CMD_READ_SPAD, buf, 9 ); // read buf
     if( !ok ) {
-      os <<  "Err: skipRom::READ_SPAD fail" NL;
+      std_out <<  "Err: skipRom::READ_SPAD fail" NL;
     } else {
       int te = buf[0] + (buf[1] << 8);
       // pr_sdx( te );
       te *= 1000; te /= 16;
       // ifcvt( te, 1000, obuf, 3 ); // TODO: hex
-      // os <<  obuf  <<  NL;
-      os <<  FloatMult( te, 3 )  <<  NL;
+      // std_out <<  obuf  <<  NL;
+      std_out <<  FloatMult( te, 3 )  <<  NL;
     }
 
     delay_ms_until_brk( &tm0, t_step );
@@ -109,34 +108,33 @@ int cmd_test0( int argc, const char * const * argv )
 int cmd_1wire0( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
 {
   uint8_t buf[12], addr[12];
-  STDOUT_os;
-  os <<  NL "1wire test start." NL;
+  std_out <<  NL "1wire test start." NL;
 
   bool have_dev = wire1.reset();
   if( !have_dev ) {
-    os << "Fail to find device" << NL;
+    std_out << "Fail to find device" << NL;
     return 1;
   }
 
   memset( addr, 0, sizeof(addr) );
   delay_ms( 1 ); // for logic analizator
   bool ok =  wire1.readRom( addr, 8 );
-  os <<  ( ok ? ( "readRom OK. addr:" NL)  : ( "readRom FAIL!!!" NL ) );
+  std_out <<  ( ok ? ( "readRom OK. addr:" NL)  : ( "readRom FAIL!!!" NL ) );
   dump8( addr, 8 );
 
 
   memset( buf, 0, sizeof(buf) );
   ok = wire1.skipRom( OneWire::CMD_READ_SPAD, buf, 9 ); //  really need 9
-  os << ( ok ? ( "READ_SPAD OK. buf:" NL ) : ( "READSPAD FAIL!!!" NL ) );
+  std_out << ( ok ? ( "READ_SPAD OK. buf:" NL ) : ( "READSPAD FAIL!!!" NL ) );
   dump8( buf, 12 );
 
   ok = wire1.skipRom( 0x44, nullptr, 0 ); // convert T
-  os << "ConvertT(44), waitung...  ok= " << ok <<  NL;
+  std_out << "ConvertT(44), waitung...  ok= " << ok <<  NL;
   delay_ms( 1000 );
 
   memset( buf, 0, sizeof(buf) );
   wire1.skipRom( OneWire::CMD_READ_SPAD, buf, 9 ); // read buf
-  os <<  ( ok ? ( "READ_SPAD OK. buf:" NL ) : ( "READSPAD FAIL!!!" NL ) );
+  std_out <<  ( ok ? ( "READ_SPAD OK. buf:" NL ) : ( "READSPAD FAIL!!!" NL ) );
   dump8( buf, 12 );
 
   int te = buf[0] + (buf[1] << 8);
@@ -146,13 +144,13 @@ int cmd_1wire0( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
 
   memset( buf, 0, sizeof(buf) );
   ok = wire1.matchRom( addr, OneWire::CMD_READ_SPAD, buf, 9 ); // read buf with addr
-  os << "MatchROM.READ_SPAD  ok= " << ok <<  NL;
+  std_out << "MatchROM.READ_SPAD  ok= " << ok <<  NL;
   dump8( buf, 12 );
 
   memset( buf, 0, sizeof(buf) );
   addr[1] = 0xFF; // bad addr
   ok = wire1.matchRom( addr, OneWire::CMD_READ_SPAD, buf, 9 ); // read buf with addr
-  os <<  ( ok ? ( "Bad addr: READ_SPAD OK" NL ) : ( "Bad addr: READSPAD FAIL!!!" NL ) );
+  std_out <<  ( ok ? ( "Bad addr: READ_SPAD OK" NL ) : ( "Bad addr: READSPAD FAIL!!!" NL ) );
   dump8( buf, 12 );
 
   wire1.eot();

@@ -63,9 +63,8 @@ int cmd_test0( int argc, const char * const * argv )
   int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
   uint32_t t_step = UVAR('t');
 
-  STDOUT_os;
-  os << NL "Test0: n= " << n << " t= " << t_step << NL;
-  os.flush();
+  std_out << NL "Test0: n= " << n << " t= " << t_step << NL;
+  std_out.flush();
 
   baro.readCalibrData();
 
@@ -90,9 +89,9 @@ int cmd_test0( int argc, const char * const * argv )
     // int t_u = baro.get_T_uncons();
     // int p_u = baro.get_P_uncons();
     // ifcvt( t10, 10, buf, 1 );
-    os << "T= " <<  FloatMult( t10, 1, 3 ) << "  P= " << p << " dp= " << dp << " dp0= " << dp0 << NL;
+    std_out << "T= " <<  FloatMult( t10, 1, 3 ) << "  P= " << p << " dp= " << dp << " dp0= " << dp0 << NL;
 
-    os.flush();
+    std_out.flush();
     delay_ms_until_brk( &tm0, t_step );
   }
 

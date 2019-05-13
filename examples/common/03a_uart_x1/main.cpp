@@ -23,17 +23,16 @@ int main(void)
 
   char cn = '0';
   leds.write( 0 );
-  STDOUT_os;
 
   uint32_t c_msp = __get_MSP();
-  os << " MSP-__heap_top = " << ((unsigned)c_msp - (unsigned)(__heap_top) ) << "\r\n";
-  os.flush();
+  std_out << " MSP-__heap_top = " << ((unsigned)c_msp - (unsigned)(__heap_top) ) << "\r\n";
+  std_out.flush();
 
   int n = 0;
   while( 1 ) {
     bool was_action = false;
     char c = '?', c_err = '-';
-    os.clear();
+    std_out.clear();
 
     if( __HAL_USART_GET_FLAG( &uah_console, UART_FLAG_ORE ) ) { // overrun
       c = uah_console.Instance->USART_RX_REG;
@@ -51,14 +50,14 @@ int main(void)
 
     if( was_action ) {
       leds.toggle( BIT1 );
-      os << "A:Z <";
-      os << ( int8_t(c) >= ' '  ?  c : ' ' );
-      os << "> [" << HexInt8( c ) << "] R" << c_err << cn << "-\r\n";
-      os.flush();
+      std_out << "A:Z <";
+      std_out << ( int8_t(c) >= ' '  ?  c : ' ' );
+      std_out << "> [" << HexInt8( c ) << "] R" << c_err << cn << "-\r\n";
+      std_out.flush();
     } else if( n % ( 50*delay_calibrate_value ) == 0 ) {
       leds.toggle( BIT1 );
-      os << '-' << cn << "-\r\n";
-      os.flush();
+      std_out << '-' << cn << "-\r\n";
+      std_out.flush();
     } else {
       // NOP;
     }

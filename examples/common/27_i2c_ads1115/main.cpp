@@ -76,12 +76,11 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  STDOUT_os;
   uint32_t t_step = UVAR('t');
   uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 1000000 ); // number of series
 
   uint16_t x_cfg = adc.getDeviceCfg();
-  os <<  NL "# Test0: n= " <<  n <<  " t= " <<  t_step <<  "  cfg= " <<  HexInt16( x_cfg ) << NL;
+  std_out <<  NL "# Test0: n= " <<  n <<  " t= " <<  t_step <<  "  cfg= " <<  HexInt16( x_cfg ) << NL;
   bool is_cont = UVAR('o');
 
   adc.setDefault();
@@ -91,11 +90,11 @@ int cmd_test0( int argc, const char * const * argv )
   // oneShot may be removed by startCont()
   UVAR('e') = adc.setCfg( cfg );
   x_cfg = adc.getDeviceCfg();
-  os <<  "# cfg= " << HexInt16( x_cfg ) <<  NL;
+  std_out <<  "# cfg= " << HexInt16( x_cfg ) <<  NL;
 
   StatData sdat( 1 );
 
-  os << "# Coeffs: " << v_coeffs[0] << NL;
+  std_out << "# Coeffs: " << v_coeffs[0] << NL;
 
   leds.set(   BIT0 | BIT1 | BIT2 ); delay_ms( 100 );
   leds.reset( BIT0 | BIT1 | BIT2 );
@@ -105,7 +104,7 @@ int cmd_test0( int argc, const char * const * argv )
   }
   x_cfg = adc.getDeviceCfg();
   int scale_mv = adc.getScale_mV();
-  os <<  "#  cfg= " <<  HexInt16( x_cfg ) <<  " scale_mv = " << scale_mv << NL;
+  std_out <<  "#  cfg= " <<  HexInt16( x_cfg ) <<  " scale_mv = " << scale_mv << NL;
 
   int v0 = 0;
 
@@ -130,7 +129,7 @@ int cmd_test0( int argc, const char * const * argv )
     if( UVAR('l') ) {  leds.reset( BIT2 ); }
     int dt = tcc - tm00; // ms
     if( do_out ) {
-      os <<  FltFmt( 0.001f * dt, cvtff_auto, 12, 4 );
+      std_out <<  FltFmt( 0.001f * dt, cvtff_auto, 12, 4 );
     }
 
     sreal vf0 = 0.001f * scale_mv * v0  * v_coeffs[0] / 32678;
@@ -138,7 +137,7 @@ int cmd_test0( int argc, const char * const * argv )
     sdat.add( &vf0 );
 
     if( do_out ) {
-      os  << ' '  <<  v0 << ' ' << vf0 << NL;
+      std_out  << ' '  <<  v0 << ' ' << vf0 << NL;
     }
 
     delay_ms_until_brk( &tm0, t_step );
@@ -149,29 +148,28 @@ int cmd_test0( int argc, const char * const * argv )
   }
 
   sdat.calc();
-  os << sdat << NL;
+  std_out << sdat << NL;
 
   x_cfg = adc.getDeviceCfg();
-  os <<  "# cfg= " << HexInt16( x_cfg ) <<  NL;
+  std_out <<  "# cfg= " << HexInt16( x_cfg ) <<  NL;
 
   return rc;
 }
 
 int cmd_getNch( int argc, const char * const * argv )
 {
-  STDOUT_os;
   uint32_t t_step = UVAR('t');
   uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 1000000 ); // number of series
   unsigned n_ch = (uint8_t)clamp( ( UVAR('c') ), 1, 4 );
   uint8_t e_ch = (uint8_t)(n_ch-1);
   uint16_t x_cfg = adc.getDeviceCfg();
-  os <<  NL "# getNch: n= " <<  n << " n_ch= " << n_ch << " t= " <<  t_step <<  "  cfg= " <<  HexInt16( x_cfg ) << NL;
+  std_out <<  NL "# getNch: n= " <<  n << " n_ch= " << n_ch << " t= " <<  t_step <<  "  cfg= " <<  HexInt16( x_cfg ) << NL;
 
   StatData sdat( n_ch );
 
-  os << "# Coeffs: ";
+  std_out << "# Coeffs: ";
   for( decltype(n_ch) j=0; j<n_ch; ++j ) {
-    os << ' ' << v_coeffs[j];
+    std_out << ' ' << v_coeffs[j];
   }
 
   adc.setDefault();
@@ -180,7 +178,7 @@ int cmd_getNch( int argc, const char * const * argv )
   UVAR('e') = adc.setCfg( cfg );
   x_cfg = adc.getDeviceCfg();
   int scale_mv = adc.getScale_mV();
-  os <<  "# cfg= " << HexInt16( x_cfg ) << " scale_mv = " << scale_mv << NL;
+  std_out <<  "# cfg= " << HexInt16( x_cfg ) << " scale_mv = " << scale_mv << NL;
 
   int16_t vi[4];
   sreal kv = 0.001f * scale_mv / 0x7FFF;
@@ -208,7 +206,7 @@ int cmd_getNch( int argc, const char * const * argv )
 
 
     if( do_out ) {
-      os <<  FltFmt( tc, cvtff_auto, 12, 4 );
+      std_out <<  FltFmt( tc, cvtff_auto, 12, 4 );
     }
 
     for( decltype(no) j=0; j<no; ++j ) {
@@ -219,16 +217,16 @@ int cmd_getNch( int argc, const char * const * argv )
 
     if( do_out ) {
       for( auto vc : v ) {
-        os  << ' '  <<  vc;
+        std_out  << ' '  <<  vc;
       }
-      os << NL;
+      std_out << NL;
     }
 
     delay_ms_until_brk( &tm0, t_step );
   }
 
   sdat.calc();
-  os << sdat << NL;
+  std_out << sdat << NL;
 
   return rc;
 }
@@ -241,8 +239,7 @@ int cmd_set_coeffs( int argc, const char * const * argv )
     v_coeffs[2] = arg2float_d( 3, argc, argv, 1, -1e10f, 1e10f );
     v_coeffs[3] = arg2float_d( 4, argc, argv, 1, -1e10f, 1e10f );
   }
-  STDOUT_os;
-  os << "# Coefficients: "
+  std_out << "# Coefficients: "
      << v_coeffs[0] << ' ' << v_coeffs[1] << ' ' << v_coeffs[2] << ' ' << v_coeffs[3] << NL;
   return 0;
 }

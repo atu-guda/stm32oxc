@@ -318,9 +318,8 @@ const BitNames SPI_SR_bitnames[] {
 void print_SPI_info( SPI_TypeDef *spi )
 {
   if( !spi ) { return; }
-  STDOUT_os;
 
-  os << "SPI: "  << HexInt( spi ) << " CR1= " << HexInt( spi->CR1 )  //  pr_bitnames( spi->CR1, SPI_CR1_bitnames );
+  std_out << "SPI: "  << HexInt( spi ) << " CR1= " << HexInt( spi->CR1 )  //  pr_bitnames( spi->CR1, SPI_CR1_bitnames );
      << " CR2= " << HexInt( spi->CR2 ) << BitsStr( spi->CR2, SPI_CR2_bitnames )
      << " SR= "  << HexInt( spi->SR )  << BitsStr( spi->SR,  SPI_SR_bitnames  )
      << " DR= "  << HexInt( spi->DR ) << NL;
@@ -329,8 +328,7 @@ void print_SPI_info( SPI_TypeDef *spi )
 void DevSPI::pr_info() const
 {
   print_SPI_info( spi->Instance );
-  STDOUT_os;
-  os << " error_code= " << int( spi->ErrorCode )
+  std_out << " error_code= " << int( spi->ErrorCode )
      << " last_err= "   << int( last_err )
      << " last_rc= "    << int( last_rc ) << NL;
 }

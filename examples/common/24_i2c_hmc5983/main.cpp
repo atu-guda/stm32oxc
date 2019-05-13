@@ -67,8 +67,7 @@ int cmd_test0( int argc, const char * const * argv )
   int scale = arg2long_d( 2, argc, argv, 1, 0, n_scales-1 );
   uint32_t t_step = UVAR('t');
 
-  STDOUT_os;
-  os <<  NL "Test0: n= "  <<  n  <<  " t= "  <<  t_step
+  std_out <<  NL "Test0: n= "  <<  n  <<  " t= "  <<  t_step
      <<  " scale= "  <<  scale   <<  NL;
 
   int scale_min = -1000000; // INT16_MIN
@@ -81,7 +80,7 @@ int cmd_test0( int argc, const char * const * argv )
   // mag.resetDev();
 
   if( ! mag.init(  HMC5983::cra_odr_75_Hz, HMC5983::Scales( scale ) ) ) {
-    os <<  "Fail to init HMC5983, Error= " <<  mag.getErr() << NL;
+    std_out <<  "Fail to init HMC5983, Error= " <<  mag.getErr() << NL;
     return 1;
   }
 
@@ -103,11 +102,11 @@ int cmd_test0( int argc, const char * const * argv )
     bar_y.draw( xyz[1] );
     bar_z.draw( xyz[2] );
     term_set_xy( 10, 5 );
-    os <<  "i= "  <<  i  <<  "  tick: " <<  (tcc - tm00 )
+    std_out <<  "i= "  <<  i  <<  "  tick: " <<  (tcc - tm00 )
        <<  " [ "  <<  xyz[0] <<  " ; "  <<  xyz[1]  <<  " ; "  <<  xyz[2]
        <<  " ] T= " /* NL  */  <<  temp  <<  " " NL;
 
-    os.flush();
+    std_out.flush();
     delay_ms_until_brk( &tm0, t_step );
   }
 

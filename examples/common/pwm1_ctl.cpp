@@ -63,14 +63,13 @@ void PWMData::mk_trap( float v, int t1, int t2, int t3 )
 
 void PWMData::show_steps() const
 {
-  STDOUT_os;
-  os << "# vmin= " << vmin << "  vdef= " << vdef << "  vmax= " << vmax << " n_steps= " << n_steps << NL;
+  std_out << "# vmin= " << vmin << "  vdef= " << vdef << "  vmax= " << vmax << " n_steps= " << n_steps << NL;
   int tc = 0;
   for( unsigned i=0; i<n_steps; ++i ) {
-    os << '[' << i << "] " << tc << ' ' << steps[i].t << ' ' << steps[i].v << ' ' << steps[i].tp << NL;
+    std_out << '[' << i << "] " << tc << ' ' << steps[i].t << ' ' << steps[i].v << ' ' << steps[i].tp << NL;
     tc += steps[i].t;
   }
-  os << "# Total: " << tc << " ms" NL;
+  std_out << "# Total: " << tc << " ms" NL;
 }
 
 bool PWMData::edit_step( unsigned ns, float v, int t, int tp )
@@ -164,8 +163,7 @@ int cmd_set_minmax( int argc, const char * const * argv )
   float vmax = arg2float_d( 2, argc, argv, pwmdat.get_max(), vmin+1, 99.99 );
   pwmdat.set_min( vmin );
   pwmdat.set_max( vmax );
-  STDOUT_os;
-  os << "# vmin= " << pwmdat.get_min() << " vmax= " << pwmdat.get_max() << NL;
+  std_out << "# vmin= " << pwmdat.get_min() << " vmax= " << pwmdat.get_max() << NL;
   return 0;
 }
 
@@ -173,8 +171,7 @@ int cmd_mk_rect( int argc, const char * const * argv )
 {
   float v  = arg2float_d( 1, argc, argv,    35, 1,       98 );
   int   t  = arg2long_d(  2, argc, argv, 30000, 1, 10000000 );
-  STDOUT_os;
-  os << "# rect: v= " << v << " t= " << t << NL;
+  std_out << "# rect: v= " << v << " t= " << t << NL;
   pwmdat.mk_rect( v, t );
   pwmdat.show_steps();
   return 0;
@@ -185,8 +182,7 @@ int cmd_mk_ladder( int argc, const char * const * argv )
   float    v  = arg2float_d( 1, argc, argv,     5, 1,       90 );
   unsigned t  = arg2long_d(  2, argc, argv, 30000, 1, 10000000 );
   unsigned n  = arg2long_d(  3, argc, argv,    10, 1, PWMData::max_pwm_steps/2-2 );
-  STDOUT_os;
-  os << "# ladder: v= " << v << " t= " << t << " n= " << n << NL;
+  std_out << "# ladder: v= " << v << " t= " << t << " n= " << n << NL;
   pwmdat.mk_ladder( v, t, n );
   pwmdat.show_steps();
   return 0;
@@ -198,8 +194,7 @@ int cmd_mk_trap( int argc, const char * const * argv )
   int   t1 = arg2long_d(  2, argc, argv, 30000, 1, 10000000 );
   int   t2 = arg2long_d(  3, argc, argv, 30000, 1, 10000000 );
   int   t3 = arg2long_d(  4, argc, argv, 30000, 1, 10000000 );
-  STDOUT_os;
-  os << "# trap: v= " << v << " t1= " << t1 << " t2= " << t2 << " t3= " << t3  << NL;
+  std_out << "# trap: v= " << v << " t1= " << t1 << " t2= " << t2 << " t3= " << t3  << NL;
   pwmdat.mk_trap( v, t1, t2, t3 );
   pwmdat.show_steps();
   return 0;

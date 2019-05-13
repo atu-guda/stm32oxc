@@ -405,7 +405,6 @@ int Datas::set( const char *nmi, const char *sval )
 
 int Datas::parse_arg( const char *s, Cmd &cmd ) const
 {
-  STDOUT_os;
   if( !s ) {
     return 0;
   }
@@ -427,7 +426,7 @@ int Datas::parse_arg( const char *s, Cmd &cmd ) const
   }
 
   if( ! isNameChar1( *s ) ) {
-    os << "# err:  Bad first char '" << *s << '\'' << NL;
+    std_out << "# err:  Bad first char '" << *s << '\'' << NL;
     return 0;
   }
   string nm0; nm0.reserve( 64 ); // pure name w/o index
@@ -446,7 +445,7 @@ int Datas::parse_arg( const char *s, Cmd &cmd ) const
   if( ! ( *s == '\0' || *s == ';' || *s == '#'  ) ) { // not only name
 
     if( *s != '[' ) {
-      os << "# err: ... [ required: \"" << s << '"' << NL;
+      std_out << "# err: ... [ required: \"" << s << '"' << NL;
       return 0;
     }
 
@@ -456,38 +455,38 @@ int Datas::parse_arg( const char *s, Cmd &cmd ) const
     // convert index
     idx = strtol( s, &eptr, 0 );
     if( eptr == s ) {
-      os << "# err: bad index \"" << s << '"' << NL;
+      std_out << "# err: bad index \"" << s << '"' << NL;
       return 0;
     }
     s = eptr;
 
     skip_ws( s );
     if( *s != ']' ) {
-      os << "# err:  ] required: \"" << s << '"' << NL;
+      std_out << "# err:  ] required: \"" << s << '"' << NL;
       return 0;
     }
     ++s;
 
     skip_ws( s );
     if( *s != '\0' && *s != ';' ) {
-      os << "# err:  strange tail found: \"" << s << '"' << NL;
+      std_out << "# err:  strange tail found: \"" << s << '"' << NL;
       return 0;
     }
   }
 
   auto p = find_nm( nm0.c_str() );
   if( p == d.end() ) {
-    os << "# err: name not found: \"" << nm0.c_str() << '"' << NL;
+    std_out << "# err: name not found: \"" << nm0.c_str() << '"' << NL;
     return 0;
   }
 
   if( idx >= int(p->n) ) {
-    os << "# err: bad index " << idx <<  NL;
+    std_out << "# err: bad index " << idx <<  NL;
     return 0;
   }
 
   if( cmd.op == CmdOp::stor  &&  p->ro ) {
-    os << "# err: R/O \"" << nm0.c_str() << '"' <<  NL;
+    std_out << "# err: R/O \"" << nm0.c_str() << '"' <<  NL;
     return 0;
   }
 
@@ -507,18 +506,16 @@ int Datas::parse_arg( const char *s, Cmd &cmd ) const
 
 void Datas::list() const
 {
-  STDOUT_os;
   for( auto v :d ) {
-    os << v.name << ' ' << dtype2name( v.dtype ) << ' ' << v.n << NL;
+    std_out << v.name << ' ' << dtype2name( v.dtype ) << ' ' << v.n << NL;
   }
 }
 
 int Datas::dump( const char *nm ) const
 {
-  STDOUT_os;
   if( !nm || !*nm ) {
     for( auto p : d ) {
-      os << "# " << p.name << "= [ ";
+      std_out << "# " << p.name << "= [ ";
       dump_inner( &p );
     }
     return 1;
@@ -528,7 +525,7 @@ int Datas::dump( const char *nm ) const
 
   auto p = find_nm( nm );
   if( p != d.end() ) {
-    os << "#  " << nm << " = [ ";
+    std_out << "#  " << nm << " = [ ";
     dump_inner( &(*p) );
     return 1;
   }
@@ -536,23 +533,23 @@ int Datas::dump( const char *nm ) const
   DataType dt;
   void *pv = ptr( nm, dt, false );
   if( pv ) {
-    os << "#  " << nm << " =  ";
+    std_out << "#  " << nm << " =  ";
     switch( dt ) {
       case DataType::t_int :
-            os << (*(int*)pv);
+            std_out << (*(int*)pv);
             break;
       case DataType::t_float :
-            os << (*(float*)pv);
+            std_out << (*(float*)pv);
             break;
       default:
-            os << "Unknown type " << (int)dt << NL;
+            std_out << "Unknown type " << (int)dt << NL;
             return 0;
     }
 
     return 1;
   }
 
-  os << "# error: \"" << nm << "\" not found" << NL;
+  std_out << "# error: \"" << nm << "\" not found" << NL;
   return 0;
 }
 
@@ -561,22 +558,21 @@ void Datas::dump_inner( const DataInfo *p ) const
   if( !p ) {
     return;
   }
-  STDOUT_os;
 
   if( p->dtype == DataType::t_int ) {
     const int *x = p->d_i;
     for( unsigned i=0; i<p->n; ++i ) {
-      os << x[i] << ' ';
+      std_out << x[i] << ' ';
     }
   } else if( p->dtype == DataType::t_float ) {
     const float *x = p->d_f;
     for( unsigned i=0; i<p->n; ++i ) {
-      os << x[i] << ' ';
+      std_out << x[i] << ' ';
     }
   } else {
-    os << " ?type_ " << int(p->dtype );
+    std_out << " ?type_ " << int(p->dtype );
   }
-  os << "] " << dtype2name( p->dtype ) << " [" << p->n << "] "
+  std_out << "] " << dtype2name( p->dtype ) << " [" << p->n << "] "
      << ( (p->ro) ? "ro" : "" ) << NL;
 }
 
@@ -592,7 +588,6 @@ int Engine::parseCmd( const char *s, Cmd &cmd )
     return 0;
   }
   skip_ws( s );
-  STDOUT_os;
 
   const char *eptr;
   auto fi = findFunc( s, &eptr );
@@ -604,7 +599,7 @@ int Engine::parseCmd( const char *s, Cmd &cmd )
       case 2: cmd.op = CmdOp::fun2; break;
       case 3: cmd.op = CmdOp::fun3; break;
       default:
-              os << "# err: bad func argns number " << fi->narg << NL;
+              std_out << "# err: bad func argns number " << fi->narg << NL;
               return 0;
     }
     cmd.d_i = reinterpret_cast<int*>( fi->ptr );
@@ -613,7 +608,7 @@ int Engine::parseCmd( const char *s, Cmd &cmd )
 
   auto oi = findCmdOp( s, &eptr );
   if( !oi ) {
-    os << "# err: unknown cmd \"" << s << '\"' << NL;
+    std_out << "# err: unknown cmd \"" << s << '\"' << NL;
     return 0;
   }
   s = eptr;
@@ -623,7 +618,7 @@ int Engine::parseCmd( const char *s, Cmd &cmd )
     skip_ws( s );
     int rc = datas.parse_arg( s, cmd );
     if( !rc ) {
-      os << "# err: fail to parse arg: \"" << s << "\" " << NL;
+      std_out << "# err: fail to parse arg: \"" << s << "\" " << NL;
       return 0;
     }
   }
@@ -702,37 +697,33 @@ int Engine::execCmdStr( const char *s )
 
 void Engine::dumpState() const
 {
-  STDOUT_os;
-  os << "# state: x= " << x << " y= " << y << " z= " << z << " tmp= " << tmp << NL;
+  std_out << "# state: x= " << x << " y= " << y << " z= " << z << " tmp= " << tmp << NL;
 }
 
 void Engine::listPgm() const
 {
-  STDOUT_os;
-  os << "# program: " << NL;
+  std_out << "# program: " << NL;
   int n = 0;
   for( const auto &c : pgm ) {
-    os << "# " << n << ' ';
+    std_out << "# " << n << ' ';
     dumpCmd( c );
     ++n;
-    os << NL;
+    std_out << NL;
   };
 }
 
 void Engine::dumpCmd( const Cmd &c ) const
 {
-  STDOUT_os;
-
   const CmdOpInfo *poi = nullptr;
   for( const auto &oi : cmdOpInfos ) {
     if( c.op == oi.op ) {
       poi = &oi;
-      os << oi.nm;
+      std_out << oi.nm;
       break;
     }
   }
   if( ! poi ) {
-    os << "??? " << (int)(c.op) << NL;
+    std_out << "??? " << (int)(c.op) << NL;
     return;
   }
 
@@ -742,12 +733,12 @@ void Engine::dumpCmd( const Cmd &c ) const
     bool fun_found = false;
     for( const auto &fi : funcInfos ) {
       if( (void*)(c.d_i) == (void*)(fi.ptr) ) {
-        os << fi.nm; fun_found = true;
+        std_out << fi.nm; fun_found = true;
         break;
       }
     }
     if( ! fun_found ) {
-      os << "Unknown_fun";
+      std_out << "Unknown_fun";
     }
     return; // no
   }
@@ -756,8 +747,8 @@ void Engine::dumpCmd( const Cmd &c ) const
     return; // all non-one arg: special case
   }
 
-  // os << " 0x" << HexInt( c.d_i );
-  os << ' ';
+  // std_out << " 0x" << HexInt( c.d_i );
+  std_out << ' ';
   auto dt = c.dtype;
   switch( dt ) {
     case DataType::t_int:
@@ -765,25 +756,24 @@ void Engine::dumpCmd( const Cmd &c ) const
       dumpArg( c );
       break;
     case DataType::t_int_i:
-      os << c.i; break;
+      std_out << c.i; break;
     case DataType::t_float_i:
-      os << c.f; break;
+      std_out << c.f; break;
     default:
-      os <<  "?type " << (int)(dt); break;
+      std_out <<  "?type " << (int)(dt); break;
   }
 }
 
 void Engine::dumpArg( const Cmd &c ) const
 {
-  STDOUT_os;
   int idx = 0;
   if( auto di = datas.findPtr( c.d_i, idx ) ) {
-    os << di->name;
+    std_out << di->name;
     if( di->n > 1 ) {
-      os << '[' << idx << ']';
+      std_out << '[' << idx << ']';
     }
   }
-  os << " ;   0x" << HexInt( c.d_i ) << ' ' << dtype2name( c.dtype );
+  std_out << " ;   0x" << HexInt( c.d_i ) << ' ' << dtype2name( c.dtype );
 }
 
 

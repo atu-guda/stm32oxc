@@ -58,19 +58,18 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  STDOUT_os;
   int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
   uint32_t t_step = UVAR('t');
-  os << NL "Test0: n= " <<  n <<  " t= " << t_step << NL;
-  os.flush();
+  std_out << NL "Test0: n= " <<  n <<  " t= " << t_step << NL;
+  std_out.flush();
 
   uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
 
   break_flag = 0;
   for( int i=0; i<n && !break_flag; ++i ) {
     uint32_t tmc = HAL_GetTick();
-    os << " Fake Action i= "  << i <<  " tick: " << ( tmc - tm00 ) << NL;
-    os.flush();
+    std_out << " Fake Action i= "  << i <<  " tick: " << ( tmc - tm00 ) << NL;
+    std_out.flush();
     if( UVAR('w') ) {
        dev_console.wait_eot();
     }

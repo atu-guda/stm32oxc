@@ -59,12 +59,11 @@ int cmd_test0( int argc, const char * const * argv )
   int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
   uint32_t t_step = UVAR('t');
 
-  STDOUT_os;
-  os <<  NL "Test0: n= "  <<  n  <<  " t= "  <<  t_step   <<  NL;
+  std_out <<  NL "Test0: n= "  <<  n  <<  " t= "  <<  t_step   <<  NL;
 
-  os <<  "Current delay_calibrate_value= "  <<  delay_calibrate_value  <<  NL;
+  std_out <<  "Current delay_calibrate_value= "  <<  delay_calibrate_value  <<  NL;
   do_delay_calibrate();
-  os <<  "New delay_calibrate_value= "  <<  delay_calibrate_value  <<  NL;
+  std_out <<  "New delay_calibrate_value= "  <<  delay_calibrate_value  <<  NL;
 
   UVAR('z') = _write( 1, "ABCDEFGH", 6 );
   putchar( 'X' );
@@ -79,7 +78,7 @@ int cmd_test0( int argc, const char * const * argv )
   for( int i=0; i<n && !break_flag; ++i ) {
     uint32_t tcc = HAL_GetTick();
 
-    os << "Fake Action i= " <<  i <<  "  tick: " <<  tcc - tm00 << NL;
+    std_out << "Fake Action i= " <<  i <<  "  tick: " <<  tcc - tm00 << NL;
 
     // delay_ms_until_brk( &tm0, t_step );
     delay_bad_ms( t_step );

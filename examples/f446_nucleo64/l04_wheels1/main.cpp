@@ -110,8 +110,7 @@ int main(void)
 
 void print_tim_info( TIM_TypeDef *tim, const char *tname )
 {
-  STDOUT_os;
-  os << "# " << tname;
+  std_out << "# " << tname;
   tim_print_cfg( tim );
 }
 
@@ -119,8 +118,7 @@ void print_tim_info( TIM_TypeDef *tim, const char *tname )
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  STDOUT_os;
-  os <<  NL "Test0: " NL;
+  std_out <<  NL "Test0: " NL;
   print_tim_info( TIM1, "TIM1" );
   print_tim_info( TIM3, "TIM3" );
   print_tim_info( TIM4, "TIM4" );
@@ -140,8 +138,7 @@ int cmd_go( int argc, const char * const * argv )
   int r_w  = arg2long_d( 2, argc, argv,   50, -100, 100 );
   int l_w  = arg2long_d( 3, argc, argv,  r_w, -100, 100 );
 
-  STDOUT_os;
-  os <<  NL "go: t= "  <<  t  <<  " r= "  <<  r_w  <<  " l= "  <<  l_w  << NL;
+  std_out <<  NL "go: t= "  <<  t  <<  " r= "  <<  r_w  <<  " l= "  <<  l_w  << NL;
 
   uint8_t bits = r_w > 0 ?    1 : 0;
   bits        |= r_w < 0 ?    2 : 0;
@@ -163,13 +160,13 @@ int cmd_go( int argc, const char * const * argv )
   for( ; t > 0 && !break_flag && !proxy_flag; t -= go_tick ) {
 
     if( ( r_w + l_w ) > 0 && UVAR('l') < us_forward_min ) {
-      os <<  "Minimal forward US distance detected "  << UVAR('l') <<  NL;
+      std_out <<  "Minimal forward US distance detected "  << UVAR('l') <<  NL;
       break;
     }
 
     uint16_t prox = ~proxy_sens.read() & 0x0F; // inverse senors
     if( prox ) {
-      os <<  "Prox: "  << HexInt(  prox )  <<  NL;
+      std_out <<  "Prox: "  << HexInt(  prox )  <<  NL;
       if( ( r_w > 0 && prox & PROXY_FR ) ||
           ( r_w < 0 && prox & PROXY_BR ) ||
           ( l_w > 0 && prox & PROXY_FL ) ||
@@ -184,11 +181,11 @@ int cmd_go( int argc, const char * const * argv )
   motor_dir.reset( motor_bits );
   set_motor_pwm( 0, 0 );
   if( break_flag ) {
-    os <<  "Break!" NL;
+    std_out <<  "Break!" NL;
   }
 
   cnt_l = TIM4->CNT - cnt_l0, cnt_r = TIM3->CNT - cnt_r0; // TODO: * direction
-  os <<  "Counts: left: "  <<  cnt_l << " right: " <<  cnt_r  <<  NL;
+  std_out <<  "Counts: left: "  <<  cnt_l << " right: " <<  cnt_r  <<  NL;
 
 
   return 0;
@@ -214,16 +211,14 @@ int cmd_us_dir( int argc, const char * const * argv )
 
   set_us_dir( dir );
 
-  STDOUT_os;
-  os <<  NL "us_dir: "  <<  us_dir << NL;
+  std_out <<  NL "us_dir: "  <<  us_dir << NL;
 
   return 0;
 }
 
 int cmd_us_scan( int argc, const char * const * argv )
 {
-  STDOUT_os;
-  os <<  NL "us_scan: "  <<  us_dir << NL;
+  std_out <<  NL "us_scan: "  <<  us_dir << NL;
   set_us_dir( us_scan_min ); // to settle before
   delay_ms( 300 );
   for( int i=0, d = us_scan_min; i < us_scan_n && d <= us_scan_max; ++i, d += us_scan_step ) {
@@ -231,7 +226,7 @@ int cmd_us_scan( int argc, const char * const * argv )
     delay_ms( 200 );
     int l = UVAR('c');
     us_scans[ i ] = l;
-    os <<  d  <<  ' '  <<  l  <<  NL;
+    std_out <<  d  <<  ' '  <<  l  <<  NL;
   }
   set_us_dir( 0 );
   delay_ms( 500 );

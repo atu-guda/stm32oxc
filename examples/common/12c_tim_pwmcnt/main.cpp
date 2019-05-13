@@ -76,11 +76,10 @@ int cmd_test0( int argc, const char * const * argv )
 {
   int t = arg2long_d( 1, argc, argv, UVAR('t'), 10, 100000 );
   int n = arg2long_d( 1, argc, argv, UVAR('n'),  1,  10000 );
-  STDOUT_os;
 
   int pbase = TIM_EXA->ARR;
   tim_print_cfg( TIM_EXA );
-  os << "# T = " << t << NL;
+  std_out << "# T = " << t << NL;
 
   for( int i=0; i<n && !break_flag; ++i ) {
     int v = (i+1) * UVAR('s');
@@ -91,7 +90,7 @@ int cmd_test0( int argc, const char * const * argv )
     TIM_IN->CNT = 0;
     delay_ms_brk( t );
     uint32_t cnt = TIM_IN->CNT;
-    os << i << ' ' << v << ' ' << cnt << NL;
+    std_out << i << ' ' << v << ' ' << cnt << NL;
   }
   TIM_EXA->CCR1 = 0;
 

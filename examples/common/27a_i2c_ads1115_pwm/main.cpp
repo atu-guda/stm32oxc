@@ -99,7 +99,6 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  STDOUT_os;
   uint32_t t_step = UVAR('t');
   uint32_t n_ch = clamp( UVAR('c'), 1, (int)n_ADC_ch_max );
 
@@ -117,17 +116,17 @@ int cmd_test0( int argc, const char * const * argv )
   UVAR('e') = adc.setCfg( cfg );
   uint16_t x_cfg = adc.getDeviceCfg();
   int scale_mv = adc.getScale_mV();
-  os <<  "# cfg= " << HexInt16( x_cfg ) << " scale_mv = " << scale_mv << NL;
+  std_out <<  "# cfg= " << HexInt16( x_cfg ) << " scale_mv = " << scale_mv << NL;
 
   int16_t ADC_buf[n_ADC_ch_max];
   sreal kv = 0.001f * scale_mv / 0x7FFF;
 
-  os << "# n = " << n << " n_ch= " << n_ch << " t_step= " << t_step << NL;
-  os << "# skip_pwm= " << skip_pwm << NL << "# Coeffs: ";
+  std_out << "# n = " << n << " n_ch= " << n_ch << " t_step= " << t_step << NL;
+  std_out << "# skip_pwm= " << skip_pwm << NL << "# Coeffs: ";
   for( decltype(n_ch) j=0; j<n_ch; ++j ) {
-    os << ' ' << v_coeffs[j];
+    std_out << ' ' << v_coeffs[j];
   }
-  os << NL;
+  std_out << NL;
 
   leds.set(   BIT0 | BIT1 | BIT2 ); delay_ms( 100 );
   leds.reset( BIT0 | BIT1 | BIT2 );
@@ -159,12 +158,12 @@ int cmd_test0( int argc, const char * const * argv )
     unsigned no = adc.getOneShotNch( 0, e_ch, ADC_buf );
     if( UVAR('l') ) {  leds.reset( BIT2 ); }
     if( no != n_ch ) {
-      os << "# Error: read only " << no << " channels" << NL;
+      std_out << "# Error: read only " << no << " channels" << NL;
       break;
     }
 
     if( do_out ) {
-      os <<  FltFmt( tc, cvtff_auto, 12, 4 );
+      std_out <<  FltFmt( tc, cvtff_auto, 12, 4 );
     }
     for( decltype(n_ch) j=0; j<n_ch; ++j ) {
       sreal cv = kv * ADC_buf[j] * v_coeffs[j];
@@ -175,9 +174,9 @@ int cmd_test0( int argc, const char * const * argv )
 
     if( do_out ) {
       for( auto vc : v ) {
-        os  << ' '  <<  vc;
+        std_out  << ' '  <<  vc;
       }
-      os << NL;
+      std_out << NL;
     }
 
     delay_ms_until_brk( &tm0, t_step );
@@ -186,7 +185,7 @@ int cmd_test0( int argc, const char * const * argv )
   pwmdat.end_run();
 
   sdat.calc();
-  os << sdat << NL;
+  std_out << sdat << NL;
 
   delay_ms( 10 );
 
@@ -238,10 +237,9 @@ void tim_cfg()
 int cmd_pwm( int argc, const char * const * argv )
 {
   float v = arg2float_d( 1, argc, argv, 10.0f, 0.0f, 100.0f );
-  STDOUT_os;
   pwmdat.set_v_manual( v );
   tim_print_cfg( TIM_EXA );
-  os << NL "PWM:  in: " << pwmdat.get_v() << "  real: " << pwmdat.get_v_real() << NL;
+  std_out << NL "PWM:  in: " << pwmdat.get_v() << "  real: " << pwmdat.get_v_real() << NL;
   return 0;
 }
 
@@ -263,8 +261,7 @@ int cmd_set_coeffs( int argc, const char * const * argv )
     v_coeffs[2] = arg2float_d( 3, argc, argv, 1, -1e10f, 1e10f );
     v_coeffs[3] = arg2float_d( 4, argc, argv, 1, -1e10f, 1e10f );
   }
-  STDOUT_os;
-  os << "# Coefficients: "
+  std_out << "# Coefficients: "
      << v_coeffs[0] << ' ' << v_coeffs[1] << ' ' << v_coeffs[2] << ' ' << v_coeffs[3] << NL;
   return 0;
 }

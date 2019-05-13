@@ -156,8 +156,7 @@ int cmd_test0( int argc, const char * const * argv )
   int dir    = arg2long_d( 3, argc, argv, 0, 0, 1 );
   int n_step = arg2long_d( 4, argc, argv, UVAR('n'), 1, 10000 );
   uint32_t t_step = UVAR('t');
-  STDOUT_os;
-  os <<  NL "Test0: ts= " <<  ts << " tg= " <<  tg << " t= " <<  t_step
+  std_out <<  NL "Test0: ts= " <<  ts << " tg= " <<  tg << " t= " <<  t_step
      <<  " n_step= " << n_step << NL;
 
   leds.reset( 1 );

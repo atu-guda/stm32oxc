@@ -46,41 +46,40 @@ void dump8( const void *addr, int n, bool isAbs  )
     return;
   }
   unsigned const char* ad0 = isAbs ? ad : nullptr; // left label
-  STDOUT_os;
-  os << NL;
+  std_out << NL;
 
   int i, row, bs;
   int nr = (n+15) >> 4; // non-full rows counting too
   for( row = 0; row < nr; ++row ) {
-    os << HexInt( (void*)ad0 ) << ": ";
+    std_out << HexInt( (void*)ad0 ) << ": ";
     bs = row << 4;
     for( i=0; i<16 && (i+bs)<n; ++i ) {
-      os << HexInt8( ad[i+bs] ) << ' ';
+      std_out << HexInt8( ad[i+bs] ) << ' ';
       if( (i&3) == 3 ) {
-        os << ": ";
+        std_out << ": ";
       }
     }
 
-    os << "|  ";
+    std_out << "|  ";
     char b;
     for( i=0; i<16 && (i+bs)<n; ++i ) {
       b = '.';
       if( ad[i+bs] >= ' ' ) {
         b = ad[i+bs];
       }
-      os.append( b );
+      std_out.append( b );
       if( (i&3) == 3 ) {
-        os << ' ';
+        std_out << ' ';
       }
     }
-    os << NL;
-    os.flush();
+    std_out << NL;
+    std_out.flush();
     ad0 += 16;
 
   }
 
-  os << "--------------------------------------" NL;
-  os.flush();
+  std_out << "--------------------------------------" NL;
+  std_out.flush();
 }
 
 
@@ -120,22 +119,20 @@ void log_reset()
 void log_print()
 {
   if( log_buf_idx > 0 ) {
-    STDOUT_os;
-    os <<  gbuf_b <<  NL <<  "log_buf_idx " <<  log_buf_idx << NL;
+    std_out <<  gbuf_b <<  NL <<  "log_buf_idx " <<  log_buf_idx << NL;
     delay_ms( 100 );
   }
 }
 
 void print_user_var( int idx )
 {
-  STDOUT_os;
   if( idx < 0  ||  idx >= (int)N_USER_VARS ) {
-    os << NL "err: bad var index: " << idx;
+    std_out << NL "err: bad var index: " << idx;
     return;
   }
   char b[] = "0 = ";
   b[0] = (char)( 'a' + idx );
-  os << b << ( user_vars[idx] ) << " = "  << HexInt( user_vars[idx], true ) << NL;
+  std_out << b << ( user_vars[idx] ) << " = "  << HexInt( user_vars[idx], true ) << NL;
 }
 
 //----------------------------------------------------------------------
@@ -202,34 +199,33 @@ void gpio_pin_info( GPIO_TypeDef *gi, uint16_t pin, char *s )
 //
 int cmd_info( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
 {
-  STDOUT_os;
-  os << NL "**** " PROJ_NAME " **** " NL;
+  std_out << NL "**** " PROJ_NAME " **** " NL;
 
-  os << "SYSCLK: " << HAL_RCC_GetSysClockFreq()
+  std_out << "SYSCLK: " << HAL_RCC_GetSysClockFreq()
      << " HCLK: "  << HAL_RCC_GetHCLKFreq()
      << " PCLK1: " << HAL_RCC_GetPCLK1Freq()
      << " PCLK2: " << HAL_RCC_GetPCLK2Freq()
      << " HSE_VALUE: " << HSE_VALUE
      << " SystemCoreClock: " << SystemCoreClock << NL;
 
-  os << "errno= " << errno << " sigint_count="  << sigint_count << NL
+  std_out << "errno= " << errno << " sigint_count="  << sigint_count << NL
      << "dbg_val0= "  << dbg_val0 <<  " = "  << HexInt( dbg_val0, true )
      << " dbg_val1= " << dbg_val1 <<  " = "  << HexInt( dbg_val1, true ) << NL
      << "dbg_val2= "  << dbg_val2 <<  " = "  << HexInt( dbg_val2, true )
      << " dbg_val3= " << dbg_val3 <<  " = "  << HexInt( dbg_val3, true ) << NL;
 
-  os << "_sdata= 0x" << HexInt( (uint32_t)(&_sdata) ) << " _edata= 0x"  << HexInt( (uint32_t)(&_edata)  )
+  std_out << "_sdata= 0x" << HexInt( (uint32_t)(&_sdata) ) << " _edata= 0x"  << HexInt( (uint32_t)(&_edata)  )
      << " _sbss= 0x" << HexInt( (uint32_t)(&_sbss)  ) << " _ebss=  0x"  << HexInt( (uint32_t)(&_ebss)   )
      << " _end= 0x"  << HexInt( (uint32_t)(&_end)   ) << " _estack= 0x" << HexInt( (uint32_t)(&_estack) );
 
   uint32_t c_msp = __get_MSP(), c_psp = __get_PSP();
-  os << NL "MSP=   " << HexInt( c_msp, true ) <<  " PSP= " << HexInt( c_psp, true )
+  std_out << NL "MSP=   " << HexInt( c_msp, true ) <<  " PSP= " << HexInt( c_psp, true )
      << "  __heap_top=   " << HexInt( (uint32_t)__heap_top, true )
      << " MSP-__heap_top = " << ((unsigned)c_msp - (unsigned)(__heap_top) )
      << NL;
 
   uint32_t prio_grouping = HAL_NVIC_GetPriorityGrouping();
-  os << "prio_grouping= " << prio_grouping << NL;
+  std_out << "prio_grouping= " << prio_grouping << NL;
 
   uint32_t prio_preempt, prio_sub;
   struct OutIrqName {
@@ -256,7 +252,7 @@ int cmd_info( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
 
   for( auto iqn : irqs ) {
     HAL_NVIC_GetPriority( iqn.IRQn, prio_grouping, &prio_preempt, &prio_sub );
-    os << iqn.nm << " (" << iqn.IRQn <<  ")  preempt= " <<  prio_preempt << " sub= " <<  prio_sub << NL;
+    std_out << iqn.nm << " (" << iqn.IRQn <<  ")  preempt= " <<  prio_preempt << " sub= " <<  prio_sub << NL;
   }
   delay_ms( 50 );
 
@@ -264,7 +260,7 @@ int cmd_info( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
 
   #if defined(USE_FREERTOS) && ( USE_FREERTOS != 0 )
     const char *nm = pcTaskGetName( 0 );
-    os <<  "task: \"" <<  nm << "\" tick_count: " << xTaskGetTickCount() << "  prty: " << uxTaskPriorityGet( 0 )
+    std_out <<  "task: \"" <<  nm << "\" tick_count: " << xTaskGetTickCount() << "  prty: " << uxTaskPriorityGet( 0 )
        << " highStackWaterMark= " << uxTaskGetStackHighWaterMark( 0 ) << NL;
   #endif
   errno = 0;
@@ -274,10 +270,9 @@ CmdInfo CMDINFO_INFO {  "info",  0, cmd_info,       " - Output general info" };
 
 int cmd_echo( int argc, const char * const * argv )
 {
-  STDOUT_os;
-  os << NL << "argc= " << argc << NL;
+  std_out << NL << "argc= " << argc << NL;
   for( int i=0; i<argc; ++i ) {
-    os << " arg" << i << " = \"" << argv[i] << "\"" NL;
+    std_out << " arg" << i << " = \"" << argv[i] << "\"" NL;
   }
   return 0;
 }
@@ -287,23 +282,22 @@ const char* common_help_string = "Default help " NL;
 
 int cmd_help( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
 {
-  STDOUT_os;
-  os << common_help_string;
-  os << NL "commands:" NL;
+  std_out << common_help_string;
+  std_out << NL "commands:" NL;
   char b1[2]; b1[0] = b1[1] = 0;
 
   for( int i=0; global_cmds[i] && i<CMDS_NMAX; ++i ) {
     if( global_cmds[i]->name == 0 ) {
       break;
     }
-    os << global_cmds[i]->name << ' ' << global_cmds[i]->hint << ' ';
+    std_out << global_cmds[i]->name << ' ' << global_cmds[i]->hint << ' ';
     if( global_cmds[i]->acr != 0 ) {
-      os << " (" << global_cmds[i]->acr << ')';
+      std_out << " (" << global_cmds[i]->acr << ')';
     }
-    os << NL;
+    std_out << NL;
   }
   // see oxc_smallrl.cpp : SMLRL::SmallRL::handle_nl
-  os <<  ".h - history " NL
+  std_out <<  ".h - history " NL
      <<  ".v - more verbose " NL
      <<  ".q - no verbose " NL;
   return 0;
@@ -316,17 +310,16 @@ int cmd_dump( int argc, const char * const * argv )
     return 1;
   }
 
-  STDOUT_os;
   const char* addr = str2addr( argv[1] );
   if( addr == BAD_ADDR ) {
-    os << "** error: dump: bad address \""  <<  argv[1] << "\"" NL;
+    std_out << "** error: dump: bad address \""  <<  argv[1] << "\"" NL;
     return 2;
   }
 
   int n = arg2long_d( 2, argc, argv, 1, 1, 0x8000 );
   int isAbs = arg2long_d( 3, argc, argv, 0, 0, 1 );
 
-  os << NL "** dump: argc=" << argc << " addr=" << HexInt( (void*)addr ) << " n= " << n << NL;
+  std_out << NL "** dump: argc=" << argc << " addr=" << HexInt( (void*)addr ) << " n= " << n << NL;
   dump8( addr, n, isAbs );
   return 0;
 }
@@ -338,10 +331,9 @@ int cmd_fill( int argc, const char * const * argv )
     return 1;
   }
 
-  STDOUT_os;
   char* addr = str2addr( argv[1] );
   if( addr == BAD_ADDR ) {
-    os << "** error: fill: bad address \"" << argv[1] << "\"" NL;
+    std_out << "** error: fill: bad address \"" << argv[1] << "\"" NL;
     return 2;
   }
 
@@ -357,13 +349,13 @@ int cmd_fill( int argc, const char * const * argv )
   int n = arg2long_d( 3, argc, argv, 1, 1, 0xFFFF );
   uint8_t stp = (uint8_t)arg2long_d( 4, argc, argv, 0, 0, 0xFF );
 
-  os <<  "** fill: addr=" << HexInt( (void*)addr )
+  std_out <<  "** fill: addr=" << HexInt( (void*)addr )
      << " v= " << v << " n= " << n << " stp= " << stp << NL;
 
   for( int i=0; i<n; ++i, ++addr ) {
     *addr = v; v+=stp;
   }
-  os << NL "---------- done---------------" NL;
+  std_out << NL "---------- done---------------" NL;
   return 0;
 }
 CmdInfo CMDINFO_FILL { "fill",  0, cmd_fill, " {a|b|addr} val [n] [stp] - Fills memory by value"  };
@@ -371,8 +363,6 @@ CmdInfo CMDINFO_FILL { "fill",  0, cmd_fill, " {a|b|addr} val [n] [stp] - Fills 
 
 int cmd_pvar( int argc, const char * const * argv )
 {
-  STDOUT_os;
-
   if( argc < 2 ) { // all
     for( unsigned i=0; i<N_USER_VARS; ++i ) {
       print_user_var( i );
@@ -396,7 +386,7 @@ int cmd_pvar( int argc, const char * const * argv )
   // build-in int vars with one-char named
   char c = argv[1][0];
   if( argv[1][1] != '\0' || c < 'a' || c > 'z' ) {
-    os << "# Error: problem with name \"" << argv[1] << '"' << NL;
+    std_out << "# Error: problem with name \"" << argv[1] << '"' << NL;
     return 2;
   }
   int idx = c - 'a';
@@ -408,9 +398,8 @@ CmdInfo CMDINFO_PVAR { "print", 'p', cmd_pvar, "name - print user var a-z"  };
 
 int cmd_svar( int argc, const char * const * argv )
 {
-  STDOUT_os;
   if( argc != 3 ) {
-    os << "# Error: bad number of arguments: s var value" << NL;
+    std_out << "# Error: bad number of arguments: s var value" << NL;
     return 1;
   }
 
@@ -420,7 +409,7 @@ int cmd_svar( int argc, const char * const * argv )
 
   int idx = argv[1][0] - 'a';
   if( idx < 0 || idx >= (int)N_USER_VARS || argv[1][1] != '\0' ) {
-    os << "# Error: problem with name \"" << argv[1] << '"' << NL;
+    std_out << "# Error: problem with name \"" << argv[1] << '"' << NL;
     return 2;
   }
 
@@ -493,14 +482,13 @@ int cmd_pin_info( int argc, const char * const * argv )
     }
   }
 
-  STDOUT_os;
-  os << NL "Port " << pstr << " addr: " << HexInt( (void*)gi ) << NL;
+  std_out << NL "Port " << pstr << " addr: " << HexInt( (void*)gi ) << NL;
 
   for( uint16_t p = pin, i=0; p<16 && i<n; ++p, ++i ) {
     gpio_pin_info( gi, p, s );
-    os << " pin: " <<  p << ": " << s << NL;
+    std_out << " pin: " <<  p << ": " << s << NL;
   }
-  os.flush();
+  std_out.flush();
   dump8( gi, (sizeof(*gi)+15) & 0xF0 );
 
   return 0;
@@ -511,8 +499,7 @@ int cmd_set_leds_step( int argc, const char * const * argv )
 {
   uint32_t nstep = arg2long_d( 1, argc, argv, 50, 1, 100000 ); // number output series
   task_leds_step = nstep;
-  STDOUT_os;
-  os << "LEDS step is set to " << task_leds_step << " = "  << task_leds_step * TASK_LEDS_QUANT << " ms" NL;
+  std_out << "LEDS step is set to " << task_leds_step << " = "  << task_leds_step * TASK_LEDS_QUANT << " ms" NL;
   return 0;
 }
 CmdInfo CMDINFO_LSTEP { "leds_step", 0, cmd_set_leds_step, " [N] - set leds step in 10 ms "  };

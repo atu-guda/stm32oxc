@@ -206,15 +206,14 @@ int main(void)
 
 bool isGoodINA226( INA226 &ina, bool print )
 {
-  STDOUT_os;
   uint16_t id_manuf = ina.readReg( INA226::reg_id_manuf );
   uint16_t id_dev   = ina.readReg( INA226::reg_id_dev );
   if( print ) {
-    os << "# id_manuf= " << HexInt16( id_manuf ) << "  id_dev= " << HexInt16( id_dev ) << NL;
+    std_out << "# id_manuf= " << HexInt16( id_manuf ) << "  id_dev= " << HexInt16( id_dev ) << NL;
   }
   if( id_manuf != INA226::id_manuf || id_dev != INA226::id_dev ) {
     if( print ) {
-      os << "# Error: bad V/I sensor ids!" << NL;
+      std_out << "# Error: bad V/I sensor ids!" << NL;
     }
     return false;
   }
@@ -223,21 +222,19 @@ bool isGoodINA226( INA226 &ina, bool print )
 
 bool init_INA()
 {
-  STDOUT_os;
-
   ina226.setCfg( INA226::cfg_rst );
   if( ! isGoodINA226( ina226, true ) ) {
     return false;
   }
   uint16_t x_cfg = ina226.getCfg();
-  os <<  "# init_INA:  cfg= " <<  HexInt16( x_cfg ) << NL;
+  std_out <<  "# init_INA:  cfg= " <<  HexInt16( x_cfg ) << NL;
 
 
   uint16_t cfg = INA226::cfg_default;
   UVAR('e') = ina226.setCfg( cfg );
   x_cfg = ina226.getCfg();
   ina226.calibrate();
-  os << "# cfg= " << HexInt16( x_cfg ) <<  " I_lsb_mA= " << ina226.get_I_lsb_mA()
+  std_out << "# cfg= " << HexInt16( x_cfg ) <<  " I_lsb_mA= " << ina226.get_I_lsb_mA()
      << " R_sh_uOhm= " << ina226.get_R_sh_uOhm() << NL;
   return true;
 }
@@ -270,7 +267,6 @@ bool measure_and_calc( float *v )
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  STDOUT_os;
   uint32_t t_step = UVAR('t');
   unsigned n_ch = 2;
   uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 1000000 ); // number of series
@@ -283,12 +279,12 @@ int cmd_test0( int argc, const char * const * argv )
     return 3;
   }
 
-  os <<  "# test0: n= " <<  n <<  " t= " <<  t_step <<  " skip_pwm= " << skip_pwm << NL << "# Coeffs: ";
+  std_out <<  "# test0: n= " <<  n <<  " t= " <<  t_step <<  " skip_pwm= " << skip_pwm << NL << "# Coeffs: ";
   for( decltype(+n_ch) j=0; j<n_ch; ++j ) {
-    os << ' ' << v_coeffs[j];
+    std_out << ' ' << v_coeffs[j];
   }
-  os << NL;
-  os << "#        t           V           I         pwm           R           W         val" << NL;
+  std_out << NL;
+  std_out << "#        t           V           I         pwm           R           W         val" << NL;
 
   leds.set(   BIT0 | BIT1 | BIT2 ); delay_ms( 100 );
   leds.reset( BIT0 | BIT1 | BIT2 );
@@ -314,17 +310,17 @@ int cmd_test0( int argc, const char * const * argv )
     sdat.add( v );
 
     if( do_out ) {
-      os <<  FltFmt( tc, cvtff_auto, 10, 3 );
+      std_out <<  FltFmt( tc, cvtff_auto, 10, 3 );
       for( auto vc : v ) {
-        os  << ' '  <<  vc;
+        std_out  << ' '  <<  vc;
       }
-      os << NL;
+      std_out << NL;
     }
 
     handle_keys();
 
     if( ! pwmdat.tick( v ) ) {
-      os << "# tick break!" << NL;
+      std_out << "# tick break!" << NL;
       break;
     }
 
@@ -334,7 +330,7 @@ int cmd_test0( int argc, const char * const * argv )
   pwmdat.end_run();
 
   sdat.calc();
-  os << sdat << NL;
+  std_out << sdat << NL;
 
   delay_ms( 10 );
 
@@ -347,9 +343,8 @@ int cmd_setcalibr( int argc, const char * const * argv )
   float calibr_I_lsb = arg2float_d( 1, argc, argv, ina226.get_I_lsb_mA()  * 1e-3f, 1e-20f, 1e10f );
   float calibr_R     = arg2float_d( 2, argc, argv, ina226.get_R_sh_uOhm() * 1e-6f, 1e-20f, 1e10f );
   float V_sh_max =  INA226::lsb_V_sh_nv * 1e-9f * 0x7FFF;
-  STDOUT_os;
   ina226.set_calibr_val( (uint32_t)(calibr_R * 1e6f), (uint32_t)(calibr_I_lsb * 1e3f) );
-  os << "# calibr_I_lsb= " << calibr_I_lsb << " calibr_R= " << calibr_R
+  std_out << "# calibr_I_lsb= " << calibr_I_lsb << " calibr_R= " << calibr_R
      << " V_sh_max=  " << V_sh_max
      << " I_max= " << ( V_sh_max / calibr_R ) << " / " << ( calibr_I_lsb * 0x7FFF ) << NL;
   return 0;
@@ -414,10 +409,9 @@ int cmd_pwm( int argc, const char * const * argv )
   float vmax = 70.0f;
   objs.get( "pwm_max", vmax );
   float v = arg2float_d( 1, argc, argv, vdef, vmin, vmax );
-  STDOUT_os;
   pwmdat.set_pwm_manual( v );
   tim_print_cfg( TIM_EXA );
-  os << NL "# PWM:  in: " << pwmdat.get_v() << "  real: " << pwmdat.get_pwm_real() << NL;
+  std_out << NL "# PWM:  in: " << pwmdat.get_v() << "  real: " << pwmdat.get_pwm_real() << NL;
   return 0;
 }
 
@@ -441,9 +435,8 @@ int cmd_calibrate( int argc, const char * const * argv )
   unsigned n_steps = (unsigned) ceilf( ( vmax - vmin ) / pwm_step );
   float d_pwm[n_steps], d_v[n_steps], d_i[n_steps];
 
-  STDOUT_os;
-  os << "# Calibrating: vmin=" << vmin << " vmax= " << vmax << " n_steps= " << n_steps << NL;
-  os << "# N         pwm           V           I           R           W" << NL;
+  std_out << "# Calibrating: vmin=" << vmin << " vmax= " << vmax << " n_steps= " << n_steps << NL;
+  std_out << "# N         pwm           V           I           R           W" << NL;
 
   break_flag = 0;
   for( unsigned i=0; i<n_steps && !break_flag; ++i ) {
@@ -457,7 +450,7 @@ int cmd_calibrate( int argc, const char * const * argv )
       auto rc = pwmdat.check_lim( v );
       if( rc != PWMData::check_result::ok ) {
         break_flag = 2;
-        os << "# Error: limits! " << NL;
+        std_out << "# Error: limits! " << NL;
         break;
       }
     }
@@ -472,7 +465,7 @@ int cmd_calibrate( int argc, const char * const * argv )
       auto rc = pwmdat.check_lim( v );
       if( rc != PWMData::check_result::ok ) {
         break_flag = 2;
-        os << "# Error: limits! " << NL;
+        std_out << "# Error: limits! " << NL;
         break;
       }
       d_v[i] += v[didx_v];
@@ -481,14 +474,14 @@ int cmd_calibrate( int argc, const char * const * argv )
     if( break_flag ) { break; }
 
     d_v[i] /= n_measure; d_i[i] /= n_measure;
-    os << "# " << i << ' ' << pwm_v << ' ' << d_v[i] << ' ' << d_i[i] << ' ' 
+    std_out << "# " << i << ' ' << pwm_v << ' ' << d_v[i] << ' ' << d_i[i] << ' ' 
        << v[didx_r] << ' ' << v[didx_w] << NL;
   }
 
   pwmdat.set_pwm_manual( vmin );
 
   if( break_flag ) {
-    os << "# calibrtion exit by break!" << NL;
+    std_out << "# calibrtion exit by break!" << NL;
     return 2;
   }
   float R_0 = d_v[0] / d_i[0];
@@ -499,7 +492,7 @@ int cmd_calibrate( int argc, const char * const * argv )
   for( unsigned i=n_steps-1; i>0; --i ) {
     float diff_pwm_l =  d_pwm[i] - d_pwm[i-1];
     float diff_pwm_g =  d_pwm[n_steps-1] - d_pwm[i-1];
-    os << "# " << i << ' ';
+    std_out << "# " << i << ' ';
     if( fabsf( diff_pwm_l ) < 0.1f || fabsf( diff_pwm_g ) < 0.1f ) {
       continue;
     }
@@ -508,14 +501,14 @@ int cmd_calibrate( int argc, const char * const * argv )
     if( fabsf( ( k_g1 - k_l1 ) / k_g1 ) < 0.03f ) {
       i_lim = i; k_g = k_g1;
     }
-    os << "# " << i << ' ' << k_l1 << ' ' << k_g1 << NL;
+    std_out << "# " << i << ' ' << k_l1 << ' ' << k_g1 << NL;
   }
   float b = d_v[n_steps-1] - k_g * d_pwm[n_steps-1];
   float x_0 = - b / k_g;
   float k_2 = - k_g * k_g / ( 4 * b );
 
   // check
-  os << "# Check:" << NL;
+  std_out << "# Check:" << NL;
 
   float err_max = 0;
   for( unsigned i=0; i<n_steps; ++i ) {
@@ -530,14 +523,14 @@ int cmd_calibrate( int argc, const char * const * argv )
     if( err > err_max ) {
       err_max = err;
     }
-    os << "# " << i << ' ' << pwm << ' ' << v << err << NL;
+    std_out << "# " << i << ' ' << pwm << ' ' << v << err << NL;
   }
-  os << "# err_max= " << err_max << NL;
-  os << "# R_0= " << R_0 << " i_lim= " << i_lim << " k_g= " << k_g
+  std_out << "# err_max= " << err_max << NL;
+  std_out << "# R_0= " << R_0 << " i_lim= " << i_lim << " k_g= " << k_g
      << " b= " << b << " x_0= " << x_0 << " k_2= " << k_2 << NL;
 
   if( err_max > 0.3f ) {
-    os << "# Large approximation error!!! " << NL;
+    std_out << "# Large approximation error!!! " << NL;
     return 5;
   }
 

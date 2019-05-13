@@ -60,8 +60,7 @@ int cmd_test0( int argc, const char * const * argv )
 {
   int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
   uint32_t t_step = UVAR('t');
-  STDOUT_os;
-  os <<  NL "Test0: n= "  <<  n  <<  " t= "  <<  t_step <<  NL;
+  std_out <<  NL "Test0: n= "  <<  n  <<  " t= "  <<  t_step <<  NL;
 
   delay_ms( 10 );
 
@@ -73,7 +72,7 @@ int cmd_test0( int argc, const char * const * argv )
 
     uint16_t t_cnt = tim_h.Instance->CNT;
     if( t_cnt != old_cnt ) {
-      os <<  "["  <<  i <<  "]  CNT= "  <<  t_cnt <<  "  D= "  <<  t_cnt - old_cnt << NL;
+      std_out <<  "["  <<  i <<  "]  CNT= "  <<  t_cnt <<  "  D= "  <<  t_cnt - old_cnt << NL;
     }
     old_cnt = t_cnt;
 

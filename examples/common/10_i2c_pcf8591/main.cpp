@@ -62,8 +62,7 @@ int cmd_test0( int argc, const char * const * argv )
 {
   int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
   uint32_t t_step = UVAR('t');
-  STDOUT_os;
-  os << NL "Test0: n= " << n << " t= " << t_step << NL; os.flush();
+  std_out << NL "Test0: n= " << n << " t= " << t_step << NL; std_out.flush();
 
   int v_end = UVAR('e');
 
@@ -78,13 +77,13 @@ int cmd_test0( int argc, const char * const * argv )
   for( int i=0; i<n && !break_flag; ++i ) {
 
     adc.getIn( d_in, n_ch );
-    os << "[" << i << "]  ";
+    std_out << "[" << i << "]  ";
     for( int j=0; j<n_ch; ++j ) {
-      os << d_in[j] << ' ';
+      std_out << d_in[j] << ' ';
     }
     adc.setOut( i & 0xFF );
 
-    os << NL; os.flush();
+    std_out << NL; std_out.flush();
     delay_ms_until_brk( &tm0, t_step );
   }
   adc.setOut( v_end );

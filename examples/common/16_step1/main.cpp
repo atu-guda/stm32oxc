@@ -87,13 +87,12 @@ int cmd_test0( int argc, const char * const * argv )
   if( argc > 2  && argv[2][0] == '-' ) {
     d = ns - 1; // % no zero
   }
-  STDOUT_os;
-  os << NL "Test0: n= " << n << " t= " << t_step << " m= "  << m << " d= "  << d <<  NL;
+  std_out << NL "Test0: n= " << n << " t= " << t_step << " m= "  << m << " d= "  << d <<  NL;
 
   if( n < 1 ) {
     motor.write( 0 );
     ph = 0;
-    os <<  NL "Motor off." NL;
+    std_out <<  NL "Motor off." NL;
     return 0;
   }
 
@@ -104,9 +103,9 @@ int cmd_test0( int argc, const char * const * argv )
   for( int i=0; i<n && !break_flag; ++i ) {
 
     if( t_step > 500 ) {
-      os <<  " Step  i= " <<  i <<  " ph: "  <<  ph  <<  " v: "  <<  steps[ph]
+      std_out <<  " Step  i= " <<  i <<  " ph: "  <<  ph  <<  " v: "  <<  steps[ph]
          <<  "  tick: " << ( HAL_GetTick() - tm0 )   <<  NL;
-      os.flush();
+      std_out.flush();
     }
     motor.write( steps[ph] );
     ph += d;

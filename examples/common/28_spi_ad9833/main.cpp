@@ -89,8 +89,7 @@ int cmd_test0( int argc, const char * const * argv )
   uint32_t freq = arg2long_d( 1, argc, argv, 1000, 0, 12500000 );
   uint8_t  cmd2 = arg2long_d( 2, argc, argv, 0x00, 0, 255 );
   uint32_t div0 = (uint32_t)( ((uint64_t)freq <<  28) / 25000000 );
-  STDOUT_os;
-  os <<  NL "Test0: freq= " <<  freq <<  "  div0= " <<  div0 <<  " = " <<  HexInt( div0 ) <<  NL;
+  std_out <<  NL "Test0: freq= " <<  freq <<  "  div0= " <<  div0 <<  " = " <<  HexInt( div0 ) <<  NL;
 
   gener.initFreq( freq, cmd2 );
   gener.setFreq( freq/2, true );
@@ -123,18 +122,17 @@ int cmd_sendr_spi( int argc, const char * const * argv )
   }
 
   int nd = imin( UVAR('r'), sizeof(gbuf_a) );
-  STDOUT_os;
-  os <<  NL "Send/recv: ns= " <<  ns <<  " nd= " <<  nd <<  "* to send: " NL;
+  std_out <<  NL "Send/recv: ns= " <<  ns <<  " nd= " <<  nd <<  "* to send: " NL;
   dump8( sbuf, ns );
 
   int rc = spi_d.send_recv( sbuf, ns, (uint8_t*)gbuf_a, nd );
 
-  os << "rc= " << rc << NL;
+  std_out << "rc= " << rc << NL;
   if( rc > 0 ) {
-    os <<  "* recv: " NL;
+    std_out <<  "* recv: " NL;
     dump8( gbuf_a, rc );
   } else {
-    os <<  "** Error, code= " << spi_d.getErr() <<  NL;
+    std_out <<  "** Error, code= " << spi_d.getErr() <<  NL;
   }
   delay_ms( 10 );
 
@@ -147,16 +145,15 @@ int cmd_recv_spi( int argc, const char * const * argv )
 {
   int nd = arg2long_d( 1, argc, argv, UVAR('r'), 1, sizeof(gbuf_a) );
 
-  STDOUT_os;
-  os <<  NL "Recv: nd= " <<  nd <<  NL;
+  std_out <<  NL "Recv: nd= " <<  nd <<  NL;
 
   int rc = spi_d.recv( (uint8_t*)gbuf_a, nd );
 
-  os << "rc= " << rc << NL;
+  std_out << "rc= " << rc << NL;
   if( rc > 0 ) {
     dump8( gbuf_a, rc );
   } else {
-    os <<  "** Error, code= " << spi_d.getErr() <<  NL;
+    std_out <<  "** Error, code= " << spi_d.getErr() <<  NL;
   }
   delay_ms( 10 );
 
@@ -175,17 +172,16 @@ int cmd_duplex_spi( int argc, const char * const * argv )
     sbuf[i] = t;
   }
 
-  STDOUT_os;
-  os <<  NL "Duplex: ns= " <<  ns <<  NL;
+  std_out <<  NL "Duplex: ns= " <<  ns <<  NL;
   dump8( sbuf, ns );
 
   int rc = spi_d.duplex( sbuf, (uint8_t*)gbuf_a, ns );
 
-  os << "rc= " << rc << NL;
+  std_out << "rc= " << rc << NL;
   if( rc > 0 ) {
     dump8( gbuf_a, rc );
   } else {
-    os <<  "** Error, code= " << spi_d.getErr() <<  NL;
+    std_out <<  "** Error, code= " << spi_d.getErr() <<  NL;
   }
   delay_ms( 10 );
 

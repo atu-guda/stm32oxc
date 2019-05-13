@@ -70,17 +70,16 @@ int cmd_test0( int argc, const char * const * argv )
   uint32_t v1 = arg2long_d( 1, argc, argv, UVAR('v'), 0 );
   uint32_t v2 = v1;
   int n = arg2long_d( 2, argc, argv, UVAR('n'), 0 );
-  STDOUT_os;
-  os << NL "Test0: n= " <<  n <<  " v1= " <<  v1 <<  " v2= " <<  v2 <<  NL;
+  std_out << NL "Test0: n= " <<  n <<  " v1= " <<  v1 <<  " v2= " <<  v2 <<  NL;
 
   auto r1 = HAL_DAC_SetValue( &hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, v1 );
   auto r2 = HAL_DAC_SetValue( &hdac, DAC_CHANNEL_2, DAC_ALIGN_12B_R, v2 );
 
-  os <<  "r1= " <<  r1 <<  "  r2= " <<  r2 <<  NL;
+  std_out <<  "r1= " <<  r1 <<  "  r2= " <<  r2 <<  NL;
   HAL_DAC_Start( &hdac, DAC_CHANNEL_1 );
   HAL_DAC_Start( &hdac, DAC_CHANNEL_2 );
   uint32_t vv = 3250 * v1 / 4096;
-  os << " vv= " << vv << NL;
+  std_out << " vv= " << vv << NL;
 
   return 0;
 }
@@ -89,8 +88,7 @@ int cmd_ofast( int argc, const char * const * argv )
 {
   int n   = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
   int dly = arg2long_d( 2, argc, argv, 0, 0, 1000 );
-  STDOUT_os;
-  os <<  "ofast: n= " <<  n <<  " dly= " <<  dly <<  NL;
+  std_out <<  "ofast: n= " <<  n <<  " dly= " <<  dly <<  NL;
 
   for( int i=0; i<n; ++i ) {
     HAL_DAC_SetValue( &hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, (i&1)*4095 );
@@ -110,8 +108,7 @@ int cmd_fun( int argc, const char * const * argv )
   int n   = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
   int tp  = arg2long_d( 2, argc, argv, 0, 0, 5 );
   int dly = arg2long_d( 3, argc, argv, 0, 0, 1000 );
-  STDOUT_os;
-  os <<  "funcs: n= " <<  n <<  " tp= " <<  tp <<  " dly= " <<  dly <<  NL;
+  std_out <<  "funcs: n= " <<  n <<  " tp= " <<  tp <<  " dly= " <<  dly <<  NL;
 
   switch( tp ) {
     case 0:

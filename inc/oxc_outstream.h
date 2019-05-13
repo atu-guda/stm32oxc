@@ -1,9 +1,6 @@
 #ifndef _OXC_OUTSTREAM_H
 #define _OXC_OUTSTREAM_H
 
-#include <stdint.h>
-
-#include <oxc_miscfun.h>
 #include <oxc_outfmt.h>
 #include <oxc_io.h>
 
@@ -37,7 +34,5 @@ class OutStream {
 
 extern OutStream std_out;
 
-// require <oxc_devio.h>
-#define STDOUT_os  OutStream os( devio_fds[1] )
 
 #endif

@@ -78,8 +78,7 @@ int cmd_test0( int argc, const char * const * argv )
   uint8_t l = arg2long_d( 3, argc, argv,  3, 1, 8 );
   uint8_t v0[] = { 1, 2, 3, 4, 0x0E, 6, 7, 8 };
 
-  STDOUT_os;
-  os << NL "Test0: v= " << v  <<  " = " << HexInt( v ) << " pos= " << pos << NL;
+  std_out << NL "Test0: v= " << v  <<  " = " << HexInt( v ) << " pos= " << pos << NL;
 
   if( UVAR('d') > 0 ) { // debug: for logic analizer start
     nss_pin.write( 0 );
@@ -99,43 +98,43 @@ int cmd_test0( int argc, const char * const * argv )
   max7219.setDigit( 0, 0xC9 );
 
   max7219.test_on();
-  os <<  "setDigit + test_on" NL;  delay_ms( def_delay );
+  std_out <<  "setDigit + test_on" NL;  delay_ms( def_delay );
 
   max7219.test_off();
-  os <<  "test_off" NL;  delay_ms( def_delay );
+  std_out <<  "test_off" NL;  delay_ms( def_delay );
 
   max7219.off();
-  os <<  "off" NL;  delay_ms( def_delay );
+  std_out <<  "off" NL;  delay_ms( def_delay );
   max7219.on();
-  os <<  "on" NL;  delay_ms( def_delay );
+  std_out <<  "on" NL;  delay_ms( def_delay );
 
   max7219.setIntens( 3 );
-  os <<  "setIntens 3" NL;  delay_ms( def_delay );
+  std_out <<  "setIntens 3" NL;  delay_ms( def_delay );
 
   max7219.setIntens( 5 );
-  os <<  "setIntens 5" NL;  delay_ms( def_delay );
+  std_out <<  "setIntens 5" NL;  delay_ms( def_delay );
 
   max7219.setIntens( 7 );
-  os <<  "setIntens 7" NL;  delay_ms( def_delay );
+  std_out <<  "setIntens 7" NL;  delay_ms( def_delay );
 
   max7219.setIntens( 0 );
-  os <<  "setIntens 0" NL;  delay_ms( def_delay );
+  std_out <<  "setIntens 0" NL;  delay_ms( def_delay );
 
   max7219.setLimit( 4 );
-  os <<  "setLinit 4" NL;  delay_ms( def_delay );
+  std_out <<  "setLinit 4" NL;  delay_ms( def_delay );
 
   max7219.setLimit( 7 );
-  os <<  "setLinit 7" NL;  delay_ms( def_delay );
+  std_out <<  "setLinit 7" NL;  delay_ms( def_delay );
 
   max7219.setDecode( 0xFF ); // all = digits
   max7219.setDigits( v0, 3, 0, 5 );
-  os <<  "setDecode 0xFF, setDigits c0 3 0 5" NL; delay_ms( def_delay );
+  std_out <<  "setDecode 0xFF, setDigits c0 3 0 5" NL; delay_ms( def_delay );
 
   max7219.setUVal( 12345678, 7, 0, 8 );
-  os <<  "setUVal 12345678" NL; delay_ms( def_delay );
+  std_out <<  "setUVal 12345678" NL; delay_ms( def_delay );
 
   max7219.clsDig();
-  os <<  "clsDig " NL; delay_ms( def_delay );
+  std_out <<  "clsDig " NL; delay_ms( def_delay );
 
   max7219.setVal( v, 1, pos, l );
 
@@ -176,13 +175,12 @@ int cmd_sendr_spi( int argc, const char * const * argv )
   }
 
   int nd = imin( UVAR('r'), sizeof(gbuf_a) );
-  STDOUT_os;
-  os <<  NL "Send/recv: ns= "  <<  ns  <<  " nd= "  <<  nd   <<  NL;
+  std_out <<  NL "Send/recv: ns= "  <<  ns  <<  " nd= "  <<  nd   <<  NL;
   dump8( sbuf, ns );
 
   int rc = spi_d.send_recv( sbuf, ns, (uint8_t*)gbuf_a, nd );
 
-  os << "rc= " << rc << NL;
+  std_out << "rc= " << rc << NL;
   if( rc > 0 ) {
     dump8( gbuf_a, rc );
   }

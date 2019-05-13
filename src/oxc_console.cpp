@@ -192,8 +192,6 @@ int exec_direct( const char *s, int l )
 
   // TODO: substs here
 
-  STDOUT_os;
-
   char *argv[MAX_ARGS];
   int argc = cmdline_split( ss, argv, MAX_ARGS );
   // DEBUG
@@ -238,11 +236,11 @@ int exec_direct( const char *s, int l )
   if( f != 0 ) {
       int rc = 0;
       if( console_verbose > 0 ) {
-        os << "#== CMD: " << nm;
+        std_out << "#== CMD: " << nm;
         for( int i=1; i<argc; ++i ) {
-          os << ' ' << argv[i];
+          std_out << ' ' << argv[i];
         }
-        os << NL;
+        std_out << NL;
         delay_ms( 5 );
       }
 
@@ -253,11 +251,11 @@ int exec_direct( const char *s, int l )
 
       break_flag = 0;  idle_flag = 1;
       if( console_verbose > 0 ) {
-        os << NL "#== END: \"" << nm << "\" rc=" <<  rc << " t= " << tm1 - tm0 << NL;
+        std_out << NL "#== END: \"" << nm << "\" rc=" <<  rc << " t= " << tm1 - tm0 << NL;
         delay_ms( 1 );
       }
   } else {
-    os << "# ERR:  Unknown command \"" << argv[0] << "\"" NL;
+    std_out << "# ERR:  Unknown command \"" << argv[0] << "\"" NL;
   }
 
   on_cmd_handler = 0;

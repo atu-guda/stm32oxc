@@ -93,12 +93,11 @@ int cmd_test0( int argc, const char * const * argv )
     ch.v = strtol( argv[ch.idx+1], 0, 0 );
   }
 
-  STDOUT_os;
-  os << NL "# Test0: pwm_vals[]= ";
+  std_out << NL "# Test0: pwm_vals[]= ";
   for( auto ch : pwmc ) {
-    os << ch.v <<  ' ';
+    std_out << ch.v <<  ' ';
   }
-  os <<  NL ;
+  std_out <<  NL ;
 
   // pwm_recalc();
   pwm_update();

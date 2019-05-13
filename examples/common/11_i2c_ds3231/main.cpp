@@ -70,8 +70,7 @@ int cmd_test0( int argc, const char * const * argv )
 {
   int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
   uint32_t t_step = UVAR('t');
-  STDOUT_os;
-  os << NL "Test0: n= " <<  n  <<  " t= "  <<  t_step <<  NL; os.flush();
+  std_out << NL "Test0: n= " <<  n  <<  " t= "  <<  t_step <<  NL; std_out.flush();
 
   rtc.resetDev();
   char time_buf[10], date_buf[14];
@@ -85,14 +84,14 @@ int cmd_test0( int argc, const char * const * argv )
   for( int i=0; i<n && !break_flag; ++i ) {
 
     // action
-    os <<  '['  <<  i <<  "]  ";
+    std_out <<  '['  <<  i <<  "]  ";
     rtc.getTime( &t_hour, &t_min, &t_sec );
     rtc.getTimeStr( time_buf );
     rtc.getDateStr( date_buf );
-    os << time_buf  <<  "   =   "  <<  t_hour <<  ":" << t_min <<  ":" <<  t_sec
+    std_out << time_buf  <<  "   =   "  <<  t_hour <<  ":" << t_min <<  ":" <<  t_sec
        <<  "  / "   <<  date_buf   <<  NL ;
 
-    os.flush();
+    std_out.flush();
     delay_ms_until_brk( &tm0, t_step );
   }
 
@@ -103,8 +102,7 @@ int cmd_set_time( int argc, const char * const * argv )
 {
   uint8_t t_hour, t_min, t_sec;
   if( argc < 4 ) {
-    STDOUT_os;
-    os <<  "3 args required" NL ;
+    std_out <<  "3 args required" NL ;
     return 1;
   }
   t_hour = atoi( argv[1] );
@@ -119,8 +117,7 @@ int cmd_set_date( int argc, const char * const * argv )
   uint16_t year;
   uint8_t mon, day;
   if( argc < 4 ) {
-    STDOUT_os;
-    os <<  "3 args required" NL;
+    std_out <<  "3 args required" NL;
     return 1;
   }
   year = atoi( argv[1] );

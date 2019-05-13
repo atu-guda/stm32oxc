@@ -63,10 +63,9 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  STDOUT_os;
   int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
   uint32_t t_step = UVAR('t');
-  os <<  NL "Test0: n= " << n << " t= " << t_step << NL; os.flush();
+  std_out <<  NL "Test0: n= " << n << " t= " << t_step << NL; std_out.flush();
   uint16_t v = 0;
 
   uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
@@ -75,21 +74,21 @@ int cmd_test0( int argc, const char * const * argv )
   for( int i=0; i<n && !break_flag; ++i ) {
 
     uint32_t tcc = HAL_GetTick();
-    os << "ADC start  i= " << i << "  tick: " << ( tcc - tm00 );
+    std_out << "ADC start  i= " << i << "  tick: " << ( tcc - tm00 );
     if( HAL_ADC_Start( &hadc1 ) != HAL_OK )  {
-      os << "  !! ADC Start error" NL; os.flush();
+      std_out << "  !! ADC Start error" NL; std_out.flush();
       break;
     }
     HAL_ADC_PollForConversion( &hadc1, 10 );
-    os << " ADC1.SR= " << HexInt( ADC1->SR );
+    std_out << " ADC1.SR= " << HexInt( ADC1->SR );
     v = 0;
     if( HAL_IS_BIT_SET( HAL_ADC_GetState( &hadc1 ), HAL_ADC_STATE_REG_EOC ) )  {
       v = HAL_ADC_GetValue( &hadc1 );
       int vv = v * 10 * UVAR('v') / 4096;
-      os << " v= " << v <<  " vv= " << FloatMult( vv, 4 );
+      std_out << " v= " << v <<  " vv= " << FloatMult( vv, 4 );
     }
 
-    os << NL; os.flush();
+    std_out << NL; std_out.flush();
     delay_ms_until_brk( &tm0, t_step );
   }
 

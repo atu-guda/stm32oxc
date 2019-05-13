@@ -161,8 +161,7 @@ int cmd_vline( int argc, const char * const * argv )
 {
   uint16_t y0 = arg2long_d( 1, argc, argv,    0,  0, ymax );
   uint16_t y1 = arg2long_d( 2, argc, argv, ymax, y0, ymax );
-  STDOUT_os;
-  os <<  NL "vline: y0= "  <<  y0  <<  " y1= " << y1;
+  std_out <<  NL "vline: y0= "  <<  y0  <<  " y1= " << y1;
 
   for( uint16_t y = y0; y<= y1; ++y ) {
     pb0.vline( y, y/2, y, (y&1) );
@@ -178,8 +177,7 @@ int cmd_line( int argc, const char * const * argv )
   uint16_t nl = arg2long_d( 1, argc, argv,  36, 0, 1024 );
   uint16_t dn = arg2long_d( 2, argc, argv,  360/nl, 1, 512 );
 
-  STDOUT_os;
-  os <<  NL "lines: nl = "  <<  nl  <<  " dn= "  <<  dn;
+  std_out <<  NL "lines: nl = "  <<  nl  <<  " dn= "  <<  dn;
 
   pb0.box( xcen, ystp, xmax-ystp, ymax-ystp, 1 );
 
@@ -187,10 +185,10 @@ int cmd_line( int argc, const char * const * argv )
     float alp = an * dn * 3.1415926f / 180;
     uint16_t x1 = xcen + 8 * ystp * cosf( alp );
     uint16_t y1 = ycen + 8 * ystp * sinf( alp );
-    // os <<  "x1= "  <<  x1 <<  " y1= "  <<  y1;
+    // std_out <<  "x1= "  <<  x1 <<  " y1= "  <<  y1;
     pb0.line( xcen, ycen, x1, y1, (an&1) );
   }
-  os << NL;
+  std_out << NL;
 
   screen.out( pb0 );
 
@@ -200,8 +198,7 @@ int cmd_line( int argc, const char * const * argv )
 int cmd_contr( int argc, const char * const * argv )
 {
   uint8_t co = arg2long_d( 1, argc, argv,  0x48, 0, 0x7F );
-  STDOUT_os;
-  os <<  NL "contrast: co="  <<  co << NL;
+  std_out <<  NL "contrast: co="  <<  co << NL;
 
   screen.contrast( co );
 

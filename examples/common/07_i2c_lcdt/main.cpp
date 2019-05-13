@@ -145,8 +145,7 @@ int cmd_lcd_rate( int argc, const char * const * argv )
 {
   int n  = arg2long_d( 1, argc, argv, 100, 1,  10000 );
   int nl = arg2long_d( 2, argc, argv,   2, 1,      4 );
-  STDOUT_os;
-  os << "lcd_rate: n= " << n << " nl= " << nl << NL;
+  std_out << "lcd_rate: n= " << n << " nl= " << nl << NL;
   char buf[32];
 
   buf[16] = '\0';
@@ -173,7 +172,7 @@ int cmd_lcd_rate( int argc, const char * const * argv )
   delay_ms( 500 );
   int dlt = tm1 - tm0;
   int mcs_l = 1000 * dlt / ( n * nl );
-  os << NL "dt= " << dlt << " ms, so " << mcs_l << " us/line" NL;
+  std_out << NL "dt= " << dlt << " ms, so " << mcs_l << " us/line" NL;
   return 0;
 }
 

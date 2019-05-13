@@ -210,8 +210,7 @@ bool NamedObjs::out( OutStream &os, const char *nm, int fmt ) const
 
 bool NamedObjs::print( const char *nm, int fmt ) const
 {
-  STDOUT_os;
-  return out( os, nm, fmt );
+  return out( std_out, nm, fmt );
 }
 
 

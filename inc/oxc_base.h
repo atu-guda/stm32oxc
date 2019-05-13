@@ -169,8 +169,8 @@ void wakeFromIRQ( long wake );
 void vApplicationIdleHook(void);
 void vApplicationTickHook(void);
 // misc functions
-[[ noreturn ]] void _exit( int rc );
-[[ noreturn ]] void die( uint16_t n );
+void _exit( int rc );
+void die( uint16_t n );
 void Error_Handler( int rc ); // defined at user program
 
 void approx_delay_calibrate(void);

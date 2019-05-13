@@ -82,7 +82,6 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  STDOUT_os;
   int t_step = UVAR('t');
   uint8_t n_ch = clamp( UVAR('c'), 1, (int)n_ADC_ch_max );
 
@@ -98,7 +97,7 @@ int cmd_test0( int argc, const char * const * argv )
   UVAR('i') =  adc_init_exa_4ch_manual( adc, adc_presc, sampl_times_codes[sampl_t_idx], n_ch );
   delay_ms( 1 );
   if( ! UVAR('i') ) {
-    os << "ADC init failed, errno= " << errno << NL;
+    std_out << "ADC init failed, errno= " << errno << NL;
     return 1;
   }
   if( UVAR('d') > 1 ) { pr_ADC_state( adc );  }
@@ -106,7 +105,7 @@ int cmd_test0( int argc, const char * const * argv )
 
   int div_val = -1;
   adc.adc_clk = calc_ADC_clk( adc_presc, &div_val );
-  os << "# ADC: n_ch= " << n_ch << " n= " << n << " adc_clk= " << adc.adc_clk << " div_val= " << div_val
+  std_out << "# ADC: n_ch= " << n_ch << " n= " << n << " adc_clk= " << adc.adc_clk << " div_val= " << div_val
      << " s_idx= " << sampl_t_idx << " sampl= " << sampl_times_cycles[sampl_t_idx]
      << " f_sampl_max= " << f_sampl_max << " Hz" NL;
   delay_ms( 10 );
@@ -117,12 +116,12 @@ int cmd_test0( int argc, const char * const * argv )
 
   adc.reset_cnt();
 
-  os << "# n = " << n << " n_ch= " << n_ch << " t_step= " << t_step << NL;
-  os << "# Coeffs: ";
+  std_out << "# n = " << n << " n_ch= " << n_ch << " t_step= " << t_step << NL;
+  std_out << "# Coeffs: ";
   for( decltype(n_ch) j=0; j<n_ch; ++j ) {
-    os << ' ' << v_coeffs[j];
+    std_out << ' ' << v_coeffs[j];
   }
-  os << NL;
+  std_out << NL;
 
   leds.set(   BIT0 | BIT1 | BIT2 ); delay_ms( 100 );
   leds.reset( BIT0 | BIT1 | BIT2 );
@@ -145,7 +144,7 @@ int cmd_test0( int argc, const char * const * argv )
     if( UVAR('l') ) {  leds.set( BIT2 ); }
     adc.end_dma = 0;
     if( HAL_ADC_Start_DMA( &adc.hadc, (uint32_t*)(&ADC_buf), n_ADC_sampl ) != HAL_OK )   {
-      os <<  "ADC_Start_DMA error" NL;
+      std_out <<  "ADC_Start_DMA error" NL;
       rc = 1;
       break;
     }
@@ -157,12 +156,12 @@ int cmd_test0( int argc, const char * const * argv )
     HAL_ADC_Stop_DMA( &adc.hadc ); // needed
     if( UVAR('l') ) {  leds.reset( BIT2 ); }
     if( adc.end_dma == 0 ) {
-      os <<  "Fail to wait DMA end " NL;
+      std_out <<  "Fail to wait DMA end " NL;
       rc = 2;
       break;
     }
     if( adc.dma_error != 0 ) {
-      os <<  "Found DMA error " << HexInt( adc.dma_error ) <<  NL;
+      std_out <<  "Found DMA error " << HexInt( adc.dma_error ) <<  NL;
       rc = 3;
       break;
     } else {
@@ -170,7 +169,7 @@ int cmd_test0( int argc, const char * const * argv )
     }
 
     if( do_out ) {
-      os <<  FltFmt( tc, cvtff_auto, 12, 4 );
+      std_out <<  FltFmt( tc, cvtff_auto, 12, 4 );
     }
     for( decltype(n_ch) j=0; j<n_ch; ++j ) {
       sreal cv = kv * ADC_buf[j] * v_coeffs[j];
@@ -181,9 +180,9 @@ int cmd_test0( int argc, const char * const * argv )
 
     if( do_out ) {
       for( auto vc : v ) {
-        os  << ' '  <<  vc;
+        std_out  << ' '  <<  vc;
       }
-      os << NL;
+      std_out << NL;
     }
 
     delay_ms_until_brk( &tm0, t_step );
@@ -191,7 +190,7 @@ int cmd_test0( int argc, const char * const * argv )
 
 
   sdat.calc();
-  os << sdat << NL;
+  std_out << sdat << NL;
 
   delay_ms( 10 );
 
@@ -235,8 +234,7 @@ int cmd_set_coeffs( int argc, const char * const * argv )
     v_coeffs[2] = arg2float_d( 3, argc, argv, 1, -1e10f, 1e10f );
     v_coeffs[3] = arg2float_d( 4, argc, argv, 1, -1e10f, 1e10f );
   }
-  STDOUT_os;
-  os << "# Coefficients: "
+  std_out << "# Coefficients: "
      << v_coeffs[0] << ' ' << v_coeffs[1] << ' ' << v_coeffs[2] << ' ' << v_coeffs[3] << NL;
   return 0;
 }

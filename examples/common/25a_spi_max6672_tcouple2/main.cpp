@@ -74,10 +74,9 @@ int cmd_test0( int argc, const char * const * argv )
 {
   int n      = arg2long_d( 1, argc, argv,    UVAR('n'), 1, 0xFFFFFF );
   int t_step = UVAR('t');
-  STDOUT_os;
 
-  os <<  NL "Test0: n= " << n << " t_step= " <<  t_step << NL;
-  os.flush();
+  std_out <<  NL "Test0: n= " << n << " t_step= " <<  t_step << NL;
+  std_out.flush();
 
   uint16_t v1, v2;
   int rc1, rc2;
@@ -98,23 +97,23 @@ int cmd_test0( int argc, const char * const * argv )
     rc2 = spi_d2.recv( (uint8_t*)(&v2), sizeof(v2) );
     v1 = rev16( v1 ); v2 = rev16( v2 );
 
-    os << FmtInt( tcc - tm00, 8, '0' ) << ' ';
+    std_out << FmtInt( tcc - tm00, 8, '0' ) << ' ';
 
-    os << FixedPoint2( v1 >> 3 ) << ' ' << FixedPoint2( v2 >> 3 ) << ' ';
+    std_out << FixedPoint2( v1 >> 3 ) << ' ' << FixedPoint2( v2 >> 3 ) << ' ';
 
     if( v1 & MAX6675_BRK ) {
-      os << " B1 ";
+      std_out << " B1 ";
     }
     if( v2 & MAX6675_BRK ) {
-      os << " B2 ";
+      std_out << " B2 ";
     }
 
     if( UVAR('d') > 0 ) {
-      os << NL << HexInt( v1 ) << ' ' << HexInt( v2 ) << ' '
+      std_out << NL << HexInt( v1 ) << ' ' << HexInt( v2 ) << ' '
          << rc1 << ' ' << rc2 << ' ';
     }
 
-    os << NL; os.flush();
+    std_out << NL; std_out.flush();
     delay_ms_until_brk( &tm0, t_step );
   }
 

@@ -91,8 +91,6 @@ int cmd_test0( int argc, const char * const * argv )
     pdlt[i] = strtol( argv[i+1], 0, 0 );
   }
 
-  STDOUT_os;
-
 
   uint32_t tm0 = HAL_GetTick();
 
@@ -103,11 +101,11 @@ int cmd_test0( int argc, const char * const * argv )
       ch.v = 127 + sin_table_8x8[ phas[ch.idx] >> 24 ];
       ch.ccr = ch.v * pbase / 256;
       if( UVAR('d') > 0 ) {
-        os << ch.v <<  ' ' << ch.ccr << ' ' << HexInt(phas[ch.idx]) << ' ';
+        std_out << ch.v <<  ' ' << ch.ccr << ' ' << HexInt(phas[ch.idx]) << ' ';
       }
     }
     if( UVAR('d') > 0 ) {
-      os << NL;
+      std_out << NL;
     }
 
     delay_ms_until_brk( &tm0, t_step );

@@ -75,8 +75,7 @@ int main(void)
 int cmd_test0( int argc, const char * const * argv )
 {
   int nd     = imin( UVAR('r'), sizeof(gbuf_b) );
-  STDOUT_os;
-  os <<  NL "Test0: nd= "  <<  nd  <<  NL;
+  std_out <<  NL "Test0: nd= "  <<  nd  <<  NL;
 
   if( UVAR('d') > 0 ) { // debug: for logic analizer start
     nss_pin.write( 0 );
@@ -94,30 +93,30 @@ int cmd_test0( int argc, const char * const * argv )
   memset( gbuf_b, '\x00', sizeof( gbuf_b ) );
 
   int rc = memspi.read( (uint8_t*)gbuf_b, 0x00, nd );
-  os <<  " Read Before: rc = "  <<  rc  <<  NL;
+  std_out <<  " Read Before: rc = "  <<  rc  <<  NL;
   dump8( gbuf_b, nd );
   status = memspi.status();
-  os << "status= " << status  <<  NL;
+  std_out << "status= " << status  <<  NL;
 
   for( int i=0; i<nd; ++i ) {
     gbuf_a[i] = (char)( '0' + i );
   }
   rc = memspi.write( (uint8_t*)gbuf_a, 0x00, nd );
-  os <<  NL "Write: rc= "  <<  rc  <<  NL;
+  std_out <<  NL "Write: rc= "  <<  rc  <<  NL;
   status = memspi.status();
-  os << "status= " << status  <<  NL;
+  std_out << "status= " << status  <<  NL;
 
   rc = memspi.read( (uint8_t*)gbuf_b, 0x00, nd );
-  os <<  " Read After: rc = "  <<  rc  <<  NL;
+  std_out <<  " Read After: rc = "  <<  rc  <<  NL;
   dump8( gbuf_b, nd );
   status = memspi.status();
-  os << "status= " << status  <<  NL;
+  std_out << "status= " << status  <<  NL;
 
   rc = memspi.read( (uint8_t*)gbuf_b, 0x03, nd );
-  os <<  " Read After with offset 3: rc = "  <<  rc  <<  NL;
+  std_out <<  " Read After with offset 3: rc = "  <<  rc  <<  NL;
   dump8( gbuf_b, nd );
   status = memspi.status();
-  os << "status= " << status  <<  NL;
+  std_out << "status= " << status  <<  NL;
 
   return 0;
 }

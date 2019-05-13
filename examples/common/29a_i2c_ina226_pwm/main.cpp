@@ -101,15 +101,14 @@ int main(void)
 
 bool isGoodINA226( INA226 &ina, bool print )
 {
-  STDOUT_os;
   uint16_t id_manuf = ina.readReg( INA226::reg_id_manuf );
   uint16_t id_dev   = ina.readReg( INA226::reg_id_dev );
   if( print ) {
-    os << "# id_manuf= " << HexInt16( id_manuf ) << "  id_dev= " << HexInt16( id_dev ) << NL;
+    std_out << "# id_manuf= " << HexInt16( id_manuf ) << "  id_dev= " << HexInt16( id_dev ) << NL;
   }
   if( id_manuf != INA226::id_manuf || id_dev != INA226::id_dev ) {
     if( print ) {
-      os << "# Error: bad ids!" << NL;
+      std_out << "# Error: bad ids!" << NL;
     }
     return false;
   }
@@ -119,7 +118,6 @@ bool isGoodINA226( INA226 &ina, bool print )
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  STDOUT_os;
   uint32_t t_step = UVAR('t');
   unsigned n_ch = 2;
   uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 1000000 ); // number of series
@@ -130,7 +128,7 @@ int cmd_test0( int argc, const char * const * argv )
 
   ina226.setCfg( INA226::cfg_rst );
   uint16_t x_cfg = ina226.getCfg();
-  os <<  NL "# getVIP: n= " <<  n <<  " t= " <<  t_step <<  "  cfg= " <<  HexInt16( x_cfg ) << NL;
+  std_out <<  NL "# getVIP: n= " <<  n <<  " t= " <<  t_step <<  "  cfg= " <<  HexInt16( x_cfg ) << NL;
 
   if( ! isGoodINA226( ina226, true ) ) {
     return 3;
@@ -140,13 +138,13 @@ int cmd_test0( int argc, const char * const * argv )
   UVAR('e') = ina226.setCfg( cfg );
   x_cfg = ina226.getCfg();
   ina226.calibrate();
-  os << "# cfg= " << HexInt16( x_cfg ) <<  " I_lsb_mA= " << ina226.get_I_lsb_mA()
+  std_out << "# cfg= " << HexInt16( x_cfg ) <<  " I_lsb_mA= " << ina226.get_I_lsb_mA()
      << " R_sh_uOhm= " << ina226.get_R_sh_uOhm() << NL;
-  os << "# skip_pwm= " << skip_pwm << NL << "# Coeffs: ";
+  std_out << "# skip_pwm= " << skip_pwm << NL << "# Coeffs: ";
   for( decltype(n_ch) j=0; j<n_ch; ++j ) {
-    os << ' ' << v_coeffs[j];
+    std_out << ' ' << v_coeffs[j];
   }
-  os << NL;
+  std_out << NL;
 
   leds.set(   BIT0 | BIT1 | BIT2 ); delay_ms( 100 );
   leds.reset( BIT0 | BIT1 | BIT2 );
@@ -184,16 +182,16 @@ int cmd_test0( int argc, const char * const * argv )
     if( UVAR('l') ) {  leds.reset( BIT2 ); }
 
     if( do_out ) {
-      os <<  FltFmt( tc, cvtff_auto, 12, 4 );
+      std_out <<  FltFmt( tc, cvtff_auto, 12, 4 );
     }
 
     sdat.add( v );
 
     if( do_out ) {
       for( auto vc : v ) {
-        os  << ' '  <<  vc;
+        std_out  << ' '  <<  vc;
       }
-      os << NL;
+      std_out << NL;
     }
 
     delay_ms_until_brk( &tm0, t_step );
@@ -202,7 +200,7 @@ int cmd_test0( int argc, const char * const * argv )
   pwmdat.end_run();
 
   sdat.calc();
-  os << sdat << NL;
+  std_out << sdat << NL;
 
   delay_ms( 10 );
 
@@ -215,9 +213,8 @@ int cmd_setcalibr( int argc, const char * const * argv )
   float calibr_I_lsb = arg2float_d( 1, argc, argv, ina226.get_I_lsb_mA()  * 1e-3f, 1e-20f, 1e10f );
   float calibr_R     = arg2float_d( 2, argc, argv, ina226.get_R_sh_uOhm() * 1e-6f, 1e-20f, 1e10f );
   float V_sh_max =  INA226::lsb_V_sh_nv * 1e-9f * 0x7FFF;
-  STDOUT_os;
   ina226.set_calibr_val( (uint32_t)(calibr_R * 1e6f), (uint32_t)(calibr_I_lsb * 1e3f) );
-  os << "# calibr_I_lsb= " << calibr_I_lsb << " calibr_R= " << calibr_R
+  std_out << "# calibr_I_lsb= " << calibr_I_lsb << " calibr_R= " << calibr_R
      << " V_sh_max=  " << V_sh_max
      << " I_max= " << ( V_sh_max / calibr_R ) << " / " << ( calibr_I_lsb * 0x7FFF ) << NL;
   return 0;
@@ -266,10 +263,9 @@ void tim_cfg()
 int cmd_pwm( int argc, const char * const * argv )
 {
   float v = arg2float_d( 1, argc, argv, 10, 0, 100 );
-  STDOUT_os;
   pwmdat.set_v_manual( v );
   tim_print_cfg( TIM_EXA );
-  os << NL "PWM:  in: " << pwmdat.get_v() << "  real: " << pwmdat.get_v_real() << NL;
+  std_out << NL "PWM:  in: " << pwmdat.get_v() << "  real: " << pwmdat.get_v_real() << NL;
   return 0;
 }
 
@@ -291,8 +287,7 @@ int cmd_set_coeffs( int argc, const char * const * argv )
     v_coeffs[2] = arg2float_d( 3, argc, argv, 1, -1e10f, 1e10f );
     v_coeffs[3] = arg2float_d( 4, argc, argv, 1, -1e10f, 1e10f );
   }
-  STDOUT_os;
-  os << "# Coefficients: "
+  std_out << "# Coefficients: "
      << v_coeffs[0] << ' ' << v_coeffs[1] << ' ' << v_coeffs[2] << ' ' << v_coeffs[3] << NL;
   return 0;
 }

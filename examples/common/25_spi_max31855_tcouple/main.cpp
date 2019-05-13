@@ -75,8 +75,7 @@ int cmd_test0( int argc, const char * const * argv )
   int n      = arg2long_d( 1, argc, argv,    UVAR('n'), 1, 0xFFFFFF );
   int t_step = UVAR('t');
 
-  STDOUT_os;
-  os <<  NL "Test0: n= "  <<  n <<  " t_step= "  <<  t_step <<  NL;
+  std_out <<  NL "Test0: n= "  <<  n <<  " t_step= "  <<  t_step <<  NL;
 
   uint8_t v[4];
   int rc;
@@ -89,18 +88,18 @@ int cmd_test0( int argc, const char * const * argv )
   for( int i=0; i<n && !break_flag; ++i ) {
     rc = spi_d.recv( (uint8_t*)(v), sizeof(v) );
     uint32_t tcc = HAL_GetTick();
-    os <<  tcc - tm00  <<  ' ' <<  rc  << ' ';
+    std_out <<  tcc - tm00  <<  ' ' <<  rc  << ' ';
 
     if( v[0] & MAX31855_FAIL ) {
-      os <<  "FAIL, ";
+      std_out <<  "FAIL, ";
       if( v[0] & MAX31855_BRK ) {
-        os <<  "BREAK";
+        std_out <<  "BREAK";
       }
       if( v[0] & MAX31855_GND ) {
-        os <<  "GND";
+        std_out <<  "GND";
       }
       if( v[0] & MAX31855_VCC ) {
-        os <<  "VCC";
+        std_out <<  "VCC";
       }
     }; // even if fail
 
@@ -108,26 +107,26 @@ int cmd_test0( int argc, const char * const * argv )
     if( tif & 0x0800 ) {
       tif |= 0xFFFFF000;
     }
-    // os <<  tif  <<  " = "  HexInt( tif );
+    // std_out <<  tif  <<  " = "  HexInt( tif );
     int32_t tid4 = tif * 625;
-    // os << " = ";
-    // os <<  tid4 / 10000  <<  '.'  <<  tid4 % 10000   <<  " ";
-    os << FloatMult( tid4, 4 );
+    // std_out << " = ";
+    // std_out <<  tid4 / 10000  <<  '.'  <<  tid4 % 10000   <<  " ";
+    std_out << FloatMult( tid4, 4 );
 
     int32_t tof =  ( v[1] >> 2 ) | ( v[0] << 6 );
     if( tof & 0x2000 ) {
       tof |= 0xFFFFC000;
     }
     int tod4 = tof * 25;
-    os <<  ' ' << FloatMult( tod4, 2 );
+    std_out <<  ' ' << FloatMult( tod4, 2 );
     // <<  tod4 / 100  <<  "."  <<  tod4 % 100 
 
     if( UVAR('d') > 0 ) {
-      os <<  " tif= "  << HexInt( tif ) <<  " tof= "  << HexInt( tof );
+      std_out <<  " tif= "  << HexInt( tif ) <<  " tof= "  << HexInt( tof );
       dump8( v, sizeof(v) );
     }
 
-    os << NL; os.flush();
+    std_out << NL; std_out.flush();
     delay_ms_until_brk( &tm0, t_step );
   }
 

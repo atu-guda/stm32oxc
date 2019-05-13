@@ -22,8 +22,7 @@ void I2C_print_status( int rc )
   if( ! i2c_dbg ) {
     return;
   }
-  STDOUT_os;
-  os << NL "I2C N: " <<  rc << " state: " << i2c_dbg->getState() << " error: " << i2c_dbg->getErr() << NL;
+  std_out << NL "I2C N: " <<  rc << " state: " << i2c_dbg->getState() << " error: " << i2c_dbg->getErr() << NL;
 }
 
 int cmd_i2c_scan( int argc, const char * const * argv )
@@ -31,8 +30,7 @@ int cmd_i2c_scan( int argc, const char * const * argv )
   uint8_t addr_start = (uint8_t)arg2long_d( 1, argc, argv,   2,            0, 127 );
   uint8_t addr_end   = (uint8_t)arg2long_d( 2, argc, argv, 127, addr_start+1, 127 );
 
-  STDOUT_os;
-  os << NL "I2C Scan in range [ " << addr_start << " ; "  << addr_end << " ] " NL;
+  std_out << NL "I2C Scan in range [ " << addr_start << " ; "  << addr_end << " ] " NL;
   CHECK_I2C_DEV;
 
   i2c_dbg->resetDev();
@@ -44,10 +42,10 @@ int cmd_i2c_scan( int argc, const char * const * argv )
     if( !rc ) {
       continue;
     }
-    os << addr << " (0x" <<  HexInt8( addr ) <<  ")  : "  <<  i_err << NL;
+    std_out << addr << " (0x" <<  HexInt8( addr ) <<  ")  : "  <<  i_err << NL;
   }
 
-  os <<  NL "I2C scan end." NL ;
+  std_out <<  NL "I2C scan end." NL ;
   return 0;
 }
 CmdInfo CMDINFO_I2C_SCAN {
@@ -62,8 +60,7 @@ int cmd_i2c_send( int argc, const char * const * argv )
   uint8_t v = arg2long_d( 1, argc, argv, 0, 0, 255 );
   uint16_t addr = arg2long_d( 2, argc, argv, (uint16_t)(UVAR('p')), 0, 127 );
 
-  STDOUT_os;
-  os << NL "I2C Send  " <<  v << " to " << HexInt8( addr ) << NL;
+  std_out << NL "I2C Send  " <<  v << " to " << HexInt8( addr ) << NL;
 
   i2c_dbg->resetDev();
 
@@ -83,9 +80,8 @@ int subcmd_i2c_send_rx( int argc, const char * const * argv, bool is2byte )
 {
   CHECK_I2C_DEV;
 
-  STDOUT_os;
   if( argc < 3 ) {
-    os <<  "** ERR: reg val required" NL;
+    std_out <<  "** ERR: reg val required" NL;
     return -1;
   }
 
@@ -93,7 +89,7 @@ int subcmd_i2c_send_rx( int argc, const char * const * argv, bool is2byte )
   uint8_t v   = arg2long_d( 2, argc, argv, 0, 0, 255 );
   uint8_t addr = (uint8_t)(UVAR('p'));
 
-  os << NL "I2C Send  " <<  v << " = 0x" << HexInt( v ) <<  " to " << HexInt8( addr )
+  std_out << NL "I2C Send  " <<  v << " = 0x" << HexInt( v ) <<  " to " << HexInt8( addr )
      <<   " : " << HexInt8( reg ) <<  NL;
 
   i2c_dbg->resetDev();
@@ -131,8 +127,7 @@ int cmd_i2c_recv( int argc, const char * const * argv )
   uint8_t addr  =  (uint8_t)arg2long_d( 1, argc, argv, 0, 0, 127 );
   uint16_t nr   = (uint16_t)arg2long_d( 2, argc, argv, 1, 1, sizeof(gbuf_a) );
 
-  STDOUT_os;
-  os <<  NL "I2C Recv from " <<  HexInt8( addr ) << " nr= " <<  nr << NL;
+  std_out <<  NL "I2C Recv from " <<  HexInt8( addr ) << " nr= " <<  nr << NL;
 
   i2c_dbg->resetDev();
 
@@ -158,8 +153,7 @@ int subcmd_i2c_recv_rx( int argc, const char * const * argv, bool is2byte )
   uint16_t reg  = (uint16_t)arg2long_d( 1, argc, argv, 0, 0, 0xFFFF );
   uint16_t n =    (uint16_t)arg2long_d( 2, argc, argv, 1, 1, sizeof(gbuf_a) );
 
-  STDOUT_os;
-  os <<  NL "I2C recv r2 from  " <<  HexInt8( addr ) <<  " : "  << HexInt16( reg ) <<  " n= " << n;
+  std_out <<  NL "I2C recv r2 from  " <<  HexInt8( addr ) <<  " : "  << HexInt16( reg ) <<  " n= " << n;
 
   i2c_dbg->resetDev();
 
@@ -195,13 +189,12 @@ CmdInfo CMDINFO_I2C_RECV_R2 {
 
 int cmd_i2c_setaddr( int argc, const char * const * argv )
 {
-  STDOUT_os;
   if( argc < 2 ) {
-    os <<  "Need addr [1-127]" NL;
+    std_out <<  "Need addr [1-127]" NL;
     return 1;
   }
   if( !i2c_client_def ) {
-    os << "# Error: I2C default client is not set!" << NL;
+    std_out << "# Error: I2C default client is not set!" << NL;
     return 2;
   }
   uint8_t addr  = (uint8_t)arg2long_d( 1, argc, argv, 0x0, 0,   127 );

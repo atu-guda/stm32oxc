@@ -62,8 +62,7 @@ int cmd_test0( int argc, const char * const * argv )
   int start = arg2long_d( 1, argc, argv, 0, 0 );
   // uint32_t t_step = UVAR('t');
 
-  STDOUT_os;
-  os <<  NL "Test0: start= "  <<  start <<  NL;
+  std_out <<  NL "Test0: start= "  <<  start <<  NL;
 
   HAL_StatusTypeDef rc;
   __HAL_SD_ENABLE( &hsd );
@@ -82,8 +81,8 @@ int cmd_test0( int argc, const char * const * argv )
   __HAL_SD_DISABLE( &hsd );
 
   dump8( sd_buf, sizeof(sd_buf) );
-  os << "rc= " << rc << " sd_state= " << sd_state << " card_state= " << card_state << NL;
-  os <<  "sd_err= "  << HexInt(  sd_err )  <<  " sd_state2= " << sd_state2
+  std_out << "rc= " << rc << " sd_state= " << sd_state << " card_state= " << card_state << NL;
+  std_out <<  "sd_err= "  << HexInt(  sd_err )  <<  " sd_state2= " << sd_state2
      <<  "type= "  <<  cardInfo.CardType
      <<  " ver= "  <<  cardInfo.CardVersion
      <<  " class = "  <<  cardInfo.Class

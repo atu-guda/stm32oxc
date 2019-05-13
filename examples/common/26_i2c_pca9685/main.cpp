@@ -70,9 +70,8 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  STDOUT_os;
   if( ! pwmc.init() ) {
-    os <<  "Fail to init PCA9685, Error= " << pwmc.getErr() <<  NL;
+    std_out <<  "Fail to init PCA9685, Error= " << pwmc.getErr() <<  NL;
     return 1;
   }
 
@@ -85,7 +84,7 @@ int cmd_test0( int argc, const char * const * argv )
   auto pre = pwmc.getPresc();
   auto freq = pwmc.getFreq();
   auto peri = pwmc.getPeriod_us();
-  os << "presc= "   << pre << " freq= " << freq << " period= " << peri
+  std_out << "presc= "   << pre << " freq= " << freq << " period= " << peri
      << " us, on= " << on  << " off= "  <<  off <<  NL;
 
   // pwmc.setServo( 0, -50 );
@@ -102,8 +101,7 @@ int cmd_setFreq( int argc, const char * const * argv )
   auto pre = pwmc.getPresc();
   auto freq_get = pwmc.getFreq();
   auto peri = pwmc.getPeriod_us();
-  STDOUT_os;
-  os << "presc= " << pre << " freq= " << freq_get <<  " period= " <<  peri <<  NL;
+  std_out << "presc= " << pre << " freq= " << freq_get <<  " period= " <<  peri <<  NL;
   return 0;
 }
 
@@ -112,8 +110,7 @@ int cmd_setPulse( int argc, const char * const * argv )
   int n  = arg2long_d( 1, argc, argv, 0, 0, PCA9685::n_ch-1 );
   int v  = arg2long_d( 2, argc, argv, 0, 0 );
   uint16_t va = pwmc.us2v( v );
-  STDOUT_os;
-  os <<  "Pulse: n= " <<  n <<  " v= " <<  v << " va= " <<  va << NL;
+  std_out <<  "Pulse: n= " <<  n <<  " v= " <<  v << " va= " <<  va << NL;
   pwmc.set( n, 0, va );
   return 0;
 }
@@ -124,8 +121,7 @@ int cmd_setServo( int argc, const char * const * argv )
   int v  = arg2long_d( 2, argc, argv, 0, -PCA9685::servo_in_max, PCA9685::servo_in_max );
   uint16_t va = pwmc.servo2v( v );
   uint16_t t  = pwmc.servo2t( v );
-  STDOUT_os;
-  os << "Pulse: n= " << n <<  " v= " << v <<  " va= " << va << " t= " << t << NL;
+  std_out << "Pulse: n= " << n <<  " v= " << v <<  " va= " << va << " t= " << t << NL;
   pwmc.setServo( n, v );
   return 0;
 }

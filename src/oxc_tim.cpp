@@ -1,7 +1,6 @@
 #include <oxc_tim.h>
 
 #ifdef USE_OXC_DEBUG
-  #include <oxc_devio.h>
   #include <oxc_outstream.h>
 #endif
 
@@ -57,9 +56,8 @@ uint32_t calc_TIM_arr_for_base_freq( TIM_TypeDef *tim, uint32_t base_freq )
 #ifdef USE_OXC_DEBUG
 void tim_print_cfg( TIM_TypeDef *tim )
 {
-  STDOUT_os;
   if( !tim ) {
-    os << NL << __PRETTY_FUNCTION__  << " : tim = nullptr";
+    std_out << NL << __PRETTY_FUNCTION__  << " : tim = nullptr";
     return;
   }
   uint32_t arr = tim->ARR;
@@ -68,7 +66,7 @@ void tim_print_cfg( TIM_TypeDef *tim )
 
   int freq1 = freq_in  / ( psc + 1 );
   int freq2 = freq1    / ( arr + 1 );
-  os <<  "# timer " << HexInt( tim )
+  std_out <<  "# timer " << HexInt( tim )
      <<  " PSC: "   <<  psc
      <<  " ARR: "   <<  arr
      <<  " f_in: "  <<  freq_in

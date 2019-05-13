@@ -355,7 +355,7 @@ int measure_adc()
 
   if( HAL_ADC_Start_DMA( &hadc1, (uint32_t *)adc_u16, n_adc ) != HAL_OK )   {
     errno = 10000;
-    // os << "## E Fail to start ADC_DMA" << NL;
+    // std_out << "## E Fail to start ADC_DMA" << NL;
     return 0;
   }
   for( int j=0; adc_state == 0 && j<50; ++j ) {
@@ -363,7 +363,7 @@ int measure_adc()
   }
   if( adc_state != 1 )  {
     errno = 10001;
-    // os << "## E Fail to wait ADC_DMA " << adc_state << NL;
+    // std_out << "## E Fail to wait ADC_DMA " << adc_state << NL;
     return 0;
   }
 
@@ -473,22 +473,20 @@ int convert_uin( int argc, const char * const * argv )
 
 int tty_output()
 {
-  STDOUT_os;
-
   if( show_eq ) {
-    os << "= ";
+    std_out << "= ";
   }
-  os << time_f << ' ';
+  std_out << time_f << ' ';
 
   for( int i=0; i < nu_uout; ++i ) {
-    os << uout[i] << ' ';
+    std_out << uout[i] << ' ';
   }
 
   for( int i=0; i < nu_uout_i; ++i ) {
-    os << uout_i[i] << ' ';
+    std_out << uout_i[i] << ' ';
   }
-  os << NL;
-  os.flush();
+  std_out << NL;
+  std_out.flush();
 
   return 1;
 }
@@ -531,8 +529,7 @@ int cmd_tloop( int argc, const char * const * argv )
   int n  = arg2long_d( 1, argc, argv, UVAR('n'), 1,   100000000 );
   uint32_t t_step = UVAR('t');
 
-  STDOUT_os;
-  os << "# n= " << n << " t= " << t_step << NL; os.flush();
+  std_out << "# n= " << n << " t= " << t_step << NL; std_out.flush();
 
   show_lcd = true;
   if( t_step < 50 ) {
@@ -556,7 +553,7 @@ int cmd_tloop( int argc, const char * const * argv )
     int proc_rc = one_step();
 
     if( proc_rc < 1 ) {
-      os << "# err: proc_rc = " << proc_rc << NL;
+      std_out << "# err: proc_rc = " << proc_rc << NL;
       break;
     }
 
@@ -573,8 +570,6 @@ int cmd_tloop( int argc, const char * const * argv )
 
 int cmd_exch( int argc, const char * const * argv )
 {
-  STDOUT_os;
-
   if( ! meas_inited ) {
     init_meas();
   }
@@ -587,7 +582,7 @@ int cmd_exch( int argc, const char * const * argv )
   int proc_rc = one_step();
 
   if( proc_rc < 1 ) {
-    os << "# err: proc_rc = " << proc_rc << NL;
+    std_out << "# err: proc_rc = " << proc_rc << NL;
     return 1;
   }
 
@@ -601,9 +596,8 @@ int cmd_ld( int argc, const char * const * argv )
 
 int cmd_sd( int argc, const char * const * argv )
 {
-  STDOUT_os;
   if( argc < 3 ) {
-    os << "# Error: need 2 arguments" << NL;
+    std_out << "# Error: need 2 arguments" << NL;
     return 1;
   }
   int rc = datas.set( argv[1], argv[2] );
@@ -613,8 +607,7 @@ int cmd_sd( int argc, const char * const * argv )
 int cmd_addCmd( int argc, const char * const * argv )
 {
   int rc = eng.addCmd( argv[1] );
-  STDOUT_os;
-  os << "# pgm count << " << eng.pgmSize() << NL;
+  std_out << "# pgm count << " << eng.pgmSize() << NL;
   return !rc;
 }
 
@@ -678,8 +671,7 @@ int cmd_dac( int argc, const char * const * argv )
 
   dac_output();
 
-  STDOUT_os;
-  os << "# DAC output: v0= " << dac[0] << " v1= " << dac[1] << NL; os.flush();
+  std_out << "# DAC output: v0= " << dac[0] << " v1= " << dac[1] << NL; std_out.flush();
 
   return 0;
 }
@@ -694,12 +686,11 @@ int cmd_pwm( int argc, const char * const * argv )
 
 int cmd_tim_info( int argc, const char * const * argv )
 {
-  STDOUT_os;
-  os << "TIM1: ";  tim_print_cfg( TIM1 );
-  os << "TIM2: ";  tim_print_cfg( TIM2 );
-  os << "TIM3: ";  tim_print_cfg( TIM3 );
-  os << "TIM4: ";  tim_print_cfg( TIM4 );
-  os << "TIM5: ";  tim_print_cfg( TIM5 );
+  std_out << "TIM1: ";  tim_print_cfg( TIM1 );
+  std_out << "TIM2: ";  tim_print_cfg( TIM2 );
+  std_out << "TIM3: ";  tim_print_cfg( TIM3 );
+  std_out << "TIM4: ";  tim_print_cfg( TIM4 );
+  std_out << "TIM5: ";  tim_print_cfg( TIM5 );
   dump8( TIM3, 0x60 );
   dump8( TIM5, 0x60 );
   return 0;
@@ -897,9 +888,9 @@ void HAL_TIM_IC_CaptureCallback( TIM_HandleTypeDef *htim )
   // test code size consumption for STL parts
   // vector<char> tmp_x1;
   // tmp_x1.assign( 100, 'x' ); // + 100
-  // os << tmp_x1[5] << NL;
+  // std_out << tmp_x1[5] << NL;
   // string s1 = "xdfg";        // + 100
-  // os << s1.c_str() << NL;
+  // std_out << s1.c_str() << NL;
   // map<string, int> m_x;      // + 11k
   // m_x[s1] = 12;
 

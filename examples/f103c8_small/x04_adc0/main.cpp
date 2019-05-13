@@ -40,18 +40,17 @@ int main(void)
   BOARD_PROLOG;
 
   leds.write( 0 );
-  STDOUT_os;
 
   MX_DigitalIn_Init();
   MX_DMA_Init();
   MX_ADC1_Init();
 
   uint32_t c_msp = __get_MSP();
-  os << "# MSP-__heap_top = " << ((unsigned)c_msp - (unsigned)(__heap_top) ) << NL;
-  os.flush();
+  std_out << "# MSP-__heap_top = " << ((unsigned)c_msp - (unsigned)(__heap_top) ) << NL;
+  std_out.flush();
 
   if( HAL_ADCEx_Calibration_Start( &hadc1 ) != HAL_OK )  {
-    os << "HAL_ADCEx_Calibration_Start failed" NL; os.flush();
+    std_out << "HAL_ADCEx_Calibration_Start failed" NL; std_out.flush();
     die4led( 0 );
   }
 
@@ -88,14 +87,14 @@ int main(void)
     vbin  = ( d_in_pure >> 3 ) & 0x03;
     vbin |= ( d_in_pure >> 6 ) & 0x0C;
 
-    os << FmtInt( n * delay_val, 8, '0' ) << ' '
+    std_out << FmtInt( n * delay_val, 8, '0' ) << ' '
        << FloatMult( vi[0], 3 ) << ' '
        << FloatMult( vi[1], 3 ) << ' '
        << FloatMult( vi[2], 3 ) << ' '
        << FloatMult( vi[3], 3 ) << ' '
        << HexInt8( vbin )    << ' '  // << jj << ' '
        << ( HAL_GetTick() - tmc ) << ' ' << stat_str << NL;
-    os.flush();
+    std_out.flush();
 
     tmc += delay_val;
     uint32_t tm1 = HAL_GetTick();

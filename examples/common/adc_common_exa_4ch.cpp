@@ -83,8 +83,7 @@ void adc_show_stat( OutStream &os, uint32_t n, uint32_t st )
 void pr_ADCDMA_state()
 {
   if( UVAR('d') > 0 ) {
-    STDOUT_os;
-    os <<  "# DMA: CR= " << HexInt( adc.hdma_adc.Instance->CR, true )
+    std_out <<  "# DMA: CR= " << HexInt( adc.hdma_adc.Instance->CR, true )
        << " NDTR= "      << adc.hdma_adc.Instance->NDTR
        << " PAR= "       << HexInt( adc.hdma_adc.Instance->PAR, true )
        << " M0AR= "      << HexInt( adc.hdma_adc.Instance->M0AR, true )
@@ -100,9 +99,8 @@ int cmd_out( int argc, const char * const * argv )
   uint32_t n = arg2long_d( 1, argc, argv, ns, 0, ns+1 ); // number output series
   uint32_t st= arg2long_d( 2, argc, argv,  0, 0, ns-2 );
 
-  STDOUT_os;
-  adc_out_to( os, n, st );
-  adc_show_stat( os, n, st );
+  adc_out_to( std_out, n, st );
+  adc_show_stat( std_out, n, st );
 
   return 0;
 }
@@ -111,9 +109,8 @@ int cmd_out( int argc, const char * const * argv )
 #ifdef USE_OXC_SD
 int cmd_outsd( int argc, const char * const * argv )
 {
-  STDOUT_os;
   if( argc < 2 ) {
-    os << "# Error: need filename [n [start]]" NL;
+    std_out << "# Error: need filename [n [start]]" NL;
     return 1;
   }
 
@@ -123,7 +120,7 @@ int cmd_outsd( int argc, const char * const * argv )
   const char *fn = argv[1];
   auto file = DevOut_FatFS( fn );
   if( !file.isGood() ) {
-    os << "Error: f_open error: " << file.getErr() << NL;
+    std_out << "Error: f_open error: " << file.getErr() << NL;
     return 2;
   }
   OutStream os_f( &file );
@@ -141,8 +138,7 @@ int cmd_show_stats( int argc, const char * const * argv )
   uint32_t n = arg2long_d( 1, argc, argv, ns, 0, ns+1 ); // number output series
   uint32_t st= arg2long_d( 2, argc, argv,  0, 0, ns-2 );
 
-  STDOUT_os;
-  adc_show_stat( os, n, st );
+  adc_show_stat( std_out, n, st );
 
   return 0;
 }

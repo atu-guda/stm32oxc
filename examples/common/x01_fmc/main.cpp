@@ -51,8 +51,7 @@ int main(void)
 int cmd_test0( int argc, const char * const * argv )
 {
   unsigned n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
-  STDOUT_os;
-  os << "# Test0: n= " << n << NL;
+  std_out << "# Test0: n= " << n << NL;
   delay_ms( 100 );
   for( decltype(+n) i=0; i<n; ++i ) {
     SDRAM_ADDR[i] = (uint8_t)(i+0x20);
