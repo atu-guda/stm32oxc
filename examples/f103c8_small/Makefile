@@ -18,6 +18,7 @@ SUBDIRS = \
   24_i2c_hmc5983 \
   26_i2c_pca9685 \
   27_i2c_ads1115 \
+  29_i2c_ina226 \
   80_math_stat \
   x03_tcop
 
