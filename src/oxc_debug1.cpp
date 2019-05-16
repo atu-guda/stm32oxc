@@ -137,17 +137,47 @@ void print_user_var( int idx )
 
 //----------------------------------------------------------------------
 
+
+#if  defined (STM32F0) || defined (STM32F1)
+
+static const char *pin_moder_name[] = { "Inp", "O10", "O02", "O50", "?m?" };
+static const char *pin_cr_i_name[]  = { "Ana", "Flt", "Pud", "xxx", "?c?" };
+static const char *pin_cr_o_name[]  = { "OPP", "ODD", "APP", "AOD", "?c?" };
+
+void gpio_pin_info( GPIO_TypeDef *gi, uint16_t pin, char *s )
+{
+  if( !gi || !s || pin >= PORT_BITS ) { return; }
+  int j = 0;
+  uint32_t cr = ( pin > 7 ) ? gi->CRH : gi->CRL;
+  uint16_t p4 = ( pin & 7 ) << 2;
+
+  uint16_t mod = ( cr >> p4 ) & 0x03;
+
+  for( int i=0; i<3; ++i ) {
+    s[j++] = pin_moder_name[mod][i];
+  }
+  s[j++] = '.';
+
+  uint16_t cn = ( cr >> (p4+2) ) & 0x03;
+  const char* pin_cname = ( mod == 0 ) ? ( pin_cr_i_name[cn] ) : ( pin_cr_o_name[cn] );
+  for( int i=0; i<3; ++i ) {
+    s[j++] = pin_cname[i];
+  }
+
+  s[j++] = ' ';
+  s[j++] = '='; s[j++] = 'i';
+  s[j++] = ( ( gi->IDR >> pin ) & 1 ) ? '1' : '0';
+  s[j++] = ','; s[j++] = 'o';
+  s[j++] = ( ( gi->ODR >> pin ) & 1 ) ? '1' : '0';
+  s[j++] = 0;
+}
+
+#elif defined (STM32F2) || defined (STM32F3) || defined (STM32F4) || defined (STM32F7)
+
 static const char *pin_moder_name[] = { "Inp", "Out", "AFn", "Ana", "?m?" };
 static const char *pin_speed_name[] = { "Low", "Lo1", "Med", "Hig", "?s?" };
 static const char *pin_pupdr_name[] = { "No", "Up", "Dn", "Xx", "?p" };
 
-#if  defined (STM32F0) || defined (STM32F1)
-void gpio_pin_info( GPIO_TypeDef *gi, uint16_t pin, char *s )
-{
-  if( !gi || !s || pin >= PORT_BITS ) { return; }
-  s[0] = '?'; s[1] = 0;
-}
-#elif defined (STM32F2) || defined (STM32F3) || defined (STM32F4) || defined (STM32F7)
 void gpio_pin_info( GPIO_TypeDef *gi, uint16_t pin, char *s )
 {
   if( !gi || !s || pin >= PORT_BITS ) { return; }
