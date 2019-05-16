@@ -44,7 +44,9 @@ void HAL_I2C_MspInit( I2C_HandleTypeDef *i2c )
     gio.Mode      = GPIO_MODE_AF_OD;
     gio.Pull      = GPIO_NOPULL;
     gio.Speed     = GPIO_SPEED_MAX;
+    #ifdef BOARD_I2C_DEFAULT_GPIO_AF
     gio.Alternate = BOARD_I2C_DEFAULT_GPIO_AF;
+    #endif
 
     gio.Pin       = BOARD_I2C_DEFAULT_GPIO_PIN_SCL;
     HAL_GPIO_Init(  BOARD_I2C_DEFAULT_GPIO_SCL, &gio );

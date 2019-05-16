@@ -16,7 +16,7 @@ STMBSP=$(STMDIR)/bsp
 STMBOARDDIR=$(STMBSP)/$(BOARDNAME)
 STMCOMPONENTS=$(STMBSP)/Components
 
-# OXCDIR := oxc // from Makefile
+# OXCDIR := oxc // from Makefile TODO: from pkgconfig
 OXCINC = $(OXCDIR)/inc
 OXCINCBSP = $(OXCDIR)/inc/bsp/$(BOARDNAME)
 OXCSRC = $(OXCDIR)/src
@@ -194,7 +194,9 @@ ifeq "$(USE_OXC_I2C)" "y"
   USE_OXC = y
   SRCS += oxc_i2c.cpp
   SRCS += stm32$(MCSUFF)xx_hal_i2c.c
-  SRCS += stm32$(MCSUFF)xx_hal_i2c_ex.c
+  ifneq "$(MCSUFF)" "f1"
+    SRCS += stm32$(MCSUFF)xx_hal_i2c_ex.c
+  endif
   ifneq "$(NOUSE_DEFAULT_I2C_INIT)" "y"
     SRCS  += oxc_i2c_default_init.cpp
   endif

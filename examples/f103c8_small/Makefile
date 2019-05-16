@@ -8,6 +8,7 @@ SUBDIRS = \
   04_uart_console \
   05a_def_console \
   05c_def_cons_nort \
+  06_i2c_test \
   x03_tcop
 
 
