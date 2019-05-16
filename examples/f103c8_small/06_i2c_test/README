@@ -1,7 +1,7 @@
 Test I2C devices on I2C1
 
-SCL = B10 ? 4.7k pullUp
-SDA = B11 ? 4.7k pullUp
+SCL = B6
+SDA = B7
 
 
 

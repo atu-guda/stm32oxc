@@ -1,0 +1,5 @@
+Use barometer BMP085 via I2C
+
+SCL = B6 + 10k pullUp on board
+SDA = B7 + 10k pullUp on board
+

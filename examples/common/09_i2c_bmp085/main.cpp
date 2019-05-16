@@ -72,11 +72,14 @@ int cmd_test0( int argc, const char * const * argv )
   // char buf[buf_sz];
   int p_old = 0, p_00 = 0;
 
-  uint32_t tm0 = HAL_GetTick();
+  std_out << "# t  T      P     dp     dp0   "  NL;
+
+  uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
 
   break_flag = 0;
   for( int i=0; i<n && !break_flag; ++i ) {
 
+    uint32_t tc = HAL_GetTick();
     baro.getAllCalc( 3 );
     int t10 = baro.get_T10();
     int p   = baro.get_P();
@@ -89,7 +92,7 @@ int cmd_test0( int argc, const char * const * argv )
     // int t_u = baro.get_T_uncons();
     // int p_u = baro.get_P_uncons();
     // ifcvt( t10, 10, buf, 1 );
-    std_out << "T= " <<  FloatMult( t10, 1, 3 ) << "  P= " << p << " dp= " << dp << " dp0= " << dp0 << NL;
+    std_out << ( tc - tm00 ) << ' ' <<  FloatMult( t10, 1, 3 ) << ' ' << p << ' ' << dp << ' ' << dp0 << NL;
 
     std_out.flush();
     delay_ms_until_brk( &tm0, t_step );
