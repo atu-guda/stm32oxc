@@ -16,7 +16,9 @@ void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim )
   gio.Mode      = GPIO_MODE_AF_PP;
   gio.Pull      = GPIO_NOPULL;
   gio.Speed     = GPIO_SPEED_MAX;
+  #if  ! defined (STM32F1)
   gio.Alternate = TIM_EXA_GPIOAF;
+  #endif
   HAL_GPIO_Init( TIM_EXA_GPIO, &gio );
 }
 

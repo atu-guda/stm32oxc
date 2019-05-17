@@ -14,6 +14,8 @@ SUBDIRS = \
   09_i2c_bmp085 \
   10_i2c_pcf8591 \
   11_i2c_ds3231 \
+  12_tim_pwm \
+  14_tim_enco \
   18_i2c_ssd1306_oled \
   24_i2c_hmc5983 \
   26_i2c_pca9685 \

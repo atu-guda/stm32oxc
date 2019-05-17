@@ -1,9 +1,8 @@
 Test TIM8 as encoder output
 in: C6, C7
 
-So so stable.
+Not so stable.
 TODO: delta near 0 is huge (0xFFFF), may be with irq?
-
 
 
 

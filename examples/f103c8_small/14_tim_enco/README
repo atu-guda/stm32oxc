@@ -1,0 +1,7 @@
+Test TIM2 as encoder output
+in: A0, A1
+
+Not so stable.
+TODO: delta near 0 is huge (0xFFFF), may be with irq?
+
+
