@@ -21,15 +21,15 @@ CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
 int cmd_reset_spi( int argc, const char * const * argv );
 CmdInfo CMDINFO_RESETSPI { "reset_spi", 'Z', cmd_reset_spi, " - reset spi"  };
 
-int cmd_testx( int argc, const char * const * argv );
-CmdInfo CMDINFO_TESTX { "testX", 'X', cmd_testx, " - test output conversion"  };
+// int cmd_testx( int argc, const char * const * argv );
+// CmdInfo CMDINFO_TESTX { "testX", 'X', cmd_testx, " - test output conversion"  };
 
   const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
 
   &CMDINFO_TEST0,
   &CMDINFO_RESETSPI,
-  &CMDINFO_TESTX,
+//  &CMDINFO_TESTX,
   nullptr
 };
 
@@ -41,8 +41,8 @@ DevSPI spi_d( &spi_h, &nss_pin );
 
 const unsigned MAX31855_SIZE = 4; // 32 bit per packet
 
-const uint32_t MAX31855_FAIL = 0x00000001; // in v[2]
-const uint32_t MAX31855_BRK  = 0x00000001; // in v[0]
+const uint32_t MAX31855_FAIL = 0x00010000;
+const uint32_t MAX31855_BRK  = 0x00000001;
 const uint32_t MAX31855_GND  = 0x00000002;
 const uint32_t MAX31855_VCC  = 0x00000004;
 
@@ -83,10 +83,7 @@ int cmd_test0( int argc, const char * const * argv )
 
   std_out <<  NL "# Test0: n= "  <<  n <<  " t_step= "  <<  t_step <<  NL;
 
-  union {
-  uint8_t v[MAX31855_SIZE];
   uint32_t vl;
-  };
   int rc;
   spi_d.setTssDelay( 200 );
 
@@ -94,43 +91,42 @@ int cmd_test0( int argc, const char * const * argv )
 
   break_flag = 0;
   for( int i=0; i<n && !break_flag; ++i ) {
-    rc = spi_d.recv( (uint8_t*)(v), sizeof(v) );
+    rc = spi_d.recv( (uint8_t*)(&vl), sizeof(vl) );
+    vl = __builtin_bswap32( vl );// or __REV(vl)
     uint32_t tcc = HAL_GetTick();
-    std_out <<  tcc - tm00  <<  ' ';
+    std_out <<  FloatMult( tcc - tm00, 3, 5 )  <<  ' ';
 
 
-    int32_t tif =  ( v[3] >> 4 ) | ( v[2] << 4 ); // Temperature internal: 12 bit 4:15
+    int32_t tif = ( vl >> 4 ) & 0x0FFF;
     if( tif & 0x0800 ) { // sign propagete
       tif |= 0xFFFFF000;
     }
     int32_t tid4 = tif * 625; // 4 bit for fraction part
     std_out << FloatMult( tid4, 4 );
 
-    int32_t tof =  ( v[1] >> 2 ) | ( v[0] << 6 ); // Temperature out: 14 bit 18:31
+    int32_t tof =  ( vl >> 18 ) & 0x3FFF; // Temperature out: 14 bit 18:31
     if( tof & 0x2000 ) {
       tof |= 0xFFFFC000;
     }
     int tod4 = tof * 25; // 2 bit for fraction
-    std_out <<  ' ' << FloatMult( tod4, 2 ) << ' ';
+    std_out <<  ' ' << FloatMult( tod4, 2 ) << ' ' << ( vl & 0x07 ) << ' '; // err
 
 
-    if( v[2] & MAX31855_FAIL ) {
+    if( vl & MAX31855_FAIL ) {
       std_out <<  'F';
     };
-    if( v[0] & MAX31855_BRK ) {
+    if( vl & MAX31855_BRK ) {
       std_out <<  'B';
     }
-    if( v[0] & MAX31855_GND ) {
+    if( vl & MAX31855_GND ) {
       std_out <<  'G';
     }
-    if( v[0] & MAX31855_VCC ) {
+    if( vl & MAX31855_VCC ) {
       std_out <<  'V';
     }
 
     if( UVAR('d') > 0 ) {
-      // std_out <<  " tif= "  << HexInt( tif ) <<  " tof= "  << HexInt( tof ) << " rc= " << rc << " vl= " << HexInt( __REV(vl) );
-      std_out <<  " tif= "  << HexInt( tif ) <<  " tof= "  << HexInt( tof ) << " rc= " << rc << " vl= " << HexInt( __builtin_bswap32(vl) );
-      dump8( v, sizeof(v) );
+      std_out <<  " vl= " << HexInt( vl ) << " tif= "  << HexInt( tif ) <<  " tof= "  << HexInt( tof ) << " rc= " << rc;
     }
 
     std_out << NL;
@@ -155,17 +151,17 @@ int cmd_reset_spi( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
   return 0;
 }
 
-int cmd_testx( int argc, const char * const * argv )
-{
-  std_out << "# test output" NL;
-  const int mult = 100;
-  for( int i=-104; i<125; i+=5 ) {
-    int i1 = i / mult;
-    int i2 = i - i1 * mult;
-    std_out << i << ' ' << FloatMult( i, 2 ) << ' ' << i1 << ' ' << i2 << NL;
-  }
-  return 0;
-}
+// int cmd_testx( int argc, const char * const * argv )
+// {
+//   std_out << "# test output" NL;
+//   const int mult = 100;
+//   for( int i=-104; i<125; i+=5 ) {
+//     int i1 = i / mult;
+//     int i2 = i - i1 * mult;
+//     std_out << i << ' ' << FloatMult( i, 2 ) << ' ' << i1 << ' ' << i2 << NL;
+//   }
+//   return 0;
+// }
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
