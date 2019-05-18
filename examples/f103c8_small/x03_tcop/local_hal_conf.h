@@ -1,6 +1,5 @@
 
 #define NEED_LEDS_EXTRA 1
-#define USE_SPI_CRC 0
 
 
 // ########################## Manual Module Selection ##############################

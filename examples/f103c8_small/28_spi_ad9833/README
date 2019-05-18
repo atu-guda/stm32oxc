@@ -1,0 +1,8 @@
+Test AD9833: programmable waveform generator
+
+Used: SPI1:
+A4 = SNSS
+A5 = SCK
+A5 = MISO
+A7 = MOSI
+

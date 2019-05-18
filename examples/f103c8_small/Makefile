@@ -23,8 +23,10 @@ SUBDIRS = \
   22_spi_pcd8544_lcd \
   24_i2c_hmc5983 \
   25_spi_max31855_tcouple \
+  25a_spi_max6672_tcouple2 \
   26_i2c_pca9685 \
   27_i2c_ads1115 \
+  28_spi_ad9833 \
   29_i2c_ina226 \
   80_math_stat \
   x03_tcop
