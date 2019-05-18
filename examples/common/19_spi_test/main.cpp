@@ -30,7 +30,7 @@ int cmd_reset_spi( int argc, const char * const * argv );
 CmdInfo CMDINFO_RESETSPI { "reset_spi", 'Z', cmd_reset_spi, " - reset spi"  };
 
 int cmd_sendloop_spi( int argc, const char * const * argv );
-CmdInfo CMDINFO_SENDLOOPSPI { "sendloop_spi", 'N', cmd_sendloop_spi, " N [val] - send N vals via SPI"  };
+CmdInfo CMDINFO_SENDLOOPSPI { "sendloop_spi", 'N', cmd_sendloop_spi, " N [val0 [val1]] - send N vals via SPI"  };
 
   const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -46,7 +46,7 @@ CmdInfo CMDINFO_SENDLOOPSPI { "sendloop_spi", 'N', cmd_sendloop_spi, " N [val] -
 
 
 
-PinsOut nss_pin( BOARD_SPI_DEFAULT_GPIO_SNSS, BOARD_SPI_DEFAULT_GPIO_PIN_SNSS, 1 ); //  to test GPIO
+PinsOut nss_pin( BOARD_SPI_DEFAULT_GPIO_SNSS, BOARD_SPI_DEFAULT_GPIO_PIN_SNSS, 1 );
 SPI_HandleTypeDef spi_h;
 DevSPI spi_d( &spi_h, &nss_pin );
 
@@ -87,7 +87,7 @@ int cmd_test0( int argc, const char * const * argv )
 {
   uint8_t sv = arg2long_d( 1, argc, argv, 0x15, 0, 0xFF );
   int nd     = arg2long_d( 2, argc, argv,    2, 0, sizeof(gbuf_a) );
-  std_out << NL "Test0: sv= "  << HexInt8( sv ) << " nd= "  <<  nd  <<  NL;
+  std_out << NL "# Test0: sv= "  << HexInt8( sv ) << " nd= "  <<  nd  <<  NL;
 
   if( UVAR('d') > 0 ) { // debug: for logic analizer start
     nss_pin.write( 0 );
@@ -96,7 +96,6 @@ int cmd_test0( int argc, const char * const * argv )
     DLY_T;
   }
 
-
   // spi_d.resetDev();
 
   int rc = spi_d.send_recv( sv, (uint8_t*)gbuf_a, nd );
@@ -104,7 +103,7 @@ int cmd_test0( int argc, const char * const * argv )
   // int rc = spi_d.recv( (uint8_t*)gbuf_a, imin(UVAR('r'),sizeof(gbuf_a)) );
 
 
-  std_out << "rc = " << rc << NL;
+  std_out << "# rc = " << rc << NL;
   if( rc > 0 ) {
     dump8( gbuf_a, rc );
   }
@@ -115,7 +114,7 @@ int cmd_test0( int argc, const char * const * argv )
 
 int cmd_sendr_spi( int argc, const char * const * argv )
 {
-  uint8_t sbuf[16]; // really used not more then 9 - max args
+  uint8_t sbuf[MAX_ARGS+1];
   uint16_t ns = argc - 1;
 
   for( uint16_t i = 0; i<ns; ++i ) {
@@ -124,17 +123,17 @@ int cmd_sendr_spi( int argc, const char * const * argv )
   }
 
   int nd = imin( UVAR('r'), sizeof(gbuf_a) );
-  std_out <<  NL "Send/recv: ns= "  <<  ns  <<  " nd= "  <<  nd  <<  "* to send: " NL;
+  std_out <<  NL "# Send/recv: ns= "  <<  ns  <<  " nd= "  <<  nd  <<  "* to send: " NL;
   dump8( sbuf, ns );
 
   int rc = spi_d.send_recv( sbuf, ns, (uint8_t*)gbuf_a, nd );
 
-  pr_sdx( rc );
-  if( rc > 0 ) {
-    std_out <<  "* recv: " NL ;
+  std_out << "# rc= " << rc << NL;
+  if( rc > 0 || nd == 0 ) {
+    std_out <<  "# recv: " NL ;
     dump8( gbuf_a, rc );
   } else {
-    std_out <<  "** Error, code= "  << spi_d.getErr() <<  NL;
+    std_out <<  "#** Error, code= "  << spi_d.getErr() <<  NL;
   }
   delay_ms( 10 );
 
@@ -147,7 +146,7 @@ int cmd_recv_spi( int argc, const char * const * argv )
 {
   int nd = arg2long_d( 1, argc, argv, UVAR('r'), 1, sizeof(gbuf_a) );
 
-  std_out <<  NL "Recv: nd= "  <<  nd  <<  NL;
+  std_out <<  NL "# Recv: nd= "  <<  nd  <<  NL;
 
   int rc = spi_d.recv( (uint8_t*)gbuf_a, nd );
 
@@ -155,7 +154,7 @@ int cmd_recv_spi( int argc, const char * const * argv )
   if( rc > 0 ) {
     dump8( gbuf_a, rc );
   } else {
-    std_out <<  "** Error, code= "  << spi_d.getErr()<<  NL;
+    std_out <<  "#** Error, code= "  << spi_d.getErr()<<  NL;
   }
   delay_ms( 10 );
 
@@ -166,7 +165,7 @@ int cmd_recv_spi( int argc, const char * const * argv )
 
 int cmd_duplex_spi( int argc, const char * const * argv )
 {
-  uint8_t sbuf[16]; // really used not more then 9 - max args
+  uint8_t sbuf[MAX_ARGS+1];
   uint16_t ns = argc - 1;
 
   for( uint16_t i = 0; i<ns; ++i ) {
@@ -174,16 +173,16 @@ int cmd_duplex_spi( int argc, const char * const * argv )
     sbuf[i] = t;
   }
 
-  std_out <<  NL "Duplex: ns= "  <<  ns  <<  NL;
+  std_out <<  NL "# Duplex: ns= "  <<  ns  <<  NL;
   dump8( sbuf, ns );
 
   int rc = spi_d.duplex( sbuf, (uint8_t*)gbuf_a, ns );
 
-  std_out << "rc = " << rc << NL;
+  std_out << "# rc = " << rc << NL;
   if( rc > 0 ) {
     dump8( gbuf_a, rc );
   } else {
-    std_out <<  "** Error, code= "  << spi_d.getErr() <<  NL;
+    std_out <<  "#** Error, code= "  << spi_d.getErr() <<  NL;
   }
   delay_ms( 10 );
 
@@ -194,11 +193,13 @@ int cmd_duplex_spi( int argc, const char * const * argv )
 
 int cmd_sendloop_spi( int argc, const char * const * argv )
 {
-  int n      = arg2long_d( 1, argc, argv,    1, 1, 10000000 );
-  uint8_t sv = arg2long_d( 2, argc, argv, 0x55, 0, 0xFF );
-  std_out << NL "sendloop_spi: sv= "  << HexInt8( sv ) << " n= "  <<  n  <<  NL;
-  for( int i=0; i<n; ++i ) {
-    spi_d.send( sv );
+  int n       = arg2long_d( 1, argc, argv,    1, 1, 10000000 );
+  uint8_t sv0 = arg2long_d( 2, argc, argv, 0x55, 0, 0xFF );
+  uint8_t sv1 = arg2long_d( 3, argc, argv,  sv0, 0, 0xFF );
+  std_out << NL "# sendloop_spi: sv0= "  << HexInt8( sv0 ) << " sv1= " << HexInt8( sv1 )
+          << " n= "  <<  n  <<  NL;
+  for( int i=0; i<n && ! break_flag; ++i ) {
+    spi_d.send( (i&1) ? sv1 : sv0 );
   }
   return 0;
 }

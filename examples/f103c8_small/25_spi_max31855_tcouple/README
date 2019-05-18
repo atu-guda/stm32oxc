@@ -1,0 +1,9 @@
+Test MAX31855 thermocouple drv via SPI
+
+
+Used: SPI1:
+A4 = SNSS
+A5 = SCK
+A5 = MISO
+A7 = MOSI
+

@@ -17,7 +17,12 @@ SUBDIRS = \
   12_tim_pwm \
   14_tim_enco \
   18_i2c_ssd1306_oled \
+  19_spi_test \
+  20_spi_mem_a25 \
+  21_spi_max7219 \
+  22_spi_pcd8544_lcd \
   24_i2c_hmc5983 \
+  25_spi_max31855_tcouple \
   26_i2c_pca9685 \
   27_i2c_ads1115 \
   29_i2c_ina226 \

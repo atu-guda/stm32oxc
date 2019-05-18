@@ -1,0 +1,9 @@
+Test basic SPI actions
+
+Used: SPI1:
+A5 = SCK
+A6 = MISO
+A7 = MOSI
+A4 = Soft NSS
+
+

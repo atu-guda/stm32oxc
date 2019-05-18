@@ -20,8 +20,8 @@ int DevSPIMem_AT::write( const uint8_t *buf, uint32_t addr, int n )
   write_enable();
   uint8_t c[4];
   c[0] = Cmd::PGM; c[3] = addr & 0xFF;
-  addr <<= 8;      c[2] = addr & 0xFF;
-  addr <<= 8;      c[1] = addr & 0xFF;
+  addr >>= 8;      c[2] = addr & 0xFF;
+  addr >>= 8;      c[1] = addr & 0xFF;
   int nt = spi.send2( c, 4, buf, n );
   bool r = wait_ready();
   return r ? nt : 0;
@@ -31,8 +31,8 @@ int DevSPIMem_AT::read( uint8_t *buf, uint32_t addr, int n )
 {
   uint8_t c[4];
   c[0] = Cmd::READ;c[3] = addr & 0xFF;
-  addr <<= 8;      c[2] = addr & 0xFF;
-  addr <<= 8;      c[1] = addr & 0xFF;
+  addr >>= 8;      c[2] = addr & 0xFF;
+  addr >>= 8;      c[1] = addr & 0xFF;
   int nt = spi.send_recv( c, 4, buf, n );
   return nt;
 }

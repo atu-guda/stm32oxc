@@ -82,6 +82,10 @@
   #endif
 #endif
 
+#ifndef USE_SPI_CRC
+#define USE_SPI_CRC 0
+#endif
+
 
 
 #if defined (STM32F0)

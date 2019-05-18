@@ -75,8 +75,8 @@ class FloatMult : public OutStreamFmt {
       : v( a ), min_sz_frac( a_min_sz_frac ), min_sz_int( a_min_sz_int ), plus_ch( a_plus_ch )
       { for( unsigned i=0; i<min_sz_frac; ++i ) { mult *= 10; } };
    virtual void out( OutStream &os ) const override;
-   int v;
-   unsigned mult = 1, min_sz_frac, min_sz_int;
+   int v, mult = 1;
+   unsigned min_sz_frac, min_sz_int;
    char plus_ch;
 };
 

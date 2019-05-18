@@ -1,0 +1,9 @@
+Test SPI AT25F512/1024 memory
+
+Used: SPI1:
+A4 = SNSS
+A5 = SCK
+A5 = MISO
+A7 = MOSI
+
+

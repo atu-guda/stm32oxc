@@ -25,16 +25,15 @@ void HAL_SPI_MspInit( SPI_HandleTypeDef *hspi )
   GPIO_InitTypeDef gio;
   if( hspi->Instance == BOARD_SPI_DEFAULT ) {
     BOARD_SPI_DEFAULT_ENABLE;
-    // SPI2 GPIO Configuration
-    // B13 --> SPI2_SCK
-    // B14 --> SPI2_MISO
-    // B15 --> SPI2_MOSI
-    // B1  --> manual NSS (separate init)
 
     gio.Mode      = GPIO_MODE_AF_PP;
     gio.Pull      = GPIO_NOPULL;
     gio.Speed     = GPIO_SPEED_MAX;
+
+    #if  ! defined (STM32F1)
     gio.Alternate = BOARD_SPI_DEFAULT_GPIO_AF;
+    #endif
+
     gio.Pin       = BOARD_SPI_DEFAULT_GPIO_PIN_SCK;
     HAL_GPIO_Init( BOARD_SPI_DEFAULT_GPIO_SCK, &gio );
     gio.Pin       = BOARD_SPI_DEFAULT_GPIO_PIN_MISO;
