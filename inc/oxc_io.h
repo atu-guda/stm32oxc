@@ -30,6 +30,8 @@ class DevIn {
 Chst getChar( int fd, int w_tick );
 Chst tryGet( int fd );
 unsigned tryGetLine( int fd, char *d, unsigned max_len );
+int unget( int fd, char c );
+int ungets( int fd, const char *s );
 int write( int fd, const char *s, int l );
 int pr( const char *s, int fd = 1 );
 int prl( const char *s, unsigned l, int fd = 1 );

@@ -72,7 +72,7 @@ int cmd_test0( int argc, const char * const * argv )
   int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
   uint32_t t_step = UVAR('t');
 
-  std_out << NL "Test0: n= " << n << " t= " << t_step << NL;
+  std_out << NL "# Test0: n= " << n << " t= " << t_step << NL;
   std_out.flush();
 
   int16_t adata[MPU6050::mpu6050_alldata_sz];

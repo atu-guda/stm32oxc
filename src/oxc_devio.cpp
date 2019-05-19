@@ -208,6 +208,22 @@ unsigned tryGetLine( int fd, char *d, unsigned max_len )
   return devio_fds[fd]->tryGetLine( d, max_len );
 }
 
+int unget( int fd, char c )
+{
+  COMMON_FD_TEST( fd );
+  devio_fds[fd]->unget( c );
+  return 1;
+}
+
+int ungets( int fd, const char *s )
+{
+  COMMON_FD_TEST( fd );
+  for( ; *s; ++s ) {
+    devio_fds[fd]->unget( *s );
+  }
+  return 1;
+}
+
 int write( int fd, const char *s, int l )
 {
   COMMON_FD_TEST( fd );
