@@ -1,4 +1,5 @@
 Fix bug with small floats output
+STD_POST_EXEC redesing: weak?
 substitute vars (or by any hook) in cmdline: oxc_console.cpp: exec_direct?
 oxc_smallrl: UTF-8 minimal handling
 common RCC init

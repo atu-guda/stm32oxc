@@ -397,7 +397,7 @@ int  SMLRL::SmallRL::history_find_next( int cp ) const
 
 void SMLRL::SmallRL::history_print() const
 {
-  pr( NL "HISTORY:" NL, fd );
+  pr( NL "# HISTORY:" NL, fd );
   int c = h_cur;
 
   for( int i=0; i<max_hist_out_lines; ++i ) {

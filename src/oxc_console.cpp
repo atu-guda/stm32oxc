@@ -252,7 +252,7 @@ int exec_direct( const char *s, int l )
       break_flag = 0;  idle_flag = 1;
       if( console_verbose > 0 ) {
         std_out << NL "#== END: \"" << nm << "\" rc=" <<  rc << " t= " << tm1 - tm0 << NL;
-        delay_ms( 1 );
+        delay_ms( 10 );
       }
   } else {
     std_out << "# ERR:  Unknown command \"" << argv[0] << "\"" NL;
