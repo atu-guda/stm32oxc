@@ -38,41 +38,43 @@ I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );
 HD44780_i2c lcdt( i2cd, 0x27 );
 
-int menu_lcd_output( const char *s1, const char *s2 = nullptr );
+int menu4b_output( const char *s1, const char *s2 = nullptr );
 
-volatile uint32_t menu_ev_global = 0;
-void menu_ev_dispatch();
+volatile uint32_t menu4b_ev_global = 0;
+void menu4b_ev_dispatch();
 
-int init_buttons(); // board dependent function: to separate file
+int init_menu4b_buttons(); // board dependent function: to separate file
 
-struct MenuItem {
+struct Menu4bItem {
   const char *name;
   int *pv;
   int vstep = 1, vmin = INT_MIN, vmax = INT_MAX;
   int (*fun)(int) = nullptr;
 };
 
-enum class MenuCmd {
-  Esc = 0, Up = 1, Down = 2, Enter = 3, N
+enum MenuCmd : uint32_t {
+  Esc = 1, Up = 2, Down = 3, Enter = 4, Run = 10
 };
 
 
-enum class MenuLevel {
-  ready = 0, select = 1, edit = 2, N
+enum MenuLevel {
+  ready = 0, select = 1, edit = 2
 };
 
-const char *const menuLevelName[] = { "Ready", "Select", "Edit", "?3", "?4?" };
 
 
 struct MenuState {
-  const MenuItem* menu;
+  const Menu4bItem* menu;
   const uint32_t menu_size;
+  const char* run_cmd = "h\n";
   MenuLevel level = MenuLevel::ready;
   int index = 0; // selected element index
   int *pv   = nullptr; // ptr current var under edit (level2)
-  int v = 0; // currenr value
+  int v = 0; // current value
+  static const char *const menuLevelName[5];
 };
 
+const char *const MenuState::menuLevelName[] = { "Ready ", "Select ", "Edit ", "?3 ", "?4? " };
 
 int T_off = 100, T_hyst = 10, t_dt = 1000;
 int fun_x1( int n );
@@ -84,28 +86,37 @@ int fun_x1( int n )
 }
 
 
-const MenuItem menu_main[] = {
+const Menu4bItem menu_main[] = {
   { "T_off",   &T_off,    1, -100,   5000, nullptr },
   { "T_hyst" , &T_hyst,   1,    0,   1000, nullptr },
   { "t_dt",      &t_dt, 100,  100, 100000, nullptr },
-  { "fun_x1",  nullptr,   1,    7, 100000,  fun_x1 }
+  { "fun_x1",  nullptr,   1,    0, 100000,  fun_x1 }
 };
 
-MenuState mstate { menu_main, size( menu_main) };
+MenuState menu4b_state { menu_main, size( menu_main), "T\n" };
 
 
-void menu_ev_dispatch()
+void menu4b_ev_dispatch()
 {
-  uint32_t ev = menu_ev_global;
-  menu_ev_global = 0;
-  switch( ev ) {
-    case 10:
-      std_out << "#!!! run2" NL;
-      ungets( 0, "T\n" );
-      break;
-    default:
-      break;
+  uint32_t ev = menu4b_ev_global;
+  menu4b_ev_global = 0;
+  if( ev == 0 ) {
+    return;
   }
+
+  if( ev == MenuCmd::Run ) { // special case
+    // std_out << "#!!! run2" NL;
+    ungets( 0, menu4b_state.run_cmd );
+    return;
+  }
+
+  // TODO: more special cases
+
+  char buf[32];
+  buf[0] = 'M'; buf[1] = ' ';
+  i2dec_n( ev, buf+2 );
+  strcat( buf, "\n" );
+  ungets( 0, buf );
 }
 
 int main(void)
@@ -126,12 +137,12 @@ int main(void)
   srl.re_ps();
 
   oxc_add_aux_tick_fun( led_task_nortos );
-  oxc_add_aux_tick_fun( menu_ev_dispatch );
+  oxc_add_aux_tick_fun( menu4b_ev_dispatch );
 
   lcdt.init_4b();
   lcdt.puts_xy( 0, 1, "Ready!" );
 
-  init_buttons();
+  init_menu4b_buttons();
 
   std_main_loop_nortos( &srl, nullptr );
 
@@ -149,16 +160,19 @@ int cmd_test0( int argc, const char * const * argv )
 
   std_out << NL "# go: n= " << n << " t= " << t_step << NL;
   std_out.flush();
+  lcdt.cls();
 
-  uint32_t tm0 = HAL_GetTick();
+  uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
 
   break_flag = 0;
   for( int i=0; i<n && !break_flag; ++i ) {
 
-    i2dec_n( i, buf0 );
-    lcdt.puts_xy( 0, 1, buf0 );
+    // i2dec_n( i, buf0 );
+    uint32_t tc = HAL_GetTick();
+    ifcvt( tc - tm00, 1000, buf0, 3, 4 );
+    lcdt.puts_xy( 0, 0, buf0 );
 
-    std_out << i << NL;
+    std_out << i << ' '  << buf0 << ' ' << (tc - tm00 ) << NL;
     delay_ms_until_brk( &tm0, t_step );
   }
   lcdt.puts_xy( 0, 1, "Stop!  " );
@@ -171,28 +185,23 @@ int cmd_menu( int argc, const char * const * argv )
 {
   int cmd_i = arg2long_d( 1, argc, argv, 0 );
 
-  if( cmd_i < 0 || cmd_i >= (int)MenuCmd::N ) {
-    return 1;
-  }
   MenuCmd cmd = MenuCmd( cmd_i );
 
   const char *item_name = "";
 
-  switch( mstate.level ) {
+  switch( menu4b_state.level ) {
 
     case MenuLevel::ready:
       switch( cmd ) {
         case MenuCmd::Esc:
-          mstate.level = MenuLevel::select; mstate.index = 0;
+          menu4b_state.level = MenuLevel::select; menu4b_state.index = 0;
           break;
         case MenuCmd::Up:
           break;
         case MenuCmd::Down:
           break;
         case MenuCmd::Enter:
-          std_out << "# ***Run!" NL;
-          // ungets( 0, "T\n" );
-          menu_ev_global = 10; // RUN!
+          menu4b_ev_global = MenuCmd::Run;
           delay_ms( 10 );
           break;
         default: break;
@@ -202,22 +211,21 @@ int cmd_menu( int argc, const char * const * argv )
     case MenuLevel::select:
       switch( cmd ) {
         case MenuCmd::Esc:
-          mstate.level = MenuLevel::ready;
+          menu4b_state.level = MenuLevel::ready;
           break;
         case MenuCmd::Up:
-          ++mstate.index;
+          ++menu4b_state.index;
           break;
         case MenuCmd::Down:
-          --mstate.index;
+          --menu4b_state.index;
           break;
         case MenuCmd::Enter:
-          mstate.level = MenuLevel::edit;
-          if( mstate.menu[mstate.index].pv ) {
-            mstate.v = *mstate.menu[mstate.index].pv;
+          menu4b_state.level = MenuLevel::edit;
+          if( menu4b_state.menu[menu4b_state.index].pv ) {
+            menu4b_state.v = *menu4b_state.menu[menu4b_state.index].pv;
           } else {
-            mstate.v = mstate.menu[mstate.index].vmin;
+            menu4b_state.v = menu4b_state.menu[menu4b_state.index].vmin;
           }
-          // copy + exec?
           break;
         default: break;
       };
@@ -226,46 +234,49 @@ int cmd_menu( int argc, const char * const * argv )
     case MenuLevel::edit:
       switch( cmd ) {
         case MenuCmd::Esc:
-          mstate.level = MenuLevel::select;
+          menu4b_state.level = MenuLevel::select;
           break;
         case MenuCmd::Up:
-          mstate.v += mstate.menu[mstate.index].vstep;
+          menu4b_state.v += menu4b_state.menu[menu4b_state.index].vstep;
           break;
         case MenuCmd::Down:
-          mstate.v -= mstate.menu[mstate.index].vstep;
+          menu4b_state.v -= menu4b_state.menu[menu4b_state.index].vstep;
           break;
         case MenuCmd::Enter:
-          if( mstate.menu[mstate.index].pv ) {
-            *mstate.menu[mstate.index].pv = clamp( mstate.v, mstate.menu[mstate.index].vmin, mstate.menu[mstate.index].vmax );
+          if( menu4b_state.menu[menu4b_state.index].pv ) {
+            *menu4b_state.menu[menu4b_state.index].pv = clamp( menu4b_state.v, menu4b_state.menu[menu4b_state.index].vmin, menu4b_state.menu[menu4b_state.index].vmax );
           }
-          if( mstate.menu[mstate.index].fun ) {
-            mstate.menu[mstate.index].fun( mstate.v );
+          if( menu4b_state.menu[menu4b_state.index].fun ) {
+            menu4b_state.menu[menu4b_state.index].fun( menu4b_state.v );
           }
-          mstate.level = MenuLevel::select;
+          menu4b_state.level = MenuLevel::select;
           break;
         default: break;
       };
-      mstate.v = clamp( mstate.v, mstate.menu[mstate.index].vmin, mstate.menu[mstate.index].vmax );
+      menu4b_state.v = clamp( menu4b_state.v, menu4b_state.menu[menu4b_state.index].vmin, menu4b_state.menu[menu4b_state.index].vmax );
       break;
 
     default: // ???
       break;
   }
 
-  mstate.index = clamp( mstate.index, 0, (int)(mstate.menu_size-1) );
-  item_name = mstate.menu[mstate.index].name;
+  menu4b_state.index = clamp( menu4b_state.index, 0, (int)(menu4b_state.menu_size-1) );
+  item_name = menu4b_state.menu[menu4b_state.index].name;
 
   int show_v = 0;
-  switch( mstate.level ) {
+  char pre_char = ' ';
+  switch( menu4b_state.level ) {
     case MenuLevel::ready:
       break;
     case MenuLevel::select:
-      if( mstate.menu[mstate.index].pv ) {
-        show_v = *mstate.menu[mstate.index].pv;
+      if( menu4b_state.menu[menu4b_state.index].pv ) {
+        show_v = *menu4b_state.menu[menu4b_state.index].pv;
       }
+      pre_char = '>';
       break;
     case MenuLevel::edit:
-      show_v = mstate.v;
+      show_v = menu4b_state.v;
+      pre_char = '*';
       break;
     default:
       break;
@@ -273,23 +284,24 @@ int cmd_menu( int argc, const char * const * argv )
 
 
   char buf[32], b0[24];
-  strcpy( buf, "> " );
-  if( mstate.level != MenuLevel::ready ) {
+  buf[0] = pre_char; buf[1] = ' '; buf[2] = '\0';
+  if( menu4b_state.level != MenuLevel::ready ) {
     strcat( buf, item_name );
     strcat( buf, "= " );
     i2dec_n( show_v, b0 );
     strcat( buf, b0 );
+    strcat( buf, "   " );
   }
 
 
-  menu_lcd_output( buf, menuLevelName[(int)mstate.level] );
+  menu4b_output( buf, MenuState::menuLevelName[(int)menu4b_state.level] );
 
   return 0;
 }
 
-int menu_lcd_output( const char *s1, const char *s2 )
+int menu4b_output( const char *s1, const char *s2 )
 {
-  lcdt.cls();
+  // lcdt.cls();
   if( s1 ) {
     lcdt.puts_xy( 0, 0, s1 );
   }
@@ -324,23 +336,22 @@ void HAL_GPIO_EXTI_Callback( uint16_t pin )
   static uint32_t last_exti_tick = 0;
 
   uint32_t curr_tick = HAL_GetTick();
-  if( curr_tick - last_exti_tick < 200 ) {
+  if( curr_tick - last_exti_tick < 100 ) {
     return; // ignore too fast events
   }
-  uint8_t cmd = 0;
+
+  uint32_t cmd = 0;
   switch( pin ) {
-    case GPIO_PIN_0: cmd = (uint8_t)(MenuCmd::Esc);   break;
-    case GPIO_PIN_1: cmd = (uint8_t)(MenuCmd::Up);    break;
-    case GPIO_PIN_2: cmd = (uint8_t)(MenuCmd::Down);  break;
-    case GPIO_PIN_3: cmd = (uint8_t)(MenuCmd::Enter); break;
+    case GPIO_PIN_0: cmd = MenuCmd::Esc;   break;
+    case GPIO_PIN_1: cmd = MenuCmd::Up;    break;
+    case GPIO_PIN_2: cmd = MenuCmd::Down;  break;
+    case GPIO_PIN_3: cmd = MenuCmd::Enter; break;
     default: break;
   }
 
-  char buf[6];
-  buf[0] = 'M'; buf[1] = ' '; buf[2] = '0' + cmd; buf[3] = '\n'; buf[4] = '\0';
   leds.toggle( BIT0 );
   if( ! on_cmd_handler ) {
-    ungets( 0, buf );
+    menu4b_ev_global = cmd;
   } else {
     break_flag = 1;
   }
@@ -348,7 +359,7 @@ void HAL_GPIO_EXTI_Callback( uint16_t pin )
   last_exti_tick = curr_tick;
 }
 
-int init_buttons() // board dependent function: to separate file
+int init_menu4b_buttons() // board dependent function: to separate file
 {
   __HAL_RCC_GPIOA_CLK_ENABLE();
 
