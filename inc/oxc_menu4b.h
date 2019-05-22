@@ -6,6 +6,7 @@ int menu4b_output( const char *s1, const char *s2 = nullptr );
 extern volatile uint32_t menu4b_ev_global;
 void menu4b_ev_dispatch();
 int menu4b_cmd( int cmd_i );
+int init_menu4b_buttons(); // board dependent function: in separate file
 
 struct Menu4bItem {
   const char *name;

@@ -1,0 +1,20 @@
+Test MAX31855 thermocouple drv via SPI
+And output both via console and LCD screen + screen menu
+
+Used: SPI1:
+A4 = SNSS
+A5 = SCK
+A5 = MISO
+A7 = MOSI
+
+A0:A3 to ground, need (internal?) pull-up
+Output via HD44780 LCD display via i2c port expander PCF8574
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Check for 5V tolerantness
+PCF8574 works with 3.3v, but HD44780 requires 5V.
+So you seed 5/3.3V I2C converter not to froast something.
+
+SCL = B6 + 10k pullUp on board
+SDA = B7 + 10k pullUp on board
+
