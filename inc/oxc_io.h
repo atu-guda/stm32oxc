@@ -8,8 +8,8 @@
 class DevOut {
   public:
    virtual void reset_out() = 0;
-   virtual int  write( const char *s, int l ) = 0;
-   virtual int  puts( const char *s ) = 0;
+   virtual int  write( const char *s, int l ) = 0; //* return number of outputed char or -1
+   virtual int  puts( const char *s ) = 0;         //* return number of outputed char or -1
    virtual int  putc( char b ) = 0;
    virtual void flush_out()  = 0;
 };

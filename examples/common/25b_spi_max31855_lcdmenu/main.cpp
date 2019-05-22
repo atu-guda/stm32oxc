@@ -3,6 +3,7 @@
 #include <iterator>
 
 #include <oxc_auto.h>
+#include <oxc_outstr.h>
 #include <oxc_hd44780_i2c.h>
 #include <oxc_menu4b.h>
 
@@ -124,6 +125,9 @@ int cmd_test0( int argc, const char * const * argv )
   std_out.flush();
   lcdt.cls();
 
+  OSTR( b0, 32 );
+  OSTR( b1, 32 );
+
   uint32_t vl;
   int rc;
   spi_d.setTssDelay( 200 );
@@ -134,37 +138,43 @@ int cmd_test0( int argc, const char * const * argv )
   for( int i=0; i<n && !break_flag; ++i ) {
     rc = spi_d.recv( (uint8_t*)(&vl), sizeof(vl) );
     vl = __builtin_bswap32( vl );// or __REV(vl)
+    b0_outstr.reset_out();
+    b1_outstr.reset_out();
+
     uint32_t tcc = HAL_GetTick();
     std_out <<  FloatMult( tcc - tm00, 3, 5 )  <<  ' ';
-
 
     int32_t tif = ( vl >> 4 ) & 0x0FFF;
     if( tif & 0x0800 ) { // sign propagation
       tif |= 0xFFFFF000;
     }
     int32_t tid4 = tif * 625; // 4 bit for fraction part
-    std_out << FloatMult( tid4, 4 );
+    b1 << FloatMult( tid4, 4 );
+    std_out << b1_buf;
 
     int32_t tof =  ( vl >> 18 ) & 0x3FFF; // Temperature out: 14 bit 18:31
     if( tof & 0x2000 ) {
       tof |= 0xFFFFC000;
     }
     int tod4 = tof * 25; // 2 bit for fraction
-    std_out <<  ' ' << FloatMult( tod4, 2 ) << ' ' << ( vl & 0x07 ) << ' '; // err
+
+    b0 << FloatMult( tod4, 2 ) << ' ';
 
 
     if( vl & MAX31855_FAIL ) {
-      std_out <<  'F';
+      b0 <<  'F';
     };
     if( vl & MAX31855_BRK ) {
-      std_out <<  'B';
+      b0 <<  'B';
     }
     if( vl & MAX31855_GND ) {
-      std_out <<  'G';
+      b0 <<  'G';
     }
     if( vl & MAX31855_VCC ) {
-      std_out <<  'V';
+      b0 <<  'V';
     }
+
+    std_out <<  ' ' << b0_buf << ' ' << ( vl & 0x07 ) << ' '; // err
 
     if( UVAR('d') > 0 ) {
       std_out <<  " vl= " << HexInt( vl ) << " tif= "  << HexInt( tif ) <<  " tof= "  << HexInt( tof ) << " rc= " << rc;
@@ -172,9 +182,8 @@ int cmd_test0( int argc, const char * const * argv )
 
     std_out << NL;
 
-    char buf0[32];
-    ifcvt( tod4, 100, buf0, 2, 4 );
-    lcdt.puts_xy( 0, 0, buf0 );
+    lcdt.puts_xy( 0, 0, b0_buf );
+    lcdt.puts_xy( 0, 1, b1_buf );
 
 
     delay_ms_until_brk( &tm0, t_step );

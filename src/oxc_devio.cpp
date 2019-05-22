@@ -39,7 +39,10 @@ void DevIO::reset()
 
 int DevIO::write( const char *s, int l )
 {
-  if( !s  ||  l < 1 ) {
+  if( !s ) {
+    return -1;
+  }
+  if( l < 1 ) {
     return 0;
   }
 
