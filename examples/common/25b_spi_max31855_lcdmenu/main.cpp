@@ -16,7 +16,10 @@ using namespace std;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
-BOARD_DEFINE_LEDS;
+// BOARD_DEFINE_LEDS;
+PinsOut leds( GPIOB, 12, 3 ); // 12: tick/menu 13: ?? 14: heather
+
+#define HEATHER_BIT BIT2
 
 BOARD_CONSOLE_DEFINES;
 
@@ -128,6 +131,7 @@ int main(void)
   spi_d.initSPI();
 
   BOARD_POST_INIT_BLINK;
+  leds.reset( HEATHER_BIT );
 
   pr( NL "##################### " PROJ_NAME NL );
 
@@ -179,6 +183,9 @@ int cmd_test0( int argc, const char * const * argv )
     time_c = tcc - tm00;
     std_out <<  FloatMult( time_c, 3, 5 )  <<  ' ';
 
+    leds.toggle( BIT0 );
+    char ctick = ( i & 1 ) ? ':' : '.';
+
     int32_t tif = ( vl >> 4 ) & 0x0FFF;
     if( tif & 0x0800 ) { // sign propagation
       tif |= 0xFFFFF000;
@@ -205,17 +212,20 @@ int cmd_test0( int argc, const char * const * argv )
     if( T_c > T_off ) {
       heather_on = 0;
     }
-    if( T_c < ( T_off + T_hyst ) ) {
+    if( T_c < ( T_off - T_hyst ) ) {
       heather_on = 1;
+    }
+    if( heather_on ) {
+      leds.set( HEATHER_BIT );
+    } else {
+      leds.reset( HEATHER_BIT );
     }
 
     dTdt = ( T_c - T_o ) * 10000 / t_dt; // TODO: more correct, more points
 
-    b0 << FloatMult( T_c, 2, 4 ) << ' ' << heather_on << ' ';
+    b0 << FloatMult( T_c, 2, 4 ) << ' ' << heather_on << ' '
+       << ( ( vl & MAX31855_FAIL ) ? 'F' : ctick );
 
-    if( vl & MAX31855_FAIL ) {
-      b0 <<  'F';
-    };
     if( vl & MAX31855_BRK ) {
       b0 <<  'B';
     }
@@ -232,6 +242,7 @@ int cmd_test0( int argc, const char * const * argv )
     b1 << FloatMult( *(outInts[out_idx].v), outInts[out_idx].div10, outInts[out_idx].min_int ) << ' '
        << outInts[out_idx].name;
 
+    // TODO: drop b1_buf after debug
     std_out <<  ' ' << b0_buf << ' ' << b1_buf << ' ' << ( vl & 0x07 ) << ' '; // err
 
     if( UVAR('d') > 0 ) {
@@ -247,6 +258,7 @@ int cmd_test0( int argc, const char * const * argv )
 
     delay_ms_until_brk( &tm0, t_step );
   }
+  leds.reset( HEATHER_BIT );
 
   if( UVAR('d') > 0 ) {
     spi_d.pr_info();
