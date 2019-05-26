@@ -25,5 +25,6 @@ SRCS  = main.cpp
 SRCS += oxc_outstr.cpp
 SRCS += oxc_hd44780_i2c.cpp
 SRCS += oxc_menu4b.cpp
+# SRCS += oxc_floatfun.cpp
 SRCS += init_menu4b_hard.cpp
 

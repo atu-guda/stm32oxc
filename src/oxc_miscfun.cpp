@@ -22,35 +22,35 @@ const char dec_digits[] = "0123456789???";
 
 char* char2hex( char c, char *s )
 {
-  if( s != 0 ) {
-    s[0] = hex_digits[ (uint8_t)(c) >> 4 ];
-    s[1] = hex_digits[ c & 0x0F ];
-    s[2] = 0;
+  if( !s ) {
+    return nullptr;
   }
+  s[0] = hex_digits[ (uint8_t)(c) >> 4 ];
+  s[1] = hex_digits[ c & 0x0F ];
+  s[2] = '\0';
   return s;
 }
 
 char* word2hex( uint32_t d,  char *s )
 {
-  if( s != 0 ) {
-    int i;
-    for( i=7; i>=0; --i ) {
-      s[i] = hex_digits[ d & 0x0F ];
-      d >>= 4;
-    }
-    s[8] = '\0';
+  if( !s ) {
+    return nullptr;
   }
+  for( int i=7; i>=0; --i ) {
+    s[i] = hex_digits[ d & 0x0F ];
+    d >>= 4;
+  }
+  s[8] = '\0';
   return s;
 }
 
 char* short2hex( uint16_t d,  char *s )
 {
   if( !s ) {
-    return 0;
+    return nullptr;
   }
 
-  int i;
-  for( i=3; i>=0; --i ) {
+  for( int i=3; i>=0; --i ) {
     s[i] = hex_digits[ d & 0x0F ];
     d >>= 4;
   }
@@ -109,7 +109,7 @@ char* ifcvt( int v, int mult, char *s, unsigned min_sz_frac,  unsigned min_sz_in
 {
   char t[INT_STR_SZ_DEC];
   if( !s ) {
-    return 0;
+    return nullptr;
   }
   int i1 = v / mult;
   int i2 = v - i1 * mult;

@@ -40,6 +40,7 @@ class RingBuf {
    unsigned tryGetLine( char *d, unsigned max_len ); // only if CR or LF present
    void reset() { MuLock lock( mu ); reset_nolock(); };
    void reset_nolock() { s = e = sz = 0; }
+   const char *getBuf() const { return b; }
    unsigned set_n_wait( unsigned n ) { unsigned tmp = n_wait; n_wait = n; return tmp; }
    static void set_wait_fun( void (*vf)(void) ) { wait_fun = vf; }
   protected:

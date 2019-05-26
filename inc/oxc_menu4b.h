@@ -13,6 +13,7 @@ struct Menu4bItem {
   int *pv;
   int vstep = 1, vmin = 0x80000000, vmax = 0x7FFFFFFF;
   int (*fun)(int) = nullptr;
+  int div10 = 0;
 };
 
 enum MenuCmd : uint32_t {

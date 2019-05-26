@@ -5,12 +5,19 @@
 #include <algorithm>
 
 #include <oxc_menu4b.h>
+#include <oxc_outstr.h>
 #include <oxc_hd44780_i2c.h>
 
 using namespace std;
 using namespace SMLRL;
 
-const char *const MenuState::menuLevelName[] = { "Ready ", "Select ", "Edit ", "?3 ", "?4? " };
+const char *const MenuState::menuLevelName[] = {
+  "Ready <Menu >Run ",
+  "Sel:  <Esc >Edit ",
+  "Edit: <Esc >Ok ",
+  "?3 ", "?4? "
+};
+
 volatile uint32_t menu4b_ev_global = 0;
 
 void menu4b_ev_dispatch()
@@ -137,13 +144,18 @@ int menu4b_cmd( int cmd_i )
   };
 
 
-  char buf[32], b0[24];
+  char buf[32];
+  OSTR( b0, 32 );
   buf[0] = pre_char; buf[1] = ' '; buf[2] = '\0';
   if( menu4b_state.level != MenuLevel::ready ) {
     strcat( buf, item_name );
     strcat( buf, "= " );
-    i2dec_n( show_v, b0 );
-    strcat( buf, b0 );
+    if( menu4b_state.menu[menu4b_state.index].div10 == 0 ) {
+      b0 << show_v;
+    } else {
+      b0 << FloatMult( show_v, menu4b_state.menu[menu4b_state.index].div10 );
+    }
+    strcat( buf, b0.getBuf() );
     strcat( buf, "   " );
   }
 

@@ -12,6 +12,7 @@ class DevOut {
    virtual int  puts( const char *s ) = 0;         //* return number of outputed char or -1
    virtual int  putc( char b ) = 0;
    virtual void flush_out()  = 0;
+   virtual const char* getBuf() const { return nullptr; }
 };
 
 class DevIn {

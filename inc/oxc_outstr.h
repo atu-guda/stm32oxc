@@ -20,10 +20,14 @@ class OutStr: public DevOut {
    const char* c_str() const { return buf; }
    unsigned size() const { return sz; }
    bool empty() const { return sz == 0; }
+   virtual const char* getBuf() const override { return buf; }
+   char  operator[]( unsigned i ) const { return (i<bsz) ? buf[i] : '\0'; }
+   char& operator[]( unsigned i ) { return (i<bsz) ? buf[i] : fake; }
   protected:
    char *buf;
    unsigned bsz;
    unsigned sz = 0;
+   char fake = '\0';
 };
 
 #define OSTR(x,sz) char x ## _buf[sz]; OutStr x ## _outstr( x ## _buf, sz ); OutStream x( & x ## _outstr );

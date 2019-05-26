@@ -2,10 +2,15 @@
 #include <cstdlib>
 #include <iterator>
 
+// #include <vector>
+// #include <array>
+#include <memory>
+
 #include <oxc_auto.h>
 #include <oxc_outstr.h>
 #include <oxc_hd44780_i2c.h>
 #include <oxc_menu4b.h>
+// #include <oxc_floatfun.h>
 
 using namespace std;
 using namespace SMLRL;
@@ -54,7 +59,7 @@ const uint32_t MAX31855_BRK  = 0x00000001;
 const uint32_t MAX31855_GND  = 0x00000002;
 const uint32_t MAX31855_VCC  = 0x00000004;
 
-int T_off = 100, T_hyst = 10, t_dt = 1000;
+int T_C = 1275, T_off = 100, T_hyst = 10, t_dt = 1000;
 int fun_x1( int n );
 
 int fun_x1( int n )
@@ -68,11 +73,13 @@ const Menu4bItem menu_main[] = {
   { "T_off",   &T_off,    1, -100,   5000, nullptr },
   { "T_hyst" , &T_hyst,   1,    0,   1000, nullptr },
   { "t_dt",      &t_dt, 100,  100, 100000, nullptr },
+  { "T_C",        &T_C,  25,  100, 100000, nullptr, 2 },
   { "fun_x1",  nullptr,   1,    0, 100000,  fun_x1 }
 };
 
-MenuState menu4b_state { menu_main, size( menu_main), "T\n" };
+MenuState menu4b_state { menu_main, size( menu_main ), "T\n" };
 
+const char menu_level0_str[] = "Ready <Menu >Run";
 
 
 int main(void)
@@ -104,7 +111,7 @@ int main(void)
   oxc_add_aux_tick_fun( menu4b_ev_dispatch );
 
   lcdt.init_4b();
-  lcdt.puts_xy( 0, 1, "Ready!" );
+  lcdt.puts_xy( 0, 1, menu_level0_str );
 
   init_menu4b_buttons();
 
@@ -119,6 +126,17 @@ int cmd_test0( int argc, const char * const * argv )
 {
   int n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 0xFFFFFF );
   uint32_t t_step = t_dt;
+
+  // just to test code size increase
+  // vector<char> vch;
+  // vch.push_back( 'a' ); vch.push_back( '\n' ); // +10k
+  // array<char,40> ach;  // +o
+  // ach[12] = 'z';
+  // auto *cn = new char[32]; // +o
+  // cn[3] = 'e'; cn[4] = '\0';
+  // delete[] cn;
+  // unique_ptr<char[]> upch ( new char[20] );
+  // upch[0] = 'a';
 
 
   std_out << NL "# go: n= " << n << " t= " << t_step << NL;
@@ -158,7 +176,7 @@ int cmd_test0( int argc, const char * const * argv )
     }
     int tod4 = tof * 25; // 2 bit for fraction
 
-    b0 << FloatMult( tod4, 2 ) << ' ';
+    b0 << FloatMult( tod4, 2, 4 ) << ' ';
 
 
     if( vl & MAX31855_FAIL ) {
@@ -193,7 +211,7 @@ int cmd_test0( int argc, const char * const * argv )
     spi_d.pr_info();
   }
 
-  lcdt.puts_xy( 0, 1, "Stop!  " );
+  lcdt.puts_xy( 0, 1, menu_level0_str );
 
   return 0;
 }

@@ -32,6 +32,7 @@ class DevIO : public DevOut, public DevIn {
    int putc_s( char b ) { return write_s( &b, 1 ); };
    int wait_eot( int w = 0 ); // w=0 means forewer, 1 - ok 0 - overtime
    virtual void flush_out() override { wait_eot( wait_tx ); };
+   virtual const char* getBuf() const override { return obuf.getBuf(); }
 
    virtual void reset_in() override { ibuf.reset(); }
    virtual Chst tryGet() override { return ibuf.tryGet(); }

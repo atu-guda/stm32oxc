@@ -13,6 +13,8 @@ class OutStream {
    OutStream( const OutStream &r ) = default;
    ~OutStream() { flush(); }
    void setOut( DevOut* _out ) { out = _out ; };
+   DevOut* getOut() { return out; }
+   const char* getBuf() const { return out ? out->getBuf() : nullptr; }
    void flush() { if( out ) { out->flush_out(); } }
    OutStream& operator=( const OutStream &rhs ) = default;
    void append( char rhs ) { if( out ) { out->putc( rhs ); } }
