@@ -33,6 +33,7 @@ struct MenuState {
   int *pv   = nullptr; // ptr current var under edit (level2)
   int v = 0; // current value
   static const char *const menuLevelName[5];
+  const char *menu_level0_str = "Ready <Menu >Run";
 };
 
 extern MenuState menu4b_state; // usualy in main.cpp

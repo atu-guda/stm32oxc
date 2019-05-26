@@ -59,27 +59,53 @@ const uint32_t MAX31855_BRK  = 0x00000001;
 const uint32_t MAX31855_GND  = 0x00000002;
 const uint32_t MAX31855_VCC  = 0x00000004;
 
-int T_C = 1275, T_off = 100, T_hyst = 10, t_dt = 1000;
-int fun_x1( int n );
+int T_c = 1275, T_i = 1000, T_min = 1000000, T_max = -100000,
+    T_rel = 0, T_base = 0,
+    T_off = 10000, T_hyst = 500,
+    t_dt = 100, time_c, // ms
+    dTdt = 0;
+int heather_on = 0;
+int out_idx = 0;
 
-int fun_x1( int n )
+int fun_set_base( int n );
+
+int fun_set_base( int /*n*/ )
 {
-  std_out << "#-- fun_x1: n= " << n << NL;
-  return n;
+  T_base = T_c;
+  std_out << "#-- set_base: n= " << FloatMult( T_base, 2 )  << NL;
+  return 0;
 }
 
 
 const Menu4bItem menu_main[] = {
-  { "T_off",   &T_off,    1, -100,   5000, nullptr },
-  { "T_hyst" , &T_hyst,   1,    0,   1000, nullptr },
-  { "t_dt",      &t_dt, 100,  100, 100000, nullptr },
-  { "T_C",        &T_C,  25,  100, 100000, nullptr, 2 },
-  { "fun_x1",  nullptr,   1,    0, 100000,  fun_x1 }
+  { "out_idx", &out_idx,   1,      0,        5, nullptr }, // max: size(outInts)-1
+  { "T_off",    &T_off,   25, -10000,   500000, nullptr, 2 },
+  { "T_hyst" ,  &T_hyst,  25,      0,   100000, nullptr, 2 },
+  { "t_dt",       &t_dt, 100,    100,   100000, nullptr, 3 },
+  { "T_i",         &T_i,   0,      0,   500000, nullptr, 2 },
+  { "T_min",     &T_min,   0,      0,   500000, nullptr, 2 },
+  { "T_max",     &T_max,   0,      0,   500000, nullptr, 2 },
+  { "T_base",   &T_base,  25,      0,   500000, nullptr, 2 },
+  { "set_base", nullptr,   0,      0,   100000, fun_set_base }
 };
 
 MenuState menu4b_state { menu_main, size( menu_main ), "T\n" };
 
-const char menu_level0_str[] = "Ready <Menu >Run";
+struct OutIntDescr {
+  int *v;
+  int div10;
+  int min_int;
+  const char *name;
+};
+
+const OutIntDescr outInts[] = {
+  {    &T_i, 2, 2, "T_i" },
+  {  &T_min, 2, 2, "T_min" },
+  {  &T_max, 2, 2, "T_max" },
+  {  &T_rel, 2, 2, "T_rel" },
+  { &time_c, 3, 4, "time_c" },
+  { &dTdt,   3, 4, "dTdt" },
+};
 
 
 int main(void)
@@ -111,7 +137,7 @@ int main(void)
   oxc_add_aux_tick_fun( menu4b_ev_dispatch );
 
   lcdt.init_4b();
-  lcdt.puts_xy( 0, 1, menu_level0_str );
+  lcdt.puts_xy( 0, 1, menu4b_state.menu_level0_str );
 
   init_menu4b_buttons();
 
@@ -127,17 +153,6 @@ int cmd_test0( int argc, const char * const * argv )
   int n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 0xFFFFFF );
   uint32_t t_step = t_dt;
 
-  // just to test code size increase
-  // vector<char> vch;
-  // vch.push_back( 'a' ); vch.push_back( '\n' ); // +10k
-  // array<char,40> ach;  // +o
-  // ach[12] = 'z';
-  // auto *cn = new char[32]; // +o
-  // cn[3] = 'e'; cn[4] = '\0';
-  // delete[] cn;
-  // unique_ptr<char[]> upch ( new char[20] );
-  // upch[0] = 'a';
-
 
   std_out << NL "# go: n= " << n << " t= " << t_step << NL;
   std_out.flush();
@@ -146,6 +161,7 @@ int cmd_test0( int argc, const char * const * argv )
   OSTR( b0, 32 );
   OSTR( b1, 32 );
 
+  T_min = 1000000; T_max = -100000;
   uint32_t vl;
   int rc;
   spi_d.setTssDelay( 200 );
@@ -160,24 +176,42 @@ int cmd_test0( int argc, const char * const * argv )
     b1_outstr.reset_out();
 
     uint32_t tcc = HAL_GetTick();
-    std_out <<  FloatMult( tcc - tm00, 3, 5 )  <<  ' ';
+    time_c = tcc - tm00;
+    std_out <<  FloatMult( time_c, 3, 5 )  <<  ' ';
 
     int32_t tif = ( vl >> 4 ) & 0x0FFF;
     if( tif & 0x0800 ) { // sign propagation
       tif |= 0xFFFFF000;
     }
     int32_t tid4 = tif * 625; // 4 bit for fraction part
-    b1 << FloatMult( tid4, 4 );
-    std_out << b1_buf;
+    T_i = tid4 / 100;
+    std_out << FloatMult( tid4, 4 );
 
     int32_t tof =  ( vl >> 18 ) & 0x3FFF; // Temperature out: 14 bit 18:31
     if( tof & 0x2000 ) {
       tof |= 0xFFFFC000;
     }
-    int tod4 = tof * 25; // 2 bit for fraction
+    int T_o = T_c;
+    T_c = tof * 25; // 2 bit for fraction
+    T_rel = T_c - T_base;
 
-    b0 << FloatMult( tod4, 2, 4 ) << ' ';
+    if( T_c > T_max ) {
+      T_max = T_c;
+    }
+    if( T_c < T_min ) {
+      T_min = T_c;
+    }
 
+    if( T_c > T_off ) {
+      heather_on = 0;
+    }
+    if( T_c < ( T_off + T_hyst ) ) {
+      heather_on = 1;
+    }
+
+    dTdt = ( T_c - T_o ) * 10000 / t_dt; // TODO: more correct, more points
+
+    b0 << FloatMult( T_c, 2, 4 ) << ' ' << heather_on << ' ';
 
     if( vl & MAX31855_FAIL ) {
       b0 <<  'F';
@@ -192,11 +226,18 @@ int cmd_test0( int argc, const char * const * argv )
       b0 <<  'V';
     }
 
-    std_out <<  ' ' << b0_buf << ' ' << ( vl & 0x07 ) << ' '; // err
+    if( out_idx >= (int)size( outInts ) ) {
+      out_idx = 0;
+    }
+    b1 << FloatMult( *(outInts[out_idx].v), outInts[out_idx].div10, outInts[out_idx].min_int ) << ' '
+       << outInts[out_idx].name;
+
+    std_out <<  ' ' << b0_buf << ' ' << b1_buf << ' ' << ( vl & 0x07 ) << ' '; // err
 
     if( UVAR('d') > 0 ) {
       std_out <<  " vl= " << HexInt( vl ) << " tif= "  << HexInt( tif ) <<  " tof= "  << HexInt( tof ) << " rc= " << rc;
     }
+
 
     std_out << NL;
 
@@ -211,7 +252,7 @@ int cmd_test0( int argc, const char * const * argv )
     spi_d.pr_info();
   }
 
-  lcdt.puts_xy( 0, 1, menu_level0_str );
+  lcdt.puts_xy( 0, 1, menu4b_state.menu_level0_str );
 
   return 0;
 }
