@@ -28,7 +28,7 @@ struct PWMInfo {
 
 class PWMData {
   public:
-   enum { max_pwm_steps = 64 };
+   enum { max_pwm_steps = 128 };
    enum class pwm_type
    {
      //          1       2     3      4    5
@@ -53,6 +53,7 @@ class PWMData {
    float get_t()  const { return t; }
    int get_c_step()  const { return c_step; }
    void reset_steps();
+   // TODO: add_step
    void mk_rect( float vmin, float vmax, int t, pwm_type tp );
    void mk_ladder( float v0, float dv, int dt, unsigned n_up, pwm_type tp );
    void mk_ramp( float vmin, float vmax, int t1, int t2, int t3, pwm_type tp );

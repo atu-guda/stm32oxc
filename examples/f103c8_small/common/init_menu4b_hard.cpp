@@ -2,8 +2,9 @@
 #include <oxc_menu4b.h>
 
 // arch-dependentf functions for Menu4b
-// this file: BluerPill, A0:A3
+// this file: BluePill, A0:A3
 
+void on_btn_while_run( int cmd );
 
 void EXTI0_IRQHandler(void)
 {
@@ -47,13 +48,13 @@ void HAL_GPIO_EXTI_Callback( uint16_t pin )
   if( ! on_cmd_handler ) {
     menu4b_ev_global = cmd;
   } else {
-    break_flag = 1;
+    on_btn_while_run( cmd );
   }
 
   last_exti_tick = curr_tick;
 }
 
-int init_menu4b_buttons() // board dependent function: to separate file
+int init_menu4b_buttons() // board dependent function
 {
   __HAL_RCC_GPIOA_CLK_ENABLE();
 

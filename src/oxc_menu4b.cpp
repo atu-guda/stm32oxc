@@ -6,7 +6,6 @@
 
 #include <oxc_menu4b.h>
 #include <oxc_outstr.h>
-#include <oxc_hd44780_i2c.h>
 
 using namespace std;
 using namespace SMLRL;

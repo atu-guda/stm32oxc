@@ -30,12 +30,13 @@ void PWMData::mk_rect( float vmin, float vmax, int t, pwm_type tp )
   steps[0].vb = steps[0].ve = vmin; steps[0].t = 10000; steps[0].tp = tp;
   steps[1].vb = steps[1].ve = vmax; steps[1].t = t;     steps[1].tp = tp;
   steps[2].vb = steps[2].ve = vmin; steps[2].t = 30000; steps[2].tp = tp;
-  n_steps = 3;
+  steps[3] = { .vb = pwm_min, .ve = pwm_min,  .t = 5000, tp = pwm_type::pwm };
+  n_steps = 4;
 }
 
 void PWMData::mk_ladder( float v0, float dv, int t, unsigned n_up, pwm_type tp )
 {
-  unsigned n_up_max = max_pwm_steps / 2 - 1;
+  unsigned n_up_max = max_pwm_steps / 2 - 2;
   n_up = clamp( n_up, 1u, n_up_max );
 
   steps[0].vb =  steps[0].ve = v0; steps[0].t = 10000; steps[0].tp = tp;
@@ -52,7 +53,9 @@ void PWMData::mk_ladder( float v0, float dv, int t, unsigned n_up, pwm_type tp )
     steps[i].t = t; steps[i].tp = tp;
   }
   steps[i].vb = steps[i].ve = v0; steps[i].t = 60000; steps[i].tp = tp;
-  n_steps = n_up * 2 + 1;
+  ++i;
+  steps[i].vb = pwm_min; steps[i].ve = pwm_min; steps[i].t = 5000; steps[i].tp = pwm_type::pwm;
+  n_steps = i + 1;
 }
 
 void PWMData::mk_ramp( float vmin, float vmax, int t1, int t2, int t3, pwm_type tp )
@@ -62,7 +65,8 @@ void PWMData::mk_ramp( float vmin, float vmax, int t1, int t2, int t3, pwm_type 
   steps[2].vb = vmax; steps[2].ve = vmax; steps[2].t = t2;    steps[2].tp = tp;
   steps[3].vb = vmax; steps[3].ve = vmin; steps[3].t = t3;    steps[3].tp = tp;
   steps[4].vb = vmin; steps[4].ve = vmin; steps[4].t = 30000; steps[4].tp = tp;
-  n_steps = 5;
+  steps[5].vb = pwm_min; steps[5].ve = pwm_min; steps[4].t = 5000; steps[5].tp = pwm_type::pwm;
+  n_steps = 6;
 }
 
 void PWMData::show_steps() const
@@ -151,7 +155,10 @@ bool PWMData::tick( const float *d )
                             pwm_val -= pwminfo.ki_v * last_R * t_step * err;
                             break;
       case pwm_type::pwr:   err = d[didx_w] - val;
-                            pwm_val -= pwminfo.ki_v * t_step * err / ( d[didx_i] + 0.2f ); // TODO: * what? / d[1]
+                            {
+                              auto i_eff = max( d[didx_i], 0.1f );
+                              pwm_val -= pwminfo.ki_v * t_step * err / i_eff;
+                            }
                             break;
       default:              pwm_val = pwm_min; break; // fail-save
     };
@@ -310,6 +317,6 @@ int cmd_edit_step( int argc, const char * const * argv )
 CmdInfo CMDINFO_SHOW_STEPS { "show_steps", 'S', cmd_show_steps, " - show PWM steps"  };
 CmdInfo CMDINFO_MK_RECT    { "mk_rect",      0, cmd_mk_rect,    " vmin vmax t tp - make rectangle steps"  };
 CmdInfo CMDINFO_MK_LADDER  { "mk_ladder",    0, cmd_mk_ladder,  " vmin dv t n_up tp - make ladder steps"  };
-CmdInfo CMDINFO_MK_RAMP    { "mk_ramp",      0, cmd_mk_ramp,    " vmin vmax v t1  t2 t3  tp - make ramp steps"  };
+CmdInfo CMDINFO_MK_RAMP    { "mk_ramp",      0, cmd_mk_ramp,    " vmin vmax t1  t2 t3  tp - make ramp steps"  };
 CmdInfo CMDINFO_EDIT_STEP  { "edit_step",  'E', cmd_edit_step,  " vb ve t tp - edit given step"  };
 

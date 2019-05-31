@@ -15,6 +15,8 @@
 
 #include <../examples/common/inc/pwm2_ctl.h>
 
+#define WAIT_BIT BIT2
+
 using namespace std;
 using namespace SMLRL;
 
@@ -36,7 +38,7 @@ bool measure_and_calc( float *v );
 I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );
 INA226 ina226( i2cd );
-const uint32_t n_ADC_ch_max = 4; // current - in UVAR('c')
+const uint32_t n_ADC_ch_max = 4; // current - in UVAR('c'). not ADC: INA226
 float v_coeffs[n_ADC_ch_max] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 bool isGoodINA226( INA226 &ina, bool print = true );
@@ -51,8 +53,8 @@ PWMInfo pwminfo {
   .rehint_lim = 0.2f,
   .V_max      = 8.0f,
   .I_max      = 50.0f,
-  .R_max      = 500.0f,
-  .W_max      = 150.0f
+  .R_max      = 200.0f,
+  .W_max      = 200.0f
 };
 PWMData pwmdat( pwminfo, do_set_pwm );
 
@@ -60,35 +62,40 @@ void handle_keys();
 
 bool print_var( const char *nm );
 bool set_var( const char *nm, const char *s );
-const char* get_var_name( unsigned i );
 
 
 // ------------- floats values and get/set funcs -------------------
 
-bool set_pwm_min( float v, int /* idx */ ) {
+bool set_pwm_min( float v, int /* idx */ )
+{
   pwmdat.set_pwm_min( v );
   return true;
 }
 
-float get_pwm_min( int /* idx */ ) {
+float get_pwm_min( int /* idx */ )
+{
   return pwmdat.get_pwm_min();
 }
 
-bool set_pwm_max( float v, int /* idx */  ) {
+bool set_pwm_max( float v, int /* idx */  )
+{
   pwmdat.set_pwm_max( v );
   return true;
 }
 
-float get_pwm_max( int /* idx */ ) {
+float get_pwm_max( int /* idx */ )
+{
   return pwmdat.get_pwm_max();
 }
 
-bool set_pwm_def( float v, int /* idx */  ) {
+bool set_pwm_def( float v, int /* idx */  )
+{
   pwmdat.set_pwm_def( v );
   return true;
 }
 
-float get_pwm_def( int /* idx */ ) {
+float get_pwm_def( int /* idx */ )
+{
   return pwmdat.get_pwm_def();
 }
 
@@ -150,7 +157,7 @@ bool set_var_ex( const char *nm, const char *s )
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " [n] [skip_pwm] - measure V,I + control PWM"  };
 int cmd_setcalibr( int argc, const char * const * argv );
-CmdInfo CMDINFO_SETCALIBR { "set_calibr", 'K', cmd_setcalibr, " I_lsb R_sh - calibrate for given shunt"  };
+CmdInfo CMDINFO_SETCALIBR { "set_calibr", 'K', cmd_setcalibr, " I_lsb R_sh - calibrate INA226 for given shunt"  };
 int cmd_tinit( int argc, const char * const * argv );
 CmdInfo CMDINFO_TINIT { "tinit", 'I', cmd_tinit, " - reinit timer"  };
 int cmd_pwm( int argc, const char * const * argv );
@@ -161,7 +168,7 @@ CmdInfo CMDINFO_CALIBRATE { "calibrate", 'C', cmd_calibrate, " [pwm_max] [dt] - 
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
-  DEBUG_I2C_CMDS,
+  // DEBUG_I2C_CMDS,
 
   &CMDINFO_TEST0,
   &CMDINFO_SETCALIBR,
@@ -180,7 +187,7 @@ int main(void)
   UVAR('c') = 2; // n_ADC_ch_max;
 
   UVAR('p') = 0;     // PSC,  - max output freq
-  UVAR('a') = 1439;  // ARR, to get 100 kHz with PSC = 0
+  UVAR('a') = 1439;  // ARR, to get 100 kHz with PSC = 0 // TODO: use oxc_timer functions
 
   print_var_hook = print_var_ex;
   set_var_hook   = set_var_ex;
@@ -244,20 +251,18 @@ bool measure_and_calc( float *v )
   if( !v ) {
     return false;
   }
-  if( UVAR('l') ) {  leds.set( BIT2 ); }
 
   float V_g = ina226.getVbus_uV() * 1e-6f * v_coeffs[0];
   float I_g = ina226.getI_uA()    * 1e-6f * v_coeffs[1];
   float R_g = ( I_g > 1e-6f ) ? ( V_g / I_g ) : 1.0e9f;
   float W_g = V_g * I_g;
+
   v[didx_v]   = V_g;
   v[didx_i]   = I_g;
   v[didx_pwm] = pwmdat.get_pwm_real();
   v[didx_r]   = R_g;
   v[didx_w]   = W_g;
   v[didx_val] = pwmdat.get_v();
-
-  if( UVAR('l') ) {  leds.reset( BIT2 ); }
 
   UVAR('z') = ina226.get_last_Vsh();
   return true;
@@ -324,7 +329,9 @@ int cmd_test0( int argc, const char * const * argv )
       break;
     }
 
+    if( UVAR('l') ) {  leds.set( WAIT_BIT ); }
     delay_ms_until_brk( &tm0, t_step );
+    if( UVAR('l') ) {  leds.reset( WAIT_BIT ); }
   }
 
   pwmdat.end_run();
@@ -392,8 +399,7 @@ void tim_cfg()
 
 void do_set_pwm( float v )
 {
-  uint32_t scl = tim_h.Instance->ARR; // TODO: external fun (ptr)
-  using tim_ccr_t = decltype( tim_h.Instance->CCR1 );
+  uint32_t scl = tim_h.Instance->ARR;
   tim_ccr_t nv = (tim_ccr_t)( v * scl / 100 );
   if( nv != tim_h.Instance->CCR1 ) {
     tim_h.Instance->CCR1 = nv;
@@ -486,11 +492,11 @@ int cmd_calibrate( int argc, const char * const * argv )
   }
   float R_0 = d_v[0] / d_i[0];
 
-  // find initial mode clange
+  // find initial mode change
   unsigned i_lim = n_steps-1;
   float k_g = 0.12f;
   for( unsigned i=n_steps-1; i>0; --i ) {
-    float diff_pwm_l =  d_pwm[i] - d_pwm[i-1];
+    float diff_pwm_l =  d_pwm[i]         - d_pwm[i-1];
     float diff_pwm_g =  d_pwm[n_steps-1] - d_pwm[i-1];
     std_out << "# " << i << ' ';
     if( fabsf( diff_pwm_l ) < 0.1f || fabsf( diff_pwm_g ) < 0.1f ) {
@@ -507,27 +513,22 @@ int cmd_calibrate( int argc, const char * const * argv )
   float x_0 = - b / k_g;
   float k_2 = - k_g * k_g / ( 4 * b );
 
-  // check
   std_out << "# Check:" << NL;
 
   float err_max = 0;
   for( unsigned i=0; i<n_steps; ++i ) {
     float pwm = d_pwm[i];
-    float v;
-    if( pwm > 2 * x_0 ) {
-      v = k_g * pwm + b;
-    } else {
-      v = pwm * pwm * k_2;
-    }
+    float v = ( pwm > 2 * x_0 ) ? ( k_g * pwm + b ) : (  pwm * pwm * k_2 );
     float err = fabsf( v - d_v[i] );
     if( err > err_max ) {
       err_max = err;
     }
     std_out << "# " << i << ' ' << pwm << ' ' << v << err << NL;
   }
+
   std_out << "# err_max= " << err_max << NL;
   std_out << "# R_0= " << R_0 << " i_lim= " << i_lim << " k_g= " << k_g
-     << " b= " << b << " x_0= " << x_0 << " k_2= " << k_2 << NL;
+          << " b= " << b << " x_0= " << x_0 << " k_2= " << k_2 << NL;
 
   if( err_max > 0.3f ) {
     std_out << "# Large approximation error!!! " << NL;

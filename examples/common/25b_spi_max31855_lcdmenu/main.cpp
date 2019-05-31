@@ -17,9 +17,10 @@ using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
 // BOARD_DEFINE_LEDS;
-PinsOut leds( GPIOB, 12, 3 ); // 12: tick/menu 13: ?? 14: heather
+PinsOut leds( GPIOB, 12, 4 ); // 12: tick/menu 13: ?? 14: heather 15: Err
 
 #define HEATHER_BIT BIT2
+#define ERR_BIT     BIT3
 
 BOARD_CONSOLE_DEFINES;
 
@@ -32,15 +33,11 @@ CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
 int cmd_menu( int argc, const char * const * argv );
 CmdInfo CMDINFO_MENU { "menu", 'M', cmd_menu, " N - menu action"  };
 
-int cmd_reset_spi( int argc, const char * const * argv );
-CmdInfo CMDINFO_RESETSPI { "reset_spi", 'Z', cmd_reset_spi, " - reset spi"  };
-
 
   const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
 
   &CMDINFO_TEST0,
-  &CMDINFO_RESETSPI,
   &CMDINFO_MENU,
   nullptr
 };
@@ -49,6 +46,8 @@ CmdInfo CMDINFO_RESETSPI { "reset_spi", 'Z', cmd_reset_spi, " - reset spi"  };
 I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );
 HD44780_i2c lcdt( i2cd, 0x27 );
+
+void on_btn_while_run( int cmd );
 
 
 PinsOut nss_pin( BOARD_SPI_DEFAULT_GPIO_SNSS, BOARD_SPI_DEFAULT_GPIO_PIN_SNSS, 1 );
@@ -68,7 +67,8 @@ int T_c = 1275, T_i = 1000, T_min = 1000000, T_max = -100000,
     t_dt = 100, time_c, // ms
     dTdt = 0;
 int heather_on = 0;
-int out_idx = 0;
+volatile int out_idx = 0;
+volatile int btn_run = 0;
 
 int fun_set_base( int n );
 
@@ -81,7 +81,7 @@ int fun_set_base( int /*n*/ )
 
 
 const Menu4bItem menu_main[] = {
-  { "out_idx", &out_idx,   1,      0,        5, nullptr }, // max: size(outInts)-1
+  { "out_idx", (int*)&out_idx,   1,      0,        5, nullptr }, // max: size(outInts)-1
   { "T_off",    &T_off,   25, -10000,   500000, nullptr, 2 },
   { "T_hyst" ,  &T_hyst,  25,      0,   100000, nullptr, 2 },
   { "t_dt",       &t_dt, 100,    100,   100000, nullptr, 3 },
@@ -130,8 +130,8 @@ int main(void)
   spi_d.setMaxWait( 500 );
   spi_d.initSPI();
 
-  BOARD_POST_INIT_BLINK;
-  leds.reset( HEATHER_BIT );
+  // BOARD_POST_INIT_BLINK;
+  leds.reset( 0x0F );
 
   pr( NL "##################### " PROJ_NAME NL );
 
@@ -226,6 +226,12 @@ int cmd_test0( int argc, const char * const * argv )
     b0 << FloatMult( T_c, 2, 4 ) << ' ' << heather_on << ' '
        << ( ( vl & MAX31855_FAIL ) ? 'F' : ctick );
 
+    if(  vl & MAX31855_FAIL ) {
+      leds.set( ERR_BIT );
+    } else {
+      leds.reset( ERR_BIT );
+    }
+
     if( vl & MAX31855_BRK ) {
       b0 <<  'B';
     }
@@ -235,6 +241,7 @@ int cmd_test0( int argc, const char * const * argv )
     if( vl & MAX31855_VCC ) {
       b0 <<  'V';
     }
+    b0 << ' ' << btn_run;
 
     if( out_idx >= (int)size( outInts ) ) {
       out_idx = 0;
@@ -288,16 +295,25 @@ int menu4b_output( const char *s1, const char *s2 )
   return 1;
 }
 
-
-
-
-int cmd_reset_spi( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
+void on_btn_while_run( int cmd )
 {
-  spi_d.resetDev();
-
-  spi_d.pr_info();
-
-  return 0;
+  switch( cmd ) {
+    case  MenuCmd::Esc:
+      break_flag = 1;
+      break;
+    case  MenuCmd::Up:
+      ++out_idx;
+      if( out_idx > 5 ) { out_idx = 0; }
+      break;
+    case  MenuCmd::Down:
+      --out_idx;
+      if( out_idx < 0 ) { out_idx = 5; }
+      break;
+    case  MenuCmd::Enter:
+      btn_run = !btn_run;
+      break;
+    default: break;
+  }
 }
 
 
