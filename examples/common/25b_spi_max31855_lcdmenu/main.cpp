@@ -11,6 +11,7 @@
 #include <oxc_hd44780_i2c.h>
 #include <oxc_menu4b.h>
 // #include <oxc_floatfun.h>
+#include <oxc_namedints.h>
 
 using namespace std;
 using namespace SMLRL;
@@ -61,6 +62,8 @@ const uint32_t MAX31855_BRK  = 0x00000001;
 const uint32_t MAX31855_GND  = 0x00000002;
 const uint32_t MAX31855_VCC  = 0x00000004;
 
+// common vars: access by menu, namedvars and program
+
 int T_c = 1275, T_i = 1000, T_min = 1000000, T_max = -100000,
     T_rel = 0, T_base = 0,
     T_off = 10000, T_hyst = 500,
@@ -110,6 +113,45 @@ const OutIntDescr outInts[] = {
   { &dTdt,   3, 4, "dTdt" },
 };
 
+// named vars iface
+
+constexpr NamedInt   o_T_off    {   "T_off",        &T_off                         };
+constexpr NamedInt   o_T_hyst   {   "T_hyst",       &T_hyst                        };
+constexpr NamedInt   o_T_base   {   "T_base",       &T_base                        };
+constexpr NamedInt   o_t_dt     {   "t_dt",         &t_dt                          };
+constexpr NamedInt   o_T_rel    {   "T_rel",        &T_rel, 1, NamedObj::Flags::ro };
+constexpr NamedInt   o_T_i      {   "T_i",          &T_i,   1, NamedObj::Flags::ro };
+constexpr NamedInt   o_T_min    {   "T_min",        &T_min, 1, NamedObj::Flags::ro };
+constexpr NamedInt   o_T_max    {   "T_max",        &T_max, 1, NamedObj::Flags::ro };
+constexpr NamedInt   o_dTdt     {   "dTdt",         &dTdt,  1, NamedObj::Flags::ro };
+
+constexpr const NamedObj *const objs_main_info[] = {
+  & o_T_i,
+  & o_T_off,
+  & o_T_hyst,
+  & o_T_base,
+  & o_t_dt,
+  & o_T_rel,
+  & o_T_i,
+  & o_T_min,
+  & o_T_max,
+  & o_dTdt,
+};
+
+const NamedObjs objs_main( objs_main_info );
+
+bool print_var_main( const char *nm, int fmt )
+{
+  return objs_main.print( nm, fmt );
+}
+
+bool set_var_main( const char *nm, const char *s )
+{
+  auto ok =  objs_main.set( nm, s );
+  print_var_main( nm, 0 );
+  return ok;
+}
+
 
 int main(void)
 {
@@ -117,6 +159,9 @@ int main(void)
 
   UVAR('t') = 1000;
   UVAR('n') = 10000000;
+
+  print_var_hook    = print_var_main;
+  set_var_hook      = set_var_main;
 
   UVAR('e') = i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
@@ -131,6 +176,8 @@ int main(void)
   spi_d.initSPI();
 
   // BOARD_POST_INIT_BLINK;
+  leds.set( 0x03 );
+  delay_ms( 200 );
   leds.reset( 0x0F );
 
   pr( NL "##################### " PROJ_NAME NL );
