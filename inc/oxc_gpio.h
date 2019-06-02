@@ -15,7 +15,7 @@ inline constexpr uint16_t make_gpio_mask( uint8_t start, uint8_t n ) {
 class Pins
 {
   public:
-   Pins( GPIO_TypeDef *gi, uint8_t a_start, uint8_t a_n )
+   constexpr Pins( GPIO_TypeDef *gi, uint8_t a_start, uint8_t a_n )
      : gpio( gi ),
        start( a_start ), n( a_n ),
        mask( make_gpio_mask( start, n ) )
@@ -28,7 +28,7 @@ class Pins
      return ((v << start) & mask );
    }
   protected:
-   GPIO_TypeDef *gpio;
+   GPIO_TypeDef *const gpio;
    const uint8_t start, n;
    const uint16_t mask;
 };
@@ -36,7 +36,7 @@ class Pins
 class PinsOut : public Pins
 {
   public:
-   PinsOut( GPIO_TypeDef *gi, uint8_t a_start, uint8_t a_n )
+   constexpr PinsOut( GPIO_TypeDef *gi, uint8_t a_start, uint8_t a_n )
      : Pins( gi, a_start, a_n )
      {};
    void initHW();
@@ -56,6 +56,13 @@ class PinsOut : public Pins
      gpio->RESET_BIT_REG = mv( v ) << RESET_BIT_SHIFT;
      #endif
    }
+   void sr( uint16_t bits, bool doSet ) {
+     if( doSet ) {
+       set( bits );
+     } else {
+       reset( bits );
+     }
+   }
    void toggle( uint16_t v ) // XOR
    {
      gpio->ODR ^= mv( v );
@@ -71,7 +78,7 @@ extern PinsOut leds;
 class PinsIn : public Pins
 {
   public:
-   PinsIn( GPIO_TypeDef *gi, uint8_t a_start, uint8_t a_n, uint16_t a_pull = GPIO_NOPULL  )
+   constexpr PinsIn( GPIO_TypeDef *gi, uint8_t a_start, uint8_t a_n, uint16_t a_pull = GPIO_NOPULL  )
      : Pins( gi, a_start, a_n ),
        pull( a_pull )
      {};
@@ -86,7 +93,7 @@ class PinsIn : public Pins
 
 class IoPin {
   public:
-   IoPin( GPIO_TypeDef *a_gpio, uint16_t a_pin )
+   constexpr IoPin( GPIO_TypeDef *a_gpio, uint16_t a_pin )
      : gpio( a_gpio ), pin( a_pin ) {};
    void initHW();
    void sw1() { gpio->SET_BIT_REG = pin; };
@@ -107,7 +114,7 @@ class IoPin {
    };
 
   protected:
-   GPIO_TypeDef *gpio;
+   GPIO_TypeDef *const gpio;
    const uint16_t pin;
 };
 

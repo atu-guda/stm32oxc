@@ -19,7 +19,9 @@ using namespace SMLRL;
 USE_DIE4LED_ERROR_HANDLER;
 // BOARD_DEFINE_LEDS;
 PinsOut leds( GPIOB, 12, 4 ); // 12: tick/menu 13: ?? 14: heather 15: Err
+PinsOut leds0( GPIOC, 13, 1 ); // single C13
 
+// TODO: to local include
 #define HEATHER_BIT BIT2
 #define ERR_BIT     BIT3
 
@@ -35,7 +37,7 @@ int cmd_menu( int argc, const char * const * argv );
 CmdInfo CMDINFO_MENU { "menu", 'M', cmd_menu, " N - menu action"  };
 
 
-  const CmdInfo* global_cmds[] = {
+const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
 
   &CMDINFO_TEST0,
@@ -62,11 +64,12 @@ const uint32_t MAX31855_BRK  = 0x00000001;
 const uint32_t MAX31855_GND  = 0x00000002;
 const uint32_t MAX31855_VCC  = 0x00000004;
 
-// common vars: access by menu, namedvars and program
+// common vars: access by menu, named vars and program
 
+// all T in C*100
 int T_c = 1275, T_i = 1000, T_min = 1000000, T_max = -100000,
     T_rel = 0, T_base = 0,
-    T_off = 10000, T_hyst = 500,
+    T_off = 3000, T_hyst = 200,
     t_dt = 100, time_c, // ms
     dTdt = 0;
 int heather_on = 0;
@@ -82,9 +85,26 @@ int fun_set_base( int /*n*/ )
   return 0;
 }
 
+struct OutIntDescr {
+  int *v;
+  int div10;
+  int min_int;
+  const char *name;
+};
+
+const OutIntDescr outInts[] = {
+  {    &T_i, 2, 2, "T_i"    },
+  {  &T_min, 2, 2, "T_min"  },
+  {  &T_max, 2, 2, "T_max"  },
+  {  &T_rel, 2, 2, "T_rel"  },
+  { &time_c, 3, 4, "time_c" },
+  {   &dTdt, 3, 4, "dTdt"   },
+};
+
+
 
 const Menu4bItem menu_main[] = {
-  { "out_idx", (int*)&out_idx,   1,      0,        5, nullptr }, // max: size(outInts)-1
+  { "out_idx", (int*)&out_idx,  1, 0, size(outInts)-1, nullptr },
   { "T_off",    &T_off,   25, -10000,   500000, nullptr, 2 },
   { "T_hyst" ,  &T_hyst,  25,      0,   100000, nullptr, 2 },
   { "t_dt",       &t_dt, 100,    100,   100000, nullptr, 3 },
@@ -96,22 +116,6 @@ const Menu4bItem menu_main[] = {
 };
 
 MenuState menu4b_state { menu_main, size( menu_main ), "T\n" };
-
-struct OutIntDescr {
-  int *v;
-  int div10;
-  int min_int;
-  const char *name;
-};
-
-const OutIntDescr outInts[] = {
-  {    &T_i, 2, 2, "T_i" },
-  {  &T_min, 2, 2, "T_min" },
-  {  &T_max, 2, 2, "T_max" },
-  {  &T_rel, 2, 2, "T_rel" },
-  { &time_c, 3, 4, "time_c" },
-  { &dTdt,   3, 4, "dTdt" },
-};
 
 // named vars iface
 
@@ -136,6 +140,7 @@ constexpr const NamedObj *const objs_main_info[] = {
   & o_T_min,
   & o_T_max,
   & o_dTdt,
+  nullptr
 };
 
 const NamedObjs objs_main( objs_main_info );
@@ -163,6 +168,8 @@ int main(void)
   print_var_hook    = print_var_main;
   set_var_hook      = set_var_main;
 
+  leds0.initHW();
+
   UVAR('e') = i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
   i2c_client_def = &lcdt;
@@ -175,10 +182,10 @@ int main(void)
   spi_d.setMaxWait( 500 );
   spi_d.initSPI();
 
-  // BOARD_POST_INIT_BLINK;
-  leds.set( 0x03 );
+  // BOARD_POST_INIT_BLINK; // NO - do not touch heather!
+  leds.set( 0x03 ); leds0.set( 0x01 );
   delay_ms( 200 );
-  leds.reset( 0x0F );
+  leds.reset( 0x0F ); leds0.reset( 0x01 );
 
   pr( NL "##################### " PROJ_NAME NL );
 
@@ -219,7 +226,7 @@ int cmd_test0( int argc, const char * const * argv )
 
   uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
 
-  break_flag = 0;
+  break_flag = 0; errno = 0;
   for( int i=0; i<n && !break_flag; ++i ) {
     rc = spi_d.recv( (uint8_t*)(&vl), sizeof(vl) );
     vl = __builtin_bswap32( vl );// or __REV(vl)
@@ -230,7 +237,7 @@ int cmd_test0( int argc, const char * const * argv )
     time_c = tcc - tm00;
     std_out <<  FloatMult( time_c, 3, 5 )  <<  ' ';
 
-    leds.toggle( BIT0 );
+    leds.toggle( BIT0 );  leds0.toggle( BIT0 );
     char ctick = ( i & 1 ) ? ':' : '.';
 
     int32_t tif = ( vl >> 4 ) & 0x0FFF;
@@ -262,22 +269,14 @@ int cmd_test0( int argc, const char * const * argv )
     if( T_c < ( T_off - T_hyst ) ) {
       heather_on = 1;
     }
-    if( heather_on ) {
-      leds.set( HEATHER_BIT );
-    } else {
-      leds.reset( HEATHER_BIT );
-    }
+    leds.sr( HEATHER_BIT, heather_on );
 
     dTdt = ( T_c - T_o ) * 10000 / t_dt; // TODO: more correct, more points
 
     b0 << FloatMult( T_c, 2, 4 ) << ' ' << heather_on << ' '
        << ( ( vl & MAX31855_FAIL ) ? 'F' : ctick );
 
-    if(  vl & MAX31855_FAIL ) {
-      leds.set( ERR_BIT );
-    } else {
-      leds.reset( ERR_BIT );
-    }
+    leds.sr( ERR_BIT, vl & MAX31855_FAIL );
 
     if( vl & MAX31855_BRK ) {
       b0 <<  'B';
@@ -288,13 +287,13 @@ int cmd_test0( int argc, const char * const * argv )
     if( vl & MAX31855_VCC ) {
       b0 <<  'V';
     }
-    b0 << ' ' << btn_run;
+    b0 << ' ' << btn_run << "   ";
 
     if( out_idx >= (int)size( outInts ) ) {
       out_idx = 0;
     }
     b1 << FloatMult( *(outInts[out_idx].v), outInts[out_idx].div10, outInts[out_idx].min_int ) << ' '
-       << outInts[out_idx].name;
+       << outInts[out_idx].name << "   ";
 
     // TODO: drop b1_buf after debug
     std_out <<  ' ' << b0_buf << ' ' << b1_buf << ' ' << ( vl & 0x07 ) << ' '; // err
@@ -320,6 +319,8 @@ int cmd_test0( int argc, const char * const * argv )
 
   lcdt.puts_xy( 0, 1, menu4b_state.menu_level0_str );
 
+  std_out << "# stop: errno= " << errno << NL;
+
   return 0;
 }
 
@@ -327,6 +328,7 @@ int cmd_test0( int argc, const char * const * argv )
 int cmd_menu( int argc, const char * const * argv )
 {
   int cmd_i = arg2long_d( 1, argc, argv, 0 );
+  leds.toggle( BIT1 );
   return menu4b_cmd( cmd_i );
 }
 
@@ -344,17 +346,18 @@ int menu4b_output( const char *s1, const char *s2 )
 
 void on_btn_while_run( int cmd )
 {
+  leds.toggle( BIT1 );
   switch( cmd ) {
     case  MenuCmd::Esc:
-      break_flag = 1;
+      break_flag = 1; errno = 10000;
       break;
     case  MenuCmd::Up:
       ++out_idx;
-      if( out_idx > 5 ) { out_idx = 0; }
+      if( out_idx > (int)size(outInts)-1 ) { out_idx = 0; }
       break;
     case  MenuCmd::Down:
       --out_idx;
-      if( out_idx < 0 ) { out_idx = 5; }
+      if( out_idx < 0 ) { out_idx = size(outInts)-1; }
       break;
     case  MenuCmd::Enter:
       btn_run = !btn_run;
