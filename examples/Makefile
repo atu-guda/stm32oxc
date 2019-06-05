@@ -8,6 +8,7 @@ SUBDIRS = \
   f407z_black0 \
   f446_nucleo64 \
   f429i_disc \
+  f746_nucleo \
   f746_wave
 
 #  f427_netdu \

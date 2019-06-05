@@ -1,9 +1,7 @@
-Using  USART as console via SmallRL.
+Try to use default console without FreeRTOS
 
 This board: connect
 D8: stlink:RX
 D9: stlink:TX
 or solder SB5, SB6, (unsolder SB4, SB7?)
-
-Or use external UART module
 

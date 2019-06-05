@@ -1,6 +1,12 @@
 Simple usage of UART.
 
-Used USART3 with external UART-USB convertor, NOT on ST-Link
+This board: connect
+D8: stlink:RX
+D9: stlink:TX
+or solder SB5, SB6, (unsolder SB4, SB7?)
+
+
+Or use USART3 with external UART-USB convertor, NOT on ST-Link
 D8  = USART3_RX
 D9  = USART3_TX
 

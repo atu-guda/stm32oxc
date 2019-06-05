@@ -1,0 +1,6 @@
+Examples for STM32F746 Nucleo144 board
+Onboard:
+2 Button: Reset, C13
+
+Clock HSE: 8Hz
+

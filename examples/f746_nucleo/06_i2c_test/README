@@ -1,0 +1,4 @@
+Test I2C devices on I2C1
+
+SCL = B8
+SDA = B9
