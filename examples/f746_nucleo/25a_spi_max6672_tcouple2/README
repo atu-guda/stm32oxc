@@ -1,0 +1,10 @@
+Test 2 MAX6675 thermocouple drv via SPI
+
+Used: SPI5: (check board_cfg.h)
+F7  = SCK
+F8  = MISO
+F9  = MOSI
++F6 = Soft NSS
+
++F0 = Soft NSS 2
+

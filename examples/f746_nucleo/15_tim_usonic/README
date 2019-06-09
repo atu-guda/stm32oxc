@@ -1,0 +1,12 @@
+Test TIM8 as usonic sensor HC-SR04 driver
+out: I5: CH1
+In:  I6: CH2
+
+c \approx 340 m/s + echo: 170 m/s
+1mm - 5.88mks
+168Mhz / 998: 1tick = 1mm
+TIM1.CH1: pulser
+TIM1.CH2: both edge receiver: IRQ
+Vcc for sensor: 5v required: with 3.3: no good return pulse
+
+

@@ -1,0 +1,7 @@
+Try ADC usage: manual conversion mode
+Clock: APB2/4 = 100/4 = 25
+
+Channels:
+// A0(0),C0(10),C2(12),C3(13)
+
+

@@ -1,0 +1,11 @@
+Test SPI AT25F512/1024 memory
+!WD=p3 and !!HOLD=p7 = 1
+
+Used: SPI5: (check board_cfg.h)
+F7  = SCK
+F8  = MISO
+F9  = MOSI
++F6 = Soft NSS
+
+NOT WORK? Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256; _2 - TOO!!
+

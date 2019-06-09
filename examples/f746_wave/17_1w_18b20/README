@@ -2,11 +2,3 @@ use: 1-wire 18B20 (initial) on G:13
 Pull-up (4.7k) required!
 
 Pin used simultaneously for input and output.
-
-Console:  USBCDC via SmallRL.
-used USB FS:
-A11 = D-
-A12 = D+
-A9  = Vbus - unused?
-A10 = Id   - unused
-

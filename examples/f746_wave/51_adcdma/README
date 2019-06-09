@@ -2,7 +2,4 @@ Try ADC with DMA
 4 channel: a0-a3
 Clock: APB2/2 = 72/4 = 36: max <- use special clock
 
-Used USART1 with UART-USB board
-B6  = USART1_TX
-B7  = USART1_RX
 

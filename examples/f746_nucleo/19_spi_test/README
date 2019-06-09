@@ -1,0 +1,22 @@
+Test basic SPI actions
+
+Used: SPI5: (check board_cfg.h)
+F7  = SCK
+F8  = MISO
+F9  = MOSI
++F6 = Soft NSS
+
+To use with 595:
+SI   <- MISO
+!OE  <- Gnd
+RCLK <- NSS
+CLK  <- SCK
+!RST <- V
+...
+s r 0 - to not send 00 bytes
+S 0x55 - set value
+
+To use logic analizer,
+  spi_h.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;
+  and add priliminary drop before.
+

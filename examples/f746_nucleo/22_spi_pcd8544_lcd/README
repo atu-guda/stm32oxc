@@ -1,0 +1,12 @@
+Test PCD8544 (Nokia 5110) LCD display driver on SPI
+
+Used: SPI5: (check board_cfg.h)
+F7  = SCK
+F8  = MISO
+F9  = MOSI
++F6 = Soft NSS
+
+More: must be successive
+F0: !RST
+F1  D/!C
+

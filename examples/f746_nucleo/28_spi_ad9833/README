@@ -1,0 +1,8 @@
+Test AD9833: programmable waveform generator
+
+Used: SPI5: (check board_cfg.h)
+F7  = SCK
+F8  = MISO
+F9  = MOSI
++F6 = Soft NSS
+
