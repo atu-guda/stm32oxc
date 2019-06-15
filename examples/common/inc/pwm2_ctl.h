@@ -12,6 +12,7 @@ enum DataIdx {
 
 //* misct data about pwm. here: fallback values. need calibration
 struct PWMInfo {
+  static constexpr unsigned max_cal_steps = 20;
   float R_0   = 1.0f;      //* initial resistance
   float V_00  = -0.5f;     //* V(0) for linear represenration
   float k_gv1 = 0.12f;     //* dV/d\gamma
@@ -22,7 +23,9 @@ struct PWMInfo {
   float I_max = 8.0f;      //* current limit
   float R_max = 8.0f;      //* resistance value for break detection
   float W_max = 90.0f;     //* power limit
+  float d_pwm[max_cal_steps], d_v[max_cal_steps], d_i[max_cal_steps];
   float hint_for_V( float V ) const;
+  float pwm2V( float pwm ) const;
 };
 
 
@@ -53,7 +56,7 @@ class PWMData {
    float get_t()  const { return t; }
    int get_c_step()  const { return c_step; }
    void reset_steps();
-   // TODO: add_step
+   int add_step( float b, float e, int ms, pwm_type tp );
    void mk_rect( float vmin, float vmax, int t, pwm_type tp );
    void mk_ladder( float v0, float dv, int dt, unsigned n_up, pwm_type tp );
    void mk_ramp( float vmin, float vmax, int t1, int t2, int t3, pwm_type tp );

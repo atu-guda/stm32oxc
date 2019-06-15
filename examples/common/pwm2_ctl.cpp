@@ -5,6 +5,7 @@
 */
 #include <cmath>
 #include <algorithm>
+#include <iterator>
 
 #include <oxc_auto.h>
 #include <oxc_floatfun.h>
@@ -13,60 +14,83 @@
 
 using namespace std;
 
-float PWMInfo::hint_for_V( float V ) const {
-  return ( V > -V_00 ) ? ( ( V - V_00 ) / k_gv1 ) : sqrtf( V / k_gv2 ) ;
+float PWMInfo::hint_for_V( float V ) const
+{
+  return ( V > -V_00 )
+    ? ( ( V - V_00 ) / k_gv1 )
+    : sqrtf( V / k_gv2 );
 };
+
+float PWMInfo::pwm2V( float pwm ) const
+{
+  float x0 = - V_00 / k_gv1;
+
+  return ( pwm > 2 * x0 )
+    ? ( pwm * k_gv1 + V_00 )
+    : ( pwm * pwm * k_gv2 );
+};
+
+// ------------------------ PWMData -------------------------------------
 
 void PWMData::reset_steps()
 {
   for( auto &s : steps ) {
     s.vb = s.ve = pwm_def; s.t = 30000; s.tp = pwm_type::pwm;
   }
-  n_steps = 1;
+  n_steps = 0;
+}
+
+int PWMData::add_step( float b, float e, int ms, pwm_type tp )
+{
+  if( n_steps >= size(steps) ) {
+    return 0;
+  }
+
+  steps[n_steps].vb = b;
+  steps[n_steps].ve = e;
+  steps[n_steps].t  = ms;
+  steps[n_steps].tp = tp;
+
+  ++n_steps;
+  return n_steps;
 }
 
 void PWMData::mk_rect( float vmin, float vmax, int t, pwm_type tp )
 {
-  steps[0].vb = steps[0].ve = vmin; steps[0].t = 10000; steps[0].tp = tp;
-  steps[1].vb = steps[1].ve = vmax; steps[1].t = t;     steps[1].tp = tp;
-  steps[2].vb = steps[2].ve = vmin; steps[2].t = 30000; steps[2].tp = tp;
-  steps[3] = { .vb = pwm_min, .ve = pwm_min,  .t = 5000, tp = pwm_type::pwm };
-  n_steps = 4;
+  reset_steps();
+  add_step( vmin, vmin, 10000, tp );
+  add_step( vmax, vmax,     t, tp );
+  add_step( vmin, vmin, 30000, tp );
 }
 
 void PWMData::mk_ladder( float v0, float dv, int t, unsigned n_up, pwm_type tp )
 {
+  reset_steps();
   unsigned n_up_max = max_pwm_steps / 2 - 2;
   n_up = clamp( n_up, 1u, n_up_max );
 
-  steps[0].vb =  steps[0].ve = v0; steps[0].t = 10000; steps[0].tp = tp;
+  add_step( v0, v0, 10000, tp );
   unsigned i = 1;
   float cv = v0;
   for( /* NOP */; i <= n_up; ++i ) {
     cv += dv;
-    steps[i].vb = steps[i].ve = cv;
-    steps[i].t = t; steps[i].tp = tp;
+    add_step( cv, cv, t, tp );
   }
   for( /* NOP */; i < n_up*2; ++i ) {
     cv -= dv;
-    steps[i].vb = steps[i].ve = cv;
-    steps[i].t = t; steps[i].tp = tp;
+    add_step( cv, cv, t, tp );
   }
-  steps[i].vb = steps[i].ve = v0; steps[i].t = 60000; steps[i].tp = tp;
-  ++i;
-  steps[i].vb = pwm_min; steps[i].ve = pwm_min; steps[i].t = 5000; steps[i].tp = pwm_type::pwm;
-  n_steps = i + 1;
+  add_step( v0, v0, 60000, tp );
 }
 
 void PWMData::mk_ramp( float vmin, float vmax, int t1, int t2, int t3, pwm_type tp )
 {
-  steps[0].vb = vmin; steps[0].ve = vmin; steps[0].t = 30000; steps[0].tp = tp;
-  steps[1].vb = vmin; steps[1].ve = vmax; steps[1].t = t1;    steps[1].tp = tp;
-  steps[2].vb = vmax; steps[2].ve = vmax; steps[2].t = t2;    steps[2].tp = tp;
-  steps[3].vb = vmax; steps[3].ve = vmin; steps[3].t = t3;    steps[3].tp = tp;
-  steps[4].vb = vmin; steps[4].ve = vmin; steps[4].t = 30000; steps[4].tp = tp;
-  steps[5].vb = pwm_min; steps[5].ve = pwm_min; steps[4].t = 5000; steps[5].tp = pwm_type::pwm;
-  n_steps = 6;
+  reset_steps();
+  add_step( vmin, vmin, 30000, tp );
+  add_step( vmin, vmax,    t1, tp );
+  add_step( vmax, vmax,    t2, tp );
+  add_step( vmax, vmin,    t3, tp );
+  add_step( vmin, vmin, 30000, tp );
 }
 
 void PWMData::show_steps() const
