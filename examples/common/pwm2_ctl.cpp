@@ -27,17 +27,9 @@ void PWMInfo::fixCoeffs()
   x_0  =  - V_00 / k_gv1;
 }
 
-float PWMInfo::hint_for_V( float V )
-{
-  if( need_regre ) { // TODO: move to separate fun + restore const
-    float a, b, r;
-    bool ok = regreCalibration( x_0, a, b, r );
-    if( ok ) {
-      k_gv1 = a; V_00 = b;
-      fixCoeffs();
-    }
-  }
 
+float PWMInfo::hint_for_V( float V ) const
+{
   return ( V > -V_00 )
     ? ( ( V - V_00 ) / k_gv1 )
     : sqrtf( V / k_gv2 );
@@ -218,6 +210,33 @@ bool PWMInfo::regreCalibration( float t_x0, float &a, float &b, float &r )
   return true;
 }
 
+bool PWMInfo::doRegre()
+{
+  if( ! need_regre ) {
+    return true;
+  }
+  float a, b, r;
+  bool ok = regreCalibration( x_0, a, b, r );
+  if( ok ) {
+    k_gv1 = a; V_00 = b;
+    fixCoeffs();
+  }
+  return ok;
+}
+
+
+bool PWMInfo::addSample( float pwm, float v )
+{
+  auto i = (unsigned) ( ( pwm - cal_min ) / cal_step );
+  if( i >= n_cal ) {
+    return false;
+  }
+  d_pwm[i] = k_move * pwm + ( 1.0f - k_move ) * d_pwm[i];
+  d_v[i]   = k_move * v   + ( 1.0f - k_move ) *   d_v[i];
+  need_regre = true;
+  return true;
+}
+
 // ------------------------ PWMData -------------------------------------
 
 void PWMData::reset_steps()
@@ -382,6 +401,8 @@ bool PWMData::tick( const float *d )
   pwm_val = clamp( pwm_val, pwm_min, pwm_tmax ); // to no-overintegrate
   set_pwm();
 
+  pwminfo.addSample( pwm_val_old, d[didx_v] );
+
   return true;
 }
 
@@ -394,6 +415,11 @@ void PWMData::calcNextStep()
   bool rehint = ( c_step == 0  )
     || ( fabsf( val_0 - old_val ) > pwminfo.rehint_lim )
     || ( steps[c_step].tp != steps[c_step-1].tp );
+
+  if( rehint ) {
+    pwminfo.doRegre();
+  }
+
   switch( steps[c_step].tp ) {
     case pwm_type::pwm:   pwm_val = val; break;
     case pwm_type::volt:  if( rehint ) {
@@ -411,7 +437,7 @@ void PWMData::calcNextStep()
     default:              pwm_val = pwm_min; break; // fail-save
   };
   std_out << "# @@@ " << c_step << ' ' << old_val << ' ' << val << ' ' << pwm_val << ' '
-     << last_R << ' ' << rehint << NL;
+     << last_R << ' ' << rehint << ' ' << pwminfo.k_gv1 << ' ' << pwminfo.V_00 << NL;
 }
 
 void PWMData::end_run()

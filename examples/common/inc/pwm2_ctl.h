@@ -14,13 +14,15 @@ enum DataIdx {
 struct PWMInfo {
   PWMInfo( float a_R0, float a_V_00 = -0.5f, float k_gv1 = -.12f );
   void fixCoeffs();
-  float hint_for_V( float V );
+  float hint_for_V( float V ) const;
   float pwm2V( float pwm ) const;
   void clearCalibrationArr();
   void fillFakeCalibration( unsigned nc );
   void addCalibrationStep( float pwm, float v, float I );
   bool calcCalibration( float &err_max, bool fake = false );
   bool regreCalibration( float t_x0, float &a, float &b, float &r );
+  bool doRegre();
+  bool addSample( float pwm, float v );
 
   static constexpr unsigned max_cal_steps = 20;
   unsigned n_cal   = 0;       //* number of calibration data: real or fake
@@ -38,7 +40,7 @@ struct PWMInfo {
   float k_move     = 0.05f;   //* move coeff for adaptation
   float cal_min    = 3.0f;    //* start calibration pwm value
   float cal_step   = 5.0f;    //* step calibration pwm value
-  float d_pwm[max_cal_steps], d_v[max_cal_steps], d_i[max_cal_steps]; //* calibration and adapt data
+  float d_pwm[max_cal_steps], d_v[max_cal_steps], d_i[max_cal_steps]; //* calibration and adapt data TODO: w/o d_i
   bool was_calibr = false;
   bool need_regre = true;
 };
