@@ -14,6 +14,14 @@
 
 using namespace std;
 
+PWMInfo::PWMInfo( float a_R0, float a_V_00, float a_k_gv1 )
+  : R_0( a_R0 ), V_00( a_V_00 ), k_gv1( a_k_gv1 ),
+    k_gv2( -k_gv1 * k_gv1 / ( 4 * V_00 ) ),
+    x_0 ( - V_00 / k_gv1 )
+{
+  fillFakeCalibration( 10 );
+}
+
 float PWMInfo::hint_for_V( float V ) const
 {
   return ( V > -V_00 )
@@ -23,12 +31,117 @@ float PWMInfo::hint_for_V( float V ) const
 
 float PWMInfo::pwm2V( float pwm ) const
 {
-  float x0 = - V_00 / k_gv1;
-
-  return ( pwm > 2 * x0 )
+  return ( pwm > 2 * x_0 )
     ? ( pwm * k_gv1 + V_00 )
     : ( pwm * pwm * k_gv2 );
-};
+}
+
+void PWMInfo::clearCalibrationArr()
+{
+  n_cal = 0;
+  was_calibr = false; // as fake;
+  for( unsigned i=0; i<max_cal_steps; ++i ) {
+    d_pwm[i] = 0;
+    d_v[i]   = 0;
+    d_i[i]   = 0;
+  }
+}
+
+void PWMInfo::fillFakeCalibration( unsigned nc )
+{
+  if( nc > max_cal_steps ) {
+    nc = max_cal_steps;
+  }
+  for( unsigned i=0; i<nc; ++i ) {
+    float pwm = cal_min + cal_step * i;
+    d_pwm[i] = pwm;
+    d_v[i]   = pwm2V( pwm );
+    d_i[i]   = d_v[i] / R_0;
+  }
+  n_cal = nc;
+  was_calibr = false; // as fake;
+}
+
+void PWMInfo::addCalibrationStep( float pwm, float v, float I )
+{
+  if( n_cal >= max_cal_steps ) {
+    return;
+  }
+  d_pwm[n_cal] = pwm;
+  d_v[n_cal]   = v;
+  d_i[n_cal]   = I;
+  ++n_cal;
+}
+
+bool  PWMInfo::calcCalibration( float &err_max, bool fake )
+{
+  std_out << "# -- calibration calculation ----- " ;
+  if( fake ) {
+    std_out << " === FAKE ===";
+  }
+  std_out << NL;
+
+  if( n_cal < 3 || fabsf( d_i[0] < 1e-4f ) ) {
+    std_out << "# Error: bad input data " NL;
+    return false;
+  }
+
+  float t_R_0 = d_v[0] / d_i[0];
+
+  // find initial mode change
+  unsigned i_lim = n_cal;
+  float k_g = 0.12f;
+  for( unsigned i=n_cal-1; i>0; --i ) {
+    float diff_pwm_l =  d_pwm[i]       - d_pwm[i-1];
+    float diff_pwm_g =  d_pwm[n_cal-1] - d_pwm[i-1];
+    std_out << "# " << i << ' ';
+    if( fabsf( diff_pwm_l ) < 0.1f || fabsf( diff_pwm_g ) < 0.1f ) {
+      continue;
+    }
+    float k_l1 = ( d_v[i]       - d_v[i-1] ) / diff_pwm_l;
+    float k_g1 = ( d_v[n_cal-1] - d_v[i-1] ) / diff_pwm_g;
+    if( fabsf( ( k_g1 - k_l1 ) / k_g1 ) < 0.03f ) {
+      i_lim = i; k_g = k_g1;
+    }
+    std_out << ' ' << i << ' ' << k_l1 << ' ' << k_g1 << NL;
+  }
+  float b = d_v[n_cal-1] - k_g * d_pwm[n_cal-1];
+  float t_x_0 = - b / k_g;
+  float k_2 = - k_g * k_g / ( 4 * b );
+
+  std_out << "# --- calibration check:" << NL;
+
+  err_max = 0;
+  for( unsigned i=0; i<n_cal; ++i ) {
+    float pwm = d_pwm[i];
+    float v = ( pwm > 2 * x_0 ) ? ( k_g * pwm + b ) : (  pwm * pwm * k_2 );
+    float err = fabsf( v - d_v[i] );
+    if( err > err_max ) {
+      err_max = err;
+    }
+    std_out << "# " << i << ' ' << pwm << ' ' << v << err << NL;
+  }
+
+  std_out << "# err_max= " << err_max << NL;
+  std_out << "# R_0= " << t_R_0 << " i_lim= " << i_lim << " k_gv1= " << k_g
+          << " V_00= " << b << " x_0= " << x_0 << " k_gv2= " << k_2 << NL;
+
+  if( err_max > 0.3f ) {
+    std_out << "# Error: large approximation error!!! " << NL;
+    return false;
+  }
+
+  R_0   = t_R_0;
+  V_00  = b;
+  k_gv1 = k_g;
+  k_gv2 = k_2;
+  x_0   = t_x_0;
+
+  if( !fake ) {
+    was_calibr = true;
+  }
+  return true;
+}
 
 // ------------------------ PWMData -------------------------------------
 

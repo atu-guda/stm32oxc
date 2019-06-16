@@ -10,22 +10,34 @@ enum DataIdx {
   didx_v = 0, didx_i = 1, didx_pwm = 2, didx_r = 3, didx_w = 4, didx_val = 5, didx_n
 };
 
-//* misct data about pwm. here: fallback values. need calibration
+//* misc data about pwm. here: fallback values. need calibration
 struct PWMInfo {
-  static constexpr unsigned max_cal_steps = 20;
-  float R_0   = 1.0f;      //* initial resistance
-  float V_00  = -0.5f;     //* V(0) for linear represenration
-  float k_gv1 = 0.12f;     //* dV/d\gamma
-  float k_gv2 = 0.006f;    //* a_2 coeff for initial part, = -k_gv1 / (4*V_00)
-  float ki_v  = 0.1f;      //* intergation coeff for voltage
-  float rehint_lim = 0.2f; //* is rehint needed in calcNextStep
-  float V_max = 8.0f;      //* voltage limit
-  float I_max = 8.0f;      //* current limit
-  float R_max = 8.0f;      //* resistance value for break detection
-  float W_max = 90.0f;     //* power limit
-  float d_pwm[max_cal_steps], d_v[max_cal_steps], d_i[max_cal_steps];
+  PWMInfo( float a_R0, float a_V_00 = -0.5f, float k_gv1 = -.12f );
   float hint_for_V( float V ) const;
   float pwm2V( float pwm ) const;
+  void clearCalibrationArr();
+  void fillFakeCalibration( unsigned nc );
+  void addCalibrationStep( float pwm, float v, float I );
+  bool calcCalibration( float &err_max, bool fake = false );
+
+  static constexpr unsigned max_cal_steps = 20;
+  unsigned n_cal   = 0;       //* number of calibration data: real or fake
+  float R_0        = 1.0f;    //* initial resistance
+  float V_00       = -0.5f;   //* V(0) for linear represenration
+  float k_gv1      = 0.12f;   //* dV/d\gamma
+  float k_gv2      = 0.006f;  //* a_2 coeff for initial part, = -k_gv1 / (4*V_00)
+  float x_0        = 0.5f;    //* = - V_00 / k_gv1
+  float ki_v       = 0.1f;    //* intergation coeff for voltage
+  float rehint_lim = 0.2f;    //* is rehint needed in calcNextStep
+  float V_max      = 8.0f;    //* voltage limit
+  float I_max      = 8.0f;    //* current limit
+  float R_max      = 8.0f;    //* resistance value for break detection
+  float W_max      = 90.0f;   //* power limit
+  float k_move     = 0.05f;   //* move coeff for adaptation
+  float cal_min    = 3.0f;    //* start calibration pwm value
+  float cal_step   = 5.0f;    //* step calibration pwm value
+  float d_pwm[max_cal_steps], d_v[max_cal_steps], d_i[max_cal_steps]; //* calibration and adapt data
+  bool was_calibr = false;
 };
 
 

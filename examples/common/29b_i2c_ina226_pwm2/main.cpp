@@ -43,22 +43,8 @@ float v_coeffs[n_ADC_ch_max] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 bool isGoodINA226( INA226 &ina, bool print = true );
 
+PWMInfo pwminfo( 0.09347f, -0.671f, 0.1139f );
 
-PWMInfo pwminfo {
-  .R_0        = 0.09347f,
-  .V_00       = -0.671f,
-  .k_gv1      = 0.1139f,
-  .k_gv2      = 4.8339e-3f,
-  .ki_v       = 0.1f,
-  .rehint_lim = 0.2f,
-  .V_max      = 8.0f,
-  .I_max      = 50.0f,
-  .R_max      = 200.0f,
-  .W_max      = 200.0f,
-  .d_pwm      = {0},
-  .d_v        = {0},
-  .d_i        = {0}
-};
 PWMData pwmdat( pwminfo, do_set_pwm );
 
 void handle_keys();
@@ -111,10 +97,13 @@ constexpr NamedFloat ob_V_00       {       "V_00",       &pwminfo.V_00  };
 constexpr NamedFloat ob_R_0        {        "R_0",        &pwminfo.R_0  };
 constexpr NamedFloat ob_k_gv1      {      "k_gv1",      &pwminfo.k_gv1  };
 constexpr NamedFloat ob_k_gv2      {      "k_gv2",      &pwminfo.k_gv2  };
+constexpr NamedFloat ob_x_0        {        "x_0",        &pwminfo.x_0  };
 constexpr NamedFloat ob_ki_v       {       "ki_v",       &pwminfo.ki_v  };
-constexpr NamedFloat ob_cal_pwm    {       "cal_pwm",     pwminfo.d_pwm, size(pwminfo.d_pwm) };
-constexpr NamedFloat ob_cal_v      {       "cal_v",       pwminfo.d_v,   size(pwminfo.d_v)   };
-constexpr NamedFloat ob_cal_i      {       "cal_i",       pwminfo.d_i,   size(pwminfo.d_i)   };
+constexpr NamedFloat ob_cal_min    {    "cal_min",       &pwminfo.cal_min  };
+constexpr NamedFloat ob_cal_step   {   "cal_step",       &pwminfo.cal_step };
+constexpr NamedFloat ob_cal_pwm    {    "cal_pwm",       pwminfo.d_pwm, size(pwminfo.d_pwm) };
+constexpr NamedFloat ob_cal_v      {      "cal_v",         pwminfo.d_v, size(pwminfo.d_v)   };
+constexpr NamedFloat ob_cal_i      {      "cal_i",         pwminfo.d_i, size(pwminfo.d_i)   };
 constexpr NamedFloat ob_rehint_lim { "rehint_lim", &pwminfo.rehint_lim  };
 constexpr NamedFloat ob_pwm_min    {    "pwm_min",         get_pwm_min,  set_pwm_min  };
 constexpr NamedFloat ob_pwm_max    {    "pwm_max",         get_pwm_max,  set_pwm_max  };
@@ -130,7 +119,10 @@ constexpr const NamedObj *const objs_info[] = {
   & ob_R_0,
   & ob_k_gv1,
   & ob_k_gv2,
+  & ob_x_0,
   & ob_ki_v,
+  & ob_cal_min,
+  & ob_cal_step,
   & ob_cal_pwm,
   & ob_cal_v,
   & ob_cal_i,
@@ -172,7 +164,7 @@ CmdInfo CMDINFO_TINIT { "tinit", 'I', cmd_tinit, " - reinit timer"  };
 int cmd_pwm( int argc, const char * const * argv );
 CmdInfo CMDINFO_PWM { "pwm", 0, cmd_pwm, " [val] - set PWM value"  };
 int cmd_calibrate( int argc, const char * const * argv );
-CmdInfo CMDINFO_CALIBRATE { "calibrate", 'C', cmd_calibrate, " [pwm_max] [dt] - calibrate PWM values"  };
+CmdInfo CMDINFO_CALIBRATE { "calibrate", 'C', cmd_calibrate, " [pwm_max] [dt] [fake] - calibrate PWM values"  };
 
 
 const CmdInfo* global_cmds[] = {
@@ -197,6 +189,11 @@ int main(void)
 
   UVAR('p') = 0;     // PSC,  - max output freq
   UVAR('a') = 1439;  // ARR, to get 100 kHz with PSC = 0 // TODO: use oxc_timer functions
+
+  pwminfo.R_max = 200.0f;
+  pwminfo.V_max =   8.0f;
+  pwminfo.I_max =  50.0f;
+  pwminfo.W_max = 200.0f;
 
   print_var_hook = print_var_ex;
   set_var_hook   = set_var_ex;
@@ -433,21 +430,22 @@ int cmd_pwm( int argc, const char * const * argv )
 // TODO: to PWMData
 int cmd_calibrate( int argc, const char * const * argv )
 {
-  float vmin = 3.0f;
-  objs.get( "pwm_min", vmin );
+  float vmin = pwminfo.cal_min;
   float vmax_def = 60.0f;
   objs.get( "pwm_max", vmax_def );
   float vmax = arg2float_d( 1, argc, argv, 0.6f * vmax_def, 2.0f, vmax_def );
   unsigned dt  = arg2long_d( 2, argc, argv, 10000, 1000, 200000 );
+  unsigned fake_cal = arg2long_d( 3, argc, argv, 0, 0, 1 );
 
   const unsigned n_measure = 10; // TODO: params
-  float pwm_step = 5.0f;
 
   if( ! init_INA() ) {
     return 3;
   }
 
-  unsigned n_steps = (unsigned) ceilf( ( vmax - vmin ) / pwm_step );
+  pwminfo.clearCalibrationArr();
+
+  unsigned n_steps = (unsigned) ceilf( ( vmax - vmin ) / pwminfo.cal_step );
   if( n_steps >= PWMInfo::max_cal_steps ) {
     n_steps = PWMInfo::max_cal_steps;
   }
@@ -458,40 +456,56 @@ int cmd_calibrate( int argc, const char * const * argv )
   break_flag = 0;
   for( unsigned i=0; i<n_steps && !break_flag; ++i ) {
     float v[didx_n];
-    float pwm_v = vmin + i * pwm_step;
-    pwmdat.set_pwm_manual( pwm_v );
+    float pwm_v = vmin + i * pwminfo.cal_step;
+    float c_pwm, c_v_a = 0, c_i_a = 0; // real / average values
 
-    for( unsigned j=0; j<dt && !break_flag; j+=10 ) { // wait for steady + check all limits
-      delay_ms_brk( 10 ); // TODO: break
-      measure_and_calc( v );
-      auto rc = pwmdat.check_lim( v );
-      if( rc != PWMData::check_result::ok ) {
-        break_flag = 2;
-        std_out << "# Error: limits! " << NL;
+    if( !fake_cal ) {
+      pwmdat.set_pwm_manual( pwm_v );
+
+      for( unsigned j=0; j<dt && !break_flag; j+=10 ) { // wait for steady + check all limits
+        delay_ms_brk( 10 ); // TODO: break
+        measure_and_calc( v );
+        auto rc = pwmdat.check_lim( v );
+        if( rc != PWMData::check_result::ok ) {
+          break_flag = 2;
+          std_out << "# Error: limits! " << NL;
+          break;
+        }
+      }
+      if( break_flag ) { break; }
+
+      c_pwm = pwmdat.get_pwm_real();
+      float c_v = 0, c_i = 0;
+
+      for( unsigned j=0; j<n_measure && !break_flag; ++j ) {
+        delay_ms( 50 );
+        measure_and_calc( v ); // TODO: check
+        auto rc = pwmdat.check_lim( v );
+        if( rc != PWMData::check_result::ok ) {
+          break_flag = 2;
+          std_out << "# Error: limits! " << NL;
+          break;
+        }
+        c_v += v[didx_v];
+        c_i += v[didx_i];
+      }
+      if( break_flag ) {
         break;
       }
+      c_v_a = c_v / n_measure;
+      c_i_a = c_i / n_measure;
+    } else { // fake_cal: values must not changed
+      c_pwm = pwm_v;
+      c_v_a = pwminfo.pwm2V( c_pwm );
+      c_i_a = c_v_a / pwminfo.R_0;
+      v[didx_r] = pwminfo.R_0;
+      v[didx_w] = c_v_a * c_i_a;
+
     }
-    if( break_flag ) { break; }
 
-    pwminfo.d_pwm[i] = pwmdat.get_pwm_real();
-    pwminfo.d_v[i] = pwminfo.d_i[i] = 0;
+    pwminfo.addCalibrationStep( c_pwm, c_v_a, c_i_a );
 
-    for( unsigned j=0; j<n_measure && !break_flag; ++j ) {
-      delay_ms( 50 );
-      measure_and_calc( v ); // TODO: check
-      auto rc = pwmdat.check_lim( v );
-      if( rc != PWMData::check_result::ok ) {
-        break_flag = 2;
-        std_out << "# Error: limits! " << NL;
-        break;
-      }
-      pwminfo.d_v[i] += v[didx_v];
-      pwminfo.d_i[i] += v[didx_i];
-    }
-    if( break_flag ) { break; }
-
-    pwminfo.d_v[i] /= n_measure; pwminfo.d_i[i] /= n_measure;
-    std_out << "# " << i << ' ' << pwm_v << ' ' << pwminfo.d_v[i] << ' ' << pwminfo.d_i[i] << ' '
+    std_out << "# " << i << ' ' << c_pwm << ' ' << c_v_a << ' ' << c_i_a << ' '
        << v[didx_r] << ' ' << v[didx_w] << NL;
   }
 
@@ -501,57 +515,11 @@ int cmd_calibrate( int argc, const char * const * argv )
     std_out << "# calibrtion exit by break!" << NL;
     return 2;
   }
-  float R_0 = pwminfo.d_v[0] / pwminfo.d_i[0];
-
-  // find initial mode change
-  unsigned i_lim = n_steps-1;
-  float k_g = 0.12f;
-  for( unsigned i=n_steps-1; i>0; --i ) {
-    float diff_pwm_l =  pwminfo.d_pwm[i]         - pwminfo.d_pwm[i-1];
-    float diff_pwm_g =  pwminfo.d_pwm[n_steps-1] - pwminfo.d_pwm[i-1];
-    std_out << "# " << i << ' ';
-    if( fabsf( diff_pwm_l ) < 0.1f || fabsf( diff_pwm_g ) < 0.1f ) {
-      continue;
-    }
-    float k_l1 = ( pwminfo.d_v[i]         - pwminfo.d_v[i-1] ) / diff_pwm_l;
-    float k_g1 = ( pwminfo.d_v[n_steps-1] - pwminfo.d_v[i-1] ) / diff_pwm_g;
-    if( fabsf( ( k_g1 - k_l1 ) / k_g1 ) < 0.03f ) {
-      i_lim = i; k_g = k_g1;
-    }
-    std_out << "# " << i << ' ' << k_l1 << ' ' << k_g1 << NL;
-  }
-  float b = pwminfo.d_v[n_steps-1] - k_g * pwminfo.d_pwm[n_steps-1];
-  float x_0 = - b / k_g;
-  float k_2 = - k_g * k_g / ( 4 * b );
-
-  std_out << "# Check:" << NL;
 
   float err_max = 0;
-  for( unsigned i=0; i<n_steps; ++i ) {
-    float pwm = pwminfo.d_pwm[i];
-    float v = ( pwm > 2 * x_0 ) ? ( k_g * pwm + b ) : (  pwm * pwm * k_2 );
-    float err = fabsf( v - pwminfo.d_v[i] );
-    if( err > err_max ) {
-      err_max = err;
-    }
-    std_out << "# " << i << ' ' << pwm << ' ' << v << err << NL;
-  }
+  bool ok = pwminfo.calcCalibration( err_max, fake_cal );
 
-  std_out << "# err_max= " << err_max << NL;
-  std_out << "# R_0= " << R_0 << " i_lim= " << i_lim << " k_g= " << k_g
-          << " b= " << b << " x_0= " << x_0 << " k_2= " << k_2 << NL;
-
-  if( err_max > 0.3f ) {
-    std_out << "# Large approximation error!!! " << NL;
-    return 5;
-  }
-
-  pwminfo.R_0 = R_0;
-  pwminfo.V_00 = b;
-  pwminfo.k_gv1 = k_g;
-  pwminfo.k_gv2 = k_2;
-
-  return 0;
+  return ok ? 0 : 5;
 }
 
 
