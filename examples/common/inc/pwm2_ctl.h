@@ -95,6 +95,7 @@ class PWMData {
    void add_to_hand( float v ) { hand += v; }
    void adj_hand_to( float v ) { hand = v - val_1; }
    void set_t_mul( float tmul ) { t_mul = tmul; }
+   int get_reason() const { return reason; }
   protected:
    float pwm_min = 3.0f, pwm_def = 5.0f, pwm_max = 60.0f, pwm_tmax = pwm_max; // tmax - tmp max for limits
    float val =  pwm_def;
@@ -111,6 +112,7 @@ class PWMData {
    unsigned c_step   = 0;
    int t = 0;
    int t_step = 10;
+   int reason = 0;
    float t_mul = 1;
    bool fake_run = false;
    StepInfo steps[max_pwm_steps];

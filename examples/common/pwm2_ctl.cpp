@@ -334,11 +334,11 @@ void PWMData::set_pwm()
   if( set_pwm_real ) {
     set_pwm_real( pwm_r );
   }
-
 }
 
 void PWMData::prep( int a_t_step, bool fake )
 {
+  reason  = 0;
   pwm_tmax = pwm_max;
   t_step = a_t_step; fake_run = fake;
   t = 0; t_mul = 1;  c_step = 0; hand = 0; last_R = pwminfo.R_0;
@@ -348,27 +348,28 @@ void PWMData::prep( int a_t_step, bool fake )
   }
 }
 
-// TODO: return reason
 bool PWMData::tick( const float *d )
 {
   t += t_step * t_mul;
   last_R = d[didx_r];
   auto pwm_val_old = pwm_val;
 
+  if( fake_run ) {
+    return true;
+  }
+
   auto rc = check_lim( d );
 
   if( rc == check_result::hard ) {
+    reason = 1;
     return false;
-  }
-
-  if( fake_run ) {
-    return true;
   }
 
   if( t >= step_t ) { // next step
     t = 0;
     ++c_step;
     if( c_step >= n_steps ) {
+      reason = 0; // end
       return false;
     }
     calcNextStep();
@@ -452,7 +453,7 @@ void PWMData::end_run()
 PWMData::check_result PWMData::check_lim( const float *d )
 {
   if( d[didx_r] > pwminfo.R_max  ||  d[didx_r] < 0.001f ) {
-    // std_out << "# Error: limit hard R: " << d[didx_r] << NL;
+    std_out << "# @#@ Error: limit hard R: " << d[didx_r] << NL;
     leds.set( BIT0 );
     return check_result::hard;
   }
@@ -461,20 +462,20 @@ PWMData::check_result PWMData::check_lim( const float *d )
     pwm_val *= 0.95f * pwminfo.V_max / d[didx_v];
     pwm_tmax = 0.99f * pwm_val;
     leds.set( BIT1 );
-    // std_out << "# limit V: " << d[didx_v] << " pwm_tmax=" << pwm_tmax << NL;
+    std_out << "# @#@ limit V: " << d[didx_v] << " pwm_tmax=" << pwm_tmax << NL;
     return check_result::soft;
   }
   if( d[didx_i] > pwminfo.I_max ) {
     pwm_val *= 0.95f * pwminfo.I_max / d[didx_i];
     pwm_tmax = 0.99f * pwm_val;
-    // std_out << "# limit I: " << d[didx_i] << " pwm_tmax=" << pwm_tmax << NL;
+    std_out << "# @#@ limit I: " << d[didx_i] << " pwm_tmax=" << pwm_tmax << NL;
     leds.set( BIT1 );
     return check_result::soft;
   }
   if( d[didx_w] > pwminfo.W_max ) {
     pwm_val *= 0.95f * pwminfo.W_max / d[didx_w];
     pwm_tmax = 0.99f * pwm_val;
-    // std_out << "# limit W: " << d[didx_w] << " pwm_tmax=" << pwm_tmax << NL;
+    std_out << "# @#@ limit W: " << d[didx_w] << " pwm_tmax=" << pwm_tmax << NL;
     leds.set( BIT1 );
     return check_result::soft;
   }

@@ -331,7 +331,7 @@ int cmd_test0( int argc, const char * const * argv )
     handle_keys();
 
     if( ! pwmdat.tick( v ) ) {
-      std_out << "# tick break!" << NL;
+      std_out << "# tick break: reason:" << pwmdat.get_reason() << NL;
       break;
     }
 
