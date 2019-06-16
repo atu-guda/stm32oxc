@@ -15,15 +15,29 @@
 using namespace std;
 
 PWMInfo::PWMInfo( float a_R0, float a_V_00, float a_k_gv1 )
-  : R_0( a_R0 ), V_00( a_V_00 ), k_gv1( a_k_gv1 ),
-    k_gv2( -k_gv1 * k_gv1 / ( 4 * V_00 ) ),
-    x_0 ( - V_00 / k_gv1 )
+  : R_0( a_R0 ), V_00( a_V_00 ), k_gv1( a_k_gv1 )
 {
+  fixCoeffs();
   fillFakeCalibration( 10 );
 }
 
-float PWMInfo::hint_for_V( float V ) const
+void PWMInfo::fixCoeffs()
 {
+  k_gv2 = -k_gv1 * k_gv1 / ( 4 * V_00 );
+  x_0  =  - V_00 / k_gv1;
+}
+
+float PWMInfo::hint_for_V( float V )
+{
+  if( need_regre ) { // TODO: move to separate fun + restore const
+    float a, b, r;
+    bool ok = regreCalibration( x_0, a, b, r );
+    if( ok ) {
+      k_gv1 = a; V_00 = b;
+      fixCoeffs();
+    }
+  }
+
   return ( V > -V_00 )
     ? ( ( V - V_00 ) / k_gv1 )
     : sqrtf( V / k_gv2 );
@@ -45,6 +59,7 @@ void PWMInfo::clearCalibrationArr()
     d_v[i]   = 0;
     d_i[i]   = 0;
   }
+  need_regre = true;
 }
 
 void PWMInfo::fillFakeCalibration( unsigned nc )
@@ -60,6 +75,7 @@ void PWMInfo::fillFakeCalibration( unsigned nc )
   }
   n_cal = nc;
   was_calibr = false; // as fake;
+  need_regre = true;
 }
 
 void PWMInfo::addCalibrationStep( float pwm, float v, float I )
@@ -105,8 +121,18 @@ bool  PWMInfo::calcCalibration( float &err_max, bool fake )
     }
     std_out << ' ' << i << ' ' << k_l1 << ' ' << k_g1 << NL;
   }
+
   float b = d_v[n_cal-1] - k_g * d_pwm[n_cal-1];
   float t_x_0 = - b / k_g;
+
+  float a_regr = 0, b_regr = 0, r_regr;
+  bool ok_regr = regreCalibration( t_x_0, a_regr, b_regr, r_regr );
+  std_out << "# regre: a= " << a_regr << " b= " << b_regr << " r= " << r_regr << " ok= " << ok_regr << NL;
+  if( ! ok_regr ) {
+    return false;
+  }
+  b = b_regr; k_g = a_regr;
+  t_x_0 = - b / k_g;
   float k_2 = - k_g * k_g / ( 4 * b );
 
   std_out << "# --- calibration check:" << NL;
@@ -114,7 +140,7 @@ bool  PWMInfo::calcCalibration( float &err_max, bool fake )
   err_max = 0;
   for( unsigned i=0; i<n_cal; ++i ) {
     float pwm = d_pwm[i];
-    float v = ( pwm > 2 * x_0 ) ? ( k_g * pwm + b ) : (  pwm * pwm * k_2 );
+    float v = ( pwm > 2 * t_x_0 ) ? ( k_g * pwm + b ) : (  pwm * pwm * k_2 );
     float err = fabsf( v - d_v[i] );
     if( err > err_max ) {
       err_max = err;
@@ -124,7 +150,7 @@ bool  PWMInfo::calcCalibration( float &err_max, bool fake )
 
   std_out << "# err_max= " << err_max << NL;
   std_out << "# R_0= " << t_R_0 << " i_lim= " << i_lim << " k_gv1= " << k_g
-          << " V_00= " << b << " x_0= " << x_0 << " k_gv2= " << k_2 << NL;
+          << " V_00= " << b << " x_0= " << t_x_0 << " k_gv2= " << k_2 << NL;
 
   if( err_max > 0.3f ) {
     std_out << "# Error: large approximation error!!! " << NL;
@@ -140,6 +166,55 @@ bool  PWMInfo::calcCalibration( float &err_max, bool fake )
   if( !fake ) {
     was_calibr = true;
   }
+  return true;
+}
+
+bool PWMInfo::regreCalibration( float t_x0, float &a, float &b, float &r )
+{
+  need_regre = true;
+  unsigned n = 0;
+  float sx = 0, sy = 0, sx2 = 0, sy2 = 0, sxy = 0;
+
+  for( unsigned i=0; i<n_cal; ++i ) {
+    if( d_pwm[i] < 2 * t_x0 ) {
+      continue;
+    }
+    float x = d_pwm[i], y = d_v[i];
+    sx  += x;
+    sx2 += x * x;
+    sy  += y;
+    sy2 += y * y;
+    sxy += x * y;
+    ++n;
+  }
+
+  if( n < 2 ) {
+    // std_out << "# Error: regre: n= " << n << NL;
+    return false;
+  }
+
+  float dd = n * sx2 - sx * sx;
+  if( fabsf( dd ) < 1e-6f ) {
+    // std_out << "# Error: regre: dd= " << dd << NL;
+    return false;
+  }
+  const float t1 = n * sxy - sx * sy;
+  a = t1 / dd;
+  b = ( sy * sx2 - sx * sxy ) / dd;
+
+  const float dz = ( n * sx2 - sx * sx ) * ( n * sy2 - sy * sy );
+  if( dz < 1e-6f ) {
+    return false;
+  }
+  r = t1 / sqrtf( dz );
+
+  //std_out << "###  regre: r= " << r << NL;
+  if( r < 0.5f ) {
+    // std_out << "# Error: regre: r= " << r << NL;
+    return false;
+  }
+
+  need_regre = false;
   return true;
 }
 

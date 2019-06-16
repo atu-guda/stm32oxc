@@ -13,12 +13,14 @@ enum DataIdx {
 //* misc data about pwm. here: fallback values. need calibration
 struct PWMInfo {
   PWMInfo( float a_R0, float a_V_00 = -0.5f, float k_gv1 = -.12f );
-  float hint_for_V( float V ) const;
+  void fixCoeffs();
+  float hint_for_V( float V );
   float pwm2V( float pwm ) const;
   void clearCalibrationArr();
   void fillFakeCalibration( unsigned nc );
   void addCalibrationStep( float pwm, float v, float I );
   bool calcCalibration( float &err_max, bool fake = false );
+  bool regreCalibration( float t_x0, float &a, float &b, float &r );
 
   static constexpr unsigned max_cal_steps = 20;
   unsigned n_cal   = 0;       //* number of calibration data: real or fake
@@ -38,6 +40,7 @@ struct PWMInfo {
   float cal_step   = 5.0f;    //* step calibration pwm value
   float d_pwm[max_cal_steps], d_v[max_cal_steps], d_i[max_cal_steps]; //* calibration and adapt data
   bool was_calibr = false;
+  bool need_regre = true;
 };
 
 
