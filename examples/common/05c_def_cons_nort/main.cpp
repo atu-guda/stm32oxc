@@ -48,9 +48,6 @@ int main(void)
 
   BOARD_POST_INIT_BLINK;
 
-  pr( NL "##################### " PROJ_NAME NL );
-
-  srl.re_ps();
 
   oxc_add_aux_tick_fun( led_task_nortos );
 

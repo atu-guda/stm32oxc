@@ -67,6 +67,7 @@ int cmd_test_rate( int argc, const char * const * argv )
 
   uint32_t tm0 = HAL_GetTick();
 
+  unsigned n_lines = 0;
   break_flag = 0;
   for( int i=0; i<n && !break_flag; ++i ) {
     buf[0] =  (char)( '@' + ( i & 0x3F ) );
@@ -74,10 +75,14 @@ int cmd_test_rate( int argc, const char * const * argv )
     if( UVAR('w') ) {
       std_out.flush();
     }
+    ++n_lines;
   }
   uint32_t tm1 = HAL_GetTick();
-  delay_ms( 1000 );
-  std_out << NL "dt= " << ( tm1 - tm0 ) << " ms" << NL;
+  delay_ms( 1000 ); // settle
+  unsigned dt = tm1 - tm0;
+  unsigned n_ch = sl * n_lines;
+  std_out << NL "dt= " << dt << " ms, chars: " << n_ch << "  lines: " << n_lines
+          << "  cps: " << ( 1000*n_ch / dt ) << "  lps: " << ( 1000*n_lines / dt ) << NL;
 
   return 0;
 }

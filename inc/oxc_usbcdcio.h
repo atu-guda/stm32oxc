@@ -40,7 +40,7 @@ class UsbcdcIO : public DevIO {
    USBD_CDC_LineCodingTypeDef lineCoding =
    { 115200, /* baud rate*/ 0x00, /* stop bits-1*/  0x00,   /* parity - none*/  0x08 /* nb. of bits 8*/
    };
-   char rx_buf[TX_BUF_SIZE];
+   char rx_buf[RX_BUF_SIZE];
    char tx_buf[TX_BUF_SIZE];
    USBD_CDC_ItfTypeDef cdc_fops =
    {

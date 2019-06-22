@@ -202,6 +202,13 @@ int exec_direct( const char *s, int l )
     return 1;
   }
 
+  // comment
+  if( argv[0][0] == '#' ) {
+    argv[1] = argv[0];
+    on_cmd_handler = 0;
+    return 0;
+  }
+
   // special case: var = expr
   char cmd_eq_buf[2] = "s";
   if( argc >= 3  && argv[1][0] == '=' && argv[1][1] == '\0' ) {

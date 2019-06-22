@@ -37,13 +37,14 @@ void default_main_loop()
 {
   int nl = 0;
   delay_ms( 10 );
-  std_out <<  "*=*** " PROJ_NAME  " main loop: ****** " NL;
+  std_out <<  "###  " PROJ_NAME  " #### " NL;
   std_out.flush();
   delay_ms( 20 );
   if( ! global_smallrl ) {
     die( 0x01 );
   }
 
+  reset_in( 0 );
   // global_smallrl->setSigFun( smallrl_sigint );
   global_smallrl->set_ps1( PS1_STRING, PS1_OUTSZ );
   global_smallrl->re_ps();
@@ -104,6 +105,22 @@ void std_main_loop_nortos( SmallRL *sm, AuxTickFun f_idle )
   if( !sm ) {
     die4led( 0 );
   }
+
+  std_out <<  "###  " PROJ_NAME  " #### " NL;
+  delay_ms( 10 );
+
+  sm->reset();
+  sm->re_ps();
+
+  // eat pre-input
+  reset_in( 0 );
+  for( unsigned i=0; i<100; ++i ) {
+    auto v = tryGet( 0 );
+    if( ! v.good() ) {
+      break;
+    }
+  }
+
   while( 1 ) {
     auto v = tryGet( 0 );
 

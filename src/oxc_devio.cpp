@@ -76,7 +76,7 @@ Chst DevIO::getc( int w_tick )
 void DevIO::on_tick_action_tx()
 {
   if( on_transmit ) { return; } // handle by IRQ?
-  char tbuf[128];
+  char tbuf[TX_BUF_SIZE];
   unsigned ns = obuf.tryGets( tbuf, sizeof(tbuf ) );
   if( ns > 0 ) {
     write_s( tbuf, ns ); // TODO: if( send_now )?
@@ -224,6 +224,27 @@ int ungets( int fd, const char *s )
   for( ; *s; ++s ) {
     devio_fds[fd]->unget( *s );
   }
+  return 1;
+}
+
+int reset_in( int fd )
+{
+  COMMON_FD_TEST( fd );
+  devio_fds[fd]->reset_in();
+  return 1;
+}
+
+int reset_out( int fd )
+{
+  COMMON_FD_TEST( fd );
+  devio_fds[fd]->reset_out();
+  return 1;
+}
+
+int reset_io( int fd )
+{
+  COMMON_FD_TEST( fd );
+  devio_fds[fd]->reset();
   return 1;
 }
 
