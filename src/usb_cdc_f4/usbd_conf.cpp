@@ -1,6 +1,8 @@
 #include <errno.h>
 #include <oxc_base.h>
 
+// #include <oxc_gpio.h> // debug
+
 #include <usbd_core.h>
 
 /* Private variables ---------------------------------------------------------*/
@@ -260,12 +262,9 @@ uint8_t USBD_LL_IsStallEP( USBD_HandleTypeDef *pdev, uint8_t ep_addr )
 {
   PCD_HandleTypeDef *hpcd = (PCD_HandleTypeDef*)pdev->pData;
 
-  if( (ep_addr & 0x80 ) == 0x80 )
-  {
+  if( (ep_addr & 0x80 ) == 0x80 ) {
     return hpcd->IN_ep[ep_addr & 0x7F].is_stall;
-  }
-  else
-  {
+  } else {
     return hpcd->OUT_ep[ep_addr & 0x7F].is_stall;
   }
 }

@@ -12,7 +12,7 @@ extern USBD_HandleTypeDef USBD_Dev;
 class UsbcdcIO : public DevIO {
   public:
    UsbcdcIO()
-    { pusb_dev = &usb_dev; static_usbcdcio = this; }
+    { pusb_dev = &usb_dev; static_usbcdcio = this; ready_transmit = false; }
    // virtual ~UsbcdcIO() override {};
    // virtual void reset() override {}
    int init();

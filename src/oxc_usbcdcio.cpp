@@ -1,7 +1,7 @@
 #include <errno.h>
 #include <oxc_usbcdcio.h>
 
-// #include <oxc_gpio.h> // debug
+#include <oxc_gpio.h> // debug
 
 USBD_HandleTypeDef* UsbcdcIO::pusb_dev = nullptr;
 UsbcdcIO* UsbcdcIO::static_usbcdcio = nullptr;
@@ -32,6 +32,12 @@ int UsbcdcIO::write_s( const char *s, int l )
   if( !s || l < 1 ) {
     return 0;
   }
+
+  if( pusb_dev == nullptr && pusb_dev->dev_state != USBD_STATE_CONFIGURED ) {
+    errno = EIO;
+    return -1;
+  }
+
   USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef *)usb_dev.pClassData;
   if( !hcdc ) {
     return 0;
@@ -77,7 +83,7 @@ int8_t UsbcdcIO::CDC_Itf_DeInit()
   return USBD_OK;
 }
 
-int8_t UsbcdcIO::CDC_Itf_Control ( uint8_t cmd, uint8_t* pbuf, uint16_t length UNUSED_ARG )
+int8_t UsbcdcIO::CDC_Itf_Control( uint8_t cmd, uint8_t* pbuf, uint16_t length UNUSED_ARG )
 {
   switch( cmd ) {
     case CDC_SEND_ENCAPSULATED_COMMAND:
@@ -102,6 +108,10 @@ int8_t UsbcdcIO::CDC_Itf_Control ( uint8_t cmd, uint8_t* pbuf, uint16_t length U
       break;
 
     case CDC_SET_LINE_CODING:
+      if( ! static_usbcdcio ) {
+        break;
+      }
+      // leds.toggle( BIT1 );
       static_usbcdcio->lineCoding.bitrate    = (uint32_t)(pbuf[0] | (pbuf[1] << 8) |\
           (pbuf[2] << 16) | (pbuf[3] << 24));
       static_usbcdcio->lineCoding.format     = pbuf[4];
@@ -111,6 +121,9 @@ int8_t UsbcdcIO::CDC_Itf_Control ( uint8_t cmd, uint8_t* pbuf, uint16_t length U
       break;
 
     case CDC_GET_LINE_CODING:
+      if( ! static_usbcdcio ) {
+        break;
+      }
       pbuf[0] = (uint8_t)( static_usbcdcio->lineCoding.bitrate       );
       pbuf[1] = (uint8_t)( static_usbcdcio->lineCoding.bitrate >>  8 );
       pbuf[2] = (uint8_t)( static_usbcdcio->lineCoding.bitrate >> 16 );
@@ -121,11 +134,35 @@ int8_t UsbcdcIO::CDC_Itf_Control ( uint8_t cmd, uint8_t* pbuf, uint16_t length U
       break;
 
     case CDC_SET_CONTROL_LINE_STATE:
-      // NOP
+      // leds.toggle( BIT2 );
+      if( ! static_usbcdcio ) {
+        break;
+      }
+
+      {
+        USBD_SetupReqTypedef *req = (USBD_SetupReqTypedef *)pbuf;
+        if( ( req->wValue & 0x0001 ) != 0 )  { // check DTR
+          static_usbcdcio->ready_transmit = true;
+          // leds.set( BIT1 );
+        } else {
+          static_usbcdcio->ready_transmit = false;
+          // leds.reset( BIT1 );
+        }
+      }
+
       break;
 
     case CDC_SEND_BREAK:
-      // NOP
+      // leds.toggle( BIT1 );
+      if( ! static_usbcdcio ) {
+        break;
+      }
+      if( static_usbcdcio->handle_cbreak ) {
+        break_flag = 1;
+        if( static_usbcdcio->onSigInt ) {
+          static_usbcdcio->onSigInt( '\x03' );
+        }
+      }
       break;
 
     default:

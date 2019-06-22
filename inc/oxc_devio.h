@@ -66,6 +66,7 @@ class DevIO : public DevOut, public DevIn {
    int wait_rx = 1500;
    bool on_transmit = false;
    bool handle_cbreak = true;
+   bool ready_transmit = true;
    static DevIO* devios[DEVIO_MAX];
 };
 

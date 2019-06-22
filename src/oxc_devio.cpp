@@ -1,3 +1,4 @@
+#include <cerrno>
 #include <cstring>
 #include <oxc_devio.h>
 
@@ -48,6 +49,10 @@ int DevIO::write( const char *s, int l )
 
   int ns = 0;
   if( ( ns = obuf.puts_ato( s, l ) ) <= 0 ) {
+    if( ! ready_transmit ) {
+      errno = EIO;
+      return -1;
+    }
     ns = obuf.puts( s, l );
   }
 
@@ -76,6 +81,7 @@ Chst DevIO::getc( int w_tick )
 void DevIO::on_tick_action_tx()
 {
   if( on_transmit ) { return; } // handle by IRQ?
+  if( !ready_transmit ) { return; }
   char tbuf[TX_BUF_SIZE];
   unsigned ns = obuf.tryGets( tbuf, sizeof(tbuf ) );
   if( ns > 0 ) {

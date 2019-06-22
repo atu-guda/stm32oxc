@@ -22,7 +22,7 @@
 #endif
 
 #ifndef USBD_MANUFACTURER_STRING
-#define USBD_MANUFACTURER_STRING      "Unknown manufaturer"
+#define USBD_MANUFACTURER_STRING      "Hidden manufacturer"
 #endif
 
 #ifndef USBD_PRODUCT_FS_STRING
@@ -158,18 +158,15 @@ static void Get_SerialNum(void)
 
   deviceserial0 += deviceserial2;
 
-  if ( deviceserial0 != 0 )
-  {
-    IntToUnicode( deviceserial0, &USBD_StringSerial[2], 8 );
+  if( deviceserial0 != 0 ) {
+    IntToUnicode( deviceserial0, &USBD_StringSerial[2],  8 );
     IntToUnicode( deviceserial1, &USBD_StringSerial[18], 4 );
   }
 }
 
 static void IntToUnicode( uint32_t value, uint8_t *pbuf, uint8_t len )
 {
-  uint8_t idx = 0;
-
-  for( idx=0; idx < len; ++idx ) {
+  for( uint8_t idx=0; idx < len; ++idx ) {
     if( ( (value >> 28 ) ) < 0xA )  {
       pbuf[ 2*idx ] = ( value >> 28 ) + '0';
     } else {

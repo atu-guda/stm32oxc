@@ -34,7 +34,7 @@ const CmdInfo* global_cmds[] = {
 
 void idle_main_task()
 {
-  leds.toggle( 1 );
+  // leds.toggle( 1 );
 }
 
 

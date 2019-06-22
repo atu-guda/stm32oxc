@@ -1,6 +1,6 @@
 Fix bug with small floats output
 STD_POST_EXEC redesing: weak?
-BUG: USB CDC: input to output bypass on start (detect connection?)
+USB CDC: DevIO: hook for connect/disconnect
 07b - all arches (need keyboard)
 substitute vars (or by any hook) in cmdline: oxc_console.cpp: exec_direct?
 oxc_smallrl: UTF-8 minimal handling
