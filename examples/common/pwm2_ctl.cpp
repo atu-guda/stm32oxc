@@ -50,6 +50,7 @@ void PWMInfo::clearCalibrationArr()
     d_pwm[i] = 0;
     d_v[i]   = 0;
     d_i[i]   = 0;
+    d_wei[i] = 0;
   }
   need_regre = true;
 }
@@ -62,6 +63,7 @@ void PWMInfo::fillFakeCalibration( unsigned nc )
   for( unsigned i=0; i<nc; ++i ) {
     float pwm = cal_min + cal_step * i;
     d_pwm[i] = pwm;
+    d_wei[i] = 10;
     d_v[i]   = pwm2V( pwm );
     d_i[i]   = d_v[i] / R_0;
   }
@@ -76,6 +78,7 @@ void PWMInfo::addCalibrationStep( float pwm, float v, float I )
     return;
   }
   d_pwm[n_cal] = pwm;
+  d_wei[n_cal] = 10;
   d_v[n_cal]   = v;
   d_i[n_cal]   = I;
   ++n_cal;
@@ -89,7 +92,7 @@ bool  PWMInfo::calcCalibration( float &err_max, bool fake )
   }
   std_out << NL;
 
-  if( n_cal < 3 || fabsf( d_i[0] < 1e-4f ) ) {
+  if( n_cal < 3 || fabsf( d_i[0] ) < 1e-4f ) {
     std_out << "# Error: bad input data " NL;
     return false;
   }
@@ -167,7 +170,10 @@ bool PWMInfo::regreCalibration( float t_x0, float &a, float &b, float &r )
   unsigned n = 0;
   float sx = 0, sy = 0, sx2 = 0, sy2 = 0, sxy = 0;
 
-  for( unsigned i=0; i<n_cal; ++i ) {
+  for( unsigned i=0; i<max_cal_steps; ++i ) {
+    if( d_pwm[i] <= 0 ) {
+      continue;
+    }
     if( d_pwm[i] < 2 * t_x0 ) {
       continue;
     }
@@ -180,7 +186,8 @@ bool PWMInfo::regreCalibration( float t_x0, float &a, float &b, float &r )
     ++n;
   }
 
-  if( n < 2 ) {
+
+  if( n < 3 ) {
     // std_out << "# Error: regre: n= " << n << NL;
     return false;
   }
@@ -201,7 +208,7 @@ bool PWMInfo::regreCalibration( float t_x0, float &a, float &b, float &r )
   r = t1 / sqrtf( dz );
 
   //std_out << "###  regre: r= " << r << NL;
-  if( r < 0.5f ) {
+  if( r < 0.7f ) {
     // std_out << "# Error: regre: r= " << r << NL;
     return false;
   }
@@ -228,11 +235,18 @@ bool PWMInfo::doRegre()
 bool PWMInfo::addSample( float pwm, float v )
 {
   auto i = (unsigned) ( ( pwm - cal_min ) / cal_step );
-  if( i >= n_cal ) {
+  if( i >= max_cal_steps ) {
     return false;
   }
-  d_pwm[i] = k_move * pwm + ( 1.0f - k_move ) * d_pwm[i];
-  d_v[i]   = k_move * v   + ( 1.0f - k_move ) *   d_v[i];
+  if( d_pwm[i] <= 0 ) {
+    d_pwm[i] = pwm;
+    d_v[i]   = v;
+    d_wei[i] = 1;
+  } else {
+    d_pwm[i] = k_move * pwm + ( 1.0f - k_move ) * d_pwm[i];
+    d_v[i]   = k_move * v   + ( 1.0f - k_move ) *   d_v[i];
+    ++d_wei[i];
+  }
   need_regre = true;
   return true;
 }
@@ -417,7 +431,7 @@ void PWMData::calcNextStep()
     || ( fabsf( val_0 - old_val ) > pwminfo.rehint_lim )
     || ( steps[c_step].tp != steps[c_step-1].tp );
 
-  if( rehint ) {
+  if( rehint && pwminfo.regre_lev > 0 ) {
     pwminfo.doRegre();
   }
 

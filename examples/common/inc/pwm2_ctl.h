@@ -24,7 +24,7 @@ struct PWMInfo {
   bool doRegre();
   bool addSample( float pwm, float v );
 
-  static constexpr unsigned max_cal_steps = 20;
+  static constexpr unsigned max_cal_steps = 40;
   unsigned n_cal   = 0;       //* number of calibration data: real or fake
   float R_0        = 1.0f;    //* initial resistance
   float V_00       = -0.5f;   //* V(0) for linear represenration
@@ -37,12 +37,14 @@ struct PWMInfo {
   float I_max      = 8.0f;    //* current limit
   float R_max      = 8.0f;    //* resistance value for break detection
   float W_max      = 90.0f;   //* power limit
-  float k_move     = 0.05f;   //* move coeff for adaptation
+  float k_move     = 0.10f;   //* move coeff for adaptation
   float cal_min    = 3.0f;    //* start calibration pwm value
-  float cal_step   = 5.0f;    //* step calibration pwm value
+  float cal_step   = 2.0f;    //* step calibration pwm value
   float d_pwm[max_cal_steps], d_v[max_cal_steps], d_i[max_cal_steps]; //* calibration and adapt data TODO: w/o d_i
-  bool was_calibr = false;
-  bool need_regre = true;
+  float d_wei[max_cal_steps]; //* step weight - really number for now
+  float regre_lev  = 1.0f;   //* really boll flag for now
+  bool was_calibr  = false;
+  bool need_regre  = true;
 };
 
 

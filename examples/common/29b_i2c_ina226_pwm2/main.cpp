@@ -106,6 +106,7 @@ constexpr NamedFloat ob_cal_pwm    {    "cal_pwm",       pwminfo.d_pwm, size(pwm
 constexpr NamedFloat ob_cal_v      {      "cal_v",         pwminfo.d_v, size(pwminfo.d_v)   };
 constexpr NamedFloat ob_cal_i      {      "cal_i",         pwminfo.d_i, size(pwminfo.d_i)   };
 constexpr NamedFloat ob_rehint_lim { "rehint_lim", &pwminfo.rehint_lim  };
+constexpr NamedFloat ob_regre_lev  {  "regre_lev", &pwminfo.regre_lev  };
 constexpr NamedFloat ob_pwm_min    {    "pwm_min",         get_pwm_min,  set_pwm_min  };
 constexpr NamedFloat ob_pwm_max    {    "pwm_max",         get_pwm_max,  set_pwm_max  };
 constexpr NamedFloat ob_pwm_def    {    "pwm_def",         get_pwm_def,  set_pwm_def  };
@@ -129,6 +130,7 @@ constexpr const NamedObj *const objs_info[] = {
   & ob_cal_v,
   & ob_cal_i,
   & ob_rehint_lim,
+  & ob_regre_lev,
   & ob_pwm_min,
   & ob_pwm_max,
   & ob_pwm_def,
@@ -187,7 +189,6 @@ int main(void)
 
   UVAR('t') = 10; // 10 ms
   UVAR('n') = 1000000; // number of series (10ms 't' each): limited by steps
-  UVAR('c') = 2; // n_ADC_ch_max;
 
   UVAR('p') = 0;     // PSC,  - max output freq
   UVAR('a') = 1439;  // ARR, to get 100 kHz with PSC = 0 // TODO: use oxc_timer functions
