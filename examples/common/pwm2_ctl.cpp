@@ -177,7 +177,10 @@ bool PWMInfo::regreCalibration( float t_x0, float &a, float &b, float &r )
     if( d_pwm[i] < 2 * t_x0 ) {
       continue;
     }
-    float x = d_pwm[i], y = d_v[i];
+    float x = d_pwm[i], y = d_v[i], w = d_wei[i];
+    if( w < 10 ) {
+      continue;
+    }
     sx  += x;
     sx2 += x * x;
     sy  += y;
