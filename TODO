@@ -1,3 +1,4 @@
+Split BSP dir names: my and ST
 Fix bug with small floats output
 STD_POST_EXEC redesing: weak?
 USB CDC: DevIO: hook for connect/disconnect

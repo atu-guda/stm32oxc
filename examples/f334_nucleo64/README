@@ -1,0 +1,10 @@
+Examples for STM32F334 Nucleo64 board
+Onboard:
+ST-Link V2
+4 LEDS: C0:C3 RYGB
+2 Buttons: Reset + C13
+
+Onboard LED on A5 disabled (removed SB21) to allow DAC2
+
+Clock is via ST-Link MCO 8 MHz.
+
