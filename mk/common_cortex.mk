@@ -13,14 +13,14 @@ STMSRC=$(STMDIR)/src
 STMLD=$(STMDIR)/ld
 STMMK=$(STMDIR)/mk
 STMBSP=$(STMDIR)/bsp
-STMBOARDDIR=$(STMBSP)/$(BOARDNAME)
 STMCOMPONENTS=$(STMBSP)/Components
 
 # OXCDIR := oxc // from Makefile TODO: from pkgconfig
 OXCINC = $(OXCDIR)/inc
-OXCINCBSP = $(OXCDIR)/inc/bsp/$(BOARDNAME)
 OXCSRC = $(OXCDIR)/src
-OXCBOARDDIR=$(OXCSRC)/bsp/$(BOARDNAME)
+OXCINCBSP = $(OXCDIR)/inc/bsp/$(BSPNAME)
+OXCBOARDDIR=$(OXCSRC)/bsp/$(BSPNAME)
+STMBOARDDIR=$(STMBSP)/$(BOARDNAME)
 OXCLD = $(OXCDIR)/ld
 
 DEPSDIR=.deps
@@ -114,9 +114,15 @@ LDFLAGS += -Wl,--start-group -lc -lgcc -lnosys -Wl,--end-group
 
 ###################################################
 
-ALLFLAGS += -I. -I$(STMINC) -I$(STMBOARDDIR)
+SRCPATHS =  $(STMSRC) $(STMSRC)/templates $(OXCBOARDDIR) $(ADDSRC)
 
-SRCPATHS =  $(STMSRC) $(STMSRC)/templates $(OXCBOARDDIR) $(STMBOARDDIR) $(ADDSRC)
+ALLFLAGS += -I. -I$(STMINC)
+
+ifneq ($(origin BOARDNAME),undefined)
+  ALLFLAGS += -I$(STMBOARDDIR)
+  SRCPATHS +=   $(STMBOARDDIR)
+endif
+
 
 ifeq "$(NO_COMMON_HAL_MODULES)" "y"
   ALLFLAGS += -DNO_COMMON_HAL_MODULES
