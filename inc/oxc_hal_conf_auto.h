@@ -3,6 +3,16 @@
 
 // automatic converter from OXC_USE define to HAL_XXX_MODULE_ENABLED
 
+#if __has_include("local_hal_conf.h")
+  #include "local_hal_conf.h"
+#endif
+
+#if __has_include("stm32_hal_conf_base.h")
+  #include "stm32_hal_conf_base.h"
+#elif __has_include("../common/stm32_hal_conf_base.h")
+  #include "../common/stm32_hal_conf_base.h"
+#endif
+
 #ifndef OXC_SYSTICK_PRTY
   #define OXC_SYSTICK_PRTY 15
 #endif

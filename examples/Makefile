@@ -2,6 +2,7 @@
 SUBDIRS = \
   f103c8_small \
   f303_disc \
+  f334_nucleo64 \
   f407_x2 \
   f407_disc \
   f407v_bb0 \

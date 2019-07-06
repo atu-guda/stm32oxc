@@ -1,1 +1,0 @@
-../../common/examples_hal_conf.h

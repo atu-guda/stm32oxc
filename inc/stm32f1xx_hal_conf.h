@@ -1,0 +1,1 @@
+stm32xxxx_hal_conf.h
