@@ -1,5 +1,7 @@
-Simple usage of UART.
-IRQ disabled in local_hal_conf.h file
+Test I2C devices on I2C1
+
+SCL = B6
+SDA = B7
 
 Used USART2 with USB_UART board.
 A2  = USART2_TX

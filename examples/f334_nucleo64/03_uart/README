@@ -5,3 +5,4 @@ Used USART2 with USB_UART board.
 A2  = USART2_TX
 A3  = USART2_RX
 
+

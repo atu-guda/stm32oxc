@@ -22,7 +22,7 @@ int main(void)
   STD_PROLOG_UART_NOCON;
 
   xTaskCreate( task_leds, "leds", 1*def_stksz, 0, 1, 0 );
-  xTaskCreate( task_send, "send", 2*def_stksz, 0, 1, 0 );
+  xTaskCreate( task_send, "send", 1*def_stksz, 0, 1, 0 );
 
   SCHEDULER_START;
   return 0;

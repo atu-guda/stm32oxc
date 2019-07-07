@@ -20,6 +20,15 @@ void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim )
   gio.Alternate = TIM_EXA_GPIOAF;
   #endif
   HAL_GPIO_Init( TIM_EXA_GPIO, &gio );
+
+  // if one times uses different AF/GPIO, like F334:T1
+  #ifdef TIM_EXA_PINS_EXT
+    gio.Pin       = TIM_EXA_PINS_EXT; // see inc/bsp/board_xxxx.h
+    #if  ! defined (STM32F1)
+    gio.Alternate = TIM_EXA_GPIOAF_EXT;
+    #endif
+    HAL_GPIO_Init( TIM_EXA_GPIO_EXT, &gio );
+  #endif
 }
 
 void HAL_TIM_PWM_MspDeInit( TIM_HandleTypeDef* htim )

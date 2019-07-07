@@ -1,8 +1,8 @@
 #include <stm32f3xx_hal.h>
 #include <errno.h>
 
-#ifndef STM32F3
-#error This SystemClock_Config is for stm32f3xx only
+#ifndef STM32F334
+#error This SystemClock_Config is for stm32f334 only
 #endif
 
 #if REQ_SYSCLK_FREQ != 72

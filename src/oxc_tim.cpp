@@ -14,14 +14,22 @@ uint32_t get_TIM_in_freq( TIM_TypeDef *tim )
     if( hclk != pclk2 ) { // *2 : if APB2 prescaler != 1 (=2)
       pclk2 *= 2;
     }
+    // TODO: use switch from RCC
+    #ifdef STM32F334
+    if( tim == TIM1 ) {
+      pclk2 *= 2;
+    }
+    #endif
     return pclk2;
   }
   #endif
+
   uint32_t hclk  = HAL_RCC_GetHCLKFreq();
   uint32_t pclk1 = HAL_RCC_GetPCLK1Freq();
   if( hclk != pclk1 ) { // *2 : if APB1 prescaler != 1 (=2)
     pclk1 *= 2;
   }
+
   return pclk1;
 }
 
