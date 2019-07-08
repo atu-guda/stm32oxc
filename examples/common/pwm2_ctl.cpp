@@ -49,7 +49,6 @@ void PWMInfo::clearCalibrationArr()
   for( unsigned i=0; i<max_cal_steps; ++i ) {
     d_pwm[i] = 0;
     d_v[i]   = 0;
-    d_i[i]   = 0;
     d_wei[i] = 0;
   }
   need_regre = true;
@@ -65,7 +64,6 @@ void PWMInfo::fillFakeCalibration( unsigned nc )
     d_pwm[i] = pwm;
     d_wei[i] = 10;
     d_v[i]   = pwm2V( pwm );
-    d_i[i]   = d_v[i] / R_0;
   }
   n_cal = nc;
   was_calibr = false; // as fake;
@@ -80,11 +78,10 @@ void PWMInfo::addCalibrationStep( float pwm, float v, float I )
   d_pwm[n_cal] = pwm;
   d_wei[n_cal] = 10;
   d_v[n_cal]   = v;
-  d_i[n_cal]   = I;
   ++n_cal;
 }
 
-bool  PWMInfo::calcCalibration( float &err_max, bool fake )
+bool  PWMInfo::calcCalibration( float &err_max, float R_0_c,  bool fake )
 {
   std_out << "# -- calibration calculation ----- " ;
   if( fake ) {
@@ -92,12 +89,15 @@ bool  PWMInfo::calcCalibration( float &err_max, bool fake )
   }
   std_out << NL;
 
-  if( n_cal < 3 || fabsf( d_i[0] ) < 1e-4f ) {
-    std_out << "# Error: bad input data " NL;
+  if( n_cal < 3 ) {
+    std_out << "# Error: too few points: " << n_cal << NL;
     return false;
   }
 
-  float t_R_0 = d_v[0] / d_i[0];
+  if( R_0_c > R_max  ||  R_0_c < 1e-3f ) {
+    std_out << "# Error: calibrated R_0 is bad: " << R_0_c << NL;
+    return false;
+  }
 
   // find initial mode change
   unsigned i_lim = n_cal;
@@ -144,7 +144,7 @@ bool  PWMInfo::calcCalibration( float &err_max, bool fake )
   }
 
   std_out << "# err_max= " << err_max << NL;
-  std_out << "# R_0= " << t_R_0 << " i_lim= " << i_lim << " k_gv1= " << k_g
+  std_out << "# R_0= " << R_0_c << " i_lim= " << i_lim << " k_gv1= " << k_g
           << " V_00= " << b << " x_0= " << t_x_0 << " k_gv2= " << k_2 << NL;
 
   if( err_max > 0.3f ) {
@@ -152,7 +152,7 @@ bool  PWMInfo::calcCalibration( float &err_max, bool fake )
     return false;
   }
 
-  R_0   = t_R_0;
+  R_0   = R_0_c;
   V_00  = b;
   k_gv1 = k_g;
   k_gv2 = k_2;
@@ -171,9 +171,9 @@ bool PWMInfo::regreCalibration( float t_x0, float &a, float &b, float &r )
   float sx = 0, sy = 0, sx2 = 0, sy2 = 0, sxy = 0;
 
   for( unsigned i=0; i<max_cal_steps; ++i ) {
-    if( d_pwm[i] <= 0 ) {
-      continue;
-    }
+    // if( d_pwm[i] <= 0 ) { // next check is more strict
+    //   continue;
+    // }
     if( d_pwm[i] < 2 * t_x0 ) {
       continue;
     }

@@ -19,7 +19,7 @@ struct PWMInfo {
   void clearCalibrationArr();
   void fillFakeCalibration( unsigned nc );
   void addCalibrationStep( float pwm, float v, float I );
-  bool calcCalibration( float &err_max, bool fake = false );
+  bool calcCalibration( float &err_max, float R_0_c, bool fake = false );
   bool regreCalibration( float t_x0, float &a, float &b, float &r );
   bool doRegre();
   bool addSample( float pwm, float v );
@@ -40,9 +40,9 @@ struct PWMInfo {
   float k_move     = 0.10f;   //* move coeff for adaptation
   float cal_min    = 3.0f;    //* start calibration pwm value
   float cal_step   = 2.0f;    //* step calibration pwm value
-  float d_pwm[max_cal_steps], d_v[max_cal_steps], d_i[max_cal_steps]; //* calibration and adapt data TODO: w/o d_i
+  float d_pwm[max_cal_steps], d_v[max_cal_steps]; //* calibration and adopt data
   float d_wei[max_cal_steps]; //* step weight - really number for now
-  float regre_lev  = 1.0f;   //* really boll flag for now
+  float regre_lev  = 1.0f;    //* really bool flag for now
   bool was_calibr  = false;
   bool need_regre  = true;
 };
@@ -85,7 +85,7 @@ class PWMData {
    float get_pwm_min() const { return pwm_min; }
    float get_pwm_def() const { return pwm_def; }
    float get_pwm_max() const { return pwm_max; }
-   void set_pwm_min( float m ) { pwm_min = std::clamp( m, 0.1f, pwm_max ); }
+   void set_pwm_min( float m ) { pwm_min = std::clamp( m, 0.001f, pwm_max ); }
    void set_pwm_def( float m ) { pwm_def = std::clamp( m, pwm_min, pwm_max ); }
    void set_pwm_max( float m ) { pwm_max = pwm_tmax = std::clamp( m, pwm_min+0.1f, 99.9f ); }
    void prep( int a_t_step, bool fake );

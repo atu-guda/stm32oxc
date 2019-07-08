@@ -30,7 +30,7 @@ BOARD_CONSOLE_DEFINES;
 const char* common_help_string = "App to misc PWM control with INA226 I2C sensor" NL;
 
 TIM_HandleTypeDef tim_h;
-using tim_ccr_t = decltype( tim_h.Instance->CCR1 );
+using tim_ccr_t = decltype( TIM_EXA->CCR1 );
 void tim_cfg();
 void do_set_pwm( float v );
 bool measure_and_calc( float *v );
@@ -104,7 +104,6 @@ constexpr NamedFloat ob_cal_min    {    "cal_min",       &pwminfo.cal_min  };
 constexpr NamedFloat ob_cal_step   {   "cal_step",       &pwminfo.cal_step };
 constexpr NamedFloat ob_cal_pwm    {    "cal_pwm",       pwminfo.d_pwm, size(pwminfo.d_pwm) };
 constexpr NamedFloat ob_cal_v      {      "cal_v",         pwminfo.d_v, size(pwminfo.d_v)   };
-constexpr NamedFloat ob_cal_i      {      "cal_i",         pwminfo.d_i, size(pwminfo.d_i)   };
 constexpr NamedFloat ob_rehint_lim { "rehint_lim", &pwminfo.rehint_lim  };
 constexpr NamedFloat ob_regre_lev  {  "regre_lev", &pwminfo.regre_lev  };
 constexpr NamedFloat ob_pwm_min    {    "pwm_min",         get_pwm_min,  set_pwm_min  };
@@ -128,7 +127,6 @@ constexpr const NamedObj *const objs_info[] = {
   & ob_cal_step,
   & ob_cal_pwm,
   & ob_cal_v,
-  & ob_cal_i,
   & ob_rehint_lim,
   & ob_regre_lev,
   & ob_pwm_min,
@@ -176,6 +174,7 @@ const CmdInfo* global_cmds[] = {
   // DEBUG_I2C_CMDS,
 
   &CMDINFO_TEST0,
+  &CMDINFO_TINIT,
   &CMDINFO_SETCALIBR,
   &CMDINFO_PWM,
   &CMDINFO_CALIBRATE,
@@ -191,7 +190,7 @@ int main(void)
   UVAR('n') = 1000000; // number of series (10ms 't' each): limited by steps
 
   UVAR('p') = 0;     // PSC,  - max output freq
-  UVAR('a') = 1439;  // ARR, to get 100 kHz with PSC = 0 // TODO: use oxc_timer functions
+  UVAR('f') = 100000;// PWM freq: to calculate ARR
 
   pwminfo.R_max = 200.0f;
   pwminfo.V_max =   8.0f;
@@ -297,8 +296,7 @@ int cmd_test0( int argc, const char * const * argv )
   for( decltype(+n_ch) j=0; j<n_ch; ++j ) {
     std_out << ' ' << v_coeffs[j];
   }
-  std_out << NL;
-  std_out << "#        t           V           I         pwm           R           W         val" << NL;
+  std_out << NL "#        t          V          I        pwm          R          W        val"  NL;
 
   leds.set(   BIT0 | BIT1 | BIT2 ); delay_ms( 100 );
   leds.reset( BIT0 | BIT1 | BIT2 );
@@ -326,7 +324,7 @@ int cmd_test0( int argc, const char * const * argv )
     if( do_out ) {
       std_out <<  FltFmt( tc, cvtff_auto, 10, 3 );
       for( auto vc : v ) {
-        std_out  << ' '  <<  vc;
+        std_out  << ' '  <<  FltFmt( vc, cvtff_auto, 10 );
       }
       std_out << NL;
     }
@@ -371,14 +369,20 @@ int cmd_setcalibr( int argc, const char * const * argv )
 
 void tim_cfg()
 {
+  // not use all functions from oxc_tim: time may be not initialized here
+  uint32_t in_freq = get_TIM_in_freq( TIM_EXA );
+  uint32_t psc = UVAR('p');
+  uint32_t cnt_freq = in_freq / ( psc + 1 );
+  uint32_t arr = cnt_freq / UVAR('f') - 1;
+
   tim_h.Instance               = TIM_EXA;
   tim_h.Init.Prescaler         = UVAR('p');
-  tim_h.Init.Period            = UVAR('a');
+  tim_h.Init.Period            = arr;
   tim_h.Init.ClockDivision     = 0;
   tim_h.Init.CounterMode       = TIM_COUNTERMODE_UP;
   tim_h.Init.RepetitionCounter = 0;
   if( HAL_TIM_PWM_Init( &tim_h ) != HAL_OK ) {
-    UVAR('e') = 1; // like error
+    UVAR('e') = 111; // like error
     return;
   }
 
@@ -386,7 +390,8 @@ void tim_cfg()
   sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
   HAL_TIM_ConfigClockSource( &tim_h, &sClockSourceConfig );
 
-  int pbase = UVAR('a');
+  HAL_TIM_PWM_Stop( &tim_h, TIM_CHANNEL_1 );
+
   TIM_OC_InitTypeDef tim_oc_cfg;
   tim_oc_cfg.OCMode       = TIM_OCMODE_PWM1;
   tim_oc_cfg.OCPolarity   = TIM_OCPOLARITY_HIGH;
@@ -394,12 +399,10 @@ void tim_cfg()
   tim_oc_cfg.OCFastMode   = TIM_OCFAST_DISABLE;
   tim_oc_cfg.OCIdleState  = TIM_OCIDLESTATE_RESET;
   tim_oc_cfg.OCNIdleState = TIM_OCNIDLESTATE_RESET;
+  tim_oc_cfg.Pulse = (tim_ccr_t)( pwmdat.get_pwm_def() * arr / 100 );
 
-
-  HAL_TIM_PWM_Stop( &tim_h, TIM_CHANNEL_1 );
-  tim_oc_cfg.Pulse = (tim_ccr_t)( pwmdat.get_pwm_def() * pbase / 100 );
   if( HAL_TIM_PWM_ConfigChannel( &tim_h, &tim_oc_cfg, TIM_CHANNEL_1 ) != HAL_OK ) {
-    UVAR('e') = 11;
+    UVAR('e') = 112;
     return;
   }
   HAL_TIM_PWM_Start( &tim_h, TIM_CHANNEL_1 );
@@ -408,21 +411,19 @@ void tim_cfg()
 
 void do_set_pwm( float v )
 {
-  uint32_t scl = tim_h.Instance->ARR;
-  tim_ccr_t nv = (tim_ccr_t)( v * scl / 100 );
-  if( nv != tim_h.Instance->CCR1 ) {
-    tim_h.Instance->CCR1 = nv;
+  uint32_t scl = TIM_EXA->ARR;
+  auto nv = (tim_ccr_t)( v * scl / 100 );
+  if( nv != TIM_EXA->CCR1 ) {
+    TIM_EXA->CCR1 = nv;
   }
 }
 
 int cmd_pwm( int argc, const char * const * argv )
 {
-  float vmin = 3.0f;
-  objs.get( "pwm_min", vmin );
-  float vdef  = 5.0f;
-  objs.get( "pwm_def", vdef );
-  float vmax = 70.0f;
-  objs.get( "pwm_max", vmax );
+  float vmin  = pwmdat.get_pwm_min();
+  float vdef  = pwmdat.get_pwm_def();
+  float vmax  = pwmdat.get_pwm_max();
+
   float v = arg2float_d( 1, argc, argv, vdef, vmin, vmax );
   pwmdat.set_pwm_manual( v );
   tim_print_cfg( TIM_EXA );
@@ -434,15 +435,14 @@ int cmd_pwm( int argc, const char * const * argv )
 int cmd_calibrate( int argc, const char * const * argv )
 {
   float vmin = pwminfo.cal_min;
-  float vmax_def = 60.0f;
-  objs.get( "pwm_max", vmax_def );
+  float vmax_def = pwmdat.get_pwm_max();
   float vmax = arg2float_d( 1, argc, argv, 0.6f * vmax_def, 2.0f, vmax_def );
   unsigned dt  = arg2long_d( 2, argc, argv, 10000, 1000, 200000 );
   unsigned fake_cal = arg2long_d( 3, argc, argv, 0, 0, 1 );
 
   const unsigned n_measure = 10; // TODO: params
 
-  if( ! init_INA() ) {
+  if( !fake_cal && ! init_INA() ) {
     return 3;
   }
 
@@ -453,8 +453,10 @@ int cmd_calibrate( int argc, const char * const * argv )
     n_steps = PWMInfo::max_cal_steps;
   }
 
-  std_out << "# Calibrating: vmin=" << vmin << " vmax= " << vmax << " n_steps= " << n_steps << NL;
-  std_out << "# N         pwm           V           I           R           W" << NL;
+  float R_0_c = pwminfo.R_0;
+
+  std_out << "# Calibrating: vmin=" << vmin << " vmax= " << vmax << " n_steps= " << n_steps
+          << NL "# N         pwm           V           I           R           W" << NL;
 
   break_flag = 0;
   for( unsigned i=0; i<n_steps && !break_flag; ++i ) {
@@ -466,7 +468,9 @@ int cmd_calibrate( int argc, const char * const * argv )
       pwmdat.set_pwm_manual( pwm_v );
 
       for( unsigned j=0; j<dt && !break_flag; j+=10 ) { // wait for steady + check all limits
-        delay_ms_brk( 10 ); // TODO: break
+        if( delay_ms_brk( 10 ) != 0 ) {
+          break;
+        }
         measure_and_calc( v );
         auto rc = pwmdat.check_lim( v );
         if( rc != PWMData::check_result::ok ) {
@@ -481,8 +485,10 @@ int cmd_calibrate( int argc, const char * const * argv )
       float c_v = 0, c_i = 0;
 
       for( unsigned j=0; j<n_measure && !break_flag; ++j ) {
-        delay_ms( 50 );
-        measure_and_calc( v ); // TODO: check
+        if( delay_ms_brk( 50 ) != 0 ) {
+          break;
+        }
+        measure_and_calc( v );
         auto rc = pwmdat.check_lim( v );
         if( rc != PWMData::check_result::ok ) {
           break_flag = 2;
@@ -492,18 +498,19 @@ int cmd_calibrate( int argc, const char * const * argv )
         c_v += v[didx_v];
         c_i += v[didx_i];
       }
-      if( break_flag ) {
-        break;
-      }
       c_v_a = c_v / n_measure;
       c_i_a = c_i / n_measure;
     } else { // fake_cal: values must not changed
-      c_pwm = pwm_v;
-      c_v_a = pwminfo.pwm2V( c_pwm );
-      c_i_a = c_v_a / pwminfo.R_0;
+      c_pwm     = pwm_v;
+      c_v_a     = pwminfo.pwm2V( c_pwm );
+      c_i_a     = c_v_a / pwminfo.R_0;
       v[didx_r] = pwminfo.R_0;
       v[didx_w] = c_v_a * c_i_a;
 
+    }
+
+    if( i == 0 ) {
+      R_0_c = c_v_a / c_i_a;
     }
 
     pwminfo.addCalibrationStep( c_pwm, c_v_a, c_i_a );
@@ -520,7 +527,8 @@ int cmd_calibrate( int argc, const char * const * argv )
   }
 
   float err_max = 0;
-  bool ok = pwminfo.calcCalibration( err_max, fake_cal );
+
+  bool ok = pwminfo.calcCalibration( err_max, R_0_c, fake_cal );
 
   return ok ? 0 : 5;
 }
