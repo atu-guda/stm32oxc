@@ -8,17 +8,20 @@
 #include <iterator>
 
 #include <oxc_auto.h>
+#include <oxc_debug1.h>
 #include <oxc_floatfun.h>
 
 #include <../examples/common/inc/pwm2_ctl.h>
 
 using namespace std;
 
+#define debug (UVAR('d'))
+
 PWMInfo::PWMInfo( float a_R0, float a_V_00, float a_k_gv1 )
   : R_0( a_R0 ), V_00( a_V_00 ), k_gv1( a_k_gv1 )
 {
   fixCoeffs();
-  fillFakeCalibration( 10 );
+  // fillFakeCalibration( 10 );
 }
 
 void PWMInfo::fixCoeffs()
@@ -62,7 +65,7 @@ void PWMInfo::fillFakeCalibration( unsigned nc )
   for( unsigned i=0; i<nc; ++i ) {
     float pwm = cal_min + cal_step * i;
     d_pwm[i] = pwm;
-    d_wei[i] = 10;
+    d_wei[i] = min_cal_req;
     d_v[i]   = pwm2V( pwm );
   }
   n_cal = nc;
@@ -70,13 +73,13 @@ void PWMInfo::fillFakeCalibration( unsigned nc )
   need_regre = true;
 }
 
-void PWMInfo::addCalibrationStep( float pwm, float v, float I )
+void PWMInfo::addCalibrationStep( float pwm, float v, float /* I */ )
 {
   if( n_cal >= max_cal_steps ) {
     return;
   }
   d_pwm[n_cal] = pwm;
-  d_wei[n_cal] = 10;
+  d_wei[n_cal] = min_cal_req;
   d_v[n_cal]   = v;
   ++n_cal;
 }
@@ -178,7 +181,10 @@ bool PWMInfo::regreCalibration( float t_x0, float &a, float &b, float &r )
       continue;
     }
     float x = d_pwm[i], y = d_v[i], w = d_wei[i];
-    if( w < 10 ) {
+    if( debug > 1 ) {
+      std_out << "#*# " << i << ' ' << x << ' ' << y << ' ' << w << NL;
+    }
+    if( w < min_cal_req ) {
       continue;
     }
     sx  += x;
@@ -191,13 +197,19 @@ bool PWMInfo::regreCalibration( float t_x0, float &a, float &b, float &r )
 
 
   if( n < 3 ) {
-    // std_out << "# Error: regre: n= " << n << NL;
+    std_out << "# warning: regre: n= " << n << NL;
     return false;
   }
 
   float dd = n * sx2 - sx * sx;
+
+  if( debug > 1 ) {
+    std_out << "# # regre: n= " << n << NL;
+    std_out << "# # sx = " << sx << " sx2= " << sx2 << " sy= " << sy << " sy2= " << sy2 << " sxy= " << sxy << " dd= " << dd << NL;
+  }
+
   if( fabsf( dd ) < 1e-6f ) {
-    // std_out << "# Error: regre: dd= " << dd << NL;
+    std_out << "# Error: regre: dd= " << dd << NL;
     return false;
   }
   const float t1 = n * sxy - sx * sy;
@@ -209,6 +221,10 @@ bool PWMInfo::regreCalibration( float t_x0, float &a, float &b, float &r )
     return false;
   }
   r = t1 / sqrtf( dz );
+
+  if( debug > 0 ) {
+    std_out << "# # a = " << a << " b= " << b << " r= " << r << NL;
+  }
 
   //std_out << "###  regre: r= " << r << NL;
   if( r < 0.7f ) {
@@ -227,6 +243,9 @@ bool PWMInfo::doRegre()
   }
   float a, b, r;
   bool ok = regreCalibration( x_0, a, b, r );
+  if( debug > 0 ) {
+    std_out << "# doRegre: a= " << a << " b= " << b << " r= " << r << " ok= " << ok << NL;
+  }
   if( ok ) {
     k_gv1 = a; V_00 = b;
     fixCoeffs();

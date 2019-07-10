@@ -15,6 +15,8 @@
 
 #include <../examples/common/inc/pwm2_ctl.h>
 
+#define debug (UVAR('d'))
+
 #define WAIT_BIT BIT2
 
 using namespace std;
@@ -232,6 +234,9 @@ bool isGoodINA226( INA226 &ina, bool print )
     }
     return false;
   }
+  if( debug > 0 ) {
+    std_out << "# INA226 detected" NL;
+  }
   return true;
 }
 
@@ -376,7 +381,7 @@ void tim_cfg()
   uint32_t arr = cnt_freq / UVAR('f') - 1;
 
   tim_h.Instance               = TIM_EXA;
-  tim_h.Init.Prescaler         = UVAR('p');
+  tim_h.Init.Prescaler         = psc;
   tim_h.Init.Period            = arr;
   tim_h.Init.ClockDivision     = 0;
   tim_h.Init.CounterMode       = TIM_COUNTERMODE_UP;

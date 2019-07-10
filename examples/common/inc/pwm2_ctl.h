@@ -25,6 +25,7 @@ struct PWMInfo {
   bool addSample( float pwm, float v );
 
   static constexpr unsigned max_cal_steps = 40;
+  static constexpr unsigned min_cal_req   = 10;
   unsigned n_cal   = 0;       //* number of calibration data: real or fake
   float R_0        = 1.0f;    //* initial resistance
   float V_00       = -0.5f;   //* V(0) for linear represenration
