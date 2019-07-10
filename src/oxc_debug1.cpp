@@ -130,9 +130,7 @@ void print_user_var( int idx )
     std_out << NL "err: bad var index: " << idx;
     return;
   }
-  char b[] = "0 = ";
-  b[0] = (char)( 'a' + idx );
-  std_out << b << ( user_vars[idx] ) << " = "  << HexInt( user_vars[idx], true ) << NL;
+  std_out << "#> " << (char)( 'a' + idx ) << " = "  << ( user_vars[idx] ) << " = "  << HexInt( user_vars[idx], true ) << NL;
 }
 
 //----------------------------------------------------------------------
@@ -249,10 +247,11 @@ int cmd_info( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
      << " _end= 0x"  << HexInt( (uint32_t)(&_end)   ) << " _estack= 0x" << HexInt( (uint32_t)(&_estack) );
 
   uint32_t c_msp = __get_MSP(), c_psp = __get_PSP();
-  std_out << NL "MSP=   " << HexInt( c_msp, true ) <<  " PSP= " << HexInt( c_psp, true )
-     << "  __heap_top=   " << HexInt( (uint32_t)__heap_top, true )
-     << " MSP-__heap_top = " << ((unsigned)c_msp - (unsigned)(__heap_top) )
-     << NL;
+  std_out
+    << NL "MSP=   " << HexInt( c_msp, true ) <<  " PSP= " << HexInt( c_psp, true )
+    << "  __heap_top=   " << HexInt( (uint32_t)__heap_top, true )
+    << " MSP-__heap_top = " << ((unsigned)c_msp - (unsigned)(__heap_top) )
+    << NL;
 
   uint32_t prio_grouping = HAL_NVIC_GetPriorityGrouping();
   std_out << "prio_grouping= " << prio_grouping << NL;
@@ -413,7 +412,7 @@ int cmd_pvar( int argc, const char * const * argv )
   }
 
 
-  // build-in int vars with one-char named
+  // build-in int vars with one-char name
   char c = argv[1][0];
   if( argv[1][1] != '\0' || c < 'a' || c > 'z' ) {
     std_out << "# Error: problem with name \"" << argv[1] << '"' << NL;
@@ -433,23 +432,23 @@ int cmd_svar( int argc, const char * const * argv )
     return 1;
   }
 
+  if( argv[1][1] == '\0' ) {
+    int idx = argv[1][0] - 'a';
+    if( idx > 0 && idx < (int)(N_USER_VARS) ) {
+      if( argv[2][0] == '-' ) {
+        user_vars[idx] = strtol( argv[2], 0, 0 );
+      } else {
+        user_vars[idx] = strtoul( argv[2], 0, 0 );
+      }
+      print_user_var( idx );
+      return 0;
+    }
+  }
+
   if( set_var_hook != nullptr  &&  set_var_hook( argv[1], argv[2] ) ) {
     return 0;
   }
-
-  int idx = argv[1][0] - 'a';
-  if( idx < 0 || idx >= (int)N_USER_VARS || argv[1][1] != '\0' ) {
-    std_out << "# Error: problem with name \"" << argv[1] << '"' << NL;
-    return 2;
-  }
-
-  if( argv[2][0] == '-' ) {
-    user_vars[idx] = strtol( argv[2], 0, 0 );
-  } else {
-    user_vars[idx] = strtoul( argv[2], 0, 0 );
-  }
-  print_user_var( idx );
-  return 0;
+  return 1;
 }
 CmdInfo CMDINFO_SVAR { "set", 's', cmd_svar,  "name value - set var a-z"  };
 

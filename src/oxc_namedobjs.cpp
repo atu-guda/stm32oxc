@@ -38,7 +38,7 @@ bool NamedSubObj::out( OutStream &os, int idx, int fmt ) const
 {
   os << "{" NL;
   bool ok = no->out( os, "", fmt );
-  os << "}";
+  os << "#> }";
   return ok;
 }
 
@@ -192,7 +192,7 @@ bool NamedObjs::out( OutStream &os, const char *nm, int fmt ) const
       os << "# Error: name not found \"" << nm << "\"" NL;
       return false;
     }
-    os << nm << " = ";
+    os << "#> " << nm << " = ";
     auto ok = f->out( os, idx, fmt );
     os << NL;
     return ok;
@@ -200,7 +200,7 @@ bool NamedObjs::out( OutStream &os, const char *nm, int fmt ) const
 
   // all names
   for( auto f : *this ) {
-    os << f->getName() << " = ";
+    os << "#> " << f->getName() << " = ";
     f->out( os, -1, fmt );
     os << NL;
   }
