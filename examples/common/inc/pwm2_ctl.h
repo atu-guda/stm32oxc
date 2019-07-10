@@ -99,7 +99,7 @@ class PWMData {
    void set_t_mul( float tmul ) { t_mul = tmul; }
    int get_reason() const { return reason; }
   protected:
-   float pwm_min = 3.0f, pwm_def = 5.0f, pwm_max = 60.0f, pwm_tmax = pwm_max; // tmax - tmp max for limits
+   float pwm_min = 0.0f, pwm_def = 3.0f, pwm_max = 60.0f, pwm_tmax = pwm_max; // tmax - tmp max for limits
    float val =  pwm_def;
    float pwm_val =  pwm_def;    // unrestricted
    float val_1 = val;    // w/o hand

@@ -310,7 +310,7 @@ void PWMData::mk_ladder( float v0, float dv, int t, unsigned n_up, pwm_type tp )
 void PWMData::mk_ramp( float vmin, float vmax, int t1, int t2, int t3, pwm_type tp )
 {
   reset_steps();
-  add_step( vmin, vmin, 30000, tp );
+  add_step( vmin, vmin, 10000, tp );
   add_step( vmin, vmax,    t1, tp );
   add_step( vmax, vmax,    t2, tp );
   add_step( vmax, vmin,    t3, tp );
@@ -409,7 +409,7 @@ bool PWMData::tick( const float *d )
                               pwm_val -= pwminfo.ki_v * t_step * err / i_eff;
                             }
                             break;
-      default:              pwm_val = pwm_min; break; // fail-save
+      default:              pwm_val = pwm_min; break; // fail-safe
     };
   }
   if( rc != check_result::ok && pwm_val > pwm_val_old ) {
@@ -461,7 +461,7 @@ void PWMData::calcNextStep()
 void PWMData::end_run()
 {
   if( ! fake_run ) {
-    pwm_val = pwm_def; hand = 0; t = 0; c_step = 0;
+    pwm_val = pwm_min; hand = 0; t = 0; c_step = 0;
     set_pwm();
   }
   pwm_tmax = pwm_max;
@@ -529,8 +529,8 @@ int cmd_mk_rect( int argc, const char * const * argv )
 
 int cmd_mk_ladder( int argc, const char * const * argv )
 {
-  float    v0  = arg2float_d( 1, argc, argv,     3, 0.1f,       90 );
-  float    dv  = arg2float_d( 2, argc, argv,     5, 0.0f,       90 );
+  float   v0   = arg2float_d( 1, argc, argv,     3, 0.1f,       90 );
+  float   dv   = arg2float_d( 2, argc, argv,     5, 0.0f,       90 );
   unsigned t   = arg2long_d(  3, argc, argv, 30000,    1, 10000000 );
   unsigned n   = arg2long_d(  4, argc, argv,    10,    1, PWMData::max_pwm_steps/2-2 );
   int   tp     = arg2long_d(  5, argc, argv,     0,    0, (int)(PWMData::pwm_type::n)-1 );

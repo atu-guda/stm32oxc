@@ -519,7 +519,7 @@ int cmd_calibrate( int argc, const char * const * argv )
        << v[didx_r] << ' ' << v[didx_w] << NL;
   }
 
-  pwmdat.set_pwm_manual( vmin );
+  pwmdat.set_pwm_manual( pwmdat.get_pwm_min() );
 
   if( break_flag ) {
     std_out << "# calibrtion exit by break!" << NL;
