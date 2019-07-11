@@ -177,12 +177,13 @@ bool PWMInfo::regreCalibration( float t_x0, float &a, float &b, float &r )
     // if( d_pwm[i] <= 0 ) { // next check is more strict
     //   continue;
     // }
-    if( d_pwm[i] < 2 * t_x0 ) {
-      continue;
-    }
+    bool good_point = d_pwm[i] > 2 * t_x0;
     float x = d_pwm[i], y = d_v[i], w = d_wei[i];
     if( debug > 1 ) {
-      std_out << "#*# " << i << ' ' << x << ' ' << y << ' ' << w << NL;
+      std_out << "#*# " << i << ' ' << x << ' ' << y << ' ' << w << ' ' << good_point <<  NL;
+    }
+    if( !good_point ) {
+      continue;
     }
     if( w < min_cal_req ) {
       continue;
@@ -218,6 +219,7 @@ bool PWMInfo::regreCalibration( float t_x0, float &a, float &b, float &r )
 
   const float dz = ( n * sx2 - sx * sx ) * ( n * sy2 - sy * sy );
   if( dz < 1e-6f ) {
+    std_out << "# Error: regre: dz= " << dz << NL;
     return false;
   }
   r = t1 / sqrtf( dz );
@@ -226,9 +228,8 @@ bool PWMInfo::regreCalibration( float t_x0, float &a, float &b, float &r )
     std_out << "# # a = " << a << " b= " << b << " r= " << r << NL;
   }
 
-  //std_out << "###  regre: r= " << r << NL;
   if( r < 0.7f ) {
-    // std_out << "# Error: regre: r= " << r << NL;
+    std_out << "# Warning: regre: r= " << r << NL;
     return false;
   }
 
@@ -446,7 +447,7 @@ bool PWMData::tick( const float *d )
 void PWMData::calcNextStep()
 {
   float old_val = val;
-  val_0  = steps[c_step].vb; val = val_0;
+  val = val_0  = steps[c_step].vb;
   step_t = steps[c_step].t;
   ks = ( steps[c_step].ve - val_0 ) / step_t;
   bool rehint = ( c_step == 0  )
@@ -471,10 +472,12 @@ void PWMData::calcNextStep()
                             pwm_val = pwminfo.hint_for_V( sqrtf( val * last_R  ) );
                           }
                           break;
-    default:              pwm_val = pwm_min; break; // fail-save
+    default:              pwm_val = pwm_min; break; // fail-safe
   };
-  std_out << "# @@@ " << c_step << ' ' << old_val << ' ' << val << ' ' << pwm_val << ' '
-     << last_R << ' ' << rehint << ' ' << pwminfo.k_gv1 << ' ' << pwminfo.V_00 << NL;
+  std_out
+     << "# @@@ " << t << ' ' << c_step << ' ' << old_val << ' ' << val
+     << ' ' << pwm_val << ' ' << last_R << ' ' << rehint << ' '
+     << pwminfo.k_gv1 << ' ' << pwminfo.V_00 << NL;
 }
 
 void PWMData::end_run()
