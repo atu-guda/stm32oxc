@@ -179,7 +179,7 @@ bool PWMInfo::regreCalibration( float t_x0, float &a, float &b, float &r )
     // }
     bool good_point = d_pwm[i] > 2 * t_x0;
     float x = d_pwm[i], y = d_v[i], w = d_wei[i];
-    if( debug > 1 ) {
+    if( debug > 1 && x > 0 ) {
       std_out << "#*# " << i << ' ' << x << ' ' << y << ' ' << w << ' ' << good_point <<  NL;
     }
     if( !good_point ) {
@@ -245,11 +245,14 @@ bool PWMInfo::doRegre()
   float a, b, r;
   bool ok = regreCalibration( x_0, a, b, r );
   if( debug > 0 ) {
-    std_out << "# doRegre: a= " << a << " b= " << b << " r= " << r << " ok= " << ok << NL;
+    std_out << "# doRegre1: a= " << a << " b= " << b << " r= " << r << " x_0= " << x_0 << " ok= " << ok << NL;
   }
   if( ok ) {
     k_gv1 = a; V_00 = b;
     fixCoeffs();
+    if( debug > 0 ) {
+      std_out << "# doRegre2: a= " << a << " b= " << b << " r= " << r << " x_0= " << x_0 << " ok= " << ok << NL;
+    }
   }
   return ok;
 }
