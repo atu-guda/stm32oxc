@@ -22,11 +22,14 @@ const char* common_help_string = "Appication to HRTIM 01" NL;
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
+int cmd_cmp1( int argc, const char * const * argv );
+CmdInfo CMDINFO_CMP1 { "cmp1", 'C', cmd_cmp1, " A B C D E - set cmp1 values"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
 
   &CMDINFO_TEST0,
+  &CMDINFO_CMP1,
   nullptr
 };
 
@@ -79,6 +82,8 @@ int cmd_test0( int argc, const char * const * argv )
   //
   // std_out << "# A.CNTxR=" << HexInt( HRTIM1->sTimerxRegs[0].CNTxR ) << NL;
   // std_out << "# A.CNTxR=" << HexInt( HRTIM1->sTimerxRegs[0].CNTxR ) << NL;
+  std_out << "# A.OUTxR= " << HexInt( HRTIM1->sTimerxRegs[0].OUTxR ) << NL;
+  std_out << "# B.OUTxR= " << HexInt( HRTIM1->sTimerxRegs[1].OUTxR ) << NL;
 
   // 0x40017400
   //
@@ -104,6 +109,20 @@ int cmd_test0( int argc, const char * const * argv )
   return 0;
 }
 
+int cmd_cmp1( int argc, const char * const * argv )
+{
+  uint32_t ca = arg2long_d( 1, argc, argv, 0x1000, 0, 0xFFEE );
+  uint32_t cb = arg2long_d( 2, argc, argv, 0x1000, 0, 0xFFEE );
+  uint32_t cc = arg2long_d( 3, argc, argv, 0x1000, 0, 0xFFEE );
+  uint32_t cd = arg2long_d( 4, argc, argv, 0x1000, 0, 0xFFEE );
+  uint32_t ce = arg2long_d( 5, argc, argv, 0x1000, 0, 0xFFEE );
+  HRTIM1->sTimerxRegs[0].CMP1xR = ca;
+  HRTIM1->sTimerxRegs[1].CMP1xR = cb;
+  HRTIM1->sTimerxRegs[2].CMP1xR = cc;
+  HRTIM1->sTimerxRegs[3].CMP1xR = cd;
+  HRTIM1->sTimerxRegs[4].CMP1xR = ce;
+  return 0;
+}
 
 
 bool MX_HRTIM1_Init()
@@ -244,29 +263,29 @@ bool MX_HRTIM1_Init()
     errno = 70016;
     return false;
   }
-  pCompareCfg.CompareValue       = 0x7000;
-  pCompareCfg.AutoDelayedMode    = HRTIM_AUTODELAYEDMODE_REGULAR;
-  pCompareCfg.AutoDelayedTimeout = 0x0000;
 
-  if( HAL_HRTIM_WaveformCompareConfig( &hhrtim1, HRTIM_TIMERINDEX_TIMER_B, HRTIM_COMPAREUNIT_2, &pCompareCfg ) != HAL_OK ) {
-    errno = 70017;
-    return false;
-  }
+  // pCompareCfg.CompareValue       = 0x7000;
+  // pCompareCfg.AutoDelayedMode    = HRTIM_AUTODELAYEDMODE_REGULAR;
+  // pCompareCfg.AutoDelayedTimeout = 0x0000;
+  // if( HAL_HRTIM_WaveformCompareConfig( &hhrtim1, HRTIM_TIMERINDEX_TIMER_B, HRTIM_COMPAREUNIT_2, &pCompareCfg ) != HAL_OK ) {
+  //   errno = 70017;
+  //   return false;
+  // }
 
-  HRTIM_DeadTimeCfgTypeDef pDeadTimeCfg;
-  pDeadTimeCfg.Prescaler       = HRTIM_TIMDEADTIME_PRESCALERRATIO_MUL8;
-  pDeadTimeCfg.RisingValue     = 0x050;
-  pDeadTimeCfg.RisingSign      = HRTIM_TIMDEADTIME_RISINGSIGN_POSITIVE;
-  pDeadTimeCfg.RisingLock      = HRTIM_TIMDEADTIME_RISINGLOCK_WRITE;
-  pDeadTimeCfg.RisingSignLock  = HRTIM_TIMDEADTIME_RISINGSIGNLOCK_WRITE;
-  pDeadTimeCfg.FallingValue    = 0x080;
-  pDeadTimeCfg.FallingSign     = HRTIM_TIMDEADTIME_FALLINGSIGN_POSITIVE;
-  pDeadTimeCfg.FallingLock     = HRTIM_TIMDEADTIME_FALLINGLOCK_WRITE;
-  pDeadTimeCfg.FallingSignLock = HRTIM_TIMDEADTIME_FALLINGSIGNLOCK_WRITE;
-  if( HAL_HRTIM_DeadTimeConfig( &hhrtim1, HRTIM_TIMERINDEX_TIMER_B, &pDeadTimeCfg ) != HAL_OK ) {
-    errno = 70018;
-    return false;
-  }
+  // HRTIM_DeadTimeCfgTypeDef pDeadTimeCfg;
+  // pDeadTimeCfg.Prescaler       = HRTIM_TIMDEADTIME_PRESCALERRATIO_MUL8;
+  // pDeadTimeCfg.RisingValue     = 0x050;
+  // pDeadTimeCfg.RisingSign      = HRTIM_TIMDEADTIME_RISINGSIGN_POSITIVE;
+  // pDeadTimeCfg.RisingLock      = HRTIM_TIMDEADTIME_RISINGLOCK_WRITE;
+  // pDeadTimeCfg.RisingSignLock  = HRTIM_TIMDEADTIME_RISINGSIGNLOCK_WRITE;
+  // pDeadTimeCfg.FallingValue    = 0x080;
+  // pDeadTimeCfg.FallingSign     = HRTIM_TIMDEADTIME_FALLINGSIGN_POSITIVE;
+  // pDeadTimeCfg.FallingLock     = HRTIM_TIMDEADTIME_FALLINGLOCK_WRITE;
+  // pDeadTimeCfg.FallingSignLock = HRTIM_TIMDEADTIME_FALLINGSIGNLOCK_WRITE;
+  // if( HAL_HRTIM_DeadTimeConfig( &hhrtim1, HRTIM_TIMERINDEX_TIMER_B, &pDeadTimeCfg ) != HAL_OK ) {
+  //   errno = 70018;
+  //   return false;
+  // }
 
   HRTIM_OutputCfgTypeDef pOutputCfg;
   pOutputCfg.Polarity              = HRTIM_OUTPUTPOLARITY_HIGH;
@@ -343,21 +362,37 @@ bool MX_HRTIM1_Init()
     errno = 70033;
     return false;
   }
+
+  HRTIM1->sTimerxRegs[0].OUTxR = 0x00020000;
+  HRTIM1->sTimerxRegs[1].OUTxR = 0x00000002;
+  // HRTIM1->sTimerxRegs[1].DTxR  = 0x00000000; // disable deadtime
+  HRTIM1->sTimerxRegs[0].CMP1xR = 0x2000;
+  HRTIM1->sTimerxRegs[1].CMP1xR = 0x4000;
+
   HAL_HRTIM_MspPostInit( &hhrtim1 );
 
-  if( HAL_HRTIM_SimpleBaseStart( &hhrtim1, 0 ) != HAL_OK )  {
-    errno = 70040;
-    return false;
-  }
-  HAL_HRTIM_SimpleOCStart( &hhrtim1, 0, 1 );
-  HAL_HRTIM_SimpleOCStart( &hhrtim1, 0, 2 );
+  // if( HAL_HRTIM_SimpleBaseStart( &hhrtim1, 0 ) != HAL_OK )  {
+  //   errno = 70040;
+  //   return false;
+  // }
+  // HAL_HRTIM_SimpleOCStart( &hhrtim1, 0, 0 );
+  //HAL_HRTIM_SimpleOCStart( &hhrtim1, 0, 1 );
 
-  if( HAL_HRTIM_SimpleBaseStart( &hhrtim1, 1 ) != HAL_OK )  {
-    errno = 70042;
-    return false;
-  }
-  HAL_HRTIM_SimpleOCStart( &hhrtim1, 1, 1 );
-  HAL_HRTIM_SimpleOCStart( &hhrtim1, 1, 2 );
+  // if( HAL_HRTIM_SimpleBaseStart( &hhrtim1, 1 ) != HAL_OK )  {
+  //   errno = 70042;
+  //   return false;
+  // }
+  //HAL_HRTIM_SimpleOCStart( &hhrtim1, 1, 0 );
+  //HAL_HRTIM_SimpleOCStart( &hhrtim1, 1, 1 );
+
+  HRTIM1->sCommonRegs.OENR |=
+    HRTIM_OUTPUT_TA1 | HRTIM_OUTPUT_TA2 | HRTIM_OUTPUT_TB1 | HRTIM_OUTPUT_TB2 |
+    HRTIM_OUTPUT_TC1 | HRTIM_OUTPUT_TC2 | HRTIM_OUTPUT_TD1 | HRTIM_OUTPUT_TD2 |
+    HRTIM_OUTPUT_TE1 | HRTIM_OUTPUT_TE2;
+  // __HAL_HRTIM_ENABLE( &hhrtim1, HRTIM_TIMERID_TIMER_A | HRTIM_TIMERID_TIMER_B );
+  HRTIM1->sMasterRegs.MCR |=
+    HRTIM_TIMERID_TIMER_A | HRTIM_TIMERID_TIMER_B  | HRTIM_TIMERID_TIMER_C |
+    HRTIM_TIMERID_TIMER_D | HRTIM_TIMERID_TIMER_E;
 
   return true;
 }
