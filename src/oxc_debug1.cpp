@@ -39,21 +39,20 @@ char* str2addr( const char *str )
 
 
 
-void dump8( const void *addr, int n, bool isAbs  )
+void dump8( const void *addr, unsigned n, bool isAbs  )
 {
-  unsigned const char* ad = (unsigned const char*)(addr);
+  auto ad = (unsigned const char*)(addr);
   if( !ad  ||  ad == BAD_ADDR ) {
     return;
   }
-  unsigned const char* ad0 = isAbs ? ad : nullptr; // left label
+  decltype(ad) ad0 = isAbs ? ad : nullptr; // left label
   std_out << NL;
 
-  int i, row, bs;
-  int nr = (n+15) >> 4; // non-full rows counting too
-  for( row = 0; row < nr; ++row ) {
+  unsigned nr = (n+15) >> 4; // non-full rows counting too
+  for( decltype(+nr) row = 0; row < nr; ++row, ad0 += 16 ) {
     std_out << HexInt( (void*)ad0 ) << ": ";
-    bs = row << 4;
-    for( i=0; i<16 && (i+bs)<n; ++i ) {
+    unsigned bs = row << 4;
+    for( unsigned i=0; i<16 && (i+bs)<n; ++i ) {
       std_out << HexInt8( ad[i+bs] ) << ' ';
       if( (i&3) == 3 ) {
         std_out << ": ";
@@ -62,7 +61,7 @@ void dump8( const void *addr, int n, bool isAbs  )
 
     std_out << "|  ";
     char b;
-    for( i=0; i<16 && (i+bs)<n; ++i ) {
+    for( unsigned i=0; i<16 && (i+bs)<n; ++i ) {
       b = '.';
       if( ad[i+bs] >= ' ' ) {
         b = ad[i+bs];
@@ -73,13 +72,34 @@ void dump8( const void *addr, int n, bool isAbs  )
       }
     }
     std_out << NL;
-    std_out.flush();
-    ad0 += 16;
-
   }
 
   std_out << "--------------------------------------" NL;
-  std_out.flush();
+}
+
+void dump32( const void *addr, unsigned n, bool isAbs  )
+{
+  auto ad = (const uint32_t *)(addr);
+  if( !ad  ||  ad == BAD_ADDR ) {
+    return;
+  }
+  decltype(ad) ad0 = isAbs ? ad : nullptr; // left label
+  std_out << NL;
+
+  unsigned nr = (n+15) >> 4; // non-full rows counting too
+  for( decltype(+nr) row = 0; row < nr; ++row, ad0 += 4 ) {
+    std_out << HexInt( (void*)ad0 ) << ": ";
+    unsigned bs = row << 2;
+    for( unsigned i=0; i<4; ++i ) {
+      std_out << HexInt( ad[i+bs] ) << ' ';
+      if( (i&3) == 3 ) {
+        std_out << ": ";
+      }
+    }
+    std_out << NL;
+  }
+
+  std_out << "--------------------------------------" NL;
 }
 
 
