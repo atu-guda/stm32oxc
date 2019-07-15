@@ -82,8 +82,13 @@ int cmd_test0( int argc, const char * const * argv )
   //
   // std_out << "# A.CNTxR=" << HexInt( HRTIM1->sTimerxRegs[0].CNTxR ) << NL;
   // std_out << "# A.CNTxR=" << HexInt( HRTIM1->sTimerxRegs[0].CNTxR ) << NL;
-  std_out << "# A.OUTxR= " << HexInt( HRTIM1->sTimerxRegs[0].OUTxR ) << NL;
-  std_out << "# B.OUTxR= " << HexInt( HRTIM1->sTimerxRegs[1].OUTxR ) << NL;
+
+  std_out << "# MCR=      " << HexInt( HRTIM1->sMasterRegs.MCR ) << NL;
+
+  std_out << "# A.OUTxR=  " << HexInt( HRTIM1->sTimerxRegs[0].OUTxR  ) << NL;
+  std_out << "# B.TIMxCR= " << HexInt( HRTIM1->sTimerxRegs[1].TIMxCR ) << NL;
+  std_out << "# B.OUTxR=  " << HexInt( HRTIM1->sTimerxRegs[1].OUTxR  ) << NL;
+  std_out << "# B.DTxR =  " << HexInt( HRTIM1->sTimerxRegs[1].DTxR   ) << NL;
 
   // 0x40017400
   //
@@ -226,6 +231,7 @@ bool MX_HRTIM1_Init()
   pTimerCfg.DMASrcAddress = 0x0000;
   pTimerCfg.DMADstAddress = 0x0000;
   pTimerCfg.DMASize       = 0x1;
+  pTimerCfg.DeadTimeInsertion     = HRTIM_TIMDEADTIMEINSERTION_ENABLED;
   if( HAL_HRTIM_WaveformTimerConfig( &hhrtim1, HRTIM_TIMERINDEX_TIMER_B, &pTimerCfg ) != HAL_OK ) {
     errno = 70012;
     return false;
@@ -264,28 +270,29 @@ bool MX_HRTIM1_Init()
     return false;
   }
 
-  // pCompareCfg.CompareValue       = 0x7000;
-  // pCompareCfg.AutoDelayedMode    = HRTIM_AUTODELAYEDMODE_REGULAR;
-  // pCompareCfg.AutoDelayedTimeout = 0x0000;
-  // if( HAL_HRTIM_WaveformCompareConfig( &hhrtim1, HRTIM_TIMERINDEX_TIMER_B, HRTIM_COMPAREUNIT_2, &pCompareCfg ) != HAL_OK ) {
-  //   errno = 70017;
-  //   return false;
-  // }
+  pCompareCfg.CompareValue       = 0x7000;
+  pCompareCfg.AutoDelayedMode    = HRTIM_AUTODELAYEDMODE_REGULAR;
+  pCompareCfg.AutoDelayedTimeout = 0x0000;
+  if( HAL_HRTIM_WaveformCompareConfig( &hhrtim1, HRTIM_TIMERINDEX_TIMER_B, HRTIM_COMPAREUNIT_2, &pCompareCfg ) != HAL_OK ) {
+    errno = 70017;
+    return false;
+  }
 
-  // HRTIM_DeadTimeCfgTypeDef pDeadTimeCfg;
-  // pDeadTimeCfg.Prescaler       = HRTIM_TIMDEADTIME_PRESCALERRATIO_MUL8;
-  // pDeadTimeCfg.RisingValue     = 0x050;
-  // pDeadTimeCfg.RisingSign      = HRTIM_TIMDEADTIME_RISINGSIGN_POSITIVE;
-  // pDeadTimeCfg.RisingLock      = HRTIM_TIMDEADTIME_RISINGLOCK_WRITE;
-  // pDeadTimeCfg.RisingSignLock  = HRTIM_TIMDEADTIME_RISINGSIGNLOCK_WRITE;
-  // pDeadTimeCfg.FallingValue    = 0x080;
-  // pDeadTimeCfg.FallingSign     = HRTIM_TIMDEADTIME_FALLINGSIGN_POSITIVE;
-  // pDeadTimeCfg.FallingLock     = HRTIM_TIMDEADTIME_FALLINGLOCK_WRITE;
-  // pDeadTimeCfg.FallingSignLock = HRTIM_TIMDEADTIME_FALLINGSIGNLOCK_WRITE;
-  // if( HAL_HRTIM_DeadTimeConfig( &hhrtim1, HRTIM_TIMERINDEX_TIMER_B, &pDeadTimeCfg ) != HAL_OK ) {
-  //   errno = 70018;
-  //   return false;
-  // }
+  HRTIM_DeadTimeCfgTypeDef pDeadTimeCfg;
+  pDeadTimeCfg.Prescaler       = HRTIM_TIMDEADTIME_PRESCALERRATIO_MUL8;
+  /// pDeadTimeCfg.Prescaler       = HRTIM_TIMDEADTIME_PRESCALERRATIO_DIV8;
+  pDeadTimeCfg.RisingValue     = 0x0FF;
+  pDeadTimeCfg.RisingSign      = HRTIM_TIMDEADTIME_RISINGSIGN_POSITIVE;
+  pDeadTimeCfg.RisingLock      = HRTIM_TIMDEADTIME_RISINGLOCK_WRITE;
+  pDeadTimeCfg.RisingSignLock  = HRTIM_TIMDEADTIME_RISINGSIGNLOCK_WRITE;
+  pDeadTimeCfg.FallingValue    = 0x077;
+  pDeadTimeCfg.FallingSign     = HRTIM_TIMDEADTIME_FALLINGSIGN_POSITIVE;
+  pDeadTimeCfg.FallingLock     = HRTIM_TIMDEADTIME_FALLINGLOCK_WRITE;
+  pDeadTimeCfg.FallingSignLock = HRTIM_TIMDEADTIME_FALLINGSIGNLOCK_WRITE;
+  if( HAL_HRTIM_DeadTimeConfig( &hhrtim1, HRTIM_TIMERINDEX_TIMER_B, &pDeadTimeCfg ) != HAL_OK ) {
+    errno = 70018;
+    return false;
+  }
 
   HRTIM_OutputCfgTypeDef pOutputCfg;
   pOutputCfg.Polarity              = HRTIM_OUTPUTPOLARITY_HIGH;
@@ -364,7 +371,7 @@ bool MX_HRTIM1_Init()
   }
 
   HRTIM1->sTimerxRegs[0].OUTxR = 0x00020000;
-  HRTIM1->sTimerxRegs[1].OUTxR = 0x00000002;
+  // HRTIM1->sTimerxRegs[1].OUTxR = 0x00000002;
   // HRTIM1->sTimerxRegs[1].DTxR  = 0x00000000; // disable deadtime
   HRTIM1->sTimerxRegs[0].CMP1xR = 0x2000;
   HRTIM1->sTimerxRegs[1].CMP1xR = 0x4000;
