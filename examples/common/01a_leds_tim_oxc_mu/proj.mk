@@ -18,6 +18,7 @@ USE_OXC_TIM = y
 OXC_NO_OSFUN = y
 OXC_NO_RINGBUF = y
 OXC_NO_MINISTR = y
+OXC_NO_OUTSTREAM = y
 # FREERTOS_HEAP = heap_2.c # # default: heap_3.c
 # REQUIRE_SPECIAL_CLOCK = y
 
