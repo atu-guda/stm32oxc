@@ -308,6 +308,11 @@ int cmd_test0( int argc, const char * const * argv )
 
   pwmdat.prep( t_step, skip_pwm );
 
+  if( !skip_pwm ) {
+    do_set_pwm( pwminfo.cal_min );
+    delay_ms( 10 );
+  }
+
   uint32_t tm0, tm00;
   int rc = 0;
   bool do_out = ! UVAR('b');
