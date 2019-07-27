@@ -7,6 +7,52 @@
 
 #include <oxc_gpio.h>
 
+
+void GpioRegs::cfgOut_common( uint8_t pin_num )
+{
+  cfg_set_MODER( pin_num, Moder::out );
+  cfg_set_speed_max( pin_num );
+  cfg_set_pull_no( pin_num );
+  cfg_set_af0( pin_num );
+}
+
+void GpioRegs::cfgOut( uint8_t pin_num, bool od )
+{
+  cfgOut_common( pin_num );
+  cfg_set_pp( pin_num );
+}
+
+void GpioRegs::cfgOutN( uint16_t pins, bool od )
+{
+  for( uint16_t pb = 1, pin_num = 0; pb != 0; pb <<= 1, ++pin_num ) {
+    if( pins & pb ) {
+      cfgOut( pin_num, od );
+    }
+  }
+}
+
+void GpioRegs::cfgAF( uint8_t pin_num, uint8_t af )
+{
+  cfg_set_MODER( pin_num, Moder::af );
+  cfg_set_speed_max( pin_num );
+  cfg_set_pull_no( pin_num );
+  cfg_set_af( pin_num, af );
+
+}
+
+void GpioRegs::cfgAFn( uint16_t pins, uint8_t af )
+{
+  for( uint16_t pb = 1, pin_num = 0; pb != 0; pb <<= 1, ++pin_num ) {
+    if( pins & pb ) {
+      cfgAF( pin_num, af );
+    }
+  }
+
+}
+
+
+// ********************************************************
+
 void GPIO_enableClk( GPIO_TypeDef* gp )
 {
   if( gp == GPIOA ) {

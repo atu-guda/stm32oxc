@@ -8,6 +8,120 @@ void GPIO_WriteBits( GPIO_TypeDef* GPIOx, uint16_t PortVal, uint16_t mask );
 void GPIO_enableClk( GPIO_TypeDef* gp );
 void board_def_btn_init( bool needIRQ );
 
+class GpioRegs {
+  public:
+   enum class Moder { in = 0, out = 1, af = 2, analog = 3 };
+   GpioRegs()  = delete; // init only as ptr/ref to real GPIO area
+   ~GpioRegs() = delete;
+   inline void cfg_set_MODER( uint8_t pin_num, Moder val )
+   {
+     uint32_t t = MODER;
+     t &= ~( 3u  << ( pin_num * 2 ) );
+     t |=  ( (uint8_t)(val) << ( pin_num * 2 ) );
+     MODER = t;
+   }
+   inline void cfg_set_pp( uint8_t pin_num )
+   {
+     OTYPER  &= ~( 1u << pin_num );
+   }
+   inline void cfg_set_od( uint8_t pin_num )
+   {
+     OTYPER  |= ( 1u << pin_num );
+   }
+   inline void cfg_set_speed_max( uint8_t pin_num )
+   {
+     OSPEEDR |=  ( 3u << ( pin_num * 2 ) );
+   }
+   inline void cfg_set_speed_min( uint8_t pin_num )
+   {
+     OSPEEDR &= ~( 3u << ( pin_num * 2 ) );
+   }
+   inline void cfg_set_pull_no( uint8_t pin_num )
+   {
+     PUPDR   &= ~( 3u << ( pin_num * 2 ) );
+   }
+   inline void cfg_set_pull_up( uint8_t pin_num )
+   {
+     PUPDR   &= ~( 3u << ( pin_num * 2 ) );
+     PUPDR   |=  ( 1u << ( pin_num * 2 ) );
+   }
+   inline void cfg_set_pull_down( uint8_t pin_num )
+   {
+     PUPDR   &= ~( 3u << ( pin_num * 2 ) );
+     PUPDR   |=  ( 2u << ( pin_num * 2 ) );
+   }
+   inline void cfg_set_af0( uint8_t pin_num )
+   {
+     uint8_t idx = pin_num >> 4;
+     AFR[idx] &= ~( 0x0F << ( pin_num * 4 ) );
+   }
+   inline void cfg_set_af( uint8_t pin_num, uint8_t af )
+   {
+     uint8_t idx = pin_num >> 4;
+     AFR[idx] &= ~( 0x0F << ( pin_num * 4 ) );
+     AFR[idx] |=  (   af << ( pin_num * 4 ) );
+   }
+
+   void cfgOut_common( uint8_t pin_num );
+   void cfgOut( uint8_t pin_num, bool od = false );
+   void cfgOutN( uint16_t pins, bool od = false );
+   void cfgAF( uint8_t pin_num, uint8_t af );
+   void cfgAFn( uint16_t pins, uint8_t af );
+
+   #if defined (STM32F1)
+   __IO uint32_t CR[2];   // CRL + CRH (16*(2+2))
+   __IO uint32_t IDR;
+   __IO uint32_t ODR;
+   __IO uint32_t BSSR;    // 16 set (low) + 16 reset (high)
+   __IO uint32_t BRR;
+   __IO uint32_t LCKR;
+   #else
+   __IO uint32_t MODER;   // (2*16): 00 = IN, 01 = GP_out, 10 = AF, 11 = Analog
+   __IO uint32_t OTYPER;  // (1*16):  0 = PP, 1 = OD
+   __IO uint32_t OSPEEDR; // (2*16): 00 = min, 11 = max
+   __IO uint32_t PUPDR;   // (2*16); 00 = NO, 01 = Up, 10 = down, 11 - reserved
+   __IO uint32_t IDR;
+   __IO uint32_t ODR;
+   __IO uint32_t BSSR;    // 16 set (low) + 16 reset (high)
+   __IO uint32_t LCKR;
+   __IO uint32_t AFR[2];  // 32*4: AF number
+   #endif
+   // TODO: ASCR on L4?????
+
+};
+
+using GpioRegs_ptr   = GpioRegs*;
+using GpioRegs_ptr_c = GpioRegs *const;
+using GpioRegs_ref   = GpioRegs&;
+
+inline GpioRegs_ref GpioA = *reinterpret_cast<GpioRegs_ptr_c>(GPIOA_BASE);
+inline GpioRegs_ref GpioB = *reinterpret_cast<GpioRegs_ptr_c>(GPIOB_BASE);
+inline GpioRegs_ref GpioC = *reinterpret_cast<GpioRegs_ptr_c>(GPIOC_BASE);
+#ifdef GPIOD_BASE
+inline GpioRegs_ref GpioD = *reinterpret_cast<GpioRegs_ptr_c>(GPIOD_BASE);
+#endif
+#ifdef GPIOE_BASE
+inline GpioRegs_ref GpioE = *reinterpret_cast<GpioRegs_ptr_c>(GPIOE_BASE);
+#endif
+#ifdef GPIOF_BASE
+inline GpioRegs_ref GpioF = *reinterpret_cast<GpioRegs_ptr_c>(GPIOF_BASE);
+#endif
+#ifdef GPIOG_BASE
+inline GpioRegs_ref GpioG = *reinterpret_cast<GpioRegs_ptr_c>(GPIOG_BASE);
+#endif
+#ifdef GPIOH_BASE
+inline GpioRegs_ref GpioH = *reinterpret_cast<GpioRegs_ptr_c>(GPIOH_BASE);
+#endif
+#ifdef GPIOI_BASE
+inline GpioRegs_ref GpioI = *reinterpret_cast<GpioRegs_ptr_c>(GPIOI_BASE);
+#endif
+#ifdef GPIOJ_BASE
+inline GpioRegs_ref GpioJ = *reinterpret_cast<GpioRegs_ptr_c>(GPIOJ_BASE);
+#endif
+#ifdef GPIOK_BASE
+inline GpioRegs_ref GpioK = *reinterpret_cast<GpioRegs_ptr_c>(GPIOK_BASE);
+#endif
+
 inline constexpr uint16_t make_gpio_mask( uint8_t start, uint8_t n ) {
   return (uint16_t) ((uint16_t)(0xFFFF) << (PORT_BITS - n)) >> (PORT_BITS - n - start);
 }
