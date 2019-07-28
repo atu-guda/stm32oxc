@@ -47,29 +47,31 @@ int main(void)
   UVAR('t') = 100;
   UVAR('n') =  20;
 
+  GpioA.enableClk();
+  GpioB.enableClk();
+  GpioC.enableClk();
+  GpioD.enableClk();
+  GpioE.enableClk();
+
   BOARD_POST_INIT_BLINK;
 
-  UVAR('a')  = GpioD.MODER;
 
-  GpioD.cfgOutN( BIT11 | BIT12 | BIT13 );
-  // GpioD.cfgOutPP( 11 );
-  // GpioD.cfgOutPP( 12 );
-  // GpioD.cfgOutPP( 13 );
+  GpioD.cfgOut_N( BIT11 | BIT12 | BIT13 );
 
   GpioD.cfgOut( 14, true );
+  GpioD.cfgAF(  15, 6, true );
+  GpioD.cfg_set_af(  0,  15 );
+  GpioD.cfgIn( 1, GpioRegs::Pull::up );
 
-  // uint8_t pin_num = 11; // D11
-  // uint32_t t = GpioD.MODER;
-  // t &= ~( 3u << ( 2 * pin_num ) );
-  // t |=  ( 1u << ( 2 * pin_num ) );
-  // GpioD.MODER = t;
-  // GpioD.OTYPER  &= ~( 1u << pin_num );
-  // GpioD.OSPEEDR |=  ( 3u << ( pin_num  * 2 ) );
-  // GpioD.PUPDR   &= ~( 3u << ( 2 * pin_num ) );
-  // uint8_t idx = pin_num >> 4;
-  //
-  // GpioD.AFR[idx] &= ~( 0x0F << ( pin_num * 4 ) );
+  GpioA.cfgOut( 5, true );
+  GpioA.cfgAF(  1, 1 );
+  GpioB.cfgOut( 0, true );
+  GpioB.cfgAF(  1, 2 );
+  GpioC.cfgAF(  0, 7, true );
+  GpioC.cfgIn( 13 );
+  GpioC.cfgIn( 1, GpioRegs::Pull::up );
 
+  GpioA.cfgAnalog( 3 );
 
 
   oxc_add_aux_tick_fun( led_task_nortos );

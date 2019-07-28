@@ -1,3 +1,5 @@
+#include <functional>
+
 #ifdef USE_FREERTOS
 #include <FreeRTOS.h>
 #include <task.h>
@@ -6,6 +8,9 @@
 #endif
 
 #include <oxc_gpio.h>
+
+using namespace std;
+using namespace std::placeholders;
 
 
 void GpioRegs::cfgOut_common( uint8_t pin_num )
@@ -19,35 +24,112 @@ void GpioRegs::cfgOut_common( uint8_t pin_num )
 void GpioRegs::cfgOut( uint8_t pin_num, bool od )
 {
   cfgOut_common( pin_num );
-  cfg_set_pp( pin_num );
+  cfg_set_ppod( pin_num, od );
 }
 
-void GpioRegs::cfgOutN( uint16_t pins, bool od )
+void GpioRegs::cfgOut_N( uint16_t pins, bool od )
 {
-  for( uint16_t pb = 1, pin_num = 0; pb != 0; pb <<= 1, ++pin_num ) {
-    if( pins & pb ) {
-      cfgOut( pin_num, od );
-    }
-  }
+  for_selected_pins( pins, std::bind( &GpioRegs::cfgOut, this, _1, od ) );
 }
 
-void GpioRegs::cfgAF( uint8_t pin_num, uint8_t af )
+void GpioRegs::cfgAF( uint8_t pin_num, uint8_t af, bool od )
 {
   cfg_set_MODER( pin_num, Moder::af );
   cfg_set_speed_max( pin_num );
+  cfg_set_ppod( pin_num, od );
   cfg_set_pull_no( pin_num );
   cfg_set_af( pin_num, af );
 
 }
 
-void GpioRegs::cfgAFn( uint16_t pins, uint8_t af )
+void GpioRegs::cfgAF_N( uint16_t pins, uint8_t af, bool od )
 {
-  for( uint16_t pb = 1, pin_num = 0; pb != 0; pb <<= 1, ++pin_num ) {
-    if( pins & pb ) {
-      cfgAF( pin_num, af );
-    }
-  }
+  for_selected_pins( pins, std::bind( &GpioRegs::cfgAF, this, _1, af, od ) );
+}
 
+void GpioRegs::cfgIn( uint8_t pin_num, Pull p )
+{
+  cfg_set_MODER( pin_num, Moder::in );
+  cfg_set_speed_min( pin_num );
+  cfg_set_pp( pin_num );
+  cfg_set_pull( pin_num, p );
+  cfg_set_af0( pin_num );
+}
+
+void GpioRegs::cfgIn_N( uint16_t pins, Pull p )
+{
+  for_selected_pins( pins, std::bind( &GpioRegs::cfgIn, this, _1, p ) );
+}
+
+void GpioRegs::cfgAnalog( uint8_t pin_num )
+{
+  cfg_set_MODER( pin_num, Moder::analog );
+  cfg_set_speed_min( pin_num );
+  cfg_set_pp( pin_num );
+  cfg_set_pull_no( pin_num );
+  cfg_set_af0( pin_num );
+}
+
+void GpioRegs::cfgAnalog_N( uint16_t pins )
+{
+  for_selected_pins( pins, std::bind( &GpioRegs::cfgAnalog, this, _1 ) );
+}
+
+
+void GpioRegs::enableClk() const
+{
+  if( this == &GpioA ) {
+    __GPIOA_CLK_ENABLE();
+    return;
+  }
+  if( this == &GpioB ) {
+    __GPIOB_CLK_ENABLE();
+    return;
+  }
+  if( this == &GpioC ) {
+    __GPIOC_CLK_ENABLE();
+    return;
+  }
+  if( this == &GpioD ) {
+    __GPIOD_CLK_ENABLE();
+    return;
+  }
+  #ifdef GPIOE
+  if( this == &GpioE ) {
+    __GPIOE_CLK_ENABLE();
+    return;
+  }
+  #endif
+  #ifdef GPIOF
+  if( this == &GpioF ) {
+    __GPIOF_CLK_ENABLE();
+    return;
+  }
+  #endif
+  #ifdef GPIOG
+  if( this == &GpioG ) {
+    __GPIOG_CLK_ENABLE();
+    return;
+  }
+  #endif
+  #ifdef GPIOH
+  if( this == &GpioH ) {
+    __GPIOH_CLK_ENABLE();
+    return;
+  }
+  #endif
+  #ifdef GPIOI
+  if( this == &GpioI ) {
+    __GPIOI_CLK_ENABLE();
+    return;
+  }
+  #endif
+  #ifdef GPIOJ
+  if( this == &GpioJ ) {
+    __GPIOJ_CLK_ENABLE();
+    return;
+  }
+  #endif
 }
 
 

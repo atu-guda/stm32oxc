@@ -150,7 +150,7 @@ void print_user_var( int idx )
     std_out << NL "err: bad var index: " << idx;
     return;
   }
-  std_out << "#> " << (char)( 'a' + idx ) << " = "  << ( user_vars[idx] ) << " = "  << HexInt( user_vars[idx], true ) << NL;
+  std_out << "#> " << (char)( 'a' + idx ) << " = "  << HexInt( user_vars[idx], true ) << " = "  << ( user_vars[idx] ) << NL;
 }
 
 //----------------------------------------------------------------------

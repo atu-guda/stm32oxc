@@ -4,15 +4,18 @@
 #include <oxc_base.h>
 
 
-void GPIO_WriteBits( GPIO_TypeDef* GPIOx, uint16_t PortVal, uint16_t mask );
-void GPIO_enableClk( GPIO_TypeDef* gp );
-void board_def_btn_init( bool needIRQ );
+inline constexpr uint16_t make_gpio_mask( uint8_t start, uint8_t n ) {
+  return (uint16_t) ((uint16_t)(0xFFFF) << (PORT_BITS - n)) >> (PORT_BITS - n - start);
+}
 
 class GpioRegs {
   public:
    enum class Moder { in = 0, out = 1, af = 2, analog = 3 };
+   enum class Pull {  no = 0,  up = 1, down = 2 };
    GpioRegs()  = delete; // init only as ptr/ref to real GPIO area
    ~GpioRegs() = delete;
+   void enableClk() const;
+
    inline void cfg_set_MODER( uint8_t pin_num, Moder val )
    {
      uint32_t t = MODER;
@@ -28,6 +31,14 @@ class GpioRegs {
    {
      OTYPER  |= ( 1u << pin_num );
    }
+   inline void cfg_set_ppod( uint8_t pin_num, bool od )
+   {
+     if( od ) {
+       cfg_set_od( pin_num );
+     } else {
+       cfg_set_pp( pin_num );
+     }
+   }
    inline void cfg_set_speed_max( uint8_t pin_num )
    {
      OSPEEDR |=  ( 3u << ( pin_num * 2 ) );
@@ -35,6 +46,11 @@ class GpioRegs {
    inline void cfg_set_speed_min( uint8_t pin_num )
    {
      OSPEEDR &= ~( 3u << ( pin_num * 2 ) );
+   }
+   inline void cfg_set_pull( uint8_t pin_num, Pull p )
+   {
+     PUPDR   &= ~( 3u << ( pin_num * 2 ) );
+     PUPDR   |=  ( (uint8_t)p << ( pin_num * 2 ) );
    }
    inline void cfg_set_pull_no( uint8_t pin_num )
    {
@@ -52,21 +68,40 @@ class GpioRegs {
    }
    inline void cfg_set_af0( uint8_t pin_num )
    {
-     uint8_t idx = pin_num >> 4;
+     uint8_t idx = pin_num >> 3;
+     pin_num  &= 0x07;
      AFR[idx] &= ~( 0x0F << ( pin_num * 4 ) );
    }
    inline void cfg_set_af( uint8_t pin_num, uint8_t af )
    {
-     uint8_t idx = pin_num >> 4;
+     uint8_t idx = pin_num >> 3;
+     pin_num  &= 0x07;
      AFR[idx] &= ~( 0x0F << ( pin_num * 4 ) );
      AFR[idx] |=  (   af << ( pin_num * 4 ) );
    }
 
    void cfgOut_common( uint8_t pin_num );
    void cfgOut( uint8_t pin_num, bool od = false );
-   void cfgOutN( uint16_t pins, bool od = false );
-   void cfgAF( uint8_t pin_num, uint8_t af );
-   void cfgAFn( uint16_t pins, uint8_t af );
+   void cfgOut_N( uint16_t pins, bool od = false );
+
+   void cfgAF( uint8_t pin_num, uint8_t af, bool od = false  );
+   void cfgAF_N( uint16_t pins, uint8_t af, bool od = false  );
+
+   void cfgIn( uint8_t pin_num, Pull p = Pull::no );
+   void cfgIn_N( uint16_t pins,  Pull p = Pull::no );
+
+   void cfgAnalog( uint8_t pin_num );
+   void cfgAnalog_N( uint16_t pins );
+
+   template <typename F> void for_selected_pins( uint16_t pins, F f )
+   {
+     for( uint16_t pb = 1, pin_num = 0; pb != 0; pb <<= 1, ++pin_num ) {
+       if( pins & pb ) {
+         f( pin_num );
+       }
+     }
+   }
+
 
    #if defined (STM32F1)
    __IO uint32_t CR[2];   // CRL + CRH (16*(2+2))
@@ -122,9 +157,11 @@ inline GpioRegs_ref GpioJ = *reinterpret_cast<GpioRegs_ptr_c>(GPIOJ_BASE);
 inline GpioRegs_ref GpioK = *reinterpret_cast<GpioRegs_ptr_c>(GPIOK_BASE);
 #endif
 
-inline constexpr uint16_t make_gpio_mask( uint8_t start, uint8_t n ) {
-  return (uint16_t) ((uint16_t)(0xFFFF) << (PORT_BITS - n)) >> (PORT_BITS - n - start);
-}
+// --------------- old part ----------------------------------------
+
+void GPIO_WriteBits( GPIO_TypeDef* GPIOx, uint16_t PortVal, uint16_t mask );
+void GPIO_enableClk( GPIO_TypeDef* gp );
+void board_def_btn_init( bool needIRQ );
 
 class Pins
 {
