@@ -97,6 +97,27 @@ void GpioRegs::enableClk() const
   RCC->GPIO_EN_REG |= GPIO_EN_BIT0 << GpioIdx( *this );
 }
 
+void GpioRegs::setEXTI( uint8_t pin, ExtiEv ev )
+{
+  uint32_t tmp = SYSCFG->EXTICR[ pin >> 2 ];
+  tmp &= ~( SYSCFG_EXTICR1_EXTI0_Msk << ( SYSCFG_EXTICR1_EXTI1_Pos * ( pin & 0x03 ) ) );
+  tmp |=  ( GpioIdx( *this )         << ( SYSCFG_EXTICR1_EXTI1_Pos * ( pin & 0x03 ) ) );
+  SYSCFG->EXTICR[ pin >> 2 ] = tmp;
+
+  if( (uint8_t)(ev) & (uint8_t)(ExtiEv::up) ) {
+    EXTI->RTSR |=  ( 1 << pin );
+  } else {
+    EXTI->RTSR &= ~( 1 << pin );
+  }
+
+  if( (uint8_t)(ev) & (uint8_t)(ExtiEv::down) ) {
+    EXTI->FTSR |=  ( 1 << pin );
+  } else {
+    EXTI->FTSR &= ~( 1 << pin );
+  }
+
+  EXTI->IMR  = 1 << pin;
+}
 
 // ********************************************************
 

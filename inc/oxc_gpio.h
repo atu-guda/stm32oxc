@@ -13,6 +13,7 @@ class GpioRegs {
   public:
    enum class Moder { in = 0, out = 1, af = 2, analog = 3 };
    enum class Pull {  no = 0,  up = 1, down = 2 };
+   enum class ExtiEv { no = 0, up = 1, down = 2, updown = 3 };
    GpioRegs()  = delete; // init only as ptr/ref to real GPIO area
    ~GpioRegs() = delete;
    void enableClk() const;
@@ -156,6 +157,8 @@ class GpioRegs {
 
    void cfgAnalog( uint8_t pin_num );
    void cfgAnalog_N( uint16_t pins );
+
+   void setEXTI( uint8_t pin, ExtiEv ev );
 
    template <typename F> void for_selected_pins( uint16_t pins, F f )
    {

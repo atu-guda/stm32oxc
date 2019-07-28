@@ -10,10 +10,8 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
-const int led_delay_init = 1000000; // in mcs
-volatile int led_delay = led_delay_init;
 volatile uint32_t last_exti_tick = 0;
-const int btn_deadtime = 200;
+const int btn_deadtime = 20;
 
 
 const char* common_help_string = "Appication to test new GPIO init approach" NL;
@@ -21,27 +19,24 @@ const char* common_help_string = "Appication to test new GPIO init approach" NL;
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
-int cmd_test_rate( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST_RATE { "test_rate", 0, cmd_test_rate, "[ n [len] ] - test output rate"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
 
   &CMDINFO_TEST0,
-  &CMDINFO_TEST_RATE,
   nullptr
 };
 
 void idle_main_task()
 {
   static unsigned n = 0;
-  GpioD.ODR ^= 1u << 11;
+  GpioD.toggle( 1u << 11 );
   ++n;
   if( ( n & 0x000F ) == 1 ) {
-    GpioD.ODR ^= 1u << 12;
+    GpioD.toggle( 1u << 12 );
   }
   if( ( n & 0x00FF ) == 1 ) {
-    GpioD.ODR ^= 1u << 13;
+    GpioD.toggle( 1u << 13 );
   }
 }
 
@@ -76,39 +71,31 @@ int main(void)
   GpioC.cfgAF(  0, 7, true );
   // GpioC.cfgIn( 1, GpioRegs::Pull::up );
 
-  uint8_t eln = 13;
-  GpioC.cfgIn( eln, GpioRegs::Pull::down  );
-  uint32_t tmp = SYSCFG->EXTICR[ eln >> 2 ];
-  tmp &= ~( SYSCFG_EXTICR1_EXTI0_Msk << ( SYSCFG_EXTICR1_EXTI1_Pos * ( eln & 0x03 ) ) );
-  tmp |=  ( GpioIdx( GpioC )         << ( SYSCFG_EXTICR1_EXTI1_Pos * ( eln & 0x03 ) ) );
-  SYSCFG->EXTICR[ eln >> 2 ] = tmp;
-
-  EXTI->IMR  = 1 << eln;
-  EXTI->RTSR = 1 << eln;
-
   GpioA.cfgAnalog( 3 );
 
-  oxc_add_aux_tick_fun( led_task_nortos );
+  // board_def_btn_init( true );
+  GpioC.cfgIn( BOARD_BTN0_N, GpioRegs::Pull::down  );
+  GpioC.setEXTI( BOARD_BTN0_N, GpioRegs::ExtiEv::up /*updown*/ );
 
   bool needIRQ = true;
-#ifdef BOARD_BTN0_EXIST
+  #ifdef BOARD_BTN0_EXIST
   if( needIRQ ) {
     HAL_NVIC_SetPriority( BOARD_BTN0_IRQ, BOARD_BTN0_IRQPRTY, 0 );
     HAL_NVIC_EnableIRQ( BOARD_BTN0_IRQ );
   }
-#endif
+  #endif
 
-#ifdef BOARD_BTN1_EXIST
+  #ifdef BOARD_BTN1_EXIST
   if( needIRQ ) {
     HAL_NVIC_SetPriority( BOARD_BTN1_IRQ, BOARD_BTN1_IRQPRTY, 0 );
     HAL_NVIC_EnableIRQ( BOARD_BTN1_IRQ );
   }
-#endif
+  #endif
 
-  // board_def_btn_init( true );
+  oxc_add_aux_tick_fun( led_task_nortos );
 
-  dump8( EXTI, 0x20 );
-  dump8( SYSCFG, 0x60 );
+  // dump8( EXTI, 0x20 );
+  // dump8( SYSCFG, 0x60 );
 
   std_main_loop_nortos( &srl, idle_main_task );
 
