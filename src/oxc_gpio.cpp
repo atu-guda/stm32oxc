@@ -15,10 +15,14 @@ using namespace std::placeholders;
 
 void GpioRegs::cfgOut_common( uint8_t pin_num )
 {
+  #if defined (STM32F1)
+    #error "Unimplemeted for now"
+  #else
   cfg_set_MODER( pin_num, Moder::out );
   cfg_set_speed_max( pin_num );
   cfg_set_pull_no( pin_num );
   cfg_set_af0( pin_num );
+  #endif
 }
 
 void GpioRegs::cfgOut( uint8_t pin_num, bool od )
@@ -34,11 +38,15 @@ void GpioRegs::cfgOut_N( uint16_t pins, bool od )
 
 void GpioRegs::cfgAF( uint8_t pin_num, uint8_t af, bool od )
 {
+  #if defined (STM32F1)
+    #error "Unimplemeted for now"
+  #else
   cfg_set_MODER( pin_num, Moder::af );
   cfg_set_speed_max( pin_num );
   cfg_set_ppod( pin_num, od );
   cfg_set_pull_no( pin_num );
   cfg_set_af( pin_num, af );
+  #endif
 
 }
 
@@ -49,11 +57,15 @@ void GpioRegs::cfgAF_N( uint16_t pins, uint8_t af, bool od )
 
 void GpioRegs::cfgIn( uint8_t pin_num, Pull p )
 {
+  #if defined (STM32F1)
+    #error "Unimplemeted for now"
+  #else
   cfg_set_MODER( pin_num, Moder::in );
   cfg_set_speed_min( pin_num );
   cfg_set_pp( pin_num );
   cfg_set_pull( pin_num, p );
   cfg_set_af0( pin_num );
+  #endif
 }
 
 void GpioRegs::cfgIn_N( uint16_t pins, Pull p )
@@ -63,11 +75,15 @@ void GpioRegs::cfgIn_N( uint16_t pins, Pull p )
 
 void GpioRegs::cfgAnalog( uint8_t pin_num )
 {
+  #if defined (STM32F1)
+    #error "Unimplemeted for now"
+  #else
   cfg_set_MODER( pin_num, Moder::analog );
   cfg_set_speed_min( pin_num );
   cfg_set_pp( pin_num );
   cfg_set_pull_no( pin_num );
   cfg_set_af0( pin_num );
+  #endif
 }
 
 void GpioRegs::cfgAnalog_N( uint16_t pins )

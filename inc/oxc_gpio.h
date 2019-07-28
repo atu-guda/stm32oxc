@@ -16,21 +16,52 @@ class GpioRegs {
    GpioRegs()  = delete; // init only as ptr/ref to real GPIO area
    ~GpioRegs() = delete;
    void enableClk() const;
+   inline void set( uint16_t v ) // get given to '1' (OR)
+   {
+     BSSR = v;
+   }
+   inline void reset( uint16_t v ) // AND~
+   {
+     BSSR = v << 16;
+   }
+   inline void sr( uint16_t bits, bool doSet ) {
+     if( doSet ) {
+       set( bits );
+     } else {
+       reset( bits );
+     }
+   }
+   inline void toggle( uint16_t v ) // XOR
+   {
+     ODR ^= v;
+   }
 
    inline void cfg_set_MODER( uint8_t pin_num, Moder val )
    {
+     #if defined (STM32F1)
+       #error "Unimplemeted for now"
+     #else
      uint32_t t = MODER;
      t &= ~( 3u  << ( pin_num * 2 ) );
      t |=  ( (uint8_t)(val) << ( pin_num * 2 ) );
      MODER = t;
+     #endif
    }
    inline void cfg_set_pp( uint8_t pin_num )
    {
+     #if defined (STM32F1)
+       #error "Unimplemeted for now"
+     #else
      OTYPER  &= ~( 1u << pin_num );
+     #endif
    }
    inline void cfg_set_od( uint8_t pin_num )
    {
+     #if defined (STM32F1)
+       #error "Unimplemeted for now"
+     #else
      OTYPER  |= ( 1u << pin_num );
+     #endif
    }
    inline void cfg_set_ppod( uint8_t pin_num, bool od )
    {
@@ -42,43 +73,75 @@ class GpioRegs {
    }
    inline void cfg_set_speed_max( uint8_t pin_num )
    {
+     #if defined (STM32F1)
+       #error "Unimplemeted for now"
+     #else
      OSPEEDR |=  ( 3u << ( pin_num * 2 ) );
+     #endif
    }
    inline void cfg_set_speed_min( uint8_t pin_num )
    {
+     #if defined (STM32F1)
+       #error "Unimplemeted for now"
+     #else
      OSPEEDR &= ~( 3u << ( pin_num * 2 ) );
+     #endif
    }
    inline void cfg_set_pull( uint8_t pin_num, Pull p )
    {
+     #if defined (STM32F1)
+       #error "Unimplemeted for now"
+     #else
      PUPDR   &= ~( 3u << ( pin_num * 2 ) );
      PUPDR   |=  ( (uint8_t)p << ( pin_num * 2 ) );
+     #endif
    }
    inline void cfg_set_pull_no( uint8_t pin_num )
    {
+     #if defined (STM32F1)
+       #error "Unimplemeted for now"
+     #else
      PUPDR   &= ~( 3u << ( pin_num * 2 ) );
+     #endif
    }
    inline void cfg_set_pull_up( uint8_t pin_num )
    {
+     #if defined (STM32F1)
+       #error "Unimplemeted for now"
+     #else
      PUPDR   &= ~( 3u << ( pin_num * 2 ) );
      PUPDR   |=  ( 1u << ( pin_num * 2 ) );
+     #endif
    }
    inline void cfg_set_pull_down( uint8_t pin_num )
    {
+     #if defined (STM32F1)
+       #error "Unimplemeted for now"
+     #else
      PUPDR   &= ~( 3u << ( pin_num * 2 ) );
      PUPDR   |=  ( 2u << ( pin_num * 2 ) );
+     #endif
    }
    inline void cfg_set_af0( uint8_t pin_num )
    {
+     #if defined (STM32F1)
+       #error "Unimplemeted for now"
+     #else
      uint8_t idx = pin_num >> 3;
      pin_num  &= 0x07;
      AFR[idx] &= ~( 0x0F << ( pin_num * 4 ) );
+     #endif
    }
    inline void cfg_set_af( uint8_t pin_num, uint8_t af )
    {
+     #if defined (STM32F1)
+       #error "Unimplemeted for now"
+     #else
      uint8_t idx = pin_num >> 3;
      pin_num  &= 0x07;
      AFR[idx] &= ~( 0x0F << ( pin_num * 4 ) );
      AFR[idx] |=  (   af << ( pin_num * 4 ) );
+     #endif
    }
 
    void cfgOut_common( uint8_t pin_num );
