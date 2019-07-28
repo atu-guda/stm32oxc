@@ -5,8 +5,9 @@
 
 
 inline constexpr uint16_t make_gpio_mask( uint8_t start, uint8_t n ) {
-  return (uint16_t) ((uint16_t)(0xFFFF) << (PORT_BITS - n)) >> (PORT_BITS - n - start);
+  return (uint16_t) ( (uint16_t)(0xFFFF) << (PORT_BITS - n) ) >> ( PORT_BITS - n - start );
 }
+
 
 class GpioRegs {
   public:
@@ -156,6 +157,12 @@ inline GpioRegs_ref GpioJ = *reinterpret_cast<GpioRegs_ptr_c>(GPIOJ_BASE);
 #ifdef GPIOK_BASE
 inline GpioRegs_ref GpioK = *reinterpret_cast<GpioRegs_ptr_c>(GPIOK_BASE);
 #endif
+
+constexpr inline uint8_t GpioIdx( const GpioRegs &gp )
+{
+  return (uint8_t)( ( reinterpret_cast<unsigned>(&gp) - GPIOA_BASE ) / ( GPIOB_BASE - GPIOA_BASE ) );
+}
+
 
 // --------------- old part ----------------------------------------
 
