@@ -78,58 +78,7 @@ void GpioRegs::cfgAnalog_N( uint16_t pins )
 
 void GpioRegs::enableClk() const
 {
-  if( this == &GpioA ) {
-    __GPIOA_CLK_ENABLE();
-    return;
-  }
-  if( this == &GpioB ) {
-    __GPIOB_CLK_ENABLE();
-    return;
-  }
-  if( this == &GpioC ) {
-    __GPIOC_CLK_ENABLE();
-    return;
-  }
-  if( this == &GpioD ) {
-    __GPIOD_CLK_ENABLE();
-    return;
-  }
-  #ifdef GPIOE
-  if( this == &GpioE ) {
-    __GPIOE_CLK_ENABLE();
-    return;
-  }
-  #endif
-  #ifdef GPIOF
-  if( this == &GpioF ) {
-    __GPIOF_CLK_ENABLE();
-    return;
-  }
-  #endif
-  #ifdef GPIOG
-  if( this == &GpioG ) {
-    __GPIOG_CLK_ENABLE();
-    return;
-  }
-  #endif
-  #ifdef GPIOH
-  if( this == &GpioH ) {
-    __GPIOH_CLK_ENABLE();
-    return;
-  }
-  #endif
-  #ifdef GPIOI
-  if( this == &GpioI ) {
-    __GPIOI_CLK_ENABLE();
-    return;
-  }
-  #endif
-  #ifdef GPIOJ
-  if( this == &GpioJ ) {
-    __GPIOJ_CLK_ENABLE();
-    return;
-  }
-  #endif
+  RCC->GPIO_EN_REG |= GPIO_EN_BIT0 << GpioIdx( *this );
 }
 
 
