@@ -3,8 +3,10 @@
 
 #include <oxc_base.h>
 
+// TODO: common SET_BIT[s], CLEAR_BIT[s], REPLACE_BIT[s], CHECK_BIT[?]
 
-inline constexpr uint16_t make_gpio_mask( uint8_t start, uint8_t n ) {
+inline constexpr uint16_t make_gpio_mask( uint8_t start, uint8_t n )
+{
   return (uint16_t) ( (uint16_t)(0xFFFF) << (PORT_BITS - n) ) >> ( PORT_BITS - n - start );
 }
 
@@ -14,6 +16,10 @@ class GpioRegs {
    enum class Moder { in = 0, out = 1, af = 2, analog = 3 };
    enum class Pull {  no = 0,  up = 1, down = 2 };
    enum class ExtiEv { no = 0, up = 1, down = 2, updown = 3 };
+   enum class ModeF1 { Analog = 0b0000, InFloat = 0b0100, InPull = 0b1000,
+                        OutPP = 0b0011, OutOD   = 0b0111,
+                         AFPP = 0b1011,  AFOD   = 0b1111  };
+
    GpioRegs()  = delete; // init only as ptr/ref to real GPIO area
    ~GpioRegs() = delete;
    void enableClk() const;
@@ -25,7 +31,8 @@ class GpioRegs {
    {
      BSSR = v << 16;
    }
-   inline void sr( uint16_t bits, bool doSet ) {
+   inline void sr( uint16_t bits, bool doSet )
+   {
      if( doSet ) {
        set( bits );
      } else {
@@ -37,32 +44,31 @@ class GpioRegs {
      ODR ^= v;
    }
 
+   template <typename F> void for_selected_pins( uint16_t pins, F f )
+   {
+     for( uint16_t pb = 1, pin_num = 0; pb != 0; pb <<= 1, ++pin_num ) {
+       if( pins & pb ) {
+         f( pin_num );
+       }
+     }
+   }
+
+   #if ! defined (STM32F1)
    inline void cfg_set_MODER( uint8_t pin_num, Moder val )
    {
-     #if defined (STM32F1)
-       #error "Unimplemeted for now"
-     #else
      uint32_t t = MODER;
      t &= ~( 3u  << ( pin_num * 2 ) );
      t |=  ( (uint8_t)(val) << ( pin_num * 2 ) );
      MODER = t;
-     #endif
    }
    inline void cfg_set_pp( uint8_t pin_num )
    {
-     #if defined (STM32F1)
-       #error "Unimplemeted for now"
-     #else
      OTYPER  &= ~( 1u << pin_num );
-     #endif
    }
+
    inline void cfg_set_od( uint8_t pin_num )
    {
-     #if defined (STM32F1)
-       #error "Unimplemeted for now"
-     #else
      OTYPER  |= ( 1u << pin_num );
-     #endif
    }
    inline void cfg_set_ppod( uint8_t pin_num, bool od )
    {
@@ -74,76 +80,45 @@ class GpioRegs {
    }
    inline void cfg_set_speed_max( uint8_t pin_num )
    {
-     #if defined (STM32F1)
-       #error "Unimplemeted for now"
-     #else
      OSPEEDR |=  ( 3u << ( pin_num * 2 ) );
-     #endif
    }
    inline void cfg_set_speed_min( uint8_t pin_num )
    {
-     #if defined (STM32F1)
-       #error "Unimplemeted for now"
-     #else
      OSPEEDR &= ~( 3u << ( pin_num * 2 ) );
-     #endif
    }
    inline void cfg_set_pull( uint8_t pin_num, Pull p )
    {
-     #if defined (STM32F1)
-       #error "Unimplemeted for now"
-     #else
      PUPDR   &= ~( 3u << ( pin_num * 2 ) );
      PUPDR   |=  ( (uint8_t)p << ( pin_num * 2 ) );
-     #endif
    }
    inline void cfg_set_pull_no( uint8_t pin_num )
    {
-     #if defined (STM32F1)
-       #error "Unimplemeted for now"
-     #else
      PUPDR   &= ~( 3u << ( pin_num * 2 ) );
-     #endif
    }
    inline void cfg_set_pull_up( uint8_t pin_num )
    {
-     #if defined (STM32F1)
-       #error "Unimplemeted for now"
-     #else
      PUPDR   &= ~( 3u << ( pin_num * 2 ) );
      PUPDR   |=  ( 1u << ( pin_num * 2 ) );
-     #endif
    }
    inline void cfg_set_pull_down( uint8_t pin_num )
    {
-     #if defined (STM32F1)
-       #error "Unimplemeted for now"
-     #else
      PUPDR   &= ~( 3u << ( pin_num * 2 ) );
      PUPDR   |=  ( 2u << ( pin_num * 2 ) );
-     #endif
    }
    inline void cfg_set_af0( uint8_t pin_num )
    {
-     #if defined (STM32F1)
-       #error "Unimplemeted for now"
-     #else
      uint8_t idx = pin_num >> 3;
      pin_num  &= 0x07;
      AFR[idx] &= ~( 0x0F << ( pin_num * 4 ) );
-     #endif
    }
    inline void cfg_set_af( uint8_t pin_num, uint8_t af )
    {
-     #if defined (STM32F1)
-       #error "Unimplemeted for now"
-     #else
      uint8_t idx = pin_num >> 3;
      pin_num  &= 0x07;
      AFR[idx] &= ~( 0x0F << ( pin_num * 4 ) );
      AFR[idx] |=  (   af << ( pin_num * 4 ) );
-     #endif
    }
+   #endif
 
    void cfgOut_common( uint8_t pin_num );
    void cfgOut( uint8_t pin_num, bool od = false );
@@ -160,14 +135,6 @@ class GpioRegs {
 
    void setEXTI( uint8_t pin, ExtiEv ev );
 
-   template <typename F> void for_selected_pins( uint16_t pins, F f )
-   {
-     for( uint16_t pb = 1, pin_num = 0; pb != 0; pb <<= 1, ++pin_num ) {
-       if( pins & pb ) {
-         f( pin_num );
-       }
-     }
-   }
 
 
    #if defined (STM32F1)

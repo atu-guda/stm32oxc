@@ -10,6 +10,7 @@
  #define GPIO_SPEED_MAX GPIO_SPEED_FREQ_HIGH
  #define GPIO_EN_REG      AHBENR
  #define GPIO_EN_BIT0 RCC_AHBENR_GPIOAEN
+ #define EXTICFG_PLACE SYSCFG
  #define ADC_FREQ_MAX 14000000
 #elif defined (STM32F1)
  #include <stm32f1xx_hal.h>
@@ -19,6 +20,7 @@
  #define GPIO_SPEED_MAX GPIO_SPEED_FREQ_HIGH
  #define GPIO_EN_REG      APB2ENR
  #define GPIO_EN_BIT0 RCC_APB2ENR_IOPAEN
+ #define EXTICFG_PLACE AFIO
  #define ADC_FREQ_MAX 14000000
 #elif defined (STM32F2)
  #include <stm32f2xx_hal.h>
@@ -28,6 +30,7 @@
  #define GPIO_SPEED_MAX GPIO_SPEED_FREQ_VERY_HIGH
  #define GPIO_EN_REG      AHB1ENR
  #define GPIO_EN_BIT0 RCC_AHB1ENR_GPIOAEN
+ #define EXTICFG_PLACE SYSCFG
  #define ADC_FREQ_MAX 36000000
 #elif defined (STM32F3)
  #include <stm32f3xx_hal.h>
@@ -38,6 +41,7 @@
  #define GPIO_SPEED_MAX GPIO_SPEED_FREQ_HIGH
  #define GPIO_EN_REG      AHBENR
  #define GPIO_EN_BIT0 RCC_AHBENR_GPIOAEN
+ #define EXTICFG_PLACE SYSCFG
  #define ADC_FREQ_MAX 72000000
 #elif defined (STM32F4)
  #include <stm32f4xx_hal.h>
@@ -47,6 +51,7 @@
  #define GPIO_SPEED_MAX GPIO_SPEED_FREQ_VERY_HIGH
  #define GPIO_EN_REG      AHB1ENR
  #define GPIO_EN_BIT0 RCC_AHB1ENR_GPIOAEN
+ #define EXTICFG_PLACE SYSCFG
  #define ADC_FREQ_MAX 36000000
 #elif defined(STM32F7)
  #include <stm32f7xx_hal.h>
@@ -56,6 +61,7 @@
  #define GPIO_SPEED_MAX GPIO_SPEED_FREQ_VERY_HIGH
  #define GPIO_EN_REG      AHB1ENR
  #define GPIO_EN_BIT0 RCC_AHB1ENR_GPIOAEN
+ #define EXTICFG_PLACE SYSCFG
  #define ADC_FREQ_MAX 36000000
 #else
   #error "Unsupported MCU"

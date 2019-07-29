@@ -11,7 +11,7 @@ BOARD_DEFINE_LEDS;
 BOARD_CONSOLE_DEFINES;
 
 volatile uint32_t last_exti_tick = 0;
-const int btn_deadtime = 20;
+const int btn_deadtime = 50;
 
 
 const char* common_help_string = "Appication to test new GPIO init approach" NL;
@@ -30,13 +30,13 @@ const CmdInfo* global_cmds[] = {
 void idle_main_task()
 {
   static unsigned n = 0;
-  GpioD.toggle( 1u << 11 );
+  GpioB.toggle( 1u << 12 );
   ++n;
-  if( ( n & 0x000F ) == 1 ) {
-    GpioD.toggle( 1u << 12 );
+  if( ( n & 0x0007 ) == 1 ) {
+    GpioB.toggle( 1u << 13 );
   }
-  if( ( n & 0x00FF ) == 1 ) {
-    GpioD.toggle( 1u << 13 );
+  if( ( n & 0x000F ) == 1 ) {
+    GpioB.toggle( 1u << 14 );
   }
 }
 
@@ -56,29 +56,26 @@ int main(void)
 
   BOARD_POST_INIT_BLINK;
 
+  GpioB.cfgOut_N( BIT12 | BIT13 | BIT14 | BIT15 );
+  // GpioB.cfgOut( 12 );
+  GpioB.cfgOut( 8, true );
 
-  GpioD.cfgOut_N( BIT11 | BIT12 | BIT13 );
+  GpioB.cfgAnalog( 0 );
+  GpioB.cfgIn( 1 );
+  GpioB.cfgIn( 2, GpioRegs::Pull::up );
 
-  GpioD.cfgOut( 14, true );
-  GpioD.cfgAF(  15, 6, true );
-  GpioD.cfg_set_af(  0,  15 );
-  GpioD.cfgIn( 1, GpioRegs::Pull::up );
+  GpioB.cfgAF( 6, 1 );
+  GpioB.cfgAF( 7, 1, true );
 
-  GpioA.cfgOut( 5, true );
-  GpioA.cfgAF(  1, 1 );
-  GpioB.cfgOut( 0, true );
-  GpioB.cfgAF(  1, 2 );
-  GpioC.cfgAF(  0, 7, true );
-  // GpioC.cfgIn( 1, GpioRegs::Pull::up );
-
-  GpioA.cfgAnalog( 3 );
-
-  // GpioD.cfgAF_N( BIT8 | BIT9, 7 ); // check cfg for UART
-
-  // board_def_btn_init( true );
-  GpioC.cfgIn( BOARD_BTN0_N, GpioRegs::Pull::down  );
-  GpioC.setEXTI( BOARD_BTN0_N, GpioRegs::ExtiEv::up /*updown*/ );
-
+  //
+  // GpioA.cfgAF(  9, 1 ); // check cfg for UART TX
+  // GpioA.cfgIn( 10 );    // check cfg for UART RX
+  //
+  // // board_def_btn_init( true );
+  GpioA.cfgIn( BOARD_BTN0_N, GpioRegs::Pull::down  );
+  GpioA.setEXTI( BOARD_BTN0_N, GpioRegs::ExtiEv::up );
+  //
+  //
   bool needIRQ = true;
   #ifdef BOARD_BTN0_EXIST
   if( needIRQ ) {
@@ -128,16 +125,18 @@ void BOARD_BTN1_IRQHANDLER(void)
 void HAL_GPIO_EXTI_Callback( uint16_t pin )
 {
   uint32_t curr_tick = HAL_GetTick();
-  leds.toggle( BIT0 );
   if( curr_tick - last_exti_tick < btn_deadtime ) {
     return; // ignore too fast events
   }
   last_exti_tick = curr_tick;
-  if( pin == BOARD_BTN0_BIT )  {
-    leds.toggle( BIT1 );
-  } else if( pin == BOARD_BTN1_BIT )  {
-    leds.toggle( BIT2 );
-  }
+
+  GpioB.toggle( BIT15 );
+
+  // if( pin == BOARD_BTN0_BIT )  {
+  //   leds.toggle( BIT1 );
+  // } else if( pin == BOARD_BTN1_BIT )  {
+  //   leds.toggle( BIT2 );
+  // }
   // leds.toggle( BIT0 );
 }
 
