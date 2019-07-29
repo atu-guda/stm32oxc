@@ -47,6 +47,12 @@ int main(void)
 
   UVAR('t') = 100;
   UVAR('n') =  20;
+  UVAR('a') =  make_bit_mask( 4, 8 );
+  UVAR('b') =  make_bit_mask_left( 31 );
+  UVAR('c') =  make_bit_mask_left(  1 );
+  UVAR('d') =  0;
+  set_bits( UVAR('d'), 8, 16 );
+  reset_bits( UVAR('d'), 12, 2 );
 
   GpioA.enableClk();
   GpioB.enableClk();

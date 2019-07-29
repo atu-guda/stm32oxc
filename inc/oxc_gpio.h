@@ -1,14 +1,9 @@
 #ifndef _OXC_GPIO_H
 #define _OXC_GPIO_H
 
+#include <functional>
+
 #include <oxc_base.h>
-
-// TODO: common SET_BIT[s], CLEAR_BIT[s], REPLACE_BIT[s], CHECK_BIT[?]
-
-inline constexpr uint16_t make_gpio_mask( uint8_t start, uint8_t n )
-{
-  return (uint16_t) ( (uint16_t)(0xFFFF) << (PORT_BITS - n) ) >> ( PORT_BITS - n - start );
-}
 
 
 class GpioRegs {
@@ -122,16 +117,29 @@ class GpioRegs {
 
    void cfgOut_common( uint8_t pin_num );
    void cfgOut( uint8_t pin_num, bool od = false );
-   void cfgOut_N( uint16_t pins, bool od = false );
+   void cfgOut_N( uint16_t pins, bool od = false )
+   {
+     for_selected_pins( pins, std::bind( &GpioRegs::cfgOut, this, std::placeholders::_1, od ) );
+   }
 
    void cfgAF( uint8_t pin_num, uint8_t af, bool od = false  );
-   void cfgAF_N( uint16_t pins, uint8_t af, bool od = false  );
+   void cfgAF_N( uint16_t pins, uint8_t af, bool od = false )
+   {
+     for_selected_pins( pins, std::bind( &GpioRegs::cfgAF, this, std::placeholders::_1, af, od ) );
+   }
 
    void cfgIn( uint8_t pin_num, Pull p = Pull::no );
-   void cfgIn_N( uint16_t pins,  Pull p = Pull::no );
+   void cfgIn_N( uint16_t pins,  Pull p = Pull::no )
+   {
+     for_selected_pins( pins, std::bind( &GpioRegs::cfgIn, this, std::placeholders::_1, p ) );
+   }
 
    void cfgAnalog( uint8_t pin_num );
-   void cfgAnalog_N( uint16_t pins );
+   void cfgAnalog_N( uint16_t pins )
+   {
+     for_selected_pins( pins, std::bind( &GpioRegs::cfgAnalog, this, std::placeholders::_1 ) );
+   }
+
 
    void setEXTI( uint8_t pin, ExtiEv ev );
 

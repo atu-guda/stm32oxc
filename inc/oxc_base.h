@@ -130,6 +130,69 @@ typedef const char *const ccstr;
 #define ARR_SZ(x) (sizeof(x) / sizeof(x[0]))
 #define ARR_AND_SZ(x) x, (sizeof(x) / sizeof(x[0]))
 
+inline constexpr uint32_t make_bit_mask( uint8_t start, uint8_t n )
+{
+  return ( (uint32_t)(0xFFFFFFFF) << ( 32 - n ) ) >> ( 32 - n - start );
+}
+inline constexpr uint32_t make_bit_mask_left( uint8_t n )
+{
+  return ( (uint32_t)(0xFFFFFFFF) >> ( 32 - n ) );
+}
+inline constexpr uint16_t make_gpio_mask( uint8_t start, uint8_t n )
+{
+  return (uint16_t) make_bit_mask( start, n );
+}
+inline void set_bit_v32( uint32_t &v, uint8_t pos )
+{
+  v |= 1 << pos;
+}
+inline void set_bits_v32( uint32_t &v, uint8_t pos, uint8_t n )
+{
+  v |= make_bit_mask( pos, n );
+}
+template<typename T>
+inline void set_bits( T &v, uint8_t pos, uint8_t n )
+{
+  v |= make_bit_mask( pos, n );
+}
+
+inline void reset_bit_v32( uint32_t &v, uint8_t pos )
+{
+  v &= ~( 1u << pos );
+}
+inline void reset_bits_v32( uint32_t &v, uint8_t pos, uint8_t n )
+{
+  v &= ~ make_bit_mask( pos, n );
+}
+template<typename T>
+inline void reset_bits( T &v, uint8_t pos, uint8_t n )
+{
+  v &= ~ make_bit_mask( pos, n );
+}
+
+inline void replace_bit_v32( uint32_t &v, uint8_t pos, uint8_t bit ) // lowest bit - if other - set
+{
+  reset_bit_v32( v, pos );
+  v |= ( bit << pos );
+}
+inline void replace_bits_v32( uint32_t &v, uint8_t pos, uint8_t n, uint32_t bits )
+{
+  reset_bits_v32( v, pos, n );
+  v |= ( bits << pos );
+}
+template<typename T>
+inline void replace_bits( T &v, uint8_t pos, uint8_t n, uint32_t bits )
+{
+  reset_bits( v, pos, n );
+  v |= ( bits << pos );
+}
+
+inline bool check_bit_v32( uint32_t v, uint8_t pos )
+{
+  return v & ( 1u << pos );
+}
+
+
 #ifndef NL
   #define NL "\r\n"
 #endif
