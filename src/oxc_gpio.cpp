@@ -31,14 +31,12 @@ void GpioRegs::cfgOut( uint8_t pin_num, bool od )
 }
 
 
+
 void GpioRegs::cfgAF( uint8_t pin_num, uint8_t af, bool od )
 {
   #if defined (STM32F1)
-    replace_bits( CR[pin_num >> 3], ( pin_num & 7 ) << 2, 4, od ? (uint8_t)(ModeF1::AFOD) : (uint8_t)(ModeF1::AFPP) );
-    // uint8_t idx = pin_num >> 3;
-    // pin_num &= 0x07;
-    // CR[idx] &= ~( 0x0F << ( pin_num << 2 ) );
-    // CR[idx] |=  ( ( od ? (uint8_t)(ModeF1::AFOD) : (uint8_t)(ModeF1::AFPP) ) << ( pin_num << 2 ) );
+    replace_bits( CR[pin_num >> 3], ( pin_num & 7 ) << 2, 4,
+                  od ? (uint8_t)(ModeF1::AFOD) : (uint8_t)(ModeF1::AFPP) );
   #else
   cfg_set_MODER( pin_num, Moder::af );
   cfg_set_speed_max( pin_num );
@@ -61,9 +59,9 @@ void GpioRegs::cfgIn( uint8_t pin_num, Pull p )
     } else {
       CR[idx] |=  ( (uint8_t)(ModeF1::InPull)   << ( pin_num << 2 ) );
       if( p == Pull::up ) {
-        ODR |=  ( 1 << pin_num );
+        set_bit( ODR, pin_num );
       } else {
-        ODR &= ~( 1 << pin_num );
+        reset_bit( ODR, pin_num );
       }
     }
   #else
@@ -79,9 +77,7 @@ void GpioRegs::cfgIn( uint8_t pin_num, Pull p )
 void GpioRegs::cfgAnalog( uint8_t pin_num )
 {
   #if defined (STM32F1)
-    uint8_t idx = pin_num >> 3;
-    pin_num &= 0x07;
-    CR[idx] &= ~( 0x0F << ( pin_num << 2 ) );
+    reset_bits( CR[pin_num >> 3], ( pin_num & 7 ) << 2, 4 );
   #else
   cfg_set_MODER( pin_num, Moder::analog );
   cfg_set_speed_min( pin_num );
@@ -105,19 +101,21 @@ void GpioRegs::setEXTI( uint8_t pin, ExtiEv ev )
   tmp |=  ( GpioIdx( *this ) << ( 4 * ( pin & 0x03 ) ) );
   EXTICFG_PLACE->EXTICR[ pin >> 2 ] = tmp;
 
+  uint32_t mask_pos = 1 << pin;
+  uint32_t mask_neg = ~mask_pos;
   if( (uint8_t)(ev) & (uint8_t)(ExtiEv::up) ) {
-    EXTI->RTSR |=  ( 1 << pin );
+    EXTI->RTSR |=  mask_pos;
   } else {
-    EXTI->RTSR &= ~( 1 << pin );
+    EXTI->RTSR &=  mask_neg;
   }
 
   if( (uint8_t)(ev) & (uint8_t)(ExtiEv::down) ) {
-    EXTI->FTSR |=  ( 1 << pin );
+    EXTI->FTSR |=  mask_pos;
   } else {
-    EXTI->FTSR &= ~( 1 << pin );
+    EXTI->FTSR &=  mask_neg;
   }
 
-  EXTI->IMR  = 1 << pin;
+  EXTI->IMR  |= mask_pos;
 }
 
 // ********************************************************

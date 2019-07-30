@@ -122,14 +122,14 @@ class GpioRegs {
      for_selected_pins( pins, std::bind( &GpioRegs::cfgOut, this, std::placeholders::_1, od ) );
    }
 
-   void cfgAF( uint8_t pin_num, uint8_t af, bool od = false  );
+   void cfgAF( uint8_t pin_num, uint8_t af, bool od = false );
    void cfgAF_N( uint16_t pins, uint8_t af, bool od = false )
    {
      for_selected_pins( pins, std::bind( &GpioRegs::cfgAF, this, std::placeholders::_1, af, od ) );
    }
 
    void cfgIn( uint8_t pin_num, Pull p = Pull::no );
-   void cfgIn_N( uint16_t pins,  Pull p = Pull::no )
+   void cfgIn_N( uint16_t pins, Pull p = Pull::no )
    {
      for_selected_pins( pins, std::bind( &GpioRegs::cfgIn, this, std::placeholders::_1, p ) );
    }
