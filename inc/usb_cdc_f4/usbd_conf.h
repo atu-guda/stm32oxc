@@ -4,8 +4,8 @@
 /* Includes ------------------------------------------------------------------*/
 #include <stdint.h>
 #include <stdlib.h>
-// to correct include "stm32fXxx_hal.h"
-#include <oxc_base.h>
+
+#include <oxc_archdef.h>
 // this includes need only for debug! here USBD_DEBUG_LEVEL = 0
 // #include <stdio.h>
 // #include <string.h>

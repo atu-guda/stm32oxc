@@ -183,16 +183,12 @@ void GPIO_WriteBits( GPIO_TypeDef* GPIOx, uint16_t PortVal, uint16_t mask )
   GPIOx->ODR = ( PortVal & mask ) | ( GPIOx->ODR & (~mask) );
 }
 
+// **************** PinsOut ********************************
+
 void PinsOut::initHW()
 {
   Pins::initHW();
-  GPIO_InitTypeDef gpi;
-
-  gpi.Pin = mask;
-  gpi.Mode = GPIO_MODE_OUTPUT_PP;
-  gpi.Pull = GPIO_NOPULL;
-  gpi.Speed = GPIO_SPEED_MAX;
-  HAL_GPIO_Init( gpio, &gpi );
+  gpio.cfgOut_N( mask );
 };
 
 [[ noreturn ]] void die4led( uint16_t n )
@@ -212,15 +208,11 @@ void PinsOut::initHW()
 
 void board_def_btn_init( bool needIRQ )
 {
-  GPIO_InitTypeDef gpi;
-  gpi.Speed = GPIO_SPEED_MAX;
 
 #ifdef BOARD_BTN0_EXIST
-  GPIO_enableClk( BOARD_BTN0_GPIO );
-  gpi.Pin   = BOARD_BTN0_BIT;
-  gpi.Mode  = BOARD_BTN0_MODE;
-  gpi.Pull  = BOARD_BTN0_PULL;
-  HAL_GPIO_Init( BOARD_BTN0_GPIO, &gpi );
+  BOARD_BTN0_GPIO.enableClk(); // TODO: config
+  BOARD_BTN0_GPIO.cfgIn( BOARD_BTN0_N, BOARD_BTN0_PULL );
+  BOARD_BTN0_GPIO.setEXTI( BOARD_BTN0_N, BOARD_BTN0_MODE );
   if( needIRQ ) {
     HAL_NVIC_SetPriority( BOARD_BTN0_IRQ, BOARD_BTN0_IRQPRTY, 0 );
     HAL_NVIC_EnableIRQ( BOARD_BTN0_IRQ );
@@ -228,11 +220,9 @@ void board_def_btn_init( bool needIRQ )
 #endif
 
 #ifdef BOARD_BTN1_EXIST
-  GPIO_enableClk( BOARD_BTN1_GPIO );
-  gpi.Pin   = BOARD_BTN1_BIT;
-  gpi.Mode  = BOARD_BTN1_MODE;
-  gpi.Pull  = BOARD_BTN1_PULL;
-  HAL_GPIO_Init( BOARD_BTN1_GPIO, &gpi );
+  BOARD_BTN1_GPIO.enableClk();
+  BOARD_BTN1_GPIO.cfgIn( BOARD_BTN1_N, BOARD_BTN1_PULL );
+  BOARD_BTN1_GPIO.setEXTI( BOARD_BTN1_N, BOARD_BTN1_MODE );
   if( needIRQ ) {
     HAL_NVIC_SetPriority( BOARD_BTN1_IRQ, BOARD_BTN1_IRQPRTY, 0 );
     HAL_NVIC_EnableIRQ( BOARD_BTN1_IRQ );
@@ -241,31 +231,20 @@ void board_def_btn_init( bool needIRQ )
 
 }
 
-// ----------------------------- PinsOut -----------------------------
+// ----------------------------- PinsIn -----------------------------
 
 void PinsIn::initHW()
 {
   Pins::initHW();
-  GPIO_InitTypeDef gpi;
-
-  gpi.Pin   = mask;
-  gpi.Mode  = GPIO_MODE_INPUT;
-  gpi.Pull  = pull;
-  gpi.Speed = GPIO_SPEED_LOW; // unused
-  HAL_GPIO_Init( gpio, &gpi );
+  gpio.cfgIn_N( mask ); // TODO: pull
 };
 
 // ----------------------------- IoPin -----------------------------
 
 void IoPin::initHW()
 {
-  GPIO_enableClk( gpio );
-  GPIO_InitTypeDef gio;
-  gio.Pin   = pin;
-  gio.Mode  = GPIO_MODE_OUTPUT_OD;
-  gio.Pull  = GPIO_NOPULL;
-  gio.Speed = GPIO_SPEED_MAX;
-  HAL_GPIO_Init( gpio, &gio );
+  gpio.enableClk();
+  gpio.cfgOut( pin, true );
 }
 
 

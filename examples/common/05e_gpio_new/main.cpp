@@ -11,7 +11,7 @@ BOARD_DEFINE_LEDS;
 BOARD_CONSOLE_DEFINES;
 
 volatile uint32_t last_exti_tick = 0;
-const int btn_deadtime = 20;
+const int btn_deadtime = 50;
 
 
 const char* common_help_string = "Appication to test new GPIO init approach" NL;
@@ -75,24 +75,7 @@ int main(void)
 
   // GpioD.cfgAF_N( BIT8 | BIT9, 7 ); // check cfg for UART
 
-  // board_def_btn_init( true );
-  GpioC.cfgIn( BOARD_BTN0_N, GpioRegs::Pull::down  );
-  GpioC.setEXTI( BOARD_BTN0_N, GpioRegs::ExtiEv::up /*updown*/ );
-
-  bool needIRQ = true;
-  #ifdef BOARD_BTN0_EXIST
-  if( needIRQ ) {
-    HAL_NVIC_SetPriority( BOARD_BTN0_IRQ, BOARD_BTN0_IRQPRTY, 0 );
-    HAL_NVIC_EnableIRQ( BOARD_BTN0_IRQ );
-  }
-  #endif
-
-  #ifdef BOARD_BTN1_EXIST
-  if( needIRQ ) {
-    HAL_NVIC_SetPriority( BOARD_BTN1_IRQ, BOARD_BTN1_IRQPRTY, 0 );
-    HAL_NVIC_EnableIRQ( BOARD_BTN1_IRQ );
-  }
-  #endif
+  board_def_btn_init( true );
 
   oxc_add_aux_tick_fun( led_task_nortos );
 

@@ -1,74 +1,8 @@
 #ifndef _OXC_BASE_H
 #define _OXC_BASE_H
 
-#ifdef __cplusplus
-#include <type_traits>
-#endif
+#include <oxc_archdef.h>
 
-#if defined (STM32F0)
- #include <stm32f0xx_hal.h>
- #define SET_BIT_REG   BSRR
- #define RESET_BIT_REG BRR
- #define RESET_BIT_SHIFT 0
- #define GPIO_SPEED_MAX GPIO_SPEED_FREQ_HIGH
- #define GPIO_EN_REG      AHBENR
- #define GPIO_EN_BIT0 RCC_AHBENR_GPIOAEN
- #define EXTICFG_PLACE SYSCFG
- #define ADC_FREQ_MAX 14000000
-#elif defined (STM32F1)
- #include <stm32f1xx_hal.h>
- #define SET_BIT_REG   BSRR
- #define RESET_BIT_REG BRR
- #define RESET_BIT_SHIFT 0
- #define GPIO_SPEED_MAX GPIO_SPEED_FREQ_HIGH
- #define GPIO_EN_REG      APB2ENR
- #define GPIO_EN_BIT0 RCC_APB2ENR_IOPAEN
- #define EXTICFG_PLACE AFIO
- #define ADC_FREQ_MAX 14000000
-#elif defined (STM32F2)
- #include <stm32f2xx_hal.h>
- #define SET_BIT_REG   BSRR
- #define RESET_BIT_REG BSRR
- #define RESET_BIT_SHIFT 16
- #define GPIO_SPEED_MAX GPIO_SPEED_FREQ_VERY_HIGH
- #define GPIO_EN_REG      AHB1ENR
- #define GPIO_EN_BIT0 RCC_AHB1ENR_GPIOAEN
- #define EXTICFG_PLACE SYSCFG
- #define ADC_FREQ_MAX 36000000
-#elif defined (STM32F3)
- #include <stm32f3xx_hal.h>
- #include <Legacy/stm32_hal_legacy.h>
- #define SET_BIT_REG   BSRR
- #define RESET_BIT_REG BRR
- #define RESET_BIT_SHIFT 0
- #define GPIO_SPEED_MAX GPIO_SPEED_FREQ_HIGH
- #define GPIO_EN_REG      AHBENR
- #define GPIO_EN_BIT0 RCC_AHBENR_GPIOAEN
- #define EXTICFG_PLACE SYSCFG
- #define ADC_FREQ_MAX 72000000
-#elif defined (STM32F4)
- #include <stm32f4xx_hal.h>
- #define SET_BIT_REG   BSRR
- #define RESET_BIT_REG BSRR
- #define RESET_BIT_SHIFT 16
- #define GPIO_SPEED_MAX GPIO_SPEED_FREQ_VERY_HIGH
- #define GPIO_EN_REG      AHB1ENR
- #define GPIO_EN_BIT0 RCC_AHB1ENR_GPIOAEN
- #define EXTICFG_PLACE SYSCFG
- #define ADC_FREQ_MAX 36000000
-#elif defined(STM32F7)
- #include <stm32f7xx_hal.h>
- #define SET_BIT_REG   BSRR
- #define RESET_BIT_REG BSRR
- #define RESET_BIT_SHIFT 16
- #define GPIO_SPEED_MAX GPIO_SPEED_FREQ_VERY_HIGH
- #define GPIO_EN_REG      AHB1ENR
- #define GPIO_EN_BIT0 RCC_AHB1ENR_GPIOAEN
- #define EXTICFG_PLACE SYSCFG
- #define ADC_FREQ_MAX 36000000
-#else
-  #error "Unsupported MCU"
-#endif
 
 #if REQ_MCBASE != MCBASE
   #error "Required and given MCBASE is not equal"
@@ -146,6 +80,14 @@ inline constexpr uint16_t make_gpio_mask( uint8_t start, uint8_t n )
   return (uint16_t) make_bit_mask( start, n );
 }
 
+inline bool check_bit( uint32_t v, uint8_t pos )
+{
+  return v & ( 1u << pos );
+}
+
+#ifdef __cplusplus
+#include <type_traits>
+
 template<typename T>
 inline void set_bit( T &v, uint8_t pos )
 {
@@ -178,11 +120,7 @@ inline void replace_bits( T &v, uint8_t pos, uint8_t n, uint32_t bits )
   t |= ( bits << pos );
   v = t;
 }
-
-inline bool check_bit( uint32_t v, uint8_t pos )
-{
-  return v & ( 1u << pos );
-}
+#endif
 
 
 #ifndef NL
