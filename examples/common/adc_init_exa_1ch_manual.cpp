@@ -35,25 +35,22 @@ int adc_init_exa_1ch_manual( uint32_t presc, uint32_t sampl_cycl )
 
 void HAL_ADC_MspInit( ADC_HandleTypeDef* adcHandle )
 {
-  GPIO_InitTypeDef gio;
-  if( adcHandle->Instance == BOARD_ADC_DEFAULT_DEV ) {
-    BOARD_ADC_DEFAULT_EN;
-
-    gio.Mode = GPIO_MODE_ANALOG;
-    gio.Pull = GPIO_NOPULL;
-
-    GPIO_enableClk( BOARD_ADC_DEFAULT_GPIO0 );
-    gio.Pin  = BOARD_ADC_DEFAULT_PIN0;
-    HAL_GPIO_Init( BOARD_ADC_DEFAULT_GPIO0, &gio );
-
+  if( adcHandle->Instance != BOARD_ADC_DEFAULT_DEV ) {
+    return;
   }
+
+  BOARD_ADC_DEFAULT_EN;
+
+  BOARD_ADC_DEFAULT_GPIO0.enableClk();
+  BOARD_ADC_DEFAULT_GPIO0.cfgAnalog( BOARD_ADC_DEFAULT_PIN0 );
 }
 
 void HAL_ADC_MspDeInit( ADC_HandleTypeDef* adcHandle )
 {
-  if( adcHandle->Instance == BOARD_ADC_DEFAULT_DEV ) {
-    BOARD_ADC_DEFAULT_DIS;
-    HAL_GPIO_DeInit( BOARD_ADC_DEFAULT_GPIO0, BOARD_ADC_DEFAULT_PIN0 );
+  if( adcHandle->Instance != BOARD_ADC_DEFAULT_DEV ) {
+    return;
   }
+
+  BOARD_ADC_DEFAULT_DIS;
 }
 

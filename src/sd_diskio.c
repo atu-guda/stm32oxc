@@ -46,7 +46,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include <string.h>
-#include <oxc_base.h>
+#include <oxc_archdef.h>
 #include <bsp_driver_sd.h>
 #include <ff_gen_drv_st.h>
 

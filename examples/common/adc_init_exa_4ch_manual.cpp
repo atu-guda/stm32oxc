@@ -58,27 +58,19 @@ int adc_init_exa_4ch_manual( ADC_Info &adc, uint32_t presc, uint32_t sampl_cycl,
 
 void HAL_ADC_MspInit( ADC_HandleTypeDef* adcHandle )
 {
-  GPIO_InitTypeDef gio;
   if( adcHandle->Instance == BOARD_ADC_DEFAULT_DEV ) {
     BOARD_ADC_DEFAULT_EN;
-
-    gio.Mode = GPIO_MODE_ANALOG;
-    gio.Pull = GPIO_NOPULL;
-
-    GPIO_enableClk( BOARD_ADC_DEFAULT_GPIO0 );
-    GPIO_enableClk( BOARD_ADC_DEFAULT_GPIO1 );
-    GPIO_enableClk( BOARD_ADC_DEFAULT_GPIO2 );
-    GPIO_enableClk( BOARD_ADC_DEFAULT_GPIO3 );
-    gio.Pin  = BOARD_ADC_DEFAULT_PIN0;
-    HAL_GPIO_Init( BOARD_ADC_DEFAULT_GPIO0, &gio );
-    gio.Pin  = BOARD_ADC_DEFAULT_PIN1;
-    HAL_GPIO_Init( BOARD_ADC_DEFAULT_GPIO1, &gio );
-    gio.Pin  = BOARD_ADC_DEFAULT_PIN2;
-    HAL_GPIO_Init( BOARD_ADC_DEFAULT_GPIO2, &gio );
-    gio.Pin  = BOARD_ADC_DEFAULT_PIN3;
-    HAL_GPIO_Init( BOARD_ADC_DEFAULT_GPIO3, &gio );
-
     __HAL_RCC_DMA2_CLK_ENABLE();
+
+    BOARD_ADC_DEFAULT_GPIO0.enableClk();
+    BOARD_ADC_DEFAULT_GPIO1.enableClk();
+    BOARD_ADC_DEFAULT_GPIO2.enableClk();
+    BOARD_ADC_DEFAULT_GPIO3.enableClk();
+
+    BOARD_ADC_DEFAULT_GPIO0.cfgAnalog( BOARD_ADC_DEFAULT_PIN0 );
+    BOARD_ADC_DEFAULT_GPIO1.cfgAnalog( BOARD_ADC_DEFAULT_PIN1 );
+    BOARD_ADC_DEFAULT_GPIO2.cfgAnalog( BOARD_ADC_DEFAULT_PIN2 );
+    BOARD_ADC_DEFAULT_GPIO3.cfgAnalog( BOARD_ADC_DEFAULT_PIN3 );
 
     // ADC_DMA_reinit();
 
@@ -99,7 +91,7 @@ void ADC_DMA_reinit( ADC_Info &adc )
   adc.hdma_adc.Init.MemInc              = DMA_MINC_ENABLE;
   adc.hdma_adc.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
   adc.hdma_adc.Init.MemDataAlignment    = DMA_MDATAALIGN_HALFWORD;
-  adc.hdma_adc.Init.Mode                = DMA_NORMAL; // DMA_CIRCULAR, DMA_PFCTRL
+  adc.hdma_adc.Init.Mode                = DMA_NORMAL; // DMA_NORMAL, DMA_CIRCULAR, DMA_PFCTRL
   adc.hdma_adc.Init.Priority            = DMA_PRIORITY_HIGH; // DMA_PRIORITY_LOW, DMA_PRIORITY_MEDIUM, DMA_PRIORITY_HIGH, DMA_PRIORITY_VERY_HIGH
   adc.hdma_adc.Init.FIFOMode            = DMA_FIFOMODE_DISABLE;
   // adc.hdma_adc.Init.FIFOThreshold    = DMA_FIFO_THRESHOLD_HALFFULL;
@@ -116,10 +108,6 @@ void HAL_ADC_MspDeInit( ADC_HandleTypeDef* adcHandle )
 {
   if( adcHandle->Instance == BOARD_ADC_DEFAULT_DEV ) {
     BOARD_ADC_DEFAULT_DIS;
-    HAL_GPIO_DeInit( BOARD_ADC_DEFAULT_GPIO0, BOARD_ADC_DEFAULT_PIN0 );
-    HAL_GPIO_DeInit( BOARD_ADC_DEFAULT_GPIO1, BOARD_ADC_DEFAULT_PIN1 );
-    HAL_GPIO_DeInit( BOARD_ADC_DEFAULT_GPIO2, BOARD_ADC_DEFAULT_PIN2 );
-    HAL_GPIO_DeInit( BOARD_ADC_DEFAULT_GPIO3, BOARD_ADC_DEFAULT_PIN3 );
     HAL_DMA_DeInit( adcHandle->DMA_Handle );
   }
 }

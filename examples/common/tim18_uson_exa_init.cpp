@@ -1,4 +1,5 @@
 #include <oxc_base.h>
+#include <oxc_gpio.h>
 
 // initialize timer 1 or 8 (from board defines) to
 // 2-channel ultrasonic range sensor
@@ -10,14 +11,8 @@ void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim )
   }
   TIM_EXA_CLKEN;
 
-  GPIO_InitTypeDef gio;
+  TIM_EXA_GPIO.cfgAF_N( TIM_EXA_PIN1 | TIM_EXA_PIN2, TIM_EXA_GPIOAF );
 
-  gio.Pin       = TIM_EXA_PIN1 | TIM_EXA_PIN2; // see inc/bsp/board_xxxx.h
-  gio.Mode      = GPIO_MODE_AF_PP;
-  gio.Pull      = GPIO_NOPULL;
-  gio.Speed     = GPIO_SPEED_MAX;
-  gio.Alternate = TIM_EXA_GPIOAF;
-  HAL_GPIO_Init( TIM_EXA_GPIO, &gio );
 }
 
 void HAL_TIM_PWM_MspDeInit( TIM_HandleTypeDef* htim )
@@ -26,7 +21,7 @@ void HAL_TIM_PWM_MspDeInit( TIM_HandleTypeDef* htim )
     return;
   }
   TIM_EXA_CLKDIS;
-  HAL_GPIO_DeInit( TIM_EXA_GPIO, TIM_EXA_PIN1 | TIM_EXA_PIN2 );
+  TIM_EXA_GPIO.cfgIn_N( TIM_EXA_PIN1 | TIM_EXA_PIN2 );
   // HAL_NVIC_DisableIRQ( TIM_EXA_IRQ );
 }
 

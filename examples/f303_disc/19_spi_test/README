@@ -6,9 +6,18 @@ B14 = MISO
 B15 = MOSI
 +B12 = Soft NSS
 
+To use with 595:
+SI   <- MOSI
+!OE  <- Gnd
+RCLK <- NSS
+CLK  <- SCK
+!RST <- V
+...
+s r 0 - to not send 00 bytes
+S 0x55 - set value
 
+To use logic analizer,
+  spi_h.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;
+  and add priliminary drop before.
 
-Used USART2 with USB-UART board.
-A2  = USART2_TX
-A3  = USART2_RX
 

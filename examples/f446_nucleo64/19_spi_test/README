@@ -7,7 +7,7 @@ B15 = MOSI
 +B1 = Soft NSS
 
 To use with 595:
-SI   <- MISO
+SI   <- MOSI
 !OE  <- Gnd
 RCLK <- NSS
 CLK  <- SCK

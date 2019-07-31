@@ -7,7 +7,7 @@ F9  = MOSI
 +F6 = Soft NSS
 
 To use with 595:
-SI   <- MISO
+SI   <- MOSI
 !OE  <- Gnd
 RCLK <- NSS
 CLK  <- SCK

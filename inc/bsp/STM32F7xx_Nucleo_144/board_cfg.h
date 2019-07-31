@@ -48,7 +48,7 @@
 
 #define TIM_EXA        TIM1
 #define TIM_EXA_STR    "TIM1"
-#define TIM_EXA_GPIO   GPIOE
+#define TIM_EXA_GPIO   GpioE
 #define TIM_EXA_PIN1   GPIO_PIN_9
 #define TIM_EXA_PIN2   GPIO_PIN_11
 #define TIM_EXA_PIN3   GPIO_PIN_13
@@ -60,12 +60,12 @@
 #define TIM_EXA_IRQ    TIM1_CC_IRQn
 #define TIM_EXA_IRQHANDLER    TIM1_CC_IRQHandler
 
-#define SD_EXA_CK_GPIO   GPIOC
-#define SD_EXA_CK_PIN    GPIO_PIN_12
-#define SD_EXA_D0_GPIO   GPIOC
-#define SD_EXA_D0_PIN    GPIO_PIN_8
-#define SD_EXA_CMD_GPIO  GPIOD
-#define SD_EXA_CMD_PIN   GPIO_PIN_2
+#define SD_EXA_CK_GPIO   GpioC
+#define SD_EXA_CK_PIN    12
+#define SD_EXA_D0_GPIO   GpioC
+#define SD_EXA_D0_PIN    8
+#define SD_EXA_CMD_GPIO  GpioD
+#define SD_EXA_CMD_PIN   2
 #define SD_EXA_CLKEN     __HAL_RCC_SDIO_CLK_ENABLE();  __HAL_RCC_GPIOC_CLK_ENABLE();  __HAL_RCC_GPIOD_CLK_ENABLE();
 #define SD_EXA_CLKDIS    __HAL_RCC_SDIO_CLK_DISABLE();
 #define SD_EXA_GPIOAF    GPIO_AF12_SDIO
@@ -102,11 +102,12 @@
 
 #define BOARD_SPI_DEFAULT               SPI5
 #define BOARD_SPI_DEFAULT_NAME          "SPI5"
-#define BOARD_SPI_DEFAULT_GPIO_SCK      GPIOF
+#define BOARD_SPI_DEFAULT_GPIO_ALL      GpioF
+//#define BOARD_SPI_DEFAULT_GPIO_SCK      GpioF
 #define BOARD_SPI_DEFAULT_GPIO_PIN_SCK  GPIO_PIN_7
-#define BOARD_SPI_DEFAULT_GPIO_MISO     GPIOF
+//#define BOARD_SPI_DEFAULT_GPIO_MISO     GpioF
 #define BOARD_SPI_DEFAULT_GPIO_PIN_MISO GPIO_PIN_8
-#define BOARD_SPI_DEFAULT_GPIO_MOSI     GPIOF
+//#define BOARD_SPI_DEFAULT_GPIO_MOSI     GpioF
 #define BOARD_SPI_DEFAULT_GPIO_PIN_MOSI GPIO_PIN_9
 #define BOARD_SPI_DEFAULT_GPIO_SNSS     GpioF
 // here number, as input to PinsOut
@@ -121,28 +122,28 @@
 #define BOARD_SPI_DEFAULT_IRQ           SPI5_IRQn
 #define BOARD_SPI_DEFAULT_IRQHANDLER    SPI5_IRQHandler
 
+// D11-D14
+#define BOARD_MOTOR_DEFAULT_GPIO        GpioD
+#define BOARD_MOTOR_DEFAULT_PIN0        11
 //
-#define BOARD_MOTOR_DEFAULT_GPIO        GPIOG
-#define BOARD_MOTOR_DEFAULT_PIN0        9
-//
-#define BOARD_1W_DEFAULT_GPIO           GPIOG
-#define BOARD_1W_DEFAULT_PIN            GPIO_PIN_12
+#define BOARD_1W_DEFAULT_GPIO           GpioG
+#define BOARD_1W_DEFAULT_PIN            4
 
 // A0(0),C0(10),C2(12),C3(13)
 #define BOARD_ADC_DEFAULT_DEV           ADC1
 #define BOARD_ADC_DEFAULT_EN            __HAL_RCC_ADC1_CLK_ENABLE();
 #define BOARD_ADC_DEFAULT_DIS           __HAL_RCC_ADC1_CLK_DISABLE();
-#define BOARD_ADC_DEFAULT_GPIO0         GPIOA
-#define BOARD_ADC_DEFAULT_PIN0          GPIO_PIN_0
+#define BOARD_ADC_DEFAULT_GPIO0         GpioA
+#define BOARD_ADC_DEFAULT_PIN0          0
 #define BOARD_ADC_DEFAULT_CH0           ADC_CHANNEL_0
-#define BOARD_ADC_DEFAULT_GPIO1         GPIOC
-#define BOARD_ADC_DEFAULT_PIN1          GPIO_PIN_0
+#define BOARD_ADC_DEFAULT_GPIO1         GpioC
+#define BOARD_ADC_DEFAULT_PIN1          0
 #define BOARD_ADC_DEFAULT_CH1           ADC_CHANNEL_10
-#define BOARD_ADC_DEFAULT_GPIO2         GPIOC
-#define BOARD_ADC_DEFAULT_PIN2          GPIO_PIN_2
+#define BOARD_ADC_DEFAULT_GPIO2         GpioC
+#define BOARD_ADC_DEFAULT_PIN2          2
 #define BOARD_ADC_DEFAULT_CH2           ADC_CHANNEL_12
-#define BOARD_ADC_DEFAULT_GPIO3         GPIOC
-#define BOARD_ADC_DEFAULT_PIN3          GPIO_PIN_3
+#define BOARD_ADC_DEFAULT_GPIO3         GpioC
+#define BOARD_ADC_DEFAULT_PIN3          3
 #define BOARD_ADC_DEFAULT_CH3           ADC_CHANNEL_13
 #define BOARD_ADC_MEM_MAX               (1024*256)
 // #define BOARD_ADC_MEM_MAX_FMC           (1024*1024*8)
