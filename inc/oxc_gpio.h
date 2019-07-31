@@ -205,7 +205,7 @@ constexpr inline uint8_t GpioIdx( const GpioRegs &gp )
 }
 
 
-// --------------- old part ----------------------------------------
+// --------------- Pins ----------------------------------------
 
 void GPIO_WriteBits( GPIO_TypeDef* GPIOx, uint16_t PortVal, uint16_t mask );
 void board_def_btn_init( bool needIRQ );
