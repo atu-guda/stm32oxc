@@ -19,7 +19,7 @@
 // Used internally, but can be used someware:
 //   USART1->STLINK.VCP(A9,A10)
 
-// my by board A1, A2 is not connected to MEMS, so may be used as ADC...
+// on my board A1, A2 is not connected to MEMS, so may be used as ADC...
 
 // default LEDS is G13 (Green), G14 (Red)
 #define BOARD_N_LEDS 2
@@ -142,15 +142,18 @@
 #define BOARD_ADC_COEFF                 2937
 
 
+// 0 = DEVICE_FS, 1 = DEVICE_HS
+#define BOARD_USB_DEFAULT_TYPE       1
+#define BOARD_USB_DEFAULT_INSTANCE   USB_OTG_HS
 #define BOARD_USB_DEFAULT_GPIO       GpioB
 #define BOARD_USB_DEFAULT_DPDM_PINS  ( GPIO_PIN_14 | GPIO_PIN_15 )
 #define BOARD_USB_DEFAULT_VBUS_PIN   GPIO_PIN_13
 #define BOARD_USB_DEFAULT_ID_PIN     GPIO_PIN_12
 #define BOARD_USB_DEFAULT_GPIO_AF    GPIO_AF12_OTG_HS_FS
-#define BOARD_USB_DEFAULT_ENABLE     __GPIOB_CLK_ENABLE(); __HAL_RCC_USB_OTG_FS_CLK_ENABLE(); __HAL_RCC_SYSCFG_CLK_ENABLE();
-#define BOARD_USB_DEFAULT_DISABLE    __HAL_RCC_USB_OTG_FS_CLK_DISABLE();
-#define BOARD_USB_DEFAULT_IRQ        OTG_FS_IRQn
-#define BOARD_USB_DEFAULT_IRQHANDLER OTG_FS_IRQHandler
+#define BOARD_USB_DEFAULT_ENABLE     __GPIOB_CLK_ENABLE();  __HAL_RCC_SYSCFG_CLK_ENABLE(); __HAL_RCC_USB_OTG_HS_CLK_ENABLE();
+#define BOARD_USB_DEFAULT_DISABLE    __HAL_RCC_USB_OTG_HS_CLK_DISABLE();
+#define BOARD_USB_DEFAULT_IRQ        OTG_HS_IRQn
+#define BOARD_USB_DEFAULT_IRQHANDLER OTG_HS_IRQHandler
 #define BOARD_USB_DEFAULT_IRQ_PRTY   14
 // TODO: more params, FS/HS, see f429i_disc
 

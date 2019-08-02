@@ -29,7 +29,7 @@ void default_USBFS_MspInit(void)
 }
 
 
-void OTG_FS_IRQHandler(void)
+void BOARD_USB_DEFAULT_IRQHANDLER(void)
 {
   HAL_PCD_IRQHandler( &hpcd );
 }
@@ -110,7 +110,7 @@ USBD_StatusTypeDef  USBD_LL_Init( USBD_HandleTypeDef *pdev )
   hpcd.pData                  = pdev;
   pdev->pData                 = &hpcd;
 
-  hpcd.Instance               = USB_OTG_FS;
+  hpcd.Instance               = BOARD_USB_DEFAULT_INSTANCE;
   hpcd.Init.dev_endpoints     = 4;
   hpcd.Init.speed             = PCD_SPEED_FULL;
   hpcd.Init.dma_enable        = DISABLE;

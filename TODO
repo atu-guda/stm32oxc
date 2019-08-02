@@ -8,13 +8,13 @@ substitute vars (or by any hook) in cmdline: oxc_console.cpp: exec_direct?
 oxc_smallrl: UTF-8 minimal handling
 common RCC init Rewrite Sysinit
 Fix 51a_adcdma_n ... examples
+Fix stemwin (f429_disc)
 
 SmallRl, console: set output funcs to unbind
 Move SPI common funcs from 28 to oxc lib
 Move ADC common fuctions (some to bsp)
 
 pkgconfig for OXC?
-Fix USB_CDC init with other pins (test on f429 discovery...)
 Check MiniStr::operator+=( const char *rhs ) bug with whole string - now masked
 
 

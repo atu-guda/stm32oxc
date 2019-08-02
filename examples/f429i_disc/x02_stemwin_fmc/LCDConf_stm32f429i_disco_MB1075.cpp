@@ -5,6 +5,7 @@
   * @version V1.4.0
   * @date    17-February-2017
   * @brief   This file implements the configuration for the GUI library
+  * @xxx     mod by atu
   ******************************************************************************
   * @attention
   *
@@ -46,7 +47,7 @@
   */
 
 /* Includes ------------------------------------------------------------------*/
-#include <oxc_base.h>
+#include <oxc_gpio.h>
 #include "LCDConf.h"
 #include "GUI_Private.h"
 
@@ -243,21 +244,14 @@ void HAL_DMA2D_MspDeInit(DMA2D_HandleTypeDef *hdma2d)
   */
 void HAL_LTDC_MspInit(LTDC_HandleTypeDef *hltdc)
 {
-  GPIO_InitTypeDef GPIO_Init_Structure;
-
-  /* Enable peripherals and GPIO Clocks */
-  /* Enable the LTDC Clock */
   __HAL_RCC_LTDC_CLK_ENABLE();
 
-  /* Enable GPIO Clock */
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
   __HAL_RCC_GPIOF_CLK_ENABLE();
   __HAL_RCC_GPIOG_CLK_ENABLE();
-
-  /* Configure peripheral GPIO */
 
   /* GPIOs Configuration */
   /*
@@ -276,51 +270,28 @@ void HAL_LTDC_MspInit(LTDC_HandleTypeDef *hltdc)
              -----------------------------------------------------
   */
 
-  /* GPIOA configuration */
-  GPIO_Init_Structure.Pin = GPIO_PIN_3 | GPIO_PIN_4 | GPIO_PIN_6 |
-                           GPIO_PIN_11 | GPIO_PIN_12;
-  GPIO_Init_Structure.Mode = GPIO_MODE_AF_PP;
-  GPIO_Init_Structure.Pull = GPIO_NOPULL;
-  GPIO_Init_Structure.Speed = GPIO_SPEED_MAX;
-  GPIO_Init_Structure.Alternate= GPIO_AF14_LTDC;
-  HAL_GPIO_Init(GPIOA, &GPIO_Init_Structure);
+  GpioA.cfgAF_N( GPIO_PIN_3 | GPIO_PIN_4 | GPIO_PIN_6
+               | GPIO_PIN_11 | GPIO_PIN_12, GPIO_AF14_LTDC );
 
- /* GPIOB configuration */
-  GPIO_Init_Structure.Pin = GPIO_PIN_8 | \
-                           GPIO_PIN_9 | GPIO_PIN_10 | GPIO_PIN_11;
-  HAL_GPIO_Init(GPIOB, &GPIO_Init_Structure);
+  GpioB.cfgAF_N( GPIO_PIN_8 | GPIO_PIN_9 | GPIO_PIN_10 | GPIO_PIN_11, GPIO_AF14_LTDC );
 
- /* GPIOC configuration */
-  GPIO_Init_Structure.Pin = GPIO_PIN_6 | GPIO_PIN_7 | GPIO_PIN_10;
-  HAL_GPIO_Init(GPIOC, &GPIO_Init_Structure);
+  GpioC.cfgAF_N(  GPIO_PIN_6 | GPIO_PIN_7 | GPIO_PIN_10, GPIO_AF14_LTDC );
 
- /* GPIOD configuration */
-  GPIO_Init_Structure.Pin = GPIO_PIN_3 | GPIO_PIN_6;
-  HAL_GPIO_Init(GPIOD, &GPIO_Init_Structure);
+  GpioD.cfgAF_N( GPIO_PIN_3 | GPIO_PIN_6, GPIO_AF14_LTDC );
 
- /* GPIOF configuration */
-  GPIO_Init_Structure.Pin = GPIO_PIN_10;
-  HAL_GPIO_Init(GPIOF, &GPIO_Init_Structure);
+  GpioF.cfgAF_N( GPIO_PIN_10, GPIO_AF14_LTDC );
 
- /* GPIOG configuration */
-  GPIO_Init_Structure.Pin = GPIO_PIN_6 | GPIO_PIN_7 | \
-                           GPIO_PIN_11;
-  HAL_GPIO_Init(GPIOG, &GPIO_Init_Structure);
+  GpioG.cfgAF_N( GPIO_PIN_6 | GPIO_PIN_7 | GPIO_PIN_11 , GPIO_AF14_LTDC );
 
-  /* GPIOB configuration */
-  GPIO_Init_Structure.Pin = GPIO_PIN_0 | GPIO_PIN_1;
-  GPIO_Init_Structure.Alternate= GPIO_AF9_LTDC;
-  HAL_GPIO_Init(GPIOB, &GPIO_Init_Structure);
+  // part2
+  GpioB.cfgAF_N(  GPIO_PIN_0 | GPIO_PIN_1, GPIO_AF9_LTDC );
 
-  /* GPIOG configuration */
-  GPIO_Init_Structure.Pin = GPIO_PIN_10 | GPIO_PIN_12;
-  HAL_GPIO_Init(GPIOG, &GPIO_Init_Structure);
+  GpioG.cfgAF_N(  GPIO_PIN_10 | GPIO_PIN_12, GPIO_AF9_LTDC );
 
   /* Set LTDC Interrupt to the lowest priority */
   HAL_NVIC_SetPriority(LTDC_IRQn, 0xF, 0);
   /// HAL_NVIC_SetPriority( LTDC_IRQn, 0x5, 0 ); // atu: try
 
-  /* Enable LTDC Interrupt */
   HAL_NVIC_EnableIRQ( LTDC_IRQn );
 }
 

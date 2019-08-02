@@ -8,7 +8,7 @@ UsbcdcIO* UsbcdcIO::static_usbcdcio = nullptr;
 
 int UsbcdcIO::init()
 {
-  if( USBD_Init( &usb_dev, &VCP_Desc, 0 ) != USBD_OK ) { // 0 = DEVICE_FS
+  if( USBD_Init( &usb_dev, &VCP_Desc, BOARD_USB_DEFAULT_TYPE ) != USBD_OK ) { // 0 = DEVICE_FS 1 = DEVICE_HS
     errno = 2000;
     return 0;
   }
@@ -140,6 +140,7 @@ int8_t UsbcdcIO::CDC_Itf_Control( uint8_t cmd, uint8_t* pbuf, uint16_t length UN
       }
 
       {
+        // TODO: may be callback here
         USBD_SetupReqTypedef *req = (USBD_SetupReqTypedef *)pbuf;
         if( ( req->wValue & 0x0001 ) != 0 )  { // check DTR
           static_usbcdcio->ready_transmit = true;

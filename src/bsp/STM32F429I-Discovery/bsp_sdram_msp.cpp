@@ -1,4 +1,5 @@
 #include <oxc_base.h>
+#include <oxc_gpio.h>
 
 #include <board_sdram.h>
 
@@ -33,36 +34,24 @@ void HAL_SDRAM_MspInit( SDRAM_HandleTypeDef * /* hsdram */ )
  +-------------------+
 */
 
-  GPIO_InitTypeDef  gio;
-  /* Common GPIO configuration */
-  gio.Mode  = GPIO_MODE_AF_PP;
-  gio.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-  gio.Pull  = GPIO_NOPULL;
-  gio.Alternate = GPIO_AF12_FMC;
 
-  gio.Pin = GPIO_PIN_5 | GPIO_PIN_6;
-  HAL_GPIO_Init( GPIOB, &gio );
+  GpioB.cfgAF_N( GPIO_PIN_5 | GPIO_PIN_6, GPIO_AF12_FMC );
 
-  gio.Pin = GPIO_PIN_0;
-  HAL_GPIO_Init( GPIOC, &gio );
+  GpioC.cfgAF_N( GPIO_PIN_0, GPIO_AF12_FMC );
 
-  gio.Pin = GPIO_PIN_0  | GPIO_PIN_1  | GPIO_PIN_8 | GPIO_PIN_9
-          | GPIO_PIN_10 | GPIO_PIN_14 | GPIO_PIN_15;
-  HAL_GPIO_Init( GPIOD, &gio );
+  GpioD.cfgAF_N( GPIO_PIN_0  | GPIO_PIN_1  | GPIO_PIN_8 | GPIO_PIN_9
+               | GPIO_PIN_10 | GPIO_PIN_14 | GPIO_PIN_15,  GPIO_AF12_FMC );
 
-  gio.Pin = GPIO_PIN_0  | GPIO_PIN_1  | GPIO_PIN_7  | GPIO_PIN_8
-          | GPIO_PIN_9  | GPIO_PIN_10 | GPIO_PIN_11 | GPIO_PIN_12
-          | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15;
-  HAL_GPIO_Init( GPIOE, &gio );
+  GpioE.cfgAF_N( GPIO_PIN_0  | GPIO_PIN_1  | GPIO_PIN_7  | GPIO_PIN_8
+               | GPIO_PIN_9  | GPIO_PIN_10 | GPIO_PIN_11 | GPIO_PIN_12
+               | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15,   GPIO_AF12_FMC );
 
-  gio.Pin = GPIO_PIN_0  | GPIO_PIN_1  | GPIO_PIN_2  | GPIO_PIN_3
-          | GPIO_PIN_4  | GPIO_PIN_5  | GPIO_PIN_11 | GPIO_PIN_12
-          | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15;
-  HAL_GPIO_Init( GPIOF, &gio );
+  GpioF.cfgAF_N( GPIO_PIN_0  | GPIO_PIN_1  | GPIO_PIN_2  | GPIO_PIN_3
+               | GPIO_PIN_4  | GPIO_PIN_5  | GPIO_PIN_11 | GPIO_PIN_12
+               | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15,   GPIO_AF12_FMC );
 
-  gio.Pin = GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_4 | GPIO_PIN_5
-          | GPIO_PIN_8 | GPIO_PIN_15;
-  HAL_GPIO_Init( GPIOG, &gio );
+  GpioG.cfgAF_N( GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_4 | GPIO_PIN_5
+               | GPIO_PIN_8 | GPIO_PIN_15, GPIO_AF12_FMC );
 }
 
 

@@ -29,7 +29,7 @@ USE_FREERTOS = y
 SRCS  = main.cpp
 
 SRCS += GUIConf.c
-SRCS += LCDConf_stm32f429i_disco_MB1075.c
+SRCS += LCDConf_stm32f429i_disco_MB1075.cpp
 
 SRCS += stm32f4xx_hal_spi.c
 
