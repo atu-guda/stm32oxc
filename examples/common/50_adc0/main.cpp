@@ -18,7 +18,7 @@ const char* common_help_string = "App to test ADC in one-shot mode one channel" 
 
 int adc_init_exa_1ch_manual( uint32_t presc, uint32_t sampl_cycl );
 ADC_HandleTypeDef hadc1;
-int v_adc_ref = 3250; // in mV, measured before test
+int v_adc_ref = BOARD_ADC_COEFF; // in mV, measured before test
 
 
 // --- local commands;

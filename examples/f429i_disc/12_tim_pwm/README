@@ -1,5 +1,5 @@
 Test TIM9 as PWM output
-out: E5, E6 - ony 2 channels
+out: E5, E6 - only 2 channels
 user vars:
  p - prescaler
  a - ARR

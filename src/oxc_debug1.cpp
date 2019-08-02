@@ -453,8 +453,8 @@ int cmd_svar( int argc, const char * const * argv )
   }
 
   if( argv[1][1] == '\0' ) {
-    int idx = argv[1][0] - 'a';
-    if( idx > 0 && idx < (int)(N_USER_VARS) ) {
+    unsigned idx = (unsigned)(argv[1][0]) - 'a';
+    if( idx < N_USER_VARS ) {
       if( argv[2][0] == '-' ) {
         user_vars[idx] = strtol( argv[2], 0, 0 );
       } else {

@@ -1,5 +1,6 @@
 Try ADC with IRQ
 Clock: APB2/2 = 72/4 = 36: max <- use special clock
+Old output approach, strange results
 
 Channels:
   A1   A2,  A5,   C3

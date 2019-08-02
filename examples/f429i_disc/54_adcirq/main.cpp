@@ -31,7 +31,7 @@ uint32_t tim_freq_in; // timer input freq
 uint32_t adc_clk = ADC_FREQ_MAX;     // depend in MCU, set in adc_init_exa_4ch_dma
 // uint32_t t_step = 100000; // in us, recalculated before measurement
 float t_step_f = 0.1; // in s, recalculated before measurement
-int v_adc_ref = 3250; // in mV, measured before test, adjust as UVAR('v')
+int v_adc_ref = BOARD_ADC_COEFF; // in mV, measured before test, adjust as UVAR('v')
 const uint32_t n_ADC_ch_max = 4; // current - in UVAR('c')
 const uint32_t n_ADC_mem  = BOARD_ADC_MEM_MAX; // MCU dependent, in byter for 16-bit samples
 
@@ -170,6 +170,7 @@ int cmd_test0( int argc, const char * const * argv )
   }
   pr_ADC_state();
 
+  // TODO: new output approach
   snprintf( pbuf, pbufsz-1, "Timer: tim_freq_in= %lu Hz / ( (%u+1)*(%u+1)) = %#.7g Hz; t_step = %#.7g s " NL,
                                     tim_freq_in,       UVAR('p'), UVAR('a'), tim_f,    t_step_f );
   pr( pbuf ); delay_ms( 1 );

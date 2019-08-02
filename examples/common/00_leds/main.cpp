@@ -49,6 +49,7 @@ int delay_bad()
 void MX_GPIO_Init(void)
 {
   BOARD_LEDS_GPIO.enableClk();
+  BOARD_LEDS_GPIO.cfgOut_N( BOARD_LEDS_MASK );
 }
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
