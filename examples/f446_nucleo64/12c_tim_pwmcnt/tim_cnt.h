@@ -10,7 +10,7 @@
 #define TIM_IN_DIS   __HAL_RCC_TIM5_CLK_DISABLE();
 #define TIM_IN_PIN   GPIO_PIN_0
 #define TIM_IN_AF    GPIO_AF2_TIM5
-#define TIM_IN_GPIO  GPIOA
+#define TIM_IN_GPIO  GpioA
 
 
 #endif

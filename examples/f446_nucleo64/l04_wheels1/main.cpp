@@ -18,12 +18,12 @@ const char* common_help_string = "Test model car: motors, sensors...." NL;
 
 const int go_tick = 100; // 0.1 s
 
-PinsOut motor_dir( GPIOC, 5, 5 );
+PinsOut motor_dir( GpioC, 5, 5 );
 const int motor_bits_r = 0x03; // bit 0x04 is reserved
 const int motor_bits_l = 0x18;
 const int motor_bits   = motor_bits_r | motor_bits_l;
 
-PinsIn proxy_sens( GPIOB, 12, 4 );
+PinsIn proxy_sens( GpioB, 12, 4 );
 enum {
   PROXY_FL = 1, PROXY_FR = 2, PROXY_BR = 4, PROXY_BL = 8,
   PROXY_FA = PROXY_FL | PROXY_FR,
@@ -86,7 +86,7 @@ int main(void)
   motor_dir.reset( 0x1F );
   proxy_sens.initHW();
 
-  // UVAR('e') = i2c_default_init( i2ch /*, 400000 */ );
+  // UVAR('e') = i2c_default_init( i2ch );
   // i2c_dbg = &i2cd;
   // i2c_client_def = &XXXXX;
 
@@ -428,47 +428,25 @@ void tim14_cfg()
 
 void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* tim_baseHandle )
 {
-  GPIO_InitTypeDef gio;
   if( tim_baseHandle->Instance == TIM1 ) {
     __HAL_RCC_TIM1_CLK_ENABLE();
     /** TIM1:  A8 ---> TIM1_CH1,  A9  ---> TIM1_CH2,  A10  ---> TIM1_CH3,  PA11 ---> TIM1_CH4   */
-    gio.Pin = T1_1_M_Right_Pin | T1_2_M_Left_Pin | T1_3_US_Pulse_Pin | T1_4_US_Echo_Pin;
-    gio.Mode      = GPIO_MODE_AF_PP;
-    gio.Pull      = GPIO_NOPULL;
-    gio.Speed     = GPIO_SPEED_FREQ_VERY_HIGH;
-    gio.Alternate = GPIO_AF1_TIM1;
-    HAL_GPIO_Init( T1_ALL_GPIO_Port, &gio );
+    T1_ALL_GPIO_Port.cfgAF_N( T1_1_M_Right_Pin | T1_2_M_Left_Pin | T1_3_US_Pulse_Pin | T1_4_US_Echo_Pin, GPIO_AF1_TIM1 );
   }
   else if( tim_baseHandle->Instance == TIM3 ) {
     __HAL_RCC_TIM3_CLK_ENABLE();
     /** TIM4:  A6     ------> TIM3_CH1  */
-    gio.Pin       = T3_1_M_count_R_Pin;
-    gio.Mode      = GPIO_MODE_AF_PP;
-    gio.Pull      = GPIO_NOPULL;
-    gio.Speed     = GPIO_SPEED_FREQ_LOW;
-    gio.Alternate = GPIO_AF2_TIM3;
-    HAL_GPIO_Init( GPIOA, &gio );
-
+    GpioA.cfgAF_N( T3_1_M_count_R_Pin, GPIO_AF2_TIM3 );
   }
   else if( tim_baseHandle->Instance == TIM4 ) {
     __HAL_RCC_TIM4_CLK_ENABLE();
     /** TIM4:  B6     ------> TIM4_CH1  */
-    gio.Pin       = T4_1_M_count_l_Pin;
-    gio.Mode      = GPIO_MODE_AF_PP;
-    gio.Pull      = GPIO_NOPULL;
-    gio.Speed     = GPIO_SPEED_FREQ_LOW;
-    gio.Alternate = GPIO_AF2_TIM4;
-    HAL_GPIO_Init( T4_1_M_count_l_GPIO_Port, &gio );
+    T4_1_M_count_l_GPIO_Port.cfgAF_N( T4_1_M_count_l_Pin, GPIO_AF2_TIM4 );
   }
   else if( tim_baseHandle->Instance == TIM14 ) {
     __HAL_RCC_TIM14_CLK_ENABLE();
     /** TIM14 GPIO Configuration   A7     ------> TIM14_CH1     */
-    gio.Pin       = T14_1_servo_Pin;
-    gio.Mode      = GPIO_MODE_AF_PP;
-    gio.Pull      = GPIO_NOPULL;
-    gio.Speed     = GPIO_SPEED_FREQ_VERY_HIGH;
-    gio.Alternate = GPIO_AF9_TIM14;
-    HAL_GPIO_Init( T14_1_servo_GPIO_Port, &gio );
+    T14_1_servo_GPIO_Port.cfgAF_N( T14_1_servo_Pin, GPIO_AF9_TIM14 );
   }
 }
 
@@ -478,16 +456,12 @@ void HAL_TIM_Base_MspDeInit( TIM_HandleTypeDef* tim_baseHandle )
   if( tim_baseHandle->Instance == TIM1 )   {
     HAL_NVIC_DisableIRQ( TIM1_CC_IRQn );
     __HAL_RCC_TIM1_CLK_DISABLE();
-    HAL_GPIO_DeInit( T1_ALL_GPIO_Port, T1_1_M_Right_Pin | T1_2_M_Left_Pin | T1_3_US_Pulse_Pin | T1_4_US_Echo_Pin );
   } else if(tim_baseHandle->Instance == TIM3 ) {
     __HAL_RCC_TIM3_CLK_DISABLE();
-    HAL_GPIO_DeInit( T3_1_M_count_R_GPIO_Port, T3_1_M_count_R_Pin );
   } else if( tim_baseHandle->Instance == TIM4 ) {
     __HAL_RCC_TIM4_CLK_DISABLE();
-    HAL_GPIO_DeInit( T4_1_M_count_l_GPIO_Port, T4_1_M_count_l_Pin );
   } else if( tim_baseHandle->Instance == TIM14 ) {
     __HAL_RCC_TIM14_CLK_DISABLE();
-    HAL_GPIO_DeInit( T14_1_servo_GPIO_Port, T14_1_servo_Pin );
   }
 }
 

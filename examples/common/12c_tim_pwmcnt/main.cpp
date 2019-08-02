@@ -193,31 +193,19 @@ int MX_TIM_IN_Init()
 
 void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* htim )
 {
-  GPIO_InitTypeDef gio;
   if( htim->Instance == TIM_IN ) {
     TIM_IN_EN;
-    gio.Pin       = TIM_IN_PIN;
-    gio.Mode      = GPIO_MODE_AF_PP;
-    gio.Pull      = GPIO_PULLDOWN;
-    gio.Speed     = GPIO_SPEED_MAX;
-    gio.Alternate = TIM_IN_AF;
-    HAL_GPIO_Init( TIM_IN_GPIO, &gio );
+    TIM_IN_GPIO.cfgAF_N( TIM_IN_PIN, TIM_IN_AF );
   }
 }
 
 void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim )
 {
-  GPIO_InitTypeDef gio;
   if( htim->Instance == TIM_EXA ) {
     __HAL_RCC_TIM1_CLK_ENABLE();
     TIM_EXA_CLKEN;
 
-    gio.Pin       = TIM_EXA_PIN1; // counts from 1 ;-(
-    gio.Mode      = GPIO_MODE_AF_PP;
-    gio.Pull      = GPIO_NOPULL;
-    gio.Speed     = GPIO_SPEED_MAX;
-    gio.Alternate = TIM_EXA_GPIOAF;
-    HAL_GPIO_Init( TIM_EXA_GPIO, &gio );
+    TIM_EXA_GPIO.cfgAF_N( TIM_EXA_PIN1, TIM_EXA_GPIOAF );
     return;
   }
 }
@@ -226,12 +214,10 @@ void HAL_TIM_Base_MspDeInit( TIM_HandleTypeDef* tim_baseHandle )
 {
   if( tim_baseHandle->Instance == TIM_EXA ) {
     TIM_EXA_CLKDIS;
-    HAL_GPIO_DeInit( TIM_EXA_GPIO, TIM_EXA_PIN1 );
     return;
   }
   if( tim_baseHandle->Instance == TIM_IN ) {
     TIM_IN_DIS;
-    HAL_GPIO_DeInit( TIM_IN_GPIO, TIM_IN_PIN );
   }
 }
 

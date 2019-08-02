@@ -122,10 +122,10 @@
 #define BOARD_SPI_DEFAULT_IRQ           SPI2_IRQn
 #define BOARD_SPI_DEFAULT_IRQHANDLER    SPI2_IRQHandler
 
-
+// G9-G12
 #define BOARD_MOTOR_DEFAULT_GPIO        GpioG
 #define BOARD_MOTOR_DEFAULT_PIN0        9
-
+//
 #define BOARD_1W_DEFAULT_GPIO           GpioG
 #define BOARD_1W_DEFAULT_PIN            13
 
@@ -147,7 +147,7 @@
 #define BOARD_ADC_DEFAULT_CH3           ADC_CHANNEL_3
 #define BOARD_ADC_MEM_MAX               (1024*256)
 #define BOARD_ADC_MEM_MAX_FMC           (1024*1024*8)
-#define BOARD_ADC_COEFF                 3250
+#define BOARD_ADC_COEFF                 3298
 
 // 0 = DEVICE_FS, 1 = DEVICE_HS
 #define BOARD_USB_DEFAULT_TYPE       0

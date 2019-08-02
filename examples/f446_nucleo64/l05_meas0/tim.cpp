@@ -245,20 +245,12 @@ int MX_TIM8_Init()
 
 void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* tim_baseHandle )
 {
-  GPIO_InitTypeDef gio;
-  gio.Mode  = GPIO_MODE_AF_PP;
-  gio.Pull  = GPIO_NOPULL;
-  gio.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
   if( tim_baseHandle->Instance == TIM1 )  { // A8: Ch1 : ETR1
     __HAL_RCC_TIM1_CLK_ENABLE();
-    gio.Pin       = GPIO_PIN_8;
-    gio.Alternate = GPIO_AF1_TIM1;
-    HAL_GPIO_Init( GPIOA, &gio );
+    GpioA.cfgAF( 8, GPIO_AF1_TIM1 );
   } else if( tim_baseHandle->Instance == TIM4 ) { // A6: Ch1: ETR1
     __HAL_RCC_TIM4_CLK_ENABLE();
-    gio.Pin       = GPIO_PIN_6;
-    gio.Alternate = GPIO_AF2_TIM4;
-    HAL_GPIO_Init( GPIOB, &gio );
+    GpioB.cfgAF( 6, GPIO_AF2_TIM4 );
   } else if( tim_baseHandle->Instance == TIM8 ) {
     __HAL_RCC_TIM8_CLK_ENABLE();
   }
@@ -266,48 +258,28 @@ void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* tim_baseHandle )
 
 void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* tim_baseHandle )
 {
-  GPIO_InitTypeDef gio;
-  gio.Mode  = GPIO_MODE_AF_PP;
-  gio.Pull  = GPIO_NOPULL;
-  gio.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-
   if( tim_baseHandle->Instance == TIM2 )  { // PWM output
     __HAL_RCC_TIM2_CLK_ENABLE();
     //* A15 --> TIM2_CH1, A1 --> TIM2_CH2, B2 --> TIM2_CH4, B10 --> TIM2_CH3
-    gio.Pin       = GPIO_PIN_1 | GPIO_PIN_15;
-    gio.Alternate = GPIO_AF1_TIM2;
-    HAL_GPIO_Init( GPIOA, &gio );
-
-    gio.Pin       = GPIO_PIN_2 | GPIO_PIN_10;
-    gio.Alternate = GPIO_AF1_TIM2;
-    HAL_GPIO_Init( GPIOB, &gio);
+    GpioA.cfgAF_N( GPIO_PIN_1 | GPIO_PIN_15, GPIO_AF1_TIM2 );
+    GpioB.cfgAF_N( GPIO_PIN_2 | GPIO_PIN_10, GPIO_AF1_TIM2 );
   }
 }
 
 
 void HAL_TIM_IC_MspInit( TIM_HandleTypeDef* tim_baseHandle )
 {
-  GPIO_InitTypeDef gio;
-  gio.Mode  = GPIO_MODE_AF_PP;
-  // gio.Pull  = GPIO_NOPULL;
-  gio.Pull  = GPIO_PULLDOWN;
-  gio.Speed = GPIO_SPEED_FREQ_LOW;
-
   if( tim_baseHandle->Instance == TIM3 ) {
     __HAL_RCC_TIM3_CLK_ENABLE();
     //* A6 --> TIM3_CH1,CH2 pwm
-    gio.Pin       = GPIO_PIN_6;
-    gio.Alternate = GPIO_AF2_TIM3;
-    HAL_GPIO_Init( GPIOA, &gio );
+    GpioA.cfgAF( 6, GPIO_AF2_TIM3 );
 
     HAL_NVIC_SetPriority( TIM3_IRQn, 2, 0 );
     HAL_NVIC_EnableIRQ( TIM3_IRQn );
 
   } else if( tim_baseHandle->Instance == TIM5 ) {
     __HAL_RCC_TIM5_CLK_ENABLE();
-    gio.Pin       = GPIO_PIN_0;
-    gio.Alternate = GPIO_AF2_TIM5;
-    HAL_GPIO_Init( GPIOA, &gio );
+    GpioA.cfgAF( 0, GPIO_AF2_TIM5 );
     HAL_NVIC_SetPriority( TIM5_IRQn, 2, 0 );
     HAL_NVIC_EnableIRQ( TIM5_IRQn );
   }
@@ -319,19 +291,15 @@ void HAL_TIM_Base_MspDeInit( TIM_HandleTypeDef* tim_baseHandle )
 {
   if( tim_baseHandle->Instance == TIM1 ) {
     __HAL_RCC_TIM1_CLK_DISABLE();
-    HAL_GPIO_DeInit( GPIOA, GPIO_PIN_8 );
   } else if( tim_baseHandle->Instance == TIM2 )  {
     __HAL_RCC_TIM2_CLK_DISABLE();
   } else if( tim_baseHandle->Instance == TIM3 )  {
     __HAL_RCC_TIM3_CLK_DISABLE();
-    HAL_GPIO_DeInit( GPIOA, GPIO_PIN_6 );
     HAL_NVIC_DisableIRQ( TIM3_IRQn );
   } else if( tim_baseHandle->Instance == TIM4 )  {
     __HAL_RCC_TIM4_CLK_DISABLE();
-    HAL_GPIO_DeInit( GPIOB, GPIO_PIN_6 );
   } else if( tim_baseHandle->Instance == TIM5 )  {
     __HAL_RCC_TIM5_CLK_DISABLE();
-    HAL_GPIO_DeInit( GPIOA, GPIO_PIN_0 );
     HAL_NVIC_DisableIRQ( TIM5_IRQn );
   } else if( tim_baseHandle->Instance == TIM8 )  {
     __HAL_RCC_TIM8_CLK_DISABLE();

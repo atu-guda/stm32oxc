@@ -126,18 +126,9 @@ int MX_TIM_IN_Init()
 
 void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* tim_baseHandle )
 {
-  GPIO_InitTypeDef gio;
-  // if( tim_baseHandle->Instance == TIM1 ) {
-  //   __HAL_RCC_TIM1_CLK_ENABLE();
-  // }
   if( tim_baseHandle->Instance == TIM_IN ) {
     TIM_IN_EN;
-    gio.Pin = TIM_IN_PIN;
-    gio.Mode = GPIO_MODE_AF_PP;
-    gio.Pull = GPIO_PULLDOWN;
-    gio.Speed = GPIO_SPEED_FREQ_LOW;
-    gio.Alternate = TIM_IN_AF;
-    HAL_GPIO_Init( TIM_IN_GPIO, &gio );
+    TIM_IN_GPIO.cfgAF_N( TIM_IN_PIN, TIM_IN_AF );
   }
 }
 
@@ -147,7 +138,6 @@ void HAL_TIM_Base_MspDeInit( TIM_HandleTypeDef* tim_baseHandle )
   // }
   if( tim_baseHandle->Instance == TIM_IN ) {
     TIM_IN_DIS;
-    HAL_GPIO_DeInit( TIM_IN_GPIO, TIM_IN_PIN );
   }
 }
 

@@ -754,13 +754,9 @@ int parse_floats( int argc, const char * const * argv, float *d )
 
 int MX_BTN_Init()
 {
-  __GPIOC_CLK_ENABLE();
-  GPIO_InitTypeDef gio;
-  gio.Pin       = GPIO_PIN_13;
-  gio.Mode      = GPIO_MODE_IT_FALLING;
-  gio.Pull      = GPIO_PULLUP;
-  gio.Speed     = GPIO_SPEED_MAX;
-  HAL_GPIO_Init( GPIOC, &gio );
+  GpioC.enableClk();
+  GpioC.cfgIn( 13, GpioRegs::Pull::up );
+  GpioC.setEXTI( 13, GpioRegs::ExtiEv::down );
 
   HAL_NVIC_SetPriority( EXTI15_10_IRQn, 10, 0 );
   HAL_NVIC_EnableIRQ(   EXTI15_10_IRQn );

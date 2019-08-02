@@ -31,11 +31,7 @@ void HAL_DAC_MspInit( DAC_HandleTypeDef* dacHandle )
   }
 
   __HAL_RCC_DAC_CLK_ENABLE();
-  GPIO_InitTypeDef gio;
-  gio.Pin  = GPIO_PIN_4 | GPIO_PIN_5;
-  gio.Mode = GPIO_MODE_ANALOG;
-  gio.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init( GPIOA, &gio );
+  GpioA.cfgAnalog_N( GPIO_PIN_4 | GPIO_PIN_5 );
 }
 
 void HAL_DAC_MspDeInit( DAC_HandleTypeDef* dacHandle )
@@ -45,7 +41,6 @@ void HAL_DAC_MspDeInit( DAC_HandleTypeDef* dacHandle )
   }
 
   __HAL_RCC_DAC_CLK_DISABLE();
-  HAL_GPIO_DeInit( GPIOA, GPIO_PIN_4 | GPIO_PIN_5 );
 }
 
 void dac_output()

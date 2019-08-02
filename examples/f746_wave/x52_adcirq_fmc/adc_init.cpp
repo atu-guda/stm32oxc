@@ -53,16 +53,12 @@ void MX_ADC1_Init( uint8_t n_ch, uint32_t sampl_time )
 
 void HAL_ADC_MspInit( ADC_HandleTypeDef* adcHandle )
 {
-  GPIO_InitTypeDef GPIO_InitStruct;
   if( adcHandle->Instance == ADC1 )  {
     __HAL_RCC_ADC1_CLK_ENABLE();
     __GPIOA_CLK_ENABLE();
 
     //* ADC1 GPIO Configuration        A0-A3   ------> ADC1: IN0-IN2, IN4 // A4: tmp
-    GPIO_InitStruct.Pin = GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3 |  GPIO_PIN_4;
-    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init( GPIOA, &GPIO_InitStruct );
+    GpioA.cfgAnalog_N(  GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3 |  GPIO_PIN_4 );
 
     HAL_NVIC_SetPriority( ADC_IRQn, 2, 0 );
     HAL_NVIC_EnableIRQ( ADC_IRQn );
@@ -75,7 +71,6 @@ void HAL_ADC_MspDeInit( ADC_HandleTypeDef* adcHandle )
 {
   if( adcHandle->Instance == ADC1 )  {
     __HAL_RCC_ADC1_CLK_DISABLE();
-    HAL_GPIO_DeInit( GPIOA, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2  | GPIO_PIN_3  | GPIO_PIN_4  );
   }
 
 }

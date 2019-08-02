@@ -54,14 +54,10 @@ int MX_ADC1_Init()
 
 void HAL_ADC_MspInit( ADC_HandleTypeDef* adcHandle )
 {
-  GPIO_InitTypeDef gio;
   if( adcHandle->Instance == ADC1 ) {
     __HAL_RCC_ADC1_CLK_ENABLE();
     /** PC0 --> ADC1_IN10 PC1 --> ADC1_IN11 PC2 --> ADC1_IN12 PC3 --> ADC1_IN13 */
-    gio.Pin  = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3;
-    gio.Mode = GPIO_MODE_ANALOG;
-    gio.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init( GPIOC, &gio );
+    GpioC.cfgAnalog_N( GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3 );
 
     if( ! dma_subinit() ) {
       return;
@@ -95,7 +91,6 @@ void HAL_ADC_MspDeInit( ADC_HandleTypeDef* adcHandle )
 {
   if( adcHandle->Instance == ADC1 )  {
     __HAL_RCC_ADC1_CLK_DISABLE();
-    HAL_GPIO_DeInit( GPIOC, GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3 );
     HAL_DMA_DeInit( adcHandle->DMA_Handle );
   }
 }

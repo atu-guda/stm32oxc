@@ -21,8 +21,8 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* tim_baseHandle );
 
 volatile uint16_t sensors_state;
 void init_exti_pins();
-PinsOut ctlEn( GPIOA, 8, 1 );
-PinsOut ctlAB( GPIOA, 9, 2 );
+PinsOut ctlEn( GpioA, 8, 1 );
+PinsOut ctlAB( GpioA, 9, 2 );
 
 uint32_t wait_with_cond( uint32_t ms, uint16_t n_hwticks, uint32_t *rc, uint32_t *dp, uint32_t ign_bits = 0 );
 
@@ -73,23 +73,20 @@ int main(void)
 // EXTI IRQ sensors B1, B2:
 void init_exti_pins()
 {
-  GPIO_enableClk( GPIOB );
-  GPIO_InitTypeDef gpi;
-  gpi.Mode  = GPIO_MODE_IT_RISING_FALLING;
-  gpi.Pull  = GPIO_PULLDOWN;
-  gpi.Speed = GPIO_SPEED_MAX;
+  GpioB.enableClk();
+  GpioB.cfgIn_N( GPIO_PIN_1 | GPIO_PIN_2, GpioRegs::Pull::down );
+  GpioB.setEXTI( 1, GpioRegs::ExtiEv::updown );
+  GpioB.setEXTI( 2, GpioRegs::ExtiEv::updown );
 
-  gpi.Pin = GPIO_PIN_1 | GPIO_PIN_2;
-  HAL_GPIO_Init( GPIOB, &gpi );
-  HAL_NVIC_SetPriority( EXTI1_IRQn, /* configKERNEL_INTERRUPT_PRIORITY + */ 1, 0 );
+  HAL_NVIC_SetPriority( EXTI1_IRQn, 12, 0 );
   HAL_NVIC_EnableIRQ( EXTI1_IRQn );
-  HAL_NVIC_SetPriority( EXTI2_IRQn, /* configKERNEL_INTERRUPT_PRIORITY + */ 1, 0 );
+  HAL_NVIC_SetPriority( EXTI2_IRQn, 12, 0 );
   HAL_NVIC_EnableIRQ( EXTI2_IRQn );
 }
 
 void EXTI1_IRQHandler()
 {
-  if( GPIOB->IDR & GPIO_PIN_1 ) {
+  if( GpioB.IDR & GPIO_PIN_1 ) {
     leds.set( 2 );
     sensors_state |= 1;
   } else {
@@ -102,7 +99,7 @@ void EXTI1_IRQHandler()
 
 void EXTI2_IRQHandler()
 {
-  if( GPIOB->IDR & GPIO_PIN_2 ) {
+  if( GpioB.IDR & GPIO_PIN_2 ) {
     leds.set( 4 );
     sensors_state |= 2;
   } else {
@@ -218,16 +215,10 @@ int  MX_TIM8_Init(void)
 
 void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* tim_baseHandle )
 {
-  GPIO_InitTypeDef gio;
   if( tim_baseHandle->Instance == TIM8 )  {
     __HAL_RCC_TIM8_CLK_ENABLE();
     /** TIM8 GPIO Configuration  A0     ------> TIM8_ETR     */
-    gio.Pin       = GPIO_PIN_0;
-    gio.Mode      = GPIO_MODE_AF_PP;
-    gio.Pull      = GPIO_NOPULL;
-    gio.Speed     = GPIO_SPEED_FREQ_LOW;
-    gio.Alternate = GPIO_AF3_TIM8;
-    HAL_GPIO_Init( GPIOA, &gio );
+    GpioA.cfgAF( 0, GPIO_AF3_TIM8 );
 
     /* TIM8 interrupt Init */
     // HAL_NVIC_SetPriority(TIM8_UP_TIM13_IRQn, 3, 0 );
@@ -242,7 +233,6 @@ void HAL_TIM_Base_MspDeInit( TIM_HandleTypeDef* tim_baseHandle )
   if( tim_baseHandle->Instance==TIM8 )
   {
     __HAL_RCC_TIM8_CLK_DISABLE();
-    HAL_GPIO_DeInit( GPIOA, GPIO_PIN_0 );
 
     /* TIM8 interrupt Deinit */
     // HAL_NVIC_DisableIRQ( TIM8_UP_TIM13_IRQn );

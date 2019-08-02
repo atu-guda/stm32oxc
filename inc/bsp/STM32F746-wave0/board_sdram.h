@@ -4,7 +4,7 @@
 // ---------------- SDRAM -------------------------------------------------------------------------
 #define SDRAM_BANK_ADDR     ((uint32_t)0xD0000000)
 #define SDRAM_ADDR          ((uint8_t *)(SDRAM_BANK_ADDR))
-#define SDRAM_DEVICE_SIZE   ((uint32_t)0x800000)  // SDRAM device size in MBytes
+#define SDRAM_DEVICE_SIZE   ((uint32_t)0x800000)  // SDRAM device size in bytes
 #define SDRAM_REFRESH_COUNT ((uint32_t)0x0603)    // SDRAM refresh counter (100Mhz SD clock)
 
 #define SDRAM_CMD_WAIT 0x1000
