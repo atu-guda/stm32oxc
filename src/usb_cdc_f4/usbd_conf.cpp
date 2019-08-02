@@ -4,37 +4,23 @@
 
 #include <usbd_core.h>
 
-/* Private variables ---------------------------------------------------------*/
 PCD_HandleTypeDef hpcd;
 void default_USBFS_MspInit(void);
 
-
+// atu: TODO: separate file
 void default_USBFS_MspInit(void)
 {
-  GPIO_InitTypeDef  gpi;
   BOARD_USB_DEFAULT_ENABLE;
 
-  gpi.Pin       = BOARD_USB_DEFAULT_DPDM_PINS; // GPIO_PIN_11 | GPIO_PIN_12; // D-, D+
-  gpi.Mode      = GPIO_MODE_AF_PP;
-  gpi.Pull      = GPIO_NOPULL;
-  gpi.Speed     = GPIO_SPEED_MAX;
-  gpi.Alternate = BOARD_USB_DEFAULT_GPIO_AF;
-  HAL_GPIO_Init( BOARD_USB_DEFAULT_GPIO, &gpi );
+  BOARD_USB_DEFAULT_GPIO.cfgAF_N( BOARD_USB_DEFAULT_DPDM_PINS, BOARD_USB_DEFAULT_GPIO_AF );
 
-#ifdef BOARD_USB_DEFAULT_VBUS_PIN
-  gpi.Pin  = BOARD_USB_DEFAULT_VBUS_PIN;
-  gpi.Mode = GPIO_MODE_INPUT;
-  gpi.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init( BOARD_USB_DEFAULT_GPIO, &gpi );
-#endif
+  #ifdef BOARD_USB_DEFAULT_VBUS_PIN
+    BOARD_USB_DEFAULT_GPIO.cfgIn_N( BOARD_USB_DEFAULT_VBUS_PIN );
+  #endif
 
-#ifdef BOARD_USB_DEFAULT_ID_PIN
-  gpi.Pin       = BOARD_USB_DEFAULT_ID_PIN;
-  gpi.Mode      = GPIO_MODE_AF_OD;
-  gpi.Pull      = GPIO_PULLUP;
-  gpi.Alternate = BOARD_USB_DEFAULT_GPIO_AF;
-  HAL_GPIO_Init( GPIOA, &gpi );
-#endif
+  #ifdef BOARD_USB_DEFAULT_ID_PIN
+    BOARD_USB_DEFAULT_GPIO.cfgAF_N( BOARD_USB_DEFAULT_ID_PIN, BOARD_USB_DEFAULT_GPIO_AF, true );
+  #endif
 
   HAL_NVIC_SetPriority( BOARD_USB_DEFAULT_IRQ, BOARD_USB_DEFAULT_IRQ_PRTY, 0 );
 
