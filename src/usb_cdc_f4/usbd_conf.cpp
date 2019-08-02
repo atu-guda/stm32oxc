@@ -1,7 +1,6 @@
 #include <errno.h>
 #include <oxc_base.h>
-
-// #include <oxc_gpio.h> // debug
+#include <oxc_gpio.h>
 
 #include <usbd_core.h>
 
