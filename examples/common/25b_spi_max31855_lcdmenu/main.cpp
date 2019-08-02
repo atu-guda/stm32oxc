@@ -18,8 +18,8 @@ using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
 // BOARD_DEFINE_LEDS;
-PinsOut leds( GPIOB, 12, 4 ); // 12: tick/menu 13: ?? 14: heather 15: Err
-PinsOut leds0( GPIOC, 13, 1 ); // single C13
+PinsOut leds( GpioB, 12, 4 ); // 12: tick/menu 13: ?? 14: heather 15: Err
+PinsOut leds0( GpioC, 13, 1 ); // single C13
 
 // TODO: to local include
 #define HEATHER_BIT BIT2

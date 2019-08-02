@@ -58,13 +58,11 @@ int init_menu4b_buttons() // board dependent function
 {
   __HAL_RCC_GPIOA_CLK_ENABLE();
 
-  GPIO_InitTypeDef gio = {
-    .Pin   = GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3,
-    .Mode  = GPIO_MODE_IT_FALLING,
-    .Pull  = GPIO_PULLUP,
-    .Speed = GPIO_SPEED_FREQ_LOW
-  };
-  HAL_GPIO_Init( GPIOA, &gio );
+  GpioA.cfgIn_N( GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3, GpioRegs::Pull::up );
+  GpioA.setEXTI( 0, GpioRegs::ExtiEv::down );
+  GpioA.setEXTI( 1, GpioRegs::ExtiEv::down );
+  GpioA.setEXTI( 2, GpioRegs::ExtiEv::down );
+  GpioA.setEXTI( 3, GpioRegs::ExtiEv::down );
 
   HAL_NVIC_SetPriority( EXTI0_IRQn, 14, 0 );
   HAL_NVIC_EnableIRQ(   EXTI0_IRQn );

@@ -12,7 +12,7 @@ void MX_inp_Init();
 int MX_USART1_UART_Init(void);
 
 
-PinsOut led0( GPIOC, 13, 1 );
+PinsOut led0( GpioC, 13, 1 );
 
 extern "C" {
 void task_leds( void *prm UNUSED_ARG );

@@ -1,4 +1,4 @@
-PROJ_NAME=i2c_lcdt
+PROJ_NAME=lcdt_menu
 
 USE_OXC = y
 # USE_OXC_DEVIO = y
@@ -26,4 +26,4 @@ SRCS  = main.cpp
 SRCS += oxc_hd44780_i2c.cpp
 SRCS += oxc_menu4b.cpp
 SRCS += init_menu4b_hard.cpp
-
+SRCS += oxc_outstr.cpp

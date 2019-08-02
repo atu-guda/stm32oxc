@@ -39,9 +39,7 @@ void HAL_ADC_MspInit( ADC_HandleTypeDef* adcHandle )
   if( adcHandle->Instance == ADC1 ) {
     __HAL_RCC_ADC1_CLK_ENABLE();
     // A0:A3 : ADC1_IN0:IN3
-    gio.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3;
-    gio.Mode = GPIO_MODE_ANALOG;
-    HAL_GPIO_Init( GPIOA, &gio );
+    GpioA.cfgAnalog_N( GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3 );
 
     hdma_adc1.Instance                 = DMA1_Channel1;
     hdma_adc1.Init.Direction           = DMA_PERIPH_TO_MEMORY;
@@ -63,7 +61,6 @@ void HAL_ADC_MspDeInit( ADC_HandleTypeDef* adcHandle )
 {
   if( adcHandle->Instance == ADC1 ) {
     __HAL_RCC_ADC1_CLK_DISABLE();
-    HAL_GPIO_DeInit( GPIOA, GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3 );
     HAL_DMA_DeInit( adcHandle->DMA_Handle );
   }
 }

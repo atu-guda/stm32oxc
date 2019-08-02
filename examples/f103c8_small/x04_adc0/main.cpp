@@ -127,10 +127,7 @@ void MX_DigitalIn_Init()
   __HAL_AFIO_REMAP_SWJ_NOJTAG(); // to use B3
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
-  gio.Pin  = Din_0_Pin | Din_1_Pin | Din_2_Pin | Din_3_Pin;
-  gio.Mode = GPIO_MODE_INPUT;
-  gio.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init( GPIOB, &gio );
+  GpioB.cfgIn_N(  Din_0_Pin | Din_1_Pin | Din_2_Pin | Din_3_Pin );
 }
 
 

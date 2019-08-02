@@ -406,7 +406,6 @@ bool MX_HRTIM1_Init()
 
 void HAL_HRTIM_MspInit( HRTIM_HandleTypeDef* hrtimHandle )
 {
-  GPIO_InitTypeDef gio;
   //  if( hrtimHandle->Instance==HRTIM1 )
   __HAL_RCC_HRTIM1_CLK_ENABLE();
   __HAL_RCC_GPIOC_CLK_ENABLE();
@@ -415,19 +414,8 @@ void HAL_HRTIM_MspInit( HRTIM_HandleTypeDef* hrtimHandle )
   //* HRTIM1 GPIO Configuration (first part)
   //  PC6     ------> HRTIM1_EEV10
   //  PA12     ------> HRTIM1_FLT1
-  gio.Pin       = GPIO_PIN_6;
-  gio.Mode      = GPIO_MODE_AF_PP;
-  gio.Pull      = GPIO_NOPULL;
-  gio.Speed     = GPIO_SPEED_FREQ_LOW;
-  gio.Alternate = GPIO_AF3_HRTIM1;
-  HAL_GPIO_Init( GPIOC, &gio );
-
-  gio.Pin       = GPIO_PIN_12;
-  gio.Mode      = GPIO_MODE_AF_PP;
-  gio.Pull      = GPIO_NOPULL;
-  gio.Speed     = GPIO_SPEED_FREQ_LOW;
-  gio.Alternate = GPIO_AF13_HRTIM1;
-  HAL_GPIO_Init( GPIOA, &gio );
+  GpioC.cfgAF( 6, GPIO_AF3_HRTIM1 );
+  GpioA.cfgAF( 12, GPIO_AF13_HRTIM1 );
 }
 
 void HAL_HRTIM_MspPostInit( HRTIM_HandleTypeDef* hrtimHandle )
@@ -450,39 +438,14 @@ void HAL_HRTIM_MspPostInit( HRTIM_HandleTypeDef* hrtimHandle )
     A10    ------> HRTIM1_CHB1
     A11    ------> HRTIM1_CHB2
     */
-  GPIO_InitTypeDef gio;
-  gio.Pin       = GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15;
-  gio.Mode      = GPIO_MODE_AF_PP;
-  gio.Pull      = GPIO_NOPULL;
-  gio.Speed     = GPIO_SPEED_FREQ_HIGH;
-  gio.Alternate = GPIO_AF13_HRTIM1;
-  HAL_GPIO_Init( GPIOB, &gio );
-
-  gio.Pin       = GPIO_PIN_8 | GPIO_PIN_9;
-  gio.Mode      = GPIO_MODE_AF_PP;
-  gio.Pull      = GPIO_NOPULL;
-  gio.Speed     = GPIO_SPEED_FREQ_HIGH;
-  gio.Alternate = GPIO_AF3_HRTIM1;
-  HAL_GPIO_Init( GPIOC, &gio );
-
-  gio.Pin       = GPIO_PIN_8 | GPIO_PIN_9 | GPIO_PIN_10 | GPIO_PIN_11;
-  gio.Mode      = GPIO_MODE_AF_PP;
-  gio.Pull      = GPIO_NOPULL;
-  gio.Speed     = GPIO_SPEED_FREQ_HIGH;
-  gio.Alternate = GPIO_AF13_HRTIM1;
-  HAL_GPIO_Init( GPIOA, &gio );
+  GpioB.cfgAF_N( GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15, GPIO_AF13_HRTIM1 );
+  GpioC.cfgAF_N( GPIO_PIN_8 | GPIO_PIN_9, GPIO_AF3_HRTIM1 );
+  GpioA.cfgAF_N( GPIO_PIN_8 | GPIO_PIN_9 | GPIO_PIN_10 | GPIO_PIN_11, GPIO_AF13_HRTIM1 );
 }
 
 void HAL_HRTIM_MspDeInit( HRTIM_HandleTypeDef* hrtimHandle )
 {
   __HAL_RCC_HRTIM1_CLK_DISABLE();
-
-  HAL_GPIO_DeInit( GPIOB, GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15 );
-
-  HAL_GPIO_DeInit( GPIOC, GPIO_PIN_6 | GPIO_PIN_8 | GPIO_PIN_9 );
-
-  HAL_GPIO_DeInit( GPIOA, GPIO_PIN_8 | GPIO_PIN_9 | GPIO_PIN_10 | GPIO_PIN_11 | GPIO_PIN_12 );
-
 }
 
 

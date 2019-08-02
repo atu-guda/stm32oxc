@@ -10,6 +10,7 @@ SUBDIRS = \
   05c_def_cons_nort \
   06_i2c_test \
   07_i2c_lcdt \
+  07a_i2c_menu4b \
   08_i2c_mpu6050 \
   09_i2c_bmp085 \
   10_i2c_pcf8591 \
@@ -24,6 +25,7 @@ SUBDIRS = \
   24_i2c_hmc5983 \
   25_spi_max31855_tcouple \
   25a_spi_max6672_tcouple2 \
+  25b_spi_max31855_lcdmenu \
   26_i2c_pca9685 \
   27_i2c_ads1115 \
   28_spi_ad9833 \

@@ -4,12 +4,7 @@ void MX_inp_Init()
 {
   // __HAL_RCC_GPIOA_CLK_ENABLE(); // copy from UART
   // __HAL_RCC_AFIO_CLK_ENABLE();
-  GPIO_InitTypeDef GPIO_InitStruct;
-  GPIO_InitStruct.Pin   = GPIO_PIN_1 | GPIO_PIN_2;
-  GPIO_InitStruct.Mode  = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Speed = GPIO_SPEED_MAX;
-  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-  HAL_GPIO_Init( GPIOA, &GPIO_InitStruct );
+  GpioA.cfgIn_N( GPIO_PIN_1 | GPIO_PIN_2, GpioRegs::Pull::down );
 }
 
 extern UART_HandleTypeDef uah_console;
@@ -31,7 +26,6 @@ int MX_USART1_UART_Init(void)
 
 void HAL_UART_MspInit( UART_HandleTypeDef* uartHandle )
 {
-  GPIO_InitTypeDef GPIO_InitStruct;
   if( uartHandle->Instance != USART1 ) {
     return;
   }
@@ -41,25 +35,17 @@ void HAL_UART_MspInit( UART_HandleTypeDef* uartHandle )
 
   //  PA9  ---> USART1_TX
   //  PA10 ---> USART1_RX
-  GPIO_InitStruct.Pin   = GPIO_PIN_9;
-  GPIO_InitStruct.Mode  = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Speed = GPIO_SPEED_MAX;
-  HAL_GPIO_Init( GPIOA, &GPIO_InitStruct );
-
-  GPIO_InitStruct.Pin  = GPIO_PIN_10;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init( GPIOA, &GPIO_InitStruct );
+  GpioA.cfgAF( 9, 1 );
+  GpioA.cfgIn( 10 );
   // leds.toggle( BIT2 );
 }
 
 void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
 {
-  if( uartHandle->Instance!=USART1 ) {
+  if( uartHandle->Instance != USART1 ) {
     return;
   }
   __HAL_RCC_USART1_CLK_DISABLE();
-  HAL_GPIO_DeInit( GPIOA, GPIO_PIN_9|GPIO_PIN_10 );
 }
 
 
@@ -89,7 +75,6 @@ void MX_SPI1_Init()
 void HAL_SPI_MspInit( SPI_HandleTypeDef* spiHandle )
 {
 
-  GPIO_InitTypeDef GPIO_InitStruct;
   if( spiHandle->Instance !=SPI1 ) {
     return;
   }
@@ -103,20 +88,9 @@ void HAL_SPI_MspInit( SPI_HandleTypeDef* spiHandle )
   // PA6   --> SPI1_MISO
   // PA7   --> SPI1_MOSI
 
-  GPIO_InitStruct.Pin   = GPIO_PIN_5 | GPIO_PIN_7;
-  GPIO_InitStruct.Mode  = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Speed = GPIO_SPEED_MAX;
-  HAL_GPIO_Init( GPIOA, &GPIO_InitStruct );
-
-  GPIO_InitStruct.Pin   = GPIO_PIN_6;
-  GPIO_InitStruct.Mode  = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull  = GPIO_NOPULL;
-  HAL_GPIO_Init( GPIOA, &GPIO_InitStruct );
-
-  GPIO_InitStruct.Pin   = GPIO_PIN_4;
-  GPIO_InitStruct.Mode  = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Speed = GPIO_SPEED_MAX;
-  HAL_GPIO_Init( GPIOA, &GPIO_InitStruct );
+  GpioA.cfgAF_N( GPIO_PIN_5 | GPIO_PIN_7, 1 );
+  GpioA.cfgIn( 6 );
+  GpioA.cfgOut( 4 );
 }
 
 void HAL_SPI_MspDeInit( SPI_HandleTypeDef* spiHandle )
@@ -125,7 +99,5 @@ void HAL_SPI_MspDeInit( SPI_HandleTypeDef* spiHandle )
     return;
   }
   __HAL_RCC_SPI1_CLK_DISABLE();
-
-  HAL_GPIO_DeInit( GPIOA, GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7 );
 }
 

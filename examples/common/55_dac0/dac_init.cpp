@@ -1,11 +1,11 @@
-#include <oxc_base.h>
+#include <oxc_gpio.h>
 
 DAC_HandleTypeDef hdac;
 
 int MX_DAC_Init()
 {
   hdac.Instance = DAC;
-  if( HAL_DAC_Init(&hdac) != HAL_OK ) {
+  if( HAL_DAC_Init( &hdac ) != HAL_OK ) {
     return 1;
   }
 
@@ -34,12 +34,7 @@ int MX_DAC_Init()
 void HAL_DAC_MspInit( DAC_HandleTypeDef* /*dacHandle*/ )
 {
   __HAL_RCC_DAC_CLK_ENABLE();
-
-  GPIO_InitTypeDef gio;
-  gio.Pin  = GPIO_PIN_4 | GPIO_PIN_5;
-  gio.Mode = GPIO_MODE_ANALOG;
-  gio.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init( GPIOA, &gio );
+  GpioA.cfgAnalog_N( GPIO_PIN_4 | GPIO_PIN_5 );
 
   // HAL_NVIC_SetPriority( TIM6_DAC_IRQn, 5, 0 );
   // HAL_NVIC_EnableIRQ( TIM6_DAC_IRQn );
@@ -48,7 +43,6 @@ void HAL_DAC_MspInit( DAC_HandleTypeDef* /*dacHandle*/ )
 void HAL_DAC_MspDeInit( DAC_HandleTypeDef* /*dacHandle*/ )
 {
   __HAL_RCC_DAC_CLK_DISABLE();
-  HAL_GPIO_DeInit( GPIOA, GPIO_PIN_4 | GPIO_PIN_5 );
   // HAL_NVIC_DisableIRQ( TIM6_DAC_IRQn );
 }
 

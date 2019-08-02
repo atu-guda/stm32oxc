@@ -1,4 +1,4 @@
-#include <oxc_base.h>
+#include <oxc_gpio.h>
 
 #include <board_sdram.h>
 
@@ -44,7 +44,6 @@
 
 void HAL_SDRAM_MspInit( SDRAM_HandleTypeDef * /* hsdram */ )
 {
-  GPIO_InitTypeDef gio;
   __HAL_RCC_GPIOD_CLK_ENABLE();
   __HAL_RCC_GPIOE_CLK_ENABLE();
   __HAL_RCC_GPIOF_CLK_ENABLE();
@@ -52,30 +51,21 @@ void HAL_SDRAM_MspInit( SDRAM_HandleTypeDef * /* hsdram */ )
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_FMC_CLK_ENABLE();
 
-  gio.Mode      = GPIO_MODE_AF_PP;
-  gio.Pull      = GPIO_NOPULL;
-  gio.Speed     = GPIO_SPEED_MAX;
-  gio.Alternate = GPIO_AF12_FMC;
-  gio.Pin = GPIO_PIN_0  | GPIO_PIN_1  | GPIO_PIN_2  | GPIO_PIN_3
+  GpioF.cfgAF_N( GPIO_PIN_0  | GPIO_PIN_1  | GPIO_PIN_2  | GPIO_PIN_3
           | GPIO_PIN_4  | GPIO_PIN_5  | GPIO_PIN_11 | GPIO_PIN_12
-          | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15;
-  HAL_GPIO_Init( GPIOF, &gio );
+          | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15, GPIO_AF12_FMC   );
 
-  gio.Pin       = GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7;
-  HAL_GPIO_Init( GPIOH, &gio );
+  GpioH.cfgAF_N( GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7, GPIO_AF12_FMC );
 
-  gio.Pin = GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_4 | GPIO_PIN_5
-          | GPIO_PIN_8 | GPIO_PIN_15;
-  HAL_GPIO_Init( GPIOG, &gio );
+  GpioG.cfgAF_N( GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_4 | GPIO_PIN_5
+          | GPIO_PIN_8 | GPIO_PIN_15,   GPIO_AF12_FMC );
 
-  gio.Pin = GPIO_PIN_7  | GPIO_PIN_8  | GPIO_PIN_9  | GPIO_PIN_10
+  GpioE.cfgAF_N(  GPIO_PIN_7  | GPIO_PIN_8  | GPIO_PIN_9  | GPIO_PIN_10
           | GPIO_PIN_11 | GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14
-          | GPIO_PIN_15 | GPIO_PIN_0  | GPIO_PIN_1;
-  HAL_GPIO_Init( GPIOE, &gio );
+          | GPIO_PIN_15 | GPIO_PIN_0  | GPIO_PIN_1,  GPIO_AF12_FMC );
 
-  gio.Pin = GPIO_PIN_8  | GPIO_PIN_9 | GPIO_PIN_10 | GPIO_PIN_14
-          | GPIO_PIN_15 | GPIO_PIN_0 | GPIO_PIN_1;
-  HAL_GPIO_Init( GPIOD, &gio );
+  GpioD.cfgAF_N( GPIO_PIN_8  | GPIO_PIN_9 | GPIO_PIN_10 | GPIO_PIN_14
+          | GPIO_PIN_15 | GPIO_PIN_0 | GPIO_PIN_1,  GPIO_AF12_FMC );
 }
 
 

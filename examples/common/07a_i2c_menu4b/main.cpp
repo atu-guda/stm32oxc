@@ -143,5 +143,23 @@ int menu4b_output( const char *s1, const char *s2 )
   return 1;
 }
 
+void on_btn_while_run( int cmd )
+{
+  leds.toggle( BIT1 );
+  switch( cmd ) {
+    case  MenuCmd::Esc:
+      break_flag = 1; errno = 10000;
+      break;
+    case  MenuCmd::Up:
+      break;
+    case  MenuCmd::Down:
+      break;
+    case  MenuCmd::Enter:
+      // btn_run = !btn_run;
+      break;
+    default: break;
+  }
+}
+
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

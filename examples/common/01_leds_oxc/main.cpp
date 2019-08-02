@@ -43,8 +43,6 @@ int main(void)
   leds.toggle( 0x08 );
   delay_ms( 1000 );
 
-  // die4led( 0x0C );
-  GpioE.BSSR = 1;
 
   while(1) {
     leds.write( i );
