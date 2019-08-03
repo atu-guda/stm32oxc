@@ -33,3 +33,10 @@
 _in/*
 fl.txt
 
+# auto-generated tmp files
+*.i
+*.ii
+
+# output data files
+examples/*/*/data/*
+
