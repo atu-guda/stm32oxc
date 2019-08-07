@@ -42,6 +42,12 @@ int main(void)
   UVAR('t') = 1000;
   UVAR('n') = 20;
 
+  UVAR('a') = delay_calibrate_value;
+  approx_delay_calibrate();
+  UVAR('b') = delay_calibrate_value;
+  do_delay_calibrate();
+  UVAR('c') = delay_calibrate_value;
+
   pin_wire1.initHW();
   wire1.initHW();
 
@@ -109,6 +115,16 @@ int cmd_1wire0( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
 {
   uint8_t buf[12], addr[12];
   std_out <<  NL "1wire test start." NL;
+
+  // pin_wire1.sw1();
+  // delay_ms( 200 );
+  // pin_wire1.sw0();
+  // delay_ms( 200 );
+  // pin_wire1.sw1();
+
+  // wire1.initHW();
+  // delay_ms( 100 );
+  UVAR('i') = pin_wire1.rw_raw();
 
   bool have_dev = wire1.reset();
   if( !have_dev ) {

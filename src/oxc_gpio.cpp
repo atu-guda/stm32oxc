@@ -244,7 +244,7 @@ void PinsIn::initHW()
 void IoPin::initHW()
 {
   gpio.enableClk();
-  gpio.cfgOut( pin, true );
+  gpio.cfgOut_N( pin, true );
 }
 
 

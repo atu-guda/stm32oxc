@@ -127,7 +127,7 @@
 #define BOARD_MOTOR_DEFAULT_PIN0        9
 //
 #define BOARD_1W_DEFAULT_GPIO           GpioG
-#define BOARD_1W_DEFAULT_PIN            13
+#define BOARD_1W_DEFAULT_PIN            GPIO_PIN_13
 
 // TODO: change, for now A0-A2,3, (0-2,3)
 #define BOARD_ADC_DEFAULT_DEV           ADC1

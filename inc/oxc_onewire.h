@@ -44,7 +44,7 @@ class OneWire {
    void write_buf( const uint8_t *b, uint16_t l );
    void read_buf( uint8_t *b, uint16_t l );
 
-   bool gcmd( const uint8_t *addr, uint8_t cmd, // genegic command
+   bool gcmd( const uint8_t *addr, uint8_t cmd, // generic command
        const uint8_t *snd, uint8_t s_sz, uint8_t *rcv, uint16_t r_sz  );
 
    bool searchRom( const uint8_t *snd, uint8_t *rcv, uint16_t r_sz  );
