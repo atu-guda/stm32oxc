@@ -133,9 +133,9 @@
 #define BOARD_ADC_DEFAULT_DEV           ADC1
 #define BOARD_ADC_DEFAULT_EN            __HAL_RCC_ADC1_CLK_ENABLE();
 #define BOARD_ADC_DEFAULT_DIS           __HAL_RCC_ADC1_CLK_DISABLE();
-#define BOARD_ADC_DEFAULT_GPIO0         GpioA
-#define BOARD_ADC_DEFAULT_PIN0          0
-#define BOARD_ADC_DEFAULT_CH0           ADC_CHANNEL_0
+#define BOARD_ADC_DEFAULT_GPIO0         GpioB
+#define BOARD_ADC_DEFAULT_PIN0          1
+#define BOARD_ADC_DEFAULT_CH0           ADC_CHANNEL_9
 #define BOARD_ADC_DEFAULT_GPIO1         GpioC
 #define BOARD_ADC_DEFAULT_PIN1          0
 #define BOARD_ADC_DEFAULT_CH1           ADC_CHANNEL_10
@@ -147,7 +147,7 @@
 #define BOARD_ADC_DEFAULT_CH3           ADC_CHANNEL_13
 #define BOARD_ADC_MEM_MAX               (1024*256)
 // #define BOARD_ADC_MEM_MAX_FMC           (1024*1024*8)
-#define BOARD_ADC_COEFF                 3250
+#define BOARD_ADC_COEFF                 3309
 
 // 0 = DEVICE_FS, 1 = DEVICE_HS
 #define BOARD_USB_DEFAULT_TYPE       0
