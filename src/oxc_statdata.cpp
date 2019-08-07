@@ -4,6 +4,40 @@
 
 using namespace std;
 
+void StatData::Stat1::add( sreal v )
+{
+  sreal v2 = v * v;
+
+  sreal y = v - kah;
+  sreal t = sum + y;
+  kah = ( t - sum ) - y;
+  sum = t;
+  // sum  += v;
+
+  y = v2 - kah2;
+  t = sum2 + y;
+  kah2 = ( t - sum2 ) - y;
+  sum2 = t;
+
+  // sum2 += v2;
+  if( v < min ) { min = v; }
+  if( v > max ) { max = v; }
+  mean  = ( n * mean  + v  ) / (n+1);
+  mean2 = ( n * mean2 + v2 ) / (n+1);
+  ++n;
+}
+
+void StatData::Stat1::calc()
+{
+  mean  = sum  / n;
+  mean2 = sum2 / n;
+  if constexpr ( sizeof(sreal) == sizeof(float) ) {
+    sd  = sqrtf( mean2  - mean * mean );
+  } else {
+    sd  = sqrt( mean2  - mean * mean );
+  }
+}
+
 StatData::StatData( unsigned nch )
   : n_ch( min( nch, max_n_ch ) )
 {
@@ -21,24 +55,15 @@ void StatData::reset()
 void StatData::add( const sreal *v )
 {
   for( decltype(+n_ch) j=0; j<n_ch; ++j ) {
-    auto cv = v[j];
-    auto cv2 = cv * cv;
-    if( cv < d[j].min ) { d[j].min = cv; }
-    if( cv > d[j].max ) { d[j].max = cv; }
-    d[j].mean  = ( n * d[j].mean  + cv  ) / (n+1);
-    d[j].mean2 = ( n * d[j].mean2 + cv2 ) / (n+1);
+    d[j].add( v[j] );
   }
   ++n;
 }
 
 void StatData::calc()
 {
-  for( auto &t : d ) {
-    if constexpr ( sizeof(sreal) == sizeof(float) ) {
-      t.sd  = sqrtf( t.mean2  - t.mean * t.mean );
-    } else {
-      t.sd  = sqrt( t.mean2  - t.mean * t.mean );
-    }
+  for( decltype(+n_ch) j=0; j<n_ch; ++j ) {
+    d[j].calc();
   }
 }
 
