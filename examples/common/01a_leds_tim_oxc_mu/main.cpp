@@ -49,11 +49,10 @@ int main(void)
 
 void TIM2_IRQHandler(void)
 {
-  leds.set( BIT3 );
-  // leds.toggle( BIT3 );
+  leds.toggle( BIT3 );
 
   //  mu_lock( &mu0 ) - bad in IRQ!
-  if( mu_trylock( &mu0 ) ) {
+  if( mu_trylock( &mu0 ) == 0 ) {
     if( xxn == 0 ) {
       ++xxn;
     } else if( xxn == 1 ) {
