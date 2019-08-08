@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #ifdef USE_OXC
-#include <oxc_base.h>
+#include <oxc_mutex.h>
 #else
 #include "oxc_extdef.h"
 #endif

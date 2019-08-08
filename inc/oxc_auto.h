@@ -8,6 +8,7 @@
 #include <oxc_gpio.h>
 #include <oxc_miscfun.h>
 #include <oxc_outstream.h>
+#include <oxc_mutex.h>
 #include <oxc_ringbuf.h>
 
 #if defined (USE_OXC_TIM)

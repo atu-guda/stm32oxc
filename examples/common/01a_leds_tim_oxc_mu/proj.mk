@@ -24,3 +24,5 @@ OXC_NO_OUTSTREAM = y
 
 SRCS  = main.cpp
 
+SRCS += oxc_mutex.cpp
+

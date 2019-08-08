@@ -311,9 +311,10 @@ ifeq "$(USE_OXC)" "y"
   SRCS += oxc_miscfun.cpp
   SRCS += oxc_gpio.cpp
   ifneq "$(OXC_NO_OUTSTREAM)" "y"
-  SRCS += oxc_outstream.cpp
+    SRCS += oxc_outstream.cpp
   endif
   ifneq "$(OXC_NO_RINGBUF)" "y"
+    SRCS += oxc_mutex.cpp
     SRCS += oxc_ringbuf.cpp
   endif
   ifneq "$(OXC_NO_OSFUN)" "y"
