@@ -6,6 +6,8 @@
 // definition of resoures STM32F334R nucleo 64 board
 // headers must be included manualy in C/CPP file
 
+#define DELAY_APPROX_COEFF  7040
+
 #define def_stksz 512
 
 

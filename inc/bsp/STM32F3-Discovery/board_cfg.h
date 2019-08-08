@@ -6,6 +6,8 @@
 // definition of resoures for STM32F303 discovery board
 // headers must be included manualy in C/CPP file
 
+#define DELAY_APPROX_COEFF   9060
+
 #define def_stksz 256
 
 // default LEDS is E8:E15

@@ -8,6 +8,8 @@
 
 #define def_stksz 512
 
+#define DELAY_APPROX_COEFF  2000
+
 
 // main MY LEDS is D4:D7
 #define BOARD_N_LEDS 4

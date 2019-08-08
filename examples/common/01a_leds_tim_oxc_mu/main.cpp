@@ -26,7 +26,8 @@ int main(void)
   while(1) {
     leds.toggle( BIT1 );
     if( xxn > 1 ) {
-      leds.toggle( BIT0 );
+      // leds.toggle( BIT0 );
+      leds.set( BIT0 );
     }
 
     leds.set( BIT2 );
@@ -41,7 +42,7 @@ int main(void)
     mu_unlock( &mu0 );
     leds.reset( BIT2 );
 
-    delay_ms( 200 );
+    delay_ms( 100 );
   }
   return 0;
 }

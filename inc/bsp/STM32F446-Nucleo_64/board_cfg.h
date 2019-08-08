@@ -8,6 +8,8 @@
 
 #define def_stksz 512
 
+#define DELAY_APPROX_COEFF  5010
+
 
 // default: single LED on A5
 #define BOARD_N_LEDS_MINI 1

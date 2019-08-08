@@ -10,6 +10,7 @@ SUBDIRS = \
   05c_def_cons_nort \
   06_i2c_test \
   12_tim_pwm \
+  17_1w_18b20 \
   80_math_stat \
 
   # 05_usb_console \
@@ -21,7 +22,6 @@ SUBDIRS = \
   # 14_tim_enco \
   # 15_tim_usonic \
   # 16_step1 \
-  # 17_1w_18b20 \
   # 18_i2c_ssd1306_oled \
   # 19_spi_test \
   # 20_spi_mem_a25 \

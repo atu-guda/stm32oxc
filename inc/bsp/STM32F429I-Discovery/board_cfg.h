@@ -8,6 +8,8 @@
 
 #define def_stksz 512
 
+#define DELAY_APPROX_COEFF  5010
+
 // Free pins:
 //   A5, B4, B7, C3, C8, C11-13-?15, D2, D4, D5, D7, E1-E6, G1, G2, G9
 // Free devs:

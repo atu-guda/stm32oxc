@@ -169,9 +169,24 @@ void wakeFromIRQ( long wake )
 
 uint32_t delay_calibrate_value = 200 * 16; // for initial 16 MHz
 
+// fallback values
+#ifndef DELAY_APPROX_COEFF
+  #if   defined (STM32F0)
+    #define DELAY_APPROX_COEFF 9060
+  #elif defined (STM32F1)
+    #define DELAY_APPROX_COEFF 7040
+  #elif defined (STM32F3)
+    #define DELAY_APPROX_COEFF 7040
+  #elif defined (STM32F4)
+    #define DELAY_APPROX_COEFF 5010
+  #elif defined (STM32F7)
+    #define DELAY_APPROX_COEFF 2000
+  #endif
+#endif
+
 void approx_delay_calibrate()
 {
-  delay_calibrate_value = 200 * ( HAL_RCC_GetSysClockFreq() / 1000000 );
+  delay_calibrate_value = HAL_RCC_GetSysClockFreq() / DELAY_APPROX_COEFF;
 }
 
 void do_delay_calibrate()

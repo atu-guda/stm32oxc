@@ -8,6 +8,8 @@
 
 #define def_stksz 512
 
+#define DELAY_APPROX_COEFF  2000
+
 
 // default LEDS is C0:C3 TODO: move
 #define BOARD_N_LEDS 4
@@ -127,7 +129,7 @@
 #define BOARD_MOTOR_DEFAULT_PIN0        9
 //
 #define BOARD_1W_DEFAULT_GPIO           GpioG
-#define BOARD_1W_DEFAULT_PIN            GPIO_PIN_13
+#define BOARD_1W_DEFAULT_PIN            GPIO_PIN_9
 
 // TODO: change, for now A0-A2,3, (0-2,3)
 #define BOARD_ADC_DEFAULT_DEV           ADC1

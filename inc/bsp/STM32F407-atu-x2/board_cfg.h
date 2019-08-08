@@ -6,6 +6,8 @@
 // definition of resoures on atu first STM32F407VE based board (named X2)
 // headers must be included manualy in C/CPP file
 
+#define DELAY_APPROX_COEFF  5010
+
 #define def_stksz 512
 
 

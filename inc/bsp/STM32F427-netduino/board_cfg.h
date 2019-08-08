@@ -1,10 +1,12 @@
 #ifndef _BOARD_STM32F427_NETDU_H
 #define _BOARD_STM32F427_NETDU_H
 
-#define def_stksz 512
-
 // definition of resoures on STM32F427 netduino 3 board
 // headers must be included manualy in C/CPP file
+
+#define DELAY_APPROX_COEFF  5010
+
+#define def_stksz 512
 
 // not so default default LEDS is C0:C3 - external subboard
 #define BOARD_N_LEDS 4

@@ -42,11 +42,11 @@ int main(void)
   UVAR('t') = 1000;
   UVAR('n') = 20;
 
-  UVAR('a') = delay_calibrate_value;
-  approx_delay_calibrate();
-  UVAR('b') = delay_calibrate_value;
-  do_delay_calibrate();
-  UVAR('c') = delay_calibrate_value;
+  // UVAR('a') = delay_calibrate_value;
+  // approx_delay_calibrate();
+  // UVAR('b') = delay_calibrate_value;
+  // do_delay_calibrate();
+  UVAR('d') = delay_calibrate_value;
 
   pin_wire1.initHW();
   wire1.initHW();
@@ -96,12 +96,12 @@ int cmd_test0( int argc, const char * const * argv )
     if( !ok ) {
       std_out <<  "Err: skipRom::READ_SPAD fail" NL;
     } else {
-      int te = buf[0] + (buf[1] << 8);
+      int te0 = buf[0] + (buf[1] << 8);
       // pr_sdx( te );
-      te *= 1000; te /= 16;
-      // ifcvt( te, 1000, obuf, 3 ); // TODO: hex
+      int te = te0 * 10000 / 16;
+      // ifcvt( te, 10000, obuf, 4 ); // TODO: hex
       // std_out <<  obuf  <<  NL;
-      std_out <<  FloatMult( te, 3 )  <<  NL;
+      std_out <<  FloatMult( te, 4 )  << ' ' << te0 << NL;
     }
 
     delay_ms_until_brk( &tm0, t_step );

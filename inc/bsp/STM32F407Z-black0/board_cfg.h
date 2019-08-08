@@ -6,6 +6,8 @@
 // definition of resoures for STM32F407ZET based board
 // headers must be included manualy in C/CPP file
 
+#define DELAY_APPROX_COEFF  5010
+
 #define def_stksz 512
 
 

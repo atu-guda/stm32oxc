@@ -6,6 +6,8 @@
 // definition of resoures for STM32F103 small board: BluePill
 // headers must be included manualy in C/CPP file
 
+#define DELAY_APPROX_COEFF  7040
+
 #define def_stksz 256
 
 #ifndef NEED_LEDS_EXTRA
@@ -123,6 +125,13 @@
 #define BOARD_SPI_DEFAULT_DISABLE       __SPI1_CLK_DISABLE();
 #define BOARD_SPI_DEFAULT_IRQ           SPI1_IRQn
 #define BOARD_SPI_DEFAULT_IRQHANDLER    SPI1_IRQHandler
+
+// B12-B15
+#define BOARD_MOTOR_DEFAULT_GPIO        GpioB
+#define BOARD_MOTOR_DEFAULT_PIN0        12
+//
+#define BOARD_1W_DEFAULT_GPIO           GpioB
+#define BOARD_1W_DEFAULT_PIN            GPIO_PIN_5
 
 #define BOARD_ADC_COEFF                 3250
 

@@ -47,7 +47,7 @@ main includes order:
 project files:
 
 <oxc_auto.h>
-  "local_hal_conf.h" # local overrides, default in inc/fake/
+  "local_hal_conf.h" # local overrides
   <oxc_hal_conf_auto.h>
     # auto set HAL_*_MODULE_ENABLED
     <oxc_stm32fNNN_hal_common_conf.h> # defs + auto include "stm32fXxx_hal_*.h
