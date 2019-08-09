@@ -59,6 +59,8 @@ class I2CClient {
       {  return dev.send( ds, addr ); };
    int  send( const uint8_t *ds, int ns )
       { return dev.send( ds, ns, addr ); }
+   int  send16_rev( uint16_t d )
+      { d = rev16( d ); return dev.send(  (const uint8_t*)(&d), 2, addr ); }
    int  send_reg12(  uint8_t reg,  const uint8_t *ds, int ns, bool is2byte )
       { return dev.send_reg12( reg, ds, ns, is2byte, addr ); };
    int  send_reg1(  uint8_t reg,  const uint8_t *ds, int ns )

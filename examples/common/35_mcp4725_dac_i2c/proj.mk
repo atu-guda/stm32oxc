@@ -1,12 +1,12 @@
-PROJ_NAME=gpio_new
+PROJ_NAME=mcp4725_DAC_I2C
 
 USE_OXC = y
-USE_OXC_DEVIO = y
+# USE_OXC_DEVIO = y
 USE_OXC_DEBUG = y
 # USE_OXC_CONSOLE_UART = y
 # USE_OXC_CONSOLE_USB_CDC = y
 USE_OXC_CONSOLE_DEFAULT = y
-# USE_OXC_I2C = y
+USE_OXC_I2C = y
 # USE_OXC_SPI = y
 # USE_OXC_TIM = y
 # USE_OXC_ADC = y
@@ -19,9 +19,9 @@ USE_OXC_CONSOLE_DEFAULT = y
 # FREERTOS_HEAP = heap_2.c # # default: heap_3.c
 # REQUIRE_SPECIAL_CLOCK = y
 
-# NOUSE_DEFAULT_UART_INIT = y
 
 SRCS  = main.cpp
 
-SRCS += empty_test0_function.cpp
+SRCS += oxc_mcp4725.cpp
+
 
