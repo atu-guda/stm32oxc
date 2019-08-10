@@ -36,6 +36,7 @@ SUBDIRS = \
   29a_i2c_ina226_pwm \
   29b_i2c_ina226_pwm2 \
   35_mcp4725_dac_i2c \
+  36_mcp23017_gpio_i2c \
   80_math_stat \
   l01_accel \
   l02_accel \

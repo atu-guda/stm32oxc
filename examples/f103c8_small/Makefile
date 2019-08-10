@@ -31,6 +31,7 @@ SUBDIRS = \
   28_spi_ad9833 \
   29_i2c_ina226 \
   35_mcp4725_dac_i2c \
+  36_mcp23017_gpio_i2c \
   80_math_stat \
   x03_tcop
 
