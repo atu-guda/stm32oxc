@@ -1,5 +1,4 @@
 #include <cstring>
-#include <cstdlib>
 
 #include <oxc_auto.h>
 #include <oxc_fs_cmd0.h>

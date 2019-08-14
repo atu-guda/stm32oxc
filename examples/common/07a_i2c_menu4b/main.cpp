@@ -1,9 +1,3 @@
-#include <cstring>
-#include <cstdlib>
-#include <climits>
-#include <iterator>
-#include <algorithm>
-
 #include <oxc_auto.h>
 #include <oxc_hd44780_i2c.h>
 #include <oxc_menu4b.h>

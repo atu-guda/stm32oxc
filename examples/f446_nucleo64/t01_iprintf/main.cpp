@@ -1,5 +1,3 @@
-#include <cstring>
-#include <cstdlib>
 #include <stdio.h>
 
 #include <oxc_auto.h>

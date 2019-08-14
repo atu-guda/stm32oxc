@@ -1,9 +1,5 @@
 #define _GNU_SOURCE
 #include <algorithm>
-#include <cstring>
-#include <cstdlib>
-#include <cstdio>
-#include <cerrno>
 #include <cmath>
 
 // test code consumption

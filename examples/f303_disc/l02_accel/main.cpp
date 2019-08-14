@@ -1,6 +1,3 @@
-#include <cstring>
-#include <cstdlib>
-
 #include <oxc_auto.h>
 #include <oxc_bartext.h>
 

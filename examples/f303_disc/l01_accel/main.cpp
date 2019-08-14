@@ -1,7 +1,3 @@
-#include <cstring>
-#include <cstdlib>
-#include <cerrno>
-
 #include <oxc_auto.h>
 
 #include <lsm303dlhc.h>

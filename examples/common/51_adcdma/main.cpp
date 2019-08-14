@@ -1,7 +1,3 @@
-#include <cstring>
-#include <cstdlib>
-#include <cstdio>
-#include <cmath>
 #include <cerrno>
 
 #include <algorithm>

@@ -43,6 +43,8 @@ CXXWARNFLAGS := -Wno-unused-parameter -Wno-register
 ALLFLAGS += -DPROJ_NAME=\"$(PROJ_NAME)\"
 ALLFLAGS += -ffreestanding
 ALLFLAGS += -mlittle-endian
+# ALLFLAGS += --specs=nano.specs
+# ALLFLAGS += -fstack-usage
 ifeq "$(NO_STDLIB)" "y"
   ALLFLAGS += -nostdlib
 endif
@@ -366,7 +368,7 @@ OBJS  = $(OBJS0:.s=.o)
 OBJS1 = $(addprefix $(OBJDIR)/,$(OBJS))
 
 CFLAGS   = $(ALLFLAGS)  -std=c11   $(CWARNFLAGS)
-CXXFLAGS = $(ALLFLAGS)  -std=c++17 $(CXXWARNFLAGS) -fno-rtti -fno-exceptions -fno-threadsafe-statics
+CXXFLAGS = $(ALLFLAGS)  -std=c++17 $(CXXWARNFLAGS) -fno-rtti -fno-exceptions -fno-threadsafe-statics -fno-use-cxa-atexit
 
 $(info SRCPATHS is $(SRCPATHS) )
 

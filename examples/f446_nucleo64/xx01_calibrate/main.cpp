@@ -1,7 +1,5 @@
 #define _GNU_SOURCE
 #include <cmath>
-#include <cstring>
-#include <cstdlib>
 
 #include <oxc_auto.h>
 

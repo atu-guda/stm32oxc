@@ -1,6 +1,3 @@
-#include <cstring>
-#include <cstdlib>
-
 #include <oxc_auto.h>
 
 #include <board_sdram.h>

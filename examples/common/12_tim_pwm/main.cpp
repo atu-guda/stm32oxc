@@ -1,6 +1,3 @@
-#include <cstring>
-#include <cstdlib>
-
 #include <iterator>
 
 #include <oxc_auto.h>
