@@ -13,6 +13,7 @@ SUBDIRS = \
   17_1w_18b20 \
   35_mcp4725_dac_i2c \
   36_mcp23017_gpio_i2c \
+  37_ad7606_spi \
   80_math_stat \
 
   # 05_usb_console \
