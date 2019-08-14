@@ -41,7 +41,7 @@ class DevSPI  {
    int  duplex( const uint8_t *ds, uint8_t *dd, int nd ); // send 1 bytes more
    void setMaxWait( uint32_t mv ) { maxWait = mv; }
    void setTssDelay( uint32_t t ) { tss_delay_mcs = t; }
-   void setUseNss( bool un ) { use_nss = un; } // for send*/recv*/duplex*
+   void setUseNss( bool un ) { use_nss = un; } // for send recv duplex
    int  getErr() const { return spi->ErrorCode; };
    int  getLastErr() const { return last_err; };
    int  resetLastErr() { int old_last_err = last_err; last_err = 0; return old_last_err; };

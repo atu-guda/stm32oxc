@@ -101,6 +101,12 @@
 #define BOARD_I2C_DEFAULT_IRQ           I2C1_EV_IRQn
 #define BOARD_I2C_DEFAULT_IRQHANDLER    I2C1_EV_IRQHandler
 
+#define BOARD_IN0_GPIO                  GpioF
+#define BOARD_IN0_PINNUM                2
+#define BOARD_IN1_GPIO                  GpioG
+#define BOARD_IN1_PINNUM                2
+#define BOARD_IN2_GPIO                  GpioG
+#define BOARD_IN2_PINNUM                3
 
 #define BOARD_SPI_DEFAULT               SPI5
 #define BOARD_SPI_DEFAULT_NAME          "SPI5"
