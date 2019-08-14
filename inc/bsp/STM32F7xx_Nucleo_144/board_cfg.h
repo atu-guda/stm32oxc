@@ -133,7 +133,7 @@
 // D11-D14
 #define BOARD_MOTOR_DEFAULT_GPIO        GpioD
 #define BOARD_MOTOR_DEFAULT_PIN0        11
-//
+
 #define BOARD_1W_DEFAULT_GPIO           GpioG
 #define BOARD_1W_DEFAULT_PIN            GPIO_PIN_4
 
