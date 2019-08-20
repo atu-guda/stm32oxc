@@ -116,6 +116,8 @@ int cmd_test0( int argc, const char * const * argv )
     // adc.start();
     // auto nwait = adc.wait_nobusy();
     // auto rc = adc.read_only( ADC_buf, n_ch );
+    // adc.reset();
+    // delay_bad_mcs( 10 );
     auto rc = adc.read( ADC_buf, n_ch );
     if( UVAR('l') ) {  leds.reset( BIT2 ); }
 

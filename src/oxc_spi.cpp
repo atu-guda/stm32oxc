@@ -186,9 +186,6 @@ int  DevSPI::duplex( const uint8_t *ds, uint8_t *dd, int nd )
 
   nss_pre_cond();
   last_rc = HAL_SPI_TransmitReceive( spi, (uint8_t*)ds, dd, nd, maxWait );
-  if( last_rc == HAL_OK ) {
-    last_rc = HAL_SPI_Receive( spi, (uint8_t*)(dd), nd, maxWait );
-  }
   nss_post_cond();
 
   if ( last_rc != HAL_OK ) {
