@@ -140,6 +140,8 @@
 #define BOARD_1W_DEFAULT_GPIO           GpioB
 #define BOARD_1W_DEFAULT_PIN            GPIO_PIN_5
 
+#define BOARD_ADC_MEM_MAX               (1024*4)
+// #define BOARD_ADC_MEM_MAX_FMC           (1024*1024*8)
 #define BOARD_ADC_COEFF                 3250
 
 

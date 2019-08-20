@@ -1,0 +1,5 @@
+Test MCP3204 ADC SPI sync by TIM2
+
+UVAR('t') in us, 1 ch req appros 50 us (not so good)
+
+

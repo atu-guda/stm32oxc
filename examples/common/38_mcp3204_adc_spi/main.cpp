@@ -23,23 +23,10 @@ int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
 
 
-int cmd_duplex_spi( int argc, const char * const * argv );
-CmdInfo CMDINFO_DUPLEX { "duplex", 'U', cmd_duplex_spi, "[0xXX ...] - send/recv bytes"  };
-
-int cmd_recv_spi( int argc, const char * const * argv );
-CmdInfo CMDINFO_RECV { "recv", 'R', cmd_recv_spi, "[N] recv bytes"  };
-
-int cmd_reset_spi( int argc, const char * const * argv );
-CmdInfo CMDINFO_RESETSPI { "reset_spi", 'Z', cmd_reset_spi, " - reset spi"  };
-
-int cmd_sendloop_spi( int argc, const char * const * argv );
-CmdInfo CMDINFO_SENDLOOPSPI { "sendloop_spi", 'N', cmd_sendloop_spi, " N [val0 [val1]] - send N vals via SPI"  };
-
   const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
 
   &CMDINFO_TEST0,
-  &CMDINFO_RESETSPI,
   nullptr
 };
 
@@ -171,15 +158,6 @@ int cmd_test0( int argc, const char * const * argv )
 }
 
 
-
-int cmd_reset_spi( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
-{
-  spi_d.resetDev();
-
-  spi_d.pr_info();
-
-  return 0;
-}
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
