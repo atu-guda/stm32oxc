@@ -190,6 +190,7 @@ void delay_bad_n( uint32_t n );
 void delay_bad_s( uint32_t s );
 void delay_bad_ms( uint32_t ms );
 void delay_bad_mcs( uint32_t mcs );
+void delay_bad_100ns( uint32_t ns100 );
 
 void SystemClock_Config(void);
 int  SystemClockCfg(void); // returns: 0: ok >0 + set errno: error

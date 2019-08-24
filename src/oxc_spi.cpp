@@ -40,7 +40,7 @@ void DevSPI::nss_pre()
   } else {
     nss_pin->reset( 1 );
   }
-  delay_bad_mcs( tss_delay_mcs );
+  delay_bad_100ns( tss_delay_100ns );
 }
 
 void DevSPI::nss_post()
@@ -51,7 +51,7 @@ void DevSPI::nss_post()
   } else {
     nss_pin->set( 1 );
   }
-  delay_bad_mcs( tss_delay_mcs );
+  delay_bad_100ns( tss_delay_100ns );
 }
 
 HAL_StatusTypeDef DevSPI::waitForFlag(  uint32_t flag, uint32_t val, int ticks )

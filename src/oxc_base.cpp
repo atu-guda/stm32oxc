@@ -170,6 +170,13 @@ void delay_bad_mcs( uint32_t mcs )
   }
 }
 
+void delay_bad_100ns( uint32_t ns100 )
+{
+  uint32_t n = ns100 * delay_calibrate_value / 10000;
+  for( uint32_t i=0; i<n; ++i ) {
+    __asm volatile ( "nop;");
+  }
+}
 
 void delay_ms( uint32_t ms )
 {

@@ -40,7 +40,8 @@ class DevSPI  {
    int  send_recv( uint8_t ds, uint8_t *dd, int nd );
    int  duplex( const uint8_t *ds, uint8_t *dd, int nd ); // send 1 bytes more
    void setMaxWait( uint32_t mv ) { maxWait = mv; }
-   void setTssDelay( uint32_t t ) { tss_delay_mcs = t; }
+   void setTssDelay( uint32_t t ) { tss_delay_100ns = t * 10; }
+   void setTssDelay_100ns( uint32_t t ) { tss_delay_100ns = t; }
    void setUseNss( bool un ) { use_nss = un; } // for send recv duplex
    int  getErr() const { return spi->ErrorCode; };
    int  getLastErr() const { return last_err; };
@@ -65,7 +66,7 @@ class DevSPI  {
    int maxWait = 100;
    bool inv_nss = false;
    bool use_nss = true;
-   uint32_t tss_delay_mcs = 1;
+   uint32_t tss_delay_100ns = 10;
    uint32_t last_err = 0;
    HAL_StatusTypeDef last_rc = HAL_OK;
 };

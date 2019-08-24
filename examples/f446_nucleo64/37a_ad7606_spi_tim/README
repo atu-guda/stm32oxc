@@ -1,0 +1,11 @@
+Test AD7606 SPI ADC + TIM2 start
+
+RST  = SPI_EXT1
+CNVSt = SPI_EXT2
+BUSY = BOARD_IN0_
+
+Timings:
+8ch: t = 30 us   f = 33.33 kS/s
+4ch: t = 20 us   f = 50.00 kS/s
+1ch: t = 16 us   f = 62.4 kS/s
+

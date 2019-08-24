@@ -5,6 +5,8 @@
 #include <oxc_floatfun.h>
 #include <oxc_statdata.h>
 
+#include <oxc_ad7606_spi.h>
+
 using namespace std;
 using namespace SMLRL;
 
@@ -15,11 +17,11 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
-const char* common_help_string = "App to use MCP3204 ADC SPI device with timer" NL;
+const char* common_help_string = "App to use AD7606 SPI ADC tith timer" NL;
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " [n] - test ADC"  };
+CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " [n] - test ADC input"  };
 int cmd_set_coeffs( int argc, const char * const * argv );
 CmdInfo CMDINFO_SET_COEFFS { "set_coeffs", 'F', cmd_set_coeffs, " k0 k1 k2 k3 - set ADC coeffs"  };
 int cmd_out( int argc, const char * const * argv );
@@ -40,9 +42,14 @@ const CmdInfo* global_cmds[] = {
 
 
 
-PinsOut nss_pin( BOARD_SPI_DEFAULT_GPIO_SNSS, BOARD_SPI_DEFAULT_GPIO_PIN_SNSS, 1 );
+PinsOut nss_pin(   BOARD_SPI_DEFAULT_GPIO_SNSS, BOARD_SPI_DEFAULT_GPIO_PIN_SNSS, 1 );
+PinsOut rst_pin(   BOARD_SPI_DEFAULT_GPIO_EXT1, BOARD_SPI_DEFAULT_GPIO_PIN_EXT1, 1 );
+PinsOut cnvst_pin( BOARD_SPI_DEFAULT_GPIO_EXT2, BOARD_SPI_DEFAULT_GPIO_PIN_EXT2, 1 );
+PinsIn  busy_pin(              BOARD_IN0_GPIO,  BOARD_IN0_PINNUM, 1 );
+
 SPI_HandleTypeDef spi_h;
 DevSPI spi_d( &spi_h, &nss_pin );
+AD7606_SPI adc( spi_d, rst_pin, cnvst_pin, busy_pin );
 
 TIM_HandleTypeDef tim2h;
 void tim2_init( uint16_t presc, uint32_t arr );
@@ -50,14 +57,14 @@ void tim2_deinit();
 volatile unsigned tim_flag = 0;
 
 const uint32_t n_ADC_mem  = BOARD_ADC_MEM_MAX; // MCU dependent, in bytes for 16-bit samples
-vector<uint16_t> ADC_buf;
+vector<int16_t> ADC_buf;
 unsigned n_lines = 0, last_n_ch = 1;
 uint32_t last_dt_us = 1000;
-const unsigned n_ADC_ch_max = 4; // current - in UVAR('c')
+const unsigned n_ADC_ch_max = 8;
 float v_coeffs[n_ADC_ch_max];
 void adc_out_to( OutStream &os, uint32_t n, uint32_t st );
 void adc_show_stat( OutStream &os, uint32_t n, uint32_t st );
-const unsigned adc_binmax = 4095;
+const unsigned adc_binmax = 0x7FFF;
 
 int main(void)
 {
@@ -65,19 +72,17 @@ int main(void)
 
   UVAR('t') = 1000; // in us here
   UVAR('n') = 10;
-  UVAR('v') = 5100; // external power supply
+  UVAR('v') = 5000; // internal REF
   UVAR('c') = n_ADC_ch_max;
 
   for( auto &x : v_coeffs ) { x = 1.0f; };
 
-  if( SPI_init_default( SPI_BAUDRATEPRESCALER_64 ) != HAL_OK ) { // 1.xx MBit/s < 2
+  if( SPI_init_default( SPI_BAUDRATEPRESCALER_2 ) != HAL_OK ) {
     die4led( 0x04 );
   }
-  // nss_pin.initHW();
-  //nss_pin.set(1);
-  spi_d.setMaxWait( 500 );
-  // spi_d.setTssDelay( 10 );
-  spi_d.initSPI();
+  spi_d.setTssDelay_100ns( 1 );
+
+  adc.init();
 
   BOARD_POST_INIT_BLINK;
 
@@ -96,26 +101,20 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  static const uint8_t mcp3204_cmds1ch[4][2] = {
-    { 0x06, 0x00 },
-    { 0x06, 0x40 },
-    { 0x06, 0x80 },
-    { 0x06, 0xC0 },
-  };
-
   int t_step = UVAR('t');
   unsigned n_ch = clamp( (unsigned)UVAR('c'), 1u, n_ADC_ch_max );
 
   const uint32_t n_ADC_series_max  = n_ADC_mem / ( 2 * n_ch ); // 2 is 16bit/sample
   uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, n_ADC_series_max ); // number of series
 
-  int min_t_step = 50 * n_ch;
-  if( t_step < min_t_step ) {
-    t_step = min_t_step;
-  }
+  // int min_t_step = 50 * n_ch; // TMP
+  // if( t_step < min_t_step ) {
+  //   t_step = min_t_step;
+  // }
 
   std_out << "# n = " << n << " n_ch= " << n_ch << " t_step= " << t_step << " us " NL;
 
+  adc.reset();
   leds.set(   BIT0 | BIT1 | BIT2 ); delay_ms( 100 );
   leds.reset( BIT0 | BIT1 | BIT2 );
 
@@ -123,6 +122,7 @@ int cmd_test0( int argc, const char * const * argv )
   ADC_buf.shrink_to_fit();
   ADC_buf.assign( (n+2) * n_ch, 0 ); // + 2 is guard, may be remove
   n_lines = 0; last_n_ch = n_ch; last_dt_us = t_step;
+  int16_t *buf_data = ADC_buf.data();
 
   uint32_t tm00 =  HAL_GetTick();
   int rc = 0;
@@ -146,13 +146,10 @@ int cmd_test0( int argc, const char * const * argv )
 
     // if( UVAR('l') ) {  leds.set( BIT2 ); }
 
-    uint8_t buf[3]; // first - fake
-    for( decltype(+n_ch) j=0; j < n_ch; ++j ) {
-      spi_d.duplex( mcp3204_cmds1ch[j], buf, 3 );
-      uint16_t v = buf[2] + ( ( buf[1] & 0x0F ) << 8 );
-      ADC_buf[ n_lines * n_ch + j ] = v;
-      // delay_bad_mcs( 1 );
-    }
+    adc.read( buf_data + n_lines * n_ch, n_ch );
+
+    // if( UVAR('l') ) {  leds.reset( BIT2 ); }
+
     ++n_lines;
 
   }
