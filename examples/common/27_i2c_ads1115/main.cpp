@@ -136,7 +136,9 @@ int cmd_test0( int argc, const char * const * argv )
       std_out  << ' '  <<  v0 << ' ' << vf0 << NL;
     }
 
-    delay_ms_until_brk( &tm0, t_step );
+    if( t_step > 0 ) {
+      delay_ms_until_brk( &tm0, t_step );
+    }
   }
 
   if( is_cont ) {
@@ -200,25 +202,22 @@ int cmd_getNch( int argc, const char * const * argv )
     int no = adc.getOneShotNch( 0, e_ch, vi );
     if( UVAR('l') ) {  leds.reset( BIT2 ); }
 
-
-    if( do_out ) {
-      std_out <<  FltFmt( tc, cvtff_auto, 12, 4 );
-    }
-
     for( decltype(no) j=0; j<no; ++j ) {
       v[j] = kv * vi[j] * v_coeffs[j];
     }
-
     sdat.add( v );
 
     if( do_out ) {
+      std_out <<  FltFmt( tc, cvtff_auto, 12, 4 );
       for( auto vc : v ) {
         std_out  << ' '  <<  vc;
       }
       std_out << NL;
     }
 
-    delay_ms_until_brk( &tm0, t_step );
+    if( t_step > 0 ) {
+      delay_ms_until_brk( &tm0, t_step );
+    }
   }
 
   sdat.calc();

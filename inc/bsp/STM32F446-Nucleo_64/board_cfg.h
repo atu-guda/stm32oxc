@@ -149,7 +149,7 @@
 #define BOARD_ADC_DEFAULT_GPIO3         GpioA
 #define BOARD_ADC_DEFAULT_PIN3          7
 #define BOARD_ADC_DEFAULT_CH3           ADC_CHANNEL_7
-#define BOARD_ADC_MEM_MAX               (1024*64)
+#define BOARD_ADC_MEM_MAX               (1024*96)
 // #define BOARD_ADC_MEM_MAX_FMC           (1024*1024*8)
 #define BOARD_ADC_COEFF                 3250
 

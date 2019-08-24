@@ -10,15 +10,19 @@ void AD7606_SPI::init()
   busy_pin.initHW();
   rst_pin.reset( 1 );
   cnvst_pin.set( 1 );
+  busy_waited = 0;
 }
 
 uint32_t AD7606_SPI::wait_nobusy()
 {
-  uint32_t n = 0;
-  while( busy_pin.read() && n < 100000 ) {
-    ++n;
+  busy_waited = 0;
+  // while( ( busy_pin.read() == 0 ) && busy_waited < 10000 ) {
+  //   ++busy_waited;
+  // }
+  while( busy_pin.read() && busy_waited < 10000 ) {
+    ++busy_waited;
   }
-  return n;
+  return busy_waited;
 }
 
 int AD7606_SPI::read_only( int16_t *d, unsigned n )
@@ -38,7 +42,7 @@ int AD7606_SPI::read( int16_t *d, unsigned n )
   if( rc > 10000 ) {
     return 0;
   }
-  delay_mcs( 1 );
+  // delay_mcs( 1 ); // ???
   return read_only( d, n );
 }
 

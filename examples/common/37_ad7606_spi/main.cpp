@@ -56,7 +56,7 @@ int main(void)
   UVAR('c') = n_ADC_ch_max;
   UVAR('a') = 10; // aux delay
 
-  if( SPI_init_default( SPI_BAUDRATEPRESCALER_2 ) != HAL_OK ) {
+  if( SPI_init_default( SPI_BAUDRATEPRESCALER_4 ) != HAL_OK ) {
     die4led( 0x04 );
   }
 
@@ -128,12 +128,12 @@ int cmd_test0( int argc, const char * const * argv )
     sdat.add( v );
 
     if( do_out ) {
-      std_out <<  FltFmt( tc, cvtff_auto, 12, 4 ) << ' ';
-      std_out <<  rc << ' ' << HexInt16( ADC_buf[0] );
+      std_out <<  FltFmt( tc, cvtff_auto, 12, 4 );
 
       for( auto vc : v ) {
         std_out  << ' '  <<  vc;
       }
+      std_out << ' ' << rc << ' ' << HexInt16( ADC_buf[0] ) << ' ' << adc.get_busy_waited();
       std_out << NL;
     }
 

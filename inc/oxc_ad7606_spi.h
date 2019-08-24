@@ -16,16 +16,18 @@ class AD7606_SPI {
      : spi_d( a_spi ),  rst_pin( a_rst ), cnvst_pin ( a_cnvst ), busy_pin( a_busy ) {};
    void init();
    void reset() { rst_pin.set( 1 );     delay_bad_n( 10 ); rst_pin.reset( 1 ); delay_bad_n( 5 ); }
-   void start() { cnvst_pin.reset( 1 ); /* delay_bad_mcs(  1 ); */ cnvst_pin.set( 1 ); }
+   void start() { cnvst_pin.reset( 1 );  delay_bad_n( 1 );  cnvst_pin.set( 1 );  delay_bad_n( 5 ); }
    uint32_t wait_nobusy();
    int read_only( int16_t *d, unsigned n );
    int read( int16_t *d, unsigned n );
+   uint32_t get_busy_waited() const { return busy_waited; };
 
   protected:
    DevSPI &spi_d;
    PinsOut &rst_pin;
    PinsOut &cnvst_pin;
    PinsIn  &busy_pin;
+   uint32_t busy_waited = 0;
 };
 
 #endif

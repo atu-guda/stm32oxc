@@ -285,7 +285,8 @@ void adc_out_to( OutStream &os, uint32_t n, uint32_t st )
   os << "# n= " << n << " n_ch= " << last_n_ch << " st= " << st
      << " dt= " << ( 1e-6f * last_dt_us ) << NL;
 
-  for( uint32_t i=0; i<n; ++i ) {
+  break_flag = 0;
+  for( uint32_t i=0; i<n && !break_flag; ++i ) {
     uint32_t ii = i + st;
     float t = 1e-6f * last_dt_us * ii;
     os <<  FltFmt( t, cvtff_auto, 14, 6 ) << ' ';
