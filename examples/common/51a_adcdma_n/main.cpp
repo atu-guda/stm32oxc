@@ -17,7 +17,6 @@ BOARD_CONSOLE_DEFINES;
 const char* common_help_string = "App to measure ADC data (4ch) with DMA double-buffer" NL;
 
 
-
 ADC_Info adc;
 
 void adc_out_to( OutStream &os, uint32_t n, uint32_t st );
@@ -38,7 +37,6 @@ vector<uint16_t> ADC_buf;
 
 volatile uint32_t n_series = 0;
 uint32_t n_series_todo = 0;
-
 
 
 TIM_HandleTypeDef tim2h;
@@ -99,6 +97,7 @@ int main(void)
 }
 
 
+
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
@@ -123,7 +122,7 @@ int cmd_test0( int argc, const char * const * argv )
   uint32_t n_ADC_bytes = n * n_ch * 2;
 
   std_out << "# t_step_tick= " << t_step_tick << " [t2ticks] tim_f= " << tim_f << " Hz"
-     << " t_step_f= " << adc.t_step_f << " s  t_wait0= " << t_wait0 << " ms" NL;
+          << " t_step_f= " << adc.t_step_f << " s  t_wait0= " << t_wait0 << " ms" NL;
 
   if( n > n_ADC_series_max ) { n = n_ADC_series_max; };
 

@@ -1,7 +1,3 @@
-#include <cstring>
-#include <cstdlib>
-#include <cstdio>
-#include <cmath>
 #include <cerrno>
 
 #include <algorithm>
@@ -140,7 +136,7 @@ int cmd_test0( int argc, const char * const * argv )
   uint32_t t_wait0 = 1 + uint32_t( n * adc.t_step_f * 1000 ); // in ms
 
   std_out << "# t_step_tick= " << t_step_tick << " [t2ticks] tim_f= " << tim_f << " Hz"
-     << " t_step_f= " << adc.t_step_f << " s  t_wait0= " << t_wait0 << " ms" NL;
+          << " t_step_f= " << adc.t_step_f << " s  t_wait0= " << t_wait0 << " ms" NL;
 
   if( n > n_ADC_series_max ) { n = n_ADC_series_max; };
 

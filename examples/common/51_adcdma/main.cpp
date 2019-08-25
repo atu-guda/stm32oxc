@@ -60,6 +60,12 @@ int main(void)
 {
   BOARD_PROLOG;
 
+  // works bad with DMA
+  #if defined(STM32F7)
+  SCB_DisableICache();
+  SCB_DisableDCache();
+  #endif
+
   tim_freq_in = get_TIM_in_freq( TIM2 ); // TODO: define
 
   UVAR('t') = 1000; // 1 s extra wait
@@ -163,14 +169,17 @@ int cmd_test0( int argc, const char * const * argv )
   tim2_init( UVAR('p'), UVAR('a') );
 
   delay_ms_brk( t_wait0 );
+  uint32_t aux_wait = 0;
   for( uint32_t ti=0; adc.end_dma == 0 && ti<(uint32_t)UVAR('t') && !break_flag;  ++ti ) {
-    delay_ms(1);
+    delay_ms( 1 );
+    ++aux_wait;
   }
+  tim2_deinit();
+  HAL_ADC_Stop_DMA( &adc.hadc ); // needed
+
   uint32_t tcc = HAL_GetTick();
   delay_ms( 10 ); // to settle all
 
-  tim2_deinit();
-  HAL_ADC_Stop_DMA( &adc.hadc ); // needed
   if( adc.end_dma == 0 ) {
     std_out <<  "Fail to wait DMA end " NL;
   } else {
@@ -180,7 +189,7 @@ int cmd_test0( int argc, const char * const * argv )
       adc.n_series = n;
     }
   }
-  std_out <<  "#  tick: " <<  ( tcc - tm00 )  <<  NL;
+  std_out <<  "#  tick: " <<  ( tcc - tm00 )  <<  " aux_wait= " << aux_wait << NL;
 
   if( adc.n_series < 20 ) {
     adc_out_to( std_out, adc.n_series, 0 );
