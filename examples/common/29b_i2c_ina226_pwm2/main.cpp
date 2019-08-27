@@ -98,7 +98,9 @@ constexpr NamedFloat ob_R_0        {        "R_0",        &pwminfo.R_0  };
 constexpr NamedFloat ob_k_gv1      {      "k_gv1",      &pwminfo.k_gv1  };
 constexpr NamedFloat ob_k_gv2      {      "k_gv2",      &pwminfo.k_gv2  };
 constexpr NamedFloat ob_x_0        {        "x_0",        &pwminfo.x_0  };
+constexpr NamedFloat ob_kp_v       {       "kp_v",       &pwminfo.kp_v  };
 constexpr NamedFloat ob_ki_v       {       "ki_v",       &pwminfo.ki_v  };
+constexpr NamedFloat ob_kd_v       {       "kd_v",       &pwminfo.kd_v  };
 constexpr NamedFloat ob_k_move     {     "k_move",       &pwminfo.k_move  };
 constexpr NamedFloat ob_cal_min    {    "cal_min",       &pwminfo.cal_min  };
 constexpr NamedFloat ob_cal_step   {   "cal_step",       &pwminfo.cal_step };
@@ -121,7 +123,9 @@ constexpr const NamedObj *const objs_info[] = {
   & ob_k_gv1,
   & ob_k_gv2,
   & ob_x_0,
+  & ob_kp_v,
   & ob_ki_v,
+  & ob_kd_v,
   & ob_k_move,
   & ob_cal_min,
   & ob_cal_step,

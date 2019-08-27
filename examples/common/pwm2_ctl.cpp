@@ -405,6 +405,9 @@ bool PWMData::tick( const float *d )
     return false;
   }
 
+  float err = 0, c_ki = 0;
+  bool only_pwm = false;
+
   if( t >= step_t ) { // next step
     t = 0;
     ++c_step;
@@ -417,24 +420,30 @@ bool PWMData::tick( const float *d )
 
     val_1 = val_0 + ks * t;
     val = val_1 + hand;
-    float err;
     switch( steps[c_step].tp ) {
-      case pwm_type::pwm:   pwm_val = val; break;
+      case pwm_type::pwm:   pwm_val = val;
+                            only_pwm = true;
+                            break;
       case pwm_type::volt:  err = d[didx_v] - val;
-                            pwm_val -= pwminfo.ki_v * t_step * err;
+                            c_ki = 1;
                             break;
       case pwm_type::curr:  err = d[didx_i] - val;
-                            pwm_val -= pwminfo.ki_v * last_R * t_step * err;
+                            c_ki = last_R;
                             break;
       case pwm_type::pwr:   err = d[didx_w] - val;
-                            {
-                              auto i_eff = max( d[didx_i], 0.1f );
-                              pwm_val -= pwminfo.ki_v * t_step * err / i_eff;
-                            }
+                            c_ki = 1.0f /  max( d[didx_i], 0.1f );
                             break;
-      default:              pwm_val = pwm_min; break; // fail-safe
+      default:              reason = 11;
+                            return false;
     };
   }
+
+  float d_err_dt = (err - last_err ) / t_step;
+  if( !only_pwm ) {
+    // TODO: prop_or_predict part + integr + diff
+    pwm_val -= pwminfo.ki_v * t_step * err * c_ki + pwminfo.kd_v * d_err_dt * c_ki;
+  }
+
   if( rc != check_result::ok && pwm_val > pwm_val_old ) {
     pwm_val = pwm_val_old;
   }
@@ -443,6 +452,8 @@ bool PWMData::tick( const float *d )
   set_pwm();
 
   pwminfo.addSample( pwm_val_old, d[didx_v] );
+
+  last_err = err;
 
   return true;
 }

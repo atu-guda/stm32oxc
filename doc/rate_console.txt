@@ -1,5 +1,5 @@
 Console output rates, measured by 05c_def_cons_nort on
-f446_nucleop64 board (on-board USB-UART convertor) and
+f446_nucleo_64 board (on-board USB-UART convertor) and
 f407v_bb0 (USBCDC)
 In every test outputs 10000 lines with different lengths,
 with (time1) and without (time2) os.flush();
