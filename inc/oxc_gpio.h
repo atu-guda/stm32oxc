@@ -171,6 +171,9 @@ using GpioRegs_ptr   = GpioRegs*;
 using GpioRegs_ptr_c = GpioRegs *const;
 using GpioRegs_ref   = GpioRegs&;
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wignored-qualifiers"
+
 inline GpioRegs_ref GpioA = *reinterpret_cast<GpioRegs_ptr_c>(GPIOA_BASE);
 inline GpioRegs_ref GpioB = *reinterpret_cast<GpioRegs_ptr_c>(GPIOB_BASE);
 inline GpioRegs_ref GpioC = *reinterpret_cast<GpioRegs_ptr_c>(GPIOC_BASE);
@@ -198,6 +201,8 @@ inline GpioRegs_ref GpioJ = *reinterpret_cast<GpioRegs_ptr_c>(GPIOJ_BASE);
 #ifdef GPIOK_BASE
 inline GpioRegs_ref GpioK = *reinterpret_cast<GpioRegs_ptr_c>(GPIOK_BASE);
 #endif
+
+#pragma GCC diagnostic pop
 
 constexpr inline uint8_t GpioIdx( const GpioRegs &gp )
 {
