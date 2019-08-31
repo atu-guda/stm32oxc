@@ -4,30 +4,21 @@
 
 using namespace std;
 
-void StatData::Stat1::add( sreal v )
+// ------------------------ StatChannel ---------------------------------------------
+
+void StatChannel::add( sreal v )
 {
   sreal v2 = v * v;
 
-  sreal y = v - kah;
-  sreal t = sum + y;
-  kah = ( t - sum ) - y;
-  sum = t;
-  // sum  += v;
+  sumKahet( v,  sum,  kah );
+  sumKahet( v2, sum2, kah2 );
 
-  y = v2 - kah2;
-  t = sum2 + y;
-  kah2 = ( t - sum2 ) - y;
-  sum2 = t;
-
-  // sum2 += v2;
   if( v < min ) { min = v; }
   if( v > max ) { max = v; }
-  mean  = ( n * mean  + v  ) / (n+1);
-  mean2 = ( n * mean2 + v2 ) / (n+1);
   ++n;
 }
 
-void StatData::Stat1::calc()
+void StatChannel::calc()
 {
   mean  = sum  / n;
   mean2 = sum2 / n;
@@ -37,6 +28,17 @@ void StatData::Stat1::calc()
     sd  = sqrt( mean2  - mean * mean );
   }
 }
+
+// ------------------------ StatChannelXY ---------------------------------------------
+
+void StatChannelXY::add( sreal v, sreal vy )
+{
+  StatChannel::add( v );
+  sumKahet( v * vy, sum_xy, kah_xy );
+}
+
+
+// ------------------------ StatData --------------------------------------
 
 StatData::StatData( unsigned nch )
   : n_ch( min( nch, max_n_ch ) )
@@ -67,7 +69,7 @@ void StatData::calc()
   }
 }
 
-void StatData::out_part( HOST_OSTREAM &os, const sreal Stat1::* pptr, const char *lbl ) const
+void StatData::out_part( HOST_OSTREAM &os, const sreal StatChannel::* pptr, const char *lbl ) const
 {
   os << NL "# " << lbl << "   ";
   for( decltype(+n_ch) j=0; j<n_ch; ++j ) {

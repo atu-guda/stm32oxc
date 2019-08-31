@@ -6,8 +6,6 @@
 #include <oxc_floatfun.h>
 #include <oxc_statdata.h>
 
-using sreal = StatData::sreal;
-
 using namespace std;
 using namespace SMLRL;
 

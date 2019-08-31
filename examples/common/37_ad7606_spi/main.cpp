@@ -7,7 +7,6 @@
 
 #include <oxc_ad7606_spi.h>
 
-using sreal = StatData::sreal;
 
 using namespace std;
 using namespace SMLRL;

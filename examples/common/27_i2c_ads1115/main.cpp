@@ -8,8 +8,6 @@
 using namespace std;
 using namespace SMLRL;
 
-using sreal = StatData::sreal;
-
 USE_DIE4LED_ERROR_HANDLER;
 BOARD_DEFINE_LEDS;
 

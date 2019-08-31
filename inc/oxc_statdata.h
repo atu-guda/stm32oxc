@@ -7,41 +7,57 @@
   #include <oxc_devio.h>
   #include <oxc_floatfun.h>
   #define HOST_OSTREAM OutStream
+  using sreal = float;
 #else
   #include <iostream>
   #define HOST_OSTREAM std::ostream
   #define NL "\n"
+  using sreal = double;
 #endif
 
+template<typename T>
+void sumKahet( T v, T &sum, T &kah )
+{
+  T y = v - kah;
+  T t = sum + y;
+  kah = ( t - sum ) - y;
+  sum = t;
+}
 
+struct StatChannel {
+  sreal min = std::numeric_limits<sreal>::max(),
+        max = std::numeric_limits<sreal>::min(),
+        sum = 0, sum2 = 0, mean = 0, mean2 = 0, sd = 0, kah = 0, kah2 = 0;
+  unsigned n = 0;
+  StatChannel() = default;
+  void reset() {
+    min = std::numeric_limits<sreal>::max();
+    max = std::numeric_limits<sreal>::min();
+    sum = sum2 = mean = mean2 = sd = kah =  kah2 = 0 ;
+    n = 0;
+  }
+  void add( sreal v );
+  void calc();
+};
+
+struct StatChannelXY : public StatChannel {
+  sreal sum_xy = 0, kah_xy = 0;
+  StatChannelXY() = default;
+  void reset() {
+    StatChannel::reset(); sum_xy = kah_xy = 0;
+  }
+  void add( sreal v, sreal vy );
+};
 
 struct StatData {
-  using sreal = float;
-  // using sreal = double;
   static const constexpr unsigned max_n_ch = 8;
 
-  struct Stat1 {
-    sreal min = std::numeric_limits<sreal>::max(),
-          max = std::numeric_limits<sreal>::min(),
-          sum = 0, sum2 = 0, mean = 0, mean2 = 0, sd = 0, kah = 0, kah2 = 0;
-    unsigned n = 0;
-    Stat1() = default;
-    void reset() {
-      min = std::numeric_limits<sreal>::max();
-      max = std::numeric_limits<sreal>::min();
-      sum = sum2 = mean = mean2 = sd = kah =  kah2 = 0 ;
-      n = 0;
-    }
-    void add( sreal v );
-    void calc();
-  };
-
   struct StructPart {
-    const sreal Stat1::* pptr;
+    const sreal StatChannel::* pptr;
     const char* const label;
   };
 
-  Stat1 d[max_n_ch];
+  StatChannel d[max_n_ch];
   unsigned n = 0;
   unsigned n_ch = 0;
 
@@ -51,17 +67,17 @@ struct StatData {
   void add( const sreal *v );
   void reset();
   void calc();
-  void out_part( HOST_OSTREAM &os, const sreal Stat1::* pptr, const char *lbl ) const;
+  void out_part( HOST_OSTREAM &os, const sreal StatChannel::* pptr, const char *lbl ) const;
   void out_parts( HOST_OSTREAM &os ) const;
   //
   static const constexpr StructPart structParts[] = {
-    { &Stat1::mean,  "mean " },
-    { &Stat1::mean2, "mean2" },
-    { &Stat1::min,   "min  " },
-    { &Stat1::max,   "max  " },
-    // { &Stat1::sum,   "sum  " },
-    // { &Stat1::sum2,  "sum2 " },
-    { &Stat1::sd,    "sd   " }
+    { &StatChannel::mean,  "mean " },
+    { &StatChannel::mean2, "mean2" },
+    { &StatChannel::min,   "min  " },
+    { &StatChannel::max,   "max  " },
+    // { &StatChannel::sum,   "sum  " },
+    // { &StatChannel::sum2,  "sum2 " },
+    { &StatChannel::sd,    "sd   " }
   };
 };
 

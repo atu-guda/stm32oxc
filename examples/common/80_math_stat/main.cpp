@@ -17,8 +17,6 @@ BOARD_CONSOLE_DEFINES;
 
 const char* common_help_string = "Appication to test misc math" NL;
 
-using sreal = StatData::sreal;
-
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test statistics"  };

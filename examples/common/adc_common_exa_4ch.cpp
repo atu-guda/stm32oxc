@@ -15,8 +15,6 @@
 
 using namespace std;
 
-using sreal = StatData::sreal;
-
 extern ADC_Info adc;
 
 void adc_out_to( OutStream &os, uint32_t n, uint32_t st );
