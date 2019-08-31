@@ -10,6 +10,7 @@
 #include <oxc_auto.h>
 #include <oxc_debug1.h>
 #include <oxc_floatfun.h>
+#include <oxc_statdata.h>
 
 #include <../examples/common/inc/pwm2_ctl.h>
 
@@ -170,8 +171,8 @@ bool  PWMInfo::calcCalibration( float &err_max, float R_0_c,  bool fake )
 bool PWMInfo::regreCalibration( float t_x0, float &a, float &b, float &r )
 {
   need_regre = true;
-  unsigned n = 0;
-  float sx = 0, sy = 0, sx2 = 0, sy2 = 0, sxy = 0;
+  StatChannelXY ch_x;
+  StatChannel   ch_y;
 
   for( unsigned i=0; i<max_cal_steps; ++i ) {
     // if( d_pwm[i] <= 0 ) { // next check is more strict
@@ -188,47 +189,34 @@ bool PWMInfo::regreCalibration( float t_x0, float &a, float &b, float &r )
     if( w < min_cal_req ) {
       continue;
     }
-    sx  += x;
-    sx2 += x * x;
-    sy  += y;
-    sy2 += y * y;
-    sxy += x * y;
-    ++n;
+    ch_x.add( x, y );
+    ch_y.add( y );
   }
 
 
-  if( n < 3 ) {
-    std_out << "# warning: regre: n= " << n << NL;
+  if( ch_x.n < 3 ) {
+    std_out << "# warning: regre: n= " << ch_x.n << NL;
     return false;
   }
 
-  float dd = n * sx2 - sx * sx;
+  RegreResults rr;
+  if( ! regre( ch_x, ch_y, rr ) ) {
+    std_out << "# Error: regre: = " << (int)rr.err << NL;
+    return false;
+  }
 
   if( debug > 1 ) {
-    std_out << "# # regre: n= " << n << NL;
-    std_out << "# # sx = " << sx << " sx2= " << sx2 << " sy= " << sy << " sy2= " << sy2 << " sxy= " << sxy << " dd= " << dd << NL;
+    std_out << "# # regre: n= " << ch_x.n << NL
+            << "# # sx = " << ch_x.sum << " sx2= " << ch_x.sum2
+            << " sy= "     << ch_y.sum << " sy2= " << ch_y.sum2
+            << " sxy= "    << ch_x.sum_xy << NL;
   }
-
-  if( fabsf( dd ) < 1e-6f ) {
-    std_out << "# Error: regre: dd= " << dd << NL;
-    return false;
-  }
-  const float t1 = n * sxy - sx * sy;
-  a = t1 / dd;
-  b = ( sy * sx2 - sx * sxy ) / dd;
-
-  const float dz = ( n * sx2 - sx * sx ) * ( n * sy2 - sy * sy );
-  if( dz < 1e-6f ) {
-    std_out << "# Error: regre: dz= " << dz << NL;
-    return false;
-  }
-  r = t1 / sqrtf( dz );
 
   if( debug > 0 ) {
-    std_out << "# # a = " << a << " b= " << b << " r= " << r << NL;
+    std_out << "# # a = " << rr.a << " b= " << rr.b << " r= " << rr.r << NL;
   }
 
-  if( r < 0.7f ) {
+  if( rr.r < 0.7f ) {
     std_out << "# Warning: regre: r= " << r << NL;
     return false;
   }

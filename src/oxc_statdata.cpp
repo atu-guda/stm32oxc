@@ -37,6 +37,44 @@ void StatChannelXY::add( sreal v, sreal vy )
   sumKahet( v * vy, sum_xy, kah_xy );
 }
 
+// ---------------------- regre -------------------------------------------
+
+bool regre( const StatChannelXY &x, const StatChannel &y, RegreResults &r )
+{
+  if( x.n != y.n ) {
+    r.err = RegreResults::diffSize;
+    return false;
+  }
+  if( x.n < 2 ) {
+    r.err = RegreResults::smallSize;
+    return false;
+  }
+
+  float dd = x.n * x.sum2 - x.sum * x.sum;
+
+  if( fabsf( dd ) < 1e-6f ) {
+    r.err = RegreResults::smallDenom;
+    return false;
+  }
+
+  const float t1 = x.n * x.sum_xy - x.sum * y.sum;
+  r.a = t1 / dd;
+  r.b = ( y.sum * x.sum2 - x.sum * x.sum_xy ) / dd;
+
+  const float dz = ( x.n * x.sum2 - x.sum * x.sum ) * ( x.n * y.sum2 - y.sum * y.sum );
+  if( dz < 1e-6f ) {
+    r.err = RegreResults::smallDz;
+    return false;
+  }
+  if constexpr( sizeof(sreal) == sizeof(float) ) {
+    r.r = t1 / sqrtf( dz );
+  } else {
+    r.r = t1 / sqrt( dz );
+  }
+  r.err = RegreResults::noError;
+
+  return true;
+}
 
 // ------------------------ StatData --------------------------------------
 

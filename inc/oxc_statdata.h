@@ -49,6 +49,14 @@ struct StatChannelXY : public StatChannel {
   void add( sreal v, sreal vy );
 };
 
+struct RegreResults {
+  sreal a, b, r;
+  enum ErrorType { noError = 0, diffSize, smallSize, smallDenom, smallDz };
+  ErrorType err;
+};
+
+bool regre( const StatChannelXY &x, const StatChannel &y, RegreResults &r );
+
 struct StatData {
   static const constexpr unsigned max_n_ch = 8;
 

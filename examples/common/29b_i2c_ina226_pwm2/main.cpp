@@ -409,7 +409,7 @@ void tim_cfg()
   tim_oc_cfg.OCFastMode   = TIM_OCFAST_DISABLE;
   tim_oc_cfg.OCIdleState  = TIM_OCIDLESTATE_RESET;
   tim_oc_cfg.OCNIdleState = TIM_OCNIDLESTATE_RESET;
-  tim_oc_cfg.Pulse = (tim_ccr_t)( pwmdat.get_pwm_min() * arr / 100 );
+  tim_oc_cfg.Pulse = ( pwmdat.get_pwm_min() * arr / 100 );
 
   if( HAL_TIM_PWM_ConfigChannel( &tim_h, &tim_oc_cfg, TIM_CHANNEL_1 ) != HAL_OK ) {
     UVAR('e') = 112;
@@ -422,7 +422,7 @@ void tim_cfg()
 void do_set_pwm( float v )
 {
   uint32_t scl = TIM_EXA->ARR;
-  auto nv = (tim_ccr_t)( v * scl / 100 );
+  tim_ccr_t nv = ( v * scl / 100 );
   if( nv != TIM_EXA->CCR1 ) {
     TIM_EXA->CCR1 = nv;
   }
