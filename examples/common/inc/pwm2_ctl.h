@@ -46,6 +46,7 @@ struct PWMInfo {
   float d_pwm[max_cal_steps], d_v[max_cal_steps]; //* calibration and adopt data
   float d_wei[max_cal_steps]; //* step weight - really number for now
   float regre_lev  = 1.0f;    //* really bool flag for now
+  float pid_only   = 0.0f;    //* bool flag too
   bool was_calibr  = false;
   bool need_regre  = true;
 };

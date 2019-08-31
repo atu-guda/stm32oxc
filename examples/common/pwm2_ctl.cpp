@@ -426,10 +426,15 @@ bool PWMData::tick( const float *d )
     };
   }
 
-  float d_err_dt = (err - last_err ) / t_step;
+  float d_err_dt = ( err - last_err ) / t_step;
+  last_err = err;
+
   if( !only_pwm ) {
-    // TODO: prop_or_predict part + integr + diff
-    pwm_val -= pwminfo.ki_v * t_step * err * c_ki + pwminfo.kd_v * d_err_dt * c_ki;
+    if( pwminfo.pid_only > 0 ) {
+      pwm_val  = c_ki * pwminfo.kp_v * err;
+    }
+
+    pwm_val -= c_ki * ( pwminfo.ki_v * t_step * err + pwminfo.kd_v * d_err_dt );
   }
 
   if( rc != check_result::ok && pwm_val > pwm_val_old ) {
@@ -441,7 +446,6 @@ bool PWMData::tick( const float *d )
 
   pwminfo.addSample( pwm_val_old, d[didx_v] );
 
-  last_err = err;
 
   return true;
 }
@@ -455,6 +459,11 @@ void PWMData::calcNextStep()
   bool rehint = ( c_step == 0  )
     || ( fabsf( val_0 - old_val ) > pwminfo.rehint_lim )
     || ( steps[c_step].tp != steps[c_step-1].tp );
+
+  if( pwminfo.pid_only > 0 ) {
+    // rehint = false;
+    return;
+  }
 
   if( rehint && pwminfo.regre_lev > 0 ) {
     pwminfo.doRegre();

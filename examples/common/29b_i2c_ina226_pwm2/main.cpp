@@ -91,24 +91,25 @@ constexpr NamedFloat ob_W_max      {      "W_max",      &pwminfo.W_max  };
 constexpr NamedFloat ob_V_max      {      "V_max",      &pwminfo.V_max  };
 constexpr NamedFloat ob_I_max      {      "I_max",      &pwminfo.I_max  };
 constexpr NamedFloat ob_R_max      {      "R_max",      &pwminfo.R_max  };
-constexpr NamedFloat ob_V_00       {       "V_00",       &pwminfo.V_00  };
-constexpr NamedFloat ob_R_0        {        "R_0",        &pwminfo.R_0  };
+constexpr NamedFloat ob_V_00       {       "V_00",      &pwminfo.V_00  };
+constexpr NamedFloat ob_R_0        {        "R_0",      &pwminfo.R_0  };
 constexpr NamedFloat ob_k_gv1      {      "k_gv1",      &pwminfo.k_gv1  };
 constexpr NamedFloat ob_k_gv2      {      "k_gv2",      &pwminfo.k_gv2  };
-constexpr NamedFloat ob_x_0        {        "x_0",        &pwminfo.x_0  };
-constexpr NamedFloat ob_kp_v       {       "kp_v",       &pwminfo.kp_v  };
-constexpr NamedFloat ob_ki_v       {       "ki_v",       &pwminfo.ki_v  };
-constexpr NamedFloat ob_kd_v       {       "kd_v",       &pwminfo.kd_v  };
-constexpr NamedFloat ob_k_move     {     "k_move",       &pwminfo.k_move  };
-constexpr NamedFloat ob_cal_min    {    "cal_min",       &pwminfo.cal_min  };
-constexpr NamedFloat ob_cal_step   {   "cal_step",       &pwminfo.cal_step };
-constexpr NamedFloat ob_cal_pwm    {    "cal_pwm",       pwminfo.d_pwm, size(pwminfo.d_pwm) };
-constexpr NamedFloat ob_cal_v      {      "cal_v",         pwminfo.d_v, size(pwminfo.d_v)   };
-constexpr NamedFloat ob_rehint_lim { "rehint_lim", &pwminfo.rehint_lim  };
-constexpr NamedFloat ob_regre_lev  {  "regre_lev", &pwminfo.regre_lev  };
-constexpr NamedFloat ob_pwm_min    {    "pwm_min",         get_pwm_min,  set_pwm_min  };
-constexpr NamedFloat ob_pwm_max    {    "pwm_max",         get_pwm_max,  set_pwm_max  };
-constexpr NamedFloat ob_pwm_def    {    "pwm_def",         get_pwm_def,  set_pwm_def  };
+constexpr NamedFloat ob_x_0        {        "x_0",      &pwminfo.x_0  };
+constexpr NamedFloat ob_kp_v       {       "kp_v",      &pwminfo.kp_v  };
+constexpr NamedFloat ob_ki_v       {       "ki_v",      &pwminfo.ki_v  };
+constexpr NamedFloat ob_kd_v       {       "kd_v",      &pwminfo.kd_v  };
+constexpr NamedFloat ob_k_move     {     "k_move",      &pwminfo.k_move  };
+constexpr NamedFloat ob_cal_min    {    "cal_min",      &pwminfo.cal_min  };
+constexpr NamedFloat ob_cal_step   {   "cal_step",      &pwminfo.cal_step };
+constexpr NamedFloat ob_cal_pwm    {    "cal_pwm",      pwminfo.d_pwm, size(pwminfo.d_pwm) };
+constexpr NamedFloat ob_cal_v      {      "cal_v",      pwminfo.d_v, size(pwminfo.d_v)   };
+constexpr NamedFloat ob_rehint_lim { "rehint_lim",      &pwminfo.rehint_lim  };
+constexpr NamedFloat ob_regre_lev  {  "regre_lev",      &pwminfo.regre_lev  };
+constexpr NamedFloat ob_pid_only   {  "pid_only",       &pwminfo.pid_only  };
+constexpr NamedFloat ob_pwm_min    {    "pwm_min",      get_pwm_min,  set_pwm_min  };
+constexpr NamedFloat ob_pwm_max    {    "pwm_max",      get_pwm_max,  set_pwm_max  };
+constexpr NamedFloat ob_pwm_def    {    "pwm_def",      get_pwm_def,  set_pwm_def  };
 
 constexpr const NamedObj *const objs_info[] = {
   & ob_v_coeffs,
@@ -131,6 +132,7 @@ constexpr const NamedObj *const objs_info[] = {
   & ob_cal_v,
   & ob_rehint_lim,
   & ob_regre_lev,
+  & ob_pid_only,
   & ob_pwm_min,
   & ob_pwm_max,
   & ob_pwm_def,
