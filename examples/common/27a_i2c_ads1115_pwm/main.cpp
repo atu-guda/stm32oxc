@@ -219,7 +219,7 @@ void tim_cfg()
 
 
   HAL_TIM_PWM_Stop( &tim_h, TIM_CHANNEL_1 );
-  tim_oc_cfg.Pulse = (tim_ccr_t)( pwmdat.get_v_def() * pbase / 100 );
+  tim_oc_cfg.Pulse = pwmdat.get_v_def() * pbase / 100;
   if( HAL_TIM_PWM_ConfigChannel( &tim_h, &tim_oc_cfg, TIM_CHANNEL_1 ) != HAL_OK ) {
     UVAR('e') = 11;
     return;

@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include <oxc_auto.h>
+#include <oxc_xxprintf.h>
 
 using namespace std;
 using namespace SMLRL;

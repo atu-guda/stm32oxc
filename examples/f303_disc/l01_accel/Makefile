@@ -22,8 +22,8 @@ USE_FREERTOS = y
 # REQUIRE_SPECIAL_CLOCK = y
 
 
-CFLAGS_ADD += -I$(STMDIR)/bsp/Components/lsm303dlhc
-ADDSRC     +=   $(STMDIR)/bsp/Components/lsm303dlhc
+CFLAGS_ADD += -I$(STM32_HAL_FW_DIR)/Drivers/BSP/Components/lsm303dlhc
+ADDSRC     +=   $(STM32_HAL_FW_DIR)/Drivers/BSP/Components/lsm303dlhc
 
 SRCS  = main.cpp
 

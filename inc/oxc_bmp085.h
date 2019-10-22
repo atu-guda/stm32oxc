@@ -36,7 +36,7 @@ class BMP085 : public I2CClient {
    void calc();
    int  get_T10() { return t10; } // T10/10 = grad C
    int  get_P()   { return p;   }
-   const int16_t* getCalibr() const { return (const int16_t*)(&calibr); }
+   const CalibrData* getCalibr() const { return &calibr; }
   protected:
    CalibrData calibr;
    int32_t t_uncons = 0, t10 = 0;

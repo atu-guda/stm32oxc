@@ -50,10 +50,6 @@ STM_HAL_SRC := \
  $(STM32_HAL_FW_DIR)/Drivers/CMSIS/Device/ST/STM32$(MCSUFF_U)xx/Source/Templates \
  $(STM32_HAL_FW_DIR)/Drivers/CMSIS/Device/ST/STM32$(MCSUFF_U)xx/Source/Templates/gcc
 
- #$(STM32_HAL_FW_DIR)/Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_core.c \
- #$(STM32_HAL_FW_DIR)/Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ctlreq.c \
- #$(STM32_HAL_FW_DIR)/Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ioreq.c \
- #$(STM32_HAL_FW_DIR)/Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Src/usbd_cdc.c
 
 # $(error Debug stop )
 
@@ -67,20 +63,14 @@ OBJCOPY:=$(TARGET)-objcopy
 OBJDUMP:=$(TARGET)-objdump
 LINK=$(CXX)
 
-STMDIR=/usr/share/stm32cube
-#STMINC=$(STMDIR)/inc
-#STMSRC=$(STMDIR)/src
-#STMLD=$(STMDIR)/ld
-#STMMK=$(STMDIR)/mk
-#STMBSP=$(STMDIR)/bsp
-#STMCOMPONENTS=$(STMBSP)/Components
 
 # OXCDIR := oxc // from Makefile TODO: from pkgconfig
 OXCINC = $(OXCDIR)/inc
 OXCSRC = $(OXCDIR)/src
 OXCINCBSP = $(OXCDIR)/inc/bsp/$(BSPNAME)
 OXCBOARDDIR=$(OXCSRC)/bsp/$(BSPNAME)
-STMBOARDDIR=$(STMBSP)/$(BOARDNAME)
+STMBOARDDIR=$(STM32_HAL_FW_DIR)/Drivers/BSP/$(BOARDNAME)
+STMCOMPONENTS=$(STM32_HAL_FW_DIR)/Drivers/BSP/Components
 OXCLD = $(OXCDIR)/ld
 
 DEPSDIR=.deps
@@ -207,6 +197,8 @@ ifeq "$(USE_OXC_CONSOLE_USB_CDC)" "y"
   # TODO: move to bsp/$(BOARDNAME) + links to common
   STM_HAL_INC += -I$(STM32_HAL_FW_DIR)/Middlewares/ST/STM32_USB_Device_Library/Core/Inc  -I$(STM32_HAL_FW_DIR)/Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc
   SRCPATHS += $(OXCSRC)/usb_cdc_$(MCSUFF)
+  SRCPATHS += $(STM32_HAL_FW_DIR)/Middlewares/ST/STM32_USB_Device_Library/Core/Src
+  SRCPATHS += $(STM32_HAL_FW_DIR)/Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Src
   ALLFLAGS += -I$(OXCINC)/usb_cdc_$(MCSUFF) -I$(OXCINC)/usbd_descr_cdc
   SRCS += usbd_conf.cpp
   SRCS += usbd_desc.cpp
@@ -400,6 +392,7 @@ ifeq "$(USE_FREERTOS)" "y"
 endif
 
 ifeq "$(USE_FONTS)" "y"
+  ALLFLAGS += -I$(STM32_HAL_FW_DIR)/Utilities/Fonts
   SRCPATHS += $(STM32_HAL_FW_DIR)/Utilities/Fonts
   SRCS += font8.c
   SRCS += font12.c

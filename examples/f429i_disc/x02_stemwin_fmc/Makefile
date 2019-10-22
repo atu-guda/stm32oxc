@@ -1,8 +1,9 @@
 OXCDIR = /usr/share/stm32oxc
 PROJ_NAME=stemwin_test
+STEMWIN_DIR = $(STM32_HAL_FW_DIR)/Middlewares/ST/STemWin
 
-ADDINC = -I$(STMINC)/STemWin -I$(STMCOMPONENTS)/ili9341 -I$(STMSRC) -I$(STMINC)/fonts
-ADDSRC =  $(STMSRC)/fonts $(STMCOMPONENTS)/stmpe811 $(STMCOMPONENTS)/ili9341  $(STMSRC)/STemWin $(STMSRC)/STemWin/OS
+ADDINC = -I$(STEMWIN_DIR)/inc -I$(STMCOMPONENTS)/ili9341
+ADDSRC =  $(STMCOMPONENTS)/stmpe811 $(STMCOMPONENTS)/ili9341  $(STEMWIN_DIR)/OS
 
 
 USE_OXC = y
@@ -53,7 +54,7 @@ SRCS += stm32f429i_discovery_ts.c
 SRCS += GUI_X.c
 
 # TODO: version auto
-LIBS += $(STMDIR)/lib/STemWin/STemWin540_CM4_GCC.a
+LIBS += $(STEMWIN_DIR)/Lib/STemWin_CM4_wc32.a
 
 
 include ../common/board_add.mk

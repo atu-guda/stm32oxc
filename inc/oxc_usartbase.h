@@ -40,8 +40,6 @@
  #define USART_TX_REG TDR
  #define USART_RX_REG RDR
  #define USART_SR_REG ISR
- #define __HAL_USART_CLEAR_FLAG(__HANDLE__, __FLAG__) ((__HANDLE__)->Instance->ICR = (uint32_t)(__FLAG__))
- #define __HAL_USART_CLEAR_OREFLAG(__HANDLE__) ((__HANDLE__)->Instance->ICR = (uint32_t)(USART_CLEAR_OREF))
 #else
   #error "Unsupported MCU"
 #endif

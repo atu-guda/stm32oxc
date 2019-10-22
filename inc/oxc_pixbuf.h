@@ -1,7 +1,7 @@
 #ifndef _OXC_PIXBUF_H
 #define _OXC_PIXBUF_H
 
-#include <fonts/fonts.h>
+#include <fonts.h>
 
 #include <oxc_base.h>
 
