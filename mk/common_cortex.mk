@@ -17,18 +17,18 @@ $(info PROJ_NAME= $(PROJ_NAME) BOARDNAME= $(BOARDNAME) )
 $(info MCTYPE= $(MCTYPE)  MCBASE= $(MCBASE)  MCSUFF= $(MCSUFF) MCSUFF_U= $(MCSUFF_U) )
 
 ifndef STM32_HAL_REPODIR
-  ifdef OXC_USE_LOCAL_REPO
-    STM32_HAL_REPODIR = ~/STM32Cube/Repository
-  else
+  ifdef OXC_USE_GLOBAL_REPO
     STM32_HAL_REPODIR = /usr/share/stm32cube/Repository
+  else
+    STM32_HAL_REPODIR = $(HOME)/STM32Cube/Repository
   endif
 endif
 
 ifndef STM32_HAL_FW
-  ifdef OXC_USE_LOCAL_REPO
-    STM32_HAL_FW = $(shell cd $(STM32_HAL_REPODIR) ; ls -1 -d STM32Cube_FW_F4_V* | sort -V )
-  else
+  ifdef OXC_USE_GLOBAL_REPO
     STM32_HAL_FW = $(MCSUFF)
+  else
+    STM32_HAL_FW = $(shell cd $(STM32_HAL_REPODIR) ; ls -1 -d STM32Cube_FW_$(MCSUFF_U)_V* | sort -V | head -1)
   endif
 endif
 STM32_HAL_FW_DIR = $(STM32_HAL_REPODIR)/$(STM32_HAL_FW)
