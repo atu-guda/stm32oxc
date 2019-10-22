@@ -1,7 +1,6 @@
 # common Makefile part for STM32F429IGT discovery board
 
 MCTYPE = STM32F429
-MCINCTYPE = $(MCTYPE)xx
 FREERTOS_ARCHNAME = ARM_CM4F
 BOARDNAME = STM32F429I-Discovery
 BSPNAME   = STM32F429I-Discovery

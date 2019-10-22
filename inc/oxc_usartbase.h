@@ -1,6 +1,13 @@
 #ifndef _OXC_USARTBASE_H
 #define _OXC_USARTBASE_H
 
+// to prevent warnings
+#ifndef USE_HAL_UART_REGISTER_CALLBACKS
+  #define USE_HAL_UART_REGISTER_CALLBACKS 0
+#endif
+#ifndef USE_HAL_USART_REGISTER_CALLBACKS
+  #define USE_HAL_USART_REGISTER_CALLBACKS 0
+#endif
 
 #if defined (STM32F0)
  #include <stm32f0xx_hal_usart.h>
@@ -38,6 +45,7 @@
 #else
   #error "Unsupported MCU"
 #endif
+
 
 // common declarations
 int init_uart( UART_HandleTypeDef *uah, int baud = 115200 ); // must be provided by project

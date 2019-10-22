@@ -1,19 +1,79 @@
+# Must be set before:
+# MCTYPE like STM32F446
+# may be
+# MCINCTYPE like STM32F103xB (for HAL define), default: $(MCTYPE)xx
+
+ifndef MCINCTYPE
+ MCINCTYPE := $(MCTYPE)xx
+endif
+
+# MCBASE is like "STM32F4"
+MCBASE := $(shell echo "$(MCTYPE)" | head -c 7  )
+# MCSUFF_U is like "F4"
+MCSUFF_U := $(shell echo -n  '$(MCBASE)'| tail -c 2  )
+# MCSUFF is like "f4"
+MCSUFF := $(shell m1='$(MCSUFF_U)'; echo  "$${m1,,*}" )
+$(info PROJ_NAME= $(PROJ_NAME) BOARDNAME= $(BOARDNAME) )
+$(info MCTYPE= $(MCTYPE)  MCBASE= $(MCBASE)  MCSUFF= $(MCSUFF) MCSUFF_U= $(MCSUFF_U) )
+
+ifndef STM32_HAL_REPODIR
+  ifdef OXC_USE_LOCAL_REPO
+    STM32_HAL_REPODIR = ~/STM32Cube/Repository
+  else
+    STM32_HAL_REPODIR = /usr/share/stm32cube/Repository
+  endif
+endif
+
+ifndef STM32_HAL_FW
+  ifdef OXC_USE_LOCAL_REPO
+    STM32_HAL_FW = $(shell cd $(STM32_HAL_REPODIR) ; ls -1 -d STM32Cube_FW_F4_V* | sort -V )
+  else
+    STM32_HAL_FW = $(MCSUFF)
+  endif
+endif
+STM32_HAL_FW_DIR = $(STM32_HAL_REPODIR)/$(STM32_HAL_FW)
+
+$(info STM32_HAL_REPODIR= $(STM32_HAL_REPODIR)  STM32_HAL_FW_DIR= $(STM32_HAL_FW_DIR) )
+
+ifeq ("$(wildcard $(STM32_HAL_FW_DIR)/package.xml)","")
+  $(error Directory $(STM32_HAL_FW_DIR) is bad or nonexistent )
+endif
+
+STM_HAL_INC := \
+ -I$(STM32_HAL_FW_DIR)/Drivers/STM32$(MCSUFF_U)xx_HAL_Driver/Inc \
+ -I$(STM32_HAL_FW_DIR)/Drivers/STM32$(MCSUFF_U)xx_HAL_Driver/Inc/Legacy \
+ -I$(STM32_HAL_FW_DIR)/Drivers/CMSIS/Device/ST/STM32$(MCSUFF_U)xx/Include \
+ -I$(STM32_HAL_FW_DIR)/Drivers/CMSIS/Include
+
+STM_HAL_SRC := \
+ $(STM32_HAL_FW_DIR)/Drivers/STM32$(MCSUFF_U)xx_HAL_Driver/Src \
+ $(STM32_HAL_FW_DIR)/Drivers/CMSIS/Device/ST/STM32$(MCSUFF_U)xx/Source/Templates \
+ $(STM32_HAL_FW_DIR)/Drivers/CMSIS/Device/ST/STM32$(MCSUFF_U)xx/Source/Templates/gcc
+
+ #$(STM32_HAL_FW_DIR)/Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_core.c \
+ #$(STM32_HAL_FW_DIR)/Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ctlreq.c \
+ #$(STM32_HAL_FW_DIR)/Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ioreq.c \
+ #$(STM32_HAL_FW_DIR)/Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Src/usbd_cdc.c
+
+# $(error Debug stop )
+
 # common variables and rules to make stm32 binaries
 TARGET:=arm-none-eabi
 CC:=$(TARGET)-gcc
 CXX:=$(TARGET)-g++
 CPP:=$(TARGET)-cpp
+AS:=$(TARGET)-gcc -x assembler-with-cpp
 OBJCOPY:=$(TARGET)-objcopy
 OBJDUMP:=$(TARGET)-objdump
 LINK=$(CXX)
 
 STMDIR=/usr/share/stm32cube
-STMINC=$(STMDIR)/inc
-STMSRC=$(STMDIR)/src
-STMLD=$(STMDIR)/ld
-STMMK=$(STMDIR)/mk
-STMBSP=$(STMDIR)/bsp
-STMCOMPONENTS=$(STMBSP)/Components
+#STMINC=$(STMDIR)/inc
+#STMSRC=$(STMDIR)/src
+#STMLD=$(STMDIR)/ld
+#STMMK=$(STMDIR)/mk
+#STMBSP=$(STMDIR)/bsp
+#STMCOMPONENTS=$(STMBSP)/Components
 
 # OXCDIR := oxc // from Makefile TODO: from pkgconfig
 OXCINC = $(OXCDIR)/inc
@@ -48,12 +108,6 @@ ALLFLAGS += -mlittle-endian
 ifeq "$(NO_STDLIB)" "y"
   ALLFLAGS += -nostdlib
 endif
-
-# MCBASE is like "STM32F4"
-MCBASE := $(shell echo "$(MCTYPE)" | head -c 7  )
-# MCSUFF is like "f4"
-MCSUFF := $(shell m1='$(MCBASE)'; echo -n "$${m1,,*}" | tail -c 2  )
-$(info PROJ_NAME = $(PROJ_NAME) BOARDNAME= $(BOARDNAME)  MCTYPE is $(MCTYPE)  MCBASE is $(MCBASE)  MCSUFF is $(MCSUFF) )
 
 ALLFLAGS  += -D$(MCTYPE) -D$(MCBASE) -DMCTYPE=$(MCTYPE) -DMCBASE=$(MCBASE)
 
@@ -116,9 +170,9 @@ LDFLAGS += -Wl,--start-group -lc -lgcc -lnosys -Wl,--end-group
 
 ###################################################
 
-SRCPATHS =  $(STMSRC) $(STMSRC)/templates $(OXCBOARDDIR) $(ADDSRC)
+SRCPATHS =  $(STM_HAL_SRC) $(OXCBOARDDIR) $(ADDSRC)
 
-ALLFLAGS += -I. -I$(STMINC)
+ALLFLAGS += -I. $(STM_HAL_INC)
 
 ifneq ($(origin BOARDNAME),undefined)
   ALLFLAGS += -I$(STMBOARDDIR)
@@ -151,6 +205,7 @@ ifeq "$(USE_OXC_CONSOLE_USB_CDC)" "y"
   # $(info "Used USB_CDC console" )
   USE_OXC_CONSOLE = y
   # TODO: move to bsp/$(BOARDNAME) + links to common
+  STM_HAL_INC += -I$(STM32_HAL_FW_DIR)/Middlewares/ST/STM32_USB_Device_Library/Core/Inc  -I$(STM32_HAL_FW_DIR)/Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc
   SRCPATHS += $(OXCSRC)/usb_cdc_$(MCSUFF)
   ALLFLAGS += -I$(OXCINC)/usb_cdc_$(MCSUFF) -I$(OXCINC)/usbd_descr_cdc
   SRCS += usbd_conf.cpp
@@ -345,7 +400,7 @@ ifeq "$(USE_FREERTOS)" "y"
 endif
 
 ifeq "$(USE_FONTS)" "y"
-  SRCPATHS += $(STMSRC)/fonts
+  SRCPATHS += $(STM32_HAL_FW_DIR)/Utilities/Fonts
   SRCS += font8.c
   SRCS += font12.c
   SRCS += font16.c
@@ -354,9 +409,9 @@ ifeq "$(USE_FONTS)" "y"
 endif
 
 
-vpath %.c   $(SRCPATHS) $(OXCSRC)/startup
+vpath %.c   $(SRCPATHS)
 vpath %.cpp $(SRCPATHS)
-vpath %.s   $(OXCSRC)/startup $(STMSRC)/startup
+vpath %.s   $(STM32_HAL_FW_DIR)/Drivers/CMSIS/Device/ST/STM32$(MCSUFF_U)xx/Source/Templates/gcc $(OXCSRC)
 vpath %.o   $(OBJDIR)
 vpath %.d   $(DEPSDIR)
 vpath %.ld  $(OXCLD)
@@ -371,6 +426,7 @@ CFLAGS   = $(ALLFLAGS)  -std=c11   $(CWARNFLAGS)
 CXXFLAGS = $(ALLFLAGS)  -std=c++17 $(CXXWARNFLAGS) -fno-rtti -fno-exceptions -fno-threadsafe-statics -fno-use-cxa-atexit
 
 $(info SRCPATHS is $(SRCPATHS) )
+$(info STM_HAL_INC= $(STM_HAL_INC) )
 
 ###################################################
 
@@ -395,7 +451,7 @@ $(OBJDIR)/%.o: %.cpp
 	mv $(OBJDIR)/$*.d $(DEPSDIR)
 
 $(OBJDIR)/%.o: %.s
-	$(CC) $(CFLAGS) -I$(OXCSRC)/startup -c -o $@ $<
+	$(AS) $(CFLAGS) -I$(OXCSRC)/startup -c -o $@ $<
 
 $(PROJ_NAME).elf: $(OBJS1) $(LDSCRIPT)
 	$(LINK) $(OBJS1) $(LDFLAGS) $(LIBS) -o $(PROJ_NAME).elf

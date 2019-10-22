@@ -1,7 +1,6 @@
 # common Makefile part for STM32F446R nucleo64 board
 
 MCTYPE = STM32F446
-MCINCTYPE = $(MCTYPE)xx
 FREERTOS_ARCHNAME = ARM_CM4F
 # see /usr/share/stm32cube/bsp/
 BOARDNAME = STM32F4xx-Nucleo

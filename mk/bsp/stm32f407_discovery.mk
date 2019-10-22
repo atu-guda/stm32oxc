@@ -1,7 +1,6 @@
 # common Makefile part for STM32F407VGT discovery board
 
 MCTYPE = STM32F407
-MCINCTYPE = $(MCTYPE)xx
 FREERTOS_ARCHNAME = ARM_CM4F
 BOARDNAME = STM32F4-Discovery
 BSPNAME   = STM32F4-Discovery

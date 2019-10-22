@@ -13,6 +13,12 @@
   #include "../common/stm32_hal_conf_base.h"
 #endif
 
+// to prevent warnings
+#ifndef USE_HAL_UART_REGISTER_CALLBACKS
+  #define USE_HAL_UART_REGISTER_CALLBACKS 0
+#endif
+
+
 #ifndef OXC_SYSTICK_PRTY
   #define OXC_SYSTICK_PRTY 15
 #endif

@@ -1,7 +1,6 @@
 # common Makefile part for STM32F746IG WaveShare board
 
 MCTYPE = STM32F746
-MCINCTYPE = $(MCTYPE)xx
 FREERTOS_ARCHNAME = ARM_CM4F
 # none
 BOARDNAME = STM32F7xx_Nucleo_144
