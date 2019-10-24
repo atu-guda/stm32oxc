@@ -205,9 +205,7 @@ ifeq "$(USE_OXC_CONSOLE_USB_CDC)" "y"
   # USB: hal:
   SRCS += stm32$(MCSUFF)xx_hal_pcd.c
   SRCS += stm32$(MCSUFF)xx_hal_pcd_ex.c
-  ifneq "$(MCSUFF)" "f3"
-    SRCS += stm32$(MCSUFF)xx_ll_usb.c
-  endif
+  SRCS += stm32$(MCSUFF)xx_ll_usb.c
   # USB: lib:
   SRCS += usbd_core.c
   SRCS += usbd_cdc.c

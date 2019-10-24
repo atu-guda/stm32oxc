@@ -12,7 +12,6 @@ int main(void)
 {
   STD_PROLOG_START;
 
-  int i=0x04;
 
   // write/set test
   leds.write( BOARD_LEDS_ALL );
@@ -44,12 +43,18 @@ int main(void)
   delay_ms( 1000 );
 
 
-  while(1) {
+  for( unsigned i=0; i<32; ++i ) {
     leds.write( i );
-    ++i;
-    i &= BOARD_LEDS_ALL;
+    // i &= BOARD_LEDS_ALL;
     delay_ms( 200 );
   }
+
+  for(;;) { // speed measure
+    leds.write( 0xFF );
+    leds.write( 0x00 );
+    // leds.toggle( 0xFF );
+  }
+
   return 0;
 }
 

@@ -221,7 +221,8 @@ class Pins
    constexpr Pins( GpioRegs &gi, uint8_t a_start, uint8_t a_n )
      : gpio( gi ),
        start( a_start ), n( a_n ),
-       mask( make_gpio_mask( start, n ) )
+       mask( make_gpio_mask( start, n ) ),
+       maskR( mask << 16 )
      {};
    uint16_t getMask() const { return mask; }
    void initHW() { gpio.enableClk(); }
@@ -234,6 +235,7 @@ class Pins
    GpioRegs &gpio;
    const uint8_t start, n;
    const uint16_t mask;
+   const uint32_t maskR;
 };
 
 class PinsOut : public Pins
@@ -245,7 +247,7 @@ class PinsOut : public Pins
    void initHW();
    void write( uint16_t v )  // set to given, drop old
    {
-     gpio.ODR = mv( v ) | ( gpio.ODR & (~mask) );
+     gpio.BSSR = mv( v ) | maskR;
    }
    inline void set( uint16_t v )   // get given to '1' (OR)
    {
@@ -264,7 +266,7 @@ class PinsOut : public Pins
    }
    inline void toggle( uint16_t v ) // XOR
    {
-     gpio.ODR ^= mv( v ); // TODO: propect mask?
+     gpio.ODR ^= mv( v );
    }
   protected:
    // none for now
