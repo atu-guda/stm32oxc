@@ -1,3 +1,4 @@
+Use PinOut instead PinsOut in SPI ..., where only one pin is required
 Bug: adcdma_n: limit output to n
 ADC_Info: more common / split
 F7 DMA:

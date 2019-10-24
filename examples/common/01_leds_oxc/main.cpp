@@ -49,10 +49,16 @@ int main(void)
     delay_ms( 200 );
   }
 
+  // PinOut pin( BOARD_LEDS_GPIO, BOARD_LEDS_OFS );
+
   for(;;) { // speed measure
     leds.write( 0xFF );
     leds.write( 0x00 );
     // leds.toggle( 0xFF );
+    // pin.set();
+    // pin.reset();
+    // pin.write( true );
+    // pin.write( false );
   }
 
   return 0;

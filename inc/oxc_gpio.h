@@ -245,7 +245,7 @@ class PinsOut : public Pins
      : Pins( gi, a_start, a_n )
      {};
    void initHW();
-   void write( uint16_t v )  // set to given, drop old
+   inline void write( uint16_t v )  // set to given, drop old
    {
      gpio.BSSR = mv( v ) | maskR;
    }
@@ -273,6 +273,49 @@ class PinsOut : public Pins
 };
 
 extern PinsOut leds;
+
+// single output pin
+class PinOut
+{
+  public:
+   constexpr PinOut( GpioRegs &gi, uint8_t a_start )
+     : gpio( gi ),
+       start( a_start ),
+       mask( make_gpio_mask( start, 1 ) ),
+       maskR( mask << 16 )
+     {};
+   uint16_t getMask() const { return mask; }
+   void initHW() { gpio.enableClk(); gpio.cfgOut_N( mask );}
+   GpioRegs& dev() { return gpio; }
+   inline void write( bool doSet )
+   {
+     sr( doSet );
+   }
+   inline void set()
+   {
+     gpio.BSSR = mask;
+   }
+   inline void reset()
+   {
+     gpio.BSSR = maskR;
+   }
+   inline void sr( bool doSet ) {
+     if( doSet ) {
+       set();
+     } else {
+       reset();
+     }
+   }
+   inline void toggle()
+   {
+     gpio.ODR ^= mask;
+   }
+  protected:
+   GpioRegs &gpio;
+   const uint8_t start;
+   const uint16_t mask;
+   const uint32_t maskR;
+};
 
 [[ noreturn ]] void die4led( uint16_t n );
 
