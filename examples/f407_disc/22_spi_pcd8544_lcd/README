@@ -6,9 +6,8 @@ A6 = MISO
 A7 = MOSI
 A4 = Soft NSS
 
-More: must be successive
-C4: !RST
-C5  D/!C
+C4: !RST BOARD_SPI_DEFAULT_GPIO_PIN_EXT1
+C5  D/!C BOARD_SPI_DEFAULT_GPIO_PIN_EXT2
 
 Console:  USBCDC via SmallRL.
 used USB FS:

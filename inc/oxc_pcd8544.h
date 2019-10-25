@@ -12,8 +12,6 @@ class PCD8544 {
    enum {
      X_SZ             = 84,
      Y_SZ             = 48,
-     BIT_RST          = 0x01, // !reset bit
-     BIT_DC           = 0x02, // D/!C bit
      FUNC_SET         = 0x20,
      FUNC_SET_PD      = 0x04, // 1 = power down
      FUNC_SET_VMODE   = 0x02, // 1 = Vertical mode
@@ -36,10 +34,10 @@ class PCD8544 {
      XCMD_VOP_DFLT    = 0xC8, //   default Vop
      MEM_SZ = ( X_SZ * Y_SZ / 8 )
    };
-   PCD8544( DevSPI &a_spi, PinsOut &a_rst_dc )
-     : spi_d( a_spi ),  rst_dc( a_rst_dc ) {};
+   PCD8544( DevSPI &a_spi, PinOut &a_rst, PinOut &a_dc )
+     : spi_d( a_spi ),  rst( a_rst ), dc( a_dc ) {};
    int init();
-   void reset() { rst_dc.reset( 1 ); delay_bad_mcs( 10 ); rst_dc.set( 1 ); }
+   void reset() { rst.reset(); delay_bad_mcs( 10 ); rst.set(); }
    int cmd( const uint8_t *cmds, uint16_t n );
    int cmd( uint8_t acmd ) { return cmd( &acmd, 1 ); };
    int xcmd( uint8_t acmd ); // send extended cmd + switch mode +-
@@ -56,7 +54,8 @@ class PCD8544 {
 
   protected:
    DevSPI &spi_d;
-   PinsOut &rst_dc;
+   PinOut &rst;
+   PinOut &dc;
 };
 
 #endif

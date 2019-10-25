@@ -5,7 +5,7 @@ using namespace std;
 
 int  PCD8544::cmd( const uint8_t *cmds, uint16_t n )
 {
-  rst_dc.reset( BIT_DC );
+  dc.reset();
   int rc = spi_d.send( cmds, n );
   return rc;
 }
@@ -24,9 +24,9 @@ int PCD8544::ncmd( uint8_t acmd )
 
 int PCD8544::data( const uint8_t *d, uint16_t n )
 {
-  rst_dc.set( BIT_DC );
+  dc.set();
   int rc = spi_d.send( d, n );
-  rst_dc.reset( BIT_DC );
+  dc.reset();
   return rc;
 }
 
@@ -34,10 +34,11 @@ int PCD8544::data( const uint8_t *d, uint16_t n )
 
 int  PCD8544::init()
 {
-  rst_dc.initHW();
+  rst.initHW();
+  dc.initHW();
   spi_d.initSPI();
-  rst_dc.set( BIT_RST );
-  rst_dc.reset( BIT_DC );
+  rst.set();
+  dc.reset();
   delay_ms( 1 );
   reset();
   static const uint8_t on_cmd[] = { FUNC_XCMD, XCMD_VOP_DFLT, XCMD_TCX_DFLT, XCMD_BIAS_DFLT,

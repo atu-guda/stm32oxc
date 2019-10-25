@@ -46,14 +46,15 @@ const CmdInfo* global_cmds[] = {
 
 
 PinOut nss_pin( BOARD_SPI_DEFAULT_GPIO_SNSS, BOARD_SPI_DEFAULT_GPIO_PIN_SNSS );
-PinsOut rst_dc_pins( BOARD_SPI_DEFAULT_GPIO_EXT1, BOARD_SPI_DEFAULT_GPIO_PIN_EXT1, 2 );
+PinOut rst_pin( BOARD_SPI_DEFAULT_GPIO_EXT1, BOARD_SPI_DEFAULT_GPIO_PIN_EXT1 );
+PinOut dc_pin(  BOARD_SPI_DEFAULT_GPIO_EXT2, BOARD_SPI_DEFAULT_GPIO_PIN_EXT2 );
 SPI_HandleTypeDef spi_h;
 DevSPI spi_d( &spi_h, &nss_pin );
 
 const uint16_t xmax = PCD8544::X_SZ, ymax = PCD8544::Y_SZ;
 const uint16_t xcen = xmax/2, ycen = ymax/2, ystp = ymax / 10;
 PixBuf1V pb0( xmax, ymax );
-PCD8544 screen( spi_d, rst_dc_pins );
+PCD8544 screen( spi_d, rst_pin, dc_pin );
 
 
 int main(void)

@@ -8,8 +8,8 @@ void AD7606_SPI::init()
   rst_pin.initHW();
   cnvst_pin.initHW();
   busy_pin.initHW();
-  rst_pin.reset( 1 );
-  cnvst_pin.set( 1 );
+  rst_pin.reset();
+  cnvst_pin.set();
   busy_waited = 0;
 }
 

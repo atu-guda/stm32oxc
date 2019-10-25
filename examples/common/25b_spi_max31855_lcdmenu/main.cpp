@@ -19,7 +19,7 @@ using namespace SMLRL;
 USE_DIE4LED_ERROR_HANDLER;
 // BOARD_DEFINE_LEDS;
 PinsOut leds( GpioB, 12, 4 ); // 12: tick/menu 13: ?? 14: heather 15: Err
-PinsOut leds0( GpioC, 13, 1 ); // single C13
+PinOut leds0( GpioC, 13 ); // single C13
 
 // TODO: to local include
 #define HEATHER_BIT BIT2
@@ -53,7 +53,7 @@ HD44780_i2c lcdt( i2cd, 0x27 );
 void on_btn_while_run( int cmd );
 
 
-PinsOut nss_pin( BOARD_SPI_DEFAULT_GPIO_SNSS, BOARD_SPI_DEFAULT_GPIO_PIN_SNSS, 1 );
+PinOut nss_pin( BOARD_SPI_DEFAULT_GPIO_SNSS, BOARD_SPI_DEFAULT_GPIO_PIN_SNSS );
 SPI_HandleTypeDef spi_h;
 DevSPI spi_d( &spi_h, &nss_pin );
 
@@ -183,9 +183,9 @@ int main(void)
   spi_d.initSPI();
 
   // BOARD_POST_INIT_BLINK; // NO - do not touch heather!
-  leds.set( 0x03 ); leds0.set( 0x01 );
+  leds.set( 0x03 ); leds0.set();
   delay_ms( 200 );
-  leds.reset( 0x0F ); leds0.reset( 0x01 );
+  leds.reset( 0x0F ); leds0.reset();
 
   pr( NL "##################### " PROJ_NAME NL );
 
@@ -237,7 +237,7 @@ int cmd_test0( int argc, const char * const * argv )
     time_c = tcc - tm00;
     std_out <<  FloatMult( time_c, 3, 5 )  <<  ' ';
 
-    leds.toggle( BIT0 );  leds0.toggle( BIT0 );
+    leds.toggle( BIT0 );  leds0.toggle();
     char ctick = ( i & 1 ) ? ':' : '.';
 
     int32_t tif = ( vl >> 4 ) & 0x0FFF;

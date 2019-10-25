@@ -1,7 +1,6 @@
 Test PCD8544 (Nokia 5110) LCD display driver on SPI
 
 
-More: must be successive
-E7: !RST
-E8  D/!C
+E7: !RST BOARD_SPI_DEFAULT_GPIO_PIN_EXT1
+E8  D/!C BOARD_SPI_DEFAULT_GPIO_PIN_EXT2
 

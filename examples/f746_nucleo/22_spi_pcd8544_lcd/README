@@ -6,7 +6,6 @@ F8  = MISO
 F9  = MOSI
 +F6 = Soft NSS
 
-More: must be successive
-F0: !RST
-F1  D/!C
+F0: !RST BOARD_SPI_DEFAULT_GPIO_PIN_EXT1
+F1  D/!C BOARD_SPI_DEFAULT_GPIO_PIN_EXT2
 
