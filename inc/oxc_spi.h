@@ -18,7 +18,7 @@ extern SPI_HandleTypeDef spi_h;
 
 class DevSPI  {
   public:
-   DevSPI( SPI_HandleTypeDef *a_spi, PinsOut *a_nss_pin = nullptr )
+   DevSPI( SPI_HandleTypeDef *a_spi, PinOut *a_nss_pin = nullptr )
      : spi( a_spi ), nss_pin( a_nss_pin )
     {
     }
@@ -62,7 +62,7 @@ class DevSPI  {
 
   protected:
    SPI_HandleTypeDef *spi;
-   PinsOut *nss_pin;
+   PinOut *nss_pin;
    int maxWait = 100;
    bool inv_nss = false;
    bool use_nss = true;

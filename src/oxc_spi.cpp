@@ -36,9 +36,9 @@ void DevSPI::nss_pre()
 {
   if( !nss_pin ) { return; };
   if( inv_nss ) {
-    nss_pin->set( 1 );
+    nss_pin->set();
   } else {
-    nss_pin->reset( 1 );
+    nss_pin->reset();
   }
   delay_bad_100ns( tss_delay_100ns );
 }
@@ -47,9 +47,9 @@ void DevSPI::nss_post()
 {
   if( !nss_pin ) { return; };
   if( inv_nss ) {
-    nss_pin->reset( 1 );
+    nss_pin->reset();
   } else {
-    nss_pin->set( 1 );
+    nss_pin->set();
   }
   delay_bad_100ns( tss_delay_100ns );
 }
