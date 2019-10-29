@@ -1,4 +1,5 @@
 Bug: adcdma_n: limit output to n
+Events in main loop
 ADC_Info: more common / split
 F7 DMA:
     The SD card works with DMA when disabling the cache memories in HAL_MspInit();

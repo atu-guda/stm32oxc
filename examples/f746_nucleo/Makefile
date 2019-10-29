@@ -41,6 +41,7 @@ SUBDIRS = \
   35_mcp4725_dac_i2c \
   36_mcp23017_gpio_i2c \
   37_ad7606_spi \
+  37a_ad7606_spi_tim \
   38_mcp3204_adc_spi \
   38a_mcp3204_adc_spi_tim \
   50_adc0 \
