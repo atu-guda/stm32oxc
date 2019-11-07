@@ -6,7 +6,3 @@ SD:
  C12 = CK   (SCK)
  D2  = CMD  (MOSI)
 
-Used USART1 with UART-USB board
-B6  = USART1_TX
-B7  = USART1_RX
-

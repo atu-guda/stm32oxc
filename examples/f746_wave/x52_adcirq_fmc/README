@@ -1,7 +1,4 @@
 Try ADC with IRQ to external SDRAM
 4 channel: a0-a3
 
-Used USART1 with UART-USB convertor board
-B6  = USART1_TX
-B7  = USART1_RX
 

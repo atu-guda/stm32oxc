@@ -5,7 +5,4 @@ Channels:
   A0   A1,  A2,   A3
  Ch0, Ch1, Ch2,  Ch3
 
-Used USART1 with UART-USB convertor board
-B6  = USART1_TX
-B7  = USART1_RX
 
