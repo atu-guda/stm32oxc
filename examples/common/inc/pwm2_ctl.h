@@ -69,6 +69,7 @@ class PWMData {
      float vb, ve; //* values: begin/end
      int t;        //* time in ms
      pwm_type tp;
+     void setDefault( float v ) { vb = ve = v; t = 30000; tp = pwm_type::pwm; };
    };
    PWMData( PWMInfo &pi, void (*pwm_fun)(float) )
      : pwminfo( pi ), set_pwm_real( pwm_fun )  { reset_steps(); };

@@ -277,7 +277,7 @@ bool PWMInfo::addSample( float pwm, float v )
 void PWMData::reset_steps()
 {
   for( auto &s : steps ) {
-    s.vb = s.ve = pwm_def; s.t = 30000; s.tp = pwm_type::pwm;
+    s.setDefault( pwm_def );
   }
   n_steps = 0;
 }
@@ -288,12 +288,8 @@ int PWMData::add_step( float b, float e, int ms, pwm_type tp )
     return 0;
   }
 
-  steps[n_steps].vb = b;
-  steps[n_steps].ve = e;
-  steps[n_steps].t  = ms;
-  steps[n_steps].tp = tp;
+  steps[n_steps++] = { b, e, ms, tp };
 
-  ++n_steps;
   return n_steps;
 }
 
@@ -433,7 +429,7 @@ bool PWMData::tick( const float *d )
     };
   }
 
-  float d_err_dt = ( err - last_err ) / t_step;
+  const float d_err_dt = ( err - last_err ) / t_step;
   last_err = err;
 
   if( !only_pwm ) {
@@ -459,16 +455,15 @@ bool PWMData::tick( const float *d )
 
 void PWMData::calcNextStep()
 {
-  float old_val = val;
+  const float old_val = val;
   val = val_0  = steps[c_step].vb;
   step_t = steps[c_step].t;
   ks = ( steps[c_step].ve - val_0 ) / step_t;
-  bool rehint = ( c_step == 0  )
+  const bool rehint = ( c_step == 0  )
     || ( fabsf( val_0 - old_val ) > pwminfo.rehint_lim )
     || ( steps[c_step].tp != steps[c_step-1].tp );
 
   if( pwminfo.pid_only > 0 ) {
-    // rehint = false;
     return;
   }
 
@@ -612,7 +607,7 @@ int cmd_edit_step( int argc, const char * const * argv )
 
 CmdInfo CMDINFO_SHOW_STEPS { "show_steps", 'S', cmd_show_steps, " - show PWM steps"  };
 CmdInfo CMDINFO_MK_RECT    { "mk_rect",      0, cmd_mk_rect,    " vmin vmax t tp - make rectangle steps"  };
-CmdInfo CMDINFO_MK_LADDER  { "mk_ladder",    0, cmd_mk_ladder,  " vmin dv t n_up tp - make ladder steps"  };
-CmdInfo CMDINFO_MK_RAMP    { "mk_ramp",      0, cmd_mk_ramp,    " vmin vmax t1  t2 t3  tp - make ramp steps"  };
+CmdInfo CMDINFO_MK_LADDER  { "mk_ladder",  'L', cmd_mk_ladder,  " vmin dv t n_up tp - make ladder steps"  };
+CmdInfo CMDINFO_MK_RAMP    { "mk_ramp",    'R', cmd_mk_ramp,    " vmin vmax t1  t2 t3  tp - make ramp steps"  };
 CmdInfo CMDINFO_EDIT_STEP  { "edit_step",  'E', cmd_edit_step,  " vb ve t tp - edit given step"  };
 
