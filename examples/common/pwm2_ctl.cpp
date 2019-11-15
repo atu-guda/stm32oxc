@@ -221,6 +221,7 @@ bool PWMInfo::regreCalibration( float t_x0, float &a, float &b, float &r )
     return false;
   }
 
+  a = rr.a; b = rr.b; r = rr.r;
   need_regre = false;
   return true;
 }
@@ -230,11 +231,17 @@ bool PWMInfo::doRegre()
   if( ! need_regre ) {
     return true;
   }
-  float a, b, r;
+  float a = 0, b = 0, r = 0;
   bool ok = regreCalibration( x_0, a, b, r );
-  if( debug > 0 ) {
+
+  if( a < 1.0e-3f || a > 1.0e2f || b < -5.0f || b > 5.0f ) {
+    ok = false;
+  }
+
+  if( debug > 0 || ! ok ) {
     std_out << "# doRegre1: a= " << a << " b= " << b << " r= " << r << " x_0= " << x_0 << " ok= " << ok << NL;
   }
+
   if( ok ) {
     k_gv1 = a; V_00 = b;
     fixCoeffs();
