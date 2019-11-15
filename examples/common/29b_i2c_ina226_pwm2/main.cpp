@@ -50,6 +50,8 @@ void handle_keys();
 bool print_var( const char *nm );
 bool set_var( const char *nm, const char *s );
 
+int key_val = 0;
+
 
 // ------------- floats values and get/set funcs -------------------
 
@@ -190,6 +192,7 @@ int main(void)
 {
   BOARD_PROLOG;
 
+  UVAR('l') = 1;  // ON led debug
   UVAR('t') = 10; // 10 ms
   UVAR('n') = 1000000; // number of series (10ms 't' each): limited by steps
 
@@ -289,6 +292,7 @@ int cmd_test0( int argc, const char * const * argv )
 {
   uint32_t t_step = UVAR('t');
   unsigned n_ch = 2;
+  key_val = 0;
   uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 1000000 ); // number of series
 
   bool skip_pwm = arg2long_d( 2, argc, argv, 0, 1, 1 ); // dont touch PWM
@@ -312,7 +316,7 @@ int cmd_test0( int argc, const char * const * argv )
 
   if( !skip_pwm ) {
     do_set_pwm( pwminfo.cal_min );
-    delay_ms( 10 );
+    delay_ms( 500 );
   }
 
   uint32_t tm0, tm00;
@@ -338,9 +342,10 @@ int cmd_test0( int argc, const char * const * argv )
       for( auto vc : v ) {
         std_out  << ' '  <<  FltFmt( vc, cvtff_auto, 10 );
       }
-      std_out << NL;
+      std_out << ' ' << key_val << NL;
     }
 
+    key_val = 0;
     handle_keys();
 
     if( ! pwmdat.tick( v ) ) {
@@ -578,6 +583,8 @@ void handle_keys()
     case 'G': pwmdat.set_t_mul( 1 ); break;
     case 'f': pwmdat.set_t_mul( 2 ); break;
     case 'F': pwmdat.set_t_mul( 5 ); break;
+    case ' ': key_val |= 1; break;
+    case 'v': key_val |= 2; break;
     default: break;
   }
 
