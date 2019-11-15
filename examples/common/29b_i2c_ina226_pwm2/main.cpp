@@ -310,7 +310,6 @@ int cmd_test0( int argc, const char * const * argv )
   std_out << NL "#        t          V          I        pwm          R          W        val"  NL;
 
   leds.set(   BIT0 | BIT1 | BIT2 ); delay_ms( 100 );
-  leds.reset( BIT0 | BIT1 | BIT2 );
 
   pwmdat.prep( t_step, skip_pwm );
 
@@ -318,6 +317,8 @@ int cmd_test0( int argc, const char * const * argv )
     do_set_pwm( pwminfo.cal_min );
     delay_ms( 500 );
   }
+
+  leds.reset( BIT0 | BIT1 | BIT2 );
 
   uint32_t tm0, tm00;
   int rc = 0;
@@ -437,14 +438,17 @@ void do_set_pwm( float v )
 
 int cmd_pwm( int argc, const char * const * argv )
 {
-  float vmin  = pwmdat.get_pwm_min();
-  float vdef  = pwmdat.get_pwm_def();
-  float vmax  = pwmdat.get_pwm_max();
-
-  float v = arg2float_d( 1, argc, argv, vdef, vmin, vmax );
-  pwmdat.set_pwm_manual( v );
+  float gamma = arg2float_d( 1, argc, argv, pwmdat.get_pwm_def(), pwmdat.get_pwm_min(), pwmdat.get_pwm_max() );
+  pwmdat.set_pwm_manual( gamma );
+  delay_ms( 100 );
   tim_print_cfg( TIM_EXA );
   std_out << NL "# PWM:  in: " << pwmdat.get_v() << "  real: " << pwmdat.get_pwm_real() << NL;
+  float v[didx_n];
+  measure_and_calc( v );
+  v[didx_val] = 0;
+  for( auto vc : v ) {
+    std_out  << ' '  <<  FltFmt( vc, cvtff_auto, 10 );
+  }
   return 0;
 }
 
