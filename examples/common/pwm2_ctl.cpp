@@ -107,14 +107,14 @@ bool  PWMInfo::calcCalibration( float &err_max, float R_0_c,  bool fake )
   unsigned i_lim = n_cal;
   float k_g = 0.12f;
   for( unsigned i=n_cal-1; i>0; --i ) {
-    float diff_pwm_l =  d_pwm[i]       - d_pwm[i-1];
-    float diff_pwm_g =  d_pwm[n_cal-1] - d_pwm[i-1];
+    const float diff_pwm_l =  d_pwm[i]       - d_pwm[i-1];
+    const float diff_pwm_g =  d_pwm[n_cal-1] - d_pwm[i-1];
     std_out << "# " << i << ' ';
     if( fabsf( diff_pwm_l ) < 0.1f || fabsf( diff_pwm_g ) < 0.1f ) {
       continue;
     }
-    float k_l1 = ( d_v[i]       - d_v[i-1] ) / diff_pwm_l;
-    float k_g1 = ( d_v[n_cal-1] - d_v[i-1] ) / diff_pwm_g;
+    const float k_l1 = ( d_v[i]       - d_v[i-1] ) / diff_pwm_l;
+    const float k_g1 = ( d_v[n_cal-1] - d_v[i-1] ) / diff_pwm_g;
     if( fabsf( ( k_g1 - k_l1 ) / k_g1 ) < 0.03f ) {
       i_lim = i; k_g = k_g1;
     }
@@ -132,15 +132,15 @@ bool  PWMInfo::calcCalibration( float &err_max, float R_0_c,  bool fake )
   }
   b = b_regr; k_g = a_regr;
   t_x_0 = - b / k_g;
-  float k_2 = - k_g * k_g / ( 4 * b );
+  const float k_2 = - k_g * k_g / ( 4 * b );
 
   std_out << "# --- calibration check:" << NL;
 
   err_max = 0;
   for( unsigned i=0; i<n_cal; ++i ) {
-    float pwm = d_pwm[i];
-    float v = ( pwm > 2 * t_x_0 ) ? ( k_g * pwm + b ) : (  pwm * pwm * k_2 );
-    float err = fabsf( v - d_v[i] );
+    const float pwm = d_pwm[i];
+    const float v = ( pwm > 2 * t_x_0 ) ? ( k_g * pwm + b ) : (  pwm * pwm * k_2 );
+    const float err = fabsf( v - d_v[i] );
     if( err > err_max ) {
       err_max = err;
     }
@@ -178,8 +178,8 @@ bool PWMInfo::regreCalibration( float t_x0, float &a, float &b, float &r )
     // if( d_pwm[i] <= 0 ) { // next check is more strict
     //   continue;
     // }
-    bool good_point = d_pwm[i] > 2 * t_x0;
-    float x = d_pwm[i], y = d_v[i], w = d_wei[i];
+    const bool good_point = d_pwm[i] > 2 * t_x0;
+    const float x = d_pwm[i], y = d_v[i], w = d_wei[i];
     if( debug > 1 && x > 0 ) {
       std_out << "#*# " << i << ' ' << x << ' ' << y << ' ' << w << ' ' << good_point <<  NL;
     }
@@ -255,11 +255,11 @@ bool PWMInfo::doRegre()
 
 bool PWMInfo::addSample( float pwm, float v )
 {
-  auto i = (unsigned) ( ( pwm - cal_min ) / cal_step );
+  const auto i = (unsigned) ( ( pwm - cal_min ) / cal_step );
   if( i >= max_cal_steps ) {
     return false;
   }
-  if( d_pwm[i] <= 0 ) {
+  if( d_pwm[i] <= 0 ) { // first data in this bucket
     d_pwm[i] = pwm;
     d_v[i]   = v;
     d_wei[i] = 1;
@@ -552,6 +552,7 @@ int cmd_show_steps( int /*argc*/, const char * const * /*argv*/ )
 
 int cmd_mk_rect( int argc, const char * const * argv )
 {
+  // TODO: limits(type), for all funcs
   float vmin  = arg2float_d( 1, argc, argv,     5, 0.1f,       98 );
   float vmax  = arg2float_d( 2, argc, argv,    35, 0.2f,       98 );
   int   t     = arg2long_d(  3, argc, argv, 30000,    1, 10000000 );

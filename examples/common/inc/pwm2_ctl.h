@@ -28,12 +28,12 @@ struct PWMInfo {
   static constexpr unsigned min_cal_req   = 10;
   unsigned n_cal   = 0;       //* number of calibration data: real or fake
   float R_0        = 1.0f;    //* initial resistance
-  float V_00       = -0.5f;   //* V(0) for linear represenration
+  float V_00       = -0.5f;   //* V(0) for linear representation
   float k_gv1      = 0.12f;   //* dV/d\gamma
   float k_gv2      = 0.006f;  //* a_2 coeff for initial part, = -k_gv1 / (4*V_00)
   float x_0        = 0.5f;    //* = - V_00 / k_gv1
   float kp_v       = 0.0f;    //* proportional coeff for voltage
-  float ki_v       = 0.1f;    //* intergation coeff for voltage
+  float ki_v       = 0.1f;    //* integration coeff for voltage
   float kd_v       = 0.0f;    //* diff coeff for voltage
   float rehint_lim = 0.2f;    //* is rehint needed in calcNextStep
   float V_max      = 8.0f;    //* voltage limit

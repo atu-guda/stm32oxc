@@ -36,8 +36,8 @@ bool measure_and_calc( float *v );
 I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );
 INA226 ina226( i2cd );
-const uint32_t n_ADC_ch_max = 4; // current - in UVAR('c'). not ADC: INA226
-float v_coeffs[n_ADC_ch_max] = { 1.0f, 1.0f, 1.0f, 1.0f };
+const uint32_t n_ADC_ch_max = 2; // current - in UVAR('c'). not ADC: INA226
+float v_coeffs[n_ADC_ch_max] = { 1.0f, 1.0f };
 
 bool isGoodINA226( INA226 &ina, bool print = true );
 
@@ -88,7 +88,7 @@ float get_pwm_def( int /* idx */ )
   return pwmdat.get_pwm_def();
 }
 
-constexpr NamedFloat ob_v_coeffs   {   "v_coeffs",            v_coeffs, size(v_coeffs)  };
+constexpr NamedFloat ob_v_coeffs   {   "v_coeffs",      v_coeffs, size(v_coeffs)  };
 constexpr NamedFloat ob_W_max      {      "W_max",      &pwminfo.W_max  };
 constexpr NamedFloat ob_V_max      {      "V_max",      &pwminfo.V_max  };
 constexpr NamedFloat ob_I_max      {      "I_max",      &pwminfo.I_max  };
@@ -270,10 +270,10 @@ bool measure_and_calc( float *v )
     return false;
   }
 
-  float V_g = ina226.getVbus_uV() * 1e-6f * v_coeffs[0];
-  float I_g = ina226.getI_uA()    * 1e-6f * v_coeffs[1];
-  float R_g = ( I_g > 1e-6f ) ? ( V_g / I_g ) : 1.0e9f;
-  float W_g = V_g * I_g;
+  const float V_g = ina226.getVbus_uV() * 1e-6f * v_coeffs[0];
+  const float I_g = ina226.getI_uA()    * 1e-6f * v_coeffs[1];
+  const float R_g = ( I_g > 1e-6f ) ? ( V_g / I_g ) : 1.0e9f;
+  const float W_g = V_g * I_g;
 
   v[didx_v]   = V_g;
   v[didx_i]   = I_g;
@@ -290,12 +290,12 @@ bool measure_and_calc( float *v )
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  uint32_t t_step = UVAR('t');
-  unsigned n_ch = 2;
+  const uint32_t t_step = UVAR('t');
+  const unsigned n_ch = 2;
   key_val = 0;
-  uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 1000000 ); // number of series
+  const uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 1000000 ); // number of series
 
-  bool skip_pwm = arg2long_d( 2, argc, argv, 0, 1, 1 ); // dont touch PWM
+  const bool skip_pwm = arg2long_d( 2, argc, argv, 0, 1, 1 ); // dont touch PWM
 
   StatData sdat( n_ch );
 
@@ -309,29 +309,29 @@ int cmd_test0( int argc, const char * const * argv )
   }
   std_out << NL "#        t          V          I        pwm          R          W        val"  NL;
 
-  leds.set(   BIT0 | BIT1 | BIT2 ); delay_ms( 100 );
+  leds.set(   BIT0 | BIT1 | BIT2 ); // delay_ms( 100 );
 
   pwmdat.prep( t_step, skip_pwm );
 
   if( !skip_pwm ) {
     do_set_pwm( pwminfo.cal_min );
-    delay_ms( 500 );
   }
+  delay_ms( 500 );
 
   leds.reset( BIT0 | BIT1 | BIT2 );
 
   uint32_t tm0, tm00;
   int rc = 0;
-  bool do_out = ! UVAR('b');
+  const bool do_out = ! UVAR('b');
 
   break_flag = 0;
   for( decltype(+n) i=0; i<n && !break_flag; ++i ) {
 
-    uint32_t tcc = HAL_GetTick();
+    const uint32_t tcc = HAL_GetTick();
     if( i == 0 ) {
       tm0 = tcc; tm00 = tm0;
     }
-    float tc = 0.001f * ( tcc - tm00 );
+    const float tc = 0.001f * ( tcc - tm00 );
 
     float v[didx_n];
     measure_and_calc( v );
@@ -372,9 +372,9 @@ int cmd_test0( int argc, const char * const * argv )
 
 int cmd_setcalibr( int argc, const char * const * argv )
 {
-  float calibr_I_lsb = arg2float_d( 1, argc, argv, ina226.get_I_lsb_mA()  * 1e-3f, 1e-20f, 1e10f );
-  float calibr_R     = arg2float_d( 2, argc, argv, ina226.get_R_sh_uOhm() * 1e-6f, 1e-20f, 1e10f );
-  float V_sh_max =  INA226::lsb_V_sh_nv * 1e-9f * 0x7FFF;
+  const float calibr_I_lsb = arg2float_d( 1, argc, argv, ina226.get_I_lsb_mA()  * 1e-3f, 1e-20f, 1e10f );
+  const float calibr_R     = arg2float_d( 2, argc, argv, ina226.get_R_sh_uOhm() * 1e-6f, 1e-20f, 1e10f );
+  const float V_sh_max =  INA226::lsb_V_sh_nv * 1e-9f * 0x7FFF;
   ina226.set_calibr_val( (uint32_t)(calibr_R * 1e6f), (uint32_t)(calibr_I_lsb * 1e3f) );
   std_out << "# calibr_I_lsb= " << calibr_I_lsb << " calibr_R= " << calibr_R
      << " V_sh_max=  " << V_sh_max
@@ -388,10 +388,10 @@ int cmd_setcalibr( int argc, const char * const * argv )
 void tim_cfg()
 {
   // not use all functions from oxc_tim: time may be not initialized here
-  uint32_t in_freq = get_TIM_in_freq( TIM_EXA );
-  uint32_t psc = UVAR('p');
-  uint32_t cnt_freq = in_freq / ( psc + 1 );
-  uint32_t arr = cnt_freq / UVAR('f') - 1;
+  const uint32_t in_freq = get_TIM_in_freq( TIM_EXA );
+  const uint32_t psc = UVAR('p');
+  const uint32_t cnt_freq = in_freq / ( psc + 1 );
+  const uint32_t arr = cnt_freq / UVAR('f') - 1;
 
   tim_h.Instance               = TIM_EXA;
   tim_h.Init.Prescaler         = psc;
@@ -429,8 +429,8 @@ void tim_cfg()
 
 void do_set_pwm( float v )
 {
-  uint32_t scl = TIM_EXA->ARR;
-  tim_ccr_t nv = ( v * scl / 100 );
+  const uint32_t scl = TIM_EXA->ARR;
+  const tim_ccr_t nv = ( v * scl / 100 );
   if( nv != TIM_EXA->CCR1 ) {
     TIM_EXA->CCR1 = nv;
   }
@@ -438,7 +438,7 @@ void do_set_pwm( float v )
 
 int cmd_pwm( int argc, const char * const * argv )
 {
-  float gamma = arg2float_d( 1, argc, argv, pwmdat.get_pwm_def(), pwmdat.get_pwm_min(), pwmdat.get_pwm_max() );
+  const float gamma = arg2float_d( 1, argc, argv, pwmdat.get_pwm_def(), pwmdat.get_pwm_min(), pwmdat.get_pwm_max() );
   pwmdat.set_pwm_manual( gamma );
   delay_ms( 100 );
   tim_print_cfg( TIM_EXA );
@@ -455,11 +455,11 @@ int cmd_pwm( int argc, const char * const * argv )
 // TODO: to PWMData
 int cmd_calibrate( int argc, const char * const * argv )
 {
-  float vmin = pwminfo.cal_min;
-  float vmax_def = pwmdat.get_pwm_max();
-  float vmax = arg2float_d( 1, argc, argv, 0.6f * vmax_def, 2.0f, vmax_def );
-  unsigned dt  = arg2long_d( 2, argc, argv, 10000, 1000, 200000 );
-  unsigned fake_cal = arg2long_d( 3, argc, argv, 0, 0, 1 );
+  const float vmin = pwminfo.cal_min;
+  const float vmax_def = pwmdat.get_pwm_max();
+  const float vmax = arg2float_d( 1, argc, argv, 0.6f * vmax_def, 2.0f, vmax_def );
+  const unsigned dt  = arg2long_d( 2, argc, argv, 10000, 1000, 200000 );
+  const unsigned fake_cal = arg2long_d( 3, argc, argv, 0, 0, 1 );
 
   const unsigned n_measure = 10; // TODO: params
 
@@ -482,7 +482,7 @@ int cmd_calibrate( int argc, const char * const * argv )
   break_flag = 0;
   for( unsigned i=0; i<n_steps && !break_flag; ++i ) {
     float v[didx_n];
-    float pwm_v = vmin + i * pwminfo.cal_step;
+    const float pwm_v = vmin + i * pwminfo.cal_step;
     float c_pwm, c_v_a = 0, c_i_a = 0; // real / average values
 
     if( !fake_cal ) {
@@ -594,8 +594,6 @@ void handle_keys()
 
 }
 
-
-// ------------------ misc tests -----------------------
 
 
 
