@@ -23,6 +23,7 @@ struct PWMInfo {
   bool regreCalibration( float t_x0, float &a, float &b, float &r );
   bool doRegre();
   bool addSample( float pwm, float v );
+  void printData( bool more = false ) const;
 
   static constexpr unsigned max_cal_steps = 40;
   static constexpr unsigned min_cal_req   = 10;

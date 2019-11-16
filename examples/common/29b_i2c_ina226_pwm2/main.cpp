@@ -173,6 +173,8 @@ int cmd_pwm( int argc, const char * const * argv );
 CmdInfo CMDINFO_PWM { "pwm", 0, cmd_pwm, " [val] - set PWM value"  };
 int cmd_calibrate( int argc, const char * const * argv );
 CmdInfo CMDINFO_CALIBRATE { "calibrate", 'C', cmd_calibrate, " [pwm_max] [dt] [fake] - calibrate PWM values"  };
+int cmd_print_pwm( int argc, const char * const * argv );
+CmdInfo CMDINFO_PRINTPWM { "print_pwm", 0, cmd_print_pwm, " [more]- print PWM data"  };
 
 
 const CmdInfo* global_cmds[] = {
@@ -572,6 +574,13 @@ int cmd_tinit( int argc, const char * const * argv )
   return 0;
 }
 
+int cmd_print_pwm( int argc, const char * const * argv )
+{
+  const int more = arg2long_d( 1, argc, argv, 0, 0, 1 );
+  pwminfo.printData( (bool)more );
+  return 0;
+}
+
 void handle_keys()
 {
   auto v = tryGet( 0 );
@@ -601,7 +610,6 @@ void handle_keys()
   }
 
 }
-
 
 
 

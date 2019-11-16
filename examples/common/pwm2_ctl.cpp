@@ -272,6 +272,23 @@ bool PWMInfo::addSample( float pwm, float v )
   return true;
 }
 
+void PWMInfo::printData( bool more ) const
+{
+  std_out << "# PWMInfo data" NL;
+  std_out << "#  n_cal= << " << n_cal
+          << "  V_00= " << V_00
+          << "  k_gv1= " << k_gv1
+          << "  k_gv2= " << k_gv2
+          << "  x_0= " << x_0
+          << "  was_calibr= " << was_calibr
+          << "  need_regre= " << need_regre
+          << NL;
+  unsigned n = more ? max_cal_steps : n_cal;
+  for( unsigned i=0; i < n; ++i ) {
+    std_out << "#  " << i << ' ' << d_pwm[i] << ' ' << d_v[i] << ' ' << d_wei[i] << NL;
+  }
+}
+
 // ------------------------ PWMData -------------------------------------
 
 void PWMData::reset_steps()
