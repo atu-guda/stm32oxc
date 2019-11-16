@@ -367,16 +367,18 @@ void PWMData::set_pwm()
   }
 }
 
-void PWMData::prep( int a_t_step, bool fake )
+bool PWMData::prep( int a_t_step, bool fake, const float *d )
 {
   reason  = 0;
   pwm_tmax = pwm_max;
   t_step = a_t_step; fake_run = fake;
-  t = 0; t_mul = 1;  c_step = 0; hand = 0; last_R = pwminfo.R_0;
+  t = 0; t_mul = 1;  c_step = 0; hand = 0; last_R = d[didx_r];
   calcNextStep();
-  if( ! fake_run ) {
-    pwm_r = val;
+  if( fake_run ) {
+    return true;
   }
+  pwm_r = val;
+  return true;
 }
 
 bool PWMData::tick( const float *d )

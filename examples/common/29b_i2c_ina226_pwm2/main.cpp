@@ -309,14 +309,23 @@ int cmd_test0( int argc, const char * const * argv )
   }
   std_out << NL "#        t          V          I        pwm          R          W        val"  NL;
 
-  leds.set(   BIT0 | BIT1 | BIT2 ); // delay_ms( 100 );
+  float v[didx_n];
 
-  pwmdat.prep( t_step, skip_pwm );
+  leds.set(   BIT0 | BIT1 | BIT2 ); // delay_ms( 100 );
 
   if( !skip_pwm ) {
     do_set_pwm( pwminfo.cal_min );
   }
   delay_ms( 500 );
+  measure_and_calc( v );
+
+  if( !skip_pwm && pwmdat.check_lim( v ) != PWMData::check_result::ok ) {
+    pwmdat.end_run();
+    std_out << "# Error: limits before start!" NL;
+    return 3;
+  }
+
+  pwmdat.prep( t_step, skip_pwm, v );
 
   leds.reset( BIT0 | BIT1 | BIT2 );
 
@@ -333,7 +342,6 @@ int cmd_test0( int argc, const char * const * argv )
     }
     const float tc = 0.001f * ( tcc - tm00 );
 
-    float v[didx_n];
     measure_and_calc( v );
 
     sdat.add( v );

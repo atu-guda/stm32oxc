@@ -93,7 +93,7 @@ class PWMData {
    void set_pwm_min( float m ) { pwm_min = std::clamp( m, 0.001f, pwm_max ); }
    void set_pwm_def( float m ) { pwm_def = std::clamp( m, pwm_min, pwm_max ); }
    void set_pwm_max( float m ) { pwm_max = pwm_tmax = std::clamp( m, pwm_min+0.1f, 99.9f ); }
-   void prep( int a_t_step, bool fake );
+   bool prep( int a_t_step, bool fake, const float *d );
    bool tick( const float *d ); // returns: true = continue;
    void end_run();
    check_result check_lim( const float *d );
