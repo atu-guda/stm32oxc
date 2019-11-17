@@ -486,7 +486,7 @@ void PWMData::calcNextStep()
     return;
   }
 
-  if( rehint && pwminfo.regre_lev > 0 ) {
+  if( pwminfo.regre_lev > 0 ) { // not only for rehint!
     pwminfo.doRegre();
   }
 
