@@ -41,7 +41,11 @@ float v_coeffs[n_ADC_ch_max] = { 1.0f, 1.0f };
 
 bool isGoodINA226( INA226 &ina, bool print = true );
 
-PWMInfo pwminfo( 0.09347f, -0.671f, 0.1139f );
+const float R_0_init   =  0.09347f;
+const float V_00_init  = -0.671f;
+const float k_gv1_init =  0.1139f;
+
+PWMInfo pwminfo( R_0_init, V_00_init, k_gv1_init );
 
 PWMData pwmdat( pwminfo, do_set_pwm );
 
@@ -175,6 +179,8 @@ int cmd_calibrate( int argc, const char * const * argv );
 CmdInfo CMDINFO_CALIBRATE { "calibrate", 'C', cmd_calibrate, " [pwm_max] [dt] [fake] - calibrate PWM values"  };
 int cmd_print_pwm( int argc, const char * const * argv );
 CmdInfo CMDINFO_PRINTPWM { "print_pwm", 0, cmd_print_pwm, " [more]- print PWM data"  };
+int cmd_reset_cal( int argc, const char * const * argv );
+CmdInfo CMDINFO_RESETCAL { "reset_cal", 'X', cmd_reset_cal, " [R_0 V_00 k_gv1]- reset calibration data"  };
 
 
 const CmdInfo* global_cmds[] = {
@@ -186,6 +192,8 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_SETCALIBR,
   &CMDINFO_PWM,
   &CMDINFO_CALIBRATE,
+  &CMDINFO_PRINTPWM,
+  &CMDINFO_RESETCAL,
   CMDINFOS_PWM,
   nullptr
 };
@@ -578,6 +586,20 @@ int cmd_print_pwm( int argc, const char * const * argv )
 {
   const int more = arg2long_d( 1, argc, argv, 0, 0, 1 );
   pwminfo.printData( (bool)more );
+  return 0;
+}
+
+int cmd_reset_cal( int argc, const char * const * argv )
+{
+  const float R_0   = arg2float_d( 1, argc, argv, R_0_init,   0.01f, pwminfo.R_max );
+  const float V_00  = arg2float_d( 2, argc, argv, V_00_init, -10.0f,  10.0f );
+  const float k_gv1 = arg2float_d( 3, argc, argv, k_gv1_init, 0.01f,  10.0f );
+  pwminfo.clearCalibrationArr();
+  pwminfo.R_0 = R_0;
+  pwminfo.V_00 = V_00;
+  pwminfo.k_gv1 = k_gv1;
+  pwminfo.fixCoeffs();
+  pwminfo.printData( false );
   return 0;
 }
 

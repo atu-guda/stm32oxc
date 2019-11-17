@@ -315,7 +315,7 @@ void PWMData::mk_rect( float vmin, float vmax, int t, pwm_type tp )
   reset_steps();
   add_step( vmin, vmin, 10000, tp );
   add_step( vmax, vmax,     t, tp );
-  add_step( vmin, vmin, 30000, tp );
+  add_step( vmin, vmin, 60000, tp );
 }
 
 void PWMData::mk_ladder( float v0, float dv, int t, unsigned n_up, pwm_type tp )
@@ -345,7 +345,7 @@ void PWMData::mk_ramp( float vmin, float vmax, int t1, int t2, int t3, pwm_type 
   add_step( vmin, vmax,    t1, tp );
   add_step( vmax, vmax,    t2, tp );
   add_step( vmax, vmin,    t3, tp );
-  add_step( vmin, vmin, 30000, tp );
+  add_step( vmin, vmin, 60000, tp );
 }
 
 void PWMData::show_steps() const
@@ -613,6 +613,7 @@ int cmd_mk_ramp( int argc, const char * const * argv )
 int cmd_edit_step( int argc, const char * const * argv )
 {
   if( argc < 4 ) {
+    std_out << "# Error: need more argumets" << NL;
     return 1;
   }
   unsigned j = arg2long_d(  1, argc, argv,     0, 0, PWMData::max_pwm_steps-1 );
