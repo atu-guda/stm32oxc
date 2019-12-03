@@ -460,10 +460,11 @@ int cmd_pwm( int argc, const char * const * argv )
   pwmdat.set_pwm_manual( gamma );
   delay_ms( 100 );
   tim_print_cfg( TIM_EXA );
-  std_out << NL "# PWM:  in: " << pwmdat.get_v() << "  real: " << pwmdat.get_pwm_real() << NL;
+  std_out << NL "# PWM:  auto: " << pwmdat.get_v() << "  real: " << pwmdat.get_pwm_real() << NL;
   float v[didx_n];
   measure_and_calc( v );
   v[didx_val] = 0;
+  std_out << '#';
   for( auto vc : v ) {
     std_out  << ' '  <<  FltFmt( vc, cvtff_auto, 10 );
   }

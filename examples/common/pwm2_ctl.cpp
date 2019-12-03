@@ -275,7 +275,7 @@ bool PWMInfo::addSample( float pwm, float v )
 void PWMInfo::printData( bool more ) const
 {
   std_out << "# PWMInfo data" NL;
-  std_out << "#  n_cal= << " << n_cal
+  std_out << "#  n_cal= " << n_cal
           << "  V_00= " << V_00
           << "  k_gv1= " << k_gv1
           << "  k_gv2= " << k_gv2
@@ -285,7 +285,7 @@ void PWMInfo::printData( bool more ) const
           << NL;
   unsigned n = more ? max_cal_steps : n_cal;
   for( unsigned i=0; i < n; ++i ) {
-    std_out << "#  " << i << ' ' << d_pwm[i] << ' ' << d_v[i] << ' ' << d_wei[i] << NL;
+    std_out << "#  " << FmtInt( i, 2 ) << ' ' << d_pwm[i] << ' ' << d_v[i] << ' ' << d_wei[i] << NL;
   }
 }
 
