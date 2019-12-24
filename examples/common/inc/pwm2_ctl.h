@@ -12,26 +12,35 @@ enum DataIdx {
 
 //* misc data about pwm. here: fallback values. need calibration
 struct PWMInfo {
-  PWMInfo( float a_R0, float a_V_00 = -0.5f, float k_gv1 = -.12f );
+  PWMInfo( float a_R0, float a_V_00 = -0.5f, float k_gv1 = -.12f, float freq = 1e5f );
   void fixCoeffs();
+  unsigned cal_idx( float pwm ) const { return ( ( pwm - cal_min ) / cal_step ); }
   float hint_for_V( float V ) const;
   float pwm2V( float pwm ) const;
+  float estimateV( float pwm, float R_h ) const;
   void clearCalibrationArr();
-  void fillFakeCalibration( unsigned nc );
+  void fillFakeCalibration( float R_h );
   void addCalibrationStep( float pwm, float v, float I );
   bool calcCalibration( float &err_max, float R_0_c, bool fake = false );
   bool regreCalibration( float t_x0, float &a, float &b, float &r );
   bool doRegre();
   bool addSample( float pwm, float v );
   void printData( bool more = false ) const;
+  float V_dn_f( float I_d ) const { return - V_dtn * log1pf( I_d / I_s ); }
 
   static constexpr unsigned max_cal_steps = 40;
   static constexpr unsigned min_cal_req   = 10;
   unsigned n_cal   = 0;       //* number of calibration data: real or fake
   float R_0        = 1.0f;    //* initial resistance
+  float R_ch       = 0.03f;   //* Charge channel resistance
+  float V_cc       = 12.0f;   //* Supply voltage
+  float L          = 0.8e-5f; //* Converter inductance
   float V_00       = -0.5f;   //* V(0) for linear representation
+  float I_s        = 0.03857; //* diode base current
+  float V_dtn      = 0.1234f; //* V_t*N for diode
   float k_gv1      = 0.12f;   //* dV/d\gamma
   float k_gv2      = 0.006f;  //* a_2 coeff for initial part, = -k_gv1 / (4*V_00)
+  float T_0        = 1e-5;    //* Converter period
   float x_0        = 0.5f;    //* = - V_00 / k_gv1
   float kp_v       = 0.0f;    //* proportional coeff for voltage
   float ki_v       = 0.1f;    //* integration coeff for voltage
@@ -46,8 +55,8 @@ struct PWMInfo {
   float cal_step   = 2.0f;    //* step calibration pwm value
   float d_pwm[max_cal_steps], d_v[max_cal_steps]; //* calibration and adopt data
   float d_wei[max_cal_steps]; //* step weight - really number for now
-  float regre_lev  = 1.0f;    //* really bool flag for now
-  float pid_only   = 0.0f;    //* bool flag too
+  int   regre_lev  = 1.0;     //* >0 : call  pwminfo::doRegre() in PWMData::calcNextStep
+  int   pid_only   = 0.0;     //* >1 : use only PID to control PWM
   bool was_calibr  = false;
   bool need_regre  = true;
 };

@@ -18,8 +18,10 @@ using namespace std;
 
 #define debug (UVAR('d'))
 
-PWMInfo::PWMInfo( float a_R0, float a_V_00, float a_k_gv1 )
-  : R_0( a_R0 ), V_00( a_V_00 ), k_gv1( a_k_gv1 )
+constexpr inline float pow2( float x ) { return x * x; }
+
+PWMInfo::PWMInfo( float a_R0, float a_V_00, float a_k_gv1, float freq )
+  : R_0( a_R0 ), V_00( a_V_00 ), k_gv1( a_k_gv1 ), T_0( 1.0f / freq )
 {
   fixCoeffs();
   // fillFakeCalibration( 10 );
@@ -46,6 +48,64 @@ float PWMInfo::pwm2V( float pwm ) const
     : ( pwm * pwm * k_gv2 );
 }
 
+float PWMInfo::estimateV( float pwm, float R_h ) const
+{
+  const float eps = 5.0e-2;
+  const float gamma = 0.01f * pwm;
+  float blr = L / ( R_h * T_0 ); // betta_{LRh}
+  float V_p = V_cc;
+  float V_dn = -0.48f; // V_dn0;
+  const float gamma_m1 = 1.0f - gamma, gamma2 = pow2( gamma ), gamma4 = pow2( gamma2 );
+
+  float dV_2 = 1000.0f;
+  float oV_2 = 1000.0f;
+  float V_2 = 0, I_h = 0, V_2_n0 = 0;
+  bool is_CCM = false;
+
+  for( int i=0; i<20 && fabsf(dV_2) > eps; ++i ) {
+
+    float V_x =
+      sqrtf(
+          ( pow2(V_dn) - 2 * V_p * V_dn + pow2(V_p) ) * gamma4
+          + ( 4 * pow2(V_dn) - 12 * V_p * V_dn + 8 * pow2(V_p) ) * blr * gamma2
+          + 4 * pow2(V_dn) * pow2(blr)
+          )
+      + ( V_dn - V_p ) * gamma2 + 2 * V_dn * blr;
+
+    float T_2 = T_0 * V_x / ( 2 * gamma * ( V_p - V_dn ) );
+    float T_23 = T_0 * gamma_m1;
+    is_CCM = false;
+    if( T_2 > T_23 ) {
+      is_CCM = true;
+      T_2 = T_23;
+    }
+
+    if( is_CCM ) {
+      V_2 = V_p * gamma + V_dn * gamma_m1;
+    } else {
+      V_2 = V_x / ( 4 * blr );
+    }
+    if( i == 0 ) {
+      V_2_n0 = V_2;
+    }
+    if( V_2 < 0 ) {
+      // std_out << "### Forced break!" << endl;
+      V_2 = V_2_n0;
+      oV_2 = V_2;
+    }
+
+    I_h = V_2 / R_h;
+    V_dn = 0.7f * V_dn + 0.3f * V_dn_f( I_h ); // TODO: adj coeff
+    if( debug > 1 ) {
+      std_out << "# " << i << " V_2= " << V_2 << " I_h= " << I_h << " V_dn= " << V_dn
+        << " V_p= " << V_p << " V_x= " << V_x << NL;
+    }
+    V_p = 0.5f * V_p + 0.5f * ( V_cc - R_ch * I_h ) ; // I_L ?
+    dV_2 = V_2 - oV_2; oV_2 = V_2;
+  }
+  return V_2;
+}
+
 void PWMInfo::clearCalibrationArr()
 {
   n_cal = 0;
@@ -58,18 +118,21 @@ void PWMInfo::clearCalibrationArr()
   need_regre = true;
 }
 
-void PWMInfo::fillFakeCalibration( unsigned nc )
+void PWMInfo::fillFakeCalibration( float R_h )
 {
-  if( nc > max_cal_steps ) {
-    nc = max_cal_steps;
-  }
-  for( unsigned i=0; i<nc; ++i ) {
+  unsigned nc = 0;
+  for( unsigned i=0; i<max_cal_steps; ++i ) {
     float pwm = cal_min + cal_step * i;
+    if( pwm > 99.5f ) {
+      break;
+    }
     d_pwm[i] = pwm;
+    d_v[i]   = estimateV( pwm, R_h );
     d_wei[i] = min_cal_req;
-    d_v[i]   = pwm2V( pwm );
+    ++nc;
   }
   n_cal = nc;
+  R_0 = R_h;
   was_calibr = false; // as fake;
   need_regre = true;
 }
@@ -234,6 +297,7 @@ bool PWMInfo::doRegre()
   float a = 0, b = 0, r = 0;
   bool ok = regreCalibration( x_0, a, b, r );
 
+  // bad values by physics
   if( a < 1.0e-3f || a > 1.0e2f || b < -5.0f || b > 5.0f ) {
     ok = false;
   }
@@ -255,7 +319,7 @@ bool PWMInfo::doRegre()
 
 bool PWMInfo::addSample( float pwm, float v )
 {
-  const auto i = (unsigned) ( ( pwm - cal_min ) / cal_step );
+  const auto i = cal_idx( pwm );
   if( i >= max_cal_steps ) {
     return false;
   }

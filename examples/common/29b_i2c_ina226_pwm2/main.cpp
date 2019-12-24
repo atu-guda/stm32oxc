@@ -44,8 +44,11 @@ bool isGoodINA226( INA226 &ina, bool print = true );
 const float R_0_init   =  0.09347f;
 const float V_00_init  = -0.671f;
 const float k_gv1_init =  0.1139f;
+const int    freq_init =  100000;
+int autocal = 1; // 0 - never, 1 - in R differ, 2 - always
 
-PWMInfo pwminfo( R_0_init, V_00_init, k_gv1_init );
+
+PWMInfo pwminfo( R_0_init, V_00_init, k_gv1_init, freq_init );
 
 PWMData pwmdat( pwminfo, do_set_pwm );
 
@@ -99,6 +102,11 @@ constexpr NamedFloat ob_I_max      {      "I_max",      &pwminfo.I_max  };
 constexpr NamedFloat ob_R_max      {      "R_max",      &pwminfo.R_max  };
 constexpr NamedFloat ob_V_00       {       "V_00",      &pwminfo.V_00  };
 constexpr NamedFloat ob_R_0        {        "R_0",      &pwminfo.R_0  };
+constexpr NamedFloat ob_R_ch       {       "R_ch",      &pwminfo.R_ch  };
+constexpr NamedFloat ob_V_cc       {       "V_cc",      &pwminfo.V_cc  };
+constexpr NamedFloat ob_L          {          "L",      &pwminfo.L  };
+constexpr NamedFloat ob_I_s        {        "I_s",      &pwminfo.I_s  };
+constexpr NamedFloat ob_V_dtn      {      "V_dtn",      &pwminfo.V_dtn  };
 constexpr NamedFloat ob_k_gv1      {      "k_gv1",      &pwminfo.k_gv1  };
 constexpr NamedFloat ob_k_gv2      {      "k_gv2",      &pwminfo.k_gv2  };
 constexpr NamedFloat ob_x_0        {        "x_0",      &pwminfo.x_0  };
@@ -111,8 +119,9 @@ constexpr NamedFloat ob_cal_step   {   "cal_step",      &pwminfo.cal_step };
 constexpr NamedFloat ob_cal_pwm    {    "cal_pwm",      pwminfo.d_pwm, size(pwminfo.d_pwm) };
 constexpr NamedFloat ob_cal_v      {      "cal_v",      pwminfo.d_v, size(pwminfo.d_v)   };
 constexpr NamedFloat ob_rehint_lim { "rehint_lim",      &pwminfo.rehint_lim  };
-constexpr NamedFloat ob_regre_lev  {  "regre_lev",      &pwminfo.regre_lev  };
-constexpr NamedFloat ob_pid_only   {  "pid_only",       &pwminfo.pid_only  };
+constexpr NamedInt   ob_regre_lev  {  "regre_lev",      &pwminfo.regre_lev  };
+constexpr NamedInt   ob_pid_only   {   "pid_only",      &pwminfo.pid_only  };
+constexpr NamedInt   ob_autocal    {    "autocal",      &autocal  };
 constexpr NamedFloat ob_pwm_min    {    "pwm_min",      get_pwm_min,  set_pwm_min  };
 constexpr NamedFloat ob_pwm_max    {    "pwm_max",      get_pwm_max,  set_pwm_max  };
 constexpr NamedFloat ob_pwm_def    {    "pwm_def",      get_pwm_def,  set_pwm_def  };
@@ -125,6 +134,11 @@ constexpr const NamedObj *const objs_info[] = {
   & ob_R_max,
   & ob_V_00,
   & ob_R_0,
+  & ob_R_ch,
+  & ob_V_cc,
+  & ob_L,
+  & ob_I_s,
+  & ob_V_dtn,
   & ob_k_gv1,
   & ob_k_gv2,
   & ob_x_0,
@@ -139,6 +153,7 @@ constexpr const NamedObj *const objs_info[] = {
   & ob_rehint_lim,
   & ob_regre_lev,
   & ob_pid_only,
+  & ob_autocal,
   & ob_pwm_min,
   & ob_pwm_max,
   & ob_pwm_def,
@@ -207,7 +222,7 @@ int main(void)
   UVAR('n') = 1000000; // number of series (10ms 't' each): limited by steps
 
   UVAR('p') = 0;     // PSC,  - max output freq
-  UVAR('f') = 100000;// PWM freq: to calculate ARR
+  UVAR('f') = freq_init;// PWM freq: to calculate ARR
 
   pwminfo.R_max = 200.0f;
   pwminfo.V_max =   8.0f;
@@ -333,6 +348,19 @@ int cmd_test0( int argc, const char * const * argv )
     pwmdat.end_run();
     std_out << "# Error: limits before start!" NL;
     return 3;
+  }
+
+  int acal = autocal + ( ( fabsf( v[didx_r] - pwminfo.R_0 ) > 0.2f ) ? 1 : 0 );
+  if( acal > 1 ) {
+    pwminfo.fillFakeCalibration( v[didx_r] );
+  }
+  if( debug > 0 ) {
+    pwminfo.printData( true );
+  }
+  if( acal > 3 ) {
+    pwmdat.end_run();
+    std_out << "# Force exit!" << NL;
+    return 0;
   }
 
   pwmdat.prep( t_step, skip_pwm, v );
