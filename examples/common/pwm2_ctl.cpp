@@ -448,6 +448,13 @@ void PWMData::set_pwm()
   }
 }
 
+void PWMData::off_pwm()
+{
+  if( set_pwm_real ) {
+    set_pwm_real( 0 );
+  }
+}
+
 bool PWMData::prep( int a_t_step, bool fake, const float *d )
 {
   reason  = 0;
@@ -579,8 +586,8 @@ void PWMData::calcNextStep()
 void PWMData::end_run()
 {
   if( ! fake_run ) {
-    pwm_val = pwm_min; hand = 0; t = 0; c_step = 0;
-    set_pwm();
+    pwm_val = 0; hand = 0; t = 0; c_step = 0;
+    off_pwm();
   }
   pwm_tmax = pwm_max;
 }

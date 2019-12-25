@@ -45,7 +45,7 @@ const float R_0_init   =  0.09347f;
 const float V_00_init  = -0.671f;
 const float k_gv1_init =  0.1139f;
 const int    freq_init =  100000;
-int autocal = 1; // 0 - never, 1 - in R differ, 2 - always
+int autocal = 1; // 0 - never, 1 - in R differ, 2 - always, >3 - stop alfter fake calibration
 
 
 PWMInfo pwminfo( R_0_init, V_00_init, k_gv1_init, freq_init );
@@ -225,7 +225,7 @@ int main(void)
   UVAR('f') = freq_init;// PWM freq: to calculate ARR
 
   pwminfo.R_max = 200.0f;
-  pwminfo.V_max =   8.0f;
+  pwminfo.V_max =  10.0f;
   pwminfo.I_max =  50.0f;
   pwminfo.W_max = 200.0f;
 
@@ -240,7 +240,7 @@ int main(void)
 
   BOARD_POST_INIT_BLINK;
 
-  pr( NL "##################### " PROJ_NAME NL );
+  pr( NL "##################### " PROJ_NAME " " __DATE__ " " __TIME__ NL );
 
   srl.re_ps();
 
@@ -332,7 +332,6 @@ int cmd_test0( int argc, const char * const * argv )
   for( decltype(+n_ch) j=0; j<n_ch; ++j ) {
     std_out << ' ' << v_coeffs[j];
   }
-  std_out << NL "#        t          V          I        pwm          R          W        val"  NL;
 
   float v[didx_n];
 
@@ -350,21 +349,24 @@ int cmd_test0( int argc, const char * const * argv )
     return 3;
   }
 
-  int acal = autocal + ( ( fabsf( v[didx_r] - pwminfo.R_0 ) > 0.2f ) ? 1 : 0 );
+  int acal = autocal + ( ( fabsf( ( v[didx_r] - pwminfo.R_0 ) / v[didx_r] ) > 0.1f ) ? 1 : 0 );
+  std_out << "# acal= " << acal << " R_0= " <<  pwminfo.R_0 << " R= " << v[didx_r] << NL;
   if( acal > 1 ) {
     pwminfo.fillFakeCalibration( v[didx_r] );
+    pwminfo.doRegre();
   }
   if( debug > 0 ) {
     pwminfo.printData( true );
   }
   if( acal > 3 ) {
     pwmdat.end_run();
-    std_out << "# Force exit!" << NL;
+    std_out << "# --------------- Force exit!" << NL;
     return 0;
   }
 
   pwmdat.prep( t_step, skip_pwm, v );
 
+  std_out << NL "#        t          V          I        pwm          R          W        val"  NL;
   leds.reset( BIT0 | BIT1 | BIT2 );
 
   uint32_t tm0, tm00;
@@ -463,7 +465,8 @@ void tim_cfg()
   tim_oc_cfg.OCFastMode   = TIM_OCFAST_DISABLE;
   tim_oc_cfg.OCIdleState  = TIM_OCIDLESTATE_RESET;
   tim_oc_cfg.OCNIdleState = TIM_OCNIDLESTATE_RESET;
-  tim_oc_cfg.Pulse = ( pwmdat.get_pwm_min() * arr / 100 );
+  tim_oc_cfg.Pulse = 0; // off by default
+  // tim_oc_cfg.Pulse = ( pwmdat.get_pwm_min() * arr / 100 );
 
   if( HAL_TIM_PWM_ConfigChannel( &tim_h, &tim_oc_cfg, TIM_CHANNEL_1 ) != HAL_OK ) {
     UVAR('e') = 112;
@@ -484,8 +487,9 @@ void do_set_pwm( float v )
 
 int cmd_pwm( int argc, const char * const * argv )
 {
-  const float gamma = arg2float_d( 1, argc, argv, pwmdat.get_pwm_def(), pwmdat.get_pwm_min(), pwmdat.get_pwm_max() );
-  pwmdat.set_pwm_manual( gamma );
+  const float gamma = arg2float_d( 1, argc, argv, pwmdat.get_pwm_def(), 0.0f, pwmdat.get_pwm_max() );
+  // pwmdat.set_pwm_manual( gamma );
+  do_set_pwm( gamma );
   delay_ms( 100 );
   tim_print_cfg( TIM_EXA );
   std_out << NL "# PWM:  auto: " << pwmdat.get_v() << "  real: " << pwmdat.get_pwm_real() << NL;
@@ -587,7 +591,7 @@ int cmd_calibrate( int argc, const char * const * argv )
        << v[didx_r] << ' ' << v[didx_w] << NL;
   }
 
-  pwmdat.set_pwm_manual( pwmdat.get_pwm_min() );
+  pwmdat.off_pwm();
 
   if( break_flag ) {
     std_out << "# calibrtion exit by break!" << NL;
