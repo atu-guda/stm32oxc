@@ -125,10 +125,13 @@ int cmdline_split( char *cmd, char** argv, int max_args )
       was_bs = false;
       char c1 = c;
       switch( c ) {
-        case 'n': c1 = '\n'; break;
-        case 'r': c1 = '\r'; break;
-        case 't': c1 = '\t'; break;
+        case 'n': c1 = '\n';   break;
+        case 'r': c1 = '\r';   break;
+        case 't': c1 = '\t';   break;
+        case 'b': c1 = '\b';   break;
+        case 'f': c1 = '\f';   break;
         case 'e': c1 = '\033'; break;
+        // TODO: xFF
       }
       cmd[j++] = c1;
       continue;

@@ -319,9 +319,19 @@ CmdInfo CMDINFO_INFO {  "info",  0, cmd_info,       " - Output general info" };
 
 int cmd_echo( int argc, const char * const * argv )
 {
-  std_out << NL << "argc= " << argc << NL;
+  std_out << NL;
   for( int i=0; i<argc; ++i ) {
-    std_out << " arg" << i << " = \"" << argv[i] << "\"" NL;
+    std_out << argv[i] << ' ';
+  }
+  std_out << NL;
+
+  if( UVAR('d') < 1 ) {
+    return 0;
+  }
+
+  std_out << "# argc= " << argc << NL;
+  for( int i=0; i<argc; ++i ) {
+    std_out << "# arg" << i << " = \"" << argv[i] << "\"" NL;
   }
   return 0;
 }
