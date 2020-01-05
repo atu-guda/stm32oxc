@@ -118,6 +118,8 @@ class PWMData {
    float pwm_min = 3.0f, pwm_def = 3.0f, pwm_max = 80.0f, pwm_tmax = pwm_max; // tmax - tmp max for limits
    float val =  pwm_def;
    float pwm_val =  pwm_def;    // unrestricted
+   float pwm_base = pwm_def;
+   float pwm_intgr = 0;
    float val_1 = val;    // w/o hand
    float pwm_r = val;    // real
    float val_0 = val;

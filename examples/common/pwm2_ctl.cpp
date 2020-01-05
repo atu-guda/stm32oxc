@@ -461,6 +461,7 @@ bool PWMData::prep( int a_t_step, bool fake, const float *d )
   pwm_tmax = pwm_max;
   t_step = a_t_step; fake_run = fake;
   t = 0; t_mul = 1;  c_step = 0; hand = 0; last_R = d[didx_r];
+  pwm_intgr = 0;
   calcNextStep();
   if( fake_run ) {
     return true;
@@ -502,7 +503,7 @@ bool PWMData::tick( const float *d )
     val_1 = val_0 + ks * t;
     val = val_1 + hand;
     switch( steps[c_step].tp ) {
-      case pwm_type::pwm:   pwm_val = val;
+      case pwm_type::pwm:   pwm_base = pwm_val = val;
                             only_pwm = true;
                             break;
       case pwm_type::volt:  err = d[didx_v] - val;
@@ -524,10 +525,11 @@ bool PWMData::tick( const float *d )
 
   if( !only_pwm ) {
     if( pwminfo.pid_only > 0 ) {
-      pwm_val  = c_ki * pwminfo.kp_v * err;
-    }
+      pwm_base  = c_ki * pwminfo.kp_v * err;
+    } // TODO: rehint if flag
 
-    pwm_val -= c_ki * ( pwminfo.ki_v * t_step * err + pwminfo.kd_v * d_err_dt );
+    pwm_intgr -= c_ki * pwminfo.ki_v * t_step * err;
+    pwm_val = pwm_base + pwm_intgr -  c_ki * pwminfo.kd_v * d_err_dt ;
   }
 
   if( rc != check_result::ok && pwm_val > pwm_val_old ) {
@@ -562,24 +564,27 @@ void PWMData::calcNextStep()
   }
 
   switch( steps[c_step].tp ) {
-    case pwm_type::pwm:   pwm_val = val; break;
+    case pwm_type::pwm:   pwm_base = val; pwm_intgr = 0; break;
     case pwm_type::volt:  if( rehint ) {
-                            pwm_val = pwminfo.hint_for_V( val );
+                            pwm_base = pwminfo.hint_for_V( val );
+                            pwm_intgr = 0;
                           }
                           break;
     case pwm_type::curr:  if( rehint ) {
-                            pwm_val = pwminfo.hint_for_V( val * last_R );
+                            pwm_base = pwminfo.hint_for_V( val * last_R );
+                            pwm_intgr = 0;
                           }
                           break;
     case pwm_type::pwr:  if( rehint ) {
-                            pwm_val = pwminfo.hint_for_V( sqrtf( val * last_R  ) );
+                            pwm_base = pwminfo.hint_for_V( sqrtf( val * last_R  ) );
+                            pwm_intgr = 0;
                           }
                           break;
-    default:              pwm_val = pwm_min; break; // fail-safe
+    default:              pwm_base = pwm_min; break; // fail-safe
   };
   std_out
      << "# @@@ " << t << ' ' << c_step << ' ' << old_val << ' ' << val
-     << ' ' << pwm_val << ' ' << last_R << ' ' << rehint << ' '
+     << ' ' << pwm_base << ' ' << last_R << ' ' << rehint << ' '
      << pwminfo.k_gv1 << ' ' << pwminfo.V_00 << NL;
 }
 
@@ -587,6 +592,7 @@ void PWMData::end_run()
 {
   if( ! fake_run ) {
     pwm_val = 0; hand = 0; t = 0; c_step = 0;
+    pwm_intgr = 0; pwm_base = 0;
     off_pwm();
   }
   pwm_tmax = pwm_max;
