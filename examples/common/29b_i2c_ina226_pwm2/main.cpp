@@ -333,6 +333,13 @@ int cmd_test0( int argc, const char * const * argv )
     std_out << ' ' << v_coeffs[j];
   }
 
+  std_out << NL "# pid_only= " << pwminfo.pid_only << " regre_lev= " << pwminfo.regre_lev
+          << " rehint_lim= " << pwminfo.rehint_lim
+          << " kp_v= " << pwminfo.kp_v
+          << " ki_v= " << pwminfo.ki_v
+          << " kd_v= " << pwminfo.kd_v
+          << NL;
+
   float v[didx_n];
 
   leds.set(   BIT0 | BIT1 | BIT2 ); // delay_ms( 100 );

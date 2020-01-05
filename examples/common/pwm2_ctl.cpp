@@ -525,7 +525,7 @@ bool PWMData::tick( const float *d )
 
   if( !only_pwm ) {
     if( pwminfo.pid_only > 0 ) {
-      pwm_base  = c_ki * pwminfo.kp_v * err;
+      pwm_base  = - pwminfo.kp_v * err; // * c_ki ???;
     } // TODO: rehint if flag
 
     pwm_intgr -= c_ki * pwminfo.ki_v * t_step * err;
