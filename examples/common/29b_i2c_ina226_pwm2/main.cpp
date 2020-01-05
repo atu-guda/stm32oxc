@@ -45,7 +45,7 @@ const float R_0_init   =  0.09347f;
 const float V_00_init  = -0.671f;
 const float k_gv1_init =  0.1139f;
 const int    freq_init =  100000;
-int autocal = 1; // 0 - never, 1 - in R differ, 2 - always, >3 - stop alfter fake calibration
+int autocal = 1; // 0 - never, 1 - in R differ, 2 - always, |4 - skip clear |8 - stop alfter fake calibration 
 
 
 PWMInfo pwminfo( R_0_init, V_00_init, k_gv1_init, freq_init );
@@ -349,16 +349,22 @@ int cmd_test0( int argc, const char * const * argv )
     return 3;
   }
 
-  int acal = autocal + ( ( fabsf( ( v[didx_r] - pwminfo.R_0 ) / v[didx_r] ) > 0.1f ) ? 1 : 0 );
+  int acal = autocal & 3;
+  if(  fabsf( ( v[didx_r] - pwminfo.R_0 ) / v[didx_r] )  >  0.1f  ) {
+    ++acal;
+  }
   std_out << "# acal= " << acal << " R_0= " <<  pwminfo.R_0 << " R= " << v[didx_r] << NL;
   if( acal > 1 ) {
     pwminfo.fillFakeCalibration( v[didx_r] );
     pwminfo.doRegre();
+    if( ! ( autocal & 4 ) ) {
+      pwminfo.clearCalibrationArr();
+    }
   }
   if( debug > 0 ) {
     pwminfo.printData( true );
   }
-  if( acal > 3 ) {
+  if( autocal & 8 ) {
     pwmdat.end_run();
     std_out << "# --------------- Force exit!" << NL;
     return 0;
