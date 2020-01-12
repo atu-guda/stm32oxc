@@ -1,11 +1,11 @@
 
 SUBDIRS = \
   00_leds \
-  # 01_leds_oxc \
-  # 01a_leds_tim_oxc_mu \
-  # 02_leds_rtos \
-  # 03_uart \
-  # 04_uart_console \
+  01_leds_oxc \
+  01a_leds_tim_oxc_mu \
+  02_leds_rtos \
+  03_uart \
+  04_uart_console \
   # 05_usb_console \
   # 05a_def_console \
   # 05c_def_cons_nort \

@@ -190,7 +190,7 @@ void gpio_pin_info( GPIO_TypeDef *gi, uint16_t pin, char *s )
   s[j++] = 0;
 }
 
-#elif defined (STM32F2) || defined (STM32F3) || defined (STM32F4) || defined (STM32F7)
+#elif defined (STM32F2) || defined (STM32F3) || defined (STM32F4) || defined (STM32F7) || defined (STM32H7)
 
 static const char *pin_moder_name[] = { "Inp", "Out", "AFn", "Ana", "?m?" };
 static const char *pin_speed_name[] = { "Low", "Lo1", "Med", "Hig", "?s?" };
