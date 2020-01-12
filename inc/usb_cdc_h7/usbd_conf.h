@@ -1,0 +1,1 @@
+../usb_cdc_f4/usbd_conf.h
