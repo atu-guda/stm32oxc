@@ -104,18 +104,18 @@ void GpioRegs::setEXTI( uint8_t pin, ExtiEv ev )
   uint32_t mask_pos = 1 << pin;
   uint32_t mask_neg = ~mask_pos;
   if( (uint8_t)(ev) & (uint8_t)(ExtiEv::up) ) {
-    EXTI->RTSR |=  mask_pos;
+    EXTI->EXTIREG_RTSR |=  mask_pos;
   } else {
-    EXTI->RTSR &=  mask_neg;
+    EXTI->EXTIREG_RTSR &=  mask_neg;
   }
 
   if( (uint8_t)(ev) & (uint8_t)(ExtiEv::down) ) {
-    EXTI->FTSR |=  mask_pos;
+    EXTI->EXTIREG_FTSR |=  mask_pos;
   } else {
-    EXTI->FTSR &=  mask_neg;
+    EXTI->EXTIREG_FTSR &=  mask_neg;
   }
 
-  EXTI->IMR  |= mask_pos;
+  EXTI->EXTIREG_IMR  |= mask_pos;
 }
 
 // ********************************************************
