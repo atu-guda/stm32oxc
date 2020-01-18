@@ -24,17 +24,19 @@ int SystemClockCfg(void)
   __HAL_RCC_PWR_CLK_ENABLE();
   __HAL_PWR_VOLTAGESCALING_CONFIG( PWR_REGULATOR_VOLTAGE_SCALE1 );
 
-  RCC_OscInitTypeDef RCC_OscInitStruct;
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
-  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLM = 8;
-  RCC_OscInitStruct.PLL.PLLN = 384;
-  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
-  RCC_OscInitStruct.PLL.PLLQ = 8;
-  RCC_OscInitStruct.PLL.PLLR = 7;
-  if( HAL_RCC_OscConfig( &RCC_OscInitStruct ) != HAL_OK ) {
+  static const RCC_OscInitTypeDef RCC_OscInitStruct = {
+    .OscillatorType = RCC_OSCILLATORTYPE_HSE,
+    .HSEState       = RCC_HSE_ON,
+    .PLL.PLLState   = RCC_PLL_ON,
+    .PLL.PLLSource  = RCC_PLLSOURCE_HSE,
+    .PLL.PLLM       = 8,
+    .PLL.PLLN       = 384,
+    .PLL.PLLP       = RCC_PLLP_DIV2,
+    .PLL.PLLQ       = 8,
+    .PLL.PLLR       = 7
+  };
+
+  if( HAL_RCC_OscConfig( (RCC_OscInitTypeDef *)(&RCC_OscInitStruct) ) != HAL_OK ) {
     errno = 1001;
     return  1001;
   }
@@ -68,9 +70,6 @@ int SystemClockCfg(void)
 
   __HAL_RCC_SYSCFG_CLK_ENABLE();
 
-  HAL_SYSTICK_Config( HAL_RCC_GetHCLKFreq()/1000 ); // to HAL_delay work even before FreeRTOS start
-  HAL_SYSTICK_CLKSourceConfig( SYSTICK_CLKSOURCE_HCLK );
-  HAL_NVIC_SetPriority( SysTick_IRQn, OXC_SYSTICK_PRTY, 0 ); // will be readjusted by FreeRTOS
   approx_delay_calibrate();
   return 0;
 }

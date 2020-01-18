@@ -23,17 +23,19 @@ int SystemClockCfg(void)
   __HAL_RCC_PWR_CLK_ENABLE();
   __HAL_PWR_VOLTAGESCALING_CONFIG( PWR_REGULATOR_VOLTAGE_SCALE1 );
 
-  RCC_OscInitTypeDef RCC_OscInitStruct;
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
-  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLM = 25;
-  RCC_OscInitStruct.PLL.PLLN = 288;
-  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
-  RCC_OscInitStruct.PLL.PLLQ = 6;
-  // RCC_OscInitStruct.PLL.PLLR = 6;
-  if( HAL_RCC_OscConfig( &RCC_OscInitStruct ) != HAL_OK ) {
+  static const RCC_OscInitTypeDef RCC_OscInitStruct = {
+    .OscillatorType = RCC_OSCILLATORTYPE_HSE,
+    .HSEState       = RCC_HSE_ON,
+    .PLL.PLLState   = RCC_PLL_ON,
+    .PLL.PLLSource  = RCC_PLLSOURCE_HSE,
+    .PLL.PLLM       = 25,
+    .PLL.PLLN       = 288,
+    .PLL.PLLP       = RCC_PLLP_DIV2,
+    .PLL.PLLQ       = 6,
+    // .PLL.PLLR    = 6
+  };
+
+  if( HAL_RCC_OscConfig( (RCC_OscInitTypeDef *)(&RCC_OscInitStruct) ) != HAL_OK ) {
     errno = 1001;
     return  1001;
   }
@@ -41,24 +43,24 @@ int SystemClockCfg(void)
   //
   // No overdrive
   //
+  //
 
-  RCC_ClkInitTypeDef RCC_ClkInitStruct;
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK
-                              | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
-  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
-  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
-  if( HAL_RCC_ClockConfig( &RCC_ClkInitStruct, FLASH_LATENCY_5 ) != HAL_OK ) {
+  static const RCC_ClkInitTypeDef RCC_ClkInitStruct = {
+    .ClockType = RCC_CLOCKTYPE_HCLK  | RCC_CLOCKTYPE_SYSCLK
+               | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2,
+    .SYSCLKSource   = RCC_SYSCLKSOURCE_PLLCLK,
+    .AHBCLKDivider  = RCC_SYSCLK_DIV1,
+    .APB1CLKDivider = RCC_HCLK_DIV4,
+    .APB2CLKDivider = RCC_HCLK_DIV2
+  };
+
+  if( HAL_RCC_ClockConfig( (RCC_ClkInitTypeDef*)(&RCC_ClkInitStruct), FLASH_LATENCY_5 ) != HAL_OK ) {
     errno = 1003;
     return  1003;
   }
 
   __HAL_RCC_SYSCFG_CLK_ENABLE();
 
-  HAL_SYSTICK_Config( HAL_RCC_GetHCLKFreq()/1000 ); // to HAL_delay work even before FreeRTOS start
-  HAL_SYSTICK_CLKSourceConfig( SYSTICK_CLKSOURCE_HCLK );
-  HAL_NVIC_SetPriority( SysTick_IRQn, OXC_SYSTICK_PRTY, 0 ); // will be readjusted by FreeRTOS
   approx_delay_calibrate();
   return 0;
 }

@@ -28,6 +28,7 @@ int cmd_test0( int argc, const char * const * argv )
   #endif
 
 
+  uint32_t tmc_prev = tc0;
   break_flag = 0;
   for( int i=0; i<n && !break_flag; ++i ) {
     #ifdef USE_FREERTOS
@@ -36,12 +37,14 @@ int cmd_test0( int argc, const char * const * argv )
     uint32_t  tcc = HAL_GetTick();
     #endif
     uint32_t tmc = HAL_GetTick();
-    std_out <<  " Fake Action i= " << i << "  tick: " << ( tcc - tc00 )
-            << "  ms_tick: " << ( tmc - tm0 ) << NL;
+    std_out <<  "i= " << i << "  tick= " << ( tcc - tc00 )
+            << "  ms_tick= " << ( tmc - tm0 ) << " dlt= " << ( tmc - tmc_prev ) << NL;
     if( UVAR('w') ) {
       std_out.flush();
     }
     leds.toggle( 1 );
+    tmc_prev = tcc;
+
     // vTaskDelayUntil( &tc0, t_step );
     // delay_ms_brk( t_step );
     if( UVAR('b') ) {

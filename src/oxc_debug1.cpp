@@ -279,11 +279,11 @@ int cmd_info( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
   uint32_t prio_preempt, prio_sub;
   struct OutIrqName {
     IRQn_Type IRQn;
-    const char* nm;
+    const char* const nm;
   };
   const OutIrqName irqs[] = {
-    { SysTick_IRQn, "SysTick" },
     { EXTI0_IRQn,   "EXTI0  " },
+    { SysTick_IRQn, "SysTick" },
     #if defined( BOARD_UART_DEFAULT_IRQ )
     { BOARD_UART_DEFAULT_IRQ,  oxc_uart_name(BOARD_UART_DEFAULT) },
     #else
@@ -299,7 +299,7 @@ int cmd_info( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
     { I2C1_EV_IRQn, "I2C1_EV" }
   };
 
-  for( auto iqn : irqs ) {
+  for( const auto& iqn : irqs ) {
     HAL_NVIC_GetPriority( iqn.IRQn, prio_grouping, &prio_preempt, &prio_sub );
     std_out << iqn.nm << " (" << iqn.IRQn <<  ")  preempt= " <<  prio_preempt << " sub= " <<  prio_sub << NL;
   }

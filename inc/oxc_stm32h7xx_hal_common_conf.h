@@ -71,7 +71,6 @@
   */
 #define  VDD_VALUE                    ((uint32_t)3300U) /*!< Value of VDD in mv */
 // TODO: check
-//#define  TICK_INT_PRIORITY            ((uint32_t)0)    /*!< tick interrupt priority */
 #define  TICK_INT_PRIORITY            ((uint32_t)0x0F) /*!< tick interrupt priority */
 #define  USE_RTOS                     0
 #ifndef  PREFETCH_ENABLE
