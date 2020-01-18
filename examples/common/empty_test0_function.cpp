@@ -41,9 +41,14 @@ int cmd_test0( int argc, const char * const * argv )
     if( UVAR('w') ) {
       std_out.flush();
     }
+    leds.toggle( 1 );
     // vTaskDelayUntil( &tc0, t_step );
     // delay_ms_brk( t_step );
-    delay_ms_until_brk( &tc0, t_step );
+    if( UVAR('b') ) {
+      delay_bad_ms( t_step );
+    } else {
+      delay_ms_until_brk( &tc0, t_step );
+    }
   }
 
   return 0;

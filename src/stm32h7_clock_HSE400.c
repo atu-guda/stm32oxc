@@ -94,7 +94,7 @@ int SystemClockCfg(void)
     return 1007;
   }
 
-  // HAL_PWREx_EnableUSBVoltageDetector();
+  HAL_PWREx_EnableUSBVoltageDetector();
 
 
   // next line makes wrong delays - * 0.5
