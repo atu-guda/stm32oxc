@@ -46,7 +46,6 @@ int main(void)
 
   BOARD_POST_INIT_BLINK;
 
-
   oxc_add_aux_tick_fun( led_task_nortos );
 
   std_main_loop_nortos( &srl, idle_main_task );

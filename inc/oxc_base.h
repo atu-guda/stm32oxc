@@ -282,7 +282,7 @@ void default_wait1(void);
 #define USE_DIE4LED_EXIT void void( int rc ) { die4led( rc ); };
 
 #ifndef PROLOG_LED_TIME
-#define PROLOG_LED_TIME 200
+#define PROLOG_LED_TIME  50
 #endif
 
 #ifdef USE_OXC_DEVIO
