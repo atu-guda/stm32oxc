@@ -83,10 +83,6 @@
 #endif
 
 
-#ifndef OXC_SYSTICK_PRTY
-  #define OXC_SYSTICK_PRTY 15
-#endif
-
 #ifndef NO_COMMON_HAL_MODULES
   #define HAL_MODULE_ENABLED
   #define HAL_CORTEX_MODULE_ENABLED
