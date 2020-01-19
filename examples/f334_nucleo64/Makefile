@@ -6,6 +6,7 @@ SUBDIRS = \
   02_leds_rtos \
   03_uart \
   04_uart_console \
+  04a_uart_console_nort \
   05a_def_console \
   05c_def_cons_nort \
   06_i2c_test \

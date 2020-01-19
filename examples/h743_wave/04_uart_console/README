@@ -1,6 +1,3 @@
-Using  UART as console via SmallRL.
+Using  UART as console via SmallRL w/o FreeRTOS.
 
-Used USART1 with USB-UART board.
-B6  = USART2_TX
-B7  = USART2_RX
 
