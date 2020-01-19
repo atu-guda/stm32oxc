@@ -66,8 +66,8 @@ __ALIGN_BEGIN uint8_t USBD_DeviceDesc[USB_LEN_DEV_DESC] __ALIGN_END = {
   USB_DESC_TYPE_DEVICE,       /* bDescriptorType */
   0x00,                       /* bcdUSB */
   0x02,
-  0x00,                       /* bDeviceClass */
-  0x00,                       /* bDeviceSubClass */
+  0x02,                       /* bDeviceClass */
+  0x02,                       /* bDeviceSubClass */
   0x00,                       /* bDeviceProtocol */
   USB_MAX_EP0_SIZE,           /* bMaxPacketSize */
   LOBYTE( USBD_VID ),         /* idVendor */
@@ -120,6 +120,12 @@ uint8_t *USBD_VCP_ProductStrDescriptor( USBD_SpeedTypeDef speed UNUSED_ARG, uint
   return USBD_StrDesc;
 }
 
+/**
+  * @brief  Return the manufacturer string descriptor
+  * @param  speed : Current device speed
+  * @param  length : Pointer to data length variable
+  * @retval Pointer to descriptor buffer
+  */
 uint8_t *USBD_VCP_ManufacturerStrDescriptor( USBD_SpeedTypeDef speed UNUSED_ARG, uint16_t *length )
 {
   USBD_GetString( (uint8_t *)USBD_MANUFACTURER_STRING, USBD_StrDesc, length );
