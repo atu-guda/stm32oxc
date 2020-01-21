@@ -196,16 +196,30 @@ ifeq "$(USE_OXC_UART)" "y"
 endif
 
 ifeq "$(USE_OXC_CONSOLE_USB_CDC)" "y"
-  # $(info "Used USB_CDC console" )
+  $(info "Used USB_CDC console" )
+  USE_USB_CDC  = y
   USE_OXC_CONSOLE = y
-  # TODO: move to bsp/$(BOARDNAME) + links to common
-  STM_HAL_INC += -I$(STM32_HAL_FW_DIR)/Middlewares/ST/STM32_USB_Device_Library/Core/Inc  -I$(STM32_HAL_FW_DIR)/Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc
-  SRCPATHS += $(OXCSRC)/usb_cdc_$(MCSUFF)
-  SRCPATHS += $(STM32_HAL_FW_DIR)/Middlewares/ST/STM32_USB_Device_Library/Core/Src
-  SRCPATHS += $(STM32_HAL_FW_DIR)/Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Src
+  ALLFLAGS += -DUSE_OXC_CONSOLE_USB_CDC
   ALLFLAGS += -I$(OXCINC)/usb_cdc_$(MCSUFF) -I$(OXCINC)/usbd_descr_cdc
+  SRCPATHS += $(OXCSRC)/usb_cdc_$(MCSUFF)
   SRCS += usbd_conf.cpp
   SRCS += usbd_desc.cpp
+  SRCS += oxc_usbcdcio.cpp
+  SRCS += usbfs_init.cpp
+endif
+
+ifeq "$(USE_USB_CDC)" "y"
+  $(info "Used USB_CDC" )
+  USE_USBD_LIB  = y
+  ALLFLAGS += -DUSE_USB_CDC
+  STM_HAL_INC += -I$(STM32_HAL_FW_DIR)/Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc
+  SRCPATHS += $(STM32_HAL_FW_DIR)/Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Src
+endif
+
+ifeq "$(USE_USBD_LIB)" "y"
+  $(info "Used USBD_LIB" )
+  STM_HAL_INC += -I$(STM32_HAL_FW_DIR)/Middlewares/ST/STM32_USB_Device_Library/Core/Inc
+  SRCPATHS += $(STM32_HAL_FW_DIR)/Middlewares/ST/STM32_USB_Device_Library/Core/Src
   # USB: hal:
   SRCS += stm32$(MCSUFF)xx_hal_pcd.c
   SRCS += stm32$(MCSUFF)xx_hal_pcd_ex.c
@@ -215,10 +229,7 @@ ifeq "$(USE_OXC_CONSOLE_USB_CDC)" "y"
   SRCS += usbd_cdc.c
   SRCS += usbd_ctlreq.c
   SRCS += usbd_ioreq.c
-  USE_USB = y
-  SRCS += oxc_usbcdcio.cpp
-  SRCS += usbfs_init.cpp
-  ALLFLAGS += -DUSE_OXC_CONSOLE_USB_CDC
+  ALLFLAGS += -DUSE_USBD_LIB
 endif
 
 ifeq "$(USE_OXC_CONSOLE)" "y"
