@@ -22,13 +22,16 @@
 #define USBD_PRODUCT_FS_STRING        "STM32 Virtual ComPort"
 #endif
 
-// #define USBD_PID_FS     22336
+#ifndef USBD_CONFIGURATION_FS_STRING
+#define USBD_CONFIGURATION_FS_STRING  "VCP Config"
+#endif
 
-#define USBD_CONFIGURATION_STRING_FS     "CDC Config"
-#define USBD_INTERFACE_STRING_FS     "CDC Interface"
+#ifndef USBD_INTERFACE_FS_STRING
+#define USBD_INTERFACE_FS_STRING      "VCP Interface"
+#endif
 
 static void Get_SerialNum(void);
-static void IntToUnicode( uint32_t value, uint8_t * pbuf, uint8_t len );
+static void IntToUnicode( uint32_t value, uint8_t *pbuf, uint8_t len );
 
 
 uint8_t *USBD_VCP_DeviceDescriptor( USBD_SpeedTypeDef speed, uint16_t *length );
@@ -40,15 +43,14 @@ uint8_t *USBD_VCP_ConfigStrDescriptor( USBD_SpeedTypeDef speed, uint16_t *length
 uint8_t *USBD_VCP_InterfaceStrDescriptor( USBD_SpeedTypeDef speed, uint16_t *length );
 
 
-USBD_DescriptorsTypeDef VCP_Desc =
-{
-  USBD_VCP_DeviceDescriptor
-, USBD_VCP_LangIDStrDescriptor
-, USBD_VCP_ManufacturerStrDescriptor
-, USBD_VCP_ProductStrDescriptor
-, USBD_VCP_SerialStrDescriptor
-, USBD_VCP_ConfigStrDescriptor
-, USBD_VCP_InterfaceStrDescriptor
+USBD_DescriptorsTypeDef VCP_Desc = {
+  USBD_VCP_DeviceDescriptor,
+  USBD_VCP_LangIDStrDescriptor,
+  USBD_VCP_ManufacturerStrDescriptor,
+  USBD_VCP_ProductStrDescriptor,
+  USBD_VCP_SerialStrDescriptor,
+  USBD_VCP_ConfigStrDescriptor,
+  USBD_VCP_InterfaceStrDescriptor
 };
 
 /** USB standard device descriptor. */
@@ -89,7 +91,7 @@ __ALIGN_BEGIN uint8_t USBD_StringSerial[USB_SIZ_STRING_SERIAL] __ALIGN_END = {
 
 __ALIGN_BEGIN uint8_t USBD_StrDesc[USBD_MAX_STR_DESC_SIZ] __ALIGN_END;
 
-uint8_t* USBD_VCP_DeviceDescriptor( USBD_SpeedTypeDef speed, uint16_t *length )
+uint8_t* USBD_VCP_DeviceDescriptor( USBD_SpeedTypeDef /* speed */, uint16_t *length )
 {
   *length = sizeof( USBD_DeviceDesc );
   return (uint8_t*)USBD_DeviceDesc;
@@ -98,28 +100,22 @@ uint8_t* USBD_VCP_DeviceDescriptor( USBD_SpeedTypeDef speed, uint16_t *length )
 uint8_t* USBD_VCP_LangIDStrDescriptor( USBD_SpeedTypeDef /* speed */, uint16_t *length )
 {
   *length = sizeof( USBD_LangIDDesc );
-  return USBD_LangIDDesc;
+  return (uint8_t*)USBD_LangIDDesc;
 }
 
-uint8_t * USBD_VCP_ProductStrDescriptor( USBD_SpeedTypeDef /* speed */, uint16_t *length )
+uint8_t* USBD_VCP_ProductStrDescriptor( USBD_SpeedTypeDef /* speed */, uint16_t *length )
 {
   USBD_GetString( (uint8_t *)USBD_PRODUCT_FS_STRING, USBD_StrDesc, length );
   return USBD_StrDesc;
 }
 
-/**
-  * @brief  Return the manufacturer string descriptor
-  * @param  speed : Current device speed
-  * @param  length : Pointer to data length variable
-  * @retval Pointer to descriptor buffer
-  */
-uint8_t * USBD_VCP_ManufacturerStrDescriptor( USBD_SpeedTypeDef /* speed */, uint16_t *length )
+uint8_t* USBD_VCP_ManufacturerStrDescriptor( USBD_SpeedTypeDef /* speed */, uint16_t *length )
 {
   USBD_GetString( (uint8_t *)USBD_MANUFACTURER_STRING, USBD_StrDesc, length );
   return USBD_StrDesc;
 }
 
-uint8_t * USBD_VCP_SerialStrDescriptor( USBD_SpeedTypeDef /* speed */, uint16_t *length )
+uint8_t* USBD_VCP_SerialStrDescriptor( USBD_SpeedTypeDef /* speed */, uint16_t *length )
 {
   *length = USB_SIZ_STRING_SERIAL;
 
@@ -130,13 +126,13 @@ uint8_t * USBD_VCP_SerialStrDescriptor( USBD_SpeedTypeDef /* speed */, uint16_t 
 
 uint8_t* USBD_VCP_ConfigStrDescriptor( USBD_SpeedTypeDef /* speed */, uint16_t *length )
 {
-  USBD_GetString( (uint8_t *)USBD_CONFIGURATION_STRING_FS, USBD_StrDesc, length );
+  USBD_GetString( (uint8_t *)USBD_CONFIGURATION_FS_STRING, USBD_StrDesc, length );
   return USBD_StrDesc;
 }
 
-uint8_t * USBD_VCP_InterfaceStrDescriptor( USBD_SpeedTypeDef /* speed */, uint16_t *length )
+uint8_t* USBD_VCP_InterfaceStrDescriptor( USBD_SpeedTypeDef /* speed */, uint16_t *length )
 {
-  USBD_GetString( (uint8_t *)USBD_INTERFACE_STRING_FS, USBD_StrDesc, length );
+  USBD_GetString( (uint8_t *)USBD_INTERFACE_FS_STRING, USBD_StrDesc, length );
   return USBD_StrDesc;
 }
 
@@ -160,7 +156,7 @@ static void IntToUnicode( uint32_t value, uint8_t *pbuf, uint8_t len )
 {
   for( uint8_t idx = 0; idx < len; idx++ ) {
     uint8_t v = (uint8_t)(value >> 28);
-    pbuf[2 * idx] = ( v < 0xA )  ?  ( v + '0' )  :  ( v  + 'A' - 10 );
+    pbuf[2 * idx] = ( v < 0x0A )  ?  ( v + '0' )  :  ( v  + 'A' - 10 );
     pbuf[2 * idx + 1] = 0;
     value <<= 4;
   }
