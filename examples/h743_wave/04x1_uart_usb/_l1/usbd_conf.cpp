@@ -241,9 +241,9 @@ void HAL_PCD_DisconnectCallback( PCD_HandleTypeDef *hpcd )
 USBD_StatusTypeDef USBD_LL_Init( USBD_HandleTypeDef *pdev )
 {
   // atu???
-  // if( pdev->id != DEVICE_FS ) {
-  //   return USBD_OK;
-  // }
+  if( pdev->id != DEVICE_FS ) {
+    return USBD_OK;
+  }
 
   hpcd.pData                    = pdev;
   pdev->pData                   = &hpcd;
@@ -258,6 +258,7 @@ USBD_StatusTypeDef USBD_LL_Init( USBD_HandleTypeDef *pdev )
   hpcd.Init.low_power_enable    = DISABLE;
   hpcd.Init.lpm_enable          = DISABLE;
   hpcd.Init.use_dedicated_ep1   = DISABLE;
+  hpcd.Init.battery_charging_enable = DISABLE; // TODO: check or condition(arch)
 
   #ifdef BOARD_USB_DEFAULT_VBUS_PIN
   hpcd.Init.vbus_sensing_enable = ENABLE;

@@ -55,9 +55,6 @@ void HAL_PCD_MspInit(PCD_HandleTypeDef* pcdHandle)
     HAL_NVIC_EnableIRQ(OTG_FS_EP1_IN_IRQn);
     HAL_NVIC_SetPriority(OTG_FS_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(OTG_FS_IRQn);
-  /* USER CODE BEGIN USB_OTG_FS_MspInit 1 */
-
-  /* USER CODE END USB_OTG_FS_MspInit 1 */
   }
 }
 
@@ -88,6 +85,28 @@ void HAL_PCD_MspDeInit(PCD_HandleTypeDef* pcdHandle)
 
   /* USER CODE END USB_OTG_FS_MspDeInit 1 */
   }
+}
+
+
+void BOARD_USB_DEFAULT_IRQHANDLER(void)
+{
+  leds.set( BIT0 );
+  HAL_PCD_IRQHandler( &hpcd );
+  leds.reset( BIT0 );
+}
+
+void OTG_FS_EP1_OUT_IRQHandler(void)
+{
+  // leds.set( BIT1 );
+  HAL_PCD_IRQHandler( &hpcd );
+  // leds.reset( BIT1 );
+}
+
+void OTG_FS_EP1_IN_IRQHandler(void)
+{
+  // leds.set( BIT2 );
+  HAL_PCD_IRQHandler( &hpcd );
+  // leds.reset( BIT2 );
 }
 
 
@@ -274,26 +293,35 @@ void HAL_PCD_DisconnectCallback( PCD_HandleTypeDef *hpcd )
   */
 USBD_StatusTypeDef USBD_LL_Init( USBD_HandleTypeDef *pdev )
 {
-  /* Init USB Ip. */
-  if (pdev->id == DEVICE_FS) {
-  /* Link the driver to the stack. */
-  hpcd.pData = pdev;
-  pdev->pData = &hpcd;
+  // atu???
+  if( pdev->id != DEVICE_FS ) {
+    return USBD_OK;
+  }
 
-  hpcd.Instance = USB_OTG_FS;
-  hpcd.Init.dev_endpoints = 9;
-  hpcd.Init.speed = PCD_SPEED_FULL;
-  hpcd.Init.dma_enable = DISABLE;
-  hpcd.Init.phy_itface = PCD_PHY_EMBEDDED;
-  hpcd.Init.Sof_enable = DISABLE;
-  hpcd.Init.low_power_enable = DISABLE;
-  hpcd.Init.lpm_enable = DISABLE;
-  hpcd.Init.battery_charging_enable = DISABLE;
+  hpcd.pData                    = pdev;
+  pdev->pData                   = &hpcd;
+
+  hpcd.Instance                 = BOARD_USB_DEFAULT_INSTANCE;
+  hpcd.Init.dev_endpoints       = 4;
+  hpcd.Init.speed               = PCD_SPEED_FULL;
+  hpcd.Init.dma_enable          = DISABLE;
+  // hpcd.Init.ep0_mps             = DEP0CTL_MPS_64; // 0x40; TODO: check, not present in examples
+  hpcd.Init.phy_itface          = PCD_PHY_EMBEDDED;
+  hpcd.Init.Sof_enable          = DISABLE;
+  hpcd.Init.low_power_enable    = DISABLE;
+  hpcd.Init.lpm_enable          = DISABLE;
+  hpcd.Init.use_dedicated_ep1   = DISABLE;
+  hpcd.Init.battery_charging_enable = DISABLE; // TODO: check or condition(arch)
+
+  #ifdef BOARD_USB_DEFAULT_VBUS_PIN
+  hpcd.Init.vbus_sensing_enable = ENABLE;
+  #else
   hpcd.Init.vbus_sensing_enable = DISABLE;
-  hpcd.Init.use_dedicated_ep1 = DISABLE;
-  if (HAL_PCD_Init(&hpcd) != HAL_OK)
-  {
-    // Error_Handler( );
+  #endif
+
+  if( HAL_PCD_Init( &hpcd ) != HAL_OK ) {
+    errno = 50000;
+    return USBD_FAIL;
   }
 
 #if ( USE_HAL_PCD_REGISTER_CALLBACKS != 0 )
@@ -316,7 +344,7 @@ USBD_StatusTypeDef USBD_LL_Init( USBD_HandleTypeDef *pdev )
   HAL_PCDEx_SetRxFiFo( &hpcd, 0x80 );
   HAL_PCDEx_SetTxFiFo( &hpcd, 0, 0x40 );
   HAL_PCDEx_SetTxFiFo( &hpcd, 1, 0x80 );
-  }
+
   return USBD_OK;
 }
 

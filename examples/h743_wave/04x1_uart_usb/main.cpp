@@ -113,27 +113,6 @@ int cmd_test0( int argc, const char * const * argv )
   return 0;
 }
 
-void OTG_FS_EP1_OUT_IRQHandler(void)
-{
-  // leds.set( BIT2 );
-  HAL_PCD_IRQHandler( &hpcd );
-  // leds.reset( BIT2 );
-}
-
-void OTG_FS_EP1_IN_IRQHandler(void)
-{
-  // leds.set( BIT1 );
-  HAL_PCD_IRQHandler( &hpcd );
-  // leds.reset( BIT2 );
-}
-
-void OTG_FS_IRQHandler(void)
-{
-  leds.set( BIT0 );
-  HAL_PCD_IRQHandler( &hpcd );
-  leds.reset( BIT0 );
-}
-
 // ----------------------------------------------------------------------------------------------
 //
 
