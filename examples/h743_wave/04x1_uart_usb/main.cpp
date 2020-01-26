@@ -2,7 +2,6 @@
 
 #include <usbd_cdc.h>
 
-#include "usb_device.h"
 #include "usbd_cdc_if.h"
 #include "usbd_conf.h"
 #include "usbd_desc.h"
@@ -75,7 +74,7 @@ int cmd_test0( int argc, const char * const * argv )
     return 1;
   }
   std_out <<  " .. OK" NL;
-  delay_ms( 2000 );
+  // delay_ms( 50 );
 
   std_out <<  "# Test USBD_RegisterClass ... ";
   if( USBD_RegisterClass( &usb_dev, USBD_CDC_CLASS ) != USBD_OK ) {
@@ -84,7 +83,7 @@ int cmd_test0( int argc, const char * const * argv )
     return 1;
   }
   std_out <<  " .. OK" NL;
-  delay_ms( 2000 );
+  // delay_ms( 50 );
 
   std_out <<  "# Test USBD_CDC_RegisterInterface ... ";
   if( USBD_CDC_RegisterInterface( &usb_dev, &cdc_fops ) != USBD_OK ) {
@@ -93,7 +92,7 @@ int cmd_test0( int argc, const char * const * argv )
     return 1;
   }
   std_out <<  " .. OK" NL;
-  delay_ms( 2000 );
+  // delay_ms( 50 );
 
   std_out <<  "# Test USBD_Start ... ";
   if( USBD_Start( &usb_dev ) != USBD_OK ) {
@@ -102,12 +101,13 @@ int cmd_test0( int argc, const char * const * argv )
     return 1;
   }
   std_out <<  " .. OK" NL;
-  delay_ms( 2000 );
+  delay_ms( 200 );
   std_out <<  "# ========== OK ================== " NL;
+
   for( int i=0; i<n && !break_flag; ++i ) {
     CDC_Transmit_FS( (uint8_t*)("ADCD\r\n"), 6 );
     std_out << "# " << i << NL;
-    delay_ms( 2000 );
+    delay_ms_brk( 1000 );
   }
 
   return 0;

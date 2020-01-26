@@ -25,14 +25,11 @@ USE_OXC_CONSOLE_UART = y
 
 SRCS  = main.cpp
 
-# SRCS += it.c
-# SRCS += usb_device.c
 SRCS += usbd_cdc_if.c
 
-SRCS += usbd_conf.c
+SRCS += usbd_conf.cpp
 SRCS += usbd_desc.cpp
 #
-#SRCS += usbd_conf.cpp
 
 # SRCS += oxc_usbcdcio.cpp
 # SRCS += usbfs_init.cpp
