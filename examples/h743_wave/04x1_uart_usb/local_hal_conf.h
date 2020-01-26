@@ -1,0 +1,3 @@
+
+// #define HAL_PCD_MODULE_ENABLED
+
