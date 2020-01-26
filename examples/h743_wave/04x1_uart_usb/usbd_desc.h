@@ -1,10 +1,6 @@
 #ifndef _USBD_DESC_H_
 #define _USBD_DESC_H_
 
-#ifdef __cplusplus
- extern "C" {
-#endif
-
 #include <usbd_def.h>
 
 #define USBD_VID                      0x0483
@@ -24,9 +20,4 @@
 extern USBD_DescriptorsTypeDef VCP_Desc;
 extern USBD_HandleTypeDef USBD_Dev;
 
-#ifdef __cplusplus
-}
-#endif
-
 #endif /* _USBD_DESC_H_ */
-

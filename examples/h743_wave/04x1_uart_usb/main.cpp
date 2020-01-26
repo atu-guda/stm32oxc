@@ -17,6 +17,7 @@ BOARD_CONSOLE_DEFINES_UART;
 extern PCD_HandleTypeDef hpcd;
 USBD_HandleTypeDef usb_dev;
 void default_USBFS_MspInit(void);
+
 // extern USBD_DescriptorsTypeDef VCP_Desc;
 
 // void MX_USB_DEVICE_Init(void);
@@ -116,6 +117,10 @@ int cmd_test0( int argc, const char * const * argv )
 // ----------------------------------------------------------------------------------------------
 //
 
+void HAL_PCD_MspInit( PCD_HandleTypeDef * /*hpcd*/ )
+{
+  default_USBFS_MspInit();
+}
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

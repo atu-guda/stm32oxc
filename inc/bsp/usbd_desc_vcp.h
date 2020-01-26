@@ -1,7 +1,6 @@
 #ifndef __USBD_DESC_VCP_H
 #define __USBD_DESC_VCP_H
 
-/* Includes ------------------------------------------------------------------*/
 #include <usbd_def.h>
 
 #define USBD_VID                      0x0483
@@ -12,10 +11,9 @@
 #define USBD_CONFIGURATION_FS_STRING  "VCP Config"
 #define USBD_INTERFACE_FS_STRING      "VCP Interface"
 
-/* Exported constants --------------------------------------------------------*/
-#define         DEVICE_ID1          (0x1FFF7A10)
-#define         DEVICE_ID2          (0x1FFF7A14)
-#define         DEVICE_ID3          (0x1FFF7A18)
+#define         DEVICE_ID1          (UID_BASE)
+#define         DEVICE_ID2          (UID_BASE + 0x4)
+#define         DEVICE_ID3          (UID_BASE + 0x8)
 
 #define  USB_SIZ_STRING_SERIAL       0x1A
 
