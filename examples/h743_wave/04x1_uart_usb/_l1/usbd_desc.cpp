@@ -8,7 +8,6 @@
 #include "usbd_desc.h"
 #include <usbd_conf.h>
 
-/* Private define ------------------------------------------------------------*/
 #ifndef USBD_VID
 #define USBD_VID                      0x0483
 #endif
@@ -37,7 +36,6 @@
 #define USBD_INTERFACE_FS_STRING      "VCP Interface"
 #endif
 
-/* Private function prototypes -----------------------------------------------*/
 uint8_t *USBD_VCP_DeviceDescriptor( USBD_SpeedTypeDef speed, uint16_t *length );
 uint8_t *USBD_VCP_LangIDStrDescriptor( USBD_SpeedTypeDef speed, uint16_t *length );
 uint8_t *USBD_VCP_ManufacturerStrDescriptor( USBD_SpeedTypeDef speed, uint16_t *length );
@@ -60,7 +58,7 @@ USBD_DescriptorsTypeDef VCP_Desc = {
   USBD_VCP_InterfaceStrDescriptor,
 };
 
-/* USB Standard Device Descriptor */
+/** USB standard device descriptor. */
 __ALIGN_BEGIN uint8_t USBD_DeviceDesc[USB_LEN_DEV_DESC] __ALIGN_END = {
   0x12,                       /* bLength */
   USB_DESC_TYPE_DEVICE,       /* bDescriptorType */
@@ -72,26 +70,26 @@ __ALIGN_BEGIN uint8_t USBD_DeviceDesc[USB_LEN_DEV_DESC] __ALIGN_END = {
   USB_MAX_EP0_SIZE,           /* bMaxPacketSize */
   LOBYTE( USBD_VID ),         /* idVendor */
   HIBYTE( USBD_VID ),         /* idVendor */
-  LOBYTE( USBD_PID ),         /* idVendor */
-  HIBYTE( USBD_PID ),         /* idVendor */
+  LOBYTE( USBD_PID ),         /* idProduct */
+  HIBYTE( USBD_PID ),         /* idProduct */
   0x00,                       /* bcdDevice rel. 2.00 */
   0x02,
   USBD_IDX_MFC_STR,           /* Index of manufacturer string */
   USBD_IDX_PRODUCT_STR,       /* Index of product string */
   USBD_IDX_SERIAL_STR,        /* Index of serial number string */
   USBD_MAX_NUM_CONFIGURATION  /* bNumConfigurations */
-}; /* USB_DeviceDescriptor */
+};
 
-/* USB Standard Device Descriptor */
+/** USB lang indentifier descriptor. */
 __ALIGN_BEGIN uint8_t USBD_LangIDDesc[USB_LEN_LANGID_STR_DESC] __ALIGN_END = {
   USB_LEN_LANGID_STR_DESC,
   USB_DESC_TYPE_STRING,
   LOBYTE( USBD_LANGID_STRING ),
-  HIBYTE( USBD_LANGID_STRING ),
+  HIBYTE( USBD_LANGID_STRING )
 };
 
-uint8_t USBD_StringSerial[USB_SIZ_STRING_SERIAL] =
-{
+/* Internal string descriptor. */
+uint8_t USBD_StringSerial[USB_SIZ_STRING_SERIAL] = {
   USB_SIZ_STRING_SERIAL,
   USB_DESC_TYPE_STRING,
 };
@@ -108,7 +106,7 @@ uint8_t *USBD_VCP_DeviceDescriptor( USBD_SpeedTypeDef speed UNUSED_ARG, uint16_t
   return (uint8_t*)USBD_DeviceDesc;
 }
 
-uint8_t *USBD_VCP_LangIDStrDescriptor( USBD_SpeedTypeDef speed UNUSED_ARG, uint16_t *length )
+uint8_t* USBD_VCP_LangIDStrDescriptor( USBD_SpeedTypeDef /* speed */, uint16_t *length )
 {
   *length = sizeof( USBD_LangIDDesc );
   return (uint8_t*)USBD_LangIDDesc;
@@ -136,13 +134,12 @@ uint8_t *USBD_VCP_SerialStrDescriptor( USBD_SpeedTypeDef speed UNUSED_ARG, uint1
 {
   *length = USB_SIZ_STRING_SERIAL;
 
-  /* Update the serial number string descriptor with the data from the unique ID*/
+  /* Update the serial number string descriptor with the data from the unique ID */
   Get_SerialNum();
-
   return (uint8_t*)USBD_StringSerial;
 }
 
-uint8_t *USBD_VCP_ConfigStrDescriptor( USBD_SpeedTypeDef speed UNUSED_ARG, uint16_t *length )
+uint8_t* USBD_VCP_ConfigStrDescriptor( USBD_SpeedTypeDef speed UNUSED_ARG, uint16_t *length )
 {
   USBD_GetString( (uint8_t *)USBD_CONFIGURATION_FS_STRING, USBD_StrDesc, length );
   return USBD_StrDesc;
@@ -165,7 +162,7 @@ static void Get_SerialNum(void)
   deviceserial0 += deviceserial2;
 
   if( deviceserial0 != 0 ) {
-    IntToUnicode( deviceserial0, &USBD_StringSerial[2],  8 );
+    IntToUnicode( deviceserial0, &USBD_StringSerial[ 2], 8 );
     IntToUnicode( deviceserial1, &USBD_StringSerial[18], 4 );
   }
 }
