@@ -46,7 +46,7 @@ int main(void)
   STD_PROLOG_UART;
 
   UVAR('t') = 100;
-  UVAR('n') =  20;
+  UVAR('n') = 100;
 
   BOARD_POST_INIT_BLINK;
 
@@ -103,8 +103,9 @@ int cmd_test0( int argc, const char * const * argv )
   // std_out <<  " .. OK" NL;
   delay_ms( 2000 );
   std_out <<  "# ========== OK ================== " NL;
-  for( int i=0; i<100 && !break_flag; ++i ) {
+  for( int i=0; i<n && !break_flag; ++i ) {
     CDC_Transmit_FS( (uint8_t*)("ADCD\r\n"), 6 );
+    std_out << "# " << i << NL;
     delay_ms( 2000 );
   }
 
