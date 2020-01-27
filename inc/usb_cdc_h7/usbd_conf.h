@@ -29,7 +29,7 @@
 #define USBD_free                 free
 #define USBD_memset               memset
 // atu: memcpy seems to be buggy TODO: recheck
-#define USBD_memcpy               memmove
+#define USBD_memcpy               memcpy
 
 /* DEBUG macros */
 #if (USBD_DEBUG_LEVEL > 0)

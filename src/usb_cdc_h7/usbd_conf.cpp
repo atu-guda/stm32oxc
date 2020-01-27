@@ -1,3 +1,4 @@
+// reworked usbd_conf.c (+more) from  STMicroelectronics
 #include <errno.h>
 #include <oxc_base.h>
 #include <oxc_gpio.h>
@@ -37,11 +38,12 @@ void default_USBFS_MspInit(void)
 
 void BOARD_USB_DEFAULT_IRQHANDLER(void)
 {
-  leds.set( BIT0 );
+  // leds.set( BIT0 );
   HAL_PCD_IRQHandler( &hpcd );
-  leds.reset( BIT0 );
+  // leds.reset( BIT0 );
 }
 
+#if defined(STM43H7)
 void OTG_FS_EP1_OUT_IRQHandler(void)
 {
   // leds.set( BIT1 );
@@ -55,7 +57,7 @@ void OTG_FS_EP1_IN_IRQHandler(void)
   HAL_PCD_IRQHandler( &hpcd );
   // leds.reset( BIT2 );
 }
-
+#endif
 
 /*******************************************************************************
                        LL Driver Callbacks (PCD -> USB Device Library)
@@ -466,9 +468,7 @@ uint32_t USBD_LL_GetRxDataSize( USBD_HandleTypeDef *pdev, uint8_t ep_addr )
 void USBD_LL_Delay( uint32_t delay )
 {
   // HAL_Delay( delay );
-  // leds.set( BIT1 );
   delay_ms( delay );
-  // leds.reset( BIT1 );
   // delay_bad_ms( delay );
 }
 

@@ -10,6 +10,8 @@
 // #include <stdio.h>
 // #include <string.h>
 
+#define DEVICE_FS               0
+#define DEVICE_HS               1
 
 
 /* Common Config */
