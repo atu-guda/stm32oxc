@@ -205,7 +205,6 @@ ifeq "$(USE_OXC_CONSOLE_USB_CDC)" "y"
   SRCS += usbd_conf.cpp
   SRCS += usbd_desc.cpp
   SRCS += oxc_usbcdcio.cpp
-  SRCS += usbfs_init.cpp
 endif
 
 ifeq "$(USE_USB_CDC)" "y"

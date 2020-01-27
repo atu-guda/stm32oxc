@@ -10,7 +10,13 @@ PCD_HandleTypeDef hpcd;
 void default_USBFS_MspInit(void);
 USBD_StatusTypeDef USBD_Get_USB_Status( HAL_StatusTypeDef hal_status );
 
-// atu: TODO: separate file
+#ifndef OXC_NEED_SPECIAL_PCD_MSPINIT
+void HAL_PCD_MspInit( PCD_HandleTypeDef* /* hpcd */ )
+{
+  default_USBFS_MspInit();
+}
+#endif
+
 void default_USBFS_MspInit(void)
 {
   BOARD_USB_DEFAULT_ENABLE;
