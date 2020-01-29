@@ -1,0 +1,4 @@
+Test  default console, depends on board: USB CDC or UART
+
+This board: UART
+

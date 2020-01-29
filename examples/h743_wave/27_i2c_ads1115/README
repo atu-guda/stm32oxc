@@ -1,0 +1,5 @@
+Use ADC ADS1115 via I2C (addr: 0x48)
+
+SCL = B8 ? 4.7k pullUp
+SDA = B9 ? 4.7k pullUp
+

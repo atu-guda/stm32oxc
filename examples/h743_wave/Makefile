@@ -7,21 +7,22 @@ SUBDIRS = \
   03_uart \
   04_uart_console \
   04a_uart_console_nort \
-  # 05_usb_console \
-  # 05a_def_console \
-  # 05c_def_cons_nort \
-  # 06_i2c_test \
-  # 07_i2c_lcdt \
-  # 08_i2c_mpu6050 \
-  # 09_i2c_bmp085 \
-  # 10_i2c_pcf8591 \
-  # 11_i2c_ds3231 \
-  # 12_tim_pwm \
-  # 14_tim_enco \
-  # 15_tim_usonic \
-  # 16_step1 \
-  # 17_1w_18b20 \
-  # 18_i2c_ssd1306_oled \
+  04x1_uart_usb \
+  05_usb_console \
+  05a_def_console \
+  05c_def_cons_nort \
+  06_i2c_test \
+  07_i2c_lcdt \
+  08_i2c_mpu6050 \
+  09_i2c_bmp085 \
+  10_i2c_pcf8591 \
+  11_i2c_ds3231 \
+  12_tim_pwm \
+  14_tim_enco \
+  15_tim_usonic \
+  16_step1 \
+  17_1w_18b20 \
+  18_i2c_ssd1306_oled \
   # 19_spi_test \
   # 20_spi_mem_a25 \
   # 21_spi_max7219 \
@@ -58,9 +59,9 @@ SUBDIRS = \
 #  x53a_adcdma_n_fmc_sdcard_i2cpot
 
 
-ALL : examples_hf743_wave
+ALL : examples_h743_wave
 
-examples_f746_wave : $(SUBDIRS)
+examples_h743_wave : $(SUBDIRS)
 
 $(SUBDIRS) :
 	$(MAKE) -C $@
