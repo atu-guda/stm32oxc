@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 #include <errno.h>
 
 #if defined(USE_FREERTOS)  &&  ( USE_FREERTOS != 0 )
@@ -19,6 +20,39 @@ int user_vars[N_USER_VARS];
 bool (*print_var_hook)( const char *nm, int fmt ) = nullptr;
 bool (*set_var_hook)( const char *nm, const char *s ) = nullptr;
 
+static const Name2Addr dev_addrs[] = {
+  { "TIM1", TIM1 },
+  { "TIM2", TIM2 },
+#ifdef TIM3
+  { "TIM3", TIM3 },
+#endif
+#ifdef TIM4
+  { "TIM4", TIM4 },
+#endif
+#ifdef TIM5
+  { "TIM5", TIM5 },
+#endif
+#ifdef TIM6
+  { "TIM6", TIM6 },
+#endif
+#ifdef TIM7
+  { "TIM7", TIM7 },
+#endif
+#ifdef TIM8
+  { "TIM8", TIM8 },
+#endif
+  { "USART1", USART1 },
+#ifdef USART2
+  { "USART2", USART2 },
+#endif
+#ifdef SPI1
+  { "SPI1", SPI1 },
+#endif
+#ifdef SPI2
+  { "SPI2", SPI2 },
+#endif
+};
+
 char* str2addr( const char *str )
 {
   if( !str || !*str ) {
@@ -29,6 +63,14 @@ char* str2addr( const char *str )
   } else if ( str[0] == 'b' && str[1] == '\0' ) {
     return gbuf_b;
   }
+
+
+  for( const auto sa : dev_addrs ) {
+    if( strcmp( sa.name, str ) == 0 ) {
+      return (char*)sa.addr;
+    }
+  };
+
   char *eptr;
   char *addr = (char*)( strtoul( str, &eptr, 0 ) );
   if( *eptr == '\0' ) {
@@ -383,6 +425,28 @@ int cmd_dump( int argc, const char * const * argv )
   return 0;
 }
 CmdInfo CMDINFO_DUMP { "hd",  0, cmd_dump, " {a|b|addr} [n] [abs:0:1]- HexDumps given area"  };
+
+int cmd_dump32( int argc, const char * const * argv )
+{
+  if( argc < 2 ) {
+    return 1;
+  }
+
+  const char* addr = str2addr( argv[1] );
+  if( addr == BAD_ADDR ) {
+    std_out << "** error: dump: bad address \""  <<  argv[1] << "\"" NL;
+    return 2;
+  }
+
+  int n = arg2long_d( 2, argc, argv, 1, 1, 0x8000 );
+  int isAbs = arg2long_d( 3, argc, argv, 0, 0, 1 );
+
+  std_out << NL "** dump32: argc=" << argc << " addr=" << HexInt( (void*)addr ) << " n= " << n << NL;
+  dump32( addr, n, isAbs );
+  return 0;
+}
+CmdInfo CMDINFO_DUMP32 { "hd32",  0, cmd_dump32, " {a|b|addr} [n] [abs:0:1]- HexDumps given area as 32bit"  };
+
 
 int cmd_fill( int argc, const char * const * argv )
 {

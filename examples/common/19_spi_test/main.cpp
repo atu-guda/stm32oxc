@@ -123,6 +123,13 @@ int cmd_sendr_spi( int argc, const char * const * argv )
   std_out <<  NL "# Send/recv: ns= "  <<  ns  <<  " nd= "  <<  nd  <<  "* to send: " NL;
   dump8( sbuf, ns );
 
+  if( UVAR('d') > 0 ) { // debug: for logic analizer start
+    nss_pin.write( 0 );
+    DLY_T;
+    nss_pin.write( 1 );
+    DLY_T;
+  }
+
   int rc = spi_d.send_recv( sbuf, ns, (uint8_t*)gbuf_a, nd );
 
   std_out << "# rc= " << rc << NL;

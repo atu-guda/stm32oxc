@@ -21,6 +21,11 @@ void log_add_bin( const char *s, uint16_t len );
 void log_reset(void);
 void log_print(void);
 
+struct Name2Addr {
+  const char *const name;
+  void *addr;
+};
+
 // helper function : converts some names and numbers to address, fail = -1 (BAD_ADDR)
 char* str2addr( const char *str );
 
@@ -51,6 +56,8 @@ int cmd_help( int argc, const char * const * argv );
 extern CmdInfo CMDINFO_HELP;
 int cmd_dump( int argc, const char * const * argv );
 extern CmdInfo CMDINFO_DUMP;
+int cmd_dump32( int argc, const char * const * argv );
+extern CmdInfo CMDINFO_DUMP32;
 int cmd_fill( int argc, const char * const * argv );
 extern CmdInfo CMDINFO_FILL;
 int cmd_pvar( int argc, const char * const * argv );
@@ -74,6 +81,7 @@ extern CmdInfo CMDINFO_LSTEP;
   &CMDINFO_HELP, \
   &CMDINFO_INFO, \
   &CMDINFO_DUMP, \
+  &CMDINFO_DUMP32, \
   &CMDINFO_FILL, \
   &CMDINFO_ECHO, \
   &CMDINFO_REBOOT, \
