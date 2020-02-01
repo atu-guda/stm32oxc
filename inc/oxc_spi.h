@@ -49,13 +49,13 @@ class DevSPI  {
    int  getLastRc() const { return last_rc; };
    int  getState() const { return spi->State; };
    // low-level
-   HAL_StatusTypeDef waitForFlag( uint32_t flag, uint32_t val, int ticks = -1 );  // -1 means 'use maxWait'
-   HAL_StatusTypeDef waitForTXE( int ticks = -1 )
-    { return waitForFlag( SPI_FLAG_TXE, SPI_FLAG_TXE, ticks ); }
-   HAL_StatusTypeDef waitForNXRE( int ticks = -1 )
-    { return waitForFlag( SPI_FLAG_RXNE, SPI_FLAG_RXNE, ticks ); }
-   int  sendSame( uint8_t ds, int ns );
-   int  txrx( uint8_t ds, uint8_t *dr = nullptr );
+   // HAL_StatusTypeDef waitForFlag( uint32_t flag, uint32_t val, int ticks = -1 );  // -1 means 'use maxWait'
+   // HAL_StatusTypeDef waitForTXE( int ticks = -1 )
+   //  { return waitForFlag( SPI_FLAG_TXE, SPI_FLAG_TXE, ticks ); }
+   // HAL_StatusTypeDef waitForNXRE( int ticks = -1 )
+   //  { return waitForFlag( SPI_FLAG_RXNE, SPI_FLAG_RXNE, ticks ); }
+   // int  sendSame( uint8_t ds, int ns );
+   // int  txrx( uint8_t ds, uint8_t *dr = nullptr );
    #ifdef USE_OXC_DEBUG
      void pr_info() const;
    #endif
