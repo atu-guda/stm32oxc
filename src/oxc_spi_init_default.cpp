@@ -17,6 +17,10 @@ int SPI_init_default( uint32_t baud_presc, SPI_lmode::lmode_enum lmode /* = SPI_
   spi_h.Init.FirstBit          = SPI_FIRSTBIT_MSB;
   spi_h.Init.TIMode            = SPI_TIMODE_DISABLED;
   spi_h.Init.CRCCalculation    = SPI_CRCCALCULATION_DISABLED;
+#ifdef STM32H7
+  spi_h.Init.NSSPMode          = SPI_NSS_PULSE_DISABLE;
+  spi_h.Init.MasterKeepIOState = SPI_MASTER_KEEP_IO_STATE_ENABLE;
+#endif
   return HAL_SPI_Init( &spi_h );
 }
 

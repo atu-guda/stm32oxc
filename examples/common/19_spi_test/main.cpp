@@ -47,6 +47,8 @@ PinOut nss_pin( BOARD_SPI_DEFAULT_GPIO_SNSS, BOARD_SPI_DEFAULT_GPIO_PIN_SNSS );
 SPI_HandleTypeDef spi_h;
 DevSPI spi_d( &spi_h, &nss_pin );
 
+void debug_nss_drop();
+
 int main(void)
 {
   BOARD_PROLOG;
@@ -77,7 +79,6 @@ int main(void)
 }
 
 
-#define DLY_T delay_mcs( 10 );
 
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
@@ -86,12 +87,7 @@ int cmd_test0( int argc, const char * const * argv )
   int nd     = arg2long_d( 2, argc, argv,    2, 0, sizeof(gbuf_a) );
   std_out << NL "# Test0: sv= "  << HexInt8( sv ) << " nd= "  <<  nd  <<  NL;
 
-  if( UVAR('d') > 0 ) { // debug: for logic analizer start
-    nss_pin.write( 0 );
-    DLY_T;
-    nss_pin.write( 1 );
-    DLY_T;
-  }
+  debug_nss_drop();
 
   // spi_d.resetDev();
 
@@ -123,12 +119,7 @@ int cmd_sendr_spi( int argc, const char * const * argv )
   std_out <<  NL "# Send/recv: ns= "  <<  ns  <<  " nd= "  <<  nd  <<  "* to send: " NL;
   dump8( sbuf, ns );
 
-  if( UVAR('d') > 0 ) { // debug: for logic analizer start
-    nss_pin.write( 0 );
-    DLY_T;
-    nss_pin.write( 1 );
-    DLY_T;
-  }
+  debug_nss_drop();
 
   int rc = spi_d.send_recv( sbuf, ns, (uint8_t*)gbuf_a, nd );
 
@@ -151,6 +142,8 @@ int cmd_recv_spi( int argc, const char * const * argv )
   int nd = arg2long_d( 1, argc, argv, UVAR('r'), 1, sizeof(gbuf_a) );
 
   std_out <<  NL "# Recv: nd= "  <<  nd  <<  NL;
+
+  debug_nss_drop();
 
   int rc = spi_d.recv( (uint8_t*)gbuf_a, nd );
 
@@ -179,6 +172,8 @@ int cmd_duplex_spi( int argc, const char * const * argv )
 
   std_out <<  NL "# Duplex: ns= "  <<  ns  <<  NL;
   dump8( sbuf, ns );
+
+  debug_nss_drop();
 
   int rc = spi_d.duplex( sbuf, (uint8_t*)gbuf_a, ns );
 
@@ -218,6 +213,16 @@ int cmd_reset_spi( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
   return 0;
 }
 
+#define DLY_T delay_mcs( 10 );
+void debug_nss_drop()
+{
+  if( UVAR('d') > 0 ) { // debug: for logic analizer start
+    nss_pin.write( 0 );
+    DLY_T;
+    nss_pin.write( 1 );
+    DLY_T;
+  }
+}
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 
