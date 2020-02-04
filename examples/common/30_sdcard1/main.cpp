@@ -64,7 +64,7 @@ int cmd_test0( int argc, const char * const * argv )
   std_out <<  NL "Test0: start= "  <<  start <<  NL;
 
   HAL_StatusTypeDef rc;
-  __HAL_SD_ENABLE( &hsd );
+  // __HAL_SD_ENABLE( &hsd );
 
   memset( sd_buf, 0, sizeof( sd_buf ) );
   UVAR('e') = HAL_SD_Init( &hsd );
@@ -77,7 +77,7 @@ int cmd_test0( int argc, const char * const * argv )
   rc = HAL_SD_ReadBlocks( &hsd, sd_buf, start, 1, 1000 );
   auto sd_state2 = HAL_SD_GetState( &hsd );
 
-  __HAL_SD_DISABLE( &hsd );
+  // __HAL_SD_DISABLE( &hsd );
 
   dump8( sd_buf, sizeof(sd_buf) );
   std_out << "rc= " << rc << " sd_state= " << sd_state << " card_state= " << card_state << NL;

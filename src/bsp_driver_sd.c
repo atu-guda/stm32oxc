@@ -137,13 +137,17 @@ void BSP_SD_IRQHandler(void)
 /** @brief  Handles SD DMA Tx transfer interrupt request.  */
 void BSP_SD_DMA_Tx_IRQHandler(void)
 {
+  #ifndef STM32H7
   HAL_DMA_IRQHandler( hsd.hdmatx );
+  #endif
 }
 
 /**  @brief  Handles SD DMA Rx transfer interrupt request.  */
 void BSP_SD_DMA_Rx_IRQHandler(void)
 {
+  #ifndef STM32H7
   HAL_DMA_IRQHandler( hsd.hdmarx );
+  #endif
 }
 
 /**

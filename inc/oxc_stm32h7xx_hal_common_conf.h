@@ -10,7 +10,11 @@
 #define USE_HAL_TIM_REGISTER_CALLBACKS 0
 #endif
 
-/* ########################## Oscillator Values adaptation ####################*/
+#ifndef USE_SD_TRANSCEIVER
+#define USE_SD_TRANSCEIVER 0
+#endif
+
+   /* ########################## Oscillator Values adaptation ####################*/
 /**
   * @brief Adjust the value of External High Speed oscillator (HSE) used in your application.
   *        This value is used by the RCC HAL module to compute the system frequency

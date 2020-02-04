@@ -37,26 +37,26 @@ SUBDIRS = \
   29_i2c_ina226 \
   29a_i2c_ina226_pwm \
   29b_i2c_ina226_pwm2 \
-  # 30_sdcard1 \
-  # 31_sdcard2 \
-  # 31a_sdcard2 \
-  # 35_mcp4725_dac_i2c \
-  # 36_mcp23017_gpio_i2c \
-  # 37_ad7606_spi \
-  # 38_mcp3204_adc_spi \
-  # 38a_mcp3204_adc_spi_tim \
+  30_sdcard1 \
+  31_sdcard2 \
+  31a_sdcard2 \
+  35_mcp4725_dac_i2c \
+  36_mcp23017_gpio_i2c \
+  37_ad7606_spi \
+  37a_ad7606_spi_tim \
+  38_mcp3204_adc_spi \
+  38a_mcp3204_adc_spi_tim \
+  80_math_stat \
+  x01_fmc \
   # 50_adc0 \
   # 50a_adcdma_soft1 \
   # 50b_adcdma_pwm \
   # 51_adcdma \
   # 51a_adcdma_n \
-  # 80_math_stat \
-  # x01_fmc \
   # x51_adcdma_fmc \
   # x52_adcirq_fmc \
   # x53a_adcdma_n_fmc_sdcard
 
-#  x53a_adcdma_n_fmc_sdcard_i2cpot
 
 
 ALL : examples_h743_wave
@@ -80,5 +80,5 @@ clean :
 	done
 
 
-.PHONY: clean subclean examples_f746_wave $(SUBDIRS)
+.PHONY: clean subclean examples_h743_wave $(SUBDIRS)
 
