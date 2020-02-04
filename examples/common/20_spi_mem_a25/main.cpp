@@ -56,7 +56,7 @@ int main(void)
   UVAR('n') = 20;
   UVAR('r') = 0x20; // default bytes to read
 
-  if( SPI_init_default( SPI_BAUDRATEPRESCALER_4 ) != HAL_OK ) {
+  if( SPI_init_default( SPI_BAUDRATEPRESCALER_8 ) != HAL_OK ) {
     die4led( 0x04 );
   }
 

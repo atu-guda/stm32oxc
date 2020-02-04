@@ -321,6 +321,9 @@ ifeq "$(USE_OXC_DMA)" "y"
   ifeq "$(MCSUFF)" "f7"
     SRCS += stm32$(MCSUFF)xx_hal_dma_ex.c
   endif
+  ifeq "$(MCSUFF)" "h7"
+    SRCS += stm32$(MCSUFF)xx_hal_dma_ex.c
+  endif
   ALLFLAGS += -DUSE_OXC_DMA
 endif
 
@@ -361,6 +364,9 @@ ifeq "$(USE_OXC_SDRAM)" "y"
   SRCS += oxc_sdram_common.cpp
   SRCS += stm32$(MCSUFF)xx_hal_sdram.c
   SRCS += stm32$(MCSUFF)xx_ll_fmc.c
+  ifeq "$(MCSUFF)" "h7"
+    SRCS += stm32$(MCSUFF)xx_hal_mdma.c
+  endif
   ALLFLAGS += -DUSE_OXC_SDRAM
 endif
 

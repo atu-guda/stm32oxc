@@ -55,7 +55,7 @@ int main(void)
   UVAR('c') = n_ADC_ch_max;
   UVAR('a') = 10; // aux delay
 
-  if( SPI_init_default( SPI_BAUDRATEPRESCALER_4 ) != HAL_OK ) {
+  if( SPI_init_default( BOARD_SPI_BAUDRATEPRESCALER_FAST ) != HAL_OK ) {
     die4led( 0x04 );
   }
 

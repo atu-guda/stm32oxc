@@ -153,6 +153,9 @@
 #ifdef USE_OXC_SDRAM
   #define HAL_SDRAM_MODULE_ENABLED
   #define HAL_DMA_MODULE_ENABLED
+  #if defined(STM32H7)
+    #define HAL_MDMA_MODULE_ENABLED
+  #endif
 #endif
 
 #ifdef USE_OXC_DMA

@@ -23,20 +23,20 @@ SUBDIRS = \
   16_step1 \
   17_1w_18b20 \
   18_i2c_ssd1306_oled \
-  # 19_spi_test \
-  # 20_spi_mem_a25 \
-  # 21_spi_max7219 \
-  # 22_spi_pcd8544_lcd \
-  # 24_i2c_hmc5983 \
-  # 25_spi_max31855_tcouple \
-  # 25a_spi_max6672_tcouple2 \
-  # 26_i2c_pca9685 \
-  # 27_i2c_ads1115 \
-  # 27a_i2c_ads1115_pwm \
-  # 28_spi_ad9833 \
-  # 29_i2c_ina226 \
-  # 29a_i2c_ina226_pwm \
-  # 29b_i2c_ina226_pwm2 \
+  19_spi_test \
+  20_spi_mem_a25 \
+  21_spi_max7219 \
+  22_spi_pcd8544_lcd \
+  24_i2c_hmc5983 \
+  25_spi_max31855_tcouple \
+  25a_spi_max6672_tcouple2 \
+  26_i2c_pca9685 \
+  27_i2c_ads1115 \
+  27a_i2c_ads1115_pwm \
+  28_spi_ad9833 \
+  29_i2c_ina226 \
+  29a_i2c_ina226_pwm \
+  29b_i2c_ina226_pwm2 \
   # 30_sdcard1 \
   # 31_sdcard2 \
   # 31a_sdcard2 \

@@ -75,7 +75,7 @@ int main(void)
 
   for( auto &x : v_coeffs ) { x = 1.0f; };
 
-  if( SPI_init_default( SPI_BAUDRATEPRESCALER_2 ) != HAL_OK ) {
+  if( SPI_init_default( BOARD_SPI_BAUDRATEPRESCALER_FAST ) != HAL_OK ) {
     die4led( 0x04 );
   }
   spi_d.setTssDelay_100ns( 1 );
