@@ -31,6 +31,7 @@ class UsbcdcIO : public DevIO {
    static int8_t CDC_Itf_DeInit();
    static int8_t CDC_Itf_Control( uint8_t cmd, uint8_t* pbuf, uint16_t length );
    static int8_t CDC_Itf_Receive( uint8_t* pbuf, uint32_t *Len );
+   static int8_t CDC_Itf_TransmitCplt( uint8_t *pbuf, uint32_t *Len, uint8_t epnum );
 
 
   protected:
@@ -47,7 +48,10 @@ class UsbcdcIO : public DevIO {
      CDC_Itf_Init,
      CDC_Itf_DeInit,
      CDC_Itf_Control,
-     CDC_Itf_Receive
+     CDC_Itf_Receive,
+     #if USBD_OXC_VERSION >= 206000
+     CDC_Itf_TransmitCplt
+     #endif
    };
 };
 

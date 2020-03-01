@@ -5,6 +5,16 @@
 
 #include <usbd_core.h>
 
+#if USBD_OXC_VERSION >= 206000
+  #define IOSIZE_TYPE uint32_t
+#else
+  #define IOSIZE_TYPE uint16_t
+#endif
+
+extern "C" {
+  USBD_StatusTypeDef USBD_LL_PrepareReceive( USBD_HandleTypeDef *pdev, uint8_t ep_addr, uint8_t *pbuf, IOSIZE_TYPE size );
+  USBD_StatusTypeDef USBD_LL_Transmit( USBD_HandleTypeDef *pdev, uint8_t ep_addr, uint8_t *pbuf, IOSIZE_TYPE size );
+}
 
 PCD_HandleTypeDef hpcd;
 void default_USBFS_MspInit(void);
@@ -435,7 +445,7 @@ USBD_StatusTypeDef USBD_LL_SetUSBAddress( USBD_HandleTypeDef *pdev, uint8_t dev_
   * @param  size: Data size
   * @retval USBD status
   */
-USBD_StatusTypeDef USBD_LL_Transmit( USBD_HandleTypeDef *pdev, uint8_t ep_addr, uint8_t *pbuf, uint16_t size )
+USBD_StatusTypeDef USBD_LL_Transmit( USBD_HandleTypeDef *pdev, uint8_t ep_addr, uint8_t *pbuf, IOSIZE_TYPE size )
 {
   USBD_StatusTypeDef rc = USBD_Get_USB_Status( HAL_PCD_EP_Transmit( (PCD_HandleTypeDef*)pdev->pData, ep_addr, pbuf, size ) );
   return rc;
@@ -449,7 +459,7 @@ USBD_StatusTypeDef USBD_LL_Transmit( USBD_HandleTypeDef *pdev, uint8_t ep_addr, 
   * @param  size: Data size
   * @retval USBD status
   */
-USBD_StatusTypeDef USBD_LL_PrepareReceive( USBD_HandleTypeDef *pdev, uint8_t ep_addr, uint8_t *pbuf, uint16_t size )
+USBD_StatusTypeDef USBD_LL_PrepareReceive( USBD_HandleTypeDef *pdev, uint8_t ep_addr, uint8_t *pbuf, IOSIZE_TYPE size )
 {
   USBD_StatusTypeDef rc = USBD_Get_USB_Status( HAL_PCD_EP_Receive( (PCD_HandleTypeDef*)pdev->pData, ep_addr, pbuf, size ) );
   return rc;

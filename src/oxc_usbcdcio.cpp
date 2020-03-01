@@ -183,3 +183,7 @@ int8_t UsbcdcIO::CDC_Itf_Receive( uint8_t* Buf, uint32_t *Len )
   return USBD_OK;
 }
 
+int8_t UsbcdcIO::CDC_Itf_TransmitCplt( uint8_t * /*pbuf*/, uint32_t * /*Len*/, uint8_t /*epnum*/ )
+{
+  return USBD_OK;
+}

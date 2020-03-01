@@ -10,6 +10,9 @@
 // #include <stdio.h>
 // #include <string.h>
 
+// 2.5.3
+#define USBD_OXC_VERSION 205030
+
 #define DEVICE_FS               0
 #define DEVICE_HS               1
 
@@ -21,6 +24,7 @@
 #define USBD_SUPPORT_USER_STRING              0
 #define USBD_SELF_POWERED                     1
 #define USBD_LPM_ENABLED                      0
+#define USBD_CLASS_BOS_ENABLED                0
 #define USBD_DEBUG_LEVEL                      0
 
 /* Exported macro ------------------------------------------------------------*/
