@@ -204,6 +204,15 @@ int cmd_testout( int argc, const char * const * argv )
        << ' ' << FltFmt( f, cvtff_exp )
        << ' ' << FltFmt( f, cvtff_fix )
        << NL;
+
+    #ifdef OXC_HAVE_DOUBLE
+    double d = arg2double_d( 1, argc, argv, 1.23456789123456, -DBL_MAX, DBL_MAX  );
+    std_out <<   DblFmt( d )
+       << ' ' << DblFmt( d, cvtff_exp )
+       << ' ' << DblFmt( d, cvtff_fix )
+       << NL;
+    #endif
+
     return 0;
   }
 
@@ -213,6 +222,18 @@ int cmd_testout( int argc, const char * const * argv )
        << ' ' << FltFmt( f, cvtff_fix )
        << NL;
   }
+
+  #ifdef OXC_HAVE_DOUBLE
+  std_out << "# double values test " NL;
+  for( double f = 7.2345678912345678e-20; f < 0.1 * DBL_MAX; f *= -10 ) {
+    std_out <<   DblFmt( f )
+       << ' ' << DblFmt( f, cvtff_exp )
+       << ' ' << DblFmt( f, cvtff_fix )
+       << NL;
+  }
+
+  #endif
+
   return 0;
 }
 
