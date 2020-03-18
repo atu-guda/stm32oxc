@@ -25,7 +25,8 @@ SRCS  = main.cpp
 
 SRCS += oxc_ad7606_spi.cpp
 SRCS += oxc_floatfun.cpp
-SRCS += oxc_statdata.cpp
+# SRCS += oxc_statdata.cpp
+SRCS += oxc_adcdata.cpp
 
 SRCS += f4_sdio_init_1bit.cpp
 SRCS += oxc_io_fatfs.cpp

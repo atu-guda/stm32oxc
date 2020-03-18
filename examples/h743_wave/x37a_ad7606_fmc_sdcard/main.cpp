@@ -3,7 +3,8 @@
 
 #include <oxc_auto.h>
 #include <oxc_floatfun.h>
-#include <oxc_statdata.h>
+// #include <oxc_statdata.h>
+#include <oxc_adcdata.h>
 
 #include <oxc_fs_cmd0.h>
 
@@ -59,7 +60,7 @@ const CmdInfo* global_cmds[] = {
 PinOut nss_pin(   BOARD_SPI_DEFAULT_GPIO_SNSS, BOARD_SPI_DEFAULT_GPIO_PIN_SNSS );
 PinOut rst_pin(   BOARD_SPI_DEFAULT_GPIO_EXT1, BOARD_SPI_DEFAULT_GPIO_PIN_EXT1 );
 PinOut cnvst_pin( BOARD_SPI_DEFAULT_GPIO_EXT2, BOARD_SPI_DEFAULT_GPIO_PIN_EXT2 );
-PinsIn  busy_pin(              BOARD_IN0_GPIO,  BOARD_IN0_PINNUM, 1 );
+PinsIn  busy_pin(              BOARD_IN0_GPIO, BOARD_IN0_PINNUM, 1 );
 
 SPI_HandleTypeDef spi_h;
 DevSPI spi_d( &spi_h, &nss_pin );
@@ -71,15 +72,9 @@ void tim2_deinit();
 volatile unsigned tim_flag = 0;
 
 const uint32_t n_ADC_mem  = BOARD_ADC_MEM_MAX_FMC; // MCU dependent, in bytes for 16-bit samples
-//vector<int16_t> ADC_buf;
-int16_t *ADC_buf = (int16_t*)(SDRAM_BANK_ADDR);
-unsigned n_lines = 0, last_n_ch = 1;
-uint32_t last_dt_us = 1000;
+AdcData<-16,xfloat> adcd( BOARD_ADC_MALLOC_EXT, BOARD_ADC_FREE_EXT );
 const unsigned n_ADC_ch_max = 8;
-float v_coeffs[n_ADC_ch_max];
-void adc_out_to( OutStream &os, uint32_t n, uint32_t st );
 void adc_show_stat( OutStream &os, uint32_t n, uint32_t st );
-const unsigned adc_binmax = 0x7FFF;
 
 int main(void)
 {
@@ -102,8 +97,6 @@ int main(void)
   UVAR('z') = HAL_SD_GetCardInfo( &hsd, &cardInfo );
   fs.fs_type = 0; // none
   fspath[0] = '\0';
-
-  for( auto &x : v_coeffs ) { x = 1.0f; };
 
   if( SPI_init_default( BOARD_SPI_BAUDRATEPRESCALER_FAST ) != HAL_OK ) {
     die4led( 0x04 );
@@ -146,11 +139,13 @@ int cmd_test0( int argc, const char * const * argv )
   leds.set(   BIT0 | BIT1 | BIT2 ); delay_ms( 100 );
   leds.reset( BIT0 | BIT1 | BIT2 );
 
-  // ADC_buf.resize( 0, 0 );
-  // ADC_buf.shrink_to_fit();
-  // ADC_buf.assign( (n+2) * n_ch, 0 ); // + 2 is guard, may be remove
-  n_lines = 0; last_n_ch = n_ch; last_dt_us = t_step;
-  int16_t *buf_data = (int16_t*)(SDRAM_BANK_ADDR);
+  adcd.free();
+  if( ! adcd.alloc( n_ch, n ) ) {
+    std_out << "# Error: fail to alloc buffer" << NL;
+    return 2;
+  }
+  adcd.set_d_t( t_step * 1e-6f );
+  adcd.set_v_ref_uV( UVAR('v') * 1000 );
 
   uint32_t tm00 =  HAL_GetTick();
   int rc = 0;
@@ -176,11 +171,9 @@ int cmd_test0( int argc, const char * const * argv )
 
     // if( UVAR('l') ) {  leds.set( BIT2 ); }
 
-    adc.read( buf_data + n_lines * n_ch, n_ch );
+    adc.read( adcd.row( i ), n_ch );
 
     // if( UVAR('l') ) {  leds.reset( BIT2 ); }
-
-    ++n_lines;
 
   }
 
@@ -189,7 +182,7 @@ int cmd_test0( int argc, const char * const * argv )
 
   leds.reset( BIT1 );
 
-  std_out << "# n_lines= " << n_lines << " dt_appr= " <<  ( 1e-3f * ( HAL_GetTick() - tm00 ) / n ) << NL;
+  std_out << "# n_lines= " << adcd.get_n_row() << " dt_appr= " <<  ( 1e-3f * ( HAL_GetTick() - tm00 ) / n ) << NL;
 
   delay_ms( 10 );
 
@@ -201,12 +194,13 @@ int cmd_set_coeffs( int argc, const char * const * argv )
 {
   if( argc > 1 ) {
     for( unsigned j=0; j< n_ADC_ch_max; ++j ) {
-      v_coeffs[j] = arg2float_d( j+1, argc, argv, 1, -1e10f, 1e10f );
+      xfloat v = arg2float_d( j+1, argc, argv, 1, -1e10f, 1e10f );
+      adcd.set_col_mult( j, v );
     }
   }
   std_out << "# Coefficients:";
-  for( auto x: v_coeffs ) {
-    std_out << ' ' << x;
+    for( unsigned j=0; j< n_ADC_ch_max; ++j ) {
+    std_out << ' ' << adcd.get_col_mult( j );
   }
   std_out << NL;
   return 0;
@@ -250,12 +244,11 @@ void TIM2_IRQHandler(void)
 
 int cmd_out( int argc, const char * const * argv )
 {
-  auto ns = n_lines;
+  auto ns = adcd.get_n_row();
   uint32_t n = arg2long_d( 1, argc, argv, ns, 0, ns+1 ); // number output series
   uint32_t st= arg2long_d( 2, argc, argv,  0, 0, ns-2 );
 
-  adc_out_to( std_out, n, st );
-  adc_show_stat( std_out, n, st );
+  adcd.out_float( std_out, st, n );
 
   return 0;
 }
@@ -263,59 +256,18 @@ int cmd_out( int argc, const char * const * argv )
 
 int cmd_show_stats( int argc, const char * const * argv )
 {
-  auto ns = n_lines;
-  uint32_t n = arg2long_d( 1, argc, argv, ns, 0, ns+1 ); // number output series
-  uint32_t st= arg2long_d( 2, argc, argv,  0, 0, ns-2 );
+  // auto ns = adcd.get_n_row();
+  // uint32_t n = arg2long_d( 1, argc, argv, ns, 0, ns+1 ); // number output series
+  // uint32_t st= arg2long_d( 2, argc, argv,  0, 0, ns-2 );
 
-  adc_show_stat( std_out, n, st );
+  StatIntData sdat( adcd );
+  sdat.slurp( adcd ); // TODO: limits
+  sdat.calc();
+  std_out << sdat;
 
   return 0;
 }
 
-void adc_show_stat( OutStream &os, uint32_t n, uint32_t st )
-{
-  if( n+st >= n_lines+1 ) {
-    n = n_lines - st;
-  }
-
-  StatData sdat( last_n_ch );
-
-  for( uint32_t i=0; i< n; ++i ) {
-    uint32_t ii = i + st;
-    sreal vv[last_n_ch];
-    for( decltype(+last_n_ch) j=0; j< last_n_ch; ++j ) {
-      vv[j] = 0.001f * v_coeffs[j] * (float) ADC_buf[ii*last_n_ch+j] * UVAR('v') / adc_binmax;
-    }
-    sdat.add( vv );
-  }
-  sdat.calc();
-  sdat.out_parts( os );
-
-}
-
-// some different from common ADC
-void adc_out_to( OutStream &os, uint32_t n, uint32_t st )
-{
-  if( n+st >= n_lines ) {
-    n = n_lines - st;
-  }
-
-  os << "# n= " << n << " n_ch= " << last_n_ch << " st= " << st
-     << " dt= " << ( 1e-6f * last_dt_us ) << NL;
-
-  break_flag = 0;
-  for( uint32_t i=0; i<n && !break_flag; ++i ) {
-    uint32_t ii = i + st;
-    float t = 1e-6f * last_dt_us * ii;
-    os <<  FltFmt( t, cvtff_auto, 14, 6 );
-    for( decltype(+last_n_ch) j=0; j< last_n_ch; ++j ) {
-      float v = 0.001f * v_coeffs[j] * (float) ADC_buf[ii*last_n_ch+j] * UVAR('v') / adc_binmax;
-      os << ' ' << v;
-    }
-    os << NL;
-  }
-
-}
 
 int cmd_outsd( int argc, const char * const * argv )
 {
@@ -324,6 +276,7 @@ int cmd_outsd( int argc, const char * const * argv )
     return 1;
   }
 
+  auto n_lines = adcd.get_n_row();
   uint32_t n = arg2long_d( 2, argc, argv, n_lines, 0, n_lines+1 ); // number output series
   uint32_t st= arg2long_d( 3, argc, argv,       0, 0, n_lines-2 );
 
@@ -336,8 +289,11 @@ int cmd_outsd( int argc, const char * const * argv )
 
   leds.set( BIT2 );
   OutStream os_f( &file );
-  adc_out_to( os_f, n, st );
-  adc_show_stat( os_f, n, st );
+  adcd.out_float( os_f, st, n );
+  StatIntData sdat( adcd );
+  sdat.slurp( adcd );
+  sdat.calc();
+  os_f << sdat;
   leds.reset( BIT2 );
 
   return 0;
