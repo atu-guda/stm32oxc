@@ -174,6 +174,11 @@
 #define BOARD_ADC_MALLOC_EXT            malloc_fmc
 #define BOARD_ADC_FREE_EXT              free_fmc
 
+void* malloc_axi( size_t sz ); // only all AXI memory for now
+void  free_axi( void* ptr );
+void* malloc_fmc( size_t sz ); // only all FMC memory for now
+void  free_fmc( void* ptr );
+
 // 0 = DEVICE_FS, 1 = DEVICE_HS
 #define BOARD_USB_DEFAULT_TYPE       0
 #define BOARD_USB_DEFAULT_INSTANCE   USB_OTG_FS
