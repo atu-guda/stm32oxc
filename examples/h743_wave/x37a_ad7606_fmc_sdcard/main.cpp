@@ -37,11 +37,17 @@ int cmd_set_coeffs( int argc, const char * const * argv );
 CmdInfo CMDINFO_SET_COEFFS { "set_coeffs", 'F', cmd_set_coeffs, " k0 k1 k2 k3 - set ADC coeffs"  };
 int cmd_out( int argc, const char * const * argv );
 CmdInfo CMDINFO_OUT { "out", 'O', cmd_out, " [N [start]]- output data "  };
+int cmd_outhex( int argc, const char * const * argv );
+CmdInfo CMDINFO_OUTHEX { "outhex", 'H', cmd_outhex, " [N [start]]- output data in hex form"  };
 int cmd_show_stats( int argc, const char * const * argv );
 CmdInfo CMDINFO_SHOWSTATS { "show_stats", 'Y', cmd_show_stats, " [N [start]]- show statistics"  };
 int cmd_outsd( int argc, const char * const * argv );
 CmdInfo CMDINFO_OUTSD { "outsd", 'X', cmd_outsd, "filename [N [start]]- output data to SD"  };
+int cmd_outsdhex( int argc, const char * const * argv );
+CmdInfo CMDINFO_OUTSDHEX { "outsdhex", 'Z', cmd_outsdhex, "filename [N [start]]- output data to SD in hex"  };
 
+int subcmd_outsd_any( int argc, const char * const * argv, bool isHex );
+int subcmd_out_any( int argc, const char * const * argv, bool isHex );
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -50,7 +56,9 @@ const CmdInfo* global_cmds[] = {
   FS_CMDS0,
   &CMDINFO_SET_COEFFS,
   &CMDINFO_OUT,
+  &CMDINFO_OUTHEX,
   &CMDINFO_OUTSD,
+  &CMDINFO_OUTSDHEX,
   &CMDINFO_SHOWSTATS,
   nullptr
 };
@@ -73,8 +81,8 @@ volatile unsigned tim_flag = 0;
 
 const uint32_t n_ADC_mem  = BOARD_ADC_MEM_MAX_FMC; // MCU dependent, in bytes for 16-bit samples
 AdcData<-16,xfloat> adcd( BOARD_ADC_MALLOC_EXT, BOARD_ADC_FREE_EXT );
+using out_fun_type = decltype( &decltype(adcd)::out_hex );
 const unsigned n_ADC_ch_max = 8;
-void adc_show_stat( OutStream &os, uint32_t n, uint32_t st );
 
 int main(void)
 {
@@ -85,7 +93,7 @@ int main(void)
 
   UVAR('t') = 20; // in us here
   UVAR('n') = 100;
-  UVAR('v') = 5000; // internal REF
+  UVAR('v') = 5000000; // internal REF in uV
   UVAR('c') = 4;
 
   MX_SDIO_SD_Init();
@@ -145,7 +153,7 @@ int cmd_test0( int argc, const char * const * argv )
     return 2;
   }
   adcd.set_d_t( t_step * 1e-6f );
-  adcd.set_v_ref_uV( UVAR('v') * 1000 );
+  adcd.set_v_ref_uV( UVAR('v') );
 
   uint32_t tm00 =  HAL_GetTick();
   int rc = 0;
@@ -241,16 +249,25 @@ void TIM2_IRQHandler(void)
   leds.toggle( BIT1 );
 }
 
-
-int cmd_out( int argc, const char * const * argv )
+int subcmd_out_any( int argc, const char * const * argv, bool isHex )
 {
   auto ns = adcd.get_n_row();
   uint32_t n = arg2long_d( 1, argc, argv, ns, 0, ns+1 ); // number output series
   uint32_t st= arg2long_d( 2, argc, argv,  0, 0, ns-2 );
 
-  adcd.out_float( std_out, st, n );
+  adcd.out_any( std_out, isHex, st, n );
 
   return 0;
+}
+
+int cmd_out( int argc, const char * const * argv )
+{
+  return subcmd_out_any( argc, argv, false );
+}
+
+int cmd_outhex( int argc, const char * const * argv )
+{
+  return subcmd_out_any( argc, argv, true );
 }
 
 
@@ -268,8 +285,7 @@ int cmd_show_stats( int argc, const char * const * argv )
   return 0;
 }
 
-
-int cmd_outsd( int argc, const char * const * argv )
+int subcmd_outsd_any( int argc, const char * const * argv, bool isHex )
 {
   if( argc < 2 ) {
     std_out << "# Error: need filename [n [start]]" NL;
@@ -289,7 +305,7 @@ int cmd_outsd( int argc, const char * const * argv )
 
   leds.set( BIT2 );
   OutStream os_f( &file );
-  adcd.out_float( os_f, st, n );
+  adcd.out_any( os_f, isHex, st, n );
   StatIntData sdat( adcd );
   sdat.slurp( adcd );
   sdat.calc();
@@ -297,6 +313,17 @@ int cmd_outsd( int argc, const char * const * argv )
   leds.reset( BIT2 );
 
   return 0;
+}
+
+
+int cmd_outsd( int argc, const char * const * argv )
+{
+  return subcmd_outsd_any( argc, argv, false );
+}
+
+int cmd_outsdhex( int argc, const char * const * argv )
+{
+  return subcmd_outsd_any( argc, argv, true );
 }
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

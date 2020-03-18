@@ -78,8 +78,9 @@ class AdcData {
    void set_col_mult( unsigned i_col, FL mult ) { if (i_col <= n_col) { col_mult[i_col] = mult; } };
    int out_float( OutStream &os, unsigned st = 0, unsigned n = 0x3FFFFFFF ) const;
    int out_hex( OutStream &os, unsigned st = 0, unsigned n = 0x3FFFFFFF ) const;
+   int out_any( OutStream &os, bool isHex, unsigned st = 0, unsigned n = 0x3FFFFFFF ) const;
    int out_header( OutStream &os, unsigned st = 0, unsigned n = 0x3FFFFFFF ) const;
-   TS xxx = (TS)(0xFFFFFFFF); // just type test: remove in prod
+   void set_out_fmt( unsigned a_out_w, unsigned a_out_prec = 99 ) { out_w = a_out_w; out_prec = a_out_prec; }
   private:
    const uint8_t bpv; //* bit per value
    const bool sign;   //* treat values as signed
@@ -89,6 +90,7 @@ class AdcData {
    unsigned n_col = 0, n_row = 0;
    unsigned sz_row = 0, sz_all = 0;
    int v_ref_uV = 1000000; // reference value in uV
+   unsigned out_w = 11, out_prec = 99;
    TS* d = nullptr;
    FL col_mult[max_ch];
    FL d_t = 1.0f;
@@ -143,14 +145,10 @@ int AdcData<N,FL>::out_float( OutStream &os, unsigned st, unsigned n ) const
   break_flag = 0;
   for( unsigned r = st;  r < en && !break_flag;  ++r ) {
     FL t = r * d_t;
-    if constexpr( sizeof(FL) == sizeof(float) ) {
-      os <<  FltFmt( t, cvtff_auto, 14, 6 );
-    } else {
-      os <<  DblFmt( t, cvtff_auto, 14, 6 );
-    }
+    os <<  XFmt( t, cvtff_auto, 14, 6 );
 
     for( unsigned c = 0; c < n_col; ++c ) {
-      os << ' ' << v( r, c );
+      os << ' ' << XFmt( v( r, c ), cvtff_auto, out_w, out_prec );
     }
     os << NL;
   }
@@ -180,6 +178,15 @@ int AdcData<N,FL>::out_hex( OutStream &os, unsigned st, unsigned n ) const
   }
 
   return 1;
+}
+
+template< int N, typename FL  >
+int AdcData<N,FL>::out_any( OutStream &os, bool isHex, unsigned st, unsigned n ) const
+{
+  if( isHex ) {
+    return out_hex( os, st, n );
+  }
+  return out_float( os, st, n );
 }
 
 template< int N, typename FL  >

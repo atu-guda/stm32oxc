@@ -61,7 +61,7 @@ OutStream& operator<<( OutStream &os, float rhs );
 #ifdef OXC_HAVE_DOUBLE
 extern double exp10id( int x );
 
-constexpr inline  int double_default_width { 17 };
+constexpr inline  int double_default_width { 15 };
 
 int cvtfd( double f, char *buf, unsigned bufsz, uint32_t flg = cvtff_auto, int w = double_default_width, int prec = 99 );
 
@@ -88,6 +88,12 @@ class DblFmt : public OutStreamFmt {
 };
 
 OutStream& operator<<( OutStream &os, double rhs );
+
+#define XFmt DblFmt
+
+#else
+
+#define XFmt FltFmt
 
 #endif
 
