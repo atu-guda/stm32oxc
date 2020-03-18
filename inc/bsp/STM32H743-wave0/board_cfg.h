@@ -166,9 +166,13 @@
 #define BOARD_ADC_DEFAULT_GPIO3         GpioA
 #define BOARD_ADC_DEFAULT_PIN3          3
 #define BOARD_ADC_DEFAULT_CH3           ADC_CHANNEL_3
-#define BOARD_ADC_MEM_MAX               (1024*256)
+#define BOARD_ADC_MEM_MAX               (1024*512)
 #define BOARD_ADC_MEM_MAX_FMC           (1024*1024*8)
 #define BOARD_ADC_COEFF                 3298
+#define BOARD_ADC_MALLOC                malloc_axi
+#define BOARD_ADC_FREE                  free_axi
+#define BOARD_ADC_MALLOC_EXT            malloc_fmc
+#define BOARD_ADC_FREE_EXT              free_fmc
 
 // 0 = DEVICE_FS, 1 = DEVICE_HS
 #define BOARD_USB_DEFAULT_TYPE       0

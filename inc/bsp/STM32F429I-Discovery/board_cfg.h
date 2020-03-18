@@ -149,6 +149,10 @@
 #define BOARD_ADC_MEM_MAX               (1024*136)
 #define BOARD_ADC_MEM_MAX_FMC           (1024*1024*8-10*1024)
 #define BOARD_ADC_COEFF                 2937
+#define BOARD_ADC_MALLOC                ::malloc
+#define BOARD_ADC_FREE                  ::free
+#define BOARD_ADC_MALLOC_EXT            malloc_fmc
+#define BOARD_ADC_FREE_EXT              free_fmc
 
 
 // 0 = DEVICE_FS, 1 = DEVICE_HS

@@ -178,6 +178,9 @@ ifeq "$(NO_COMMON_HAL_MODULES)" "y"
   ALLFLAGS += -DNO_COMMON_HAL_MODULES
 endif
 
+# default: from src/bsp/$(BOARDNAME)/
+SRCS += bsp_arch.cpp
+
 ifeq "$(USE_OXC_CONSOLE_UART)" "y"
   # $(info "Used UART console" )
   USE_OXC_CONSOLE = y

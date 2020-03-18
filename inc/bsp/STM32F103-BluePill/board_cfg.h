@@ -144,6 +144,10 @@
 #define BOARD_ADC_MEM_MAX               (1024*4)
 // #define BOARD_ADC_MEM_MAX_FMC           (1024*1024*8)
 #define BOARD_ADC_COEFF                 3250
+#define BOARD_ADC_MALLOC                ::malloc
+#define BOARD_ADC_FREE                  ::free
+// #define BOARD_ADC_MALLOC_EXT            malloc_fmc
+// #define BOARD_ADC_FREE_EXT              free_fmc
 
 
 #define BOARD_CONSOLE_DEFINES         UART_CONSOLE_DEFINES( USART1 );
