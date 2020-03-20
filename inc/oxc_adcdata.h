@@ -161,17 +161,17 @@ int AdcData<N,FL>::out_hex( OutStream &os, unsigned st, unsigned n ) const
 {
   out_header( os, st, n );
 
-  unsigned en = st + n; // TODO: fox overflow
+  unsigned en = st + n; // TODO: fix overflow
   if( en > n_row ) {
     en = n_row;
   }
   for( unsigned r = st;  r < en;  ++r ) {
-    os << HexInt( r );
+    // os << HexInt( r );
     for( unsigned c = 0; c < n_col; ++c ) {
       if constexpr ( sizeof(TS) > 16 ) {
-        os << ' ' << HexInt( operator()( r, c ) ) << ' ';
+        os << HexInt(   operator()( r, c ) ) << ' ';
       } else {
-        os << ' ' << HexInt16( operator()( r, c ) ) << ' ';
+        os << HexInt16( operator()( r, c ) ) << ' ';
       }
     }
     os << NL;
@@ -192,15 +192,15 @@ int AdcData<N,FL>::out_any( OutStream &os, bool isHex, unsigned st, unsigned n )
 template< int N, typename FL  >
 int AdcData<N,FL>::out_header( OutStream &os, unsigned st, unsigned n ) const
 {
-  os << "## AdcData "    << N << NL;
-  os << "#@ max_val= "   << max_val << NL;
+  os << "## AdcData "    << N        << NL;
+  os << "#@ max_val= "   << max_val  << NL;
   os << "#@ bpv= "       << (int)bpv << NL;
-  os << "#@ sign= "      << sign << NL;
-  os << "#@ n_row= "     << n_row << NL;
-  os << "#@ n_col= "     << n_col << NL;
-  os << "#@ st= "        << st << NL;
-  os << "#@ n= "         << n << NL;
-  os << "#@ d_t= "       << d_t << NL;
+  os << "#@ sign= "      << sign     << NL;
+  os << "#@ n_row= "     << n_row    << NL;
+  os << "#@ n_col= "     << n_col    << NL;
+  os << "#@ st= "        << st       << NL;
+  os << "#@ n= "         << n        << NL;
+  os << "#@ d_t= "       << d_t      << NL;
   os << "#@ v_ref_uV= "  << v_ref_uV << NL;
   for( unsigned i=0; i<n_col; ++i ) {
     os << "#@ k_" << i << "= " << col_mult[i] << NL;
