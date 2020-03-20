@@ -12,7 +12,7 @@
 
 using namespace std;
 
-int debug = 2;
+int debug = 0;
 
 struct PrmPtr {
   double *dv;
@@ -55,17 +55,18 @@ int main( int argc, char **argv )
 
   // parameters and interface to its
   const int max_ch = 32;
-  int st = 0, n_row = 0, bpv = 0, n = 0, n_col = 0;
+  int st = 0, n_row = 0, bpv = 0, sign = 0, n = 0, n_col = 0;
   int max_val = 0, v_ref_uV = 0, d_t_i = 0;
+  unsigned signmask = 0;
   double d_t = 0;
   vector<double> k_n ( max_ch, 1.0 ); // not { } !!!!!
-  vector<int> hv( max_ch, 0 );
 
   PrmMap prms = {
     { "n_col"s    , PrmPtr{   nullptr, &n_col    } },
     { "n_row"s    , PrmPtr{   nullptr, &n_row    } },
     { "st"s       , PrmPtr{   nullptr, &st       } },
     { "bpv"s      , PrmPtr{   nullptr, &bpv      } },
+    { "sign"s     , PrmPtr{   nullptr, &sign     } },
     { "n"s        , PrmPtr{   nullptr, &n        } },
     { "max_val"s  , PrmPtr{   nullptr, &max_val  } },
     { "v_ref_uV"s , PrmPtr{   nullptr, &v_ref_uV } },
@@ -90,8 +91,11 @@ int main( int argc, char **argv )
   }
 
   bool in_header = true;
-  int c_row = 0;
+  int c_row = st, line = 0; // line starts from 1: like editors
+  vector<int> hv( max_ch, 0 );
+
   for( string s; getline( inf, s ); /* NOP */ ) {
+    ++line;
     string s1 = trim( s );
     if( s1.empty() ) {
       continue;
@@ -99,28 +103,55 @@ int main( int argc, char **argv )
 
     if( s1[0] == '#' ) {
       cout << s1 << endl;
-      const bool is_prm = parse_prm_line( s1, prms );
-      if( is_prm && ! in_header ) {
-        cerr << "# warning: parameter after header" << endl;
+      if( s1[1] == '@' && ! in_header ) {
+        cerr << "# warning: parameter after header in line " << line << endl;
+        continue;
       }
+      parse_prm_line( s1, prms );
       continue;
     }
 
-    size_t en;
-    int row = stoi( s1, &en, 16 );
-    if( en < 1 ) {
+    istringstream strs { s1 };
+    int n_conv = 0;
+    for( ;  strs && n_conv < (int)hv.size() ;  ) {
+      int v = -1;
+      strs >> hex >> v;
+      if( strs ) {
+        hv[n_conv++] = v;
+      }
+    };
+
+    if( n_conv != n_col ) {
+      cerr << "# warn: n_conv= " << n_conv << " != n_col = " << n_col << " in line " << line << endl;
       continue;
     }
-    if( in_header ) {
+
+    if( in_header ) { // header end detected
       in_header = false;
       out_params( prms );
+      if( bpv < 4 || bpv > 31 || n_col < 1 || n < 1 || d_t <=0 ) {
+        cerr << "# error: bad parameters detected!" << endl;
+        return 4;
+      }
+      if( sign ) {
+        signmask = ~0u << ( bpv - 1 );
+        // cerr << "#- signmask= " << hex << signmask << endl;
+      }
+      c_row = st;
     }
-    string_view sv( s1.data() + en );
-    cerr << "# -8- sv: \"" << sv << endl;
 
     double c_t = d_t * c_row;
 
-    cerr << "#? " << row << ' ' << en << ' ' << setw(16) << c_t << ' ' << s1 <<endl;
+    cout << setw(15)  << setprecision(7) << c_t ;
+    for( int i=0; i < n_col; ++i ) {
+      int v = hv[i];
+      if( signmask & hv[i] ) {
+        v |= signmask;
+      }
+      double fv = v_ref_uV * 1e-6 * k_n[i] * v / max_val;
+      cout << ' ' << setw(15) << setprecision(8)  <<  fv;
+    }
+    cout << endl;
     ++c_row;
 
 
