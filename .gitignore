@@ -47,3 +47,7 @@ examples/*/*/data/*
 *.project
 .settings
 
+# extra
+/extra/unhex_adc/unhex_adc
+extra/unhex_adc/*.txt
+
