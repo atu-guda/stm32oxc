@@ -1,15 +1,21 @@
 #include <oxc_base.h>
-#include <board_sdram.h>
 
+#ifdef USE_OXC_SDRAM
+#include <board_sdram.h>
+#endif
+
+//---------------------------------------------------
+
+#ifdef USE_OXC_SDRAM
 static bool bsp_allocated_fmc = false;
 
 void* malloc_fmc( size_t sz )
 {
-  if( bsp_allocated_axi ) {
-    bsp_allocated_fmc = true;
-    return (void*)(SDRAM_BANK_ADDR);
+  if( bsp_allocated_fmc || sz > SDRAM_DEVICE_SIZE ) {
+    return nullptr;
   }
-  return nullptr;
+  bsp_allocated_fmc = true;
+  return (void*)(SDRAM_BANK_ADDR);
 }
 
 void  free_fmc( void* ptr )
@@ -20,4 +26,5 @@ void  free_fmc( void* ptr )
   bsp_allocated_fmc = false;
 }
 
+#endif
 

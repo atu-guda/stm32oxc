@@ -35,7 +35,7 @@ const CmdInfo* global_cmds[] = {
 
 
 
-PinsOut nss_pin( GpioB, 14, 1 );
+PinOut nss_pin( GpioB, 14 );
 SPI_HandleTypeDef spi_h;
 DevSPI spi_d( &spi_h, &nss_pin );
 DevSPIMem_AT memspi( spi_d );
