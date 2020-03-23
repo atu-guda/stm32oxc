@@ -1,5 +1,8 @@
 #include <oxc_base.h>
+
+#ifdef USE_OXC_SDRAM
 #include <board_sdram.h>
+#endif
 
 static bool bsp_allocated_axi = false;
 
@@ -22,6 +25,7 @@ void  free_axi( void* ptr )
 
 //---------------------------------------------------
 
+#ifdef USE_OXC_SDRAM
 static bool bsp_allocated_fmc = false;
 
 void* malloc_fmc( size_t sz )
@@ -41,4 +45,5 @@ void  free_fmc( void* ptr )
   bsp_allocated_fmc = false;
 }
 
+#endif
 

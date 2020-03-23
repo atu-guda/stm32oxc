@@ -24,5 +24,5 @@ SRCS  = main.cpp
 
 SRCS += oxc_ad7606_spi.cpp
 SRCS += oxc_floatfun.cpp
-SRCS += oxc_statdata.cpp
+SRCS += oxc_adcdata.cpp
 

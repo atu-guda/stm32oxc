@@ -14,7 +14,10 @@
 #define _OXC_ADCDATA_CMDS_H
 
 #include <oxc_floatfun.h>
+
+#ifdef USE_OXC_SDFAT
 #include <oxc_io_fatfs.h>
+#endif
 
 template<typename AD>
 int subcmd_set_coeffs( int argc, const char * const * argv, AD &ad )
@@ -47,6 +50,7 @@ int subcmd_out_any( int argc, const char * const * argv, AD &ad, bool isHex )
   return 0;
 }
 
+#ifdef USE_OXC_SDFAT
 template<typename AD>
 int subcmd_outsd_any( int argc, const char * const * argv, AD &ad, bool isHex )
 {
@@ -77,6 +81,7 @@ int subcmd_outsd_any( int argc, const char * const * argv, AD &ad, bool isHex )
 
   return 0;
 }
+#endif
 
 
 #endif

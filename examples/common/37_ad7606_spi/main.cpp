@@ -1,12 +1,9 @@
-#include <cstring>
-#include <cstdlib>
-
 #include <oxc_auto.h>
 #include <oxc_floatfun.h>
-#include <oxc_statdata.h>
+#include <oxc_adcdata.h>
+#include <oxc_adcdata_cmds.h>
 
 #include <oxc_ad7606_spi.h>
-
 
 using namespace std;
 using namespace SMLRL;
@@ -18,11 +15,22 @@ BOARD_CONSOLE_DEFINES;
 
 const char* common_help_string = "App to use AD7606 SPI ADC " NL;
 
+const uint32_t n_ADC_mem  = BOARD_ADC_MEM_MAX; // MCU dependent, in bytes for 16-bit samples
+using AdcDataX = AdcData<-16,xfloat>;
+AdcDataX adcd( BOARD_ADC_MALLOC, BOARD_ADC_FREE );
+const unsigned n_ADC_ch_max = 8;
+
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " [n] - test ADC input"  };
 int cmd_set_coeffs( int argc, const char * const * argv );
 CmdInfo CMDINFO_SET_COEFFS { "set_coeffs", 'F', cmd_set_coeffs, " k0 k1 k2 k3 - set ADC coeffs"  };
+int cmd_out( int argc, const char * const * argv );
+CmdInfo CMDINFO_OUT { "out", 'O', cmd_out, " [N [start]]- output data "  };
+int cmd_outhex( int argc, const char * const * argv );
+CmdInfo CMDINFO_OUTHEX { "outhex", 'H', cmd_outhex, " [N [start]]- output data in hex form"  };
+int cmd_show_stats( int argc, const char * const * argv );
+CmdInfo CMDINFO_SHOWSTATS { "show_stats", 'Y', cmd_show_stats, " [N [start]]- show statistics"  };
 
 
 const CmdInfo* global_cmds[] = {
@@ -30,17 +38,18 @@ const CmdInfo* global_cmds[] = {
 
   &CMDINFO_TEST0,
   &CMDINFO_SET_COEFFS,
+  &CMDINFO_OUT,
+  &CMDINFO_OUTHEX,
+  &CMDINFO_SHOWSTATS,
   nullptr
 };
 
-const unsigned n_ADC_ch_max = 8;
-float v_coeffs[n_ADC_ch_max] = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f };
 
 
 PinOut nss_pin(   BOARD_SPI_DEFAULT_GPIO_SNSS, BOARD_SPI_DEFAULT_GPIO_PIN_SNSS );
 PinOut rst_pin(   BOARD_SPI_DEFAULT_GPIO_EXT1, BOARD_SPI_DEFAULT_GPIO_PIN_EXT1 );
 PinOut cnvst_pin( BOARD_SPI_DEFAULT_GPIO_EXT2, BOARD_SPI_DEFAULT_GPIO_PIN_EXT2 );
-PinsIn  busy_pin(              BOARD_IN0_GPIO,  BOARD_IN0_PINNUM, 1 );
+PinsIn  busy_pin(              BOARD_IN0_GPIO, BOARD_IN0_PINNUM, 1 );
 
 SPI_HandleTypeDef spi_h;
 DevSPI spi_d( &spi_h, &nss_pin );
@@ -51,13 +60,15 @@ int main(void)
   BOARD_PROLOG;
 
   UVAR('t') = 100;
-  UVAR('n') = 20;
-  UVAR('c') = n_ADC_ch_max;
+  UVAR('n') = 100;
+  UVAR('v') = 5000000; // internal REF in uV
+  UVAR('c') = 4;
   UVAR('a') = 10; // aux delay
 
   if( SPI_init_default( BOARD_SPI_BAUDRATEPRESCALER_FAST ) != HAL_OK ) {
     die4led( 0x04 );
   }
+  spi_d.setTssDelay_100ns( 1 );
 
   adc.init();
 
@@ -75,29 +86,35 @@ int main(void)
 }
 
 
-#define DLY_T delay_mcs( 2 );
-
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  int16_t ADC_buf[n_ADC_ch_max];
-  unsigned n_ch = clamp( (unsigned)UVAR('c'), 1u, n_ADC_ch_max );
   int t_step = UVAR('t');
-  uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 1000000 ); // number of series
-  bool do_out = ! UVAR('b');
+  unsigned n_ch = clamp( (unsigned)UVAR('c'), 1u, n_ADC_ch_max );
 
-  float kv = 5.0f / 0x7FFF; // TODO: adjust for real scope
+  const uint32_t n_ADC_series_max  = n_ADC_mem / ( 2 * n_ch ); // 2 is 16bit/sample
+  uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, n_ADC_series_max ); // number of series
 
-  StatData sdat( n_ch );
-
-  // if( UVAR('d') > 0 ) { // debug: for logic analizer start
-  //   nss_pin.write( 0 );
-  //   DLY_T;
-  //   nss_pin.write( 1 );
-  //   DLY_T;
+  // int min_t_step = 50 * n_ch; // TMP
+  // if( t_step < min_t_step ) {
+  //   t_step = min_t_step;
   // }
 
+  std_out << "# n = " << n << " n_ch= " << n_ch << " t_step= " << t_step << " us " NL;
+
   adc.reset();
+  leds.set(   BIT0 | BIT1 | BIT2 ); delay_ms( 100 );
+  leds.reset( BIT0 | BIT1 | BIT2 );
+
+  adcd.free();
+  if( ! adcd.alloc( n_ch, n ) ) {
+    std_out << "# Error: fail to alloc buffer" << NL;
+    return 2;
+  }
+  adcd.set_d_t( t_step * 1e-6f );
+  adcd.set_v_ref_uV( UVAR('v') );
+
+  leds.set( BIT1 );
 
   break_flag = 0;
   uint32_t tm0 = 0, tm00 = 0;
@@ -108,33 +125,11 @@ int cmd_test0( int argc, const char * const * argv )
       tm0 = tcc; tm00 = tm0;
     }
 
-    float tc = 0.001f * ( tcc - tm00 );
-    sreal v[n_ch];
+    // if( UVAR('l') ) {  leds.set( BIT2 ); }
 
-    if( UVAR('l') ) {  leds.set( BIT2 ); }
-    // adc.start();
-    // auto nwait = adc.wait_nobusy();
-    // auto rc = adc.read_only( ADC_buf, n_ch );
-    // adc.reset();
-    // delay_bad_mcs( 10 );
-    auto rc = adc.read( ADC_buf, n_ch );
-    if( UVAR('l') ) {  leds.reset( BIT2 ); }
+    adc.read( adcd.row( i ), n_ch );
 
-    for( decltype(n_ch) j=0; j<n_ch; ++j ) {
-      sreal cv = kv * ADC_buf[j]; // * v_coeffs[j];
-      v[j] = cv;
-    }
-    sdat.add( v );
-
-    if( do_out ) {
-      std_out <<  FltFmt( tc, cvtff_auto, 12, 4 );
-
-      for( auto vc : v ) {
-        std_out  << ' '  <<  vc;
-      }
-      std_out << ' ' << rc << ' ' << HexInt16( ADC_buf[0] ) << ' ' << adc.get_busy_waited();
-      std_out << NL;
-    }
+    // if( UVAR('l') ) {  leds.reset( BIT2 ); }
 
     if( t_step > 0 ) {
       delay_ms_until_brk( &tm0, t_step );
@@ -144,9 +139,11 @@ int cmd_test0( int argc, const char * const * argv )
   }
 
 
-  std_out << "# dt= " <<  ( 1e-3f * ( HAL_GetTick() - tm00 ) / n ) << NL;
-  sdat.calc();
-  std_out << sdat << NL;
+  leds.reset( BIT1 );
+
+  std_out << "# n_lines= " << adcd.get_n_row() << " dt_appr= " <<  ( 1e-3f * ( HAL_GetTick() - tm00 ) / n ) << NL;
+
+  delay_ms( 10 );
 
   return 0;
 }
@@ -154,16 +151,37 @@ int cmd_test0( int argc, const char * const * argv )
 
 int cmd_set_coeffs( int argc, const char * const * argv )
 {
-  if( argc > 1 ) {
-    v_coeffs[0] = arg2float_d( 1, argc, argv, 1, -1e10f, 1e10f );
-    v_coeffs[1] = arg2float_d( 2, argc, argv, 1, -1e10f, 1e10f );
-    v_coeffs[2] = arg2float_d( 3, argc, argv, 1, -1e10f, 1e10f );
-    v_coeffs[3] = arg2float_d( 4, argc, argv, 1, -1e10f, 1e10f );
-  }
-  std_out << "# Coefficients: "
-     << v_coeffs[0] << ' ' << v_coeffs[1] << ' ' << v_coeffs[2] << ' ' << v_coeffs[3] << NL;
+  return subcmd_set_coeffs( argc, argv, adcd );
+}
+
+
+
+
+int cmd_out( int argc, const char * const * argv )
+{
+  return subcmd_out_any( argc, argv, adcd, false );
+}
+
+int cmd_outhex( int argc, const char * const * argv )
+{
+  return subcmd_out_any( argc, argv, adcd, true );
+}
+
+
+int cmd_show_stats( int argc, const char * const * argv )
+{
+  // auto ns = adcd.get_n_row();
+  // uint32_t n = arg2long_d( 1, argc, argv, ns, 0, ns+1 ); // number output series
+  // uint32_t st= arg2long_d( 2, argc, argv,  0, 0, ns-2 );
+
+  StatIntData sdat( adcd );
+  sdat.slurp( adcd ); // TODO: limits
+  sdat.calc();
+  std_out << sdat;
+
   return 0;
 }
+
 
 
 

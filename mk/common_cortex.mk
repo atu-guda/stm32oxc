@@ -339,7 +339,7 @@ ifeq "$(USE_OXC_SD)" "y"
   # TODO: USE_FATFS
   ifeq "$(USE_OXC_SDFAT)"  "y"
     ADDSRC +=     /usr/share/fatfs/source
-    ALLFLAGS += -I/usr/share/fatfs/source
+    ALLFLAGS += -I/usr/share/fatfs/source -DUSE_OXC_SDFAT
     SRCS += bsp_driver_sd.c
     SRCS += ff.c
     SRCS += ffunicode.c
