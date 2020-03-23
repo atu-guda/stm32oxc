@@ -1,6 +1,7 @@
 #include <oxc_auto.h>
 #include <oxc_floatfun.h>
 #include <oxc_adcdata.h>
+#include <oxc_adcdata_cmds.h>
 
 #include <oxc_fs_cmd0.h>
 
@@ -22,7 +23,6 @@ const char* common_help_string = "App to use AD7606 SPI ADC with timer, SDRAM an
 const uint32_t n_ADC_mem  = BOARD_ADC_MEM_MAX_FMC; // MCU dependent, in bytes for 16-bit samples
 using AdcDataX = AdcData<-16,xfloat>;
 AdcDataX adcd( BOARD_ADC_MALLOC_EXT, BOARD_ADC_FREE_EXT );
-using out_fun_type = decltype( &decltype(adcd)::out_hex );
 const unsigned n_ADC_ch_max = 8;
 
 extern SD_HandleTypeDef hsd;
@@ -47,10 +47,6 @@ int cmd_outsd( int argc, const char * const * argv );
 CmdInfo CMDINFO_OUTSD { "outsd", 'X', cmd_outsd, "filename [N [start]]- output data to SD"  };
 int cmd_outsdhex( int argc, const char * const * argv );
 CmdInfo CMDINFO_OUTSDHEX { "outsdhex", 'Z', cmd_outsdhex, "filename [N [start]]- output data to SD in hex"  };
-
-int subcmd_outsd_any( int argc, const char * const * argv, AdcDataX &ad, bool isHex );
-int subcmd_out_any( int argc, const char * const * argv, AdcDataX &ad, bool isHex );
-int subcmd_set_coeffs( int argc, const char * const * argv, AdcDataX &ad );
 
 
 const CmdInfo* global_cmds[] = {
@@ -197,22 +193,6 @@ int cmd_test0( int argc, const char * const * argv )
   return rc;
 }
 
-int subcmd_set_coeffs( int argc, const char * const * argv, AdcDataX &ad )
-{
-  const unsigned n_row = ad.get_n_row();
-  if( argc > 1 ) {
-    for( unsigned j=0; j<n_row; ++j ) {
-      xfloat v = arg2xfloat_d( j+1, argc, argv, 1, XFLOAT_NLARGE, XFLOAT_LARGE );
-      ad.set_col_mult( j, v );
-    }
-  }
-  std_out << "# Coefficients:";
-    for( unsigned j=0; j<n_row; ++j ) {
-    std_out << ' ' << ad.get_col_mult( j );
-  }
-  std_out << NL;
-  return 0;
-}
 
 int cmd_set_coeffs( int argc, const char * const * argv )
 {
@@ -254,17 +234,6 @@ void TIM2_IRQHandler(void)
   leds.toggle( BIT1 );
 }
 
-int subcmd_out_any( int argc, const char * const * argv, AdcDataX &ad, bool isHex )
-{
-  auto ns = adcd.get_n_row();
-  uint32_t n = arg2long_d( 1, argc, argv, ns, 0, ns+1 ); // number output series
-  uint32_t st= arg2long_d( 2, argc, argv,  0, 0, ns-2 );
-
-  ad.out_any( std_out, isHex, st, n );
-
-  return 0;
-}
-
 int cmd_out( int argc, const char * const * argv )
 {
   return subcmd_out_any( argc, argv, adcd, false );
@@ -290,35 +259,6 @@ int cmd_show_stats( int argc, const char * const * argv )
   return 0;
 }
 
-int subcmd_outsd_any( int argc, const char * const * argv, AdcDataX &ad, bool isHex )
-{
-  if( argc < 2 ) {
-    std_out << "# Error: need filename [n [start]]" NL;
-    return 1;
-  }
-
-  auto n_lines = ad.get_n_row();
-  uint32_t n = arg2long_d( 2, argc, argv, n_lines, 0, n_lines+1 ); // number output series
-  uint32_t st= arg2long_d( 3, argc, argv,       0, 0, n_lines-2 );
-
-  const char *fn = argv[1];
-  auto file = DevOut_FatFS( fn );
-  if( !file.isGood() ) {
-    std_out << "Error: f_open error: " << file.getErr() << NL;
-    return 2;
-  }
-
-  leds.set( BIT2 );
-  OutStream os_f( &file );
-  adcd.out_any( os_f, isHex, st, n );
-  StatIntData sdat( ad );
-  sdat.slurp( ad );
-  sdat.calc();
-  os_f << sdat;
-  leds.reset( BIT2 );
-
-  return 0;
-}
 
 
 int cmd_outsd( int argc, const char * const * argv )
