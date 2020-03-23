@@ -1,9 +1,5 @@
-#include <algorithm>
-#include <vector>
-
 #include <oxc_auto.h>
 #include <oxc_floatfun.h>
-// #include <oxc_statdata.h>
 #include <oxc_adcdata.h>
 
 #include <oxc_fs_cmd0.h>
@@ -22,6 +18,12 @@ BOARD_DEFINE_LEDS;
 BOARD_CONSOLE_DEFINES;
 
 const char* common_help_string = "App to use AD7606 SPI ADC with timer, SDRAM and SDIO" NL;
+
+const uint32_t n_ADC_mem  = BOARD_ADC_MEM_MAX_FMC; // MCU dependent, in bytes for 16-bit samples
+using AdcDataX = AdcData<-16,xfloat>;
+AdcDataX adcd( BOARD_ADC_MALLOC_EXT, BOARD_ADC_FREE_EXT );
+using out_fun_type = decltype( &decltype(adcd)::out_hex );
+const unsigned n_ADC_ch_max = 8;
 
 extern SD_HandleTypeDef hsd;
 void MX_SDIO_SD_Init();
@@ -46,8 +48,10 @@ CmdInfo CMDINFO_OUTSD { "outsd", 'X', cmd_outsd, "filename [N [start]]- output d
 int cmd_outsdhex( int argc, const char * const * argv );
 CmdInfo CMDINFO_OUTSDHEX { "outsdhex", 'Z', cmd_outsdhex, "filename [N [start]]- output data to SD in hex"  };
 
-int subcmd_outsd_any( int argc, const char * const * argv, bool isHex );
-int subcmd_out_any( int argc, const char * const * argv, bool isHex );
+int subcmd_outsd_any( int argc, const char * const * argv, AdcDataX &ad, bool isHex );
+int subcmd_out_any( int argc, const char * const * argv, AdcDataX &ad, bool isHex );
+int subcmd_set_coeffs( int argc, const char * const * argv, AdcDataX &ad );
+
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -79,10 +83,6 @@ void tim2_init( uint16_t presc, uint32_t arr );
 void tim2_deinit();
 volatile unsigned tim_flag = 0;
 
-const uint32_t n_ADC_mem  = BOARD_ADC_MEM_MAX_FMC; // MCU dependent, in bytes for 16-bit samples
-AdcData<-16,xfloat> adcd( BOARD_ADC_MALLOC_EXT, BOARD_ADC_FREE_EXT );
-using out_fun_type = decltype( &decltype(adcd)::out_hex );
-const unsigned n_ADC_ch_max = 8;
 
 int main(void)
 {
@@ -197,21 +197,26 @@ int cmd_test0( int argc, const char * const * argv )
   return rc;
 }
 
-
-int cmd_set_coeffs( int argc, const char * const * argv )
+int subcmd_set_coeffs( int argc, const char * const * argv, AdcDataX &ad )
 {
+  const unsigned n_row = ad.get_n_row();
   if( argc > 1 ) {
-    for( unsigned j=0; j< n_ADC_ch_max; ++j ) {
-      xfloat v = arg2float_d( j+1, argc, argv, 1, -1e10f, 1e10f );
-      adcd.set_col_mult( j, v );
+    for( unsigned j=0; j<n_row; ++j ) {
+      xfloat v = arg2xfloat_d( j+1, argc, argv, 1, XFLOAT_NLARGE, XFLOAT_LARGE );
+      ad.set_col_mult( j, v );
     }
   }
   std_out << "# Coefficients:";
-    for( unsigned j=0; j< n_ADC_ch_max; ++j ) {
-    std_out << ' ' << adcd.get_col_mult( j );
+    for( unsigned j=0; j<n_row; ++j ) {
+    std_out << ' ' << ad.get_col_mult( j );
   }
   std_out << NL;
   return 0;
+}
+
+int cmd_set_coeffs( int argc, const char * const * argv )
+{
+  return subcmd_set_coeffs( argc, argv, adcd );
 }
 
 
@@ -249,25 +254,25 @@ void TIM2_IRQHandler(void)
   leds.toggle( BIT1 );
 }
 
-int subcmd_out_any( int argc, const char * const * argv, bool isHex )
+int subcmd_out_any( int argc, const char * const * argv, AdcDataX &ad, bool isHex )
 {
   auto ns = adcd.get_n_row();
   uint32_t n = arg2long_d( 1, argc, argv, ns, 0, ns+1 ); // number output series
   uint32_t st= arg2long_d( 2, argc, argv,  0, 0, ns-2 );
 
-  adcd.out_any( std_out, isHex, st, n );
+  ad.out_any( std_out, isHex, st, n );
 
   return 0;
 }
 
 int cmd_out( int argc, const char * const * argv )
 {
-  return subcmd_out_any( argc, argv, false );
+  return subcmd_out_any( argc, argv, adcd, false );
 }
 
 int cmd_outhex( int argc, const char * const * argv )
 {
-  return subcmd_out_any( argc, argv, true );
+  return subcmd_out_any( argc, argv, adcd, true );
 }
 
 
@@ -285,14 +290,14 @@ int cmd_show_stats( int argc, const char * const * argv )
   return 0;
 }
 
-int subcmd_outsd_any( int argc, const char * const * argv, bool isHex )
+int subcmd_outsd_any( int argc, const char * const * argv, AdcDataX &ad, bool isHex )
 {
   if( argc < 2 ) {
     std_out << "# Error: need filename [n [start]]" NL;
     return 1;
   }
 
-  auto n_lines = adcd.get_n_row();
+  auto n_lines = ad.get_n_row();
   uint32_t n = arg2long_d( 2, argc, argv, n_lines, 0, n_lines+1 ); // number output series
   uint32_t st= arg2long_d( 3, argc, argv,       0, 0, n_lines-2 );
 
@@ -306,8 +311,8 @@ int subcmd_outsd_any( int argc, const char * const * argv, bool isHex )
   leds.set( BIT2 );
   OutStream os_f( &file );
   adcd.out_any( os_f, isHex, st, n );
-  StatIntData sdat( adcd );
-  sdat.slurp( adcd );
+  StatIntData sdat( ad );
+  sdat.slurp( ad );
   sdat.calc();
   os_f << sdat;
   leds.reset( BIT2 );
@@ -318,12 +323,12 @@ int subcmd_outsd_any( int argc, const char * const * argv, bool isHex )
 
 int cmd_outsd( int argc, const char * const * argv )
 {
-  return subcmd_outsd_any( argc, argv, false );
+  return subcmd_outsd_any( argc, argv, adcd, false );
 }
 
 int cmd_outsdhex( int argc, const char * const * argv )
 {
-  return subcmd_outsd_any( argc, argv, true );
+  return subcmd_outsd_any( argc, argv, adcd, true );
 }
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

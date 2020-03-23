@@ -90,10 +90,33 @@ class DblFmt : public OutStreamFmt {
 OutStream& operator<<( OutStream &os, double rhs );
 
 #define XFmt DblFmt
+#define xfloat_default_width double_default_width
+#define cvtfx cvtfd
+#define str2xfloat_d str2double_d
+#define arg2xfloat_d arg2double_d
+#define XFLOAT_MAX     __DBL_MAX__
+#define XFLOAT_NMAX   (-__DBL_MAX__)
+#define XFLOAT_LARGE  (__DBL_MAX__/10)
+#define XFLOAT_NLARGE (-__DBL_MAX__/10)
+#define XFLOAT_MIN __DBL_MIN__
+#define XFLOAT_EPS __DBL_EPSILON__
+#define XFLOAT_C(c) c
 
+// -------------------- without double -----------------------------------
 #else
 
+#define xfloat_default_width float_default_width
 #define XFmt FltFmt
+#define cvtfx cvtff
+#define str2xfloat_d str2float_d
+#define arg2xfloat_d arg2float_d
+#define XFLOAT_MAX     __FLT_MAX__
+#define XFLOAT_NMAX   (-__FLT_MAX__)
+#define XFLOAT_LARGE  (__FLT_MAX__/10)
+#define XFLOAT_NLARGE (-__FLT_MAX__/10)
+#define XFLOAT_MIN __FLT_MIN__
+#define XFLOAT_EPS __FLT_EPSILON__
+#define XFLOAT_C(c) c ## f
 
 #endif
 
