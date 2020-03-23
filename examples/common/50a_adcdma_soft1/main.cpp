@@ -14,13 +14,13 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
-const char* common_help_string = "App to measure via inner ADC" NL;
+const char* common_help_string = "App to measure via inner ADC, up to 4 ch, DMA, soft start " NL;
 
 int adc_init_exa_4ch_manual( ADC_Info &adc, uint32_t adc_presc, uint32_t sampl_cycl, uint8_t n_ch );
 
 ADC_Info adc;
 
-int v_adc_ref = BOARD_ADC_COEFF; // in mV, measured before test, adjust as UVAR('v')
+int v_adc_ref = BOARD_ADC_COEFF; // in uV, measured before test, adjust as UVAR('v')
 uint16_t ADC_buf[32];
 
 
@@ -106,7 +106,7 @@ int cmd_test0( int argc, const char * const * argv )
 
   uint32_t n_ADC_sampl = n_ch;
 
-  sreal kv = 0.001f * UVAR('v') / 4096;
+  xfloat kv = 1e-6f * UVAR('v') / 4096;
 
   adc.reset_cnt();
 
@@ -133,7 +133,7 @@ int cmd_test0( int argc, const char * const * argv )
     }
 
     float tc = 0.001f * ( tcc - tm00 );
-    sreal v[n_ch];
+    xfloat v[n_ch];
 
     if( UVAR('l') ) {  leds.set( BIT2 ); }
     adc.end_dma = 0;
@@ -166,7 +166,7 @@ int cmd_test0( int argc, const char * const * argv )
       std_out <<  FltFmt( tc, cvtff_auto, 12, 4 );
     }
     for( decltype(n_ch) j=0; j<n_ch; ++j ) {
-      sreal cv = kv * ADC_buf[j] * v_coeffs[j];
+      xfloat cv = kv * ADC_buf[j] * v_coeffs[j];
       v[j] = cv;
     }
     //
@@ -174,7 +174,7 @@ int cmd_test0( int argc, const char * const * argv )
 
     if( do_out ) {
       for( auto vc : v ) {
-        std_out  << ' '  <<  vc;
+        std_out  << ' '  << vc;
       }
       std_out << NL;
     }

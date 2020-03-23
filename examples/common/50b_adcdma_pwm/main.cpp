@@ -23,7 +23,7 @@ int adc_init_exa_4ch_manual( ADC_Info &adc, uint32_t adc_presc, uint32_t sampl_c
 
 ADC_Info adc;
 
-int v_adc_ref = BOARD_ADC_COEFF; // in mV, measured before test, adjust as UVAR('v')
+int v_adc_ref = BOARD_ADC_COEFF; // in uV, measured before test, adjust as UVAR('v')
 uint16_t ADC_buf[32];
 
 TIM_HandleTypeDef tim_h;
@@ -99,8 +99,8 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  uint32_t t_step = UVAR('t');
-  uint32_t n_ch = clamp( UVAR('c'), 1, (int)n_ADC_ch_max );
+  int t_step = UVAR('t');
+  uint8_t n_ch = clamp( UVAR('c'), 1, (int)n_ADC_ch_max );
 
   uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 1000000 ); // number of series
 
@@ -130,7 +130,7 @@ int cmd_test0( int argc, const char * const * argv )
 
   uint32_t n_ADC_sampl = n_ch;
 
-  sreal kv = 0.001f * UVAR('v') / 4096;
+  xfloat kv = 1e-6f * UVAR('v') / 4096;
 
   adc.reset_cnt();
 
@@ -165,7 +165,7 @@ int cmd_test0( int argc, const char * const * argv )
     }
 
     float tc = 0.001f * ( tcc - tm00 );
-    sreal v[n_ch+1]; // +1 for PWM
+    xfloat v[n_ch+1]; // +1 for PWM
 
     if( UVAR('l') ) {  leds.set( BIT2 ); }
     adc.end_dma = 0;
@@ -198,7 +198,7 @@ int cmd_test0( int argc, const char * const * argv )
       std_out <<  FltFmt( tc, cvtff_auto, 12, 4 );
     }
     for( decltype(n_ch) j=0; j<n_ch; ++j ) {
-      sreal cv = kv * ADC_buf[j] * v_coeffs[j];
+      xfloat cv = kv * ADC_buf[j] * v_coeffs[j];
       v[j] = cv;
     }
     v[n_ch] = pwmdat.get_v_real();

@@ -14,11 +14,11 @@ BOARD_CONSOLE_DEFINES;
 const char* common_help_string = "App to test ADC in one-shot mode one channel" NL
  " var t - delay time in ms" NL
  " var n - default number of measurements" NL
- " var v - reference voltage in mV " NL;
+ " var v - reference voltage in uV " NL;
 
 int adc_init_exa_1ch_manual( uint32_t presc, uint32_t sampl_cycl );
 ADC_HandleTypeDef hadc1;
-int v_adc_ref = BOARD_ADC_COEFF; // in mV, measured before test
+int v_adc_ref = BOARD_ADC_COEFF; // in uV, measured before test
 
 
 // --- local commands;
@@ -74,7 +74,7 @@ int cmd_test0( int argc, const char * const * argv )
   for( int i=0; i<n && !break_flag; ++i ) {
 
     uint32_t tcc = HAL_GetTick();
-    std_out << "ADC start  i= " << i << "  tick: " << ( tcc - tm00 );
+    std_out << "i= " << i << "  tick: " << ( tcc - tm00 );
     if( HAL_ADC_Start( &hadc1 ) != HAL_OK )  {
       std_out << "  !! ADC Start error" NL; std_out.flush();
       break;
@@ -84,7 +84,7 @@ int cmd_test0( int argc, const char * const * argv )
     v = 0;
     if( HAL_IS_BIT_SET( HAL_ADC_GetState( &hadc1 ), HAL_ADC_STATE_REG_EOC ) )  {
       v = HAL_ADC_GetValue( &hadc1 );
-      int vv = v * 10 * UVAR('v') / 4096;
+      int vv = v * ( UVAR('v') / 100 ) / 4096; // 100 = 1000/10
       std_out << " v= " << v <<  " vv= " << FloatMult( vv, 4 );
     }
 

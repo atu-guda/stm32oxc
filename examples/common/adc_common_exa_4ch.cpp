@@ -45,7 +45,7 @@ void adc_out_to( OutStream &os, uint32_t n, uint32_t st )
     t = adc.t_step_f * ii;
     os << t << ' ';
     for( int j=0; j< n_ch; ++j ) {
-      float v = 0.001f * (float) adc.data[ii*n_ch+j] * UVAR('v') / 4096;
+      float v = 1e-6f * (float) adc.data[ii*n_ch+j] * UVAR('v') / 4096;
       os << v;
     }
     os << NL;
@@ -67,7 +67,7 @@ void adc_show_stat( OutStream &os, uint32_t n, uint32_t st )
     uint32_t ii = i + st;
     sreal vv[n_ch];
     for( int j=0; j< n_ch; ++j ) {
-      vv[j] = 0.001f * (float) adc.data[ii*n_ch+j] * UVAR('v') / 4096;
+      vv[j] = 1e-6f * (float) adc.data[ii*n_ch+j] * UVAR('v') / 4096;
     }
     sdat.add( vv );
   }

@@ -1,11 +1,7 @@
-#include <cstring>
-#include <cerrno>
-
-#include <algorithm>
-#include <vector>
-
 #include <oxc_auto.h>
 #include <oxc_floatfun.h>
+#include <oxc_adcdata.h>
+#include <oxc_adcdata_cmds.h>
 
 #include <oxc_fs_cmd0.h>
 #include <fatfs_sd_st.h>
@@ -21,9 +17,6 @@ BOARD_CONSOLE_DEFINES;
 
 const char* common_help_string = "App to measure ADC data (4ch) to SDRAM and store to SD card" NL;
 
-uint8_t *sdram_mem = SDRAM_ADDR;
-
-
 extern SD_HandleTypeDef hsd;
 void MX_SDIO_SD_Init();
 uint8_t sd_buf[512]; // one sector
@@ -32,9 +25,13 @@ FATFS fs;
 
 ADC_Info adc;
 
-void adc_out_to( OutStream &os, uint32_t n, uint32_t st );
-void adc_show_stat( OutStream &os, uint32_t n = 0xFFFFFFFF, uint32_t st = 0 );
-void pr_ADCDMA_state();
+// void pr_ADCDMA_state();
+
+const uint32_t n_ADC_mem  = BOARD_ADC_MEM_MAX_FMC; // MCU dependent, in bytes for 16-bit samples
+using AdcDataX = AdcData<12,xfloat>;
+AdcDataX adcd( BOARD_ADC_MALLOC_EXT, BOARD_ADC_FREE_EXT );
+const unsigned n_ADC_ch_max = 4;
+
 
 const uint32_t ADCDMA_chunk_size = 1024; // in bytes, for now. may be up to 64k-small
 HAL_StatusTypeDef ADC_Start_DMA_n( ADC_HandleTypeDef* hadc, uint32_t* pData, uint32_t Length, uint32_t chunkLength, uint8_t elSz );
@@ -42,16 +39,7 @@ int adc_init_exa_4ch_dma_n( ADC_Info &adc, uint32_t presc, uint32_t sampl_cycl, 
 void ADC_DMA_REINIT();
 
 uint32_t tim_freq_in; // timer input freq
-int v_adc_ref = BOARD_ADC_COEFF; // in mV, measured before test, adjust as UVAR('v')
-const uint32_t n_ADC_ch_max = 4; // current - in UVAR('c')
-const uint32_t n_ADC_mem  = BOARD_ADC_MEM_MAX_FMC; // MCU dependent, in bytes for 16-bit samples
-uint16_t *adc_v0 = (uint16_t*)(sdram_mem);
-
-// vector<uint16_t> ADC_buf;
-uint16_t *ADC_buf_x = (uint16_t*)(SDRAM_ADDR);
-
-volatile uint32_t n_series = 0;
-uint32_t n_series_todo = 0;
+int v_adc_ref = BOARD_ADC_COEFF; // in uV, measured before test, adjust as UVAR('v')
 
 
 
@@ -61,22 +49,32 @@ void tim2_deinit();
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test ADC"  };
+CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " [n] - test ADC"  };
+int cmd_set_coeffs( int argc, const char * const * argv );
+CmdInfo CMDINFO_SET_COEFFS { "set_coeffs", 'F', cmd_set_coeffs, " k0 k1 k2 k3 - set ADC coeffs"  };
 int cmd_out( int argc, const char * const * argv );
-extern CmdInfo CMDINFO_OUT;
+CmdInfo CMDINFO_OUT { "out", 'O', cmd_out, " [N [start]]- output data "  };
+int cmd_outhex( int argc, const char * const * argv );
+CmdInfo CMDINFO_OUTHEX { "outhex", 'H', cmd_outhex, " [N [start]]- output data in hex form"  };
 int cmd_show_stats( int argc, const char * const * argv );
-extern CmdInfo CMDINFO_SHOWSTATS;
+CmdInfo CMDINFO_SHOWSTATS { "show_stats", 'Y', cmd_show_stats, " [N [start]]- show statistics"  };
 int cmd_outsd( int argc, const char * const * argv );
-extern CmdInfo CMDINFO_OUTSD;
+CmdInfo CMDINFO_OUTSD { "outsd", 'X', cmd_outsd, "filename [N [start]]- output data to SD"  };
+int cmd_outsdhex( int argc, const char * const * argv );
+CmdInfo CMDINFO_OUTSDHEX { "outsdhex", 'Z', cmd_outsdhex, "filename [N [start]]- output data to SD in hex"  };
+
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
 
   &CMDINFO_TEST0,
+  &CMDINFO_SET_COEFFS,
   FS_CMDS0,
   &CMDINFO_OUT,
-  &CMDINFO_SHOWSTATS,
+  &CMDINFO_OUTHEX,
   &CMDINFO_OUTSD,
+  &CMDINFO_OUTSDHEX,
+  &CMDINFO_SHOWSTATS,
   nullptr
 };
 
@@ -85,6 +83,14 @@ const CmdInfo* global_cmds[] = {
 int main(void)
 {
   BOARD_PROLOG;
+
+  // works bad with DMA
+  #if defined(STM32F7)
+  SCB_DisableICache();
+  SCB_DisableDCache();
+  #endif
+
+  bsp_init_sdram();
 
   tim_freq_in = get_TIM_in_freq( TIM2 ); // TODO: define
 
@@ -113,8 +119,6 @@ int main(void)
   PWR->CR1 |= PWR_CR1_ADCDC1;
   #endif
 
-  bsp_init_sdram();
-
   BOARD_POST_INIT_BLINK;
 
   pr( NL "##################### " PROJ_NAME NL );
@@ -132,6 +136,7 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
+  //
   uint8_t n_ch = clamp( UVAR('c'), 1, (int)adc.n_ch_max );
 
   uint32_t tim_psc = UVAR('p');
@@ -143,8 +148,8 @@ int cmd_test0( int argc, const char * const * argv )
   uint32_t sampl_t_idx = clamp( UVAR('s'), 0, (int)adc_n_sampl_times-1 );
 
   uint32_t t_step_tick =  (tim_arr+1) * (tim_psc+1); // in timer input ticks
-  float tim_f = (float)tim_freq_in / t_step_tick; // timer update freq, Hz
-  adc.t_step_f = (float)t_step_tick / tim_freq_in; // in s
+  xfloat tim_f = (xfloat)tim_freq_in / t_step_tick; // timer update freq, Hz
+  adc.t_step_f = (xfloat)t_step_tick / tim_freq_in; // in s
   uint32_t t_wait0 = 1 + uint32_t( n * adc.t_step_f * 1000 ); // in ms
 
   // make n a multiple of ADCDMA_chunk_size
@@ -153,9 +158,11 @@ int cmd_test0( int argc, const char * const * argv )
   uint32_t n_ADC_bytes = n * n_ch * 2;
 
   std_out << "# t_step_tick= " << t_step_tick << " [t2ticks] tim_f= " << tim_f << " Hz"
-     << " t_step_f= " << adc.t_step_f << " s  t_wait0= " << t_wait0 << " ms" NL;
+          << " t_step_f= " << adc.t_step_f << " s  t_wait0= " << t_wait0 << " ms" NL;
 
   if( n > n_ADC_series_max ) { n = n_ADC_series_max; };
+
+  std_out << "# n= " << n << " n_ADC_series_max= " << n_ADC_series_max << NL;
 
   tim2_deinit();
 
@@ -181,15 +188,23 @@ int cmd_test0( int argc, const char * const * argv )
      << " f_sampl_max= " << f_sampl_max << " Hz" NL;
   delay_ms( 10 );
 
-  memset( ADC_buf_x, n_ADC_bytes + ADCDMA_chunk_size, 0 );
-  adc.data = ADC_buf_x;
+
+  adcd.free();
+  if( ! adcd.alloc( n_ch, n, ADCDMA_chunk_size ) ) {
+    std_out << "# Error: fail to alloc buffer" << NL;
+    return 2;
+  }
+  adc.data = adcd.data();
   adc.reset_cnt();
+  adcd.set_d_t( adc.t_step_f * 1e-6f );
+  adcd.set_v_ref_uV( UVAR('v') );
+  std_out << "# n_col= " << adcd.get_n_col() << " n_row= " << adcd.get_n_row() << " data: " << HexInt(adcd.data()) << " size_all= " << adcd.size_all() << NL;
 
   leds.reset( BIT0 | BIT1 | BIT2 );
 
   uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
 
-  if( ADC_Start_DMA_n( &adc.hadc, (uint32_t*)ADC_buf_x, n_ADC_bytes, ADCDMA_chunk_size, 2 ) != HAL_OK )   {
+  if( ADC_Start_DMA_n( &adc.hadc, (uint32_t*)adcd.data(), n_ADC_bytes, ADCDMA_chunk_size, 2 ) != HAL_OK )   {
     std_out <<  "# ADC_Start_DMA_n error = "   << HexInt(  adc.hdma_adc.ErrorCode )   <<  NL;
     return 10;
   }
@@ -197,7 +212,7 @@ int cmd_test0( int argc, const char * const * argv )
 
   delay_ms_brk( t_wait0 );
   for( uint32_t ti=0; adc.end_dma == 0 && ti<(uint32_t)UVAR('t') && !break_flag;  ++ti ) {
-    delay_ms(1);
+    delay_ms( 1 );
   }
   uint32_t tcc = HAL_GetTick();
   delay_ms( 10 ); // to settle all
@@ -215,13 +230,13 @@ int cmd_test0( int argc, const char * const * argv )
   }
   std_out <<  "#  tick: " <<  ( tcc - tm00 )  <<  NL;
 
-  if( adc.n_series < 20 ) {
-    adc_out_to( std_out, adc.n_series, 0 );
-  } else {
-    adc_out_to( std_out, 4, 0 );
-    std_out <<  "....." NL;
-    adc_out_to( std_out, 4, adc.n_series-4 );
-  }
+  // if( adc.n_series < 20 ) {
+  //   adc_out_to( std_out, adc.n_series, 0 );
+  // } else {
+  //   adc_out_to( std_out, 4, 0 );
+  //   std_out <<  "....." NL;
+  //   adc_out_to( std_out, 4, adc.n_series-4 );
+  // }
 
   std_out <<  NL;
 
@@ -230,10 +245,85 @@ int cmd_test0( int argc, const char * const * argv )
   return 0;
 }
 
+
+int cmd_set_coeffs( int argc, const char * const * argv )
+{
+  return subcmd_set_coeffs( argc, argv, adcd );
+}
+
+
+
+
+int cmd_out( int argc, const char * const * argv )
+{
+  return subcmd_out_any( argc, argv, adcd, false );
+}
+
+int cmd_outhex( int argc, const char * const * argv )
+{
+  return subcmd_out_any( argc, argv, adcd, true );
+}
+
+
+int cmd_show_stats( int argc, const char * const * argv )
+{
+  // auto ns = adcd.get_n_row();
+  // uint32_t n = arg2long_d( 1, argc, argv, ns, 0, ns+1 ); // number output series
+  // uint32_t st= arg2long_d( 2, argc, argv,  0, 0, ns-2 );
+
+  StatIntData sdat( adcd );
+  sdat.slurp( adcd ); // TODO: limits
+  sdat.calc();
+  std_out << sdat;
+
+  return 0;
+}
+
+
+
+int cmd_outsd( int argc, const char * const * argv )
+{
+  return subcmd_outsd_any( argc, argv, adcd, false );
+}
+
+int cmd_outsdhex( int argc, const char * const * argv )
+{
+  return subcmd_outsd_any( argc, argv, adcd, true );
+}
+
+
+
 void ADC_IRQHandler(void)
 {
   HAL_ADC_IRQHandler( &adc.hadc );
 }
+
+void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc )
+{
+  adc.end_dma |= 1;
+  adc.good_SR =  adc.last_SR = adc.hadc.Instance->SR;
+  adc.last_end = 1;
+  adc.last_error = 0;
+  ++adc.n_good;
+}
+
+void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc )
+{
+  adc.end_dma |= 2;
+  adc.bad_SR = adc.last_SR = adc.hadc.Instance->SR;
+  // tim2_deinit();
+  adc.last_end  = 2;
+  adc.last_error = HAL_ADC_GetError( hadc );
+  adc.dma_error = hadc->DMA_Handle->ErrorCode;
+  hadc->DMA_Handle->ErrorCode = 0;
+  ++adc.n_bad;
+}
+
+void DMA2_Stream0_IRQHandler(void)
+{
+  HAL_DMA_IRQHandler( &adc.hdma_adc );
+}
+
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

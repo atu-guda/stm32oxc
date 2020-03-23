@@ -30,7 +30,7 @@ static bool bsp_allocated_fmc = false;
 
 void* malloc_fmc( size_t sz )
 {
-  if( bsp_allocated_axi || sz > SDRAM_DEVICE_SIZE ) {
+  if( bsp_allocated_fmc || sz > SDRAM_DEVICE_SIZE ) {
     return nullptr;
   }
   bsp_allocated_fmc = true;

@@ -156,7 +156,7 @@
 #define BOARD_ADC_DEFAULT_CH3           ADC_CHANNEL_13
 #define BOARD_ADC_MEM_MAX               (1024*256)
 // #define BOARD_ADC_MEM_MAX_FMC           (1024*1024*8)
-#define BOARD_ADC_COEFF                 3309
+#define BOARD_ADC_COEFF                 3309000
 #define BOARD_ADC_MALLOC                ::malloc
 #define BOARD_ADC_FREE                  ::free
 // #define BOARD_ADC_MALLOC_EXT            malloc_fmc

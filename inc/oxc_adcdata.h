@@ -13,6 +13,9 @@
 #define _OXC_ADCDATA_H
 
 #include <type_traits>
+#include <limits>
+#include <algorithm>
+#include <cstdlib>
 
 #include <oxc_floatfun.h>
 
