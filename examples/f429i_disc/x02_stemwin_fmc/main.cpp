@@ -54,13 +54,20 @@ int main(void)
 {
   BOARD_PROLOG;
 
+  __HAL_RCC_CRC_CLK_ENABLE();
+
   bsp_init_sdram();
 
+  std_out << "# point 0" NL; delay_ms( 10 );
+
   BSP_TS_Init( 240, 320 );
-  __HAL_RCC_CRC_CLK_ENABLE();
+
+  std_out << "# point 1" NL; delay_ms( 10 ); // hang after here
 
   GUI_Init();
   GUI_Initialized = 1;
+
+  std_out << "# point 2" NL; delay_ms( 10 );
 
   /* Activate the use of memory device feature */
   WM_SetCreateFlags( WM_CF_MEMDEV );
@@ -74,22 +81,21 @@ int main(void)
 
   BOARD_POST_INIT_BLINK;
 
-  BOARD_CREATE_STD_TASKS;
-  xTaskCreate( task_grout,      "grout", 2*def_stksz, nullptr,   1, nullptr );
+  std_out <<  NL "##################### " PROJ_NAME NL;
 
-  SCHEDULER_START;
+  srl.re_ps();
+
+  oxc_add_aux_tick_fun( led_task_nortos );
+
+  std_main_loop_nortos( &srl, nullptr );
+
   return 0;
 }
 
-void task_main( void *prm UNUSED_ARG ) // TMAIN
-{
-  default_main_loop();
-  vTaskDelete(NULL);
-}
 
 void task_grout( void *prm UNUSED_ARG )
 {
-  delay_ms( 100 );
+  delay_ms( 1000 );
   if( GUI_Initialized )  {
     GUI_DispStringAt( "Hello world!", (LCD_GetXSize()-100)/2, (LCD_GetYSize()-20)/2 );
   }
@@ -101,7 +107,7 @@ void task_grout( void *prm UNUSED_ARG )
     delay_ms( 50 );
   }
 
-  vTaskDelete(NULL);
+  // vTaskDelete(NULL);
 }
 
 void BSP_Pointer_Update()
