@@ -1,9 +1,7 @@
-#include <algorithm>
-#include <vector>
-
 #include <oxc_auto.h>
 #include <oxc_floatfun.h>
-#include <oxc_statdata.h>
+#include <oxc_adcdata.h>
+#include <oxc_adcdata_cmds.h>
 
 using namespace std;
 using namespace SMLRL;
@@ -15,6 +13,11 @@ BOARD_CONSOLE_DEFINES;
 
 const char* common_help_string = "App to use MCP3204 ADC SPI device with timer" NL;
 
+const uint32_t n_ADC_mem  = BOARD_ADC_MEM_MAX; // MCU dependent, in bytes for 16-bit samples
+using AdcDataX = AdcData<12,xfloat>;
+AdcDataX adcd( BOARD_ADC_MALLOC, BOARD_ADC_FREE );
+const unsigned n_ADC_ch_max = 4;
+
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " [n] - test ADC"  };
@@ -22,6 +25,8 @@ int cmd_set_coeffs( int argc, const char * const * argv );
 CmdInfo CMDINFO_SET_COEFFS { "set_coeffs", 'F', cmd_set_coeffs, " k0 k1 k2 k3 - set ADC coeffs"  };
 int cmd_out( int argc, const char * const * argv );
 CmdInfo CMDINFO_OUT { "out", 'O', cmd_out, " [N [start]]- output data "  };
+int cmd_outhex( int argc, const char * const * argv );
+CmdInfo CMDINFO_OUTHEX { "outhex", 'H', cmd_outhex, " [N [start]]- output data in hex form"  };
 int cmd_show_stats( int argc, const char * const * argv );
 CmdInfo CMDINFO_SHOWSTATS { "show_stats", 'Y', cmd_show_stats, " [N [start]]- show statistics"  };
 
@@ -32,6 +37,7 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_TEST0,
   &CMDINFO_SET_COEFFS,
   &CMDINFO_OUT,
+  &CMDINFO_OUTHEX,
   &CMDINFO_SHOWSTATS,
   nullptr
 };
@@ -47,15 +53,6 @@ void tim2_init( uint16_t presc, uint32_t arr );
 void tim2_deinit();
 volatile unsigned tim_flag = 0;
 
-const uint32_t n_ADC_mem  = BOARD_ADC_MEM_MAX; // MCU dependent, in bytes for 16-bit samples
-vector<uint16_t> ADC_buf;
-unsigned n_lines = 0, last_n_ch = 1;
-uint32_t last_dt_us = 1000;
-const unsigned n_ADC_ch_max = 4; // current - in UVAR('c')
-float v_coeffs[n_ADC_ch_max];
-void adc_out_to( OutStream &os, uint32_t n, uint32_t st );
-void adc_show_stat( OutStream &os, uint32_t n, uint32_t st );
-const unsigned adc_binmax = 4095;
 
 int main(void)
 {
@@ -63,10 +60,9 @@ int main(void)
 
   UVAR('t') = 1000; // in us here
   UVAR('n') = 10;
-  UVAR('v') = 5100; // external power supply
+  UVAR('v') = 5090000; // external power supply = Vref in uV
   UVAR('c') = n_ADC_ch_max;
 
-  for( auto &x : v_coeffs ) { x = 1.0f; };
 
   if( SPI_init_default( SPI_BAUDRATEPRESCALER_64 ) != HAL_OK ) { // 1.xx MBit/s < 2
     die4led( 0x04 );
@@ -110,6 +106,7 @@ int cmd_test0( int argc, const char * const * argv )
   int min_t_step = 50 * n_ch;
   if( t_step < min_t_step ) {
     t_step = min_t_step;
+    std_out << "# warn: time step adjusted to " << t_step << " us " NL;
   }
 
   std_out << "# n = " << n << " n_ch= " << n_ch << " t_step= " << t_step << " us " NL;
@@ -117,10 +114,13 @@ int cmd_test0( int argc, const char * const * argv )
   leds.set(   BIT0 | BIT1 | BIT2 ); delay_ms( 100 );
   leds.reset( BIT0 | BIT1 | BIT2 );
 
-  ADC_buf.resize( 0, 0 );
-  ADC_buf.shrink_to_fit();
-  ADC_buf.assign( (n+2) * n_ch, 0 ); // + 2 is guard, may be remove
-  n_lines = 0; last_n_ch = n_ch; last_dt_us = t_step;
+  adcd.free();
+  if( ! adcd.alloc( n_ch, n ) ) {
+    std_out << "# Error: fail to alloc buffer" << NL;
+    return 2;
+  }
+  adcd.set_d_t( t_step * 1e-6f );
+  adcd.set_v_ref_uV( UVAR('v') );
 
   uint32_t tm00 =  HAL_GetTick();
   int rc = 0;
@@ -136,6 +136,8 @@ int cmd_test0( int argc, const char * const * argv )
   }
   HAL_NVIC_EnableIRQ( TIM2_IRQn );
 
+  leds.set( BIT1 );
+
   break_flag = 0;
   for( decltype(n) i=0; i<n && !break_flag; ++i ) {
 
@@ -144,21 +146,21 @@ int cmd_test0( int argc, const char * const * argv )
 
     // if( UVAR('l') ) {  leds.set( BIT2 ); }
 
-    uint8_t buf[3]; // first - fake
+    uint8_t buf[4]; // first - fake, last - align
     for( decltype(+n_ch) j=0; j < n_ch; ++j ) {
       spi_d.duplex( mcp3204_cmds1ch[j], buf, 3 );
       uint16_t v = buf[2] + ( ( buf[1] & 0x0F ) << 8 );
-      ADC_buf[ n_lines * n_ch + j ] = v;
-      // delay_bad_mcs( 1 );
+      adcd( i, j ) = v;
     }
-    ++n_lines;
 
   }
 
   HAL_NVIC_DisableIRQ( TIM2_IRQn );
   HAL_TIM_Base_Stop_IT( &tim2h );
 
-  std_out << "# n_lines= " << n_lines << " dt_appr= " <<  ( 1e-3f * ( HAL_GetTick() - tm00 ) / n ) << NL;
+  leds.reset( BIT1 );
+
+  std_out << "# n_lines= " << adcd.get_n_row() << " dt_appr= " <<  ( 1e-3f * ( HAL_GetTick() - tm00 ) / n ) << NL;
 
   delay_ms( 10 );
 
@@ -168,17 +170,7 @@ int cmd_test0( int argc, const char * const * argv )
 
 int cmd_set_coeffs( int argc, const char * const * argv )
 {
-  if( argc > 1 ) {
-    for( unsigned j=0; j< n_ADC_ch_max; ++j ) {
-      v_coeffs[j] = arg2float_d( j+1, argc, argv, 1, -1e10f, 1e10f );
-    }
-  }
-  std_out << "# Coefficients:";
-  for( auto x: v_coeffs ) {
-    std_out << ' ' << x;
-  }
-  std_out << NL;
-  return 0;
+  return subcmd_set_coeffs( argc, argv, adcd );
 }
 
 
@@ -216,75 +208,32 @@ void TIM2_IRQHandler(void)
   leds.toggle( BIT1 );
 }
 
-
 int cmd_out( int argc, const char * const * argv )
 {
-  auto ns = n_lines;
-  uint32_t n = arg2long_d( 1, argc, argv, ns, 0, ns+1 ); // number output series
-  uint32_t st= arg2long_d( 2, argc, argv,  0, 0, ns-2 );
+  return subcmd_out_any( argc, argv, adcd, false );
+}
 
-  adc_out_to( std_out, n, st );
-  adc_show_stat( std_out, n, st );
-
-  return 0;
+int cmd_outhex( int argc, const char * const * argv )
+{
+  return subcmd_out_any( argc, argv, adcd, true );
 }
 
 
 int cmd_show_stats( int argc, const char * const * argv )
 {
-  auto ns = n_lines;
-  uint32_t n = arg2long_d( 1, argc, argv, ns, 0, ns+1 ); // number output series
-  uint32_t st= arg2long_d( 2, argc, argv,  0, 0, ns-2 );
+  // auto ns = adcd.get_n_row();
+  // uint32_t n = arg2long_d( 1, argc, argv, ns, 0, ns+1 ); // number output series
+  // uint32_t st= arg2long_d( 2, argc, argv,  0, 0, ns-2 );
 
-  adc_show_stat( std_out, n, st );
+  StatIntData sdat( adcd );
+  sdat.slurp( adcd ); // TODO: limits
+  sdat.calc();
+  std_out << sdat;
 
   return 0;
 }
 
-void adc_show_stat( OutStream &os, uint32_t n, uint32_t st )
-{
-  if( n+st >= n_lines+1 ) {
-    n = n_lines - st;
-  }
 
-  StatData sdat( last_n_ch );
-
-  for( uint32_t i=0; i< n; ++i ) {
-    uint32_t ii = i + st;
-    sreal vv[last_n_ch];
-    for( decltype(+last_n_ch) j=0; j< last_n_ch; ++j ) {
-      vv[j] = 0.001f * v_coeffs[j] * (float) ADC_buf[ii*last_n_ch+j] * UVAR('v') / adc_binmax;
-    }
-    sdat.add( vv );
-  }
-  sdat.calc();
-  sdat.out_parts( os );
-
-}
-
-// some different from common ADC
-void adc_out_to( OutStream &os, uint32_t n, uint32_t st )
-{
-  if( n+st >= n_lines ) {
-    n = n_lines - st;
-  }
-
-  os << "# n= " << n << " n_ch= " << last_n_ch << " st= " << st
-     << " dt= " << ( 1e-6f * last_dt_us ) << NL;
-
-  break_flag = 0;
-  for( uint32_t i=0; i<n && !break_flag; ++i ) {
-    uint32_t ii = i + st;
-    float t = 1e-6f * last_dt_us * ii;
-    os <<  FltFmt( t, cvtff_auto, 14, 6 );
-    for( decltype(+last_n_ch) j=0; j< last_n_ch; ++j ) {
-      float v = 0.001f * v_coeffs[j] * (float) ADC_buf[ii*last_n_ch+j] * UVAR('v') / adc_binmax;
-      os << ' ' << v;
-    }
-    os << NL;
-  }
-
-}
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

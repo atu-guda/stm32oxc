@@ -262,11 +262,11 @@ struct StatIntData {
   //
   static const constexpr StructPart structParts[] = {
     { &StatIntChannel::mean,  "mean " },
-    { &StatIntChannel::mean2, "mean2" },
-    { &StatIntChannel::fmin,  "min  " }, // TODO: revive
+    { &StatIntChannel::fmin,  "min  " },
     { &StatIntChannel::fmax,  "max  " },
     // { &StatIntChannel::fsum,  "sum  " },
     // { &StatIntChannel::fsum2, "sum2 " },
+    { &StatIntChannel::mean2, "mean2" },
     { &StatIntChannel::sd,    "sd   " }
   };
 };

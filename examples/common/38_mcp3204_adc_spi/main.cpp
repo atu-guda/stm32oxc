@@ -1,10 +1,8 @@
-#include <cerrno>
-
 #include <algorithm>
 
 #include <oxc_auto.h>
 #include <oxc_floatfun.h>
-#include <oxc_statdata.h>
+#include <oxc_adcdata.h>
 
 using namespace std;
 using namespace SMLRL;
@@ -18,7 +16,7 @@ const char* common_help_string = "App to use MCP3204 ADC SPI device" NL;
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
+CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, "[n] - test ADC"  };
 
 
   const CmdInfo* global_cmds[] = {
@@ -43,7 +41,7 @@ int main(void)
 
   UVAR('t') = 100;
   UVAR('n') = 10;
-  UVAR('v') = 5100; // external power supply
+  UVAR('v') = 5090000; // external power supply = Vref in uV
   UVAR('c') = n_ADC_ch_max;
 
   if( SPI_init_default( SPI_BAUDRATEPRESCALER_64 ) != HAL_OK ) { // 1.xx MBit/s < 2
@@ -84,9 +82,10 @@ int cmd_test0( int argc, const char * const * argv )
 
   uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 1000000 ); // number of series
 
-  StatData sdat( n_ch );
+  xfloat kv = 1e-6f * UVAR('v') / 4095;
 
-  sreal kv = 0.001f * UVAR('v') / 4096;
+  StatIntData sdat( n_ch, kv );
+
 
   std_out << "# n = " << n << " n_ch= " << n_ch << " t_step= " << t_step << NL;
   std_out << "# Coeffs: ";
@@ -113,27 +112,28 @@ int cmd_test0( int argc, const char * const * argv )
     }
 
     float tc = 0.001f * ( tcc - tm00 );
-    sreal v[n_ch];
+    xfloat v[n_ch];
+    int   vi[n_ch];
 
     if( UVAR('l') ) {  leds.set( BIT2 ); }
 
-    uint8_t buf[3]; // first - fake
+    uint8_t buf[4]; // first - fake, last - align
     for( decltype(+n_ch) j=0; j < n_ch; ++j ) {
       spi_d.duplex( mcp3204_cmds1ch[j], buf, 3 );
-      ADC_buf[j] = buf[2] + ( ( buf[1] & 0x0F ) << 8 );
+      vi[j] = ADC_buf[j] = buf[2] + ( ( buf[1] & 0x0F ) << 8 );
       // delay_bad_mcs( 1 );
     }
 
     if( UVAR('l') ) {  leds.reset( BIT2 ); }
 
     for( decltype(n_ch) j=0; j<n_ch; ++j ) {
-      sreal cv = kv * ADC_buf[j] * v_coeffs[j];
+      xfloat cv = kv * ADC_buf[j] * v_coeffs[j];
       v[j] = cv;
     }
-    sdat.add( v );
+    sdat.add( vi );
 
     if( do_out ) {
-      std_out <<  FltFmt( tc, cvtff_auto, 12, 4 );
+      std_out <<  XFmt( tc, cvtff_auto, 12, 4 );
       for( auto vc : v ) {
         std_out  << ' '  <<  vc;
       }
