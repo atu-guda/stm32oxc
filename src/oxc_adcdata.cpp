@@ -19,7 +19,7 @@ using namespace std;
 
 void StatIntChannel::add( int v )
 {
-  long long v2 = v * v;
+  long long v2 = (long long)v * v;
   sum += v;
   sum2 += v2;
 
@@ -88,7 +88,7 @@ void StatIntData::out_part( OutStream &os, const xfloat StatIntChannel::* pptr, 
 
 void StatIntData::out_parts( OutStream &os ) const
 {
-  os << NL << "# n_real= " << n << " n_ch = " << n_ch;
+  os << NL << "# n_real= " << n << " n_ch= " << n_ch << " sz_flt= " << sizeof(xfloat);
   for( auto p : structParts ) {
     out_part( os, p.pptr, p.label );
   }

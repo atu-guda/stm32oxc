@@ -2,6 +2,7 @@
 #include <cstdlib>
 
 #include <oxc_auto.h>
+#include <oxc_adcdata.h>
 
 using namespace std;
 using namespace SMLRL;
@@ -65,8 +66,10 @@ int cmd_test0( int argc, const char * const * argv )
 {
   int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
   uint32_t t_step = UVAR('t');
-  std_out <<  NL "Test0: n= " << n << " t= " << t_step << NL; std_out.flush();
-  uint32_t v = 0;
+  std_out <<  NL "Test0: n= " << n << " t= " << t_step << NL;
+  int v = 0;
+
+  StatIntData sdat( 1, 1e-6f * UVAR('v') / BOARD_ADC_DEFAULT_MAX );
 
   uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
 
@@ -74,30 +77,38 @@ int cmd_test0( int argc, const char * const * argv )
   for( int i=0; i<n && !break_flag; ++i ) {
 
     uint32_t tcc = HAL_GetTick();
-    std_out << "i= " << i << "  tick: " << ( tcc - tm00 );
 
     if( HAL_ADC_Start( &hadc1 ) != HAL_OK )  {
-      std_out << "  !! ADC Start error" NL;
+      std_out << "# error:  !! ADC Start error" NL;
       break;
     }
 
     HAL_ADC_PollForConversion( &hadc1, 10 );
-    // std_out << " ADC1.ISR= " << HexInt( ADC1->ISR );
+    // std_out << "# ADC1.ISR= " << HexInt( ADC1->ISR );
 
     v = 0;
     if( HAL_IS_BIT_SET( HAL_ADC_GetState( &hadc1 ), HAL_ADC_STATE_REG_EOC ) )  {
       v = HAL_ADC_GetValue( &hadc1 );
-      int vv = v * ( UVAR('v') / 100 ) / BOARD_ADC_DEFAULT_MAX; // 100 = 1000/10
-      std_out << " v= " << v <<  " vv= " << FloatMult( vv, 4 );
+      sdat.add( &v );
+
+      // TODO: if ! HAVE_FLOAT
+      //int vv = v * ( UVAR('v') / 100 ) / BOARD_ADC_DEFAULT_MAX; // 100 = 1000/10
+      //std_out << " v= " << v <<  " vv= " << FloatMult( vv, 4 );
+
+      xfloat vv = ( 1e-6f * UVAR('v') * (long long)v ) / BOARD_ADC_DEFAULT_MAX;
+      if( UVAR('x') == 0 ) {
+        std_out << FmtInt( i, 5 ) << ' ' << FmtInt( tcc - tm00, 8 )
+                << ' ' << FmtInt( v, 5 ) << ' ' << XFmt( vv, cvtff_auto, 9, 6 ) << NL;
+      }
     } else {
       std_out << "# warn: REG_EOC not set!" NL;
     }
 
-    std_out << NL;
     delay_ms_until_brk( &tm0, t_step );
   }
 
-  pr( NL );
+  sdat.calc();
+  std_out << sdat << NL;
 
   return 0;
 }
