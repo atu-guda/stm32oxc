@@ -170,6 +170,8 @@ int cmd_test0( int argc, const char * const * argv )
   unsigned n_ch = 2;
   uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 100000000 ); // number of series
 
+  std_out << "# Test: sizeof(sreal)= " << sizeof(sreal) << "  sizeof(xfloat)= " << sizeof(xfloat) << NL;
+
   StatData sdat( n_ch );
 
   break_flag = 0;
