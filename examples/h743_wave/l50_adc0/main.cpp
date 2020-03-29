@@ -43,7 +43,7 @@ int main(void)
   UVAR('n') = 20;
   UVAR('v') = v_adc_ref;
 
-  UVAR('e') =  adc_h7_init_exa_1ch_manual( ADC_CLOCK_ASYNC_DIV4, ADC_SAMPLETIME_387CYCLES_5 );
+  UVAR('e') =  adc_h7_init_exa_1ch_manual( BOARD_ADC_DEFAULT_CLOCK, BOARD_ADC_DEFAULT_SAMPL_LARGE );
 
   BOARD_POST_INIT_BLINK;
 
@@ -77,23 +77,23 @@ int cmd_test0( int argc, const char * const * argv )
     std_out << "i= " << i << "  tick: " << ( tcc - tm00 );
 
     if( HAL_ADC_Start( &hadc1 ) != HAL_OK )  {
-      std_out << "  !! ADC Start error" NL; std_out.flush();
+      std_out << "  !! ADC Start error" NL;
       break;
     }
 
     HAL_ADC_PollForConversion( &hadc1, 10 );
-    std_out << " ADC1.SR= " << HexInt( ADC1->ISR );
+    // std_out << " ADC1.ISR= " << HexInt( ADC1->ISR );
 
     v = 0;
     if( HAL_IS_BIT_SET( HAL_ADC_GetState( &hadc1 ), HAL_ADC_STATE_REG_EOC ) )  {
       v = HAL_ADC_GetValue( &hadc1 );
-      int vv = v * ( UVAR('v') / 100 ) / 0xFFFF; // 100 = 1000/10
+      int vv = v * ( UVAR('v') / 100 ) / BOARD_ADC_DEFAULT_MAX; // 100 = 1000/10
       std_out << " v= " << v <<  " vv= " << FloatMult( vv, 4 );
     } else {
       std_out << "# warn: REG_EOC not set!" NL;
     }
 
-    std_out << NL; std_out.flush();
+    std_out << NL;
     delay_ms_until_brk( &tm0, t_step );
   }
 

@@ -8,8 +8,8 @@ int adc_h7_init_exa_1ch_manual( uint32_t presc, uint32_t sampl_cycl )
   BOARD_ADC_DEFAULT_EN;
 
   hadc1.Instance                      = BOARD_ADC_DEFAULT_DEV;
-  hadc1.Init.ClockPrescaler           = presc; // ADC_CLOCK_ASYNC_DIV4;
-  hadc1.Init.Resolution               = ADC_RESOLUTION_16B;
+  hadc1.Init.ClockPrescaler           = presc;
+  hadc1.Init.Resolution               = BOARD_ADC_DEFAULT_RESOLUTION;
   hadc1.Init.ScanConvMode             = ADC_SCAN_DISABLE;
   hadc1.Init.EOCSelection             = ADC_EOC_SINGLE_CONV;
   hadc1.Init.LowPowerAutoWait         = DISABLE;
