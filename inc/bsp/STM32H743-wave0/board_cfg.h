@@ -152,20 +152,20 @@
 
 // ADC
 #define BOARD_ADC_DEFAULT_DEV           ADC1
-#define BOARD_ADC_DEFAULT_EN            __HAL_RCC_ADC1_CLK_ENABLE();
-#define BOARD_ADC_DEFAULT_DIS           __HAL_RCC_ADC1_CLK_DISABLE();
+#define BOARD_ADC_DEFAULT_EN            __HAL_RCC_ADC12_CLK_ENABLE();
+#define BOARD_ADC_DEFAULT_DIS           __HAL_RCC_ADC12_CLK_DISABLE();
 #define BOARD_ADC_DEFAULT_GPIO0         GpioA
 #define BOARD_ADC_DEFAULT_PIN0          1
-#define BOARD_ADC_DEFAULT_CH0           ADC_CHANNEL_1
+#define BOARD_ADC_DEFAULT_CH0           ADC_CHANNEL_17
 #define BOARD_ADC_DEFAULT_GPIO1         GpioA
 #define BOARD_ADC_DEFAULT_PIN1          2
-#define BOARD_ADC_DEFAULT_CH1           ADC_CHANNEL_2
-#define BOARD_ADC_DEFAULT_GPIO2         GpioA
-#define BOARD_ADC_DEFAULT_PIN2          2
-#define BOARD_ADC_DEFAULT_CH2           ADC_CHANNEL_2
-#define BOARD_ADC_DEFAULT_GPIO3         GpioA
-#define BOARD_ADC_DEFAULT_PIN3          3
-#define BOARD_ADC_DEFAULT_CH3           ADC_CHANNEL_3
+#define BOARD_ADC_DEFAULT_CH1           ADC_CHANNEL_14
+#define BOARD_ADC_DEFAULT_GPIO2         GpioC
+#define BOARD_ADC_DEFAULT_PIN2          4
+#define BOARD_ADC_DEFAULT_CH2           ADC_CHANNEL_4
+#define BOARD_ADC_DEFAULT_GPIO3         GpioC
+#define BOARD_ADC_DEFAULT_PIN3          5
+#define BOARD_ADC_DEFAULT_CH3           ADC_CHANNEL_8
 #define BOARD_ADC_MEM_MAX               (1024*512)
 #define BOARD_ADC_MEM_MAX_FMC           (1024*1024*8)
 #define BOARD_ADC_COEFF                 3298000

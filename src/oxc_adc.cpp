@@ -2,6 +2,8 @@
 #include <oxc_devio.h>
 #include <oxc_outstream.h>
 
+#if defined(STM32F4) || defined (STM32F7)
+
 const uint32_t sampl_times_codes[adc_n_sampl_times] = { // all for 36 MHz ADC clock
   ADC_SAMPLETIME_3CYCLES   , //  15  tick: 2.40 MSa,  0.42 us
   ADC_SAMPLETIME_15CYCLES  , //  27  tick: 1.33 MSa,  0.75 us
@@ -72,6 +74,8 @@ void pr_ADC_state( const ADC_Info &adc )
      << " last_end= " << adc.last_end << " last_error= " << adc.last_error
      <<  NL;
 }
+
+#endif
 
 void ADC_Info::reset_cnt()
 {
