@@ -3,7 +3,7 @@
 
 extern ADC_HandleTypeDef hadc1;
 
-int adc_h7_init_exa_1ch_manual( uint32_t presc, uint32_t sampl_cycl )
+int adc_arch_init_exa_1ch_manual( uint32_t presc, uint32_t sampl_cycl )
 {
   BOARD_ADC_DEFAULT_EN;
 
@@ -49,7 +49,6 @@ int adc_h7_init_exa_1ch_manual( uint32_t presc, uint32_t sampl_cycl )
     return 0;
   }
 
-  // H7 only?
   if( HAL_ADCEx_Calibration_Start( &hadc1, ADC_CALIB_OFFSET, ADC_SINGLE_ENDED ) != HAL_OK ) {
     errno = 3041;
     return 0;

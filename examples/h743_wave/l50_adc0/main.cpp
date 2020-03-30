@@ -17,7 +17,7 @@ const char* common_help_string = "App to test ADC on H7 in one-shot mode one cha
  " var n - default number of measurements" NL
  " var v - reference voltage in uV " NL;
 
-int adc_h7_init_exa_1ch_manual( uint32_t presc, uint32_t sampl_cycl );
+int adc_arch_init_exa_1ch_manual( uint32_t presc, uint32_t sampl_cycl );
 ADC_HandleTypeDef hadc1;
 int v_adc_ref = BOARD_ADC_COEFF; // in uV, measured before test
 
@@ -40,11 +40,11 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 1000;
+  UVAR('t') = 100;
   UVAR('n') = 20;
   UVAR('v') = v_adc_ref;
 
-  UVAR('e') =  adc_h7_init_exa_1ch_manual( BOARD_ADC_DEFAULT_CLOCK, BOARD_ADC_DEFAULT_SAMPL_LARGE );
+  UVAR('e') =  adc_arch_init_exa_1ch_manual( BOARD_ADC_DEFAULT_CLOCK, BOARD_ADC_DEFAULT_SAMPL_LARGE );
 
   BOARD_POST_INIT_BLINK;
 
@@ -68,8 +68,9 @@ int cmd_test0( int argc, const char * const * argv )
   uint32_t t_step = UVAR('t');
   std_out <<  NL "Test0: n= " << n << " t= " << t_step << NL;
   int v = 0;
+  xfloat k_all = 1e-6f * UVAR('v') / BOARD_ADC_DEFAULT_MAX;
 
-  StatIntData sdat( 1, 1e-6f * UVAR('v') / BOARD_ADC_DEFAULT_MAX );
+  StatIntData sdat( 1, k_all );
 
   uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
 
@@ -95,7 +96,7 @@ int cmd_test0( int argc, const char * const * argv )
       //int vv = v * ( UVAR('v') / 100 ) / BOARD_ADC_DEFAULT_MAX; // 100 = 1000/10
       //std_out << " v= " << v <<  " vv= " << FloatMult( vv, 4 );
 
-      xfloat vv = ( 1e-6f * UVAR('v') * (long long)v ) / BOARD_ADC_DEFAULT_MAX;
+      xfloat vv = k_all * v;
       if( UVAR('x') == 0 ) {
         std_out << FmtInt( i, 5 ) << ' ' << FmtInt( tcc - tm00, 8 )
                 << ' ' << FmtInt( v, 5 ) << ' ' << XFmt( vv, cvtff_auto, 9, 6 ) << NL;
@@ -109,6 +110,10 @@ int cmd_test0( int argc, const char * const * argv )
 
   sdat.calc();
   std_out << sdat << NL;
+
+  if( UVAR('d') > 1 ) {
+    dump32( ADC1, 0x200 );
+  }
 
   return 0;
 }
