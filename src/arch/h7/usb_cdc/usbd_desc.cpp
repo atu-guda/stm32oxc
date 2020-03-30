@@ -1,0 +1,1 @@
+../../f4/usb_cdc/usbd_desc.cpp

@@ -25,7 +25,7 @@ $(info MCTYPE= $(MCTYPE)  MCBASE= $(MCBASE)  MCSUFF= $(MCSUFF) MCSUFF_U= $(MCSUF
 # OXCDIR := oxc // from Makefile TODO: from pkgconfig
 OXCINC = $(OXCDIR)/inc
 OXCSRC = $(OXCDIR)/src
-OXCSRCARCH = $(OXCDIR)/src/$(MCSUFF)
+OXCSRCARCH = $(OXCDIR)/src/arch/$(MCSUFF)
 OXCINCARCH = $(OXCDIR)/inc/arch/$(MCSUFF)
 OXCINCBSP  = $(OXCDIR)/inc/bsp/$(BSPNAME)
 OXCBOARDDIR=$(OXCSRC)/bsp/$(BSPNAME)
@@ -212,8 +212,8 @@ ifeq "$(USE_OXC_CONSOLE_USB_CDC)" "y"
   USE_USB_CDC  = y
   USE_OXC_CONSOLE = y
   ALLFLAGS += -DUSE_OXC_CONSOLE_USB_CDC
-  ALLFLAGS += -I$(OXCINC)/usb_cdc_$(MCSUFF) -I$(OXCINC)/usbd_descr_cdc
-  SRCPATHS += $(OXCSRC)/usb_cdc_$(MCSUFF)
+  ALLFLAGS += -I$(OXCINCARCH)/usb_cdc -I$(OXCINC)/usbd_descr_cdc
+  SRCPATHS += $(OXCSRCARCH)/usb_cdc
   SRCS += usbd_conf.cpp
   SRCS += usbd_desc.cpp
   SRCS += oxc_usbcdcio.cpp
