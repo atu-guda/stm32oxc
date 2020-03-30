@@ -204,15 +204,6 @@ int cmd_test0( int argc, const char * const * argv )
   }
   std_out <<  "#  tick: " <<  ( tcc - tm00 )  <<  NL;
 
-  // if( adc.n_series < 20 ) {
-  //   adc_out_to( std_out, adc.n_series, 0 );
-  // } else {
-  //   adc_out_to( std_out, 4, 0 );
-  //   std_out <<  "....." NL;
-  //   adc_out_to( std_out, 4, adc.n_series-4 );
-  // }
-
-  std_out <<  NL;
 
   if( UVAR('d') > 1 ) { pr_ADC_state( adc );  }
 

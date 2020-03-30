@@ -41,7 +41,7 @@ FATFS fs;
 
 ADC_Info adc;
 
-void adc_out_to( OutStream &os, uint32_t n, uint32_t st );
+// void adc_out_to( OutStream &os, uint32_t n, uint32_t st );
 void adc_show_stat( OutStream &os, uint32_t n = 0xFFFFFFFF, uint32_t st = 0 );
 void pr_ADCDMA_state();
 

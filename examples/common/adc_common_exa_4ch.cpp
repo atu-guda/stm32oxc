@@ -17,7 +17,6 @@ using namespace std;
 
 extern ADC_Info adc;
 
-void adc_out_to( OutStream &os, uint32_t n, uint32_t st );
 void adc_show_stat( OutStream &os, uint32_t n = 0xFFFFFFFF, uint32_t st = 0 );
 void pr_ADCDMA_state();
 int cmd_out( int argc, const char * const * argv );
@@ -30,28 +29,6 @@ CmdInfo CMDINFO_OUTSD { "outsd", 'X', cmd_outsd, "filename [N [start]]- output d
 #endif
 
 
-void adc_out_to( OutStream &os, uint32_t n, uint32_t st )
-{
-  uint8_t n_ch = clamp( UVAR('c'), 1, (int)adc.n_ch_max );
-  if( n+st >= adc.n_series+1 ) {
-    n = adc.n_series - st;
-  }
-
-  os << "# n= " << n << " n_ch= " << n_ch << " st= " << st << NL;
-
-  float t = st * adc.t_step_f;
-  for( uint32_t i=0; i< n; ++i ) {
-    uint32_t ii = i + st;
-    t = adc.t_step_f * ii;
-    os << t << ' ';
-    for( int j=0; j< n_ch; ++j ) {
-      float v = 1e-6f * (float) adc.data[ii*n_ch+j] * UVAR('v') / 4096;
-      os << v;
-    }
-    os << NL;
-  }
-
-}
 
 
 void adc_show_stat( OutStream &os, uint32_t n, uint32_t st )
@@ -97,7 +74,6 @@ int cmd_out( int argc, const char * const * argv )
   uint32_t n = arg2long_d( 1, argc, argv, ns, 0, ns+1 ); // number output series
   uint32_t st= arg2long_d( 2, argc, argv,  0, 0, ns-2 );
 
-  adc_out_to( std_out, n, st );
   adc_show_stat( std_out, n, st );
 
   return 0;
@@ -122,7 +98,7 @@ int cmd_outsd( int argc, const char * const * argv )
     return 2;
   }
   OutStream os_f( &file );
-  adc_out_to( os_f, n, st );
+  // adc_out_to( os_f, n, st );
   adc_show_stat( os_f, n, st );
 
   return 0;
