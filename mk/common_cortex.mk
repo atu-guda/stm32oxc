@@ -1,7 +1,13 @@
 # Must be set before:
 # MCTYPE like STM32F446
 # may be
+# BSPNAME
 # MCINCTYPE like STM32F103xB (for HAL define), default: $(MCTYPE)xx
+# BOARDNAME for STM BSP dirs
+
+ifndef MCTYPE
+  $(error MCTYPE not specified)
+endif
 
 ifndef MCINCTYPE
  MCINCTYPE := $(MCTYPE)xx
@@ -11,10 +17,21 @@ endif
 MCBASE := $(shell echo "$(MCTYPE)" | head -c 7  )
 # MCSUFF_U is like "F4"
 MCSUFF_U := $(shell echo -n  '$(MCBASE)'| tail -c 2  )
-# MCSUFF is like "f4"
+# MCSUFF is like "f4" = ARCH
 MCSUFF := $(shell m1='$(MCSUFF_U)'; echo  "$${m1,,*}" )
-$(info PROJ_NAME= $(PROJ_NAME) BOARDNAME= $(BOARDNAME) )
+$(info PROJ_NAME= $(PROJ_NAME) BOARDNAME= $(BOARDNAME) BSPNAME= $(BSPNAME) )
 $(info MCTYPE= $(MCTYPE)  MCBASE= $(MCBASE)  MCSUFF= $(MCSUFF) MCSUFF_U= $(MCSUFF_U) )
+
+# OXCDIR := oxc // from Makefile TODO: from pkgconfig
+OXCINC = $(OXCDIR)/inc
+OXCSRC = $(OXCDIR)/src
+OXCSRCARCH = $(OXCDIR)/src/$(MCSUFF)
+OXCINCARCH = $(OXCDIR)/inc/arch/$(MCSUFF)
+OXCINCBSP  = $(OXCDIR)/inc/bsp/$(BSPNAME)
+OXCBOARDDIR=$(OXCSRC)/bsp/$(BSPNAME)
+STMBOARDDIR=$(STM32_HAL_FW_DIR)/Drivers/BSP/$(BOARDNAME)
+STMCOMPONENTS=$(STM32_HAL_FW_DIR)/Drivers/BSP/Components
+OXCLD = $(OXCDIR)/ld
 
 ifndef STM32_HAL_REPODIR
   ifdef OXC_USE_GLOBAL_REPO
@@ -64,14 +81,6 @@ OBJDUMP:=$(TARGET)-objdump
 LINK=$(CXX)
 
 
-# OXCDIR := oxc // from Makefile TODO: from pkgconfig
-OXCINC = $(OXCDIR)/inc
-OXCSRC = $(OXCDIR)/src
-OXCINCBSP = $(OXCDIR)/inc/bsp/$(BSPNAME)
-OXCBOARDDIR=$(OXCSRC)/bsp/$(BSPNAME)
-STMBOARDDIR=$(STM32_HAL_FW_DIR)/Drivers/BSP/$(BOARDNAME)
-STMCOMPONENTS=$(STM32_HAL_FW_DIR)/Drivers/BSP/Components
-OXCLD = $(OXCDIR)/ld
 
 DEPSDIR=.deps
 OBJDIR=.objs
@@ -153,7 +162,7 @@ endif
 ALLFLAGS += $(ARCHFLAGS)
 ALLFLAGS += $(CFLAGS_ADD) $(ADDINC)
 
-LDFLAGS  = --static # -nostartfiles
+LDFLAGS += --static # -nostartfiles
 LDFLAGS += -g3
 LDFLAGS += -L$(OXCLD)
 LDFLAGS += -T$(LDSCRIPT)
@@ -164,7 +173,7 @@ LDFLAGS += -Wl,--start-group -lc -lgcc -lnosys -Wl,--end-group
 
 ###################################################
 
-SRCPATHS =  $(STM_HAL_SRC) $(OXCBOARDDIR) $(ADDSRC)
+SRCPATHS +=  $(STM_HAL_SRC) $(OXCBOARDDIR) $(ADDSRC)
 
 ALLFLAGS += -I. $(STM_HAL_INC)
 
@@ -375,8 +384,8 @@ endif
 
 
 ifeq "$(USE_OXC)" "y"
-  SRCPATHS += $(OXCSRC)
-  ALLFLAGS += -DUSE_OXC -I$(OXCINC) -I$(OXCINCBSP) -I$(OXCINC)/fake
+  SRCPATHS += $(OXCSRC) $(OXCSRCARCH)
+  ALLFLAGS += -DUSE_OXC -I$(OXCINC) -I$(OXCINCBSP) -I$(OXCINCARCH) -I$(OXCINC)/fake
   SRCS += oxc_base.cpp
   SRCS += oxc_miscfun.cpp
   SRCS += oxc_gpio.cpp
