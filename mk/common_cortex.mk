@@ -212,19 +212,19 @@ ifeq "$(USE_OXC_CONSOLE_USB_CDC)" "y"
   USE_USB_CDC  = y
   USE_OXC_CONSOLE = y
   ALLFLAGS += -DUSE_OXC_CONSOLE_USB_CDC
-  ALLFLAGS += -I$(OXCINCARCH)/usb_cdc -I$(OXCINC)/usbd_descr_cdc
-  SRCPATHS += $(OXCSRCARCH)/usb_cdc
-  SRCS += usbd_conf.cpp
-  SRCS += usbd_desc.cpp
   SRCS += oxc_usbcdcio.cpp
 endif
 
 ifeq "$(USE_USB_CDC)" "y"
   $(info "Used USB_CDC" )
-  USE_USBD_LIB  = y
   ALLFLAGS += -DUSE_USB_CDC
+  ALLFLAGS += -I$(OXCINCARCH)/usb_cdc -I$(OXCINC)/usbd_descr_cdc
+  USE_USBD_LIB  = y
   STM_HAL_INC += -I$(STM32_HAL_FW_DIR)/Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc
   SRCPATHS += $(STM32_HAL_FW_DIR)/Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Src
+  SRCPATHS += $(OXCSRCARCH)/usb_cdc
+  SRCS += usbd_conf.cpp
+  SRCS += usbd_desc.cpp
 endif
 
 ifeq "$(USE_USBD_LIB)" "y"
