@@ -485,9 +485,11 @@ $(PROJ_NAME).bin: $(PROJ_NAME).elf
 
 #	$(OBJCOPY) -O ihex $(PROJ_NAME).elf $(PROJ_NAME).hex
 
-flash: $(PROJ_NAME).bin
-	st-flash --reset write  $(PROJ_NAME).bin 0x8000000
+#flash: $(PROJ_NAME).bin
+#	st-flash --reset write  $(PROJ_NAME).bin 0x8000000
 
+flash: $(PROJ_NAME).elf
+	eblink-stm32-flash $<
 
 
 subclean:

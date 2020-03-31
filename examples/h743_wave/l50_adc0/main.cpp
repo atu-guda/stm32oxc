@@ -44,7 +44,6 @@ int main(void)
   UVAR('n') = 20;
   UVAR('v') = v_adc_ref;
 
-  UVAR('e') =  adc_arch_init_exa_1ch_manual( BOARD_ADC_DEFAULT_CLOCK, BOARD_ADC_DEFAULT_SAMPL_LARGE );
 
   BOARD_POST_INIT_BLINK;
 
@@ -69,6 +68,8 @@ int cmd_test0( int argc, const char * const * argv )
   std_out <<  NL "Test0: n= " << n << " t= " << t_step << NL;
   int v = 0;
   xfloat k_all = 1e-6f * UVAR('v') / BOARD_ADC_DEFAULT_MAX;
+
+  UVAR('e') =  adc_arch_init_exa_1ch_manual( BOARD_ADC_DEFAULT_CLOCK, BOARD_ADC_DEFAULT_SAMPL_LARGE );
 
   StatIntData sdat( 1, k_all );
 
