@@ -289,34 +289,38 @@ void gpio_pin_info( GPIO_TypeDef *gi, uint16_t pin, char *s )
 //
 int cmd_info( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
 {
-  std_out << NL "**** " PROJ_NAME " **** " NL;
+  std_out << NL "# **** " PROJ_NAME " **** " NL;
 
-  std_out << "SYSCLK: " << HAL_RCC_GetSysClockFreq()
+  std_out << "# HalVersion= " << HexInt( HAL_GetHalVersion() )
+          << " REVID= "       << HexInt( HAL_GetREVID() )
+          << " DEVID= "       << HexInt( HAL_GetDEVID() ) << NL;
+
+  std_out << "# SYSCLK: " << HAL_RCC_GetSysClockFreq()
      << " HCLK: "  << HAL_RCC_GetHCLKFreq()
      << " PCLK1: " << HAL_RCC_GetPCLK1Freq()
      << " PCLK2: " << HAL_RCC_GetPCLK2Freq()
      << " HSE_VALUE: " << HSE_VALUE
      << " SystemCoreClock: " << SystemCoreClock << NL;
 
-  std_out << "errno= " << errno << " sigint_count="  << sigint_count << NL
-     << "dbg_val0= "  << dbg_val0 <<  " = "  << HexInt( dbg_val0, true )
+  std_out << "# errno= " << errno << " sigint_count="  << sigint_count << NL
+     << "# dbg_val0= "  << dbg_val0 <<  " = "  << HexInt( dbg_val0, true )
      << " dbg_val1= " << dbg_val1 <<  " = "  << HexInt( dbg_val1, true ) << NL
-     << "dbg_val2= "  << dbg_val2 <<  " = "  << HexInt( dbg_val2, true )
+     << "# dbg_val2= "  << dbg_val2 <<  " = "  << HexInt( dbg_val2, true )
      << " dbg_val3= " << dbg_val3 <<  " = "  << HexInt( dbg_val3, true ) << NL;
 
-  std_out << "_sdata= 0x" << HexInt( (uint32_t)(&_sdata) ) << " _edata= 0x"  << HexInt( (uint32_t)(&_edata)  )
+  std_out << "# _sdata= 0x" << HexInt( (uint32_t)(&_sdata) ) << " _edata= 0x"  << HexInt( (uint32_t)(&_edata)  )
      << " _sbss= 0x" << HexInt( (uint32_t)(&_sbss)  ) << " _ebss=  0x"  << HexInt( (uint32_t)(&_ebss)   )
      << " _end= 0x"  << HexInt( (uint32_t)(&_end)   ) << " _estack= 0x" << HexInt( (uint32_t)(&_estack) );
 
   uint32_t c_msp = __get_MSP(), c_psp = __get_PSP();
   std_out
-    << NL "MSP=   " << HexInt( c_msp, true ) <<  " PSP= " << HexInt( c_psp, true )
+    << NL "# MSP=   " << HexInt( c_msp, true ) <<  " PSP= " << HexInt( c_psp, true )
     << "  __heap_top=   " << HexInt( (uint32_t)__heap_top, true )
     << " MSP-__heap_top = " << ((unsigned)c_msp - (unsigned)(__heap_top) )
     << NL;
 
   uint32_t prio_grouping = HAL_NVIC_GetPriorityGrouping();
-  std_out << "prio_grouping= " << prio_grouping << NL;
+  std_out << "# prio_grouping= " << prio_grouping << NL;
 
   uint32_t prio_preempt, prio_sub;
   struct OutIrqName {
@@ -343,7 +347,7 @@ int cmd_info( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
 
   for( const auto& iqn : irqs ) {
     HAL_NVIC_GetPriority( iqn.IRQn, prio_grouping, &prio_preempt, &prio_sub );
-    std_out << iqn.nm << " (" << iqn.IRQn <<  ")  preempt= " <<  prio_preempt << " sub= " <<  prio_sub << NL;
+    std_out << "# " << iqn.nm << " (" << iqn.IRQn <<  ")  preempt= " <<  prio_preempt << " sub= " <<  prio_sub << NL;
   }
   delay_ms( 50 );
 
@@ -351,7 +355,7 @@ int cmd_info( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
 
   #if defined(USE_FREERTOS) && ( USE_FREERTOS != 0 )
     const char *nm = pcTaskGetName( 0 );
-    std_out <<  "task: \"" <<  nm << "\" tick_count: " << xTaskGetTickCount() << "  prty: " << uxTaskPriorityGet( 0 )
+    std_out <<  "# task: \"" <<  nm << "\" tick_count: " << xTaskGetTickCount() << "  prty: " << uxTaskPriorityGet( 0 )
        << " highStackWaterMark= " << uxTaskGetStackHighWaterMark( 0 ) << NL;
   #endif
   errno = 0;
