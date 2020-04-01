@@ -91,23 +91,80 @@ int main(void)
   return 0;
 }
 
-constexpr uint32_t adc_arch_div2divcode( uint32_t div )
+uint32_t ADC_calc_div( ADC_HandleTypeDef* hadc, uint32_t freq_max, uint32_t *div_val )
 {
-  switch( div ) {
-    case   1: return ADC_CLOCK_ASYNC_DIV1;
-    case   2: return ADC_CLOCK_ASYNC_DIV2;
-    case   4: return ADC_CLOCK_ASYNC_DIV4;
-    case   6: return ADC_CLOCK_ASYNC_DIV6;
-    case   8: return ADC_CLOCK_ASYNC_DIV8;
-    case  10: return ADC_CLOCK_ASYNC_DIV10;
-    case  12: return ADC_CLOCK_ASYNC_DIV12;
-    case  16: return ADC_CLOCK_ASYNC_DIV16;
-    case  32: return ADC_CLOCK_ASYNC_DIV32;
-    case  64: return ADC_CLOCK_ASYNC_DIV64;
-    case 128: return ADC_CLOCK_ASYNC_DIV128;
-    case 256: return ADC_CLOCK_ASYNC_DIV256;
-    default:  return 0xFFFFFFFF; // ???
+  if( !hadc ) {
+    return 0xFFFFFFFF;
   }
+  // TODO: BUG: what about sync mode?
+
+#if defined(ADC_VER_V5_3)
+  bool auxmul = true;
+#else /* not ADC_VER_V5_3 */
+  bool auxmul = ( HAL_GetREVID() > REV_ID_Y );
+#endif /* end not ADC_VER_V5_3 */
+
+
+  uint32_t freq_in = ADC_getFreqIn( hadc );
+  if( auxmul ) {
+    freq_in /= 2;
+  }
+  uint32_t dm = ( freq_in + freq_max - 1 ) / freq_max;
+  uint32_t div = 0;
+  uint32_t bits = 0;
+
+
+  std_out << "# *** aux_mul= " << (int)(auxmul) << " dm= " << dm << NL;
+
+  if( dm <= 1 ) {
+    bits = ADC_CLOCK_ASYNC_DIV1;
+    div = 1;
+  } else if( dm <= 2 ) {
+    bits = ADC_CLOCK_ASYNC_DIV2;
+    div = 2;
+  } else if( dm <= 4 ) {
+    bits = ADC_CLOCK_ASYNC_DIV4;
+    div = 4;
+  } else if( dm <= 6 ) {
+    bits = ADC_CLOCK_ASYNC_DIV6;
+    div = 6;
+  } else if( dm <= 8 ) {
+    bits = ADC_CLOCK_ASYNC_DIV8;
+    div = 8;
+  } else if( dm <= 10 ) {
+    bits = ADC_CLOCK_ASYNC_DIV10;
+    div = 10;
+  } else if( dm <= 12 ) {
+    bits = ADC_CLOCK_ASYNC_DIV12;
+    div = 12;
+  } else if( dm <= 16 ) {
+    bits = ADC_CLOCK_ASYNC_DIV16;
+    div = 16;
+  } else if( dm <= 32 ) {
+    bits = ADC_CLOCK_ASYNC_DIV32;
+    div = 32;
+  } else if( dm <= 64 ) {
+    bits = ADC_CLOCK_ASYNC_DIV64;
+    div = 64;
+  } else if ( dm <= 128 ) {
+    bits = ADC_CLOCK_ASYNC_DIV128;
+    div = 128;
+  } else if( dm <= 256 ) {
+    bits = ADC_CLOCK_ASYNC_DIV256;
+    div = 256;
+  } else {
+    div = 0;
+    bits = 0xFFFFFFFF;
+  }
+
+  if( auxmul ) {
+    div *= 2;
+  }
+
+  if( div_val ) {
+    *div_val = div;
+  }
+  return bits;
 }
 
 
@@ -119,24 +176,30 @@ int cmd_test0( int argc, const char * const * argv )
   const xfloat k_all = 1e-6f * UVAR('v') / BOARD_ADC_DEFAULT_MAX;
 
   // TODO: to clock config file
-  const uint32_t adc_arch_clock_in = ADC_getFreqIn();
+  const uint32_t adc_arch_clock_in = ADC_getFreqIn( &hadc1 );
   const uint32_t adc_freq_max = 36000000;
-  const uint32_t adc_arch_clock_div = 4;
-  const uint32_t adc_arch_clock    = adc_arch_clock_in / adc_arch_clock_div;
-  constexpr uint32_t adc_arch_clock_divcode = adc_arch_div2divcode( adc_arch_clock_div );
-  // ???? * 2 for Rev 'V' devices???
-  const uint32_t adc_arch_clock_ns = (unsigned)( 1 + 1000000000LL / adc_arch_clock );
+  uint32_t s_div = 0;
+  uint32_t div_bits = ADC_calc_div( &hadc1, adc_freq_max, &s_div );
 
+  std_out <<  NL "# Test0: n= " << n << " t= " << t_step << " freq_in= " << adc_arch_clock_in
+    << " freq_max= " << adc_freq_max << NL;
 
+  if( s_div == 0  ||  div_bits == 0xFFFFFFFF ) {
+    std_out << "# error: fail to calc divisor" NL;
+    return 7;
+  }
+  const uint32_t adc_freq = adc_arch_clock_in / s_div;
+  const uint32_t adc_arch_clock_ns = (unsigned)( 1 + 1000000000LL / adc_freq );
+  std_out << "# div= " << s_div << " bits: " << HexInt( div_bits ) << " freq: " << adc_freq
+          << " tau: " << adc_arch_clock_ns << NL;
 
   unsigned stime_idx = ( (unsigned)UVAR('s') < adc_arch_sampletimes_n ) ? UVAR('s') : (adc_arch_sampletimes_n - 1);
   unsigned stime_ns = (unsigned)( ( 9 + adc_arch_clock_ns * adc_arch_sampletimes[stime_idx].stime10  ) / 10 );
 
-  std_out <<  NL "Test0: n= " << n << " t= " << t_step
-          << " stime_idx= " << stime_idx << " 10ticks= " << adc_arch_sampletimes[stime_idx].stime10
+  std_out << " stime_idx= " << stime_idx << " 10ticks= " << adc_arch_sampletimes[stime_idx].stime10
           << " stime_ns= "  << stime_ns  << " code= " <<  adc_arch_sampletimes[stime_idx].code << NL;
 
-  if( ! adc_arch_init_exa_1ch_manual( adc_arch_clock_divcode, adc_arch_sampletimes[stime_idx].code ) ) {
+  if( ! adc_arch_init_exa_1ch_manual( div_bits, adc_arch_sampletimes[stime_idx].code ) ) {
     std_out << "# error: fail to init ADC: errno= " << errno << NL;
   }
 
@@ -217,7 +280,7 @@ uint32_t ADC_calcfreq( ADC_HandleTypeDef* hadc, ADC_freq_info *fi )
   fi->devbits = 0;
 
   uint32_t cclock = LL_ADC_GetCommonClock( __LL_ADC_COMMON_INSTANCE( hadc->Instance ) );
-  dbg_val1 = cclock;
+  dbg_val1 = cclock; // TODO remove
 
   if( ADC_IS_SYNCHRONOUS_CLOCK_MODE( hadc ) ) {
     fi->devbits |= 1; // sync mode
