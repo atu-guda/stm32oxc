@@ -19,6 +19,15 @@ const char* common_help_string = "App to test ADC on H7 in one-shot mode one cha
  " var x - supress normal output" NL
  " var v - reference voltage in uV " NL;
 
+struct ADC_freq_info {
+  uint32_t freq_in; //* input frequency
+  uint32_t freq;    //* working freq
+  uint32_t div;     //* total divider
+  uint32_t div1;    //* base divider
+  uint32_t div2;    //* second divider
+  uint32_t devbits; //* misc bits about device: 1: sync mode, 2: ADC_VER_V5_3, 4: REV_ID_Y
+};
+
 int adc_arch_init_exa_1ch_manual( uint32_t presc, uint32_t sampl_cycl );
 ADC_HandleTypeDef hadc1;
 int v_adc_ref = BOARD_ADC_COEFF; // in uV, measured before test
@@ -28,6 +37,8 @@ struct AdcSampleTimeInfo {
   uint32_t code;
   uint32_t stime10; //* in 10 * ADC_Cycles
 };
+uint32_t ADC_calcfreq( ADC_HandleTypeDef* hadc, ADC_freq_info *fi );
+uint32_t ADC_getFreqIn( ADC_HandleTypeDef* hadc );
 
 // TODO: to arch dependent header
 const AdcSampleTimeInfo adc_arch_sampletimes[] = {
@@ -108,14 +119,15 @@ int cmd_test0( int argc, const char * const * argv )
   const xfloat k_all = 1e-6f * UVAR('v') / BOARD_ADC_DEFAULT_MAX;
 
   // TODO: to clock config file
-  const uint32_t adc_arch_clock_in = 96000000;
+  const uint32_t adc_arch_clock_in = ADC_getFreqIn();
+  const uint32_t adc_freq_max = 36000000;
   const uint32_t adc_arch_clock_div = 4;
   const uint32_t adc_arch_clock    = adc_arch_clock_in / adc_arch_clock_div;
   constexpr uint32_t adc_arch_clock_divcode = adc_arch_div2divcode( adc_arch_clock_div );
   // ???? * 2 for Rev 'V' devices???
   const uint32_t adc_arch_clock_ns = (unsigned)( 1 + 1000000000LL / adc_arch_clock );
 
-  // std_out << "## div= " << HexInt(adc_arch_clock_divcode) << " div4= " << HexInt(ADC_CLOCK_ASYNC_DIV4) << NL;
+
 
   unsigned stime_idx = ( (unsigned)UVAR('s') < adc_arch_sampletimes_n ) ? UVAR('s') : (adc_arch_sampletimes_n - 1);
   unsigned stime_ns = (unsigned)( ( 9 + adc_arch_clock_ns * adc_arch_sampletimes[stime_idx].stime10  ) / 10 );
@@ -127,6 +139,13 @@ int cmd_test0( int argc, const char * const * argv )
   if( ! adc_arch_init_exa_1ch_manual( adc_arch_clock_divcode, adc_arch_sampletimes[stime_idx].code ) ) {
     std_out << "# error: fail to init ADC: errno= " << errno << NL;
   }
+
+  // or such
+  ADC_freq_info fi;
+  ADC_calcfreq( &hadc1, &fi );
+  std_out << "# ADC: freq_in: " << fi.freq_in << " freq: " << fi.freq
+          << " div: " << fi.div << " div1: " << fi.div1 << " div2: " << fi.div2
+          << " bits: " << HexInt( fi.devbits ) << NL;
 
   StatIntData sdat( 1, k_all );
 
@@ -166,7 +185,8 @@ int cmd_test0( int argc, const char * const * argv )
     dump32( ADC1, 0x200 );
   }
 
-  HAL_ADC_Stop( &hadc1 );
+
+  // HAL_ADC_Stop( &hadc1 );
 
   return 0;
 }
@@ -174,6 +194,100 @@ int cmd_test0( int argc, const char * const * argv )
 // TODO: if ! HAVE_FLOAT
 //int vv = v * ( UVAR('v') / 100 ) / BOARD_ADC_DEFAULT_MAX; // 100 = 1000/10
 //std_out << " v= " << v <<  " vv= " << FloatMult( vv, 4 );
+
+uint32_t ADC_getFreqIn( ADC_HandleTypeDef* hadc )
+{
+  if( ! hadc ) {
+    return 0;
+  }
+  if( ADC_IS_SYNCHRONOUS_CLOCK_MODE( hadc ) ) {
+    return HAL_RCC_GetHCLKFreq();
+  } // else  async mode
+  return HAL_RCCEx_GetPeriphCLKFreq( RCC_PERIPHCLK_ADC );
+}
+
+uint32_t ADC_calcfreq( ADC_HandleTypeDef* hadc, ADC_freq_info *fi )
+{
+  if( ! hadc || ! fi ) {
+    return 0;
+  }
+
+  uint32_t freq;
+  fi->div = fi->div1 = fi->div2 = 1;
+  fi->devbits = 0;
+
+  uint32_t cclock = LL_ADC_GetCommonClock( __LL_ADC_COMMON_INSTANCE( hadc->Instance ) );
+  dbg_val1 = cclock;
+
+  if( ADC_IS_SYNCHRONOUS_CLOCK_MODE( hadc ) ) {
+    fi->devbits |= 1; // sync mode
+    fi->freq_in = freq = HAL_RCC_GetHCLKFreq();
+    switch( cclock ) {
+      case ADC_CLOCK_SYNC_PCLK_DIV1:
+      case ADC_CLOCK_SYNC_PCLK_DIV2:
+        freq /= ( hadc->Init.ClockPrescaler >> ADC_CCR_CKMODE_Pos );
+        fi->div1 = ( hadc->Init.ClockPrescaler >> ADC_CCR_CKMODE_Pos );
+        break;
+      case ADC_CLOCK_SYNC_PCLK_DIV4:
+        freq /= 4UL;
+        fi->div1 = 4;
+        break;
+      default:
+        break;
+    }
+  } else { // async mode
+    fi->freq_in = freq = HAL_RCCEx_GetPeriphCLKFreq( RCC_PERIPHCLK_ADC );
+    fi->devbits |= 0x0100; // debug: async
+    switch( cclock ) {
+      case ADC_CLOCK_ASYNC_DIV2:
+      case ADC_CLOCK_ASYNC_DIV4:
+      case ADC_CLOCK_ASYNC_DIV6:
+      case ADC_CLOCK_ASYNC_DIV8:
+      case ADC_CLOCK_ASYNC_DIV10:
+      case ADC_CLOCK_ASYNC_DIV12:
+        fi->div1 = ( hadc->Init.ClockPrescaler >> ADC_CCR_PRESC_Pos ) << 1;
+        fi->devbits |= 0x8000; // debug : 2-12
+        break;
+      case ADC_CLOCK_ASYNC_DIV16:
+        fi->div1 = 16;
+        break;
+      case ADC_CLOCK_ASYNC_DIV32:
+        fi->div1 = 32;
+        break;
+      case ADC_CLOCK_ASYNC_DIV64:
+        fi->div1 = 64;
+        break;
+      case ADC_CLOCK_ASYNC_DIV128:
+        fi->div1 = 128;
+        break;
+      case ADC_CLOCK_ASYNC_DIV256:
+        fi->div1 = 256;
+        break;
+      default:
+        fi->devbits |= 0x4000; // debug: unknown
+        break;
+    }
+    freq /= fi->div1;
+  }
+
+#if defined(ADC_VER_V5_3)
+  fi->devbits |= 2;
+  freq /= 2U;
+  fi->div2 *= 2;
+
+#else /* not ADC_VER_V5_3 */
+  if( HAL_GetREVID() <= REV_ID_Y ) {  /* STM32H7 silicon Rev.Y */
+    fi->devbits |= 4;
+  } else { /* STM32H7 silicon Rev.V */
+    freq /= 2U; /* divider by 2 for Rev.V */
+    fi->div2 *= 2;
+  }
+#endif /* end not ADC_VER_V5_3 */
+
+  fi->div = fi->div1 * fi->div2;
+  fi->freq = freq;
+  return freq;
+}
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

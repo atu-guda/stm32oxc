@@ -35,29 +35,40 @@
 #define LED_BSP_RX        LED_BSP_GREEN
 #define LED_BSP_ERR       LED_BSP_BLUE
 
+// A = TOP
 #define BOARD_BTN0_EXIST   1
 #define BOARD_BTN0_GPIOX   G
 #define BOARD_BTN0_N       2
 #define BOARD_BTN0_ACTIVE_DOWN 1
 #define BOARD_BTN0_IRQNAME EXTI2
 
+// B = RIGHT
 #define BOARD_BTN1_EXIST   1
 #define BOARD_BTN1_GPIOX   E
 #define BOARD_BTN1_N       3
 #define BOARD_BTN1_ACTIVE_DOWN 1
 #define BOARD_BTN1_IRQNAME   EXTI3
 
+// C = LEFT
 #define BOARD_BTN2_EXIST   1
 #define BOARD_BTN2_GPIOX   D
 #define BOARD_BTN2_N       4
 #define BOARD_BTN2_ACTIVE_DOWN 1
 #define BOARD_BTN2_IRQNAME   EXTI4
 
+// D = BOTTOM
 #define BOARD_BTN3_EXIST   1
 #define BOARD_BTN3_GPIOX   D
 #define BOARD_BTN3_N       5
 #define BOARD_BTN3_ACTIVE_DOWN 1
 #define BOARD_BTN3_IRQNAME   EXTI5
+
+// CTR = Center
+#define BOARD_BTN4_EXIST   1
+#define BOARD_BTN4_GPIOX   I11
+#define BOARD_BTN4_N       5
+#define BOARD_BTN4_ACTIVE_DOWN 1
+#define BOARD_BTN4_IRQNAME   EXTI15_10
 
 #define TIM_EXA        TIM8
 #define TIM_EXA_STR    "TIM8"
@@ -161,11 +172,11 @@
 #define BOARD_ADC_DEFAULT_PIN1          2
 #define BOARD_ADC_DEFAULT_CH1           ADC_CHANNEL_14
 #define BOARD_ADC_DEFAULT_GPIO2         GpioC
-#define BOARD_ADC_DEFAULT_PIN2          4
-#define BOARD_ADC_DEFAULT_CH2           ADC_CHANNEL_4
+#define BOARD_ADC_DEFAULT_PIN2          0
+#define BOARD_ADC_DEFAULT_CH2           ADC_CHANNEL_10
 #define BOARD_ADC_DEFAULT_GPIO3         GpioC
-#define BOARD_ADC_DEFAULT_PIN3          5
-#define BOARD_ADC_DEFAULT_CH3           ADC_CHANNEL_8
+#define BOARD_ADC_DEFAULT_PIN3          1
+#define BOARD_ADC_DEFAULT_CH3           ADC_CHANNEL_11
 #define BOARD_ADC_MEM_MAX               (1024*512)
 #define BOARD_ADC_MEM_MAX_FMC           (1024*1024*8)
 #define BOARD_ADC_COEFF                 3298000
