@@ -66,7 +66,7 @@ int SystemClockCfg(void)
       | RCC_PERIPHCLK_I2C1   | RCC_PERIPHCLK_I2C4 | RCC_PERIPHCLK_USB
       | RCC_PERIPHCLK_FMC,
     .PLL2.PLL2M            = 4,
-    .PLL2.PLL2N            = 96,
+    .PLL2.PLL2N            = 100,
     .PLL2.PLL2P            = 2,
     .PLL2.PLL2Q            = 4,
     .PLL2.PLL2R            = 2,
@@ -83,7 +83,7 @@ int SystemClockCfg(void)
     .PLL3.PLL3FRACN        = 0,
     .FmcClockSelection     = RCC_FMCCLKSOURCE_D1HCLK,
     .SdmmcClockSelection   = RCC_SDMMCCLKSOURCE_PLL,
-    .Spi123ClockSelection  = RCC_SPI123CLKSOURCE_PLL2,
+    .Spi123ClockSelection  = RCC_SPI123CLKSOURCE_PLL3,
     .Usart16ClockSelection = RCC_USART16CLKSOURCE_D2PCLK2,
     .I2c123ClockSelection  = RCC_I2C123CLKSOURCE_D2PCLK1,
     .UsbClockSelection     = RCC_USBCLKSOURCE_PLL3,

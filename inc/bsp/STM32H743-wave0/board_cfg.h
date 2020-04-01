@@ -189,6 +189,7 @@
 #define BOARD_ADC_DEFAULT_RESOLUTION    ADC_RESOLUTION_16B
 #define BOARD_ADC_DEFAULT_BITS          16
 #define BOARD_ADC_DEFAULT_MAX           65535
+#define BOARD_ADC_FREQ_MAX              50000000
 
 void* malloc_axi( size_t sz ); // only all AXI memory for now
 void  free_axi( void* ptr );

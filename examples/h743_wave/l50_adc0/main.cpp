@@ -13,7 +13,7 @@ BOARD_DEFINE_LEDS;
 BOARD_CONSOLE_DEFINES;
 
 const char* common_help_string = "App to test ADC on H7 in one-shot mode one channel" NL
- " var t - delay time in ms" NL
+ " var t - delay time in us" NL
  " var n - default number of measurements" NL
  " var s - sample time index" NL
  " var x - supress normal output" NL
@@ -72,8 +72,9 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 100;
+  UVAR('t') = 100000;
   UVAR('n') = 20;
+  UVAR('c') = 1; // number of channels - 1 for this program, but need for next test
   UVAR('s') = adc_arch_sampletimes_n;
   UVAR('v') = v_adc_ref;
 
@@ -167,36 +168,54 @@ uint32_t ADC_calc_div( ADC_HandleTypeDef* hadc, uint32_t freq_max, uint32_t *div
   return bits;
 }
 
+uint32_t ADC_conv_time_tick( uint32_t s_idx, uint32_t n_ch, uint32_t n_bits )
+{
+  if( s_idx >= adc_arch_sampletimes_n || n_ch < 1 || n_ch > 20 || n_bits > 16 || n_bits < 8 ) {
+    return 0xFFFFFFFF;
+  }
+  return n_ch * ( ( 9 + ( adc_arch_sampletimes[s_idx].stime10 + 5 * n_bits ) ) / 10 );
+}
+
 
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
   const int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
-  const uint32_t t_step = UVAR('t');
+  uint32_t n_ch = UVAR('c'); // 1, but cat set more for test
+  const uint32_t t_step = UVAR('t') / 1000;
+  const uint32_t t_step_us = UVAR('t');
   const xfloat k_all = 1e-6f * UVAR('v') / BOARD_ADC_DEFAULT_MAX;
 
   // TODO: to clock config file
   const uint32_t adc_arch_clock_in = ADC_getFreqIn( &hadc1 );
-  const uint32_t adc_freq_max = 36000000;
   uint32_t s_div = 0;
-  uint32_t div_bits = ADC_calc_div( &hadc1, adc_freq_max, &s_div );
+  uint32_t div_bits = ADC_calc_div( &hadc1, BOARD_ADC_FREQ_MAX, &s_div );
 
-  std_out <<  NL "# Test0: n= " << n << " t= " << t_step << " freq_in= " << adc_arch_clock_in
-    << " freq_max= " << adc_freq_max << NL;
+  std_out <<  NL "# Test0: n= " << n << " n_ch= " << n_ch
+    << " t= " << t_step << " ms, freq_in= " << adc_arch_clock_in
+    << " freq_max= " << BOARD_ADC_FREQ_MAX << NL;
 
   if( s_div == 0  ||  div_bits == 0xFFFFFFFF ) {
     std_out << "# error: fail to calc divisor" NL;
     return 7;
   }
   const uint32_t adc_freq = adc_arch_clock_in / s_div;
-  const uint32_t adc_arch_clock_ns = (unsigned)( 1 + 1000000000LL / adc_freq );
+  const uint32_t adc_arch_clock_ns = (unsigned)( ( 1000000000LL + adc_freq - 1 ) / adc_freq );
   std_out << "# div= " << s_div << " bits: " << HexInt( div_bits ) << " freq: " << adc_freq
           << " tau: " << adc_arch_clock_ns << NL;
 
-  unsigned stime_idx = ( (unsigned)UVAR('s') < adc_arch_sampletimes_n ) ? UVAR('s') : (adc_arch_sampletimes_n - 1);
-  unsigned stime_ns = (unsigned)( ( 9 + adc_arch_clock_ns * adc_arch_sampletimes[stime_idx].stime10  ) / 10 );
+  uint32_t unsigned stime_idx = ( (uint32_t)UVAR('s') < adc_arch_sampletimes_n ) ? UVAR('s') : (adc_arch_sampletimes_n - 1);
+  uint32_t stime_ns =  adc_arch_clock_ns * ADC_conv_time_tick( stime_idx, n_ch, BOARD_ADC_DEFAULT_BITS );
+  if( stime_ns == 0xFFFFFFFF ) {
+    std_out << "# error: fail to calculate conversion time" NL;
+    return 8;
+  }
 
-  std_out << " stime_idx= " << stime_idx << " 10ticks= " << adc_arch_sampletimes[stime_idx].stime10
+  if( t_step_us * 1000 <= stime_ns ) {
+    std_out << "# warn: time step (" << t_step_us * 1000 << ") ns < conversion time (" << stime_ns << ") ns" NL;
+  }
+
+  std_out << "# stime_idx= " << stime_idx << " 10ticks= " << adc_arch_sampletimes[stime_idx].stime10
           << " stime_ns= "  << stime_ns  << " code= " <<  adc_arch_sampletimes[stime_idx].code << NL;
 
   if( ! adc_arch_init_exa_1ch_manual( div_bits, adc_arch_sampletimes[stime_idx].code ) ) {
