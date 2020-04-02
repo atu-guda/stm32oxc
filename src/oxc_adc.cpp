@@ -77,9 +77,33 @@ void pr_ADC_state( const ADC_Info &adc )
 
 #endif
 
+ADC_Info::ADC_Info( ADC_TypeDef* _hadc, const AdcChannelInfo *ch_i )
+{
+  hadc.Instance  = _hadc;
+  set_channels( ch_i );
+
+  reset_cnt();
+}
+
+uint32_t ADC_Info::set_channels( const AdcChannelInfo *ch_i )
+{
+  n_ch_max = 0;
+  ch_info = ch_i;
+  if( ! ch_i ) {
+    return 0;
+  }
+
+  for( ; ; ++n_ch_max ) {
+    if( ch_i[n_ch_max].pin_num == 0 ) {
+      break;
+    }
+  }
+  return n_ch_max;
+}
+
 void ADC_Info::reset_cnt()
 {
-  n_ch_max = 4;
+  // n_ch_max = 4;
   end_dma = 0;
   dma_error = 0;
   n_series = 0;
@@ -87,6 +111,25 @@ void ADC_Info::reset_cnt()
   n_good = 0;
   n_bad = 0;
   last_SR = good_SR = bad_SR = last_end = last_error = 0;
+}
+
+uint32_t ADC_Info::init_gpio_channels()
+{
+  if( !ch_info || n_ch_max < 1 ) {
+    return 0;
+  }
+
+  unsigned n = 0;
+  for( int i=0; i<n_ch_max; ++i ) {
+    if( ch_info[i].pin_num == 0 ) {
+      break;
+    }
+    ch_info[i].gpio.enableClk();
+    ch_info[i].gpio.cfgAnalog( ch_info[i].pin_num );
+    ++n;
+  }
+  return n;
+
 }
 
 // vim: path=.,/usr/share/stm32cube/inc

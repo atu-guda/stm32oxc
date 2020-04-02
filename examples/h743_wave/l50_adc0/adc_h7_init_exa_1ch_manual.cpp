@@ -1,80 +1,55 @@
 #include <errno.h>
-#include <oxc_gpio.h>
 
-extern ADC_HandleTypeDef hadc1;
+#include <oxc_adc.h>
 
-int adc_arch_init_exa_1ch_manual( uint32_t presc, uint32_t sampl_cycl )
+int adc_arch_init_exa_1ch_manual( ADC_Info &adc,  uint32_t presc, uint32_t sampl_cycl )
 {
   BOARD_ADC_DEFAULT_EN;
 
-  hadc1.Instance                      = BOARD_ADC_DEFAULT_DEV;
-  hadc1.Init.ClockPrescaler           = presc;
-  hadc1.Init.Resolution               = BOARD_ADC_DEFAULT_RESOLUTION;
-  hadc1.Init.ScanConvMode             = ADC_SCAN_DISABLE;
-  hadc1.Init.EOCSelection             = ADC_EOC_SINGLE_CONV;
-  hadc1.Init.LowPowerAutoWait         = DISABLE;
-  hadc1.Init.ContinuousConvMode       = DISABLE;
-  hadc1.Init.NbrOfConversion          = 1;
-  hadc1.Init.DiscontinuousConvMode    = DISABLE;
-  hadc1.Init.ExternalTrigConv         = ADC_SOFTWARE_START;
-  hadc1.Init.ExternalTrigConvEdge     = ADC_EXTERNALTRIGCONVEDGE_NONE;
-  hadc1.Init.ConversionDataManagement = ADC_CONVERSIONDATA_DR;
-  hadc1.Init.Overrun                  = ADC_OVR_DATA_OVERWRITTEN;
-  hadc1.Init.LeftBitShift             = ADC_LEFTBITSHIFT_NONE;
-  hadc1.Init.OversamplingMode         = DISABLE;
-
-  // hadc1.Init.DataAlign             = ADC_DATAALIGN_RIGHT;
-  if( HAL_ADC_Init( &hadc1 ) != HAL_OK ) {
+  if( adc.hadc.Instance == 0 ) { // must be set beforehand
     errno = 3000;
+    return 0;
+  }
+
+  adc.hadc.Init.ClockPrescaler           = presc;
+  // adc.hadc.Init.Resolution               = BOARD_ADC_DEFAULT_RESOLUTION; // before
+  adc.hadc.Init.ScanConvMode             = ADC_SCAN_DISABLE;
+  adc.hadc.Init.EOCSelection             = ADC_EOC_SINGLE_CONV;
+  adc.hadc.Init.LowPowerAutoWait         = DISABLE;
+  adc.hadc.Init.ContinuousConvMode       = DISABLE;
+  adc.hadc.Init.NbrOfConversion          = 1;
+  adc.hadc.Init.DiscontinuousConvMode    = DISABLE;
+  adc.hadc.Init.ExternalTrigConv         = ADC_SOFTWARE_START;
+  adc.hadc.Init.ExternalTrigConvEdge     = ADC_EXTERNALTRIGCONVEDGE_NONE;
+  adc.hadc.Init.ConversionDataManagement = ADC_CONVERSIONDATA_DR;
+  adc.hadc.Init.Overrun                  = ADC_OVR_DATA_OVERWRITTEN;
+  adc.hadc.Init.LeftBitShift             = ADC_LEFTBITSHIFT_NONE;
+  adc.hadc.Init.OversamplingMode         = DISABLE;
+
+  if( HAL_ADC_Init( &adc.hadc ) != HAL_OK ) {
+    errno = 3001;
     return 0;
   }
 
   //* no ADC multi-mode
   ADC_MultiModeTypeDef multimode;
   multimode.Mode = ADC_MODE_INDEPENDENT;
-  if( HAL_ADCEx_MultiModeConfigChannel( &hadc1, &multimode ) != HAL_OK ) {
-    errno = 3040;
+  if( HAL_ADCEx_MultiModeConfigChannel( &adc.hadc, &multimode ) != HAL_OK ) {
+    errno = 3002;
     return 0;
   }
 
-  ADC_ChannelConfTypeDef sConfig;
-  sConfig.Channel      = BOARD_ADC_DEFAULT_CH0;
-  sConfig.Rank         = ADC_REGULAR_RANK_1;
-  sConfig.SamplingTime = sampl_cycl;
-  sConfig.SingleDiff   = ADC_SINGLE_ENDED;
-  sConfig.OffsetNumber = ADC_OFFSET_NONE;
-  sConfig.Offset       = 0;
-  if( HAL_ADC_ConfigChannel( &hadc1, &sConfig ) != HAL_OK )  {
-    errno = 3001;
+  if( ! adc.init_adc_channels( sampl_cycl ) )  {
+    errno = 3003;
     return 0;
   }
 
-  if( HAL_ADCEx_Calibration_Start( &hadc1, ADC_CALIB_OFFSET, ADC_SINGLE_ENDED ) != HAL_OK ) {
-    errno = 3041;
+  if( HAL_ADCEx_Calibration_Start( &adc.hadc, ADC_CALIB_OFFSET, ADC_SINGLE_ENDED ) != HAL_OK ) {
+    errno = 3010;
     return 0;
   }
 
   return 1;
 }
 
-void HAL_ADC_MspInit( ADC_HandleTypeDef* adcHandle )
-{
-  if( adcHandle->Instance != BOARD_ADC_DEFAULT_DEV ) {
-    return;
-  }
-
-  BOARD_ADC_DEFAULT_EN;
-
-  BOARD_ADC_DEFAULT_GPIO0.enableClk();
-  BOARD_ADC_DEFAULT_GPIO0.cfgAnalog( BOARD_ADC_DEFAULT_PIN0 );
-}
-
-void HAL_ADC_MspDeInit( ADC_HandleTypeDef* adcHandle )
-{
-  if( adcHandle->Instance != BOARD_ADC_DEFAULT_DEV ) {
-    return;
-  }
-
-  BOARD_ADC_DEFAULT_DIS;
-}
 

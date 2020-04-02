@@ -19,10 +19,15 @@ const char* common_help_string = "App to test ADC on H7 in one-shot mode one cha
  " var x - supress normal output" NL
  " var v - reference voltage in uV " NL;
 
-int adc_arch_init_exa_1ch_manual( uint32_t presc, uint32_t sampl_cycl );
-ADC_HandleTypeDef hadc1;
-int v_adc_ref = BOARD_ADC_COEFF; // in uV, measured before test
+const AdcChannelInfo adc_channels[] = {
+  { BOARD_ADC_DEFAULT_CH0, GpioA, 1 },
+  {                     0, GpioA, 0 } // END
+};
 
+ADC_Info adc( BOARD_ADC_DEFAULT_DEV, adc_channels );
+
+int adc_arch_init_exa_1ch_manual( ADC_Info &adc, uint32_t presc, uint32_t sampl_cycl );
+int v_adc_ref = BOARD_ADC_COEFF; // in uV, measured before test
 
 
 // --- local commands;
@@ -45,14 +50,13 @@ int main(void)
 
   UVAR('t') = 100000;
   UVAR('n') = 20;
-  UVAR('c') = 1; // number of channels - 1 for this program, but need for next test
-  UVAR('s') = adc_arch_sampletimes_n;
+  UVAR('c') = adc.n_ch_max; // number of channels - 1 for this program, but need for next test
+  UVAR('s') = adc_arch_sampletimes_n - 1;
   UVAR('v') = v_adc_ref;
-
 
   BOARD_POST_INIT_BLINK;
 
-  pr( NL "##################### " PROJ_NAME NL );
+  std_out << NL "##################### " PROJ_NAME NL;
 
   srl.re_ps();
 
@@ -74,9 +78,9 @@ int cmd_test0( int argc, const char * const * argv )
   const uint32_t t_step_us = UVAR('t');
   const xfloat k_all = 1e-6f * UVAR('v') / BOARD_ADC_DEFAULT_MAX;
 
-  const uint32_t adc_arch_clock_in = ADC_getFreqIn( &hadc1 );
+  const uint32_t adc_arch_clock_in = ADC_getFreqIn( &adc.hadc );
   uint32_t s_div = 0;
-  uint32_t div_bits = ADC_calc_div( &hadc1, BOARD_ADC_FREQ_MAX, &s_div );
+  uint32_t div_bits = ADC_calc_div( &adc.hadc, BOARD_ADC_FREQ_MAX, &s_div );
 
   std_out <<  NL "# Test0: n= " << n << " n_ch= " << n_ch
     << " t= " << t_step << " ms, freq_in= " << adc_arch_clock_in
@@ -105,13 +109,15 @@ int cmd_test0( int argc, const char * const * argv )
   std_out << "# stime_idx= " << stime_idx << " 10ticks= " << adc_arch_sampletimes[stime_idx].stime10
           << " stime_ns= "  << stime_ns  << " code= " <<  adc_arch_sampletimes[stime_idx].code << NL;
 
-  if( ! adc_arch_init_exa_1ch_manual( div_bits, adc_arch_sampletimes[stime_idx].code ) ) {
+  adc.hadc.Init.Resolution = BOARD_ADC_DEFAULT_RESOLUTION;
+
+  if( ! adc_arch_init_exa_1ch_manual( adc, div_bits, adc_arch_sampletimes[stime_idx].code ) ) {
     std_out << "# error: fail to init ADC: errno= " << errno << NL;
   }
 
   // or such
   ADC_freq_info fi;
-  ADC_calcfreq( &hadc1, &fi );
+  ADC_calcfreq( &adc.hadc, &fi );
   std_out << "# ADC: freq_in: " << fi.freq_in << " freq: " << fi.freq
           << " div: " << fi.div << " div1: " << fi.div1 << " div2: " << fi.div2
           << " bits: " << HexInt( fi.devbits ) << NL;
@@ -125,13 +131,13 @@ int cmd_test0( int argc, const char * const * argv )
 
     uint32_t tcc = HAL_GetTick();
 
-    if( HAL_ADC_Start( &hadc1 ) != HAL_OK )  {
+    if( HAL_ADC_Start( &adc.hadc ) != HAL_OK )  {
       std_out << "# error:  !! ADC Start error" NL;
       break;
     }
 
-    if( HAL_ADC_PollForConversion( &hadc1, 10 ) == HAL_OK ) {
-      int v = HAL_ADC_GetValue( &hadc1 );
+    if( HAL_ADC_PollForConversion( &adc.hadc, 10 ) == HAL_OK ) {
+      int v = HAL_ADC_GetValue( &adc.hadc );
       xfloat vv = k_all * v;
       sdat.add( &v );
 
@@ -155,10 +161,38 @@ int cmd_test0( int argc, const char * const * argv )
   }
 
 
-  // HAL_ADC_Stop( &hadc1 );
+  // HAL_ADC_Stop( &adc.hadc1 );
 
   return 0;
 }
+
+void HAL_ADC_MspInit( ADC_HandleTypeDef* adcHandle )
+{
+  if( adcHandle->Instance != BOARD_ADC_DEFAULT_DEV ) {
+    return;
+  }
+
+  BOARD_ADC_DEFAULT_EN;
+
+  adc.init_gpio_channels();
+
+  // BOARD_ADC_DEFAULT_GPIO0.enableClk();
+  // BOARD_ADC_DEFAULT_GPIO0.cfgAnalog( BOARD_ADC_DEFAULT_PIN0 );
+}
+
+void HAL_ADC_MspDeInit( ADC_HandleTypeDef* adcHandle )
+{
+  if( adcHandle->Instance != BOARD_ADC_DEFAULT_DEV ) {
+    return;
+  }
+
+  BOARD_ADC_DEFAULT_DIS;
+}
+
+
+
+
+
 
 // TODO: if ! HAVE_FLOAT
 //int vv = v * ( UVAR('v') / 100 ) / BOARD_ADC_DEFAULT_MAX; // 100 = 1000/10

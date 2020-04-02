@@ -195,3 +195,38 @@ uint32_t ADC_calcfreq( ADC_HandleTypeDef* hadc, ADC_freq_info *fi )
   fi->freq = freq;
   return freq;
 }
+
+
+// ---------------- ADC_Info arch-dependent functions ---------------------------------
+
+uint32_t ADC_Info::init_adc_channels( uint32_t sampl_cycl )
+{
+  if( !ch_info || n_ch_max < 1 ) {
+    return 0;
+  }
+
+  ADC_ChannelConfTypeDef sConfig;
+  sConfig.SamplingTime = sampl_cycl;
+  sConfig.SingleDiff   = ADC_SINGLE_ENDED;
+  sConfig.OffsetNumber = ADC_OFFSET_NONE;
+  sConfig.Offset       = 0;
+
+  unsigned n = 0;
+  uint32_t rank = ADC_REGULAR_RANK_1;
+
+  for( int i=0; i<n_ch_max; ++i ) {
+    if( ch_info[i].pin_num == 0 ) {
+      break;
+    }
+
+    sConfig.Channel      = ch_info[i].channel;
+    sConfig.Rank         = rank;
+
+    if( HAL_ADC_ConfigChannel( &hadc, &sConfig ) != HAL_OK )  {
+      return 0;
+    }
+    ++n; ++rank;
+  }
+  return n;
+}
+
