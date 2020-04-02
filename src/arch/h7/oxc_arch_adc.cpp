@@ -199,14 +199,14 @@ uint32_t ADC_calcfreq( ADC_HandleTypeDef* hadc, ADC_freq_info *fi )
 
 // ---------------- ADC_Info arch-dependent functions ---------------------------------
 
-uint32_t ADC_Info::init_adc_channels( uint32_t sampl_cycl )
+uint32_t ADC_Info::init_adc_channels()
 {
   if( !ch_info || n_ch_max < 1 ) {
     return 0;
   }
 
   ADC_ChannelConfTypeDef sConfig;
-  sConfig.SamplingTime = sampl_cycl;
+  sConfig.SamplingTime = sampl_cycl_common;
   sConfig.SingleDiff   = ADC_SINGLE_ENDED;
   sConfig.OffsetNumber = ADC_OFFSET_NONE;
   sConfig.Offset       = 0;
@@ -228,5 +228,65 @@ uint32_t ADC_Info::init_adc_channels( uint32_t sampl_cycl )
     ++n; ++rank;
   }
   return n;
+}
+
+
+uint32_t ADC_Info::prepare_single_manual( uint32_t presc, uint32_t sampl_cycl, uint32_t resol )
+{
+  if( hadc.Instance == 0 || n_ch_max < 1 ) {
+    return 0;
+  }
+  sampl_cycl_common = sampl_cycl;
+
+  hadc.Init.ClockPrescaler           = presc;
+  hadc.Init.Resolution               = resol;
+  hadc.Init.ScanConvMode             = ADC_SCAN_DISABLE;
+  hadc.Init.EOCSelection             = ADC_EOC_SINGLE_CONV;
+  hadc.Init.LowPowerAutoWait         = DISABLE;
+  hadc.Init.ContinuousConvMode       = DISABLE;
+  hadc.Init.NbrOfConversion          = 1;
+  hadc.Init.DiscontinuousConvMode    = DISABLE;
+  hadc.Init.ExternalTrigConv         = ADC_SOFTWARE_START;
+  hadc.Init.ExternalTrigConvEdge     = ADC_EXTERNALTRIGCONVEDGE_NONE;
+  hadc.Init.ConversionDataManagement = ADC_CONVERSIONDATA_DR;
+  hadc.Init.Overrun                  = ADC_OVR_DATA_OVERWRITTEN;
+  hadc.Init.LeftBitShift             = ADC_LEFTBITSHIFT_NONE;
+  hadc.Init.OversamplingMode         = DISABLE;
+  prepared = 1;
+  return 1;
+}
+
+
+uint32_t ADC_Info::init_xxx1()
+{
+  if( hadc.Instance == 0 || ! prepared ) {
+    errno = 3000;
+    return 0;
+  }
+
+  if( HAL_ADC_Init( &hadc ) != HAL_OK ) {
+    errno = 3001;
+    return 0;
+  }
+
+  //* no ADC multi-mode
+  ADC_MultiModeTypeDef multimode;
+  multimode.Mode = ADC_MODE_INDEPENDENT;
+  if( HAL_ADCEx_MultiModeConfigChannel( &hadc, &multimode ) != HAL_OK ) {
+    errno = 3002;
+    return 0;
+  }
+
+  if( ! init_adc_channels() )  {
+    errno = 3003;
+    return 0;
+  }
+
+  if( HAL_ADCEx_Calibration_Start( &hadc, ADC_CALIB_OFFSET, ADC_SINGLE_ENDED ) != HAL_OK ) {
+    errno = 3010;
+    return 0;
+  }
+
+  return 1;
 }
 

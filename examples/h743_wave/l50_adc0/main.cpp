@@ -26,7 +26,7 @@ const AdcChannelInfo adc_channels[] = {
 
 ADC_Info adc( BOARD_ADC_DEFAULT_DEV, adc_channels );
 
-int adc_arch_init_exa_1ch_manual( ADC_Info &adc, uint32_t presc, uint32_t sampl_cycl );
+int adc_arch_init_exa_1ch_manual( ADC_Info &adc );
 int v_adc_ref = BOARD_ADC_COEFF; // in uV, measured before test
 
 
@@ -110,8 +110,9 @@ int cmd_test0( int argc, const char * const * argv )
           << " stime_ns= "  << stime_ns  << " code= " <<  adc_arch_sampletimes[stime_idx].code << NL;
 
   adc.hadc.Init.Resolution = BOARD_ADC_DEFAULT_RESOLUTION;
+  adc.prepare_single_manual( div_bits, adc_arch_sampletimes[stime_idx].code, BOARD_ADC_DEFAULT_RESOLUTION );
 
-  if( ! adc_arch_init_exa_1ch_manual( adc, div_bits, adc_arch_sampletimes[stime_idx].code ) ) {
+  if( ! adc.init_xxx1() ) {
     std_out << "# error: fail to init ADC: errno= " << errno << NL;
   }
 
@@ -171,13 +172,9 @@ void HAL_ADC_MspInit( ADC_HandleTypeDef* adcHandle )
   if( adcHandle->Instance != BOARD_ADC_DEFAULT_DEV ) {
     return;
   }
-
   BOARD_ADC_DEFAULT_EN;
 
   adc.init_gpio_channels();
-
-  // BOARD_ADC_DEFAULT_GPIO0.enableClk();
-  // BOARD_ADC_DEFAULT_GPIO0.cfgAnalog( BOARD_ADC_DEFAULT_PIN0 );
 }
 
 void HAL_ADC_MspDeInit( ADC_HandleTypeDef* adcHandle )

@@ -1,6 +1,9 @@
 #ifndef _OXC_ADC_H
 #define _OXC_ADC_H
 
+// beware: some functions is arch-dependent, and inplemented in src/arch/${arch}/oxc_arch_adc.cpp
+//         other - common, in src/axc_adc.cpp
+
 #include <oxc_base.h>
 #include <oxc_gpio.h>
 
@@ -32,7 +35,9 @@ struct ADC_Info {
   ADC_HandleTypeDef hadc;
   DMA_HandleTypeDef hdma_adc;
   const AdcChannelInfo *ch_info = nullptr;
+  int32_t prepared = 0;
   int32_t n_ch_max = 0;
+  uint32_t sampl_cycl_common = 0;
   uint32_t adc_clk = -1;
   uint16_t *data = nullptr;
   float t_step_f = 0; // in s, recalculated before measurement
@@ -55,11 +60,16 @@ struct ADC_Info {
   uint32_t set_channels( const AdcChannelInfo *ch_i );
   void reset_cnt();
   uint32_t init_gpio_channels();
-  uint32_t init_adc_channels( uint32_t sampl_cycl ); // arch-dependent, in oxc_arch_adc.cpp
+  uint32_t init_adc_channels(); // arch-dependent, in oxc_arch_adc.cpp
+
+  uint32_t prepare_single_manual( uint32_t presc, uint32_t sampl_cycl, uint32_t resol ); // arch-dep
+
+  uint32_t init_xxx1(); // arch-dep
 };
 
 
 // TODO: different for F1, F3
+// [[deprecated]]
 const uint32_t adc_n_sampl_times = 7;
 extern const uint32_t sampl_times_codes[adc_n_sampl_times];
 extern const uint32_t sampl_times_cycles[adc_n_sampl_times];
@@ -69,9 +79,9 @@ extern "C" {
  void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc );
 }
 
-uint32_t calc_ADC_clk( uint32_t presc, int *div_val );
-uint32_t hint_ADC_presc();
-void pr_ADC_state( const ADC_Info &adc );
+[[deprecated]] uint32_t calc_ADC_clk( uint32_t presc, int *div_val );
+[[deprecated]] uint32_t hint_ADC_presc();
+[[deprecated]] void pr_ADC_state( const ADC_Info &adc );
 
 uint32_t ADC_getFreqIn( ADC_HandleTypeDef* hadc );
 uint32_t ADC_calc_div( ADC_HandleTypeDef* hadc, uint32_t freq_max, uint32_t *div_val );

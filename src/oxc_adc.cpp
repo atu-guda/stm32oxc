@@ -2,6 +2,7 @@
 #include <oxc_devio.h>
 #include <oxc_outstream.h>
 
+// TODO: move to arch-dependent file, and rework like H7
 #if defined(STM32F4) || defined (STM32F7)
 
 const uint32_t sampl_times_codes[adc_n_sampl_times] = { // all for 36 MHz ADC clock
@@ -24,7 +25,7 @@ const uint32_t sampl_times_cycles[adc_n_sampl_times] = { // sample+conv(12)
    492,  // ADC_SAMPLETIME_480CYCLES
 };
 
-uint32_t calc_ADC_clk( uint32_t presc, int *div_val )
+uint32_t calc_ADC_clk( uint32_t presc, int *div_val ) // old
 {
   int dv_fake = 0;
   if( div_val == nullptr ) {
@@ -44,7 +45,7 @@ uint32_t calc_ADC_clk( uint32_t presc, int *div_val )
   return clk;
 }
 
-uint32_t hint_ADC_presc()
+uint32_t hint_ADC_presc() // old
 {
   uint32_t clk =  HAL_RCC_GetPCLK2Freq();
   const uint32_t max_ADC_Clk = ADC_FREQ_MAX;
@@ -60,7 +61,7 @@ uint32_t hint_ADC_presc()
   return ADC_CLOCK_SYNC_PCLK_DIV8;
 }
 
-void pr_ADC_state( const ADC_Info &adc )
+void pr_ADC_state( const ADC_Info &adc ) // old: new must be arch-dependent member of ADC_Info
 {
   std_out << "# ADC: SR= " << HexInt( BOARD_ADC_DEFAULT_DEV->SR  )
      <<  "  CR1= "    << HexInt( BOARD_ADC_DEFAULT_DEV->CR1 )
