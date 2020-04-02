@@ -132,13 +132,13 @@ int cmd_test0( int argc, const char * const * argv )
 
     uint32_t tcc = HAL_GetTick();
 
-    if( HAL_ADC_Start( &adc.hadc ) != HAL_OK )  {
+    if( !adc.start() )  {
       std_out << "# error:  !! ADC Start error" NL;
       break;
     }
 
-    if( HAL_ADC_PollForConversion( &adc.hadc, 10 ) == HAL_OK ) {
-      int v = HAL_ADC_GetValue( &adc.hadc );
+    int v = 0;
+    if( adc.poll_and_read( v ) ) {
       xfloat vv = k_all * v;
       sdat.add( &v );
 

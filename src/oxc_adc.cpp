@@ -133,4 +133,12 @@ uint32_t ADC_Info::init_gpio_channels()
 
 }
 
+bool ADC_Info::poll_and_read( int &v )
+{
+  if( HAL_ADC_PollForConversion( &hadc, 10 ) == HAL_OK ) {
+    v = HAL_ADC_GetValue( &hadc );
+    return true;
+  }
+  return false;
+}
 // vim: path=.,/usr/share/stm32cube/inc
