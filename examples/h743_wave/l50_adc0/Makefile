@@ -29,6 +29,8 @@ SRCS += adc_h7_init_exa_1ch_manual.cpp
 SRCS += oxc_adcdata.cpp
 SRCS += oxc_floatfun.cpp
 
+SRCS += oxc_arch_adc.cpp
+
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
 # see ../common/h7_modules.mk

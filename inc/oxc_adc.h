@@ -3,6 +3,24 @@
 
 #include <oxc_base.h>
 
+struct AdcSampleTimeInfo {
+  uint32_t code;
+  uint32_t stime10; //* in 10 * ADC_Cycles
+};
+
+extern const unsigned adc_arch_sampletimes_n;
+extern const AdcSampleTimeInfo adc_arch_sampletimes[];
+
+struct ADC_freq_info {
+  uint32_t freq_in; //* input frequency
+  uint32_t freq;    //* working freq
+  uint32_t div;     //* total divider
+  uint32_t div1;    //* base divider
+  uint32_t div2;    //* second divider
+  uint32_t devbits; //* misc bits about device: H7: 1: sync mode, 2: ADC_VER_V5_3, 4: REV_ID_Y
+};
+
+
 struct ADC_Info {
   ADC_HandleTypeDef hadc;
   DMA_HandleTypeDef hdma_adc;
@@ -43,6 +61,10 @@ uint32_t calc_ADC_clk( uint32_t presc, int *div_val );
 uint32_t hint_ADC_presc();
 void pr_ADC_state( const ADC_Info &adc );
 
+uint32_t ADC_getFreqIn( ADC_HandleTypeDef* hadc );
+uint32_t ADC_calc_div( ADC_HandleTypeDef* hadc, uint32_t freq_max, uint32_t *div_val );
+uint32_t ADC_conv_time_tick( uint32_t s_idx, uint32_t n_ch, uint32_t n_bits );
+uint32_t ADC_calcfreq( ADC_HandleTypeDef* hadc, ADC_freq_info *fi );
 
 #endif
 
