@@ -197,9 +197,8 @@ uint32_t ADC_Info::start_DMA_wait( uint32_t n_ch, uint32_t n, uint32_t t_wait ) 
 
   delay_ms_brk( t_wait );
   for( uint32_t ti=0; end_dma == 0 && ti < 1000 && !break_flag;  ++ti ) {
-     delay_ms( 1 );
+    delay_ms( 1 );
   }
-  // tim2_deinit();
 
   HAL_ADC_Stop_DMA( &hadc ); // needed
 

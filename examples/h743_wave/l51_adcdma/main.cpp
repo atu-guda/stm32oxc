@@ -13,7 +13,7 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
-const char* common_help_string = "App to test ADC on H7 in T2 shot N channels onoe chunk" NL
+const char* common_help_string = "App to test ADC on H7 in T2 shot N channels one chunk" NL
  " var t - delay time in us" NL
  " var n - default number of measurements" NL
  " var s - sample time index" NL
@@ -33,11 +33,10 @@ const uint32_t n_ADC_mem  = std::min( BOARD_ADC_MEM_MAX, 128*1024 ); // 128k - o
 using AdcDataX = AdcData<BOARD_ADC_DEFAULT_BITS,xfloat>;
 AdcDataX adcd( BOARD_ADC_MALLOC, BOARD_ADC_FREE );
 
-// TMP?
-uint32_t tim_freq_in; // timer input freq
+const int tim_base_freq = 1000000;
 
 TIM_HandleTypeDef tim2h;
-void tim2_init( uint16_t presc = 36, uint32_t arr = 100 ); // 1MHz, 10 kHz
+void tim2_init( uint16_t presc, uint32_t arr );
 void tim2_deinit();
 
 ADC_Info adc( BOARD_ADC_DEFAULT_DEV, adc_channels );
@@ -74,14 +73,7 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  // tmp: for better timer
-  const int tim_base_freq = 1000000;
-  tim_freq_in = get_TIM_in_freq( TIM2 ); // TODO: define
-  UVAR('j') = tim_freq_in;
-  UVAR('p') = calc_TIM_psc_for_cnt_freq( TIM2, tim_base_freq ); // timer PSC, for 1MHz
-  UVAR('a') = ( tim_base_freq / 10 ) - 1;
-
-  UVAR('t') = 100000;
+  UVAR('t') = 1000; // 1 ms
   UVAR('n') = 20;
   UVAR('c') = adc.n_ch_max; // number of channels
   UVAR('s') = adc_arch_sampletimes_n - 1;
@@ -115,16 +107,7 @@ int cmd_test0( int argc, const char * const * argv )
   const uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, n_ADC_series_max ); // number of series
   uint32_t unsigned stime_idx = ( (uint32_t)UVAR('s') < adc_arch_sampletimes_n ) ? UVAR('s') : (adc_arch_sampletimes_n - 1);
 
-  // TODO: rework: like 37?
-  uint32_t tim_psc = UVAR('p'); // TODO: tmp: replace by calculation
-  uint32_t tim_arr = UVAR('a');
-  uint32_t t_step_tick =  (tim_arr+1) * (tim_psc+1); // in timer input ticks
-  xfloat tim_f = (xfloat)tim_freq_in / t_step_tick; // timer update freq, Hz
-  adc.t_step_f = (xfloat)t_step_tick / tim_freq_in; // in s
-  uint32_t t_wait0 = 1 + uint32_t( n * adc.t_step_f * 1000 ); // in ms
-
   const uint32_t t_step_us = UVAR('t');
-
 
   const uint32_t adc_arch_clock_in = ADC_getFreqIn( &adc.hadc );
   uint32_t s_div = 0;
@@ -139,26 +122,30 @@ int cmd_test0( int argc, const char * const * argv )
     return 7;
   }
   const uint32_t adc_freq = adc_arch_clock_in / s_div;
-  const uint32_t adc_arch_clock_ns = (unsigned)( ( 1000000000LL + adc_freq - 1 ) / adc_freq );
+  const uint32_t adc_clock_ns = (unsigned)( ( 1000000000LL + adc_freq - 1 ) / adc_freq );
   std_out << "# div= " << s_div << " bits: " << HexInt( div_bits ) << " freq: " << adc_freq
-          << " tau: " << adc_arch_clock_ns << NL;
+          << " adc_clock_ns: " << adc_clock_ns << NL;
 
-  uint32_t stime_ns =  adc_arch_clock_ns * ADC_conv_time_tick( stime_idx, n_ch, BOARD_ADC_DEFAULT_BITS );
+  uint32_t stime_ns = ADC_conv_time_tick( stime_idx, n_ch, BOARD_ADC_DEFAULT_BITS );
   if( stime_ns == 0xFFFFFFFF ) {
     std_out << "# error: fail to calculate conversion time" NL;
     return 8;
   }
+  stime_ns *= adc_clock_ns;
+
+  uint32_t t_wait0 = 2 + uint32_t( n * t_step_us / 1000 ); // in ms
 
   if( t_step_us * 1000 <= stime_ns ) {
     std_out << "# warn: time step (" << t_step_us * 1000 << ") ns < conversion time (" << stime_ns << ") ns" NL;
   }
 
   std_out << "# stime_idx= " << stime_idx << " 10ticks= " << adc_arch_sampletimes[stime_idx].stime10
-          << " stime_ns= "  << stime_ns  << " code= " <<  adc_arch_sampletimes[stime_idx].code << NL;
+          << " stime_ns= "  << stime_ns  << " code= " <<  adc_arch_sampletimes[stime_idx].code
+          << " t_wait0= " << t_wait0 << " ms" NL;
 
   // TMP
-  std_out << "# Timer: tim_freq_in= " << tim_freq_in << "  Hz / ((" << tim_psc
-     << "+1)*(" << tim_arr << "+1)) =" << tim_f << " Hz; t_step = " << adc.t_step_f << " s" NL;
+  uint32_t psc = calc_TIM_psc_for_cnt_freq( tim2h.Instance, 1000000 ); // 1 us each
+  UVAR('p') = psc;
   delay_ms( 1 );
 
   adc.prepare_multi_tim( n_ch, div_bits, adc_arch_sampletimes[stime_idx].code, ADC_EXTERNALTRIG_T2_TRGO, BOARD_ADC_DEFAULT_RESOLUTION );
@@ -172,11 +159,11 @@ int cmd_test0( int argc, const char * const * argv )
   }
 
   // or such
-  ADC_freq_info fi;
-  ADC_calcfreq( &adc.hadc, &fi );
-  std_out << "# ADC: freq_in: " << fi.freq_in << " freq: " << fi.freq
-          << " div: " << fi.div << " div1: " << fi.div1 << " div2: " << fi.div2
-          << " bits: " << HexInt( fi.devbits ) << NL;
+  // ADC_freq_info fi;
+  // ADC_calcfreq( &adc.hadc, &fi );
+  // std_out << "# ADC: freq_in: " << fi.freq_in << " freq: " << fi.freq
+  //         << " div: " << fi.div << " div1: " << fi.div1 << " div2: " << fi.div2
+  //         << " bits: " << HexInt( fi.devbits ) << NL;
 
 
   // really need for H7 - DMA not work with ordinary memory
@@ -191,14 +178,13 @@ int cmd_test0( int argc, const char * const * argv )
   adcd.set_v_ref_uV( UVAR('v') );
   std_out << "# n_col= " << adcd.get_n_col() << " n_row= " << adcd.get_n_row() << " data: " << HexInt(adcd.data()) << " size_all= " << adcd.size_all() << NL;
 
-
   int rc = 0;
 
   break_flag = 0;
   uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
 
   if( UVAR('l') ) {  leds.set( BIT2 ); }
-  tim2_init( UVAR('p'), UVAR('a') );
+  tim2_init( psc, t_step_us - 1 );
   uint32_t r = adc.start_DMA_wait( n_ch, n, t_wait0 );
   tim2_deinit();
   if( UVAR('l') ) {  leds.reset( BIT2 ); }

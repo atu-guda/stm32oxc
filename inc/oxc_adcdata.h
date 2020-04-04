@@ -165,7 +165,7 @@ int AdcData<N,FL>::out_float_row( OutStream &os, FL t, unsigned r ) const
     return 0;
   }
 
-  os <<  XFmt( t, cvtff_auto, 14, 6 );
+  os <<  XFmt( t, cvtff_auto, 15, 6 );
 
   for( unsigned c = 0; c < n_col; ++c ) {
     os << ' ' << XFmt( v( r, c ), cvtff_auto, out_w, out_prec );
