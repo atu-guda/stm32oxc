@@ -22,15 +22,15 @@
 template<typename AD>
 int subcmd_set_coeffs( int argc, const char * const * argv, AD &ad )
 {
-  const unsigned n_row = ad.get_n_row();
+  const unsigned n_col = ad.get_n_col();
   if( argc > 1 ) {
-    for( unsigned j=0; j<n_row; ++j ) {
+    for( unsigned j=0; j<n_col; ++j ) {
       xfloat v = arg2xfloat_d( j+1, argc, argv, 1, XFLOAT_NLARGE, XFLOAT_LARGE );
       ad.set_col_mult( j, v );
     }
   }
   std_out << "# ADC coefficients:";
-    for( unsigned j=0; j<n_row; ++j ) {
+    for( unsigned j=0; j<n_col; ++j ) {
     std_out << ' ' << ad.get_col_mult( j );
   }
   std_out << NL;

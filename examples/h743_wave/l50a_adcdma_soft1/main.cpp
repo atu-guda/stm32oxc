@@ -3,6 +3,7 @@
 
 #include <oxc_auto.h>
 #include <oxc_adcdata.h>
+#include <oxc_adcdata_cmds.h>
 
 using namespace std;
 using namespace SMLRL;
@@ -28,6 +29,9 @@ const AdcChannelInfo adc_channels[] = {
   {                     0,                   GpioA,                    255 } // END
 };
 
+using AdcDataX = AdcData<BOARD_ADC_DEFAULT_BITS,xfloat>;
+AdcDataX adcd( BOARD_ADC_MALLOC, BOARD_ADC_FREE );
+
 ADC_Info adc( BOARD_ADC_DEFAULT_DEV, adc_channels );
 // uint16_t ADC_buf[32];
 
@@ -49,8 +53,6 @@ const CmdInfo* global_cmds[] = {
 };
 
 
-const uint32_t n_ADC_ch_max = 4; // current - in UVAR('c')
-float v_coeffs[n_ADC_ch_max] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 int main(void)
 {
@@ -131,7 +133,7 @@ int cmd_test0( int argc, const char * const * argv )
   }
 
   if( UVAR('d') > 1 ) {
-    dump32( ADC1, 0x100 );
+    dump32( BOARD_ADC_DEFAULT_DEV, 0x100 );
   }
 
   // or such
@@ -141,14 +143,21 @@ int cmd_test0( int argc, const char * const * argv )
           << " div: " << fi.div << " div1: " << fi.div1 << " div2: " << fi.div2
           << " bits: " << HexInt( fi.devbits ) << NL;
 
+
   // really need for H7 - DMA not work with ordinary memory
-  uint16_t *ADC_buf = (uint16_t *) BOARD_ADC_MALLOC( n_ch * sizeof(uint16_t) );
-  if( !ADC_buf ) {
-    std_out << "# error: fail to alloc buffer" NL;
-    return 13;
+  adcd.free();
+  if( ! adcd.alloc( n_ch, 1 ) ) {
+    std_out << "# Error: fail to alloc buffer" << NL;
+    return 2;
   }
+  adc.data = adcd.data();
+  adc.reset_cnt();
+  adcd.set_d_t( t_step_us * 1e-6f );
+  adcd.set_v_ref_uV( UVAR('v') );
+  std_out << "# n_col= " << adcd.get_n_col() << " n_row= " << adcd.get_n_row() << " data: " << HexInt(adcd.data()) << " size_all= " << adcd.size_all() << NL;
 
   StatIntData sdat( n_ch, k_all );
+  sdat.setScalesFrom( adcd );
 
   uint32_t tm0, tm00;
   int rc = 0;
@@ -162,41 +171,22 @@ int cmd_test0( int argc, const char * const * argv )
     if( i == 0 ) {
       tm0 = tcc; tm00 = tm0;
     }
-
     float tc = 0.001f * ( tcc - tm00 );
-    xfloat v[n_ch];
 
     if( UVAR('l') ) {  leds.set( BIT2 ); }
+    uint32_t r = adc.start_DMA_wait_1row( adcd.data(), n_ch );
+    if( UVAR('l') ) {  leds.reset( BIT2 ); }
 
-    uint32_t r = adc.start_DMA_wait_1row( ADC_buf, n_ch );
     if( r != 0 ) {
       std_out <<  "# error: start_DMA_wait_1row " << r << NL;
       rc = 1;
       break;
     }
 
-    if( UVAR('l') ) {  leds.reset( BIT2 ); }
+    sdat.add( adcd.row(0) );
 
     if( do_out ) {
-      std_out <<  FltFmt( tc, cvtff_auto, 12, 4 );
-    }
-
-    int vi[n_ch];
-    for( decltype(+n_ch) j=0; j<n_ch; ++j ) {
-      vi[j] = ADC_buf[j];
-      xfloat cv = k_all * ADC_buf[j] * (xfloat)v_coeffs[j];
-      v[j] = cv;
-    }
-    sdat.add( vi ); // TODO: allow to add from uint16_t
-
-    if( do_out ) {
-      for( auto vc : v ) {
-        std_out  << ' '  << XFmt( vc, cvtff_auto, 10, 6 );
-      }
-      // for( decltype(+n_ch) i=0; i<n_ch; ++i ) {
-      //   std_out  << ' ' <<   HexInt( ADC_buf[i] );
-      // }
-      std_out << NL;
+      adcd.out_float_row( std_out, tc, 0 );
     }
 
     delay_ms_until_brk( &tm0, t_step );
@@ -206,13 +196,8 @@ int cmd_test0( int argc, const char * const * argv )
   std_out << sdat << NL;
 
   if( UVAR('d') > 1 ) {
-    dump32( ADC1, 0x200 );
+    dump32( BOARD_ADC_DEFAULT_DEV, 0x200 );
   }
-
-  BOARD_ADC_FREE( ADC_buf );
-
-
-  // HAL_ADC_Stop( &adc.hadc1 );
 
   return rc;
 }
@@ -282,22 +267,11 @@ void BOARD_ADC_DMA_IRQHANDLER(void)
 //   leds.toggle( BIT0 );
 // }
 
-
-
-
-
 int cmd_set_coeffs( int argc, const char * const * argv )
 {
-  if( argc > 1 ) {
-    v_coeffs[0] = arg2float_d( 1, argc, argv, 1, -1e10f, 1e10f );
-    v_coeffs[1] = arg2float_d( 2, argc, argv, 1, -1e10f, 1e10f );
-    v_coeffs[2] = arg2float_d( 3, argc, argv, 1, -1e10f, 1e10f );
-    v_coeffs[3] = arg2float_d( 4, argc, argv, 1, -1e10f, 1e10f );
-  }
-  std_out << "# Coefficients: "
-     << v_coeffs[0] << ' ' << v_coeffs[1] << ' ' << v_coeffs[2] << ' ' << v_coeffs[3] << NL;
-  return 0;
+  return subcmd_set_coeffs( argc, argv, adcd );
 }
+
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

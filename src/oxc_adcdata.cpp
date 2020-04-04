@@ -70,6 +70,14 @@ void StatIntData::add( const int *v )
   ++n;
 }
 
+void StatIntData::add( const uint16_t *v )
+{
+  for( decltype(+n_ch) j=0; j<n_ch; ++j ) {
+    d[j].add( (int)v[j] );
+  }
+  ++n;
+}
+
 
 void StatIntData::calc()
 {

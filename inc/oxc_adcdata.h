@@ -80,6 +80,7 @@ class AdcData {
    FL get_col_mult( unsigned i_col ) const { return (i_col <= n_col) ? col_mult[i_col] : 0; };
    void set_col_mult( unsigned i_col, FL mult ) { if (i_col <= n_col) { col_mult[i_col] = mult; } };
    int out_float( OutStream &os, unsigned st = 0, unsigned n = 0x3FFFFFFF ) const;
+   int out_float_row( OutStream &os, FL t, unsigned r = 0 ) const;
    int out_hex( OutStream &os, unsigned st = 0, unsigned n = 0x3FFFFFFF ) const;
    int out_any( OutStream &os, bool isHex, unsigned st = 0, unsigned n = 0x3FFFFFFF ) const;
    int out_header( OutStream &os, unsigned st = 0, unsigned n = 0x3FFFFFFF ) const;
@@ -148,13 +149,28 @@ int AdcData<N,FL>::out_float( OutStream &os, unsigned st, unsigned n ) const
   break_flag = 0;
   for( unsigned r = st;  r < en && !break_flag;  ++r ) {
     FL t = r * d_t;
-    os <<  XFmt( t, cvtff_auto, 14, 6 );
-
-    for( unsigned c = 0; c < n_col; ++c ) {
-      os << ' ' << XFmt( v( r, c ), cvtff_auto, out_w, out_prec );
+    auto rc = out_float_row( os, t, r );
+    if( rc == 0 ) {
+      break;
     }
-    os << NL;
   }
+
+  return 1;
+}
+
+template< int N, typename FL >
+int AdcData<N,FL>::out_float_row( OutStream &os, FL t, unsigned r ) const
+{
+  if( r > n_row ) {
+    return 0;
+  }
+
+  os <<  XFmt( t, cvtff_auto, 14, 6 );
+
+  for( unsigned c = 0; c < n_col; ++c ) {
+    os << ' ' << XFmt( v( r, c ), cvtff_auto, out_w, out_prec );
+  }
+  os << NL;
 
   return 1;
 }
@@ -248,11 +264,14 @@ struct StatIntData {
   unsigned n_ch = 0;
 
   //
-  StatIntData( unsigned nch, xfloat a_scale ); // slurp AdcData?
+  StatIntData( unsigned nch, xfloat a_scale );
   template< int N, typename FL = float >
     explicit StatIntData( const AdcData<N,FL> &adc );
+  template< int N, typename FL = float >
+    void setScalesFrom( const AdcData<N,FL> &adc );
   auto getNch() const { return n_ch; }
   void add( const int *v );
+  void add( const uint16_t *v );
   void reset();
   void calc();
   template< int N, typename FL = float >
@@ -277,11 +296,17 @@ template< int N, typename FL = float >
   StatIntData::StatIntData( const AdcData<N,FL> &adc )
   : n_ch( adc.get_n_col() )
 {
+  setScalesFrom( adc );
+  reset();
+}
+
+template< int N, typename FL = float >
+  void StatIntData::setScalesFrom( const AdcData<N,FL> &adc )
+{
   FL c0 = adc.get_v_ref() / adc.get_max_val();
   for( unsigned i=0 ; i<n_ch; ++i ) {
     d[i].set_scale( c0 * adc.get_col_mult( i ) );
   }
-  reset();
 }
 
 template< int N, typename FL = float >
