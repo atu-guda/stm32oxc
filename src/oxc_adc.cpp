@@ -143,43 +143,6 @@ bool ADC_Info::poll_and_read( int &v )
   return true;
 }
 
-uint32_t ADC_Info::start_DMA_wait_1row( uint32_t n_ch ) // 0 - ok
-{
-  if( ! data || n_ch < 1 || n_ch > n_ch_max || ! prepared ) {
-    return 1;
-  }
-
-  // for( decltype(+n_ch) i=0; i<n_ch; ++i ) {
-  //   data[i] = 0;
-  // }
-  end_dma = 0;
-
-  if( int sta = HAL_ADC_Start_DMA( &hadc, (uint32_t*)(data), n_ch ); sta != HAL_OK )   {
-    last_status = sta;
-    // std_out <<  "# error: ADC_Start_DMA error " << sta << NL;
-    return 2;
-  }
-
-  for( uint32_t ti=0; end_dma == 0 && ti<50000; ++ti ) { // TODO: better!
-    delay_mcs( 2 );
-  }
-
-  HAL_ADC_Stop_DMA( &hadc ); // needed
-
-  if( end_dma == 0 ) {
-    // std_out <<  "# error: Fail to wait DMA end " NL;
-    return 3;
-  }
-
-  if( dma_error != 0 ) {
-    // std_out <<  "# error: Found DMA error " << HexInt( adc.dma_error ) <<  NL;
-    return 4;
-  }
-  n_series = 1;
-
-  return 0;
-}
-
 
 uint32_t ADC_Info::start_DMA_wait( uint32_t n_ch, uint32_t n, uint32_t t_wait ) // 0 - ok
 {
@@ -195,8 +158,7 @@ uint32_t ADC_Info::start_DMA_wait( uint32_t n_ch, uint32_t n, uint32_t t_wait ) 
     return 2;
   }
 
-  delay_ms_brk( t_wait );
-  for( uint32_t ti=0; end_dma == 0 && ti < 1000 && !break_flag;  ++ti ) {
+  for( uint32_t ti=0; end_dma == 0 && ti < t_wait + 1000 && !break_flag;  ++ti ) {
     delay_ms( 1 );
   }
 

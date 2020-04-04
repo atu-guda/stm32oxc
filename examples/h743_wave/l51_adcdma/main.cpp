@@ -143,12 +143,11 @@ int cmd_test0( int argc, const char * const * argv )
           << " stime_ns= "  << stime_ns  << " code= " <<  adc_arch_sampletimes[stime_idx].code
           << " t_wait0= " << t_wait0 << " ms" NL;
 
-  // TMP
   uint32_t psc = calc_TIM_psc_for_cnt_freq( tim2h.Instance, 1000000 ); // 1 us each
   UVAR('p') = psc;
   delay_ms( 1 );
 
-  adc.prepare_multi_tim( n_ch, div_bits, adc_arch_sampletimes[stime_idx].code, ADC_EXTERNALTRIG_T2_TRGO, BOARD_ADC_DEFAULT_RESOLUTION );
+  adc.prepare_multi_ev( n_ch, div_bits, adc_arch_sampletimes[stime_idx].code, ADC_EXTERNALTRIG_T2_TRGO, BOARD_ADC_DEFAULT_RESOLUTION );
 
   if( ! adc.init_xxx1() ) {
     std_out << "# error: fail to init ADC: errno= " << errno << NL;

@@ -61,13 +61,11 @@ struct ADC_Info {
   uint32_t set_channels( const AdcChannelInfo *ch_i );
   void reset_cnt();
   uint32_t init_gpio_channels();
-  uint32_t start_DMA_wait_1row( uint32_t n_ch ); // 0 - ok, 1 - arg error, 2 - start err 3 - no end DMA, 4 - DMA error
   uint32_t start_DMA_wait( uint32_t n_ch, uint32_t n, uint32_t t_wait ); // 0 - ok, 1 - arg error, 2 - start err 3 - no end DMA, 4 - DMA error
   uint32_t init_adc_channels(); // arch-dependent, in oxc_arch_adc.cpp
 
   uint32_t prepare_single_manual( uint32_t presc, uint32_t sampl_cycl, uint32_t resol ); // arch-dep
-  uint32_t prepare_multi_softstart( uint32_t n_ch, uint32_t presc, uint32_t sampl_cycl, uint32_t resol ); // arch-dep
-  uint32_t prepare_multi_tim( uint32_t n_ch, uint32_t presc, uint32_t sampl_cycl, uint32_t ev, uint32_t resol ); // arch-dep
+  uint32_t prepare_multi_ev( uint32_t n_ch, uint32_t presc, uint32_t sampl_cycl, uint32_t ev, uint32_t resol ); // arch-dep
 
   int DMA_reinit( uint32_t mode );
   void convCpltCallback( ADC_HandleTypeDef *hadc );
