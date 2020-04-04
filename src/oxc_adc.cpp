@@ -143,18 +143,18 @@ bool ADC_Info::poll_and_read( int &v )
   return true;
 }
 
-uint32_t ADC_Info::start_DMA_wait_1row( uint16_t *buf, uint32_t n_ch ) // 0 - ok
+uint32_t ADC_Info::start_DMA_wait_1row( uint32_t n_ch ) // 0 - ok
 {
-  if( ! buf || n_ch < 1 || n_ch > n_ch_max || ! prepared ) {
+  if( ! data || n_ch < 1 || n_ch > n_ch_max || ! prepared ) {
     return 1;
   }
 
-  for( decltype(+n_ch) i=0; i<n_ch; ++i ) {
-    buf[i] = 0;
-  }
+  // for( decltype(+n_ch) i=0; i<n_ch; ++i ) {
+  //   data[i] = 0;
+  // }
   end_dma = 0;
 
-  if( int sta = HAL_ADC_Start_DMA( &hadc, (uint32_t*)(buf), n_ch ); sta != HAL_OK )   {
+  if( int sta = HAL_ADC_Start_DMA( &hadc, (uint32_t*)(data), n_ch ); sta != HAL_OK )   {
     last_status = sta;
     // std_out <<  "# error: ADC_Start_DMA error " << sta << NL;
     return 2;

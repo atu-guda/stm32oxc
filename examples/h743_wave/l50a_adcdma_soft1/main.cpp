@@ -174,7 +174,7 @@ int cmd_test0( int argc, const char * const * argv )
     float tc = 0.001f * ( tcc - tm00 );
 
     if( UVAR('l') ) {  leds.set( BIT2 ); }
-    uint32_t r = adc.start_DMA_wait_1row( adcd.data(), n_ch );
+    uint32_t r = adc.start_DMA_wait_1row( n_ch );
     if( UVAR('l') ) {  leds.reset( BIT2 ); }
 
     if( r != 0 ) {
@@ -194,6 +194,8 @@ int cmd_test0( int argc, const char * const * argv )
 
   sdat.calc();
   std_out << sdat << NL;
+
+  adc.data = nullptr;
 
   if( UVAR('d') > 1 ) {
     dump32( BOARD_ADC_DEFAULT_DEV, 0x200 );
