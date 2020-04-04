@@ -20,13 +20,12 @@ const char* common_help_string = "App to test ADC on H7 in one-shot mode one cha
  " var v - reference voltage in uV " NL;
 
 const AdcChannelInfo adc_channels[] = {
-  { BOARD_ADC_DEFAULT_CH0, GpioA, 1 },
-  {                     0, GpioA, 0 } // END
+  { BOARD_ADC_DEFAULT_CH0, BOARD_ADC_DEFAULT_GPIO0, BOARD_ADC_DEFAULT_PIN0 },
+  {                     0,                   GpioA, 255 } // END
 };
 
 ADC_Info adc( BOARD_ADC_DEFAULT_DEV, adc_channels );
 
-int adc_arch_init_exa_1ch_manual( ADC_Info &adc );
 int v_adc_ref = BOARD_ADC_COEFF; // in uV, measured before test
 
 

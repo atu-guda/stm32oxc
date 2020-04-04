@@ -201,7 +201,14 @@ uint32_t ADC_calcfreq( ADC_HandleTypeDef* hadc, ADC_freq_info *fi )
 
 uint32_t ADC_Info::init_adc_channels()
 {
-  if( !ch_info || n_ch_max < 1 ) {
+  static const constexpr uint32_t ranks[] = {
+     ADC_REGULAR_RANK_1,  ADC_REGULAR_RANK_2,  ADC_REGULAR_RANK_3,  ADC_REGULAR_RANK_4,  ADC_REGULAR_RANK_5,
+     ADC_REGULAR_RANK_6,  ADC_REGULAR_RANK_7,  ADC_REGULAR_RANK_8,  ADC_REGULAR_RANK_9, ADC_REGULAR_RANK_10,
+    ADC_REGULAR_RANK_11, ADC_REGULAR_RANK_12, ADC_REGULAR_RANK_13, ADC_REGULAR_RANK_14, ADC_REGULAR_RANK_15,
+    ADC_REGULAR_RANK_16
+  };
+
+  if( !ch_info || n_ch_max < 1 || (size_t)n_ch_max >= std::size(ranks) ) {
     return 0;
   }
 
@@ -211,21 +218,20 @@ uint32_t ADC_Info::init_adc_channels()
   sConfig.OffsetNumber = ADC_OFFSET_NONE;
   sConfig.Offset       = 0;
 
-  unsigned n = 0;
-  uint32_t rank = ADC_REGULAR_RANK_1;
+  uint32_t n = 0;
 
   for( int i=0; i<n_ch_max; ++i ) {
-    if( ch_info[i].pin_num == 0 ) {
+    if( ch_info[i].pin_num > 15 ) {
       break;
     }
 
     sConfig.Channel      = ch_info[i].channel;
-    sConfig.Rank         = rank;
+    sConfig.Rank         = ranks[i];
 
     if( HAL_ADC_ConfigChannel( &hadc, &sConfig ) != HAL_OK )  {
       return 0;
     }
-    ++n; ++rank;
+    ++n;
   }
   return n;
 }
@@ -256,6 +262,31 @@ uint32_t ADC_Info::prepare_single_manual( uint32_t presc, uint32_t sampl_cycl, u
   return 1;
 }
 
+uint32_t ADC_Info::prepare_multi_softstart( uint32_t presc, uint32_t sampl_cycl, uint32_t resol )
+{
+  if( hadc.Instance == 0 || n_ch_max < 1 ) {
+    return 0;
+  }
+  sampl_cycl_common = sampl_cycl;
+
+  hadc.Init.ClockPrescaler           = presc;
+  hadc.Init.Resolution               = resol;
+  hadc.Init.ScanConvMode             = ADC_SCAN_ENABLE;
+  hadc.Init.EOCSelection             = ADC_EOC_SEQ_CONV;
+  hadc.Init.LowPowerAutoWait         = DISABLE;
+  hadc.Init.ContinuousConvMode       = DISABLE;
+  hadc.Init.NbrOfConversion          = n_ch_max; // not always?
+  hadc.Init.DiscontinuousConvMode    = DISABLE;
+  hadc.Init.ExternalTrigConv         = ADC_SOFTWARE_START;
+  hadc.Init.ExternalTrigConvEdge     = ADC_EXTERNALTRIGCONVEDGE_NONE;
+  hadc.Init.ConversionDataManagement = ADC_CONVERSIONDATA_DMA_ONESHOT; // ADC_CONVERSIONDATA_DR;
+  hadc.Init.Overrun                  = ADC_OVR_DATA_OVERWRITTEN;
+  hadc.Init.LeftBitShift             = ADC_LEFTBITSHIFT_NONE;
+  hadc.Init.OversamplingMode         = DISABLE;
+  prepared = 2;
+  return 1;
+}
+
 
 uint32_t ADC_Info::init_xxx1()
 {
@@ -277,7 +308,9 @@ uint32_t ADC_Info::init_xxx1()
     return 0;
   }
 
-  if( ! init_adc_channels() )  {
+  int32_t n_ch_init = init_adc_channels();
+  // dbg_val0 = n_ch_init;
+  if( n_ch_init != n_ch_max )  {
     errno = 3003;
     return 0;
   }

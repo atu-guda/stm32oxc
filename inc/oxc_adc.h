@@ -63,6 +63,7 @@ struct ADC_Info {
   uint32_t init_adc_channels(); // arch-dependent, in oxc_arch_adc.cpp
 
   uint32_t prepare_single_manual( uint32_t presc, uint32_t sampl_cycl, uint32_t resol ); // arch-dep
+  uint32_t prepare_multi_softstart( uint32_t presc, uint32_t sampl_cycl, uint32_t resol ); // arch-dep
 
   uint32_t init_xxx1(); // arch-dep
   uint32_t start() { if( !prepared ) return 0; return HAL_ADC_Start( &hadc ) == HAL_OK; }; // TODO: more check

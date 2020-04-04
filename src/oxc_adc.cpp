@@ -95,7 +95,7 @@ uint32_t ADC_Info::set_channels( const AdcChannelInfo *ch_i )
   }
 
   for( ; ; ++n_ch_max ) {
-    if( ch_i[n_ch_max].pin_num == 0 ) {
+    if( ch_i[n_ch_max].pin_num > 15 ) {
       break;
     }
   }
@@ -122,7 +122,7 @@ uint32_t ADC_Info::init_gpio_channels()
 
   unsigned n = 0;
   for( int i=0; i<n_ch_max; ++i ) {
-    if( ch_info[i].pin_num == 0 ) {
+    if( ch_info[i].pin_num > 15 ) {
       break;
     }
     ch_info[i].gpio.enableClk();

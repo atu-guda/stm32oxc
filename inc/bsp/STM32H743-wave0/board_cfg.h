@@ -190,6 +190,14 @@
 #define BOARD_ADC_DEFAULT_BITS          16
 #define BOARD_ADC_DEFAULT_MAX           65535
 #define BOARD_ADC_FREQ_MAX              50000000
+#define BOARD_ADC_IRQ                   ADC_IRQn
+#define BOARD_ADC_IRQHANDLER            ADC_IRQHandler
+#define BOARD_ADC_DMA_INSTANCE          DMA1_Stream1
+#define BOARD_ADC_DMA_REQUEST           DMA_REQUEST_ADC1
+#define BOARD_ADC_DMA_DEFAULT_EN        __HAL_RCC_DMA1_CLK_ENABLE();
+#define BOARD_ADC_DMA_DEFAULT_DIS       __HAL_RCC_DMA1_CLK_DISABLE();
+#define BOARD_ADC_DMA_IRQ               DMA1_Stream1_IRQn
+#define BOARD_ADC_DMA_IRQHANDLER        DMA1_Stream1_IRQHandler
 
 void* malloc_axi( size_t sz ); // only all AXI memory for now
 void  free_axi( void* ptr );
