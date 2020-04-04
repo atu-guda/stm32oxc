@@ -43,7 +43,7 @@ int cvtff( float f, char *buf, unsigned bufsz, uint32_t flg, int w, int prec )
 
   int exp1 = 0;
   if( f > __FLT_DENORM_MIN__ ) {
-    exp1 = floor( log10f( f ) );
+    exp1 = floor( log10f( 1.00001f * f ) );
   }
 
   bool need_exp = false;
@@ -254,7 +254,7 @@ int cvtfd( double f, char *buf, unsigned bufsz, uint32_t flg, int w, int prec )
 
   int exp1 = 0;
   if( f > __DBL_DENORM_MIN__ ) {
-    exp1 = floor( log10( f ) );
+    exp1 = floor( log10( 1.0000002 * f ) );
   }
 
   bool need_exp = false;
