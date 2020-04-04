@@ -111,7 +111,7 @@ void ADC_Info::reset_cnt()
   // n_series_todo = 0;
   n_good = 0;
   n_bad = 0;
-  last_SR = good_SR = bad_SR = last_end = last_error = 0;
+  last_SR = good_SR = bad_SR = last_end = last_error = last_status = 0;
 }
 
 uint32_t ADC_Info::init_gpio_channels()
@@ -121,7 +121,7 @@ uint32_t ADC_Info::init_gpio_channels()
   }
 
   unsigned n = 0;
-  for( int i=0; i<n_ch_max; ++i ) {
+  for( decltype(+n_ch_max) i=0; i<n_ch_max; ++i ) {
     if( ch_info[i].pin_num > 15 ) {
       break;
     }
@@ -135,10 +135,49 @@ uint32_t ADC_Info::init_gpio_channels()
 
 bool ADC_Info::poll_and_read( int &v )
 {
-  if( HAL_ADC_PollForConversion( &hadc, 10 ) == HAL_OK ) {
-    v = HAL_ADC_GetValue( &hadc );
-    return true;
+  if( int sta = HAL_ADC_PollForConversion( &hadc, 10 ); sta != HAL_OK ) {
+    last_status = sta;
+    return false;
   }
-  return false;
+  v = HAL_ADC_GetValue( &hadc );
+  return true;
 }
+
+uint32_t ADC_Info::start_DMA_wait_1row( uint16_t *buf, uint32_t n_ch ) // 0 - ok
+{
+  if( ! buf || n_ch < 1 || n_ch > n_ch_max || ! prepared ) {
+    return 1;
+  }
+
+  for( decltype(+n_ch) i=0; i<n_ch; ++i ) {
+    buf[i] = 0;
+  }
+  end_dma = 0;
+
+  if( int sta = HAL_ADC_Start_DMA( &hadc, (uint32_t*)(buf), n_ch ); sta != HAL_OK )   {
+    last_status = sta;
+    // std_out <<  "# error: ADC_Start_DMA error " << sta << NL;
+    return 2;
+  }
+
+  for( uint32_t ti=0; end_dma == 0 && ti<50000; ++ti ) { // TODO: better!
+    delay_mcs( 2 );
+  }
+
+  HAL_ADC_Stop_DMA( &hadc ); // needed
+
+  if( end_dma == 0 ) {
+    // std_out <<  "# error: Fail to wait DMA end " NL;
+    return 3;
+  }
+
+  if( dma_error != 0 ) {
+    // std_out <<  "# error: Found DMA error " << HexInt( adc.dma_error ) <<  NL;
+    return 4;
+  }
+  n_series = 1;
+
+  return 0;
+}
+
 // vim: path=.,/usr/share/stm32cube/inc

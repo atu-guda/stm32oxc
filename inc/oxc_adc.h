@@ -36,7 +36,7 @@ struct ADC_Info {
   DMA_HandleTypeDef hdma_adc;
   const AdcChannelInfo *ch_info = nullptr;
   int32_t prepared = 0;
-  int32_t n_ch_max = 0;
+  uint32_t n_ch_max = 0;
   uint32_t sampl_cycl_common = 0;
   uint32_t adc_clk = -1;
   uint16_t *data = nullptr;
@@ -53,6 +53,7 @@ struct ADC_Info {
   uint32_t bad_SR = 0;
   uint32_t last_end = 0;
   uint32_t last_error = 0;
+  uint32_t last_status = 0;
 
 
   [[deprecated]] ADC_Info() { reset_cnt(); } // TODO: remove
@@ -60,10 +61,16 @@ struct ADC_Info {
   uint32_t set_channels( const AdcChannelInfo *ch_i );
   void reset_cnt();
   uint32_t init_gpio_channels();
+  uint32_t start_DMA_wait_1row( uint16_t *buf, uint32_t n_ch ); // 0 - ok, 1 - arg error, 2 - start err 3 - no end DMA, 4 - DMA error
   uint32_t init_adc_channels(); // arch-dependent, in oxc_arch_adc.cpp
 
   uint32_t prepare_single_manual( uint32_t presc, uint32_t sampl_cycl, uint32_t resol ); // arch-dep
-  uint32_t prepare_multi_softstart( uint32_t presc, uint32_t sampl_cycl, uint32_t resol ); // arch-dep
+  uint32_t prepare_multi_softstart( uint32_t n_ch, uint32_t presc, uint32_t sampl_cycl, uint32_t resol ); // arch-dep
+
+  int DMA_reinit( uint32_t mode );
+  void convCpltCallback( ADC_HandleTypeDef *hadc );
+  void convHalfCpltCallback( ADC_HandleTypeDef *hadc );
+  void errorCallback( ADC_HandleTypeDef *hadc );
 
   uint32_t init_xxx1(); // arch-dep
   uint32_t start() { if( !prepared ) return 0; return HAL_ADC_Start( &hadc ) == HAL_OK; }; // TODO: more check

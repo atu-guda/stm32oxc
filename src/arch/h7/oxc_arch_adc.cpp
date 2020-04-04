@@ -220,7 +220,7 @@ uint32_t ADC_Info::init_adc_channels()
 
   uint32_t n = 0;
 
-  for( int i=0; i<n_ch_max; ++i ) {
+  for( decltype(+n_ch_max) i=0; i<n_ch_max; ++i ) {
     if( ch_info[i].pin_num > 15 ) {
       break;
     }
@@ -262,9 +262,12 @@ uint32_t ADC_Info::prepare_single_manual( uint32_t presc, uint32_t sampl_cycl, u
   return 1;
 }
 
-uint32_t ADC_Info::prepare_multi_softstart( uint32_t presc, uint32_t sampl_cycl, uint32_t resol )
+uint32_t ADC_Info::prepare_multi_softstart( uint32_t n_ch, uint32_t presc, uint32_t sampl_cycl, uint32_t resol )
 {
-  if( hadc.Instance == 0 || n_ch_max < 1 ) {
+  if( n_ch > n_ch_max ) {
+    n_ch = n_ch_max;
+  }
+  if( hadc.Instance == 0 || n_ch < 1 ) {
     return 0;
   }
   sampl_cycl_common = sampl_cycl;
@@ -275,7 +278,7 @@ uint32_t ADC_Info::prepare_multi_softstart( uint32_t presc, uint32_t sampl_cycl,
   hadc.Init.EOCSelection             = ADC_EOC_SEQ_CONV;
   hadc.Init.LowPowerAutoWait         = DISABLE;
   hadc.Init.ContinuousConvMode       = DISABLE;
-  hadc.Init.NbrOfConversion          = n_ch_max; // not always?
+  hadc.Init.NbrOfConversion          = n_ch;
   hadc.Init.DiscontinuousConvMode    = DISABLE;
   hadc.Init.ExternalTrigConv         = ADC_SOFTWARE_START;
   hadc.Init.ExternalTrigConvEdge     = ADC_EXTERNALTRIGCONVEDGE_NONE;
@@ -308,7 +311,7 @@ uint32_t ADC_Info::init_xxx1()
     return 0;
   }
 
-  int32_t n_ch_init = init_adc_channels();
+  uint32_t n_ch_init = init_adc_channels();
   // dbg_val0 = n_ch_init;
   if( n_ch_init != n_ch_max )  {
     errno = 3003;
@@ -321,5 +324,70 @@ uint32_t ADC_Info::init_xxx1()
   }
 
   return 1;
+}
+
+int ADC_Info::DMA_reinit( uint32_t mode )
+{
+  // std_out << "# debug: DMA_reinit start" NL;
+  hdma_adc.Instance                 = BOARD_ADC_DMA_INSTANCE;
+
+  #ifdef BOARD_ADC_DMA_REQUEST
+  hdma_adc.Init.Request             = BOARD_ADC_DMA_REQUEST;
+  #endif
+  #ifdef BOARD_ADC_DMA_CHANNEL
+  hdma_adc.Init.Channel             = BOARD_ADC_DMA_CHANNEL;
+  #endif
+
+  hdma_adc.Init.Direction           = DMA_PERIPH_TO_MEMORY;
+  hdma_adc.Init.PeriphInc           = DMA_PINC_DISABLE;
+  hdma_adc.Init.MemInc              = DMA_MINC_ENABLE;
+  hdma_adc.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
+  hdma_adc.Init.MemDataAlignment    = DMA_MDATAALIGN_HALFWORD;
+  hdma_adc.Init.Mode                = mode; // DMA_NORMAL, DMA_CIRCULAR, DMA_PFCTRL
+  hdma_adc.Init.Priority            = DMA_PRIORITY_HIGH; // DMA_PRIORITY_LOW, DMA_PRIORITY_MEDIUM, DMA_PRIORITY_HIGH, DMA_PRIORITY_VERY_HIGH
+  hdma_adc.Init.FIFOMode            = DMA_FIFOMODE_DISABLE;
+  // hdma_adc.Init.FIFOThreshold    = DMA_FIFO_THRESHOLD_HALFFULL;
+  // hdma_adc.Init.MemBurst         = DMA_MBURST_SINGLE;
+  // hdma_adc.Init.PeriphBurst      = DMA_PBURST_SINGLE;
+
+  HAL_DMA_DeInit( &hdma_adc );
+  if( HAL_DMA_Init( &hdma_adc ) != HAL_OK ) {
+    errno = 7777;
+    return 0;
+  }
+
+  __HAL_LINKDMA( &hadc, DMA_Handle, hdma_adc );
+
+  // std_out << "# debug: DMA_reinit end" NL;
+  return 1;
+}
+
+void ADC_Info::convCpltCallback( ADC_HandleTypeDef *hadc )
+{
+  end_dma |= 1;
+  good_SR =  last_SR = hadc->Instance->ISR;
+  last_end = 1;
+  last_error = 0;
+  ++n_good;
+}
+
+void ADC_Info::convHalfCpltCallback( ADC_HandleTypeDef *hadc )
+{
+  // leds.set( BIT1 );
+  /* Invalidate Data Cache to get the updated content of the SRAM on the first half of the ADC converted data buffer: 32 bytes */
+  // SCB_InvalidateDCache_by_Addr((uint32_t *) &aADCxConvertedData[0], ADC_CONVERTED_DATA_BUFFER_SIZE);
+}
+
+void ADC_Info::errorCallback( ADC_HandleTypeDef *hadc )
+{
+  // leds.set( BIT0 );
+  end_dma |= 2;
+  bad_SR = last_SR = hadc->Instance->ISR;
+  // tim2_deinit();
+  last_end  = 2;
+  last_error = HAL_ADC_GetError( hadc );
+  dma_error = hadc->DMA_Handle->ErrorCode;
+  hadc->DMA_Handle->ErrorCode = 0;
+  n_bad;
 }
 

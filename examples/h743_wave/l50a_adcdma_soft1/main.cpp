@@ -30,7 +30,6 @@ const AdcChannelInfo adc_channels[] = {
 
 ADC_Info adc( BOARD_ADC_DEFAULT_DEV, adc_channels );
 // uint16_t ADC_buf[32];
-int ADC_DMA_reinit( ADC_Info &adc ); // TODO: move/remove
 
 int v_adc_ref = BOARD_ADC_COEFF; // in uV, measured before test
 
@@ -59,7 +58,7 @@ int main(void)
 
   UVAR('t') = 100000;
   UVAR('n') = 20;
-  UVAR('c') = adc.n_ch_max; // number of channels - 1 for this program, but need for next test
+  UVAR('c') = adc.n_ch_max; // number of channels
   UVAR('s') = adc_arch_sampletimes_n - 1;
   UVAR('v') = v_adc_ref;
 
@@ -87,7 +86,7 @@ int main(void)
 int cmd_test0( int argc, const char * const * argv )
 {
   const int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
-  uint32_t n_ch = UVAR('c');
+  const uint32_t n_ch = clamp<uint32_t>( UVAR('c'), 1, adc.n_ch_max );
   const uint32_t t_step = UVAR('t') / 1000;
   const uint32_t t_step_us = UVAR('t');
   const xfloat k_all = 1e-6f * UVAR('v') / BOARD_ADC_DEFAULT_MAX;
@@ -96,7 +95,7 @@ int cmd_test0( int argc, const char * const * argv )
   uint32_t s_div = 0;
   uint32_t div_bits = ADC_calc_div( &adc.hadc, BOARD_ADC_FREQ_MAX, &s_div );
 
-  adc.set_channels( adc_channels );
+  // adc.set_channels( adc_channels );
 
   std_out <<  NL "# Test0: n= " << n << " n_ch= " << n_ch
     << " t= " << t_step << " ms, freq_in= " << adc_arch_clock_in
@@ -125,8 +124,7 @@ int cmd_test0( int argc, const char * const * argv )
   std_out << "# stime_idx= " << stime_idx << " 10ticks= " << adc_arch_sampletimes[stime_idx].stime10
           << " stime_ns= "  << stime_ns  << " code= " <<  adc_arch_sampletimes[stime_idx].code << NL;
 
-  adc.prepare_multi_softstart( div_bits, adc_arch_sampletimes[stime_idx].code, BOARD_ADC_DEFAULT_RESOLUTION );
-  // adc.prepare_multi_softstart( div_bits, adc_arch_sampletimes[stime_idx].code, ADC_RESOLUTION_12B );
+  adc.prepare_multi_softstart( n_ch, div_bits, adc_arch_sampletimes[stime_idx].code, BOARD_ADC_DEFAULT_RESOLUTION );
 
   if( ! adc.init_xxx1() ) {
     std_out << "# error: fail to init ADC: errno= " << errno << NL;
@@ -169,45 +167,22 @@ int cmd_test0( int argc, const char * const * argv )
     xfloat v[n_ch];
 
     if( UVAR('l') ) {  leds.set( BIT2 ); }
-    adc.end_dma = 0;
 
-    for( decltype(+n_ch) i=0; i<n_ch; ++i ) {
-      ADC_buf[i] = 0;
-    }
-
-    if( int sta = HAL_ADC_Start_DMA( &adc.hadc, (uint32_t*)(ADC_buf), n_ch ); sta != HAL_OK )   {
-      std_out <<  "# error: ADC_Start_DMA error " << sta << NL;
+    uint32_t r = adc.start_DMA_wait_1row( ADC_buf, n_ch );
+    if( r != 0 ) {
+      std_out <<  "# error: start_DMA_wait_1row " << r << NL;
       rc = 1;
       break;
     }
 
-    for( uint32_t ti=0; adc.end_dma == 0 && ti<50000; ++ti ) { // 11
-      delay_mcs( 2 );
-    }
-
-    HAL_ADC_Stop_DMA( &adc.hadc ); // needed
     if( UVAR('l') ) {  leds.reset( BIT2 ); }
-
-    if( adc.end_dma == 0 ) {
-      std_out <<  "# error: Fail to wait DMA end " NL;
-      rc = 2;
-      break;
-    }
-
-    if( adc.dma_error != 0 ) {
-      std_out <<  "# error: Found DMA error " << HexInt( adc.dma_error ) <<  NL;
-      rc = 3;
-      break;
-    } else {
-      adc.n_series = 1;
-    }
 
     if( do_out ) {
       std_out <<  FltFmt( tc, cvtff_auto, 12, 4 );
     }
 
     int vi[n_ch];
-    for( decltype(n_ch) j=0; j<n_ch; ++j ) {
+    for( decltype(+n_ch) j=0; j<n_ch; ++j ) {
       vi[j] = ADC_buf[j];
       xfloat cv = k_all * ADC_buf[j] * (xfloat)v_coeffs[j];
       v[j] = cv;
@@ -254,7 +229,7 @@ void HAL_ADC_MspInit( ADC_HandleTypeDef* adcHandle )
   adc.init_gpio_channels();
 
   // here?
-  ADC_DMA_reinit( adc );
+  adc.DMA_reinit( DMA_NORMAL );
 
   HAL_NVIC_SetPriority( BOARD_ADC_DMA_IRQ, 2, 0 );
   HAL_NVIC_EnableIRQ(   BOARD_ADC_DMA_IRQ );
@@ -277,34 +252,20 @@ void HAL_ADC_MspDeInit( ADC_HandleTypeDef* adcHandle )
 void HAL_ADC_ConvHalfCpltCallback( ADC_HandleTypeDef *hadc )
 {
   // leds.set( BIT1 );
-  /* Invalidate Data Cache to get the updated content of the SRAM on the first half of the ADC converted data buffer: 32 bytes */
-  // SCB_InvalidateDCache_by_Addr((uint32_t *) &aADCxConvertedData[0], ADC_CONVERTED_DATA_BUFFER_SIZE);
+  // adc.convHalfCpltCallback( hadc );
 }
 
 
 void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc )
 {
   // leds.set( BIT1 );
-  // TODO: ADC_Info member
-  adc.end_dma |= 1;
-  // adc.good_SR =  adc.last_SR = adc.hadc.Instance->SR;
-  adc.last_end = 1;
-  adc.last_error = 0;
-  ++adc.n_good;
+  adc.convCpltCallback( hadc );
 }
 
 void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc )
 {
   // leds.set( BIT0 );
-  // TODO: ADC_Info member
-  adc.end_dma |= 2;
-  // adc.bad_SR = adc.last_SR = adc.hadc.Instance->SR;
-  // tim2_deinit();
-  adc.last_end  = 2;
-  adc.last_error = HAL_ADC_GetError( hadc );
-  adc.dma_error = hadc->DMA_Handle->ErrorCode;
-  hadc->DMA_Handle->ErrorCode = 0;
-  ++adc.n_bad;
+  adc.errorCallback( hadc );
 }
 
 void BOARD_ADC_DMA_IRQHANDLER(void)
@@ -320,43 +281,6 @@ void BOARD_ADC_DMA_IRQHANDLER(void)
 //   HAL_ADC_IRQHandler( &adc.hadc );
 //   leds.toggle( BIT0 );
 // }
-
-
-int ADC_DMA_reinit( ADC_Info &adc )
-{
-  // std_out << "# debug: ADC_DMA_reinit start" NL;
-  adc.hdma_adc.Instance                 = BOARD_ADC_DMA_INSTANCE;
-
-  #ifdef BOARD_ADC_DMA_REQUEST
-  adc.hdma_adc.Init.Request             = BOARD_ADC_DMA_REQUEST;
-  #endif
-  #ifdef BOARD_ADC_DMA_CHANNEL
-  adc.hdma_adc.Init.Channel             = BOARD_ADC_DMA_CHANNEL;
-  #endif
-
-  adc.hdma_adc.Init.Direction           = DMA_PERIPH_TO_MEMORY;
-  adc.hdma_adc.Init.PeriphInc           = DMA_PINC_DISABLE;
-  adc.hdma_adc.Init.MemInc              = DMA_MINC_ENABLE;
-  adc.hdma_adc.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
-  adc.hdma_adc.Init.MemDataAlignment    = DMA_MDATAALIGN_HALFWORD;
-  adc.hdma_adc.Init.Mode                = DMA_NORMAL; // DMA_NORMAL, DMA_CIRCULAR, DMA_PFCTRL
-  adc.hdma_adc.Init.Priority            = DMA_PRIORITY_HIGH; // DMA_PRIORITY_LOW, DMA_PRIORITY_MEDIUM, DMA_PRIORITY_HIGH, DMA_PRIORITY_VERY_HIGH
-  adc.hdma_adc.Init.FIFOMode            = DMA_FIFOMODE_DISABLE;
-  // adc.hdma_adc.Init.FIFOThreshold    = DMA_FIFO_THRESHOLD_HALFFULL;
-  // adc.hdma_adc.Init.MemBurst         = DMA_MBURST_SINGLE;
-  // adc.hdma_adc.Init.PeriphBurst      = DMA_PBURST_SINGLE;
-
-  HAL_DMA_DeInit( &adc.hdma_adc );
-  if( HAL_DMA_Init( &adc.hdma_adc ) != HAL_OK ) {
-    errno = 7777;
-    return 0;
-  }
-
-  __HAL_LINKDMA( &adc.hadc, DMA_Handle, adc.hdma_adc );
-
-  // std_out << "# debug: ADC_DMA_reinit end" NL;
-  return 1;
-}
 
 
 
