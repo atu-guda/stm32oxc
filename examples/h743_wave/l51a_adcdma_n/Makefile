@@ -28,6 +28,7 @@ SRCS += oxc_adcdata.cpp
 SRCS += oxc_floatfun.cpp
 
 SRCS += oxc_arch_adc.cpp
+SRCS += oxc_arch_adcdma_n.cpp
 
 SRCS += tim2_adcdma_init.cpp
 

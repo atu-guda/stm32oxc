@@ -62,10 +62,12 @@ struct ADC_Info {
   void reset_cnt();
   uint32_t init_gpio_channels();
   uint32_t start_DMA_wait( uint32_t n_ch, uint32_t n, uint32_t t_wait ); // 0 - ok, 1 - arg error, 2 - start err 3 - no end DMA, 4 - DMA error
+  uint32_t start_DMA_wait_n( uint32_t n_ch, uint32_t n, uint32_t t_wait, uint32_t chank_sz );
   uint32_t init_adc_channels(); // arch-dependent, in oxc_arch_adc.cpp
 
   uint32_t prepare_single_manual( uint32_t presc, uint32_t sampl_cycl, uint32_t resol ); // arch-dep
   uint32_t prepare_multi_ev( uint32_t n_ch, uint32_t presc, uint32_t sampl_cycl, uint32_t ev, uint32_t resol ); // arch-dep
+  uint32_t prepare_multi_ev_n( uint32_t n_ch, uint32_t presc, uint32_t sampl_cycl, uint32_t ev, uint32_t resol ); // arch-dep
 
   int DMA_reinit( uint32_t mode );
   void convCpltCallback( ADC_HandleTypeDef *hadc );
@@ -77,6 +79,13 @@ struct ADC_Info {
   bool poll_and_read( int &v );
 };
 
+struct AdcDma_n_status {
+  uint32_t base_dma_addr;
+  uint32_t next_dma_ofs;
+  uint32_t step_dma_addr;
+  uint32_t dma_total_sz;
+};
+extern AdcDma_n_status adcdma_n_status;
 
 // TODO: different for F1, F3
 // [[deprecated]]
@@ -97,6 +106,8 @@ uint32_t ADC_getFreqIn( ADC_HandleTypeDef* hadc );
 uint32_t ADC_calc_div( ADC_HandleTypeDef* hadc, uint32_t freq_max, uint32_t *div_val );
 uint32_t ADC_conv_time_tick( uint32_t s_idx, uint32_t n_ch, uint32_t n_bits );
 uint32_t ADC_calcfreq( ADC_HandleTypeDef* hadc, ADC_freq_info *fi );
+
+HAL_StatusTypeDef ADC_Start_DMA_n( ADC_HandleTypeDef* hadc, uint32_t* pData, uint32_t Length, uint32_t chunkLength );
 
 #endif
 

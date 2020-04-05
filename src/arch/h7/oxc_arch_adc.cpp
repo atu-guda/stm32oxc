@@ -292,6 +292,35 @@ uint32_t ADC_Info::prepare_multi_ev( uint32_t n_ch, uint32_t presc, uint32_t sam
 }
 
 
+uint32_t ADC_Info::prepare_multi_ev_n( uint32_t n_ch, uint32_t presc, uint32_t sampl_cycl, uint32_t ev, uint32_t resol )
+{
+  if( n_ch > n_ch_max ) {
+    n_ch = n_ch_max;
+  }
+  if( hadc.Instance == 0 || n_ch < 1 ) {
+    return 0;
+  }
+  sampl_cycl_common = sampl_cycl;
+
+  hadc.Init.ClockPrescaler           = presc;
+  hadc.Init.Resolution               = resol;
+  hadc.Init.ScanConvMode             = ADC_SCAN_ENABLE;
+  hadc.Init.EOCSelection             = ADC_EOC_SEQ_CONV;
+  hadc.Init.LowPowerAutoWait         = DISABLE;
+  hadc.Init.ContinuousConvMode       = DISABLE;
+  hadc.Init.NbrOfConversion          = n_ch;
+  hadc.Init.DiscontinuousConvMode    = DISABLE;
+  hadc.Init.ExternalTrigConv         = ev;
+  hadc.Init.ExternalTrigConvEdge     = ADC_EXTERNALTRIGCONVEDGE_RISING;
+  hadc.Init.ConversionDataManagement = ADC_CONVERSIONDATA_DMA_CIRCULAR; //
+  hadc.Init.Overrun                  = ADC_OVR_DATA_OVERWRITTEN;
+  hadc.Init.LeftBitShift             = ADC_LEFTBITSHIFT_NONE;
+  hadc.Init.OversamplingMode         = DISABLE;
+  prepared = 4;
+  return 1;
+}
+
+
 
 uint32_t ADC_Info::init_xxx1()
 {

@@ -145,7 +145,7 @@ int cmd_test0( int argc, const char * const * argv )
   UVAR('p') = psc;
   delay_ms( 1 );
 
-  adc.prepare_multi_ev( n_ch, div_bits, adc_arch_sampletimes[stime_idx].code, ADC_EXTERNALTRIG_T2_TRGO, BOARD_ADC_DEFAULT_RESOLUTION );
+  adc.prepare_multi_ev_n( n_ch, div_bits, adc_arch_sampletimes[stime_idx].code, ADC_EXTERNALTRIG_T2_TRGO, BOARD_ADC_DEFAULT_RESOLUTION );
 
   if( ! adc.init_xxx1() ) {
     std_out << "# error: fail to init ADC: errno= " << errno << NL;
@@ -182,7 +182,7 @@ int cmd_test0( int argc, const char * const * argv )
 
   if( UVAR('l') ) {  leds.set( BIT2 ); }
   tim2_init( psc, t_step_us - 1 );
-  uint32_t r = adc.start_DMA_wait( n_ch, n, t_wait0 );
+  uint32_t r = adc.start_DMA_wait_n( n_ch, n, t_wait0, ADCDMA_chunk_size );
   tim2_deinit();
   if( UVAR('l') ) {  leds.reset( BIT2 ); }
 
@@ -217,7 +217,7 @@ void HAL_ADC_MspInit( ADC_HandleTypeDef* adcHandle )
   adc.init_gpio_channels();
 
   // here?
-  adc.DMA_reinit( DMA_NORMAL );
+  adc.DMA_reinit( DMA_CIRCULAR );
 
   HAL_NVIC_SetPriority( BOARD_ADC_DMA_IRQ, 2, 0 );
   HAL_NVIC_EnableIRQ(   BOARD_ADC_DMA_IRQ );
@@ -240,7 +240,7 @@ void HAL_ADC_MspDeInit( ADC_HandleTypeDef* adcHandle )
 void HAL_ADC_ConvHalfCpltCallback( ADC_HandleTypeDef *hadc )
 {
   // leds.set( BIT1 );
-  // adc.convHalfCpltCallback( hadc );
+  adc.convHalfCpltCallback( hadc );
 }
 
 

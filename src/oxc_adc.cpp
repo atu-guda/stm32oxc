@@ -178,4 +178,40 @@ uint32_t ADC_Info::start_DMA_wait( uint32_t n_ch, uint32_t n, uint32_t t_wait ) 
   return 0;
 }
 
+uint32_t ADC_Info::start_DMA_wait_n( uint32_t n_ch, uint32_t n, uint32_t t_wait, uint32_t chank_sz ) // 0 - ok
+{
+  if( ! data || n_ch < 1 || n_ch > n_ch_max || ! prepared || n < 1 ) {
+    return 1;
+  }
+
+  end_dma = 0;
+
+  if( int sta = ADC_Start_DMA_n( &hadc, (uint32_t*)(data), n_ch * n, chank_sz ); sta != HAL_OK )   {
+    last_status = sta;
+    // std_out <<  "# error: ADC_Start_DMA error " << sta << NL;
+    return 2;
+  }
+
+  delay_ms( t_wait );
+  for( uint32_t ti=0; end_dma == 0 && ti < t_wait + 1000 && !break_flag;  ++ti ) {
+    delay_ms( 1 );
+  }
+
+  HAL_ADC_Stop_DMA( &hadc ); // needed
+
+  if( end_dma == 0 ) {
+    // std_out <<  "# error: Fail to wait DMA end " NL;
+    return 3;
+  }
+
+  if( dma_error != 0 ) {
+    // std_out <<  "# error: Found DMA error " << HexInt( adc.dma_error ) <<  NL;
+    return 4;
+  }
+  n_series = n;
+
+  return 0;
+}
+
+
 // vim: path=.,/usr/share/stm32cube/inc
