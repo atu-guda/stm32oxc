@@ -10,7 +10,7 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
-const char* common_help_string = "App to test ADC on H7 in T2 shot N channels one chunk" NL
+const char* common_help_string = "App to measure ADC data (4ch) with DMA double-buffer T2 shot" NL
  " var t - delay time in us" NL
  " var n - default number of measurements" NL
  " var s - sample time index" NL
@@ -26,8 +26,8 @@ const AdcChannelInfo adc_channels[] = {
   {                     0,                   GpioA,                    255 } // END
 };
 
-//
-const uint32_t n_ADC_mem  = std::min( BOARD_ADC_MEM_MAX, 128*1024 ); // 128k - one DMA max chunk
+const uint32_t ADCDMA_chunk_size = 1024; // in bytes, for now. may be up to 64k-small
+const uint32_t n_ADC_mem  = BOARD_ADC_MEM_MAX;
 using AdcDataX = AdcData<BOARD_ADC_DEFAULT_BITS,xfloat>;
 AdcDataX adcd( BOARD_ADC_MALLOC, BOARD_ADC_FREE );
 
@@ -44,7 +44,7 @@ int v_adc_ref = BOARD_ADC_COEFF; // in uV, measured before test
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " [n] - test ADC "  };
+CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " [n] - test ADC"  };
 int cmd_set_coeffs( int argc, const char * const * argv );
 CmdInfo CMDINFO_SET_COEFFS { "set_coeffs", 'F', cmd_set_coeffs, " k0 k1 k2 k3 - set ADC coeffs"  };
 int cmd_out( int argc, const char * const * argv );
@@ -165,7 +165,7 @@ int cmd_test0( int argc, const char * const * argv )
 
   // really need for H7 - DMA not work with ordinary memory
   adcd.free();
-  if( ! adcd.alloc( n_ch, n ) ) {
+  if( ! adcd.alloc( n_ch, n, ADCDMA_chunk_size ) ) {
     std_out << "# Error: fail to alloc buffer" << NL;
     return 2;
   }
@@ -263,12 +263,11 @@ void BOARD_ADC_DMA_IRQHANDLER(void)
 }
 
 
-// not used in single DMA
-// void BOARD_ADC_IRQHANDLER(void)
-// {
-//   HAL_ADC_IRQHandler( &adc.hadc );
-//   leds.toggle( BIT0 );
-// }
+void BOARD_ADC_IRQHANDLER(void)
+{
+  HAL_ADC_IRQHandler( &adc.hadc );
+  leds.toggle( BIT0 );
+}
 
 int cmd_set_coeffs( int argc, const char * const * argv )
 {

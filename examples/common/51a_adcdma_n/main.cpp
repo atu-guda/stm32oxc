@@ -55,7 +55,6 @@ CmdInfo CMDINFO_OUTHEX { "outhex", 'H', cmd_outhex, " [N [start]]- output data i
 int cmd_show_stats( int argc, const char * const * argv );
 CmdInfo CMDINFO_SHOWSTATS { "show_stats", 'Y', cmd_show_stats, " [N [start]]- show statistics"  };
 
-
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
 
@@ -171,7 +170,6 @@ int cmd_test0( int argc, const char * const * argv )
     std_out << "# Error: fail to alloc buffer" << NL;
     return 2;
   }
-  // ADC_buf.assign( n * n_ch + ADCDMA_chunk_size, 0 ); // 2 reserved chunks
   adc.data = adcd.data();
   adc.reset_cnt();
   adcd.set_d_t( adc.t_step_f * 1e-6f );
