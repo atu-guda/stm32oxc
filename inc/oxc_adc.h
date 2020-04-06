@@ -60,6 +60,7 @@ struct ADC_Info {
   ADC_Info( ADC_TypeDef* _hadc, const AdcChannelInfo *ch_i );
   uint32_t set_channels( const AdcChannelInfo *ch_i );
   void reset_cnt();
+  void pr_state() const; // arch-dep
   uint32_t init_gpio_channels();
   uint32_t start_DMA_wait( uint32_t n_ch, uint32_t n, uint32_t t_wait ); // 0 - ok, 1 - arg error, 2 - start err 3 - no end DMA, 4 - DMA error
   uint32_t start_DMA_wait_n( uint32_t n_ch, uint32_t n, uint32_t t_wait, uint32_t chank_sz );

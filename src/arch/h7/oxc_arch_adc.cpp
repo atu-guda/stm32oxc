@@ -1,5 +1,6 @@
 #include <algorithm>
 
+#include <oxc_auto.h> // output and debug
 #include <oxc_adc.h>
 
 const AdcSampleTimeInfo adc_arch_sampletimes[] = {
@@ -124,7 +125,6 @@ uint32_t ADC_calcfreq( ADC_HandleTypeDef* hadc, ADC_freq_info *fi )
   fi->devbits = 0;
 
   uint32_t cclock = LL_ADC_GetCommonClock( __LL_ADC_COMMON_INSTANCE( hadc->Instance ) );
-  dbg_val1 = cclock; // TODO remove
 
   if( ADC_IS_SYNCHRONOUS_CLOCK_MODE( hadc ) ) {
     fi->devbits |= 1; // sync mode
@@ -198,6 +198,21 @@ uint32_t ADC_calcfreq( ADC_HandleTypeDef* hadc, ADC_freq_info *fi )
 
 
 // ---------------- ADC_Info arch-dependent functions ---------------------------------
+
+void ADC_Info::pr_state() const
+{
+  std_out
+     << "# ADC: ISR= " << HexInt( BOARD_ADC_DEFAULT_DEV->ISR  )
+     <<  "  CR= "      << HexInt( BOARD_ADC_DEFAULT_DEV->CR )
+     <<  "  SQR1= "    << HexInt( BOARD_ADC_DEFAULT_DEV->SQR1 )
+     <<  "  SQR2= "    << HexInt( BOARD_ADC_DEFAULT_DEV->SQR2 )
+     <<  "  SQR3= "    << HexInt( BOARD_ADC_DEFAULT_DEV->SQR3 )
+     <<  NL;
+  std_out << "# adc_clk= " << adc_clk << " end_dma= " << end_dma << " n_series= " << n_series
+     << " n_good= " << n_good << " n_bad= " << n_bad
+     << " last_end= " << last_end << " last_error= " << last_error << " data= " << HexInt( (void*)(data), 1 )
+     <<  NL;
+}
 
 uint32_t ADC_Info::init_adc_channels()
 {
@@ -362,13 +377,7 @@ int ADC_Info::DMA_reinit( uint32_t mode )
   // std_out << "# debug: DMA_reinit start" NL;
   hdma_adc.Instance                 = BOARD_ADC_DMA_INSTANCE;
 
-  #ifdef BOARD_ADC_DMA_REQUEST
   hdma_adc.Init.Request             = BOARD_ADC_DMA_REQUEST;
-  #endif
-  #ifdef BOARD_ADC_DMA_CHANNEL
-  hdma_adc.Init.Channel             = BOARD_ADC_DMA_CHANNEL;
-  #endif
-
   hdma_adc.Init.Direction           = DMA_PERIPH_TO_MEMORY;
   hdma_adc.Init.PeriphInc           = DMA_PINC_DISABLE;
   hdma_adc.Init.MemInc              = DMA_MINC_ENABLE;

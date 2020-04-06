@@ -26,7 +26,8 @@ const AdcChannelInfo adc_channels[] = {
   {                     0,                   GpioA,                    255 } // END
 };
 
-const uint32_t ADCDMA_chunk_size = 1024; // in bytes, for now. may be up to 64k-small
+// const uint32_t ADCDMA_chunk_size = 1024; // in bytes, for now. may be up to 64k-small
+const uint32_t ADCDMA_chunk_size = 8 * 4 * 2; // debug: 8 lines
 const uint32_t n_ADC_mem  = BOARD_ADC_MEM_MAX;
 using AdcDataX = AdcData<BOARD_ADC_DEFAULT_BITS,xfloat>;
 AdcDataX adcd( BOARD_ADC_MALLOC, BOARD_ADC_FREE );
@@ -71,7 +72,8 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 1000; // 1 ms
+  UVAR('d') = 1;      // TMP: debug
+  UVAR('t') = 100000; // TMP: 0.1 for debug, real: 1000; // 1 ms
   UVAR('n') = 20;
   UVAR('c') = adc.n_ch_max; // number of channels
   UVAR('s') = adc_arch_sampletimes_n - 1;
@@ -102,8 +104,12 @@ int cmd_test0( int argc, const char * const * argv )
 {
   const uint32_t n_ch = clamp<uint32_t>( UVAR('c'), 1, adc.n_ch_max );
   const uint32_t n_ADC_series_max  = n_ADC_mem / ( 2 * n_ch ); // 2 is 16bit/sample
-  const uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, n_ADC_series_max ); // number of series
+  uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, n_ADC_series_max ); // number of series
   uint32_t unsigned stime_idx = ( (uint32_t)UVAR('s') < adc_arch_sampletimes_n ) ? UVAR('s') : (adc_arch_sampletimes_n - 1);
+
+  // make n a multiple of ADCDMA_chunk_size
+  uint32_t lines_per_chunk = ADCDMA_chunk_size / ( n_ch * 2 );
+  n = ( ( n  + lines_per_chunk - 1 ) / lines_per_chunk ) * lines_per_chunk;
 
   const uint32_t t_step_us = UVAR('t');
 
@@ -120,6 +126,7 @@ int cmd_test0( int argc, const char * const * argv )
     return 7;
   }
   const uint32_t adc_freq = adc_arch_clock_in / s_div;
+  adc.adc_clk = adc_freq; // TODO: place in good? place
   const uint32_t adc_clock_ns = (unsigned)( ( 1000000000LL + adc_freq - 1 ) / adc_freq );
   std_out << "# div= " << s_div << " bits: " << HexInt( div_bits ) << " freq: " << adc_freq
           << " adc_clock_ns: " << adc_clock_ns << NL;
@@ -181,6 +188,7 @@ int cmd_test0( int argc, const char * const * argv )
   uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
 
   if( UVAR('l') ) {  leds.set( BIT2 ); }
+  dbg_val0 = dbg_val1 = dbg_val2 = dbg_val3 = UVAR('i') = 0;
   tim2_init( psc, t_step_us - 1 );
   uint32_t r = adc.start_DMA_wait_n( n_ch, n, t_wait0, ADCDMA_chunk_size );
   tim2_deinit();
@@ -196,11 +204,14 @@ int cmd_test0( int argc, const char * const * argv )
 
   std_out <<  "#  tick: " <<  ( tcc - tm00 )  << NL;
 
-  adc.data = nullptr;
-
+  if( UVAR('d') > 0 ) {
+    adc.pr_state();
+  }
   if( UVAR('d') > 1 ) {
     dump32( BOARD_ADC_DEFAULT_DEV, 0x200 );
   }
+
+  adc.data = nullptr;
 
   return rc;
 }
@@ -222,8 +233,8 @@ void HAL_ADC_MspInit( ADC_HandleTypeDef* adcHandle )
   HAL_NVIC_SetPriority( BOARD_ADC_DMA_IRQ, 2, 0 );
   HAL_NVIC_EnableIRQ(   BOARD_ADC_DMA_IRQ );
 
-  // HAL_NVIC_SetPriority( BOARD_ADC_IRQ, 3, 0 );
-  // HAL_NVIC_EnableIRQ( BOARD_ADC_IRQ );
+  HAL_NVIC_SetPriority( BOARD_ADC_IRQ, 3, 0 );
+  HAL_NVIC_EnableIRQ( BOARD_ADC_IRQ );
 }
 
 void HAL_ADC_MspDeInit( ADC_HandleTypeDef* adcHandle )
@@ -240,6 +251,7 @@ void HAL_ADC_MspDeInit( ADC_HandleTypeDef* adcHandle )
 void HAL_ADC_ConvHalfCpltCallback( ADC_HandleTypeDef *hadc )
 {
   // leds.set( BIT1 );
+  ++dbg_val0;
   adc.convHalfCpltCallback( hadc );
 }
 
@@ -247,24 +259,28 @@ void HAL_ADC_ConvHalfCpltCallback( ADC_HandleTypeDef *hadc )
 void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc )
 {
   // leds.set( BIT1 );
+  ++dbg_val1;
   adc.convCpltCallback( hadc );
 }
 
 void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc )
 {
   // leds.set( BIT0 );
+  ++dbg_val2;
   adc.errorCallback( hadc );
 }
 
 void BOARD_ADC_DMA_IRQHANDLER(void)
 {
   // leds.set( BIT2 );
+  ++dbg_val3;
   HAL_DMA_IRQHandler( &adc.hdma_adc );
 }
 
 
 void BOARD_ADC_IRQHANDLER(void)
 {
+  ++UVAR('i');
   HAL_ADC_IRQHandler( &adc.hadc );
   leds.toggle( BIT0 );
 }
