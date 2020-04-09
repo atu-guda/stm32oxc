@@ -188,7 +188,7 @@ void ADC_DMAConvCplt_c_n( DMA_HandleTypeDef *hdma )
   if( is_final ) {
     // log_add( "fin "  );
     HAL_ADC_Stop_DMA( hadc );
-    adcdma_n_status.reset();
+    adcdma_n_status.reset(); // and signal to stop
   }
 
   /* Update state machine on conversion status if not in error state */

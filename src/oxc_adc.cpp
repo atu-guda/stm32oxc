@@ -192,7 +192,6 @@ uint32_t ADC_Info::start_DMA_wait_n( uint32_t n_ch, uint32_t n, uint32_t t_wait,
     return 2;
   }
 
-  delay_ms( t_wait );
   for( uint32_t ti=0; end_dma == 0 && ti < t_wait + 1000 && !break_flag;  ++ti ) {
     delay_ms( 1 );
   }

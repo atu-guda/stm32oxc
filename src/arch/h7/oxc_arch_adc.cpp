@@ -405,7 +405,13 @@ int ADC_Info::DMA_reinit( uint32_t mode )
 
 void ADC_Info::convCpltCallback( ADC_HandleTypeDef *hadc )
 {
-  end_dma |= 1; // not always
+  if( prepared != 4 ) {
+    end_dma |= 1; // not always
+  } else {
+    if( adcdma_n_status.base == 0 ) {
+      end_dma |= 1; // not always
+    }
+  }
   good_SR =  last_SR = hadc->Instance->ISR;
   last_end = 1;
   last_error = 0;

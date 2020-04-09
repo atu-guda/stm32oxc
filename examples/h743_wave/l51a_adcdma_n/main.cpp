@@ -269,8 +269,8 @@ void HAL_ADC_MspDeInit( ADC_HandleTypeDef* adcHandle )
 void HAL_ADC_ConvHalfCpltCallback( ADC_HandleTypeDef *hadc )
 {
   // leds.set( BIT1 );
-  log_add( "C.H " );
-  ++dbg_val0;
+  // log_add( "C.H " );
+  // ++dbg_val0;
   adc.convHalfCpltCallback( hadc );
 }
 
@@ -278,16 +278,16 @@ void HAL_ADC_ConvHalfCpltCallback( ADC_HandleTypeDef *hadc )
 void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc )
 {
   // leds.set( BIT1 );
-  log_add( "C.C " );
-  ++dbg_val1;
+  // log_add( "C.C " );
+  // ++dbg_val1;
   adc.convCpltCallback( hadc );
 }
 
 void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc )
 {
   // leds.set( BIT0 );
-  log_add( "C.E " );
-  ++dbg_val2;
+  // log_add( "C.E " );
+  // ++dbg_val2;
   adc.errorCallback( hadc );
 }
 
