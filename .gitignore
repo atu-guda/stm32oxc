@@ -47,6 +47,12 @@ examples/*/*/data/*
 *.project
 .settings
 
+# vim plugin files
+env.vim
+tags
+files.list
+session.vim
+
 # extra
 /extra/unhex_adc/unhex_adc
 extra/unhex_adc/*.txt
