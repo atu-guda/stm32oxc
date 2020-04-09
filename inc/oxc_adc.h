@@ -10,7 +10,7 @@
 struct AdcChannelInfo {
   uint32_t channel; // like ADC_CHANNEL_17
   GpioRegs &gpio;   // like GpioA
-  uint8_t  pin_num; // like 15 - not bit
+  uint8_t  pin_num; // like 15 - not bit, 15 - END
 };
 
 struct AdcSampleTimeInfo {
@@ -63,7 +63,7 @@ struct ADC_Info {
   void pr_state() const; // arch-dep
   uint32_t init_gpio_channels();
   uint32_t start_DMA_wait( uint32_t n_ch, uint32_t n, uint32_t t_wait ); // 0 - ok, 1 - arg error, 2 - start err 3 - no end DMA, 4 - DMA error
-  uint32_t start_DMA_wait_n( uint32_t n_ch, uint32_t n, uint32_t t_wait, uint32_t chank_sz );
+  uint32_t start_DMA_wait_n( uint32_t n_ch, uint32_t n, uint32_t t_wait, uint32_t chunk_sz );
   uint32_t init_adc_channels(); // arch-dependent, in oxc_arch_adc.cpp
 
   uint32_t prepare_single_manual( uint32_t presc, uint32_t sampl_cycl, uint32_t resol ); // arch-dep
@@ -81,10 +81,12 @@ struct ADC_Info {
 };
 
 struct AdcDma_n_status {
-  uint32_t base_dma_addr;
-  uint32_t next_dma_ofs;
-  uint32_t step_dma_addr;
-  uint32_t dma_total_sz;
+  uint32_t base;
+  uint32_t next; // is offset, from 0
+  uint32_t step;
+  uint32_t total_sz;
+  void reset() { base = next = step = total_sz = 0; }
+  void makeStep() { next += step; }
 };
 extern AdcDma_n_status adcdma_n_status;
 

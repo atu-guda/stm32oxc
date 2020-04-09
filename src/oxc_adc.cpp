@@ -178,7 +178,7 @@ uint32_t ADC_Info::start_DMA_wait( uint32_t n_ch, uint32_t n, uint32_t t_wait ) 
   return 0;
 }
 
-uint32_t ADC_Info::start_DMA_wait_n( uint32_t n_ch, uint32_t n, uint32_t t_wait, uint32_t chank_sz ) // 0 - ok
+uint32_t ADC_Info::start_DMA_wait_n( uint32_t n_ch, uint32_t n, uint32_t t_wait, uint32_t chunk_sz ) // 0 - ok
 {
   if( ! data || n_ch < 1 || n_ch > n_ch_max || ! prepared || n < 1 ) {
     return 1;
@@ -186,7 +186,7 @@ uint32_t ADC_Info::start_DMA_wait_n( uint32_t n_ch, uint32_t n, uint32_t t_wait,
 
   end_dma = 0;
 
-  if( int sta = ADC_Start_DMA_n( &hadc, (uint32_t*)(data), n_ch * n, chank_sz ); sta != HAL_OK )   {
+  if( int sta = ADC_Start_DMA_n( &hadc, (uint32_t*)(data), n_ch * n, chunk_sz ); sta != HAL_OK )   {
     last_status = sta;
     // std_out <<  "# error: ADC_Start_DMA error " << sta << NL;
     return 2;

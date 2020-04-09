@@ -111,7 +111,7 @@ uint32_t ADC_conv_time_tick( uint32_t s_idx, uint32_t n_ch, uint32_t n_bits )
   if( s_idx >= adc_arch_sampletimes_n || n_ch < 1 || n_ch > 20 || n_bits > 16 || n_bits < 8 ) {
     return 0xFFFFFFFF;
   }
-  return n_ch * ( ( 9 + ( adc_arch_sampletimes[s_idx].stime10 + 5 * n_bits ) ) / 10 );
+  return n_ch * ( ( 9 + ( adc_arch_sampletimes[s_idx].stime10 + 5 * n_bits ) ) / 10 ); // TODO: check!
 }
 
 uint32_t ADC_calcfreq( ADC_HandleTypeDef* hadc, ADC_freq_info *fi )
@@ -204,19 +204,21 @@ void ADC_Info::pr_state() const
   std_out
      << "# ADC: ISR= " << HexInt( BOARD_ADC_DEFAULT_DEV->ISR  )
      <<  "  CR= "      << HexInt( BOARD_ADC_DEFAULT_DEV->CR )
+     <<  "  CFGR= "    << HexInt( BOARD_ADC_DEFAULT_DEV->CFGR )
+     <<  "  CFGR2= "   << HexInt( BOARD_ADC_DEFAULT_DEV->CFGR2 )
      <<  "  SQR1= "    << HexInt( BOARD_ADC_DEFAULT_DEV->SQR1 )
-     <<  "  SQR2= "    << HexInt( BOARD_ADC_DEFAULT_DEV->SQR2 )
-     <<  "  SQR3= "    << HexInt( BOARD_ADC_DEFAULT_DEV->SQR3 )
      <<  NL;
   std_out << "# adc_clk= " << adc_clk << " end_dma= " << end_dma << " n_series= " << n_series
      << " n_good= " << n_good << " n_bad= " << n_bad
-     << " last_end= " << last_end << " last_error= " << last_error << " data= " << HexInt( (void*)(data), 1 )
+     << " last_end= " << last_end << " last_error= " << last_error << " dma_error= " << dma_error << NL
+     << "# good_SR= " << HexInt( good_SR ) << " bad_SR= " << HexInt(bad_SR) << " last_SR= " << HexInt(last_SR)
+     << " data= " << HexInt( (void*)(data), 1 )
      <<  NL;
 }
 
 uint32_t ADC_Info::init_adc_channels()
 {
-  static const constexpr uint32_t ranks[] = {
+  static const constexpr uint32_t ranks[] = {  // TODO: LL macros?
      ADC_REGULAR_RANK_1,  ADC_REGULAR_RANK_2,  ADC_REGULAR_RANK_3,  ADC_REGULAR_RANK_4,  ADC_REGULAR_RANK_5,
      ADC_REGULAR_RANK_6,  ADC_REGULAR_RANK_7,  ADC_REGULAR_RANK_8,  ADC_REGULAR_RANK_9, ADC_REGULAR_RANK_10,
     ADC_REGULAR_RANK_11, ADC_REGULAR_RANK_12, ADC_REGULAR_RANK_13, ADC_REGULAR_RANK_14, ADC_REGULAR_RANK_15,
@@ -358,7 +360,6 @@ uint32_t ADC_Info::init_xxx1()
   }
 
   uint32_t n_ch_init = init_adc_channels();
-  // dbg_val0 = n_ch_init;
   if( n_ch_init != n_ch_max )  {
     errno = 3003;
     return 0;
@@ -383,7 +384,7 @@ int ADC_Info::DMA_reinit( uint32_t mode )
   hdma_adc.Init.MemInc              = DMA_MINC_ENABLE;
   hdma_adc.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
   hdma_adc.Init.MemDataAlignment    = DMA_MDATAALIGN_HALFWORD;
-  hdma_adc.Init.Mode                = mode; // DMA_NORMAL, DMA_CIRCULAR, DMA_PFCTRL
+  hdma_adc.Init.Mode                = mode; // DMA_NORMAL, DMA_CIRCULAR, DMA_PFCTRL, DMA_DOUBLE_BUFFER_M0, DMA_DOUBLE_BUFFER_M1
   hdma_adc.Init.Priority            = DMA_PRIORITY_HIGH; // DMA_PRIORITY_LOW, DMA_PRIORITY_MEDIUM, DMA_PRIORITY_HIGH, DMA_PRIORITY_VERY_HIGH
   hdma_adc.Init.FIFOMode            = DMA_FIFOMODE_DISABLE;
   // hdma_adc.Init.FIFOThreshold    = DMA_FIFO_THRESHOLD_HALFFULL;
@@ -404,7 +405,7 @@ int ADC_Info::DMA_reinit( uint32_t mode )
 
 void ADC_Info::convCpltCallback( ADC_HandleTypeDef *hadc )
 {
-  end_dma |= 1;
+  end_dma |= 1; // not always
   good_SR =  last_SR = hadc->Instance->ISR;
   last_end = 1;
   last_error = 0;
@@ -428,6 +429,6 @@ void ADC_Info::errorCallback( ADC_HandleTypeDef *hadc )
   last_error = HAL_ADC_GetError( hadc );
   dma_error = hadc->DMA_Handle->ErrorCode;
   hadc->DMA_Handle->ErrorCode = 0;
-  n_bad;
+  ++n_bad;
 }
 

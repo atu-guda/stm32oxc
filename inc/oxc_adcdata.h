@@ -52,6 +52,7 @@ class AdcData {
      } ;
    AdcData( const AdcData &rhs ) = delete;
    ~AdcData() { free(); };
+   void fill( TS v );
    AdcData& operator=( const AdcData &rhs ) = delete;
    bool alloc( unsigned a_n_col, unsigned a_n_row, unsigned row_add = 0 );
    void free();
@@ -121,7 +122,7 @@ bool AdcData<N,FL>::alloc( unsigned a_n_col, unsigned a_n_row, unsigned row_add 
   if( !d ) {
     return false;
   }
-  std::fill( d, d+(n_row+row_add)*n_col, 0 );
+  fill( 0 );
   n_col = a_n_col; n_row = a_n_row;
   // cerr << "d= " << d << " sz_row= " << sz_row << " sz_all_full= " << sz_all_full << NL;
   return true;
@@ -134,6 +135,12 @@ void AdcData<N,FL>::free()
     free_fun( d ); d = nullptr;
   }
   n_col = n_row = sz_row = sz_all = 0;
+}
+
+template< int N, typename FL  >
+void AdcData<N,FL>::fill( TS v )
+{
+  std::fill( d, d+n_row*n_col, v ); // row_add unavailable here
 }
 
 template< int N, typename FL  >

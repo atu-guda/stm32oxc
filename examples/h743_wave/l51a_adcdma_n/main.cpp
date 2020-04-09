@@ -32,6 +32,9 @@ const uint32_t n_ADC_mem  = BOARD_ADC_MEM_MAX;
 using AdcDataX = AdcData<BOARD_ADC_DEFAULT_BITS,xfloat>;
 AdcDataX adcd( BOARD_ADC_MALLOC, BOARD_ADC_FREE );
 
+// tmp: for debug DMA
+uint32_t  *xxx_dma_isr;
+
 const int tim_base_freq = 1000000;
 
 TIM_HandleTypeDef tim2h;
@@ -73,8 +76,8 @@ int main(void)
   BOARD_PROLOG;
 
   UVAR('d') = 1;      // TMP: debug
-  UVAR('t') = 100000; // TMP: 0.1 for debug, real: 1000; // 1 ms
-  UVAR('n') = 20;
+  UVAR('t') = 10000; // TMP: 0.01 for debug, real: 1000; // 1 ms
+  UVAR('n') = 128;
   UVAR('c') = adc.n_ch_max; // number of channels
   UVAR('s') = adc_arch_sampletimes_n - 1;
   UVAR('v') = v_adc_ref;
@@ -107,9 +110,9 @@ int cmd_test0( int argc, const char * const * argv )
   uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, n_ADC_series_max ); // number of series
   uint32_t unsigned stime_idx = ( (uint32_t)UVAR('s') < adc_arch_sampletimes_n ) ? UVAR('s') : (adc_arch_sampletimes_n - 1);
 
-  // make n a multiple of ADCDMA_chunk_size
-  uint32_t lines_per_chunk = ADCDMA_chunk_size / ( n_ch * 2 );
-  n = ( ( n  + lines_per_chunk - 1 ) / lines_per_chunk ) * lines_per_chunk;
+  // make n a multiple of 2 * ADCDMA_chunk_size
+  uint32_t lines_per_chunk2 = ADCDMA_chunk_size / ( n_ch ); // *2 - 2line, /2 - 16 bit
+  n = ( ( n  + lines_per_chunk2 - 1 ) / lines_per_chunk2 ) * lines_per_chunk2;
 
   const uint32_t t_step_us = UVAR('t');
 
@@ -158,9 +161,16 @@ int cmd_test0( int argc, const char * const * argv )
     std_out << "# error: fail to init ADC: errno= " << errno << NL;
   }
 
+  if( UVAR('d') > 0 ) {
+    adc.pr_state();
+  }
   if( UVAR('d') > 1 ) {
     dump32( BOARD_ADC_DEFAULT_DEV, 0x100 );
   }
+  xxx_dma_isr = (uint32_t*)(0x30000000);
+  for( unsigned i=0; i<10240; ++i ) {
+    xxx_dma_isr[i] = 0x1111;
+  };
 
   // or such
   // ADC_freq_info fi;
@@ -180,7 +190,10 @@ int cmd_test0( int argc, const char * const * argv )
   adc.reset_cnt();
   adcd.set_d_t( t_step_us * 1e-6f );
   adcd.set_v_ref_uV( UVAR('v') );
+  adcd.fill( 0x5555 ); // debug?
   std_out << "# n_col= " << adcd.get_n_col() << " n_row= " << adcd.get_n_row() << " data: " << HexInt(adcd.data()) << " size_all= " << adcd.size_all() << NL;
+
+  // adc.DMA_reinit( DMA_CIRCULAR ); // ???????????????? not
 
   leds.reset( BIT0 | BIT1 | BIT2 );
   int rc = 0;
@@ -210,6 +223,7 @@ int cmd_test0( int argc, const char * const * argv )
   if( UVAR('d') > 1 ) {
     dump32( BOARD_ADC_DEFAULT_DEV, 0x200 );
   }
+  HAL_ADC_Stop_DMA( &adc.hadc ); // ????? not?
 
   adc.data = nullptr;
 
@@ -228,13 +242,13 @@ void HAL_ADC_MspInit( ADC_HandleTypeDef* adcHandle )
   adc.init_gpio_channels();
 
   // here?
-  adc.DMA_reinit( DMA_CIRCULAR );
+  adc.DMA_reinit( DMA_DOUBLE_BUFFER_M1 ); // or M0 /?
 
   HAL_NVIC_SetPriority( BOARD_ADC_DMA_IRQ, 2, 0 );
   HAL_NVIC_EnableIRQ(   BOARD_ADC_DMA_IRQ );
 
   HAL_NVIC_SetPriority( BOARD_ADC_IRQ, 3, 0 );
-  HAL_NVIC_EnableIRQ( BOARD_ADC_IRQ );
+  // HAL_NVIC_EnableIRQ( BOARD_ADC_IRQ );
 }
 
 void HAL_ADC_MspDeInit( ADC_HandleTypeDef* adcHandle )
@@ -251,6 +265,7 @@ void HAL_ADC_MspDeInit( ADC_HandleTypeDef* adcHandle )
 void HAL_ADC_ConvHalfCpltCallback( ADC_HandleTypeDef *hadc )
 {
   // leds.set( BIT1 );
+  log_add( "C.H " );
   ++dbg_val0;
   adc.convHalfCpltCallback( hadc );
 }
@@ -259,6 +274,7 @@ void HAL_ADC_ConvHalfCpltCallback( ADC_HandleTypeDef *hadc )
 void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc )
 {
   // leds.set( BIT1 );
+  log_add( "C.C " );
   ++dbg_val1;
   adc.convCpltCallback( hadc );
 }
@@ -266,21 +282,41 @@ void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc )
 void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc )
 {
   // leds.set( BIT0 );
+  log_add( "C.E " );
   ++dbg_val2;
   adc.errorCallback( hadc );
 }
 
 void BOARD_ADC_DMA_IRQHANDLER(void)
 {
-  // leds.set( BIT2 );
-  ++dbg_val3;
+  leds.set( BIT1 );
+  log_add( "I.AD [ " );
+
+  DMA_TypeDef *dma_base = (DMA_TypeDef*)(adc.hdma_adc.StreamBaseAddress);
+  DMA_Stream_TypeDef *dma_stream = (DMA_Stream_TypeDef *)(adc.hdma_adc.Instance);
+  *xxx_dma_isr++ = dma_base->LISR;
+  *xxx_dma_isr++ = dma_stream->CR;
+  // *xxx_dma_isr++ = dma_stream->NDTR;
+  *xxx_dma_isr++ = dma_stream->M0AR;
+  *xxx_dma_isr++ = dma_stream->M1AR;
+  // ++dbg_val3;
+
   HAL_DMA_IRQHandler( &adc.hdma_adc );
+
+  *xxx_dma_isr++ = dma_base->LISR;
+  *xxx_dma_isr++ = dma_stream->CR;
+  // *xxx_dma_isr++ = dma_stream->NDTR;
+  *xxx_dma_isr++ = dma_stream->M0AR;
+  *xxx_dma_isr++ = dma_stream->M1AR;
+  log_add( " ].AD" NL NL );
+  leds.reset( BIT1 );
 }
 
 
 void BOARD_ADC_IRQHANDLER(void)
 {
   ++UVAR('i');
+  log_add( "I.A " NL );
   HAL_ADC_IRQHandler( &adc.hadc );
   leds.toggle( BIT0 );
 }
