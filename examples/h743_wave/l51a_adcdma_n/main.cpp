@@ -290,7 +290,6 @@ void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc )
 void BOARD_ADC_DMA_IRQHANDLER(void)
 {
   leds.set( BIT1 );
-  log_add( "I.AD [ " );
 
   DMA_TypeDef *dma_base = (DMA_TypeDef*)(adc.hdma_adc.StreamBaseAddress);
   DMA_Stream_TypeDef *dma_stream = (DMA_Stream_TypeDef *)(adc.hdma_adc.Instance);
@@ -300,6 +299,8 @@ void BOARD_ADC_DMA_IRQHANDLER(void)
   *xxx_dma_isr++ = dma_stream->M0AR;
   *xxx_dma_isr++ = dma_stream->M1AR;
   // ++dbg_val3;
+
+  log_add( "I.AD" ); log_add_hex( dma_base->LISR ); log_add( "[ " );
 
   HAL_DMA_IRQHandler( &adc.hdma_adc );
 

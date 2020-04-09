@@ -160,6 +160,17 @@ void log_add( const char *s )
   gbuf_b[log_buf_idx] = '\0'; // not++
 }
 
+void log_add_hex( uint32_t v )
+{
+  //              0123456789ABCDEF
+  char s[16]; // ' 0x01234567 '
+  s[0] = ' '; s[1] = '0'; s[2] = 'x';
+  word2hex( v, s+3 );
+  s[11] = ' ';
+  s[12] = '\0';
+  log_add_bin( s, 12 );
+}
+
 void log_add_bin( const char *s, uint16_t len )
 {
   if( !s ) {

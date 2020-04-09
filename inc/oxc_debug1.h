@@ -17,6 +17,7 @@ extern char gbuf_a[GBUF_SZ];
 extern char gbuf_b[GBUF_SZ];
 extern int log_buf_idx; // gbuf_b is log place too
 void log_add( const char *s );
+void log_add_hex( uint32_t v );
 void log_add_bin( const char *s, uint16_t len );
 void log_reset(void);
 void log_print(void);
