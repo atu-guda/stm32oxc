@@ -260,20 +260,20 @@ void ADC_DMAConvCplt_c_n( DMA_HandleTypeDef *hdma )
 
 void ADC_DMAConvCplt_n( DMA_HandleTypeDef *hdma )
 {
-  log_add( "c.cc0 " );
+  log_add( "c.cc1 " ); // really 1, logic in IRQ handler is inconsistent
 
   // bool is_mem1 = ((DMA_Stream_TypeDef *)(hdma->Instance))->CR & DMA_SxCR_CT;
   adcdma_n_status.makeStep();
-  ((DMA_Stream_TypeDef *)(hdma->Instance))->M1AR = adcdma_n_status.base + adcdma_n_status.next;
+  ((DMA_Stream_TypeDef *)(hdma->Instance))->M0AR = adcdma_n_status.base + adcdma_n_status.next;
 
   ADC_DMAConvCplt_c_n( hdma );
 }
 
 void ADC_DMAM1Cplt_n( DMA_HandleTypeDef *hdma )
 {
-  log_add( "c.cc1 " );
+  log_add( "c.cc0 " ); // really 0
   adcdma_n_status.makeStep();
-  ((DMA_Stream_TypeDef *)(hdma->Instance))->M0AR = adcdma_n_status.base + adcdma_n_status.next;
+  ((DMA_Stream_TypeDef *)(hdma->Instance))->M1AR = adcdma_n_status.base + adcdma_n_status.next;
   ADC_DMAConvCplt_c_n( hdma );
 }
 

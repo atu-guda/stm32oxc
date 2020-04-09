@@ -34,6 +34,7 @@ AdcDataX adcd( BOARD_ADC_MALLOC, BOARD_ADC_FREE );
 
 // tmp: for debug DMA
 uint32_t  *xxx_dma_isr;
+char tmp_log_buff[4096];
 
 const int tim_base_freq = 1000000;
 
@@ -81,6 +82,8 @@ int main(void)
   UVAR('c') = adc.n_ch_max; // number of channels
   UVAR('s') = adc_arch_sampletimes_n - 1;
   UVAR('v') = v_adc_ref;
+
+  set_log_buf( tmp_log_buff, size(tmp_log_buff) );
 
   // TODO: check
   #ifdef PWR_CR1_ADCDC1
@@ -167,6 +170,7 @@ int cmd_test0( int argc, const char * const * argv )
   if( UVAR('d') > 1 ) {
     dump32( BOARD_ADC_DEFAULT_DEV, 0x100 );
   }
+  log_reset();
   xxx_dma_isr = (uint32_t*)(0x30000000);
   for( unsigned i=0; i<10240; ++i ) {
     xxx_dma_isr[i] = 0x1111;
@@ -242,7 +246,7 @@ void HAL_ADC_MspInit( ADC_HandleTypeDef* adcHandle )
   adc.init_gpio_channels();
 
   // here?
-  adc.DMA_reinit( DMA_DOUBLE_BUFFER_M1 ); // or M0 /?
+  adc.DMA_reinit( DMA_DOUBLE_BUFFER_M0 ); // or M0 /?
 
   HAL_NVIC_SetPriority( BOARD_ADC_DMA_IRQ, 2, 0 );
   HAL_NVIC_EnableIRQ(   BOARD_ADC_DMA_IRQ );
@@ -300,7 +304,10 @@ void BOARD_ADC_DMA_IRQHANDLER(void)
   *xxx_dma_isr++ = dma_stream->M1AR;
   // ++dbg_val3;
 
-  log_add( "I.AD" ); log_add_hex( dma_base->LISR ); log_add( "[ " );
+  log_add( "I.AD" );
+  log_add_hex( dma_base->LISR );
+  log_add_hex( dma_stream->CR );
+  log_add( "[ " );
 
   HAL_DMA_IRQHandler( &adc.hdma_adc );
 

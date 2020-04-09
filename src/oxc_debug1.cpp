@@ -145,7 +145,21 @@ void dump32( const void *addr, unsigned n, bool isAbs  )
 }
 
 
-int log_buf_idx = 0;
+char* log_buf = gbuf_b;
+unsigned log_buf_size = GBUF_SZ;
+unsigned log_buf_idx = 0;
+
+void set_log_buf( char *buf, unsigned buf_sz )
+{
+  if( buf == nullptr ) { // default values
+    log_buf = gbuf_b;
+    log_buf_size = GBUF_SZ;
+  } else {
+    log_buf = buf;
+    log_buf_size = buf_sz;
+  }
+  log_buf_idx = 0;
+}
 
 // TODO: mutex
 void log_add( const char *s )
@@ -154,10 +168,10 @@ void log_add( const char *s )
     return;
   }
 
-  while( *s !=0  && log_buf_idx < GBUF_SZ-1 ) {
-    gbuf_b[log_buf_idx++] = *s++;
+  while( *s !=0  && log_buf_idx < log_buf_size-1 ) {
+    log_buf[log_buf_idx++] = *s++;
   }
-  gbuf_b[log_buf_idx] = '\0'; // not++
+  log_buf[log_buf_idx] = '\0'; // not++
 }
 
 void log_add_hex( uint32_t v )
@@ -177,22 +191,22 @@ void log_add_bin( const char *s, uint16_t len )
     return;
   }
 
-  for( uint16_t i=0;  i<len && log_buf_idx < GBUF_SZ-1; ++i ) {
-    gbuf_b[log_buf_idx++] = *s++;
+  for( uint16_t i=0;  i<len && log_buf_idx < log_buf_size-1; ++i ) {
+    log_buf[log_buf_idx++] = *s++;
   }
-  gbuf_b[log_buf_idx] = '\0'; // not++
+  log_buf[log_buf_idx] = '\0'; // not++
 }
 
 void log_reset()
 {
   log_buf_idx = 0;
-  gbuf_b[0] = '\0';
+  log_buf[0] = '\0';
 }
 
 void log_print()
 {
   if( log_buf_idx > 0 ) {
-    std_out <<  gbuf_b <<  NL <<  "log_buf_idx " <<  log_buf_idx << NL;
+    std_out <<  log_buf <<  NL <<  "log_buf_idx " <<  log_buf_idx << NL;
     delay_ms( 100 );
   }
 }

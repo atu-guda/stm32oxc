@@ -15,7 +15,10 @@ extern int user_vars[N_USER_VARS];
 #define GBUF_SZ 256
 extern char gbuf_a[GBUF_SZ];
 extern char gbuf_b[GBUF_SZ];
-extern int log_buf_idx; // gbuf_b is log place too
+extern char* log_buf;
+extern unsigned log_buf_size;
+extern unsigned log_buf_idx; // gbuf_b is default log place too
+void set_log_buf( char *buf, unsigned buf_sz );
 void log_add( const char *s );
 void log_add_hex( uint32_t v );
 void log_add_bin( const char *s, uint16_t len );
