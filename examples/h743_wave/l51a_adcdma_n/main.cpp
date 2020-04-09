@@ -26,14 +26,14 @@ const AdcChannelInfo adc_channels[] = {
   {                     0,                   GpioA,                    255 } // END
 };
 
-// const uint32_t ADCDMA_chunk_size = 1024; // in bytes, for now. may be up to 64k-small
-const uint32_t ADCDMA_chunk_size = 8 * 4 * 2; // debug: 8 lines
+const uint32_t ADCDMA_chunk_size = 1024; // in bytes, for now. may be up to 64k-small
+// const uint32_t ADCDMA_chunk_size = 8 * 4 * 2; // debug: 8 lines
 const uint32_t n_ADC_mem  = BOARD_ADC_MEM_MAX;
 using AdcDataX = AdcData<BOARD_ADC_DEFAULT_BITS,xfloat>;
 AdcDataX adcd( BOARD_ADC_MALLOC, BOARD_ADC_FREE );
 
 // tmp: for debug DMA
-uint32_t  *xxx_dma_isr;
+// uint32_t  *xxx_dma_isr;
 char tmp_log_buff[4096];
 
 const int tim_base_freq = 1000000;
@@ -76,9 +76,9 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('d') = 1;      // TMP: debug
-  UVAR('t') = 10000; // TMP: 0.01 for debug, real: 1000; // 1 ms
-  UVAR('n') = 128;
+  UVAR('d') = 0;      // TMP: debug
+  UVAR('t') = 1000; // TMP: 0.01 for debug, real: 1000; // 1 ms
+  UVAR('n') = 20;    // must be rounded to 24 in small chunks (64B)
   UVAR('c') = adc.n_ch_max; // number of channels
   UVAR('s') = adc_arch_sampletimes_n - 1;
   UVAR('v') = v_adc_ref;
@@ -113,9 +113,9 @@ int cmd_test0( int argc, const char * const * argv )
   uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, n_ADC_series_max ); // number of series
   uint32_t unsigned stime_idx = ( (uint32_t)UVAR('s') < adc_arch_sampletimes_n ) ? UVAR('s') : (adc_arch_sampletimes_n - 1);
 
-  // make n a multiple of 2 * ADCDMA_chunk_size
-  uint32_t lines_per_chunk2 = ADCDMA_chunk_size / ( n_ch ); // *2 - 2line, /2 - 16 bit
-  n = ( ( n  + lines_per_chunk2 - 1 ) / lines_per_chunk2 ) * lines_per_chunk2;
+  // make n a multiple of ADCDMA_chunk_size
+  uint32_t lines_per_chunk = ADCDMA_chunk_size / ( n_ch  * 2 ); // /2 - 16 bit
+  n = ( ( n  + lines_per_chunk - 1 ) / lines_per_chunk ) * lines_per_chunk;
 
   const uint32_t t_step_us = UVAR('t');
 
@@ -171,10 +171,10 @@ int cmd_test0( int argc, const char * const * argv )
     dump32( BOARD_ADC_DEFAULT_DEV, 0x100 );
   }
   log_reset();
-  xxx_dma_isr = (uint32_t*)(0x30000000);
-  for( unsigned i=0; i<10240; ++i ) {
-    xxx_dma_isr[i] = 0x1111;
-  };
+  // xxx_dma_isr = (uint32_t*)(0x30000000);
+  // for( unsigned i=0; i<10240; ++i ) {
+  //   xxx_dma_isr[i] = 0x1111;
+  // };
 
   // or such
   // ADC_freq_info fi;
@@ -293,38 +293,40 @@ void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc )
 
 void BOARD_ADC_DMA_IRQHANDLER(void)
 {
-  leds.set( BIT1 );
+  // leds.set( BIT1 );
 
-  DMA_TypeDef *dma_base = (DMA_TypeDef*)(adc.hdma_adc.StreamBaseAddress);
-  DMA_Stream_TypeDef *dma_stream = (DMA_Stream_TypeDef *)(adc.hdma_adc.Instance);
-  *xxx_dma_isr++ = dma_base->LISR;
-  *xxx_dma_isr++ = dma_stream->CR;
-  // *xxx_dma_isr++ = dma_stream->NDTR;
-  *xxx_dma_isr++ = dma_stream->M0AR;
-  *xxx_dma_isr++ = dma_stream->M1AR;
-  // ++dbg_val3;
+  // uint32_t tc = HAL_GetTick();
 
-  log_add( "I.AD" );
-  log_add_hex( dma_base->LISR );
-  log_add_hex( dma_stream->CR );
-  log_add( "[ " );
+  // DMA_TypeDef *dma_base = (DMA_TypeDef*)(adc.hdma_adc.StreamBaseAddress);
+  // DMA_Stream_TypeDef *dma_stream = (DMA_Stream_TypeDef *)(adc.hdma_adc.Instance);
+  // *xxx_dma_isr++ = dma_base->LISR;
+  // *xxx_dma_isr++ = dma_stream->CR;
+  // // *xxx_dma_isr++ = dma_stream->NDTR;
+  // *xxx_dma_isr++ = dma_stream->M0AR;
+  // *xxx_dma_isr++ = dma_stream->M1AR;
+  // // ++dbg_val3;
+
+  // log_add( "I.AD" );
+  // log_add_hex( dma_base->LISR );
+  // log_add_hex( dma_stream->CR );
+  // log_add_hex( tc );
+  // log_add( "[ " );
 
   HAL_DMA_IRQHandler( &adc.hdma_adc );
 
-  *xxx_dma_isr++ = dma_base->LISR;
-  *xxx_dma_isr++ = dma_stream->CR;
-  // *xxx_dma_isr++ = dma_stream->NDTR;
-  *xxx_dma_isr++ = dma_stream->M0AR;
-  *xxx_dma_isr++ = dma_stream->M1AR;
-  log_add( " ].AD" NL NL );
-  leds.reset( BIT1 );
+  // *xxx_dma_isr++ = dma_base->LISR;
+  // *xxx_dma_isr++ = dma_stream->CR;
+  // // *xxx_dma_isr++ = dma_stream->NDTR;
+  // *xxx_dma_isr++ = dma_stream->M0AR;
+  // *xxx_dma_isr++ = dma_stream->M1AR;
+  // log_add( " ].AD" NL NL );
+  // leds.reset( BIT1 );
 }
 
 
+// unused
 void BOARD_ADC_IRQHANDLER(void)
 {
-  ++UVAR('i');
-  log_add( "I.A " NL );
   HAL_ADC_IRQHandler( &adc.hadc );
   leds.toggle( BIT0 );
 }
