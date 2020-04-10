@@ -7,7 +7,6 @@
   *          by  MCD Application Team
    ------------------------------------------------------------------*/
 
-AdcDma_n_status adcdma_n_status;
 
 static void ADC_DMAConvCplt_c_n( DMA_HandleTypeDef *hdma ); // common part
 static void ADC_DMAConvCplt_n( DMA_HandleTypeDef *hdma );

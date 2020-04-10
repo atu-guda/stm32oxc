@@ -1,6 +1,3 @@
-#include <cstring>
-#include <cstdlib>
-
 #include <oxc_auto.h>
 #include <oxc_adcdata.h>
 #include <oxc_adcdata_cmds.h>
@@ -39,7 +36,7 @@ int v_adc_ref = BOARD_ADC_COEFF; // in uV, measured before test
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " [n] - test ADC "  };
+CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " [n] - test ADC"  };
 int cmd_set_coeffs( int argc, const char * const * argv );
 CmdInfo CMDINFO_SET_COEFFS { "set_coeffs", 'F', cmd_set_coeffs, " k0 k1 k2 k3 - set ADC coeffs"  };
 
@@ -87,11 +84,13 @@ int main(void)
 int cmd_test0( int argc, const char * const * argv )
 {
   const uint32_t n_ch = clamp<uint32_t>( UVAR('c'), 1, adc.n_ch_max );
-  // const uint32_t n_ADC_series_max  = n_ADC_mem / ( 2 * n_ch ); // 2 is 16bit/sample
-  const uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1 );
+  //
   uint32_t unsigned stime_idx = ( (uint32_t)UVAR('s') < adc_arch_sampletimes_n ) ? UVAR('s') : (adc_arch_sampletimes_n - 1);
+  const uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1 );
 
   const uint32_t t_step_us = UVAR('t');
+  adc.t_step_f = (decltype(adc.t_step_f))(1e-6f) * t_step_us;
+  const xfloat freq_sampl = (xfloat)1e6f / t_step_us;
   const uint32_t t_step = UVAR('t') / 1000;
   const xfloat k_all = 1e-6f * UVAR('v') / BOARD_ADC_DEFAULT_MAX;
 
@@ -100,7 +99,8 @@ int cmd_test0( int argc, const char * const * argv )
   uint32_t div_bits = ADC_calc_div( &adc.hadc, BOARD_ADC_FREQ_MAX, &s_div );
 
   std_out <<  NL "# Test0: n= " << n << " n_ch= " << n_ch
-    << " t= " << t_step_us << " us, freq_in= " << adc_arch_clock_in
+    << " t= " << t_step_us << " us, freq_sampl= " << freq_sampl
+    << " freq_in= " << adc_arch_clock_in
     << " freq_max= " << BOARD_ADC_FREQ_MAX << NL;
 
   if( s_div == 0  ||  div_bits == 0xFFFFFFFF ) {
@@ -108,6 +108,7 @@ int cmd_test0( int argc, const char * const * argv )
     return 7;
   }
   const uint32_t adc_freq = adc_arch_clock_in / s_div;
+  adc.adc_clk = adc_freq; // TODO: place in good? place
   const uint32_t adc_clock_ns = (unsigned)( ( 1000000000LL + adc_freq - 1 ) / adc_freq );
   std_out << "# div= " << s_div << " bits: " << HexInt( div_bits ) << " freq: " << adc_freq
           << " adc_clock_ns: " << adc_clock_ns << NL;
@@ -135,9 +136,13 @@ int cmd_test0( int argc, const char * const * argv )
     std_out << "# error: fail to init ADC: errno= " << errno << NL;
   }
 
+  if( UVAR('d') > 0 ) {
+    adc.pr_state();
+  }
   if( UVAR('d') > 1 ) {
     dump32( BOARD_ADC_DEFAULT_DEV, 0x100 );
   }
+  // log_reset();
 
   // or such
   // ADC_freq_info fi;
@@ -157,6 +162,7 @@ int cmd_test0( int argc, const char * const * argv )
   adc.reset_cnt();
   adcd.set_d_t( t_step_us * 1e-6f );
   adcd.set_v_ref_uV( UVAR('v') );
+  // adcd.fill( 0 ); // debug?
   std_out << "# n_col= " << adcd.get_n_col() << " n_row= " << adcd.get_n_row() << " data: " << HexInt(adcd.data()) << " size_all= " << adcd.size_all() << NL;
 
   StatIntData sdat( n_ch, k_all );
@@ -198,11 +204,16 @@ int cmd_test0( int argc, const char * const * argv )
   sdat.calc();
   std_out << sdat << NL;
 
-  adc.data = nullptr;
 
+  if( UVAR('d') > 0 ) {
+    adc.pr_state();
+  }
   if( UVAR('d') > 1 ) {
     dump32( BOARD_ADC_DEFAULT_DEV, 0x200 );
   }
+  HAL_ADC_Stop_DMA( &adc.hadc ); // ????? not?
+
+  adc.data = nullptr;
 
   return rc;
 }
@@ -218,7 +229,6 @@ void HAL_ADC_MspInit( ADC_HandleTypeDef* adcHandle )
 
   adc.init_gpio_channels();
 
-  // here?
   adc.DMA_reinit( DMA_NORMAL );
 
   HAL_NVIC_SetPriority( BOARD_ADC_DMA_IRQ, 2, 0 );
@@ -265,7 +275,7 @@ void BOARD_ADC_DMA_IRQHANDLER(void)
 }
 
 
-// not used in single DMA
+// unused
 // void BOARD_ADC_IRQHANDLER(void)
 // {
 //   HAL_ADC_IRQHandler( &adc.hadc );

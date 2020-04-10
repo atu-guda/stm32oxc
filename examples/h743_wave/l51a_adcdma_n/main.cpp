@@ -173,7 +173,7 @@ int cmd_test0( int argc, const char * const * argv )
   if( UVAR('d') > 1 ) {
     dump32( BOARD_ADC_DEFAULT_DEV, 0x100 );
   }
-  log_reset();
+  // log_reset();
 
   // or such
   // ADC_freq_info fi;
@@ -193,7 +193,7 @@ int cmd_test0( int argc, const char * const * argv )
   adc.reset_cnt();
   adcd.set_d_t( t_step_us * 1e-6f );
   adcd.set_v_ref_uV( UVAR('v') );
-  adcd.fill( 0 ); // debug?
+  // adcd.fill( 0 ); // debug?
   std_out << "# n_col= " << adcd.get_n_col() << " n_row= " << adcd.get_n_row() << " data: " << HexInt(adcd.data()) << " size_all= " << adcd.size_all() << NL;
 
   leds.reset( BIT0 | BIT1 | BIT2 );
@@ -202,7 +202,6 @@ int cmd_test0( int argc, const char * const * argv )
   uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
 
   if( UVAR('l') ) {  leds.set( BIT2 ); }
-  dbg_val0 = dbg_val1 = dbg_val2 = dbg_val3 = UVAR('i') = 0;
   tim2_init( psc, t_step_us - 1 );
   uint32_t r = adc.start_DMA_wait_n( n_ch, n, t_wait0, ADCDMA_chunk_size );
   tim2_deinit();
@@ -247,7 +246,7 @@ void HAL_ADC_MspInit( ADC_HandleTypeDef* adcHandle )
   HAL_NVIC_SetPriority( BOARD_ADC_DMA_IRQ, 2, 0 );
   HAL_NVIC_EnableIRQ(   BOARD_ADC_DMA_IRQ );
 
-  HAL_NVIC_SetPriority( BOARD_ADC_IRQ, 3, 0 );
+  // HAL_NVIC_SetPriority( BOARD_ADC_IRQ, 3, 0 );
   // HAL_NVIC_EnableIRQ( BOARD_ADC_IRQ ); // not need even for adcdma_n
 }
 
@@ -321,11 +320,11 @@ void BOARD_ADC_DMA_IRQHANDLER(void)
 
 
 // unused
-void BOARD_ADC_IRQHANDLER(void)
-{
-  HAL_ADC_IRQHandler( &adc.hadc );
-  leds.toggle( BIT0 );
-}
+// void BOARD_ADC_IRQHANDLER(void)
+// {
+//   HAL_ADC_IRQHandler( &adc.hadc );
+//   leds.toggle( BIT0 );
+// }
 
 int cmd_set_coeffs( int argc, const char * const * argv )
 {

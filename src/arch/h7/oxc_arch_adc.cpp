@@ -14,6 +14,8 @@ const AdcSampleTimeInfo adc_arch_sampletimes[] = {
   { ADC_SAMPLETIME_810CYCLES_5 , 8105 }
 };
 
+AdcDma_n_status adcdma_n_status;
+
 const unsigned adc_arch_sampletimes_n = std::size( adc_arch_sampletimes );
 
 

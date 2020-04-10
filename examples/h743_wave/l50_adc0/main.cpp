@@ -16,7 +16,7 @@ const char* common_help_string = "App to test ADC on H7 in one-shot mode one cha
  " var t - delay time in us" NL
  " var n - default number of measurements" NL
  " var s - sample time index" NL
- " var x - supress normal output" NL
+ " var b - supress normal output" NL
  " var v - reference voltage in uV " NL;
 
 const AdcChannelInfo adc_channels[] = {
@@ -71,10 +71,15 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  const int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
-  uint32_t n_ch = UVAR('c'); // 1, but cat set more for test
-  const uint32_t t_step = UVAR('t') / 1000;
+  const uint32_t n_ch = clamp<uint32_t>( UVAR('c'), 1, adc.n_ch_max );
+  //
+  uint32_t unsigned stime_idx = ( (uint32_t)UVAR('s') < adc_arch_sampletimes_n ) ? UVAR('s') : (adc_arch_sampletimes_n - 1);
+  const uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1 );
+
   const uint32_t t_step_us = UVAR('t');
+  adc.t_step_f = (decltype(adc.t_step_f))(1e-6f) * t_step_us;
+  const xfloat freq_sampl = (xfloat)1e6f / t_step_us;
+  const uint32_t t_step = UVAR('t') / 1000;
   const xfloat k_all = 1e-6f * UVAR('v') / BOARD_ADC_DEFAULT_MAX;
 
   const uint32_t adc_arch_clock_in = ADC_getFreqIn( &adc.hadc );
@@ -82,7 +87,8 @@ int cmd_test0( int argc, const char * const * argv )
   uint32_t div_bits = ADC_calc_div( &adc.hadc, BOARD_ADC_FREQ_MAX, &s_div );
 
   std_out <<  NL "# Test0: n= " << n << " n_ch= " << n_ch
-    << " t= " << t_step << " ms, freq_in= " << adc_arch_clock_in
+    << " t= " << t_step_us << " us, freq_sampl= " << freq_sampl
+    << " freq_in= " << adc_arch_clock_in
     << " freq_max= " << BOARD_ADC_FREQ_MAX << NL;
 
   if( s_div == 0  ||  div_bits == 0xFFFFFFFF ) {
@@ -90,30 +96,41 @@ int cmd_test0( int argc, const char * const * argv )
     return 7;
   }
   const uint32_t adc_freq = adc_arch_clock_in / s_div;
-  const uint32_t adc_arch_clock_ns = (unsigned)( ( 1000000000LL + adc_freq - 1 ) / adc_freq );
+  //
+  const uint32_t adc_clock_ns = (unsigned)( ( 1000000000LL + adc_freq - 1 ) / adc_freq );
   std_out << "# div= " << s_div << " bits: " << HexInt( div_bits ) << " freq: " << adc_freq
-          << " tau: " << adc_arch_clock_ns << NL;
+          << " adc_clock_ns: " << adc_clock_ns << NL;
 
-  uint32_t unsigned stime_idx = ( (uint32_t)UVAR('s') < adc_arch_sampletimes_n ) ? UVAR('s') : (adc_arch_sampletimes_n - 1);
-  uint32_t stime_ns =  adc_arch_clock_ns * ADC_conv_time_tick( stime_idx, n_ch, BOARD_ADC_DEFAULT_BITS );
+  uint32_t stime_ns = ADC_conv_time_tick( stime_idx, n_ch, BOARD_ADC_DEFAULT_BITS );
   if( stime_ns == 0xFFFFFFFF ) {
     std_out << "# error: fail to calculate conversion time" NL;
     return 8;
   }
+  stime_ns *= adc_clock_ns;
+
+  uint32_t t_wait0 = 1 + uint32_t( ( 999 + stime_ns ) / 1000 ); // in ms, unused here
 
   if( t_step_us * 1000 <= stime_ns ) {
     std_out << "# warn: time step (" << t_step_us * 1000 << ") ns < conversion time (" << stime_ns << ") ns" NL;
   }
 
   std_out << "# stime_idx= " << stime_idx << " 10ticks= " << adc_arch_sampletimes[stime_idx].stime10
-          << " stime_ns= "  << stime_ns  << " code= " <<  adc_arch_sampletimes[stime_idx].code << NL;
+          << " stime_ns= "  << stime_ns  << " code= " <<  adc_arch_sampletimes[stime_idx].code
+          << " t_wait0= " << t_wait0 << " ms" NL;
 
-  adc.hadc.Init.Resolution = BOARD_ADC_DEFAULT_RESOLUTION;
   adc.prepare_single_manual( div_bits, adc_arch_sampletimes[stime_idx].code, BOARD_ADC_DEFAULT_RESOLUTION );
 
   if( ! adc.init_xxx1() ) {
     std_out << "# error: fail to init ADC: errno= " << errno << NL;
   }
+
+  if( UVAR('d') > 0 ) {
+    adc.pr_state();
+  }
+  if( UVAR('d') > 1 ) {
+    dump32( BOARD_ADC_DEFAULT_DEV, 0x100 );
+  }
+  // log_reset();
 
   // or such
   ADC_freq_info fi;
@@ -127,7 +144,7 @@ int cmd_test0( int argc, const char * const * argv )
   uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
 
   break_flag = 0;
-  for( int i=0; i<n && !break_flag; ++i ) {
+  for( decltype(+n) i=0; i<n && !break_flag; ++i ) {
 
     uint32_t tcc = HAL_GetTick();
 
@@ -141,7 +158,7 @@ int cmd_test0( int argc, const char * const * argv )
       xfloat vv = k_all * v;
       sdat.add( &v );
 
-      if( UVAR('x') == 0 ) {
+      if( UVAR('b') == 0 ) {
         std_out << FmtInt( i, 5 ) << ' ' << FmtInt( tcc - tm00, 8 )
                 << ' ' << FmtInt( v, 5 ) << ' ' << XFmt( vv, cvtff_auto, 9, 6 ) << NL;
       }
@@ -156,8 +173,12 @@ int cmd_test0( int argc, const char * const * argv )
   sdat.calc();
   std_out << sdat << NL;
 
+
+  if( UVAR('d') > 0 ) {
+    adc.pr_state();
+  }
   if( UVAR('d') > 1 ) {
-    dump32( ADC1, 0x200 );
+    dump32( BOARD_ADC_DEFAULT_DEV, 0x200 );
   }
 
 
