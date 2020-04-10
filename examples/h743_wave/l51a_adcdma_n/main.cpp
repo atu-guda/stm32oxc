@@ -110,21 +110,24 @@ int cmd_test0( int argc, const char * const * argv )
 {
   const uint32_t n_ch = clamp<uint32_t>( UVAR('c'), 1, adc.n_ch_max );
   const uint32_t n_ADC_series_max  = n_ADC_mem / ( 2 * n_ch ); // 2 is 16bit/sample
-  uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, n_ADC_series_max ); // number of series
   uint32_t unsigned stime_idx = ( (uint32_t)UVAR('s') < adc_arch_sampletimes_n ) ? UVAR('s') : (adc_arch_sampletimes_n - 1);
+  uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, n_ADC_series_max ); // number of series
 
   // make n a multiple of ADCDMA_chunk_size
   uint32_t lines_per_chunk = ADCDMA_chunk_size / ( n_ch  * 2 ); // /2 - 16 bit
   n = ( ( n  + lines_per_chunk - 1 ) / lines_per_chunk ) * lines_per_chunk;
 
   const uint32_t t_step_us = UVAR('t');
+  adc.t_step_f = (decltype(adc.t_step_f))(1e-6f) * t_step_us;
+  const xfloat freq_sampl = (xfloat)1e6f / t_step_us;
 
   const uint32_t adc_arch_clock_in = ADC_getFreqIn( &adc.hadc );
   uint32_t s_div = 0;
   uint32_t div_bits = ADC_calc_div( &adc.hadc, BOARD_ADC_FREQ_MAX, &s_div );
 
   std_out <<  NL "# Test0: n= " << n << " n_ch= " << n_ch
-    << " t= " << t_step_us << " us, freq_in= " << adc_arch_clock_in
+    << " t= " << t_step_us << " us, freq_sampl= " << freq_sampl
+    << " freq_in= " << adc_arch_clock_in
     << " freq_max= " << BOARD_ADC_FREQ_MAX << NL;
 
   if( s_div == 0  ||  div_bits == 0xFFFFFFFF ) {
@@ -171,10 +174,6 @@ int cmd_test0( int argc, const char * const * argv )
     dump32( BOARD_ADC_DEFAULT_DEV, 0x100 );
   }
   log_reset();
-  // xxx_dma_isr = (uint32_t*)(0x30000000);
-  // for( unsigned i=0; i<10240; ++i ) {
-  //   xxx_dma_isr[i] = 0x1111;
-  // };
 
   // or such
   // ADC_freq_info fi;
@@ -194,10 +193,8 @@ int cmd_test0( int argc, const char * const * argv )
   adc.reset_cnt();
   adcd.set_d_t( t_step_us * 1e-6f );
   adcd.set_v_ref_uV( UVAR('v') );
-  adcd.fill( 0x5555 ); // debug?
+  adcd.fill( 0 ); // debug?
   std_out << "# n_col= " << adcd.get_n_col() << " n_row= " << adcd.get_n_row() << " data: " << HexInt(adcd.data()) << " size_all= " << adcd.size_all() << NL;
-
-  // adc.DMA_reinit( DMA_CIRCULAR ); // ???????????????? not
 
   leds.reset( BIT0 | BIT1 | BIT2 );
   int rc = 0;
@@ -245,14 +242,13 @@ void HAL_ADC_MspInit( ADC_HandleTypeDef* adcHandle )
 
   adc.init_gpio_channels();
 
-  // here?
-  adc.DMA_reinit( DMA_DOUBLE_BUFFER_M0 ); // or M0 /?
+  adc.DMA_reinit( DMA_DOUBLE_BUFFER_M0 );
 
   HAL_NVIC_SetPriority( BOARD_ADC_DMA_IRQ, 2, 0 );
   HAL_NVIC_EnableIRQ(   BOARD_ADC_DMA_IRQ );
 
   HAL_NVIC_SetPriority( BOARD_ADC_IRQ, 3, 0 );
-  // HAL_NVIC_EnableIRQ( BOARD_ADC_IRQ );
+  // HAL_NVIC_EnableIRQ( BOARD_ADC_IRQ ); // not need even for adcdma_n
 }
 
 void HAL_ADC_MspDeInit( ADC_HandleTypeDef* adcHandle )
