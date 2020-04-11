@@ -142,9 +142,9 @@
 #define BOARD_ADC_DEFAULT_DEV           ADC1
 #define BOARD_ADC_DEFAULT_EN            __HAL_RCC_ADC1_CLK_ENABLE();
 #define BOARD_ADC_DEFAULT_DIS           __HAL_RCC_ADC1_CLK_DISABLE();
-#define BOARD_ADC_DEFAULT_GPIO0         GpioB
-#define BOARD_ADC_DEFAULT_PIN0          1
-#define BOARD_ADC_DEFAULT_CH0           ADC_CHANNEL_9
+#define BOARD_ADC_DEFAULT_GPIO0         GpioA
+#define BOARD_ADC_DEFAULT_PIN0          0
+#define BOARD_ADC_DEFAULT_CH0           ADC_CHANNEL_0
 #define BOARD_ADC_DEFAULT_GPIO1         GpioC
 #define BOARD_ADC_DEFAULT_PIN1          0
 #define BOARD_ADC_DEFAULT_CH1           ADC_CHANNEL_10
@@ -161,6 +161,24 @@
 #define BOARD_ADC_FREE                  ::free
 // #define BOARD_ADC_MALLOC_EXT            malloc_fmc
 // #define BOARD_ADC_FREE_EXT              free_fmc
+
+#define BOARD_ADC_DEFAULT_CLOCK         ADC_CLOCK_SYNC_PCLK_DIV4
+#define BOARD_ADC_DEFAULT_SAMPL_LARGE   ADC_SAMPLETIME_480CYCLES
+#define BOARD_ADC_DEFAULT_RESOLUTION    ADC_RESOLUTION_12B
+#define BOARD_ADC_DEFAULT_BITS          12
+#define BOARD_ADC_DEFAULT_MAX           0x0FFF
+#define BOARD_ADC_FREQ_MAX              36000000
+#define BOARD_ADC_IRQ                   ADC_IRQn
+#define BOARD_ADC_IRQHANDLER            ADC_IRQHandler
+#define BOARD_ADC_DMA_INSTANCE          DMA2_Stream0
+#define BOARD_ADC_DMA_CHANNEL           DMA_CHANNEL_0
+// #define BOARD_ADC_DMA_REQUEST           DMA_REQUEST_ADC1
+#define BOARD_ADC_DMA_DEFAULT_EN        __HAL_RCC_DMA2_CLK_ENABLE();
+#define BOARD_ADC_DMA_DEFAULT_DIS       __HAL_RCC_DMA2_CLK_DISABLE();
+#define BOARD_ADC_DMA_IRQ               DMA2_Stream0_IRQn
+#define BOARD_ADC_DMA_IRQHANDLER        DMA2_Stream0_IRQHandler
+#define BOARD_ADC_DEFAULT_TRIG          ADC_EXTERNALTRIG2_T2_TRGO
+#define BOARD_ADC_DEFAULT_DBLBUF        ((uint32_t)DMA_SxCR_DBM)
 
 // 0 = DEVICE_FS, 1 = DEVICE_HS
 #define BOARD_USB_DEFAULT_TYPE       0

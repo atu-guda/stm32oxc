@@ -149,7 +149,7 @@ int cmd_test0( int argc, const char * const * argv )
   UVAR('p') = psc;
   delay_ms( 1 );
 
-  adc.prepare_multi_ev( n_ch, div_bits, adc_arch_sampletimes[stime_idx].code, ADC_EXTERNALTRIG_T2_TRGO, BOARD_ADC_DEFAULT_RESOLUTION );
+  adc.prepare_multi_ev( n_ch, div_bits, adc_arch_sampletimes[stime_idx].code, BOARD_ADC_DEFAULT_TRIG, BOARD_ADC_DEFAULT_RESOLUTION );
 
   if( ! adc.init_xxx1() ) {
     std_out << "# error: fail to init ADC: errno= " << errno << NL;

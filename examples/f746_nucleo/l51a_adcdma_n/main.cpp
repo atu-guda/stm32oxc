@@ -193,7 +193,7 @@ int cmd_test0( int argc, const char * const * argv )
   adc.reset_cnt();
   adcd.set_d_t( t_step_us * 1e-6f );
   adcd.set_v_ref_uV( UVAR('v') );
-  // adcd.fill( 0 ); // debug?
+  adcd.fill( 0 ); // debug?
   std_out << "# n_col= " << adcd.get_n_col() << " n_row= " << adcd.get_n_row() << " data: " << HexInt(adcd.data()) << " size_all= " << adcd.size_all() << NL;
 
   leds.reset( BIT0 | BIT1 | BIT2 );

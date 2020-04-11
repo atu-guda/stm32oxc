@@ -1,3 +1,4 @@
+OXCDIR = /usr/share/stm32oxc
 PROJ_NAME=adcdma_n
 
 USE_OXC = y
@@ -17,17 +18,28 @@ USE_OXC_DMA = y
 # USE_FREERTOS = y
 # NOUSE_OXC_OSFUN = y
 # FREERTOS_HEAP = heap_2.c # # default: heap_3.c
-REQUIRE_SPECIAL_CLOCK = y
+# REQUIRE_SPECIAL_CLOCK = y
+
 
 SRCS  = main.cpp
 
-SRCS += oxc_floatfun.cpp
+
 SRCS += oxc_adcdata.cpp
-#SRCS += oxc_f47_adcdma_n.cpp
+SRCS += oxc_floatfun.cpp
 
-#SRCS += adc_init_exa_4ch_dma_n.cpp
+SRCS += oxc_arch_adc.cpp
+SRCS += oxc_arch_adcdma_n.cpp
+
 SRCS += tim2_adcdma_init.cpp
-# SRCS += adc_common_exa_4ch.cpp
 
 
+# aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
+# see ../common/h7_modules.mk
+
+include ../common/board_add.mk
+include $(OXCDIR)/mk/common_cortex.mk
+# ../../../mk/common_cortex.mk
+
+include $(wildcard $(DEPSDIR)/*.d)
+#
 

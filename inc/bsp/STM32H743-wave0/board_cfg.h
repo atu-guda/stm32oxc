@@ -198,6 +198,8 @@
 #define BOARD_ADC_DMA_DEFAULT_DIS       __HAL_RCC_DMA1_CLK_DISABLE();
 #define BOARD_ADC_DMA_IRQ               DMA1_Stream1_IRQn
 #define BOARD_ADC_DMA_IRQHANDLER        DMA1_Stream1_IRQHandler
+#define BOARD_ADC_DEFAULT_TRIG          ADC_EXTERNALTRIG_T2_TRGO
+#define BOARD_ADC_DEFAULT_DBLBUF        DMA_DOUBLE_BUFFER_M0
 
 void* malloc_axi( size_t sz ); // only all AXI memory for now
 void  free_axi( void* ptr );
