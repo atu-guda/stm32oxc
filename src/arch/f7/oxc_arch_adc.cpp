@@ -70,7 +70,7 @@ uint32_t ADC_conv_time_tick( uint32_t s_idx, uint32_t n_ch, uint32_t n_bits )
   if( s_idx >= adc_arch_sampletimes_n || n_ch < 1 || n_ch > 20 || n_bits > 12 || n_bits < 8 ) {
     return 0xFFFFFFFF;
   }
-  return n_ch * ( ( 9 + ( adc_arch_sampletimes[s_idx].stime10 + 5 * n_bits ) ) / 10 ); // TODO: check!
+  return n_ch * (  n_bits + ( adc_arch_sampletimes[s_idx].stime10 / 10 ) ); // TODO: check!
 }
 
 uint32_t ADC_calcfreq( ADC_HandleTypeDef* hadc, ADC_freq_info *fi )

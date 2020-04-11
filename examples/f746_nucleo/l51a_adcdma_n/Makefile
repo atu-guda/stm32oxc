@@ -32,6 +32,10 @@ SRCS += oxc_arch_adcdma_n.cpp
 
 SRCS += tim2_adcdma_init.cpp
 
+# tmp: move to local.mk
+REQUIRE_SPECIAL_CLOCK = y
+SRCS += stm32f7_clock_HSE144.c
+
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
 # see ../common/h7_modules.mk
