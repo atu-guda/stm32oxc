@@ -1,6 +1,0 @@
-ADC up to 4 channels usage with DMA, but manual start + PWM on default TIM: ch1
-Clock: APB2/2 = 72/2 = 36
-
-Channels:
-// A0(0),C0(10),C2(12),C3(13)
-

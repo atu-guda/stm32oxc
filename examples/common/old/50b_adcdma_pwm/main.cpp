@@ -1,5 +1,4 @@
 #include <cmath>
-#include <cerrno>
 
 #include <algorithm>
 
@@ -19,7 +18,6 @@ BOARD_CONSOLE_DEFINES;
 
 const char* common_help_string = "App to measure via inner ADC with PWM control" NL;
 
-int adc_init_exa_4ch_manual( ADC_Info &adc, uint32_t adc_presc, uint32_t sampl_cycl, uint8_t n_ch );
 
 ADC_Info adc;
 
@@ -46,7 +44,6 @@ int cmd_pwm( int argc, const char * const * argv );
 CmdInfo CMDINFO_PWM { "pwm", 'W', cmd_pwm, " [val] - set PWM value"  };
 int cmd_set_coeffs( int argc, const char * const * argv );
 CmdInfo CMDINFO_SET_COEFFS { "set_coeffs", 'F', cmd_set_coeffs, " k0 k1 k2 k3 - set ADC coeffs"  };
-
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -84,7 +81,7 @@ int main(void)
 
   BOARD_POST_INIT_BLINK;
 
-  pr( NL "##################### " PROJ_NAME NL );
+  std_out << NL "##################### " PROJ_NAME NL;
 
   srl.re_ps();
 
@@ -150,8 +147,9 @@ int cmd_test0( int argc, const char * const * argv )
   int rc = 0;
   bool do_out = ! UVAR('b');
 
+
   break_flag = 0;
-  for( decltype(n) i=0; i<n && !break_flag; ++i ) {
+  for( decltype(+n) i=0; i<n && !break_flag; ++i ) {
 
     uint32_t tcc = HAL_GetTick();
     if( i == 0 ) {
@@ -350,6 +348,7 @@ void handle_keys()
   }
 
 }
+
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
