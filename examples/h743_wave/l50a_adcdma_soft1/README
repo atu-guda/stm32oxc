@@ -1,3 +1,0 @@
-ADC up to 4 channels usage with DMA, but manual start
-Clock: common to this arch, ADC up to 50 MHz
-4 channel: A1, A2, C0, C1 - fast

@@ -1,4 +1,0 @@
-ADC usage: DMA double-buffer approach
-Clock: common to this arch, ADC up to 50 MHz
-4 channel: A1, A2, C0, C1 - fast
-

@@ -1,5 +1,0 @@
-ADC with DMA one chunk
-Clock: common to this arch, ADC up to 50 MHz
-4 channel: A1, A2, C0, C1 - fast
-
-
