@@ -47,6 +47,7 @@ SUBDIRS = \
   37a_ad7606_spi_tim \
   38_mcp3204_adc_spi \
   38a_mcp3204_adc_spi_tim \
+  51_adcdma \
   51a_adcdma_n \
   80_math_stat \
   x01_fmc \

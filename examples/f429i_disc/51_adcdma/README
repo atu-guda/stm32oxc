@@ -5,7 +5,4 @@ Channels:
   A1   A2,  A5,   C3
  Ch1, Ch2, Ch5, Ch13
 
-Used USART1 with VCP on ST_LInk V2-1
-A9   = USART1_TX
-A10  = USART1_RX
 
