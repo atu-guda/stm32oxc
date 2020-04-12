@@ -118,6 +118,7 @@ struct ADC_Info {
   uint32_t start_DMA_wait_n( uint32_t n_ch, uint32_t n, uint32_t t_wait, uint32_t chunk_sz );
   uint32_t init_adc_channels(); // arch-dependent, in oxc_arch_adc.cpp
 
+  uint32_t prepare_base( uint32_t presc, uint32_t sampl_cycl, uint32_t resol ); // arch-dep
   uint32_t prepare_single_manual( uint32_t presc, uint32_t sampl_cycl, uint32_t resol ); // arch-dep
   uint32_t prepare_multi_ev( uint32_t n_ch, uint32_t presc, uint32_t sampl_cycl, uint32_t ev, uint32_t resol ); // arch-dep
   uint32_t prepare_multi_ev_n( uint32_t n_ch, uint32_t presc, uint32_t sampl_cycl, uint32_t ev, uint32_t resol ); // arch-dep
@@ -127,7 +128,7 @@ struct ADC_Info {
   void convHalfCpltCallback( ADC_HandleTypeDef *hadc );
   void errorCallback( ADC_HandleTypeDef *hadc );
 
-  uint32_t init_xxx1(); // arch-dep
+  uint32_t init_common(); // arch-dep
   uint32_t start() { if( !prepared ) return 0; return HAL_ADC_Start( &hadc ) == HAL_OK; }; // TODO: more check
   bool poll_and_read( int &v );
 };

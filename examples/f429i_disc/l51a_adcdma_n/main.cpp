@@ -163,7 +163,7 @@ int cmd_test0( int argc, const char * const * argv )
 
   adc.prepare_multi_ev_n( n_ch, div_bits, adc_arch_sampletimes[stime_idx].code, BOARD_ADC_DEFAULT_TRIG, BOARD_ADC_DEFAULT_RESOLUTION );
 
-  if( ! adc.init_xxx1() ) {
+  if( ! adc.init_common() ) {
     std_out << "# error: fail to init ADC: errno= " << errno << NL;
   }
 

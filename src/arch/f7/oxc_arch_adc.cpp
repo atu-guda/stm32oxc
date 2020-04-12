@@ -163,7 +163,7 @@ uint32_t ADC_Info::init_adc_channels()
 }
 
 
-uint32_t ADC_Info::prepare_single_manual( uint32_t presc, uint32_t sampl_cycl, uint32_t resol )
+uint32_t ADC_Info::prepare_base( uint32_t presc, uint32_t sampl_cycl, uint32_t resol )
 {
   if( hadc.Instance == 0 || n_ch_max < 1 ) {
     return 0;
@@ -172,15 +172,30 @@ uint32_t ADC_Info::prepare_single_manual( uint32_t presc, uint32_t sampl_cycl, u
 
   hadc.Init.ClockPrescaler           = presc;
   hadc.Init.Resolution               = resol;
-  hadc.Init.ScanConvMode             = ADC_SCAN_DISABLE;
-  hadc.Init.EOCSelection             = ADC_EOC_SINGLE_CONV;
+  // hadc.Init.ScanConvMode             = ADC_SCAN_DISABLE;
+  // hadc.Init.EOCSelection             = ADC_EOC_SINGLE_CONV;
   hadc.Init.ContinuousConvMode       = DISABLE;
-  hadc.Init.NbrOfConversion          = 1;
+  // hadc.Init.NbrOfConversion          = 1;
   hadc.Init.DiscontinuousConvMode    = DISABLE;
   hadc.Init.ExternalTrigConv         = ADC_SOFTWARE_START;
   hadc.Init.ExternalTrigConvEdge     = ADC_EXTERNALTRIGCONVEDGE_NONE;
   hadc.Init.DataAlign                = ADC_DATAALIGN_RIGHT;
   hadc.Init.DMAContinuousRequests    = DISABLE;
+  return 1;
+}
+
+
+uint32_t ADC_Info::prepare_single_manual( uint32_t presc, uint32_t sampl_cycl, uint32_t resol )
+{
+  if( ! prepare_base( presc, sampl_cycl, resol ) ) {
+    return 0;
+  }
+
+  hadc.Init.ScanConvMode             = ADC_SCAN_DISABLE;
+  hadc.Init.EOCSelection             = ADC_EOC_SINGLE_CONV;
+  hadc.Init.NbrOfConversion          = 1;
+  hadc.Init.ExternalTrigConv         = ADC_SOFTWARE_START;
+  hadc.Init.ExternalTrigConvEdge     = ADC_EXTERNALTRIGCONVEDGE_NONE;
   prepared = 1;
   return 1;
 }
@@ -191,7 +206,7 @@ uint32_t ADC_Info::prepare_multi_ev( uint32_t n_ch, uint32_t presc, uint32_t sam
   if( n_ch > n_ch_max ) {
     n_ch = n_ch_max;
   }
-  if( hadc.Instance == 0 || n_ch < 1 ) {
+  if( ! prepare_base( presc, sampl_cycl, resol ) ) {
     return 0;
   }
 
@@ -199,20 +214,11 @@ uint32_t ADC_Info::prepare_multi_ev( uint32_t n_ch, uint32_t presc, uint32_t sam
     __HAL_RCC_DAC_CLK_ENABLE(); // !!!!!!!!!!!!! see errata - need for timer interaction
   #endif
 
-  sampl_cycl_common = sampl_cycl;
-
-  // adc.adc_clk                         = calc_ADC_clk( presc, nullptr );
-  hadc.Init.ClockPrescaler           = presc;
-  hadc.Init.Resolution               = resol;
   hadc.Init.ScanConvMode             = ADC_SCAN_ENABLE;
   hadc.Init.EOCSelection             = ADC_EOC_SEQ_CONV;
-  hadc.Init.ContinuousConvMode       = DISABLE;
   hadc.Init.NbrOfConversion          = n_ch;
-  hadc.Init.DiscontinuousConvMode    = DISABLE;
   hadc.Init.ExternalTrigConv         = ev;
   hadc.Init.ExternalTrigConvEdge     = ADC_EXTERNALTRIGCONVEDGE_RISING;
-  hadc.Init.DataAlign                = ADC_DATAALIGN_RIGHT;
-  hadc.Init.DMAContinuousRequests    = DISABLE;
   prepared = 3;
   return 1;
 }
@@ -223,7 +229,7 @@ uint32_t ADC_Info::prepare_multi_ev_n( uint32_t n_ch, uint32_t presc, uint32_t s
   if( n_ch > n_ch_max ) {
     n_ch = n_ch_max;
   }
-  if( hadc.Instance == 0 || n_ch < 1 ) {
+  if( ! prepare_base( presc, sampl_cycl, resol ) ) {
     return 0;
   }
 
@@ -231,18 +237,11 @@ uint32_t ADC_Info::prepare_multi_ev_n( uint32_t n_ch, uint32_t presc, uint32_t s
     __HAL_RCC_DAC_CLK_ENABLE(); // !!!!!!!!!!!!! see errata - need for timer interaction
   #endif
 
-  sampl_cycl_common = sampl_cycl;
-
-  hadc.Init.ClockPrescaler           = presc;
-  hadc.Init.Resolution               = resol;
   hadc.Init.ScanConvMode             = ADC_SCAN_ENABLE;
   hadc.Init.EOCSelection             = ADC_EOC_SEQ_CONV;
-  hadc.Init.ContinuousConvMode       = DISABLE;
   hadc.Init.NbrOfConversion          = n_ch;
-  hadc.Init.DiscontinuousConvMode    = DISABLE;
   hadc.Init.ExternalTrigConv         = ev;
   hadc.Init.ExternalTrigConvEdge     = ADC_EXTERNALTRIGCONVEDGE_RISING;
-  hadc.Init.DataAlign                = ADC_DATAALIGN_RIGHT;
   hadc.Init.DMAContinuousRequests    = ENABLE; // for double-buffer DMA
   prepared = 4;
   return 1;
@@ -250,7 +249,7 @@ uint32_t ADC_Info::prepare_multi_ev_n( uint32_t n_ch, uint32_t presc, uint32_t s
 
 
 
-uint32_t ADC_Info::init_xxx1()
+uint32_t ADC_Info::init_common()
 {
   if( hadc.Instance == 0 || ! prepared ) {
     errno = 3000;
