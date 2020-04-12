@@ -1,10 +1,6 @@
-#include <cerrno>
-
-#include <algorithm>
-
 #include <oxc_auto.h>
-#include <oxc_floatfun.h>
-#include <oxc_statdata.h>
+#include <oxc_adcdata.h>
+#include <oxc_adcdata_cmds.h>
 
 using namespace std;
 using namespace SMLRL;
@@ -14,24 +10,35 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
-const char* common_help_string = "App to measure via inner ADC, up to 4 ch, DMA, soft start " NL;
+const char* common_help_string = "App to test ADC in manual shot N channels" NL
+ " var t - delay time in us" NL
+ " var n - default number of measurements" NL
+ " var s - sample time index" NL
+ " var c - number of channels" NL
+ " var b - supress normal output" NL
+ " var v - reference voltage in uV " NL;
 
-int adc_init_exa_4ch_manual( ADC_Info &adc, uint32_t adc_presc, uint32_t sampl_cycl, uint8_t n_ch );
+const AdcChannelInfo adc_channels[] = {
+  { BOARD_ADC_DEFAULT_CH0, BOARD_ADC_DEFAULT_GPIO0, BOARD_ADC_DEFAULT_PIN0 },
+  { BOARD_ADC_DEFAULT_CH1, BOARD_ADC_DEFAULT_GPIO1, BOARD_ADC_DEFAULT_PIN1 },
+  { BOARD_ADC_DEFAULT_CH2, BOARD_ADC_DEFAULT_GPIO2, BOARD_ADC_DEFAULT_PIN2 },
+  { BOARD_ADC_DEFAULT_CH3, BOARD_ADC_DEFAULT_GPIO3, BOARD_ADC_DEFAULT_PIN3 },
+  {                     0,                   GpioA,                    255 } // END
+};
 
-ADC_Info adc;
+using AdcDataX = AdcData<BOARD_ADC_DEFAULT_BITS,xfloat>;
+AdcDataX adcd( BOARD_ADC_MALLOC, BOARD_ADC_FREE );
 
-int v_adc_ref = BOARD_ADC_COEFF; // in uV, measured before test, adjust as UVAR('v')
-uint16_t ADC_buf[32];
+ADC_Info adc( BOARD_ADC_DEFAULT_DEV, adc_channels );
 
-
+int v_adc_ref = BOARD_ADC_COEFF; // in uV, measured before test
 
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " [n] - measure ADC"  };
+CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " [n] - test ADC"  };
 int cmd_set_coeffs( int argc, const char * const * argv );
 CmdInfo CMDINFO_SET_COEFFS { "set_coeffs", 'F', cmd_set_coeffs, " k0 k1 k2 k3 - set ADC coeffs"  };
-
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -41,27 +48,26 @@ const CmdInfo* global_cmds[] = {
   nullptr
 };
 
-const uint32_t n_ADC_ch_max = 4; // current - in UVAR('c')
-float v_coeffs[n_ADC_ch_max] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 
 int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 10; // 10 ms
+  UVAR('t') = 100000;
+  UVAR('n') = 20;
+  UVAR('c') = adc.n_ch_max; // number of channels
+  UVAR('s') = adc_arch_sampletimes_n - 1;
   UVAR('v') = v_adc_ref;
-  UVAR('c') = n_ADC_ch_max;
-  UVAR('n') = 20; // number of series
-  UVAR('s') = 6; // sampling time index
 
+  // TODO: check
   #ifdef PWR_CR1_ADCDC1
   // PWR->CR1 |= PWR_CR1_ADCDC1;
   #endif
 
   BOARD_POST_INIT_BLINK;
 
-  pr( NL "##################### " PROJ_NAME NL );
+  std_out << NL "##################### " PROJ_NAME NL;
 
   srl.re_ps();
 
@@ -73,165 +79,215 @@ int main(void)
 }
 
 
+
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  int t_step = UVAR('t');
-  uint8_t n_ch = clamp( UVAR('c'), 1, (int)n_ADC_ch_max );
+  const uint32_t n_ch = clamp<uint32_t>( UVAR('c'), 1, adc.n_ch_max );
+  //
+  uint32_t unsigned stime_idx = ( (uint32_t)UVAR('s') < adc_arch_sampletimes_n ) ? UVAR('s') : (adc_arch_sampletimes_n - 1);
+  const uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1 );
 
-  uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 1000000 ); // number of series
+  const uint32_t t_step_us = UVAR('t');
+  adc.t_step_f = (decltype(adc.t_step_f))(1e-6f) * t_step_us;
+  const xfloat freq_sampl = (xfloat)1e6f / t_step_us;
+  const uint32_t t_step = UVAR('t') / 1000;
+  const xfloat k_all = 1e-6f * UVAR('v') / BOARD_ADC_DEFAULT_MAX;
 
+  const uint32_t adc_arch_clock_in = ADC_getFreqIn( &adc.hadc );
+  uint32_t s_div = 0;
+  uint32_t div_bits = ADC_calc_div( &adc.hadc, ADC_FREQ_MAX, &s_div );
 
-  StatData sdat( n_ch );
+  std_out <<  NL "# Test0: n= " << n << " n_ch= " << n_ch
+    << " t= " << t_step_us << " us, freq_sampl= " << freq_sampl
+    << " freq_in= " << adc_arch_clock_in
+    << " freq_max= " << ADC_FREQ_MAX << NL;
 
-  uint32_t sampl_t_idx = clamp( UVAR('s'), 0, (int)adc_n_sampl_times-1 );
-  uint32_t f_sampl_max = adc.adc_clk / ( sampl_times_cycles[sampl_t_idx] * n_ch );
-
-  uint32_t adc_presc = hint_ADC_presc();
-  UVAR('i') =  adc_init_exa_4ch_manual( adc, adc_presc, sampl_times_codes[sampl_t_idx], n_ch );
-  delay_ms( 1 );
-  if( ! UVAR('i') ) {
-    std_out << "ADC init failed, errno= " << errno << NL;
-    return 1;
+  if( s_div == 0  ||  div_bits == 0xFFFFFFFF ) {
+    std_out << "# error: fail to calc divisor" NL;
+    return 7;
   }
-  if( UVAR('d') > 1 ) { pr_ADC_state( adc );  }
+  const uint32_t adc_freq = adc_arch_clock_in / s_div;
+  adc.adc_clk = adc_freq; // TODO: place in good? place
+  const uint32_t adc_clock_ns = (unsigned)( ( 1000000000LL + adc_freq - 1 ) / adc_freq );
+  std_out << "# div= " << s_div << " bits: " << HexInt( div_bits ) << " freq: " << adc_freq
+          << " adc_clock_ns: " << adc_clock_ns << NL;
+
+  uint32_t stime_ns = ADC_conv_time_tick( stime_idx, n_ch, BOARD_ADC_DEFAULT_BITS );
+  if( stime_ns == 0xFFFFFFFF ) {
+    std_out << "# error: fail to calculate conversion time" NL;
+    return 8;
+  }
+  stime_ns *= adc_clock_ns;
+
+  uint32_t t_wait0 = 1 + uint32_t( ( 999 + stime_ns ) / 1000 ); // in ms
+
+  if( t_step_us * 1000 <= stime_ns ) {
+    std_out << "# warn: time step (" << t_step_us * 1000 << ") ns < conversion time (" << stime_ns << ") ns" NL;
+  }
+
+  std_out << "# stime_idx= " << stime_idx << " 10ticks= " << adc_arch_sampletimes[stime_idx].stime10
+          << " stime_ns= "  << stime_ns  << " code= " <<  adc_arch_sampletimes[stime_idx].code
+          << " t_wait0= " << t_wait0 << " ms" NL;
+
+  adc.prepare_multi_ev( n_ch, div_bits, adc_arch_sampletimes[stime_idx].code, ADC_SOFTWARE_START, BOARD_ADC_DEFAULT_RESOLUTION );
+
+  if( ! adc.init_common() ) {
+    std_out << "# error: fail to init ADC: errno= " << errno << NL;
+  }
+
+  if( UVAR('d') > 0 ) {
+    adc.pr_state();
+  }
+  if( UVAR('d') > 1 ) {
+    dump32( BOARD_ADC_DEFAULT_DEV, 0x100 );
+  }
+  // log_reset();
+
+  // or such
+  // ADC_freq_info fi;
+  // ADC_calcfreq( &adc.hadc, &fi );
+  // std_out << "# ADC: freq_in: " << fi.freq_in << " freq: " << fi.freq
+  //         << " div: " << fi.div << " div1: " << fi.div1 << " div2: " << fi.div2
+  //         << " bits: " << HexInt( fi.devbits ) << NL;
 
 
-  int div_val = -1;
-  adc.adc_clk = calc_ADC_clk( adc_presc, &div_val );
-  std_out << "# ADC: n_ch= " << n_ch << " n= " << n << " adc_clk= " << adc.adc_clk << " div_val= " << div_val
-     << " s_idx= " << sampl_t_idx << " sampl= " << sampl_times_cycles[sampl_t_idx]
-     << " f_sampl_max= " << f_sampl_max << " Hz" NL;
-  delay_ms( 10 );
-
-  uint32_t n_ADC_sampl = n_ch;
-
-  xfloat kv = 1e-6f * UVAR('v') / 4096;
-
+  // really need for H7 - DMA not work with ordinary memory
+  adcd.free();
+  if( ! adcd.alloc( n_ch, 1 ) ) {
+    std_out << "# Error: fail to alloc buffer" << NL;
+    return 2;
+  }
+  adc.data = adcd.data();
   adc.reset_cnt();
+  adcd.set_d_t( t_step_us * 1e-6f );
+  adcd.set_v_ref_uV( UVAR('v') );
+  // adcd.fill( 0 ); // debug?
+  std_out << "# n_col= " << adcd.get_n_col() << " n_row= " << adcd.get_n_row() << " data: " << HexInt(adcd.data()) << " size_all= " << adcd.size_all() << NL;
 
-  std_out << "# n = " << n << " n_ch= " << n_ch << " t_step= " << t_step << NL;
-  std_out << "# Coeffs: ";
-  for( decltype(n_ch) j=0; j<n_ch; ++j ) {
-    std_out << ' ' << v_coeffs[j];
-  }
-  std_out << NL;
-
-  leds.set(   BIT0 | BIT1 | BIT2 ); delay_ms( 100 );
-  leds.reset( BIT0 | BIT1 | BIT2 );
+  StatIntData sdat( n_ch, k_all );
+  sdat.setScalesFrom( adcd );
 
   uint32_t tm0, tm00;
   int rc = 0;
   bool do_out = ! UVAR('b');
 
+
   break_flag = 0;
-  for( decltype(n) i=0; i<n && !break_flag; ++i ) {
+  for( decltype(+n) i=0; i<n && !break_flag; ++i ) {
 
     uint32_t tcc = HAL_GetTick();
     if( i == 0 ) {
       tm0 = tcc; tm00 = tm0;
     }
-
     float tc = 0.001f * ( tcc - tm00 );
-    xfloat v[n_ch];
 
     if( UVAR('l') ) {  leds.set( BIT2 ); }
-    adc.end_dma = 0;
-    if( HAL_ADC_Start_DMA( &adc.hadc, (uint32_t*)(&ADC_buf), n_ADC_sampl ) != HAL_OK )   {
-      std_out <<  "ADC_Start_DMA error" NL;
+    uint32_t r = adc.start_DMA_wait( n_ch, 1, t_wait0 );
+    if( UVAR('l') ) {  leds.reset( BIT2 ); }
+
+    if( r != 0 ) {
+      std_out <<  "# error: start_DMA_wait " << r << NL;
       rc = 1;
       break;
     }
 
-    for( uint32_t ti=0; adc.end_dma == 0 && ti<5000; ++ti ) { // 11
-      delay_mcs( 2 );
-    }
-
-    HAL_ADC_Stop_DMA( &adc.hadc ); // needed
-    if( UVAR('l') ) {  leds.reset( BIT2 ); }
-    if( adc.end_dma == 0 ) {
-      std_out <<  "Fail to wait DMA end " NL;
-      rc = 2;
-      break;
-    }
-    if( adc.dma_error != 0 ) {
-      std_out <<  "Found DMA error " << HexInt( adc.dma_error ) <<  NL;
-      rc = 3;
-      break;
-    } else {
-      adc.n_series = 1;
-    }
+    sdat.add( adcd.row(0) );
 
     if( do_out ) {
-      std_out <<  FltFmt( tc, cvtff_auto, 12, 4 );
-    }
-    for( decltype(n_ch) j=0; j<n_ch; ++j ) {
-      xfloat cv = kv * ADC_buf[j] * v_coeffs[j];
-      v[j] = cv;
-    }
-    //
-    sdat.add( v );
-
-    if( do_out ) {
-      for( auto vc : v ) {
-        std_out  << ' '  << vc;
-      }
-      std_out << NL;
+      adcd.out_float_row( std_out, tc, 0 );
     }
 
     delay_ms_until_brk( &tm0, t_step );
   }
 
-
   sdat.calc();
   std_out << sdat << NL;
 
-  delay_ms( 10 );
+
+  if( UVAR('d') > 0 ) {
+    adc.pr_state();
+  }
+  if( UVAR('d') > 1 ) {
+    dump32( BOARD_ADC_DEFAULT_DEV, 0x200 );
+  }
+  HAL_ADC_Stop_DMA( &adc.hadc ); // ????? not?
+
+  adc.data = nullptr;
 
   return rc;
 }
 
+void HAL_ADC_MspInit( ADC_HandleTypeDef* adcHandle )
+{
+  if( adcHandle->Instance != BOARD_ADC_DEFAULT_DEV ) {
+    return;
+  }
+  // std_out << "# debug: " << __PRETTY_FUNCTION__ << NL;
+  BOARD_ADC_DEFAULT_EN;
+  BOARD_ADC_DMA_DEFAULT_EN;
+
+  adc.init_gpio_channels();
+
+  adc.DMA_reinit( DMA_NORMAL );
+
+  HAL_NVIC_SetPriority( BOARD_ADC_DMA_IRQ, 2, 0 );
+  HAL_NVIC_EnableIRQ(   BOARD_ADC_DMA_IRQ );
+
+  // HAL_NVIC_SetPriority( BOARD_ADC_IRQ, 3, 0 );
+  // HAL_NVIC_EnableIRQ( BOARD_ADC_IRQ );
+}
+
+void HAL_ADC_MspDeInit( ADC_HandleTypeDef* adcHandle )
+{
+  if( adcHandle->Instance != BOARD_ADC_DEFAULT_DEV ) {
+    return;
+  }
+  // std_out << "# debug: " << __PRETTY_FUNCTION__ << NL;
+
+  BOARD_ADC_DMA_DEFAULT_DIS;
+  BOARD_ADC_DEFAULT_DIS;
+}
+
+void HAL_ADC_ConvHalfCpltCallback( ADC_HandleTypeDef *hadc )
+{
+  // leds.set( BIT1 );
+  // adc.convHalfCpltCallback( hadc );
+}
 
 
 void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc )
 {
-  adc.end_dma |= 1;
-  adc.good_SR =  adc.last_SR = adc.hadc.Instance->SR;
-  adc.last_end = 1;
-  adc.last_error = 0;
-  ++adc.n_good;
+  // leds.set( BIT1 );
+  adc.convCpltCallback( hadc );
 }
 
 void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc )
 {
-  adc.end_dma |= 2;
-  adc.bad_SR = adc.last_SR = adc.hadc.Instance->SR;
-  // tim2_deinit();
-  adc.last_end  = 2;
-  adc.last_error = HAL_ADC_GetError( hadc );
-  adc.dma_error = hadc->DMA_Handle->ErrorCode;
-  hadc->DMA_Handle->ErrorCode = 0;
-  ++adc.n_bad;
+  // leds.set( BIT0 );
+  adc.errorCallback( hadc );
 }
 
-void DMA2_Stream0_IRQHandler(void)
+void BOARD_ADC_DMA_IRQHANDLER(void)
 {
+  leds.set( BIT0 );
   HAL_DMA_IRQHandler( &adc.hdma_adc );
 }
 
 
+// unused
+// void BOARD_ADC_IRQHANDLER(void)
+// {
+//   HAL_ADC_IRQHandler( &adc.hadc );
+//   leds.toggle( BIT0 );
+// }
+
 int cmd_set_coeffs( int argc, const char * const * argv )
 {
-  if( argc > 1 ) {
-    v_coeffs[0] = arg2float_d( 1, argc, argv, 1, -1e10f, 1e10f );
-    v_coeffs[1] = arg2float_d( 2, argc, argv, 1, -1e10f, 1e10f );
-    v_coeffs[2] = arg2float_d( 3, argc, argv, 1, -1e10f, 1e10f );
-    v_coeffs[3] = arg2float_d( 4, argc, argv, 1, -1e10f, 1e10f );
-  }
-  std_out << "# Coefficients: "
-     << v_coeffs[0] << ' ' << v_coeffs[1] << ' ' << v_coeffs[2] << ' ' << v_coeffs[3] << NL;
-  return 0;
+  return subcmd_set_coeffs( argc, argv, adcd );
 }
+
+
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

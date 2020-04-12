@@ -310,7 +310,11 @@ uint32_t ADC_Info::prepare_multi_ev( uint32_t n_ch, uint32_t presc, uint32_t sam
   hadc.Init.EOCSelection             = ADC_EOC_SEQ_CONV;
   hadc.Init.NbrOfConversion          = n_ch;
   hadc.Init.ExternalTrigConv         = ev;
-  hadc.Init.ExternalTrigConvEdge     = ADC_EXTERNALTRIGCONVEDGE_RISING;
+  if( ev == ADC_SOFTWARE_START ) { // softstart
+    hadc.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+  } else {
+    hadc.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_RISING;
+  }
   hadc.Init.ConversionDataManagement = ADC_CONVERSIONDATA_DMA_ONESHOT; // ADC_CONVERSIONDATA_DR;
   prepared = 3;
   return 1;

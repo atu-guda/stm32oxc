@@ -17,12 +17,11 @@ USE_OXC_DMA = y
 # USE_FREERTOS = y
 # NOUSE_OXC_OSFUN = y
 # FREERTOS_HEAP = heap_2.c # # default: heap_3.c
-REQUIRE_SPECIAL_CLOCK = y
+# REQUIRE_SPECIAL_CLOCK = y
 
 SRCS  = main.cpp
 
 SRCS += oxc_floatfun.cpp
-SRCS += oxc_statdata.cpp
+SRCS += oxc_adcdata.cpp
 
-SRCS += adc_init_exa_4ch_manual.cpp
 

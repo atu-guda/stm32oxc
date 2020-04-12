@@ -183,7 +183,6 @@ uint32_t ADC_Info::prepare_base( uint32_t presc, uint32_t sampl_cycl, uint32_t r
   return 1;
 }
 
-
 uint32_t ADC_Info::prepare_single_manual( uint32_t presc, uint32_t sampl_cycl, uint32_t resol )
 {
   if( ! prepare_base( presc, sampl_cycl, resol ) ) {
@@ -217,7 +216,11 @@ uint32_t ADC_Info::prepare_multi_ev( uint32_t n_ch, uint32_t presc, uint32_t sam
   hadc.Init.EOCSelection             = ADC_EOC_SEQ_CONV;
   hadc.Init.NbrOfConversion          = n_ch;
   hadc.Init.ExternalTrigConv         = ev;
-  hadc.Init.ExternalTrigConvEdge     = ADC_EXTERNALTRIGCONVEDGE_RISING;
+  if( ev == ADC_SOFTWARE_START ) { // softstart
+    hadc.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+  } else {
+    hadc.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_RISING;
+  }
   prepared = 3;
   return 1;
 }
