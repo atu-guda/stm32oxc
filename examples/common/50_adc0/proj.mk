@@ -22,6 +22,7 @@ USE_OXC_ADC = y
 
 SRCS  = main.cpp
 
-SRCS += adc_init_exa_1ch_manual.cpp
+SRCS += oxc_floatfun.cpp
+SRCS += oxc_adcdata.cpp
 
 
