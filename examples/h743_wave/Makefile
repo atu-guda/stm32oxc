@@ -51,11 +51,11 @@ SUBDIRS = \
   50a_adcdma_soft1 \
   51_adcdma \
   51a_adcdma_n \
-  80_math_stat \
+  53_adcdma_sd \
   x01_fmc \
-  # x51_adcdma_fmc \
-  # x52_adcirq_fmc \
-  # x53a_adcdma_n_fmc_sdcard
+  x51_adcdma_fmc \
+  x53a_adcdma_n_fmc_sdcard/
+  80_math_stat \
 
 
 

@@ -10,7 +10,7 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
-const char* common_help_string = "App to test ADC on H7 in T2 shot N channels one chunk" NL
+const char* common_help_string = "App to test ADC in T2 shot N channels one chunk" NL
  " var t - delay time in us" NL
  " var n - default number of measurements" NL
  " var s - sample time index" NL
