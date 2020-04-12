@@ -1,5 +1,4 @@
 #include <oxc_adc.h>
-#include <stm32f7xx_ll_adc.h>
 // #include <oxc_auto.h> // tmp: debug, remove with std_out
 // #include <oxc_debug1.h> // tmp: log_add
 /**

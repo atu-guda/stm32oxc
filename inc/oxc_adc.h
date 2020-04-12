@@ -7,6 +7,58 @@
 #include <oxc_base.h>
 #include <oxc_gpio.h>
 
+#if defined (STM32F0)
+ #include <stm32f0xx_ll_adc.h>
+ #include <stm32f0xx_hal_adc.h>
+ #define ADC_FREQ_MAX 14000000
+#elif defined (STM32F1)
+ #include <stm32f1xx_ll_adc.h>
+ #include <stm32f1xx_hal_adc.h>
+ #define ADC_FREQ_MAX 14000000
+#elif defined (STM32F2)
+ #include <stm32f2xx_ll_adc.h>
+ #include <stm32f2xx_hal_adc.h>
+ #define ADC_FREQ_MAX 36000000
+#elif defined (STM32F3)
+ #include <stm32f3xx_ll_adc.h>
+ #include <stm32f3xx_hal_adc.h>
+ #define ADC_FREQ_MAX 72000000
+#elif defined (STM32F4)
+ #include <stm32f4xx_ll_adc.h>
+ #include <stm32f4xx_hal_adc.h>
+ #define ADC_FREQ_MAX 36000000
+ // not defined in stm32f4xx_hal_adc.h
+ #define ADC_SCAN_DISABLE      ((uint32_t)0x00000000)
+ #define ADC_SCAN_ENABLE       ((uint32_t)0x00000001)
+ #define ADC_REGULAR_RANK_1    ((uint32_t)0x00000001)
+ #define ADC_REGULAR_RANK_2    ((uint32_t)0x00000002)
+ #define ADC_REGULAR_RANK_3    ((uint32_t)0x00000003)
+ #define ADC_REGULAR_RANK_4    ((uint32_t)0x00000004)
+ #define ADC_REGULAR_RANK_5    ((uint32_t)0x00000005)
+ #define ADC_REGULAR_RANK_6    ((uint32_t)0x00000006)
+ #define ADC_REGULAR_RANK_7    ((uint32_t)0x00000007)
+ #define ADC_REGULAR_RANK_8    ((uint32_t)0x00000008)
+ #define ADC_REGULAR_RANK_9    ((uint32_t)0x00000009)
+ #define ADC_REGULAR_RANK_10   ((uint32_t)0x0000000A)
+ #define ADC_REGULAR_RANK_11   ((uint32_t)0x0000000B)
+ #define ADC_REGULAR_RANK_12   ((uint32_t)0x0000000C)
+ #define ADC_REGULAR_RANK_13   ((uint32_t)0x0000000D)
+ #define ADC_REGULAR_RANK_14   ((uint32_t)0x0000000E)
+ #define ADC_REGULAR_RANK_15   ((uint32_t)0x0000000F)
+ #define ADC_REGULAR_RANK_16   ((uint32_t)0x00000010)
+#elif defined(STM32F7)
+ #include <stm32f7xx_ll_adc.h>
+ #include <stm32f7xx_hal_adc.h>
+ #define ADC_FREQ_MAX 36000000
+#elif defined(STM32H7)
+ #include <stm32h7xx_ll_adc.h>
+ #include <stm32h7xx_hal_adc.h>
+ #define ADC_FREQ_MAX 50000000
+#else
+  #error "Unsupported MCU"
+#endif
+
+
 struct AdcChannelInfo {
   uint32_t channel; // like ADC_CHANNEL_17
   GpioRegs &gpio;   // like GpioA

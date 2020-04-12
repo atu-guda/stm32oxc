@@ -2,7 +2,6 @@
 
 #include <oxc_auto.h> // output and debug
 #include <oxc_adc.h>
-#include <stm32f7xx_ll_adc.h>
 
 const AdcSampleTimeInfo adc_arch_sampletimes[] = {
   { ADC_SAMPLETIME_3CYCLES    ,   30 },

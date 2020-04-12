@@ -28,7 +28,6 @@
  #define EXTIREG_RTSR RTSR
  #define EXTIREG_FTSR FTSR
  #define EXTIREG_IMR  IMR
- #define ADC_FREQ_MAX 14000000
 #elif defined (STM32F1)
  #include <stm32f1xx_hal.h>
  #define SET_BIT_REG   BSRR
@@ -41,7 +40,6 @@
  #define EXTIREG_RTSR RTSR
  #define EXTIREG_FTSR FTSR
  #define EXTIREG_IMR  IMR
- #define ADC_FREQ_MAX 14000000
 #elif defined (STM32F2)
  #include <stm32f2xx_hal.h>
  #define SET_BIT_REG   BSRR
@@ -54,7 +52,6 @@
  #define EXTIREG_RTSR RTSR
  #define EXTIREG_FTSR FTSR
  #define EXTIREG_IMR  IMR
- #define ADC_FREQ_MAX 36000000
 #elif defined (STM32F3)
  #include <stm32f3xx_hal.h>
  #include <Legacy/stm32_hal_legacy.h>
@@ -68,7 +65,6 @@
  #define EXTIREG_RTSR RTSR
  #define EXTIREG_FTSR FTSR
  #define EXTIREG_IMR  IMR
- #define ADC_FREQ_MAX 72000000
 #elif defined (STM32F4)
  #include <stm32f4xx_hal.h>
  #define SET_BIT_REG   BSRR
@@ -81,7 +77,6 @@
  #define EXTIREG_RTSR RTSR
  #define EXTIREG_FTSR FTSR
  #define EXTIREG_IMR  IMR
- #define ADC_FREQ_MAX 36000000
 #elif defined(STM32F7)
  #include <stm32f7xx_hal.h>
  #define SET_BIT_REG   BSRR
@@ -94,7 +89,6 @@
  #define EXTIREG_RTSR RTSR
  #define EXTIREG_FTSR FTSR
  #define EXTIREG_IMR  IMR
- #define ADC_FREQ_MAX 36000000
 #elif defined(STM32H7)
  #include <stm32h7xx_hal.h>
  #define SET_BIT_REG   BSRR
@@ -107,7 +101,6 @@
  #define EXTIREG_RTSR RTSR1
  #define EXTIREG_FTSR FTSR1
  #define EXTIREG_IMR  IMR1
- #define ADC_FREQ_MAX xxx36000000
 #else
   #error "Unsupported MCU"
 #endif
