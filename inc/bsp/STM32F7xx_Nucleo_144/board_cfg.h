@@ -167,7 +167,6 @@
 #define BOARD_ADC_DEFAULT_RESOLUTION    ADC_RESOLUTION_12B
 #define BOARD_ADC_DEFAULT_BITS          12
 #define BOARD_ADC_DEFAULT_MAX           0x0FFF
-#define BOARD_ADC_FREQ_MAX              36000000
 #define BOARD_ADC_IRQ                   ADC_IRQn
 #define BOARD_ADC_IRQHANDLER            ADC_IRQHandler
 #define BOARD_ADC_DMA_INSTANCE          DMA2_Stream0
@@ -179,6 +178,9 @@
 #define BOARD_ADC_DMA_IRQHANDLER        DMA2_Stream0_IRQHandler
 #define BOARD_ADC_DEFAULT_TRIG          ADC_EXTERNALTRIG2_T2_TRGO
 #define BOARD_ADC_DEFAULT_DBLBUF        ((uint32_t)DMA_SxCR_DBM)
+
+// void* malloc_fmc( size_t sz ); // only all FMC memory for now
+// void  free_fmc( void* ptr );
 
 // 0 = DEVICE_FS, 1 = DEVICE_HS
 #define BOARD_USB_DEFAULT_TYPE       0

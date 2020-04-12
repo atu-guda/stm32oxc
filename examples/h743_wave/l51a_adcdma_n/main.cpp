@@ -123,12 +123,12 @@ int cmd_test0( int argc, const char * const * argv )
 
   const uint32_t adc_arch_clock_in = ADC_getFreqIn( &adc.hadc );
   uint32_t s_div = 0;
-  uint32_t div_bits = ADC_calc_div( &adc.hadc, BOARD_ADC_FREQ_MAX, &s_div );
+  uint32_t div_bits = ADC_calc_div( &adc.hadc, ADC_FREQ_MAX, &s_div );
 
   std_out <<  NL "# Test0: n= " << n << " n_ch= " << n_ch
     << " t= " << t_step_us << " us, freq_sampl= " << freq_sampl
     << " freq_in= " << adc_arch_clock_in
-    << " freq_max= " << BOARD_ADC_FREQ_MAX << NL;
+    << " freq_max= " << ADC_FREQ_MAX << NL;
 
   if( s_div == 0  ||  div_bits == 0xFFFFFFFF ) {
     std_out << "# error: fail to calc divisor" NL;
@@ -157,13 +157,13 @@ int cmd_test0( int argc, const char * const * argv )
           << " stime_ns= "  << stime_ns  << " code= " <<  adc_arch_sampletimes[stime_idx].code
           << " t_wait0= " << t_wait0 << " ms" NL;
 
-  uint32_t psc = calc_TIM_psc_for_cnt_freq( tim2h.Instance, 1000000 ); // 1 us each
+  uint32_t psc = calc_TIM_psc_for_cnt_freq( tim2h.Instance, tim_base_freq ); // 1 us each
   UVAR('p') = psc;
   delay_ms( 1 );
 
   adc.prepare_multi_ev_n( n_ch, div_bits, adc_arch_sampletimes[stime_idx].code, BOARD_ADC_DEFAULT_TRIG, BOARD_ADC_DEFAULT_RESOLUTION );
 
-  if( ! adc.init_xxx1() ) {
+  if( ! adc.init_common() ) {
     std_out << "# error: fail to init ADC: errno= " << errno << NL;
   }
 
@@ -193,7 +193,7 @@ int cmd_test0( int argc, const char * const * argv )
   adc.reset_cnt();
   adcd.set_d_t( t_step_us * 1e-6f );
   adcd.set_v_ref_uV( UVAR('v') );
-  // adcd.fill( 0 ); // debug?
+  adcd.fill( 0 ); // debug?
   std_out << "# n_col= " << adcd.get_n_col() << " n_row= " << adcd.get_n_row() << " data: " << HexInt(adcd.data()) << " size_all= " << adcd.size_all() << NL;
 
   leds.reset( BIT0 | BIT1 | BIT2 );

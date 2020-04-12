@@ -184,12 +184,12 @@
 #define BOARD_ADC_FREE                  free_axi
 #define BOARD_ADC_MALLOC_EXT            malloc_fmc
 #define BOARD_ADC_FREE_EXT              free_fmc
+
 #define BOARD_ADC_DEFAULT_CLOCK         ADC_CLOCK_ASYNC_DIV4
 #define BOARD_ADC_DEFAULT_SAMPL_LARGE   ADC_SAMPLETIME_387CYCLES_5
 #define BOARD_ADC_DEFAULT_RESOLUTION    ADC_RESOLUTION_16B
 #define BOARD_ADC_DEFAULT_BITS          16
 #define BOARD_ADC_DEFAULT_MAX           65535
-#define BOARD_ADC_FREQ_MAX              50000000
 #define BOARD_ADC_IRQ                   ADC_IRQn
 #define BOARD_ADC_IRQHANDLER            ADC_IRQHandler
 #define BOARD_ADC_DMA_INSTANCE          DMA1_Stream1
@@ -201,10 +201,11 @@
 #define BOARD_ADC_DEFAULT_TRIG          ADC_EXTERNALTRIG_T2_TRGO
 #define BOARD_ADC_DEFAULT_DBLBUF        DMA_DOUBLE_BUFFER_M0
 
-void* malloc_axi( size_t sz ); // only all AXI memory for now
-void  free_axi( void* ptr );
 void* malloc_fmc( size_t sz ); // only all FMC memory for now
 void  free_fmc( void* ptr );
+
+void* malloc_axi( size_t sz ); // only all AXI memory for now
+void  free_axi( void* ptr );
 
 // 0 = DEVICE_FS, 1 = DEVICE_HS
 #define BOARD_USB_DEFAULT_TYPE       0

@@ -157,7 +157,7 @@ int cmd_test0( int argc, const char * const * argv )
           << " stime_ns= "  << stime_ns  << " code= " <<  adc_arch_sampletimes[stime_idx].code
           << " t_wait0= " << t_wait0 << " ms" NL;
 
-  uint32_t psc = calc_TIM_psc_for_cnt_freq( tim2h.Instance, 1000000 ); // 1 us each
+  uint32_t psc = calc_TIM_psc_for_cnt_freq( tim2h.Instance, tim_base_freq ); // 1 us each
   UVAR('p') = psc;
   delay_ms( 1 );
 

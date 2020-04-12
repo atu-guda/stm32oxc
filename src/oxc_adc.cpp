@@ -78,6 +78,8 @@ void pr_ADC_state( const ADC_Info &adc ) // old: new must be arch-dependent memb
 
 #endif
 
+AdcDma_n_status adcdma_n_status;
+
 ADC_Info::ADC_Info( ADC_TypeDef* _hadc, const AdcChannelInfo *ch_i )
 {
   hadc.Instance  = _hadc;

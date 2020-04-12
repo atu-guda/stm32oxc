@@ -1,0 +1,9 @@
+ADC usage: DMA double-buffer approach
+Clock: APB2/2 = 72/4 = 36: max <- use special clock
+
+Channels:
+   C2, //  C3,   C4,   C5
+ Ch12,// Ch13, Ch14, Ch15
+
+Console: standard
+

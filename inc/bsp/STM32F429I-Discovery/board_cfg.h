@@ -159,7 +159,6 @@
 #define BOARD_ADC_DEFAULT_RESOLUTION    ADC_RESOLUTION_12B
 #define BOARD_ADC_DEFAULT_BITS          12
 #define BOARD_ADC_DEFAULT_MAX           0x0FFF
-#define BOARD_ADC_FREQ_MAX              36000000
 #define BOARD_ADC_IRQ                   ADC_IRQn
 #define BOARD_ADC_IRQHANDLER            ADC_IRQHandler
 #define BOARD_ADC_DMA_INSTANCE          DMA2_Stream0

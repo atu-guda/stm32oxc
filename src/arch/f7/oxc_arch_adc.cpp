@@ -15,7 +15,6 @@ const AdcSampleTimeInfo adc_arch_sampletimes[] = {
 };
 
 
-AdcDma_n_status adcdma_n_status; //TODO: move
 
 const unsigned adc_arch_sampletimes_n = std::size( adc_arch_sampletimes );
 
