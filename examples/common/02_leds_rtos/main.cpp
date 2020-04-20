@@ -49,12 +49,17 @@ void MX_GPIO_Init(void)
   board_def_btn_init( true );
 }
 
+//  if( __HAL_GPIO_EXTI_GET_IT( GPIO_Pin ) != RESET )
 
 #ifdef BOARD_BTN0_EXIST
 #define EXTI_BIT0 BOARD_BTN0_BIT
 void BOARD_BTN0_IRQHANDLER(void)
 {
+  leds.toggle( BIT3 );
   HAL_GPIO_EXTI_IRQHandler( BOARD_BTN0_BIT );
+  #ifdef BOARD_BTN0_1_SAME_IRQ
+    HAL_GPIO_EXTI_IRQHandler( BOARD_BTN1_BIT );
+  #endif
 }
 #else
 #define EXTI_BIT0 0
@@ -62,10 +67,12 @@ void BOARD_BTN0_IRQHANDLER(void)
 
 #ifdef BOARD_BTN1_EXIST
 #define EXTI_BIT1 BOARD_BTN1_BIT
+#ifndef BOARD_BTN0_1_SAME_IRQ
 void BOARD_BTN1_IRQHANDLER(void)
 {
   HAL_GPIO_EXTI_IRQHandler( BOARD_BTN1_BIT );
 }
+#endif
 #else
 #define EXTI_BIT1 0
 #endif
@@ -73,7 +80,7 @@ void BOARD_BTN1_IRQHANDLER(void)
 void HAL_GPIO_EXTI_Callback( uint16_t pin )
 {
   uint32_t curr_tick = HAL_GetTick();
-  leds.toggle( BIT3 );
+  // leds.toggle( BIT3 );
   if( curr_tick - last_exti_tick < btn_deadtime ) {
     return; // ignore too fast events
   }

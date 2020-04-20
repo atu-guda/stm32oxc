@@ -11,10 +11,10 @@
 #define DELAY_APPROX_COEFF  2000
 
 
-// default LEDS is C0:C3 TODO: move
+// default LEDS is H8:H11
 #define BOARD_N_LEDS 4
-#define BOARD_LEDS_GPIOX C
-#define BOARD_LEDS_OFS  0
+#define BOARD_LEDS_GPIOX H
+#define BOARD_LEDS_OFS  8
 
 // extra is C0:C7
 #define BOARD_N_LEDS_EXTRA 8
@@ -35,17 +35,18 @@
 #define LED_BSP_RX        LED_BSP_GREEN
 #define LED_BSP_ERR       LED_BSP_BLUE
 
-#define BOARD_BTN0_EXIST   1
-#define BOARD_BTN0_GPIOX   H
-#define BOARD_BTN0_N       2
+#define BOARD_BTN0_EXIST       1
+#define BOARD_BTN0_GPIOX       B
+#define BOARD_BTN0_N           10
 #define BOARD_BTN0_ACTIVE_DOWN 0
-#define BOARD_BTN0_IRQNAME EXTI2
+#define BOARD_BTN0_IRQNAME     EXTI15_10
+#define BOARD_BTN0_1_SAME_IRQ  1
 
-#define BOARD_BTN1_EXIST   1
-#define BOARD_BTN1_GPIOX   H
-#define BOARD_BTN1_N       3
+#define BOARD_BTN1_EXIST       1
+#define BOARD_BTN1_GPIOX       B
+#define BOARD_BTN1_N           11
 #define BOARD_BTN1_ACTIVE_DOWN 0
-#define BOARD_BTN1_IRQNAME   EXTI3
+#define BOARD_BTN1_IRQNAME     EXTI15_10
 
 
 #define TIM_EXA        TIM8
@@ -101,12 +102,12 @@
 #define BOARD_I2C_DEFAULT_IRQ           I2C1_EV_IRQn
 #define BOARD_I2C_DEFAULT_IRQHANDLER    I2C1_EV_IRQHandler
 
-#define BOARD_IN0_GPIO                  GpioD
-#define BOARD_IN0_PINNUM                11
-#define BOARD_IN1_GPIO                  GpioD
-#define BOARD_IN1_PINNUM                12
-#define BOARD_IN2_GPIO                  GpioD
-#define BOARD_IN2_PINNUM                13
+#define BOARD_IN0_GPIO                  GpioG
+#define BOARD_IN0_PINNUM                2
+#define BOARD_IN1_GPIO                  GpioG
+#define BOARD_IN1_PINNUM                3
+#define BOARD_IN2_GPIO                  GpioG
+#define BOARD_IN2_PINNUM                6
 
 
 #define BOARD_SPI_DEFAULT               SPI2
@@ -139,22 +140,22 @@
 #define BOARD_1W_DEFAULT_GPIO           GpioG
 #define BOARD_1W_DEFAULT_PIN            GPIO_PIN_9
 
-// TODO: change, for now A0-A2,3, (0-2,3)
+// TODO: C0:C3
 #define BOARD_ADC_DEFAULT_DEV           ADC1
 #define BOARD_ADC_DEFAULT_EN            __HAL_RCC_ADC1_CLK_ENABLE();
 #define BOARD_ADC_DEFAULT_DIS           __HAL_RCC_ADC1_CLK_DISABLE();
-#define BOARD_ADC_DEFAULT_GPIO0         GpioA
+#define BOARD_ADC_DEFAULT_GPIO0         GpioC
 #define BOARD_ADC_DEFAULT_PIN0          0
-#define BOARD_ADC_DEFAULT_CH0           ADC_CHANNEL_0
-#define BOARD_ADC_DEFAULT_GPIO1         GpioA
+#define BOARD_ADC_DEFAULT_CH0           ADC_CHANNEL_10
+#define BOARD_ADC_DEFAULT_GPIO1         GpioC
 #define BOARD_ADC_DEFAULT_PIN1          1
-#define BOARD_ADC_DEFAULT_CH1           ADC_CHANNEL_1
-#define BOARD_ADC_DEFAULT_GPIO2         GpioA
+#define BOARD_ADC_DEFAULT_CH1           ADC_CHANNEL_11
+#define BOARD_ADC_DEFAULT_GPIO2         GpioC
 #define BOARD_ADC_DEFAULT_PIN2          2
-#define BOARD_ADC_DEFAULT_CH2           ADC_CHANNEL_2
-#define BOARD_ADC_DEFAULT_GPIO3         GpioA
+#define BOARD_ADC_DEFAULT_CH2           ADC_CHANNEL_12
+#define BOARD_ADC_DEFAULT_GPIO3         GpioC
 #define BOARD_ADC_DEFAULT_PIN3          3
-#define BOARD_ADC_DEFAULT_CH3           ADC_CHANNEL_3
+#define BOARD_ADC_DEFAULT_CH3           ADC_CHANNEL_13
 #define BOARD_ADC_MEM_MAX               (1024*256)
 #define BOARD_ADC_MEM_MAX_FMC           (1024*1024*8)
 #define BOARD_ADC_COEFF                 3298000
