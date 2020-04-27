@@ -34,6 +34,7 @@ const CmdInfo* global_cmds[] = {
 };
 
 mjs *js = nullptr;
+void resetjs();
 
 void idle_main_task()
 {
@@ -143,17 +144,9 @@ int main(void)
   set_var_hook      = set_var_fl;
 
   BOARD_POST_INIT_BLINK;
-  js = mjs_create();
+  resetjs();
 
   std_out << NL "##################### " PROJ_NAME NL;
-  // std_out << "# fl0.size = " << fl0.size() << " name= \"" << fl0.getName( 1 ) << "\"" NL;
-  // std_out << "# &fl0_W_max  = " << HexInt( (void*)&fl0_W_max ) << " fl0_objs= "  << HexInt( (void*)fl0_objs )
-  //    << " fl0.begin()= " << HexInt( (void*)( fl0.begin() ) ) << NL;
-  //
-  // auto f = fl0.begin();
-  // std_out << "# f.getName()= \"" << f->getName() << "\"" NL;
-
-
 
 
   srl.re_ps();
@@ -169,23 +162,34 @@ int main(void)
 
 int cmd_test0( int argc, const char * const * argv )
 {
-  std_out << "# Test: " << NL;
+  const char *cmd = ( argc > 1 ) ? argv[1] : "let f =  7 + 8; f;";
+
+  std_out << "# Test: cmd= \"" << cmd << '"' << NL;
+  delay_ms( 10 );
 
   mjs_val_t ret /* = MJS_UNDEFINED */;
-  mjs_err_t rc = mjs_exec( js, "let f = 2 + 3 ; f;", &ret );
+  mjs_err_t rc = mjs_exec( js, cmd, &ret );
 
   std_out << "# rc= " << rc << " ret= " << HexInt64( ret, true ) << NL;
+  if( rc != 0 ) {
+    std_out << "# err: " << mjs_strerror( js, rc ) << NL;
+  }
 
 
   return 0;
 }
 
-int cmd_resetjs( int argc, const char * const * argv )
+void resetjs()
 {
   if( js ) {
     mjs_destroy( js );
-    js = mjs_create();
   }
+  js = mjs_create();
+}
+
+int cmd_resetjs( int argc, const char * const * argv )
+{
+  resetjs();
   return 0;
 }
 

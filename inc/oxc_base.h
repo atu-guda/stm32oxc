@@ -124,7 +124,7 @@ inline void replace_bits( T &v, uint8_t pos, uint8_t n, uint32_t bits )
 
 
 #ifndef NL
-  #define NL "\r\n"
+  #define NL "\n"
 #endif
 
 extern uint32_t delay_calibrate_value;
