@@ -44,6 +44,19 @@ char* word2hex( uint32_t d,  char *s )
   return s;
 }
 
+char* u64_2hex( uint64_t d,  char *s )
+{
+  if( !s ) {
+    return nullptr;
+  }
+  for( int i=15; i>=0; --i ) {
+    s[i] = hex_digits[ d & 0x0F ];
+    d >>= 4;
+  }
+  s[16] = '\0';
+  return s;
+}
+
 char* short2hex( uint16_t d,  char *s )
 {
   if( !s ) {

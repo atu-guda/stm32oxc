@@ -50,11 +50,21 @@ OutStream& OutStream::operator+=( int rhs )
 
 void HexInt::out( OutStream &os ) const
 {
-  char buf[12];  // 0xAABBCCDD
   if( pr ) {
     os.append( "0x" );
   }
+  char buf[12];  // 0xAABBCCDD
   word2hex( v, buf );
+  os.append( buf );
+}
+
+void HexInt64::out( OutStream &os ) const
+{
+  if( pr ) {
+    os.append( "0x" );
+  }
+  char buf[20];  // 0xAABBCCDDEEFFGGHH
+  u64_2hex( v, buf );
   os.append( buf );
 }
 

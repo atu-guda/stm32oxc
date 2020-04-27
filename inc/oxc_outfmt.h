@@ -23,6 +23,15 @@ class HexInt : public OutStreamFmt {
    bool pr; // output (0x before)
 };
 
+class HexInt64 : public OutStreamFmt {
+  public:
+   explicit HexInt64( uint64_t a, bool prefix_0x = false ) : v(a), pr( prefix_0x ) {};
+   operator uint64_t() const { return v; }
+   virtual void out( OutStream &os ) const override;
+   uint64_t v;
+   bool pr; // output (0x before)
+};
+
 class HexInt16 : public OutStreamFmt {
   public:
    explicit HexInt16( uint16_t a ) : v(a) {};

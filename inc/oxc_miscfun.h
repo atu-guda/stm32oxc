@@ -20,6 +20,7 @@ extern const char dec_digits[];
 char* char2hex( char c, char *s );
 // converts uint32 to hex represenration (8(64=16) digits+EOL, store to s)
 char* word2hex(  uint32_t d, char *s );
+char* u64_2hex(  uint64_t d, char *s );
 char* short2hex( uint16_t d, char *s );
 // 64/log_2[10] \approx 20
 #define INT_STR_SZ 24
