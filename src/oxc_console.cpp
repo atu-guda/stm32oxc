@@ -188,7 +188,11 @@ int exec_direct( const char *s, int l )
   if( l<0 || l >= CMDLINE_MAXSZ ) {
     return 0;
   }
-  on_cmd_handler = 1;
+  if( on_cmd_handler ) {
+    return 1;
+  }
+
+  AutoIncDec{ on_cmd_handler };
   // dump8( s,  l+1 );
   char ss[l+1];
   memmove( ss, s, l+1 );
@@ -201,14 +205,12 @@ int exec_direct( const char *s, int l )
   // dump8( ss, l+1 );
 
   if( argc < 1 ) {
-    on_cmd_handler = 0;
     return 1;
   }
 
   // comment
   if( argv[0][0] == '#' ) {
     argv[1] = argv[0];
-    on_cmd_handler = 0;
     return 0;
   }
 
@@ -268,7 +270,6 @@ int exec_direct( const char *s, int l )
     std_out << "# ERR:  Unknown command \"" << argv[0] << "\"" NL;
   }
 
-  on_cmd_handler = 0;
   return 0;
 }
 
