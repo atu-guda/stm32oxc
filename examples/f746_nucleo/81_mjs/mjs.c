@@ -1,7 +1,5 @@
 #include "mjs.h"
-#ifdef MJS_MODULE_LINES
-#line 1 "common/platform.h"
-#endif
+
 #ifndef CS_COMMON_PLATFORM_H_
 #define CS_COMMON_PLATFORM_H_
 
@@ -141,1413 +139,8 @@
 #endif
 
 #endif /* CS_COMMON_PLATFORM_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "common/platforms/platform_windows.h"
-#endif
-#ifndef CS_COMMON_PLATFORMS_PLATFORM_WINDOWS_H_
-#define CS_COMMON_PLATFORMS_PLATFORM_WINDOWS_H_
-#if CS_PLATFORM == CS_P_WINDOWS
 
-/*
- * MSVC++ 14.0 _MSC_VER == 1900 (Visual Studio 2015)
- * MSVC++ 12.0 _MSC_VER == 1800 (Visual Studio 2013)
- * MSVC++ 11.0 _MSC_VER == 1700 (Visual Studio 2012)
- * MSVC++ 10.0 _MSC_VER == 1600 (Visual Studio 2010)
- * MSVC++ 9.0  _MSC_VER == 1500 (Visual Studio 2008)
- * MSVC++ 8.0  _MSC_VER == 1400 (Visual Studio 2005)
- * MSVC++ 7.1  _MSC_VER == 1310 (Visual Studio 2003)
- * MSVC++ 7.0  _MSC_VER == 1300
- * MSVC++ 6.0  _MSC_VER == 1200
- * MSVC++ 5.0  _MSC_VER == 1100
- */
-#ifdef _MSC_VER
-#pragma warning(disable : 4127) /* FD_SET() emits warning, disable it */
-#pragma warning(disable : 4204) /* missing c99 support */
-#endif
 
-#ifndef _WINSOCK_DEPRECATED_NO_WARNINGS
-#define _WINSOCK_DEPRECATED_NO_WARNINGS 1
-#endif
-
-#ifndef _CRT_SECURE_NO_WARNINGS
-#define _CRT_SECURE_NO_WARNINGS
-#endif
-
-#include <assert.h>
-#include <direct.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <io.h>
-#include <limits.h>
-#include <signal.h>
-#include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/stat.h>
-#include <time.h>
-#include <ctype.h>
-
-#ifdef _MSC_VER
-#pragma comment(lib, "ws2_32.lib") /* Linking with winsock library */
-#endif
-
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#include <windows.h>
-#include <process.h>
-
-#if _MSC_VER < 1700
-typedef int bool;
-#else
-#include <stdbool.h>
-#endif
-
-#if defined(_MSC_VER) && _MSC_VER >= 1800
-#define strdup _strdup
-#endif
-
-#ifndef EINPROGRESS
-#define EINPROGRESS WSAEINPROGRESS
-#endif
-#ifndef EWOULDBLOCK
-#define EWOULDBLOCK WSAEWOULDBLOCK
-#endif
-#ifndef __func__
-#define STRX(x) #x
-#define STR(x) STRX(x)
-#define __func__ __FILE__ ":" STR(__LINE__)
-#endif
-#define snprintf _snprintf
-#define vsnprintf _vsnprintf
-#define to64(x) _atoi64(x)
-#if !defined(__MINGW32__) && !defined(__MINGW64__)
-#define popen(x, y) _popen((x), (y))
-#define pclose(x) _pclose(x)
-#define fileno _fileno
-#endif
-#if defined(_MSC_VER) && _MSC_VER >= 1400
-#define fseeko(x, y, z) _fseeki64((x), (y), (z))
-#else
-#define fseeko(x, y, z) fseek((x), (y), (z))
-#endif
-#if defined(_MSC_VER) && _MSC_VER <= 1200
-typedef unsigned long uintptr_t;
-typedef long intptr_t;
-#endif
-typedef int socklen_t;
-#if _MSC_VER >= 1700
-#include <stdint.h>
-#else
-typedef signed char int8_t;
-typedef unsigned char uint8_t;
-typedef int int32_t;
-typedef unsigned int uint32_t;
-typedef short int16_t;
-typedef unsigned short uint16_t;
-typedef __int64 int64_t;
-typedef unsigned __int64 uint64_t;
-#endif
-typedef SOCKET sock_t;
-typedef uint32_t in_addr_t;
-#ifndef UINT16_MAX
-#define UINT16_MAX 65535
-#endif
-#ifndef UINT32_MAX
-#define UINT32_MAX 4294967295
-#endif
-#ifndef pid_t
-#define pid_t HANDLE
-#endif
-#define INT64_FMT "I64d"
-#define INT64_X_FMT "I64x"
-#define SIZE_T_FMT "Iu"
-typedef struct _stati64 cs_stat_t;
-#ifndef S_ISDIR
-#define S_ISDIR(x) (((x) &_S_IFMT) == _S_IFDIR)
-#endif
-#ifndef S_ISREG
-#define S_ISREG(x) (((x) &_S_IFMT) == _S_IFREG)
-#endif
-#define DIRSEP '\\'
-#define CS_DEFINE_DIRENT
-
-#ifndef va_copy
-#ifdef __va_copy
-#define va_copy __va_copy
-#else
-#define va_copy(x, y) (x) = (y)
-#endif
-#endif
-
-#ifndef MG_MAX_HTTP_REQUEST_SIZE
-#define MG_MAX_HTTP_REQUEST_SIZE 8192
-#endif
-
-#ifndef MG_MAX_HTTP_SEND_MBUF
-#define MG_MAX_HTTP_SEND_MBUF 4096
-#endif
-
-#ifndef MG_MAX_HTTP_HEADERS
-#define MG_MAX_HTTP_HEADERS 40
-#endif
-
-#ifndef CS_ENABLE_STDIO
-#define CS_ENABLE_STDIO 1
-#endif
-
-#ifndef MG_ENABLE_BROADCAST
-#define MG_ENABLE_BROADCAST 1
-#endif
-
-#ifndef MG_ENABLE_DIRECTORY_LISTING
-#define MG_ENABLE_DIRECTORY_LISTING 1
-#endif
-
-#ifndef MG_ENABLE_FILESYSTEM
-#define MG_ENABLE_FILESYSTEM 1
-#endif
-
-#ifndef MG_ENABLE_HTTP_CGI
-#define MG_ENABLE_HTTP_CGI MG_ENABLE_FILESYSTEM
-#endif
-
-#ifndef MG_NET_IF
-#define MG_NET_IF MG_NET_IF_SOCKET
-#endif
-
-unsigned int sleep(unsigned int seconds);
-
-/* https://stackoverflow.com/questions/16647819/timegm-cross-platform */
-#define timegm _mkgmtime
-
-#define gmtime_r(a, b) \
-  do {                 \
-    *(b) = *gmtime(a); \
-  } while (0)
-
-#endif /* CS_PLATFORM == CS_P_WINDOWS */
-#endif /* CS_COMMON_PLATFORMS_PLATFORM_WINDOWS_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "common/platforms/platform_unix.h"
-#endif
-#ifndef CS_COMMON_PLATFORMS_PLATFORM_UNIX_H_
-#define CS_COMMON_PLATFORMS_PLATFORM_UNIX_H_
-#if CS_PLATFORM == CS_P_UNIX
-
-#ifndef _XOPEN_SOURCE
-#define _XOPEN_SOURCE 600
-#endif
-
-/* <inttypes.h> wants this for C++ */
-#ifndef __STDC_FORMAT_MACROS
-#define __STDC_FORMAT_MACROS
-#endif
-
-/* C++ wants that for INT64_MAX */
-#ifndef __STDC_LIMIT_MACROS
-#define __STDC_LIMIT_MACROS
-#endif
-
-/* Enable fseeko() and ftello() functions */
-#ifndef _LARGEFILE_SOURCE
-#define _LARGEFILE_SOURCE
-#endif
-
-/* Enable 64-bit file offsets */
-#ifndef _FILE_OFFSET_BITS
-#define _FILE_OFFSET_BITS 64
-#endif
-
-#include <arpa/inet.h>
-#include <assert.h>
-#include <ctype.h>
-#include <dirent.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <inttypes.h>
-#include <stdint.h>
-#include <limits.h>
-#include <math.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <pthread.h>
-#include <signal.h>
-#include <stdarg.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/param.h>
-#include <sys/socket.h>
-#include <sys/select.h>
-#include <sys/stat.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <unistd.h>
-
-#ifdef __APPLE__
-#include <machine/endian.h>
-#ifndef BYTE_ORDER
-#define LITTLE_ENDIAN __DARWIN_LITTLE_ENDIAN
-#define BIG_ENDIAN __DARWIN_BIG_ENDIAN
-#define PDP_ENDIAN __DARWIN_PDP_ENDIAN
-#define BYTE_ORDER __DARWIN_BYTE_ORDER
-#endif
-#endif
-
-/*
- * osx correctly avoids defining strtoll when compiling in strict ansi mode.
- * c++ 11 standard defines strtoll as well.
- * We require strtoll, and if your embedded pre-c99 compiler lacks one, please
- * implement a shim.
- */
-#if !(defined(__cplusplus) && __cplusplus >= 201103L) && \
-    !(defined(__DARWIN_C_LEVEL) && __DARWIN_C_LEVEL >= 200809L)
-long long strtoll(const char *, char **, int);
-#endif
-
-typedef int sock_t;
-#define INVALID_SOCKET (-1)
-#define SIZE_T_FMT "zu"
-typedef struct stat cs_stat_t;
-#define DIRSEP '/'
-#define to64(x) strtoll(x, NULL, 10)
-#define INT64_FMT PRId64
-#define INT64_X_FMT PRIx64
-
-#ifndef __cdecl
-#define __cdecl
-#endif
-
-#ifndef va_copy
-#ifdef __va_copy
-#define va_copy __va_copy
-#else
-#define va_copy(x, y) (x) = (y)
-#endif
-#endif
-
-#define closesocket(x) close(x)
-
-#ifndef MG_MAX_HTTP_REQUEST_SIZE
-#define MG_MAX_HTTP_REQUEST_SIZE 8192
-#endif
-
-#ifndef MG_MAX_HTTP_SEND_MBUF
-#define MG_MAX_HTTP_SEND_MBUF 4096
-#endif
-
-#ifndef MG_MAX_HTTP_HEADERS
-#define MG_MAX_HTTP_HEADERS 40
-#endif
-
-#ifndef CS_ENABLE_STDIO
-#define CS_ENABLE_STDIO 1
-#endif
-
-#ifndef MG_ENABLE_BROADCAST
-#define MG_ENABLE_BROADCAST 1
-#endif
-
-#ifndef MG_ENABLE_DIRECTORY_LISTING
-#define MG_ENABLE_DIRECTORY_LISTING 1
-#endif
-
-#ifndef MG_ENABLE_FILESYSTEM
-#define MG_ENABLE_FILESYSTEM 1
-#endif
-
-#ifndef MG_ENABLE_HTTP_CGI
-#define MG_ENABLE_HTTP_CGI MG_ENABLE_FILESYSTEM
-#endif
-
-#ifndef MG_NET_IF
-#define MG_NET_IF MG_NET_IF_SOCKET
-#endif
-
-#ifndef MG_HOSTS_FILE_NAME
-#define MG_HOSTS_FILE_NAME "/etc/hosts"
-#endif
-
-#ifndef MG_RESOLV_CONF_FILE_NAME
-#define MG_RESOLV_CONF_FILE_NAME "/etc/resolv.conf"
-#endif
-
-#endif /* CS_PLATFORM == CS_P_UNIX */
-#endif /* CS_COMMON_PLATFORMS_PLATFORM_UNIX_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "common/platforms/platform_esp32.h"
-#endif
-
-#ifndef CS_COMMON_PLATFORMS_PLATFORM_ESP32_H_
-#define CS_COMMON_PLATFORMS_PLATFORM_ESP32_H_
-#if CS_PLATFORM == CS_P_ESP32
-
-#include <assert.h>
-#include <ctype.h>
-#include <dirent.h>
-#include <fcntl.h>
-#include <inttypes.h>
-#include <machine/endian.h>
-#include <stdbool.h>
-#include <stdint.h>
-#include <string.h>
-#include <sys/stat.h>
-#include <sys/time.h>
-
-#define SIZE_T_FMT "u"
-typedef struct stat cs_stat_t;
-#define DIRSEP '/'
-#define to64(x) strtoll(x, NULL, 10)
-#define INT64_FMT PRId64
-#define INT64_X_FMT PRIx64
-#define __cdecl
-#define _FILE_OFFSET_BITS 32
-
-#define MG_LWIP 1
-
-#ifndef MG_NET_IF
-#define MG_NET_IF MG_NET_IF_SOCKET
-#endif
-
-#ifndef CS_ENABLE_STDIO
-#define CS_ENABLE_STDIO 1
-#endif
-
-#endif /* CS_PLATFORM == CS_P_ESP32 */
-#endif /* CS_COMMON_PLATFORMS_PLATFORM_ESP32_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "common/platforms/platform_esp8266.h"
-#endif
-
-#ifndef CS_COMMON_PLATFORMS_PLATFORM_ESP8266_H_
-#define CS_COMMON_PLATFORMS_PLATFORM_ESP8266_H_
-#if CS_PLATFORM == CS_P_ESP8266
-
-#include <assert.h>
-#include <ctype.h>
-#include <fcntl.h>
-#include <inttypes.h>
-#include <machine/endian.h>
-#include <stdbool.h>
-#include <string.h>
-#include <sys/stat.h>
-#include <sys/time.h>
-
-#define SIZE_T_FMT "u"
-typedef struct stat cs_stat_t;
-#define DIRSEP '/'
-#if !defined(MGOS_VFS_DEFINE_DIRENT)
-#define CS_DEFINE_DIRENT
-#endif
-
-#define to64(x) strtoll(x, NULL, 10)
-#define INT64_FMT PRId64
-#define INT64_X_FMT PRIx64
-#define __cdecl
-#define _FILE_OFFSET_BITS 32
-
-#define MG_LWIP 1
-
-/* struct timeval is defined in sys/time.h. */
-#define LWIP_TIMEVAL_PRIVATE 0
-
-#ifndef MG_NET_IF
-#include <lwip/opt.h>
-#if LWIP_SOCKET /* RTOS SDK has LWIP sockets */
-#define MG_NET_IF MG_NET_IF_SOCKET
-#else
-#define MG_NET_IF MG_NET_IF_LWIP_LOW_LEVEL
-#endif
-#endif
-
-#ifndef CS_ENABLE_STDIO
-#define CS_ENABLE_STDIO 1
-#endif
-
-#define inet_ntop(af, src, dst, size)                                          \
-  (((af) == AF_INET) ? ipaddr_ntoa_r((const ip_addr_t *) (src), (dst), (size)) \
-                     : NULL)
-#define inet_pton(af, src, dst) \
-  (((af) == AF_INET) ? ipaddr_aton((src), (ip_addr_t *) (dst)) : 0)
-
-#endif /* CS_PLATFORM == CS_P_ESP8266 */
-#endif /* CS_COMMON_PLATFORMS_PLATFORM_ESP8266_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "common/platforms/platform_cc3100.h"
-#endif
-
-#ifndef CS_COMMON_PLATFORMS_PLATFORM_CC3100_H_
-#define CS_COMMON_PLATFORMS_PLATFORM_CC3100_H_
-#if CS_PLATFORM == CS_P_CC3100
-
-#include <assert.h>
-#include <ctype.h>
-#include <errno.h>
-#include <inttypes.h>
-#include <stdint.h>
-#include <string.h>
-#include <time.h>
-
-#define MG_NET_IF MG_NET_IF_SIMPLELINK
-#define MG_SSL_IF MG_SSL_IF_SIMPLELINK
-
-/*
- * CC3100 SDK and STM32 SDK include headers w/out path, just like
- * #include "simplelink.h". As result, we have to add all required directories
- * into Makefile IPATH and do the same thing (include w/out path)
- */
-
-#include <simplelink.h>
-#include <netapp.h>
-#undef timeval
-
-typedef int sock_t;
-#define INVALID_SOCKET (-1)
-
-#define to64(x) strtoll(x, NULL, 10)
-#define INT64_FMT PRId64
-#define INT64_X_FMT PRIx64
-#define SIZE_T_FMT "u"
-
-#define SOMAXCONN 8
-
-const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
-char *inet_ntoa(struct in_addr in);
-int inet_pton(int af, const char *src, void *dst);
-
-#endif /* CS_PLATFORM == CS_P_CC3100 */
-#endif /* CS_COMMON_PLATFORMS_PLATFORM_CC3100_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "common/platforms/simplelink/cs_simplelink.h"
-#endif
-
-#ifndef CS_COMMON_PLATFORMS_SIMPLELINK_CS_SIMPLELINK_H_
-#define CS_COMMON_PLATFORMS_SIMPLELINK_CS_SIMPLELINK_H_
-
-#if defined(MG_NET_IF) && MG_NET_IF == MG_NET_IF_SIMPLELINK
-
-/* If simplelink.h is already included, all bets are off. */
-#if !defined(__SIMPLELINK_H__)
-
-#include <stdbool.h>
-
-#ifndef __TI_COMPILER_VERSION__
-#undef __CONCAT
-#undef FD_CLR
-#undef FD_ISSET
-#undef FD_SET
-#undef FD_SETSIZE
-#undef FD_ZERO
-#undef fd_set
-#endif
-
-#if CS_PLATFORM == CS_P_CC3220
-#include <ti/drivers/net/wifi/porting/user.h>
-#include <ti/drivers/net/wifi/simplelink.h>
-#include <ti/drivers/net/wifi/sl_socket.h>
-#include <ti/drivers/net/wifi/netapp.h>
-#else
-/* We want to disable SL_INC_STD_BSD_API_NAMING, so we include user.h ourselves
- * and undef it. */
-#define PROVISIONING_API_H_
-#include <simplelink/user.h>
-#undef PROVISIONING_API_H_
-#undef SL_INC_STD_BSD_API_NAMING
-
-#include <simplelink/include/simplelink.h>
-#include <simplelink/include/netapp.h>
-#endif /* CS_PLATFORM == CS_P_CC3220 */
-
-/* Now define only the subset of the BSD API that we use.
- * Notably, close(), read() and write() are not defined. */
-#define AF_INET SL_AF_INET
-
-#define socklen_t SlSocklen_t
-#define sockaddr SlSockAddr_t
-#define sockaddr_in SlSockAddrIn_t
-#define in_addr SlInAddr_t
-
-#define SOCK_STREAM SL_SOCK_STREAM
-#define SOCK_DGRAM SL_SOCK_DGRAM
-
-#define htonl sl_Htonl
-#define ntohl sl_Ntohl
-#define htons sl_Htons
-#define ntohs sl_Ntohs
-
-#ifndef EACCES
-#define EACCES SL_EACCES
-#endif
-#ifndef EAFNOSUPPORT
-#define EAFNOSUPPORT SL_EAFNOSUPPORT
-#endif
-#ifndef EAGAIN
-#define EAGAIN SL_EAGAIN
-#endif
-#ifndef EBADF
-#define EBADF SL_EBADF
-#endif
-#ifndef EINVAL
-#define EINVAL SL_EINVAL
-#endif
-#ifndef ENOMEM
-#define ENOMEM SL_ENOMEM
-#endif
-#ifndef EWOULDBLOCK
-#define EWOULDBLOCK SL_EWOULDBLOCK
-#endif
-
-#define SOMAXCONN 8
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
-char *inet_ntoa(struct in_addr in);
-int inet_pton(int af, const char *src, void *dst);
-
-struct mg_mgr;
-struct mg_connection;
-
-typedef void (*mg_init_cb)(struct mg_mgr *mgr);
-bool mg_start_task(int priority, int stack_size, mg_init_cb mg_init);
-
-void mg_run_in_task(void (*cb)(struct mg_mgr *mgr, void *arg), void *cb_arg);
-
-int sl_fs_init(void);
-
-void sl_restart_cb(struct mg_mgr *mgr);
-
-int sl_set_ssl_opts(int sock, struct mg_connection *nc);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* !defined(__SIMPLELINK_H__) */
-
-/* Compatibility with older versions of SimpleLink */
-#if SL_MAJOR_VERSION_NUM < 2
-
-#define SL_ERROR_BSD_EAGAIN SL_EAGAIN
-#define SL_ERROR_BSD_EALREADY SL_EALREADY
-#define SL_ERROR_BSD_ENOPROTOOPT SL_ENOPROTOOPT
-#define SL_ERROR_BSD_ESECDATEERROR SL_ESECDATEERROR
-#define SL_ERROR_BSD_ESECSNOVERIFY SL_ESECSNOVERIFY
-#define SL_ERROR_FS_FAILED_TO_ALLOCATE_MEM SL_FS_ERR_FAILED_TO_ALLOCATE_MEM
-#define SL_ERROR_FS_FILE_HAS_NOT_BEEN_CLOSE_CORRECTLY \
-  SL_FS_FILE_HAS_NOT_BEEN_CLOSE_CORRECTLY
-#define SL_ERROR_FS_FILE_NAME_EXIST SL_FS_FILE_NAME_EXIST
-#define SL_ERROR_FS_FILE_NOT_EXISTS SL_FS_ERR_FILE_NOT_EXISTS
-#define SL_ERROR_FS_NO_AVAILABLE_NV_INDEX SL_FS_ERR_NO_AVAILABLE_NV_INDEX
-#define SL_ERROR_FS_NOT_ENOUGH_STORAGE_SPACE SL_FS_ERR_NO_AVAILABLE_BLOCKS
-#define SL_ERROR_FS_NOT_SUPPORTED SL_FS_ERR_NOT_SUPPORTED
-#define SL_ERROR_FS_WRONG_FILE_NAME SL_FS_WRONG_FILE_NAME
-#define SL_ERROR_FS_INVALID_HANDLE SL_FS_ERR_INVALID_HANDLE
-#define SL_NETCFG_MAC_ADDRESS_GET SL_MAC_ADDRESS_GET
-#define SL_SOCKET_FD_ZERO SL_FD_ZERO
-#define SL_SOCKET_FD_SET SL_FD_SET
-#define SL_SOCKET_FD_ISSET SL_FD_ISSET
-#define SL_SO_SECURE_DOMAIN_NAME_VERIFICATION SO_SECURE_DOMAIN_NAME_VERIFICATION
-
-#define SL_FS_READ FS_MODE_OPEN_READ
-#define SL_FS_WRITE FS_MODE_OPEN_WRITE
-
-#define SL_FI_FILE_SIZE(fi) ((fi).FileLen)
-#define SL_FI_FILE_MAX_SIZE(fi) ((fi).AllocatedLen)
-
-#define SlDeviceVersion_t SlVersionFull
-#define sl_DeviceGet sl_DevGet
-#define SL_DEVICE_GENERAL SL_DEVICE_GENERAL_CONFIGURATION
-#define SL_LEN_TYPE _u8
-#define SL_OPT_TYPE _u8
-
-#else /* SL_MAJOR_VERSION_NUM >= 2 */
-
-#define FS_MODE_OPEN_CREATE(max_size, flag) \
-  (SL_FS_CREATE | SL_FS_CREATE_MAX_SIZE(max_size))
-#define SL_FI_FILE_SIZE(fi) ((fi).Len)
-#define SL_FI_FILE_MAX_SIZE(fi) ((fi).MaxSize)
-
-#define SL_LEN_TYPE _u16
-#define SL_OPT_TYPE _u16
-
-#endif /* SL_MAJOR_VERSION_NUM < 2 */
-
-int slfs_open(const unsigned char *fname, uint32_t flags, uint32_t *token);
-
-#endif /* MG_NET_IF == MG_NET_IF_SIMPLELINK */
-
-#endif /* CS_COMMON_PLATFORMS_SIMPLELINK_CS_SIMPLELINK_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "common/platforms/platform_cc3200.h"
-#endif
-
-#ifndef CS_COMMON_PLATFORMS_PLATFORM_CC3200_H_
-#define CS_COMMON_PLATFORMS_PLATFORM_CC3200_H_
-#if CS_PLATFORM == CS_P_CC3200
-
-#include <assert.h>
-#include <ctype.h>
-#include <errno.h>
-#include <inttypes.h>
-#include <stdbool.h>
-#include <stdint.h>
-#include <string.h>
-#include <time.h>
-
-#ifndef __TI_COMPILER_VERSION__
-#include <fcntl.h>
-#include <sys/time.h>
-#endif
-
-#define MG_NET_IF MG_NET_IF_SIMPLELINK
-#define MG_SSL_IF MG_SSL_IF_SIMPLELINK
-
-/* Only SPIFFS supports directories, SLFS does not. */
-#if defined(CC3200_FS_SPIFFS) && !defined(MG_ENABLE_DIRECTORY_LISTING)
-#define MG_ENABLE_DIRECTORY_LISTING 1
-#endif
-
-/* Amalgamated: #include "common/platforms/simplelink/cs_simplelink.h" */
-
-typedef int sock_t;
-#define INVALID_SOCKET (-1)
-#define SIZE_T_FMT "u"
-typedef struct stat cs_stat_t;
-#define DIRSEP '/'
-#define to64(x) strtoll(x, NULL, 10)
-#define INT64_FMT PRId64
-#define INT64_X_FMT PRIx64
-#define __cdecl
-
-#define fileno(x) -1
-
-/* Some functions we implement for Mongoose. */
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#ifdef __TI_COMPILER_VERSION__
-struct SlTimeval_t;
-#define timeval SlTimeval_t
-int gettimeofday(struct timeval *t, void *tz);
-int settimeofday(const struct timeval *tv, const void *tz);
-
-int asprintf(char **strp, const char *fmt, ...);
-
-#endif
-
-/* TI's libc does not have stat & friends, add them. */
-#ifdef __TI_COMPILER_VERSION__
-
-#include <file.h>
-
-typedef unsigned int mode_t;
-typedef size_t _off_t;
-typedef long ssize_t;
-
-struct stat {
-  int st_ino;
-  mode_t st_mode;
-  int st_nlink;
-  time_t st_mtime;
-  off_t st_size;
-};
-
-int _stat(const char *pathname, struct stat *st);
-int stat(const char *pathname, struct stat *st);
-
-#define __S_IFMT 0170000
-
-#define __S_IFDIR 0040000
-#define __S_IFCHR 0020000
-#define __S_IFREG 0100000
-
-#define __S_ISTYPE(mode, mask) (((mode) &__S_IFMT) == (mask))
-
-#define S_IFDIR __S_IFDIR
-#define S_IFCHR __S_IFCHR
-#define S_IFREG __S_IFREG
-#define S_ISDIR(mode) __S_ISTYPE((mode), __S_IFDIR)
-#define S_ISREG(mode) __S_ISTYPE((mode), __S_IFREG)
-
-/* 5.x series compilers don't have va_copy, 16.x do. */
-#if __TI_COMPILER_VERSION__ < 16000000
-#define va_copy(apc, ap) ((apc) = (ap))
-#endif
-
-#endif /* __TI_COMPILER_VERSION__ */
-
-#ifdef CC3200_FS_SLFS
-#define MG_FS_SLFS
-#endif
-
-#if (defined(CC3200_FS_SPIFFS) || defined(CC3200_FS_SLFS)) && \
-    !defined(MG_ENABLE_FILESYSTEM)
-#define MG_ENABLE_FILESYSTEM 1
-#define CS_DEFINE_DIRENT
-#endif
-
-#ifndef CS_ENABLE_STDIO
-#define CS_ENABLE_STDIO 1
-#endif
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* CS_PLATFORM == CS_P_CC3200 */
-#endif /* CS_COMMON_PLATFORMS_PLATFORM_CC3200_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "common/platforms/platform_cc3220.h"
-#endif
-
-#ifndef CS_COMMON_PLATFORMS_PLATFORM_CC3220_H_
-#define CS_COMMON_PLATFORMS_PLATFORM_CC3220_H_
-#if CS_PLATFORM == CS_P_CC3220
-
-#include <assert.h>
-#include <ctype.h>
-#include <errno.h>
-#include <inttypes.h>
-#include <stdbool.h>
-#include <stdint.h>
-#include <string.h>
-#include <time.h>
-
-#ifndef __TI_COMPILER_VERSION__
-#include <fcntl.h>
-#include <sys/time.h>
-#endif
-
-#define MG_NET_IF MG_NET_IF_SIMPLELINK
-#ifndef MG_SSL_IF
-#define MG_SSL_IF MG_SSL_IF_SIMPLELINK
-#endif
-
-/* Only SPIFFS supports directories, SLFS does not. */
-#if defined(CC3220_FS_SPIFFS) && !defined(MG_ENABLE_DIRECTORY_LISTING)
-#define MG_ENABLE_DIRECTORY_LISTING 1
-#endif
-
-/* Amalgamated: #include "common/platforms/simplelink/cs_simplelink.h" */
-
-typedef int sock_t;
-#define INVALID_SOCKET (-1)
-#define SIZE_T_FMT "u"
-typedef struct stat cs_stat_t;
-#define DIRSEP '/'
-#define to64(x) strtoll(x, NULL, 10)
-#define INT64_FMT PRId64
-#define INT64_X_FMT PRIx64
-#define __cdecl
-
-#define fileno(x) -1
-
-/* Some functions we implement for Mongoose. */
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#ifdef __TI_COMPILER_VERSION__
-struct SlTimeval_t;
-#define timeval SlTimeval_t
-int gettimeofday(struct timeval *t, void *tz);
-int settimeofday(const struct timeval *tv, const void *tz);
-
-int asprintf(char **strp, const char *fmt, ...);
-
-#endif
-
-/* TI's libc does not have stat & friends, add them. */
-#ifdef __TI_COMPILER_VERSION__
-
-#include <file.h>
-
-typedef unsigned int mode_t;
-typedef size_t _off_t;
-typedef long ssize_t;
-
-struct stat {
-  int st_ino;
-  mode_t st_mode;
-  int st_nlink;
-  time_t st_mtime;
-  off_t st_size;
-};
-
-int _stat(const char *pathname, struct stat *st);
-int stat(const char *pathname, struct stat *st);
-
-#define __S_IFMT 0170000
-
-#define __S_IFDIR 0040000
-#define __S_IFCHR 0020000
-#define __S_IFREG 0100000
-
-#define __S_ISTYPE(mode, mask) (((mode) &__S_IFMT) == (mask))
-
-#define S_IFDIR __S_IFDIR
-#define S_IFCHR __S_IFCHR
-#define S_IFREG __S_IFREG
-#define S_ISDIR(mode) __S_ISTYPE((mode), __S_IFDIR)
-#define S_ISREG(mode) __S_ISTYPE((mode), __S_IFREG)
-
-#endif /* __TI_COMPILER_VERSION__ */
-
-#ifndef CS_ENABLE_STDIO
-#define CS_ENABLE_STDIO 1
-#endif
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* CS_PLATFORM == CS_P_CC3220 */
-#endif /* CS_COMMON_PLATFORMS_PLATFORM_CC3200_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "common/platforms/platform_mbed.h"
-#endif
-
-#ifndef CS_COMMON_PLATFORMS_PLATFORM_MBED_H_
-#define CS_COMMON_PLATFORMS_PLATFORM_MBED_H_
-#if CS_PLATFORM == CS_P_MBED
-
-/*
- * mbed.h contains C++ code (e.g. templates), thus, it should be processed
- * only if included directly to startup file (ex: main.cpp)
- */
-#ifdef __cplusplus
-/* Amalgamated: #include "mbed.h" */
-#endif /* __cplusplus */
-
-#include <assert.h>
-#include <ctype.h>
-#include <errno.h>
-#include <inttypes.h>
-#include <stdint.h>
-#include <string.h>
-#include <time.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <fcntl.h>
-#include <stdio.h>
-
-typedef struct stat cs_stat_t;
-#define DIRSEP '/'
-
-#ifndef CS_ENABLE_STDIO
-#define CS_ENABLE_STDIO 1
-#endif
-
-/*
- * mbed can be compiled with the ARM compiler which
- * just doesn't come with a gettimeofday shim
- * because it's a BSD API and ARM targets embedded
- * non-unix platforms.
- */
-#if defined(__ARMCC_VERSION) || defined(__ICCARM__)
-#define _TIMEVAL_DEFINED
-#define gettimeofday _gettimeofday
-
-/* copied from GCC on ARM; for some reason useconds are signed */
-typedef long suseconds_t; /* microseconds (signed) */
-struct timeval {
-  time_t tv_sec;       /* seconds */
-  suseconds_t tv_usec; /* and microseconds */
-};
-
-#endif
-
-#if MG_NET_IF == MG_NET_IF_SIMPLELINK
-
-#define MG_SIMPLELINK_NO_OSI 1
-
-#include <simplelink.h>
-
-typedef int sock_t;
-#define INVALID_SOCKET (-1)
-
-#define to64(x) strtoll(x, NULL, 10)
-#define INT64_FMT PRId64
-#define INT64_X_FMT PRIx64
-#define SIZE_T_FMT "u"
-
-#define SOMAXCONN 8
-
-const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
-char *inet_ntoa(struct in_addr in);
-int inet_pton(int af, const char *src, void *dst);
-int inet_aton(const char *cp, struct in_addr *inp);
-in_addr_t inet_addr(const char *cp);
-
-#endif /* MG_NET_IF == MG_NET_IF_SIMPLELINK */
-
-#endif /* CS_PLATFORM == CS_P_MBED */
-#endif /* CS_COMMON_PLATFORMS_PLATFORM_MBED_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "common/platforms/platform_nrf51.h"
-#endif
-#ifndef CS_COMMON_PLATFORMS_PLATFORM_NRF51_H_
-#define CS_COMMON_PLATFORMS_PLATFORM_NRF51_H_
-#if CS_PLATFORM == CS_P_NRF51
-
-#include <assert.h>
-#include <ctype.h>
-#include <inttypes.h>
-#include <stdint.h>
-#include <string.h>
-#include <time.h>
-
-#define to64(x) strtoll(x, NULL, 10)
-
-#define MG_NET_IF MG_NET_IF_LWIP_LOW_LEVEL
-#define MG_LWIP 1
-#define MG_ENABLE_IPV6 1
-
-/*
- * For ARM C Compiler, make lwip to export `struct timeval`; for other
- * compilers, suppress it.
- */
-#if !defined(__ARMCC_VERSION)
-#define LWIP_TIMEVAL_PRIVATE 0
-#else
-struct timeval;
-int gettimeofday(struct timeval *tp, void *tzp);
-#endif
-
-#define INT64_FMT PRId64
-#define SIZE_T_FMT "u"
-
-/*
- * ARM C Compiler doesn't have strdup, so we provide it
- */
-#define CS_ENABLE_STRDUP defined(__ARMCC_VERSION)
-
-#endif /* CS_PLATFORM == CS_P_NRF51 */
-#endif /* CS_COMMON_PLATFORMS_PLATFORM_NRF51_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "common/platforms/platform_nrf52.h"
-#endif
-#ifndef CS_COMMON_PLATFORMS_PLATFORM_NRF52_H_
-#define CS_COMMON_PLATFORMS_PLATFORM_NRF52_H_
-#if CS_PLATFORM == CS_P_NRF52
-
-#include <assert.h>
-#include <ctype.h>
-#include <errno.h>
-#include <inttypes.h>
-#include <stdbool.h>
-#include <stdint.h>
-#include <string.h>
-#include <time.h>
-
-#define to64(x) strtoll(x, NULL, 10)
-
-#define MG_NET_IF MG_NET_IF_LWIP_LOW_LEVEL
-#define MG_LWIP 1
-#define MG_ENABLE_IPV6 1
-
-#if !defined(ENOSPC)
-#define ENOSPC 28 /* No space left on device */
-#endif
-
-/*
- * For ARM C Compiler, make lwip to export `struct timeval`; for other
- * compilers, suppress it.
- */
-#if !defined(__ARMCC_VERSION)
-#define LWIP_TIMEVAL_PRIVATE 0
-#endif
-
-#define INT64_FMT PRId64
-#define SIZE_T_FMT "u"
-
-/*
- * ARM C Compiler doesn't have strdup, so we provide it
- */
-#define CS_ENABLE_STRDUP defined(__ARMCC_VERSION)
-
-#endif /* CS_PLATFORM == CS_P_NRF52 */
-#endif /* CS_COMMON_PLATFORMS_PLATFORM_NRF52_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "common/platforms/platform_wince.h"
-#endif
-#ifndef CS_COMMON_PLATFORMS_PLATFORM_WINCE_H_
-#define CS_COMMON_PLATFORMS_PLATFORM_WINCE_H_
-
-#if CS_PLATFORM == CS_P_WINCE
-
-/*
- * MSVC++ 14.0 _MSC_VER == 1900 (Visual Studio 2015)
- * MSVC++ 12.0 _MSC_VER == 1800 (Visual Studio 2013)
- * MSVC++ 11.0 _MSC_VER == 1700 (Visual Studio 2012)
- * MSVC++ 10.0 _MSC_VER == 1600 (Visual Studio 2010)
- * MSVC++ 9.0  _MSC_VER == 1500 (Visual Studio 2008)
- * MSVC++ 8.0  _MSC_VER == 1400 (Visual Studio 2005)
- * MSVC++ 7.1  _MSC_VER == 1310 (Visual Studio 2003)
- * MSVC++ 7.0  _MSC_VER == 1300
- * MSVC++ 6.0  _MSC_VER == 1200
- * MSVC++ 5.0  _MSC_VER == 1100
- */
-#pragma warning(disable : 4127) /* FD_SET() emits warning, disable it */
-#pragma warning(disable : 4204) /* missing c99 support */
-
-#ifndef _WINSOCK_DEPRECATED_NO_WARNINGS
-#define _WINSOCK_DEPRECATED_NO_WARNINGS 1
-#endif
-
-#ifndef _CRT_SECURE_NO_WARNINGS
-#define _CRT_SECURE_NO_WARNINGS
-#endif
-
-#include <assert.h>
-#include <limits.h>
-#include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-
-#pragma comment(lib, "ws2.lib") /* Linking with WinCE winsock library */
-
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#include <windows.h>
-
-#define strdup _strdup
-
-#ifndef EINPROGRESS
-#define EINPROGRESS WSAEINPROGRESS
-#endif
-
-#ifndef EWOULDBLOCK
-#define EWOULDBLOCK WSAEWOULDBLOCK
-#endif
-
-#ifndef EAGAIN
-#define EAGAIN EWOULDBLOCK
-#endif
-
-#ifndef __func__
-#define STRX(x) #x
-#define STR(x) STRX(x)
-#define __func__ __FILE__ ":" STR(__LINE__)
-#endif
-
-#define snprintf _snprintf
-#define fileno _fileno
-#define vsnprintf _vsnprintf
-#define sleep(x) Sleep((x) *1000)
-#define to64(x) _atoi64(x)
-#define rmdir _rmdir
-
-#if defined(_MSC_VER) && _MSC_VER >= 1400
-#define fseeko(x, y, z) _fseeki64((x), (y), (z))
-#else
-#define fseeko(x, y, z) fseek((x), (y), (z))
-#endif
-
-typedef int socklen_t;
-
-#if _MSC_VER >= 1700
-#include <stdint.h>
-#else
-typedef signed char int8_t;
-typedef unsigned char uint8_t;
-typedef int int32_t;
-typedef unsigned int uint32_t;
-typedef short int16_t;
-typedef unsigned short uint16_t;
-typedef __int64 int64_t;
-typedef unsigned __int64 uint64_t;
-#endif
-
-typedef SOCKET sock_t;
-typedef uint32_t in_addr_t;
-
-#ifndef UINT16_MAX
-#define UINT16_MAX 65535
-#endif
-
-#ifndef UINT32_MAX
-#define UINT32_MAX 4294967295
-#endif
-
-#ifndef pid_t
-#define pid_t HANDLE
-#endif
-
-#define INT64_FMT "I64d"
-#define INT64_X_FMT "I64x"
-/* TODO(alashkin): check if this is correct */
-#define SIZE_T_FMT "u"
-
-#define DIRSEP '\\'
-#define CS_DEFINE_DIRENT
-
-#ifndef va_copy
-#ifdef __va_copy
-#define va_copy __va_copy
-#else
-#define va_copy(x, y) (x) = (y)
-#endif
-#endif
-
-#ifndef MG_MAX_HTTP_REQUEST_SIZE
-#define MG_MAX_HTTP_REQUEST_SIZE 8192
-#endif
-
-#ifndef MG_MAX_HTTP_SEND_MBUF
-#define MG_MAX_HTTP_SEND_MBUF 4096
-#endif
-
-#ifndef MG_MAX_HTTP_HEADERS
-#define MG_MAX_HTTP_HEADERS 40
-#endif
-
-#ifndef CS_ENABLE_STDIO
-#define CS_ENABLE_STDIO 1
-#endif
-
-#define abort() DebugBreak();
-
-#ifndef BUFSIZ
-#define BUFSIZ 4096
-#endif
-/*
- * Explicitly disabling MG_ENABLE_THREADS for WinCE
- * because they are enabled for _WIN32 by default
- */
-#ifndef MG_ENABLE_THREADS
-#define MG_ENABLE_THREADS 0
-#endif
-
-#ifndef MG_ENABLE_FILESYSTEM
-#define MG_ENABLE_FILESYSTEM 1
-#endif
-
-#ifndef MG_NET_IF
-#define MG_NET_IF MG_NET_IF_SOCKET
-#endif
-
-typedef struct _stati64 {
-  uint32_t st_mtime;
-  uint32_t st_size;
-  uint32_t st_mode;
-} cs_stat_t;
-
-/*
- * WinCE 6.0 has a lot of useful definitions in ATL (not windows.h) headers
- * use #ifdefs to avoid conflicts
- */
-
-#ifndef ENOENT
-#define ENOENT ERROR_PATH_NOT_FOUND
-#endif
-
-#ifndef EACCES
-#define EACCES ERROR_ACCESS_DENIED
-#endif
-
-#ifndef ENOMEM
-#define ENOMEM ERROR_NOT_ENOUGH_MEMORY
-#endif
-
-#ifndef _UINTPTR_T_DEFINED
-typedef unsigned int *uintptr_t;
-#endif
-
-#define _S_IFREG 2
-#define _S_IFDIR 4
-
-#ifndef S_ISDIR
-#define S_ISDIR(x) (((x) &_S_IFDIR) != 0)
-#endif
-
-#ifndef S_ISREG
-#define S_ISREG(x) (((x) &_S_IFREG) != 0)
-#endif
-
-int open(const char *filename, int oflag, int pmode);
-int _wstati64(const wchar_t *path, cs_stat_t *st);
-const char *strerror();
-
-#endif /* CS_PLATFORM == CS_P_WINCE */
-#endif /* CS_COMMON_PLATFORMS_PLATFORM_WINCE_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "common/platforms/platform_nxp_lpc.h"
-#endif
-
-#ifndef CS_COMMON_PLATFORMS_PLATFORM_NXP_LPC_H_
-#define CS_COMMON_PLATFORMS_PLATFORM_NXP_LPC_H_
-
-#if CS_PLATFORM == CS_P_NXP_LPC
-
-#include <ctype.h>
-#include <stdint.h>
-#include <string.h>
-
-#define SIZE_T_FMT "u"
-typedef struct stat cs_stat_t;
-#define INT64_FMT "lld"
-#define INT64_X_FMT "llx"
-#define __cdecl
-
-#define MG_LWIP 1
-
-#define MG_NET_IF MG_NET_IF_LWIP_LOW_LEVEL
-
-/*
- * LPCXpress comes with 3 C library implementations: Newlib, NewlibNano and
- *Redlib.
- * See https://community.nxp.com/message/630860 for more details.
- *
- * Redlib is the default and lacks certain things, so we provide them.
- */
-#ifdef __REDLIB_INTERFACE_VERSION__
-
-/* Let LWIP define timeval for us. */
-#define LWIP_TIMEVAL_PRIVATE 1
-
-#define va_copy(d, s) __builtin_va_copy(d, s)
-
-#define CS_ENABLE_TO64 1
-#define to64(x) cs_to64(x)
-
-#define CS_ENABLE_STRDUP 1
-
-#else
-
-#include <sys/time.h>
-#define LWIP_TIMEVAL_PRIVATE 0
-#define to64(x) strtoll(x, NULL, 10)
-
-#endif
-
-#endif /* CS_PLATFORM == CS_P_NXP_LPC */
-#endif /* CS_COMMON_PLATFORMS_PLATFORM_NXP_LPC_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "common/platforms/platform_nxp_kinetis.h"
-#endif
-
-#ifndef CS_COMMON_PLATFORMS_PLATFORM_NXP_KINETIS_H_
-#define CS_COMMON_PLATFORMS_PLATFORM_NXP_KINETIS_H_
-
-#if CS_PLATFORM == CS_P_NXP_KINETIS
-
-#include <ctype.h>
-#include <inttypes.h>
-#include <string.h>
-#include <sys/time.h>
-
-#define SIZE_T_FMT "u"
-typedef struct stat cs_stat_t;
-#define to64(x) strtoll(x, NULL, 10)
-#define INT64_FMT "lld"
-#define INT64_X_FMT "llx"
-#define __cdecl
-
-#define MG_LWIP 1
-
-#define MG_NET_IF MG_NET_IF_LWIP_LOW_LEVEL
-
-/* struct timeval is defined in sys/time.h. */
-#define LWIP_TIMEVAL_PRIVATE 0
-
-#endif /* CS_PLATFORM == CS_P_NXP_KINETIS */
-#endif /* CS_COMMON_PLATFORMS_PLATFORM_NXP_KINETIS_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "common/platforms/platform_pic32.h"
-#endif
-
-#ifndef CS_COMMON_PLATFORMS_PLATFORM_PIC32_H_
-#define CS_COMMON_PLATFORMS_PLATFORM_PIC32_H_
-
-#if CS_PLATFORM == CS_P_PIC32
-
-#define MG_NET_IF MG_NET_IF_PIC32
-
-#include <stdint.h>
-#include <time.h>
-#include <ctype.h>
-#include <stdlib.h>
-
-#include <system_config.h>
-#include <system_definitions.h>
-
-#include <sys/types.h>
-
-typedef TCP_SOCKET sock_t;
-#define to64(x) strtoll(x, NULL, 10)
-
-#define SIZE_T_FMT "lu"
-#define INT64_FMT "lld"
-
-#ifndef CS_ENABLE_STDIO
-#define CS_ENABLE_STDIO 1
-#endif
-
-char *inet_ntoa(struct in_addr in);
-
-#endif /* CS_PLATFORM == CS_P_PIC32 */
-
-#endif /* CS_COMMON_PLATFORMS_PLATFORM_PIC32_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "common/platforms/platform_rs14100.h"
-#endif
-
-#ifndef CS_COMMON_PLATFORMS_PLATFORM_RS14100_H_
-#define CS_COMMON_PLATFORMS_PLATFORM_RS14100_H_
-#if CS_PLATFORM == CS_P_RS14100
-
-#include <ctype.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/stat.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <unistd.h>
-
-#ifdef MGOS_HAVE_VFS_COMMON
-#include <mgos_vfs.h>
-#endif
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#define to64(x) strtoll(x, NULL, 10)
-#define INT64_FMT "lld"
-#define SIZE_T_FMT "u"
-typedef struct stat cs_stat_t;
-#define DIRSEP '/'
-
-#ifndef CS_ENABLE_STDIO
-#define CS_ENABLE_STDIO 1
-#endif
-
-#ifndef MG_ENABLE_FILESYSTEM
-#define MG_ENABLE_FILESYSTEM 1
-#endif
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* CS_PLATFORM == CS_P_RS14100 */
-#endif /* CS_COMMON_PLATFORMS_PLATFORM_RS14100_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "common/platforms/platform_stm32.h"
-#endif
 
 #ifndef CS_COMMON_PLATFORMS_PLATFORM_STM32_H_
 #define CS_COMMON_PLATFORMS_PLATFORM_STM32_H_
@@ -1584,9 +177,6 @@ typedef struct stat cs_stat_t;
 
 #endif /* CS_PLATFORM == CS_P_STM32 */
 #endif /* CS_COMMON_PLATFORMS_PLATFORM_STM32_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "common/cs_dbg.h"
-#endif
 
 #ifndef CS_COMMON_CS_DBG_H_
 #define CS_COMMON_CS_DBG_H_
@@ -1719,9 +309,6 @@ void cs_log_printf(const char *fmt, ...) PRINTF_LIKE(1, 2);
 #endif /* __cplusplus */
 
 #endif /* CS_COMMON_CS_DBG_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "common/cs_time.h"
-#endif
 
 #ifndef CS_COMMON_CS_TIME_H_
 #define CS_COMMON_CS_TIME_H_
@@ -1748,9 +335,6 @@ double cs_timegm(const struct tm *tm);
 #endif /* __cplusplus */
 
 #endif /* CS_COMMON_CS_TIME_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "common/mg_str.h"
-#endif
 
 #ifndef CS_COMMON_MG_STR_H_
 #define CS_COMMON_MG_STR_H_
@@ -1848,9 +432,6 @@ int mg_str_starts_with(struct mg_str s, struct mg_str prefix);
 #endif
 
 #endif /* CS_COMMON_MG_STR_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "common/str_util.h"
-#endif
 
 #ifndef CS_COMMON_STR_UTIL_H_
 #define CS_COMMON_STR_UTIL_H_
@@ -2033,9 +614,6 @@ size_t mg_match_prefix_n(const struct mg_str pattern, const struct mg_str str);
 #endif
 
 #endif /* CS_COMMON_STR_UTIL_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "common/cs_file.h"
-#endif
 
 #ifndef CS_COMMON_CS_FILE_H_
 #define CS_COMMON_CS_FILE_H_
@@ -2068,9 +646,6 @@ char *cs_mmap_file(const char *path, size_t *size);
 #endif /* __cplusplus */
 
 #endif /* CS_COMMON_CS_FILE_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "common/mbuf.h"
-#endif
 
 /*
  * Mbufs are mutable/growing memory buffers, like C++ strings.
@@ -2166,9 +741,6 @@ void mbuf_trim(struct mbuf *);
 #endif /* __cplusplus */
 
 #endif /* CS_COMMON_MBUF_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "common/mg_mem.h"
-#endif
 
 #ifndef CS_COMMON_MG_MEM_H_
 #define CS_COMMON_MG_MEM_H_
@@ -2198,9 +770,6 @@ extern "C" {
 #endif
 
 #endif /* CS_COMMON_MG_MEM_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "frozen/frozen.h"
-#endif
 
 #ifndef CS_FROZEN_FROZEN_H_
 #define CS_FROZEN_FROZEN_H_
@@ -2513,9 +1082,6 @@ void *json_next_elem(const char *s, int len, void *handle, const char *path,
 #endif /* __cplusplus */
 
 #endif /* CS_FROZEN_FROZEN_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/ffi/ffi.h"
-#endif
 
 #ifndef MJS_FFI_FFI_H_
 #define MJS_FFI_FFI_H_
@@ -2566,9 +1132,6 @@ void ffi_set_float(struct ffi_arg *arg, float v);
 #endif /* __cplusplus */
 
 #endif /* MJS_FFI_FFI_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_internal.h"
-#endif
 
 #ifndef MJS_INTERNAL_H_
 #define MJS_INTERNAL_H_
@@ -2655,12 +1218,6 @@ typedef unsigned long uintptr_t;
 #endif
 
 #endif /* MJS_INTERNAL_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_license.h"
-#endif
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_features.h"
-#endif
 
 #ifndef MJS_FEATURES_H_
 #define MJS_FEATURES_H_
@@ -2690,9 +1247,6 @@ typedef unsigned long uintptr_t;
 #endif
 
 #endif /* MJS_FEATURES_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_core_public.h"
-#endif
 
 #ifndef MJS_CORE_PUBLIC_H_
 #define MJS_CORE_PUBLIC_H_
@@ -2753,22 +1307,7 @@ struct mjs {
 };
 #endif
 
-struct mjs;
 
-typedef enum mjs_err {
-  MJS_OK,
-  MJS_SYNTAX_ERROR,
-  MJS_REFERENCE_ERROR,
-  MJS_TYPE_ERROR,
-  MJS_OUT_OF_MEMORY,
-  MJS_INTERNAL_ERROR,
-  MJS_NOT_IMPLEMENTED_ERROR,
-  MJS_FILE_READ_ERROR,
-  MJS_BAD_ARGS_ERROR,
-
-  MJS_ERRS_CNT
-} mjs_err_t;
-struct mjs;
 
 /* Create MJS instance */
 struct mjs *mjs_create();
@@ -2856,75 +1395,16 @@ mjs_val_t mjs_get_global(struct mjs *mjs);
  * stay alive after the C function has returned, it also needs to be properly
  * owned.
  */
-void mjs_own(struct mjs *mjs, mjs_val_t *v);
 
-/*
- * Disowns the value previously owned by `mjs_own()`.
- *
- * Returns 1 if value is found, 0 otherwise.
- */
-int mjs_disown(struct mjs *mjs, mjs_val_t *v);
 
-mjs_err_t mjs_set_errorf(struct mjs *mjs, mjs_err_t err, const char *fmt, ...);
 
-/*
- * If there is no error message already set, then it's equal to
- * `mjs_set_errorf()`.
- *
- * Otherwise, an old message gets prepended with the new one, followed by a
- * colon. (the previously set error code is kept)
- */
-mjs_err_t mjs_prepend_errorf(struct mjs *mjs, mjs_err_t err, const char *fmt,
-                             ...);
 
-/*
- * Print the last error details. If print_stack_trace is non-zero, also
- * print stack trace. `msg` is the message which gets prepended to the actual
- * error message, if it's NULL, then "MJS error" is used.
- */
-void mjs_print_error(struct mjs *mjs, FILE *fp, const char *msg,
-                     int print_stack_trace);
-
-/*
- * return a string representation of an error.
- * the error string might be overwritten by calls to `mjs_set_errorf`.
- */
-const char *mjs_strerror(struct mjs *mjs, enum mjs_err err);
-
-/*
- * Sets whether *.jsc files are generated when *.js file is executed. By
- * default it's 0.
- *
- * If either `MJS_GENERATE_JSC` or `CS_MMAP` is off, then this function has no
- * effect.
- */
-void mjs_set_generate_jsc(struct mjs *mjs, int generate_jsc);
-
-/*
- * When invoked from a cfunction, returns number of arguments passed to the
- * current JS function call.
- */
-int mjs_nargs(struct mjs *mjs);
-
-/*
- * When invoked from a cfunction, returns n-th argument to the current JS
- * function call.
- */
-mjs_val_t mjs_arg(struct mjs *mjs, int n);
-
-/*
- * Sets return value for the current JS function call.
- */
-void mjs_return(struct mjs *mjs, mjs_val_t v);
 
 #if defined(__cplusplus)
 }
 #endif /* __cplusplus */
 
 #endif /* MJS_CORE_PUBLIC_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_array_public.h"
-#endif
 
 /*
  * === Arrays
@@ -2939,39 +1419,13 @@ void mjs_return(struct mjs *mjs, mjs_val_t v);
 extern "C" {
 #endif /* __cplusplus */
 
-/* Make an empty array object */
-mjs_val_t mjs_mk_array(struct mjs *mjs);
 
-/* Returns length on an array. If `arr` is not an array, 0 is returned. */
-unsigned long mjs_array_length(struct mjs *mjs, mjs_val_t arr);
-
-/* Insert value `v` in array `arr` at the end of the array. */
-mjs_err_t mjs_array_push(struct mjs *mjs, mjs_val_t arr, mjs_val_t v);
-
-/*
- * Return array member at index `index`. If `index` is out of bounds, undefined
- * is returned.
- */
-mjs_val_t mjs_array_get(struct mjs *, mjs_val_t arr, unsigned long index);
-
-/* Insert value `v` into `arr` at index `index`. */
-mjs_err_t mjs_array_set(struct mjs *mjs, mjs_val_t arr, unsigned long index,
-                        mjs_val_t v);
-
-/* Returns true if the given value is an array */
-int mjs_is_array(mjs_val_t v);
-
-/* Delete value in array `arr` at index `index`, if it exists. */
-void mjs_array_del(struct mjs *mjs, mjs_val_t arr, unsigned long index);
 
 #if defined(__cplusplus)
 }
 #endif /* __cplusplus */
 
 #endif /* MJS_ARRAY_PUBLIC_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_array.h"
-#endif
 
 #ifndef MJS_ARRAY_H_
 #define MJS_ARRAY_H_
@@ -2995,9 +1449,6 @@ MJS_PRIVATE void mjs_array_push_internal(struct mjs *mjs);
 #endif /* __cplusplus */
 
 #endif /* MJS_ARRAY_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_ffi_public.h"
-#endif
 
 #ifndef MJS_FFI_PUBLIC_H_
 #define MJS_FFI_PUBLIC_H_
@@ -3008,33 +1459,13 @@ MJS_PRIVATE void mjs_array_push_internal(struct mjs *mjs);
 extern "C" {
 #endif /* __cplusplus */
 
-enum mjs_ffi_ctype {
-  MJS_FFI_CTYPE_NONE,
-  MJS_FFI_CTYPE_USERDATA,
-  MJS_FFI_CTYPE_CALLBACK,
-  MJS_FFI_CTYPE_INT,
-  MJS_FFI_CTYPE_BOOL,
-  MJS_FFI_CTYPE_DOUBLE,
-  MJS_FFI_CTYPE_FLOAT,
-  MJS_FFI_CTYPE_CHAR_PTR,
-  MJS_FFI_CTYPE_VOID_PTR,
-  MJS_FFI_CTYPE_STRUCT_MG_STR_PTR,
-  MJS_FFI_CTYPE_STRUCT_MG_STR,
-  MJS_FFI_CTYPE_INVALID,
-};
 
-typedef void *(mjs_ffi_resolver_t)(void *handle, const char *symbol);
-
-void mjs_set_ffi_resolver(struct mjs *mjs, mjs_ffi_resolver_t *dlsym);
 
 #if defined(__cplusplus)
 }
 #endif /* __cplusplus */
 
 #endif /* MJS_FFI_PUBLIC_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_ffi.h"
-#endif
 
 #ifndef MJS_FFI_H_
 #define MJS_FFI_H_
@@ -3169,9 +1600,6 @@ MJS_PRIVATE void mjs_ffi_args_free_list(struct mjs *mjs);
 #endif /* __cplusplus */
 
 #endif /* MJS_FFI_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_mm.h"
-#endif
 
 #ifndef MJS_MM_H_
 #define MJS_MM_H_
@@ -3212,9 +1640,6 @@ struct gc_arena {
 #endif /* __cplusplus */
 
 #endif /* MJS_MM_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_gc.h"
-#endif
 
 #ifndef MJS_GC_H_
 #define MJS_GC_H_
@@ -3276,9 +1701,6 @@ MJS_PRIVATE int gc_check_ptr(const struct gc_arena *a, const void *p);
 #endif /* __cplusplus */
 
 #endif /* MJS_GC_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_core.h"
-#endif
 
 #ifndef MJS_CORE_H
 #define MJS_CORE_H
@@ -3322,34 +1744,6 @@ enum mjs_call_stack_frame_item {
 
   CALL_STACK_FRAME_ITEMS_CNT
 };
-
-/*
- * A tag is made of the sign bit and the 4 lower order bits of byte 6.
- * So in total we have 32 possible tags.
- *
- * Tag (1,0) however cannot hold a zero payload otherwise it's interpreted as an
- * INFINITY; for simplicity we're just not going to use that combination.
- */
-#define MAKE_TAG(s, t) \
-  ((uint64_t)(s) << 63 | (uint64_t) 0x7ff0 << 48 | (uint64_t)(t) << 48)
-
-#define MJS_TAG_OBJECT MAKE_TAG(1, 1)
-#define MJS_TAG_FOREIGN MAKE_TAG(1, 2)
-#define MJS_TAG_UNDEFINED MAKE_TAG(1, 3)
-#define MJS_TAG_BOOLEAN MAKE_TAG(1, 4)
-#define MJS_TAG_NAN MAKE_TAG(1, 5)
-#define MJS_TAG_STRING_I MAKE_TAG(1, 6)  /* Inlined string len < 5 */
-#define MJS_TAG_STRING_5 MAKE_TAG(1, 7)  /* Inlined string len 5 */
-#define MJS_TAG_STRING_O MAKE_TAG(1, 8)  /* Owned string */
-#define MJS_TAG_STRING_F MAKE_TAG(1, 9)  /* Foreign string */
-#define MJS_TAG_STRING_C MAKE_TAG(1, 10) /* String chunk */
-#define MJS_TAG_STRING_D MAKE_TAG(1, 11) /* Dictionary string  */
-#define MJS_TAG_ARRAY MAKE_TAG(1, 12)
-#define MJS_TAG_FUNCTION MAKE_TAG(1, 13)
-#define MJS_TAG_FUNCTION_FFI MAKE_TAG(1, 14)
-#define MJS_TAG_NULL MAKE_TAG(1, 15)
-
-#define MJS_TAG_MASK MAKE_TAG(1, 15)
 
 struct mjs_vals {
   /* Current `this` value  */
@@ -3456,9 +1850,6 @@ MJS_PRIVATE void mjs_die(struct mjs *mjs);
 #endif /* __cplusplus */
 
 #endif /* MJS_CORE_H */
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_conversion.h"
-#endif
 
 #ifndef MJS_CONVERSION_H_
 #define MJS_CONVERSION_H_
@@ -3495,9 +1886,6 @@ MJS_PRIVATE int mjs_is_truthy(struct mjs *mjs, mjs_val_t v);
 #endif /* __cplusplus */
 
 #endif /* MJS_CONVERSION_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_object_public.h"
-#endif
 
 #ifndef MJS_OBJECT_PUBLIC_H_
 #define MJS_OBJECT_PUBLIC_H_
@@ -3510,117 +1898,15 @@ MJS_PRIVATE int mjs_is_truthy(struct mjs *mjs, mjs_val_t v);
 extern "C" {
 #endif /* __cplusplus */
 
-/*
- * Returns true if the given value is an object or array.
- */
-int mjs_is_object(mjs_val_t v);
 
-/* Make an empty object */
-mjs_val_t mjs_mk_object(struct mjs *mjs);
 
-/* Field types for struct-object conversion. */
-enum mjs_struct_field_type {
-  MJS_STRUCT_FIELD_TYPE_INVALID,
-  MJS_STRUCT_FIELD_TYPE_STRUCT,     /* Struct, arg points to def. */
-  MJS_STRUCT_FIELD_TYPE_STRUCT_PTR, /* Ptr to struct, arg points to def. */
-  MJS_STRUCT_FIELD_TYPE_INT,
-  MJS_STRUCT_FIELD_TYPE_BOOL,
-  MJS_STRUCT_FIELD_TYPE_DOUBLE,
-  MJS_STRUCT_FIELD_TYPE_FLOAT,
-  MJS_STRUCT_FIELD_TYPE_CHAR_PTR,   /* NUL-terminated string. */
-  MJS_STRUCT_FIELD_TYPE_VOID_PTR,   /* Converted to foreign ptr. */
-  MJS_STRUCT_FIELD_TYPE_MG_STR_PTR, /* Converted to string. */
-  MJS_STRUCT_FIELD_TYPE_MG_STR,     /* Converted to string. */
-  MJS_STRUCT_FIELD_TYPE_DATA,       /* Data, arg is length, becomes string. */
-  MJS_STRUCT_FIELD_TYPE_INT8,
-  MJS_STRUCT_FIELD_TYPE_INT16,
-  MJS_STRUCT_FIELD_TYPE_UINT8,
-  MJS_STRUCT_FIELD_TYPE_UINT16,
-  /*
-   * User-provided function. Arg is a pointer to function that takes void *
-   * (pointer to field within the struct) and returns mjs_val_t:
-   * mjs_val_t field_value(struct mjs *mjs, const void *field_ptr) { ... }
-   */
-  MJS_STRUCT_FIELD_TYPE_CUSTOM,
-};
 
-/* C structure layout descriptor - needed by mjs_struct_to_obj */
-struct mjs_c_struct_member {
-  const char *name;
-  int offset;
-  enum mjs_struct_field_type type;
-  const void *arg; /* Additional argument, used for some types. */
-};
-
-/* Create flat JS object from a C memory descriptor */
-mjs_val_t mjs_struct_to_obj(struct mjs *mjs, const void *base,
-                            const struct mjs_c_struct_member *members);
-
-/*
- * Lookup property `name` in object `obj`. If `obj` holds no such property,
- * an `undefined` value is returned.
- *
- * If `name_len` is ~0, `name` is assumed to be NUL-terminated and
- * `strlen(name)` is used.
- */
-mjs_val_t mjs_get(struct mjs *mjs, mjs_val_t obj, const char *name,
-                  size_t name_len);
-
-/*
- * Like mjs_get but with a JS string.
- */
-mjs_val_t mjs_get_v(struct mjs *mjs, mjs_val_t obj, mjs_val_t name);
-
-/*
- * Like mjs_get_v but lookup the prototype chain.
- */
-mjs_val_t mjs_get_v_proto(struct mjs *mjs, mjs_val_t obj, mjs_val_t key);
-
-/*
- * Set object property. Behaves just like JavaScript assignment.
- */
-mjs_err_t mjs_set(struct mjs *mjs, mjs_val_t obj, const char *name, size_t len,
-                  mjs_val_t val);
-
-/*
- * Like mjs_set but the name is already a JS string.
- */
-mjs_err_t mjs_set_v(struct mjs *mjs, mjs_val_t obj, mjs_val_t name,
-                    mjs_val_t val);
-
-/*
- * Delete own property `name` of the object `obj`. Does not follow the
- * prototype chain.
- *
- * If `name_len` is ~0, `name` is assumed to be NUL-terminated and
- * `strlen(name)` is used.
- *
- * Returns 0 on success, -1 on error.
- */
-int mjs_del(struct mjs *mjs, mjs_val_t obj, const char *name, size_t len);
-
-/*
- * Iterate over `obj` properties.
- * First call should set `iterator` to MJS_UNDEFINED.
- * Return object's key (a string), or MJS_UNDEFINED when no more keys left.
- * Do not mutate the object during iteration.
- *
- * Example:
- *   mjs_val_t key, iter = MJS_UNDEFINED;
- *   while ((key = mjs_next(mjs, obj, &iter)) != MJS_UNDEFINED) {
- *     // Do something with the obj/key ...
- *   }
- */
-mjs_val_t mjs_next(struct mjs *mjs, mjs_val_t obj, mjs_val_t *iterator);
 
 #if defined(__cplusplus)
 }
 #endif /* __cplusplus */
 
 #endif /* MJS_OBJECT_PUBLIC_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_object.h"
-#endif
 
 #ifndef MJS_OBJECT_H_
 #define MJS_OBJECT_H_
@@ -3675,9 +1961,6 @@ MJS_PRIVATE void mjs_op_create_object(struct mjs *mjs);
 #endif /* __cplusplus */
 
 #endif /* MJS_OBJECT_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_primitive_public.h"
-#endif
 
 #ifndef MJS_PRIMITIVE_PUBLIC_H_
 #define MJS_PRIMITIVE_PUBLIC_H_
@@ -3795,9 +2078,6 @@ int mjs_is_function(mjs_val_t v);
 #endif /* __cplusplus */
 
 #endif /* MJS_PRIMITIVE_PUBLIC_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_primitive.h"
-#endif
 
 #ifndef MJS_PRIMITIVE_H
 #define MJS_PRIMITIVE_H
@@ -3835,9 +2115,6 @@ MJS_PRIVATE void mjs_op_isnan(struct mjs *mjs);
 #endif /* __cplusplus */
 
 #endif /* MJS_PRIMITIVE_H */
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_string_public.h"
-#endif
 
 #ifndef MJS_STRING_PUBLIC_H_
 #define MJS_STRING_PUBLIC_H_
@@ -3912,9 +2189,6 @@ int mjs_strcmp(struct mjs *mjs, mjs_val_t *a, const char *b, size_t len);
 #endif /* __cplusplus */
 
 #endif /* MJS_STRING_PUBLIC_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_string.h"
-#endif
 
 #ifndef MJS_STRING_H_
 #define MJS_STRING_H_
@@ -3955,9 +2229,6 @@ MJS_PRIVATE void mjs_string_char_code_at(struct mjs *mjs);
 #endif /* __cplusplus */
 
 #endif /* MJS_STRING_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_util_public.h"
-#endif
 
 #ifndef MJS_UTIL_PUBLIC_H_
 #define MJS_UTIL_PUBLIC_H_
@@ -4004,9 +2275,6 @@ int mjs_get_offset_by_call_frame_num(struct mjs *mjs, int cf_num);
 #endif /* __cplusplus */
 
 #endif /* MJS_UTIL_PUBLIC_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_util.h"
-#endif
 
 #ifndef MJS_UTIL_H_
 #define MJS_UTIL_H_
@@ -4055,9 +2323,6 @@ void mjs_jprintf(mjs_val_t v, struct mjs *mjs, struct json_out *out);
 #endif /* __cplusplus */
 
 #endif /* MJS_UTIL_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "common/cs_varint.h"
-#endif
 
 #ifndef CS_COMMON_CS_VARINT_H_
 #define CS_COMMON_CS_VARINT_H_
@@ -4101,9 +2366,6 @@ uint64_t cs_varint_decode_unsafe(const uint8_t *buf, int *llen);
 #endif
 
 #endif /* CS_COMMON_CS_VARINT_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_bcode.h"
-#endif
 
 #ifndef MJS_BCODE_H_
 #define MJS_BCODE_H_
@@ -4207,9 +2469,6 @@ MJS_PRIVATE void mjs_bcode_commit(struct mjs *mjs);
 #endif /* __cplusplus */
 
 #endif /* MJS_BCODE_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_internal.h"
-#endif
 
 #ifndef MJS_INTERNAL_H_
 #define MJS_INTERNAL_H_
@@ -4296,9 +2555,6 @@ typedef unsigned long uintptr_t;
 #endif
 
 #endif /* MJS_INTERNAL_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_tok.h"
-#endif
 
 #ifndef MJS_TOK_H_
 #define MJS_TOK_H_
@@ -4436,9 +2692,6 @@ MJS_PRIVATE int mjs_is_digit(int c);
 #endif /* __cplusplus */
 
 #endif /* MJS_TOK_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_dataview.h"
-#endif
 
 #ifndef MJS_DATAVIEW_H_
 #define MJS_DATAVIEW_H_
@@ -4467,9 +2720,6 @@ void mjs_mem_set_int(void *ptr, int val, int size, int bigendian);
 #endif /* __cplusplus */
 
 #endif /* MJS_DATAVIEW_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_exec_public.h"
-#endif
 
 #ifndef MJS_EXEC_PUBLIC_H_
 #define MJS_EXEC_PUBLIC_H_
@@ -4496,9 +2746,6 @@ mjs_val_t mjs_get_this(struct mjs *mjs);
 #endif /* __cplusplus */
 
 #endif /* MJS_EXEC_PUBLIC_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_exec.h"
-#endif
 
 #ifndef MJS_EXEC_H_
 #define MJS_EXEC_H_
@@ -4522,9 +2769,6 @@ MJS_PRIVATE mjs_err_t mjs_execute(struct mjs *mjs, size_t off, mjs_val_t *res);
 #endif /* __cplusplus */
 
 #endif /* MJS_EXEC_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_json.h"
-#endif
 
 #ifndef MJS_JSON_H_
 #define MJS_JSON_H_
@@ -4550,9 +2794,6 @@ mjs_json_parse(struct mjs *mjs, const char *str, size_t len, mjs_val_t *res);
 #endif /* __cplusplus */
 
 #endif /* MJS_JSON_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_builtin.h"
-#endif
 
 #ifndef MJS_BUILTIN_H_
 #define MJS_BUILTIN_H_
@@ -4571,9 +2812,6 @@ void mjs_init_builtin(struct mjs *mjs, mjs_val_t obj);
 #endif /* __cplusplus */
 
 #endif /* MJS_BUILTIN_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_parser.h"
-#endif
 
 #ifndef MJS_PARSER_H
 #define MJS_PARSER_H
@@ -4593,9 +2831,6 @@ mjs_parse(const char *path, const char *buf, struct mjs *);
 
 #endif /* MJS_PARSER_H */
 #ifndef MJS_EXPORT_INTERNAL_HEADERS
-#ifdef MJS_MODULE_LINES
-#line 1 "common/cs_dbg.c"
-#endif
 
 /* Amalgamated: #include "common/cs_dbg.h" */
 
@@ -4723,9 +2958,6 @@ void cs_log_set_level(enum cs_log_level level) {
   cs_log_ts = cs_time();
 #endif
 }
-#ifdef MJS_MODULE_LINES
-#line 1 "common/cs_file.c"
-#endif
 
 /* Amalgamated: #include "common/cs_file.h" */
 
@@ -4776,9 +3008,6 @@ char *cs_mmap_file(const char *path, size_t *size) {
   if (r == MAP_FAILED) return NULL;
   return r;
 }
-#endif
-#ifdef MJS_MODULE_LINES
-#line 1 "common/cs_varint.c"
 #endif
 
 /* Amalgamated: #include "cs_varint.h" */
@@ -4840,9 +3069,6 @@ uint64_t cs_varint_decode_unsafe(const uint8_t *buf, int *llen) {
   *llen = l;
   return v;
 }
-#ifdef MJS_MODULE_LINES
-#line 1 "common/mbuf.c"
-#endif
 
 #ifndef EXCLUDE_COMMON
 
@@ -4978,9 +3204,6 @@ void mbuf_move(struct mbuf *from, struct mbuf *to) {
 }
 
 #endif /* EXCLUDE_COMMON */
-#ifdef MJS_MODULE_LINES
-#line 1 "common/mg_str.c"
-#endif
 
 /* Amalgamated: #include "common/mg_mem.h" */
 /* Amalgamated: #include "common/mg_str.h" */
@@ -5143,9 +3366,6 @@ int mg_str_starts_with(struct mg_str s, struct mg_str prefix) {
   if (s.len < prefix.len) return 0;
   return (mg_strcmp(sp, prefix) == 0);
 }
-#ifdef MJS_MODULE_LINES
-#line 1 "common/str_util.c"
-#endif
 
 #ifndef EXCLUDE_COMMON
 
@@ -5662,9 +3882,6 @@ size_t mg_match_prefix(const char *pattern, int pattern_len, const char *str) {
 }
 
 #endif /* EXCLUDE_COMMON */
-#ifdef MJS_MODULE_LINES
-#line 1 "frozen/frozen.c"
-#endif
 
 #define _CRT_SECURE_NO_WARNINGS /* Disable deprecation warning in VS2005+ */
 
@@ -7118,9 +5335,6 @@ char *json_asprintf(const char *fmt, ...) {
   va_end(ap);
   return result;
 }
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/ffi/ffi.c"
-#endif
 
 /* Amalgamated: #include "mjs/src/ffi/ffi.h" */
 
@@ -7683,9 +5897,6 @@ int ffi_call(ffi_fn_t *func, int nargs, struct ffi_arg *res,
 
   return 0;
 }
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_array.c"
-#endif
 
 #include <stdio.h>
 /* Amalgamated: #include "common/str_util.h" */
@@ -7920,9 +6131,6 @@ MJS_PRIVATE void mjs_array_splice(struct mjs *mjs) {
 clean:
   mjs_return(mjs, ret);
 }
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_bcode.c"
-#endif
 
 /* Amalgamated: #include "common/cs_varint.h" */
 
@@ -8067,9 +6275,6 @@ MJS_PRIVATE void mjs_bcode_commit(struct mjs *mjs) {
 
   mjs->bcode_len += bp.data.len;
 }
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_builtin.c"
-#endif
 
 /* Amalgamated: #include "mjs/src/mjs_bcode.h" */
 /* Amalgamated: #include "mjs/src/mjs_core.h" */
@@ -8246,9 +6451,6 @@ void mjs_init_builtin(struct mjs *mjs, mjs_val_t obj) {
   mjs_set(mjs, obj, "isNaN", ~0,
           mjs_mk_foreign_func(mjs, (mjs_func_ptr_t) mjs_op_isnan));
 }
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_conversion.c"
-#endif
 
 /* Amalgamated: #include "mjs/src/mjs_conversion.h" */
 /* Amalgamated: #include "mjs/src/mjs_object.h" */
@@ -8325,9 +6527,6 @@ MJS_PRIVATE mjs_val_t mjs_to_boolean_v(struct mjs *mjs, mjs_val_t v) {
 MJS_PRIVATE int mjs_is_truthy(struct mjs *mjs, mjs_val_t v) {
   return mjs_get_bool(mjs, mjs_to_boolean_v(mjs, v));
 }
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_core.c"
-#endif
 
 /* Amalgamated: #include "common/cs_varint.h" */
 /* Amalgamated: #include "common/str_util.h" */
@@ -8711,9 +6910,6 @@ MJS_PRIVATE void mjs_push(struct mjs *mjs, mjs_val_t v) {
 void mjs_set_generate_jsc(struct mjs *mjs, int generate_jsc) {
   mjs->generate_jsc = generate_jsc;
 }
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_dataview.c"
-#endif
 
 /* Amalgamated: #include "mjs/src/mjs_exec_public.h" */
 /* Amalgamated: #include "mjs/src/mjs_internal.h" */
@@ -8796,9 +6992,6 @@ void mjs_mem_set_uint(void *ptr, unsigned int val, int size, int bigendian) {
 void mjs_mem_set_int(void *ptr, int val, int size, int bigendian) {
   mjs_mem_set_uint(ptr, val, size, bigendian);
 }
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_exec.c"
-#endif
 
 /* Amalgamated: #include "common/cs_file.h" */
 /* Amalgamated: #include "common/cs_varint.h" */
@@ -9789,6 +7982,10 @@ clean:
 
 MJS_PRIVATE mjs_err_t mjs_exec_internal(struct mjs *mjs, const char *path,
                                         const char *src, int generate_jsc,
+                                        mjs_val_t *res);
+
+MJS_PRIVATE mjs_err_t mjs_exec_internal(struct mjs *mjs, const char *path,
+                                        const char *src, int generate_jsc,
                                         mjs_val_t *res) {
   size_t off = mjs->bcode_len;
   mjs_val_t r = MJS_UNDEFINED;
@@ -9970,9 +8167,6 @@ mjs_err_t mjs_apply(struct mjs *mjs, mjs_val_t *res, mjs_val_t func,
 
   return mjs->error;
 }
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_ffi.c"
-#endif
 
 /* Amalgamated: #include "common/mg_str.h" */
 
@@ -10069,6 +8263,10 @@ static const char *find_closing_paren(const char *s, const char *e) {
   }
   return (s < e ? s : NULL);
 }
+
+MJS_PRIVATE mjs_err_t mjs_parse_ffi_signature(struct mjs *mjs, const char *s,
+                                              int sig_len, mjs_ffi_sig_t *sig,
+                                              enum ffi_sig_type sig_type);
 
 MJS_PRIVATE mjs_err_t mjs_parse_ffi_signature(struct mjs *mjs, const char *s,
                                               int sig_len, mjs_ffi_sig_t *sig,
@@ -11145,9 +9343,6 @@ void *dlsym(void *handle, const char *name) {
   return NULL;
 }
 #endif
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_gc.c"
-#endif
 
 #include <stdio.h>
 
@@ -11524,11 +9719,17 @@ MJS_PRIVATE void gc_mark(struct mjs *mjs, mjs_val_t *v) {
   }
 }
 
-MJS_PRIVATE uint64_t gc_string_mjs_val_to_offset(mjs_val_t v) {
+MJS_PRIVATE uint64_t gc_string_mjs_val_to_offset(mjs_val_t v);
+
+MJS_PRIVATE uint64_t gc_string_mjs_val_to_offset(mjs_val_t v)
+{
   return (((uint64_t)(uintptr_t) get_ptr(v)) & ~MJS_TAG_MASK);
 }
 
-MJS_PRIVATE mjs_val_t gc_string_val_from_offset(uint64_t s) {
+MJS_PRIVATE mjs_val_t gc_string_val_from_offset(uint64_t s);
+
+MJS_PRIVATE mjs_val_t gc_string_val_from_offset(uint64_t s)
+{
   return s | MJS_TAG_STRING_O;
 }
 
@@ -11684,9 +9885,6 @@ MJS_PRIVATE int gc_check_ptr(const struct gc_arena *a, const void *ptr) {
   }
   return 0;
 }
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_json.c"
-#endif
 
 /* Amalgamated: #include "common/str_util.h" */
 /* Amalgamated: #include "frozen.h" */
@@ -12199,9 +10397,6 @@ MJS_PRIVATE void mjs_op_json_parse(struct mjs *mjs) {
 
   mjs_return(mjs, ret);
 }
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_main.c"
-#endif
 
 #ifdef MJS_MAIN
 
@@ -12258,9 +10453,6 @@ int main(int argc, char *argv[]) {
   return EXIT_SUCCESS;
 }
 #endif
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_object.c"
-#endif
 
 /* Amalgamated: #include "mjs/src/mjs_object.h" */
 /* Amalgamated: #include "mjs/src/mjs_conversion.h" */
@@ -12272,7 +10464,10 @@ int main(int argc, char *argv[]) {
 
 /* Amalgamated: #include "common/mg_str.h" */
 
-MJS_PRIVATE mjs_val_t mjs_object_to_value(struct mjs_object *o) {
+MJS_PRIVATE mjs_val_t mjs_object_to_value(struct mjs_object *o);
+
+MJS_PRIVATE mjs_val_t mjs_object_to_value(struct mjs_object *o)
+{
   if (o == NULL) {
     return MJS_NULL;
   } else {
@@ -12280,7 +10475,10 @@ MJS_PRIVATE mjs_val_t mjs_object_to_value(struct mjs_object *o) {
   }
 }
 
-MJS_PRIVATE struct mjs_object *get_object_struct(mjs_val_t v) {
+MJS_PRIVATE struct mjs_object *get_object_struct(mjs_val_t v);
+
+MJS_PRIVATE struct mjs_object *get_object_struct(mjs_val_t v)
+{
   struct mjs_object *ret = NULL;
   if (mjs_is_null(v)) {
     ret = NULL;
@@ -12349,9 +10547,12 @@ MJS_PRIVATE struct mjs_property *mjs_get_own_property_v(struct mjs *mjs,
   return p;
 }
 
+MJS_PRIVATE struct mjs_property *mjs_mk_property(struct mjs *mjs, mjs_val_t name, mjs_val_t value);
+
 MJS_PRIVATE struct mjs_property *mjs_mk_property(struct mjs *mjs,
                                                  mjs_val_t name,
-                                                 mjs_val_t value) {
+                                                 mjs_val_t value)
+{
   struct mjs_property *p = new_property(mjs);
   p->next = NULL;
   p->name = name;
@@ -12359,8 +10560,11 @@ MJS_PRIVATE struct mjs_property *mjs_mk_property(struct mjs *mjs,
   return p;
 }
 
+mjs_val_t mjs_get(struct mjs *mjs, mjs_val_t obj, const char *name, size_t name_len);
+
 mjs_val_t mjs_get(struct mjs *mjs, mjs_val_t obj, const char *name,
-                  size_t name_len) {
+                  size_t name_len)
+{
   struct mjs_property *p;
 
   if (name_len == (size_t) ~0) {
@@ -12470,7 +10674,10 @@ clean:
   return rcode;
 }
 
-MJS_PRIVATE void mjs_destroy_property(struct mjs_property **p) {
+MJS_PRIVATE void mjs_destroy_property(struct mjs_property **p);
+
+MJS_PRIVATE void mjs_destroy_property(struct mjs_property **p)
+{
   *p = NULL;
 }
 
@@ -12654,9 +10861,6 @@ mjs_val_t mjs_struct_to_obj(struct mjs *mjs, const void *base,
   mjs_disown(mjs, &obj);
   return obj;
 }
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_parser.c"
-#endif
 
 /* Amalgamated: #include "common/cs_varint.h" */
 
@@ -13681,9 +11885,6 @@ mjs_parse(const char *path, const char *buf, struct mjs *mjs) {
 
   return res;
 }
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_primitive.c"
-#endif
 
 /* Amalgamated: #include "mjs/src/mjs_core.h" */
 /* Amalgamated: #include "mjs/src/mjs_internal.h" */
@@ -13840,9 +12041,6 @@ MJS_PRIVATE void mjs_op_isnan(struct mjs *mjs) {
 
   mjs_return(mjs, ret);
 }
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_string.c"
-#endif
 
 /* Amalgamated: #include "mjs/src/mjs_string.h" */
 /* Amalgamated: #include "common/cs_varint.h" */
@@ -14436,9 +12634,6 @@ MJS_PRIVATE void embed_string(struct mbuf *m, size_t offset, const char *p,
     m->buf[offset + tot_len - 1] = '\0';
   }
 }
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_tok.c"
-#endif
 
 #include <stdlib.h>
 #include <string.h>
@@ -14689,9 +12884,6 @@ MJS_PRIVATE int pnext(struct pstate *p) {
   p->tok.tok = ptranslate(tok);
   return p->tok.tok;
 }
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_util.c"
-#endif
 
 /* Amalgamated: #include "common/cs_varint.h" */
 /* Amalgamated: #include "frozen.h" */

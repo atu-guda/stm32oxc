@@ -37,6 +37,7 @@ const CmdInfo* global_cmds[] = {
 
 mjs *js = nullptr;
 void resetjs();
+void mjs_f1( mjs *mjs );
 
 void idle_main_task()
 {
@@ -204,12 +205,25 @@ int js_cmdline_handler( char *s )
   return -1;
 }
 
+void mjs_f1( mjs *mjs )
+{
+  size_t num_args = mjs_nargs( mjs );
+  for( size_t i = 0; i < num_args; i++ ) {
+    mjs_fprintf( mjs_arg(mjs, i), mjs, stdout );
+    putchar(' ');
+  }
+  putchar('\n');
+  mjs_return( mjs, MJS_UNDEFINED );
+}
+
 void resetjs()
 {
   if( js ) {
     mjs_destroy( js );
   }
   js = mjs_create();
+  mjs_val_t global = mjs_get_global( js );
+  mjs_set( js, global, "f1", ~0, mjs_mk_foreign_func( js, (mjs_func_ptr_t) mjs_f1 ) );
 }
 
 int cmd_resetjs( int argc, const char * const * argv )

@@ -1,9 +1,5 @@
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_license.h"
-#endif
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_features.h"
-#endif
+// mod by atu:
+#define MJS_EXPOSE_PRIVATE 1
 
 #ifndef MJS_FEATURES_H_
 #define MJS_FEATURES_H_
@@ -33,9 +29,7 @@
 #endif
 
 #endif /* MJS_FEATURES_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_core_public.h"
-#endif
+
 
 #ifndef MJS_CORE_PUBLIC_H_
 #define MJS_CORE_PUBLIC_H_
@@ -111,7 +105,6 @@ typedef enum mjs_err {
 
   MJS_ERRS_CNT
 } mjs_err_t;
-struct mjs;
 
 /* Create MJS instance */
 struct mjs *mjs_create(void);
@@ -779,6 +772,35 @@ mjs_val_t mjs_next(struct mjs *mjs, mjs_val_t obj, mjs_val_t *iterator);
 #define MJS_PRIMITIVE_PUBLIC_H_
 
 /* Amalgamated: #include "mjs/src/mjs_core_public.h" */
+
+// atu: moved from mjs.c
+/*
+ * A tag is made of the sign bit and the 4 lower order bits of byte 6.
+ * So in total we have 32 possible tags.
+ *
+ * Tag (1,0) however cannot hold a zero payload otherwise it's interpreted as an
+ * INFINITY; for simplicity we're just not going to use that combination.
+ */
+#define MAKE_TAG(s, t) \
+  ((uint64_t)(s) << 63 | (uint64_t) 0x7ff0 << 48 | (uint64_t)(t) << 48)
+
+#define MJS_TAG_OBJECT MAKE_TAG(1, 1)
+#define MJS_TAG_FOREIGN MAKE_TAG(1, 2)
+#define MJS_TAG_UNDEFINED MAKE_TAG(1, 3)
+#define MJS_TAG_BOOLEAN MAKE_TAG(1, 4)
+#define MJS_TAG_NAN MAKE_TAG(1, 5)
+#define MJS_TAG_STRING_I MAKE_TAG(1, 6)  /* Inlined string len < 5 */
+#define MJS_TAG_STRING_5 MAKE_TAG(1, 7)  /* Inlined string len 5 */
+#define MJS_TAG_STRING_O MAKE_TAG(1, 8)  /* Owned string */
+#define MJS_TAG_STRING_F MAKE_TAG(1, 9)  /* Foreign string */
+#define MJS_TAG_STRING_C MAKE_TAG(1, 10) /* String chunk */
+#define MJS_TAG_STRING_D MAKE_TAG(1, 11) /* Dictionary string  */
+#define MJS_TAG_ARRAY MAKE_TAG(1, 12)
+#define MJS_TAG_FUNCTION MAKE_TAG(1, 13)
+#define MJS_TAG_FUNCTION_FFI MAKE_TAG(1, 14)
+#define MJS_TAG_NULL MAKE_TAG(1, 15)
+
+#define MJS_TAG_MASK MAKE_TAG(1, 15)
 
 #if defined(__cplusplus)
 extern "C" {
