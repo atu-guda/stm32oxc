@@ -6,6 +6,8 @@
 int console_verbose = 1;
 volatile int on_cmd_handler = 0;
 
+CmdlineHandler cmdline_handlers[CMDLINE_MAX_HANDLERS];
+
 void term_cmd1( int n, char c, int fd )
 {
   char b[8];
@@ -188,14 +190,25 @@ int exec_direct( const char *s, int l )
   if( l<0 || l >= CMDLINE_MAXSZ ) {
     return 0;
   }
+
   if( on_cmd_handler ) {
     return 1;
   }
-
   AutoIncDec{ on_cmd_handler };
+
   // dump8( s,  l+1 );
-  char ss[l+1];
+  char ss[CMDLINE_MAXSZ];
   memmove( ss, s, l+1 );
+
+  for( unsigned i=0; i<CMDLINE_MAX_HANDLERS; ++i ) {
+    if( cmdline_handlers[i] == nullptr ) {
+      break;
+    }
+    int rc = cmdline_handlers[i]( ss );
+    if( rc >= 0 ) {
+      return rc;
+    }
+  }
 
   // TODO: substs here
 
@@ -244,7 +257,7 @@ int exec_direct( const char *s, int l )
 
   // TODO: and substs here
 
-  pr( NL );
+  std_out << NL;
   if( f != 0 ) {
       int rc = 0;
       if( console_verbose > 0 ) {

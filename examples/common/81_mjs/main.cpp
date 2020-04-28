@@ -17,6 +17,8 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
+int js_cmdline_handler( char *s );
+
 const char* common_help_string = "Appication to test mjs" NL;
 
 // --- local commands;
@@ -140,6 +142,9 @@ int main(void)
   UVAR('t') = 100;
   UVAR('n') = 1000000;
 
+  cmdline_handlers[0] = js_cmdline_handler;
+  cmdline_handlers[1] = nullptr;
+
   print_var_hook    = print_var_fl;
   set_var_hook      = set_var_fl;
 
@@ -177,6 +182,26 @@ int cmd_test0( int argc, const char * const * argv )
 
 
   return 0;
+}
+
+int js_cmdline_handler( char *s )
+{
+  if( s[0] == '!' ) {
+    const char *cmd = s + 1;
+    std_out << NL "# JS: cmd= \"" << cmd << '"' << NL;
+    delay_ms( 10 );
+
+    mjs_val_t ret /* = MJS_UNDEFINED */;
+    mjs_err_t rc = mjs_exec( js, cmd, &ret );
+
+    std_out << "# rc= " << rc << " ret= " << HexInt64( ret, true ) << NL;
+    if( rc != 0 ) {
+      std_out << "# err: " << mjs_strerror( js, rc ) << NL;
+    }
+    return rc;
+  }
+
+  return -1;
 }
 
 void resetjs()

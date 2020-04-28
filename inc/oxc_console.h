@@ -71,6 +71,17 @@ inline void term_save_cpos( int fd = 1 ) { prl( "\033[s", 3, fd ); };
 inline void term_rest_cpos( int fd = 1 ) { prl( "\033[u", 3, fd ); };
 inline void term_clear( int fd = 1 )     { prl( "\033[2J", 4, fd ); };
 
+#ifndef CMDLINE_MAX_HANDLERS
+#define CMDLINE_MAX_HANDLERS 8
+#endif
+
+//* handler can change s, up to CMDLINE_MAXSZ
+//  returns: rc = >=0 - line processed, no other actions, return rc
+//           rc < 0 - continue processing
+typedef int (*CmdlineHandler)( char *s );
+
+extern CmdlineHandler cmdline_handlers[CMDLINE_MAX_HANDLERS];
+
 
 typedef int (*CmdFun)( int argc, const char * const * argv );
 
