@@ -258,9 +258,6 @@ void mjs_return(struct mjs *mjs, mjs_val_t v);
 #endif /* __cplusplus */
 
 #endif /* MJS_CORE_PUBLIC_H_ */
-#ifdef MJS_MODULE_LINES
-#line 1 "mjs/src/mjs_ffi_public.h"
-#endif
 
 #ifndef MJS_FFI_PUBLIC_H_
 #define MJS_FFI_PUBLIC_H_
