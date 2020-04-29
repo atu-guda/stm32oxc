@@ -37,11 +37,26 @@ const CmdInfo* global_cmds[] = {
   nullptr
 };
 
+struct Ffi_ptrs {
+  const char *const name;
+  void *const ptr;
+};
+
 mjs *js = nullptr;
 mjs_val_t arr1 = MJS_UNDEFINED;
-mjs_val_t js_Math = MJS_UNDEFINED;
+// mjs_val_t js_Math = MJS_UNDEFINED;
 void resetjs();
 void mjs_f1( mjs *mjs );
+extern const char js_Math_funcs[];
+extern const Ffi_ptrs ffi_ptrs[];
+void *mjs_dlsym_local( void *handle, const char *name );
+using F_D_D = double(*)(double);
+using F_D_DD = double(*)(double,double);
+#define FUN_D_D(x)  (void*)(F_D_D)(x)
+#define FUN_D_DD(x) (void*)(F_D_DD)(x)
+
+
+
 
 void idle_main_task()
 {
@@ -208,6 +223,10 @@ int js_cmdline_handler( char *s )
     if( rc != 0 ) {
       std_out << "# err: " << mjs_strerror( js, rc ) << NL;
     } else {
+      auto ar_ret = mjs_array_get( js, arr1, 2 );
+      if( mjs_is_number( ar_ret ) ) {
+        std_out << "# ar_ret: " << (float)mjs_get_double( js, ar_ret ) << NL;
+      }
       if( mjs_is_number( ret ) ) {
         std_out << "# ret: " << mjs_get_int( js, ret ) << NL;
       }
@@ -220,20 +239,21 @@ int js_cmdline_handler( char *s )
 
 void mjs_f1( mjs *mjs )
 {
+  char buf[128];
   size_t num_args = mjs_nargs( mjs );
   for( size_t i = 0; i < num_args; i++ ) {
     auto arg = mjs_arg( mjs, i );
-    mjs_fprintf( arg, mjs, stdout );
-    std_out << ' ';
+    mjs_sprintf( arg, mjs, buf, sizeof(buf)-1 );
+    std_out << "# i= " << i << " s= \"" << buf << "\"" NL;
   }
-  std_out << NL;
 
   if( num_args > 0 ) {
     auto arg0 = mjs_arg( mjs, 0 );
     if( mjs_is_object( arg0 ) ) {
       mjs_val_t key, iter = MJS_UNDEFINED;
       while( ( key = mjs_next( js, arg0, &iter ) ) != MJS_UNDEFINED) {
-       mjs_fprintf( key, js, stdout );
+        mjs_sprintf( key, js, buf, sizeof(buf)-1 );
+        std_out << "# xx  s= \"" << buf << "\"" NL;
       }
     }
   }
@@ -268,24 +288,74 @@ void resetjs()
   js = mjs_create();
   mjs_val_t global = mjs_get_global( js );
   mjs_set( js, global, "f1", ~0, mjs_mk_foreign_func( js, (mjs_func_ptr_t) mjs_f1 ) );
+  mjs_set_ffi_resolver( js, mjs_dlsym_local );
   // mjs_val_t obj1 = mjs_( js );
 
+  const unsigned arr1_sz = 4;
   arr1 = mjs_mk_array( js );
-  mjs_array_push( js, arr1, mjs_mk_number( js, 10 ) );
-  mjs_array_push( js, arr1, mjs_mk_number( js, 11 ) );
-  mjs_array_push( js, arr1, mjs_mk_number( js, 12 ) );
-  mjs_array_push( js, arr1, mjs_mk_number( js, 13 ) );
-  mjs_set( js, global, "arr1", 4, arr1 );
+  for( decltype(+arr1_sz) i=0; i< arr1_sz; ++i ) {
+    mjs_array_push( js, arr1, mjs_mk_number( js, i + 10 ) );
+  }
+  mjs_set( js, global, "arr1", arr1_sz, arr1 );
 
-  js_Math = mjs_mk_object( js );
-  mjs_set( js, global, "Math", ~0, js_Math );
-  mjs_set( js, js_Math, "sin", ~0, mjs_mk_foreign_func( js, (mjs_func_ptr_t) js_Math_sin ) );
+  mjs_val_t rc1 = MJS_UNDEFINED;
+  mjs_exec( js, js_Math_funcs, &rc1 );
+
+  // js_Math = mjs_mk_object( js );
+  // mjs_set( js, global, "Math", ~0, js_Math );
+  // mjs_set( js, js_Math, "sin", ~0, mjs_mk_foreign_func( js, (mjs_func_ptr_t) js_Math_sin ) );
 }
 
 int cmd_resetjs( int argc, const char * const * argv )
 {
   resetjs();
   return 0;
+}
+
+const char js_Math_funcs[] =
+  "let Math = {"
+  "  ceil:      ffi('double ceil(double)'), "
+  "  floor:     ffi('double floor(double)'), "
+  "  round:     ffi('double round(double)'), "
+  "  max:       ffi('double max(double,double)'), "
+  "  min:       ffi('double min(double,double)'), "
+  "  abs:       ffi('double abs(double)'), "
+  "  sqrt:      ffi('double sqrt(double)'), "
+  "  exp:       ffi('double exp(double)'), "
+  "  log:       ffi('double log(double)'), "
+  "  pow:       ffi('double pow(double, double)'), "
+  "  sin:       ffi('double sin(double)'), "
+  "  cos:       ffi('double cos(double)'), "
+  "  rand:      ffi('int rand()'), "
+  "  random: function() { return Math.rand() / 0x7fffffff; } "
+  "};";
+
+
+const Ffi_ptrs ffi_ptrs[] = {
+  { "ceil",     FUN_D_D(ceil)  },
+  { "floor",    FUN_D_D(floor) },
+  { "round",    FUN_D_D(round) },
+  { "max",      FUN_D_DD(fmax) },
+  { "min",      FUN_D_DD(fmin) },
+  { "abs",      FUN_D_D(fabs)  },
+  { "sqrt",     FUN_D_D(sqrt)  },
+  { "exp",      FUN_D_D(exp)   },
+  { "log",      FUN_D_D(log)   },
+  { "pow",      FUN_D_DD(pow)  },
+  { "sin",      FUN_D_D(sin)   },
+  { "cos",      FUN_D_D(cos)   },
+  { "rand",     (void*)(rand)  },
+  { nullptr,  nullptr  }
+};
+
+void *mjs_dlsym_local ( void * /*handle*/, const char *name )
+{
+  for( auto f = ffi_ptrs; f->name != nullptr; ++f ) {
+    if( strcmp( name, f->name ) == 0 ) {
+      return f->ptr;
+    }
+  }
+  return nullptr;
 }
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
