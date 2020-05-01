@@ -213,7 +213,7 @@ float arg2float_d( int narg, int argc, const char * const * argv, float def, flo
   return v;
 }
 
-#ifdef OXC_HAVE_DOUBLE
+#ifdef OXC_NEED_DOUBLE_OUT
 
 double exp10id( int x )
 {

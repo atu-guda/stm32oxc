@@ -14,6 +14,10 @@
   #define xfloat float
 #endif
 
+#ifdef OXC_HAVE_DOUBLE
+  #define OXC_NEED_DOUBLE_OUT
+#endif
+
 enum cvtff_flags {
   cvtff_auto = 0,
   cvtff_exp = 2,
@@ -58,7 +62,7 @@ class FltFmt : public OutStreamFmt {
 
 OutStream& operator<<( OutStream &os, float rhs );
 
-#ifdef OXC_HAVE_DOUBLE
+#ifdef OXC_NEED_DOUBLE_OUT
 extern double exp10id( int x );
 
 constexpr inline  int double_default_width { 15 };
@@ -88,6 +92,10 @@ class DblFmt : public OutStreamFmt {
 };
 
 OutStream& operator<<( OutStream &os, double rhs );
+
+#endif
+
+#ifdef OXC_HAVE_DOUBLE
 
 #define XFmt DblFmt
 #define xfloat_default_width double_default_width

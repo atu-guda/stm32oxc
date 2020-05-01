@@ -225,7 +225,7 @@ int js_cmdline_handler( char *s )
     } else {
       auto ar_ret = mjs_array_get( js, arr1, 2 );
       if( mjs_is_number( ar_ret ) ) {
-        std_out << "# ar_ret: " << (float)mjs_get_double( js, ar_ret ) << NL;
+        std_out << "# ar_ret: " << mjs_get_double( js, ar_ret ) << NL;
       }
       if( mjs_is_number( ret ) ) {
         std_out << "# ret: " << mjs_get_int( js, ret ) << NL;
