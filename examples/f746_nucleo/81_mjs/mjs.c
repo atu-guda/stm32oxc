@@ -80,22 +80,6 @@
 #define MG_SSL_IF_MBEDTLS 2
 #define MG_SSL_IF_SIMPLELINK 3
 
-/* Amalgamated: #include "common/platforms/platform_unix.h" */
-/* Amalgamated: #include "common/platforms/platform_windows.h" */
-/* Amalgamated: #include "common/platforms/platform_esp32.h" */
-/* Amalgamated: #include "common/platforms/platform_esp8266.h" */
-/* Amalgamated: #include "common/platforms/platform_cc3100.h" */
-/* Amalgamated: #include "common/platforms/platform_cc3200.h" */
-/* Amalgamated: #include "common/platforms/platform_cc3220.h" */
-/* Amalgamated: #include "common/platforms/platform_mbed.h" */
-/* Amalgamated: #include "common/platforms/platform_nrf51.h" */
-/* Amalgamated: #include "common/platforms/platform_nrf52.h" */
-/* Amalgamated: #include "common/platforms/platform_wince.h" */
-/* Amalgamated: #include "common/platforms/platform_nxp_lpc.h" */
-/* Amalgamated: #include "common/platforms/platform_nxp_kinetis.h" */
-/* Amalgamated: #include "common/platforms/platform_pic32.h" */
-/* Amalgamated: #include "common/platforms/platform_rs14100.h" */
-/* Amalgamated: #include "common/platforms/platform_stm32.h" */
 #if CS_PLATFORM == CS_P_CUSTOM
 #include <platform_custom.h>
 #endif
@@ -181,7 +165,6 @@ typedef struct stat cs_stat_t;
 #ifndef CS_COMMON_CS_DBG_H_
 #define CS_COMMON_CS_DBG_H_
 
-/* Amalgamated: #include "common/platform.h" */
 
 #if CS_ENABLE_STDIO
 #include <stdio.h>
@@ -315,7 +298,6 @@ void cs_log_printf(const char *fmt, ...) PRINTF_LIKE(1, 2);
 
 #include <time.h>
 
-/* Amalgamated: #include "common/platform.h" */
 
 #ifdef __cplusplus
 extern "C" {
@@ -439,8 +421,6 @@ int mg_str_starts_with(struct mg_str s, struct mg_str prefix);
 #include <stdarg.h>
 #include <stdlib.h>
 
-/* Amalgamated: #include "common/mg_str.h" */
-/* Amalgamated: #include "common/platform.h" */
 
 #ifndef CS_ENABLE_STRDUP
 #define CS_ENABLE_STRDUP 0
@@ -618,7 +598,6 @@ size_t mg_match_prefix_n(const struct mg_str pattern, const struct mg_str str);
 #ifndef CS_COMMON_CS_FILE_H_
 #define CS_COMMON_CS_FILE_H_
 
-/* Amalgamated: #include "common/platform.h" */
 
 #ifdef __cplusplus
 extern "C" {
@@ -658,7 +637,6 @@ char *cs_mmap_file(const char *path, size_t *size);
 #define CS_COMMON_MBUF_H_
 
 #include <stdlib.h>
-/* Amalgamated: #include "common/platform.h" */
 
 #if defined(__cplusplus)
 extern "C" {
@@ -782,12 +760,7 @@ extern "C" {
 #include <stddef.h>
 #include <stdio.h>
 
-#if defined(_WIN32) && _MSC_VER < 1700
-typedef int bool;
-enum { false = 0, true = 1 };
-#else
 #include <stdbool.h>
-#endif
 
 /* JSON token type */
 enum json_token_type {
@@ -1086,7 +1059,6 @@ void *json_next_elem(const char *s, int len, void *handle, const char *path,
 #ifndef MJS_FFI_FFI_H_
 #define MJS_FFI_FFI_H_
 
-/* Amalgamated: #include "common/platform.h" */
 
 #if defined(__cplusplus)
 extern "C" {
@@ -1163,9 +1135,6 @@ void ffi_set_float(struct ffi_arg *arg, float v);
 #define MJS_EXTERN static
 #endif
 
-#ifndef ARRAY_SIZE
-#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
-#endif
 
 #if !defined(WEAK)
 #if (defined(__GNUC__) || defined(__TI_COMPILER_VERSION__)) && !defined(_WIN32)
@@ -1179,9 +1148,6 @@ void ffi_set_float(struct ffi_arg *arg, float v);
 #define CS_ENABLE_STDIO 1
 #endif
 
-/* Amalgamated: #include "common/cs_dbg.h" */
-/* Amalgamated: #include "common/cs_file.h" */
-/* Amalgamated: #include "common/mbuf.h" */
 
 #if defined(_WIN32) && _MSC_VER < 1700
 typedef signed char int8_t;
@@ -1260,145 +1226,12 @@ typedef unsigned char uint8_t;
 #endif
 #include <stdio.h>
 #include <stddef.h>
-/* Amalgamated: #include "mjs/src/mjs_license.h" */
-/* Amalgamated: #include "mjs/src/mjs_features.h" */
 
 #if defined(__cplusplus)
 extern "C" {
 #endif /* __cplusplus */
 
 #define MJS_ENABLE_DEBUG 1
-
-/*
- *  Double-precision floating-point number, IEEE 754
- *
- *  64 bit (8 bytes) in total
- *  1  bit sign
- *  11 bits exponent
- *  52 bits mantissa
- *      7         6        5        4        3        2        1        0
- *  seeeeeee|eeeemmmm|mmmmmmmm|mmmmmmmm|mmmmmmmm|mmmmmmmm|mmmmmmmm|mmmmmmmm
- *
- * If an exponent is all-1 and mantissa is all-0, then it is an INFINITY:
- *  11111111|11110000|00000000|00000000|00000000|00000000|00000000|00000000
- *
- * If an exponent is all-1 and mantissa's MSB is 1, it is a quiet NaN:
- *  11111111|11111000|00000000|00000000|00000000|00000000|00000000|00000000
- *
- *  MJS NaN-packing:
- *    sign and exponent is 0xfff
- *    4 bits specify type (tag), must be non-zero
- *    48 bits specify value
- *
- *  11111111|1111tttt|vvvvvvvv|vvvvvvvv|vvvvvvvv|vvvvvvvv|vvvvvvvv|vvvvvvvv
- *   NaN marker |type|  48-bit placeholder for values: pointers, strings
- *
- * On 64-bit platforms, pointers are really 48 bit only, so they can fit,
- * provided they are sign extended
- */
-
-typedef uint64_t mjs_val_t;
-
-/* This if-0 is a dirty workaround to force etags to pick `struct mjs` */
-#if 0
-/* Opaque structure. MJS engine context. */
-struct mjs {
-  /* ... */
-};
-#endif
-
-
-
-/* Create MJS instance */
-struct mjs *mjs_create();
-
-struct mjs_create_opts {
-  /* use non-default bytecode definition file, testing-only */
-  const struct bf_code *code;
-};
-
-/*
- * Like `msj_create()`, but allows to customize initial MJS state, see `struct
- * mjs_create_opts`.
- */
-struct mjs *mjs_create_opt(struct mjs_create_opts opts);
-
-/* Destroy MJS instance */
-void mjs_destroy(struct mjs *mjs);
-
-mjs_val_t mjs_get_global(struct mjs *mjs);
-
-/*
- * Tells the GC about an MJS value variable/field owned by C code.
- *
- * The user's C code should own mjs_val_t variables if the value's lifetime
- * crosses any invocation of `mjs_exec()` and friends, including `mjs_call()`.
- *
- * The registration of the variable prevents the GC from mistakenly treat the
- * object as garbage.
- *
- * User code should also explicitly disown the variables with `mjs_disown()`
- * once it goes out of scope or the structure containing the mjs_val_t field is
- * freed.
- *
- * Consider the following examples:
- *
- * Correct (owning is not necessary):
- * ```c
- * mjs_val_t res;
- * mjs_exec(mjs, "....some script", &res);
- * // ... use res somehow
- *
- * mjs_val_t res;
- * mjs_exec(mjs, "....some script2", &res);
- * // ... use new res somehow
- * ```
- *
- * WRONG:
- * ```c
- * mjs_val_t res1;
- * mjs_exec(mjs, "....some script", &res1);
- *
- * mjs_val_t res2;
- * mjs_exec(mjs, "....some script2", &res2);
- *
- * // ... use res1 (WRONG!) and res2
- * ```
- *
- * The code above is wrong, because after the second invocation of
- * `mjs_exec()`, the value of `res1` is invalidated.
- *
- * Correct (res1 is owned)
- * ```c
- * mjs_val_t res1 = MJS_UNDEFINED;
- * mjs_own(mjs, &res1);
- * mjs_exec(mjs, "....some script", &res1);
- *
- * mjs_val_t res2 = MJS_UNDEFINED;
- * mjs_exec(mjs, "....some script2", &res2);
- *
- * // ... use res1 and res2
- * mjs_disown(mjs, &res1);
- * ```
- *
- * NOTE that we explicly initialized `res1` to a valid value before owning it
- * (in this case, the value is `MJS_UNDEFINED`). Owning an uninitialized
- * variable is an undefined behaviour.
- *
- * Of course, it's not an error to own a variable even if it's not mandatory:
- * e.g. in the last example we could own both `res1` and `res2`. Probably it
- * would help us in the future, when we refactor the code so that `res2` has to
- * be owned, and we could forget to do that.
- *
- * Also, if the user code has some C function called from MJS, and in this C
- * function some MJS value (`mjs_val_t`) needs to be stored somewhhere and to
- * stay alive after the C function has returned, it also needs to be properly
- * owned.
- */
-
-
-
-
 
 #if defined(__cplusplus)
 }
@@ -1413,7 +1246,6 @@ mjs_val_t mjs_get_global(struct mjs *mjs);
 #ifndef MJS_ARRAY_PUBLIC_H_
 #define MJS_ARRAY_PUBLIC_H_
 
-/* Amalgamated: #include "mjs/src/mjs_core_public.h" */
 
 #if defined(__cplusplus)
 extern "C" {
@@ -1430,8 +1262,6 @@ extern "C" {
 #ifndef MJS_ARRAY_H_
 #define MJS_ARRAY_H_
 
-/* Amalgamated: #include "mjs/src/mjs_internal.h" */
-/* Amalgamated: #include "mjs/src/mjs_array_public.h" */
 
 #if defined(__cplusplus)
 extern "C" {
@@ -1453,7 +1283,6 @@ MJS_PRIVATE void mjs_array_push_internal(struct mjs *mjs);
 #ifndef MJS_FFI_PUBLIC_H_
 #define MJS_FFI_PUBLIC_H_
 
-/* Amalgamated: #include "mjs/src/mjs_core_public.h" */
 
 #if defined(__cplusplus)
 extern "C" {
@@ -1470,9 +1299,6 @@ extern "C" {
 #ifndef MJS_FFI_H_
 #define MJS_FFI_H_
 
-/* Amalgamated: #include "mjs/src/ffi/ffi.h" */
-/* Amalgamated: #include "mjs/src/mjs_ffi_public.h" */
-/* Amalgamated: #include "mjs/src/mjs_internal.h" */
 
 #if defined(__cplusplus)
 extern "C" {
@@ -1604,7 +1430,6 @@ MJS_PRIVATE void mjs_ffi_args_free_list(struct mjs *mjs);
 #ifndef MJS_MM_H_
 #define MJS_MM_H_
 
-/* Amalgamated: #include "mjs/src/mjs_internal.h" */
 
 #if defined(__cplusplus)
 extern "C" {
@@ -1644,9 +1469,6 @@ struct gc_arena {
 #ifndef MJS_GC_H_
 #define MJS_GC_H_
 
-/* Amalgamated: #include "mjs/src/mjs_core.h" */
-/* Amalgamated: #include "mjs/src/mjs_mm.h" */
-/* Amalgamated: #include "mjs/src/mjs_internal.h" */
 
 #if defined(__cplusplus)
 extern "C" {
@@ -1705,9 +1527,6 @@ MJS_PRIVATE int gc_check_ptr(const struct gc_arena *a, const void *p);
 #ifndef MJS_CORE_H
 #define MJS_CORE_H
 
-/* Amalgamated: #include "mjs/src/mjs_ffi.h" */
-/* Amalgamated: #include "mjs/src/mjs_gc.h" */
-/* Amalgamated: #include "mjs/src/mjs_internal.h" */
 
 #if defined(__cplusplus)
 extern "C" {
@@ -1854,8 +1673,6 @@ MJS_PRIVATE void mjs_die(struct mjs *mjs);
 #ifndef MJS_CONVERSION_H_
 #define MJS_CONVERSION_H_
 
-/* Amalgamated: #include "mjs/src/mjs_internal.h" */
-/* Amalgamated: #include "mjs/src/mjs_core.h" */
 
 #if defined(__cplusplus)
 extern "C" {
@@ -1891,8 +1708,6 @@ MJS_PRIVATE int mjs_is_truthy(struct mjs *mjs, mjs_val_t v);
 #define MJS_OBJECT_PUBLIC_H_
 
 #include <stddef.h>
-/* Amalgamated: #include "mjs/src/mjs_core_public.h" */
-/* Amalgamated: #include "mjs/src/mjs_ffi_public.h" */
 
 #if defined(__cplusplus)
 extern "C" {
@@ -1911,8 +1726,6 @@ extern "C" {
 #ifndef MJS_OBJECT_H_
 #define MJS_OBJECT_H_
 
-/* Amalgamated: #include "mjs/src/mjs_object_public.h" */
-/* Amalgamated: #include "mjs/src/mjs_internal.h" */
 
 #if defined(__cplusplus)
 extern "C" {
@@ -1965,7 +1778,6 @@ MJS_PRIVATE void mjs_op_create_object(struct mjs *mjs);
 #ifndef MJS_PRIMITIVE_PUBLIC_H_
 #define MJS_PRIMITIVE_PUBLIC_H_
 
-/* Amalgamated: #include "mjs/src/mjs_core_public.h" */
 
 #if defined(__cplusplus)
 extern "C" {
@@ -1977,101 +1789,6 @@ extern "C" {
 /* JavaScript `undefined` value */
 #define MJS_UNDEFINED MJS_TAG_UNDEFINED
 
-/* Function pointer type used in `mjs_mk_foreign_func`. */
-typedef void (*mjs_func_ptr_t)(void);
-
-/*
- * Make `null` primitive value.
- *
- * NOTE: this function is deprecated and will be removed in future releases.
- * Use `MJS_NULL` instead.
- */
-mjs_val_t mjs_mk_null(void);
-
-/* Returns true if given value is a primitive `null` value */
-int mjs_is_null(mjs_val_t v);
-
-/*
- * Make `undefined` primitive value.
- *
- * NOTE: this function is deprecated and will be removed in future releases.
- * Use `MJS_UNDEFINED` instead.
- */
-mjs_val_t mjs_mk_undefined(void);
-
-/* Returns true if given value is a primitive `undefined` value */
-int mjs_is_undefined(mjs_val_t v);
-
-/* Make numeric primitive value */
-mjs_val_t mjs_mk_number(struct mjs *mjs, double num);
-
-/*
- * Returns number value stored in `mjs_val_t` as `double`.
- *
- * Returns NaN for non-numbers.
- */
-double mjs_get_double(struct mjs *mjs, mjs_val_t v);
-
-/*
- * Returns number value stored in `mjs_val_t` as `int`. If the number value is
- * not an integer, the fraction part will be discarded.
- *
- * If the given value is a non-number, or NaN, the result is undefined.
- */
-int mjs_get_int(struct mjs *mjs, mjs_val_t v);
-
-/*
- * Like mjs_get_int but ensures that the returned type
- * is a 32-bit signed integer.
- */
-int32_t mjs_get_int32(struct mjs *mjs, mjs_val_t v);
-
-/* Returns true if given value is a primitive number value */
-int mjs_is_number(mjs_val_t v);
-
-/*
- * Make JavaScript value that holds C/C++ `void *` pointer.
- *
- * A foreign value is completely opaque and JS code cannot do anything useful
- * with it except holding it in properties and passing it around.
- * It behaves like a sealed object with no properties.
- *
- * NOTE:
- * Only valid pointers (as defined by each supported architecture) will fully
- * preserved. In particular, all supported 64-bit architectures (x86_64, ARM-64)
- * actually define a 48-bit virtual address space.
- * Foreign values will be sign-extended as required, i.e creating a foreign
- * value of something like `(void *) -1` will work as expected. This is
- * important because in some 64-bit OSs (e.g. Solaris) the user stack grows
- * downwards from the end of the address space.
- *
- * If you need to store exactly sizeof(void*) bytes of raw data where
- * `sizeof(void*)` >= 8, please use byte arrays instead.
- */
-mjs_val_t mjs_mk_foreign(struct mjs *mjs, void *ptr);
-
-/*
- * Make JavaScript value that holds C/C++ function pointer, similarly to
- * `mjs_mk_foreign`.
- */
-mjs_val_t mjs_mk_foreign_func(struct mjs *mjs, mjs_func_ptr_t fn);
-
-/*
- * Returns `void *` pointer stored in `mjs_val_t`.
- *
- * Returns NULL if the value is not a foreign pointer.
- */
-void *mjs_get_ptr(struct mjs *mjs, mjs_val_t v);
-
-/* Returns true if given value holds `void *` pointer */
-int mjs_is_foreign(mjs_val_t v);
-
-mjs_val_t mjs_mk_boolean(struct mjs *mjs, int v);
-int mjs_get_bool(struct mjs *mjs, mjs_val_t v);
-int mjs_is_boolean(mjs_val_t v);
-
-mjs_val_t mjs_mk_function(struct mjs *mjs, size_t off);
-int mjs_is_function(mjs_val_t v);
 
 #if defined(__cplusplus)
 }
@@ -2082,8 +1799,6 @@ int mjs_is_function(mjs_val_t v);
 #ifndef MJS_PRIMITIVE_H
 #define MJS_PRIMITIVE_H
 
-/* Amalgamated: #include "mjs/src/mjs_primitive_public.h" */
-/* Amalgamated: #include "mjs/src/mjs_internal.h" */
 
 #if defined(__cplusplus)
 extern "C" {
@@ -2119,82 +1834,15 @@ MJS_PRIVATE void mjs_op_isnan(struct mjs *mjs);
 #ifndef MJS_STRING_PUBLIC_H_
 #define MJS_STRING_PUBLIC_H_
 
-/* Amalgamated: #include "mjs/src/mjs_core_public.h" */
 
 #define MJS_STRING_LITERAL_MAX_LEN 128
 
-#if defined(__cplusplus)
-extern "C" {
-#endif /* __cplusplus */
-
-/*
- * Creates a string primitive value.
- * `str` must point to the utf8 string of length `len`.
- * If `len` is ~0, `str` is assumed to be NUL-terminated and `strlen(str)` is
- * used.
- *
- * If `copy` is non-zero, the string data is copied and owned by the GC. The
- * caller can free the string data afterwards. Otherwise (`copy` is zero), the
- * caller owns the string data, and is responsible for not freeing it while it
- * is used.
- */
-mjs_val_t mjs_mk_string(struct mjs *mjs, const char *str, size_t len, int copy);
-
-/* Returns true if given value is a primitive string value */
-int mjs_is_string(mjs_val_t v);
-
-/*
- * Returns a pointer to the string stored in `mjs_val_t`.
- *
- * String length returned in `len`, which is allowed to be NULL. Returns NULL
- * if the value is not a string.
- *
- * JS strings can contain embedded NUL chars and may or may not be NUL
- * terminated.
- *
- * CAUTION: creating new JavaScript object, array, or string may kick in a
- * garbage collector, which in turn may relocate string data and invalidate
- * pointer returned by `mjs_get_string()`.
- *
- * Short JS strings are embedded inside the `mjs_val_t` value itself. This
- * is why a pointer to a `mjs_val_t` is required. It also means that the string
- * data will become invalid once that `mjs_val_t` value goes out of scope.
- */
-const char *mjs_get_string(struct mjs *mjs, mjs_val_t *v, size_t *len);
-
-/*
- * Returns a pointer to the string stored in `mjs_val_t`.
- *
- * Returns NULL if the value is not a string or if the string is not compatible
- * with a C string.
- *
- * C compatible strings contain exactly one NUL char, in terminal position.
- *
- * All strings owned by the MJS engine (see `mjs_mk_string()`) are guaranteed to
- * be NUL terminated. Out of these, those that don't include embedded NUL chars
- * are guaranteed to be C compatible.
- */
-const char *mjs_get_cstring(struct mjs *mjs, mjs_val_t *v);
-
-/*
- * Returns the standard strcmp comparison code after comparing a JS string a
- * with a possibly non null-terminated string b. NOTE: the strings are equal
- * only if their length is equal, i.e. the len field doesn't imply strncmp
- * behaviour.
- */
-int mjs_strcmp(struct mjs *mjs, mjs_val_t *a, const char *b, size_t len);
-
-#if defined(__cplusplus)
-}
-#endif /* __cplusplus */
 
 #endif /* MJS_STRING_PUBLIC_H_ */
 
 #ifndef MJS_STRING_H_
 #define MJS_STRING_H_
 
-/* Amalgamated: #include "mjs/src/mjs_internal.h" */
-/* Amalgamated: #include "mjs/src/mjs_string_public.h" */
 
 #if defined(__cplusplus)
 extern "C" {
@@ -2233,55 +1881,14 @@ MJS_PRIVATE void mjs_string_char_code_at(struct mjs *mjs);
 #ifndef MJS_UTIL_PUBLIC_H_
 #define MJS_UTIL_PUBLIC_H_
 
-/* Amalgamated: #include "mjs/src/mjs_core_public.h" */
 #include <stdio.h>
 
-#if defined(__cplusplus)
-extern "C" {
-#endif /* __cplusplus */
-
-const char *mjs_typeof(mjs_val_t v);
-
-void mjs_fprintf(mjs_val_t v, struct mjs *mjs, FILE *fp);
-void mjs_sprintf(mjs_val_t v, struct mjs *mjs, char *buf, size_t buflen);
-
-#if MJS_ENABLE_DEBUG
-
-void mjs_disasm(const uint8_t *code, size_t len);
-void mjs_dump(struct mjs *mjs, int do_disasm);
-
-#endif
-
-/*
- * Returns the filename corresponding to the given bcode offset.
- */
-const char *mjs_get_bcode_filename_by_offset(struct mjs *mjs, int offset);
-
-/*
- * Returns the line number corresponding to the given bcode offset.
- */
-int mjs_get_lineno_by_offset(struct mjs *mjs, int offset);
-
-/*
- * Returns bcode offset of the corresponding call frame cf_num, where 0 means
- * the currently executing function, 1 means the first return address, etc.
- *
- * If given cf_num is too large, -1 is returned.
- */
-int mjs_get_offset_by_call_frame_num(struct mjs *mjs, int cf_num);
-
-#if defined(__cplusplus)
-}
-#endif /* __cplusplus */
 
 #endif /* MJS_UTIL_PUBLIC_H_ */
 
 #ifndef MJS_UTIL_H_
 #define MJS_UTIL_H_
 
-/* Amalgamated: #include "frozen.h" */
-/* Amalgamated: #include "mjs/src/mjs_core.h" */
-/* Amalgamated: #include "mjs/src/mjs_util_public.h" */
 
 #if defined(__cplusplus)
 extern "C" {
@@ -2370,9 +1977,7 @@ uint64_t cs_varint_decode_unsafe(const uint8_t *buf, int *llen);
 #ifndef MJS_BCODE_H_
 #define MJS_BCODE_H_
 
-/* Amalgamated: #include "mjs/src/mjs_internal.h" */
 
-/* Amalgamated: #include "mjs/src/mjs_core.h" */
 
 #if defined(__cplusplus)
 extern "C" {
@@ -2480,17 +2085,6 @@ MJS_PRIVATE void mjs_bcode_commit(struct mjs *mjs);
 #include <stdio.h>
 #include <string.h>
 
-#ifndef FAST
-#define FAST
-#endif
-
-#ifndef STATIC
-#define STATIC
-#endif
-
-#ifndef ENDL
-#define ENDL "\n"
-#endif
 
 #ifdef MJS_EXPOSE_PRIVATE
 #define MJS_PRIVATE
@@ -2500,9 +2094,6 @@ MJS_PRIVATE void mjs_bcode_commit(struct mjs *mjs);
 #define MJS_EXTERN static
 #endif
 
-#ifndef ARRAY_SIZE
-#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
-#endif
 
 #if !defined(WEAK)
 #if (defined(__GNUC__) || defined(__TI_COMPILER_VERSION__)) && !defined(_WIN32)
@@ -2516,9 +2107,6 @@ MJS_PRIVATE void mjs_bcode_commit(struct mjs *mjs);
 #define CS_ENABLE_STDIO 1
 #endif
 
-/* Amalgamated: #include "common/cs_dbg.h" */
-/* Amalgamated: #include "common/cs_file.h" */
-/* Amalgamated: #include "common/mbuf.h" */
 
 #if defined(_WIN32) && _MSC_VER < 1700
 typedef signed char int8_t;
@@ -2559,7 +2147,6 @@ typedef unsigned long uintptr_t;
 #ifndef MJS_TOK_H_
 #define MJS_TOK_H_
 
-/* Amalgamated: #include "mjs_internal.h" */
 
 #if defined(__cplusplus)
 extern "C" {
@@ -2724,7 +2311,6 @@ void mjs_mem_set_int(void *ptr, int val, int size, int bigendian);
 #ifndef MJS_EXEC_PUBLIC_H_
 #define MJS_EXEC_PUBLIC_H_
 
-/* Amalgamated: #include "mjs/src/mjs_core_public.h" */
 #include <stdio.h>
 
 #if defined(__cplusplus)
@@ -2750,7 +2336,6 @@ mjs_val_t mjs_get_this(struct mjs *mjs);
 #ifndef MJS_EXEC_H_
 #define MJS_EXEC_H_
 
-/* Amalgamated: #include "mjs/src/mjs_exec_public.h" */
 
 /*
  * A special bcode offset value which causes mjs_execute() to exit immediately;
@@ -2798,8 +2383,6 @@ mjs_json_parse(struct mjs *mjs, const char *str, size_t len, mjs_val_t *res);
 #ifndef MJS_BUILTIN_H_
 #define MJS_BUILTIN_H_
 
-/* Amalgamated: #include "mjs/src/mjs_core_public.h" */
-/* Amalgamated: #include "mjs/src/mjs_internal.h" */
 
 #if defined(__cplusplus)
 extern "C" {
@@ -2816,7 +2399,6 @@ void mjs_init_builtin(struct mjs *mjs, mjs_val_t obj);
 #ifndef MJS_PARSER_H
 #define MJS_PARSER_H
 
-/* Amalgamated: #include "mjs/src/mjs_internal.h" */
 
 #if defined(__cplusplus)
 extern "C" {
@@ -2832,14 +2414,11 @@ mjs_parse(const char *path, const char *buf, struct mjs *);
 #endif /* MJS_PARSER_H */
 #ifndef MJS_EXPORT_INTERNAL_HEADERS
 
-/* Amalgamated: #include "common/cs_dbg.h" */
 
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 
-/* Amalgamated: #include "common/cs_time.h" */
-/* Amalgamated: #include "common/str_util.h" */
 
 enum cs_log_level cs_log_level WEAK =
 #if CS_ENABLE_DEBUG
@@ -2959,7 +2538,6 @@ void cs_log_set_level(enum cs_log_level level) {
 #endif
 }
 
-/* Amalgamated: #include "common/cs_file.h" */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -3010,7 +2588,6 @@ char *cs_mmap_file(const char *path, size_t *size) {
 }
 #endif
 
-/* Amalgamated: #include "cs_varint.h" */
 
 size_t cs_varint_llen(uint64_t num) {
   size_t llen = 0;
@@ -3074,7 +2651,6 @@ uint64_t cs_varint_decode_unsafe(const uint8_t *buf, int *llen) {
 
 #include <assert.h>
 #include <string.h>
-/* Amalgamated: #include "common/mbuf.h" */
 
 #ifndef MBUF_REALLOC
 #define MBUF_REALLOC realloc
@@ -3205,9 +2781,6 @@ void mbuf_move(struct mbuf *from, struct mbuf *to) {
 
 #endif /* EXCLUDE_COMMON */
 
-/* Amalgamated: #include "common/mg_mem.h" */
-/* Amalgamated: #include "common/mg_str.h" */
-/* Amalgamated: #include "common/platform.h" */
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -3369,15 +2942,11 @@ int mg_str_starts_with(struct mg_str s, struct mg_str prefix) {
 
 #ifndef EXCLUDE_COMMON
 
-/* Amalgamated: #include "common/str_util.h" */
-/* Amalgamated: #include "common/mg_mem.h" */
-/* Amalgamated: #include "common/platform.h" */
 
 #ifndef C_DISABLE_BUILTIN_SNPRINTF
 #define C_DISABLE_BUILTIN_SNPRINTF 0
 #endif
 
-/* Amalgamated: #include "common/mg_mem.h" */
 
 size_t c_strnlen(const char *s, size_t maxlen) WEAK;
 size_t c_strnlen(const char *s, size_t maxlen) {
@@ -3885,7 +3454,6 @@ size_t mg_match_prefix(const char *pattern, int pattern_len, const char *str) {
 
 #define _CRT_SECURE_NO_WARNINGS /* Disable deprecation warning in VS2005+ */
 
-/* Amalgamated: #include "frozen.h" */
 
 #include <ctype.h>
 #include <stdarg.h>
@@ -4646,28 +4214,6 @@ int json_printf_array(struct json_out *out, va_list *ap) {
   return len;
 }
 
-#ifdef _WIN32
-int cs_win_vsnprintf(char *str, size_t size, const char *format,
-                     va_list ap) WEAK;
-int cs_win_vsnprintf(char *str, size_t size, const char *format, va_list ap) {
-  int res = _vsnprintf(str, size, format, ap);
-  va_end(ap);
-  if (res >= size) {
-    str[size - 1] = '\0';
-  }
-  return res;
-}
-
-int cs_win_snprintf(char *str, size_t size, const char *format, ...) WEAK;
-int cs_win_snprintf(char *str, size_t size, const char *format, ...) {
-  int res;
-  va_list ap;
-  va_start(ap, format);
-  res = vsnprintf(str, size, format, ap);
-  va_end(ap);
-  return res;
-}
-#endif /* _WIN32 */
 
 int json_walk(const char *json_string, int json_string_length,
               json_walk_callback_t callback, void *callback_data) WEAK;
@@ -5336,7 +4882,6 @@ char *json_asprintf(const char *fmt, ...) {
   return result;
 }
 
-/* Amalgamated: #include "mjs/src/ffi/ffi.h" */
 
 #define IS_W(arg) ((arg).ctype == FFI_CTYPE_WORD)
 #define IS_D(arg) ((arg).ctype == FFI_CTYPE_DOUBLE)
@@ -5899,15 +5444,6 @@ int ffi_call(ffi_fn_t *func, int nargs, struct ffi_arg *res,
 }
 
 #include <stdio.h>
-/* Amalgamated: #include "common/str_util.h" */
-/* Amalgamated: #include "mjs/src/mjs_array.h" */
-/* Amalgamated: #include "mjs/src/mjs_conversion.h" */
-/* Amalgamated: #include "mjs/src/mjs_core.h" */
-/* Amalgamated: #include "mjs/src/mjs_internal.h" */
-/* Amalgamated: #include "mjs/src/mjs_object.h" */
-/* Amalgamated: #include "mjs/src/mjs_primitive.h" */
-/* Amalgamated: #include "mjs/src/mjs_string.h" */
-/* Amalgamated: #include "mjs/src/mjs_util.h" */
 
 #define SPLICE_NEW_ITEM_IDX 2
 
@@ -6132,12 +5668,7 @@ clean:
   mjs_return(mjs, ret);
 }
 
-/* Amalgamated: #include "common/cs_varint.h" */
 
-/* Amalgamated: #include "mjs/src/mjs_internal.h" */
-/* Amalgamated: #include "mjs/src/mjs_bcode.h" */
-/* Amalgamated: #include "mjs/src/mjs_core.h" */
-/* Amalgamated: #include "mjs/src/mjs_tok.h" */
 
 static void add_lineno_map_item(struct pstate *pstate) {
   if (pstate->last_emitted_line_no < pstate->line_no) {
@@ -6276,16 +5807,6 @@ MJS_PRIVATE void mjs_bcode_commit(struct mjs *mjs) {
   mjs->bcode_len += bp.data.len;
 }
 
-/* Amalgamated: #include "mjs/src/mjs_bcode.h" */
-/* Amalgamated: #include "mjs/src/mjs_core.h" */
-/* Amalgamated: #include "mjs/src/mjs_dataview.h" */
-/* Amalgamated: #include "mjs/src/mjs_exec.h" */
-/* Amalgamated: #include "mjs/src/mjs_internal.h" */
-/* Amalgamated: #include "mjs/src/mjs_json.h" */
-/* Amalgamated: #include "mjs/src/mjs_object.h" */
-/* Amalgamated: #include "mjs/src/mjs_primitive.h" */
-/* Amalgamated: #include "mjs/src/mjs_string.h" */
-/* Amalgamated: #include "mjs/src/mjs_util.h" */
 
 static void mjs_print(struct mjs *mjs) {
   size_t i, num_args = mjs_nargs(mjs);
@@ -6452,11 +5973,6 @@ void mjs_init_builtin(struct mjs *mjs, mjs_val_t obj) {
           mjs_mk_foreign_func(mjs, (mjs_func_ptr_t) mjs_op_isnan));
 }
 
-/* Amalgamated: #include "mjs/src/mjs_conversion.h" */
-/* Amalgamated: #include "mjs/src/mjs_object.h" */
-/* Amalgamated: #include "mjs/src/mjs_primitive.h" */
-/* Amalgamated: #include "mjs/src/mjs_string.h" */
-/* Amalgamated: #include "mjs/src/mjs_util.h" */
 
 MJS_PRIVATE mjs_err_t mjs_to_string(struct mjs *mjs, mjs_val_t *v, char **p,
                                     size_t *sizep, int *need_free) {
@@ -6528,20 +6044,7 @@ MJS_PRIVATE int mjs_is_truthy(struct mjs *mjs, mjs_val_t v) {
   return mjs_get_bool(mjs, mjs_to_boolean_v(mjs, v));
 }
 
-/* Amalgamated: #include "common/cs_varint.h" */
-/* Amalgamated: #include "common/str_util.h" */
 
-/* Amalgamated: #include "mjs/src/mjs_bcode.h" */
-/* Amalgamated: #include "mjs/src/mjs_builtin.h" */
-/* Amalgamated: #include "mjs/src/mjs_core.h" */
-/* Amalgamated: #include "mjs/src/mjs_exec.h" */
-/* Amalgamated: #include "mjs/src/mjs_ffi.h" */
-/* Amalgamated: #include "mjs/src/mjs_internal.h" */
-/* Amalgamated: #include "mjs/src/mjs_license.h" */
-/* Amalgamated: #include "mjs/src/mjs_object.h" */
-/* Amalgamated: #include "mjs/src/mjs_primitive.h" */
-/* Amalgamated: #include "mjs/src/mjs_string.h" */
-/* Amalgamated: #include "mjs/src/mjs_util.h" */
 
 #ifndef MJS_OBJECT_ARENA_SIZE
 #define MJS_OBJECT_ARENA_SIZE 20
@@ -6911,11 +6414,6 @@ void mjs_set_generate_jsc(struct mjs *mjs, int generate_jsc) {
   mjs->generate_jsc = generate_jsc;
 }
 
-/* Amalgamated: #include "mjs/src/mjs_exec_public.h" */
-/* Amalgamated: #include "mjs/src/mjs_internal.h" */
-/* Amalgamated: #include "mjs/src/mjs_object.h" */
-/* Amalgamated: #include "mjs/src/mjs_primitive.h" */
-/* Amalgamated: #include "mjs/src/mjs_util.h" */
 
 void *mjs_mem_to_ptr(unsigned val) {
   return (void *) (uintptr_t) val;
@@ -6993,21 +6491,7 @@ void mjs_mem_set_int(void *ptr, int val, int size, int bigendian) {
   mjs_mem_set_uint(ptr, val, size, bigendian);
 }
 
-/* Amalgamated: #include "common/cs_file.h" */
-/* Amalgamated: #include "common/cs_varint.h" */
 
-/* Amalgamated: #include "mjs/src/mjs_array.h" */
-/* Amalgamated: #include "mjs/src/mjs_bcode.h" */
-/* Amalgamated: #include "mjs/src/mjs_conversion.h" */
-/* Amalgamated: #include "mjs/src/mjs_core.h" */
-/* Amalgamated: #include "mjs/src/mjs_exec.h" */
-/* Amalgamated: #include "mjs/src/mjs_internal.h" */
-/* Amalgamated: #include "mjs/src/mjs_object.h" */
-/* Amalgamated: #include "mjs/src/mjs_parser.h" */
-/* Amalgamated: #include "mjs/src/mjs_primitive.h" */
-/* Amalgamated: #include "mjs/src/mjs_string.h" */
-/* Amalgamated: #include "mjs/src/mjs_tok.h" */
-/* Amalgamated: #include "mjs/src/mjs_util.h" */
 
 #if MJS_GENERATE_JSC && defined(CS_MMAP)
 #include <sys/mman.h>
@@ -8168,15 +7652,7 @@ mjs_err_t mjs_apply(struct mjs *mjs, mjs_val_t *res, mjs_val_t func,
   return mjs->error;
 }
 
-/* Amalgamated: #include "common/mg_str.h" */
 
-/* Amalgamated: #include "mjs/src/ffi/ffi.h" */
-/* Amalgamated: #include "mjs/src/mjs_core.h" */
-/* Amalgamated: #include "mjs/src/mjs_exec.h" */
-/* Amalgamated: #include "mjs/src/mjs_internal.h" */
-/* Amalgamated: #include "mjs/src/mjs_primitive.h" */
-/* Amalgamated: #include "mjs/src/mjs_string.h" */
-/* Amalgamated: #include "mjs/src/mjs_util.h" */
 
 /*
  * on linux this is enabled only if __USE_GNU is defined, but we cannot set it
@@ -9346,16 +8822,7 @@ void *dlsym(void *handle, const char *name) {
 
 #include <stdio.h>
 
-/* Amalgamated: #include "common/cs_varint.h" */
-/* Amalgamated: #include "common/mbuf.h" */
 
-/* Amalgamated: #include "mjs/src/mjs_core.h" */
-/* Amalgamated: #include "mjs/src/mjs_ffi.h" */
-/* Amalgamated: #include "mjs/src/mjs_gc.h" */
-/* Amalgamated: #include "mjs/src/mjs_internal.h" */
-/* Amalgamated: #include "mjs/src/mjs_object.h" */
-/* Amalgamated: #include "mjs/src/mjs_primitive.h" */
-/* Amalgamated: #include "mjs/src/mjs_string.h" */
 
 /*
  * Macros for marking reachable things: use bit 0.
@@ -9886,15 +9353,6 @@ MJS_PRIVATE int gc_check_ptr(const struct gc_arena *a, const void *ptr) {
   return 0;
 }
 
-/* Amalgamated: #include "common/str_util.h" */
-/* Amalgamated: #include "frozen.h" */
-/* Amalgamated: #include "mjs/src/mjs_array.h" */
-/* Amalgamated: #include "mjs/src/mjs_internal.h" */
-/* Amalgamated: #include "mjs/src/mjs_conversion.h" */
-/* Amalgamated: #include "mjs/src/mjs_core.h" */
-/* Amalgamated: #include "mjs/src/mjs_object.h" */
-/* Amalgamated: #include "mjs/src/mjs_primitive.h" */
-/* Amalgamated: #include "mjs/src/mjs_string.h" */
 
 #define BUF_LEFT(size, used) (((size_t)(used) < (size)) ? ((size) - (used)) : 0)
 
@@ -10402,11 +9860,6 @@ MJS_PRIVATE void mjs_op_json_parse(struct mjs *mjs) {
 
 // #include <dlfcn.h>
 
-/* Amalgamated: #include "mjs/src/mjs_core.h" */
-/* Amalgamated: #include "mjs/src/mjs_exec.h" */
-/* Amalgamated: #include "mjs/src/mjs_internal.h" */
-/* Amalgamated: #include "mjs/src/mjs_primitive.h" */
-/* Amalgamated: #include "mjs/src/mjs_util.h" */
 
 int main(int argc, char *argv[]) {
   struct mjs *mjs = mjs_create();
@@ -10454,15 +9907,7 @@ int main(int argc, char *argv[]) {
 }
 #endif
 
-/* Amalgamated: #include "mjs/src/mjs_object.h" */
-/* Amalgamated: #include "mjs/src/mjs_conversion.h" */
-/* Amalgamated: #include "mjs/src/mjs_core.h" */
-/* Amalgamated: #include "mjs/src/mjs_internal.h" */
-/* Amalgamated: #include "mjs/src/mjs_primitive.h" */
-/* Amalgamated: #include "mjs/src/mjs_string.h" */
-/* Amalgamated: #include "mjs/src/mjs_util.h" */
 
-/* Amalgamated: #include "common/mg_str.h" */
 
 MJS_PRIVATE mjs_val_t mjs_object_to_value(struct mjs_object *o);
 
@@ -10862,14 +10307,7 @@ mjs_val_t mjs_struct_to_obj(struct mjs *mjs, const void *base,
   return obj;
 }
 
-/* Amalgamated: #include "common/cs_varint.h" */
 
-/* Amalgamated: #include "mjs/src/mjs_bcode.h" */
-/* Amalgamated: #include "mjs/src/mjs_core.h" */
-/* Amalgamated: #include "mjs/src/mjs_internal.h" */
-/* Amalgamated: #include "mjs/src/mjs_parser.h" */
-/* Amalgamated: #include "mjs/src/mjs_string.h" */
-/* Amalgamated: #include "mjs/src/mjs_tok.h" */
 
 #ifndef MAX_TOKS_IN_EXPR
 #define MAX_TOKS_IN_EXPR 40
@@ -11886,9 +11324,6 @@ mjs_parse(const char *path, const char *buf, struct mjs *mjs) {
   return res;
 }
 
-/* Amalgamated: #include "mjs/src/mjs_core.h" */
-/* Amalgamated: #include "mjs/src/mjs_internal.h" */
-/* Amalgamated: #include "mjs/src/mjs_primitive.h" */
 
 mjs_val_t mjs_mk_null(void) {
   return MJS_NULL;
@@ -12042,14 +11477,6 @@ MJS_PRIVATE void mjs_op_isnan(struct mjs *mjs) {
   mjs_return(mjs, ret);
 }
 
-/* Amalgamated: #include "mjs/src/mjs_string.h" */
-/* Amalgamated: #include "common/cs_varint.h" */
-/* Amalgamated: #include "common/mg_str.h" */
-/* Amalgamated: #include "mjs/src/mjs_conversion.h" */
-/* Amalgamated: #include "mjs/src/mjs_core.h" */
-/* Amalgamated: #include "mjs/src/mjs_internal.h" */
-/* Amalgamated: #include "mjs/src/mjs_primitive.h" */
-/* Amalgamated: #include "mjs/src/mjs_util.h" */
 
 // No UTF
 typedef unsigned short Rune;
@@ -12638,8 +12065,6 @@ MJS_PRIVATE void embed_string(struct mbuf *m, size_t offset, const char *p,
 #include <stdlib.h>
 #include <string.h>
 
-/* Amalgamated: #include "common/cs_dbg.h" */
-/* Amalgamated: #include "mjs/src/mjs_tok.h" */
 
 MJS_PRIVATE void pinit(const char *file_name, const char *buf,
                        struct pstate *p) {
@@ -12885,17 +12310,6 @@ MJS_PRIVATE int pnext(struct pstate *p) {
   return p->tok.tok;
 }
 
-/* Amalgamated: #include "common/cs_varint.h" */
-/* Amalgamated: #include "frozen.h" */
-/* Amalgamated: #include "mjs/src/mjs_array.h" */
-/* Amalgamated: #include "mjs/src/mjs_bcode.h" */
-/* Amalgamated: #include "mjs/src/mjs_core.h" */
-/* Amalgamated: #include "mjs/src/mjs_internal.h" */
-/* Amalgamated: #include "mjs/src/mjs_object.h" */
-/* Amalgamated: #include "mjs/src/mjs_primitive.h" */
-/* Amalgamated: #include "mjs/src/mjs_string.h" */
-/* Amalgamated: #include "mjs/src/mjs_util.h" */
-/* Amalgamated: #include "mjs/src/mjs_tok.h" */
 
 const char *mjs_typeof(mjs_val_t v) {
   return mjs_stringify_type(mjs_get_type(v));
