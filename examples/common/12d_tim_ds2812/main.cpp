@@ -19,7 +19,10 @@ TIM_HandleTypeDef tim_h;
 
 
 void tim_cfg();
-uint16_t t_min, t_max;
+uint16_t t_min, t_max; // timings got 0/1 on wire (in times ticks) min1-max0 = 0, max1-min0 = 1
+const uint32_t max_leds = 256; // each LED require 3*8 = 24 bit, each require halfword
+uint16_t ledbuf[max_leds*24];
+
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -39,13 +42,14 @@ int main(void)
   BOARD_PROLOG;
 
   UVAR('t') = 10;
-  UVAR('n') = 10000;
+  UVAR('n') = 1;
 
   BOARD_POST_INIT_BLINK;
 
   pr( NL "##################### " PROJ_NAME NL );
 
   tim_cfg();
+  memset( ledbuf, 0, sizeof(ledbuf) );
 
   srl.re_ps();
 
@@ -61,11 +65,37 @@ int main(void)
 int cmd_test0( int argc, const char * const * argv )
 {
   unsigned v = arg2long_d( 1, argc, argv, 0, 0, 100 );
-  // unsigned n = arg2long_d( 2, argc, argv, UVAR('n'), 0 );
+  unsigned td = arg2long_d( 2, argc, argv, UVAR('t'), 0 );
+  unsigned n = UVAR('n');
 
-  uint16_t s = ( v > 0 ) ? t_max : t_min;
-  std_out << "# Test: s= " << s << NL;
+  for( unsigned nled=0; nled < n; ++nled ) {
+    unsigned ofs = nled * 24;
+    for( unsigned i=0; i<8; ++i ) {
+      ledbuf[ofs+i] = t_min;
+    }
+    ofs += 8;
+    for( unsigned i=0; i<8; ++i ) {
+      ledbuf[ofs+i] = t_max;
+    }
+    ofs += 8;
+    for( unsigned i=0; i<8; ++i ) {
+      ledbuf[ofs+i] = t_min;
+    }
+  }
+
+  uint16_t s = 0;
+  switch( v ) {
+    case 0: s = 0;     break;
+    case 1: s = t_min; break;
+    case 2: s = t_max; break;
+    default: s = v; break;
+  }
+
+  std_out << "# Test: s= " << s << "  td= " << td <<  NL;
   TIM_EXA->CCR1 = s;
+
+  delay_ms( td );
+  TIM_EXA->CCR1 = 0;
 
 
 
