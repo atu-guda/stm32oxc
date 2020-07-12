@@ -57,3 +57,5 @@ session.vim
 /extra/unhex_adc/unhex_adc
 extra/unhex_adc/*.txt
 
+*.kdev4
+
