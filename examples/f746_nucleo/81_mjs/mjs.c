@@ -1,3 +1,5 @@
+// mjs.c mod by atu:
+
 #include "mjs.h"
 
 #ifndef CS_COMMON_PLATFORM_H_
@@ -1149,29 +1151,6 @@ void ffi_set_float(struct ffi_arg *arg, float v);
 #endif
 
 
-#if defined(_WIN32) && _MSC_VER < 1700
-typedef signed char int8_t;
-typedef unsigned char uint8_t;
-typedef int int32_t;
-typedef unsigned int uint32_t;
-typedef short int16_t;
-typedef unsigned short uint16_t;
-typedef __int64 int64_t;
-typedef unsigned long uintptr_t;
-#define STRX(x) #x
-#define STR(x) STRX(x)
-#define __func__ __FILE__ ":" STR(__LINE__)
-// #define snprintf _snprintf
-#define vsnprintf _vsnprintf
-#define isnan(x) _isnan(x)
-#define va_copy(x, y) (x) = (y)
-#define CS_DEFINE_DIRENT
-#include <windows.h>
-#else
-#if defined(__unix__) || defined(__APPLE__)
-#include <dlfcn.h>
-#endif
-#endif
 
 /*
  * Number of bytes reserved for the jump offset initially. The most practical
@@ -1227,15 +1206,9 @@ typedef unsigned char uint8_t;
 #include <stdio.h>
 #include <stddef.h>
 
-#if defined(__cplusplus)
-extern "C" {
-#endif /* __cplusplus */
 
 #define MJS_ENABLE_DEBUG 1
 
-#if defined(__cplusplus)
-}
-#endif /* __cplusplus */
 
 #endif /* MJS_CORE_PUBLIC_H_ */
 
@@ -1243,21 +1216,7 @@ extern "C" {
  * === Arrays
  */
 
-#ifndef MJS_ARRAY_PUBLIC_H_
-#define MJS_ARRAY_PUBLIC_H_
 
-
-#if defined(__cplusplus)
-extern "C" {
-#endif /* __cplusplus */
-
-
-
-#if defined(__cplusplus)
-}
-#endif /* __cplusplus */
-
-#endif /* MJS_ARRAY_PUBLIC_H_ */
 
 #ifndef MJS_ARRAY_H_
 #define MJS_ARRAY_H_

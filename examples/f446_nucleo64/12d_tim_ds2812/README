@@ -1,0 +1,5 @@
+Test DS2812 LED controller with timer and DMA
+
+out: T1.1 = A8 with 3.3 - 5 V conv
+
+

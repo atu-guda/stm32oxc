@@ -1,4 +1,6 @@
-// mod by atu:
+// mjs.h mod by atu:
+#pragma once
+
 #define MJS_EXPOSE_PRIVATE 1
 
 #ifndef MJS_FEATURES_H_

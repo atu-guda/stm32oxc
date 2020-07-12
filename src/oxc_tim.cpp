@@ -61,6 +61,14 @@ uint32_t calc_TIM_arr_for_base_freq( TIM_TypeDef *tim, uint32_t base_freq )
   return arr;
 }
 
+uint32_t calc_TIM_arr_for_base_psc( TIM_TypeDef *tim, uint32_t psc, uint32_t base_freq )
+{
+  uint32_t freq = get_TIM_in_freq( tim ); // in_freq
+  freq /= 1 + psc;
+  uint32_t arr = freq / base_freq - 1;
+  return arr;
+}
+
 #ifdef USE_OXC_DEBUG
 void tim_print_cfg( TIM_TypeDef *tim )
 {
