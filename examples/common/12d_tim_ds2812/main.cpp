@@ -1,6 +1,7 @@
-#include <cstring>
-#include <iterator>
-#include <cstdlib>
+// #include <cstring>
+// #include <iterator>
+// #include <cstdlib>
+#include <climits>
 
 #include <oxc_auto.h>
 #include <oxc_tim.h>
@@ -28,8 +29,45 @@ DMA_HandleTypeDef hdma_tim_chx;
 
 void MX_DMA_Init();
 int tim_cfg();
+
+struct RGB8_Arr {
+  RGB8_Arr( uint8_t *data, uint32_t size ) : d( data ), sz( size ) {};
+  uint8_t* data() { return d; };
+  const uint8_t* cdata() const { return d; };
+  uint32_t size() const { return sz; }
+  void clear() { for( unsigned i=0; i<sz*3; ++i ) { d[i] = 0; } }
+  void set(  uint8_t r, uint8_t g, uint8_t b, uint32_t pos );
+  void fill( uint8_t r, uint8_t g, uint8_t b, uint32_t begin = 0, uint32_t end = UINT_MAX );
+
+  uint8_t *d;  // data, not owning
+  uint32_t sz; // size in elements
+};
+
+void RGB8_Arr::set( uint8_t r, uint8_t g, uint8_t b, uint32_t pos )
+{
+  if( pos >= sz ) {
+    return;
+  }
+  uint32_t p3 = pos * 3;
+  d[p3] = r; d[p3+1] = g; d[p3+2] = b;
+}
+
+void RGB8_Arr::fill( uint8_t r, uint8_t g, uint8_t b, uint32_t begin, uint32_t end )
+{
+  if( end > sz ) {
+    end = sz;
+  }
+  if( begin >= end ) {
+    return;
+  }
+  for( uint32_t p3 = begin*3; p3 < end*3; p3 += 3 ) {
+    d[p3] = r; d[p3+1] = g; d[p3+2] = b;
+  }
+}
+
 const uint32_t max_leds = 128; // each LED require 3*8 = 24 bit, each require halfword
 uint8_t lbuf[max_leds*3];
+RGB8_Arr pbuf( lbuf, max_leds );
 
 // TODO: move to oxc lib
 struct DS2812_info {
@@ -152,12 +190,15 @@ DS2812_info dsi( &tim_h, DS2812_TIM_CH );
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test LED output"  };
+int cmd_pix( int argc, const char * const * argv );
+CmdInfo CMDINFO_PIX { "pix", 'P', cmd_pix, " r g b pos - set pixel"  };
 
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
 
   &CMDINFO_TEST0,
+  &CMDINFO_PIX,
   nullptr
 };
 
@@ -166,8 +207,8 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 5;
-  UVAR('n') = 4;
+  UVAR('t') = 20;
+  UVAR('n') = 8;
 
   BOARD_POST_INIT_BLINK;
 
@@ -191,33 +232,22 @@ int main(void)
 int cmd_test0( int argc, const char * const * argv )
 {
   unsigned v = arg2long_d( 1, argc, argv, 32, 0, 255 );
-  unsigned td = arg2long_d( 2, argc, argv, UVAR('t'), 0 );
   unsigned n = UVAR('n');
   uint8_t v0 = UVAR('b'); //background
 
 
-  std_out << "# Test:  " <<  "  td= " << td <<  NL;
+  std_out << "# Test:  " <<  "  v= " << v <<  NL;
 
-  for( unsigned i=0; i<n*3; ++i ) {
-    lbuf[i] = v0;
-  }
+  pbuf.fill( v0, v0, v0, 0, n );
 
-  lbuf[0] =    v; lbuf[1]  = 0x00; lbuf[2]  = 0x00;
-  lbuf[3] = 0x00; lbuf[4]  =    v; lbuf[5]  = 0x00;
-  lbuf[6] = 0x00; lbuf[7]  = 0x00; lbuf[8]  =    v;
-  lbuf[9] =    v; lbuf[10] =    v; lbuf[11] =    v;
-  dsi.ibuf = lbuf; dsi.size = n; dsi.pos = 0;
-  dsi.fill_zeros();
-
-  // log_reset();
+  pbuf.set( v, 0, 0, 0 );
+  pbuf.set( 0, v, 0, 1 );
+  pbuf.set( 0, 0, v, 2 );
+  pbuf.set( v, v, v, 3 );
 
 
-  UVAR('i') = 0;
-  UVAR('j') = 0;
-  UVAR('k') = 0;
-  UVAR('q') = 0;
 
-  UVAR('r') = dsi.send( lbuf, n );
+  UVAR('r') = dsi.send( pbuf.cdata(), n );
 
 
 
@@ -232,6 +262,19 @@ int cmd_test0( int argc, const char * const * argv )
   //   delay_ms_until_brk( &tm0, t_step );
   // }
 
+  return 0;
+}
+
+int cmd_pix( int argc, const char * const * argv )
+{
+  uint8_t r = (uint8_t)(arg2long_d( 1, argc, argv, 1, 0, 255 ));
+  uint8_t g = (uint8_t)(arg2long_d( 2, argc, argv, 1, 0, 255 ));
+  uint8_t b = (uint8_t)(arg2long_d( 3, argc, argv, 1, 0, 255 ));
+  uint16_t p = (uint16_t)(arg2long_d( 4, argc, argv, 0, 0, max_leds ));
+
+  std_out << "# pix: (" << r << ',' << g << ',' << b << ") " << p << NL;
+  pbuf.set( r, g, b, p );
+  UVAR('r') = dsi.send( pbuf.cdata(), UVAR('n') );
   return 0;
 }
 
