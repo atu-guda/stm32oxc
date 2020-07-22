@@ -5,6 +5,11 @@
 #include <oxc_auto.h>
 #include <oxc_tim.h>
 
+// local configs requires
+#ifndef DEFINES_FOR_DS2812
+#error "Defines for DS2812 are required, may be in local_hal_conf.h"
+#endif
+
 using namespace std;
 using namespace SMLRL;
 
@@ -142,7 +147,7 @@ void DS2812_info::callback_full()
   ++pos;
 }
 
-DS2812_info dsi( &tim_h, TIM_CHANNEL_1 );
+DS2812_info dsi( &tim_h, DS2812_TIM_CH );
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -261,9 +266,9 @@ int tim_cfg()
   tim_oc_cfg.OCIdleState  = TIM_OCIDLESTATE_RESET;
   tim_oc_cfg.OCNIdleState = TIM_OCNIDLESTATE_RESET;
 
-  HAL_TIM_PWM_Stop( &tim_h, TIM_CHANNEL_1 );
+  HAL_TIM_PWM_Stop( &tim_h, DS2812_TIM_CH );
   tim_oc_cfg.Pulse = 0; // pbase / 2;
-  if( HAL_TIM_PWM_ConfigChannel( &tim_h, &tim_oc_cfg, TIM_CHANNEL_1 ) != HAL_OK ) {
+  if( HAL_TIM_PWM_ConfigChannel( &tim_h, &tim_oc_cfg, DS2812_TIM_CH ) != HAL_OK ) {
     UVAR('e') = 11;
     return 0;
   }
@@ -277,10 +282,10 @@ void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim )
   }
   TIM_EXA_CLKEN;
 
-  TIM_EXA_GPIO.cfgAF_N( TIM_EXA_PIN1, TIM_EXA_GPIOAF );
+  TIM_EXA_GPIO.cfgAF_N( DS2812_TIM_PIN, TIM_EXA_GPIOAF );
 
-  hdma_tim_chx.Instance                 = DMA2_Stream1; // XXX
-  hdma_tim_chx.Init.Channel             = DMA_CHANNEL_6;// XXX
+  hdma_tim_chx.Instance                 = DS2812_DMA_INSTANCE;
+  hdma_tim_chx.Init.Channel             = DS2812_DMA_CHANNEL;
   hdma_tim_chx.Init.Direction           = DMA_MEMORY_TO_PERIPH;
   hdma_tim_chx.Init.PeriphInc           = DMA_PINC_DISABLE;
   hdma_tim_chx.Init.MemInc              = DMA_MINC_ENABLE;
@@ -294,7 +299,7 @@ void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim )
     return;
   }
 
-  __HAL_LINKDMA( &tim_h, hdma[TIM_DMA_ID_CC1], hdma_tim_chx ); // XXX
+  __HAL_LINKDMA( &tim_h, hdma[DS2812_TIM_DMA_ID], hdma_tim_chx );
 
 }
 
@@ -304,20 +309,20 @@ void HAL_TIM_PWM_MspDeInit( TIM_HandleTypeDef* htim )
     return;
   }
   TIM_EXA_CLKDIS;
-  TIM_EXA_GPIO.cfgIn_N( TIM_EXA_PIN1 );
+  TIM_EXA_GPIO.cfgIn_N( DS2812_TIM_PIN );
 }
 
 void MX_DMA_Init()
 {
-  __HAL_RCC_DMA2_CLK_ENABLE();
+  DS2812_DMA_ENABLE;
 
-  HAL_NVIC_SetPriority( DMA2_Stream1_IRQn, 8, 0 ); // XXX
-  HAL_NVIC_EnableIRQ( DMA2_Stream1_IRQn );
+  HAL_NVIC_SetPriority( DS2812_DMA_IRQN, 8, 0 );
+  HAL_NVIC_EnableIRQ(   DS2812_DMA_IRQN );
 
 }
 
 
-void DMA2_Stream1_IRQHandler() // XXX
+void DS2812_DMA_IRQHANDLER()
 {
   // leds.toggle( BIT0 );
   HAL_DMA_IRQHandler( &hdma_tim_chx );
