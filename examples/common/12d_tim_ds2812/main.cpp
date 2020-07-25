@@ -24,6 +24,7 @@ const char* common_help_string = "App to test DS2812 LED controller with timer a
 TIM_HandleTypeDef tim_h;
 DMA_HandleTypeDef hdma_tim_chx;
 
+extern const int8_t sin_table_8x8[256];
 // char xlog_buf[2048];
 
 
@@ -65,7 +66,7 @@ void RGB8_Arr::fill( uint8_t r, uint8_t g, uint8_t b, uint32_t begin, uint32_t e
   }
 }
 
-const uint32_t max_leds = 128; // each LED require 3*8 = 24 bit, each require halfword
+const uint32_t max_leds = 128; // each LED require 3*8 = 24 bit
 uint8_t lbuf[max_leds*3];
 RGB8_Arr pbuf( lbuf, max_leds );
 
@@ -121,7 +122,7 @@ void DS2812_info::rgb2tim( uint8_t r, uint8_t g, uint8_t b, uint16_t *d )
 
 int DS2812_info::send( const uint8_t *d, int sz ) // size in leds: 3*sz bytes in d[] required
 {
-  sz &= 0xFFFE; // limit size ond oddness
+  sz &= 0xFFFE; // limit size and oddness
   UVAR('y') = sz;
   if( busy || !d || sz < 2 ) {
     return 0;
@@ -192,6 +193,8 @@ int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test LED output"  };
 int cmd_pix( int argc, const char * const * argv );
 CmdInfo CMDINFO_PIX { "pix", 'P', cmd_pix, " r g b pos - set pixel"  };
+int cmd_wave( int argc, const char * const * argv );
+CmdInfo CMDINFO_WAVE { "wave", 'W', cmd_wave, " type t_scale l_scale - test wave"  };
 
 
 const CmdInfo* global_cmds[] = {
@@ -199,6 +202,7 @@ const CmdInfo* global_cmds[] = {
 
   &CMDINFO_TEST0,
   &CMDINFO_PIX,
+  &CMDINFO_WAVE,
   nullptr
 };
 
@@ -236,7 +240,7 @@ int cmd_test0( int argc, const char * const * argv )
   uint8_t v0 = UVAR('b'); //background
 
 
-  std_out << "# Test:  " <<  "  v= " << v <<  NL;
+  std_out << "# Test: v= " << v <<  NL;
 
   pbuf.fill( v0, v0, v0, 0, n );
 
@@ -246,21 +250,7 @@ int cmd_test0( int argc, const char * const * argv )
   pbuf.set( v, v, v, 3 );
 
 
-
   UVAR('r') = dsi.send( pbuf.cdata(), n );
-
-
-
-  // uint32_t tm0 = HAL_GetTick();
-  // break_flag = 0;
-  // for( unsigned i=0; i<n && !break_flag; ++i ) {
-  //   ch.ccr = ch.v * pbase / 256;
-  //   if( UVAR('d') > 0 ) {
-  //     std_out << NL;
-  //   }
-  //
-  //   delay_ms_until_brk( &tm0, t_step );
-  // }
 
   return 0;
 }
@@ -275,6 +265,52 @@ int cmd_pix( int argc, const char * const * argv )
   std_out << "# pix: (" << r << ',' << g << ',' << b << ") " << p << NL;
   pbuf.set( r, g, b, p );
   UVAR('r') = dsi.send( pbuf.cdata(), UVAR('n') );
+  return 0;
+}
+
+int cmd_wave( int argc, const char * const * argv )
+{
+  unsigned tp      = arg2long_d( 1, argc, argv,   0, 0,      0 ); // just synglee type for now
+  unsigned t_scale = arg2long_d( 2, argc, argv, 100, 1, 100000 ); // time step scale, def = 100
+  unsigned l_scale = arg2long_d( 3, argc, argv, 100, 1, 100000 ); // length step scale, def = 100
+  unsigned n = UVAR('n');
+  uint32_t ph[3];    // phases for first LED (R,G,B) // 32 bit, used for output only 8 MSB
+  // openssl prime -generate -bits 24 -hex // 23, 22
+  uint32_t d_ph[3] = { 0xEB7FB9, 0x671A9D, 0x33F443 } ;  // phases deltas
+
+  for( auto &p : ph ) { p = 0; }
+
+
+  std_out << "# Wave:  " <<  "  tp= " << tp <<  NL;
+
+  unsigned n_t = 1000;
+  unsigned t_step = 20; // ms
+  uint32_t tm0 = HAL_GetTick();
+  break_flag = 0;
+  for( unsigned i=0; i<n_t && !break_flag; ++i ) {
+    for( unsigned i=0; i<3; ++i ) {
+      ph[i] += d_ph[i] * t_scale / 10;
+    }
+    if( UVAR('d') > 0 ) {
+      std_out << "# " << i << NL;
+    }
+
+    for( unsigned j=0; j<n; ++j ) {
+      unsigned ph_l = j * l_scale * 5000000;
+      uint8_t r = 127 + sin_table_8x8[ ( ph_l + ph[0] ) >> 24 ];
+      uint8_t g = 127 + sin_table_8x8[ ( ph_l + ph[1] ) >> 24 ];
+      uint8_t b = 127 + sin_table_8x8[ ( ph_l + ph[2] ) >> 24 ];
+      pbuf.set( r, g, b, j );
+    }
+
+    dsi.send( pbuf.cdata(), n );
+
+    delay_ms_until_brk( &tm0, t_step );
+  }
+
+  pbuf.fill( 0, 0, 0, 0, n );
+  dsi.send( pbuf.cdata(), n );
+
   return 0;
 }
 

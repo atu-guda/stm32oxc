@@ -22,4 +22,5 @@ USE_OXC_DMA = y
 
 SRCS  = main.cpp
 
+SRCS  += oxc_sin_8x8.cpp
 
