@@ -1,3 +1,4 @@
+// based on https://github.com/cesanta/mjs
 // mjs.c mod by atu:
 
 #include "mjs.h"
@@ -96,15 +97,7 @@
 #endif
 #endif
 
-#if !defined(WEAK)
-#if (defined(__GNUC__) || defined(__clang__) || \
-     defined(__TI_COMPILER_VERSION__)) &&       \
-    !defined(_WIN32)
 #define WEAK __attribute__((weak))
-#else
-#define WEAK
-#endif
-#endif
 
 #ifdef __GNUC__
 #define NORETURN __attribute__((noreturn))
@@ -142,10 +135,9 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
-char *strdup(const char *s);
-// #include <dirent.h>
+char *strdup(const char *s); // not always defined
+// #include <dirent.h> // atu: find and realize
 
-// #include <stm32_sdk_hal.h>
 
 #define to64(x) strtoll(x, NULL, 10)
 #define INT64_FMT "lld"
@@ -168,9 +160,6 @@ typedef struct stat cs_stat_t;
 #define CS_COMMON_CS_DBG_H_
 
 
-#if CS_ENABLE_STDIO
-#include <stdio.h>
-#endif
 
 #ifndef CS_ENABLE_DEBUG
 #define CS_ENABLE_DEBUG 0
@@ -436,11 +425,7 @@ int mg_str_starts_with(struct mg_str s, struct mg_str prefix);
  * Expands to a string representation of its argument: e.g.
  * `CS_STRINGIFY_LIT(5) expands to "5"`
  */
-#if !defined(_MSC_VER) || _MSC_VER >= 1900
 #define CS_STRINGIFY_LIT(...) #__VA_ARGS__
-#else
-#define CS_STRINGIFY_LIT(x) #x
-#endif
 
 /*
  * Expands to a string representation of its argument, which is allowed
@@ -638,8 +623,6 @@ char *cs_mmap_file(const char *path, size_t *size);
 #ifndef CS_COMMON_MBUF_H_
 #define CS_COMMON_MBUF_H_
 
-#include <stdlib.h>
-
 #if defined(__cplusplus)
 extern "C" {
 #endif
@@ -760,7 +743,6 @@ extern "C" {
 
 #include <stdarg.h>
 #include <stddef.h>
-#include <stdio.h>
 
 #include <stdbool.h>
 
@@ -1114,7 +1096,6 @@ void ffi_set_float(struct ffi_arg *arg, float v);
 #include <ctype.h>
 #include <math.h>
 #include <stdarg.h>
-#include <stdio.h>
 #include <string.h>
 
 #ifndef FAST
@@ -1203,7 +1184,6 @@ typedef unsigned __int64 uint64_t;
 typedef int int32_t;
 typedef unsigned char uint8_t;
 #endif
-#include <stdio.h>
 #include <stddef.h>
 
 
@@ -1226,12 +1206,12 @@ typedef unsigned char uint8_t;
 extern "C" {
 #endif /* __cplusplus */
 
-MJS_PRIVATE mjs_val_t
+mjs_val_t
 mjs_array_get2(struct mjs *mjs, mjs_val_t arr, unsigned long index, int *has);
 
-MJS_PRIVATE void mjs_array_splice(struct mjs *mjs);
+void mjs_array_splice(struct mjs *mjs);
 
-MJS_PRIVATE void mjs_array_push_internal(struct mjs *mjs);
+void mjs_array_push_internal(struct mjs *mjs);
 
 #if defined(__cplusplus)
 }
@@ -1317,44 +1297,44 @@ struct mjs_ffi_sig {
 typedef struct mjs_ffi_sig mjs_ffi_sig_t;
 
 /* Initialize new FFI signature */
-MJS_PRIVATE void mjs_ffi_sig_init(mjs_ffi_sig_t *sig);
+void mjs_ffi_sig_init(mjs_ffi_sig_t *sig);
 /* Copy existing FFI signature */
-MJS_PRIVATE void mjs_ffi_sig_copy(mjs_ffi_sig_t *to, const mjs_ffi_sig_t *from);
+void mjs_ffi_sig_copy(mjs_ffi_sig_t *to, const mjs_ffi_sig_t *from);
 /* Free FFI signature. NOTE: the pointer `sig` itself is not freed */
-MJS_PRIVATE void mjs_ffi_sig_free(mjs_ffi_sig_t *sig);
+void mjs_ffi_sig_free(mjs_ffi_sig_t *sig);
 
 /*
  * Creates a new FFI signature from the GC arena, and return mjs_val_t which
  * wraps it.
  */
-MJS_PRIVATE mjs_val_t mjs_mk_ffi_sig(struct mjs *mjs);
+mjs_val_t mjs_mk_ffi_sig(struct mjs *mjs);
 
 /*
  * Checks whether the given value is a FFI signature.
  */
-MJS_PRIVATE int mjs_is_ffi_sig(mjs_val_t v);
+int mjs_is_ffi_sig(mjs_val_t v);
 
 /*
  * Wraps FFI signature structure into mjs_val_t value.
  */
-MJS_PRIVATE mjs_val_t mjs_ffi_sig_to_value(struct mjs_ffi_sig *psig);
+mjs_val_t mjs_ffi_sig_to_value(struct mjs_ffi_sig *psig);
 
 /*
  * Extracts a pointer to the FFI signature struct from the mjs_val_t value.
  */
-MJS_PRIVATE struct mjs_ffi_sig *mjs_get_ffi_sig_struct(mjs_val_t v);
+struct mjs_ffi_sig *mjs_get_ffi_sig_struct(mjs_val_t v);
 
 /*
  * A wrapper for mjs_ffi_sig_free() suitable to use as a GC cell destructor.
  */
-MJS_PRIVATE void mjs_ffi_sig_destructor(struct mjs *mjs, void *psig);
+void mjs_ffi_sig_destructor(struct mjs *mjs, void *psig);
 
-MJS_PRIVATE int mjs_ffi_sig_set_val_type(mjs_ffi_sig_t *sig, int idx,
+int mjs_ffi_sig_set_val_type(mjs_ffi_sig_t *sig, int idx,
                                          mjs_ffi_ctype_t type);
-MJS_PRIVATE int mjs_ffi_sig_validate(struct mjs *mjs, mjs_ffi_sig_t *sig,
+int mjs_ffi_sig_validate(struct mjs *mjs, mjs_ffi_sig_t *sig,
                                      enum ffi_sig_type sig_type);
-MJS_PRIVATE int mjs_ffi_is_regular_word(mjs_ffi_ctype_t type);
-MJS_PRIVATE int mjs_ffi_is_regular_word_or_void(mjs_ffi_ctype_t type);
+int mjs_ffi_is_regular_word(mjs_ffi_ctype_t type);
+int mjs_ffi_is_regular_word_or_void(mjs_ffi_ctype_t type);
 
 struct mjs_ffi_cb_args {
   struct mjs_ffi_cb_args *next;
@@ -1369,16 +1349,16 @@ typedef struct mjs_ffi_cb_args ffi_cb_args_t;
  * cfunction:
  * Parses the FFI signature string and returns a value wrapping mjs_ffi_sig_t.
  */
-MJS_PRIVATE mjs_err_t mjs_ffi_call(struct mjs *mjs);
+mjs_err_t mjs_ffi_call(struct mjs *mjs);
 
 /*
  * cfunction:
  * Performs the FFI signature call.
  */
-MJS_PRIVATE mjs_err_t mjs_ffi_call2(struct mjs *mjs);
+mjs_err_t mjs_ffi_call2(struct mjs *mjs);
 
-MJS_PRIVATE void mjs_ffi_cb_free(struct mjs *);
-MJS_PRIVATE void mjs_ffi_args_free_list(struct mjs *mjs);
+void mjs_ffi_cb_free(struct mjs *);
+void mjs_ffi_args_free_list(struct mjs *mjs);
 
 #if defined(__cplusplus)
 }
@@ -1453,29 +1433,29 @@ struct gc_cell {
  */
 void mjs_gc(struct mjs *mjs, int full);
 
-MJS_PRIVATE int gc_strings_is_gc_needed(struct mjs *mjs);
+int gc_strings_is_gc_needed(struct mjs *mjs);
 
 /* perform gc if not inhibited */
-MJS_PRIVATE int maybe_gc(struct mjs *mjs);
+int maybe_gc(struct mjs *mjs);
 
-MJS_PRIVATE struct mjs_object *new_object(struct mjs *);
-MJS_PRIVATE struct mjs_property *new_property(struct mjs *);
-MJS_PRIVATE struct mjs_ffi_sig *new_ffi_sig(struct mjs *mjs);
+struct mjs_object *new_object(struct mjs *);
+struct mjs_property *new_property(struct mjs *);
+struct mjs_ffi_sig *new_ffi_sig(struct mjs *mjs);
 
-MJS_PRIVATE void gc_mark(struct mjs *mjs, mjs_val_t *val);
+void gc_mark(struct mjs *mjs, mjs_val_t *val);
 
-MJS_PRIVATE void gc_arena_init(struct gc_arena *, size_t, size_t, size_t);
-MJS_PRIVATE void gc_arena_destroy(struct mjs *, struct gc_arena *a);
-MJS_PRIVATE void gc_sweep(struct mjs *, struct gc_arena *, size_t);
-MJS_PRIVATE void *gc_alloc_cell(struct mjs *, struct gc_arena *);
+void gc_arena_init(struct gc_arena *, size_t, size_t, size_t);
+void gc_arena_destroy(struct mjs *, struct gc_arena *a);
+void gc_sweep(struct mjs *, struct gc_arena *, size_t);
+void *gc_alloc_cell(struct mjs *, struct gc_arena *);
 
-MJS_PRIVATE uint64_t gc_string_mjs_val_to_offset(mjs_val_t v);
+uint64_t gc_string_mjs_val_to_offset(mjs_val_t v);
 
 /* return 0 if v is an object/function with a bad pointer */
-MJS_PRIVATE int gc_check_val(struct mjs *mjs, mjs_val_t v);
+int gc_check_val(struct mjs *mjs, mjs_val_t v);
 
 /* checks whether a pointer is within the ranges of an arena */
-MJS_PRIVATE int gc_check_ptr(const struct gc_arena *a, const void *p);
+int gc_check_ptr(const struct gc_arena *a, const void *p);
 
 #if defined(__cplusplus)
 }
@@ -1557,6 +1537,7 @@ struct mjs_bcode_part {
   unsigned in_rom : 1;
 };
 
+// atu: TODO: move to header as class
 struct mjs {
   struct mbuf bcode_gen;
   struct mbuf bcode_parts;
@@ -1602,26 +1583,26 @@ enum mjs_header_items {
   MJS_HDR_ITEMS_CNT
 };
 
-MJS_PRIVATE size_t mjs_get_func_addr(mjs_val_t v);
+size_t mjs_get_func_addr(mjs_val_t v);
 
-MJS_PRIVATE int mjs_getretvalpos(struct mjs *mjs);
+int mjs_getretvalpos(struct mjs *mjs);
 
-MJS_PRIVATE enum mjs_type mjs_get_type(mjs_val_t v);
+enum mjs_type mjs_get_type(mjs_val_t v);
 
 /*
  * Prints stack trace starting from the given bcode offset; other offsets
  * (if any) will be fetched from the call_stack.
  */
-MJS_PRIVATE void mjs_gen_stack_trace(struct mjs *mjs, size_t offset);
+void mjs_gen_stack_trace(struct mjs *mjs, size_t offset);
 
-MJS_PRIVATE mjs_val_t vtop(struct mbuf *m);
-MJS_PRIVATE size_t mjs_stack_size(const struct mbuf *m);
-MJS_PRIVATE mjs_val_t *vptr(struct mbuf *m, int idx);
-MJS_PRIVATE void push_mjs_val(struct mbuf *m, mjs_val_t v);
-MJS_PRIVATE mjs_val_t mjs_pop_val(struct mbuf *m);
-MJS_PRIVATE mjs_val_t mjs_pop(struct mjs *mjs);
-MJS_PRIVATE void mjs_push(struct mjs *mjs, mjs_val_t v);
-MJS_PRIVATE void mjs_die(struct mjs *mjs);
+mjs_val_t vtop(struct mbuf *m);
+size_t mjs_stack_size(const struct mbuf *m);
+mjs_val_t *vptr(struct mbuf *m, int idx);
+void push_mjs_val(struct mbuf *m, mjs_val_t v);
+mjs_val_t mjs_pop_val(struct mbuf *m);
+mjs_val_t mjs_pop(struct mjs *mjs);
+void mjs_push(struct mjs *mjs, mjs_val_t v);
+void mjs_die(struct mjs *mjs);
 
 #if defined(__cplusplus)
 }
@@ -1647,15 +1628,15 @@ extern "C" {
  * MJS does not support `toString()` and `valueOf()`, so, passing an object
  * always results in `MJS_TYPE_ERROR`.
  */
-MJS_PRIVATE mjs_err_t mjs_to_string(struct mjs *mjs, mjs_val_t *v, char **p,
+mjs_err_t mjs_to_string(struct mjs *mjs, mjs_val_t *v, char **p,
                                     size_t *sizep, int *need_free);
 
 /*
  * Converts value to boolean as in the expression `if (v)`.
  */
-MJS_PRIVATE mjs_val_t mjs_to_boolean_v(struct mjs *mjs, mjs_val_t v);
+mjs_val_t mjs_to_boolean_v(struct mjs *mjs, mjs_val_t v);
 
-MJS_PRIVATE int mjs_is_truthy(struct mjs *mjs, mjs_val_t v);
+int mjs_is_truthy(struct mjs *mjs, mjs_val_t v);
 
 #if defined(__cplusplus)
 }
@@ -1690,8 +1671,6 @@ extern "C" {
 extern "C" {
 #endif /* __cplusplus */
 
-struct mjs;
-
 struct mjs_property {
   struct mjs_property *next; /* Linkage in struct mjs_object::properties */
   mjs_val_t name;            /* Property name (a string) */
@@ -1702,13 +1681,13 @@ struct mjs_object {
   struct mjs_property *properties;
 };
 
-MJS_PRIVATE struct mjs_object *get_object_struct(mjs_val_t v);
-MJS_PRIVATE struct mjs_property *mjs_get_own_property(struct mjs *mjs,
+struct mjs_object *get_object_struct(mjs_val_t v);
+struct mjs_property *mjs_get_own_property(struct mjs *mjs,
                                                       mjs_val_t obj,
                                                       const char *name,
                                                       size_t len);
 
-MJS_PRIVATE struct mjs_property *mjs_get_own_property_v(struct mjs *mjs,
+struct mjs_property *mjs_get_own_property_v(struct mjs *mjs,
                                                         mjs_val_t obj,
                                                         mjs_val_t key);
 
@@ -1717,14 +1696,14 @@ MJS_PRIVATE struct mjs_property *mjs_get_own_property_v(struct mjs *mjs,
  * ptr+len and mjs_val_t. If `name` pointer is not NULL, it takes precedence
  * over `name_v`.
  */
-MJS_PRIVATE mjs_err_t mjs_set_internal(struct mjs *mjs, mjs_val_t obj,
+mjs_err_t mjs_set_internal(struct mjs *mjs, mjs_val_t obj,
                                        mjs_val_t name_v, char *name,
                                        size_t name_len, mjs_val_t val);
 
 /*
  * Implementation of `Object.create(proto)`
  */
-MJS_PRIVATE void mjs_op_create_object(struct mjs *mjs);
+void mjs_op_create_object(struct mjs *mjs);
 
 #define MJS_PROTO_PROP_NAME "__p" /* Make it < 5 chars */
 
@@ -1766,23 +1745,23 @@ extern "C" {
 /*
  * Convert a pointer to mjs_val_t. If pointer is not valid, mjs crashes.
  */
-MJS_PRIVATE mjs_val_t mjs_legit_pointer_to_value(void *p);
+mjs_val_t mjs_legit_pointer_to_value(void *p);
 
 /*
  * Convert a pointer to mjs_val_t. If pointer is not valid, error is set
  * in the mjs context.
  */
-MJS_PRIVATE mjs_val_t mjs_pointer_to_value(struct mjs *mjs, void *p);
+mjs_val_t mjs_pointer_to_value(struct mjs *mjs, void *p);
 
 /*
  * Extracts a pointer from the mjs_val_t value.
  */
-MJS_PRIVATE void *get_ptr(mjs_val_t v);
+void *get_ptr(mjs_val_t v);
 
 /*
  * Implementation for JS isNaN()
  */
-MJS_PRIVATE void mjs_op_isnan(struct mjs *mjs);
+void mjs_op_isnan(struct mjs *mjs);
 
 #if defined(__cplusplus)
 }
@@ -1813,20 +1792,18 @@ extern "C" {
  */
 #define _MJS_STRING_BUF_RESERVE 100
 
-MJS_PRIVATE unsigned long cstr_to_ulong(const char *s, size_t len, int *ok);
-MJS_PRIVATE mjs_err_t
-str_to_ulong(struct mjs *mjs, mjs_val_t v, int *ok, unsigned long *res);
-MJS_PRIVATE int s_cmp(struct mjs *mjs, mjs_val_t a, mjs_val_t b);
-MJS_PRIVATE mjs_val_t s_concat(struct mjs *mjs, mjs_val_t a, mjs_val_t b);
+unsigned long cstr_to_ulong(const char *s, size_t len, int *ok);
+mjs_err_t str_to_ulong(struct mjs *mjs, mjs_val_t v, int *ok, unsigned long *res);
+int s_cmp(struct mjs *mjs, mjs_val_t a, mjs_val_t b);
+mjs_val_t s_concat(struct mjs *mjs, mjs_val_t a, mjs_val_t b);
 
-MJS_PRIVATE void embed_string(struct mbuf *m, size_t offset, const char *p,
-                              size_t len, uint8_t /*enum embstr_flags*/ flags);
+void embed_string(struct mbuf *m, size_t offset, const char *p, size_t len, uint8_t /*enum embstr_flags*/ flags);
 
-MJS_PRIVATE void mjs_mkstr(struct mjs *mjs);
+void mjs_mkstr(struct mjs *mjs);
 
-MJS_PRIVATE void mjs_string_slice(struct mjs *mjs);
-MJS_PRIVATE void mjs_string_index_of(struct mjs *mjs);
-MJS_PRIVATE void mjs_string_char_code_at(struct mjs *mjs);
+void mjs_string_slice(struct mjs *mjs);
+void mjs_string_index_of(struct mjs *mjs);
+void mjs_string_char_code_at(struct mjs *mjs);
 
 #define EMBSTR_ZERO_TERM 1
 #define EMBSTR_UNESCAPE 2
@@ -1839,8 +1816,6 @@ MJS_PRIVATE void mjs_string_char_code_at(struct mjs *mjs);
 
 #ifndef MJS_UTIL_PUBLIC_H_
 #define MJS_UTIL_PUBLIC_H_
-
-#include <stdio.h>
 
 
 #endif /* MJS_UTIL_PUBLIC_H_ */
@@ -1855,9 +1830,9 @@ extern "C" {
 
 struct mjs_bcode_part;
 
-MJS_PRIVATE const char *opcodetostr(uint8_t opcode);
-MJS_PRIVATE size_t mjs_disasm_single(const uint8_t *code, size_t i);
-MJS_PRIVATE const char *mjs_stringify_type(enum mjs_type t);
+const char *opcodetostr(uint8_t opcode);
+size_t mjs_disasm_single(const uint8_t *code, size_t i);
+const char *mjs_stringify_type(enum mjs_type t);
 
 /*
  * Checks that the given argument is provided, and checks its type. If check
@@ -1867,7 +1842,7 @@ MJS_PRIVATE const char *mjs_stringify_type(enum mjs_type t);
  * `this`. `arg_name` is used for the error message only. If `parg` is not
  * NULL, writes resulting value at this location in case of success.
  */
-MJS_PRIVATE int mjs_check_arg(struct mjs *mjs, int arg_num,
+int mjs_check_arg(struct mjs *mjs, int arg_num,
                               const char *arg_name, enum mjs_type expected_type,
                               mjs_val_t *parg);
 
@@ -1876,9 +1851,9 @@ MJS_PRIVATE int mjs_check_arg(struct mjs *mjs, int arg_num,
  * returns the index which is >= 0 and <= size. Negative index is interpreted
  * as size + index.
  */
-MJS_PRIVATE int mjs_normalize_idx(int idx, int size);
+int mjs_normalize_idx(int idx, int size);
 
-MJS_PRIVATE const char *mjs_get_bcode_filename(struct mjs *mjs,
+const char *mjs_get_bcode_filename(struct mjs *mjs,
                                                struct mjs_bcode_part *bp);
 
 /* Print JS value `v` to the JSON stream `out`. */
@@ -1893,14 +1868,8 @@ void mjs_jprintf(mjs_val_t v, struct mjs *mjs, struct json_out *out);
 #ifndef CS_COMMON_CS_VARINT_H_
 #define CS_COMMON_CS_VARINT_H_
 
-#if defined(_WIN32) && _MSC_VER < 1700
-typedef unsigned char uint8_t;
-typedef unsigned __int64 uint64_t;
-#else
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
-#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -1986,11 +1955,10 @@ enum mjs_opcode {
 };
 
 struct pstate;
-struct mjs;
 
-MJS_PRIVATE void emit_byte(struct pstate *pstate, uint8_t byte);
-MJS_PRIVATE void emit_int(struct pstate *pstate, int64_t n);
-MJS_PRIVATE void emit_str(struct pstate *pstate, const char *ptr, size_t len);
+void emit_byte(struct pstate *pstate, uint8_t byte);
+void emit_int(struct pstate *pstate, int64_t n);
+void emit_str(struct pstate *pstate, const char *ptr, size_t len);
 
 /*
  * Inserts provided offset `v` at the offset `offset`.
@@ -1998,35 +1966,35 @@ MJS_PRIVATE void emit_str(struct pstate *pstate, const char *ptr, size_t len);
  * Returns delta at which the code was moved; the delta can be any: 0 or
  * positive or negative.
  */
-MJS_PRIVATE int mjs_bcode_insert_offset(struct pstate *p, struct mjs *mjs,
+int mjs_bcode_insert_offset(struct pstate *p, struct mjs *mjs,
                                         size_t offset, size_t v);
 
 /*
  * Adds a new bcode part; does not retain `bp`.
  */
-MJS_PRIVATE void mjs_bcode_part_add(struct mjs *mjs,
+void mjs_bcode_part_add(struct mjs *mjs,
                                     const struct mjs_bcode_part *bp);
 
 /*
  * Returns bcode part by the bcode number
  */
-MJS_PRIVATE struct mjs_bcode_part *mjs_bcode_part_get(struct mjs *mjs, int num);
+struct mjs_bcode_part *mjs_bcode_part_get(struct mjs *mjs, int num);
 
 /*
  * Returns bcode part by the global bcode offset
  */
-MJS_PRIVATE struct mjs_bcode_part *mjs_bcode_part_get_by_offset(struct mjs *mjs,
+struct mjs_bcode_part *mjs_bcode_part_get_by_offset(struct mjs *mjs,
                                                                 size_t offset);
 
 /*
  * Returns a number of bcode parts
  */
-MJS_PRIVATE int mjs_bcode_parts_cnt(struct mjs *mjs);
+int mjs_bcode_parts_cnt(struct mjs *mjs);
 
 /*
  * Adds the bcode being generated (mjs->bcode_gen) as a next bcode part
  */
-MJS_PRIVATE void mjs_bcode_commit(struct mjs *mjs);
+void mjs_bcode_commit(struct mjs *mjs);
 
 #if defined(__cplusplus)
 }
@@ -2041,7 +2009,6 @@ MJS_PRIVATE void mjs_bcode_commit(struct mjs *mjs);
 #include <ctype.h>
 #include <math.h>
 #include <stdarg.h>
-#include <stdio.h>
 #include <string.h>
 
 
@@ -2049,7 +2016,7 @@ MJS_PRIVATE void mjs_bcode_commit(struct mjs *mjs);
 #define MJS_PRIVATE
 #define MJS_EXTERN extern
 #else
-#define MJS_PRIVATE static
+#define static
 #define MJS_EXTERN static
 #endif
 
@@ -2228,10 +2195,10 @@ enum {
   TOK_MAX
 };
 
-MJS_PRIVATE void pinit(const char *file_name, const char *buf, struct pstate *);
-MJS_PRIVATE int pnext(struct pstate *);
-MJS_PRIVATE int mjs_is_ident(int c);
-MJS_PRIVATE int mjs_is_digit(int c);
+void pinit(const char *file_name, const char *buf, struct pstate *);
+int pnext(struct pstate *);
+int mjs_is_ident(int c);
+int mjs_is_digit(int c);
 
 #if defined(__cplusplus)
 }
@@ -2270,8 +2237,6 @@ void mjs_mem_set_int(void *ptr, int val, int size, int bigendian);
 #ifndef MJS_EXEC_PUBLIC_H_
 #define MJS_EXEC_PUBLIC_H_
 
-#include <stdio.h>
-
 #if defined(__cplusplus)
 extern "C" {
 #endif /* __cplusplus */
@@ -2306,7 +2271,7 @@ mjs_val_t mjs_get_this(struct mjs *mjs);
 extern "C" {
 #endif /* __cplusplus */
 
-MJS_PRIVATE mjs_err_t mjs_execute(struct mjs *mjs, size_t off, mjs_val_t *res);
+mjs_err_t mjs_execute(struct mjs *mjs, size_t off, mjs_val_t *res);
 
 #if defined(__cplusplus)
 }
@@ -2321,16 +2286,16 @@ MJS_PRIVATE mjs_err_t mjs_execute(struct mjs *mjs, size_t off, mjs_val_t *res);
 extern "C" {
 #endif /* __cplusplus */
 
-MJS_PRIVATE mjs_err_t to_json_or_debug(struct mjs *mjs, mjs_val_t v, char *buf,
+mjs_err_t to_json_or_debug(struct mjs *mjs, mjs_val_t v, char *buf,
                                        size_t size, size_t *res_len,
                                        uint8_t is_debug);
 
-MJS_PRIVATE mjs_err_t mjs_json_stringify(struct mjs *mjs, mjs_val_t v,
+mjs_err_t mjs_json_stringify(struct mjs *mjs, mjs_val_t v,
                                          char *buf, size_t size, char **res);
-MJS_PRIVATE void mjs_op_json_stringify(struct mjs *mjs);
-MJS_PRIVATE void mjs_op_json_parse(struct mjs *mjs);
+void mjs_op_json_stringify(struct mjs *mjs);
+void mjs_op_json_parse(struct mjs *mjs);
 
-MJS_PRIVATE mjs_err_t
+mjs_err_t
 mjs_json_parse(struct mjs *mjs, const char *str, size_t len, mjs_val_t *res);
 
 #if defined(__cplusplus)
@@ -2363,7 +2328,7 @@ void mjs_init_builtin(struct mjs *mjs, mjs_val_t obj);
 extern "C" {
 #endif /* __cplusplus */
 
-MJS_PRIVATE mjs_err_t
+mjs_err_t
 mjs_parse(const char *path, const char *buf, struct mjs *);
 
 #if defined(__cplusplus)
@@ -2375,7 +2340,6 @@ mjs_parse(const char *path, const char *buf, struct mjs *);
 
 
 #include <stdarg.h>
-#include <stdio.h>
 #include <string.h>
 
 
@@ -2497,9 +2461,6 @@ void cs_log_set_level(enum cs_log_level level) {
 #endif
 }
 
-
-#include <stdio.h>
-#include <stdlib.h>
 
 #ifdef CS_MMAP
 #include <fcntl.h>
@@ -2742,7 +2703,6 @@ void mbuf_move(struct mbuf *from, struct mbuf *to) {
 
 
 #include <ctype.h>
-#include <stdlib.h>
 #include <string.h>
 
 int mg_ncasecmp(const char *s1, const char *s2, size_t len) WEAK;
@@ -3118,35 +3078,6 @@ int c_snprintf(char *buf, size_t buf_size, const char *fmt, ...) {
   return result;
 }
 
-#ifdef _WIN32
-int to_wchar(const char *path, wchar_t *wbuf, size_t wbuf_len) {
-  int ret;
-  char buf[MAX_PATH * 2], buf2[MAX_PATH * 2], *p;
-
-  strncpy(buf, path, sizeof(buf));
-  buf[sizeof(buf) - 1] = '\0';
-
-  /* Trim trailing slashes. Leave backslash for paths like "X:\" */
-  p = buf + strlen(buf) - 1;
-  while (p > buf && p[-1] != ':' && (p[0] == '\\' || p[0] == '/')) *p-- = '\0';
-
-  memset(wbuf, 0, wbuf_len * sizeof(wchar_t));
-  ret = MultiByteToWideChar(CP_UTF8, 0, buf, -1, wbuf, (int) wbuf_len);
-
-  /*
-   * Convert back to Unicode. If doubly-converted string does not match the
-   * original, something is fishy, reject.
-   */
-  WideCharToMultiByte(CP_UTF8, 0, wbuf, (int) wbuf_len, buf2, sizeof(buf2),
-                      NULL, NULL);
-  if (strcmp(buf, buf2) != 0) {
-    wbuf[0] = L'\0';
-    ret = 0;
-  }
-
-  return ret;
-}
-#endif /* _WIN32 */
 
 /* The simplest O(mn) algorithm. Better implementation are GPLed */
 const char *c_strnstr(const char *s, const char *find, size_t slen) WEAK;
@@ -3416,9 +3347,8 @@ size_t mg_match_prefix(const char *pattern, int pattern_len, const char *str) {
 
 #include <ctype.h>
 #include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 
 #if !defined(WEAK)
 #if (defined(__GNUC__) || defined(__TI_COMPILER_VERSION__)) && !defined(_WIN32)
@@ -3427,29 +3357,6 @@ size_t mg_match_prefix(const char *pattern, int pattern_len, const char *str) {
 #define WEAK
 #endif
 #endif
-
-#ifdef _WIN32
-#undef snprintf
-#undef vsnprintf
-#define snprintf cs_win_snprintf
-#define vsnprintf cs_win_vsnprintf
-int cs_win_snprintf(char *str, size_t size, const char *format, ...);
-int cs_win_vsnprintf(char *str, size_t size, const char *format, va_list ap);
-#if _MSC_VER >= 1700
-#include <stdint.h>
-#else
-typedef _int64 int64_t;
-typedef unsigned _int64 uint64_t;
-#endif
-#define PRId64 "I64d"
-#define PRIu64 "I64u"
-#else /* _WIN32 */
-/* <inttypes.h> wants this for C++ */
-#ifndef __STDC_FORMAT_MACROS
-#define __STDC_FORMAT_MACROS
-#endif
-#include <inttypes.h>
-#endif /* _WIN32 */
 
 #ifndef INT64_FMT
 #define INT64_FMT PRId64
@@ -3536,24 +3443,29 @@ static int json_parse_value(struct frozen *f);
 
 #define END_OF_STRING (-1)
 
-static int json_left(const struct frozen *f) {
+static int json_left(const struct frozen *f)
+{
   return f->end - f->cur;
 }
 
-static int json_isspace(int ch) {
+static int json_isspace(int ch)
+{
   return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n';
 }
 
-static void json_skip_whitespaces(struct frozen *f) {
+static void json_skip_whitespaces(struct frozen *f)
+{
   while (f->cur < f->end && json_isspace(*f->cur)) f->cur++;
 }
 
-static int json_cur(struct frozen *f) {
+static int json_cur(struct frozen *f)
+{
   json_skip_whitespaces(f);
   return f->cur >= f->end ? END_OF_STRING : *(unsigned char *) f->cur;
 }
 
-static int json_test_and_skip(struct frozen *f, int expected) {
+static int json_test_and_skip(struct frozen *f, int expected)
+{
   int ch = json_cur(f);
   if (ch == expected) {
     f->cur++;
@@ -3562,20 +3474,24 @@ static int json_test_and_skip(struct frozen *f, int expected) {
   return ch == END_OF_STRING ? JSON_STRING_INCOMPLETE : JSON_STRING_INVALID;
 }
 
-static int json_isalpha(int ch) {
+static int json_isalpha(int ch)
+{
   return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z');
 }
 
-static int json_isdigit(int ch) {
+static int json_isdigit(int ch)
+{
   return ch >= '0' && ch <= '9';
 }
 
-static int json_isxdigit(int ch) {
+static int json_isxdigit(int ch)
+{
   return json_isdigit(ch) || (ch >= 'a' && ch <= 'f') ||
          (ch >= 'A' && ch <= 'F');
 }
 
-static int json_get_escape_len(const char *s, int len) {
+static int json_get_escape_len(const char *s, int len)
+{
   switch (*s) {
     case 'u':
       return len < 6 ? JSON_STRING_INCOMPLETE
@@ -3598,7 +3514,8 @@ static int json_get_escape_len(const char *s, int len) {
 }
 
 /* identifier = letter { letter | digit | '_' } */
-static int json_parse_identifier(struct frozen *f) {
+static int json_parse_identifier(struct frozen *f)
+{
   EXPECT(json_isalpha(json_cur(f)), JSON_STRING_INVALID);
   {
     SET_STATE(f, f->cur, "", 0);
@@ -3612,7 +3529,8 @@ static int json_parse_identifier(struct frozen *f) {
   return 0;
 }
 
-static int json_get_utf8_char_len(unsigned char ch) {
+static int json_get_utf8_char_len(unsigned char ch)
+{
   if ((ch & 0x80) == 0) return 1;
   switch (ch & 0xf0) {
     case 0xf0:
@@ -3625,7 +3543,8 @@ static int json_get_utf8_char_len(unsigned char ch) {
 }
 
 /* string = '"' { quoted_printable_chars } '"' */
-static int json_parse_string(struct frozen *f) {
+static int json_parse_string(struct frozen *f)
+{
   int n, ch = 0, len = 0;
   TRY(json_test_and_skip(f, '"'));
   {
@@ -3650,7 +3569,8 @@ static int json_parse_string(struct frozen *f) {
 }
 
 /* number = [ '-' ] digit+ [ '.' digit+ ] [ ['e'|'E'] ['+'|'-'] digit+ ] */
-static int json_parse_number(struct frozen *f) {
+static int json_parse_number(struct frozen *f)
+{
   int ch = json_cur(f);
   SET_STATE(f, f->cur, "", 0);
   if (ch == '-') f->cur++;
@@ -3685,7 +3605,8 @@ static int json_parse_number(struct frozen *f) {
 
 #if JSON_ENABLE_ARRAY
 /* array = '[' [ value { ',' value } ] ']' */
-static int json_parse_array(struct frozen *f) {
+static int json_parse_array(struct frozen *f)
+{
   int i = 0, current_path_len;
   char buf[20];
   CALL_BACK(f, JSON_TYPE_ARRAY_START, NULL, 0);
@@ -3713,8 +3634,8 @@ static int json_parse_array(struct frozen *f) {
 }
 #endif /* JSON_ENABLE_ARRAY */
 
-static int json_expect(struct frozen *f, const char *s, int len,
-                       enum json_token_type tok_type) {
+static int json_expect(struct frozen *f, const char *s, int len, enum json_token_type tok_type )
+{
   int i, n = json_left(f);
   SET_STATE(f, f->cur, "", 0);
   for (i = 0; i < len; i++) {
@@ -3730,7 +3651,8 @@ static int json_expect(struct frozen *f, const char *s, int len,
 }
 
 /* value = 'null' | 'true' | 'false' | number | string | array | object */
-static int json_parse_value(struct frozen *f) {
+static int json_parse_value(struct frozen *f)
+{
   int ch = json_cur(f);
 
   switch (ch) {
@@ -3775,7 +3697,8 @@ static int json_parse_value(struct frozen *f) {
 }
 
 /* key = identifier | string */
-static int json_parse_key(struct frozen *f) {
+static int json_parse_key(struct frozen *f)
+{
   int ch = json_cur(f);
   if (json_isalpha(ch)) {
     TRY(json_parse_identifier(f));
@@ -3788,7 +3711,8 @@ static int json_parse_key(struct frozen *f) {
 }
 
 /* pair = key ':' value */
-static int json_parse_pair(struct frozen *f) {
+static int json_parse_pair(struct frozen *f)
+{
   int current_path_len;
   const char *tok;
   json_skip_whitespaces(f);
@@ -3806,7 +3730,8 @@ static int json_parse_pair(struct frozen *f) {
 }
 
 /* object = '{' pair { ',' pair } '}' */
-static int json_parse_object(struct frozen *f) {
+static int json_parse_object(struct frozen *f)
+{
   CALL_BACK(f, JSON_TYPE_OBJECT_START, NULL, 0);
   TRY(json_test_and_skip(f, '{'));
   {
@@ -3822,14 +3747,16 @@ static int json_parse_object(struct frozen *f) {
   return 0;
 }
 
-static int json_doit(struct frozen *f) {
+static int json_doit(struct frozen *f)
+{
   if (f->cur == 0 || f->end < f->cur) return JSON_STRING_INVALID;
   if (f->end == f->cur) return JSON_STRING_INCOMPLETE;
   return json_parse_value(f);
 }
 
 int json_escape(struct json_out *out, const char *p, size_t len) WEAK;
-int json_escape(struct json_out *out, const char *p, size_t len) {
+int json_escape(struct json_out *out, const char *p, size_t len)
+{
   size_t i, cl, n = 0;
   const char *hex_digits = "0123456789abcdef";
   const char *specials = "btnvfr";
@@ -3858,7 +3785,8 @@ int json_escape(struct json_out *out, const char *p, size_t len) {
 }
 
 int json_printer_buf(struct json_out *out, const char *buf, size_t len) WEAK;
-int json_printer_buf(struct json_out *out, const char *buf, size_t len) {
+int json_printer_buf(struct json_out *out, const char *buf, size_t len)
+{
   size_t avail = out->u.buf.size - out->u.buf.len;
   size_t n = len < avail ? len : avail;
   memcpy(out->u.buf.buf + out->u.buf.len, buf, n);
@@ -3872,12 +3800,14 @@ int json_printer_buf(struct json_out *out, const char *buf, size_t len) {
 }
 
 int json_printer_file(struct json_out *out, const char *buf, size_t len) WEAK;
-int json_printer_file(struct json_out *out, const char *buf, size_t len) {
+int json_printer_file(struct json_out *out, const char *buf, size_t len)
+{
   return fwrite(buf, 1, len, out->u.fp);
 }
 
 #if JSON_ENABLE_BASE64
-static int b64idx(int c) {
+static int b64idx(int c)
+{
   if (c < 26) {
     return c + 'A';
   } else if (c < 52) {
@@ -3889,7 +3819,8 @@ static int b64idx(int c) {
   }
 }
 
-static int b64rev(int c) {
+static int b64rev(int c)
+{
   if (c >= 'A' && c <= 'Z') {
     return c - 'A';
   } else if (c >= 'a' && c <= 'z') {
@@ -3905,7 +3836,8 @@ static int b64rev(int c) {
   }
 }
 
-static int b64enc(struct json_out *out, const unsigned char *p, int n) {
+static int b64enc(struct json_out *out, const unsigned char *p, int n)
+{
   char buf[4];
   int i, len = 0;
   for (i = 0; i < n; i += 3) {
@@ -3921,7 +3853,8 @@ static int b64enc(struct json_out *out, const unsigned char *p, int n) {
   return len;
 }
 
-static int b64dec(const char *src, int n, char *dst) {
+static int b64dec(const char *src, int n, char *dst)
+{
   const char *end = src + n;
   int len = 0;
   while (src + 3 < end) {
@@ -3940,7 +3873,8 @@ static int b64dec(const char *src, int n, char *dst) {
 }
 #endif /* JSON_ENABLE_BASE64 */
 
-static unsigned char hexdec(const char *s) {
+static unsigned char hexdec(const char *s)
+{
 #define HEXTOI(x) (x >= '0' && x <= '9' ? x - '0' : x - 'W')
   int a = tolower(*(const unsigned char *) s);
   int b = tolower(*(const unsigned char *) (s + 1));
@@ -3948,7 +3882,8 @@ static unsigned char hexdec(const char *s) {
 }
 
 int json_vprintf(struct json_out *out, const char *fmt, va_list xap) WEAK;
-int json_vprintf(struct json_out *out, const char *fmt, va_list xap) {
+int json_vprintf(struct json_out *out, const char *fmt, va_list xap)
+{
   int len = 0;
   const char *quote = "\"", *null = "null";
   va_list ap;
@@ -4138,7 +4073,8 @@ int json_vprintf(struct json_out *out, const char *fmt, va_list xap) {
 }
 
 int json_printf(struct json_out *out, const char *fmt, ...) WEAK;
-int json_printf(struct json_out *out, const char *fmt, ...) {
+int json_printf(struct json_out *out, const char *fmt, ...)
+{
   int n;
   va_list ap;
   va_start(ap, fmt);
@@ -4148,14 +4084,16 @@ int json_printf(struct json_out *out, const char *fmt, ...) {
 }
 
 int json_printf_array(struct json_out *out, va_list *ap) WEAK;
-int json_printf_array(struct json_out *out, va_list *ap) {
+int json_printf_array(struct json_out *out, va_list *ap)
+{
   int len = 0;
   char *arr = va_arg(*ap, char *);
-  size_t i, arr_size = va_arg(*ap, size_t);
+  size_t arr_size  = va_arg(*ap, size_t);
   size_t elem_size = va_arg(*ap, size_t);
-  const char *fmt = va_arg(*ap, char *);
+  const char *fmt  = va_arg(*ap, char *);
   len += json_printf(out, "[", 1);
-  for (i = 0; arr != NULL && i < arr_size / elem_size; i++) {
+
+  for( size_t i = 0; arr != NULL && i < arr_size / elem_size; i++) {
     union {
       int64_t i;
       double d;
@@ -4177,7 +4115,8 @@ int json_printf_array(struct json_out *out, va_list *ap) {
 int json_walk(const char *json_string, int json_string_length,
               json_walk_callback_t callback, void *callback_data) WEAK;
 int json_walk(const char *json_string, int json_string_length,
-              json_walk_callback_t callback, void *callback_data) {
+              json_walk_callback_t callback, void *callback_data)
+{
   struct frozen frozen;
 
   memset(&frozen, 0, sizeof(frozen));
@@ -4199,7 +4138,8 @@ struct scan_array_info {
 
 static void json_scanf_array_elem_cb(void *callback_data, const char *name,
                                      size_t name_len, const char *path,
-                                     const struct json_token *token) {
+                                     const struct json_token *token)
+{
   struct scan_array_info *info = (struct scan_array_info *) callback_data;
 
   (void) name;
@@ -4214,7 +4154,8 @@ static void json_scanf_array_elem_cb(void *callback_data, const char *name,
 int json_scanf_array_elem(const char *s, int len, const char *path, int idx,
                           struct json_token *token) WEAK;
 int json_scanf_array_elem(const char *s, int len, const char *path, int idx,
-                          struct json_token *token) {
+                          struct json_token *token)
+{
   struct scan_array_info info;
   info.token = token;
   info.found = 0;
@@ -4234,7 +4175,8 @@ struct json_scanf_info {
 };
 
 int json_unescape(const char *src, int slen, char *dst, int dlen) WEAK;
-int json_unescape(const char *src, int slen, char *dst, int dlen) {
+int json_unescape(const char *src, int slen, char *dst, int dlen)
+{
   char *send = (char *) src + slen, *dend = dst + dlen, *orig_dst = dst, *p;
   const char *esc1 = "\"\\/bfnrt", *esc2 = "\"\\/\b\f\n\r\t";
 
@@ -4269,7 +4211,8 @@ int json_unescape(const char *src, int slen, char *dst, int dlen) {
 
 static void json_scanf_cb(void *callback_data, const char *name,
                           size_t name_len, const char *path,
-                          const struct json_token *token) {
+                          const struct json_token *token)
+{
   struct json_scanf_info *info = (struct json_scanf_info *) callback_data;
   char buf[32]; /* Must be enough to hold numbers */
 
@@ -4405,7 +4348,8 @@ static void json_scanf_cb(void *callback_data, const char *name,
 }
 
 int json_vscanf(const char *s, int len, const char *fmt, va_list ap) WEAK;
-int json_vscanf(const char *s, int len, const char *fmt, va_list ap) {
+int json_vscanf(const char *s, int len, const char *fmt, va_list ap)
+{
   char path[JSON_MAX_PATH_LEN] = "", fmtbuf[20];
   int i = 0;
   char *p = NULL;
@@ -4460,7 +4404,8 @@ int json_vscanf(const char *s, int len, const char *fmt, va_list ap) {
 }
 
 int json_scanf(const char *str, int len, const char *fmt, ...) WEAK;
-int json_scanf(const char *str, int len, const char *fmt, ...) {
+int json_scanf(const char *str, int len, const char *fmt, ...)
+{
   int result;
   va_list ap;
   va_start(ap, fmt);
@@ -4470,7 +4415,8 @@ int json_scanf(const char *str, int len, const char *fmt, ...) {
 }
 
 int json_vfprintf(const char *file_name, const char *fmt, va_list ap) WEAK;
-int json_vfprintf(const char *file_name, const char *fmt, va_list ap) {
+int json_vfprintf(const char *file_name, const char *fmt, va_list ap)
+{
   int res = -1;
   FILE *fp = fopen(file_name, "wb");
   if (fp != NULL) {
@@ -4483,7 +4429,8 @@ int json_vfprintf(const char *file_name, const char *fmt, va_list ap) {
 }
 
 int json_fprintf(const char *file_name, const char *fmt, ...) WEAK;
-int json_fprintf(const char *file_name, const char *fmt, ...) {
+int json_fprintf(const char *file_name, const char *fmt, ...)
+{
   int result;
   va_list ap;
   va_start(ap, fmt);
@@ -4493,7 +4440,8 @@ int json_fprintf(const char *file_name, const char *fmt, ...) {
 }
 
 char *json_fread(const char *path) WEAK;
-char *json_fread(const char *path) {
+char *json_fread(const char *path)
+{
   FILE *fp;
   char *data = NULL;
   if ((fp = fopen(path, "rb")) == NULL) {
@@ -4524,14 +4472,16 @@ struct json_setf_data {
   int prev;         /* Offset of the previous token end */
 };
 
-static int get_matched_prefix_len(const char *s1, const char *s2) {
+static int get_matched_prefix_len(const char *s1, const char *s2)
+{
   int i = 0;
   while (s1[i] && s2[i] && s1[i] == s2[i]) i++;
   return i;
 }
 
 static void json_vsetf_cb(void *userdata, const char *name, size_t name_len,
-                          const char *path, const struct json_token *t) {
+                          const char *path, const struct json_token *t)
+{
   struct json_setf_data *data = (struct json_setf_data *) userdata;
   int off, len = get_matched_prefix_len(path, data->json_path);
   if (t->ptr == NULL) return;
@@ -4575,7 +4525,8 @@ static void json_vsetf_cb(void *userdata, const char *name, size_t name_len,
 int json_vsetf(const char *s, int len, struct json_out *out,
                const char *json_path, const char *json_fmt, va_list ap) WEAK;
 int json_vsetf(const char *s, int len, struct json_out *out,
-               const char *json_path, const char *json_fmt, va_list ap) {
+               const char *json_path, const char *json_fmt, va_list ap)
+{
   struct json_setf_data data;
   memset(&data, 0, sizeof(data));
   data.json_path = json_path;
@@ -4632,7 +4583,8 @@ int json_vsetf(const char *s, int len, struct json_out *out,
 int json_setf(const char *s, int len, struct json_out *out,
               const char *json_path, const char *json_fmt, ...) WEAK;
 int json_setf(const char *s, int len, struct json_out *out,
-              const char *json_path, const char *json_fmt, ...) {
+              const char *json_path, const char *json_fmt, ...)
+{
   int result;
   va_list ap;
   va_start(ap, json_fmt);
@@ -4647,18 +4599,26 @@ struct prettify_data {
   int last_token;
 };
 
-static void indent(struct json_out *out, int level) {
-  while (level-- > 0) out->printer(out, "  ", 2);
+static void indent(struct json_out *out, int level)
+{
+  while( level-- > 0 ) {
+    out->printer(out, "  ", 2);
+  }
 }
 
 static void print_key(struct prettify_data *pd, const char *path,
-                      const char *name, int name_len) {
+                      const char *name, int name_len)
+{
   if (pd->last_token != JSON_TYPE_INVALID &&
       pd->last_token != JSON_TYPE_ARRAY_START &&
       pd->last_token != JSON_TYPE_OBJECT_START) {
     pd->out->printer(pd->out, ",", 1);
   }
-  if (path[0] != '\0') pd->out->printer(pd->out, "\n", 1);
+
+  if (path[0] != '\0') {
+    pd->out->printer(pd->out, "\n", 1);
+  }
+
   indent(pd->out, pd->level);
   if (path[0] != '\0' && path[strlen(path) - 1] != ']') {
     pd->out->printer(pd->out, "\"", 1);
@@ -4669,7 +4629,8 @@ static void print_key(struct prettify_data *pd, const char *path,
 }
 
 static void prettify_cb(void *userdata, const char *name, size_t name_len,
-                        const char *path, const struct json_token *t) {
+                        const char *path, const struct json_token *t)
+{
   struct prettify_data *pd = (struct prettify_data *) userdata;
   switch (t->type) {
     case JSON_TYPE_OBJECT_START:
@@ -4707,13 +4668,15 @@ static void prettify_cb(void *userdata, const char *name, size_t name_len,
 }
 
 int json_prettify(const char *s, int len, struct json_out *out) WEAK;
-int json_prettify(const char *s, int len, struct json_out *out) {
+int json_prettify(const char *s, int len, struct json_out *out)
+{
   struct prettify_data pd = {out, 0, JSON_TYPE_INVALID};
   return json_walk(s, len, prettify_cb, &pd);
 }
 
 int json_prettify_file(const char *file_name) WEAK;
-int json_prettify_file(const char *file_name) {
+int json_prettify_file(const char *file_name)
+{
   int res = -1;
   char *s = json_fread(file_name);
   FILE *fp;
@@ -4745,8 +4708,8 @@ struct next_data {
   int *idx;                // Array index
 };
 
-static void next_set_key(struct next_data *d, const char *name, int name_len,
-                         int is_array) {
+static void next_set_key(struct next_data *d, const char *name, int name_len, int is_array)
+{
   if (is_array) {
     /* Array. Set index and reset key  */
     if (d->key != NULL) {
@@ -4765,7 +4728,8 @@ static void next_set_key(struct next_data *d, const char *name, int name_len,
 }
 
 static void json_next_cb(void *userdata, const char *name, size_t name_len,
-                         const char *path, const struct json_token *t) {
+                         const char *path, const struct json_token *t)
+{
   struct next_data *d = (struct next_data *) userdata;
   const char *p = path + d->path_len;
   if (d->found) return;
@@ -4787,7 +4751,8 @@ static void json_next_cb(void *userdata, const char *name, size_t name_len,
 }
 
 static void *json_next(const char *s, int len, void *handle, const char *path,
-                       struct json_token *key, struct json_token *val, int *i) {
+                       struct json_token *key, struct json_token *val, int *i)
+{
   struct json_token tmpval, *v = val == NULL ? &tmpval : val;
   struct json_token tmpkey, *k = key == NULL ? &tmpkey : key;
   int tmpidx, *pidx = i == NULL ? &tmpidx : i;
@@ -4799,18 +4764,21 @@ static void *json_next(const char *s, int len, void *handle, const char *path,
 void *json_next_key(const char *s, int len, void *handle, const char *path,
                     struct json_token *key, struct json_token *val) WEAK;
 void *json_next_key(const char *s, int len, void *handle, const char *path,
-                    struct json_token *key, struct json_token *val) {
+                    struct json_token *key, struct json_token *val)
+{
   return json_next(s, len, handle, path, key, val, NULL);
 }
 
 void *json_next_elem(const char *s, int len, void *handle, const char *path,
                      int *idx, struct json_token *val) WEAK;
 void *json_next_elem(const char *s, int len, void *handle, const char *path,
-                     int *idx, struct json_token *val) {
+                     int *idx, struct json_token *val)
+{
   return json_next(s, len, handle, path, NULL, val, idx);
 }
 
-static int json_sprinter(struct json_out *out, const char *str, size_t len) {
+static int json_sprinter(struct json_out *out, const char *str, size_t len)
+{
   size_t old_len = out->u.buf.buf == NULL ? 0 : strlen(out->u.buf.buf);
   size_t new_len = len + old_len;
   char *p = (char *) realloc(out->u.buf.buf, new_len + 1);
@@ -4823,7 +4791,8 @@ static int json_sprinter(struct json_out *out, const char *str, size_t len) {
 }
 
 char *json_vasprintf(const char *fmt, va_list ap) WEAK;
-char *json_vasprintf(const char *fmt, va_list ap) {
+char *json_vasprintf(const char *fmt, va_list ap)
+{
   struct json_out out;
   memset(&out, 0, sizeof(out));
   out.printer = json_sprinter;
@@ -4832,7 +4801,8 @@ char *json_vasprintf(const char *fmt, va_list ap) {
 }
 
 char *json_asprintf(const char *fmt, ...) WEAK;
-char *json_asprintf(const char *fmt, ...) {
+char *json_asprintf(const char *fmt, ...)
+{
   char *result = NULL;
   va_list ap;
   va_start(ap, fmt);
@@ -4850,26 +4820,31 @@ char *json_asprintf(const char *fmt, ...) {
 #define D(arg) ((arg).v.d)
 #define F(arg) ((arg).v.f)
 
-void ffi_set_word(struct ffi_arg *arg, ffi_word_t v) {
+void ffi_set_word(struct ffi_arg *arg, ffi_word_t v)
+{
   arg->ctype = FFI_CTYPE_WORD;
   arg->v.i = v;
 }
 
-void ffi_set_bool(struct ffi_arg *arg, bool v) {
+void ffi_set_bool(struct ffi_arg *arg, bool v)
+{
   arg->ctype = FFI_CTYPE_BOOL;
   arg->v.i = v;
 }
 
-void ffi_set_ptr(struct ffi_arg *arg, void *v) {
+void ffi_set_ptr(struct ffi_arg *arg, void *v)
+{
   ffi_set_word(arg, (ffi_word_t) v);
 }
 
-void ffi_set_double(struct ffi_arg *arg, double v) {
+void ffi_set_double(struct ffi_arg *arg, double v)
+{
   arg->ctype = FFI_CTYPE_DOUBLE;
   arg->v.d = v;
 }
 
-void ffi_set_float(struct ffi_arg *arg, float v) {
+void ffi_set_float(struct ffi_arg *arg, float v)
+{
   arg->ctype = FFI_CTYPE_FLOAT;
   arg->v.f = v;
 }
@@ -4909,73 +4884,67 @@ void ffi_set_float(struct ffi_arg *arg, float v) {
  *
  */
 
-typedef ffi_word_t (*w4w_t)(ffi_word_t, ffi_word_t, ffi_word_t, ffi_word_t);
-typedef ffi_word_t (*w5w_t)(ffi_word_t, ffi_word_t, ffi_word_t, ffi_word_t,
-                            ffi_word_t);
-typedef ffi_word_t (*w6w_t)(ffi_word_t, ffi_word_t, ffi_word_t, ffi_word_t,
-                            ffi_word_t, ffi_word_t);
+typedef ffi_word_t (*w4w_t)( ffi_word_t, ffi_word_t, ffi_word_t, ffi_word_t );
+typedef ffi_word_t (*w5w_t)( ffi_word_t, ffi_word_t, ffi_word_t, ffi_word_t, ffi_word_t );
+typedef ffi_word_t (*w6w_t)( ffi_word_t, ffi_word_t, ffi_word_t, ffi_word_t, ffi_word_t, ffi_word_t );
 
-typedef ffi_word_t (*wdw_t)(double, ffi_word_t);
-typedef ffi_word_t (*wwd_t)(ffi_word_t, double);
-typedef ffi_word_t (*wdd_t)(double, double);
+typedef ffi_word_t (*wdw_t)( double, ffi_word_t );
+typedef ffi_word_t (*wwd_t)( ffi_word_t, double );
+typedef ffi_word_t (*wdd_t)( double, double );
 
-typedef ffi_word_t (*wwwd_t)(ffi_word_t, ffi_word_t, double);
-typedef ffi_word_t (*wwdw_t)(ffi_word_t, double, ffi_word_t);
-typedef ffi_word_t (*wwdd_t)(ffi_word_t, double, double);
-typedef ffi_word_t (*wdww_t)(double, ffi_word_t, ffi_word_t);
-typedef ffi_word_t (*wdwd_t)(double, ffi_word_t, double);
-typedef ffi_word_t (*wddw_t)(double, double, ffi_word_t);
-typedef ffi_word_t (*wddd_t)(double, double, double);
+typedef ffi_word_t (*wwwd_t)( ffi_word_t, ffi_word_t, double );
+typedef ffi_word_t (*wwdw_t)( ffi_word_t, double, ffi_word_t );
+typedef ffi_word_t (*wwdd_t)( ffi_word_t, double, double );
+typedef ffi_word_t (*wdww_t)( double, ffi_word_t, ffi_word_t );
+typedef ffi_word_t (*wdwd_t)( double, ffi_word_t, double );
+typedef ffi_word_t (*wddw_t)( double, double, ffi_word_t );
+typedef ffi_word_t (*wddd_t)( double, double, double );
 
-typedef ffi_word_t (*wfw_t)(float, ffi_word_t);
-typedef ffi_word_t (*wwf_t)(ffi_word_t, float);
-typedef ffi_word_t (*wff_t)(float, float);
+typedef ffi_word_t (*wfw_t)( float, ffi_word_t );
+typedef ffi_word_t (*wwf_t)( ffi_word_t, float );
+typedef ffi_word_t (*wff_t)( float, float );
 
-typedef ffi_word_t (*wwwf_t)(ffi_word_t, ffi_word_t, float);
-typedef ffi_word_t (*wwfw_t)(ffi_word_t, float, ffi_word_t);
-typedef ffi_word_t (*wwff_t)(ffi_word_t, float, float);
-typedef ffi_word_t (*wfww_t)(float, ffi_word_t, ffi_word_t);
-typedef ffi_word_t (*wfwf_t)(float, ffi_word_t, float);
-typedef ffi_word_t (*wffw_t)(float, float, ffi_word_t);
-typedef ffi_word_t (*wfff_t)(float, float, float);
+typedef ffi_word_t (*wwwf_t)( ffi_word_t, ffi_word_t, float );
+typedef ffi_word_t (*wwfw_t)( ffi_word_t, float, ffi_word_t );
+typedef ffi_word_t (*wwff_t)( ffi_word_t, float, float );
+typedef ffi_word_t (*wfww_t)( float, ffi_word_t, ffi_word_t );
+typedef ffi_word_t (*wfwf_t)( float, ffi_word_t, float );
+typedef ffi_word_t (*wffw_t)( float, float, ffi_word_t );
+typedef ffi_word_t (*wfff_t)( float, float, float );
 
-typedef bool (*b4w_t)(ffi_word_t, ffi_word_t, ffi_word_t, ffi_word_t);
-typedef bool (*b5w_t)(ffi_word_t, ffi_word_t, ffi_word_t, ffi_word_t,
-                      ffi_word_t);
-typedef bool (*b6w_t)(ffi_word_t, ffi_word_t, ffi_word_t, ffi_word_t,
-                      ffi_word_t, ffi_word_t);
-typedef bool (*bdw_t)(double, ffi_word_t);
-typedef bool (*bwd_t)(ffi_word_t, double);
-typedef bool (*bdd_t)(double, double);
+typedef bool (*b4w_t)( ffi_word_t, ffi_word_t, ffi_word_t, ffi_word_t );
+typedef bool (*b5w_t)( ffi_word_t, ffi_word_t, ffi_word_t, ffi_word_t, ffi_word_t );
+typedef bool (*b6w_t)( ffi_word_t, ffi_word_t, ffi_word_t, ffi_word_t, ffi_word_t, ffi_word_t );
+typedef bool (*bdw_t)( double, ffi_word_t );
+typedef bool (*bwd_t)( ffi_word_t, double );
+typedef bool (*bdd_t)( double, double );
 
-typedef bool (*bwwd_t)(ffi_word_t, ffi_word_t, double);
-typedef bool (*bwdw_t)(ffi_word_t, double, ffi_word_t);
-typedef bool (*bwdd_t)(ffi_word_t, double, double);
-typedef bool (*bdww_t)(double, ffi_word_t, ffi_word_t);
-typedef bool (*bdwd_t)(double, ffi_word_t, double);
-typedef bool (*bddw_t)(double, double, ffi_word_t);
-typedef bool (*bddd_t)(double, double, double);
+typedef bool (*bwwd_t)( ffi_word_t, ffi_word_t, double);
+typedef bool (*bwdw_t)( ffi_word_t, double, ffi_word_t);
+typedef bool (*bwdd_t)( ffi_word_t, double, double);
+typedef bool (*bdww_t)( double, ffi_word_t, ffi_word_t);
+typedef bool (*bdwd_t)( double, ffi_word_t, double);
+typedef bool (*bddw_t)( double, double, ffi_word_t);
+typedef bool (*bddd_t)( double, double, double);
 
-typedef bool (*bfw_t)(float, ffi_word_t);
-typedef bool (*bwf_t)(ffi_word_t, float);
-typedef bool (*bff_t)(float, float);
+typedef bool (*bfw_t)( float, ffi_word_t);
+typedef bool (*bwf_t)( ffi_word_t, float);
+typedef bool (*bff_t)( float, float);
 
-typedef bool (*bwwf_t)(ffi_word_t, ffi_word_t, float);
-typedef bool (*bwfw_t)(ffi_word_t, float, ffi_word_t);
-typedef bool (*bwff_t)(ffi_word_t, float, float);
-typedef bool (*bfww_t)(float, ffi_word_t, ffi_word_t);
-typedef bool (*bfwf_t)(float, ffi_word_t, float);
-typedef bool (*bffw_t)(float, float, ffi_word_t);
-typedef bool (*bfff_t)(float, float, float);
+typedef bool (*bwwf_t)( ffi_word_t, ffi_word_t, float);
+typedef bool (*bwfw_t)( ffi_word_t, float, ffi_word_t);
+typedef bool (*bwff_t)( ffi_word_t, float, float);
+typedef bool (*bfww_t)( float, ffi_word_t, ffi_word_t);
+typedef bool (*bfwf_t)( float, ffi_word_t, float);
+typedef bool (*bffw_t)( float, float, ffi_word_t);
+typedef bool (*bfff_t)( float, float, float);
 
-typedef double (*d4w_t)(ffi_word_t, ffi_word_t, ffi_word_t, ffi_word_t);
-typedef double (*d5w_t)(ffi_word_t, ffi_word_t, ffi_word_t, ffi_word_t,
-                        ffi_word_t);
-typedef double (*d6w_t)(ffi_word_t, ffi_word_t, ffi_word_t, ffi_word_t,
-                        ffi_word_t, ffi_word_t);
-typedef double (*ddw_t)(double, ffi_word_t);
-typedef double (*dwd_t)(ffi_word_t, double);
-typedef double (*ddd_t)(double, double);
+typedef double (*d4w_t)( ffi_word_t, ffi_word_t, ffi_word_t, ffi_word_t );
+typedef double (*d5w_t)( ffi_word_t, ffi_word_t, ffi_word_t, ffi_word_t, ffi_word_t );
+typedef double (*d6w_t)( ffi_word_t, ffi_word_t, ffi_word_t, ffi_word_t, ffi_word_t, ffi_word_t );
+typedef double (*ddw_t)( double, ffi_word_t );
+typedef double (*dwd_t)( ffi_word_t, double );
+typedef double (*ddd_t)( double, double );
 
 typedef double (*dwwd_t)(ffi_word_t, ffi_word_t, double);
 typedef double (*dwdw_t)(ffi_word_t, double, ffi_word_t);
@@ -5003,7 +4972,8 @@ typedef float (*fffw_t)(float, float, ffi_word_t);
 typedef float (*ffff_t)(float, float, float);
 
 int ffi_call(ffi_fn_t *func, int nargs, struct ffi_arg *res,
-             struct ffi_arg *args) {
+             struct ffi_arg *args)
+{
   int i, doubles = 0, floats = 0;
 
   if (nargs > 6) return -1;
@@ -5402,12 +5372,11 @@ int ffi_call(ffi_fn_t *func, int nargs, struct ffi_arg *res,
   return 0;
 }
 
-#include <stdio.h>
-
 #define SPLICE_NEW_ITEM_IDX 2
 
 /* like c_snprintf but returns `size` if write is truncated */
-static int v_sprintf_s(char *buf, size_t size, const char *fmt, ...) {
+static int v_sprintf_s(char *buf, size_t size, const char *fmt, ... )
+{
   size_t n;
   va_list ap;
   va_start(ap, fmt);
@@ -5418,7 +5387,8 @@ static int v_sprintf_s(char *buf, size_t size, const char *fmt, ...) {
   return n;
 }
 
-mjs_val_t mjs_mk_array(struct mjs *mjs) {
+mjs_val_t mjs_mk_array(struct mjs *mjs)
+{
   mjs_val_t ret = mjs_mk_object(mjs);
   /* change the tag to MJS_TAG_ARRAY */
   ret &= ~MJS_TAG_MASK;
@@ -5426,23 +5396,25 @@ mjs_val_t mjs_mk_array(struct mjs *mjs) {
   return ret;
 }
 
-int mjs_is_array(mjs_val_t v) {
+int mjs_is_array(mjs_val_t v)
+{
   return (v & MJS_TAG_MASK) == MJS_TAG_ARRAY;
 }
 
-mjs_val_t mjs_array_get(struct mjs *mjs, mjs_val_t arr, unsigned long index) {
+mjs_val_t mjs_array_get(struct mjs *mjs, mjs_val_t arr, unsigned long index)
+{
   return mjs_array_get2(mjs, arr, index, NULL);
 }
 
-mjs_val_t mjs_array_get2(struct mjs *mjs, mjs_val_t arr, unsigned long index,
-                         int *has) {
+mjs_val_t mjs_array_get2(struct mjs *mjs, mjs_val_t arr, unsigned long index, int *has )
+{
   mjs_val_t res = MJS_UNDEFINED;
 
   if (has != NULL) {
     *has = 0;
   }
 
-  if (mjs_is_object(arr)) {
+  if( mjs_is_object(arr) ) {
     struct mjs_property *p;
     char buf[20];
     int n = v_sprintf_s(buf, sizeof(buf), "%lu", index);
@@ -5458,7 +5430,8 @@ mjs_val_t mjs_array_get2(struct mjs *mjs, mjs_val_t arr, unsigned long index,
   return res;
 }
 
-unsigned long mjs_array_length(struct mjs *mjs, mjs_val_t v) {
+unsigned long mjs_array_length(struct mjs *mjs, mjs_val_t v)
+{
   struct mjs_property *p;
   unsigned long len = 0;
 
@@ -5480,8 +5453,8 @@ clean:
   return len;
 }
 
-mjs_err_t mjs_array_set(struct mjs *mjs, mjs_val_t arr, unsigned long index,
-                        mjs_val_t v) {
+mjs_err_t mjs_array_set(struct mjs *mjs, mjs_val_t arr, unsigned long index, mjs_val_t v )
+{
   mjs_err_t ret = MJS_OK;
 
   if (mjs_is_object(arr)) {
@@ -5495,17 +5468,20 @@ mjs_err_t mjs_array_set(struct mjs *mjs, mjs_val_t arr, unsigned long index,
   return ret;
 }
 
-void mjs_array_del(struct mjs *mjs, mjs_val_t arr, unsigned long index) {
+void mjs_array_del(struct mjs *mjs, mjs_val_t arr, unsigned long index)
+{
   char buf[20];
   int n = v_sprintf_s(buf, sizeof(buf), "%lu", index);
   mjs_del(mjs, arr, buf, n);
 }
 
-mjs_err_t mjs_array_push(struct mjs *mjs, mjs_val_t arr, mjs_val_t v) {
+mjs_err_t mjs_array_push(struct mjs *mjs, mjs_val_t arr, mjs_val_t v)
+{
   return mjs_array_set(mjs, arr, mjs_array_length(mjs, arr), v);
 }
 
-MJS_PRIVATE void mjs_array_push_internal(struct mjs *mjs) {
+void mjs_array_push_internal(struct mjs *mjs)
+{
   mjs_err_t rcode = MJS_OK;
   mjs_val_t ret = MJS_UNDEFINED;
   int nargs = mjs_nargs(mjs);
@@ -5533,14 +5509,15 @@ clean:
   return;
 }
 
-static void move_item(struct mjs *mjs, mjs_val_t arr, unsigned long from,
-                      unsigned long to) {
+static void move_item( struct mjs *mjs, mjs_val_t arr, unsigned long from, unsigned long to )
+{
   mjs_val_t cur = mjs_array_get(mjs, arr, from);
   mjs_array_set(mjs, arr, to, cur);
   mjs_array_del(mjs, arr, from);
 }
 
-MJS_PRIVATE void mjs_array_splice(struct mjs *mjs) {
+void mjs_array_splice(struct mjs *mjs)
+{
   int nargs = mjs_nargs(mjs);
   mjs_err_t rcode = MJS_OK;
   mjs_val_t ret = mjs_mk_array(mjs);
@@ -5554,7 +5531,7 @@ MJS_PRIVATE void mjs_array_splice(struct mjs *mjs) {
   int i;
 
   /* Make sure that `this` is an array */
-  if (!mjs_check_arg(mjs, -1 /*this*/, "this", MJS_TYPE_OBJECT_ARRAY, NULL)) {
+  if( !mjs_check_arg(mjs, -1 /*this*/, "this", MJS_TYPE_OBJECT_ARRAY, NULL) ) {
     goto clean;
   }
 
@@ -5629,7 +5606,8 @@ clean:
 
 
 
-static void add_lineno_map_item(struct pstate *pstate) {
+static void add_lineno_map_item(struct pstate *pstate)
+{
   if (pstate->last_emitted_line_no < pstate->line_no) {
     int offset = pstate->cur_idx - pstate->start_bcode_idx;
     size_t offset_llen = cs_varint_llen(offset);
@@ -5654,13 +5632,15 @@ static void add_lineno_map_item(struct pstate *pstate) {
   }
 }
 
-MJS_PRIVATE void emit_byte(struct pstate *pstate, uint8_t byte) {
+void emit_byte(struct pstate *pstate, uint8_t byte)
+{
   add_lineno_map_item(pstate);
   mbuf_insert(&pstate->mjs->bcode_gen, pstate->cur_idx, &byte, sizeof(byte));
   pstate->cur_idx += sizeof(byte);
 }
 
-MJS_PRIVATE void emit_int(struct pstate *pstate, int64_t n) {
+void emit_int(struct pstate *pstate, int64_t n)
+{
   struct mbuf *b = &pstate->mjs->bcode_gen;
   size_t llen = cs_varint_llen(n);
   add_lineno_map_item(pstate);
@@ -5669,7 +5649,8 @@ MJS_PRIVATE void emit_int(struct pstate *pstate, int64_t n) {
   pstate->cur_idx += llen;
 }
 
-MJS_PRIVATE void emit_str(struct pstate *pstate, const char *ptr, size_t len) {
+void emit_str(struct pstate *pstate, const char *ptr, size_t len)
+{
   struct mbuf *b = &pstate->mjs->bcode_gen;
   size_t llen = cs_varint_llen(len);
   add_lineno_map_item(pstate);
@@ -5679,8 +5660,8 @@ MJS_PRIVATE void emit_str(struct pstate *pstate, const char *ptr, size_t len) {
   pstate->cur_idx += llen + len;
 }
 
-MJS_PRIVATE int mjs_bcode_insert_offset(struct pstate *p, struct mjs *mjs,
-                                        size_t offset, size_t v) {
+int mjs_bcode_insert_offset(struct pstate *p, struct mjs *mjs, size_t offset, size_t v)
+{
   int llen = (int) cs_varint_llen(v);
   int diff = llen - MJS_INIT_OFFSET_SIZE;
   assert(offset < mjs->bcode_gen.len);
@@ -5707,20 +5688,20 @@ MJS_PRIVATE int mjs_bcode_insert_offset(struct pstate *p, struct mjs *mjs,
   return diff;
 }
 
-MJS_PRIVATE void mjs_bcode_part_add(struct mjs *mjs,
-                                    const struct mjs_bcode_part *bp) {
+void mjs_bcode_part_add(struct mjs *mjs, const struct mjs_bcode_part *bp )
+{
   mbuf_append(&mjs->bcode_parts, bp, sizeof(*bp));
 }
 
-MJS_PRIVATE struct mjs_bcode_part *mjs_bcode_part_get(struct mjs *mjs,
-                                                      int num) {
+struct mjs_bcode_part *mjs_bcode_part_get(struct mjs *mjs, int num)
+{
   assert(num < mjs_bcode_parts_cnt(mjs));
   return (struct mjs_bcode_part *) (mjs->bcode_parts.buf +
                                     num * sizeof(struct mjs_bcode_part));
 }
 
-MJS_PRIVATE struct mjs_bcode_part *mjs_bcode_part_get_by_offset(struct mjs *mjs,
-                                                                size_t offset) {
+struct mjs_bcode_part *mjs_bcode_part_get_by_offset(struct mjs *mjs, size_t offset)
+{
   int i;
   int parts_cnt = mjs_bcode_parts_cnt(mjs);
   struct mjs_bcode_part *bp = NULL;
@@ -5742,11 +5723,13 @@ MJS_PRIVATE struct mjs_bcode_part *mjs_bcode_part_get_by_offset(struct mjs *mjs,
   return bp;
 }
 
-MJS_PRIVATE int mjs_bcode_parts_cnt(struct mjs *mjs) {
+int mjs_bcode_parts_cnt(struct mjs *mjs)
+{
   return mjs->bcode_parts.len / sizeof(struct mjs_bcode_part);
 }
 
-MJS_PRIVATE void mjs_bcode_commit(struct mjs *mjs) {
+void mjs_bcode_commit(struct mjs *mjs)
+{
   struct mjs_bcode_part bp;
   memset(&bp, 0, sizeof(bp));
 
@@ -5767,7 +5750,8 @@ MJS_PRIVATE void mjs_bcode_commit(struct mjs *mjs) {
 }
 
 
-static void mjs_print(struct mjs *mjs) {
+static void mjs_print(struct mjs *mjs)
+{
   size_t i, num_args = mjs_nargs(mjs);
   for (i = 0; i < num_args; i++) {
     mjs_fprintf(mjs_arg(mjs, i), mjs, stdout);
@@ -5781,26 +5765,25 @@ static void mjs_print(struct mjs *mjs) {
  * If the file with the given filename was already loaded, returns the
  * corresponding bcode part; otherwise returns NULL.
  */
-static struct mjs_bcode_part *mjs_get_loaded_file_bcode(struct mjs *mjs,
-                                                        const char *filename) {
-  int parts_cnt = mjs_bcode_parts_cnt(mjs);
-  int i;
-
+static struct mjs_bcode_part *mjs_get_loaded_file_bcode(struct mjs *mjs, const char *filename )
+{
   if (filename == NULL) {
     return 0;
   }
 
-  for (i = 0; i < parts_cnt; i++) {
+  int parts_cnt = mjs_bcode_parts_cnt(mjs);
+  for( int i = 0; i < parts_cnt; i++) {
     struct mjs_bcode_part *bp = mjs_bcode_part_get(mjs, i);
     const char *cur_fn = mjs_get_bcode_filename(mjs, bp);
-    if (strcmp(filename, cur_fn) == 0) {
+    if( strcmp(filename, cur_fn) == 0 ) {
       return bp;
     }
   }
   return NULL;
 }
 
-static void mjs_load(struct mjs *mjs) {
+static void mjs_load(struct mjs *mjs)
+{
   mjs_val_t res = MJS_UNDEFINED;
   mjs_val_t arg0 = mjs_arg(mjs, 0);
   mjs_val_t arg1 = mjs_arg(mjs, 1);
@@ -5853,11 +5836,13 @@ static void mjs_load(struct mjs *mjs) {
   mjs_return(mjs, res);
 }
 
-static void mjs_get_mjs(struct mjs *mjs) {
+static void mjs_get_mjs(struct mjs *mjs)
+{
   mjs_return(mjs, mjs_mk_foreign(mjs, mjs));
 }
 
-static void mjs_chr(struct mjs *mjs) {
+static void mjs_chr(struct mjs *mjs)
+{
   mjs_val_t arg0 = mjs_arg(mjs, 0), res = MJS_NULL;
   int n = mjs_get_int(mjs, arg0);
   if (mjs_is_number(arg0) && n >= 0 && n <= 255) {
@@ -5867,20 +5852,23 @@ static void mjs_chr(struct mjs *mjs) {
   mjs_return(mjs, res);
 }
 
-static void mjs_do_gc(struct mjs *mjs) {
+static void mjs_do_gc(struct mjs *mjs)
+{
   mjs_val_t arg0 = mjs_arg(mjs, 0);
   mjs_gc(mjs, mjs_is_boolean(arg0) ? mjs_get_bool(mjs, arg0) : 0);
   mjs_return(mjs, arg0);
 }
 
-static void mjs_s2o(struct mjs *mjs) {
+static void mjs_s2o(struct mjs *mjs)
+{
   mjs_return(mjs,
              mjs_struct_to_obj(mjs, mjs_get_ptr(mjs, mjs_arg(mjs, 0)),
                                (const struct mjs_c_struct_member *) mjs_get_ptr(
                                    mjs, mjs_arg(mjs, 1))));
 }
 
-void mjs_init_builtin(struct mjs *mjs, mjs_val_t obj) {
+void mjs_init_builtin(struct mjs *mjs, mjs_val_t obj)
+{
   mjs_val_t v;
 
   mjs_set(mjs, obj, "global", ~0, obj);
@@ -5933,8 +5921,8 @@ void mjs_init_builtin(struct mjs *mjs, mjs_val_t obj) {
 }
 
 
-MJS_PRIVATE mjs_err_t mjs_to_string(struct mjs *mjs, mjs_val_t *v, char **p,
-                                    size_t *sizep, int *need_free) {
+mjs_err_t mjs_to_string(struct mjs *mjs, mjs_val_t *v, char **p, size_t *sizep, int *need_free )
+{
   mjs_err_t ret = MJS_OK;
 
   *p = NULL;
@@ -5985,7 +5973,8 @@ clean:
   return ret;
 }
 
-MJS_PRIVATE mjs_val_t mjs_to_boolean_v(struct mjs *mjs, mjs_val_t v) {
+mjs_val_t mjs_to_boolean_v(struct mjs *mjs, mjs_val_t v)
+{
   size_t len;
   int is_truthy;
 
@@ -5999,7 +5988,8 @@ MJS_PRIVATE mjs_val_t mjs_to_boolean_v(struct mjs *mjs, mjs_val_t v) {
   return mjs_mk_boolean(mjs, is_truthy);
 }
 
-MJS_PRIVATE int mjs_is_truthy(struct mjs *mjs, mjs_val_t v) {
+int mjs_is_truthy(struct mjs *mjs, mjs_val_t v)
+{
   return mjs_get_bool(mjs, mjs_to_boolean_v(mjs, v));
 }
 
@@ -6025,7 +6015,8 @@ MJS_PRIVATE int mjs_is_truthy(struct mjs *mjs, mjs_val_t v) {
 #define MJS_FUNC_FFI_ARENA_INC_SIZE 10
 #endif
 
-void mjs_destroy(struct mjs *mjs) {
+void mjs_destroy(struct mjs *mjs)
+{
   {
     int parts_cnt = mjs_bcode_parts_cnt(mjs);
     int i;
@@ -6057,7 +6048,8 @@ void mjs_destroy(struct mjs *mjs) {
   free(mjs);
 }
 
-struct mjs *mjs_create(void) {
+struct mjs *mjs_create(void)
+{
   mjs_val_t global_object;
   struct mjs *mjs = calloc(1, sizeof(*mjs));
   mbuf_init(&mjs->stack, 0);
@@ -6101,7 +6093,8 @@ struct mjs *mjs_create(void) {
   return mjs;
 }
 
-mjs_err_t mjs_set_errorf(struct mjs *mjs, mjs_err_t err, const char *fmt, ...) {
+mjs_err_t mjs_set_errorf(struct mjs *mjs, mjs_err_t err, const char *fmt, ...)
+{
   va_list ap;
   va_start(ap, fmt);
   free(mjs->error_msg);
@@ -6114,8 +6107,8 @@ mjs_err_t mjs_set_errorf(struct mjs *mjs, mjs_err_t err, const char *fmt, ...) {
   return err;
 }
 
-mjs_err_t mjs_prepend_errorf(struct mjs *mjs, mjs_err_t err, const char *fmt,
-                             ...) {
+mjs_err_t mjs_prepend_errorf(struct mjs *mjs, mjs_err_t err, const char *fmt, ... )
+{
   char *old_error_msg = mjs->error_msg;
   char *new_error_msg = NULL;
   va_list ap;
@@ -6142,8 +6135,8 @@ mjs_err_t mjs_prepend_errorf(struct mjs *mjs, mjs_err_t err, const char *fmt,
   return err;
 }
 
-void mjs_print_error(struct mjs *mjs, FILE *fp, const char *msg,
-                     int print_stack_trace) {
+void mjs_print_error(struct mjs *mjs, FILE *fp, const char *msg, int print_stack_trace )
+{
   if (print_stack_trace && mjs->stack_trace != NULL) {
     fprintf(fp, "%s", mjs->stack_trace);
   }
@@ -6155,7 +6148,8 @@ void mjs_print_error(struct mjs *mjs, FILE *fp, const char *msg,
   fprintf(fp, "%s: %s\n", msg, mjs_strerror(mjs, mjs->error));
 }
 
-MJS_PRIVATE void mjs_die(struct mjs *mjs) {
+void mjs_die(struct mjs *mjs)
+{
   mjs_val_t msg_v = MJS_UNDEFINED;
   const char *msg = NULL;
   size_t msg_len = 0;
@@ -6174,7 +6168,8 @@ clean:
   mjs_return(mjs, MJS_UNDEFINED);
 }
 
-const char *mjs_strerror(struct mjs *mjs, enum mjs_err err) {
+const char *mjs_strerror(struct mjs *mjs, enum mjs_err err)
+{
   const char *err_names[] = {
       "NO_ERROR",        "SYNTAX_ERROR",    "REFERENCE_ERROR",
       "TYPE_ERROR",      "OUT_OF_MEMORY",   "INTERNAL_ERROR",
@@ -6183,11 +6178,13 @@ const char *mjs_strerror(struct mjs *mjs, enum mjs_err err) {
                                                              : mjs->error_msg;
 }
 
-MJS_PRIVATE size_t mjs_get_func_addr(mjs_val_t v) {
+size_t mjs_get_func_addr(mjs_val_t v)
+{
   return v & ~MJS_TAG_MASK;
 }
 
-MJS_PRIVATE enum mjs_type mjs_get_type(mjs_val_t v) {
+enum mjs_type mjs_get_type(mjs_val_t v)
+{
   int tag;
   if (mjs_is_number(v)) {
     return MJS_TYPE_NUMBER;
@@ -6220,11 +6217,13 @@ MJS_PRIVATE enum mjs_type mjs_get_type(mjs_val_t v) {
   }
 }
 
-mjs_val_t mjs_get_global(struct mjs *mjs) {
+mjs_val_t mjs_get_global(struct mjs *mjs)
+{
   return *vptr(&mjs->scopes, 0);
 }
 
-static void mjs_append_stack_trace_line(struct mjs *mjs, size_t offset) {
+static void mjs_append_stack_trace_line(struct mjs *mjs, size_t offset)
+{
   if (offset != MJS_BCODE_OFFSET_EXIT) {
     const char *filename = mjs_get_bcode_filename_by_offset(mjs, offset);
     int line_no = mjs_get_lineno_by_offset(mjs, offset);
@@ -6249,18 +6248,16 @@ static void mjs_append_stack_trace_line(struct mjs *mjs, size_t offset) {
   }
 }
 
-MJS_PRIVATE void mjs_gen_stack_trace(struct mjs *mjs, size_t offset) {
+void mjs_gen_stack_trace(struct mjs *mjs, size_t offset) {
   mjs_append_stack_trace_line(mjs, offset);
-  while (mjs->call_stack.len >=
-         sizeof(mjs_val_t) * CALL_STACK_FRAME_ITEMS_CNT) {
-    int i;
+  while( mjs->call_stack.len >= sizeof(mjs_val_t) * CALL_STACK_FRAME_ITEMS_CNT) {
 
     /* set current offset to it to the offset stored in the frame */
     offset = mjs_get_int(
         mjs, *vptr(&mjs->call_stack, -1 - CALL_STACK_FRAME_ITEM_RETURN_ADDR));
 
     /* pop frame from the call stack */
-    for (i = 0; i < CALL_STACK_FRAME_ITEMS_CNT; i++) {
+    for (int i = 0; i < CALL_STACK_FRAME_ITEMS_CNT; i++) {
       mjs_pop_val(&mjs->call_stack);
     }
 
@@ -6268,11 +6265,13 @@ MJS_PRIVATE void mjs_gen_stack_trace(struct mjs *mjs, size_t offset) {
   }
 }
 
-void mjs_own(struct mjs *mjs, mjs_val_t *v) {
+void mjs_own(struct mjs *mjs, mjs_val_t *v)
+{
   mbuf_append(&mjs->owned_values, &v, sizeof(v));
 }
 
-int mjs_disown(struct mjs *mjs, mjs_val_t *v) {
+int mjs_disown(struct mjs *mjs, mjs_val_t *v)
+{
   mjs_val_t **vp = (mjs_val_t **) (mjs->owned_values.buf +
                                    mjs->owned_values.len - sizeof(v));
 
@@ -6292,24 +6291,26 @@ int mjs_disown(struct mjs *mjs, mjs_val_t *v) {
  * Returns position in the data stack at which the called function is located,
  * and which should be later replaced with the returned value.
  */
-MJS_PRIVATE int mjs_getretvalpos(struct mjs *mjs) {
-  int pos;
+int mjs_getretvalpos(struct mjs *mjs)
+{
   mjs_val_t *ppos = vptr(&mjs->call_stack, -1);
   // LOG(LL_INFO, ("ppos: %p %d", ppos, mjs_stack_size(&mjs->call_stack)));
   assert(ppos != NULL && mjs_is_number(*ppos));
-  pos = mjs_get_int(mjs, *ppos) - 1;
+  int pos = mjs_get_int(mjs, *ppos) - 1;
   assert(pos < (int) mjs_stack_size(&mjs->stack));
   return pos;
 }
 
-int mjs_nargs(struct mjs *mjs) {
+int mjs_nargs(struct mjs *mjs)
+{
   int top = mjs_stack_size(&mjs->stack);
   int pos = mjs_getretvalpos(mjs) + 1;
   // LOG(LL_INFO, ("top: %d pos: %d", top, pos));
   return pos > 0 && pos < top ? top - pos : 0;
 }
 
-mjs_val_t mjs_arg(struct mjs *mjs, int arg_index) {
+mjs_val_t mjs_arg(struct mjs *mjs, int arg_index)
+{
   mjs_val_t res = MJS_UNDEFINED;
   int top = mjs_stack_size(&mjs->stack);
   int pos = mjs_getretvalpos(mjs) + 1;
@@ -6320,29 +6321,34 @@ mjs_val_t mjs_arg(struct mjs *mjs, int arg_index) {
   return res;
 }
 
-void mjs_return(struct mjs *mjs, mjs_val_t v) {
+void mjs_return(struct mjs *mjs, mjs_val_t v)
+{
   int pos = mjs_getretvalpos(mjs);
   // LOG(LL_INFO, ("pos: %d", pos));
   mjs->stack.len = sizeof(mjs_val_t) * pos;
   mjs_push(mjs, v);
 }
 
-MJS_PRIVATE mjs_val_t vtop(struct mbuf *m) {
+mjs_val_t vtop(struct mbuf *m)
+{
   size_t size = mjs_stack_size(m);
   return size > 0 ? *vptr(m, size - 1) : MJS_UNDEFINED;
 }
 
-MJS_PRIVATE size_t mjs_stack_size(const struct mbuf *m) {
+size_t mjs_stack_size(const struct mbuf *m)
+{
   return m->len / sizeof(mjs_val_t);
 }
 
-MJS_PRIVATE mjs_val_t *vptr(struct mbuf *m, int idx) {
+mjs_val_t *vptr(struct mbuf *m, int idx)
+{
   int size = mjs_stack_size(m);
   if (idx < 0) idx = size + idx;
   return idx >= 0 && idx < size ? &((mjs_val_t *) m->buf)[idx] : NULL;
 }
 
-MJS_PRIVATE mjs_val_t mjs_pop(struct mjs *mjs) {
+mjs_val_t mjs_pop(struct mjs *mjs)
+{
   if (mjs->stack.len == 0) {
     mjs_set_errorf(mjs, MJS_INTERNAL_ERROR, "stack underflow");
     return MJS_UNDEFINED;
@@ -6351,11 +6357,13 @@ MJS_PRIVATE mjs_val_t mjs_pop(struct mjs *mjs) {
   }
 }
 
-MJS_PRIVATE void push_mjs_val(struct mbuf *m, mjs_val_t v) {
+void push_mjs_val(struct mbuf *m, mjs_val_t v)
+{
   mbuf_append(m, &v, sizeof(v));
 }
 
-MJS_PRIVATE mjs_val_t mjs_pop_val(struct mbuf *m) {
+mjs_val_t mjs_pop_val(struct mbuf *m)
+{
   mjs_val_t v = MJS_UNDEFINED;
   assert(m->len >= sizeof(v));
   if (m->len >= sizeof(v)) {
@@ -6365,34 +6373,41 @@ MJS_PRIVATE mjs_val_t mjs_pop_val(struct mbuf *m) {
   return v;
 }
 
-MJS_PRIVATE void mjs_push(struct mjs *mjs, mjs_val_t v) {
+void mjs_push(struct mjs *mjs, mjs_val_t v)
+{
   push_mjs_val(&mjs->stack, v);
 }
 
-void mjs_set_generate_jsc(struct mjs *mjs, int generate_jsc) {
+void mjs_set_generate_jsc(struct mjs *mjs, int generate_jsc)
+{
   mjs->generate_jsc = generate_jsc;
 }
 
 
-void *mjs_mem_to_ptr(unsigned val) {
+void *mjs_mem_to_ptr(unsigned val)
+{
   return (void *) (uintptr_t) val;
 }
 
-void *mjs_mem_get_ptr(void *base, int offset) {
+void *mjs_mem_get_ptr(void *base, int offset)
+{
   return (char *) base + offset;
 }
 
-void mjs_mem_set_ptr(void *ptr, void *val) {
+void mjs_mem_set_ptr(void *ptr, void *val)
+{
   *(void **) ptr = val;
 }
 
-double mjs_mem_get_dbl(void *ptr) {
+double mjs_mem_get_dbl(void *ptr)
+{
   double v;
   memcpy(&v, ptr, sizeof(v));
   return v;
 }
 
-void mjs_mem_set_dbl(void *ptr, double val) {
+void mjs_mem_set_dbl(void *ptr, double val)
+{
   memcpy(ptr, &val, sizeof(val));
 }
 
@@ -6400,7 +6415,8 @@ void mjs_mem_set_dbl(void *ptr, double val) {
  * TODO(dfrank): add support for unsigned ints to ffi and use
  * unsigned int here
  */
-double mjs_mem_get_uint(void *ptr, int size, int bigendian) {
+double mjs_mem_get_uint(void *ptr, int size, int bigendian)
+{
   uint8_t *p = (uint8_t *) ptr;
   int i, inc = bigendian ? 1 : -1;
   unsigned int res = 0;
@@ -6416,7 +6432,8 @@ double mjs_mem_get_uint(void *ptr, int size, int bigendian) {
  * TODO(dfrank): add support for unsigned ints to ffi and use
  * unsigned int here
  */
-double mjs_mem_get_int(void *ptr, int size, int bigendian) {
+double mjs_mem_get_int(void *ptr, int size, int bigendian)
+{
   uint8_t *p = (uint8_t *) ptr;
   int i, inc = bigendian ? 1 : -1;
   int res = 0;
@@ -6437,7 +6454,8 @@ double mjs_mem_get_int(void *ptr, int size, int bigendian) {
   return res;
 }
 
-void mjs_mem_set_uint(void *ptr, unsigned int val, int size, int bigendian) {
+void mjs_mem_set_uint(void *ptr, unsigned int val, int size, int bigendian)
+{
   uint8_t *p = (uint8_t *) ptr + (bigendian ? size - 1 : 0);
   int i, inc = bigendian ? -1 : 1;
   for (i = 0; i < size; i++, p += inc) {
@@ -6446,7 +6464,8 @@ void mjs_mem_set_uint(void *ptr, unsigned int val, int size, int bigendian) {
   }
 }
 
-void mjs_mem_set_int(void *ptr, int val, int size, int bigendian) {
+void mjs_mem_set_int(void *ptr, int val, int size, int bigendian)
+{
   mjs_mem_set_uint(ptr, val, size, bigendian);
 }
 
@@ -6460,8 +6479,8 @@ void mjs_mem_set_int(void *ptr, int val, int size, int bigendian) {
  * Pushes call stack frame. Offset is a global bcode offset. Retval_stack_idx
  * is an index in mjs->stack at which return value should be written later.
  */
-static void call_stack_push_frame(struct mjs *mjs, size_t offset,
-                                  mjs_val_t retval_stack_idx) {
+static void call_stack_push_frame(struct mjs *mjs, size_t offset, mjs_val_t retval_stack_idx)
+{
   /* Pop `this` value, and apply it */
   mjs_val_t this_obj = mjs_pop_val(&mjs->arg_stack);
 
@@ -6483,7 +6502,8 @@ static void call_stack_push_frame(struct mjs *mjs, size_t offset,
 /*
  * Restores call stack frame. Returns the return address.
  */
-static size_t call_stack_restore_frame(struct mjs *mjs) {
+static size_t call_stack_restore_frame(struct mjs *mjs)
+{
   size_t retval_stack_idx, return_address, scope_index, loop_addr_index;
   assert(mjs_stack_size(&mjs->call_stack) >= CALL_STACK_FRAME_ITEMS_CNT);
 
@@ -6513,7 +6533,8 @@ static size_t call_stack_restore_frame(struct mjs *mjs) {
   return return_address;
 }
 
-static mjs_val_t mjs_find_scope(struct mjs *mjs, mjs_val_t key) {
+static mjs_val_t mjs_find_scope(struct mjs *mjs, mjs_val_t key)
+{
   size_t num_scopes = mjs_stack_size(&mjs->scopes);
   while (num_scopes > 0) {
     mjs_val_t scope = *vptr(&mjs->scopes, num_scopes - 1);
@@ -6525,11 +6546,13 @@ static mjs_val_t mjs_find_scope(struct mjs *mjs, mjs_val_t key) {
   return MJS_UNDEFINED;
 }
 
-mjs_val_t mjs_get_this(struct mjs *mjs) {
+mjs_val_t mjs_get_this(struct mjs *mjs)
+{
   return mjs->vals.this_obj;
 }
 
-static double do_arith_op(double da, double db, int op, bool *resnan) {
+static double do_arith_op(double da, double db, int op, bool *resnan)
+{
   *resnan = false;
 
   if (isnan(da) || isnan(db)) {
@@ -6585,12 +6608,14 @@ static double do_arith_op(double da, double db, int op, bool *resnan) {
   return 0;
 }
 
-static void set_no_autoconversion_error(struct mjs *mjs) {
+static void set_no_autoconversion_error(struct mjs *mjs)
+{
   mjs_prepend_errorf(mjs, MJS_TYPE_ERROR,
                      "implicit type conversion is prohibited");
 }
 
-static mjs_val_t do_op(struct mjs *mjs, mjs_val_t a, mjs_val_t b, int op) {
+static mjs_val_t do_op(struct mjs *mjs, mjs_val_t a, mjs_val_t b, int op)
+{
   mjs_val_t ret = MJS_UNDEFINED;
   bool resnan = false;
   if ((mjs_is_foreign(a) || mjs_is_number(a)) &&
@@ -6636,7 +6661,8 @@ static mjs_val_t do_op(struct mjs *mjs, mjs_val_t a, mjs_val_t b, int op) {
   return ret;
 }
 
-static void op_assign(struct mjs *mjs, int op) {
+static void op_assign(struct mjs *mjs, int op)
+{
   mjs_val_t val = mjs_pop(mjs);
   mjs_val_t obj = mjs_pop(mjs);
   mjs_val_t key = mjs_pop(mjs);
@@ -6649,7 +6675,8 @@ static void op_assign(struct mjs *mjs, int op) {
   }
 }
 
-static int check_equal(struct mjs *mjs, mjs_val_t a, mjs_val_t b) {
+static int check_equal(struct mjs *mjs, mjs_val_t a, mjs_val_t b)
+{
   int ret = 0;
   if (a == MJS_TAG_NAN && b == MJS_TAG_NAN) {
     ret = 0;
@@ -6673,7 +6700,8 @@ static int check_equal(struct mjs *mjs, mjs_val_t a, mjs_val_t b) {
   return ret;
 }
 
-static void exec_expr(struct mjs *mjs, int op) {
+static void exec_expr(struct mjs *mjs, int op)
+{
   switch (op) {
     case TOK_DOT:
       break;
@@ -6868,7 +6896,8 @@ static void exec_expr(struct mjs *mjs, int op) {
 
 static int getprop_builtin_string(struct mjs *mjs, mjs_val_t val,
                                   const char *name, size_t name_len,
-                                  mjs_val_t *res) {
+                                  mjs_val_t *res)
+{
   int isnum = 0;
   int idx = cstr_to_ulong(name, name_len, &isnum);
 
@@ -6905,7 +6934,8 @@ static int getprop_builtin_string(struct mjs *mjs, mjs_val_t val,
 
 static int getprop_builtin_array(struct mjs *mjs, mjs_val_t val,
                                  const char *name, size_t name_len,
-                                 mjs_val_t *res) {
+                                 mjs_val_t *res)
+{
   if (strcmp(name, "splice") == 0) {
     *res = mjs_mk_foreign_func(mjs, (mjs_func_ptr_t) mjs_array_splice);
     return 1;
@@ -6923,7 +6953,8 @@ static int getprop_builtin_array(struct mjs *mjs, mjs_val_t val,
 
 static int getprop_builtin_foreign(struct mjs *mjs, mjs_val_t val,
                                    const char *name, size_t name_len,
-                                   mjs_val_t *res) {
+                                   mjs_val_t *res)
+{
   int isnum = 0;
   int idx = cstr_to_ulong(name, name_len, &isnum);
 
@@ -6936,7 +6967,8 @@ static int getprop_builtin_foreign(struct mjs *mjs, mjs_val_t val,
   return 1;
 }
 
-static void mjs_apply_(struct mjs *mjs) {
+static void mjs_apply_(struct mjs *mjs)
+{
   mjs_val_t res = MJS_UNDEFINED, *args = NULL;
   mjs_val_t func = mjs->vals.this_obj, v = mjs_arg(mjs, 1);
   int i, nargs = 0;
@@ -6951,7 +6983,8 @@ static void mjs_apply_(struct mjs *mjs) {
 }
 
 static int getprop_builtin(struct mjs *mjs, mjs_val_t val, mjs_val_t name,
-                           mjs_val_t *res) {
+                           mjs_val_t *res)
+{
   size_t n;
   char *s = NULL;
   int need_free = 0;
@@ -6980,7 +7013,8 @@ static int getprop_builtin(struct mjs *mjs, mjs_val_t val, mjs_val_t name,
   return handled;
 }
 
-MJS_PRIVATE mjs_err_t mjs_execute(struct mjs *mjs, size_t off, mjs_val_t *res) {
+mjs_err_t mjs_execute(struct mjs *mjs, size_t off, mjs_val_t *res)
+{
   size_t i;
   uint8_t prev_opcode = OP_MAX;
   uint8_t opcode = OP_MAX;
@@ -7423,13 +7457,14 @@ clean:
   return mjs->error;
 }
 
-MJS_PRIVATE mjs_err_t mjs_exec_internal(struct mjs *mjs, const char *path,
+mjs_err_t mjs_exec_internal(struct mjs *mjs, const char *path,
                                         const char *src, int generate_jsc,
                                         mjs_val_t *res);
 
-MJS_PRIVATE mjs_err_t mjs_exec_internal(struct mjs *mjs, const char *path,
+mjs_err_t mjs_exec_internal(struct mjs *mjs, const char *path,
                                         const char *src, int generate_jsc,
-                                        mjs_val_t *res) {
+                                        mjs_val_t *res)
+{
   size_t off = mjs->bcode_len;
   mjs_val_t r = MJS_UNDEFINED;
   mjs->error = mjs_parse(path, src, mjs);
@@ -7509,11 +7544,13 @@ MJS_PRIVATE mjs_err_t mjs_exec_internal(struct mjs *mjs, const char *path,
   return mjs->error;
 }
 
-mjs_err_t mjs_exec(struct mjs *mjs, const char *src, mjs_val_t *res) {
+mjs_err_t mjs_exec(struct mjs *mjs, const char *src, mjs_val_t *res)
+{
   return mjs_exec_internal(mjs, "<stdin>", src, 0 /* generate_jsc */, res);
 }
 
-mjs_err_t mjs_exec_file(struct mjs *mjs, const char *path, mjs_val_t *res) {
+mjs_err_t mjs_exec_file(struct mjs *mjs, const char *path, mjs_val_t *res)
+{
   mjs_err_t error = MJS_FILE_READ_ERROR;
   mjs_val_t r = MJS_UNDEFINED;
   size_t size;
@@ -7534,8 +7571,8 @@ clean:
   return error;
 }
 
-mjs_err_t mjs_call(struct mjs *mjs, mjs_val_t *res, mjs_val_t func,
-                   mjs_val_t this_val, int nargs, ...) {
+mjs_err_t mjs_call(struct mjs *mjs, mjs_val_t *res, mjs_val_t func, mjs_val_t this_val, int nargs, ... )
+{
   va_list ap;
   int i;
   mjs_err_t ret;
@@ -7553,7 +7590,8 @@ mjs_err_t mjs_call(struct mjs *mjs, mjs_val_t *res, mjs_val_t func,
 }
 
 mjs_err_t mjs_apply(struct mjs *mjs, mjs_val_t *res, mjs_val_t func,
-                    mjs_val_t this_val, int nargs, mjs_val_t *args) {
+                    mjs_val_t this_val, int nargs, mjs_val_t *args)
+{
   mjs_val_t r, prev_this_val, retval_stack_idx, *resp;
   int i;
 
@@ -7639,12 +7677,13 @@ struct cbdata {
   int8_t userdata_idx;
 };
 
-void mjs_set_ffi_resolver(struct mjs *mjs, mjs_ffi_resolver_t *dlsym) {
+void mjs_set_ffi_resolver( struct mjs *mjs, mjs_ffi_resolver_t *dlsym )
+{
   mjs->dlsym = dlsym;
 }
 
-static mjs_ffi_ctype_t parse_cval_type(struct mjs *mjs, const char *s,
-                                       const char *e) {
+static mjs_ffi_ctype_t parse_cval_type(struct mjs *mjs, const char *s, const char *e )
+{
   struct mg_str ms = MG_NULL_STR;
   /* Trim leading and trailing whitespace */
   while (s < e && isspace((int) *s)) s++;
@@ -7679,14 +7718,16 @@ static mjs_ffi_ctype_t parse_cval_type(struct mjs *mjs, const char *s,
   }
 }
 
-static const char *find_paren(const char *s, const char *e) {
+static const char *find_paren(const char *s, const char *e)
+{
   for (; s < e; s++) {
     if (*s == '(') return s;
   }
   return NULL;
 }
 
-static const char *find_closing_paren(const char *s, const char *e) {
+static const char *find_closing_paren(const char *s, const char *e)
+{
   int nesting = 1;
   while (s < e) {
     if (*s == '(') {
@@ -7699,13 +7740,14 @@ static const char *find_closing_paren(const char *s, const char *e) {
   return (s < e ? s : NULL);
 }
 
-MJS_PRIVATE mjs_err_t mjs_parse_ffi_signature(struct mjs *mjs, const char *s,
+mjs_err_t mjs_parse_ffi_signature(struct mjs *mjs, const char *s,
                                               int sig_len, mjs_ffi_sig_t *sig,
                                               enum ffi_sig_type sig_type);
 
-MJS_PRIVATE mjs_err_t mjs_parse_ffi_signature(struct mjs *mjs, const char *s,
+mjs_err_t mjs_parse_ffi_signature(struct mjs *mjs, const char *s,
                                               int sig_len, mjs_ffi_sig_t *sig,
-                                              enum ffi_sig_type sig_type) {
+                                              enum ffi_sig_type sig_type)
+{
   mjs_err_t ret = MJS_OK;
   int vtidx = 0;
   const char *cur, *e, *tmp_e, *tmp;
@@ -7928,7 +7970,8 @@ struct ffi_cb_data {
 };
 
 static union ffi_cb_data_val ffi_cb_impl_generic(void *param,
-                                                 struct ffi_cb_data *data) {
+                                                 struct ffi_cb_data *data)
+{
   struct mjs_ffi_cb_args *cbargs = (struct mjs_ffi_cb_args *) param;
   mjs_val_t *args, res = MJS_UNDEFINED;
   union ffi_cb_data_val ret;
@@ -8046,7 +8089,8 @@ clean:
 
 static void ffi_init_cb_data_wwww(struct ffi_cb_data *data, uintptr_t w0,
                                   uintptr_t w1, uintptr_t w2, uintptr_t w3,
-                                  uintptr_t w4, uintptr_t w5) {
+                                  uintptr_t w4, uintptr_t w5)
+{
   memset(data, 0, sizeof(*data));
   data->args[0].w = w0;
   data->args[1].w = w1;
@@ -8057,48 +8101,55 @@ static void ffi_init_cb_data_wwww(struct ffi_cb_data *data, uintptr_t w0,
 }
 
 static uintptr_t ffi_cb_impl_wpwwwww(uintptr_t w0, uintptr_t w1, uintptr_t w2,
-                                     uintptr_t w3, uintptr_t w4, uintptr_t w5) {
+                                     uintptr_t w3, uintptr_t w4, uintptr_t w5)
+{
   struct ffi_cb_data data;
   ffi_init_cb_data_wwww(&data, w0, w1, w2, w3, w4, w5);
   return ffi_cb_impl_generic((void *) w0, &data).w;
 }
 
 static uintptr_t ffi_cb_impl_wwpwwww(uintptr_t w0, uintptr_t w1, uintptr_t w2,
-                                     uintptr_t w3, uintptr_t w4, uintptr_t w5) {
+                                     uintptr_t w3, uintptr_t w4, uintptr_t w5)
+{
   struct ffi_cb_data data;
   ffi_init_cb_data_wwww(&data, w0, w1, w2, w3, w4, w5);
   return ffi_cb_impl_generic((void *) w1, &data).w;
 }
 
 static uintptr_t ffi_cb_impl_wwwpwww(uintptr_t w0, uintptr_t w1, uintptr_t w2,
-                                     uintptr_t w3, uintptr_t w4, uintptr_t w5) {
+                                     uintptr_t w3, uintptr_t w4, uintptr_t w5)
+{
   struct ffi_cb_data data;
   ffi_init_cb_data_wwww(&data, w0, w1, w2, w3, w4, w5);
   return ffi_cb_impl_generic((void *) w2, &data).w;
 }
 
 static uintptr_t ffi_cb_impl_wwwwpww(uintptr_t w0, uintptr_t w1, uintptr_t w2,
-                                     uintptr_t w3, uintptr_t w4, uintptr_t w5) {
+                                     uintptr_t w3, uintptr_t w4, uintptr_t w5)
+{
   struct ffi_cb_data data;
   ffi_init_cb_data_wwww(&data, w0, w1, w2, w3, w4, w5);
   return ffi_cb_impl_generic((void *) w3, &data).w;
 }
 
 static uintptr_t ffi_cb_impl_wwwwwpw(uintptr_t w0, uintptr_t w1, uintptr_t w2,
-                                     uintptr_t w3, uintptr_t w4, uintptr_t w5) {
+                                     uintptr_t w3, uintptr_t w4, uintptr_t w5)
+{
   struct ffi_cb_data data;
   ffi_init_cb_data_wwww(&data, w0, w1, w2, w3, w4, w5);
   return ffi_cb_impl_generic((void *) w4, &data).w;
 }
 
 static uintptr_t ffi_cb_impl_wwwwwwp(uintptr_t w0, uintptr_t w1, uintptr_t w2,
-                                     uintptr_t w3, uintptr_t w4, uintptr_t w5) {
+                                     uintptr_t w3, uintptr_t w4, uintptr_t w5)
+{
   struct ffi_cb_data data;
   ffi_init_cb_data_wwww(&data, w0, w1, w2, w3, w4, w5);
   return ffi_cb_impl_generic((void *) w5, &data).w;
 }
 
-static uintptr_t ffi_cb_impl_wpd(uintptr_t w0, double d1) {
+static uintptr_t ffi_cb_impl_wpd(uintptr_t w0, double d1)
+{
   struct ffi_cb_data data;
 
   memset(&data, 0, sizeof(data));
@@ -8108,7 +8159,8 @@ static uintptr_t ffi_cb_impl_wpd(uintptr_t w0, double d1) {
   return ffi_cb_impl_generic((void *) w0, &data).w;
 }
 
-static uintptr_t ffi_cb_impl_wdp(double d0, uintptr_t w1) {
+static uintptr_t ffi_cb_impl_wdp(double d0, uintptr_t w1)
+{
   struct ffi_cb_data data;
 
   memset(&data, 0, sizeof(data));
@@ -8121,7 +8173,8 @@ static uintptr_t ffi_cb_impl_wdp(double d0, uintptr_t w1) {
 
 static struct mjs_ffi_cb_args **ffi_get_matching(struct mjs_ffi_cb_args **plist,
                                                  mjs_val_t func,
-                                                 mjs_val_t userdata) {
+                                                 mjs_val_t userdata)
+{
   for (; *plist != NULL; plist = &((*plist)->next)) {
     if ((*plist)->func == func && (*plist)->userdata == userdata) {
       break;
@@ -8130,7 +8183,8 @@ static struct mjs_ffi_cb_args **ffi_get_matching(struct mjs_ffi_cb_args **plist,
   return plist;
 }
 
-static ffi_fn_t *get_cb_impl_by_signature(const mjs_ffi_sig_t *sig) {
+static ffi_fn_t *get_cb_impl_by_signature(const mjs_ffi_sig_t *sig)
+{
   if (sig->is_valid) {
     int i;
     int double_cnt = 0;
@@ -8207,7 +8261,8 @@ static ffi_fn_t *get_cb_impl_by_signature(const mjs_ffi_sig_t *sig) {
   return NULL;
 }
 
-MJS_PRIVATE mjs_val_t mjs_ffi_sig_to_value(struct mjs_ffi_sig *psig) {
+mjs_val_t mjs_ffi_sig_to_value(struct mjs_ffi_sig *psig)
+{
   if (psig == NULL) {
     return MJS_NULL;
   } else {
@@ -8215,29 +8270,34 @@ MJS_PRIVATE mjs_val_t mjs_ffi_sig_to_value(struct mjs_ffi_sig *psig) {
   }
 }
 
-MJS_PRIVATE int mjs_is_ffi_sig(mjs_val_t v) {
+int mjs_is_ffi_sig(mjs_val_t v)
+{
   return (v & MJS_TAG_MASK) == MJS_TAG_FUNCTION_FFI;
 }
 
-MJS_PRIVATE struct mjs_ffi_sig *mjs_get_ffi_sig_struct(mjs_val_t v) {
+struct mjs_ffi_sig *mjs_get_ffi_sig_struct(mjs_val_t v)
+{
   struct mjs_ffi_sig *ret = NULL;
   assert(mjs_is_ffi_sig(v));
   ret = (struct mjs_ffi_sig *) get_ptr(v);
   return ret;
 }
 
-MJS_PRIVATE mjs_val_t mjs_mk_ffi_sig(struct mjs *mjs) {
+mjs_val_t mjs_mk_ffi_sig(struct mjs *mjs)
+{
   struct mjs_ffi_sig *psig = new_ffi_sig(mjs);
   mjs_ffi_sig_init(psig);
   return mjs_ffi_sig_to_value(psig);
 }
 
-MJS_PRIVATE void mjs_ffi_sig_destructor(struct mjs *mjs, void *psig) {
+void mjs_ffi_sig_destructor(struct mjs *mjs, void *psig)
+{
   mjs_ffi_sig_free((mjs_ffi_sig_t *) psig);
   (void) mjs;
 }
 
-MJS_PRIVATE mjs_err_t mjs_ffi_call(struct mjs *mjs) {
+mjs_err_t mjs_ffi_call(struct mjs *mjs)
+{
   mjs_err_t e = MJS_OK;
   const char *sig_str = NULL;
   mjs_val_t sig_str_v = mjs_arg(mjs, 0);
@@ -8255,7 +8315,8 @@ clean:
   return e;
 }
 
-MJS_PRIVATE mjs_err_t mjs_ffi_call2(struct mjs *mjs) {
+mjs_err_t mjs_ffi_call2(struct mjs *mjs)
+{
   mjs_err_t ret = MJS_OK;
   mjs_ffi_sig_t *psig = NULL;
   mjs_ffi_ctype_t rtype;
@@ -8572,7 +8633,8 @@ clean:
  * TODO(dfrank): make it return boolean (when booleans are supported), instead
  * of a number
  */
-MJS_PRIVATE void mjs_ffi_cb_free(struct mjs *mjs) {
+void mjs_ffi_cb_free(struct mjs *mjs)
+{
   mjs_val_t ret = mjs_mk_number(mjs, 0);
   mjs_val_t func = mjs_arg(mjs, 0);
   mjs_val_t userdata = mjs_arg(mjs, 1);
@@ -8595,7 +8657,8 @@ MJS_PRIVATE void mjs_ffi_cb_free(struct mjs *mjs) {
   mjs_return(mjs, ret);
 }
 
-void mjs_ffi_args_free_list(struct mjs *mjs) {
+void mjs_ffi_args_free_list(struct mjs *mjs)
+{
   ffi_cb_args_t *next = mjs->ffi_cb_args;
 
   while (next != NULL) {
@@ -8605,12 +8668,13 @@ void mjs_ffi_args_free_list(struct mjs *mjs) {
   }
 }
 
-MJS_PRIVATE void mjs_ffi_sig_init(mjs_ffi_sig_t *sig) {
-  memset(sig, 0, sizeof(*sig));
+void mjs_ffi_sig_init(mjs_ffi_sig_t *sig)
+{
+  memset( sig, 0, sizeof(*sig) );
 }
 
-MJS_PRIVATE void mjs_ffi_sig_copy(mjs_ffi_sig_t *to,
-                                  const mjs_ffi_sig_t *from) {
+void mjs_ffi_sig_copy(mjs_ffi_sig_t *to, const mjs_ffi_sig_t *from )
+{
   memcpy(to, from, sizeof(*to));
   if (from->cb_sig != NULL) {
     to->cb_sig = calloc(sizeof(*to->cb_sig), 1);
@@ -8618,15 +8682,16 @@ MJS_PRIVATE void mjs_ffi_sig_copy(mjs_ffi_sig_t *to,
   }
 }
 
-MJS_PRIVATE void mjs_ffi_sig_free(mjs_ffi_sig_t *sig) {
+void mjs_ffi_sig_free(mjs_ffi_sig_t *sig)
+{
   if (sig->cb_sig != NULL) {
     free(sig->cb_sig);
     sig->cb_sig = NULL;
   }
 }
 
-MJS_PRIVATE int mjs_ffi_sig_set_val_type(mjs_ffi_sig_t *sig, int idx,
-                                         mjs_ffi_ctype_t type) {
+int mjs_ffi_sig_set_val_type(mjs_ffi_sig_t *sig, int idx, mjs_ffi_ctype_t type )
+{
   if (idx < MJS_CB_SIGNATURE_MAX_SIZE) {
     sig->val_types[idx] = type;
     return 1;
@@ -8636,8 +8701,8 @@ MJS_PRIVATE int mjs_ffi_sig_set_val_type(mjs_ffi_sig_t *sig, int idx,
   }
 }
 
-MJS_PRIVATE int mjs_ffi_sig_validate(struct mjs *mjs, mjs_ffi_sig_t *sig,
-                                     enum ffi_sig_type sig_type) {
+int mjs_ffi_sig_validate(struct mjs *mjs, mjs_ffi_sig_t *sig, enum ffi_sig_type sig_type)
+{
   int ret = 0;
   int i;
   int callback_idx = 0;
@@ -8747,7 +8812,8 @@ clean:
   return ret;
 }
 
-MJS_PRIVATE int mjs_ffi_is_regular_word(mjs_ffi_ctype_t type) {
+int mjs_ffi_is_regular_word(mjs_ffi_ctype_t type)
+{
   switch (type) {
     case MJS_FFI_CTYPE_INT:
     case MJS_FFI_CTYPE_BOOL:
@@ -8757,29 +8823,20 @@ MJS_PRIVATE int mjs_ffi_is_regular_word(mjs_ffi_ctype_t type) {
   }
 }
 
-MJS_PRIVATE int mjs_ffi_is_regular_word_or_void(mjs_ffi_ctype_t type) {
+int mjs_ffi_is_regular_word_or_void(mjs_ffi_ctype_t type)
+{
   return (type == MJS_FFI_CTYPE_NONE || mjs_ffi_is_regular_word(type));
 }
 
-#ifdef _WIN32
-void *dlsym(void *handle, const char *name) {
-  static HANDLE msvcrt_dll;
-  void *sym = NULL;
-  if (msvcrt_dll == NULL) msvcrt_dll = GetModuleHandle("msvcrt.dll");
-  if ((sym = GetProcAddress(GetModuleHandle(NULL), name)) == NULL) {
-    sym = GetProcAddress(msvcrt_dll, name);
-  }
-  return sym;
-}
-#elif !defined(__unix__) && !defined(__APPLE__)
-void *dlsym(void *handle, const char *name) {
+// atu: check
+#if !defined(__unix__) && !defined(__APPLE__)
+void *dlsym(void *handle, const char *name)
+{
   (void) handle;
   (void) name;
   return NULL;
 }
 #endif
-
-#include <stdio.h>
 
 
 
@@ -8808,21 +8865,25 @@ static struct gc_block *gc_new_block(struct gc_arena *a, size_t size);
 static void gc_free_block(struct gc_block *b);
 static void gc_mark_mbuf_pt(struct mjs *mjs, const struct mbuf *mbuf);
 
-MJS_PRIVATE struct mjs_object *new_object(struct mjs *mjs) {
+struct mjs_object *new_object(struct mjs *mjs)
+{
   return (struct mjs_object *) gc_alloc_cell(mjs, &mjs->object_arena);
 }
 
-MJS_PRIVATE struct mjs_property *new_property(struct mjs *mjs) {
+struct mjs_property *new_property(struct mjs *mjs)
+{
   return (struct mjs_property *) gc_alloc_cell(mjs, &mjs->property_arena);
 }
 
-MJS_PRIVATE struct mjs_ffi_sig *new_ffi_sig(struct mjs *mjs) {
+struct mjs_ffi_sig *new_ffi_sig(struct mjs *mjs)
+{
   return (struct mjs_ffi_sig *) gc_alloc_cell(mjs, &mjs->ffi_sig_arena);
 }
 
 /* Initializes a new arena. */
-MJS_PRIVATE void gc_arena_init(struct gc_arena *a, size_t cell_size,
-                               size_t initial_size, size_t size_increment) {
+void gc_arena_init(struct gc_arena *a, size_t cell_size,
+                               size_t initial_size, size_t size_increment)
+{
   assert(cell_size >= sizeof(uintptr_t));
 
   memset(a, 0, sizeof(*a));
@@ -8831,7 +8892,8 @@ MJS_PRIVATE void gc_arena_init(struct gc_arena *a, size_t cell_size,
   a->blocks = gc_new_block(a, initial_size);
 }
 
-MJS_PRIVATE void gc_arena_destroy(struct mjs *mjs, struct gc_arena *a) {
+void gc_arena_destroy(struct mjs *mjs, struct gc_arena *a)
+{
   struct gc_block *b;
 
   if (a->blocks != NULL) {
@@ -8845,12 +8907,14 @@ MJS_PRIVATE void gc_arena_destroy(struct mjs *mjs, struct gc_arena *a) {
   }
 }
 
-static void gc_free_block(struct gc_block *b) {
+static void gc_free_block(struct gc_block *b)
+{
   free(b->base);
   free(b);
 }
 
-static struct gc_block *gc_new_block(struct gc_arena *a, size_t size) {
+static struct gc_block *gc_new_block(struct gc_arena *a, size_t size)
+{
   struct gc_cell *cur;
   struct gc_block *b;
 
@@ -8875,7 +8939,8 @@ static struct gc_block *gc_new_block(struct gc_arena *a, size_t size) {
  * Returns whether the given arena has GC_ARENA_CELLS_RESERVE or less free
  * cells
  */
-static int gc_arena_is_gc_needed(struct gc_arena *a) {
+static int gc_arena_is_gc_needed(struct gc_arena *a)
+{
   struct gc_cell *r = a->free;
   int i;
 
@@ -8888,12 +8953,14 @@ static int gc_arena_is_gc_needed(struct gc_arena *a) {
   return 0;
 }
 
-MJS_PRIVATE int gc_strings_is_gc_needed(struct mjs *mjs) {
+int gc_strings_is_gc_needed(struct mjs *mjs)
+{
   struct mbuf *m = &mjs->owned_strings;
   return (double) m->len / (double) m->size > 0.9;
 }
 
-MJS_PRIVATE void *gc_alloc_cell(struct mjs *mjs, struct gc_arena *a) {
+void *gc_alloc_cell(struct mjs *mjs, struct gc_arena *a)
+{
   struct gc_cell *r;
 
   if (a->free == NULL) {
@@ -8931,7 +8998,8 @@ MJS_PRIVATE void *gc_alloc_cell(struct mjs *mjs, struct gc_arena *a) {
  * Empty blocks get deallocated. The head of the free list will contais cells
  * from the last (oldest) block. Cells will thus be allocated in block order.
  */
-void gc_sweep(struct mjs *mjs, struct gc_arena *a, size_t start) {
+void gc_sweep(struct mjs *mjs, struct gc_arena *a, size_t start)
+{
   struct gc_block *b;
   struct gc_cell *cur;
   struct gc_block **prevp = &a->blocks;
@@ -9023,7 +9091,8 @@ void gc_sweep(struct mjs *mjs, struct gc_arena *a, size_t start) {
 }
 
 /* Mark an FFI signature */
-static void gc_mark_ffi_sig(struct mjs *mjs, mjs_val_t *v) {
+static void gc_mark_ffi_sig(struct mjs *mjs, mjs_val_t *v)
+{
   struct mjs_ffi_sig *psig;
 
   assert(mjs_is_ffi_sig(*v));
@@ -9044,7 +9113,8 @@ static void gc_mark_ffi_sig(struct mjs *mjs, mjs_val_t *v) {
 }
 
 /* Mark an object */
-static void gc_mark_object(struct mjs *mjs, mjs_val_t *v) {
+static void gc_mark_object(struct mjs *mjs, mjs_val_t *v)
+{
   struct mjs_object *obj_base;
   struct mjs_property *prop;
   struct mjs_property *next;
@@ -9086,7 +9156,8 @@ static void gc_mark_object(struct mjs *mjs, mjs_val_t *v) {
 }
 
 /* Mark a string value */
-static void gc_mark_string(struct mjs *mjs, mjs_val_t *v) {
+static void gc_mark_string(struct mjs *mjs, mjs_val_t *v)
+{
   mjs_val_t h, tmp = 0;
   char *s;
 
@@ -9133,7 +9204,8 @@ static void gc_mark_string(struct mjs *mjs, mjs_val_t *v) {
   memcpy(v, &tmp, sizeof(tmp));
 }
 
-MJS_PRIVATE void gc_mark(struct mjs *mjs, mjs_val_t *v) {
+void gc_mark(struct mjs *mjs, mjs_val_t *v)
+{
   if (mjs_is_object(*v)) {
     gc_mark_object(mjs, v);
   }
@@ -9145,23 +9217,24 @@ MJS_PRIVATE void gc_mark(struct mjs *mjs, mjs_val_t *v) {
   }
 }
 
-MJS_PRIVATE uint64_t gc_string_mjs_val_to_offset(mjs_val_t v);
+uint64_t gc_string_mjs_val_to_offset(mjs_val_t v);
 
-MJS_PRIVATE uint64_t gc_string_mjs_val_to_offset(mjs_val_t v)
+uint64_t gc_string_mjs_val_to_offset(mjs_val_t v)
 {
   return (((uint64_t)(uintptr_t) get_ptr(v)) & ~MJS_TAG_MASK);
 }
 
-MJS_PRIVATE mjs_val_t gc_string_val_from_offset(uint64_t s);
+mjs_val_t gc_string_val_from_offset(uint64_t s);
 
-MJS_PRIVATE mjs_val_t gc_string_val_from_offset(uint64_t s)
+mjs_val_t gc_string_val_from_offset(uint64_t s)
 {
   return s | MJS_TAG_STRING_O;
 }
 
 void gc_compact_strings(struct mjs *mjs);
 
-void gc_compact_strings(struct mjs *mjs) {
+void gc_compact_strings(struct mjs *mjs)
+{
   char *p = mjs->owned_strings.buf + 1;
   uint64_t h, next, head = 1;
   int len, llen;
@@ -9216,7 +9289,8 @@ void gc_compact_strings(struct mjs *mjs) {
   mjs->owned_strings.len = head;
 }
 
-MJS_PRIVATE int maybe_gc(struct mjs *mjs) {
+int maybe_gc(struct mjs *mjs)
+{
   if (!mjs->inhibit_gc) {
     mjs_gc(mjs, 0);
     return 1;
@@ -9227,7 +9301,8 @@ MJS_PRIVATE int maybe_gc(struct mjs *mjs) {
 /*
  * mark an array of `mjs_val_t` values (*not pointers* to them)
  */
-static void gc_mark_val_array(struct mjs *mjs, mjs_val_t *vals, size_t len) {
+static void gc_mark_val_array(struct mjs *mjs, mjs_val_t *vals, size_t len)
+{
   mjs_val_t *vp;
   for (vp = vals; vp < vals + len; vp++) {
     gc_mark(mjs, vp);
@@ -9237,7 +9312,8 @@ static void gc_mark_val_array(struct mjs *mjs, mjs_val_t *vals, size_t len) {
 /*
  * mark an mbuf containing *pointers* to `mjs_val_t` values
  */
-static void gc_mark_mbuf_pt(struct mjs *mjs, const struct mbuf *mbuf) {
+static void gc_mark_mbuf_pt(struct mjs *mjs, const struct mbuf *mbuf)
+{
   mjs_val_t **vp;
   for (vp = (mjs_val_t **) mbuf->buf; (char *) vp < mbuf->buf + mbuf->len;
        vp++) {
@@ -9248,12 +9324,14 @@ static void gc_mark_mbuf_pt(struct mjs *mjs, const struct mbuf *mbuf) {
 /*
  * mark an mbuf containing `mjs_val_t` values (*not pointers* to them)
  */
-static void gc_mark_mbuf_val(struct mjs *mjs, const struct mbuf *mbuf) {
+static void gc_mark_mbuf_val(struct mjs *mjs, const struct mbuf *mbuf)
+{
   gc_mark_val_array(mjs, (mjs_val_t *) mbuf->buf,
                     mbuf->len / sizeof(mjs_val_t));
 }
 
-static void gc_mark_ffi_cbargs_list(struct mjs *mjs, ffi_cb_args_t *cbargs) {
+static void gc_mark_ffi_cbargs_list(struct mjs *mjs, ffi_cb_args_t *cbargs)
+{
   for (; cbargs != NULL; cbargs = cbargs->next) {
     gc_mark(mjs, &cbargs->func);
     gc_mark(mjs, &cbargs->userdata);
@@ -9261,7 +9339,8 @@ static void gc_mark_ffi_cbargs_list(struct mjs *mjs, ffi_cb_args_t *cbargs) {
 }
 
 /* Perform garbage collection */
-void mjs_gc(struct mjs *mjs, int full) {
+void mjs_gc(struct mjs *mjs, int full)
+{
   gc_mark_val_array(mjs, (mjs_val_t *) &mjs->vals,
                     sizeof(mjs->vals) / sizeof(mjs_val_t));
 
@@ -9291,7 +9370,8 @@ void mjs_gc(struct mjs *mjs, int full) {
   }
 }
 
-MJS_PRIVATE int gc_check_val(struct mjs *mjs, mjs_val_t v) {
+int gc_check_val(struct mjs *mjs, mjs_val_t v)
+{
   if (mjs_is_object(v)) {
     return gc_check_ptr(&mjs->object_arena, get_object_struct(v));
   }
@@ -9301,7 +9381,8 @@ MJS_PRIVATE int gc_check_val(struct mjs *mjs, mjs_val_t v) {
   return 1;
 }
 
-MJS_PRIVATE int gc_check_ptr(const struct gc_arena *a, const void *ptr) {
+int gc_check_ptr(const struct gc_arena *a, const void *ptr)
+{
   const struct gc_cell *p = (const struct gc_cell *) ptr;
   struct gc_block *b;
   for (b = a->blocks; b != NULL; b = b->next) {
@@ -9322,7 +9403,8 @@ MJS_PRIVATE int gc_check_ptr(const struct gc_arena *a, const void *ptr) {
  * So far it always returns 0, but we might add some logic later, if we
  * implement some non-jsonnable objects
  */
-static int should_skip_for_json(enum mjs_type type) {
+static int should_skip_for_json(enum mjs_type type)
+{
   int ret;
   switch (type) {
     /* All permitted values */
@@ -9342,7 +9424,8 @@ static int should_skip_for_json(enum mjs_type type) {
 }
 
 static const char *hex_digits = "0123456789abcdef";
-static char *append_hex(char *buf, char *limit, uint8_t c) {
+static char *append_hex(char *buf, char *limit, uint8_t c)
+{
   if (buf < limit) *buf++ = 'u';
   if (buf < limit) *buf++ = '0';
   if (buf < limit) *buf++ = '0';
@@ -9357,7 +9440,8 @@ static char *append_hex(char *buf, char *limit, uint8_t c) {
  * like snprintf.
  * If size is zero it doesn't output anything but keeps counting.
  */
-static int snquote(char *buf, size_t size, const char *s, size_t len) {
+static int snquote(char *buf, size_t size, const char *s, size_t len)
+{
   char *limit = buf + size;
   const char *end;
   /*
@@ -9411,9 +9495,10 @@ static int snquote(char *buf, size_t size, const char *s, size_t len) {
   return i;
 }
 
-MJS_PRIVATE mjs_err_t to_json_or_debug(struct mjs *mjs, mjs_val_t v, char *buf,
+mjs_err_t to_json_or_debug(struct mjs *mjs, mjs_val_t v, char *buf,
                                        size_t size, size_t *res_len,
-                                       uint8_t is_debug) {
+                                       uint8_t is_debug)
+{
   mjs_val_t el;
   char *vp;
   mjs_err_t rcode = MJS_OK;
@@ -9558,8 +9643,9 @@ clean:
   return rcode;
 }
 
-MJS_PRIVATE mjs_err_t mjs_json_stringify(struct mjs *mjs, mjs_val_t v,
-                                         char *buf, size_t size, char **res) {
+mjs_err_t mjs_json_stringify(struct mjs *mjs, mjs_val_t v,
+                                         char *buf, size_t size, char **res)
+{
   mjs_err_t rcode = MJS_OK;
   char *p = buf;
   size_t len;
@@ -9608,8 +9694,8 @@ struct json_parse_ctx {
 };
 
 /* Allocate JSON parse frame */
-static struct json_parse_frame *alloc_json_frame(struct json_parse_ctx *ctx,
-                                                 mjs_val_t v) {
+static struct json_parse_frame *alloc_json_frame(struct json_parse_ctx *ctx, mjs_val_t v )
+{
   struct json_parse_frame *frame =
       (struct json_parse_frame *) calloc(sizeof(struct json_parse_frame), 1);
   frame->val = v;
@@ -9618,8 +9704,8 @@ static struct json_parse_frame *alloc_json_frame(struct json_parse_ctx *ctx,
 }
 
 /* Free JSON parse frame, return the previous one (which may be NULL) */
-static struct json_parse_frame *free_json_frame(
-    struct json_parse_ctx *ctx, struct json_parse_frame *frame) {
+static struct json_parse_frame *free_json_frame( struct json_parse_ctx *ctx, struct json_parse_frame *frame)
+{
   struct json_parse_frame *up = frame->up;
   mjs_disown(ctx->mjs, &frame->val);
   free(frame);
@@ -9628,7 +9714,8 @@ static struct json_parse_frame *free_json_frame(
 
 /* Callback for json_walk() */
 static void frozen_cb(void *data, const char *name, size_t name_len,
-                      const char *path, const struct json_token *token) {
+                      const char *path, const struct json_token *token)
+{
   struct json_parse_ctx *ctx = (struct json_parse_ctx *) data;
   mjs_val_t v = MJS_UNDEFINED;
 
@@ -9725,8 +9812,8 @@ static void frozen_cb(void *data, const char *name, size_t name_len,
   mjs_disown(ctx->mjs, &v);
 }
 
-MJS_PRIVATE mjs_err_t
-mjs_json_parse(struct mjs *mjs, const char *str, size_t len, mjs_val_t *res) {
+mjs_err_t mjs_json_parse(struct mjs *mjs, const char *str, size_t len, mjs_val_t *res)
+{
   struct json_parse_ctx *ctx =
       (struct json_parse_ctx *) calloc(sizeof(struct json_parse_ctx), 1);
   int json_res;
@@ -9783,7 +9870,8 @@ mjs_json_parse(struct mjs *mjs, const char *str, size_t len, mjs_val_t *res) {
   return rcode;
 }
 
-MJS_PRIVATE void mjs_op_json_stringify(struct mjs *mjs) {
+void mjs_op_json_stringify(struct mjs *mjs)
+{
   mjs_val_t ret = MJS_UNDEFINED;
   mjs_val_t val = mjs_arg(mjs, 0);
 
@@ -9800,7 +9888,8 @@ MJS_PRIVATE void mjs_op_json_stringify(struct mjs *mjs) {
   mjs_return(mjs, ret);
 }
 
-MJS_PRIVATE void mjs_op_json_parse(struct mjs *mjs) {
+void mjs_op_json_parse(struct mjs *mjs)
+{
   mjs_val_t ret = MJS_UNDEFINED;
   mjs_val_t arg0 = mjs_arg(mjs, 0);
 
@@ -9820,7 +9909,8 @@ MJS_PRIVATE void mjs_op_json_parse(struct mjs *mjs) {
 // #include <dlfcn.h>
 
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
   struct mjs *mjs = mjs_create();
   mjs_val_t res = MJS_UNDEFINED;
   mjs_err_t err = MJS_OK;
@@ -9868,9 +9958,9 @@ int main(int argc, char *argv[]) {
 
 
 
-MJS_PRIVATE mjs_val_t mjs_object_to_value(struct mjs_object *o);
+mjs_val_t mjs_object_to_value(struct mjs_object *o);
 
-MJS_PRIVATE mjs_val_t mjs_object_to_value(struct mjs_object *o)
+mjs_val_t mjs_object_to_value(struct mjs_object *o)
 {
   if (o == NULL) {
     return MJS_NULL;
@@ -9879,9 +9969,9 @@ MJS_PRIVATE mjs_val_t mjs_object_to_value(struct mjs_object *o)
   }
 }
 
-MJS_PRIVATE struct mjs_object *get_object_struct(mjs_val_t v);
+struct mjs_object *get_object_struct(mjs_val_t v);
 
-MJS_PRIVATE struct mjs_object *get_object_struct(mjs_val_t v)
+struct mjs_object *get_object_struct(mjs_val_t v)
 {
   struct mjs_object *ret = NULL;
   if (mjs_is_null(v)) {
@@ -9893,7 +9983,8 @@ MJS_PRIVATE struct mjs_object *get_object_struct(mjs_val_t v)
   return ret;
 }
 
-mjs_val_t mjs_mk_object(struct mjs *mjs) {
+mjs_val_t mjs_mk_object(struct mjs *mjs)
+{
   struct mjs_object *o = new_object(mjs);
   if (o == NULL) {
     return MJS_NULL;
@@ -9903,15 +9994,17 @@ mjs_val_t mjs_mk_object(struct mjs *mjs) {
   return mjs_object_to_value(o);
 }
 
-int mjs_is_object(mjs_val_t v) {
+int mjs_is_object(mjs_val_t v)
+{
   return (v & MJS_TAG_MASK) == MJS_TAG_OBJECT ||
          (v & MJS_TAG_MASK) == MJS_TAG_ARRAY;
 }
 
-MJS_PRIVATE struct mjs_property *mjs_get_own_property(struct mjs *mjs,
+struct mjs_property *mjs_get_own_property(struct mjs *mjs,
                                                       mjs_val_t obj,
                                                       const char *name,
-                                                      size_t len) {
+                                                      size_t len)
+{
   struct mjs_property *p;
   struct mjs_object *o;
 
@@ -9936,9 +10029,10 @@ MJS_PRIVATE struct mjs_property *mjs_get_own_property(struct mjs *mjs,
   return NULL;
 }
 
-MJS_PRIVATE struct mjs_property *mjs_get_own_property_v(struct mjs *mjs,
+struct mjs_property *mjs_get_own_property_v(struct mjs *mjs,
                                                         mjs_val_t obj,
-                                                        mjs_val_t key) {
+                                                        mjs_val_t key)
+{
   size_t n;
   char *s = NULL;
   int need_free = 0;
@@ -9951,9 +10045,9 @@ MJS_PRIVATE struct mjs_property *mjs_get_own_property_v(struct mjs *mjs,
   return p;
 }
 
-MJS_PRIVATE struct mjs_property *mjs_mk_property(struct mjs *mjs, mjs_val_t name, mjs_val_t value);
+struct mjs_property *mjs_mk_property(struct mjs *mjs, mjs_val_t name, mjs_val_t value);
 
-MJS_PRIVATE struct mjs_property *mjs_mk_property(struct mjs *mjs,
+struct mjs_property *mjs_mk_property(struct mjs *mjs,
                                                  mjs_val_t name,
                                                  mjs_val_t value)
 {
@@ -9983,7 +10077,8 @@ mjs_val_t mjs_get(struct mjs *mjs, mjs_val_t obj, const char *name,
   }
 }
 
-mjs_val_t mjs_get_v(struct mjs *mjs, mjs_val_t obj, mjs_val_t name) {
+mjs_val_t mjs_get_v(struct mjs *mjs, mjs_val_t obj, mjs_val_t name)
+{
   size_t n;
   char *s = NULL;
   int need_free = 0;
@@ -10003,7 +10098,8 @@ mjs_val_t mjs_get_v(struct mjs *mjs, mjs_val_t obj, mjs_val_t name) {
   return ret;
 }
 
-mjs_val_t mjs_get_v_proto(struct mjs *mjs, mjs_val_t obj, mjs_val_t key) {
+mjs_val_t mjs_get_v_proto(struct mjs *mjs, mjs_val_t obj, mjs_val_t key)
+{
   struct mjs_property *p;
   mjs_val_t pn = mjs_mk_string(mjs, MJS_PROTO_PROP_NAME, ~0, 1);
   if ((p = mjs_get_own_property_v(mjs, obj, key)) != NULL) return p->value;
@@ -10017,14 +10113,15 @@ mjs_err_t mjs_set(struct mjs *mjs, mjs_val_t obj, const char *name,
                           val);
 }
 
-mjs_err_t mjs_set_v(struct mjs *mjs, mjs_val_t obj, mjs_val_t name,
-                    mjs_val_t val) {
+mjs_err_t mjs_set_v(struct mjs *mjs, mjs_val_t obj, mjs_val_t name, mjs_val_t val )
+{
   return mjs_set_internal(mjs, obj, name, NULL, 0, val);
 }
 
-MJS_PRIVATE mjs_err_t mjs_set_internal(struct mjs *mjs, mjs_val_t obj,
+mjs_err_t mjs_set_internal(struct mjs *mjs, mjs_val_t obj,
                                        mjs_val_t name_v, char *name,
-                                       size_t name_len, mjs_val_t val) {
+                                       size_t name_len, mjs_val_t val)
+{
   mjs_err_t rcode = MJS_OK;
 
   struct mjs_property *p;
@@ -10078,9 +10175,9 @@ clean:
   return rcode;
 }
 
-MJS_PRIVATE void mjs_destroy_property(struct mjs_property **p);
+void mjs_destroy_property(struct mjs_property **p);
 
-MJS_PRIVATE void mjs_destroy_property(struct mjs_property **p)
+void mjs_destroy_property(struct mjs_property **p)
 {
   *p = NULL;
 }
@@ -10088,7 +10185,8 @@ MJS_PRIVATE void mjs_destroy_property(struct mjs_property **p)
 /*
  * See comments in `object_public.h`
  */
-int mjs_del(struct mjs *mjs, mjs_val_t obj, const char *name, size_t len) {
+int mjs_del(struct mjs *mjs, mjs_val_t obj, const char *name, size_t len)
+{
   struct mjs_property *prop, *prev;
 
   if (!mjs_is_object(obj)) {
@@ -10114,7 +10212,8 @@ int mjs_del(struct mjs *mjs, mjs_val_t obj, const char *name, size_t len) {
   return -1;
 }
 
-mjs_val_t mjs_next(struct mjs *mjs, mjs_val_t obj, mjs_val_t *iterator) {
+mjs_val_t mjs_next(struct mjs *mjs, mjs_val_t obj, mjs_val_t *iterator)
+{
   struct mjs_property *p = NULL;
   mjs_val_t key = MJS_UNDEFINED;
 
@@ -10135,7 +10234,8 @@ mjs_val_t mjs_next(struct mjs *mjs, mjs_val_t obj, mjs_val_t *iterator) {
   return key;
 }
 
-MJS_PRIVATE void mjs_op_create_object(struct mjs *mjs) {
+void mjs_op_create_object(struct mjs *mjs)
+{
   mjs_val_t ret = MJS_UNDEFINED;
   mjs_val_t proto_v = mjs_arg(mjs, 0);
 
@@ -10151,7 +10251,8 @@ clean:
 }
 
 mjs_val_t mjs_struct_to_obj(struct mjs *mjs, const void *base,
-                            const struct mjs_c_struct_member *defs) {
+                            const struct mjs_c_struct_member *defs)
+{
   mjs_val_t obj;
   const struct mjs_c_struct_member *def = defs;
   if (base == NULL || def == NULL) return MJS_UNDEFINED;
@@ -10163,7 +10264,10 @@ mjs_val_t mjs_struct_to_obj(struct mjs *mjs, const void *base,
    * start from the end so the constructed object more closely resembles
    * the definition.
    */
-  while (def->name != NULL) def++;
+  while (def->name != NULL) {
+    def++;
+  }
+
   for (def--; def >= defs; def--) {
     mjs_val_t v = MJS_UNDEFINED;
     const char *ptr = (const char *) base + def->offset;
@@ -10314,13 +10418,15 @@ static int s_assign_ops[] = {
     TOK_URSHIFT_ASSIGN, TOK_AND_ASSIGN,  TOK_XOR_ASSIGN,    TOK_OR_ASSIGN,
     TOK_EOF};
 
-static int findtok(int *toks, int tok) {
+static int findtok(int *toks, int tok)
+{
   int i = 0;
   while (tok != toks[i] && toks[i] != TOK_EOF) i++;
   return toks[i];
 }
 
-static void emit_op(struct pstate *pstate, int tok) {
+static void emit_op(struct pstate *pstate, int tok)
+{
   assert(tok >= 0 && tok <= 255);
   emit_byte(pstate, OP_EXPR);
   emit_byte(pstate, (uint8_t) tok);
@@ -10385,19 +10491,22 @@ static void emit_op(struct pstate *pstate, int tok) {
   } while (0)
 
 #if MJS_INIT_OFFSET_SIZE > 0
-static void emit_init_offset(struct pstate *p) {
+static void emit_init_offset(struct pstate *p)
+{
   size_t i;
   for (i = 0; i < MJS_INIT_OFFSET_SIZE; i++) {
     emit_byte(p, 0);
   }
 }
 #else
-static void emit_init_offset(struct pstate *p) {
+static void emit_init_offset(struct pstate *p)
+{
   (void) p;
 }
 #endif
 
-static mjs_err_t parse_statement_list(struct pstate *p, int et) {
+static mjs_err_t parse_statement_list(struct pstate *p, int et)
+{
   mjs_err_t res = MJS_OK;
   int drop = 0;
   pnext1(p);
@@ -10418,7 +10527,8 @@ static mjs_err_t parse_statement_list(struct pstate *p, int et) {
   return res;
 }
 
-static mjs_err_t parse_block(struct pstate *p, int mkscope) {
+static mjs_err_t parse_block(struct pstate *p, int mkscope)
+{
   mjs_err_t res = MJS_OK;
   p->depth++;
   if (p->depth > (STACK_LIMIT / BINOP_STACK_FRAME_SIZE)) {
@@ -10426,6 +10536,7 @@ static mjs_err_t parse_block(struct pstate *p, int mkscope) {
     res = MJS_SYNTAX_ERROR;
     return res;
   }
+
   LOG(LL_VERBOSE_DEBUG, ("[%.*s]", 10, p->tok.ptr));
   if (mkscope) emit_byte(p, OP_NEW_SCOPE);
   res = parse_statement_list(p, TOK_CLOSE_CURLY);
@@ -10434,7 +10545,8 @@ static mjs_err_t parse_block(struct pstate *p, int mkscope) {
   return res;
 }
 
-static mjs_err_t parse_function(struct pstate *p) {
+static mjs_err_t parse_function(struct pstate *p)
+{
   size_t prologue, off;
   int arg_no = 0;
   int name_provided = 0;
@@ -10488,7 +10600,8 @@ static mjs_err_t parse_function(struct pstate *p) {
   return res;
 }
 
-static mjs_err_t parse_object_literal(struct pstate *p) {
+static mjs_err_t parse_object_literal(struct pstate *p)
+{
   mjs_err_t res = MJS_OK;
   EXPECT(p, TOK_OPEN_CURLY);
   emit_byte(p, OP_PUSH_OBJ);
@@ -10512,7 +10625,8 @@ static mjs_err_t parse_object_literal(struct pstate *p) {
   return res;
 }
 
-static mjs_err_t parse_array_literal(struct pstate *p) {
+static mjs_err_t parse_array_literal(struct pstate *p)
+{
   mjs_err_t res = MJS_OK;
   EXPECT(p, TOK_OPEN_BRACKET);
   emit_byte(p, OP_PUSH_ARRAY);
@@ -10525,7 +10639,8 @@ static mjs_err_t parse_array_literal(struct pstate *p) {
   return res;
 }
 
-static enum mjs_err parse_literal(struct pstate *p, const struct tok *t) {
+static enum mjs_err parse_literal(struct pstate *p, const struct tok *t)
+{
   struct mbuf *bcode_gen = &p->mjs->bcode_gen;
   enum mjs_err res = MJS_OK;
   int tok = t->tok;
@@ -10601,7 +10716,8 @@ static enum mjs_err parse_literal(struct pstate *p, const struct tok *t) {
   return res;
 }
 
-static mjs_err_t parse_call_dot_mem(struct pstate *p, int prev_op) {
+static mjs_err_t parse_call_dot_mem(struct pstate *p, int prev_op)
+{
   int ops[] = {TOK_DOT, TOK_OPEN_PAREN, TOK_OPEN_BRACKET, TOK_EOF};
   mjs_err_t res = MJS_OK;
   if ((res = parse_literal(p, &p->tok)) != MJS_OK) return res;
@@ -10636,7 +10752,8 @@ static mjs_err_t parse_call_dot_mem(struct pstate *p, int prev_op) {
   return res;
 }
 
-static mjs_err_t parse_postfix(struct pstate *p, int prev_op) {
+static mjs_err_t parse_postfix(struct pstate *p, int prev_op)
+{
   mjs_err_t res = MJS_OK;
   if ((res = parse_call_dot_mem(p, prev_op)) != MJS_OK) return res;
   if (p->tok.tok == TOK_PLUS_PLUS || p->tok.tok == TOK_MINUS_MINUS) {
@@ -10647,7 +10764,8 @@ static mjs_err_t parse_postfix(struct pstate *p, int prev_op) {
   return res;
 }
 
-static mjs_err_t parse_unary(struct pstate *p, int prev_op) {
+static mjs_err_t parse_unary(struct pstate *p, int prev_op)
+{
   mjs_err_t res = MJS_OK;
   int op = TOK_EOF;
   if (findtok(s_unary_ops, p->tok.tok) != TOK_EOF) {
@@ -10668,55 +10786,66 @@ static mjs_err_t parse_unary(struct pstate *p, int prev_op) {
   return res;
 }
 
-static mjs_err_t parse_mul_div_rem(struct pstate *p, int prev_op) {
+static mjs_err_t parse_mul_div_rem(struct pstate *p, int prev_op)
+{
   int ops[] = {TOK_MUL, TOK_DIV, TOK_REM, TOK_EOF};
   PARSE_LTR_BINOP(p, parse_unary, parse_mul_div_rem, ops, prev_op);
 }
 
-static mjs_err_t parse_plus_minus(struct pstate *p, int prev_op) {
+static mjs_err_t parse_plus_minus(struct pstate *p, int prev_op)
+{
   int ops[] = {TOK_PLUS, TOK_MINUS, TOK_EOF};
   PARSE_LTR_BINOP(p, parse_mul_div_rem, parse_plus_minus, ops, prev_op);
 }
 
-static mjs_err_t parse_shifts(struct pstate *p, int prev_op) {
+static mjs_err_t parse_shifts(struct pstate *p, int prev_op)
+{
   int ops[] = {TOK_LSHIFT, TOK_RSHIFT, TOK_URSHIFT, TOK_EOF};
   PARSE_LTR_BINOP(p, parse_plus_minus, parse_shifts, ops, prev_op);
 }
 
-static mjs_err_t parse_comparison(struct pstate *p, int prev_op) {
+static mjs_err_t parse_comparison(struct pstate *p, int prev_op)
+{
   PARSE_LTR_BINOP(p, parse_shifts, parse_comparison, s_comparison_ops, prev_op);
 }
 
-static mjs_err_t parse_equality(struct pstate *p, int prev_op) {
+static mjs_err_t parse_equality(struct pstate *p, int prev_op)
+{
   PARSE_LTR_BINOP(p, parse_comparison, parse_equality, s_equality_ops, prev_op);
 }
 
-static mjs_err_t parse_bitwise_and(struct pstate *p, int prev_op) {
+static mjs_err_t parse_bitwise_and(struct pstate *p, int prev_op)
+{
   int ops[] = {TOK_AND, TOK_EOF};
   PARSE_LTR_BINOP(p, parse_equality, parse_bitwise_and, ops, prev_op);
 }
 
-static mjs_err_t parse_bitwise_xor(struct pstate *p, int prev_op) {
+static mjs_err_t parse_bitwise_xor(struct pstate *p, int prev_op)
+{
   int ops[] = {TOK_XOR, TOK_EOF};
   PARSE_LTR_BINOP(p, parse_bitwise_and, parse_bitwise_xor, ops, prev_op);
 }
 
-static mjs_err_t parse_bitwise_or(struct pstate *p, int prev_op) {
+static mjs_err_t parse_bitwise_or(struct pstate *p, int prev_op)
+{
   int ops[] = {TOK_OR, TOK_EOF};
   PARSE_LTR_BINOP(p, parse_bitwise_xor, parse_bitwise_or, ops, prev_op);
 }
 
-static mjs_err_t parse_logical_and(struct pstate *p, int prev_op) {
+static mjs_err_t parse_logical_and(struct pstate *p, int prev_op)
+{
   int ops[] = {TOK_LOGICAL_AND, TOK_EOF};
   PARSE_LTR_BINOP(p, parse_bitwise_or, parse_logical_and, ops, prev_op);
 }
 
-static mjs_err_t parse_logical_or(struct pstate *p, int prev_op) {
+static mjs_err_t parse_logical_or(struct pstate *p, int prev_op)
+{
   int ops[] = {TOK_LOGICAL_OR, TOK_EOF};
   PARSE_LTR_BINOP(p, parse_logical_and, parse_logical_or, ops, prev_op);
 }
 
-static mjs_err_t parse_ternary(struct pstate *p, int prev_op) {
+static mjs_err_t parse_ternary(struct pstate *p, int prev_op)
+{
   mjs_err_t res = MJS_OK;
   if ((res = parse_logical_or(p, TOK_EOF)) != MJS_OK) return res;
   if (prev_op != TOK_EOF) emit_op(p, prev_op);
@@ -10755,15 +10884,18 @@ static mjs_err_t parse_ternary(struct pstate *p, int prev_op) {
   return res;
 }
 
-static mjs_err_t parse_assignment(struct pstate *p, int prev_op) {
+static mjs_err_t parse_assignment(struct pstate *p, int prev_op)
+{
   PARSE_RTL_BINOP(p, parse_ternary, parse_assignment, s_assign_ops, prev_op);
 }
 
-static mjs_err_t parse_expr(struct pstate *p) {
+static mjs_err_t parse_expr(struct pstate *p)
+{
   return parse_assignment(p, TOK_EOF);
 }
 
-static mjs_err_t parse_let(struct pstate *p) {
+static mjs_err_t parse_let(struct pstate *p)
+{
   mjs_err_t res = MJS_OK;
   LOG(LL_VERBOSE_DEBUG, ("[%.*s]", 10, p->tok.ptr));
   EXPECT(p, TOK_KEYWORD_LET);
@@ -10795,7 +10927,8 @@ static mjs_err_t parse_let(struct pstate *p) {
   return res;
 }
 
-static mjs_err_t parse_block_or_stmt(struct pstate *p, int cs) {
+static mjs_err_t parse_block_or_stmt(struct pstate *p, int cs)
+{
   if (ptest(p) == TOK_OPEN_CURLY) {
     return parse_block(p, cs);
   } else {
@@ -10803,7 +10936,8 @@ static mjs_err_t parse_block_or_stmt(struct pstate *p, int cs) {
   }
 }
 
-static mjs_err_t parse_for_in(struct pstate *p) {
+static mjs_err_t parse_for_in(struct pstate *p)
+{
   mjs_err_t res = MJS_OK;
   size_t off_b, off_check_end;
 
@@ -10871,7 +11005,8 @@ static mjs_err_t parse_for_in(struct pstate *p) {
   return res;
 }
 
-static int check_for_in(struct pstate *p) {
+static int check_for_in(struct pstate *p)
+{
   struct pstate saved = *p;
   int forin = 0;
   if (p->tok.tok == TOK_KEYWORD_LET) pnext1(p);
@@ -10883,7 +11018,8 @@ static int check_for_in(struct pstate *p) {
   return forin;
 }
 
-static mjs_err_t parse_for(struct pstate *p) {
+static mjs_err_t parse_for(struct pstate *p)
+{
   mjs_err_t res = MJS_OK;
   size_t off_b, off_c, off_init_end;
   size_t off_incr_begin, off_cond_begin, off_cond_end;
@@ -11004,7 +11140,8 @@ static mjs_err_t parse_for(struct pstate *p) {
   return res;
 }
 
-static mjs_err_t parse_while(struct pstate *p) {
+static mjs_err_t parse_while(struct pstate *p)
+{
   size_t off_cond_end, off_b;
   mjs_err_t res = MJS_OK;
 
@@ -11070,7 +11207,8 @@ static mjs_err_t parse_while(struct pstate *p) {
   return res;
 }
 
-static mjs_err_t parse_if(struct pstate *p) {
+static mjs_err_t parse_if(struct pstate *p)
+{
   size_t off_if, off_endif;
   mjs_err_t res = MJS_OK;
   LOG(LL_VERBOSE_DEBUG, ("[%.*s]", 10, p->tok.ptr));
@@ -11121,7 +11259,8 @@ static mjs_err_t parse_if(struct pstate *p) {
 }
 
 static void pstate_revert(struct pstate *p, struct pstate *old,
-                          int old_bcode_gen_len) {
+                          int old_bcode_gen_len)
+{
   p->pos = old->pos;
   p->line_no = old->line_no;
   p->last_emitted_line_no = old->last_emitted_line_no;
@@ -11133,7 +11272,8 @@ static void pstate_revert(struct pstate *p, struct pstate *old,
   p->depth = old->depth;
 }
 
-static mjs_err_t parse_return(struct pstate *p) {
+static mjs_err_t parse_return(struct pstate *p)
+{
   int old_bcode_gen_len;
   struct pstate p_saved;
   EXPECT(p, TOK_KEYWORD_RETURN);
@@ -11152,7 +11292,8 @@ static mjs_err_t parse_return(struct pstate *p) {
   return MJS_OK;
 }
 
-static mjs_err_t parse_statement(struct pstate *p) {
+static mjs_err_t parse_statement(struct pstate *p)
+{
   LOG(LL_VERBOSE_DEBUG, ("[%.*s]", 10, p->tok.ptr));
   switch (p->tok.tok) {
     case TOK_SEMICOLON:
@@ -11208,8 +11349,8 @@ static mjs_err_t parse_statement(struct pstate *p) {
   }
 }
 
-MJS_PRIVATE mjs_err_t
-mjs_parse(const char *path, const char *buf, struct mjs *mjs) {
+mjs_err_t mjs_parse(const char *path, const char *buf, struct mjs *mjs)
+{
   mjs_err_t res = MJS_OK;
   struct pstate p;
   size_t start_idx, llen;
@@ -11284,23 +11425,28 @@ mjs_parse(const char *path, const char *buf, struct mjs *mjs) {
 }
 
 
-mjs_val_t mjs_mk_null(void) {
+mjs_val_t mjs_mk_null(void)
+{
   return MJS_NULL;
 }
 
-int mjs_is_null(mjs_val_t v) {
+int mjs_is_null(mjs_val_t v)
+{
   return v == MJS_NULL;
 }
 
-mjs_val_t mjs_mk_undefined(void) {
+mjs_val_t mjs_mk_undefined(void)
+{
   return MJS_UNDEFINED;
 }
 
-int mjs_is_undefined(mjs_val_t v) {
+int mjs_is_undefined(mjs_val_t v)
+{
   return v == MJS_UNDEFINED;
 }
 
-mjs_val_t mjs_mk_number(struct mjs *mjs, double v) {
+mjs_val_t mjs_mk_number(struct mjs *mjs, double v)
+{
   mjs_val_t res;
   (void) mjs;
   /* not every NaN is a JS NaN */
@@ -11317,7 +11463,8 @@ mjs_val_t mjs_mk_number(struct mjs *mjs, double v) {
   return res;
 }
 
-static double get_double(mjs_val_t v) {
+static double get_double(mjs_val_t v)
+{
   union {
     double d;
     mjs_val_t v;
@@ -11327,12 +11474,14 @@ static double get_double(mjs_val_t v) {
   return u.d;
 }
 
-double mjs_get_double(struct mjs *mjs, mjs_val_t v) {
+double mjs_get_double(struct mjs *mjs, mjs_val_t v)
+{
   (void) mjs;
   return get_double(v);
 }
 
-int mjs_get_int(struct mjs *mjs, mjs_val_t v) {
+int mjs_get_int(struct mjs *mjs, mjs_val_t v)
+{
   (void) mjs;
   /*
    * NOTE(dfrank): without double cast, all numbers >= 0x80000000 are always
@@ -11341,21 +11490,25 @@ int mjs_get_int(struct mjs *mjs, mjs_val_t v) {
   return (int) (unsigned int) get_double(v);
 }
 
-int32_t mjs_get_int32(struct mjs *mjs, mjs_val_t v) {
+int32_t mjs_get_int32(struct mjs *mjs, mjs_val_t v)
+{
   (void) mjs;
   return (int32_t) get_double(v);
 }
 
-int mjs_is_number(mjs_val_t v) {
+int mjs_is_number(mjs_val_t v)
+{
   return v == MJS_TAG_NAN || !isnan(get_double(v));
 }
 
-mjs_val_t mjs_mk_boolean(struct mjs *mjs, int v) {
+mjs_val_t mjs_mk_boolean(struct mjs *mjs, int v)
+{
   (void) mjs;
   return (v ? 1 : 0) | MJS_TAG_BOOLEAN;
 }
 
-int mjs_get_bool(struct mjs *mjs, mjs_val_t v) {
+int mjs_get_bool(struct mjs *mjs, mjs_val_t v)
+{
   (void) mjs;
   if (mjs_is_boolean(v)) {
     return v & 1;
@@ -11364,14 +11517,16 @@ int mjs_get_bool(struct mjs *mjs, mjs_val_t v) {
   }
 }
 
-int mjs_is_boolean(mjs_val_t v) {
+int mjs_is_boolean(mjs_val_t v)
+{
   return (v & MJS_TAG_MASK) == MJS_TAG_BOOLEAN;
 }
 
 #define MJS_IS_POINTER_LEGIT(n) \
   (((n) &MJS_TAG_MASK) == 0 || ((n) &MJS_TAG_MASK) == (~0 & MJS_TAG_MASK))
 
-MJS_PRIVATE mjs_val_t mjs_pointer_to_value(struct mjs *mjs, void *p) {
+mjs_val_t mjs_pointer_to_value(struct mjs *mjs, void *p)
+{
   uint64_t n = ((uint64_t)(uintptr_t) p);
 
   if (!MJS_IS_POINTER_LEGIT(n)) {
@@ -11380,31 +11535,36 @@ MJS_PRIVATE mjs_val_t mjs_pointer_to_value(struct mjs *mjs, void *p) {
   return n & ~MJS_TAG_MASK;
 }
 
-MJS_PRIVATE mjs_val_t mjs_legit_pointer_to_value(void *p) {
+mjs_val_t mjs_legit_pointer_to_value(void *p)
+{
   uint64_t n = ((uint64_t)(uintptr_t) p);
 
   assert(MJS_IS_POINTER_LEGIT(n));
   return n & ~MJS_TAG_MASK;
 }
 
-MJS_PRIVATE void *get_ptr(mjs_val_t v) {
+void *get_ptr(mjs_val_t v)
+{
   return (void *) (uintptr_t)(v & 0xFFFFFFFFFFFFUL);
 }
 
-void *mjs_get_ptr(struct mjs *mjs, mjs_val_t v) {
+void *mjs_get_ptr(struct mjs *mjs, mjs_val_t v)
+{
   (void) mjs;
-  if (!mjs_is_foreign(v)) {
+  if(!mjs_is_foreign(v)) {
     return NULL;
   }
   return get_ptr(v);
 }
 
-mjs_val_t mjs_mk_foreign(struct mjs *mjs, void *p) {
+mjs_val_t mjs_mk_foreign(struct mjs *mjs, void *p)
+{
   (void) mjs;
   return mjs_pointer_to_value(mjs, p) | MJS_TAG_FOREIGN;
 }
 
-mjs_val_t mjs_mk_foreign_func(struct mjs *mjs, mjs_func_ptr_t fn) {
+mjs_val_t mjs_mk_foreign_func(struct mjs *mjs, mjs_func_ptr_t fn)
+{
   union {
     mjs_func_ptr_t fn;
     void *p;
@@ -11414,20 +11574,24 @@ mjs_val_t mjs_mk_foreign_func(struct mjs *mjs, mjs_func_ptr_t fn) {
   return mjs_pointer_to_value(mjs, u.p) | MJS_TAG_FOREIGN;
 }
 
-int mjs_is_foreign(mjs_val_t v) {
+int mjs_is_foreign(mjs_val_t v)
+{
   return (v & MJS_TAG_MASK) == MJS_TAG_FOREIGN;
 }
 
-mjs_val_t mjs_mk_function(struct mjs *mjs, size_t off) {
+mjs_val_t mjs_mk_function(struct mjs *mjs, size_t off)
+{
   (void) mjs;
   return (mjs_val_t) off | MJS_TAG_FUNCTION;
 }
 
-int mjs_is_function(mjs_val_t v) {
+int mjs_is_function(mjs_val_t v)
+{
   return (v & MJS_TAG_MASK) == MJS_TAG_FUNCTION;
 }
 
-MJS_PRIVATE void mjs_op_isnan(struct mjs *mjs) {
+void mjs_op_isnan(struct mjs *mjs)
+{
   mjs_val_t ret = MJS_UNDEFINED;
   mjs_val_t val = mjs_arg(mjs, 0);
 
@@ -11439,11 +11603,14 @@ MJS_PRIVATE void mjs_op_isnan(struct mjs *mjs) {
 
 // No UTF
 typedef unsigned short Rune;
-static int chartorune(Rune *rune, const char *str) {
+static int chartorune(Rune *rune, const char *str)
+{
   *rune = *(unsigned char *) str;
   return 1;
 }
-static int runetochar(char *str, Rune *rune) {
+
+static int runetochar(char *str, Rune *rune)
+{
   str[0] = (char) *rune;
   return 1;
 }
@@ -11452,22 +11619,24 @@ static int runetochar(char *str, Rune *rune) {
 #define MJS_STRING_BUF_RESERVE 100
 #endif
 
-MJS_PRIVATE size_t unescape(const char *s, size_t len, char *to);
+size_t unescape(const char *s, size_t len, char *to);
 
-MJS_PRIVATE void embed_string(struct mbuf *m, size_t offset, const char *p,
+void embed_string(struct mbuf *m, size_t offset, const char *p,
                               size_t len, uint8_t /*enum embstr_flags*/ flags);
 
 /* TODO(lsm): NaN payload location depends on endianness, make crossplatform */
 #define GET_VAL_NAN_PAYLOAD(v) ((char *) &(v))
 
-int mjs_is_string(mjs_val_t v) {
+int mjs_is_string(mjs_val_t v)
+{
   uint64_t t = v & MJS_TAG_MASK;
   return t == MJS_TAG_STRING_I || t == MJS_TAG_STRING_F ||
          t == MJS_TAG_STRING_O || t == MJS_TAG_STRING_5 ||
          t == MJS_TAG_STRING_D;
 }
 
-mjs_val_t mjs_mk_string(struct mjs *mjs, const char *p, size_t len, int copy) {
+mjs_val_t mjs_mk_string(struct mjs *mjs, const char *p, size_t len, int copy)
+{
   struct mbuf *m;
   mjs_val_t offset, tag = MJS_TAG_STRING_F;
   if (len == 0) {
@@ -11556,7 +11725,8 @@ mjs_val_t mjs_mk_string(struct mjs *mjs, const char *p, size_t len, int copy) {
 }
 
 /* Get a pointer to string and string length. */
-const char *mjs_get_string(struct mjs *mjs, mjs_val_t *v, size_t *sizep) {
+const char *mjs_get_string(struct mjs *mjs, mjs_val_t *v, size_t *sizep)
+{
   uint64_t tag = v[0] & MJS_TAG_MASK;
   const char *p = NULL;
   size_t size = 0, llen;
@@ -11631,7 +11801,8 @@ clean:
   return p;
 }
 
-const char *mjs_get_cstring(struct mjs *mjs, mjs_val_t *value) {
+const char *mjs_get_cstring(struct mjs *mjs, mjs_val_t *value)
+{
   size_t size;
   const char *s = mjs_get_string(mjs, value, &size);
   if (s == NULL) return NULL;
@@ -11641,7 +11812,8 @@ const char *mjs_get_cstring(struct mjs *mjs, mjs_val_t *value) {
   return s;
 }
 
-int mjs_strcmp(struct mjs *mjs, mjs_val_t *a, const char *b, size_t len) {
+int mjs_strcmp(struct mjs *mjs, mjs_val_t *a, const char *b, size_t len)
+{
   size_t n;
   const char *s;
   if (len == (size_t) ~0) len = strlen(b);
@@ -11652,15 +11824,16 @@ int mjs_strcmp(struct mjs *mjs, mjs_val_t *a, const char *b, size_t len) {
   return strncmp(s, b, len);
 }
 
-MJS_PRIVATE unsigned long cstr_to_ulong(const char *s, size_t len, int *ok) {
+unsigned long cstr_to_ulong(const char *s, size_t len, int *ok)
+{
   char *e;
   unsigned long res = strtoul(s, &e, 10);
   *ok = (e == s + len) && len != 0;
   return res;
 }
 
-MJS_PRIVATE mjs_err_t
-str_to_ulong(struct mjs *mjs, mjs_val_t v, int *ok, unsigned long *res) {
+mjs_err_t str_to_ulong(struct mjs *mjs, mjs_val_t v, int *ok, unsigned long *res)
+{
   enum mjs_err ret = MJS_OK;
   size_t len = 0;
   const char *p = mjs_get_string(mjs, &v, &len);
@@ -11669,7 +11842,8 @@ str_to_ulong(struct mjs *mjs, mjs_val_t v, int *ok, unsigned long *res) {
   return ret;
 }
 
-MJS_PRIVATE int s_cmp(struct mjs *mjs, mjs_val_t a, mjs_val_t b) {
+int s_cmp(struct mjs *mjs, mjs_val_t a, mjs_val_t b)
+{
   size_t a_len, b_len;
   const char *a_ptr, *b_ptr;
 
@@ -11688,7 +11862,8 @@ MJS_PRIVATE int s_cmp(struct mjs *mjs, mjs_val_t a, mjs_val_t b) {
   }
 }
 
-MJS_PRIVATE mjs_val_t s_concat(struct mjs *mjs, mjs_val_t a, mjs_val_t b) {
+mjs_val_t s_concat(struct mjs *mjs, mjs_val_t a, mjs_val_t b)
+{
   size_t a_len, b_len, res_len;
   const char *a_ptr, *b_ptr, *res_ptr;
   mjs_val_t res;
@@ -11712,7 +11887,8 @@ MJS_PRIVATE mjs_val_t s_concat(struct mjs *mjs, mjs_val_t a, mjs_val_t b) {
   return res;
 }
 
-MJS_PRIVATE void mjs_string_slice(struct mjs *mjs) {
+void mjs_string_slice(struct mjs *mjs)
+{
   int nargs = mjs_nargs(mjs);
   mjs_val_t ret = mjs_mk_number(mjs, 0);
   mjs_val_t beginSlice_v = MJS_UNDEFINED;
@@ -11756,7 +11932,8 @@ clean:
   mjs_return(mjs, ret);
 }
 
-MJS_PRIVATE void mjs_string_index_of(struct mjs *mjs) {
+void mjs_string_index_of(struct mjs *mjs)
+{
   mjs_val_t ret = mjs_mk_number(mjs, -1);
   mjs_val_t substr_v = MJS_UNDEFINED;
   mjs_val_t idx_v = MJS_UNDEFINED;
@@ -11798,7 +11975,8 @@ clean:
   mjs_return(mjs, ret);
 }
 
-MJS_PRIVATE void mjs_string_char_code_at(struct mjs *mjs) {
+void mjs_string_char_code_at(struct mjs *mjs)
+{
   mjs_val_t ret = MJS_UNDEFINED;
   mjs_val_t idx_v = MJS_UNDEFINED;
   int idx = 0;
@@ -11824,7 +12002,8 @@ clean:
   mjs_return(mjs, ret);
 }
 
-MJS_PRIVATE void mjs_mkstr(struct mjs *mjs) {
+void mjs_mkstr(struct mjs *mjs)
+{
   int nargs = mjs_nargs(mjs);
   mjs_val_t ret = MJS_UNDEFINED;
 
@@ -11901,7 +12080,8 @@ static int hex(int c) {
   return -SLRE_INVALID_HEX_DIGIT;
 }
 
-static int nextesc(const char **p) {
+static int nextesc(const char **p)
+{
   const unsigned char *s = (unsigned char *) (*p)++;
   switch (*s) {
     case 0:
@@ -11941,7 +12121,8 @@ static int nextesc(const char **p) {
   }
 }
 
-MJS_PRIVATE size_t unescape(const char *s, size_t len, char *to) {
+size_t unescape(const char *s, size_t len, char *to)
+{
   const char *end = s + len;
   size_t n = 0;
   char tmp[4];
@@ -11983,8 +12164,9 @@ MJS_PRIVATE size_t unescape(const char *s, size_t len, char *to) {
   return n;
 }
 
-MJS_PRIVATE void embed_string(struct mbuf *m, size_t offset, const char *p,
-                              size_t len, uint8_t /*enum embstr_flags*/ flags) {
+void embed_string(struct mbuf *m, size_t offset, const char *p,
+                              size_t len, uint8_t /*enum embstr_flags*/ flags)
+{
   char *old_base = m->buf;
   uint8_t p_backed_by_mbuf = p >= old_base && p < old_base + m->len;
   size_t n = (flags & EMBSTR_UNESCAPE) ? unescape(p, len, NULL) : len;
@@ -12021,12 +12203,9 @@ MJS_PRIVATE void embed_string(struct mbuf *m, size_t offset, const char *p,
   }
 }
 
-#include <stdlib.h>
-#include <string.h>
 
-
-MJS_PRIVATE void pinit(const char *file_name, const char *buf,
-                       struct pstate *p) {
+void pinit(const char *file_name, const char *buf, struct pstate *p )
+{
   memset(p, 0, sizeof(*p));
   p->line_no = 1;
   p->last_emitted_line_no = 1;
@@ -12042,22 +12221,27 @@ static int mjs_is_space(int c) {
          c == '\v';
 }
 
-MJS_PRIVATE int mjs_is_digit(int c) {
+int mjs_is_digit(int c)
+{
   return c >= '0' && c <= '9';
 }
 
-static int mjs_is_alpha(int c) {
+static int mjs_is_alpha(int c)
+{
   return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
 }
 
-MJS_PRIVATE int mjs_is_ident(int c) {
+int mjs_is_ident(int c)
+{
   return c == '_' || c == '$' || mjs_is_alpha(c);
 }
 
 // Try to parse a token that can take one or two chars.
-static int longtok(struct pstate *p, const char *first_chars,
-                   const char *second_chars) {
-  if (strchr(first_chars, p->pos[0]) == NULL) return TOK_EOF;
+static int longtok(struct pstate *p, const char *first_chars, const char *second_chars )
+{
+  if (strchr(first_chars, p->pos[0]) == NULL) {
+    return TOK_EOF;
+  }
   if (p->pos[1] != '\0' && strchr(second_chars, p->pos[1]) != NULL) {
     p->tok.len++;
     p->pos++;
@@ -12067,7 +12251,8 @@ static int longtok(struct pstate *p, const char *first_chars,
 }
 
 // Try to parse a token that takes exactly 3 chars.
-static int longtok3(struct pstate *p, char a, char b, char c) {
+static int longtok3(struct pstate *p, char a, char b, char c)
+{
   if (p->pos[0] == a && p->pos[1] == b && p->pos[2] == c) {
     p->tok.len += 2;
     p->pos += 2;
@@ -12077,7 +12262,8 @@ static int longtok3(struct pstate *p, char a, char b, char c) {
 }
 
 // Try to parse a token that takes exactly 4 chars.
-static int longtok4(struct pstate *p, char a, char b, char c, char d) {
+static int longtok4(struct pstate *p, char a, char b, char c, char d)
+{
   if (p->pos[0] == a && p->pos[1] == b && p->pos[2] == c && p->pos[3] == d) {
     p->tok.len += 3;
     p->pos += 3;
@@ -12086,19 +12272,16 @@ static int longtok4(struct pstate *p, char a, char b, char c, char d) {
   return TOK_EOF;
 }
 
-static int getnum(struct pstate *p) {
-  if (p->pos[0] == '0' && p->pos[1] == 'x') {
-    // MSVC6 strtod cannot parse 0x... numbers, thus this ugly workaround.
-    strtoul(p->pos + 2, (char **) &p->pos, 16);
-  } else {
-    strtod(p->pos, (char **) &p->pos);
-  }
+static int getnum(struct pstate *p)
+{
+  strtod(p->pos, (char **) &p->pos);
   p->tok.len = p->pos - p->tok.ptr;
   p->pos--;
   return TOK_NUM;
 }
 
-static int is_reserved_word_token(const char *s, int len) {
+static int is_reserved_word_token(const char *s, int len)
+{
   const char *reserved[] = {
       "break",     "case",   "catch", "continue",   "debugger", "default",
       "delete",    "do",     "else",  "false",      "finally",  "for",
@@ -12106,23 +12289,29 @@ static int is_reserved_word_token(const char *s, int len) {
       "return",    "switch", "this",  "throw",      "true",     "try",
       "typeof",    "var",    "void",  "while",      "with",     "let",
       "undefined", NULL};
-  int i;
-  if (!mjs_is_alpha(s[0])) return 0;
-  for (i = 0; reserved[i] != NULL; i++) {
-    if (len == (int) strlen(reserved[i]) && strncmp(s, reserved[i], len) == 0)
+  if( !mjs_is_alpha(s[0]) ) {
+    return 0;
+  }
+  for( int i = 0; reserved[i] != NULL; i++) {
+    if (len == (int) strlen(reserved[i]) && strncmp(s, reserved[i], len) == 0 ) {
       return i + 1;
+    }
   }
   return 0;
 }
 
-static int getident(struct pstate *p) {
-  while (mjs_is_ident(p->pos[0]) || mjs_is_digit(p->pos[0])) p->pos++;
+static int getident(struct pstate *p)
+{
+  while( mjs_is_ident(p->pos[0]) || mjs_is_digit(p->pos[0]) ) {
+    p->pos++;
+  }
   p->tok.len = p->pos - p->tok.ptr;
   p->pos--;
   return TOK_IDENT;
 }
 
-static int getstr(struct pstate *p) {
+static int getstr(struct pstate *p)
+{
   int quote = *p->pos++;
   p->tok.ptr++;
   while (p->pos[0] != '\0' && p->pos[0] != quote) {
@@ -12137,7 +12326,8 @@ static int getstr(struct pstate *p) {
   return TOK_STR;
 }
 
-static void skip_spaces_and_comments(struct pstate *p) {
+static void skip_spaces_and_comments(struct pstate *p)
+{
   const char *pos;
   do {
     pos = p->pos;
@@ -12162,7 +12352,8 @@ static void skip_spaces_and_comments(struct pstate *p) {
   } while (pos < p->pos);
 }
 
-static int ptranslate(int tok) {
+static int ptranslate(int tok)
+{
 #define DT(a, b) ((a) << 8 | (b))
 #define TT(a, b, c) ((a) << 16 | (b) << 8 | (c))
 #define QT(a, b, c, d) ((a) << 24 | (b) << 16 | (c) << 8 | (d))
@@ -12222,7 +12413,8 @@ static int ptranslate(int tok) {
   return tok;
 }
 
-MJS_PRIVATE int pnext(struct pstate *p) {
+int pnext(struct pstate *p)
+{
   int tmp, tok = TOK_INVALID;
 
   skip_spaces_and_comments(p);
@@ -12270,11 +12462,13 @@ MJS_PRIVATE int pnext(struct pstate *p) {
 }
 
 
-const char *mjs_typeof(mjs_val_t v) {
+const char *mjs_typeof(mjs_val_t v)
+{
   return mjs_stringify_type(mjs_get_type(v));
 }
 
-MJS_PRIVATE const char *mjs_stringify_type(enum mjs_type t) {
+const char *mjs_stringify_type(enum mjs_type t)
+{
   switch (t) {
     case MJS_TYPE_NUMBER:
       return "number";
@@ -12299,7 +12493,8 @@ MJS_PRIVATE const char *mjs_stringify_type(enum mjs_type t) {
   }
 }
 
-void mjs_jprintf(mjs_val_t v, struct mjs *mjs, struct json_out *out) {
+void mjs_jprintf(mjs_val_t v, struct mjs *mjs, struct json_out *out)
+{
   if (mjs_is_number(v)) {
     double iv, d = mjs_get_double(mjs, v);
     if (modf(d, &iv) == 0) {
@@ -12338,19 +12533,22 @@ void mjs_jprintf(mjs_val_t v, struct mjs *mjs, struct json_out *out) {
   }
 }
 
-void mjs_sprintf(mjs_val_t v, struct mjs *mjs, char *buf, size_t n) {
+void mjs_sprintf(mjs_val_t v, struct mjs *mjs, char *buf, size_t n)
+{
   struct json_out out = JSON_OUT_BUF(buf, n);
   mjs_jprintf(v, mjs, &out);
 }
 
-void mjs_fprintf(mjs_val_t v, struct mjs *mjs, FILE *fp) {
+void mjs_fprintf(mjs_val_t v, struct mjs *mjs, FILE *fp)
+{
   struct json_out out = JSON_OUT_FILE(fp);
   mjs_jprintf(v, mjs, &out);
 }
 
 #if MJS_ENABLE_DEBUG
 
-MJS_PRIVATE const char *opcodetostr(uint8_t opcode) {
+const char *opcodetostr(uint8_t opcode)
+{
   static const char *names[] = {
       "NOP", "DROP", "DUP", "SWAP", "JMP", "JMP_TRUE", "JMP_NEUTRAL_TRUE",
       "JMP_FALSE", "JMP_NEUTRAL_FALSE", "FIND_SCOPE", "PUSH_SCOPE", "PUSH_STR",
@@ -12366,7 +12564,8 @@ MJS_PRIVATE const char *opcodetostr(uint8_t opcode) {
   return name;
 }
 
-MJS_PRIVATE size_t mjs_disasm_single(const uint8_t *code, size_t i) {
+size_t mjs_disasm_single(const uint8_t *code, size_t i)
+{
   char buf[40];
   size_t start_i = i;
   size_t llen;
@@ -12505,7 +12704,8 @@ MJS_PRIVATE size_t mjs_disasm_single(const uint8_t *code, size_t i) {
   return i - start_i;
 }
 
-void mjs_disasm(const uint8_t *code, size_t len) {
+void mjs_disasm(const uint8_t *code, size_t len)
+{
   size_t i, start = 0;
   mjs_header_item_t map_offset = 0, total_size = 0;
 
@@ -12528,8 +12728,8 @@ void mjs_disasm(const uint8_t *code, size_t len) {
   }
 }
 
-static void mjs_dump_obj_stack(const char *name, const struct mbuf *m,
-                               struct mjs *mjs) {
+static void mjs_dump_obj_stack(const char *name, const struct mbuf *m, struct mjs *mjs )
+{
   char buf[50];
   size_t i, n;
   n = mjs_stack_size(m);
@@ -12540,28 +12740,29 @@ static void mjs_dump_obj_stack(const char *name, const struct mbuf *m,
   }
 }
 
-void mjs_dump(struct mjs *mjs, int do_disasm) {
+void mjs_dump(struct mjs *mjs, int do_disasm)
+{
   LOG(LL_VERBOSE_DEBUG, ("------- MJS VM DUMP BEGIN"));
   mjs_dump_obj_stack("DATA_STACK", &mjs->stack, mjs);
   mjs_dump_obj_stack("CALL_STACK", &mjs->call_stack, mjs);
   mjs_dump_obj_stack("SCOPES", &mjs->scopes, mjs);
   mjs_dump_obj_stack("LOOP_OFFSETS", &mjs->loop_addresses, mjs);
   mjs_dump_obj_stack("ARG_STACK", &mjs->arg_stack, mjs);
-  if (do_disasm) {
+  if( do_disasm ) {
     int parts_cnt = mjs_bcode_parts_cnt(mjs);
-    int i;
     LOG(LL_VERBOSE_DEBUG, ("%23s", "CODE:"));
-    for (i = 0; i < parts_cnt; i++) {
-      struct mjs_bcode_part *bp = mjs_bcode_part_get(mjs, i);
+    for( int i = 0; i < parts_cnt; ++i ) {
+      struct mjs_bcode_part *bp = mjs_bcode_part_get( mjs, i );
       mjs_disasm((uint8_t *) bp->data.p, bp->data.len);
     }
   }
   LOG(LL_VERBOSE_DEBUG, ("------- MJS VM DUMP END"));
 }
 
-MJS_PRIVATE int mjs_check_arg(struct mjs *mjs, int arg_num,
+int mjs_check_arg(struct mjs *mjs, int arg_num,
                               const char *arg_name, enum mjs_type expected_type,
-                              mjs_val_t *parg) {
+                              mjs_val_t *parg)
+{
   mjs_val_t arg = MJS_UNDEFINED;
   enum mjs_type actual_type;
 
@@ -12593,7 +12794,8 @@ MJS_PRIVATE int mjs_check_arg(struct mjs *mjs, int arg_num,
   return 1;
 }
 
-MJS_PRIVATE int mjs_normalize_idx(int idx, int size) {
+int mjs_normalize_idx(int idx, int size)
+{
   if (idx < 0) {
     idx = size + idx;
     if (idx < 0) {
@@ -12606,14 +12808,15 @@ MJS_PRIVATE int mjs_normalize_idx(int idx, int size) {
   return idx;
 }
 
-MJS_PRIVATE const char *mjs_get_bcode_filename(struct mjs *mjs,
-                                               struct mjs_bcode_part *bp) {
+const char *mjs_get_bcode_filename(struct mjs *mjs, struct mjs_bcode_part *bp)
+{
   (void) mjs;
   return bp->data.p + 1 /* OP_BCODE_HEADER */ +
          sizeof(mjs_header_item_t) * MJS_HDR_ITEMS_CNT;
 }
 
-const char *mjs_get_bcode_filename_by_offset(struct mjs *mjs, int offset) {
+const char *mjs_get_bcode_filename_by_offset(struct mjs *mjs, int offset)
+{
   const char *ret = NULL;
   struct mjs_bcode_part *bp = mjs_bcode_part_get_by_offset(mjs, offset);
   if (bp != NULL) {
@@ -12622,9 +12825,8 @@ const char *mjs_get_bcode_filename_by_offset(struct mjs *mjs, int offset) {
   return ret;
 }
 
-int mjs_get_lineno_by_offset(struct mjs *mjs, int offset) {
-  size_t llen;
-  uint64_t map_len;
+int mjs_get_lineno_by_offset(struct mjs *mjs, int offset)
+{
   int prev_line_no, ret = 1;
   struct mjs_bcode_part *bp = mjs_bcode_part_get_by_offset(mjs, offset);
   uint8_t *p, *pe;
@@ -12644,6 +12846,8 @@ int mjs_get_lineno_by_offset(struct mjs *mjs, int offset) {
     /* get pointer to the length of the map followed by the map itself */
     p = (uint8_t *) bp->data.p + 1 /* OP_BCODE_HEADER */ + map_offset;
 
+    size_t llen;
+    uint64_t map_len;
     cs_varint_decode(p, ~0, &map_len, &llen);
     p += llen;
     pe = p + map_len;
@@ -12666,7 +12870,8 @@ int mjs_get_lineno_by_offset(struct mjs *mjs, int offset) {
   return ret;
 }
 
-int mjs_get_offset_by_call_frame_num(struct mjs *mjs, int cf_num) {
+int mjs_get_offset_by_call_frame_num(struct mjs *mjs, int cf_num)
+{
   int ret = -1;
   if (cf_num == 0) {
     /* Return current bcode offset */
