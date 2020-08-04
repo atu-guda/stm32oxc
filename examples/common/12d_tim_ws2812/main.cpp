@@ -7,8 +7,8 @@
 #include <oxc_tim.h>
 
 // local configs requires
-#ifndef DEFINES_FOR_DS2812
-#error "Defines for DS2812 are required, may be in local_hal_conf.h"
+#ifndef DEFINES_FOR_WS2812
+#error "Defines for WS2812 are required, may be in local_hal_conf.h"
 #endif
 
 using namespace std;
@@ -19,7 +19,7 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
-const char* common_help_string = "App to test DS2812 LED controller with timer and DMA" NL;
+const char* common_help_string = "App to test WS2812 LED controller with timer and DMA" NL;
 
 TIM_HandleTypeDef tim_h;
 DMA_HandleTypeDef hdma_tim_chx;
@@ -71,9 +71,9 @@ uint8_t lbuf[max_leds*3];
 RGB8_Arr pbuf( lbuf, max_leds );
 
 // TODO: move to oxc lib
-struct DS2812_info {
+struct WS2812_info {
   using tim_ch_t = decltype(TIM_CHANNEL_1);
-  DS2812_info( TIM_HandleTypeDef *_tim_h_p, tim_ch_t t_ch ) : tim_h_p(_tim_h_p), tim_ch( t_ch ) {};
+  WS2812_info( TIM_HandleTypeDef *_tim_h_p, tim_ch_t t_ch ) : tim_h_p(_tim_h_p), tim_ch( t_ch ) {};
   static constexpr uint16_t size_1led = 3 * 8;
   static uint16_t t_min, t_max;     // CCR values for '0' and '1'
   uint16_t buf[ 2 * size_1led ];    // 2 chunks, each 24: 1 bit (CCR) for output via timer
@@ -94,15 +94,15 @@ struct DS2812_info {
   void callback_full();
   static void calc_minmax( uint16_t arr );
 };
-uint16_t DS2812_info::t_min, DS2812_info::t_max;
+uint16_t WS2812_info::t_min, WS2812_info::t_max;
 
-void DS2812_info::calc_minmax( uint16_t arr )
+void WS2812_info::calc_minmax( uint16_t arr )
 {
   t_min = (uint16_t)( arr * 7 / 25 ); // * 0.35/1.25  = 0.28
   t_max = (uint16_t)( arr - t_min );
 }
 
-void DS2812_info::color2tim( uint8_t c, uint16_t *d )
+void WS2812_info::color2tim( uint8_t c, uint16_t *d )
 {
   unsigned i = 0;
   for( uint8_t m=0x80; m; m>>=1, ++i ) {
@@ -110,7 +110,7 @@ void DS2812_info::color2tim( uint8_t c, uint16_t *d )
   }
 }
 
-void DS2812_info::rgb2tim( uint8_t r, uint8_t g, uint8_t b, uint16_t *d )
+void WS2812_info::rgb2tim( uint8_t r, uint8_t g, uint8_t b, uint16_t *d )
 {
   if( !d ) {
     return;
@@ -120,7 +120,7 @@ void DS2812_info::rgb2tim( uint8_t r, uint8_t g, uint8_t b, uint16_t *d )
   color2tim( b, d+16 );
 }
 
-int DS2812_info::send( const uint8_t *d, int sz ) // size in leds: 3*sz bytes in d[] required
+int WS2812_info::send( const uint8_t *d, int sz ) // size in leds: 3*sz bytes in d[] required
 {
   sz &= 0xFFFE; // limit size and oddness
   UVAR('y') = sz;
@@ -155,7 +155,7 @@ int DS2812_info::send( const uint8_t *d, int sz ) // size in leds: 3*sz bytes in
   return rc_s;
 }
 
-void DS2812_info::callback_half()
+void WS2812_info::callback_half()
 {
   uint16_t xpos = pos * 3;
   if( pos > size+1 ) {
@@ -171,7 +171,7 @@ void DS2812_info::callback_half()
   ++pos;
 }
 
-void DS2812_info::callback_full()
+void WS2812_info::callback_full()
 {
   uint16_t xpos = pos * 3;
   if( pos > size+2 ) {
@@ -186,7 +186,7 @@ void DS2812_info::callback_full()
   ++pos;
 }
 
-DS2812_info dsi( &tim_h, DS2812_TIM_CH );
+WS2812_info dsi( &tim_h, WS2812_TIM_CH );
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -320,7 +320,7 @@ int tim_cfg()
 {
   auto pbase = calc_TIM_arr_for_base_psc( TIM_EXA, 0, 800000 );
   UVAR('a') = pbase;
-  DS2812_info::calc_minmax( pbase );
+  WS2812_info::calc_minmax( pbase );
 
   tim_h.Instance               = TIM_EXA;
   tim_h.Init.Prescaler         = 0;
@@ -345,9 +345,9 @@ int tim_cfg()
   tim_oc_cfg.OCIdleState  = TIM_OCIDLESTATE_RESET;
   tim_oc_cfg.OCNIdleState = TIM_OCNIDLESTATE_RESET;
 
-  HAL_TIM_PWM_Stop( &tim_h, DS2812_TIM_CH );
+  HAL_TIM_PWM_Stop( &tim_h, WS2812_TIM_CH );
   tim_oc_cfg.Pulse = 0; // pbase / 2;
-  if( HAL_TIM_PWM_ConfigChannel( &tim_h, &tim_oc_cfg, DS2812_TIM_CH ) != HAL_OK ) {
+  if( HAL_TIM_PWM_ConfigChannel( &tim_h, &tim_oc_cfg, WS2812_TIM_CH ) != HAL_OK ) {
     UVAR('e') = 11;
     return 0;
   }
@@ -361,10 +361,10 @@ void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim )
   }
   TIM_EXA_CLKEN;
 
-  TIM_EXA_GPIO.cfgAF_N( DS2812_TIM_PIN, TIM_EXA_GPIOAF );
+  TIM_EXA_GPIO.cfgAF_N( WS2812_TIM_PIN, TIM_EXA_GPIOAF );
 
-  hdma_tim_chx.Instance                 = DS2812_DMA_INSTANCE;
-  hdma_tim_chx.Init.Channel             = DS2812_DMA_CHANNEL;
+  hdma_tim_chx.Instance                 = WS2812_DMA_INSTANCE;
+  hdma_tim_chx.Init.Channel             = WS2812_DMA_CHANNEL;
   hdma_tim_chx.Init.Direction           = DMA_MEMORY_TO_PERIPH;
   hdma_tim_chx.Init.PeriphInc           = DMA_PINC_DISABLE;
   hdma_tim_chx.Init.MemInc              = DMA_MINC_ENABLE;
@@ -378,7 +378,7 @@ void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim )
     return;
   }
 
-  __HAL_LINKDMA( &tim_h, hdma[DS2812_TIM_DMA_ID], hdma_tim_chx );
+  __HAL_LINKDMA( &tim_h, hdma[WS2812_TIM_DMA_ID], hdma_tim_chx );
 
 }
 
@@ -388,20 +388,20 @@ void HAL_TIM_PWM_MspDeInit( TIM_HandleTypeDef* htim )
     return;
   }
   TIM_EXA_CLKDIS;
-  TIM_EXA_GPIO.cfgIn_N( DS2812_TIM_PIN );
+  TIM_EXA_GPIO.cfgIn_N( WS2812_TIM_PIN );
 }
 
 void MX_DMA_Init()
 {
-  DS2812_DMA_ENABLE;
+  WS2812_DMA_ENABLE;
 
-  HAL_NVIC_SetPriority( DS2812_DMA_IRQN, 8, 0 );
-  HAL_NVIC_EnableIRQ(   DS2812_DMA_IRQN );
+  HAL_NVIC_SetPriority( WS2812_DMA_IRQN, 8, 0 );
+  HAL_NVIC_EnableIRQ(   WS2812_DMA_IRQN );
 
 }
 
 
-void DS2812_DMA_IRQHANDLER()
+void WS2812_DMA_IRQHANDLER()
 {
   // leds.toggle( BIT0 );
   HAL_DMA_IRQHandler( &hdma_tim_chx );

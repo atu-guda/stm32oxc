@@ -23,6 +23,7 @@ SUBDIRS = \
   12a_tim_pwm_fade \
   12b_tim_cnt \
   12c_tim_pwmcnt \
+  12d_tim_ws2812 \
   14_tim_enco \
   15_tim_usonic \
   16_step1 \

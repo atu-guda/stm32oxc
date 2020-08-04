@@ -1,0 +1,16 @@
+#ifndef _LOCAL_HAL_CONF_H
+#define _LOCAL_HAL_CONF_H
+
+#define DEFINES_FOR_WS2812
+
+#define WS2812_TIM_CH         TIM_CHANNEL_1
+#define WS2812_TIM_PIN        TIM_EXA_PIN1
+#define WS2812_DMA_INSTANCE   DMA2_Stream1
+#define WS2812_DMA_CHANNEL    DMA_CHANNEL_6
+#define WS2812_DMA_ENABLE     __HAL_RCC_DMA2_CLK_ENABLE()
+#define WS2812_DMA_IRQN       DMA2_Stream1_IRQn
+#define WS2812_TIM_DMA_ID     TIM_DMA_ID_CC1
+#define WS2812_DMA_IRQHANDLER DMA2_Stream1_IRQHandler
+
+#endif
+
