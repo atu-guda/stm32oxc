@@ -4,12 +4,13 @@
 
 #include <cmath>
 
-#include "mjs.h"
-
 #include <oxc_auto.h>
 #include <oxc_statdata.h>
 #include <oxc_namedints.h>
 #include <oxc_namedfloats.h>
+
+#include <oxc_mjs.h>
+
 
 using namespace std;
 using namespace SMLRL;

@@ -76,7 +76,7 @@ typedef uint64_t mjs_val_t;
 
 struct mjs;
 
-typedef enum mjs_err {
+enum mjs_err_t {
   MJS_OK,
   MJS_SYNTAX_ERROR,
   MJS_REFERENCE_ERROR,
@@ -88,7 +88,7 @@ typedef enum mjs_err {
   MJS_BAD_ARGS_ERROR,
 
   MJS_ERRS_CNT
-} mjs_err_t;
+};
 
 /* Create MJS instance */
 struct mjs *mjs_create(void);
@@ -207,7 +207,7 @@ void mjs_print_error(struct mjs *mjs, FILE *fp, const char *msg, int print_stack
  * return a string representation of an error.
  * the error string might be overwritten by calls to `mjs_set_errorf`.
  */
-const char *mjs_strerror(struct mjs *mjs, enum mjs_err err);
+const char *mjs_strerror(struct mjs *mjs, mjs_err_t err );
 
 /*
  * Sets whether *.jsc files are generated when *.js file is executed. By

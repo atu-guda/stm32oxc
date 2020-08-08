@@ -1,7 +1,7 @@
 // based on https://github.com/cesanta/mjs
 // mjs.c mod by atu:
 
-#include "mjs.h"
+#include <oxc_mjs.h>
 
 #ifndef CS_COMMON_PLATFORM_H_
 #define CS_COMMON_PLATFORM_H_
@@ -129,20 +129,31 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <stdint.h>
+#include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
+#include <math.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <time.h>
+#include <stddef.h>
+#include <stdarg.h>
+#include <stdlib.h>
+#include <stdbool.h>
 char *strdup(const char *s); // not always defined
 // #include <dirent.h> // atu: find and realize
 
 
 #define to64(x) strtoll(x, nullptr, 10)
-#define INT64_FMT "lld"
+#define INT64_FMT PRId64
+#define UINT64_FMT PRIu64
 #define SIZE_T_FMT "u"
+
 typedef struct stat cs_stat_t;
+
 #define DIRSEP '/'
 
 #ifndef CS_ENABLE_STDIO
@@ -193,7 +204,7 @@ enum cs_log_level {
  * Set max log level to print; messages with the level above the given one will
  * not be printed.
  */
-void cs_log_set_level(enum cs_log_level level);
+void cs_log_set_level( cs_log_level level );
 
 /*
  * A comma-separated set of prefix=level.
@@ -217,7 +228,7 @@ void cs_log_set_file_level(const char *file_level);
  */
 int cs_log_print_prefix(enum cs_log_level level, const char *fname, int line);
 
-extern enum cs_log_level cs_log_level;
+extern cs_log_level cs_log_level;
 
 #if CS_ENABLE_STDIO
 
@@ -281,7 +292,6 @@ void cs_log_printf(const char *fmt, ...) PRINTF_LIKE(1, 2);
 #ifndef CS_COMMON_CS_TIME_H_
 #define CS_COMMON_CS_TIME_H_
 
-#include <time.h>
 
 
 
@@ -300,7 +310,6 @@ double cs_timegm(const struct tm *tm);
 #ifndef CS_COMMON_MG_STR_H_
 #define CS_COMMON_MG_STR_H_
 
-#include <stddef.h>
 
 
 /* Describes chunk of memory */
@@ -391,8 +400,6 @@ int mg_str_starts_with(struct mg_str s, struct mg_str prefix);
 #ifndef CS_COMMON_STR_UTIL_H_
 #define CS_COMMON_STR_UTIL_H_
 
-#include <stdarg.h>
-#include <stdlib.h>
 
 
 #ifndef CS_ENABLE_STRDUP
@@ -464,7 +471,6 @@ char *strdup(const char *src);
 #endif
 
 #if CS_ENABLE_TO64
-#include <stdint.h>
 /*
  * Simple string -> int64 conversion routine.
  */
@@ -696,10 +702,6 @@ void mbuf_trim(struct mbuf *);
 #define CS_FROZEN_FROZEN_H_
 
 
-#include <stdarg.h>
-#include <stddef.h>
-
-#include <stdbool.h>
 
 /* JSON token type */
 enum json_token_type {
@@ -1038,11 +1040,6 @@ void ffi_set_float(struct ffi_arg *arg, float v);
 #ifndef MJS_INTERNAL_H_
 #define MJS_INTERNAL_H_
 
-#include <assert.h>
-#include <ctype.h>
-#include <math.h>
-#include <stdarg.h>
-#include <string.h>
 
 #ifndef FAST
 #define FAST
@@ -1123,14 +1120,6 @@ void ffi_set_float(struct ffi_arg *arg, float v);
 #ifndef MJS_CORE_PUBLIC_H_
 #define MJS_CORE_PUBLIC_H_
 
-#if !defined(_MSC_VER) || _MSC_VER >= 1700
-#include <stdint.h>
-#else
-typedef unsigned __int64 uint64_t;
-typedef int int32_t;
-typedef unsigned char uint8_t;
-#endif
-#include <stddef.h>
 
 
 #define MJS_ENABLE_DEBUG 1
@@ -1199,7 +1188,7 @@ struct mjs_ffi_sig {
    * managed by GC, and for the GC mark to work, the first element should be
    * a pointer (so that the two LSBs are not used).
    */
-  struct mjs_ffi_sig *cb_sig;
+  mjs_ffi_sig *cb_sig;
 
   /*
    * The first item is the return value type (for `void`, `MJS_FFI_CTYPE_NONE`
@@ -1467,7 +1456,7 @@ struct mjs {
   struct mjs_vals vals;
   char *error_msg;
   char *stack_trace;
-  enum mjs_err error;
+  mjs_err_t error;
   mjs_ffi_resolver_t *dlsym;  /* Symbol resolver function for FFI */
   ffi_cb_args_t *ffi_cb_args; /* List of FFI args descriptors */
   size_t cur_bcode_offset;
@@ -1476,9 +1465,9 @@ struct mjs {
   struct gc_arena property_arena;
   struct gc_arena ffi_sig_arena;
 
-  unsigned inhibit_gc : 1;
-  unsigned need_gc : 1;
-  unsigned generate_jsc : 1;
+  unsigned inhibit_gc;
+  unsigned need_gc;
+  unsigned generate_jsc;
 };
 
 /*
@@ -1551,7 +1540,6 @@ int mjs_is_truthy(struct mjs *mjs, mjs_val_t v);
 #ifndef MJS_OBJECT_PUBLIC_H_
 #define MJS_OBJECT_PUBLIC_H_
 
-#include <stddef.h>
 
 
 
@@ -1736,9 +1724,6 @@ void mjs_jprintf(mjs_val_t v, struct mjs *mjs, struct json_out *out);
 #ifndef CS_COMMON_CS_VARINT_H_
 #define CS_COMMON_CS_VARINT_H_
 
-#include <stdbool.h>
-#include <stdint.h>
-
 
 /* Returns number of bytes required to encode `num`. */
 size_t cs_varint_llen(uint64_t num);
@@ -1861,11 +1846,6 @@ void mjs_bcode_commit(struct mjs *mjs);
 #ifndef MJS_INTERNAL_H_
 #define MJS_INTERNAL_H_
 
-#include <assert.h>
-#include <ctype.h>
-#include <math.h>
-#include <stdarg.h>
-#include <string.h>
 
 
 #ifdef MJS_EXPOSE_PRIVATE
@@ -1890,28 +1870,8 @@ void mjs_bcode_commit(struct mjs *mjs);
 #endif
 
 
-#if defined(_WIN32) && _MSC_VER < 1700
-typedef signed char int8_t;
-typedef unsigned char uint8_t;
-typedef int int32_t;
-typedef unsigned int uint32_t;
-typedef short int16_t;
-typedef unsigned short uint16_t;
-typedef __int64 int64_t;
-typedef unsigned long uintptr_t;
-#define STRX(x) #x
-#define STR(x) STRX(x)
-#define __func__ __FILE__ ":" STR(__LINE__)
-// #define snprintf _snprintf
-#define vsnprintf _vsnprintf
-#define isnan(x) _isnan(x)
-#define va_copy(x, y) (x) = (y)
-#define CS_DEFINE_DIRENT
-#include <windows.h>
-#else
 #if defined(__unix__) || defined(__APPLE__)
 #include <dlfcn.h>
-#endif
 #endif
 
 /*
@@ -2152,8 +2112,6 @@ mjs_err_t mjs_parse(const char *path, const char *buf, struct mjs *);
 #ifndef MJS_EXPORT_INTERNAL_HEADERS
 
 
-#include <stdarg.h>
-#include <string.h>
 
 
 enum cs_log_level cs_log_level WEAK =
@@ -2176,7 +2134,8 @@ double cs_log_ts WEAK;
 
 enum cs_log_level cs_log_cur_msg_level WEAK = LL_NONE;
 
-void cs_log_set_file_level(const char *file_level) {
+void cs_log_set_file_level(const char *file_level)
+{
   char *fl = s_file_level;
   if (file_level != nullptr) {
     s_file_level = strdup(file_level);
@@ -2187,24 +2146,29 @@ void cs_log_set_file_level(const char *file_level) {
 }
 
 int cs_log_print_prefix(enum cs_log_level level, const char *file, int ln) WEAK;
-int cs_log_print_prefix(enum cs_log_level level, const char *file, int ln) {
+
+int cs_log_print_prefix(enum cs_log_level level, const char *file, int ln)
+{
   char prefix[CS_LOG_PREFIX_LEN], *q;
-  const char *p;
   size_t fl = 0, ll = 0, pl = 0;
 
   if (level > cs_log_level && s_file_level == nullptr) return 0;
 
-  p = file + strlen(file);
+  const char *p = file + strlen(file);
 
-  while (p != file) {
+  while( p != file ) {
     const char c = *(p - 1);
-    if (c == '/' || c == '\\') break;
+    if (c == '/' || c == '\\') {
+      break;
+    }
     p--;
     fl++;
   }
 
   ll = (ln < 10000 ? (ln < 1000 ? (ln < 100 ? (ln < 10 ? 1 : 2) : 3) : 4) : 5);
-  if (fl > (sizeof(prefix) - ll - 2)) fl = (sizeof(prefix) - ll - 2);
+  if (fl > (sizeof(prefix) - ll - 2)) {
+    fl = (sizeof(prefix) - ll - 2);
+  }
 
   pl = fl + 1 + ll;
   memcpy(prefix, p, fl);
@@ -2243,7 +2207,8 @@ int cs_log_print_prefix(enum cs_log_level level, const char *file, int ln) {
 }
 
 void cs_log_printf(const char *fmt, ...) WEAK;
-void cs_log_printf(const char *fmt, ...) {
+void cs_log_printf(const char *fmt, ...)
+{
   va_list ap;
   va_start(ap, fmt);
   vfprintf(cs_log_file, fmt, ap);
@@ -2254,20 +2219,23 @@ void cs_log_printf(const char *fmt, ...) {
 }
 
 void cs_log_set_file(FILE *file) WEAK;
-void cs_log_set_file(FILE *file) {
+void cs_log_set_file(FILE *file)
+{
   cs_log_file = file;
 }
 
 #else
 
-void cs_log_set_file_level(const char *file_level) {
+void cs_log_set_file_level(const char *file_level)
+{
   (void) file_level;
 }
 
 #endif /* CS_ENABLE_STDIO */
 
 void cs_log_set_level(enum cs_log_level level) WEAK;
-void cs_log_set_level(enum cs_log_level level) {
+void cs_log_set_level(enum cs_log_level level)
+{
   cs_log_level = level;
 #if CS_LOG_ENABLE_TS_DIFF && CS_ENABLE_STDIO
   cs_log_ts = cs_time();
@@ -2276,17 +2244,17 @@ void cs_log_set_level(enum cs_log_level level) {
 
 
 #ifdef CS_MMAP
-#include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #endif
 
 #ifndef EXCLUDE_COMMON
 char *cs_read_file(const char *path, size_t *size) WEAK;
-char *cs_read_file(const char *path, size_t *size) {
+char *cs_read_file(const char *path, size_t *size)
+{
   FILE *fp;
   char *data = nullptr;
-  if ((fp = fopen(path, "rb")) == nullptr) {
+  if( (fp = fopen(path, "rb")) == nullptr ) {
   } else if (fseek(fp, 0, SEEK_END) != 0) {
     fclose(fp);
   } else {
@@ -2308,11 +2276,14 @@ char *cs_read_file(const char *path, size_t *size) {
 
 #ifdef CS_MMAP
 char *cs_mmap_file(const char *path, size_t *size) WEAK;
-char *cs_mmap_file(const char *path, size_t *size) {
+char *cs_mmap_file(const char *path, size_t *size)
+{
   char *r;
   int fd = open(path, O_RDONLY, 0);
   struct stat st;
-  if (fd < 0) return nullptr;
+  if (fd < 0) {
+    return nullptr;
+  }
   fstat(fd, &st);
   *size = (size_t) st.st_size;
   r = (char *) mmap(nullptr, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
@@ -2322,7 +2293,8 @@ char *cs_mmap_file(const char *path, size_t *size) {
 #endif
 
 
-size_t cs_varint_llen(uint64_t num) {
+size_t cs_varint_llen(uint64_t num)
+{
   size_t llen = 0;
 
   do {
@@ -2332,7 +2304,8 @@ size_t cs_varint_llen(uint64_t num) {
   return llen;
 }
 
-size_t cs_varint_encode(uint64_t num, uint8_t *buf, size_t buf_size) {
+size_t cs_varint_encode(uint64_t num, uint8_t *buf, size_t buf_size)
+{
   size_t llen = 0;
 
   do {
@@ -2346,8 +2319,8 @@ size_t cs_varint_encode(uint64_t num, uint8_t *buf, size_t buf_size) {
   return llen;
 }
 
-bool cs_varint_decode(const uint8_t *buf, size_t buf_size, uint64_t *num,
-                      size_t *llen) {
+bool cs_varint_decode(const uint8_t *buf, size_t buf_size, uint64_t *num, size_t *llen)
+{
   size_t i = 0, shift = 0;
   uint64_t n = 0;
 
@@ -2372,7 +2345,8 @@ bool cs_varint_decode(const uint8_t *buf, size_t buf_size, uint64_t *num,
   return true;
 }
 
-uint64_t cs_varint_decode_unsafe(const uint8_t *buf, int *llen) {
+uint64_t cs_varint_decode_unsafe(const uint8_t *buf, int *llen)
+{
   uint64_t v;
   size_t l;
   cs_varint_decode(buf, ~0, &v, &l);
@@ -2382,8 +2356,6 @@ uint64_t cs_varint_decode_unsafe(const uint8_t *buf, int *llen) {
 
 #ifndef EXCLUDE_COMMON
 
-#include <assert.h>
-#include <string.h>
 
 #ifndef MBUF_REALLOC
 #define MBUF_REALLOC realloc
@@ -2394,14 +2366,16 @@ uint64_t cs_varint_decode_unsafe(const uint8_t *buf, int *llen) {
 #endif
 
 void mbuf_init(struct mbuf *mbuf, size_t initial_size) WEAK;
-void mbuf_init(struct mbuf *mbuf, size_t initial_size) {
+void mbuf_init(struct mbuf *mbuf, size_t initial_size)
+{
   mbuf->len = mbuf->size = 0;
   mbuf->buf = nullptr;
   mbuf_resize(mbuf, initial_size);
 }
 
 void mbuf_free(struct mbuf *mbuf) WEAK;
-void mbuf_free(struct mbuf *mbuf) {
+void mbuf_free(struct mbuf *mbuf)
+{
   if (mbuf->buf != nullptr) {
     MBUF_FREE(mbuf->buf);
     mbuf_init(mbuf, 0);
@@ -2409,7 +2383,8 @@ void mbuf_free(struct mbuf *mbuf) {
 }
 
 void mbuf_resize(struct mbuf *a, size_t new_size) WEAK;
-void mbuf_resize(struct mbuf *a, size_t new_size) {
+void mbuf_resize(struct mbuf *a, size_t new_size)
+{
   if (new_size > a->size || (new_size < a->size && new_size >= a->len)) {
     char *buf = (char *) MBUF_REALLOC(a->buf, new_size);
     /*
@@ -2424,12 +2399,14 @@ void mbuf_resize(struct mbuf *a, size_t new_size) {
 }
 
 void mbuf_trim(struct mbuf *mbuf) WEAK;
-void mbuf_trim(struct mbuf *mbuf) {
+void mbuf_trim(struct mbuf *mbuf)
+{
   mbuf_resize(mbuf, mbuf->len);
 }
 
 size_t mbuf_insert(struct mbuf *a, size_t off, const void *buf, size_t) WEAK;
-size_t mbuf_insert(struct mbuf *a, size_t off, const void *buf, size_t len) {
+size_t mbuf_insert(struct mbuf *a, size_t off, const void *buf, size_t len)
+{
   char *p = nullptr;
 
   assert(a != nullptr);
@@ -2473,12 +2450,14 @@ size_t mbuf_insert(struct mbuf *a, size_t off, const void *buf, size_t len) {
 }
 
 size_t mbuf_append(struct mbuf *a, const void *buf, size_t len) WEAK;
-size_t mbuf_append(struct mbuf *a, const void *buf, size_t len) {
+size_t mbuf_append(struct mbuf *a, const void *buf, size_t len)
+{
   return mbuf_insert(a, a->len, buf, len);
 }
 
 size_t mbuf_append_and_free(struct mbuf *a, void *buf, size_t len) WEAK;
-size_t mbuf_append_and_free(struct mbuf *a, void *data, size_t len) {
+size_t mbuf_append_and_free(struct mbuf *a, void *data, size_t len)
+{
   size_t ret;
   /* Optimization: if the buffer is currently empty,
    * take over the user-provided buffer. */
@@ -2494,7 +2473,8 @@ size_t mbuf_append_and_free(struct mbuf *a, void *data, size_t len) {
 }
 
 void mbuf_remove(struct mbuf *mb, size_t n) WEAK;
-void mbuf_remove(struct mbuf *mb, size_t n) {
+void mbuf_remove(struct mbuf *mb, size_t n)
+{
   if (n > 0 && n <= mb->len) {
     memmove(mb->buf, mb->buf + n, mb->len - n);
     mb->len -= n;
@@ -2502,12 +2482,14 @@ void mbuf_remove(struct mbuf *mb, size_t n) {
 }
 
 void mbuf_clear(struct mbuf *mb) WEAK;
-void mbuf_clear(struct mbuf *mb) {
+void mbuf_clear(struct mbuf *mb)
+{
   mb->len = 0;
 }
 
 void mbuf_move(struct mbuf *from, struct mbuf *to) WEAK;
-void mbuf_move(struct mbuf *from, struct mbuf *to) {
+void mbuf_move(struct mbuf *from, struct mbuf *to)
+{
   memcpy(to, from, sizeof(*to));
   memset(from, 0, sizeof(*from));
 }
@@ -2515,26 +2497,29 @@ void mbuf_move(struct mbuf *from, struct mbuf *to) {
 #endif /* EXCLUDE_COMMON */
 
 
-#include <ctype.h>
-#include <string.h>
 
 int mg_ncasecmp(const char *s1, const char *s2, size_t len) WEAK;
 
 struct mg_str mg_mk_str(const char *s) WEAK;
-struct mg_str mg_mk_str(const char *s) {
+struct mg_str mg_mk_str(const char *s)
+{
   struct mg_str ret = {s, 0};
-  if (s != nullptr) ret.len = strlen(s);
+  if (s != nullptr) {
+    ret.len = strlen(s);
+  }
   return ret;
 }
 
 struct mg_str mg_mk_str_n(const char *s, size_t len) WEAK;
-struct mg_str mg_mk_str_n(const char *s, size_t len) {
+struct mg_str mg_mk_str_n(const char *s, size_t len)
+{
   struct mg_str ret = {s, len};
   return ret;
 }
 
 int mg_vcmp(const struct mg_str *str1, const char *str2) WEAK;
-int mg_vcmp(const struct mg_str *str1, const char *str2) {
+int mg_vcmp(const struct mg_str *str1, const char *str2)
+{
   size_t n2 = strlen(str2), n1 = str1->len;
   int r = strncmp(str1->p, str2, (n1 < n2) ? n1 : n2);
   if (r == 0) {
@@ -2544,7 +2529,8 @@ int mg_vcmp(const struct mg_str *str1, const char *str2) {
 }
 
 int mg_vcasecmp(const struct mg_str *str1, const char *str2) WEAK;
-int mg_vcasecmp(const struct mg_str *str1, const char *str2) {
+int mg_vcasecmp(const struct mg_str *str1, const char *str2)
+{
   size_t n2 = strlen(str2), n1 = str1->len;
   int r = mg_ncasecmp(str1->p, str2, (n1 < n2) ? n1 : n2);
   if (r == 0) {
@@ -2553,10 +2539,10 @@ int mg_vcasecmp(const struct mg_str *str1, const char *str2) {
   return r;
 }
 
-static struct mg_str mg_strdup_common(const struct mg_str s,
-                                      int nul_terminate) {
+static struct mg_str mg_strdup_common(const struct mg_str s, int nul_terminate )
+{
   struct mg_str r = {nullptr, 0};
-  if (s.len > 0 && s.p != nullptr) {
+  if( s.len > 0 && s.p != nullptr ) {
     char *sc = (char *) MG_MALLOC(s.len + (nul_terminate ? 1 : 0));
     if (sc != nullptr) {
       memcpy(sc, s.p, s.len);
@@ -2569,17 +2555,20 @@ static struct mg_str mg_strdup_common(const struct mg_str s,
 }
 
 struct mg_str mg_strdup(const struct mg_str s) WEAK;
-struct mg_str mg_strdup(const struct mg_str s) {
+struct mg_str mg_strdup(const struct mg_str s)
+{
   return mg_strdup_common(s, 0 /* NUL-terminate */);
 }
 
 struct mg_str mg_strdup_nul(const struct mg_str s) WEAK;
-struct mg_str mg_strdup_nul(const struct mg_str s) {
+struct mg_str mg_strdup_nul(const struct mg_str s)
+{
   return mg_strdup_common(s, 1 /* NUL-terminate */);
 }
 
 const char *mg_strchr(const struct mg_str s, int c) WEAK;
-const char *mg_strchr(const struct mg_str s, int c) {
+const char *mg_strchr(const struct mg_str s, int c)
+{
   size_t i;
   for (i = 0; i < s.len; i++) {
     if (s.p[i] == c) return &s.p[i];
@@ -2588,7 +2577,8 @@ const char *mg_strchr(const struct mg_str s, int c) {
 }
 
 int mg_strcmp(const struct mg_str str1, const struct mg_str str2) WEAK;
-int mg_strcmp(const struct mg_str str1, const struct mg_str str2) {
+int mg_strcmp(const struct mg_str str1, const struct mg_str str2)
+{
   size_t i = 0;
   while (i < str1.len && i < str2.len) {
     int c1 = str1.p[i];
@@ -2603,7 +2593,8 @@ int mg_strcmp(const struct mg_str str1, const struct mg_str str2) {
 }
 
 int mg_strncmp(const struct mg_str, const struct mg_str, size_t n) WEAK;
-int mg_strncmp(const struct mg_str str1, const struct mg_str str2, size_t n) {
+int mg_strncmp(const struct mg_str str1, const struct mg_str str2, size_t n)
+{
   struct mg_str s1 = str1;
   struct mg_str s2 = str2;
 
@@ -2617,7 +2608,8 @@ int mg_strncmp(const struct mg_str str1, const struct mg_str str2, size_t n) {
 }
 
 int mg_strcasecmp(const struct mg_str str1, const struct mg_str str2) WEAK;
-int mg_strcasecmp(const struct mg_str str1, const struct mg_str str2) {
+int mg_strcasecmp(const struct mg_str str1, const struct mg_str str2)
+{
   size_t i = 0;
   while (i < str1.len && i < str2.len) {
     int c1 = tolower((int) str1.p[i]);
@@ -2632,17 +2624,19 @@ int mg_strcasecmp(const struct mg_str str1, const struct mg_str str2) {
 }
 
 void mg_strfree(struct mg_str *s) WEAK;
-void mg_strfree(struct mg_str *s) {
+void mg_strfree(struct mg_str *s)
+{
   char *sp = (char *) s->p;
   s->p = nullptr;
   s->len = 0;
-  if (sp != nullptr) free(sp);
+  if (sp != nullptr) {
+    free(sp);
+  }
 }
 
-const char *mg_strstr(const struct mg_str haystack,
-                      const struct mg_str needle) WEAK;
-const char *mg_strstr(const struct mg_str haystack,
-                      const struct mg_str needle) {
+const char *mg_strstr(const struct mg_str haystack, const struct mg_str needle) WEAK;
+const char *mg_strstr(const struct mg_str haystack, const struct mg_str needle)
+{
   size_t i;
   if (needle.len > haystack.len) return nullptr;
   for (i = 0; i <= haystack.len - needle.len; i++) {
@@ -2654,7 +2648,8 @@ const char *mg_strstr(const struct mg_str haystack,
 }
 
 struct mg_str mg_strstrip(struct mg_str s) WEAK;
-struct mg_str mg_strstrip(struct mg_str s) {
+struct mg_str mg_strstrip(struct mg_str s)
+{
   while (s.len > 0 && isspace((int) *s.p)) {
     s.p++;
     s.len--;
@@ -2666,7 +2661,8 @@ struct mg_str mg_strstrip(struct mg_str s) {
 }
 
 int mg_str_starts_with(struct mg_str s, struct mg_str prefix) WEAK;
-int mg_str_starts_with(struct mg_str s, struct mg_str prefix) {
+int mg_str_starts_with(struct mg_str s, struct mg_str prefix)
+{
   const struct mg_str sp = MG_MK_STR_N(s.p, prefix.len);
   if (s.len < prefix.len) return 0;
   return (mg_strcmp(sp, prefix) == 0);
@@ -2681,7 +2677,8 @@ int mg_str_starts_with(struct mg_str s, struct mg_str prefix) {
 
 
 size_t c_strnlen(const char *s, size_t maxlen) WEAK;
-size_t c_strnlen(const char *s, size_t maxlen) {
+size_t c_strnlen(const char *s, size_t maxlen)
+{
   size_t l = 0;
   for (; l < maxlen && s[l] != '\0'; l++) {
   }
@@ -2698,12 +2695,13 @@ size_t c_strnlen(const char *s, size_t maxlen) {
 
 #if C_DISABLE_BUILTIN_SNPRINTF
 int c_vsnprintf(char *buf, size_t buf_size, const char *fmt, va_list ap) WEAK;
-int c_vsnprintf(char *buf, size_t buf_size, const char *fmt, va_list ap) {
+int c_vsnprintf(char *buf, size_t buf_size, const char *fmt, va_list ap)
+{
   return vsnprintf(buf, buf_size, fmt, ap);
 }
 #else
-static int c_itoa(char *buf, size_t buf_size, int64_t num, int base, int flags,
-                  int field_width) {
+static int c_itoa(char *buf, size_t buf_size, int64_t num, int base, int flags, int field_width )
+{
   char tmp[40];
   int i = 0, k = 0, neg = 0;
 
@@ -2744,7 +2742,8 @@ static int c_itoa(char *buf, size_t buf_size, int64_t num, int base, int flags,
 }
 
 int c_vsnprintf(char *buf, size_t buf_size, const char *fmt, va_list ap) WEAK;
-int c_vsnprintf(char *buf, size_t buf_size, const char *fmt, va_list ap) {
+int c_vsnprintf(char *buf, size_t buf_size, const char *fmt, va_list ap)
+{
   int ch, i = 0, len_mod, flags, precision, field_width;
 
   while ((ch = *fmt++) != '\0') {
@@ -2882,7 +2881,8 @@ int c_vsnprintf(char *buf, size_t buf_size, const char *fmt, va_list ap) {
 #endif
 
 int c_snprintf(char *buf, size_t buf_size, const char *fmt, ...) WEAK;
-int c_snprintf(char *buf, size_t buf_size, const char *fmt, ...) {
+int c_snprintf(char *buf, size_t buf_size, const char *fmt, ...)
+{
   int result;
   va_list ap;
   va_start(ap, fmt);
@@ -2894,16 +2894,16 @@ int c_snprintf(char *buf, size_t buf_size, const char *fmt, ...) {
 
 /* The simplest O(mn) algorithm. Better implementation are GPLed */
 const char *c_strnstr(const char *s, const char *find, size_t slen) WEAK;
-const char *c_strnstr(const char *s, const char *find, size_t slen) {
+const char *c_strnstr(const char *s, const char *find, size_t slen)
+{
   size_t find_length = strlen(find);
-  size_t i;
 
-  for (i = 0; i < slen; i++) {
-    if (i + find_length > slen) {
+  for( size_t i = 0; i < slen; i++ ) {
+    if( i + find_length > slen ) {
       return nullptr;
     }
 
-    if (strncmp(&s[i], find, find_length) == 0) {
+    if( strncmp( &s[i], find, find_length ) == 0 ) {
       return &s[i];
     }
   }
@@ -2913,7 +2913,8 @@ const char *c_strnstr(const char *s, const char *find, size_t slen) {
 
 #if CS_ENABLE_STRDUP
 char *strdup(const char *src) WEAK;
-char *strdup(const char *src) {
+char *strdup(const char *src)
+{
   size_t len = strlen(src) + 1;
   char *ret = MG_MALLOC(len);
   if (ret != nullptr) {
@@ -2924,7 +2925,8 @@ char *strdup(const char *src) {
 #endif
 
 void cs_to_hex(char *to, const unsigned char *p, size_t len) WEAK;
-void cs_to_hex(char *to, const unsigned char *p, size_t len) {
+void cs_to_hex(char *to, const unsigned char *p, size_t len)
+{
   static const char *hex = "0123456789abcdef";
 
   for (; len--; p++) {
@@ -2934,7 +2936,8 @@ void cs_to_hex(char *to, const unsigned char *p, size_t len) {
   *to = '\0';
 }
 
-static int fourbit(int ch) {
+static int fourbit(int ch)
+{
   if (ch >= '0' && ch <= '9') {
     return ch - '0';
   } else if (ch >= 'a' && ch <= 'f') {
@@ -2946,10 +2949,9 @@ static int fourbit(int ch) {
 }
 
 void cs_from_hex(char *to, const char *p, size_t len) WEAK;
-void cs_from_hex(char *to, const char *p, size_t len) {
-  size_t i;
-
-  for (i = 0; i < len; i += 2) {
+void cs_from_hex(char *to, const char *p, size_t len)
+{
+  for (size_t i = 0; i < len; i += 2) {
     *to++ = (fourbit(p[i]) << 4) + fourbit(p[i + 1]);
   }
   *to = '\0';
@@ -2957,7 +2959,8 @@ void cs_from_hex(char *to, const char *p, size_t len) {
 
 #if CS_ENABLE_TO64
 int64_t cs_to64(const char *s) WEAK;
-int64_t cs_to64(const char *s) {
+int64_t cs_to64(const char *s)
+{
   int64_t result = 0;
   int64_t neg = 1;
   while (*s && isspace((unsigned char) *s)) s++;
@@ -2974,12 +2977,14 @@ int64_t cs_to64(const char *s) {
 }
 #endif
 
-static int str_util_lowercase(const char *s) {
+static int str_util_lowercase(const char *s)
+{
   return tolower(*(const unsigned char *) s);
 }
 
 int mg_ncasecmp(const char *s1, const char *s2, size_t len) WEAK;
-int mg_ncasecmp(const char *s1, const char *s2, size_t len) {
+int mg_ncasecmp(const char *s1, const char *s2, size_t len)
+{
   int diff = 0;
 
   if (len > 0) do {
@@ -2990,12 +2995,14 @@ int mg_ncasecmp(const char *s1, const char *s2, size_t len) {
 }
 
 int mg_casecmp(const char *s1, const char *s2) WEAK;
-int mg_casecmp(const char *s1, const char *s2) {
+int mg_casecmp(const char *s1, const char *s2)
+{
   return mg_ncasecmp(s1, s2, (size_t) ~0);
 }
 
 int mg_asprintf(char **buf, size_t size, const char *fmt, ...) WEAK;
-int mg_asprintf(char **buf, size_t size, const char *fmt, ...) {
+int mg_asprintf(char **buf, size_t size, const char *fmt, ...)
+{
   int ret;
   va_list ap;
   va_start(ap, fmt);
@@ -3005,7 +3012,8 @@ int mg_asprintf(char **buf, size_t size, const char *fmt, ...) {
 }
 
 int mg_avprintf(char **buf, size_t size, const char *fmt, va_list ap) WEAK;
-int mg_avprintf(char **buf, size_t size, const char *fmt, va_list ap) {
+int mg_avprintf(char **buf, size_t size, const char *fmt, va_list ap)
+{
   va_list ap_copy;
   int len;
 
@@ -3056,7 +3064,8 @@ int mg_avprintf(char **buf, size_t size, const char *fmt, va_list ap) {
 const char *mg_next_comma_list_entry(const char *, struct mg_str *,
                                      struct mg_str *) WEAK;
 const char *mg_next_comma_list_entry(const char *list, struct mg_str *val,
-                                     struct mg_str *eq_val) {
+                                     struct mg_str *eq_val)
+{
   struct mg_str ret = mg_next_comma_list_entry_n(mg_mk_str(list), val, eq_val);
   return ret.p;
 }
@@ -3064,7 +3073,8 @@ const char *mg_next_comma_list_entry(const char *list, struct mg_str *val,
 struct mg_str mg_next_comma_list_entry_n(struct mg_str list, struct mg_str *val,
                                          struct mg_str *eq_val) WEAK;
 struct mg_str mg_next_comma_list_entry_n(struct mg_str list, struct mg_str *val,
-                                         struct mg_str *eq_val) {
+                                         struct mg_str *eq_val)
+{
   if (list.len == 0) {
     /* End of the list */
     list = mg_mk_str(nullptr);
@@ -3100,7 +3110,8 @@ struct mg_str mg_next_comma_list_entry_n(struct mg_str list, struct mg_str *val,
 }
 
 size_t mg_match_prefix_n(const struct mg_str, const struct mg_str) WEAK;
-size_t mg_match_prefix_n(const struct mg_str pattern, const struct mg_str str) {
+size_t mg_match_prefix_n(const struct mg_str pattern, const struct mg_str str)
+{
   const char *or_str;
   size_t res = 0, len = 0, i = 0, j = 0;
 
@@ -3146,37 +3157,18 @@ size_t mg_match_prefix_n(const struct mg_str pattern, const struct mg_str str) {
 }
 
 size_t mg_match_prefix(const char *, int, const char *) WEAK;
-size_t mg_match_prefix(const char *pattern, int pattern_len, const char *str) {
+size_t mg_match_prefix(const char *pattern, int pattern_len, const char *str)
+{
   const struct mg_str pstr = {pattern, (size_t) pattern_len};
   struct mg_str s = {str, 0};
-  if (str != nullptr) s.len = strlen(str);
+  if (str != nullptr) {
+    s.len = strlen(str);
+  }
   return mg_match_prefix_n(pstr, s);
 }
 
 #endif /* EXCLUDE_COMMON */
 
-#define _CRT_SECURE_NO_WARNINGS /* Disable deprecation warning in VS2005+ */
-
-
-#include <ctype.h>
-#include <stdarg.h>
-#include <string.h>
-#include <inttypes.h>
-
-#if !defined(WEAK)
-#if (defined(__GNUC__) || defined(__TI_COMPILER_VERSION__)) && !defined(_WIN32)
-#define WEAK __attribute__((weak))
-#else
-#define WEAK
-#endif
-#endif
-
-#ifndef INT64_FMT
-#define INT64_FMT PRId64
-#endif
-#ifndef UINT64_FMT
-#define UINT64_FMT PRIu64
-#endif
 
 #ifndef va_copy
 #define va_copy(x, y) x = y
@@ -3225,7 +3217,8 @@ struct fstate {
     }                                                                         \
   } while (0)
 
-static int json_append_to_path(struct frozen *f, const char *str, int size) {
+static int json_append_to_path(struct frozen *f, const char *str, int size)
+{
   int n = f->path_len;
   int left = sizeof(f->path) - n - 1;
   if (size > left) size = left;
@@ -3235,7 +3228,8 @@ static int json_append_to_path(struct frozen *f, const char *str, int size) {
   return n;
 }
 
-static void json_truncate_path(struct frozen *f, size_t len) {
+static void json_truncate_path(struct frozen *f, size_t len)
+{
   f->path_len = len;
   f->path[len] = '\0';
 }
@@ -5742,7 +5736,15 @@ mjs_err_t mjs_to_string(struct mjs *mjs, mjs_val_t *v, char **p, size_t *sizep, 
   *sizep = 0;
   *need_free = 0;
 
-  if (mjs_is_string(*v)) {
+  // atu: we need no const
+  static char s_true[] = "true";
+  static char s_false[] = "false";
+  static char s_undefined[] = "undefined";
+  static char s_null[] = "null";
+  static char s_TODO_foreign[] = "TODO_foreign";
+
+
+  if( mjs_is_string(*v) ) {
     *p = (char *) mjs_get_string(mjs, v, sizep);
   } else if (mjs_is_number(*v)) {
     char buf[50] = "";
@@ -5756,26 +5758,26 @@ mjs_err_t mjs_to_string(struct mjs *mjs, mjs_val_t *v, char **p, size_t *sizep, 
     }
     memmove(*p, buf, *sizep + 1);
     *need_free = 1;
-  } else if (mjs_is_boolean(*v)) {
+  } else if( mjs_is_boolean(*v) ) {
     if (mjs_get_bool(mjs, *v)) {
-      *p = "true";
+      *p = s_true;
       *sizep = 4;
     } else {
-      *p = "false";
+      *p = s_false;
       *sizep = 5;
     }
   } else if (mjs_is_undefined(*v)) {
-    *p = "undefined";
+    *p = s_undefined;
     *sizep = 9;
   } else if (mjs_is_null(*v)) {
-    *p = "null";
+    *p = s_null;
     *sizep = 4;
   } else if (mjs_is_object(*v)) {
     ret = MJS_TYPE_ERROR;
     mjs_set_errorf(mjs, ret,
                    "conversion from object to string is not supported");
   } else if (mjs_is_foreign(*v)) {
-    *p = "TODO_foreign";
+    *p = s_TODO_foreign;
     *sizep = 12;
   } else {
     ret = MJS_TYPE_ERROR;
@@ -5981,7 +5983,7 @@ clean:
   mjs_return(mjs, MJS_UNDEFINED);
 }
 
-const char *mjs_strerror(struct mjs *mjs, enum mjs_err err)
+const char *mjs_strerror(struct mjs *mjs, mjs_err_t err)
 {
   const char *err_names[] = {
       "NO_ERROR",        "SYNTAX_ERROR",    "REFERENCE_ERROR",
@@ -6830,7 +6832,6 @@ static int getprop_builtin(struct mjs *mjs, mjs_val_t val, mjs_val_t name,
 
 mjs_err_t mjs_execute(struct mjs *mjs, size_t off, mjs_val_t *res)
 {
-  size_t i;
   uint8_t prev_opcode = OP_MAX;
   uint8_t opcode = OP_MAX;
 
@@ -6853,7 +6854,7 @@ mjs_err_t mjs_execute(struct mjs *mjs, size_t off, mjs_val_t *res)
 
   off -= bp.start_idx;
 
-  for (i = off; i < bp.data.len; i++) {
+  for ( size_t i = off; i < bp.data.len; i++) {
     mjs->cur_bcode_offset = i;
 
     if (mjs->need_gc) {
@@ -9504,7 +9505,7 @@ struct json_parse_ctx {
   struct mjs *mjs;
   mjs_val_t result;
   struct json_parse_frame *frame;
-  enum mjs_err rcode;
+  mjs_err_t rcode;
 };
 
 /* Allocate JSON parse frame */
@@ -9631,7 +9632,7 @@ mjs_err_t mjs_json_parse(struct mjs *mjs, const char *str, size_t len, mjs_val_t
   struct json_parse_ctx *ctx =
       (struct json_parse_ctx *) calloc(sizeof(struct json_parse_ctx), 1);
   int json_res;
-  enum mjs_err rcode = MJS_OK;
+  mjs_err_t rcode = MJS_OK;
 
   ctx->mjs = mjs;
   ctx->result = MJS_UNDEFINED;
@@ -9671,7 +9672,7 @@ mjs_err_t mjs_json_parse(struct mjs *mjs, const char *str, size_t len, mjs_val_t
     assert(ctx->frame == nullptr);
   }
 
-  if (rcode != MJS_OK) {
+  if( rcode != MJS_OK ) {
     /* There might be some allocated frames in case of malformed JSON */
     while (ctx->frame != nullptr) {
       ctx->frame = free_json_frame(ctx, ctx->frame);
@@ -10453,10 +10454,10 @@ static mjs_err_t parse_array_literal(struct pstate *p)
   return res;
 }
 
-static enum mjs_err parse_literal(struct pstate *p, const struct tok *t)
+static mjs_err_t parse_literal(struct pstate *p, const struct tok *t)
 {
   struct mbuf *bcode_gen = &p->mjs->bcode_gen;
-  enum mjs_err res = MJS_OK;
+  mjs_err_t res = MJS_OK;
   int tok = t->tok;
   LOG(LL_VERBOSE_DEBUG, ("[%.*s] %p", p->tok.len, p->tok.ptr, (void *) &t));
   switch (t->tok) {
@@ -11648,7 +11649,7 @@ unsigned long cstr_to_ulong(const char *s, size_t len, int *ok)
 
 mjs_err_t str_to_ulong(struct mjs *mjs, mjs_val_t v, int *ok, unsigned long *res)
 {
-  enum mjs_err ret = MJS_OK;
+  mjs_err_t ret = MJS_OK;
   size_t len = 0;
   const char *p = mjs_get_string(mjs, &v, &len);
   *res = cstr_to_ulong(p, len, ok);
@@ -11667,6 +11668,7 @@ int s_cmp(struct mjs *mjs, mjs_val_t a, mjs_val_t b)
   if (a_len == b_len) {
     return memcmp(a_ptr, b_ptr, a_len);
   }
+
   if (a_len > b_len) {
     return 1;
   } else if (a_len < b_len) {
