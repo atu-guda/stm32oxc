@@ -41,9 +41,6 @@
 #include <stdio.h>
 #include <stddef.h>
 
-#if defined(__cplusplus)
-extern "C" {
-#endif /* __cplusplus */
 
 #define MJS_ENABLE_DEBUG 1
 
@@ -238,9 +235,6 @@ mjs_val_t mjs_arg(struct mjs *mjs, int n);
  */
 void mjs_return(struct mjs *mjs, mjs_val_t v);
 
-#if defined(__cplusplus)
-}
-#endif /* __cplusplus */
 
 #endif /* MJS_CORE_PUBLIC_H_ */
 
@@ -249,9 +243,6 @@ void mjs_return(struct mjs *mjs, mjs_val_t v);
 
 /* Amalgamated: #include "mjs/src/mjs_core_public.h" */
 
-#if defined(__cplusplus)
-extern "C" {
-#endif /* __cplusplus */
 
 enum mjs_ffi_ctype {
   MJS_FFI_CTYPE_NONE,
@@ -272,9 +263,6 @@ typedef void *(mjs_ffi_resolver_t)(void *handle, const char *symbol);
 
 void mjs_set_ffi_resolver(struct mjs *mjs, mjs_ffi_resolver_t *dlsym);
 
-#if defined(__cplusplus)
-}
-#endif /* __cplusplus */
 
 #endif /* MJS_FFI_PUBLIC_H_ */
 #ifndef MJS_EXPORT_INTERNAL_HEADERS
@@ -287,9 +275,6 @@ void mjs_set_ffi_resolver(struct mjs *mjs, mjs_ffi_resolver_t *dlsym);
 #define MJS_ARRAY_PUBLIC_H_
 
 
-#if defined(__cplusplus)
-extern "C" {
-#endif /* __cplusplus */
 
 /* Make an empty array object */
 mjs_val_t mjs_mk_array( struct mjs *mjs );
@@ -315,25 +300,16 @@ int mjs_is_array( mjs_val_t v );
 /* Delete value in array `arr` at index `index`, if it exists. */
 void mjs_array_del( struct mjs *mjs, mjs_val_t arr, unsigned long index );
 
-#if defined(__cplusplus)
-}
-#endif /* __cplusplus */
 
 #endif /* MJS_ARRAY_PUBLIC_H_ */
 
 #ifndef MJS_CORE_PUBLIC_H_
 #define MJS_CORE_PUBLIC_H_
 
-#if defined(__cplusplus)
-extern "C" {
-#endif /* __cplusplus */
 
 #define MJS_ENABLE_DEBUG 1
 
 
-#if defined(__cplusplus)
-}
-#endif /* __cplusplus */
 
 #endif /* MJS_CORE_PUBLIC_H_ */
 
@@ -341,9 +317,6 @@ extern "C" {
 #define MJS_EXEC_PUBLIC_H_
 
 
-#if defined(__cplusplus)
-extern "C" {
-#endif /* __cplusplus */
 
 mjs_err_t mjs_exec( struct mjs*, const char *src, mjs_val_t *res );
 mjs_err_t mjs_exec_buf( struct mjs*, const char *src, size_t, mjs_val_t *res );
@@ -353,31 +326,19 @@ mjs_err_t mjs_apply( struct mjs *mjs, mjs_val_t *res, mjs_val_t func, mjs_val_t 
 mjs_err_t mjs_call( struct mjs *mjs, mjs_val_t *res, mjs_val_t func, mjs_val_t this_val, int nargs, ... );
 mjs_val_t mjs_get_this( struct mjs *mjs );
 
-#if defined(__cplusplus)
-}
-#endif /* __cplusplus */
 
 #endif /* MJS_EXEC_PUBLIC_H_ */
 
 #ifndef MJS_FFI_PUBLIC_H_
 #define MJS_FFI_PUBLIC_H_
 
-#if defined(__cplusplus)
-extern "C" {
-#endif /* __cplusplus */
 
-#if defined(__cplusplus)
-}
-#endif /* __cplusplus */
 
 #endif /* MJS_FFI_PUBLIC_H_ */
 
 #ifndef MJS_OBJECT_PUBLIC_H_
 #define MJS_OBJECT_PUBLIC_H_
 
-#if defined(__cplusplus)
-extern "C" {
-#endif /* __cplusplus */
 
 /*
  * Returns true if the given value is an object or array.
@@ -478,9 +439,6 @@ int mjs_del( struct mjs *mjs, mjs_val_t obj, const char *name, size_t len );
  */
 mjs_val_t mjs_next( struct mjs *mjs, mjs_val_t obj, mjs_val_t *iterator );
 
-#if defined(__cplusplus)
-}
-#endif /* __cplusplus */
 
 #endif /* MJS_OBJECT_PUBLIC_H_ */
 
@@ -516,9 +474,6 @@ mjs_val_t mjs_next( struct mjs *mjs, mjs_val_t obj, mjs_val_t *iterator );
 
 #define MJS_TAG_MASK MAKE_TAG(1, 15)
 
-#if defined(__cplusplus)
-extern "C" {
-#endif /* __cplusplus */
 
 /* JavaScript `null` value */
 #define MJS_NULL MJS_TAG_NULL
@@ -622,9 +577,6 @@ int mjs_is_boolean(mjs_val_t v);
 mjs_val_t mjs_mk_function(struct mjs *mjs, size_t off);
 int mjs_is_function(mjs_val_t v);
 
-#if defined(__cplusplus)
-}
-#endif /* __cplusplus */
 
 #endif /* MJS_PRIMITIVE_PUBLIC_H_ */
 
@@ -633,9 +585,6 @@ int mjs_is_function(mjs_val_t v);
 
 #define MJS_STRING_LITERAL_MAX_LEN 128
 
-#if defined(__cplusplus)
-extern "C" {
-#endif /* __cplusplus */
 
 /*
  * Creates a string primitive value.
@@ -694,9 +643,6 @@ const char *mjs_get_cstring( struct mjs *mjs, mjs_val_t *v );
  */
 int mjs_strcmp(struct mjs *mjs, mjs_val_t *a, const char *b, size_t len);
 
-#if defined(__cplusplus)
-}
-#endif /* __cplusplus */
 
 #endif /* MJS_STRING_PUBLIC_H_ */
 
@@ -704,9 +650,6 @@ int mjs_strcmp(struct mjs *mjs, mjs_val_t *a, const char *b, size_t len);
 #define MJS_UTIL_PUBLIC_H_
 
 
-#if defined(__cplusplus)
-extern "C" {
-#endif /* __cplusplus */
 
 const char *mjs_typeof(mjs_val_t v);
 
@@ -738,9 +681,6 @@ int mjs_get_lineno_by_offset(struct mjs *mjs, int offset);
  */
 int mjs_get_offset_by_call_frame_num(struct mjs *mjs, int cf_num);
 
-#if defined(__cplusplus)
-}
-#endif /* __cplusplus */
 
 #endif /* MJS_UTIL_PUBLIC_H_ */
 #endif /* MJS_EXPORT_INTERNAL_HEADERS */

@@ -25,11 +25,11 @@ USE_OXC_CONSOLE_DEFAULT = y
 
 SRCS  = main.cpp
 
+SRCS += oxc_mjs.cpp
+
 SRCS += oxc_floatfun.cpp
 SRCS += oxc_statdata.cpp
 SRCS += oxc_namedobjs.cpp
 SRCS += oxc_namedfloats.cpp
 SRCS += oxc_namedints.cpp
-
-SRCS += mjs.c
 

@@ -139,7 +139,7 @@ char *strdup(const char *s); // not always defined
 // #include <dirent.h> // atu: find and realize
 
 
-#define to64(x) strtoll(x, NULL, 10)
+#define to64(x) strtoll(x, nullptr, 10)
 #define INT64_FMT "lld"
 #define SIZE_T_FMT "u"
 typedef struct stat cs_stat_t;
@@ -173,9 +173,6 @@ typedef struct stat cs_stat_t;
 #define CS_LOG_ENABLE_TS_DIFF 0
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
 
 /*
  * Log level; `LL_INFO` is the default. Use `cs_log_set_level()` to change it.
@@ -225,7 +222,7 @@ extern enum cs_log_level cs_log_level;
 #if CS_ENABLE_STDIO
 
 /*
- * Set file to write logs into. If `NULL`, logs go to `stderr`.
+ * Set file to write logs into. If `nullptr`, logs go to `stderr`.
  */
 void cs_log_set_file(FILE *file);
 
@@ -278,9 +275,6 @@ void cs_log_printf(const char *fmt, ...) PRINTF_LIKE(1, 2);
 
 #endif
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
 
 #endif /* CS_COMMON_CS_DBG_H_ */
 
@@ -290,9 +284,6 @@ void cs_log_printf(const char *fmt, ...) PRINTF_LIKE(1, 2);
 #include <time.h>
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
 
 /* Sub-second granularity time(). */
 double cs_time(void);
@@ -303,9 +294,6 @@ double cs_time(void);
  */
 double cs_timegm(const struct tm *tm);
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
 
 #endif /* CS_COMMON_CS_TIME_H_ */
 
@@ -314,9 +302,6 @@ double cs_timegm(const struct tm *tm);
 
 #include <stddef.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /* Describes chunk of memory */
 struct mg_str {
@@ -326,7 +311,7 @@ struct mg_str {
 
 /*
  * Helper function for creating mg_str struct from plain C string.
- * `NULL` is allowed and becomes `{NULL, 0}`.
+ * `nullptr` is allowed and becomes `{nullptr, 0}`.
  */
 struct mg_str mg_mk_str(const char *s);
 
@@ -341,7 +326,7 @@ struct mg_str mg_mk_str_n(const char *s, size_t len);
 #define MG_MK_STR_N(str_literal, len) \
   { str_literal, len }
 #define MG_NULL_STR \
-  { NULL, 0 }
+  { nullptr, 0 }
 
 /*
  * Cross-platform version of `strcmp()` where where first string is
@@ -400,9 +385,6 @@ struct mg_str mg_strstrip(struct mg_str s);
 /* Returns 1 if s starts with the given prefix. */
 int mg_str_starts_with(struct mg_str s, struct mg_str prefix);
 
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* CS_COMMON_MG_STR_H_ */
 
@@ -438,9 +420,6 @@ int mg_str_starts_with(struct mg_str s, struct mg_str prefix);
  */
 #define CS_STRINGIFY_MACRO(x) CS_STRINGIFY_LIT(x)
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /*
  * Equivalent of standard `strnlen()`.
@@ -527,7 +506,7 @@ int mg_avprintf(char **buf, size_t size, const char *fmt, va_list ap);
 
 /*
  * A helper function for traversing a comma separated list of values.
- * It returns a list pointer shifted to the next value or NULL if the end
+ * It returns a list pointer shifted to the next value or nullptr if the end
  * of the list found.
  * The value is stored in a val vector. If the value has a form "x=y", then
  * eq_val vector is initialised to point to the "y" part, and val vector length
@@ -544,7 +523,7 @@ const char *mg_next_comma_list_entry(const char *list, struct mg_str *val,
 /*
  * Like `mg_next_comma_list_entry()`, but takes `list` as `struct mg_str`.
  * NB: Test return value's .p, not .len. On last itreation that yields result
- * .len will be 0 but .p will not. When finished, .p will be NULL.
+ * .len will be 0 but .p will not. When finished, .p will be nullptr.
  */
 struct mg_str mg_next_comma_list_entry_n(struct mg_str list, struct mg_str *val,
                                          struct mg_str *eq_val);
@@ -576,9 +555,6 @@ size_t mg_match_prefix(const char *pattern, int pattern_len, const char *str);
  */
 size_t mg_match_prefix_n(const struct mg_str pattern, const struct mg_str str);
 
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* CS_COMMON_STR_UTIL_H_ */
 
@@ -586,16 +562,13 @@ size_t mg_match_prefix_n(const struct mg_str pattern, const struct mg_str str);
 #define CS_COMMON_CS_FILE_H_
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
 
 /*
  * Read whole file `path` in memory. It is responsibility of the caller
  * to `free()` allocated memory. File content is guaranteed to be
  * '\0'-terminated. File size is returned in `size` variable, which does not
  * count terminating `\0`.
- * Return: allocated memory, or NULL on error.
+ * Return: allocated memory, or nullptr on error.
  */
 char *cs_read_file(const char *path, size_t *size);
 
@@ -607,9 +580,6 @@ char *cs_read_file(const char *path, size_t *size);
 char *cs_mmap_file(const char *path, size_t *size);
 #endif
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
 
 #endif /* CS_COMMON_CS_FILE_H_ */
 
@@ -623,9 +593,6 @@ char *cs_mmap_file(const char *path, size_t *size);
 #ifndef CS_COMMON_MBUF_H_
 #define CS_COMMON_MBUF_H_
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
 
 #ifndef MBUF_SIZE_MULTIPLIER
 #define MBUF_SIZE_MULTIPLIER 1.5
@@ -699,18 +666,12 @@ void mbuf_clear(struct mbuf *);
 /* Shrinks an Mbuf by resizing its `size` to `len`. */
 void mbuf_trim(struct mbuf *);
 
-#if defined(__cplusplus)
-}
-#endif /* __cplusplus */
 
 #endif /* CS_COMMON_MBUF_H_ */
 
 #ifndef CS_COMMON_MG_MEM_H_
 #define CS_COMMON_MG_MEM_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #ifndef MG_MALLOC
 #define MG_MALLOC malloc
@@ -728,18 +689,12 @@ extern "C" {
 #define MG_FREE free
 #endif
 
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* CS_COMMON_MG_MEM_H_ */
 
 #ifndef CS_FROZEN_FROZEN_H_
 #define CS_FROZEN_FROZEN_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
 
 #include <stdarg.h>
 #include <stddef.h>
@@ -783,7 +738,7 @@ struct json_token {
  * Callback-based SAX-like API.
  *
  * Property name and length is given only if it's available: i.e. if current
- * event is an object's property. In other cases, `name` is `NULL`. For
+ * event is an object's property. In other cases, `name` is `nullptr`. For
  * example, name is never given:
  *   - For the first value in the JSON string;
  *   - For events JSON_TYPE_OBJECT_END and JSON_TYPE_ARRAY_END
@@ -791,18 +746,18 @@ struct json_token {
  * E.g. for the input `{ "foo": 123, "bar": [ 1, 2, { "baz": true } ] }`,
  * the sequence of callback invocations will be as follows:
  *
- * - type: JSON_TYPE_OBJECT_START, name: NULL, path: "", value: NULL
+ * - type: JSON_TYPE_OBJECT_START, name: nullptr, path: "", value: nullptr
  * - type: JSON_TYPE_NUMBER, name: "foo", path: ".foo", value: "123"
- * - type: JSON_TYPE_ARRAY_START,  name: "bar", path: ".bar", value: NULL
+ * - type: JSON_TYPE_ARRAY_START,  name: "bar", path: ".bar", value: nullptr
  * - type: JSON_TYPE_NUMBER, name: "0", path: ".bar[0]", value: "1"
  * - type: JSON_TYPE_NUMBER, name: "1", path: ".bar[1]", value: "2"
- * - type: JSON_TYPE_OBJECT_START, name: "2", path: ".bar[2]", value: NULL
+ * - type: JSON_TYPE_OBJECT_START, name: "2", path: ".bar[2]", value: nullptr
  * - type: JSON_TYPE_TRUE, name: "baz", path: ".bar[2].baz", value: "true"
- * - type: JSON_TYPE_OBJECT_END, name: NULL, path: ".bar[2]", value: "{ \"baz\":
+ * - type: JSON_TYPE_OBJECT_END, name: nullptr, path: ".bar[2]", value: "{ \"baz\":
  *true }"
- * - type: JSON_TYPE_ARRAY_END, name: NULL, path: ".bar", value: "[ 1, 2, {
+ * - type: JSON_TYPE_ARRAY_END, name: nullptr, path: ".bar", value: "[ 1, 2, {
  *\"baz\": true } ]"
- * - type: JSON_TYPE_OBJECT_END, name: NULL, path: "", value: "{ \"foo\": 123,
+ * - type: JSON_TYPE_OBJECT_END, name: nullptr, path: "", value: "{ \"foo\": 123,
  *\"bar\": [ 1, 2, { \"baz\": true } ] }"
  */
 typedef void (*json_walk_callback_t)(void *callback_data, const char *name,
@@ -879,7 +834,7 @@ int json_vfprintf(const char *file_name, const char *fmt, va_list ap);
 
 /*
  * Print JSON into an allocated 0-terminated string.
- * Return allocated string, or NULL on error.
+ * Return allocated string, or nullptr on error.
  * Example:
  *
  * ```c
@@ -956,13 +911,13 @@ int json_escape(struct json_out *out, const char *str, size_t str_len);
 
 /*
  * Read the whole file in memory.
- * Return malloc-ed file content, or NULL on error. The caller must free().
+ * Return malloc-ed file content, or nullptr on error. The caller must free().
  */
 char *json_fread(const char *file_name);
 
 /*
  * Update given JSON string `s,len` by changing the value at given `json_path`.
- * The result is saved to `out`. If `json_fmt` == NULL, that deletes the key.
+ * The result is saved to `out`. If `json_fmt` == nullptr, that deletes the key.
  * If path is not present, missing keys are added. Array path without an
  * index pushes a value to the end of an array.
  * Return 1 if the string was changed, 0 otherwise.
@@ -971,7 +926,7 @@ char *json_fread(const char *file_name);
  *   json_setf(s, len, out, ".a", "7");     // { "a": 7, "b": [ 2 ] }
  *   json_setf(s, len, out, ".b", "7");     // { "a": 1, "b": 7 }
  *   json_setf(s, len, out, ".b[]", "7");   // { "a": 1, "b": [ 2,7 ] }
- *   json_setf(s, len, out, ".b", NULL);    // { "a": 1 }
+ *   json_setf(s, len, out, ".b", nullptr);    // { "a": 1 }
  */
 int json_setf(const char *s, int len, struct json_out *out,
               const char *json_path, const char *json_fmt, ...);
@@ -994,16 +949,16 @@ int json_prettify_file(const char *file_name);
 
 /*
  * Iterate over an object at given JSON `path`.
- * On each iteration, fill the `key` and `val` tokens. It is OK to pass NULL
+ * On each iteration, fill the `key` and `val` tokens. It is OK to pass nullptr
  * for `key`, or `val`, in which case they won't be populated.
- * Return an opaque value suitable for the next iteration, or NULL when done.
+ * Return an opaque value suitable for the next iteration, or nullptr when done.
  *
  * Example:
  *
  * ```c
- * void *h = NULL;
+ * void *h = nullptr;
  * struct json_token key, val;
- * while ((h = json_next_key(s, len, h, ".foo", &key, &val)) != NULL) {
+ * while ((h = json_next_key(s, len, h, ".foo", &key, &val)) != nullptr) {
  *   printf("[%.*s] -> [%.*s]\n", key.len, key.ptr, val.len, val.ptr);
  * }
  * ```
@@ -1034,9 +989,6 @@ void *json_next_elem(const char *s, int len, void *handle, const char *path,
 #define JSON_ENABLE_HEX !JSON_MINIMAL
 #endif
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
 
 #endif /* CS_FROZEN_FROZEN_H_ */
 
@@ -1044,9 +996,6 @@ void *json_next_elem(const char *s, int len, void *handle, const char *path,
 #define MJS_FFI_FFI_H_
 
 
-#if defined(__cplusplus)
-extern "C" {
-#endif /* __cplusplus */
 
 /*
  * Maximum number of word-sized args to ffi-ed function. If at least one
@@ -1083,9 +1032,6 @@ void ffi_set_ptr(struct ffi_arg *arg, void *v);
 void ffi_set_double(struct ffi_arg *arg, double v);
 void ffi_set_float(struct ffi_arg *arg, float v);
 
-#if defined(__cplusplus)
-}
-#endif /* __cplusplus */
 
 #endif /* MJS_FFI_FFI_H_ */
 
@@ -1202,9 +1148,6 @@ typedef unsigned char uint8_t;
 #define MJS_ARRAY_H_
 
 
-#if defined(__cplusplus)
-extern "C" {
-#endif /* __cplusplus */
 
 mjs_val_t
 mjs_array_get2(struct mjs *mjs, mjs_val_t arr, unsigned long index, int *has);
@@ -1213,9 +1156,6 @@ void mjs_array_splice(struct mjs *mjs);
 
 void mjs_array_push_internal(struct mjs *mjs);
 
-#if defined(__cplusplus)
-}
-#endif /* __cplusplus */
 
 #endif /* MJS_ARRAY_H_ */
 
@@ -1223,15 +1163,9 @@ void mjs_array_push_internal(struct mjs *mjs);
 #define MJS_FFI_PUBLIC_H_
 
 
-#if defined(__cplusplus)
-extern "C" {
-#endif /* __cplusplus */
 
 
 
-#if defined(__cplusplus)
-}
-#endif /* __cplusplus */
 
 #endif /* MJS_FFI_PUBLIC_H_ */
 
@@ -1239,9 +1173,6 @@ extern "C" {
 #define MJS_FFI_H_
 
 
-#if defined(__cplusplus)
-extern "C" {
-#endif /* __cplusplus */
 
 mjs_ffi_resolver_t dlsym;
 
@@ -1360,9 +1291,6 @@ mjs_err_t mjs_ffi_call2(struct mjs *mjs);
 void mjs_ffi_cb_free(struct mjs *);
 void mjs_ffi_args_free_list(struct mjs *mjs);
 
-#if defined(__cplusplus)
-}
-#endif /* __cplusplus */
 
 #endif /* MJS_FFI_H_ */
 
@@ -1370,9 +1298,6 @@ void mjs_ffi_args_free_list(struct mjs *mjs);
 #define MJS_MM_H_
 
 
-#if defined(__cplusplus)
-extern "C" {
-#endif /* __cplusplus */
 
 struct mjs;
 
@@ -1399,9 +1324,6 @@ struct gc_arena {
   gc_cell_destructor_t destructor;
 };
 
-#if defined(__cplusplus)
-}
-#endif /* __cplusplus */
 
 #endif /* MJS_MM_H_ */
 
@@ -1409,9 +1331,6 @@ struct gc_arena {
 #define MJS_GC_H_
 
 
-#if defined(__cplusplus)
-extern "C" {
-#endif /* __cplusplus */
 
 /*
  * performs arithmetics on gc_cell pointers as if they were arena->cell_size
@@ -1457,9 +1376,6 @@ int gc_check_val(struct mjs *mjs, mjs_val_t v);
 /* checks whether a pointer is within the ranges of an arena */
 int gc_check_ptr(const struct gc_arena *a, const void *p);
 
-#if defined(__cplusplus)
-}
-#endif /* __cplusplus */
 
 #endif /* MJS_GC_H_ */
 
@@ -1467,9 +1383,6 @@ int gc_check_ptr(const struct gc_arena *a, const void *p);
 #define MJS_CORE_H
 
 
-#if defined(__cplusplus)
-extern "C" {
-#endif /* __cplusplus */
 
 #define JUMP_INSTRUCTION_SIZE 2
 
@@ -1604,9 +1517,6 @@ mjs_val_t mjs_pop(struct mjs *mjs);
 void mjs_push(struct mjs *mjs, mjs_val_t v);
 void mjs_die(struct mjs *mjs);
 
-#if defined(__cplusplus)
-}
-#endif /* __cplusplus */
 
 #endif /* MJS_CORE_H */
 
@@ -1614,9 +1524,6 @@ void mjs_die(struct mjs *mjs);
 #define MJS_CONVERSION_H_
 
 
-#if defined(__cplusplus)
-extern "C" {
-#endif /* __cplusplus */
 
 /*
  * Tries to convert `mjs_val_t` to a string, returns MJS_OK if successful.
@@ -1638,9 +1545,6 @@ mjs_val_t mjs_to_boolean_v(struct mjs *mjs, mjs_val_t v);
 
 int mjs_is_truthy(struct mjs *mjs, mjs_val_t v);
 
-#if defined(__cplusplus)
-}
-#endif /* __cplusplus */
 
 #endif /* MJS_CONVERSION_H_ */
 
@@ -1649,17 +1553,11 @@ int mjs_is_truthy(struct mjs *mjs, mjs_val_t v);
 
 #include <stddef.h>
 
-#if defined(__cplusplus)
-extern "C" {
-#endif /* __cplusplus */
 
 
 
 
 
-#if defined(__cplusplus)
-}
-#endif /* __cplusplus */
 
 #endif /* MJS_OBJECT_PUBLIC_H_ */
 
@@ -1667,9 +1565,6 @@ extern "C" {
 #define MJS_OBJECT_H_
 
 
-#if defined(__cplusplus)
-extern "C" {
-#endif /* __cplusplus */
 
 struct mjs_property {
   struct mjs_property *next; /* Linkage in struct mjs_object::properties */
@@ -1693,7 +1588,7 @@ struct mjs_property *mjs_get_own_property_v(struct mjs *mjs,
 
 /*
  * A worker function for `mjs_set()` and `mjs_set_v()`: it takes name as both
- * ptr+len and mjs_val_t. If `name` pointer is not NULL, it takes precedence
+ * ptr+len and mjs_val_t. If `name` pointer is not nullptr, it takes precedence
  * over `name_v`.
  */
 mjs_err_t mjs_set_internal(struct mjs *mjs, mjs_val_t obj,
@@ -1707,9 +1602,6 @@ void mjs_op_create_object(struct mjs *mjs);
 
 #define MJS_PROTO_PROP_NAME "__p" /* Make it < 5 chars */
 
-#if defined(__cplusplus)
-}
-#endif /* __cplusplus */
 
 #endif /* MJS_OBJECT_H_ */
 
@@ -1717,9 +1609,6 @@ void mjs_op_create_object(struct mjs *mjs);
 #define MJS_PRIMITIVE_PUBLIC_H_
 
 
-#if defined(__cplusplus)
-extern "C" {
-#endif /* __cplusplus */
 
 /* JavaScript `null` value */
 #define MJS_NULL MJS_TAG_NULL
@@ -1728,9 +1617,6 @@ extern "C" {
 #define MJS_UNDEFINED MJS_TAG_UNDEFINED
 
 
-#if defined(__cplusplus)
-}
-#endif /* __cplusplus */
 
 #endif /* MJS_PRIMITIVE_PUBLIC_H_ */
 
@@ -1738,9 +1624,6 @@ extern "C" {
 #define MJS_PRIMITIVE_H
 
 
-#if defined(__cplusplus)
-extern "C" {
-#endif /* __cplusplus */
 
 /*
  * Convert a pointer to mjs_val_t. If pointer is not valid, mjs crashes.
@@ -1763,9 +1646,6 @@ void *get_ptr(mjs_val_t v);
  */
 void mjs_op_isnan(struct mjs *mjs);
 
-#if defined(__cplusplus)
-}
-#endif /* __cplusplus */
 
 #endif /* MJS_PRIMITIVE_H */
 
@@ -1782,9 +1662,6 @@ void mjs_op_isnan(struct mjs *mjs);
 #define MJS_STRING_H_
 
 
-#if defined(__cplusplus)
-extern "C" {
-#endif /* __cplusplus */
 
 /*
  * Size of the extra space for strings mbuf that is needed to avoid frequent
@@ -1808,9 +1685,6 @@ void mjs_string_char_code_at(struct mjs *mjs);
 #define EMBSTR_ZERO_TERM 1
 #define EMBSTR_UNESCAPE 2
 
-#if defined(__cplusplus)
-}
-#endif /* __cplusplus */
 
 #endif /* MJS_STRING_H_ */
 
@@ -1824,9 +1698,6 @@ void mjs_string_char_code_at(struct mjs *mjs);
 #define MJS_UTIL_H_
 
 
-#if defined(__cplusplus)
-extern "C" {
-#endif /* __cplusplus */
 
 struct mjs_bcode_part;
 
@@ -1840,7 +1711,7 @@ const char *mjs_stringify_type(enum mjs_type t);
  *
  * If `arg_num` >= 0, checks argument; otherwise (`arg_num` is negative) checks
  * `this`. `arg_name` is used for the error message only. If `parg` is not
- * NULL, writes resulting value at this location in case of success.
+ * nullptr, writes resulting value at this location in case of success.
  */
 int mjs_check_arg(struct mjs *mjs, int arg_num,
                               const char *arg_name, enum mjs_type expected_type,
@@ -1859,9 +1730,6 @@ const char *mjs_get_bcode_filename(struct mjs *mjs,
 /* Print JS value `v` to the JSON stream `out`. */
 void mjs_jprintf(mjs_val_t v, struct mjs *mjs, struct json_out *out);
 
-#if defined(__cplusplus)
-}
-#endif /* __cplusplus */
 
 #endif /* MJS_UTIL_H_ */
 
@@ -1871,9 +1739,6 @@ void mjs_jprintf(mjs_val_t v, struct mjs *mjs, struct json_out *out);
 #include <stdbool.h>
 #include <stdint.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /* Returns number of bytes required to encode `num`. */
 size_t cs_varint_llen(uint64_t num);
@@ -1896,9 +1761,6 @@ bool cs_varint_decode(const uint8_t *buf, size_t buf_size, uint64_t *num,
 
 uint64_t cs_varint_decode_unsafe(const uint8_t *buf, int *llen);
 
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* CS_COMMON_CS_VARINT_H_ */
 
@@ -1907,9 +1769,6 @@ uint64_t cs_varint_decode_unsafe(const uint8_t *buf, int *llen);
 
 
 
-#if defined(__cplusplus)
-extern "C" {
-#endif /* __cplusplus */
 
 enum mjs_opcode {
   OP_NOP,               /* ( -- ) */
@@ -1996,9 +1855,6 @@ int mjs_bcode_parts_cnt(struct mjs *mjs);
  */
 void mjs_bcode_commit(struct mjs *mjs);
 
-#if defined(__cplusplus)
-}
-#endif /* __cplusplus */
 
 #endif /* MJS_BCODE_H_ */
 
@@ -2074,9 +1930,6 @@ typedef unsigned long uintptr_t;
 #define MJS_TOK_H_
 
 
-#if defined(__cplusplus)
-extern "C" {
-#endif /* __cplusplus */
 
 struct tok {
   int tok;
@@ -2200,18 +2053,12 @@ int pnext(struct pstate *);
 int mjs_is_ident(int c);
 int mjs_is_digit(int c);
 
-#if defined(__cplusplus)
-}
-#endif /* __cplusplus */
 
 #endif /* MJS_TOK_H_ */
 
 #ifndef MJS_DATAVIEW_H_
 #define MJS_DATAVIEW_H_
 
-#if defined(__cplusplus)
-extern "C" {
-#endif /* __cplusplus */
 
 /*
  * Functions for memory introspection.
@@ -2228,18 +2075,12 @@ double mjs_mem_get_int(void *ptr, int size, int bigendian);
 void mjs_mem_set_uint(void *ptr, unsigned int val, int size, int bigendian);
 void mjs_mem_set_int(void *ptr, int val, int size, int bigendian);
 
-#if defined(__cplusplus)
-}
-#endif /* __cplusplus */
 
 #endif /* MJS_DATAVIEW_H_ */
 
 #ifndef MJS_EXEC_PUBLIC_H_
 #define MJS_EXEC_PUBLIC_H_
 
-#if defined(__cplusplus)
-extern "C" {
-#endif /* __cplusplus */
 
 mjs_err_t mjs_exec(struct mjs *, const char *src, mjs_val_t *res);
 mjs_err_t mjs_exec_buf(struct mjs *, const char *src, size_t, mjs_val_t *res);
@@ -2251,9 +2092,6 @@ mjs_err_t mjs_call(struct mjs *mjs, mjs_val_t *res, mjs_val_t func,
                    mjs_val_t this_val, int nargs, ...);
 mjs_val_t mjs_get_this(struct mjs *mjs);
 
-#if defined(__cplusplus)
-}
-#endif /* __cplusplus */
 
 #endif /* MJS_EXEC_PUBLIC_H_ */
 
@@ -2267,24 +2105,15 @@ mjs_val_t mjs_get_this(struct mjs *mjs);
  */
 #define MJS_BCODE_OFFSET_EXIT ((size_t) 0x7fffffff)
 
-#if defined(__cplusplus)
-extern "C" {
-#endif /* __cplusplus */
 
 mjs_err_t mjs_execute(struct mjs *mjs, size_t off, mjs_val_t *res);
 
-#if defined(__cplusplus)
-}
-#endif /* __cplusplus */
 
 #endif /* MJS_EXEC_H_ */
 
 #ifndef MJS_JSON_H_
 #define MJS_JSON_H_
 
-#if defined(__cplusplus)
-extern "C" {
-#endif /* __cplusplus */
 
 mjs_err_t to_json_or_debug(struct mjs *mjs, mjs_val_t v, char *buf,
                                        size_t size, size_t *res_len,
@@ -2298,9 +2127,6 @@ void mjs_op_json_parse(struct mjs *mjs);
 mjs_err_t
 mjs_json_parse(struct mjs *mjs, const char *str, size_t len, mjs_val_t *res);
 
-#if defined(__cplusplus)
-}
-#endif /* __cplusplus */
 
 #endif /* MJS_JSON_H_ */
 
@@ -2308,15 +2134,9 @@ mjs_json_parse(struct mjs *mjs, const char *str, size_t len, mjs_val_t *res);
 #define MJS_BUILTIN_H_
 
 
-#if defined(__cplusplus)
-extern "C" {
-#endif /* __cplusplus */
 
 void mjs_init_builtin(struct mjs *mjs, mjs_val_t obj);
 
-#if defined(__cplusplus)
-}
-#endif /* __cplusplus */
 
 #endif /* MJS_BUILTIN_H_ */
 
@@ -2324,16 +2144,9 @@ void mjs_init_builtin(struct mjs *mjs, mjs_val_t obj);
 #define MJS_PARSER_H
 
 
-#if defined(__cplusplus)
-extern "C" {
-#endif /* __cplusplus */
 
-mjs_err_t
-mjs_parse(const char *path, const char *buf, struct mjs *);
+mjs_err_t mjs_parse(const char *path, const char *buf, struct mjs *);
 
-#if defined(__cplusplus)
-}
-#endif /* __cplusplus */
 
 #endif /* MJS_PARSER_H */
 #ifndef MJS_EXPORT_INTERNAL_HEADERS
@@ -2351,11 +2164,11 @@ enum cs_log_level cs_log_level WEAK =
 #endif
 
 #if CS_ENABLE_STDIO
-static char *s_file_level = NULL;
+static char *s_file_level = nullptr;
 
 void cs_log_set_file_level(const char *file_level) WEAK;
 
-FILE *cs_log_file WEAK = NULL;
+FILE *cs_log_file WEAK = nullptr;
 
 #if CS_LOG_ENABLE_TS_DIFF
 double cs_log_ts WEAK;
@@ -2365,10 +2178,10 @@ enum cs_log_level cs_log_cur_msg_level WEAK = LL_NONE;
 
 void cs_log_set_file_level(const char *file_level) {
   char *fl = s_file_level;
-  if (file_level != NULL) {
+  if (file_level != nullptr) {
     s_file_level = strdup(file_level);
   } else {
-    s_file_level = NULL;
+    s_file_level = nullptr;
   }
   free(fl);
 }
@@ -2379,7 +2192,7 @@ int cs_log_print_prefix(enum cs_log_level level, const char *file, int ln) {
   const char *p;
   size_t fl = 0, ll = 0, pl = 0;
 
-  if (level > cs_log_level && s_file_level == NULL) return 0;
+  if (level > cs_log_level && s_file_level == nullptr) return 0;
 
   p = file + strlen(file);
 
@@ -2403,11 +2216,11 @@ int cs_log_print_prefix(enum cs_log_level level, const char *file, int ln) {
   } while (ln > 0);
   *(--q) = ':';
 
-  if (s_file_level != NULL) {
+  if (s_file_level != nullptr) {
     enum cs_log_level pll = cs_log_level;
     struct mg_str fl = mg_mk_str(s_file_level), ps = MG_MK_STR_N(prefix, pl);
     struct mg_str k, v;
-    while ((fl = mg_next_comma_list_entry_n(fl, &k, &v)).p != NULL) {
+    while ((fl = mg_next_comma_list_entry_n(fl, &k, &v)).p != nullptr) {
       bool yes = !(!mg_str_starts_with(ps, k) || v.len == 0);
       if (!yes) continue;
       pll = (enum cs_log_level)(*v.p - '0');
@@ -2416,7 +2229,7 @@ int cs_log_print_prefix(enum cs_log_level level, const char *file, int ln) {
     if (level > pll) return 0;
   }
 
-  if (cs_log_file == NULL) cs_log_file = stderr;
+  if (cs_log_file == nullptr) cs_log_file = stderr;
   cs_log_cur_msg_level = level;
   fwrite(prefix, 1, sizeof(prefix), cs_log_file);
 #if CS_LOG_ENABLE_TS_DIFF
@@ -2472,18 +2285,18 @@ void cs_log_set_level(enum cs_log_level level) {
 char *cs_read_file(const char *path, size_t *size) WEAK;
 char *cs_read_file(const char *path, size_t *size) {
   FILE *fp;
-  char *data = NULL;
-  if ((fp = fopen(path, "rb")) == NULL) {
+  char *data = nullptr;
+  if ((fp = fopen(path, "rb")) == nullptr) {
   } else if (fseek(fp, 0, SEEK_END) != 0) {
     fclose(fp);
   } else {
     *size = ftell(fp);
     data = (char *) malloc(*size + 1);
-    if (data != NULL) {
+    if (data != nullptr) {
       fseek(fp, 0, SEEK_SET); /* Some platforms might not have rewind(), Oo */
       if (fread(data, 1, *size, fp) != *size) {
         free(data);
-        return NULL;
+        return nullptr;
       }
       data[*size] = '\0';
     }
@@ -2499,11 +2312,11 @@ char *cs_mmap_file(const char *path, size_t *size) {
   char *r;
   int fd = open(path, O_RDONLY, 0);
   struct stat st;
-  if (fd < 0) return NULL;
+  if (fd < 0) return nullptr;
   fstat(fd, &st);
   *size = (size_t) st.st_size;
-  r = (char *) mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
-  if (r == MAP_FAILED) return NULL;
+  r = (char *) mmap(nullptr, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+  if (r == MAP_FAILED) return nullptr;
   return r;
 }
 #endif
@@ -2583,13 +2396,13 @@ uint64_t cs_varint_decode_unsafe(const uint8_t *buf, int *llen) {
 void mbuf_init(struct mbuf *mbuf, size_t initial_size) WEAK;
 void mbuf_init(struct mbuf *mbuf, size_t initial_size) {
   mbuf->len = mbuf->size = 0;
-  mbuf->buf = NULL;
+  mbuf->buf = nullptr;
   mbuf_resize(mbuf, initial_size);
 }
 
 void mbuf_free(struct mbuf *mbuf) WEAK;
 void mbuf_free(struct mbuf *mbuf) {
-  if (mbuf->buf != NULL) {
+  if (mbuf->buf != nullptr) {
     MBUF_FREE(mbuf->buf);
     mbuf_init(mbuf, 0);
   }
@@ -2601,10 +2414,10 @@ void mbuf_resize(struct mbuf *a, size_t new_size) {
     char *buf = (char *) MBUF_REALLOC(a->buf, new_size);
     /*
      * In case realloc fails, there's not much we can do, except keep things as
-     * they are. Note that NULL is a valid return value from realloc when
+     * they are. Note that nullptr is a valid return value from realloc when
      * size == 0, but that is covered too.
      */
-    if (buf == NULL && new_size != 0) return;
+    if (buf == nullptr && new_size != 0) return;
     a->buf = buf;
     a->size = new_size;
   }
@@ -2617,9 +2430,9 @@ void mbuf_trim(struct mbuf *mbuf) {
 
 size_t mbuf_insert(struct mbuf *a, size_t off, const void *buf, size_t) WEAK;
 size_t mbuf_insert(struct mbuf *a, size_t off, const void *buf, size_t len) {
-  char *p = NULL;
+  char *p = nullptr;
 
-  assert(a != NULL);
+  assert(a != nullptr);
   assert(a->len <= a->size);
   assert(off <= a->len);
 
@@ -2628,7 +2441,7 @@ size_t mbuf_insert(struct mbuf *a, size_t off, const void *buf, size_t len) {
 
   if (a->len + len <= a->size) {
     memmove(a->buf + off + len, a->buf + off, a->len - off);
-    if (buf != NULL) {
+    if (buf != nullptr) {
       memcpy(a->buf + off, buf, len);
     }
     a->len += len;
@@ -2639,16 +2452,16 @@ size_t mbuf_insert(struct mbuf *a, size_t off, const void *buf, size_t len) {
       new_size = min_size + MBUF_SIZE_MAX_HEADROOM;
     }
     p = (char *) MBUF_REALLOC(a->buf, new_size);
-    if (p == NULL && new_size != min_size) {
+    if (p == nullptr && new_size != min_size) {
       new_size = min_size;
       p = (char *) MBUF_REALLOC(a->buf, new_size);
     }
-    if (p != NULL) {
+    if (p != nullptr) {
       a->buf = p;
       if (off != a->len) {
         memmove(a->buf + off + len, a->buf + off, a->len - off);
       }
-      if (buf != NULL) memcpy(a->buf + off, buf, len);
+      if (buf != nullptr) memcpy(a->buf + off, buf, len);
       a->len += len;
       a->size = new_size;
     } else {
@@ -2670,7 +2483,7 @@ size_t mbuf_append_and_free(struct mbuf *a, void *data, size_t len) {
   /* Optimization: if the buffer is currently empty,
    * take over the user-provided buffer. */
   if (a->len == 0) {
-    if (a->buf != NULL) free(a->buf);
+    if (a->buf != nullptr) free(a->buf);
     a->buf = (char *) data;
     a->len = a->size = len;
     return len;
@@ -2710,7 +2523,7 @@ int mg_ncasecmp(const char *s1, const char *s2, size_t len) WEAK;
 struct mg_str mg_mk_str(const char *s) WEAK;
 struct mg_str mg_mk_str(const char *s) {
   struct mg_str ret = {s, 0};
-  if (s != NULL) ret.len = strlen(s);
+  if (s != nullptr) ret.len = strlen(s);
   return ret;
 }
 
@@ -2742,10 +2555,10 @@ int mg_vcasecmp(const struct mg_str *str1, const char *str2) {
 
 static struct mg_str mg_strdup_common(const struct mg_str s,
                                       int nul_terminate) {
-  struct mg_str r = {NULL, 0};
-  if (s.len > 0 && s.p != NULL) {
+  struct mg_str r = {nullptr, 0};
+  if (s.len > 0 && s.p != nullptr) {
     char *sc = (char *) MG_MALLOC(s.len + (nul_terminate ? 1 : 0));
-    if (sc != NULL) {
+    if (sc != nullptr) {
       memcpy(sc, s.p, s.len);
       if (nul_terminate) sc[s.len] = '\0';
       r.p = sc;
@@ -2771,7 +2584,7 @@ const char *mg_strchr(const struct mg_str s, int c) {
   for (i = 0; i < s.len; i++) {
     if (s.p[i] == c) return &s.p[i];
   }
-  return NULL;
+  return nullptr;
 }
 
 int mg_strcmp(const struct mg_str str1, const struct mg_str str2) WEAK;
@@ -2821,9 +2634,9 @@ int mg_strcasecmp(const struct mg_str str1, const struct mg_str str2) {
 void mg_strfree(struct mg_str *s) WEAK;
 void mg_strfree(struct mg_str *s) {
   char *sp = (char *) s->p;
-  s->p = NULL;
+  s->p = nullptr;
   s->len = 0;
-  if (sp != NULL) free(sp);
+  if (sp != nullptr) free(sp);
 }
 
 const char *mg_strstr(const struct mg_str haystack,
@@ -2831,13 +2644,13 @@ const char *mg_strstr(const struct mg_str haystack,
 const char *mg_strstr(const struct mg_str haystack,
                       const struct mg_str needle) {
   size_t i;
-  if (needle.len > haystack.len) return NULL;
+  if (needle.len > haystack.len) return nullptr;
   for (i = 0; i <= haystack.len - needle.len; i++) {
     if (memcmp(haystack.p + i, needle.p, needle.len) == 0) {
       return haystack.p + i;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 struct mg_str mg_strstrip(struct mg_str s) WEAK;
@@ -3009,8 +2822,8 @@ int c_vsnprintf(char *buf, size_t buf_size, const char *fmt, va_list ap) {
           C_SNPRINTF_APPEND_CHAR(' ');
         }
 
-        /* `s` may be NULL in case of %.*s */
-        if (s != NULL) {
+        /* `s` may be nullptr in case of %.*s */
+        if (s != nullptr) {
           /* Ignore negative and 0 precisions */
           for (j = 0; (precision <= 0 || j < precision) && s[j] != '\0'; j++) {
             C_SNPRINTF_APPEND_CHAR(s[j]);
@@ -3087,7 +2900,7 @@ const char *c_strnstr(const char *s, const char *find, size_t slen) {
 
   for (i = 0; i < slen; i++) {
     if (i + find_length > slen) {
-      return NULL;
+      return nullptr;
     }
 
     if (strncmp(&s[i], find, find_length) == 0) {
@@ -3095,7 +2908,7 @@ const char *c_strnstr(const char *s, const char *find, size_t slen) {
     }
   }
 
-  return NULL;
+  return nullptr;
 }
 
 #if CS_ENABLE_STRDUP
@@ -3103,7 +2916,7 @@ char *strdup(const char *src) WEAK;
 char *strdup(const char *src) {
   size_t len = strlen(src) + 1;
   char *ret = MG_MALLOC(len);
-  if (ret != NULL) {
+  if (ret != nullptr) {
     strcpy(ret, src);
   }
   return ret;
@@ -3204,14 +3017,14 @@ int mg_avprintf(char **buf, size_t size, const char *fmt, va_list ap) {
     /* eCos and Windows are not standard-compliant and return -1 when
      * the buffer is too small. Keep allocating larger buffers until we
      * succeed or out of memory. */
-    *buf = NULL; /* LCOV_EXCL_START */
+    *buf = nullptr; /* LCOV_EXCL_START */
     while (len < 0) {
       MG_FREE(*buf);
       if (size == 0) {
         size = 5;
       }
       size *= 2;
-      if ((*buf = (char *) MG_MALLOC(size)) == NULL) {
+      if ((*buf = (char *) MG_MALLOC(size)) == nullptr) {
         len = -1;
         break;
       }
@@ -3228,7 +3041,7 @@ int mg_avprintf(char **buf, size_t size, const char *fmt, va_list ap) {
     /* LCOV_EXCL_STOP */
   } else if (len >= (int) size) {
     /* Standard-compliant code path. Allocate a buffer that is large enough. */
-    if ((*buf = (char *) MG_MALLOC(len + 1)) == NULL) {
+    if ((*buf = (char *) MG_MALLOC(len + 1)) == nullptr) {
       len = -1; /* LCOV_EXCL_LINE */
     } else {    /* LCOV_EXCL_LINE */
       va_copy(ap_copy, ap);
@@ -3254,12 +3067,12 @@ struct mg_str mg_next_comma_list_entry_n(struct mg_str list, struct mg_str *val,
                                          struct mg_str *eq_val) {
   if (list.len == 0) {
     /* End of the list */
-    list = mg_mk_str(NULL);
+    list = mg_mk_str(nullptr);
   } else {
-    const char *chr = NULL;
+    const char *chr = nullptr;
     *val = list;
 
-    if ((chr = mg_strchr(*val, ',')) != NULL) {
+    if ((chr = mg_strchr(*val, ',')) != nullptr) {
       /* Comma found. Store length and shift the list ptr */
       val->len = chr - val->p;
       chr++;
@@ -3270,12 +3083,12 @@ struct mg_str mg_next_comma_list_entry_n(struct mg_str list, struct mg_str *val,
       list = mg_mk_str_n(list.p + list.len, 0);
     }
 
-    if (eq_val != NULL) {
+    if (eq_val != nullptr) {
       /* Value has form "x=y", adjust pointers and lengths */
       /* so that val points to "x", and eq_val points to "y". */
       eq_val->len = 0;
       eq_val->p = (const char *) memchr(val->p, '=', val->len);
-      if (eq_val->p != NULL) {
+      if (eq_val->p != nullptr) {
         eq_val->p++; /* Skip over '=' character */
         eq_val->len = val->p + val->len - eq_val->p;
         val->len = (eq_val->p - val->p) - 1;
@@ -3291,8 +3104,8 @@ size_t mg_match_prefix_n(const struct mg_str pattern, const struct mg_str str) {
   const char *or_str;
   size_t res = 0, len = 0, i = 0, j = 0;
 
-  if ((or_str = (const char *) memchr(pattern.p, '|', pattern.len)) != NULL ||
-      (or_str = (const char *) memchr(pattern.p, ',', pattern.len)) != NULL) {
+  if ((or_str = (const char *) memchr(pattern.p, '|', pattern.len)) != nullptr ||
+      (or_str = (const char *) memchr(pattern.p, ',', pattern.len)) != nullptr) {
     struct mg_str pstr = {pattern.p, (size_t)(or_str - pattern.p)};
     res = mg_match_prefix_n(pstr, str);
     if (res > 0) return res;
@@ -3336,7 +3149,7 @@ size_t mg_match_prefix(const char *, int, const char *) WEAK;
 size_t mg_match_prefix(const char *pattern, int pattern_len, const char *str) {
   const struct mg_str pstr = {pattern, (size_t) pattern_len};
   struct mg_str s = {str, 0};
-  if (str != NULL) s.len = strlen(str);
+  if (str != nullptr) s.len = strlen(str);
   return mg_match_prefix_n(pstr, s);
 }
 
@@ -3407,7 +3220,7 @@ struct fstate {
                      (fr)->path, &t);                                         \
                                                                               \
       /* Reset the name */                                                    \
-      (fr)->cur_name = NULL;                                                  \
+      (fr)->cur_name = nullptr;                                                  \
       (fr)->cur_name_len = 0;                                                 \
     }                                                                         \
   } while (0)
@@ -3609,7 +3422,7 @@ static int json_parse_array(struct frozen *f)
 {
   int i = 0, current_path_len;
   char buf[20];
-  CALL_BACK(f, JSON_TYPE_ARRAY_START, NULL, 0);
+  CALL_BACK(f, JSON_TYPE_ARRAY_START, nullptr, 0);
   TRY(json_test_and_skip(f, '['));
   {
     {
@@ -3732,7 +3545,7 @@ static int json_parse_pair(struct frozen *f)
 /* object = '{' pair { ',' pair } '}' */
 static int json_parse_object(struct frozen *f)
 {
-  CALL_BACK(f, JSON_TYPE_OBJECT_START, NULL, 0);
+  CALL_BACK(f, JSON_TYPE_OBJECT_START, nullptr, 0);
   TRY(json_test_and_skip(f, '{'));
   {
     SET_STATE(f, f->cur - 1, ".", 1);
@@ -3890,7 +3703,7 @@ int json_vprintf(struct json_out *out, const char *fmt, va_list xap)
   va_copy(ap, xap);
 
   while (*fmt != '\0') {
-    if (strchr(":, \r\n\t[]{}\"", *fmt) != NULL) {
+    if (strchr(":, \r\n\t[]{}\"", *fmt) != nullptr) {
       len += out->printer(out, fmt, 1);
       fmt++;
     } else if (fmt[0] == '%') {
@@ -3946,7 +3759,7 @@ int json_vprintf(struct json_out *out, const char *fmt, va_list xap)
         }
         p = va_arg(ap, char *);
 
-        if (p == NULL) {
+        if (p == nullptr) {
           len += out->printer(out, null, 4);
         } else {
           if (fmt[1] == 'Q') {
@@ -3987,11 +3800,11 @@ int json_vprintf(struct json_out *out, const char *fmt, va_list xap)
            * Windows & eCos vsnprintf implementation return -1 on overflow
            * instead of needed size.
            */
-          pbuf = NULL;
+          pbuf = nullptr;
           while (need_len < 0) {
             free(pbuf);
             size *= 2;
-            if ((pbuf = (char *) malloc(size)) == NULL) break;
+            if ((pbuf = (char *) malloc(size)) == nullptr) break;
             va_copy(ap_copy, ap);
             need_len = vsnprintf(pbuf, size, fmt2, ap_copy);
             va_end(ap_copy);
@@ -4001,13 +3814,13 @@ int json_vprintf(struct json_out *out, const char *fmt, va_list xap)
            * resulting string doesn't fit into a stack-allocated buffer `buf`,
            * so we need to allocate a new buffer from heap and use it
            */
-          if ((pbuf = (char *) malloc(need_len + 1)) != NULL) {
+          if ((pbuf = (char *) malloc(need_len + 1)) != nullptr) {
             va_copy(ap_copy, ap);
             vsnprintf(pbuf, need_len + 1, fmt2, ap_copy);
             va_end(ap_copy);
           }
         }
-        if (pbuf == NULL) {
+        if (pbuf == nullptr) {
           buf[0] = '\0';
           pbuf = buf;
         }
@@ -4051,7 +3864,7 @@ int json_vprintf(struct json_out *out, const char *fmt, va_list xap)
         /* If buffer was allocated from heap, free it */
         if (pbuf != buf) {
           free(pbuf);
-          pbuf = NULL;
+          pbuf = nullptr;
         }
       }
       fmt += skip;
@@ -4093,7 +3906,7 @@ int json_printf_array(struct json_out *out, va_list *ap)
   const char *fmt  = va_arg(*ap, char *);
   len += json_printf(out, "[", 1);
 
-  for( size_t i = 0; arr != NULL && i < arr_size / elem_size; i++) {
+  for( size_t i = 0; arr != nullptr && i < arr_size / elem_size; i++) {
     union {
       int64_t i;
       double d;
@@ -4101,7 +3914,7 @@ int json_printf_array(struct json_out *out, va_list *ap)
     memcpy(&val, arr + i * elem_size,
            elem_size > sizeof(val) ? sizeof(val) : elem_size);
     if (i > 0) len += json_printf(out, ", ");
-    if (strpbrk(fmt, "efg") != NULL) {
+    if (strpbrk(fmt, "efg") != nullptr) {
       len += json_printf(out, fmt, val.d);
     } else {
       len += json_printf(out, fmt, val.i);
@@ -4194,7 +4007,7 @@ int json_unescape(const char *src, int slen, char *dst, int dlen)
           /* Complex \uXXXX escapes drag utf8 lib... Do it at some stage */
           return JSON_STRING_INVALID;
         }
-      } else if ((p = (char *) strchr(esc1, *src)) != NULL) {
+      } else if ((p = (char *) strchr(esc1, *src)) != nullptr) {
         if (dst < dend) *dst = esc2[p - esc1];
       } else {
         return JSON_STRING_INVALID;
@@ -4219,7 +4032,7 @@ static void json_scanf_cb(void *callback_data, const char *name,
   (void) name;
   (void) name_len;
 
-  if (token->ptr == NULL) {
+  if (token->ptr == nullptr) {
     /*
      * We're not interested here in the events for which we have no value;
      * namely, JSON_TYPE_OBJECT_START and JSON_TYPE_ARRAY_START
@@ -4259,18 +4072,18 @@ static void json_scanf_cb(void *callback_data, const char *name,
     case 'Q': {
       char **dst = (char **) info->target;
       if (token->type == JSON_TYPE_NULL) {
-        *dst = NULL;
+        *dst = nullptr;
       } else {
-        int unescaped_len = json_unescape(token->ptr, token->len, NULL, 0);
+        int unescaped_len = json_unescape(token->ptr, token->len, nullptr, 0);
         if (unescaped_len >= 0 &&
-            (*dst = (char *) malloc(unescaped_len + 1)) != NULL) {
+            (*dst = (char *) malloc(unescaped_len + 1)) != nullptr) {
           info->num_conversions++;
           if (json_unescape(token->ptr, token->len, *dst, unescaped_len) ==
               unescaped_len) {
             (*dst)[unescaped_len] = '\0';
           } else {
             free(*dst);
-            *dst = NULL;
+            *dst = nullptr;
           }
         }
       }
@@ -4281,7 +4094,7 @@ static void json_scanf_cb(void *callback_data, const char *name,
       char **dst = (char **) info->user_data;
       int i, len = token->len / 2;
       *(int *) info->target = len;
-      if ((*dst = (char *) malloc(len + 1)) != NULL) {
+      if ((*dst = (char *) malloc(len + 1)) != nullptr) {
         for (i = 0; i < len; i++) {
           (*dst)[i] = hexdec(token->ptr + 2 * i);
         }
@@ -4295,7 +4108,7 @@ static void json_scanf_cb(void *callback_data, const char *name,
 #if JSON_ENABLE_BASE64
       char **dst = (char **) info->target;
       int len = token->len * 4 / 3 + 2;
-      if ((*dst = (char *) malloc(len + 1)) != NULL) {
+      if ((*dst = (char *) malloc(len + 1)) != nullptr) {
         int n = b64dec(token->ptr, token->len, *dst);
         (*dst)[n] = '\0';
         *(int *) info->user_data = n;
@@ -4316,7 +4129,7 @@ static void json_scanf_cb(void *callback_data, const char *name,
       /* NB: Use of base 0 for %d, %ld, %u and %lu is intentional. */
       if (info->fmt[1] == 'd' || (info->fmt[1] == 'l' && info->fmt[2] == 'd') ||
           info->fmt[1] == 'i') {
-        char *endptr = NULL;
+        char *endptr = nullptr;
         long r = strtol(buf, &endptr, 0 /* base */);
         if (*endptr == '\0') {
           if (info->fmt[1] == 'l') {
@@ -4328,7 +4141,7 @@ static void json_scanf_cb(void *callback_data, const char *name,
         }
       } else if (info->fmt[1] == 'u' ||
                  (info->fmt[1] == 'l' && info->fmt[2] == 'u')) {
-        char *endptr = NULL;
+        char *endptr = nullptr;
         unsigned long r = strtoul(buf, &endptr, 0 /* base */);
         if (*endptr == '\0') {
           if (info->fmt[1] == 'l') {
@@ -4352,15 +4165,15 @@ int json_vscanf(const char *s, int len, const char *fmt, va_list ap)
 {
   char path[JSON_MAX_PATH_LEN] = "", fmtbuf[20];
   int i = 0;
-  char *p = NULL;
-  struct json_scanf_info info = {0, path, fmtbuf, NULL, NULL, 0};
+  char *p = nullptr;
+  struct json_scanf_info info = {0, path, fmtbuf, nullptr, nullptr, 0};
 
   while (fmt[i] != '\0') {
     if (fmt[i] == '{') {
       strcat(path, ".");
       i++;
     } else if (fmt[i] == '}') {
-      if ((p = strrchr(path, '.')) != NULL) *p = '\0';
+      if ((p = strrchr(path, '.')) != nullptr) *p = '\0';
       i++;
     } else if (fmt[i] == '%') {
       info.target = va_arg(ap, void *);
@@ -4391,7 +4204,7 @@ int json_vscanf(const char *s, int len, const char *fmt, va_list ap)
       char *pe;
       const char *delims = ": \r\n\t";
       int key_len = strcspn(&fmt[i], delims);
-      if ((p = strrchr(path, '.')) != NULL) p[1] = '\0';
+      if ((p = strrchr(path, '.')) != nullptr) p[1] = '\0';
       pe = path + strlen(path);
       memcpy(pe, fmt + i, key_len);
       pe[key_len] = '\0';
@@ -4419,7 +4232,7 @@ int json_vfprintf(const char *file_name, const char *fmt, va_list ap)
 {
   int res = -1;
   FILE *fp = fopen(file_name, "wb");
-  if (fp != NULL) {
+  if (fp != nullptr) {
     struct json_out out = JSON_OUT_FILE(fp);
     res = json_vprintf(&out, fmt, ap);
     fputc('\n', fp);
@@ -4443,17 +4256,17 @@ char *json_fread(const char *path) WEAK;
 char *json_fread(const char *path)
 {
   FILE *fp;
-  char *data = NULL;
-  if ((fp = fopen(path, "rb")) == NULL) {
+  char *data = nullptr;
+  if ((fp = fopen(path, "rb")) == nullptr) {
   } else if (fseek(fp, 0, SEEK_END) != 0) {
     fclose(fp);
   } else {
     long size = ftell(fp);
-    if (size > 0 && (data = (char *) malloc(size + 1)) != NULL) {
+    if (size > 0 && (data = (char *) malloc(size + 1)) != nullptr) {
       fseek(fp, 0, SEEK_SET); /* Some platforms might not have rewind(), Oo */
       if (fread(data, 1, size, fp) != (size_t) size) {
         free(data);
-        data = NULL;
+        data = nullptr;
       } else {
         data[size] = '\0';
       }
@@ -4484,7 +4297,7 @@ static void json_vsetf_cb(void *userdata, const char *name, size_t name_len,
 {
   struct json_setf_data *data = (struct json_setf_data *) userdata;
   int off, len = get_matched_prefix_len(path, data->json_path);
-  if (t->ptr == NULL) return;
+  if (t->ptr == nullptr) return;
   off = t->ptr - data->base;
   if (len > data->matched) data->matched = len;
 
@@ -4533,7 +4346,7 @@ int json_vsetf(const char *s, int len, struct json_out *out,
   data.base = s;
   data.end = len;
   json_walk(s, len, json_vsetf_cb, &data);
-  if (json_fmt == NULL) {
+  if (json_fmt == nullptr) {
     /* Deletion codepath */
     json_printf(out, "%.*s", data.prev, s);
     /* Trim comma after the value that begins at object/array start */
@@ -4680,7 +4493,7 @@ int json_prettify_file(const char *file_name)
   int res = -1;
   char *s = json_fread(file_name);
   FILE *fp;
-  if (s != NULL && (fp = fopen(file_name, "wb")) != NULL) {
+  if (s != nullptr && (fp = fopen(file_name, "wb")) != nullptr) {
     struct json_out out = JSON_OUT_FILE(fp);
     res = json_prettify(s, strlen(s), &out);
     if (res < 0) {
@@ -4712,18 +4525,18 @@ static void next_set_key(struct next_data *d, const char *name, int name_len, in
 {
   if (is_array) {
     /* Array. Set index and reset key  */
-    if (d->key != NULL) {
+    if (d->key != nullptr) {
       d->key->len = 0;
-      d->key->ptr = NULL;
+      d->key->ptr = nullptr;
     }
-    if (d->idx != NULL) *d->idx = atoi(name);
+    if (d->idx != nullptr) *d->idx = atoi(name);
   } else {
     /* Object. Set key and make index -1 */
-    if (d->key != NULL) {
+    if (d->key != nullptr) {
       d->key->ptr = name;
       d->key->len = name_len;
     }
-    if (d->idx != NULL) *d->idx = -1;
+    if (d->idx != nullptr) *d->idx = -1;
   }
 }
 
@@ -4735,16 +4548,16 @@ static void json_next_cb(void *userdata, const char *name, size_t name_len,
   if (d->found) return;
   if (d->path_len >= (int) strlen(path)) return;
   if (strncmp(d->path, path, d->path_len) != 0) return;
-  if (strchr(p + 1, '.') != NULL) return; /* More nested objects - skip */
-  if (strchr(p + 1, '[') != NULL) return; /* Ditto for arrays */
+  if (strchr(p + 1, '.') != nullptr) return; /* More nested objects - skip */
+  if (strchr(p + 1, '[') != nullptr) return; /* Ditto for arrays */
   // {OBJECT,ARRAY}_END types do not pass name, _START does. Save key.
   if (t->type == JSON_TYPE_OBJECT_START || t->type == JSON_TYPE_ARRAY_START) {
     next_set_key(d, name, name_len, p[0] == '[');
-  } else if (d->handle == NULL || d->handle < (void *) t->ptr) {
+  } else if (d->handle == nullptr || d->handle < (void *) t->ptr) {
     if (t->type != JSON_TYPE_OBJECT_END && t->type != JSON_TYPE_ARRAY_END) {
       next_set_key(d, name, name_len, p[0] == '[');
     }
-    if (d->val != NULL) *d->val = *t;
+    if (d->val != nullptr) *d->val = *t;
     d->handle = (void *) t->ptr;
     d->found = 1;
   }
@@ -4753,12 +4566,12 @@ static void json_next_cb(void *userdata, const char *name, size_t name_len,
 static void *json_next(const char *s, int len, void *handle, const char *path,
                        struct json_token *key, struct json_token *val, int *i)
 {
-  struct json_token tmpval, *v = val == NULL ? &tmpval : val;
-  struct json_token tmpkey, *k = key == NULL ? &tmpkey : key;
-  int tmpidx, *pidx = i == NULL ? &tmpidx : i;
+  struct json_token tmpval, *v = val == nullptr ? &tmpval : val;
+  struct json_token tmpkey, *k = key == nullptr ? &tmpkey : key;
+  int tmpidx, *pidx = i == nullptr ? &tmpidx : i;
   struct next_data data = {handle, path, (int) strlen(path), 0, k, v, pidx};
   json_walk(s, len, json_next_cb, &data);
-  return data.found ? data.handle : NULL;
+  return data.found ? data.handle : nullptr;
 }
 
 void *json_next_key(const char *s, int len, void *handle, const char *path,
@@ -4766,7 +4579,7 @@ void *json_next_key(const char *s, int len, void *handle, const char *path,
 void *json_next_key(const char *s, int len, void *handle, const char *path,
                     struct json_token *key, struct json_token *val)
 {
-  return json_next(s, len, handle, path, key, val, NULL);
+  return json_next(s, len, handle, path, key, val, nullptr);
 }
 
 void *json_next_elem(const char *s, int len, void *handle, const char *path,
@@ -4774,15 +4587,15 @@ void *json_next_elem(const char *s, int len, void *handle, const char *path,
 void *json_next_elem(const char *s, int len, void *handle, const char *path,
                      int *idx, struct json_token *val)
 {
-  return json_next(s, len, handle, path, NULL, val, idx);
+  return json_next(s, len, handle, path, nullptr, val, idx);
 }
 
 static int json_sprinter(struct json_out *out, const char *str, size_t len)
 {
-  size_t old_len = out->u.buf.buf == NULL ? 0 : strlen(out->u.buf.buf);
+  size_t old_len = out->u.buf.buf == nullptr ? 0 : strlen(out->u.buf.buf);
   size_t new_len = len + old_len;
   char *p = (char *) realloc(out->u.buf.buf, new_len + 1);
-  if (p != NULL) {
+  if (p != nullptr) {
     memcpy(p + old_len, str, len);
     p[new_len] = '\0';
     out->u.buf.buf = p;
@@ -4803,7 +4616,7 @@ char *json_vasprintf(const char *fmt, va_list ap)
 char *json_asprintf(const char *fmt, ...) WEAK;
 char *json_asprintf(const char *fmt, ...)
 {
-  char *result = NULL;
+  char *result = nullptr;
   va_list ap;
   va_start(ap, fmt);
   result = json_vasprintf(fmt, ap);
@@ -5403,14 +5216,14 @@ int mjs_is_array(mjs_val_t v)
 
 mjs_val_t mjs_array_get(struct mjs *mjs, mjs_val_t arr, unsigned long index)
 {
-  return mjs_array_get2(mjs, arr, index, NULL);
+  return mjs_array_get2(mjs, arr, index, nullptr);
 }
 
 mjs_val_t mjs_array_get2(struct mjs *mjs, mjs_val_t arr, unsigned long index, int *has )
 {
   mjs_val_t res = MJS_UNDEFINED;
 
-  if (has != NULL) {
+  if (has != nullptr) {
     *has = 0;
   }
 
@@ -5419,8 +5232,8 @@ mjs_val_t mjs_array_get2(struct mjs *mjs, mjs_val_t arr, unsigned long index, in
     char buf[20];
     int n = v_sprintf_s(buf, sizeof(buf), "%lu", index);
     p = mjs_get_own_property(mjs, arr, buf, n);
-    if (p != NULL) {
-      if (has != NULL) {
+    if (p != nullptr) {
+      if (has != nullptr) {
         *has = 1;
       }
       res = p->value;
@@ -5440,7 +5253,7 @@ unsigned long mjs_array_length(struct mjs *mjs, mjs_val_t v)
     goto clean;
   }
 
-  for (p = get_object_struct(v)->properties; p != NULL; p = p->next) {
+  for (p = get_object_struct(v)->properties; p != nullptr; p = p->next) {
     int ok = 0;
     unsigned long n = 0;
     str_to_ulong(mjs, p->name, &ok, &n);
@@ -5488,7 +5301,7 @@ void mjs_array_push_internal(struct mjs *mjs)
   int i;
 
   /* Make sure that `this` is an array */
-  if (!mjs_check_arg(mjs, -1 /*this*/, "this", MJS_TYPE_OBJECT_ARRAY, NULL)) {
+  if (!mjs_check_arg(mjs, -1 /*this*/, "this", MJS_TYPE_OBJECT_ARRAY, nullptr)) {
     goto clean;
   }
 
@@ -5531,7 +5344,7 @@ void mjs_array_splice(struct mjs *mjs)
   int i;
 
   /* Make sure that `this` is an array */
-  if( !mjs_check_arg(mjs, -1 /*this*/, "this", MJS_TYPE_OBJECT_ARRAY, NULL) ) {
+  if( !mjs_check_arg(mjs, -1 /*this*/, "this", MJS_TYPE_OBJECT_ARRAY, nullptr) ) {
     goto clean;
   }
 
@@ -5644,7 +5457,7 @@ void emit_int(struct pstate *pstate, int64_t n)
   struct mbuf *b = &pstate->mjs->bcode_gen;
   size_t llen = cs_varint_llen(n);
   add_lineno_map_item(pstate);
-  mbuf_insert(b, pstate->cur_idx, NULL, llen);
+  mbuf_insert(b, pstate->cur_idx, nullptr, llen);
   cs_varint_encode(n, (uint8_t *) b->buf + pstate->cur_idx, llen);
   pstate->cur_idx += llen;
 }
@@ -5654,7 +5467,7 @@ void emit_str(struct pstate *pstate, const char *ptr, size_t len)
   struct mbuf *b = &pstate->mjs->bcode_gen;
   size_t llen = cs_varint_llen(len);
   add_lineno_map_item(pstate);
-  mbuf_insert(b, pstate->cur_idx, NULL, llen + len);
+  mbuf_insert(b, pstate->cur_idx, nullptr, llen + len);
   cs_varint_encode(len, (uint8_t *) b->buf + pstate->cur_idx, llen);
   memcpy(b->buf + pstate->cur_idx + llen, ptr, len);
   pstate->cur_idx += llen + len;
@@ -5704,10 +5517,10 @@ struct mjs_bcode_part *mjs_bcode_part_get_by_offset(struct mjs *mjs, size_t offs
 {
   int i;
   int parts_cnt = mjs_bcode_parts_cnt(mjs);
-  struct mjs_bcode_part *bp = NULL;
+  struct mjs_bcode_part *bp = nullptr;
 
   if (offset >= mjs->bcode_len) {
-    return NULL;
+    return nullptr;
   }
 
   for (i = 0; i < parts_cnt; i++) {
@@ -5763,11 +5576,11 @@ static void mjs_print(struct mjs *mjs)
 
 /*
  * If the file with the given filename was already loaded, returns the
- * corresponding bcode part; otherwise returns NULL.
+ * corresponding bcode part; otherwise returns nullptr.
  */
 static struct mjs_bcode_part *mjs_get_loaded_file_bcode(struct mjs *mjs, const char *filename )
 {
-  if (filename == NULL) {
+  if (filename == nullptr) {
     return 0;
   }
 
@@ -5779,7 +5592,7 @@ static struct mjs_bcode_part *mjs_get_loaded_file_bcode(struct mjs *mjs, const c
       return bp;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 static void mjs_load(struct mjs *mjs)
@@ -5791,7 +5604,7 @@ static void mjs_load(struct mjs *mjs)
 
   if (mjs_is_string(arg0)) {
     const char *path = mjs_get_cstring(mjs, &arg0);
-    struct mjs_bcode_part *bp = NULL;
+    struct mjs_bcode_part *bp = nullptr;
     mjs_err_t ret;
 
     if (mjs_is_object(arg1)) {
@@ -5799,7 +5612,7 @@ static void mjs_load(struct mjs *mjs)
       push_mjs_val(&mjs->scopes, arg1);
     }
     bp = mjs_get_loaded_file_bcode(mjs, path);
-    if (bp == NULL) {
+    if (bp == nullptr) {
       /* File was not loaded before, so, load */
       ret = mjs_exec_file(mjs, path, &res);
     } else {
@@ -5925,7 +5738,7 @@ mjs_err_t mjs_to_string(struct mjs *mjs, mjs_val_t *v, char **p, size_t *sizep, 
 {
   mjs_err_t ret = MJS_OK;
 
-  *p = NULL;
+  *p = nullptr;
   *sizep = 0;
   *need_free = 0;
 
@@ -5936,8 +5749,8 @@ mjs_err_t mjs_to_string(struct mjs *mjs, mjs_val_t *v, char **p, size_t *sizep, 
     struct json_out out = JSON_OUT_BUF(buf, sizeof(buf));
     mjs_jprintf(*v, mjs, &out);
     *sizep = strlen(buf);
-    *p = malloc(*sizep + 1);
-    if (*p == NULL) {
+    *p = (char*)malloc(*sizep + 1);
+    if (*p == nullptr) {
       ret = MJS_OUT_OF_MEMORY;
       goto clean;
     }
@@ -6051,7 +5864,7 @@ void mjs_destroy(struct mjs *mjs)
 struct mjs *mjs_create(void)
 {
   mjs_val_t global_object;
-  struct mjs *mjs = calloc(1, sizeof(*mjs));
+  struct mjs *mjs = (struct mjs*)calloc(1, sizeof(*mjs)); // atu: TODO: fix
   mbuf_init(&mjs->stack, 0);
   mbuf_init(&mjs->call_stack, 0);
   mbuf_init(&mjs->arg_stack, 0);
@@ -6098,9 +5911,9 @@ mjs_err_t mjs_set_errorf(struct mjs *mjs, mjs_err_t err, const char *fmt, ...)
   va_list ap;
   va_start(ap, fmt);
   free(mjs->error_msg);
-  mjs->error_msg = NULL;
+  mjs->error_msg = nullptr;
   mjs->error = err;
-  if (fmt != NULL) {
+  if (fmt != nullptr) {
     mg_avprintf(&mjs->error_msg, 0, fmt, ap);
   }
   va_end(ap);
@@ -6110,14 +5923,14 @@ mjs_err_t mjs_set_errorf(struct mjs *mjs, mjs_err_t err, const char *fmt, ...)
 mjs_err_t mjs_prepend_errorf(struct mjs *mjs, mjs_err_t err, const char *fmt, ... )
 {
   char *old_error_msg = mjs->error_msg;
-  char *new_error_msg = NULL;
+  char *new_error_msg = nullptr;
   va_list ap;
   va_start(ap, fmt);
 
   /* err should never be MJS_OK here */
   assert(err != MJS_OK);
 
-  mjs->error_msg = NULL;
+  mjs->error_msg = nullptr;
   /* set error if only it wasn't already set to some error */
   if (mjs->error == MJS_OK) {
     mjs->error = err;
@@ -6125,7 +5938,7 @@ mjs_err_t mjs_prepend_errorf(struct mjs *mjs, mjs_err_t err, const char *fmt, ..
   mg_avprintf(&new_error_msg, 0, fmt, ap);
   va_end(ap);
 
-  if (old_error_msg != NULL) {
+  if (old_error_msg != nullptr) {
     mg_asprintf(&mjs->error_msg, 0, "%s: %s", new_error_msg, old_error_msg);
     free(new_error_msg);
     free(old_error_msg);
@@ -6137,11 +5950,11 @@ mjs_err_t mjs_prepend_errorf(struct mjs *mjs, mjs_err_t err, const char *fmt, ..
 
 void mjs_print_error(struct mjs *mjs, FILE *fp, const char *msg, int print_stack_trace )
 {
-  if (print_stack_trace && mjs->stack_trace != NULL) {
+  if (print_stack_trace && mjs->stack_trace != nullptr) {
     fprintf(fp, "%s", mjs->stack_trace);
   }
 
-  if (msg == NULL) {
+  if (msg == nullptr) {
     msg = "MJS error";
   }
 
@@ -6151,7 +5964,7 @@ void mjs_print_error(struct mjs *mjs, FILE *fp, const char *msg, int print_stack
 void mjs_die(struct mjs *mjs)
 {
   mjs_val_t msg_v = MJS_UNDEFINED;
-  const char *msg = NULL;
+  const char *msg = nullptr;
   size_t msg_len = 0;
 
   /* get idx from arg 0 */
@@ -6174,7 +5987,7 @@ const char *mjs_strerror(struct mjs *mjs, enum mjs_err err)
       "NO_ERROR",        "SYNTAX_ERROR",    "REFERENCE_ERROR",
       "TYPE_ERROR",      "OUT_OF_MEMORY",   "INTERNAL_ERROR",
       "NOT_IMPLEMENTED", "FILE_OPEN_ERROR", "BAD_ARGUMENTS"};
-  return mjs->error_msg == NULL || mjs->error_msg[0] == '\0' ? err_names[err]
+  return mjs->error_msg == nullptr || mjs->error_msg[0] == '\0' ? err_names[err]
                                                              : mjs->error_msg;
 }
 
@@ -6227,9 +6040,9 @@ static void mjs_append_stack_trace_line(struct mjs *mjs, size_t offset)
   if (offset != MJS_BCODE_OFFSET_EXIT) {
     const char *filename = mjs_get_bcode_filename_by_offset(mjs, offset);
     int line_no = mjs_get_lineno_by_offset(mjs, offset);
-    char *new_line = NULL;
+    char *new_line = nullptr;
     const char *fmt = "  at %s:%d\n";
-    if (filename == NULL) {
+    if (filename == nullptr) {
       fprintf(stderr,
               "ERROR during stack trace generation: wrong bcode offset %d\n",
               (int) offset);
@@ -6237,7 +6050,7 @@ static void mjs_append_stack_trace_line(struct mjs *mjs, size_t offset)
     }
     mg_asprintf(&new_line, 0, fmt, filename, line_no);
 
-    if (mjs->stack_trace != NULL) {
+    if (mjs->stack_trace != nullptr) {
       char *old = mjs->stack_trace;
       mg_asprintf(&mjs->stack_trace, 0, "%s%s", mjs->stack_trace, new_line);
       free(old);
@@ -6295,7 +6108,7 @@ int mjs_getretvalpos(struct mjs *mjs)
 {
   mjs_val_t *ppos = vptr(&mjs->call_stack, -1);
   // LOG(LL_INFO, ("ppos: %p %d", ppos, mjs_stack_size(&mjs->call_stack)));
-  assert(ppos != NULL && mjs_is_number(*ppos));
+  assert(ppos != nullptr && mjs_is_number(*ppos));
   int pos = mjs_get_int(mjs, *ppos) - 1;
   assert(pos < (int) mjs_stack_size(&mjs->stack));
   return pos;
@@ -6344,7 +6157,7 @@ mjs_val_t *vptr(struct mbuf *m, int idx)
 {
   int size = mjs_stack_size(m);
   if (idx < 0) idx = size + idx;
-  return idx >= 0 && idx < size ? &((mjs_val_t *) m->buf)[idx] : NULL;
+  return idx >= 0 && idx < size ? &((mjs_val_t *) m->buf)[idx] : nullptr;
 }
 
 mjs_val_t mjs_pop(struct mjs *mjs)
@@ -6539,7 +6352,7 @@ static mjs_val_t mjs_find_scope(struct mjs *mjs, mjs_val_t key)
   while (num_scopes > 0) {
     mjs_val_t scope = *vptr(&mjs->scopes, num_scopes - 1);
     num_scopes--;
-    if (mjs_get_own_property_v(mjs, scope, key) != NULL) return scope;
+    if (mjs_get_own_property_v(mjs, scope, key) != nullptr) return scope;
   }
   mjs_set_errorf(mjs, MJS_REFERENCE_ERROR, "[%s] is not defined",
                  mjs_get_cstring(mjs, &key));
@@ -6691,9 +6504,9 @@ static int check_equal(struct mjs *mjs, mjs_val_t a, mjs_val_t b)
   } else if (mjs_is_string(a) && mjs_is_string(b)) {
     ret = s_cmp(mjs, a, b) == 0;
   } else if (mjs_is_foreign(a) && b == MJS_NULL) {
-    ret = mjs_get_ptr(mjs, a) == NULL;
+    ret = mjs_get_ptr(mjs, a) == nullptr;
   } else if (a == MJS_NULL && mjs_is_foreign(b)) {
-    ret = mjs_get_ptr(mjs, b) == NULL;
+    ret = mjs_get_ptr(mjs, b) == nullptr;
   } else {
     ret = 0;
   }
@@ -6969,13 +6782,15 @@ static int getprop_builtin_foreign(struct mjs *mjs, mjs_val_t val,
 
 static void mjs_apply_(struct mjs *mjs)
 {
-  mjs_val_t res = MJS_UNDEFINED, *args = NULL;
+  mjs_val_t res = MJS_UNDEFINED, *args = nullptr;
   mjs_val_t func = mjs->vals.this_obj, v = mjs_arg(mjs, 1);
   int i, nargs = 0;
   if (mjs_is_array(v)) {
     nargs = mjs_array_length(mjs, v);
-    args = calloc(nargs, sizeof(args[0]));
-    for (i = 0; i < nargs; i++) args[i] = mjs_array_get(mjs, v, i);
+    args = (mjs_val_t*)calloc(nargs, sizeof(args[0]));
+    for (i = 0; i < nargs; i++) {
+      args[i] = mjs_array_get(mjs, v, i);
+    }
   }
   mjs_apply(mjs, &res, func, mjs_arg(mjs, 0), nargs, args);
   free(args);
@@ -6986,7 +6801,7 @@ static int getprop_builtin(struct mjs *mjs, mjs_val_t val, mjs_val_t name,
                            mjs_val_t *res)
 {
   size_t n;
-  char *s = NULL;
+  char *s = nullptr;
   int need_free = 0;
   int handled = 0;
 
@@ -6995,7 +6810,7 @@ static int getprop_builtin(struct mjs *mjs, mjs_val_t val, mjs_val_t name,
   if (err == MJS_OK) {
     if (mjs_is_string(val)) {
       handled = getprop_builtin_string(mjs, val, s, n, res);
-    } else if (s != NULL && n == 5 && strncmp(s, "apply", n) == 0) {
+    } else if (s != nullptr && n == 5 && strncmp(s, "apply", n) == 0) {
       *res = mjs_mk_foreign_func(mjs, (mjs_func_ptr_t) mjs_apply_);
       handled = 1;
     } else if (mjs_is_array(val)) {
@@ -7007,7 +6822,7 @@ static int getprop_builtin(struct mjs *mjs, mjs_val_t val, mjs_val_t name,
 
   if (need_free) {
     free(s);
-    s = NULL;
+    s = nullptr;
   }
 
   return handled;
@@ -7032,9 +6847,9 @@ mjs_err_t mjs_execute(struct mjs *mjs, size_t off, mjs_val_t *res)
 
   struct mjs_bcode_part bp = *mjs_bcode_part_get_by_offset(mjs, off);
 
-  mjs_set_errorf(mjs, MJS_OK, NULL);
+  mjs_set_errorf(mjs, MJS_OK, nullptr);
   free(mjs->stack_trace);
-  mjs->stack_trace = NULL;
+  mjs->stack_trace = nullptr;
 
   off -= bp.start_idx;
 
@@ -7133,7 +6948,7 @@ mjs_err_t mjs_execute(struct mjs *mjs, size_t off, mjs_val_t *res)
       case OP_CREATE: {
         mjs_val_t obj = mjs_pop(mjs);
         mjs_val_t key = mjs_pop(mjs);
-        if (mjs_get_own_property_v(mjs, obj, key) == NULL) {
+        if (mjs_get_own_property_v(mjs, obj, key) == nullptr) {
           mjs_set_v(mjs, obj, key, MJS_UNDEFINED);
         }
         break;
@@ -7206,7 +7021,7 @@ mjs_err_t mjs_execute(struct mjs *mjs, size_t off, mjs_val_t *res)
       case OP_PUSH_DBL: {
         int llen, n = cs_varint_decode_unsafe(&code[i + 1], &llen);
         mjs_push(mjs, mjs_mk_number(
-                          mjs, strtod((char *) code + i + 1 + llen, NULL)));
+                          mjs, strtod((char *) code + i + 1 + llen, nullptr)));
         i += llen + n;
         break;
       }
@@ -7472,7 +7287,7 @@ mjs_err_t mjs_exec_internal(struct mjs *mjs, const char *path,
   if (generate_jsc == -1) generate_jsc = mjs->generate_jsc;
   if (mjs->error == MJS_OK) {
 #if MJS_GENERATE_JSC && defined(CS_MMAP)
-    if (generate_jsc && path != NULL) {
+    if (generate_jsc && path != nullptr) {
       const char *jsext = ".js";
       int basename_len = (int) strlen(path) - strlen(jsext);
       if (basename_len > 0 && strcmp(path + basename_len, jsext) == 0) {
@@ -7500,7 +7315,7 @@ mjs_err_t mjs_exec_internal(struct mjs *mjs, const char *path,
         {
           size_t size;
           char *data = cs_mmap_file(filename_jsc, &size);
-          if (data != NULL) {
+          if (data != nullptr) {
             if (size == bp->data.len) {
               if (memcmp(data, bp->data.p, size) == 0) {
                 /* .jsc file is up to date, so don't rewrite it */
@@ -7514,7 +7329,7 @@ mjs_err_t mjs_exec_internal(struct mjs *mjs, const char *path,
         /* try to open .jsc file for writing */
         if (rewrite) {
           FILE *fp = fopen(filename_jsc, "wb");
-          if (fp != NULL) {
+          if (fp != nullptr) {
             /* write last bcode part to .jsc */
             fwrite(bp->data.p, bp->data.len, 1, fp);
             fclose(fp);
@@ -7540,7 +7355,7 @@ mjs_err_t mjs_exec_internal(struct mjs *mjs, const char *path,
 
     mjs_execute(mjs, off, &r);
   }
-  if (res != NULL) *res = r;
+  if (res != nullptr) *res = r;
   return mjs->error;
 }
 
@@ -7556,7 +7371,7 @@ mjs_err_t mjs_exec_file(struct mjs *mjs, const char *path, mjs_val_t *res)
   size_t size;
   char *source_code = cs_read_file(path, &size);
 
-  if (source_code == NULL) {
+  if (source_code == nullptr) {
     error = MJS_FILE_READ_ERROR;
     mjs_prepend_errorf(mjs, error, "failed to read file \"%s\"", path);
     goto clean;
@@ -7567,18 +7382,17 @@ mjs_err_t mjs_exec_file(struct mjs *mjs, const char *path, mjs_val_t *res)
   free(source_code);
 
 clean:
-  if (res != NULL) *res = r;
+  if (res != nullptr) *res = r;
   return error;
 }
 
 mjs_err_t mjs_call(struct mjs *mjs, mjs_val_t *res, mjs_val_t func, mjs_val_t this_val, int nargs, ... )
 {
   va_list ap;
-  int i;
   mjs_err_t ret;
-  mjs_val_t *args = calloc(nargs, sizeof(mjs_val_t));
+  mjs_val_t *args = (mjs_val_t *)calloc(nargs, sizeof(mjs_val_t));
   va_start(ap, nargs);
-  for (i = 0; i < nargs; i++) {
+  for (int i = 0; i < nargs; i++) {
     args[i] = va_arg(ap, mjs_val_t);
   }
   va_end(ap);
@@ -7624,14 +7438,14 @@ mjs_err_t mjs_apply(struct mjs *mjs, mjs_val_t *res, mjs_val_t func,
 
   if (mjs_is_foreign(func)) {
     ((void (*) (struct mjs *)) mjs_get_ptr(mjs, func))(mjs);
-    if (res != NULL) *res = *resp;
+    if (res != nullptr) *res = *resp;
   } else if (mjs_is_ffi_sig(func)) {
     mjs_ffi_call2(mjs);
-    if (res != NULL) *res = *resp;
+    if (res != nullptr) *res = *resp;
   } else {
     size_t addr = mjs_get_func_addr(func);
     mjs_execute(mjs, addr, &r);
-    if (res != NULL) *res = r;
+    if (res != nullptr) *res = r;
   }
 
   /*
@@ -7656,7 +7470,7 @@ mjs_err_t mjs_apply(struct mjs *mjs, mjs_val_t *res, mjs_val_t func,
  * because dlfcn could have been included already.
  */
 #ifndef RTLD_DEFAULT
-#define RTLD_DEFAULT NULL
+#define RTLD_DEFAULT nullptr
 #endif
 
 static ffi_fn_t *get_cb_impl_by_signature(const mjs_ffi_sig_t *sig);
@@ -7723,7 +7537,7 @@ static const char *find_paren(const char *s, const char *e)
   for (; s < e; s++) {
     if (*s == '(') return s;
   }
-  return NULL;
+  return nullptr;
 }
 
 static const char *find_closing_paren(const char *s, const char *e)
@@ -7737,7 +7551,7 @@ static const char *find_closing_paren(const char *s, const char *e)
     }
     s++;
   }
-  return (s < e ? s : NULL);
+  return (s < e ? s : nullptr);
 }
 
 mjs_err_t mjs_parse_ffi_signature(struct mjs *mjs, const char *s,
@@ -7766,13 +7580,13 @@ mjs_err_t mjs_parse_ffi_signature(struct mjs *mjs, const char *s,
 
   /* FInd the first set of parens */
   tmp_e = find_paren(cur, e);
-  if (tmp_e == NULL || tmp_e - s < 2) {
+  if (tmp_e == nullptr || tmp_e - s < 2) {
     ret = MJS_TYPE_ERROR;
     mjs_prepend_errorf(mjs, ret, "1");
     goto clean;
   }
   tmp = find_closing_paren(tmp_e + 1, e);
-  if (tmp == NULL) {
+  if (tmp == nullptr) {
     ret = MJS_TYPE_ERROR;
     mjs_prepend_errorf(mjs, ret, "2");
     goto clean;
@@ -7780,7 +7594,7 @@ mjs_err_t mjs_parse_ffi_signature(struct mjs *mjs, const char *s,
 
   /* Now see if we have a second set of parens */
   args.p = find_paren(tmp + 1, e);
-  if (args.p == NULL) {
+  if (args.p == nullptr) {
     /* We don't - it's a regular function signature */
     fn.p = tmp_e - 1;
     while (fn.p > cur && isspace((int) *fn.p)) fn.p--;
@@ -7803,14 +7617,14 @@ mjs_err_t mjs_parse_ffi_signature(struct mjs *mjs, const char *s,
     rt.len = tmp_e - rt.p;
     args.p++;
     tmp = find_closing_paren(args.p, e);
-    if (tmp == NULL) {
+    if (tmp == nullptr) {
       ret = MJS_TYPE_ERROR;
       mjs_prepend_errorf(mjs, ret, "3");
       goto clean;
     }
     args.len = tmp - args.p;
     /*
-     * We ignore the name and leave sig->fn NULL here, but it will later be
+     * We ignore the name and leave sig->fn nullptr here, but it will later be
      * set to the appropriate callback implementation.
      */
     sig->is_callback = 1;
@@ -7826,7 +7640,7 @@ mjs_err_t mjs_parse_ffi_signature(struct mjs *mjs, const char *s,
   /* Parse function name {{{ */
   if (!sig->is_callback) {
     char buf[100];
-    if (mjs->dlsym == NULL) {
+    if (mjs->dlsym == nullptr) {
       ret = MJS_TYPE_ERROR;
       mjs_prepend_errorf(mjs, ret,
                          "resolver is not set, call mjs_set_ffi_resolver");
@@ -7835,14 +7649,14 @@ mjs_err_t mjs_parse_ffi_signature(struct mjs *mjs, const char *s,
 
     snprintf(buf, sizeof(buf), "%.*s", (int) fn.len, fn.p);
     sig->fn = (ffi_fn_t *) mjs->dlsym(RTLD_DEFAULT, buf);
-    if (sig->fn == NULL) {
+    if (sig->fn == nullptr) {
       ret = MJS_TYPE_ERROR;
       mjs_prepend_errorf(mjs, ret, "dlsym('%s') failed", buf);
       goto clean;
     }
   } else {
     tmp_e = strchr(tmp_e, ')');
-    if (tmp_e == NULL) {
+    if (tmp_e == nullptr) {
       ret = MJS_TYPE_ERROR;
       goto clean;
     }
@@ -7880,7 +7694,7 @@ mjs_err_t mjs_parse_ffi_signature(struct mjs *mjs, const char *s,
     /* Parse current arg */
     if (is_fp) {
       /* Current argument is a callback function pointer */
-      if (sig->cb_sig != NULL) {
+      if (sig->cb_sig != nullptr) {
         /*
          * We already have parsed some callback argument. Currently we don't
          * support more than one callback argument, so, return error
@@ -7891,13 +7705,13 @@ mjs_err_t mjs_parse_ffi_signature(struct mjs *mjs, const char *s,
         goto clean;
       }
 
-      sig->cb_sig = calloc(sizeof(*sig->cb_sig), 1);
+      sig->cb_sig = (mjs_ffi_sig_t*)calloc(sizeof(*sig->cb_sig), 1);
       ret = mjs_parse_ffi_signature(mjs, cur, tmp_e - cur, sig->cb_sig,
                                     FFI_SIG_CALLBACK);
       if (ret != MJS_OK) {
         mjs_ffi_sig_free(sig->cb_sig);
         free(sig->cb_sig);
-        sig->cb_sig = NULL;
+        sig->cb_sig = nullptr;
         goto clean;
       }
       val_type = MJS_FFI_CTYPE_CALLBACK;
@@ -7938,7 +7752,7 @@ mjs_err_t mjs_parse_ffi_signature(struct mjs *mjs, const char *s,
   /* If the signature represents a callback, find the suitable implementation */
   if (sig->is_callback) {
     sig->fn = get_cb_impl_by_signature(sig);
-    if (sig->fn == NULL) {
+    if (sig->fn == nullptr) {
       ret = MJS_TYPE_ERROR;
       mjs_prepend_errorf(mjs, ret,
                          "the callback signature is valid, but there's "
@@ -7987,7 +7801,7 @@ static union ffi_cb_data_val ffi_cb_impl_generic(void *param,
   assert(cbargs->sig.args_cnt > 0);
 
   /* Create JS arguments */
-  args = calloc(1, sizeof(mjs_val_t) * cbargs->sig.args_cnt);
+  args = (mjs_val_t*)calloc(1, sizeof(mjs_val_t) * cbargs->sig.args_cnt);
   for (i = 0; i < cbargs->sig.args_cnt; i++) {
     mjs_ffi_ctype_t val_type =
         cbargs->sig.val_types[i + 1 /* first val_type is return value type */];
@@ -8003,7 +7817,7 @@ static union ffi_cb_data_val ffi_cb_impl_generic(void *param,
         break;
       case MJS_FFI_CTYPE_CHAR_PTR: {
         const char *s = (char *) data->args[i].w;
-        if (s == NULL) s = "";
+        if (s == nullptr) s = "";
         args[i] = mjs_mk_string(mjs, s, ~0, 1);
         break;
       }
@@ -8044,7 +7858,7 @@ static union ffi_cb_data_val ffi_cb_impl_generic(void *param,
    * cbargs might be invalidated by the callback (if it called ffi_cb_free), so
    * null it out
    */
-  cbargs = NULL;
+  cbargs = nullptr;
   if (err != MJS_OK) {
     /*
      * There's not much we can do about the error here; let's at least print it
@@ -8175,7 +7989,7 @@ static struct mjs_ffi_cb_args **ffi_get_matching(struct mjs_ffi_cb_args **plist,
                                                  mjs_val_t func,
                                                  mjs_val_t userdata)
 {
-  for (; *plist != NULL; plist = &((*plist)->next)) {
+  for (; *plist != nullptr; plist = &((*plist)->next)) {
     if ((*plist)->func == func && (*plist)->userdata == userdata) {
       break;
     }
@@ -8212,7 +8026,7 @@ static ffi_fn_t *get_cb_impl_by_signature(const mjs_ffi_sig_t *sig)
 
     if (float_cnt > 0) {
       /* TODO(dfrank): add support for floats in callbacks */
-      return NULL;
+      return nullptr;
     }
 
     assert(userdata_idx > 0); /* Otherwise is_valid should be 0 */
@@ -8258,12 +8072,12 @@ static ffi_fn_t *get_cb_impl_by_signature(const mjs_ffi_sig_t *sig)
     }
   }
 
-  return NULL;
+  return nullptr;
 }
 
 mjs_val_t mjs_ffi_sig_to_value(struct mjs_ffi_sig *psig)
 {
-  if (psig == NULL) {
+  if (psig == nullptr) {
     return MJS_NULL;
   } else {
     return mjs_legit_pointer_to_value(psig) | MJS_TAG_FUNCTION_FFI;
@@ -8277,7 +8091,7 @@ int mjs_is_ffi_sig(mjs_val_t v)
 
 struct mjs_ffi_sig *mjs_get_ffi_sig_struct(mjs_val_t v)
 {
-  struct mjs_ffi_sig *ret = NULL;
+  struct mjs_ffi_sig *ret = nullptr;
   assert(mjs_is_ffi_sig(v));
   ret = (struct mjs_ffi_sig *) get_ptr(v);
   return ret;
@@ -8299,7 +8113,7 @@ void mjs_ffi_sig_destructor(struct mjs *mjs, void *psig)
 mjs_err_t mjs_ffi_call(struct mjs *mjs)
 {
   mjs_err_t e = MJS_OK;
-  const char *sig_str = NULL;
+  const char *sig_str = nullptr;
   mjs_val_t sig_str_v = mjs_arg(mjs, 0);
   mjs_val_t ret_v = MJS_UNDEFINED;
   struct mjs_ffi_sig *psig = mjs_get_ffi_sig_struct(mjs_mk_ffi_sig(mjs));
@@ -8318,7 +8132,7 @@ clean:
 mjs_err_t mjs_ffi_call2(struct mjs *mjs)
 {
   mjs_err_t ret = MJS_OK;
-  mjs_ffi_sig_t *psig = NULL;
+  mjs_ffi_sig_t *psig = nullptr;
   mjs_ffi_ctype_t rtype;
   mjs_val_t sig_v = *vptr(&mjs->stack, mjs_getretvalpos(mjs));
 
@@ -8482,7 +8296,7 @@ mjs_err_t mjs_ffi_call2(struct mjs *mjs)
           argvs[i] = arg;
           ffi_set_ptr(&args[i], (void *) mjs_get_string(mjs, &argvs[i], &s));
         } else if (mjs_is_null(arg)) {
-          ffi_set_ptr(&args[i], NULL);
+          ffi_set_ptr(&args[i], nullptr);
         } else {
           ret = MJS_TYPE_ERROR;
           mjs_prepend_errorf(
@@ -8503,7 +8317,7 @@ mjs_err_t mjs_ffi_call2(struct mjs *mjs)
         } else if (mjs_is_foreign(arg)) {
           ffi_set_ptr(&args[i], (void *) mjs_get_ptr(mjs, arg));
         } else if (mjs_is_null(arg)) {
-          ffi_set_ptr(&args[i], NULL);
+          ffi_set_ptr(&args[i], nullptr);
         } else {
           ret = MJS_TYPE_ERROR;
           mjs_prepend_errorf(mjs, ret, "actual arg #%d is not a ptr", i);
@@ -8539,8 +8353,8 @@ mjs_err_t mjs_ffi_call2(struct mjs *mjs)
   }
 
   if (cbdata.userdata_idx >= 0 && cbdata.func_idx >= 0) {
-    struct mjs_ffi_cb_args *cbargs = NULL;
-    struct mjs_ffi_cb_args **pitem = NULL;
+    struct mjs_ffi_cb_args *cbargs = nullptr;
+    struct mjs_ffi_cb_args **pitem = nullptr;
 
     /* the function takes a callback */
 
@@ -8549,9 +8363,9 @@ mjs_err_t mjs_ffi_call2(struct mjs *mjs)
      * or create a new one.
      */
     pitem = ffi_get_matching(&mjs->ffi_cb_args, cbdata.func, cbdata.userdata);
-    if (*pitem == NULL) {
+    if( *pitem == nullptr ) {
       /* No matching cbargs item; we need to add a new one */
-      cbargs = calloc(1, sizeof(*cbargs));
+      cbargs = (mjs_ffi_cb_args*)calloc(1, sizeof(*cbargs));
       cbargs->mjs = mjs;
       cbargs->func = cbdata.func;
       cbargs->userdata = cbdata.userdata;
@@ -8588,7 +8402,7 @@ mjs_err_t mjs_ffi_call2(struct mjs *mjs)
   switch (rtype) {
     case MJS_FFI_CTYPE_CHAR_PTR: {
       const char *s = (const char *) (uintptr_t) res.v.i;
-      if (s != NULL) {
+      if (s != nullptr) {
         resv = mjs_mk_string(mjs, s, ~0, 1);
       } else {
         resv = MJS_NULL;
@@ -8642,7 +8456,7 @@ void mjs_ffi_cb_free(struct mjs *mjs)
   if (mjs_is_function(func)) {
     struct mjs_ffi_cb_args **pitem =
         ffi_get_matching(&mjs->ffi_cb_args, func, userdata);
-    if (*pitem != NULL) {
+    if (*pitem != nullptr) {
       /* Found matching item: remove it from the linked list, and free */
       struct mjs_ffi_cb_args *cbargs = *pitem;
       *pitem = cbargs->next;
@@ -8661,7 +8475,7 @@ void mjs_ffi_args_free_list(struct mjs *mjs)
 {
   ffi_cb_args_t *next = mjs->ffi_cb_args;
 
-  while (next != NULL) {
+  while (next != nullptr) {
     ffi_cb_args_t *cur = next;
     next = next->next;
     free(cur);
@@ -8676,17 +8490,17 @@ void mjs_ffi_sig_init(mjs_ffi_sig_t *sig)
 void mjs_ffi_sig_copy(mjs_ffi_sig_t *to, const mjs_ffi_sig_t *from )
 {
   memcpy(to, from, sizeof(*to));
-  if (from->cb_sig != NULL) {
-    to->cb_sig = calloc(sizeof(*to->cb_sig), 1);
+  if (from->cb_sig != nullptr) {
+    to->cb_sig = (mjs_ffi_sig*)calloc(sizeof(*to->cb_sig), 1);
     mjs_ffi_sig_copy(to->cb_sig, from->cb_sig);
   }
 }
 
 void mjs_ffi_sig_free(mjs_ffi_sig_t *sig)
 {
-  if (sig->cb_sig != NULL) {
+  if (sig->cb_sig != nullptr) {
     free(sig->cb_sig);
-    sig->cb_sig = NULL;
+    sig->cb_sig = nullptr;
   }
 }
 
@@ -8834,7 +8648,7 @@ void *dlsym(void *handle, const char *name)
 {
   (void) handle;
   (void) name;
-  return NULL;
+  return nullptr;
 }
 #endif
 
@@ -8896,9 +8710,9 @@ void gc_arena_destroy(struct mjs *mjs, struct gc_arena *a)
 {
   struct gc_block *b;
 
-  if (a->blocks != NULL) {
+  if (a->blocks != nullptr) {
     gc_sweep(mjs, a, 0);
-    for (b = a->blocks; b != NULL;) {
+    for (b = a->blocks; b != nullptr;) {
       struct gc_block *tmp;
       tmp = b;
       b = b->next;
@@ -8919,11 +8733,11 @@ static struct gc_block *gc_new_block(struct gc_arena *a, size_t size)
   struct gc_block *b;
 
   b = (struct gc_block *) calloc(1, sizeof(*b));
-  if (b == NULL) abort();
+  if (b == nullptr) abort();
 
   b->size = size;
   b->base = (struct gc_cell *) calloc(a->cell_size, b->size);
-  if (b->base == NULL) abort();
+  if (b->base == nullptr) abort();
 
   for (cur = GC_CELL_OP(a, b->base, +, 0);
        cur < GC_CELL_OP(a, b->base, +, b->size);
@@ -8945,7 +8759,7 @@ static int gc_arena_is_gc_needed(struct gc_arena *a)
   int i;
 
   for (i = 0; i <= GC_ARENA_CELLS_RESERVE; i++, r = r->head.link) {
-    if (r == NULL) {
+    if (r == nullptr) {
       return 1;
     }
   }
@@ -8963,7 +8777,7 @@ void *gc_alloc_cell(struct mjs *mjs, struct gc_arena *a)
 {
   struct gc_cell *r;
 
-  if (a->free == NULL) {
+  if (a->free == nullptr) {
     struct gc_block *b = gc_new_block(a, a->size_increment);
     b->next = a->blocks;
     a->blocks = b;
@@ -9013,7 +8827,7 @@ void gc_sweep(struct mjs *mjs, struct gc_arena *a, size_t start)
    */
   {
     struct gc_cell *next;
-    for (cur = a->free; cur != NULL; cur = next) {
+    for (cur = a->free; cur != nullptr; cur = next) {
       next = cur->head.link;
       MARK_FREE(cur);
     }
@@ -9022,9 +8836,9 @@ void gc_sweep(struct mjs *mjs, struct gc_arena *a, size_t start)
   /*
    * We'll rebuild the whole `free` list, so initially we just reset it
    */
-  a->free = NULL;
+  a->free = nullptr;
 
-  for (b = a->blocks; b != NULL;) {
+  for (b = a->blocks; b != nullptr;) {
     size_t freed_in_block = 0;
     /*
      * if it turns out that this block is 100% garbage
@@ -9057,7 +8871,7 @@ void gc_sweep(struct mjs *mjs, struct gc_arena *a, size_t start)
            * The cell is used and should be freed: call the destructor and
            * reset the memory
            */
-          if (a->destructor != NULL) {
+          if (a->destructor != nullptr) {
             a->destructor(mjs, cur);
           }
           memset(cur, 0, a->cell_size);
@@ -9078,7 +8892,7 @@ void gc_sweep(struct mjs *mjs, struct gc_arena *a, size_t start)
      * because it has a special size aimed at reducing waste
      * and simplifying initial startup. TODO(mkm): improve
      * */
-    if (b->next != NULL && freed_in_block == b->size) {
+    if (b->next != nullptr && freed_in_block == b->size) {
       *prevp = b->next;
       gc_free_block(b);
       b = *prevp;
@@ -9134,7 +8948,7 @@ static void gc_mark_object(struct mjs *mjs, mjs_val_t *v)
   if (MARKED(obj_base)) return;
 
   /* mark object itself, and its properties */
-  for ((prop = obj_base->properties), MARK(obj_base); prop != NULL;
+  for ((prop = obj_base->properties), MARK(obj_base); prop != nullptr;
        prop = next) {
     if (!gc_check_ptr(&mjs->property_arena, prop)) {
       abort();
@@ -9332,7 +9146,7 @@ static void gc_mark_mbuf_val(struct mjs *mjs, const struct mbuf *mbuf)
 
 static void gc_mark_ffi_cbargs_list(struct mjs *mjs, ffi_cb_args_t *cbargs)
 {
-  for (; cbargs != NULL; cbargs = cbargs->next) {
+  for (; cbargs != nullptr; cbargs = cbargs->next) {
     gc_mark(mjs, &cbargs->func);
     gc_mark(mjs, &cbargs->userdata);
   }
@@ -9385,7 +9199,7 @@ int gc_check_ptr(const struct gc_arena *a, const void *ptr)
 {
   const struct gc_cell *p = (const struct gc_cell *) ptr;
   struct gc_block *b;
-  for (b = a->blocks; b != NULL; b = b->next) {
+  for (b = a->blocks; b != nullptr; b = b->next) {
     if (p >= b->base && p < GC_CELL_OP(a, b->base, +, b->size)) {
       return 1;
     }
@@ -9487,8 +9301,8 @@ static int snquote(char *buf, size_t size, const char *s, size_t len)
     *buf = '\0';
   } else if (size != 0) {
     /*
-     * There is no room for the NULL char, but the size wasn't zero, so we can
-     * safely put NULL in the previous byte
+     * There is no room for the nullptr char, but the size wasn't zero, so we can
+     * safely put nullptr in the previous byte
      */
     *(buf - 1) = '\0';
   }
@@ -9532,7 +9346,7 @@ mjs_err_t to_json_or_debug(struct mjs *mjs, mjs_val_t v, char *buf,
       /* For those types, regular `mjs_to_string()` works */
       {
         /* TODO: refactor: mjs_to_string allocates memory every time */
-        char *p = NULL;
+        char *p = nullptr;
         int need_free = 0;
         rcode = mjs_to_string(mjs, &v, &p, &len, &need_free);
         c_snprintf(buf, size, "%.*s", (int) len, p);
@@ -9556,13 +9370,13 @@ mjs_err_t to_json_or_debug(struct mjs *mjs, mjs_val_t v, char *buf,
     case MJS_TYPE_OBJECT_FUNCTION:
     case MJS_TYPE_OBJECT_GENERIC: {
       char *b = buf;
-      struct mjs_property *prop = NULL;
-      struct mjs_object *o = NULL;
+      struct mjs_property *prop = nullptr;
+      struct mjs_object *o = nullptr;
 
       mbuf_append(&mjs->json_visited_stack, (char *) &v, sizeof(v));
       b += c_snprintf(b, BUF_LEFT(size, b - buf), "{");
       o = get_object_struct(v);
-      for (prop = o->properties; prop != NULL; prop = prop->next) {
+      for (prop = o->properties; prop != nullptr; prop = prop->next) {
         size_t n;
         const char *s;
         if (!is_debug && should_skip_for_json(mjs_get_type(prop->value))) {
@@ -9637,7 +9451,7 @@ clean:
   if (rcode != MJS_OK) {
     len = 0;
   }
-  if (res_len != NULL) {
+  if (res_len != nullptr) {
     *res_len = len;
   }
   return rcode;
@@ -9703,7 +9517,7 @@ static struct json_parse_frame *alloc_json_frame(struct json_parse_ctx *ctx, mjs
   return frame;
 }
 
-/* Free JSON parse frame, return the previous one (which may be NULL) */
+/* Free JSON parse frame, return the previous one (which may be nullptr) */
 static struct json_parse_frame *free_json_frame( struct json_parse_ctx *ctx, struct json_parse_frame *frame)
 {
   struct json_parse_frame *up = frame->up;
@@ -9726,7 +9540,7 @@ static void frozen_cb(void *data, const char *name, size_t name_len,
   switch (token->type) {
     case JSON_TYPE_STRING: {
       char *dst;
-      if (token->len > 0 && (dst = malloc(token->len)) != NULL) {
+      if( token->len > 0 && (dst = (char*)malloc(token->len)) != nullptr ) {
         int len = json_unescape(token->ptr, token->len, dst, token->len);
         if (len < 0) {
           mjs_prepend_errorf(ctx->mjs, MJS_TYPE_ERROR, "invalid JSON string");
@@ -9744,7 +9558,7 @@ static void frozen_cb(void *data, const char *name, size_t name_len,
       break;
     }
     case JSON_TYPE_NUMBER:
-      v = mjs_mk_number(ctx->mjs, strtod(token->ptr, NULL));
+      v = mjs_mk_number(ctx->mjs, strtod(token->ptr, nullptr));
       break;
     case JSON_TYPE_TRUE:
       v = mjs_mk_boolean(ctx->mjs, 1);
@@ -9774,7 +9588,7 @@ static void frozen_cb(void *data, const char *name, size_t name_len,
   }
 
   if (!mjs_is_undefined(v)) {
-    if (name != NULL && name_len != 0) {
+    if (name != nullptr && name_len != 0) {
       /* Need to define a property on the current object/array */
       if (mjs_is_object(ctx->frame->val)) {
         mjs_set(ctx->mjs, ctx->frame->val, name, name_len, v);
@@ -9783,14 +9597,14 @@ static void frozen_cb(void *data, const char *name, size_t name_len,
          * TODO(dfrank): consult name_len. Currently it's not a problem due to
          * the implementation details of frozen, but it might change
          */
-        int idx = (int) strtod(name, NULL);
+        int idx = (int) strtod(name, nullptr);
         mjs_array_set(ctx->mjs, ctx->frame->val, idx, v);
       } else {
         LOG(LL_ERROR, ("Current value is neither object nor array\n"));
       }
     } else {
       /* This is a root value */
-      assert(ctx->frame == NULL);
+      assert(ctx->frame == nullptr);
 
       /*
        * This value will also be the overall result of JSON parsing
@@ -9821,7 +9635,7 @@ mjs_err_t mjs_json_parse(struct mjs *mjs, const char *str, size_t len, mjs_val_t
 
   ctx->mjs = mjs;
   ctx->result = MJS_UNDEFINED;
-  ctx->frame = NULL;
+  ctx->frame = nullptr;
   ctx->rcode = MJS_OK;
 
   mjs_own(mjs, &ctx->result);
@@ -9832,14 +9646,14 @@ mjs_err_t mjs_json_parse(struct mjs *mjs, const char *str, size_t len, mjs_val_t
      * frozen_cb can create new strings, which can result in the reallocation
      * of mjs string mbuf, invalidating the `str` pointer.
      */
-    char *stmp = malloc(len);
+    char *stmp = (char*)malloc(len);
     memcpy(stmp, str, len);
     json_res = json_walk(stmp, len, frozen_cb, ctx);
     free(stmp);
-    stmp = NULL;
+    stmp = nullptr;
 
     /* str might have been invalidated, so null it out */
-    str = NULL;
+    str = nullptr;
   }
 
   if (ctx->rcode != MJS_OK) {
@@ -9854,12 +9668,12 @@ mjs_err_t mjs_json_parse(struct mjs *mjs, const char *str, size_t len, mjs_val_t
     *res = ctx->result;
 
     /* There should be no allocated frames */
-    assert(ctx->frame == NULL);
+    assert(ctx->frame == nullptr);
   }
 
   if (rcode != MJS_OK) {
     /* There might be some allocated frames in case of malformed JSON */
-    while (ctx->frame != NULL) {
+    while (ctx->frame != nullptr) {
       ctx->frame = free_json_frame(ctx, ctx->frame);
     }
   }
@@ -9878,8 +9692,8 @@ void mjs_op_json_stringify(struct mjs *mjs)
   if (mjs_nargs(mjs) < 1) {
     mjs_prepend_errorf(mjs, MJS_TYPE_ERROR, "missing a value to stringify");
   } else {
-    char *p = NULL;
-    if (mjs_json_stringify(mjs, val, NULL, 0, &p) == MJS_OK) {
+    char *p = nullptr;
+    if (mjs_json_stringify(mjs, val, nullptr, 0, &p) == MJS_OK) {
       ret = mjs_mk_string(mjs, p, ~0, 1 /* copy */);
       free(p);
     }
@@ -9948,7 +9762,7 @@ int main(int argc, char *argv[])
     mjs_fprintf(res, mjs, stdout);
     putchar('\n');
   } else {
-    mjs_print_error(mjs, stdout, NULL, 1 /* print_stack_trace */);
+    mjs_print_error(mjs, stdout, nullptr, 1 /* print_stack_trace */);
   }
   mjs_destroy(mjs);
 
@@ -9962,7 +9776,7 @@ mjs_val_t mjs_object_to_value(struct mjs_object *o);
 
 mjs_val_t mjs_object_to_value(struct mjs_object *o)
 {
-  if (o == NULL) {
+  if (o == nullptr) {
     return MJS_NULL;
   } else {
     return mjs_legit_pointer_to_value(o) | MJS_TAG_OBJECT;
@@ -9973,9 +9787,9 @@ struct mjs_object *get_object_struct(mjs_val_t v);
 
 struct mjs_object *get_object_struct(mjs_val_t v)
 {
-  struct mjs_object *ret = NULL;
+  struct mjs_object *ret = nullptr;
   if (mjs_is_null(v)) {
-    ret = NULL;
+    ret = nullptr;
   } else {
     assert(mjs_is_object(v));
     ret = (struct mjs_object *) get_ptr(v);
@@ -9986,11 +9800,11 @@ struct mjs_object *get_object_struct(mjs_val_t v)
 mjs_val_t mjs_mk_object(struct mjs *mjs)
 {
   struct mjs_object *o = new_object(mjs);
-  if (o == NULL) {
+  if (o == nullptr) {
     return MJS_NULL;
   }
   (void) mjs;
-  o->properties = NULL;
+  o->properties = nullptr;
   return mjs_object_to_value(o);
 }
 
@@ -10009,24 +9823,24 @@ struct mjs_property *mjs_get_own_property(struct mjs *mjs,
   struct mjs_object *o;
 
   if (!mjs_is_object(obj)) {
-    return NULL;
+    return nullptr;
   }
 
   o = get_object_struct(obj);
 
   if (len <= 5) {
     mjs_val_t ss = mjs_mk_string(mjs, name, len, 1);
-    for (p = o->properties; p != NULL; p = p->next) {
+    for (p = o->properties; p != nullptr; p = p->next) {
       if (p->name == ss) return p;
     }
   } else {
-    for (p = o->properties; p != NULL; p = p->next) {
+    for (p = o->properties; p != nullptr; p = p->next) {
       if (mjs_strcmp(mjs, &p->name, name, len) == 0) return p;
     }
     return p;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 struct mjs_property *mjs_get_own_property_v(struct mjs *mjs,
@@ -10034,9 +9848,9 @@ struct mjs_property *mjs_get_own_property_v(struct mjs *mjs,
                                                         mjs_val_t key)
 {
   size_t n;
-  char *s = NULL;
+  char *s = nullptr;
   int need_free = 0;
-  struct mjs_property *p = NULL;
+  struct mjs_property *p = nullptr;
   mjs_err_t err = mjs_to_string(mjs, &key, &s, &n, &need_free);
   if (err == MJS_OK) {
     p = mjs_get_own_property(mjs, obj, s, n);
@@ -10052,7 +9866,7 @@ struct mjs_property *mjs_mk_property(struct mjs *mjs,
                                                  mjs_val_t value)
 {
   struct mjs_property *p = new_property(mjs);
-  p->next = NULL;
+  p->next = nullptr;
   p->name = name;
   p->value = value;
   return p;
@@ -10070,7 +9884,7 @@ mjs_val_t mjs_get(struct mjs *mjs, mjs_val_t obj, const char *name,
   }
 
   p = mjs_get_own_property(mjs, obj, name, name_len);
-  if (p == NULL) {
+  if (p == nullptr) {
     return MJS_UNDEFINED;
   } else {
     return p->value;
@@ -10080,7 +9894,7 @@ mjs_val_t mjs_get(struct mjs *mjs, mjs_val_t obj, const char *name,
 mjs_val_t mjs_get_v(struct mjs *mjs, mjs_val_t obj, mjs_val_t name)
 {
   size_t n;
-  char *s = NULL;
+  char *s = nullptr;
   int need_free = 0;
   mjs_val_t ret = MJS_UNDEFINED;
 
@@ -10093,7 +9907,7 @@ mjs_val_t mjs_get_v(struct mjs *mjs, mjs_val_t obj, mjs_val_t name)
 
   if (need_free) {
     free(s);
-    s = NULL;
+    s = nullptr;
   }
   return ret;
 }
@@ -10102,8 +9916,8 @@ mjs_val_t mjs_get_v_proto(struct mjs *mjs, mjs_val_t obj, mjs_val_t key)
 {
   struct mjs_property *p;
   mjs_val_t pn = mjs_mk_string(mjs, MJS_PROTO_PROP_NAME, ~0, 1);
-  if ((p = mjs_get_own_property_v(mjs, obj, key)) != NULL) return p->value;
-  if ((p = mjs_get_own_property_v(mjs, obj, pn)) == NULL) return MJS_UNDEFINED;
+  if ((p = mjs_get_own_property_v(mjs, obj, key)) != nullptr) return p->value;
+  if ((p = mjs_get_own_property_v(mjs, obj, pn)) == nullptr) return MJS_UNDEFINED;
   return mjs_get_v_proto(mjs, p->value, key);
 }
 
@@ -10115,7 +9929,7 @@ mjs_err_t mjs_set(struct mjs *mjs, mjs_val_t obj, const char *name,
 
 mjs_err_t mjs_set_v(struct mjs *mjs, mjs_val_t obj, mjs_val_t name, mjs_val_t val )
 {
-  return mjs_set_internal(mjs, obj, name, NULL, 0, val);
+  return mjs_set_internal(mjs, obj, name, nullptr, 0, val);
 }
 
 mjs_err_t mjs_set_internal(struct mjs *mjs, mjs_val_t obj,
@@ -10128,7 +9942,7 @@ mjs_err_t mjs_set_internal(struct mjs *mjs, mjs_val_t obj,
 
   int need_free = 0;
 
-  if (name == NULL) {
+  if (name == nullptr) {
     /* Pointer was not provided, so obtain one from the name_v. */
     rcode = mjs_to_string(mjs, &name_v, &name, &name_len, &need_free);
     if (rcode != MJS_OK) {
@@ -10144,7 +9958,7 @@ mjs_err_t mjs_set_internal(struct mjs *mjs, mjs_val_t obj,
 
   p = mjs_get_own_property(mjs, obj, name, name_len);
 
-  if (p == NULL) {
+  if (p == nullptr) {
     struct mjs_object *o;
     if (!mjs_is_object(obj)) {
       return MJS_REFERENCE_ERROR;
@@ -10170,7 +9984,7 @@ mjs_err_t mjs_set_internal(struct mjs *mjs, mjs_val_t obj,
 clean:
   if (need_free) {
     free(name);
-    name = NULL;
+    name = nullptr;
   }
   return rcode;
 }
@@ -10179,7 +9993,7 @@ void mjs_destroy_property(struct mjs_property **p);
 
 void mjs_destroy_property(struct mjs_property **p)
 {
-  *p = NULL;
+  *p = nullptr;
 }
 
 /*
@@ -10195,7 +10009,7 @@ int mjs_del(struct mjs *mjs, mjs_val_t obj, const char *name, size_t len)
   if (len == (size_t) ~0) {
     len = strlen(name);
   }
-  for (prev = NULL, prop = get_object_struct(obj)->properties; prop != NULL;
+  for (prev = nullptr, prop = get_object_struct(obj)->properties; prop != nullptr;
        prev = prop, prop = prop->next) {
     size_t n;
     const char *s = mjs_get_string(mjs, &prop->name, &n);
@@ -10214,7 +10028,7 @@ int mjs_del(struct mjs *mjs, mjs_val_t obj, const char *name, size_t len)
 
 mjs_val_t mjs_next(struct mjs *mjs, mjs_val_t obj, mjs_val_t *iterator)
 {
-  struct mjs_property *p = NULL;
+  struct mjs_property *p = nullptr;
   mjs_val_t key = MJS_UNDEFINED;
 
   if (*iterator == MJS_UNDEFINED) {
@@ -10224,7 +10038,7 @@ mjs_val_t mjs_next(struct mjs *mjs, mjs_val_t obj, mjs_val_t *iterator)
     p = ((struct mjs_property *) get_ptr(*iterator))->next;
   }
 
-  if (p == NULL) {
+  if (p == nullptr) {
     *iterator = MJS_UNDEFINED;
   } else {
     key = p->name;
@@ -10255,7 +10069,7 @@ mjs_val_t mjs_struct_to_obj(struct mjs *mjs, const void *base,
 {
   mjs_val_t obj;
   const struct mjs_c_struct_member *def = defs;
-  if (base == NULL || def == NULL) return MJS_UNDEFINED;
+  if (base == nullptr || def == nullptr) return MJS_UNDEFINED;
   obj = mjs_mk_object(mjs);
   /* Pin the object while it is being built */
   mjs_own(mjs, &obj);
@@ -10264,7 +10078,7 @@ mjs_val_t mjs_struct_to_obj(struct mjs *mjs, const void *base,
    * start from the end so the constructed object more closely resembles
    * the definition.
    */
-  while (def->name != NULL) {
+  while (def->name != nullptr) {
     def++;
   }
 
@@ -10283,7 +10097,7 @@ mjs_val_t mjs_struct_to_obj(struct mjs *mjs, const void *base,
         const void **sub_base = (const void **) ptr;
         const struct mjs_c_struct_member *sub_def =
             (const struct mjs_c_struct_member *) def->arg;
-        if (*sub_base != NULL) {
+        if (*sub_base != nullptr) {
           v = mjs_struct_to_obj(mjs, *sub_base, sub_def);
         } else {
           v = MJS_NULL;
@@ -10319,7 +10133,7 @@ mjs_val_t mjs_struct_to_obj(struct mjs *mjs, const void *base,
       }
       case MJS_STRUCT_FIELD_TYPE_MG_STR_PTR: {
         const struct mg_str *s = *(const struct mg_str **) ptr;
-        if (s != NULL) {
+        if (s != nullptr) {
           v = mjs_mk_string(mjs, s->p, s->len, 1);
         } else {
           v = MJS_NULL;
@@ -10673,8 +10487,8 @@ static enum mjs_err parse_literal(struct pstate *p, const struct tok *t)
       break;
     }
     case TOK_NUM: {
-      double iv, d = strtod(t->ptr, NULL);
-      unsigned long uv = strtoul(t->ptr + 2, NULL, 16);
+      double iv, d = strtod(t->ptr, nullptr);
+      unsigned long uv = strtoul(t->ptr + 2, nullptr, 16);
       if (t->ptr[0] == '0' && t->ptr[1] == 'x') d = uv;
       if (modf(d, &iv) == 0) {
         emit_byte(p, OP_PUSH_INT);
@@ -11369,10 +11183,10 @@ mjs_err_t mjs_parse(const char *path, const char *buf, struct mjs *mjs)
 
   /* Remember starting bcode position, and reserve the room for bcode header */
   start_idx = p.mjs->bcode_gen.len;
-  mbuf_append(&p.mjs->bcode_gen, NULL,
+  mbuf_append(&p.mjs->bcode_gen, nullptr,
               sizeof(mjs_header_item_t) * MJS_HDR_ITEMS_CNT);
 
-  /* Append NULL-terminated filename */
+  /* Append nullptr-terminated filename */
   mbuf_append(&p.mjs->bcode_gen, path, strlen(path) + 1 /* null-terminate */);
 
   bcode_offset = p.mjs->bcode_gen.len - start_idx;
@@ -11552,7 +11366,7 @@ void *mjs_get_ptr(struct mjs *mjs, mjs_val_t v)
 {
   (void) mjs;
   if(!mjs_is_foreign(v)) {
-    return NULL;
+    return nullptr;
   }
   return get_ptr(v);
 }
@@ -11712,7 +11526,7 @@ mjs_val_t mjs_mk_string(struct mjs *mjs, const char *p, size_t len, int copy)
       size_t llen = cs_varint_llen(len);
 
       /* allocate space for len and ptr */
-      mbuf_insert(m, pos, NULL, llen + sizeof(p));
+      mbuf_insert(m, pos, nullptr, llen + sizeof(p));
 
       cs_varint_encode(len, (uint8_t *) (m->buf + pos), llen);
       memcpy(m->buf + pos + llen, &p, sizeof(p));
@@ -11728,7 +11542,7 @@ mjs_val_t mjs_mk_string(struct mjs *mjs, const char *p, size_t len, int copy)
 const char *mjs_get_string(struct mjs *mjs, mjs_val_t *v, size_t *sizep)
 {
   uint64_t tag = v[0] & MJS_TAG_MASK;
-  const char *p = NULL;
+  const char *p = nullptr;
   size_t size = 0, llen;
 
   if (!mjs_is_string(*v)) {
@@ -11795,7 +11609,7 @@ const char *mjs_get_string(struct mjs *mjs, mjs_val_t *v, size_t *sizep)
   }
 
 clean:
-  if (sizep != NULL) {
+  if (sizep != nullptr) {
     *sizep = size;
   }
   return p;
@@ -11805,9 +11619,9 @@ const char *mjs_get_cstring(struct mjs *mjs, mjs_val_t *value)
 {
   size_t size;
   const char *s = mjs_get_string(mjs, value, &size);
-  if (s == NULL) return NULL;
+  if (s == nullptr) return nullptr;
   if (s[size] != 0 || strlen(s) != size) {
-    return NULL;
+    return nullptr;
   }
   return s;
 }
@@ -11873,7 +11687,7 @@ mjs_val_t s_concat(struct mjs *mjs, mjs_val_t a, mjs_val_t b)
   b_ptr = mjs_get_string(mjs, &b, &b_len);
 
   /* Create a placeholder string */
-  res = mjs_mk_string(mjs, NULL, a_len + b_len, 1);
+  res = mjs_mk_string(mjs, nullptr, a_len + b_len, 1);
 
   /* mjs_mk_string() may have reallocated mbuf - revalidate pointers */
   a_ptr = mjs_get_string(mjs, &a, &a_len);
@@ -11896,10 +11710,10 @@ void mjs_string_slice(struct mjs *mjs)
   int beginSlice = 0;
   int endSlice = 0;
   size_t size;
-  const char *s = NULL;
+  const char *s = nullptr;
 
   /* get string from `this` */
-  if (!mjs_check_arg(mjs, -1 /*this*/, "this", MJS_TYPE_STRING, NULL)) {
+  if (!mjs_check_arg(mjs, -1 /*this*/, "this", MJS_TYPE_STRING, nullptr)) {
     goto clean;
   }
   s = mjs_get_string(mjs, &mjs->vals.this_obj, &size);
@@ -11938,10 +11752,10 @@ void mjs_string_index_of(struct mjs *mjs)
   mjs_val_t substr_v = MJS_UNDEFINED;
   mjs_val_t idx_v = MJS_UNDEFINED;
   int idx = 0;
-  const char *str = NULL, *substr = NULL;
+  const char *str = nullptr, *substr = nullptr;
   size_t str_len = 0, substr_len = 0;
 
-  if (!mjs_check_arg(mjs, -1 /* this */, "this", MJS_TYPE_STRING, NULL)) {
+  if (!mjs_check_arg(mjs, -1 /* this */, "this", MJS_TYPE_STRING, nullptr)) {
     goto clean;
   }
   str = mjs_get_string(mjs, &mjs->vals.this_obj, &str_len);
@@ -11966,7 +11780,7 @@ void mjs_string_index_of(struct mjs *mjs)
     mgsubstr.p = substr;
     mgsubstr.len = substr_len;
     substr_p = mg_strstr(mgstr, mgsubstr);
-    if (substr_p != NULL) {
+    if (substr_p != nullptr) {
       ret = mjs_mk_number(mjs, (int) (substr_p - str));
     }
   }
@@ -11981,10 +11795,10 @@ void mjs_string_char_code_at(struct mjs *mjs)
   mjs_val_t idx_v = MJS_UNDEFINED;
   int idx = 0;
   size_t size;
-  const char *s = NULL;
+  const char *s = nullptr;
 
   /* get string from `this` */
-  if (!mjs_check_arg(mjs, -1 /*this*/, "this", MJS_TYPE_STRING, NULL)) {
+  if (!mjs_check_arg(mjs, -1 /*this*/, "this", MJS_TYPE_STRING, nullptr)) {
     goto clean;
   }
   s = mjs_get_string(mjs, &mjs->vals.this_obj, &size);
@@ -12007,7 +11821,7 @@ void mjs_mkstr(struct mjs *mjs)
   int nargs = mjs_nargs(mjs);
   mjs_val_t ret = MJS_UNDEFINED;
 
-  char *ptr = NULL;
+  char *ptr = nullptr;
   int offset = 0;
   int len = 0;
   int copy = 0;
@@ -12148,7 +11962,7 @@ size_t unescape(const char *s, size_t len, char *to)
             case -SLRE_INVALID_ESC_CHAR:
               r = '\\';
               s = tmp_s;
-              n += runetochar(to == NULL ? tmp : to + n, &r);
+              n += runetochar(to == nullptr ? tmp : to + n, &r);
               s += chartorune(&r, s);
               break;
             case -SLRE_INVALID_HEX_DIGIT:
@@ -12158,7 +11972,7 @@ size_t unescape(const char *s, size_t len, char *to)
         }
       }
     }
-    n += runetochar(to == NULL ? tmp : to + n, &r);
+    n += runetochar(to == nullptr ? tmp : to + n, &r);
   }
 
   return n;
@@ -12169,7 +11983,7 @@ void embed_string(struct mbuf *m, size_t offset, const char *p,
 {
   char *old_base = m->buf;
   uint8_t p_backed_by_mbuf = p >= old_base && p < old_base + m->len;
-  size_t n = (flags & EMBSTR_UNESCAPE) ? unescape(p, len, NULL) : len;
+  size_t n = (flags & EMBSTR_UNESCAPE) ? unescape(p, len, nullptr) : len;
 
   /* Calculate how many bytes length takes */
   size_t k = cs_varint_llen(n);
@@ -12178,7 +11992,7 @@ void embed_string(struct mbuf *m, size_t offset, const char *p,
   size_t tot_len = k + n + !!(flags & EMBSTR_ZERO_TERM);
 
   /* Allocate buffer */
-  mbuf_insert(m, offset, NULL, tot_len);
+  mbuf_insert(m, offset, nullptr, tot_len);
 
   /* Fixup p if it was relocated by mbuf_insert() above */
   if (p_backed_by_mbuf) {
@@ -12197,7 +12011,7 @@ void embed_string(struct mbuf *m, size_t offset, const char *p,
     }
   }
 
-  /* add NULL-terminator if needed */
+  /* add nullptr-terminator if needed */
   if (flags & EMBSTR_ZERO_TERM) {
     m->buf[offset + tot_len - 1] = '\0';
   }
@@ -12239,10 +12053,10 @@ int mjs_is_ident(int c)
 // Try to parse a token that can take one or two chars.
 static int longtok(struct pstate *p, const char *first_chars, const char *second_chars )
 {
-  if (strchr(first_chars, p->pos[0]) == NULL) {
+  if (strchr(first_chars, p->pos[0]) == nullptr) {
     return TOK_EOF;
   }
-  if (p->pos[1] != '\0' && strchr(second_chars, p->pos[1]) != NULL) {
+  if (p->pos[1] != '\0' && strchr(second_chars, p->pos[1]) != nullptr) {
     p->tok.len++;
     p->pos++;
     return p->pos[-1] << 8 | p->pos[0];
@@ -12288,11 +12102,11 @@ static int is_reserved_word_token(const char *s, int len)
       "function",  "if",     "in",    "instanceof", "new",      "null",
       "return",    "switch", "this",  "throw",      "true",     "try",
       "typeof",    "var",    "void",  "while",      "with",     "let",
-      "undefined", NULL};
+      "undefined", nullptr};
   if( !mjs_is_alpha(s[0]) ) {
     return 0;
   }
-  for( int i = 0; reserved[i] != NULL; i++) {
+  for( int i = 0; reserved[i] != nullptr; i++) {
     if (len == (int) strlen(reserved[i]) && strncmp(s, reserved[i], len) == 0 ) {
       return i + 1;
     }
@@ -12316,7 +12130,7 @@ static int getstr(struct pstate *p)
   p->tok.ptr++;
   while (p->pos[0] != '\0' && p->pos[0] != quote) {
     if (p->pos[0] == '\\' && p->pos[1] != '\0' &&
-        (p->pos[1] == quote || strchr("bfnrtv\\", p->pos[1]) != NULL)) {
+        (p->pos[1] == quote || strchr("bfnrtv\\", p->pos[1]) != nullptr)) {
       p->pos += 2;
     } else {
       p->pos++;
@@ -12436,7 +12250,7 @@ int pnext(struct pstate *p)
      * statement.
      */
     tok += is_reserved_word_token(p->tok.ptr, p->tok.len);
-  } else if (strchr(",.:;{}[]()?", p->pos[0]) != NULL) {
+  } else if (strchr(",.:;{}[]()?", p->pos[0]) != nullptr) {
     tok = p->pos[0];
   } else if ((tmp = longtok3(p, '<', '<', '=')) != TOK_EOF ||
              (tmp = longtok3(p, '>', '>', '=')) != TOK_EOF ||
@@ -12787,7 +12601,7 @@ int mjs_check_arg(struct mjs *mjs, int arg_num,
     return 0;
   }
 
-  if (parg != NULL) {
+  if (parg != nullptr) {
     *parg = arg;
   }
 
@@ -12817,9 +12631,9 @@ const char *mjs_get_bcode_filename(struct mjs *mjs, struct mjs_bcode_part *bp)
 
 const char *mjs_get_bcode_filename_by_offset(struct mjs *mjs, int offset)
 {
-  const char *ret = NULL;
+  const char *ret = nullptr;
   struct mjs_bcode_part *bp = mjs_bcode_part_get_by_offset(mjs, offset);
-  if (bp != NULL) {
+  if (bp != nullptr) {
     ret = mjs_get_bcode_filename(mjs, bp);
   }
   return ret;
@@ -12830,7 +12644,7 @@ int mjs_get_lineno_by_offset(struct mjs *mjs, int offset)
   int prev_line_no, ret = 1;
   struct mjs_bcode_part *bp = mjs_bcode_part_get_by_offset(mjs, offset);
   uint8_t *p, *pe;
-  if (bp != NULL) {
+  if( bp != nullptr ) {
     mjs_header_item_t map_offset, bcode_offset;
     memcpy(&map_offset, bp->data.p + 1 /* OP_BCODE_HEADER */ +
                             sizeof(mjs_header_item_t) * MJS_HDR_ITEM_MAP_OFFSET,
