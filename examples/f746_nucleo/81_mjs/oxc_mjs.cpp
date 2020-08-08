@@ -1041,34 +1041,6 @@ void ffi_set_float(struct ffi_arg *arg, float v);
 #define MJS_INTERNAL_H_
 
 
-#ifndef FAST
-#define FAST
-#endif
-
-#ifndef STATIC
-#define STATIC
-#endif
-
-#ifndef ENDL
-#define ENDL "\n"
-#endif
-
-#ifdef MJS_EXPOSE_PRIVATE
-#define MJS_PRIVATE
-#define MJS_EXTERN extern
-#else
-#define MJS_PRIVATE static
-#define MJS_EXTERN static
-#endif
-
-
-#if !defined(WEAK)
-#if (defined(__GNUC__) || defined(__TI_COMPILER_VERSION__)) && !defined(_WIN32)
-#define WEAK __attribute__((weak))
-#else
-#define WEAK
-#endif
-#endif
 
 #ifndef CS_ENABLE_STDIO
 #define CS_ENABLE_STDIO 1
@@ -1119,11 +1091,6 @@ void ffi_set_float(struct ffi_arg *arg, float v);
 
 #ifndef MJS_CORE_PUBLIC_H_
 #define MJS_CORE_PUBLIC_H_
-
-
-
-#define MJS_ENABLE_DEBUG 1
-
 
 #endif /* MJS_CORE_PUBLIC_H_ */
 
@@ -1847,24 +1814,6 @@ void mjs_bcode_commit(struct mjs *mjs);
 #define MJS_INTERNAL_H_
 
 
-
-#ifdef MJS_EXPOSE_PRIVATE
-#define MJS_PRIVATE
-#define MJS_EXTERN extern
-#else
-#define static
-#define MJS_EXTERN static
-#endif
-
-
-#if !defined(WEAK)
-#if (defined(__GNUC__) || defined(__TI_COMPILER_VERSION__)) && !defined(_WIN32)
-#define WEAK __attribute__((weak))
-#else
-#define WEAK
-#endif
-#endif
-
 #ifndef CS_ENABLE_STDIO
 #define CS_ENABLE_STDIO 1
 #endif
@@ -2100,17 +2049,8 @@ void mjs_init_builtin(struct mjs *mjs, mjs_val_t obj);
 
 #endif /* MJS_BUILTIN_H_ */
 
-#ifndef MJS_PARSER_H
-#define MJS_PARSER_H
-
-
 
 mjs_err_t mjs_parse(const char *path, const char *buf, struct mjs *);
-
-
-#endif /* MJS_PARSER_H */
-#ifndef MJS_EXPORT_INTERNAL_HEADERS
-
 
 
 
@@ -2614,22 +2554,31 @@ int mg_strcasecmp(const struct mg_str str1, const struct mg_str str2)
   while (i < str1.len && i < str2.len) {
     int c1 = tolower((int) str1.p[i]);
     int c2 = tolower((int) str2.p[i]);
-    if (c1 < c2) return -1;
-    if (c1 > c2) return 1;
+    if (c1 < c2) {
+      return -1;
+    }
+    if (c1 > c2) {
+      return 1;
+    }
     i++;
   }
-  if (i < str1.len) return 1;
-  if (i < str2.len) return -1;
+
+  if( i < str1.len ) {
+    return 1;
+  }
+  if( i < str2.len ) {
+    return -1;
+  }
   return 0;
 }
 
-void mg_strfree(struct mg_str *s) WEAK;
-void mg_strfree(struct mg_str *s)
+void mg_strfree( struct mg_str *s ) WEAK;
+void mg_strfree( struct mg_str *s )
 {
   char *sp = (char *) s->p;
   s->p = nullptr;
   s->len = 0;
-  if (sp != nullptr) {
+  if( sp != nullptr ) {
     free(sp);
   }
 }
@@ -2637,10 +2586,12 @@ void mg_strfree(struct mg_str *s)
 const char *mg_strstr(const struct mg_str haystack, const struct mg_str needle) WEAK;
 const char *mg_strstr(const struct mg_str haystack, const struct mg_str needle)
 {
-  size_t i;
-  if (needle.len > haystack.len) return nullptr;
-  for (i = 0; i <= haystack.len - needle.len; i++) {
-    if (memcmp(haystack.p + i, needle.p, needle.len) == 0) {
+  if (needle.len > haystack.len) {
+    return nullptr;
+  }
+
+  for( size_t i = 0; i <= haystack.len - needle.len; ++i ) {
+    if( memcmp( haystack.p + i, needle.p, needle.len ) == 0 ) {
       return haystack.p + i;
     }
   }
@@ -2664,7 +2615,9 @@ int mg_str_starts_with(struct mg_str s, struct mg_str prefix) WEAK;
 int mg_str_starts_with(struct mg_str s, struct mg_str prefix)
 {
   const struct mg_str sp = MG_MK_STR_N(s.p, prefix.len);
-  if (s.len < prefix.len) return 0;
+  if (s.len < prefix.len) {
+    return 0;
+  }
   return (mg_strcmp(sp, prefix) == 0);
 }
 
@@ -2929,7 +2882,7 @@ void cs_to_hex(char *to, const unsigned char *p, size_t len)
 {
   static const char *hex = "0123456789abcdef";
 
-  for (; len--; p++) {
+  for( ; len--; ++p ) {
     *to++ = hex[p[0] >> 4];
     *to++ = hex[p[0] & 0x0f];
   }
@@ -2951,7 +2904,7 @@ static int fourbit(int ch)
 void cs_from_hex(char *to, const char *p, size_t len) WEAK;
 void cs_from_hex(char *to, const char *p, size_t len)
 {
-  for (size_t i = 0; i < len; i += 2) {
+  for( size_t i = 0; i < len; i += 2 ) {
     *to++ = (fourbit(p[i]) << 4) + fourbit(p[i + 1]);
   }
   *to = '\0';
@@ -2963,11 +2916,12 @@ int64_t cs_to64(const char *s)
 {
   int64_t result = 0;
   int64_t neg = 1;
-  while (*s && isspace((unsigned char) *s)) s++;
+  while( *s && isspace((unsigned char) *s)) s++;
   if (*s == '-') {
     neg = -1;
     s++;
   }
+
   while (isdigit((unsigned char) *s)) {
     result *= 10;
     result += (*s - '0');
@@ -3174,9 +3128,6 @@ size_t mg_match_prefix(const char *pattern, int pattern_len, const char *str)
 #define va_copy(x, y) x = y
 #endif
 
-#ifndef JSON_ENABLE_ARRAY
-#define JSON_ENABLE_ARRAY 1
-#endif
 
 struct frozen {
   const char *end;
@@ -3410,7 +3361,6 @@ static int json_parse_number(struct frozen *f)
   return 0;
 }
 
-#if JSON_ENABLE_ARRAY
 /* array = '[' [ value { ',' value } ] ']' */
 static int json_parse_array(struct frozen *f)
 {
@@ -3439,7 +3389,6 @@ static int json_parse_array(struct frozen *f)
   }
   return 0;
 }
-#endif /* JSON_ENABLE_ARRAY */
 
 static int json_expect(struct frozen *f, const char *s, int len, enum json_token_type tok_type )
 {
@@ -3469,11 +3418,9 @@ static int json_parse_value(struct frozen *f)
     case '{':
       TRY(json_parse_object(f));
       break;
-#if JSON_ENABLE_ARRAY
     case '[':
       TRY(json_parse_array(f));
       break;
-#endif
     case 'n':
       TRY(json_expect(f, "null", 4, JSON_TYPE_NULL));
       break;
@@ -7241,9 +7188,7 @@ mjs_err_t mjs_execute(struct mjs *mjs, size_t off, mjs_val_t *res)
         i = bp.data.len;
         break;
       default:
-#if MJS_ENABLE_DEBUG
         mjs_dump(mjs, 1);
-#endif
         mjs_set_errorf(mjs, MJS_INTERNAL_ERROR, "Unknown opcode: %d, off %d+%d",
                        (int) opcode, (int) bp.start_idx, (int) i);
         i = bp.data.len;
@@ -12361,8 +12306,6 @@ void mjs_fprintf(mjs_val_t v, struct mjs *mjs, FILE *fp)
   mjs_jprintf(v, mjs, &out);
 }
 
-#if MJS_ENABLE_DEBUG
-
 const char *opcodetostr(uint8_t opcode)
 {
   static const char *names[] = {
@@ -12704,5 +12647,3 @@ int mjs_get_offset_by_call_frame_num(struct mjs *mjs, int cf_num)
   return ret;
 }
 
-#endif
-#endif /* MJS_EXPORT_INTERNAL_HEADERS */

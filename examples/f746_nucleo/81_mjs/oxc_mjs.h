@@ -42,8 +42,6 @@
 #include <stddef.h>
 
 
-#define MJS_ENABLE_DEBUG 1
-
 /*
  *  Double-precision floating-point number, IEEE 754
  *
@@ -271,10 +269,6 @@ void mjs_set_ffi_resolver(struct mjs *mjs, mjs_ffi_resolver_t *dlsym);
  * === Arrays
  */
 
-#ifndef MJS_ARRAY_PUBLIC_H_
-#define MJS_ARRAY_PUBLIC_H_
-
-
 
 /* Make an empty array object */
 mjs_val_t mjs_mk_array( struct mjs *mjs );
@@ -301,14 +295,9 @@ int mjs_is_array( mjs_val_t v );
 void mjs_array_del( struct mjs *mjs, mjs_val_t arr, unsigned long index );
 
 
-#endif /* MJS_ARRAY_PUBLIC_H_ */
 
 #ifndef MJS_CORE_PUBLIC_H_
 #define MJS_CORE_PUBLIC_H_
-
-
-#define MJS_ENABLE_DEBUG 1
-
 
 
 #endif /* MJS_CORE_PUBLIC_H_ */
@@ -656,12 +645,8 @@ const char *mjs_typeof(mjs_val_t v);
 void mjs_fprintf(mjs_val_t v, struct mjs *mjs, FILE *fp);
 void mjs_sprintf(mjs_val_t v, struct mjs *mjs, char *buf, size_t buflen);
 
-#if MJS_ENABLE_DEBUG
-
 void mjs_disasm(const uint8_t *code, size_t len);
 void mjs_dump(struct mjs *mjs, int do_disasm);
-
-#endif
 
 /*
  * Returns the filename corresponding to the given bcode offset.
