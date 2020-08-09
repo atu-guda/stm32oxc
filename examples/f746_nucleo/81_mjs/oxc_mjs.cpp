@@ -224,89 +224,8 @@ double cs_timegm(const struct tm *tm);
 
 #endif /* CS_COMMON_CS_TIME_H_ */
 
-#ifndef CS_COMMON_MG_STR_H_
-#define CS_COMMON_MG_STR_H_
 
 
-
-/*
- * Helper function for creating mg_str struct from plain C string.
- * `nullptr` is allowed and becomes `{nullptr, 0}`.
- */
-Mg_str mg_mk_str(const char *s);
-
-/*
- * Like `mg_mk_str`, but takes string length explicitly.
- */
-Mg_str mg_mk_str_n(const char *s, size_t len);
-
-/* Macro for initializing mg_str. */
-#define MG_MK_STR(str_literal) \
-  { str_literal, sizeof(str_literal) - 1 }
-#define MG_MK_STR_N(str_literal, len) \
-  { str_literal, len }
-#define MG_NULL_STR \
-  { nullptr, 0 }
-
-/*
- * Cross-platform version of `strcmp()` where where first string is
- * specified by `Mg_str`.
- */
-int mg_vcmp(const Mg_str *str2, const char *str1);
-
-/*
- * Cross-platform version of `strncasecmp()` where first string is
- * specified by `Mg_str`.
- */
-int mg_vcasecmp(const Mg_str *str2, const char *str1);
-
-/* Creates a copy of s (heap-allocated). */
-Mg_str mg_strdup(const Mg_str s);
-
-/*
- * Creates a copy of s (heap-allocated).
- * Resulting string is NUL-terminated (but NUL is not included in len).
- */
-Mg_str mg_strdup_nul(const Mg_str s);
-
-/*
- * Locates character in a string.
- */
-const char *mg_strchr(const Mg_str s, int c);
-
-/*
- * Compare two `mg_str`s; return value is the same as `strcmp`.
- */
-int mg_strcmp(const Mg_str str1, const Mg_str str2);
-
-/*
- * Like `mg_strcmp`, but compares at most `n` characters.
- */
-int mg_strncmp(const Mg_str str1, const Mg_str str2, size_t n);
-
-/*
- * Compare two `mg_str`s ignoreing case; return value is the same as `strcmp`.
- */
-int mg_strcasecmp(const Mg_str str1, const Mg_str str2);
-
-/*
- * Free the string (assuming it was heap allocated).
- */
-void mg_strfree(Mg_str *s);
-
-/*
- * Finds the first occurrence of a substring `needle` in the `haystack`.
- */
-const char *mg_strstr(const Mg_str haystack, const Mg_str needle);
-
-/* Strip whitespace at the start and the end of s */
-Mg_str mg_strstrip(Mg_str s);
-
-/* Returns 1 if s starts with the given prefix. */
-int mg_str_starts_with(Mg_str s, Mg_str prefix);
-
-
-#endif /* CS_COMMON_MG_STR_H_ */
 
 #ifndef CS_COMMON_STR_UTIL_H_
 #define CS_COMMON_STR_UTIL_H_
@@ -339,10 +258,6 @@ int mg_str_starts_with(Mg_str s, Mg_str prefix);
 #define CS_STRINGIFY_MACRO(x) CS_STRINGIFY_LIT(x)
 
 
-/*
- * Equivalent of standard `strnlen()`.
- */
-size_t c_strnlen(const char *s, size_t maxlen);
 
 /*
  * Equivalent of standard `snprintf()`.
@@ -434,16 +349,14 @@ int mg_avprintf(char **buf, size_t size, const char *fmt, va_list ap);
  * The purpose of this function is to parse comma separated string without
  * any copying/memory allocation.
  */
-const char *mg_next_comma_list_entry(const char *list, Mg_str *val,
-                                     Mg_str *eq_val);
+const char *mg_next_comma_list_entry( const char *list, Mg_str *val, Mg_str *eq_val);
 
 /*
  * Like `mg_next_comma_list_entry()`, but takes `list` as `Mg_str`.
  * NB: Test return value's .p, not .len. On last itreation that yields result
  * .len will be 0 but .p will not. When finished, .p will be nullptr.
  */
-Mg_str mg_next_comma_list_entry_n(Mg_str list, Mg_str *val,
-                                         Mg_str *eq_val);
+Mg_str mg_next_comma_list_entry_n( Mg_str list, Mg_str *val, Mg_str *eq_val );
 
 /*
  * Matches 0-terminated string (mg_match_prefix) or string with given length
@@ -470,7 +383,7 @@ size_t mg_match_prefix(const char *pattern, int pattern_len, const char *str);
 /*
  * Like `mg_match_prefix()`, but takes `pattern` and `str` as `Mg_str`.
  */
-size_t mg_match_prefix_n(const Mg_str pattern, const Mg_str str);
+size_t mg_match_prefix_n( const Mg_str pattern, const Mg_str str );
 
 
 #endif /* CS_COMMON_STR_UTIL_H_ */
@@ -1919,10 +1832,10 @@ int cs_log_print_prefix( Cs_log_level level, const char *file, int ln )
 
   if (s_file_level != nullptr) {
     Cs_log_level pll = cs_log_level;
-    Mg_str fl = mg_mk_str(s_file_level), ps = MG_MK_STR_N(prefix, pl);
+    Mg_str fl( s_file_level ), ps( prefix, pl );
     Mg_str k, v;
     while ((fl = mg_next_comma_list_entry_n(fl, &k, &v)).p != nullptr) {
-      bool yes = !(!mg_str_starts_with(ps, k) || v.len == 0);
+      bool yes = !( ! ps.starts_with( k ) || v.len == 0);
       if (!yes) continue;
       pll = (Cs_log_level)(*v.p - '0');
       break;
@@ -2214,115 +2127,118 @@ void mbuf_move(struct mbuf *from, struct mbuf *to)
 
 int mg_ncasecmp(const char *s1, const char *s2, size_t len) WEAK;
 
-Mg_str mg_mk_str(const char *s) WEAK;
-Mg_str mg_mk_str(const char *s)
+// ================================ Mg_str ==================================
+
+Mg_str::Mg_str( const char *str )
+       : p( str ), len( 0 )
 {
-  Mg_str ret = {s, 0};
-  if (s != nullptr) {
-    ret.len = strlen(s);
+  if( p ) {
+    len = strlen( p );
   }
-  return ret;
 }
 
-Mg_str mg_mk_str_n(const char *s, size_t len) WEAK;
-Mg_str mg_mk_str_n(const char *s, size_t len)
-{
-  Mg_str ret = {s, len};
-  return ret;
-}
 
-int mg_vcmp(const Mg_str *str1, const char *str2) WEAK;
-int mg_vcmp(const Mg_str *str1, const char *str2)
+
+
+int mg_vcmp( const Mg_str &str1, const char *str2 ) // friend to Mg_str
 {
-  size_t n2 = strlen(str2), n1 = str1->len;
-  int r = strncmp(str1->p, str2, (n1 < n2) ? n1 : n2);
+  size_t n2 = strlen( str2 ), n1 = str1.len;
+  int r = strncmp( str1.p, str2, (n1 < n2) ? n1 : n2 );
   if (r == 0) {
     return n1 - n2;
   }
   return r;
 }
 
-int mg_vcasecmp(const Mg_str *str1, const char *str2) WEAK;
-int mg_vcasecmp(const Mg_str *str1, const char *str2)
+int mg_vcasecmp( const Mg_str &str1, const char *str2 ) // friend to Mg_str
 {
-  size_t n2 = strlen(str2), n1 = str1->len;
-  int r = mg_ncasecmp(str1->p, str2, (n1 < n2) ? n1 : n2);
+  size_t n2 = strlen( str2 ), n1 = str1.len;
+  int r = mg_ncasecmp( str1.p, str2, (n1 < n2) ? n1 : n2 );
   if (r == 0) {
     return n1 - n2;
   }
   return r;
 }
 
-static Mg_str mg_strdup_common(const Mg_str s, int nul_terminate )
+Mg_str mg_strdup_common( const Mg_str &s, int nul_terminate ) // friend to Mg_str
 {
-  Mg_str r = {nullptr, 0};
+  char *sc = nullptr;
+  size_t l = 0;
+
   if( s.len > 0 && s.p != nullptr ) {
-    char *sc = (char *) MG_MALLOC(s.len + (nul_terminate ? 1 : 0));
-    if (sc != nullptr) {
-      memcpy(sc, s.p, s.len);
-      if (nul_terminate) sc[s.len] = '\0';
-      r.p = sc;
-      r.len = s.len;
+    sc = (char *) MG_MALLOC( s.len + 1 );
+    if( sc != nullptr ) {
+      memcpy( sc, s.p, s.len );
+      if( nul_terminate ) {
+        sc[s.len] = '\0';
+      }
+      l = s.len;
     }
   }
-  return r;
+  return Mg_str( sc, l );
 }
 
-Mg_str mg_strdup(const Mg_str s) WEAK;
-Mg_str mg_strdup(const Mg_str s)
+inline Mg_str mg_strdup( const Mg_str &s )
 {
-  return mg_strdup_common(s, 0 /* NUL-terminate */);
+  return mg_strdup_common( s, 0 /* not NUL-terminate */ );
 }
 
-Mg_str mg_strdup_nul(const Mg_str s) WEAK;
-Mg_str mg_strdup_nul(const Mg_str s)
+inline Mg_str mg_strdup_nul( const Mg_str &s )
 {
-  return mg_strdup_common(s, 1 /* NUL-terminate */);
+  return mg_strdup_common( s, 1 /* NUL-terminate */ );
 }
 
-const char *mg_strchr(const Mg_str s, int c) WEAK;
-const char *mg_strchr(const Mg_str s, int c)
+
+const char* Mg_str::strchr( int c ) const
 {
-  size_t i;
-  for (i = 0; i < s.len; i++) {
-    if (s.p[i] == c) return &s.p[i];
+  for( size_t i = 0; i < len; i++ ) {
+    if( p[i] == c ) {
+      return &p[i];
+    }
   }
   return nullptr;
 }
 
-int mg_strcmp(const Mg_str str1, const Mg_str str2) WEAK;
-int mg_strcmp(const Mg_str str1, const Mg_str str2)
+
+int mg_strcmp( const Mg_str &str1, const Mg_str &str2 ) // friend to Mg_str
 {
   size_t i = 0;
-  while (i < str1.len && i < str2.len) {
+  while( i < str1.len && i < str2.len ) {
     int c1 = str1.p[i];
     int c2 = str2.p[i];
-    if (c1 < c2) return -1;
-    if (c1 > c2) return 1;
+    if( c1 < c2 ) {
+      return -1;
+    }
+    if( c1 > c2 ) {
+      return 1;
+    }
     i++;
   }
-  if (i < str1.len) return 1;
-  if (i < str2.len) return -1;
+  if( i < str1.len ) {
+    return 1;
+  }
+  if( i < str2.len ) {
+    return -1;
+  }
+
   return 0;
 }
 
-int mg_strncmp(const Mg_str, const Mg_str, size_t n) WEAK;
-int mg_strncmp(const Mg_str str1, const Mg_str str2, size_t n)
+int mg_strncmp( const Mg_str &str1, const Mg_str &str2, size_t n ) // friend to Mg_str
 {
   Mg_str s1 = str1;
   Mg_str s2 = str2;
 
-  if (s1.len > n) {
+  if( s1.len > n ) {
     s1.len = n;
   }
-  if (s2.len > n) {
+  if( s2.len > n ) {
     s2.len = n;
   }
-  return mg_strcmp(s1, s2);
+  return mg_strcmp( s1, s2 );
 }
 
-int mg_strcasecmp(const Mg_str str1, const Mg_str str2) WEAK;
-int mg_strcasecmp(const Mg_str str1, const Mg_str str2)
+int mg_strcasecmp( const Mg_str &str1, const Mg_str &str2 ) // friend to Mg_str
 {
   size_t i = 0;
   while (i < str1.len && i < str2.len) {
@@ -2346,53 +2262,49 @@ int mg_strcasecmp(const Mg_str str1, const Mg_str str2)
   return 0;
 }
 
-void mg_strfree( Mg_str *s ) WEAK;
-void mg_strfree( Mg_str *s )
+void Mg_str::strfree()
 {
-  char *sp = (char *) s->p;
-  s->p = nullptr;
-  s->len = 0;
-  if( sp != nullptr ) {
-    free(sp);
-  }
+  ::free( (void*)p ); // atu: BUG: without check?
+  p = nullptr;
+  len = 0;
 }
 
-const char *mg_strstr(const Mg_str haystack, const Mg_str needle) WEAK;
-const char *mg_strstr(const Mg_str haystack, const Mg_str needle)
+
+const char* Mg_str::strstr( const Mg_str &needle ) const
 {
-  if (needle.len > haystack.len) {
+  if( needle.len > len ) {
     return nullptr;
   }
 
-  for( size_t i = 0; i <= haystack.len - needle.len; ++i ) {
-    if( memcmp( haystack.p + i, needle.p, needle.len ) == 0 ) {
-      return haystack.p + i;
+  for( size_t i = 0; i <= len - needle.len; ++i ) {
+    if( memcmp( p + i, needle.p, needle.len ) == 0 ) {
+      return p + i;
     }
   }
   return nullptr;
 }
 
-Mg_str mg_strstrip(Mg_str s) WEAK;
-Mg_str mg_strstrip(Mg_str s)
+void Mg_str::strstrip()
 {
-  while (s.len > 0 && isspace((int) *s.p)) {
-    s.p++;
-    s.len--;
+  // atu: beware, not free after p changed
+  while( len > 0 && isspace((int) *p) ) {
+    ++p; // HERE!
+    --len;
   }
-  while (s.len > 0 && isspace((int) *(s.p + s.len - 1))) {
-    s.len--;
+
+  while( len > 0 && isspace((int) *(p + len - 1))) {
+    --len;
   }
-  return s;
 }
 
-int mg_str_starts_with(Mg_str s, Mg_str prefix) WEAK;
-int mg_str_starts_with(Mg_str s, Mg_str prefix)
+
+bool Mg_str::starts_with( const Mg_str &prefix ) const
 {
-  const Mg_str sp = MG_MK_STR_N(s.p, prefix.len);
-  if (s.len < prefix.len) {
-    return 0;
+  if( len < prefix.len ) {
+    return false;
   }
-  return (mg_strcmp(sp, prefix) == 0);
+  const Mg_str sp ( p, prefix.len );
+  return ( mg_strcmp( sp, prefix ) == 0 );
 }
 
 #ifndef EXCLUDE_COMMON
@@ -2403,14 +2315,6 @@ int mg_str_starts_with(Mg_str s, Mg_str prefix)
 #endif
 
 
-size_t c_strnlen(const char *s, size_t maxlen) WEAK;
-size_t c_strnlen(const char *s, size_t maxlen)
-{
-  size_t l = 0;
-  for (; l < maxlen && s[l] != '\0'; l++) {
-  }
-  return l;
-}
 
 #define C_SNPRINTF_APPEND_CHAR(ch)       \
   do {                                   \
@@ -2543,7 +2447,7 @@ int c_vsnprintf(char *buf, size_t buf_size, const char *fmt, va_list ap)
       if (ch == 's') {
         const char *s = va_arg(ap, const char *); /* Always fetch parameter */
         int j;
-        int pad = field_width - (precision >= 0 ? c_strnlen(s, precision) : 0);
+        int pad = field_width - (precision >= 0 ? strnlen( s, precision ) : 0);
         for (j = 0; j < pad; j++) {
           C_SNPRINTF_APPEND_CHAR(' ');
         }
@@ -2794,23 +2698,21 @@ const char *mg_next_comma_list_entry(const char *, Mg_str *,
 const char *mg_next_comma_list_entry(const char *list, Mg_str *val,
                                      Mg_str *eq_val)
 {
-  Mg_str ret = mg_next_comma_list_entry_n(mg_mk_str(list), val, eq_val);
+  Mg_str ret = mg_next_comma_list_entry_n( Mg_str( list ), val, eq_val);
   return ret.p;
 }
 
-Mg_str mg_next_comma_list_entry_n(Mg_str list, Mg_str *val,
-                                         Mg_str *eq_val) WEAK;
-Mg_str mg_next_comma_list_entry_n(Mg_str list, Mg_str *val,
-                                         Mg_str *eq_val)
+Mg_str mg_next_comma_list_entry_n(Mg_str list, Mg_str *val,  Mg_str *eq_val) WEAK;
+Mg_str mg_next_comma_list_entry_n( Mg_str list, Mg_str *val, Mg_str *eq_val)
 {
   if (list.len == 0) {
     /* End of the list */
-    list = mg_mk_str(nullptr);
+    list.clear();
   } else {
     const char *chr = nullptr;
     *val = list;
 
-    if ((chr = mg_strchr(*val, ',')) != nullptr) {
+    if( (chr = val->strchr(',') ) != nullptr ) {
       /* Comma found. Store length and shift the list ptr */
       val->len = chr - val->p;
       chr++;
@@ -2818,10 +2720,10 @@ Mg_str mg_next_comma_list_entry_n(Mg_str list, Mg_str *val,
       list.p = chr;
     } else {
       /* This value is the last one */
-      list = mg_mk_str_n(list.p + list.len, 0);
+      list = Mg_str( list.p + list.len, 0 );
     }
 
-    if (eq_val != nullptr) {
+    if( eq_val != nullptr ) {
       /* Value has form "x=y", adjust pointers and lengths */
       /* so that val points to "x", and eq_val points to "y". */
       eq_val->len = 0;
@@ -7147,32 +7049,32 @@ void mjs_set_ffi_resolver( Mjs *mjs, mjs_ffi_resolver_t *dlsym )
 
 static mjs_ffi_ctype_t parse_cval_type(Mjs *mjs, const char *s, const char *e )
 {
-  Mg_str ms = MG_NULL_STR;
+  Mg_str ms;
   /* Trim leading and trailing whitespace */
   while (s < e && isspace((int) *s)) s++;
   while (e > s && isspace((int) e[-1])) e--;
   ms.p = s;
   ms.len = e - s;
-  if (mg_vcmp(&ms, "void") == 0) {
+  if( mg_vcmp( ms, "void" ) == 0) {
     return MJS_FFI_CTYPE_NONE;
-  } else if (mg_vcmp(&ms, "userdata") == 0) {
+  } else if( mg_vcmp( ms, "userdata" ) == 0) {
     return MJS_FFI_CTYPE_USERDATA;
-  } else if (mg_vcmp(&ms, "int") == 0) {
+  } else if( mg_vcmp( ms, "int" ) == 0) {
     return MJS_FFI_CTYPE_INT;
-  } else if (mg_vcmp(&ms, "bool") == 0) {
+  } else if( mg_vcmp( ms, "bool" ) == 0) {
     return MJS_FFI_CTYPE_BOOL;
-  } else if (mg_vcmp(&ms, "double") == 0) {
+  } else if( mg_vcmp( ms, "double" ) == 0) {
     return MJS_FFI_CTYPE_DOUBLE;
-  } else if (mg_vcmp(&ms, "float") == 0) {
+  } else if( mg_vcmp( ms, "float" ) == 0) {
     return MJS_FFI_CTYPE_FLOAT;
-  } else if (mg_vcmp(&ms, "char*") == 0 || mg_vcmp(&ms, "char *") == 0) {
+  } else if( mg_vcmp( ms, "char*" ) == 0 || mg_vcmp( ms, "char *" ) == 0) {
     return MJS_FFI_CTYPE_CHAR_PTR;
-  } else if (mg_vcmp(&ms, "void*") == 0 || mg_vcmp(&ms, "void *") == 0) {
+  } else if( mg_vcmp( ms, "void*" ) == 0 || mg_vcmp( ms, "void *" ) == 0) {
     return MJS_FFI_CTYPE_VOID_PTR;
-  } else if (mg_vcmp(&ms, "Mg_str") == 0) {
+  } else if( mg_vcmp( ms, "Mg_str" ) == 0) {
     return MJS_FFI_CTYPE_STRUCT_MG_STR;
-  } else if (mg_vcmp(&ms, "Mg_str *") == 0 ||
-             mg_vcmp(&ms, "Mg_str*") == 0) {
+  } else if( mg_vcmp( ms, "Mg_str *" ) == 0 ||
+             mg_vcmp( ms, "Mg_str*" ) == 0 ) {
     return MJS_FFI_CTYPE_STRUCT_MG_STR_PTR;
   } else {
     mjs_prepend_errorf(mjs, MJS_TYPE_ERROR, "failed to parse val type \"%.*s\"",
@@ -7214,7 +7116,7 @@ mjs_err_t mjs_parse_ffi_signature(Mjs *mjs, const char *s,
   mjs_err_t ret = MJS_OK;
   int vtidx = 0;
   const char *cur, *e, *tmp_e, *tmp;
-  Mg_str rt = MG_NULL_STR, fn = MG_NULL_STR, args = MG_NULL_STR;
+  Mg_str rt, fn, args;
   mjs_ffi_ctype_t val_type = MJS_FFI_CTYPE_INVALID;
   if (sig_len == ~0) {
     sig_len = strlen(s);
@@ -11429,8 +11331,8 @@ void mjs_string_index_of(Mjs *mjs)
     mgstr.len = str_len - idx;
     mgsubstr.p = substr;
     mgsubstr.len = substr_len;
-    substr_p = mg_strstr(mgstr, mgsubstr);
-    if (substr_p != nullptr) {
+    substr_p = mgstr.strstr( mgsubstr );
+    if( substr_p != nullptr ) {
       ret = mjs_mk_number(mjs, (int) (substr_p - str));
     }
   }

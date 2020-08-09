@@ -2,6 +2,8 @@
 // mjs.h mod by atu:
 #pragma once
 
+#define _GNU_SOURCE 1
+
 #include <stdint.h>
 #include <stdio.h>
 #include <stddef.h>
@@ -134,6 +136,22 @@ enum mjs_err_t {
 
 /* Describes chunk of memory */
 struct Mg_str {
+  Mg_str() : p( nullptr ), len( 0 ) {};
+  explicit Mg_str( const char *str );
+  Mg_str( const char *s, size_t l ) : p( s ), len( l ) {};
+  void clear() { p = nullptr; len = 0; };
+  const char* strchr( int c ) const;
+  void strfree(); // may be unused
+  const char* strstr( const Mg_str &needle ) const;
+  void strstrip();
+  bool starts_with( const Mg_str &prefix ) const;
+  friend int mg_strcmp( const Mg_str &str1, const Mg_str &str2 );
+  friend int mg_vcmp( const Mg_str &str1, const char *str2 );
+  friend int mg_vcasecmp( const Mg_str &str1, const char *str2 );
+  friend Mg_str mg_strdup_common( const Mg_str &s, int nul_terminate );
+  friend int mg_strncmp( const Mg_str &str1, const Mg_str &str2, size_t n );
+  friend int mg_strcasecmp( const Mg_str &str1, const Mg_str &str2 );
+
   const char *p; /* Memory chunk pointer */
   size_t len;    /* Memory chunk length */
 };
