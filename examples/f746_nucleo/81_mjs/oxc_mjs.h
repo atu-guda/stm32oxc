@@ -12,6 +12,30 @@ namespace OXC_MJS // for future
 
 
 
+#if !defined(PRINTF_LIKE)
+#if defined(__GNUC__) || defined(__clang__) || defined(__TI_COMPILER_VERSION__)
+#define PRINTF_LIKE(f, a) __attribute__((format(printf, f, a)))
+#else
+#define PRINTF_LIKE(f, a)
+#endif
+#endif
+
+#define WEAK __attribute__((weak))
+
+#ifdef __GNUC__
+#define NORETURN __attribute__((noreturn))
+#define NOINLINE __attribute__((noinline))
+#define WARN_UNUSED_RESULT __attribute__((warn_unused_result))
+#define NOINSTR __attribute__((no_instrument_function))
+#define DO_NOT_WARN_UNUSED __attribute__((unused))
+#else
+#define NORETURN
+#define NOINLINE
+#define WARN_UNUSED_RESULT
+#define NOINSTR
+#define DO_NOT_WARN_UNUSED
+#endif /* __GNUC__ */
+
 
 //namespace OXC_MJS
 //{
@@ -47,7 +71,52 @@ namespace OXC_MJS // for future
 
 typedef uint64_t mjs_val_t;
 
-struct mjs;
+struct Mjs;
+
+/*
+ * Log level; `LL_INFO` is the default. Use `cs_log_set_level()` to change it.
+ */
+enum Cs_log_level {
+  LL_NONE = -1,
+  LL_ERROR = 0,
+  LL_WARN = 1,
+  LL_INFO = 2,
+  LL_DEBUG = 3,
+  LL_VERBOSE_DEBUG = 4,
+
+  _LL_MIN = -2,
+  _LL_MAX = 5,
+};
+/*
+ * Set max log level to print; messages with the level above the given one will
+ * not be printed.
+ */
+void cs_log_set_level( Cs_log_level level );
+/*
+ * A comma-separated set of prefix=level.
+ * prefix is matched against the log prefix exactly as printed, including line
+ * number, but partial match is ok. Check stops on first matching entry.
+ * If nothing matches, default level is used.
+ *
+ * Examples:
+ *   main.c:=4 - everything from main C at verbose debug level.
+ *   mongoose.c=1,mjs.c=1,=4 - everything at verbose debug except mg_* and mjs_*
+ *
+ */
+void cs_log_set_file_level( const char *file_level );
+/*
+ * Helper function which prints message prefix with the given `level`.
+ * If message should be printed (according to the current log level
+ * and filter), prints the prefix and returns 1, otherwise returns 0.
+ *
+ * Clients should typically just use `LOG()` macro.
+ */
+int cs_log_print_prefix( Cs_log_level level, const char *fname, int line );
+/*
+ * Prints log to the current log file, appends "\n" in the end and flushes the
+ * stream.
+ */
+void cs_log_printf(const char *fmt, ...) PRINTF_LIKE(1, 2);
 
 enum mjs_err_t {
   MJS_OK,
@@ -63,8 +132,14 @@ enum mjs_err_t {
   MJS_ERRS_CNT
 };
 
+/* Describes chunk of memory */
+struct Mg_str {
+  const char *p; /* Memory chunk pointer */
+  size_t len;    /* Memory chunk length */
+};
+
 /* Create MJS instance */
-struct mjs *mjs_create(void);
+Mjs *mjs_create(void);
 
 struct mjs_create_opts {
   /* use non-default bytecode definition file, testing-only */
@@ -75,12 +150,12 @@ struct mjs_create_opts {
  * Like `msj_create()`, but allows to customize initial MJS state, see `struct
  * mjs_create_opts`.
  */
-struct mjs *mjs_create_opt(struct mjs_create_opts opts);
+Mjs *mjs_create_opt(struct mjs_create_opts opts);
 
 /* Destroy MJS instance */
-void mjs_destroy(struct mjs *mjs);
+void mjs_destroy(Mjs *mjs);
 
-mjs_val_t mjs_get_global(struct mjs *mjs);
+mjs_val_t mjs_get_global(Mjs *mjs);
 
 /*
  * Tells the GC about an MJS value variable/field owned by C code.
@@ -149,16 +224,16 @@ mjs_val_t mjs_get_global(struct mjs *mjs);
  * stay alive after the C function has returned, it also needs to be properly
  * owned.
  */
-void mjs_own( struct mjs *mjs, mjs_val_t *v );
+void mjs_own( Mjs *mjs, mjs_val_t *v );
 
 /*
  * Disowns the value previously owned by `mjs_own()`.
  *
  * Returns 1 if value is found, 0 otherwise.
  */
-int mjs_disown(struct mjs *mjs, mjs_val_t *v);
+int mjs_disown(Mjs *mjs, mjs_val_t *v);
 
-mjs_err_t mjs_set_errorf(struct mjs *mjs, mjs_err_t err, const char *fmt, ...);
+mjs_err_t mjs_set_errorf(Mjs *mjs, mjs_err_t err, const char *fmt, ...);
 
 /*
  * If there is no error message already set, then it's equal to
@@ -167,20 +242,20 @@ mjs_err_t mjs_set_errorf(struct mjs *mjs, mjs_err_t err, const char *fmt, ...);
  * Otherwise, an old message gets prepended with the new one, followed by a
  * colon. (the previously set error code is kept)
  */
-mjs_err_t mjs_prepend_errorf( struct mjs *mjs, mjs_err_t err, const char *fmt, ... );
+mjs_err_t mjs_prepend_errorf( Mjs *mjs, mjs_err_t err, const char *fmt, ... );
 
 /*
  * Print the last error details. If print_stack_trace is non-zero, also
  * print stack trace. `msg` is the message which gets prepended to the actual
  * error message, if it's NULL, then "MJS error" is used.
  */
-void mjs_print_error(struct mjs *mjs, FILE *fp, const char *msg, int print_stack_trace );
+void mjs_print_error(Mjs *mjs, FILE *fp, const char *msg, int print_stack_trace );
 
 /*
  * return a string representation of an error.
  * the error string might be overwritten by calls to `mjs_set_errorf`.
  */
-const char *mjs_strerror(struct mjs *mjs, mjs_err_t err );
+const char *mjs_strerror(Mjs *mjs, mjs_err_t err );
 
 /*
  * Sets whether *.jsc files are generated when *.js file is executed. By
@@ -190,24 +265,24 @@ const char *mjs_strerror(struct mjs *mjs, mjs_err_t err );
  * effect.
  * atu: always for me
  */
-void mjs_set_generate_jsc(struct mjs *mjs, int generate_jsc);
+void mjs_set_generate_jsc(Mjs *mjs, int generate_jsc);
 
 /*
  * When invoked from a cfunction, returns number of arguments passed to the
  * current JS function call.
  */
-int mjs_nargs(struct mjs *mjs);
+int mjs_nargs(Mjs *mjs);
 
 /*
  * When invoked from a cfunction, returns n-th argument to the current JS
  * function call.
  */
-mjs_val_t mjs_arg(struct mjs *mjs, int n);
+mjs_val_t mjs_arg(Mjs *mjs, int n);
 
 /*
  * Sets return value for the current JS function call.
  */
-void mjs_return(struct mjs *mjs, mjs_val_t v);
+void mjs_return(Mjs *mjs, mjs_val_t v);
 
 
 enum mjs_ffi_ctype {
@@ -227,7 +302,7 @@ enum mjs_ffi_ctype {
 
 typedef void *(mjs_ffi_resolver_t)(void *handle, const char *symbol);
 
-void mjs_set_ffi_resolver(struct mjs *mjs, mjs_ffi_resolver_t *dlsym);
+void mjs_set_ffi_resolver(Mjs *mjs, mjs_ffi_resolver_t *dlsym);
 
 
 
@@ -237,40 +312,40 @@ void mjs_set_ffi_resolver(struct mjs *mjs, mjs_ffi_resolver_t *dlsym);
 
 
 /* Make an empty array object */
-mjs_val_t mjs_mk_array( struct mjs *mjs );
+mjs_val_t mjs_mk_array( Mjs *mjs );
 
 /* Returns length on an array. If `arr` is not an array, 0 is returned. */
-unsigned long mjs_array_length( struct mjs *mjs, mjs_val_t arr );
+unsigned long mjs_array_length( Mjs *mjs, mjs_val_t arr );
 
 /* Insert value `v` in array `arr` at the end of the array. */
-mjs_err_t mjs_array_push( struct mjs *mjs, mjs_val_t arr, mjs_val_t v );
+mjs_err_t mjs_array_push( Mjs *mjs, mjs_val_t arr, mjs_val_t v );
 
 /*
  * Return array member at index `index`. If `index` is out of bounds, undefined
  * is returned.
  */
-mjs_val_t mjs_array_get( struct mjs *, mjs_val_t arr, unsigned long index );
+mjs_val_t mjs_array_get( Mjs *, mjs_val_t arr, unsigned long index );
 
 /* Insert value `v` into `arr` at index `index`. */
-mjs_err_t mjs_array_set( struct mjs *mjs, mjs_val_t arr, unsigned long index, mjs_val_t v );
+mjs_err_t mjs_array_set( Mjs *mjs, mjs_val_t arr, unsigned long index, mjs_val_t v );
 
 /* Returns true if the given value is an array */
 int mjs_is_array( mjs_val_t v );
 
 /* Delete value in array `arr` at index `index`, if it exists. */
-void mjs_array_del( struct mjs *mjs, mjs_val_t arr, unsigned long index );
+void mjs_array_del( Mjs *mjs, mjs_val_t arr, unsigned long index );
 
 
 
 
 
-mjs_err_t mjs_exec( struct mjs*, const char *src, mjs_val_t *res );
-mjs_err_t mjs_exec_buf( struct mjs*, const char *src, size_t, mjs_val_t *res );
+mjs_err_t mjs_exec( Mjs*, const char *src, mjs_val_t *res );
+mjs_err_t mjs_exec_buf( Mjs*, const char *src, size_t, mjs_val_t *res );
 
-mjs_err_t mjs_exec_file( struct mjs *mjs, const char *path, mjs_val_t *res );
-mjs_err_t mjs_apply( struct mjs *mjs, mjs_val_t *res, mjs_val_t func, mjs_val_t this_val, int nargs, mjs_val_t *args );
-mjs_err_t mjs_call( struct mjs *mjs, mjs_val_t *res, mjs_val_t func, mjs_val_t this_val, int nargs, ... );
-mjs_val_t mjs_get_this( struct mjs *mjs );
+mjs_err_t mjs_exec_file( Mjs *mjs, const char *path, mjs_val_t *res );
+mjs_err_t mjs_apply( Mjs *mjs, mjs_val_t *res, mjs_val_t func, mjs_val_t this_val, int nargs, mjs_val_t *args );
+mjs_err_t mjs_call( Mjs *mjs, mjs_val_t *res, mjs_val_t func, mjs_val_t this_val, int nargs, ... );
+mjs_val_t mjs_get_this( Mjs *mjs );
 
 
 
@@ -280,7 +355,7 @@ mjs_val_t mjs_get_this( struct mjs *mjs );
 int mjs_is_object(mjs_val_t v);
 
 /* Make an empty object */
-mjs_val_t mjs_mk_object(struct mjs *mjs);
+mjs_val_t mjs_mk_object(Mjs *mjs);
 
 /* Field types for struct-object conversion. */
 enum mjs_struct_field_type {
@@ -303,7 +378,7 @@ enum mjs_struct_field_type {
   /*
    * User-provided function. Arg is a pointer to function that takes void *
    * (pointer to field within the struct) and returns mjs_val_t:
-   * mjs_val_t field_value(struct mjs *mjs, const void *field_ptr) { ... }
+   * mjs_val_t field_value(Mjs *mjs, const void *field_ptr) { ... }
    */
   MJS_STRUCT_FIELD_TYPE_CUSTOM,
 };
@@ -317,7 +392,7 @@ struct mjs_c_struct_member {
 };
 
 /* Create flat JS object from a C memory descriptor */
-mjs_val_t mjs_struct_to_obj( struct mjs *mjs, const void *base, const struct mjs_c_struct_member *members );
+mjs_val_t mjs_struct_to_obj( Mjs *mjs, const void *base, const struct mjs_c_struct_member *members );
 
 /*
  * Lookup property `name` in object `obj`. If `obj` holds no such property,
@@ -326,27 +401,27 @@ mjs_val_t mjs_struct_to_obj( struct mjs *mjs, const void *base, const struct mjs
  * If `name_len` is ~0, `name` is assumed to be NUL-terminated and
  * `strlen(name)` is used.
  */
-mjs_val_t mjs_get( struct mjs *mjs, mjs_val_t obj, const char *name, size_t name_len );
+mjs_val_t mjs_get( Mjs *mjs, mjs_val_t obj, const char *name, size_t name_len );
 
 /*
  * Like mjs_get but with a JS string.
  */
-mjs_val_t mjs_get_v( struct mjs *mjs, mjs_val_t obj, mjs_val_t name );
+mjs_val_t mjs_get_v( Mjs *mjs, mjs_val_t obj, mjs_val_t name );
 
 /*
  * Like mjs_get_v but lookup the prototype chain.
  */
-mjs_val_t mjs_get_v_proto( struct mjs *mjs, mjs_val_t obj, mjs_val_t key );
+mjs_val_t mjs_get_v_proto( Mjs *mjs, mjs_val_t obj, mjs_val_t key );
 
 /*
  * Set object property. Behaves just like JavaScript assignment.
  */
-mjs_err_t mjs_set( struct mjs *mjs, mjs_val_t obj, const char *name, size_t len, mjs_val_t val );
+mjs_err_t mjs_set( Mjs *mjs, mjs_val_t obj, const char *name, size_t len, mjs_val_t val );
 
 /*
  * Like mjs_set but the name is already a JS string.
  */
-mjs_err_t mjs_set_v( struct mjs *mjs, mjs_val_t obj, mjs_val_t name, mjs_val_t val );
+mjs_err_t mjs_set_v( Mjs *mjs, mjs_val_t obj, mjs_val_t name, mjs_val_t val );
 
 /*
  * Delete own property `name` of the object `obj`. Does not follow the
@@ -357,7 +432,7 @@ mjs_err_t mjs_set_v( struct mjs *mjs, mjs_val_t obj, mjs_val_t name, mjs_val_t v
  *
  * Returns 0 on success, -1 on error.
  */
-int mjs_del( struct mjs *mjs, mjs_val_t obj, const char *name, size_t len );
+int mjs_del( Mjs *mjs, mjs_val_t obj, const char *name, size_t len );
 
 /*
  * Iterate over `obj` properties.
@@ -371,7 +446,7 @@ int mjs_del( struct mjs *mjs, mjs_val_t obj, const char *name, size_t len );
  *     // Do something with the obj/key ...
  *   }
  */
-mjs_val_t mjs_next( struct mjs *mjs, mjs_val_t obj, mjs_val_t *iterator );
+mjs_val_t mjs_next( Mjs *mjs, mjs_val_t obj, mjs_val_t *iterator );
 
 
 
@@ -437,14 +512,14 @@ mjs_val_t mjs_mk_undefined(void);
 int mjs_is_undefined(mjs_val_t v);
 
 /* Make numeric primitive value */
-mjs_val_t mjs_mk_number(struct mjs *mjs, double num);
+mjs_val_t mjs_mk_number(Mjs *mjs, double num);
 
 /*
  * Returns number value stored in `mjs_val_t` as `double`.
  *
  * Returns NaN for non-numbers.
  */
-double mjs_get_double(struct mjs *mjs, mjs_val_t v);
+double mjs_get_double(Mjs *mjs, mjs_val_t v);
 
 /*
  * Returns number value stored in `mjs_val_t` as `int`. If the number value is
@@ -452,13 +527,13 @@ double mjs_get_double(struct mjs *mjs, mjs_val_t v);
  *
  * If the given value is a non-number, or NaN, the result is undefined.
  */
-int mjs_get_int(struct mjs *mjs, mjs_val_t v);
+int mjs_get_int(Mjs *mjs, mjs_val_t v);
 
 /*
  * Like mjs_get_int but ensures that the returned type
  * is a 32-bit signed integer.
  */
-int32_t mjs_get_int32(struct mjs *mjs, mjs_val_t v);
+int32_t mjs_get_int32(Mjs *mjs, mjs_val_t v);
 
 /* Returns true if given value is a primitive number value */
 int mjs_is_number(mjs_val_t v);
@@ -482,29 +557,29 @@ int mjs_is_number(mjs_val_t v);
  * If you need to store exactly sizeof(void*) bytes of raw data where
  * `sizeof(void*)` >= 8, please use byte arrays instead.
  */
-mjs_val_t mjs_mk_foreign( struct mjs *mjs, void *ptr );
+mjs_val_t mjs_mk_foreign( Mjs *mjs, void *ptr );
 
 /*
  * Make JavaScript value that holds C/C++ function pointer, similarly to
  * `mjs_mk_foreign`.
  */
-mjs_val_t mjs_mk_foreign_func( struct mjs *mjs, mjs_func_ptr_t fn );
+mjs_val_t mjs_mk_foreign_func( Mjs *mjs, mjs_func_ptr_t fn );
 
 /*
  * Returns `void *` pointer stored in `mjs_val_t`.
  *
  * Returns NULL if the value is not a foreign pointer.
  */
-void *mjs_get_ptr(struct mjs *mjs, mjs_val_t v);
+void *mjs_get_ptr(Mjs *mjs, mjs_val_t v);
 
 /* Returns true if given value holds `void *` pointer */
 int mjs_is_foreign(mjs_val_t v);
 
-mjs_val_t mjs_mk_boolean(struct mjs *mjs, int v);
-int mjs_get_bool(struct mjs *mjs, mjs_val_t v);
+mjs_val_t mjs_mk_boolean(Mjs *mjs, int v);
+int mjs_get_bool(Mjs *mjs, mjs_val_t v);
 int mjs_is_boolean(mjs_val_t v);
 
-mjs_val_t mjs_mk_function(struct mjs *mjs, size_t off);
+mjs_val_t mjs_mk_function(Mjs *mjs, size_t off);
 int mjs_is_function(mjs_val_t v);
 
 
@@ -522,7 +597,7 @@ int mjs_is_function(mjs_val_t v);
  * caller owns the string data, and is responsible for not freeing it while it
  * is used.
  */
-mjs_val_t mjs_mk_string( struct mjs *mjs, const char *str, size_t len, int copy );
+mjs_val_t mjs_mk_string( Mjs *mjs, const char *str, size_t len, int copy );
 
 /* Returns true if given value is a primitive string value */
 int mjs_is_string( mjs_val_t v );
@@ -544,7 +619,7 @@ int mjs_is_string( mjs_val_t v );
  * is why a pointer to a `mjs_val_t` is required. It also means that the string
  * data will become invalid once that `mjs_val_t` value goes out of scope.
  */
-const char *mjs_get_string( struct mjs *mjs, mjs_val_t *v, size_t *len );
+const char *mjs_get_string( Mjs *mjs, mjs_val_t *v, size_t *len );
 
 /*
  * Returns a pointer to the string stored in `mjs_val_t`.
@@ -558,7 +633,7 @@ const char *mjs_get_string( struct mjs *mjs, mjs_val_t *v, size_t *len );
  * be NUL terminated. Out of these, those that don't include embedded NUL chars
  * are guaranteed to be C compatible.
  */
-const char *mjs_get_cstring( struct mjs *mjs, mjs_val_t *v );
+const char *mjs_get_cstring( Mjs *mjs, mjs_val_t *v );
 
 /*
  * Returns the standard strcmp comparison code after comparing a JS string a
@@ -566,26 +641,26 @@ const char *mjs_get_cstring( struct mjs *mjs, mjs_val_t *v );
  * only if their length is equal, i.e. the len field doesn't imply strncmp
  * behaviour.
  */
-int mjs_strcmp(struct mjs *mjs, mjs_val_t *a, const char *b, size_t len);
+int mjs_strcmp(Mjs *mjs, mjs_val_t *a, const char *b, size_t len);
 
 
 const char *mjs_typeof(mjs_val_t v);
 
-void mjs_fprintf(mjs_val_t v, struct mjs *mjs, FILE *fp);
-void mjs_sprintf(mjs_val_t v, struct mjs *mjs, char *buf, size_t buflen);
+void mjs_fprintf(mjs_val_t v, Mjs *mjs, FILE *fp);
+void mjs_sprintf(mjs_val_t v, Mjs *mjs, char *buf, size_t buflen);
 
 void mjs_disasm(const uint8_t *code, size_t len);
-void mjs_dump(struct mjs *mjs, int do_disasm);
+void mjs_dump(Mjs *mjs, int do_disasm);
 
 /*
  * Returns the filename corresponding to the given bcode offset.
  */
-const char *mjs_get_bcode_filename_by_offset(struct mjs *mjs, int offset);
+const char *mjs_get_bcode_filename_by_offset(Mjs *mjs, int offset);
 
 /*
  * Returns the line number corresponding to the given bcode offset.
  */
-int mjs_get_lineno_by_offset(struct mjs *mjs, int offset);
+int mjs_get_lineno_by_offset(Mjs *mjs, int offset);
 
 /*
  * Returns bcode offset of the corresponding call frame cf_num, where 0 means
@@ -593,7 +668,7 @@ int mjs_get_lineno_by_offset(struct mjs *mjs, int offset);
  *
  * If given cf_num is too large, -1 is returned.
  */
-int mjs_get_offset_by_call_frame_num(struct mjs *mjs, int cf_num);
+int mjs_get_offset_by_call_frame_num(Mjs *mjs, int cf_num);
 
 
 

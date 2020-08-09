@@ -44,11 +44,11 @@ struct Ffi_ptrs {
   void *const ptr;
 };
 
-mjs *js = nullptr;
+Mjs *js = nullptr;
 mjs_val_t arr1 = MJS_UNDEFINED;
 // mjs_val_t js_Math = MJS_UNDEFINED;
 void resetjs();
-void mjs_f1( mjs *mjs );
+void mjs_f1( Mjs *mjs );
 extern const char js_Math_funcs[];
 extern const Ffi_ptrs ffi_ptrs[];
 void *mjs_dlsym_local( void *handle, const char *name );
@@ -189,7 +189,7 @@ int main(void)
 
 int cmd_test0( int argc, const char * const * argv )
 {
-  const char *cmd = ( argc > 1 ) ? argv[1] : "let f =  7 + 8; f;";
+  const char *cmd = ( argc > 1 ) ? argv[1] : "let f =  7 + 8; f; let a = Math.sin(0.1); print( a );";
 
   std_out << "# Test: cmd= \"" << cmd << '"' << NL;
   delay_ms( 10 );
@@ -239,7 +239,7 @@ int js_cmdline_handler( char *s )
   return -1;
 }
 
-void mjs_f1( mjs *mjs )
+void mjs_f1( Mjs *mjs )
 {
   char buf[128];
   size_t num_args = mjs_nargs( mjs );
@@ -262,7 +262,7 @@ void mjs_f1( mjs *mjs )
   mjs_return( mjs, MJS_UNDEFINED );
 }
 
-void js_Math_sin( mjs *mjs )
+void js_Math_sin( Mjs *mjs )
 {
   size_t num_args = mjs_nargs( mjs );
   if( num_args < 1 ) {
