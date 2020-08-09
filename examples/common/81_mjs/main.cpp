@@ -14,6 +14,7 @@
 
 using namespace std;
 using namespace SMLRL;
+using namespace OXC_MJS;
 
 USE_DIE4LED_ERROR_HANDLER;
 BOARD_DEFINE_LEDS;

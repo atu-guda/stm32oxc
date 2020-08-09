@@ -2,44 +2,19 @@
 // mjs.h mod by atu:
 #pragma once
 
-#define MJS_EXPOSE_PRIVATE 1
-
-#ifndef MJS_FEATURES_H_
-#define MJS_FEATURES_H_
-
-#if !defined(MJS_AGGRESSIVE_GC)
-#define MJS_AGGRESSIVE_GC 0
-#endif
-
-#if !defined(MJS_MEMORY_STATS)
-#define MJS_MEMORY_STATS 0
-#endif
-
-/*
- * MJS_GENERATE_JSC: if enabled, and if mmapping is also enabled (CS_MMAP),
- * then execution of any .js file will result in creation of a .jsc file with
- * precompiled bcode, and this .jsc file will be mmapped, instead of keeping
- * bcode in RAM.
- *
- * By default it's enabled (provided that CS_MMAP is defined)
- */
-#if !defined(MJS_GENERATE_JSC)
-#if defined(CS_MMAP)
-#define MJS_GENERATE_JSC 1
-#else
-#define MJS_GENERATE_JSC 0
-#endif
-#endif
-
-#endif /* MJS_FEATURES_H_ */
-
-
-#ifndef MJS_CORE_PUBLIC_H_
-#define MJS_CORE_PUBLIC_H_
-
 #include <stdint.h>
 #include <stdio.h>
 #include <stddef.h>
+
+namespace OXC_MJS // for future
+{
+};
+
+
+
+
+//namespace OXC_MJS
+//{
 
 
 /*
@@ -174,7 +149,7 @@ mjs_val_t mjs_get_global(struct mjs *mjs);
  * stay alive after the C function has returned, it also needs to be properly
  * owned.
  */
-void mjs_own(struct mjs *mjs, mjs_val_t *v);
+void mjs_own( struct mjs *mjs, mjs_val_t *v );
 
 /*
  * Disowns the value previously owned by `mjs_own()`.
@@ -213,6 +188,7 @@ const char *mjs_strerror(struct mjs *mjs, mjs_err_t err );
  *
  * If either `MJS_GENERATE_JSC` or `CS_MMAP` is off, then this function has no
  * effect.
+ * atu: always for me
  */
 void mjs_set_generate_jsc(struct mjs *mjs, int generate_jsc);
 
@@ -232,14 +208,6 @@ mjs_val_t mjs_arg(struct mjs *mjs, int n);
  * Sets return value for the current JS function call.
  */
 void mjs_return(struct mjs *mjs, mjs_val_t v);
-
-
-#endif /* MJS_CORE_PUBLIC_H_ */
-
-#ifndef MJS_FFI_PUBLIC_H_
-#define MJS_FFI_PUBLIC_H_
-
-/* Amalgamated: #include "mjs/src/mjs_core_public.h" */
 
 
 enum mjs_ffi_ctype {
@@ -262,8 +230,6 @@ typedef void *(mjs_ffi_resolver_t)(void *handle, const char *symbol);
 void mjs_set_ffi_resolver(struct mjs *mjs, mjs_ffi_resolver_t *dlsym);
 
 
-#endif /* MJS_FFI_PUBLIC_H_ */
-#ifndef MJS_EXPORT_INTERNAL_HEADERS
 
 /*
  * === Arrays
@@ -296,15 +262,6 @@ void mjs_array_del( struct mjs *mjs, mjs_val_t arr, unsigned long index );
 
 
 
-#ifndef MJS_CORE_PUBLIC_H_
-#define MJS_CORE_PUBLIC_H_
-
-
-#endif /* MJS_CORE_PUBLIC_H_ */
-
-#ifndef MJS_EXEC_PUBLIC_H_
-#define MJS_EXEC_PUBLIC_H_
-
 
 
 mjs_err_t mjs_exec( struct mjs*, const char *src, mjs_val_t *res );
@@ -315,18 +272,6 @@ mjs_err_t mjs_apply( struct mjs *mjs, mjs_val_t *res, mjs_val_t func, mjs_val_t 
 mjs_err_t mjs_call( struct mjs *mjs, mjs_val_t *res, mjs_val_t func, mjs_val_t this_val, int nargs, ... );
 mjs_val_t mjs_get_this( struct mjs *mjs );
 
-
-#endif /* MJS_EXEC_PUBLIC_H_ */
-
-#ifndef MJS_FFI_PUBLIC_H_
-#define MJS_FFI_PUBLIC_H_
-
-
-
-#endif /* MJS_FFI_PUBLIC_H_ */
-
-#ifndef MJS_OBJECT_PUBLIC_H_
-#define MJS_OBJECT_PUBLIC_H_
 
 
 /*
@@ -429,10 +374,6 @@ int mjs_del( struct mjs *mjs, mjs_val_t obj, const char *name, size_t len );
 mjs_val_t mjs_next( struct mjs *mjs, mjs_val_t obj, mjs_val_t *iterator );
 
 
-#endif /* MJS_OBJECT_PUBLIC_H_ */
-
-#ifndef MJS_PRIMITIVE_PUBLIC_H_
-#define MJS_PRIMITIVE_PUBLIC_H_
 
 // atu: moved from mjs.c
 /*
@@ -567,11 +508,6 @@ mjs_val_t mjs_mk_function(struct mjs *mjs, size_t off);
 int mjs_is_function(mjs_val_t v);
 
 
-#endif /* MJS_PRIMITIVE_PUBLIC_H_ */
-
-#ifndef MJS_STRING_PUBLIC_H_
-#define MJS_STRING_PUBLIC_H_
-
 #define MJS_STRING_LITERAL_MAX_LEN 128
 
 
@@ -633,13 +569,6 @@ const char *mjs_get_cstring( struct mjs *mjs, mjs_val_t *v );
 int mjs_strcmp(struct mjs *mjs, mjs_val_t *a, const char *b, size_t len);
 
 
-#endif /* MJS_STRING_PUBLIC_H_ */
-
-#ifndef MJS_UTIL_PUBLIC_H_
-#define MJS_UTIL_PUBLIC_H_
-
-
-
 const char *mjs_typeof(mjs_val_t v);
 
 void mjs_fprintf(mjs_val_t v, struct mjs *mjs, FILE *fp);
@@ -667,5 +596,5 @@ int mjs_get_lineno_by_offset(struct mjs *mjs, int offset);
 int mjs_get_offset_by_call_frame_num(struct mjs *mjs, int cf_num);
 
 
-#endif /* MJS_UTIL_PUBLIC_H_ */
-#endif /* MJS_EXPORT_INTERNAL_HEADERS */
+
+//}; // namespace OXC_MJS

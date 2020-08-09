@@ -3,6 +3,7 @@
 
 #include <oxc_mjs.h>
 
+
 #ifndef CS_COMMON_PLATFORM_H_
 #define CS_COMMON_PLATFORM_H_
 
@@ -12,7 +13,6 @@
  */
 #define CS_P_CUSTOM 0
 #define CS_P_UNIX 1
-#define CS_P_WINDOWS 2
 #define CS_P_ESP32 15
 #define CS_P_ESP8266 3
 #define CS_P_CC3100 6
@@ -21,7 +21,6 @@
 #define CS_P_MSP432 5
 #define CS_P_TM4C129 14
 #define CS_P_MBED 7
-#define CS_P_WINCE 8
 #define CS_P_NXP_LPC 13
 #define CS_P_NXP_KINETIS 9
 #define CS_P_NRF51 12
@@ -42,10 +41,6 @@
 #define CS_PLATFORM CS_P_CC3220
 #elif defined(__unix__) || defined(__APPLE__)
 #define CS_PLATFORM CS_P_UNIX
-#elif defined(WINCE)
-#define CS_PLATFORM CS_P_WINCE
-#elif defined(_WIN32)
-#define CS_PLATFORM CS_P_WINDOWS
 #elif defined(__MBED__)
 #define CS_PLATFORM CS_P_MBED
 #elif defined(__USE_LPCOPEN)
@@ -72,16 +67,6 @@
 #endif
 
 #endif /* !defined(CS_PLATFORM) */
-
-#define MG_NET_IF_SOCKET 1
-#define MG_NET_IF_SIMPLELINK 2
-#define MG_NET_IF_LWIP_LOW_LEVEL 3
-#define MG_NET_IF_PIC32 4
-#define MG_NET_IF_NULL 5
-
-#define MG_SSL_IF_OPENSSL 1
-#define MG_SSL_IF_MBEDTLS 2
-#define MG_SSL_IF_SIMPLELINK 3
 
 #if CS_PLATFORM == CS_P_CUSTOM
 #include <platform_custom.h>
@@ -146,6 +131,7 @@
 char *strdup(const char *s); // not always defined
 // #include <dirent.h> // atu: find and realize
 
+using namespace OXC_MJS;
 
 #define to64(x) strtoll(x, nullptr, 10)
 #define INT64_FMT PRId64
@@ -578,13 +564,6 @@ size_t mg_match_prefix_n(const struct mg_str pattern, const struct mg_str str);
  */
 char *cs_read_file(const char *path, size_t *size);
 
-#ifdef CS_MMAP
-/*
- * Only on platforms which support mmapping: mmap file `path` to the returned
- * address. File size is written to `*size`.
- */
-char *cs_mmap_file(const char *path, size_t *size);
-#endif
 
 
 #endif /* CS_COMMON_CS_FILE_H_ */
@@ -1063,36 +1042,10 @@ void ffi_set_float(struct ffi_arg *arg, float v);
 #ifndef MJS_FEATURES_H_
 #define MJS_FEATURES_H_
 
-#if !defined(MJS_AGGRESSIVE_GC)
-#define MJS_AGGRESSIVE_GC 0
-#endif
 
-#if !defined(MJS_MEMORY_STATS)
-#define MJS_MEMORY_STATS 0
-#endif
-
-/*
- * MJS_GENERATE_JSC: if enabled, and if mmapping is also enabled (CS_MMAP),
- * then execution of any .js file will result in creation of a .jsc file with
- * precompiled bcode, and this .jsc file will be mmapped, instead of keeping
- * bcode in RAM.
- *
- * By default it's enabled (provided that CS_MMAP is defined)
- */
-#if !defined(MJS_GENERATE_JSC)
-#if defined(CS_MMAP)
-#define MJS_GENERATE_JSC 1
-#else
-#define MJS_GENERATE_JSC 0
-#endif
-#endif
 
 #endif /* MJS_FEATURES_H_ */
 
-#ifndef MJS_CORE_PUBLIC_H_
-#define MJS_CORE_PUBLIC_H_
-
-#endif /* MJS_CORE_PUBLIC_H_ */
 
 /*
  * === Arrays
@@ -1255,8 +1208,6 @@ void mjs_ffi_args_free_list(struct mjs *mjs);
 
 
 
-struct mjs;
-
 typedef void (*gc_cell_destructor_t)(struct mjs *mjs, void *);
 
 struct gc_block {
@@ -1271,11 +1222,11 @@ struct gc_arena {
   struct gc_cell *free; /* head of free list */
   size_t cell_size;
 
-#if MJS_MEMORY_STATS
-  unsigned long allocations; /* cumulative counter of allocations */
-  unsigned long garbage;     /* cumulative counter of garbage */
-  unsigned long alive;       /* number of living cells */
-#endif
+// #if MJS_MEMORY_STATS
+//   unsigned long allocations; #<{(| cumulative counter of allocations |)}>#
+//   unsigned long garbage;     #<{(| cumulative counter of garbage |)}>#
+//   unsigned long alive;       #<{(| number of living cells |)}>#
+// #endif
 
   gc_cell_destructor_t destructor;
 };
@@ -1560,20 +1511,9 @@ void mjs_op_create_object(struct mjs *mjs);
 
 #endif /* MJS_OBJECT_H_ */
 
-#ifndef MJS_PRIMITIVE_PUBLIC_H_
-#define MJS_PRIMITIVE_PUBLIC_H_
 
 
 
-/* JavaScript `null` value */
-#define MJS_NULL MJS_TAG_NULL
-
-/* JavaScript `undefined` value */
-#define MJS_UNDEFINED MJS_TAG_UNDEFINED
-
-
-
-#endif /* MJS_PRIMITIVE_PUBLIC_H_ */
 
 #ifndef MJS_PRIMITIVE_H
 #define MJS_PRIMITIVE_H
@@ -1604,17 +1544,8 @@ void mjs_op_isnan(struct mjs *mjs);
 
 #endif /* MJS_PRIMITIVE_H */
 
-#ifndef MJS_STRING_PUBLIC_H_
-#define MJS_STRING_PUBLIC_H_
-
 
 #define MJS_STRING_LITERAL_MAX_LEN 128
-
-
-#endif /* MJS_STRING_PUBLIC_H_ */
-
-#ifndef MJS_STRING_H_
-#define MJS_STRING_H_
 
 
 
@@ -1641,16 +1572,7 @@ void mjs_string_char_code_at(struct mjs *mjs);
 #define EMBSTR_UNESCAPE 2
 
 
-#endif /* MJS_STRING_H_ */
 
-#ifndef MJS_UTIL_PUBLIC_H_
-#define MJS_UTIL_PUBLIC_H_
-
-
-#endif /* MJS_UTIL_PUBLIC_H_ */
-
-#ifndef MJS_UTIL_H_
-#define MJS_UTIL_H_
 
 
 
@@ -1686,10 +1608,6 @@ const char *mjs_get_bcode_filename(struct mjs *mjs,
 void mjs_jprintf(mjs_val_t v, struct mjs *mjs, struct json_out *out);
 
 
-#endif /* MJS_UTIL_H_ */
-
-#ifndef CS_COMMON_CS_VARINT_H_
-#define CS_COMMON_CS_VARINT_H_
 
 
 /* Returns number of bytes required to encode `num`. */
@@ -1712,12 +1630,6 @@ bool cs_varint_decode(const uint8_t *buf, size_t buf_size, uint64_t *num,
                       size_t *llen);
 
 uint64_t cs_varint_decode_unsafe(const uint8_t *buf, int *llen);
-
-
-#endif /* CS_COMMON_CS_VARINT_H_ */
-
-#ifndef MJS_BCODE_H_
-#define MJS_BCODE_H_
 
 
 
@@ -1808,10 +1720,6 @@ int mjs_bcode_parts_cnt(struct mjs *mjs);
 void mjs_bcode_commit(struct mjs *mjs);
 
 
-#endif /* MJS_BCODE_H_ */
-
-#ifndef MJS_INTERNAL_H_
-#define MJS_INTERNAL_H_
 
 
 #ifndef CS_ENABLE_STDIO
@@ -1832,11 +1740,6 @@ void mjs_bcode_commit(struct mjs *mjs);
 #ifndef MJS_INIT_OFFSET_SIZE
 #define MJS_INIT_OFFSET_SIZE 1
 #endif
-
-#endif /* MJS_INTERNAL_H_ */
-
-#ifndef MJS_TOK_H_
-#define MJS_TOK_H_
 
 
 
@@ -1963,10 +1866,6 @@ int mjs_is_ident(int c);
 int mjs_is_digit(int c);
 
 
-#endif /* MJS_TOK_H_ */
-
-#ifndef MJS_DATAVIEW_H_
-#define MJS_DATAVIEW_H_
 
 
 /*
@@ -1985,10 +1884,6 @@ void mjs_mem_set_uint(void *ptr, unsigned int val, int size, int bigendian);
 void mjs_mem_set_int(void *ptr, int val, int size, int bigendian);
 
 
-#endif /* MJS_DATAVIEW_H_ */
-
-#ifndef MJS_EXEC_PUBLIC_H_
-#define MJS_EXEC_PUBLIC_H_
 
 
 mjs_err_t mjs_exec(struct mjs *, const char *src, mjs_val_t *res);
@@ -2002,11 +1897,6 @@ mjs_err_t mjs_call(struct mjs *mjs, mjs_val_t *res, mjs_val_t func,
 mjs_val_t mjs_get_this(struct mjs *mjs);
 
 
-#endif /* MJS_EXEC_PUBLIC_H_ */
-
-#ifndef MJS_EXEC_H_
-#define MJS_EXEC_H_
-
 
 /*
  * A special bcode offset value which causes mjs_execute() to exit immediately;
@@ -2017,11 +1907,6 @@ mjs_val_t mjs_get_this(struct mjs *mjs);
 
 mjs_err_t mjs_execute(struct mjs *mjs, size_t off, mjs_val_t *res);
 
-
-#endif /* MJS_EXEC_H_ */
-
-#ifndef MJS_JSON_H_
-#define MJS_JSON_H_
 
 
 mjs_err_t to_json_or_debug(struct mjs *mjs, mjs_val_t v, char *buf,
@@ -2037,17 +1922,8 @@ mjs_err_t
 mjs_json_parse(struct mjs *mjs, const char *str, size_t len, mjs_val_t *res);
 
 
-#endif /* MJS_JSON_H_ */
-
-#ifndef MJS_BUILTIN_H_
-#define MJS_BUILTIN_H_
-
-
 
 void mjs_init_builtin(struct mjs *mjs, mjs_val_t obj);
-
-
-#endif /* MJS_BUILTIN_H_ */
 
 
 mjs_err_t mjs_parse(const char *path, const char *buf, struct mjs *);
@@ -2183,10 +2059,6 @@ void cs_log_set_level(enum cs_log_level level)
 }
 
 
-#ifdef CS_MMAP
-#include <sys/mman.h>
-#include <sys/stat.h>
-#endif
 
 #ifndef EXCLUDE_COMMON
 char *cs_read_file(const char *path, size_t *size) WEAK;
@@ -2214,23 +2086,6 @@ char *cs_read_file(const char *path, size_t *size)
 }
 #endif /* EXCLUDE_COMMON */
 
-#ifdef CS_MMAP
-char *cs_mmap_file(const char *path, size_t *size) WEAK;
-char *cs_mmap_file(const char *path, size_t *size)
-{
-  char *r;
-  int fd = open(path, O_RDONLY, 0);
-  struct stat st;
-  if (fd < 0) {
-    return nullptr;
-  }
-  fstat(fd, &st);
-  *size = (size_t) st.st_size;
-  r = (char *) mmap(nullptr, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
-  if (r == MAP_FAILED) return nullptr;
-  return r;
-}
-#endif
 
 
 size_t cs_varint_llen(uint64_t num)
@@ -4464,7 +4319,7 @@ struct next_data {
 
 static void next_set_key(struct next_data *d, const char *name, int name_len, int is_array)
 {
-  if (is_array) {
+  if( is_array ) {
     /* Array. Set index and reset key  */
     if (d->key != nullptr) {
       d->key->len = 0;
@@ -6233,9 +6088,6 @@ void mjs_mem_set_int(void *ptr, int val, int size, int bigendian)
 
 
 
-#if MJS_GENERATE_JSC && defined(CS_MMAP)
-#include <sys/mman.h>
-#endif
 
 /*
  * Pushes call stack frame. Offset is a global bcode offset. Retval_stack_idx
@@ -6809,9 +6661,7 @@ mjs_err_t mjs_execute(struct mjs *mjs, size_t off, mjs_val_t *res)
         mjs->need_gc = 0;
       }
     }
-#if MJS_AGGRESSIVE_GC
-    maybe_gc(mjs);
-#endif
+    // maybe_gc(mjs);
 
     code = (const uint8_t *) bp.data.p;
     mjs_disasm_single(code, i);
@@ -7232,73 +7082,7 @@ mjs_err_t mjs_exec_internal(struct mjs *mjs, const char *path,
   if (cs_log_level >= LL_VERBOSE_DEBUG) mjs_dump(mjs, 1);
   if (generate_jsc == -1) generate_jsc = mjs->generate_jsc;
   if (mjs->error == MJS_OK) {
-#if MJS_GENERATE_JSC && defined(CS_MMAP)
-    if (generate_jsc && path != nullptr) {
-      const char *jsext = ".js";
-      int basename_len = (int) strlen(path) - strlen(jsext);
-      if (basename_len > 0 && strcmp(path + basename_len, jsext) == 0) {
-        /* source file has a .js extension: create a .jsc counterpart */
-        int rewrite = 1;
-        int read_mmapped = 1;
-
-        /* construct .jsc filename */
-        const char *jscext = ".jsc";
-        char filename_jsc[basename_len + strlen(jscext) + 1 /* nul-term */];
-        memcpy(filename_jsc, path, basename_len);
-        strcpy(filename_jsc + basename_len, jscext);
-
-        /* get last bcode part */
-        struct mjs_bcode_part *bp =
-            mjs_bcode_part_get(mjs, mjs_bcode_parts_cnt(mjs) - 1);
-
-        /*
-         * before writing .jsc file, check if it already exists and has the
-         * same contents
-         *
-         * TODO(dfrank): probably store crc32 before the bcode data, and only
-         * compare it.
-         */
-        {
-          size_t size;
-          char *data = cs_mmap_file(filename_jsc, &size);
-          if (data != nullptr) {
-            if (size == bp->data.len) {
-              if (memcmp(data, bp->data.p, size) == 0) {
-                /* .jsc file is up to date, so don't rewrite it */
-                rewrite = 0;
-              }
-            }
-            munmap(data, size);
-          }
-        }
-
-        /* try to open .jsc file for writing */
-        if (rewrite) {
-          FILE *fp = fopen(filename_jsc, "wb");
-          if (fp != nullptr) {
-            /* write last bcode part to .jsc */
-            fwrite(bp->data.p, bp->data.len, 1, fp);
-            fclose(fp);
-          } else {
-            LOG(LL_WARN, ("Failed to open %s for writing", filename_jsc));
-            read_mmapped = 0;
-          }
-        }
-
-        if (read_mmapped) {
-          /* free RAM buffer with last bcode part */
-          free((void *) bp->data.p);
-
-          /* mmap .jsc file and set last bcode part buffer to it */
-          bp->data.p = cs_mmap_file(filename_jsc, &bp->data.len);
-          bp->in_rom = 1;
-        }
-      }
-    }
-#else
     (void) generate_jsc;
-#endif
-
     mjs_execute(mjs, off, &r);
   }
   if (res != nullptr) *res = r;
@@ -8734,10 +8518,10 @@ void *gc_alloc_cell(struct mjs *mjs, struct gc_arena *a)
 
   a->free = r->head.link;
 
-#if MJS_MEMORY_STATS
-  a->allocations++;
-  a->alive++;
-#endif
+// #if MJS_MEMORY_STATS
+//   a->allocations++;
+//   a->alive++;
+// #endif
 
   /* Schedule GC if needed */
   if (gc_arena_is_gc_needed(a)) {
@@ -8763,9 +8547,9 @@ void gc_sweep(struct mjs *mjs, struct gc_arena *a, size_t start)
   struct gc_block *b;
   struct gc_cell *cur;
   struct gc_block **prevp = &a->blocks;
-#if MJS_MEMORY_STATS
-  a->alive = 0;
-#endif
+// #if MJS_MEMORY_STATS
+//   a->alive = 0;
+// #endif
 
   /*
    * Before we sweep, we should mark all free cells in a way that is
@@ -8799,9 +8583,9 @@ void gc_sweep(struct mjs *mjs, struct gc_arena *a, size_t start)
       if (MARKED(cur)) {
         /* The cell is used and marked  */
         UNMARK(cur);
-#if MJS_MEMORY_STATS
-        a->alive++;
-#endif
+// #if MJS_MEMORY_STATS
+//         a->alive++;
+// #endif
       } else {
         /*
          * The cell is either:
@@ -8827,9 +8611,9 @@ void gc_sweep(struct mjs *mjs, struct gc_arena *a, size_t start)
         cur->head.link = a->free;
         a->free = cur;
         freed_in_block++;
-#if MJS_MEMORY_STATS
-        a->garbage++;
-#endif
+// #if MJS_MEMORY_STATS
+//         a->garbage++;
+// #endif
       }
     }
 
