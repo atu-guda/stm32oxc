@@ -156,6 +156,18 @@ struct Mg_str {
   size_t len;    /* Memory chunk length */
 };
 
+// ------------------------ Mbuf ------------------------------------
+
+/* Memory buffer descriptor */
+struct Mbuf {
+  char *buf;   /* Buffer pointer */
+  size_t len;  /* Data length. Data is located between offset 0 and len. */
+  size_t size; /* Buffer size allocated by realloc(1). Must be >= len */
+};
+
+
+// ------------------------ Mjs ------------------------------------
+
 /* Create MJS instance */
 Mjs *mjs_create(void);
 

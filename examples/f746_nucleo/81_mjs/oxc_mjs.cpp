@@ -413,8 +413,6 @@ char *cs_read_file(const char *path, size_t *size);
  * needed.
  */
 
-#ifndef CS_COMMON_MBUF_H_
-#define CS_COMMON_MBUF_H_
 
 
 #ifndef MBUF_SIZE_MULTIPLIER
@@ -429,28 +427,22 @@ char *cs_read_file(const char *path, size_t *size);
 #endif
 #endif
 
-/* Memory buffer descriptor */
-struct mbuf {
-  char *buf;   /* Buffer pointer */
-  size_t len;  /* Data length. Data is located between offset 0 and len. */
-  size_t size; /* Buffer size allocated by realloc(1). Must be >= len */
-};
 
 /*
  * Initialises an Mbuf.
  * `initial_capacity` specifies the initial capacity of the mbuf.
  */
-void mbuf_init(struct mbuf *, size_t initial_capacity);
+void mbuf_init(Mbuf *, size_t initial_capacity);
 
 /* Frees the space allocated for the mbuffer and resets the mbuf structure. */
-void mbuf_free(struct mbuf *);
+void mbuf_free(Mbuf *);
 
 /*
  * Appends data to the Mbuf.
  *
  * Returns the number of bytes appended or 0 if out of memory.
  */
-size_t mbuf_append(struct mbuf *, const void *data, size_t data_size);
+size_t mbuf_append(Mbuf *, const void *data, size_t data_size);
 
 /*
  * Appends data to the Mbuf and frees it (data must be heap-allocated).
@@ -458,7 +450,7 @@ size_t mbuf_append(struct mbuf *, const void *data, size_t data_size);
  * Returns the number of bytes appended or 0 if out of memory.
  * data is freed irrespective of return value.
  */
-size_t mbuf_append_and_free(struct mbuf *, void *data, size_t data_size);
+size_t mbuf_append_and_free(Mbuf *, void *data, size_t data_size);
 
 /*
  * Inserts data at a specified offset in the Mbuf.
@@ -467,10 +459,10 @@ size_t mbuf_append_and_free(struct mbuf *, void *data, size_t data_size);
  * be grown if necessary.
  * Returns the number of bytes inserted.
  */
-size_t mbuf_insert(struct mbuf *, size_t, const void *, size_t);
+size_t mbuf_insert(Mbuf *, size_t, const void *, size_t);
 
 /* Removes `data_size` bytes from the beginning of the buffer. */
-void mbuf_remove(struct mbuf *, size_t data_size);
+void mbuf_remove(Mbuf *, size_t data_size);
 
 /*
  * Resizes an Mbuf.
@@ -478,19 +470,18 @@ void mbuf_remove(struct mbuf *, size_t data_size);
  * If `new_size` is smaller than buffer's `len`, the
  * resize is not performed.
  */
-void mbuf_resize(struct mbuf *, size_t new_size);
+void mbuf_resize(Mbuf *, size_t new_size);
 
 /* Moves the state from one mbuf to the other. */
-void mbuf_move(struct mbuf *from, struct mbuf *to);
+void mbuf_move(Mbuf *from, Mbuf *to);
 
 /* Removes all the data from mbuf (if any). */
-void mbuf_clear(struct mbuf *);
+void mbuf_clear(Mbuf *);
 
 /* Shrinks an Mbuf by resizing its `size` to `len`. */
-void mbuf_trim(struct mbuf *);
+void mbuf_trim(Mbuf *);
 
 
-#endif /* CS_COMMON_MBUF_H_ */
 
 #ifndef CS_COMMON_MG_MEM_H_
 #define CS_COMMON_MG_MEM_H_
@@ -1197,18 +1188,18 @@ struct mjs_bcode_part {
 
 // atu: TODO: move to header as class
 struct Mjs {
-  struct mbuf bcode_gen;
-  struct mbuf bcode_parts;
+  Mbuf bcode_gen;
+  Mbuf bcode_parts;
   size_t bcode_len;
-  struct mbuf stack;
-  struct mbuf call_stack;
-  struct mbuf arg_stack;
-  struct mbuf scopes;          /* Scope objects */
-  struct mbuf loop_addresses;  /* Addresses for breaks & continues */
-  struct mbuf owned_strings;   /* Sequence of (varint len, char data[]) */
-  struct mbuf foreign_strings; /* Sequence of (varint len, char *data) */
-  struct mbuf owned_values;
-  struct mbuf json_visited_stack;
+  Mbuf stack;
+  Mbuf call_stack;
+  Mbuf arg_stack;
+  Mbuf scopes;          /* Scope objects */
+  Mbuf loop_addresses;  /* Addresses for breaks & continues */
+  Mbuf owned_strings;   /* Sequence of (varint len, char data[]) */
+  Mbuf foreign_strings; /* Sequence of (varint len, char *data) */
+  Mbuf owned_values;
+  Mbuf json_visited_stack;
   struct mjs_vals vals;
   char *error_msg;
   char *stack_trace;
@@ -1253,11 +1244,11 @@ enum mjs_type mjs_get_type(mjs_val_t v);
  */
 void mjs_gen_stack_trace(Mjs *mjs, size_t offset);
 
-mjs_val_t vtop(struct mbuf *m);
-size_t mjs_stack_size(const struct mbuf *m);
-mjs_val_t *vptr(struct mbuf *m, int idx);
-void push_mjs_val(struct mbuf *m, mjs_val_t v);
-mjs_val_t mjs_pop_val(struct mbuf *m);
+mjs_val_t vtop(Mbuf *m);
+size_t mjs_stack_size(const Mbuf *m);
+mjs_val_t *vptr(Mbuf *m, int idx);
+void push_mjs_val(Mbuf *m, mjs_val_t v);
+mjs_val_t mjs_pop_val(Mbuf *m);
 mjs_val_t mjs_pop(Mjs *mjs);
 void mjs_push(Mjs *mjs, mjs_val_t v);
 void mjs_die(Mjs *mjs);
@@ -1398,7 +1389,7 @@ mjs_err_t str_to_ulong(Mjs *mjs, mjs_val_t v, int *ok, unsigned long *res);
 int s_cmp(Mjs *mjs, mjs_val_t a, mjs_val_t b);
 mjs_val_t s_concat(Mjs *mjs, mjs_val_t a, mjs_val_t b);
 
-void embed_string(struct mbuf *m, size_t offset, const char *p, size_t len, uint8_t /*enum embstr_flags*/ flags);
+void embed_string(Mbuf *m, size_t offset, const char *p, size_t len, uint8_t /*enum embstr_flags*/ flags);
 
 void mjs_mkstr(Mjs *mjs);
 
@@ -1593,7 +1584,7 @@ struct pstate {
   const char *pos;       /* Current position */
   int line_no;           /* Line number */
   int last_emitted_line_no;
-  struct mbuf offset_lineno_map;
+  Mbuf offset_lineno_map;
   int prev_tok;   /* Previous token, for prefix increment / decrement */
   struct tok tok; /* Parsed token */
   Mjs *mjs;
@@ -1992,16 +1983,16 @@ uint64_t cs_varint_decode_unsafe(const uint8_t *buf, int *llen)
 #define MBUF_FREE free
 #endif
 
-void mbuf_init(struct mbuf *mbuf, size_t initial_size) WEAK;
-void mbuf_init(struct mbuf *mbuf, size_t initial_size)
+void mbuf_init(Mbuf *mbuf, size_t initial_size) WEAK;
+void mbuf_init(Mbuf *mbuf, size_t initial_size)
 {
   mbuf->len = mbuf->size = 0;
   mbuf->buf = nullptr;
   mbuf_resize(mbuf, initial_size);
 }
 
-void mbuf_free(struct mbuf *mbuf) WEAK;
-void mbuf_free(struct mbuf *mbuf)
+void mbuf_free(Mbuf *mbuf) WEAK;
+void mbuf_free(Mbuf *mbuf)
 {
   if (mbuf->buf != nullptr) {
     MBUF_FREE(mbuf->buf);
@@ -2009,8 +2000,8 @@ void mbuf_free(struct mbuf *mbuf)
   }
 }
 
-void mbuf_resize(struct mbuf *a, size_t new_size) WEAK;
-void mbuf_resize(struct mbuf *a, size_t new_size)
+void mbuf_resize(Mbuf *a, size_t new_size) WEAK;
+void mbuf_resize(Mbuf *a, size_t new_size)
 {
   if (new_size > a->size || (new_size < a->size && new_size >= a->len)) {
     char *buf = (char *) MBUF_REALLOC(a->buf, new_size);
@@ -2025,14 +2016,14 @@ void mbuf_resize(struct mbuf *a, size_t new_size)
   }
 }
 
-void mbuf_trim(struct mbuf *mbuf) WEAK;
-void mbuf_trim(struct mbuf *mbuf)
+void mbuf_trim(Mbuf *mbuf) WEAK;
+void mbuf_trim(Mbuf *mbuf)
 {
   mbuf_resize(mbuf, mbuf->len);
 }
 
-size_t mbuf_insert(struct mbuf *a, size_t off, const void *buf, size_t) WEAK;
-size_t mbuf_insert(struct mbuf *a, size_t off, const void *buf, size_t len)
+size_t mbuf_insert(Mbuf *a, size_t off, const void *buf, size_t) WEAK;
+size_t mbuf_insert(Mbuf *a, size_t off, const void *buf, size_t len)
 {
   char *p = nullptr;
 
@@ -2076,14 +2067,14 @@ size_t mbuf_insert(struct mbuf *a, size_t off, const void *buf, size_t len)
   return len;
 }
 
-size_t mbuf_append(struct mbuf *a, const void *buf, size_t len) WEAK;
-size_t mbuf_append(struct mbuf *a, const void *buf, size_t len)
+size_t mbuf_append(Mbuf *a, const void *buf, size_t len) WEAK;
+size_t mbuf_append(Mbuf *a, const void *buf, size_t len)
 {
   return mbuf_insert(a, a->len, buf, len);
 }
 
-size_t mbuf_append_and_free(struct mbuf *a, void *buf, size_t len) WEAK;
-size_t mbuf_append_and_free(struct mbuf *a, void *data, size_t len)
+size_t mbuf_append_and_free(Mbuf *a, void *buf, size_t len) WEAK;
+size_t mbuf_append_and_free(Mbuf *a, void *data, size_t len)
 {
   size_t ret;
   /* Optimization: if the buffer is currently empty,
@@ -2099,8 +2090,8 @@ size_t mbuf_append_and_free(struct mbuf *a, void *data, size_t len)
   return ret;
 }
 
-void mbuf_remove(struct mbuf *mb, size_t n) WEAK;
-void mbuf_remove(struct mbuf *mb, size_t n)
+void mbuf_remove(Mbuf *mb, size_t n) WEAK;
+void mbuf_remove(Mbuf *mb, size_t n)
 {
   if (n > 0 && n <= mb->len) {
     memmove(mb->buf, mb->buf + n, mb->len - n);
@@ -2108,14 +2099,14 @@ void mbuf_remove(struct mbuf *mb, size_t n)
   }
 }
 
-void mbuf_clear(struct mbuf *mb) WEAK;
-void mbuf_clear(struct mbuf *mb)
+void mbuf_clear(Mbuf *mb) WEAK;
+void mbuf_clear(Mbuf *mb)
 {
   mb->len = 0;
 }
 
-void mbuf_move(struct mbuf *from, struct mbuf *to) WEAK;
-void mbuf_move(struct mbuf *from, struct mbuf *to)
+void mbuf_move(Mbuf *from, Mbuf *to) WEAK;
+void mbuf_move(Mbuf *from, Mbuf *to)
 {
   memcpy(to, from, sizeof(*to));
   memset(from, 0, sizeof(*from));
@@ -5071,7 +5062,7 @@ void emit_byte(struct pstate *pstate, uint8_t byte)
 
 void emit_int(struct pstate *pstate, int64_t n)
 {
-  struct mbuf *b = &pstate->mjs->bcode_gen;
+  Mbuf *b = &pstate->mjs->bcode_gen;
   size_t llen = cs_varint_llen(n);
   add_lineno_map_item(pstate);
   mbuf_insert(b, pstate->cur_idx, nullptr, llen);
@@ -5081,7 +5072,7 @@ void emit_int(struct pstate *pstate, int64_t n)
 
 void emit_str(struct pstate *pstate, const char *ptr, size_t len)
 {
-  struct mbuf *b = &pstate->mjs->bcode_gen;
+  Mbuf *b = &pstate->mjs->bcode_gen;
   size_t llen = cs_varint_llen(len);
   add_lineno_map_item(pstate);
   mbuf_insert(b, pstate->cur_idx, nullptr, llen + len);
@@ -5767,18 +5758,18 @@ void mjs_return(Mjs *mjs, mjs_val_t v)
   mjs_push(mjs, v);
 }
 
-mjs_val_t vtop(struct mbuf *m)
+mjs_val_t vtop(Mbuf *m)
 {
   size_t size = mjs_stack_size(m);
   return size > 0 ? *vptr(m, size - 1) : MJS_UNDEFINED;
 }
 
-size_t mjs_stack_size(const struct mbuf *m)
+size_t mjs_stack_size(const Mbuf *m)
 {
   return m->len / sizeof(mjs_val_t);
 }
 
-mjs_val_t *vptr(struct mbuf *m, int idx)
+mjs_val_t *vptr(Mbuf *m, int idx)
 {
   int size = mjs_stack_size(m);
   if (idx < 0) idx = size + idx;
@@ -5795,12 +5786,12 @@ mjs_val_t mjs_pop(Mjs *mjs)
   }
 }
 
-void push_mjs_val(struct mbuf *m, mjs_val_t v)
+void push_mjs_val(Mbuf *m, mjs_val_t v)
 {
   mbuf_append(m, &v, sizeof(v));
 }
 
-mjs_val_t mjs_pop_val(struct mbuf *m)
+mjs_val_t mjs_pop_val(Mbuf *m)
 {
   mjs_val_t v = MJS_UNDEFINED;
   assert(m->len >= sizeof(v));
@@ -8228,7 +8219,7 @@ void *dlsym(void *handle, const char *name)
 
 static struct gc_block *gc_new_block(struct gc_arena *a, size_t size);
 static void gc_free_block(struct gc_block *b);
-static void gc_mark_mbuf_pt(Mjs *mjs, const struct mbuf *mbuf);
+static void gc_mark_mbuf_pt(Mjs *mjs, const Mbuf *mbuf);
 
 struct mjs_object *new_object(Mjs *mjs)
 {
@@ -8320,7 +8311,7 @@ static int gc_arena_is_gc_needed(struct gc_arena *a)
 
 int gc_strings_is_gc_needed(Mjs *mjs)
 {
-  struct mbuf *m = &mjs->owned_strings;
+  Mbuf *m = &mjs->owned_strings;
   return (double) m->len / (double) m->size > 0.9;
 }
 
@@ -8677,7 +8668,7 @@ static void gc_mark_val_array(Mjs *mjs, mjs_val_t *vals, size_t len)
 /*
  * mark an mbuf containing *pointers* to `mjs_val_t` values
  */
-static void gc_mark_mbuf_pt(Mjs *mjs, const struct mbuf *mbuf)
+static void gc_mark_mbuf_pt(Mjs *mjs, const Mbuf *mbuf)
 {
   mjs_val_t **vp;
   for (vp = (mjs_val_t **) mbuf->buf; (char *) vp < mbuf->buf + mbuf->len;
@@ -8689,7 +8680,7 @@ static void gc_mark_mbuf_pt(Mjs *mjs, const struct mbuf *mbuf)
 /*
  * mark an mbuf containing `mjs_val_t` values (*not pointers* to them)
  */
-static void gc_mark_mbuf_val(Mjs *mjs, const struct mbuf *mbuf)
+static void gc_mark_mbuf_val(Mjs *mjs, const Mbuf *mbuf)
 {
   gc_mark_val_array(mjs, (mjs_val_t *) mbuf->buf,
                     mbuf->len / sizeof(mjs_val_t));
@@ -10006,7 +9997,7 @@ static mjs_err_t parse_array_literal(struct pstate *p)
 
 static mjs_err_t parse_literal(struct pstate *p, const struct tok *t)
 {
-  struct mbuf *bcode_gen = &p->mjs->bcode_gen;
+  Mbuf *bcode_gen = &p->mjs->bcode_gen;
   mjs_err_t res = MJS_OK;
   int tok = t->tok;
   LOG(LL_VERBOSE_DEBUG, ("[%.*s] %p", p->tok.len, p->tok.ptr, (void *) &t));
@@ -10986,7 +10977,7 @@ static int runetochar(char *str, Rune *rune)
 
 size_t unescape(const char *s, size_t len, char *to);
 
-void embed_string(struct mbuf *m, size_t offset, const char *p,
+void embed_string(Mbuf *m, size_t offset, const char *p,
                               size_t len, uint8_t /*enum embstr_flags*/ flags);
 
 /* TODO(lsm): NaN payload location depends on endianness, make crossplatform */
@@ -11002,7 +10993,7 @@ int mjs_is_string(mjs_val_t v)
 
 mjs_val_t mjs_mk_string(Mjs *mjs, const char *p, size_t len, int copy)
 {
-  struct mbuf *m;
+  Mbuf *m;
   mjs_val_t offset, tag = MJS_TAG_STRING_F;
   if (len == 0) {
     /*
@@ -11530,7 +11521,7 @@ size_t unescape(const char *s, size_t len, char *to)
   return n;
 }
 
-void embed_string(struct mbuf *m, size_t offset, const char *p,
+void embed_string(Mbuf *m, size_t offset, const char *p,
                               size_t len, uint8_t /*enum embstr_flags*/ flags)
 {
   char *old_base = m->buf;
@@ -12092,7 +12083,7 @@ void mjs_disasm(const uint8_t *code, size_t len)
   }
 }
 
-static void mjs_dump_obj_stack(const char *name, const struct mbuf *m, Mjs *mjs )
+static void mjs_dump_obj_stack(const char *name, const Mbuf *m, Mjs *mjs )
 {
   char buf[50];
   size_t i, n;
