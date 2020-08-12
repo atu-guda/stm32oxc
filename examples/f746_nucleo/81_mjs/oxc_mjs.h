@@ -169,6 +169,184 @@ struct Mbuf {
   size_t size; /* Buffer size allocated by realloc(1). Must be >= len */
 };
 
+// ------------------------ Mjs  ------------------------------------
+
+struct mjs_vals {
+  /* Current `this` value  */
+  mjs_val_t this_obj;
+  mjs_val_t dataview_proto;
+
+  /*
+   * The object against which the last `OP_GET` was invoked. Needed for
+   * "method invocation pattern".
+   */
+  mjs_val_t last_getprop_obj;
+};
+
+enum mjs_ffi_ctype {
+  MJS_FFI_CTYPE_NONE,
+  MJS_FFI_CTYPE_USERDATA,
+  MJS_FFI_CTYPE_CALLBACK,
+  MJS_FFI_CTYPE_INT,
+  MJS_FFI_CTYPE_BOOL,
+  MJS_FFI_CTYPE_DOUBLE,
+  MJS_FFI_CTYPE_FLOAT,
+  MJS_FFI_CTYPE_CHAR_PTR,
+  MJS_FFI_CTYPE_VOID_PTR,
+  MJS_FFI_CTYPE_STRUCT_MG_STR_PTR,
+  MJS_FFI_CTYPE_STRUCT_MG_STR,
+  MJS_FFI_CTYPE_INVALID,
+};
+
+typedef void *(mjs_ffi_resolver_t)(void *handle, const char *symbol);
+
+void mjs_set_ffi_resolver(Mjs *mjs, mjs_ffi_resolver_t *dlsym);
+
+typedef uint8_t mjs_ffi_ctype_t;
+
+enum ffi_sig_type {
+  FFI_SIG_FUNC,
+  FFI_SIG_CALLBACK,
+};
+
+#define MJS_CB_ARGS_MAX_CNT 6
+#define MJS_CB_SIGNATURE_MAX_SIZE (MJS_CB_ARGS_MAX_CNT + 1 /* return type */)
+
+/*
+ * Maximum number of word-sized args to ffi-ed function. If at least one
+ * of the args is double, only 2 args are allowed.
+ */
+#define FFI_MAX_ARGS_CNT 6
+
+typedef void(ffi_fn_t)(void);
+
+typedef intptr_t ffi_word_t;
+
+enum ffi_ctype {
+  FFI_CTYPE_WORD,
+  FFI_CTYPE_BOOL,
+  FFI_CTYPE_FLOAT,
+  FFI_CTYPE_DOUBLE,
+};
+
+struct ffi_arg {
+  enum ffi_ctype ctype;
+  union {
+    uint64_t i;
+    double d;
+    float f;
+  } v;
+};
+
+//* Parsed FFI signature
+struct mjs_ffi_sig {
+  /*
+   * Callback signature, corresponds to the arg of type MJS_FFI_CTYPE_CALLBACK
+   * TODO(dfrank): probably we'll need to support multiple callback/userdata
+   * pairs
+   *
+   * NOTE(dfrank): instances of this structure are grouped into GC arenas and
+   * managed by GC, and for the GC mark to work, the first element should be
+   * a pointer (so that the two LSBs are not used).
+   */
+  mjs_ffi_sig *cb_sig;
+
+  /*
+   * The first item is the return value type (for `void`, `MJS_FFI_CTYPE_NONE`
+   * is used); the rest are arguments. If some argument is
+   * `MJS_FFI_CTYPE_NONE`, it means that there are no more arguments.
+   */
+  mjs_ffi_ctype_t val_types[MJS_CB_SIGNATURE_MAX_SIZE];
+
+  /*
+   * Function to call. If `is_callback` is not set, then it's the function
+   * obtained by dlsym; otherwise it's a pointer to the appropriate callback
+   * implementation.
+   */
+  ffi_fn_t *fn;
+
+  /* Number of arguments in the signature */
+  int8_t args_cnt;
+
+  /*
+   * If set, then the signature represents the callback (as opposed to a normal
+   * function), and `fn` points to the suitable callback implementation.
+   */
+  unsigned is_callback : 1;
+  unsigned is_valid : 1;
+};
+typedef struct mjs_ffi_sig mjs_ffi_sig_t;
+
+/* Initialize new FFI signature */
+void mjs_ffi_sig_init(mjs_ffi_sig_t *sig);
+/* Copy existing FFI signature */
+void mjs_ffi_sig_copy(mjs_ffi_sig_t *to, const mjs_ffi_sig_t *from);
+/* Free FFI signature. NOTE: the pointer `sig` itself is not freed */
+void mjs_ffi_sig_free(mjs_ffi_sig_t *sig);
+
+struct mjs_ffi_cb_args {
+  struct mjs_ffi_cb_args *next;
+  Mjs *mjs;
+  mjs_ffi_sig_t sig;
+  mjs_val_t func;
+  mjs_val_t userdata;
+};
+typedef struct mjs_ffi_cb_args ffi_cb_args_t;
+
+typedef void (*gc_cell_destructor_t)(Mjs *mjs, void *);
+
+struct gc_block {
+  struct gc_block *next;
+  struct gc_cell *base;
+  size_t size;
+};
+
+struct gc_arena {
+  struct gc_block *blocks;
+  size_t size_increment;
+  struct gc_cell *free; /* head of free list */
+  size_t cell_size;
+
+// #if MJS_MEMORY_STATS
+//   unsigned long allocations; #<{(| cumulative counter of allocations |)}>#
+//   unsigned long garbage;     #<{(| cumulative counter of garbage |)}>#
+//   unsigned long alive;       #<{(| number of living cells |)}>#
+// #endif
+
+  gc_cell_destructor_t destructor;
+};
+
+struct Mjs {
+  Xbuf bcode_gen_x;
+  Mbuf bcode_gen;
+  Mbuf bcode_parts;
+  size_t bcode_len;
+  Mbuf stack;
+  Mbuf call_stack;
+  Mbuf arg_stack;
+  Mbuf scopes;          /* Scope objects */
+  Mbuf loop_addresses;  /* Addresses for breaks & continues */
+  Mbuf owned_strings;   /* Sequence of (varint len, char data[]) */
+  Mbuf foreign_strings; /* Sequence of (varint len, char *data) */
+  Mbuf owned_values;
+  Mbuf json_visited_stack;
+  struct mjs_vals vals;
+  char *error_msg;
+  char *stack_trace;
+  mjs_err_t error;
+  mjs_ffi_resolver_t *dlsym;  /* Symbol resolver function for FFI */
+  ffi_cb_args_t *ffi_cb_args; /* List of FFI args descriptors */
+  size_t cur_bcode_offset;
+
+  struct gc_arena object_arena;
+  struct gc_arena property_arena;
+  struct gc_arena ffi_sig_arena;
+
+  unsigned inhibit_gc;
+  unsigned need_gc;
+  unsigned generate_jsc;
+};
+
 
 // ------------------------ Mjs ------------------------------------
 
@@ -317,26 +495,6 @@ mjs_val_t mjs_arg(Mjs *mjs, int n);
  * Sets return value for the current JS function call.
  */
 void mjs_return(Mjs *mjs, mjs_val_t v);
-
-
-enum mjs_ffi_ctype {
-  MJS_FFI_CTYPE_NONE,
-  MJS_FFI_CTYPE_USERDATA,
-  MJS_FFI_CTYPE_CALLBACK,
-  MJS_FFI_CTYPE_INT,
-  MJS_FFI_CTYPE_BOOL,
-  MJS_FFI_CTYPE_DOUBLE,
-  MJS_FFI_CTYPE_FLOAT,
-  MJS_FFI_CTYPE_CHAR_PTR,
-  MJS_FFI_CTYPE_VOID_PTR,
-  MJS_FFI_CTYPE_STRUCT_MG_STR_PTR,
-  MJS_FFI_CTYPE_STRUCT_MG_STR,
-  MJS_FFI_CTYPE_INVALID,
-};
-
-typedef void *(mjs_ffi_resolver_t)(void *handle, const char *symbol);
-
-void mjs_set_ffi_resolver(Mjs *mjs, mjs_ffi_resolver_t *dlsym);
 
 
 
