@@ -251,7 +251,7 @@ void mjs_f1( Mjs *mjs )
 
   if( num_args > 0 ) {
     auto arg0 = mjs_arg( mjs, 0 );
-    if( mjs_is_object( arg0 ) ) {
+    if( Mjs::is_object( arg0 ) ) {
       mjs_val_t key, iter = MJS_UNDEFINED;
       while( ( key = mjs_next( js, arg0, &iter ) ) != MJS_UNDEFINED) {
         mjs_sprintf( key, js, buf, sizeof(buf)-1 );
@@ -285,27 +285,27 @@ void js_Math_sin( Mjs *mjs )
 void resetjs()
 {
   if( js ) {
-    mjs_destroy( js );
+    delete js; js = nullptr;
   }
-  js = mjs_create();
-  mjs_val_t global = mjs_get_global( js );
-  mjs_set( js, global, "f1", ~0, mjs_mk_foreign_func( js, (mjs_func_ptr_t) mjs_f1 ) );
+  js = new Mjs; // mjs_create();
+  mjs_val_t global = js->get_global();
+  js->set( global, "f1", ~0, mjs_mk_foreign_func( js, (mjs_func_ptr_t) mjs_f1 ) );
   mjs_set_ffi_resolver( js, mjs_dlsym_local );
   // mjs_val_t obj1 = mjs_( js );
 
   const unsigned arr1_sz = 4;
-  arr1 = mjs_mk_array( js );
+  arr1 = js->mk_array();
   for( decltype(+arr1_sz) i=0; i< arr1_sz; ++i ) {
     mjs_array_push( js, arr1, mjs_mk_number( js, i + 10 ) );
   }
-  mjs_set( js, global, "arr1", arr1_sz, arr1 );
+  js->set( global, "arr1", arr1_sz, arr1 );
 
   mjs_val_t rc1 = MJS_UNDEFINED;
   mjs_exec( js, js_Math_funcs, &rc1 );
 
-  // js_Math = mjs_mk_object( js );
-  // mjs_set( js, global, "Math", ~0, js_Math );
-  // mjs_set( js, js_Math, "sin", ~0, mjs_mk_foreign_func( js, (mjs_func_ptr_t) js_Math_sin ) );
+  // js_Math = js->mk_object();
+  // js->set( global, "Math", ~0, js_Math );
+  // js->set( js_Math, "sin", ~0, mjs_mk_foreign_func( js, (mjs_func_ptr_t) js_Math_sin ) );
 }
 
 int cmd_resetjs( int argc, const char * const * argv )

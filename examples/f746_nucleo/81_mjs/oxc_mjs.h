@@ -75,7 +75,7 @@ namespace OXC_MJS // for future
 
 typedef uint64_t mjs_val_t;
 
-struct Mjs;
+class Mjs;
 
 /*
  * Log level; `LL_INFO` is the default. Use `cs_log_set_level()` to change it.
@@ -307,67 +307,214 @@ struct gc_arena {
   struct gc_cell *free; /* head of free list */
   size_t cell_size;
 
-// #if MJS_MEMORY_STATS
-//   unsigned long allocations; #<{(| cumulative counter of allocations |)}>#
-//   unsigned long garbage;     #<{(| cumulative counter of garbage |)}>#
-//   unsigned long alive;       #<{(| number of living cells |)}>#
-// #endif
-
   gc_cell_destructor_t destructor;
 };
 
-struct Mjs {
-  Xbuf bcode_gen_x;
-  Mbuf bcode_gen;
-  Mbuf bcode_parts;
-  size_t bcode_len;
-  Mbuf stack;
-  Mbuf call_stack;
-  Mbuf arg_stack;
-  Mbuf scopes;          /* Scope objects */
-  Mbuf loop_addresses;  /* Addresses for breaks & continues */
-  Mbuf owned_strings;   /* Sequence of (varint len, char data[]) */
-  Mbuf foreign_strings; /* Sequence of (varint len, char *data) */
-  Mbuf owned_values;
-  Mbuf json_visited_stack;
-  struct mjs_vals vals;
-  char *error_msg;
-  char *stack_trace;
-  mjs_err_t error;
-  mjs_ffi_resolver_t *dlsym;  /* Symbol resolver function for FFI */
-  ffi_cb_args_t *ffi_cb_args; /* List of FFI args descriptors */
-  size_t cur_bcode_offset;
+#define JUMP_INSTRUCTION_SIZE 2
 
-  struct gc_arena object_arena;
-  struct gc_arena property_arena;
-  struct gc_arena ffi_sig_arena;
+enum mjs_type {
+  /* Primitive types */
+  MJS_TYPE_UNDEFINED,
+  MJS_TYPE_NULL,
+  MJS_TYPE_BOOLEAN,
+  MJS_TYPE_NUMBER,
+  MJS_TYPE_STRING,
+  MJS_TYPE_FOREIGN,
 
-  unsigned inhibit_gc;
-  unsigned need_gc;
-  unsigned generate_jsc;
+  /* Different classes of Object type */
+  MJS_TYPE_OBJECT_GENERIC,
+  MJS_TYPE_OBJECT_ARRAY,
+  MJS_TYPE_OBJECT_FUNCTION,
+  /*
+   * TODO(dfrank): if we support prototypes, need to add items for them here
+   */
+
+  MJS_TYPES_CNT
+};
+
+enum mjs_call_stack_frame_item {
+  CALL_STACK_FRAME_ITEM_RETVAL_STACK_IDX, /* TOS */
+  CALL_STACK_FRAME_ITEM_LOOP_ADDR_IDX,
+  CALL_STACK_FRAME_ITEM_SCOPE_IDX,
+  CALL_STACK_FRAME_ITEM_RETURN_ADDR,
+  CALL_STACK_FRAME_ITEM_THIS,
+
+  CALL_STACK_FRAME_ITEMS_CNT
 };
 
 
-// ------------------------ Mjs ------------------------------------
+struct mjs_bcode_part {
+  /* Global index of the bcode part */
+  size_t start_idx;
 
-/* Create MJS instance */
-Mjs *mjs_create(void);
+  /* Actual bcode data */
+  struct {
+    const char *p; /* Memory chunk pointer */
+    size_t len;    /* Memory chunk length */
+  } data;
 
-struct mjs_create_opts {
-  /* use non-default bytecode definition file, testing-only */
-  const struct bf_code *code;
+  /*
+   * Result of evaluation (not parsing: if there is an error during parsing,
+   * the bcode is not even committed). It is used to determine whether we
+   * need to evaluate the file: if file was already evaluated, and the result
+   * was MJS_OK, then we won't evaluate it again. Otherwise, we will.
+   */
+  mjs_err_t exec_res : 4;
+
+  /* If set, bcode data does not need to be freed */
+  unsigned in_rom : 1;
 };
+
 
 /*
- * Like `msj_create()`, but allows to customize initial MJS state, see `struct
- * mjs_create_opts`.
+ * Bcode header: type of the items, and item numbers.
  */
-Mjs *mjs_create_opt(struct mjs_create_opts opts);
+typedef uint32_t mjs_header_item_t;
+enum mjs_header_items {
+  MJS_HDR_ITEM_TOTAL_SIZE,   /* Total size of the bcode (not counting the
+                                OP_BCODE_HEADER byte) */
+  MJS_HDR_ITEM_BCODE_OFFSET, /* Offset to the start of the actual bcode (not
+                                counting the OP_BCODE_HEADER byte) */
+  MJS_HDR_ITEM_MAP_OFFSET,   /* Offset to the start of offset-to-line_no mapping
+                                k*/
 
-/* Destroy MJS instance */
-void mjs_destroy(Mjs *mjs);
+  MJS_HDR_ITEMS_CNT
+};
 
-mjs_val_t mjs_get_global(Mjs *mjs);
+size_t mjs_get_func_addr(mjs_val_t v);
+
+int mjs_getretvalpos(Mjs *mjs);
+
+enum mjs_type mjs_get_type(mjs_val_t v);
+
+/*
+ * Prints stack trace starting from the given bcode offset; other offsets
+ * (if any) will be fetched from the call_stack.
+ */
+void mjs_gen_stack_trace(Mjs *mjs, size_t offset);
+
+mjs_val_t vtop(Mbuf *m);
+size_t mjs_stack_size(const Mbuf *m);
+mjs_val_t *vptr(Mbuf *m, int idx);
+void push_mjs_val(Mbuf *m, mjs_val_t v);
+mjs_val_t mjs_pop_val(Mbuf *m);
+mjs_val_t mjs_pop(Mjs *mjs);
+void mjs_push(Mjs *mjs, mjs_val_t v);
+void mjs_die(Mjs *mjs);
+
+/*
+ * A tag is made of the sign bit and the 4 lower order bits of byte 6.
+ * So in total we have 32 possible tags.
+ *
+ * Tag (1,0) however cannot hold a zero payload otherwise it's interpreted as an
+ * INFINITY; for simplicity we're just not going to use that combination.
+ */
+#define MAKE_TAG(s, t) \
+  ((uint64_t)(s) << 63 | (uint64_t) 0x7ff0 << 48 | (uint64_t)(t) << 48)
+
+#define MJS_TAG_OBJECT MAKE_TAG(1, 1)
+#define MJS_TAG_FOREIGN MAKE_TAG(1, 2)
+#define MJS_TAG_UNDEFINED MAKE_TAG(1, 3)
+#define MJS_TAG_BOOLEAN MAKE_TAG(1, 4)
+#define MJS_TAG_NAN MAKE_TAG(1, 5)
+#define MJS_TAG_STRING_I MAKE_TAG(1, 6)  /* Inlined string len < 5 */
+#define MJS_TAG_STRING_5 MAKE_TAG(1, 7)  /* Inlined string len 5 */
+#define MJS_TAG_STRING_O MAKE_TAG(1, 8)  /* Owned string */
+#define MJS_TAG_STRING_F MAKE_TAG(1, 9)  /* Foreign string */
+#define MJS_TAG_STRING_C MAKE_TAG(1, 10) /* String chunk */
+#define MJS_TAG_STRING_D MAKE_TAG(1, 11) /* Dictionary string  */
+#define MJS_TAG_ARRAY MAKE_TAG(1, 12)
+#define MJS_TAG_FUNCTION MAKE_TAG(1, 13)
+#define MJS_TAG_FUNCTION_FFI MAKE_TAG(1, 14)
+#define MJS_TAG_NULL MAKE_TAG(1, 15)
+
+#define MJS_TAG_MASK MAKE_TAG(1, 15)
+
+
+/* JavaScript `null` value */
+#define MJS_NULL MJS_TAG_NULL
+
+/* JavaScript `undefined` value */
+#define MJS_UNDEFINED MJS_TAG_UNDEFINED
+
+constexpr uint64_t make_tag( uint64_t s, uint64_t t ) // TODO: add Msj ???
+     { return s << 63 | ( (uint64_t) 0x7ff0 << 48 ) | t << 48 ; }
+
+
+class Mjs {
+  public:
+   Mjs();
+   ~Mjs();
+   mjs_val_t get_global() { return *vptr( &scopes, 0 ); } // ?
+
+   enum MsjTag {
+     Mjs_TAG_OBJECT       = make_tag( 1,  1 ),
+     Mjs_TAG_FOREIGN      = make_tag( 1,  2 ),
+     Mjs_TAG_UNDEFINED    = make_tag( 1,  3 ),
+     Mjs_TAG_BOOLEAN      = make_tag( 1,  4 ),
+     Mjs_TAG_NAN          = make_tag( 1,  5 ),
+     Mjs_TAG_STRING_I     = make_tag( 1,  6 ), /* Inlined string len < 5 */
+     Mjs_TAG_STRING_5     = make_tag( 1,  7 ), /* Inlined string len 5 */
+     Mjs_TAG_STRING_O     = make_tag( 1,  8 ), /* Owned string */
+     Mjs_TAG_STRING_F     = make_tag( 1,  9 ), /* Foreign string */
+     Mjs_TAG_STRING_C     = make_tag( 1, 10 ), /* String chunk */
+     Mjs_TAG_STRING_D     = make_tag( 1, 11 ), /* Dictionary string  */
+     Mjs_TAG_ARRAY        = make_tag( 1, 12 ),
+     Mjs_TAG_FUNCTION     = make_tag( 1, 13 ),
+     Mjs_TAG_FUNCTION_FFI = make_tag( 1, 14 ),
+     Mjs_TAG_NULL         = make_tag( 1, 15 ),
+     Mjs_TAG_MASK         = make_tag( 1, 15 ),
+     Mjs_NULL             = Mjs_TAG_NULL,
+     Mjs_UNDEFINED        = Mjs_TAG_UNDEFINED //* JavaScript `undefined` value
+   };
+   static inline bool is_array( mjs_val_t v )  { return ( v & Mjs_TAG_MASK ) == Mjs_TAG_ARRAY; }
+   static inline bool is_object( mjs_val_t v )
+     { return ( v & Mjs_TAG_MASK ) == Mjs_TAG_OBJECT || ( v & Mjs_TAG_MASK) == Mjs_TAG_ARRAY; }
+
+   mjs_val_t mk_array();
+   mjs_val_t mk_object();  //* Make an empty object
+   mjs_err_t set( mjs_val_t obj, const char *name, size_t name_len, mjs_val_t val );
+   mjs_err_t set_v( mjs_val_t obj, mjs_val_t name, mjs_val_t val );
+
+   int get_offset_by_call_frame_num( int cf_num ); // const?
+
+  private:
+   mjs_err_t set_internal( mjs_val_t obj, mjs_val_t name_v, char *name, size_t name_len, mjs_val_t val );
+
+  public:
+   // TODO: make most of them private, types - included
+   Xbuf bcode_gen_x; // test: replacement for bcode_gen ...
+
+   Mbuf bcode_gen;
+   Mbuf bcode_parts;
+   size_t bcode_len;
+   Mbuf stack;
+   Mbuf call_stack;
+   Mbuf arg_stack;
+   Mbuf scopes;          /* Scope objects */
+   Mbuf loop_addresses;  /* Addresses for breaks & continues */
+   Mbuf owned_strings;   /* Sequence of (varint len, char data[]) */
+   Mbuf foreign_strings; /* Sequence of (varint len, char *data) */
+   Mbuf owned_values;
+   Mbuf json_visited_stack;
+   struct mjs_vals vals;
+   char *error_msg;
+   char *stack_trace;
+   mjs_err_t error;
+   mjs_ffi_resolver_t *dlsym;  /* Symbol resolver function for FFI */
+   ffi_cb_args_t *ffi_cb_args; /* List of FFI args descriptors */
+   size_t cur_bcode_offset;
+
+   gc_arena object_arena;
+   gc_arena property_arena;
+   gc_arena ffi_sig_arena;
+
+   bool inhibit_gc;
+   bool need_gc = false;
+   unsigned generate_jsc;
+};
+
+
 
 /*
  * Tells the GC about an MJS value variable/field owned by C code.
@@ -521,8 +668,6 @@ mjs_val_t mjs_array_get( Mjs *, mjs_val_t arr, unsigned long index );
 /* Insert value `v` into `arr` at index `index`. */
 mjs_err_t mjs_array_set( Mjs *mjs, mjs_val_t arr, unsigned long index, mjs_val_t v );
 
-/* Returns true if the given value is an array */
-int mjs_is_array( mjs_val_t v );
 
 /* Delete value in array `arr` at index `index`, if it exists. */
 void mjs_array_del( Mjs *mjs, mjs_val_t arr, unsigned long index );
@@ -546,8 +691,6 @@ mjs_val_t mjs_get_this( Mjs *mjs );
  */
 int mjs_is_object(mjs_val_t v);
 
-/* Make an empty object */
-mjs_val_t mjs_mk_object(Mjs *mjs);
 
 /* Field types for struct-object conversion. */
 enum mjs_struct_field_type {
@@ -605,15 +748,7 @@ mjs_val_t mjs_get_v( Mjs *mjs, mjs_val_t obj, mjs_val_t name );
  */
 mjs_val_t mjs_get_v_proto( Mjs *mjs, mjs_val_t obj, mjs_val_t key );
 
-/*
- * Set object property. Behaves just like JavaScript assignment.
- */
-mjs_err_t mjs_set( Mjs *mjs, mjs_val_t obj, const char *name, size_t len, mjs_val_t val );
 
-/*
- * Like mjs_set but the name is already a JS string.
- */
-mjs_err_t mjs_set_v( Mjs *mjs, mjs_val_t obj, mjs_val_t name, mjs_val_t val );
 
 /*
  * Delete own property `name` of the object `obj`. Does not follow the
@@ -641,42 +776,6 @@ int mjs_del( Mjs *mjs, mjs_val_t obj, const char *name, size_t len );
 mjs_val_t mjs_next( Mjs *mjs, mjs_val_t obj, mjs_val_t *iterator );
 
 
-
-// atu: moved from mjs.c
-/*
- * A tag is made of the sign bit and the 4 lower order bits of byte 6.
- * So in total we have 32 possible tags.
- *
- * Tag (1,0) however cannot hold a zero payload otherwise it's interpreted as an
- * INFINITY; for simplicity we're just not going to use that combination.
- */
-#define MAKE_TAG(s, t) \
-  ((uint64_t)(s) << 63 | (uint64_t) 0x7ff0 << 48 | (uint64_t)(t) << 48)
-
-#define MJS_TAG_OBJECT MAKE_TAG(1, 1)
-#define MJS_TAG_FOREIGN MAKE_TAG(1, 2)
-#define MJS_TAG_UNDEFINED MAKE_TAG(1, 3)
-#define MJS_TAG_BOOLEAN MAKE_TAG(1, 4)
-#define MJS_TAG_NAN MAKE_TAG(1, 5)
-#define MJS_TAG_STRING_I MAKE_TAG(1, 6)  /* Inlined string len < 5 */
-#define MJS_TAG_STRING_5 MAKE_TAG(1, 7)  /* Inlined string len 5 */
-#define MJS_TAG_STRING_O MAKE_TAG(1, 8)  /* Owned string */
-#define MJS_TAG_STRING_F MAKE_TAG(1, 9)  /* Foreign string */
-#define MJS_TAG_STRING_C MAKE_TAG(1, 10) /* String chunk */
-#define MJS_TAG_STRING_D MAKE_TAG(1, 11) /* Dictionary string  */
-#define MJS_TAG_ARRAY MAKE_TAG(1, 12)
-#define MJS_TAG_FUNCTION MAKE_TAG(1, 13)
-#define MJS_TAG_FUNCTION_FFI MAKE_TAG(1, 14)
-#define MJS_TAG_NULL MAKE_TAG(1, 15)
-
-#define MJS_TAG_MASK MAKE_TAG(1, 15)
-
-
-/* JavaScript `null` value */
-#define MJS_NULL MJS_TAG_NULL
-
-/* JavaScript `undefined` value */
-#define MJS_UNDEFINED MJS_TAG_UNDEFINED
 
 /* Function pointer type used in `mjs_mk_foreign_func`. */
 typedef void (*mjs_func_ptr_t)(void);
