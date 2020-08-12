@@ -8,6 +8,8 @@
 #include <stdio.h>
 #include <stddef.h>
 
+#include <vector>
+
 namespace OXC_MJS // for future
 {
 };
@@ -156,7 +158,9 @@ struct Mg_str {
   size_t len;    /* Memory chunk length */
 };
 
-// ------------------------ Mbuf ------------------------------------
+// ------------------------ Mbuf  -> Xbuf ------------------------------------
+
+using Xbuf = std::vector<char>;
 
 /* Memory buffer descriptor */
 struct Mbuf {

@@ -4,8 +4,7 @@
 #include <oxc_mjs.h>
 
 
-#ifndef CS_COMMON_PLATFORM_H_
-#define CS_COMMON_PLATFORM_H_
+using namespace std;
 
 /*
  * For the "custom" platform, includes and dependencies can be
@@ -72,26 +71,15 @@
 #include <platform_custom.h>
 #endif
 
-/* Common stuff */
-
-#ifndef ARRAY_SIZE
-#define ARRAY_SIZE(array) (sizeof(array) / sizeof(array[0]))
-#endif
-
-#endif /* CS_COMMON_PLATFORM_H_ */
-
 
 
 #ifndef CS_COMMON_PLATFORMS_PLATFORM_STM32_H_
 #define CS_COMMON_PLATFORMS_PLATFORM_STM32_H_
-#if CS_PLATFORM == CS_P_STM32
 
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <stdint.h>
 #include <inttypes.h>
-#include <stdio.h>
 #include <string.h>
 #include <assert.h>
 #include <math.h>
@@ -100,7 +88,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <time.h>
-#include <stddef.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -126,7 +113,6 @@ typedef struct stat cs_stat_t;
 #define MG_ENABLE_FILESYSTEM 1
 #endif
 
-#endif /* CS_PLATFORM == CS_P_STM32 */
 #endif /* CS_COMMON_PLATFORMS_PLATFORM_STM32_H_ */
 
 #ifndef CS_COMMON_CS_DBG_H_
@@ -444,13 +430,6 @@ void mbuf_free(Mbuf *);
  */
 size_t mbuf_append(Mbuf *, const void *data, size_t data_size);
 
-/*
- * Appends data to the Mbuf and frees it (data must be heap-allocated).
- *
- * Returns the number of bytes appended or 0 if out of memory.
- * data is freed irrespective of return value.
- */
-size_t mbuf_append_and_free(Mbuf *, void *data, size_t data_size);
 
 /*
  * Inserts data at a specified offset in the Mbuf.
@@ -461,8 +440,6 @@ size_t mbuf_append_and_free(Mbuf *, void *data, size_t data_size);
  */
 size_t mbuf_insert(Mbuf *, size_t, const void *, size_t);
 
-/* Removes `data_size` bytes from the beginning of the buffer. */
-void mbuf_remove(Mbuf *, size_t data_size);
 
 /*
  * Resizes an Mbuf.
@@ -472,19 +449,11 @@ void mbuf_remove(Mbuf *, size_t data_size);
  */
 void mbuf_resize(Mbuf *, size_t new_size);
 
-/* Moves the state from one mbuf to the other. */
-void mbuf_move(Mbuf *from, Mbuf *to);
-
-/* Removes all the data from mbuf (if any). */
-void mbuf_clear(Mbuf *);
 
 /* Shrinks an Mbuf by resizing its `size` to `len`. */
 void mbuf_trim(Mbuf *);
 
 
-
-#ifndef CS_COMMON_MG_MEM_H_
-#define CS_COMMON_MG_MEM_H_
 
 
 #ifndef MG_MALLOC
@@ -504,10 +473,7 @@ void mbuf_trim(Mbuf *);
 #endif
 
 
-#endif /* CS_COMMON_MG_MEM_H_ */
 
-#ifndef CS_FROZEN_FROZEN_H_
-#define CS_FROZEN_FROZEN_H_
 
 
 
@@ -563,12 +529,9 @@ struct json_token {
  * - type: JSON_TYPE_NUMBER, name: "1", path: ".bar[1]", value: "2"
  * - type: JSON_TYPE_OBJECT_START, name: "2", path: ".bar[2]", value: nullptr
  * - type: JSON_TYPE_TRUE, name: "baz", path: ".bar[2].baz", value: "true"
- * - type: JSON_TYPE_OBJECT_END, name: nullptr, path: ".bar[2]", value: "{ \"baz\":
- *true }"
- * - type: JSON_TYPE_ARRAY_END, name: nullptr, path: ".bar", value: "[ 1, 2, {
- *\"baz\": true } ]"
- * - type: JSON_TYPE_OBJECT_END, name: nullptr, path: "", value: "{ \"foo\": 123,
- *\"bar\": [ 1, 2, { \"baz\": true } ] }"
+ * - type: JSON_TYPE_OBJECT_END, name: nullptr, path: ".bar[2]", value: "{ \"baz\": true }"
+ * - type: JSON_TYPE_ARRAY_END, name: nullptr, path: ".bar", value: "[ 1, 2, {\"baz\": true } ]"
+ * - type: JSON_TYPE_OBJECT_END, name: nullptr, path: "", value: "{ \"foo\": 123, \"bar\": [ 1, 2, { \"baz\": true } ] }"
  */
 typedef void (*json_walk_callback_t)(void *callback_data, const char *name,
                                      size_t name_len, const char *path,
@@ -800,7 +763,6 @@ void *json_next_elem(const char *s, int len, void *handle, const char *path,
 #endif
 
 
-#endif /* CS_FROZEN_FROZEN_H_ */
 
 #ifndef MJS_FFI_FFI_H_
 #define MJS_FFI_FFI_H_
@@ -1188,6 +1150,7 @@ struct mjs_bcode_part {
 
 // atu: TODO: move to header as class
 struct Mjs {
+  Xbuf bcode_gen_x;
   Mbuf bcode_gen;
   Mbuf bcode_parts;
   size_t bcode_len;
@@ -2073,44 +2036,9 @@ size_t mbuf_append(Mbuf *a, const void *buf, size_t len)
   return mbuf_insert(a, a->len, buf, len);
 }
 
-size_t mbuf_append_and_free(Mbuf *a, void *buf, size_t len) WEAK;
-size_t mbuf_append_and_free(Mbuf *a, void *data, size_t len)
-{
-  size_t ret;
-  /* Optimization: if the buffer is currently empty,
-   * take over the user-provided buffer. */
-  if (a->len == 0) {
-    if (a->buf != nullptr) free(a->buf);
-    a->buf = (char *) data;
-    a->len = a->size = len;
-    return len;
-  }
-  ret = mbuf_insert(a, a->len, data, len);
-  free(data);
-  return ret;
-}
 
-void mbuf_remove(Mbuf *mb, size_t n) WEAK;
-void mbuf_remove(Mbuf *mb, size_t n)
-{
-  if (n > 0 && n <= mb->len) {
-    memmove(mb->buf, mb->buf + n, mb->len - n);
-    mb->len -= n;
-  }
-}
 
-void mbuf_clear(Mbuf *mb) WEAK;
-void mbuf_clear(Mbuf *mb)
-{
-  mb->len = 0;
-}
 
-void mbuf_move(Mbuf *from, Mbuf *to) WEAK;
-void mbuf_move(Mbuf *from, Mbuf *to)
-{
-  memcpy(to, from, sizeof(*to));
-  memset(from, 0, sizeof(*from));
-}
 
 #endif /* EXCLUDE_COMMON */
 
@@ -11914,8 +11842,11 @@ const char *opcodetostr(uint8_t opcode)
       "ARGS", "FOR_IN_NEXT",
   };
   const char *name = "???";
-  assert(ARRAY_SIZE(names) == OP_MAX);
-  if (opcode < ARRAY_SIZE(names)) name = names[opcode];
+
+  static_assert( size(names) == OP_MAX );
+  if( opcode < size(names) ) {
+    name = names[opcode];
+  }
   return name;
 }
 
