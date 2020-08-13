@@ -332,6 +332,16 @@ enum mjs_type {
   MJS_TYPES_CNT
 };
 
+struct mjs_property {
+  mjs_property *next; /* Linkage in struct mjs_object::properties */
+  mjs_val_t name;            /* Property name (a string) */
+  mjs_val_t value;           /* Property value */
+};
+
+struct mjs_object {
+  mjs_property *properties;
+};
+
 enum mjs_call_stack_frame_item {
   CALL_STACK_FRAME_ITEM_RETVAL_STACK_IDX, /* TOS */
   CALL_STACK_FRAME_ITEM_LOOP_ADDR_IDX,
