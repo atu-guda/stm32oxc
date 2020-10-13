@@ -1,0 +1,14 @@
+Test TIM1 as double shot  = 2 * single shot output
+out: A8
+user vars:
+ p - prescaler
+ a - ARR
+
+T t_1 t_delay t_2
+t_x - in ms
+
+
+Used USART2 with ST_Link VCP
+A2  = USART2_TX
+A3  = USART2_RX
+
