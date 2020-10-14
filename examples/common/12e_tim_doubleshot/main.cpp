@@ -1,5 +1,3 @@
-#include <iterator>
-
 #include <oxc_auto.h>
 #include <oxc_tim.h>
 
@@ -84,12 +82,12 @@ unsigned pulse1( uint16_t arr, uint16_t ccr )
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  int t_1 = arg2long_d( 1, argc, argv,   200,    1, 20000 );
-  int t_d = arg2long_d( 2, argc, argv,   100,    0, 20000 );
-  int t_2 = arg2long_d( 3, argc, argv,   300,    0, 20000 );
+  int t_1 = arg2long_d( 1, argc, argv,   200,    1, 2000 );
+  int t_d = arg2long_d( 2, argc, argv,   100,    0, 2000 );
+  int t_2 = arg2long_d( 3, argc, argv,   300,    0, 2000 );
 
   uint16_t arr1 = (uint16_t)( t_1 * 10 );
-  uint16_t ccr1 = 0; // arr1/4; // TMP, really 1-0 ?
+  uint16_t ccr1 = 0;
   uint16_t arr2 = (uint16_t)( ( t_d + t_2 ) * 10 );
   uint16_t ccr2 = (uint16_t)( arr2 - t_2 * 10 );
 
@@ -150,7 +148,6 @@ void tim_cfg()
   tim_oc_cfg.OCNIdleState = TIM_OCNIDLESTATE_RESET;
   tim_oc_cfg.Pulse = 50 * pbase / 100; /// TMP: 50
 
-  // HAL_TIM_OnePulse_Stop( &tim_h, TIM_CHANNEL_1 );
   if( HAL_TIM_PWM_ConfigChannel( &tim_h, &tim_oc_cfg, TIM_CHANNEL_1 ) != HAL_OK ) {
     UVAR('e') = 11;
     return;
