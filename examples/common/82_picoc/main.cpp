@@ -1,4 +1,5 @@
 #include <oxc_auto.h>
+#include <picoc.h>
 
 using namespace std;
 using namespace SMLRL;
@@ -10,7 +11,9 @@ BOARD_CONSOLE_DEFINES;
 
 const char* common_help_string = "Appication to test picoc interpratator" NL;
 
+#define PICOC_STACK_SIZE (32*1024)
 int picoc_cmdline_handler( char *s );
+Picoc pc;
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -39,6 +42,9 @@ int main(void)
 
   cmdline_handlers[0] = picoc_cmdline_handler;
   cmdline_handlers[1] = nullptr;
+
+  PicocInitialise( &pc, PICOC_STACK_SIZE );
+  PicocIncludeAllSystemHeaders( &pc );
 
   BOARD_POST_INIT_BLINK;
 
