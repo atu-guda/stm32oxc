@@ -9,20 +9,24 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
-const char* common_help_string = "Appication to test picoc interpratator" NL;
+const char* common_help_string = "Appication to test picoc interpratator ;cmd" NL;
 
 #define PICOC_STACK_SIZE (32*1024)
 int picoc_cmdline_handler( char *s );
 Picoc pc;
+int init_picoc( Picoc *ppc );
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
+int cmd_init_picoc( int argc, const char * const * argv );
+CmdInfo CMDINFO_INIT_PICOC { "init_picoc", 'I', cmd_init_picoc, " - init picoc interpretator"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
 
   &CMDINFO_TEST0,
+  &CMDINFO_INIT_PICOC,
   nullptr
 };
 
@@ -43,8 +47,8 @@ int main(void)
   cmdline_handlers[0] = picoc_cmdline_handler;
   cmdline_handlers[1] = nullptr;
 
-  PicocInitialise( &pc, PICOC_STACK_SIZE );
-  PicocIncludeAllSystemHeaders( &pc );
+  pc.InteractiveHead = nullptr;
+  init_picoc( &pc );
 
   BOARD_POST_INIT_BLINK;
 
@@ -59,7 +63,25 @@ int main(void)
 int cmd_test0( int argc, const char * const * argv )
 {
   int a = arg2long_d( 1, argc, argv,   2,    0, 127 );
-  std_out << "Test0: a= " << a <<  NL;
+  std_out << "# Test0: a= " << a <<  NL;
+
+  unsigned tsize = pc.GlobalTable.Size;
+  std_out << "# &pc= " << HexInt(&pc) << " size= " << tsize << " OnHeap= " << pc.GlobalTable.OnHeap << NL;
+
+  Table *gtab = &pc.GlobalTable;
+  TableEntry **ppte = gtab->HashTable;
+  std_out << "# ppte= " << HexInt(ppte) << NL;
+
+  for( unsigned hi=0; hi<tsize; ++hi ) {
+    for( TableEntry* te = gtab->HashTable[hi]; te != nullptr; te = te->Next ) {
+      std_out << "# hi= " << hi << "\" key= \"" << te->p.v.Key << "\"" << " file= \"" << te->DeclFileName << NL;
+      Value *v = te->p.v.Val;
+      if( v ) {
+        std_out << "## typ= " << v->Typ->Base << NL;
+      }
+    }
+  }
+
 
   return 0;
 }
@@ -75,11 +97,29 @@ int picoc_cmdline_handler( char *s )
   const char *cmd = s + 1;
   std_out << NL "# C: cmd= \"" << cmd << '"' << NL;
   delay_ms( 10 );
+  PicocParse( &pc, "cmd", cmd, strlen(cmd), TRUE, TRUE, FALSE, TRUE );
 
   int rc = 0;
 
   return rc;
 
+}
+
+int init_picoc( Picoc *ppc )
+{
+  if( ppc->InteractiveHead != nullptr ) {
+    PicocCleanup( ppc );
+  }
+  PicocInitialise( ppc, PICOC_STACK_SIZE );
+  PicocIncludeAllSystemHeaders( ppc );
+  VariableDefinePlatformVar( ppc, nullptr, "__a", &(ppc->IntType), (union AnyValue *)&(UVAR('a')), TRUE );
+  return 0;
+}
+
+int cmd_init_picoc( int argc, const char * const * argv )
+{
+  init_picoc( &pc );
+  return 0;
 }
 
 
