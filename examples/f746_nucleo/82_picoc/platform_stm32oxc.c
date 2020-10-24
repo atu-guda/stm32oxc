@@ -3,23 +3,24 @@
 
 
 /* mark where to end the program for platforms which require this */
-jmp_buf PicocExitBuf;
+// jmp_buf PicocExitBuf;
 
 #ifndef NO_DEBUGGER
 #include <signal.h>
 
 Picoc *break_pc = NULL;
 
+
 static void BreakHandler(int Signal)
 {
-    break_pc->DebugManualBreak = TRUE;
+  break_pc->DebugManualBreak = TRUE;
 }
 
 void PlatformInit(Picoc *pc)
 {
-    /* capture the break signal and pass it to the debugger */
-    break_pc = pc;
-    signal(SIGINT, BreakHandler);
+  /* capture the break signal and pass it to the debugger */
+  break_pc = pc;
+  signal(SIGINT, BreakHandler);
 }
 #else
 void PlatformInit(Picoc *pc)
@@ -34,12 +35,12 @@ void PlatformCleanup(Picoc *pc)
 /* get a line of interactive input */
 char *PlatformGetLine(char *Buf, int MaxLen, const char *Prompt)
 {
+  if (Prompt != NULL) {
+    printf("%s", Prompt);
+  }
 
-    if (Prompt != NULL)
-        printf("%s", Prompt);
-        
-    fflush(stdout);
-    return fgets(Buf, MaxLen, stdin);
+  fflush(stdout);
+  return fgets(Buf, MaxLen, stdin);
 }
 
 /* get a character of interactive input */
@@ -91,8 +92,8 @@ char *PlatformReadFile(Picoc *pc, const char *FileName)
     /*     } */
     /* } */
 
-    // return ReadText;    
-    return 0;    
+    // return ReadText;
+    return 0;
 }
 
 /* read and scan a file for definitions */
@@ -101,10 +102,10 @@ void PicocPlatformScanFile(Picoc *pc, const char *FileName)
     char *SourceStr = PlatformReadFile(pc, FileName);
 
     /* ignore "#!/path/to/picoc" .. by replacing the "#!" with "//" */
-    if (SourceStr != NULL && SourceStr[0] == '#' && SourceStr[1] == '!') 
-    { 
-        SourceStr[0] = '/'; 
-        SourceStr[1] = '/'; 
+    if (SourceStr != NULL && SourceStr[0] == '#' && SourceStr[1] == '!')
+    {
+        SourceStr[0] = '/';
+        SourceStr[1] = '/';
     }
 
     PicocParse(pc, FileName, SourceStr, strlen(SourceStr), TRUE, FALSE, TRUE, TRUE);
@@ -113,7 +114,8 @@ void PicocPlatformScanFile(Picoc *pc, const char *FileName)
 /* exit the program */
 void PlatformExit(Picoc *pc, int RetVal)
 {
-    pc->PicocExitValue = RetVal;
-    // longjmp(pc->PicocExitBuf, 1); TMP
+  PlatformPrintf( pc->CStdOut, "######## platform exit %d\r\n", RetVal );
+  pc->PicocExitValue = RetVal;
+  longjmp( pc->PicocExitBuf, 1 ); // ??? TMP
 }
 

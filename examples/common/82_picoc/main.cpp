@@ -74,11 +74,12 @@ int cmd_test0( int argc, const char * const * argv )
 
   for( unsigned hi=0; hi<tsize; ++hi ) {
     for( TableEntry* te = gtab->HashTable[hi]; te != nullptr; te = te->Next ) {
-      std_out << "# hi= " << hi << "\" key= \"" << te->p.v.Key << "\"" << " file= \"" << te->DeclFileName << NL;
+      std_out << "# hi= " << hi << " key= \"" << te->p.v.Key << "\"" << " file= \"" << te->DeclFileName;
       Value *v = te->p.v.Val;
       if( v ) {
-        std_out << "## typ= " << v->Typ->Base << NL;
+        std_out << "\" typ= " << v->Typ->Base;
       }
+      std_out  << NL;
     }
   }
 
@@ -97,7 +98,12 @@ int picoc_cmdline_handler( char *s )
   const char *cmd = s + 1;
   std_out << NL "# C: cmd= \"" << cmd << '"' << NL;
   delay_ms( 10 );
-  PicocParse( &pc, "cmd", cmd, strlen(cmd), TRUE, TRUE, FALSE, TRUE );
+  int ep_rc =  PicocPlatformSetExitPoint( &pc );
+  if( ep_rc == 0 ) {
+    PicocParse( &pc, "cmd", cmd, strlen(cmd), TRUE, TRUE, FALSE, TRUE );
+  } else {
+    std_out << "## Exit point: " << ep_rc << NL;
+  }
 
   int rc = 0;
 
