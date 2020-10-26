@@ -1,4 +1,7 @@
 #include <oxc_auto.h>
+
+#include <stdarg.h>
+
 #include <picoc.h>
 
 using namespace std;
@@ -63,7 +66,7 @@ int main(void)
 int cmd_test0( int argc, const char * const * argv )
 {
   int a = arg2long_d( 1, argc, argv,   2,    0, 127 );
-  std_out << "# Test0: a= " << a <<  NL;
+  std_out << "# Test0: a= " << a << " sz:va_list= " << sizeof(va_list) << NL;
 
   unsigned tsize = pc.GlobalTable.Size;
   std_out << "# &pc= " << HexInt(&pc) << " size= " << tsize << " OnHeap= " << pc.GlobalTable.OnHeap << NL;
