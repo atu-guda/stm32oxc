@@ -43,6 +43,7 @@ SRCS += variable.c
 
 SRCS += library_stm32oxc.c
 SRCS += platform_stm32oxc.c
+SRCS += oxc_picoc_math.c
 
 
 

@@ -18,6 +18,10 @@ const char* common_help_string = "Appication to test picoc interpratator ;cmd" N
 int picoc_cmdline_handler( char *s );
 Picoc pc;
 int init_picoc( Picoc *ppc );
+// TMP here: move to system include
+extern "C" {
+void oxc_picoc_math_init( Picoc *pc );
+}
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -120,6 +124,7 @@ int init_picoc( Picoc *ppc )
     PicocCleanup( ppc );
   }
   PicocInitialise( ppc, PICOC_STACK_SIZE );
+  oxc_picoc_math_init( ppc );
   PicocIncludeAllSystemHeaders( ppc );
   VariableDefinePlatformVar( ppc, nullptr, "__a", &(ppc->IntType), (union AnyValue *)&(UVAR('a')), TRUE );
   return 0;
