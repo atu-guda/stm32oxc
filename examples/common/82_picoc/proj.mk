@@ -21,6 +21,9 @@ USE_OXC_CONSOLE_DEFAULT = y
 
 # NOUSE_DEFAULT_UART_INIT = y
 
+# picoc uses double
+ALLFLAGS += -DOXC_FORCE_DOUBLE=y
+
 # TODO: make good place
 PICOC_DIR = /home/atu/proj/misc/picoc
 
@@ -41,9 +44,12 @@ SRCS += table.c
 SRCS += type.c
 SRCS += variable.c
 
+SRCS += oxc_floatfun.c
+
 SRCS += library_stm32oxc.c
 SRCS += platform_stm32oxc.c
 SRCS += oxc_picoc_math.c
+SRCS += oxc_picoc_misc.cpp
 
 
 

@@ -23,7 +23,10 @@ extern "C" {
 void oxc_picoc_math_init( Picoc *pc );
 }
 double d_arr[4] = { 1.234, 9.87654321e-10, 5.432198765e12, 1.23456789e-100 };
-char d_char[] = "ABCDE";
+double *d_ptr = d_arr;
+char a_char[] = "ABCDE";
+char *p_char = a_char;
+void oxc_picoc_misc_init( Picoc *pc );
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -130,11 +133,13 @@ int init_picoc( Picoc *ppc )
   }
   PicocInitialise( ppc, PICOC_STACK_SIZE );
   oxc_picoc_math_init( ppc );
+  oxc_picoc_misc_init( ppc );
   PicocIncludeAllSystemHeaders( ppc );
   VariableDefinePlatformVar( ppc, nullptr, "__a",         &(ppc->IntType), (union AnyValue *)&(UVAR('a')), TRUE );
-  VariableDefinePlatformVar( ppc, nullptr, "UVAR",      ppc->IntArrayType, (union AnyValue *)(user_vars),  TRUE );
   VariableDefinePlatformVar( ppc, nullptr, "d_arr",      ppc->FPArrayType, (union AnyValue *)d_arr,        TRUE );
-  VariableDefinePlatformVar( ppc, nullptr, "d_char",   ppc->CharArrayType, (union AnyValue *)d_char,       TRUE );
+  VariableDefinePlatformVar( ppc, nullptr, "d_ptr",        ppc->FPPtrType, (union AnyValue *)&d_ptr,       TRUE );
+  VariableDefinePlatformVar( ppc, nullptr, "a_char",   ppc->CharArrayType, (union AnyValue *)a_char,       TRUE );
+  VariableDefinePlatformVar( ppc, nullptr, "p_char",     ppc->CharPtrType, (union AnyValue *)&p_char,      TRUE );
   return 0;
 }
 
