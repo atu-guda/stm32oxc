@@ -2,7 +2,7 @@
 #define _OXC_ADS1115_H
 
 // 16-bit 4 input xx ADC I2C
-// work with ADS1015 - 12 bit ADC - anly different timings
+// work with ADS1015 - 12 bit ADC - only different timings
 
 #include <oxc_i2c.h>
 

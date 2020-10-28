@@ -97,28 +97,108 @@ void C_pr( struct ParseState *Parser, struct Value *ReturnValue, struct Value **
 {
   struct Value *na = Param[0];
   char sep =  (char)( na->Val->Integer );
+
   for( int i=1; i<NumArgs; ++i ) {
     na = (struct Value *)( (char *)na + MEM_ALIGN(sizeof(struct Value) + TypeStackSizeValue(na)) );
-    std_out << "na= " << HexInt( na ) << " Typ= " << HexInt( na->Typ );
-    delay_ms( 100 );
-    if( na->Typ ) {
-       std_out << " Typ->Base= " << HexInt( na->Typ->Base );
+    if( ! na->Typ ) {
+      std_out << "?X?";
+      continue;
     }
-    delay_ms( 100 );
-    std_out << " Val= " << HexInt( na->Val )
-            << " Val->Typ=" << HexInt(na->Val->Typ)
-            << " int= " << ( na->Val->Integer ) << ' ';
-    delay_ms( 100 );
-    // if( (uint32_t)(na->Val->Typ) > 0x08000000 &&  (uint32_t)(na->Val->Typ) < 0x30000000 ) { // real mem: flash or ram
-    //   std_out << " Val->Typ->Base: " << HexInt(na->Val->Typ->Base);
-    // }
+
+
+    switch( na->Typ->Base ) {
+      case TypeInt: case TypeShort: case TypeLong: case TypeUnsignedInt:
+      case TypeUnsignedShort: case TypeUnsignedChar: case TypeUnsignedLong: case TypeEnum:
+        std_out << na->Val->Integer;
+        break;
+      case TypeChar:
+        std_out << (char)(na->Val->Integer);
+        break;
+      case TypePointer:
+        if( !na->Val->Pointer ) {
+          std_out << "null";
+          break;
+        }
+        if( na->Typ->FromType->Base == TypeChar ) {
+          std_out << (const char*)(na->Val->Pointer);
+        } else {
+          std_out << "?P?";
+        }
+        break;
+      case TypeFP:
+        std_out << na->Val->FP;
+        break;
+      default:
+        std_out << '?' << (int)(na->Typ->Base) << '?';
+        break;
+    }
     if( sep != '\0' ) {
       std_out << sep;
     }
-    std_out << NL; // TMP: debug
-    delay_ms( 100 );
   }
 }
+
+void C_char2hex( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs);
+void C_char2hex( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
+{
+  uint8_t v =  (uint8_t)( Param[0]->Val->Integer );
+  char *s = (char*)( Param[1]->Val->Pointer );
+  ReturnValue->Val->Pointer = char2hex( v, s );
+}
+
+void C_short2hex( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs);
+void C_short2hex( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
+{
+  uint16_t v =  (uint16_t)( Param[0]->Val->Integer );
+  char *s = (char*)( Param[1]->Val->Pointer );
+  ReturnValue->Val->Pointer = short2hex( v, s );
+}
+
+
+void C_word2hex( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs);
+void C_word2hex( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
+{
+  uint32_t v =  (uint32_t)( Param[0]->Val->Integer );
+  std_out << "## v= " << HexInt(v) << NL;
+  char *s = (char*)( Param[1]->Val->Pointer );
+  ReturnValue->Val->Pointer = word2hex( v, s );
+}
+
+void C_rev16( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs);
+void C_rev16( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
+{
+  uint16_t v =  (uint16_t)( Param[0]->Val->Integer );
+  ReturnValue->Val->Integer = __REV16( v );
+}
+
+void C_imin( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs);
+void C_imin( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
+{
+  ReturnValue->Val->Integer = imin( Param[0]->Val->Integer, Param[1]->Val->Integer );
+}
+
+void C_imax( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs);
+void C_imax( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
+{
+  ReturnValue->Val->Integer = imax( Param[0]->Val->Integer, Param[1]->Val->Integer );
+}
+
+void C_isign( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs);
+void C_isign( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
+{
+  ReturnValue->Val->Integer = sign( Param[0]->Val->Integer );
+}
+
+void C_i2dec( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs);
+void C_i2dec( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
+{
+  int n           = Param[0]->Val->Integer;
+  char *s         = (char*)Param[1]->Val->Pointer;
+  unsigned min_sz = Param[2]->Val->Integer;
+  char fill_ch    = (char)(Param[3]->Val->Integer);
+  ReturnValue->Val->Pointer = i2dec( n, s, min_sz, fill_ch );
+}
+
 
 struct LibraryFunction oxc_picoc_misc_Functions[] =
 {
@@ -135,6 +215,14 @@ struct LibraryFunction oxc_picoc_misc_Functions[] =
   { C_pr_s,          "void pr_s(char*);" },
   { C_pr_d,          "void pr_d(double);" },
   { C_pr,            "void pr(char,...);" },
+  { C_char2hex,      "char* char2hex(char,char*);" },
+  { C_short2hex,     "char* short2hex(int,char*);" },
+  { C_word2hex,      "char* word2hex(int,char*);" },
+  { C_rev16,         "short rev16(short);" },
+  { C_imin,          "int imin(int,int);" },
+  { C_imin,          "int imax(int,int);" },
+  { C_isign,         "int isign(int);" },
+  { C_i2dec,         "char* i2dec(int,char*,int,char);" },
   { NULL,            NULL }
 };
 
