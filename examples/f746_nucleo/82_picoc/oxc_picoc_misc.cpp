@@ -22,6 +22,13 @@ void C_delay_ms_brk( struct ParseState *Parser, struct Value *ReturnValue, struc
   ReturnValue->Val->Integer = rc;
 }
 
+void C_delay_ms_until_brk( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs);
+void C_delay_ms_until_brk( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
+{
+  int rc = delay_ms_until_brk( (uint32_t*)Param[0]->Val->Pointer, Param[1]->Val->Integer );
+  ReturnValue->Val->Integer = rc;
+}
+
 void C_leds_set( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs);
 void C_leds_set( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
 {
@@ -202,27 +209,28 @@ void C_i2dec( struct ParseState *Parser, struct Value *ReturnValue, struct Value
 
 struct LibraryFunction oxc_picoc_misc_Functions[] =
 {
-  { C_delay_ms,      "void delay_ms(int);" },
-  { C_delay_ms_brk,  "int delay_ms_brk(int);" },
-  { C_leds_set,      "void leds_set(int);" },
-  { C_leds_reset,    "void leds_reset(int);" },
-  { C_leds_toggle,   "void leds_toggle(int);" },
-  { C_pr_i,          "void pr_i(int);" },
-  { C_pr_ih,         "void pr_ih(int);" },
-  { C_pr_i_l,        "void pr_i_l(int,...);" },
-  { C_pr_i_n,        "void pr_i_n(int*,int);" },
-  { C_pr_c,          "void pr_c(int);" },
-  { C_pr_s,          "void pr_s(char*);" },
-  { C_pr_d,          "void pr_d(double);" },
-  { C_pr,            "void pr(char,...);" },
-  { C_char2hex,      "char* char2hex(char,char*);" },
-  { C_short2hex,     "char* short2hex(int,char*);" },
-  { C_word2hex,      "char* word2hex(int,char*);" },
-  { C_rev16,         "short rev16(short);" },
-  { C_imin,          "int imin(int,int);" },
-  { C_imin,          "int imax(int,int);" },
-  { C_isign,         "int isign(int);" },
-  { C_i2dec,         "char* i2dec(int,char*,int,char);" },
+  { C_delay_ms,            "void delay_ms(int);" },
+  { C_delay_ms_brk,        "int delay_ms_brk(int);" },
+  { C_delay_ms_until_brk,  "int delay_ms_until_brk(int*,int);" },
+  { C_leds_set,            "void leds_set(int);" },
+  { C_leds_reset,          "void leds_reset(int);" },
+  { C_leds_toggle,         "void leds_toggle(int);" },
+  { C_pr_i,                "void pr_i(int);" },
+  { C_pr_ih,               "void pr_ih(int);" },
+  { C_pr_i_l,              "void pr_i_l(int,...);" },
+  { C_pr_i_n,              "void pr_i_n(int*,int);" },
+  { C_pr_c,                "void pr_c(int);" },
+  { C_pr_s,                "void pr_s(char*);" },
+  { C_pr_d,                "void pr_d(double);" },
+  { C_pr,                  "void pr(char,...);" },
+  { C_char2hex,            "char* char2hex(char,char*);" },
+  { C_short2hex,           "char* short2hex(int,char*);" },
+  { C_word2hex,            "char* word2hex(int,char*);" },
+  { C_rev16,               "short rev16(short);" },
+  { C_imin,                "int imin(int,int);" },
+  { C_imin,                "int imax(int,int);" },
+  { C_isign,               "int isign(int);" },
+  { C_i2dec,               "char* i2dec(int,char*,int,char);" },
   { NULL,            NULL }
 };
 
