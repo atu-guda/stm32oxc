@@ -340,30 +340,35 @@ ifeq "$(USE_OXC_DMA)" "y"
   ALLFLAGS += -DUSE_OXC_DMA
 endif
 
-ifeq "$(USE_OXC_SD)" "y"
+ifeq "$(USE_OXC_SDFAT)" "y"
   USE_OXC = y
-  # SRCS += oxc_sd.cpp
-  SRCS += stm32$(MCSUFF)xx_hal_sd.c
-  SRCS += stm32$(MCSUFF)xx_ll_sdmmc.c
-  ALLFLAGS += -DUSE_OXC_SD
-  # TODO: USE_FATFS
-  ifeq "$(USE_OXC_SDFAT)"  "y"
-    ADDSRC +=     /usr/share/fatfs/source
-    ALLFLAGS += -I/usr/share/fatfs/source -DUSE_OXC_SDFAT
-    SRCS += bsp_driver_sd.c
-    SRCS += ff.c
-    SRCS += ffunicode.c
-    SRCS += ff_gen_drv_st.c
-    SRCS += diskio_st.c
-    SRCS += sd_diskio.c
-    SRCS += fatfs_sd_st.c
-    SRCS += oxc_fs_cmd0.cpp
-    ifeq "$(USE_FREERTOS)" "y"
-      SRCS += oxc_ff_syncobj.cpp
-    endif
-  endif
+  USE_OXC_SD = y
+  USE_OXC_FATFS = y
+  ALLFLAGS += -DUSE_OXC_SDFAT
 endif
 
+ifeq "$(USE_OXC_SD)" "y"
+  USE_OXC = y
+  SRCS += stm32$(MCSUFF)xx_hal_sd.c
+  SRCS += stm32$(MCSUFF)xx_ll_sdmmc.c
+  SRCS += bsp_driver_sd.c
+  ALLFLAGS += -DUSE_OXC_SD
+endif
+
+ifeq "$(USE_OXC_FATFS)" "y"
+  ADDSRC +=     /usr/share/fatfs/source
+  ALLFLAGS += -I/usr/share/fatfs/source -DUSE_OXC_FATFS
+  SRCS += ff.c
+  SRCS += ffunicode.c
+  SRCS += ff_gen_drv_st.c
+  SRCS += diskio_st.c
+  SRCS += sd_diskio.c
+  SRCS += fatfs_sd_st.c
+  SRCS += oxc_fs_cmd0.cpp
+  ifeq "$(USE_FREERTOS)" "y"
+    SRCS += oxc_ff_syncobj.cpp
+  endif
+endif
 
 ifeq "$(USE_OXC_DEBUG)" "y"
   USE_OXC = y
