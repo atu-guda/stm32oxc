@@ -33,6 +33,10 @@ STMBOARDDIR=$(STM32_HAL_FW_DIR)/Drivers/BSP/$(BOARDNAME)
 STMCOMPONENTS=$(STM32_HAL_FW_DIR)/Drivers/BSP/Components
 OXCLD = $(OXCDIR)/ld
 
+ifndef FATFS_DIR
+  FATFS_DIR := /usr/share/fatfs/source
+endif
+
 ifndef STM32_HAL_REPODIR
   ifdef OXC_USE_GLOBAL_REPO
     STM32_HAL_REPODIR = /usr/share/stm32cube/Repository
@@ -394,8 +398,8 @@ ifeq "$(USE_OXC_SD)" "y"
 endif
 
 ifeq "$(USE_OXC_FATFS)" "y"
-  ADDSRC +=     /usr/share/fatfs/source
-  ALLFLAGS += -I/usr/share/fatfs/source -DUSE_OXC_FATFS
+  ADDSRC   +=   $(FATFS_DIR)
+  ALLFLAGS += -I$(FATFS_DIR) -DUSE_OXC_FATFS
   SRCS += ff.c
   SRCS += ffunicode.c
   SRCS += ff_gen_drv_st.c
