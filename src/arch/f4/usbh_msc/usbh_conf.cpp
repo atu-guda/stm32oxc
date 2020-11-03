@@ -54,6 +54,10 @@
 /* Private variables ---------------------------------------------------------*/
 HCD_HandleTypeDef hhcd;
 
+#ifdef BOARD_USB_DEFAULT_PWR_GPIO
+  PinOut usb_pwr_pin( BOARD_USB_DEFAULT_PWR_GPIO, BOARD_USB_DEFAULT_PWR_PINNUM );
+#endif
+
 /*******************************************************************************
                        HCD BSP Routines
 *******************************************************************************/
@@ -62,45 +66,31 @@ HCD_HandleTypeDef hhcd;
   * @param  hhcd: HCD handle
   * @retval None
   */
-void HAL_HCD_MspInit(HCD_HandleTypeDef *hhcd)
+#ifndef OXC_NEED_SPECIAL_HCD_MSPINIT
+void HAL_HCD_MspInit( HCD_HandleTypeDef *hhcd )
 {
-  // TODO: rewrite to oxc funcs
-  GPIO_InitTypeDef  GPIO_InitStruct;
+  BOARD_USB_DEFAULT_ENABLE;
 
-  /* Configure USB FS GPIOs */
-  __HAL_RCC_GPIOA_CLK_ENABLE();
-  __HAL_RCC_GPIOG_CLK_ENABLE();
+  BOARD_USB_DEFAULT_GPIO.cfgAF_N( BOARD_USB_DEFAULT_DPDM_PINS, BOARD_USB_DEFAULT_GPIO_AF );
 
-  /*USB DM and DP */
-  GPIO_InitStruct.Pin = (GPIO_PIN_11 | GPIO_PIN_12);
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_HIGH;
-  GPIO_InitStruct.Alternate = GPIO_AF10_OTG_FS;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  #ifdef BOARD_USB_DEFAULT_VBUS_PIN
+    BOARD_USB_DEFAULT_GPIO.cfgIn_N( BOARD_USB_DEFAULT_VBUS_PIN );
+  #endif
 
-  /*USB ID */
-  GPIO_InitStruct.Pin = GPIO_PIN_10;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
-  GPIO_InitStruct.Alternate = GPIO_AF10_OTG_FS;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  #ifdef BOARD_USB_DEFAULT_ID_PIN
+    BOARD_USB_DEFAULT_GPIO.cfgAF_N( BOARD_USB_DEFAULT_ID_PIN, BOARD_USB_DEFAULT_GPIO_AF, true );
+  #endif
 
-  /* Configure POWER_SWITCH IO pin TODO: add to config */
-  GPIO_InitStruct.Pin = GPIO_PIN_6;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
+  #ifdef BOARD_USB_DEFAULT_PWR_GPIO
+    usb_pwr_pin.initHW();
+    usb_pwr_pin.reset();
+  #endif
 
-  /* Enable USB FS Clocks */
-  __HAL_RCC_USB_OTG_FS_CLK_ENABLE();
+  HAL_NVIC_SetPriority( BOARD_USB_DEFAULT_IRQ, BOARD_USB_DEFAULT_IRQ_PRTY, 0 );
 
-  /* Set USBFS Interrupt priority */
-  HAL_NVIC_SetPriority(OTG_FS_IRQn, 6, 0);
-
-  /* Enable USBFS Interrupt */
-  HAL_NVIC_EnableIRQ( OTG_FS_IRQn );
+  HAL_NVIC_EnableIRQ( BOARD_USB_DEFAULT_IRQ );
 }
+#endif
 
 /**
   * @brief  DeInitializes the HCD MSP.
@@ -109,7 +99,12 @@ void HAL_HCD_MspInit(HCD_HandleTypeDef *hhcd)
   */
 void HAL_HCD_MspDeInit( HCD_HandleTypeDef *hhcd )
 {
-  __HAL_RCC_USB_OTG_FS_CLK_DISABLE();
+  // __HAL_RCC_USB_OTG_FS_CLK_DISABLE(); ?? BSP
+}
+
+void BOARD_USB_DEFAULT_IRQHANDLER(void)
+{
+  HAL_HCD_IRQHandler( &hhcd );
 }
 
 /*******************************************************************************
@@ -187,7 +182,7 @@ void HAL_HCD_HC_NotifyURBChange_Callback( HCD_HandleTypeDef *hhcd, uint8_t chnum
 USBH_StatusTypeDef USBH_LL_Init( USBH_HandleTypeDef *phost )
 {
   /* Set the LL Driver parameters */
-  hhcd.Instance                 = USB_OTG_FS; // TODO: from bsp
+  hhcd.Instance                 = BOARD_USB_DEFAULT_INSTANCE;
   hhcd.Init.Host_channels       = 11;
   hhcd.Init.dma_enable          = 0;
   hhcd.Init.low_power_enable    = 0;
@@ -387,12 +382,10 @@ USBH_URBStateTypeDef USBH_LL_GetURBState( USBH_HandleTypeDef *phost, uint8_t pip
   */
 USBH_StatusTypeDef USBH_LL_DriverVBUS( USBH_HandleTypeDef *phost, uint8_t state )
 {
-  // TODO: rewrite
-  if( state == 0 ) {
-    HAL_GPIO_WritePin(GPIOG, GPIO_PIN_6, GPIO_PIN_RESET);
-  } else {
-    HAL_GPIO_WritePin(GPIOG, GPIO_PIN_6, GPIO_PIN_SET);
-  }
+  #ifdef BOARD_USB_DEFAULT_PWR_GPIO
+    usb_pwr_pin.sr( state );
+  #endif
+
   HAL_Delay(200);
   return USBH_OK;
 }

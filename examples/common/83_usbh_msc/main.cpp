@@ -16,7 +16,6 @@ BOARD_CONSOLE_DEFINES_UART;
 
 const char* common_help_string = "Appication to test USB host msc (flash)" NL;
 
-extern HCD_HandleTypeDef hhcd;
 USBH_HandleTypeDef hUSB_Host;
 char USBDISKPath[8]; // USB Host logical drive path
 uint8_t sd_buf[512]; // one sector
@@ -134,11 +133,6 @@ void USBH_HandleEvent( USBH_HandleTypeDef *phost, uint8_t id )
     default:
       break;
   }
-}
-
-void OTG_FS_IRQHandler(void)
-{
-  HAL_HCD_IRQHandler( &hhcd );
 }
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
