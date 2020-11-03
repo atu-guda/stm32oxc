@@ -82,6 +82,10 @@
   #define USE_HAL_PCD_REGISTER_CALLBACKS 0
 #endif
 
+#ifndef USE_HAL_HCD_REGISTER_CALLBACKS
+  #define USE_HAL_HCD_REGISTER_CALLBACKS 0
+#endif
+
 
 #ifndef NO_COMMON_HAL_MODULES
   #define HAL_MODULE_ENABLED
@@ -119,6 +123,12 @@
     #define USE_OXC_CONSOLE
   #endif
 #endif
+
+#ifdef USE_USBH_LIB
+  #define HAL_HCD_MODULE_ENABLED
+  #define HAL_PCD_MODULE_ENABLED
+#endif
+
 
 #ifdef USE_OXC_I2C
   #define HAL_I2C_MODULE_ENABLED

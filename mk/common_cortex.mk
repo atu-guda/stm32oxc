@@ -243,6 +243,42 @@ ifeq "$(USE_USBD_LIB)" "y"
   ALLFLAGS += -DUSE_USBD_LIB
 endif
 
+ifeq "$(USE_OXC_MSCFAT)" "y"
+  USE_USBH_MSC = y
+  USE_OXC_FATFS = y
+  ALLFLAGS += -DUSE_OXC_MSCFAT
+endif
+
+ifeq "$(USE_USBH_MSC)" "y"
+  USE_USBH_LIB = y
+  ALLFLAGS += -DUSE_USBH_MSC -I$(OXCINCARCH)/usbh_msc
+  STM_HAL_INC += -I$(STM32_HAL_FW_DIR)/Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Inc
+  SRCPATHS += $(STM32_HAL_FW_DIR)/Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Src
+  SRCPATHS += $(OXCSRCARCH)/usbh_msc
+  SRCS += usbh_msc.c
+  SRCS += usbh_msc_bot.c
+  SRCS += usbh_msc_scsi.c
+  SRCS += usbh_conf.cpp
+  SRCS += usbh_diskio.cpp
+  # SRCS += 
+endif
+
+ifeq "$(USE_USBH_LIB)" "y"
+  $(info "Used USBH_LIB" )
+  STM_HAL_INC += -I$(STM32_HAL_FW_DIR)/Middlewares/ST/STM32_USB_Host_Library/Core/Inc
+  SRCPATHS += $(STM32_HAL_FW_DIR)/Middlewares/ST/STM32_USB_Host_Library/Core/Src
+  # # USB: hal:
+  SRCS += stm32$(MCSUFF)xx_ll_usb.c
+  SRCS += stm32$(MCSUFF)xx_hal_hcd.c
+  # # USB: lib:
+  SRCS += usbh_core.c
+  SRCS += usbh_ctlreq.c
+  SRCS += usbh_ioreq.c
+  SRCS += usbh_pipes.c
+  ALLFLAGS += -DUSE_USBH_LIB
+endif
+
+
 ifeq "$(USE_OXC_CONSOLE)" "y"
   # $(info "Used console" )
   USE_OXC_DEVIO = y
@@ -344,6 +380,7 @@ ifeq "$(USE_OXC_SDFAT)" "y"
   USE_OXC = y
   USE_OXC_SD = y
   USE_OXC_FATFS = y
+  SRCS += fatfs_sd_st.c
   ALLFLAGS += -DUSE_OXC_SDFAT
 endif
 
@@ -352,6 +389,7 @@ ifeq "$(USE_OXC_SD)" "y"
   SRCS += stm32$(MCSUFF)xx_hal_sd.c
   SRCS += stm32$(MCSUFF)xx_ll_sdmmc.c
   SRCS += bsp_driver_sd.c
+  SRCS += sd_diskio.c
   ALLFLAGS += -DUSE_OXC_SD
 endif
 
@@ -362,8 +400,6 @@ ifeq "$(USE_OXC_FATFS)" "y"
   SRCS += ffunicode.c
   SRCS += ff_gen_drv_st.c
   SRCS += diskio_st.c
-  SRCS += sd_diskio.c
-  SRCS += fatfs_sd_st.c
   SRCS += oxc_fs_cmd0.cpp
   ifeq "$(USE_FREERTOS)" "y"
     SRCS += oxc_ff_syncobj.cpp

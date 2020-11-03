@@ -59,7 +59,7 @@ void BOARD_USB_DEFAULT_IRQHANDLER(void)
   // leds.reset( BIT0 );
 }
 
-#if defined(STM43H7)
+#if defined(STM32H7)
 void OTG_FS_EP1_OUT_IRQHandler(void)
 {
   // leds.set( BIT1 );
