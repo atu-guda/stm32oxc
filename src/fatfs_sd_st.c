@@ -8,7 +8,7 @@ char SD_Path[8];  /* SD logical drive path */
 /* When multi-partition feature is enabled (1), each logical drive number is bound to arbitrary physical drive and partition
 listed in the VolToPart[] */
 
-#ifdef FF_MULTI_PARTITION
+#if defined(FF_MULTI_PARTITION) && FF_MULTI_PARTITION != 0
 PARTITION VolToPart[10];
 #endif
 

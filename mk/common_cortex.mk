@@ -385,6 +385,7 @@ ifeq "$(USE_OXC_SDFAT)" "y"
   USE_OXC_SD = y
   USE_OXC_FATFS = y
   SRCS += fatfs_sd_st.c
+  SRCS += sd_diskio.c
   ALLFLAGS += -DUSE_OXC_SDFAT
 endif
 
@@ -393,7 +394,6 @@ ifeq "$(USE_OXC_SD)" "y"
   SRCS += stm32$(MCSUFF)xx_hal_sd.c
   SRCS += stm32$(MCSUFF)xx_ll_sdmmc.c
   SRCS += bsp_driver_sd.c
-  SRCS += sd_diskio.c
   ALLFLAGS += -DUSE_OXC_SD
 endif
 

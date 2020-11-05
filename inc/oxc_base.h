@@ -186,7 +186,7 @@ void vApplicationIdleHook(void);
 void vApplicationTickHook(void);
 // misc functions
 void _exit( int rc );
-void die( uint16_t n );
+[[ noreturn ]] void die( uint16_t n );
 void Error_Handler( int rc ); // defined at user program
 
 void approx_delay_calibrate(void);
