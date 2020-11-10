@@ -15,6 +15,7 @@ USE_OXC_CONSOLE_DEFAULT = y
 # USE_OXC_SD  = y
 # USE_OXC_SDFAT = y
 # USE_FREERTOS = y
+USE_OXC_PICOC = y
 # NOUSE_OXC_OSFUN = y
 # FREERTOS_HEAP = heap_2.c # # default: heap_3.c
 # REQUIRE_SPECIAL_CLOCK = y
@@ -32,24 +33,7 @@ ALLFLAGS += -I$(PICOC_DIR)
 
 SRCS  = main.cpp
 
-SRCS += clibrary.c
-SRCS += debug.c
-SRCS += expression.c
-SRCS += heap.c
-SRCS += include.c
-SRCS += lex.c
-SRCS += parse.c
-SRCS += platform.c
-SRCS += table.c
-SRCS += type.c
-SRCS += variable.c
-
 SRCS += oxc_floatfun.c
-
-SRCS += library_stm32oxc.c
-SRCS += platform_stm32oxc.c
-SRCS += oxc_picoc_math.c
-SRCS += oxc_picoc_misc.cpp
 
 
 

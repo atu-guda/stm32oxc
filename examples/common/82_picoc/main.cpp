@@ -2,7 +2,7 @@
 
 #include <stdarg.h>
 
-#include <picoc.h>
+#include <oxc_picoc.h>
 
 using namespace std;
 using namespace SMLRL;

@@ -264,7 +264,6 @@ ifeq "$(USE_USBH_MSC)" "y"
   SRCS += usbh_msc_scsi.c
   SRCS += usbh_conf.cpp
   SRCS += usbh_diskio.cpp
-  # SRCS += 
 endif
 
 ifeq "$(USE_USBH_LIB)" "y"
@@ -475,6 +474,29 @@ ifeq "$(USE_FONTS)" "y"
   SRCS += font16.c
   SRCS += font20.c
   SRCS += font24.c
+endif
+
+
+ifeq "$(USE_OXC_PICOC)" "y"
+  ALLFLAGS += -I$(OXCINC)/picoc
+  SRCPATHS += $(OXCSRC)/picoc
+  SRCS += oxc_picoc_clibrary.c
+  SRCS += oxc_picoc_debug.c
+  SRCS += oxc_picoc_expression.c
+  SRCS += oxc_picoc_heap.c
+  SRCS += oxc_picoc_include.c
+  SRCS += oxc_picoc_lex.c
+  SRCS += oxc_picoc_parse.c
+  SRCS += oxc_picoc_platform.c
+  SRCS += oxc_picoc_table.c
+  SRCS += oxc_picoc_type.c
+  SRCS += oxc_picoc_variable.c
+
+  SRCS += oxc_picoc_library.c
+  SRCS += oxc_picoc_math.c
+  SRCS += oxc_picoc_misc.cpp
+  SRCS += oxc_picoc_platform_stm32.c
+  # SRCS += oxc_floatfun.c
 endif
 
 
