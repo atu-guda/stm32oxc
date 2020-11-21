@@ -1,3 +1,5 @@
+#include <oxc_base.h>
+
 #include <picoc.h>
 #include <interpreter.h>
 

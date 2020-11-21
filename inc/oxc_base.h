@@ -67,6 +67,9 @@ typedef const char *const ccstr;
 #define ARR_SZ(x) (sizeof(x) / sizeof(x[0]))
 #define ARR_AND_SZ(x) x, (sizeof(x) / sizeof(x[0]))
 
+#ifdef __cplusplus
+#include <type_traits>
+
 inline constexpr uint32_t make_bit_mask( uint8_t start, uint8_t n )
 {
   return ( (uint32_t)(0xFFFFFFFF) << ( 32 - n ) ) >> ( 32 - n - start );
@@ -85,8 +88,6 @@ inline bool check_bit( uint32_t v, uint8_t pos )
   return v & ( 1u << pos );
 }
 
-#ifdef __cplusplus
-#include <type_traits>
 
 template<typename T>
 inline void set_bit( T &v, uint8_t pos )
@@ -186,7 +187,7 @@ void vApplicationIdleHook(void);
 void vApplicationTickHook(void);
 // misc functions
 void _exit( int rc );
-[[ noreturn ]] void die( uint16_t n );
+void die( uint16_t n ) __attribute__((noreturn));
 void Error_Handler( int rc ); // defined at user program
 
 void approx_delay_calibrate(void);
