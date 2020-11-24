@@ -30,7 +30,7 @@ class DevIO : public DevOut, public DevIn {
    virtual int puts_s( const char *s );
    int putc( char b )  override { return write( &b, 1 ); };
    int putc_s( char b ) { return write_s( &b, 1 ); };
-   int wait_eot( int w = 0 ); // w=0 means forewer, 1 - ok 0 - overtime
+   int wait_eot( int w = 0 ); // w=0 means forever, 1 - ok 0 - overtime
    virtual void flush_out() override { wait_eot( wait_tx ); };
    virtual const char* getBuf() const override { return obuf.getBuf(); }
 
@@ -53,7 +53,7 @@ class DevIO : public DevOut, public DevIn {
    void charsFromIrq( const char *s, int l ); // virtual?
 
    virtual void start_transmit() {};
-   void testCbreak( char c ); // called from funcs, called from IRQ!
+   void testCbreak( char c ); // called from function, called from IRQ!
 
   protected:
    // TODO: open mode + flags

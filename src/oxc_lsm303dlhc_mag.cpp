@@ -10,7 +10,7 @@ bool LSM303DHLC_Mag::init( uint8_t odr, uint8_t sens )
   if( send_reg1_8bit( reg_crb, sens ) != 1 ) {
     return false;
   }
-  if( send_reg1_8bit( reg_mode, 0 ) != 1 ) { // 0 = continous 1=single_shot
+  if( send_reg1_8bit( reg_mode, 0 ) != 1 ) { // 0 = continuous 1=single_shot
     return false;
   }
   return true;

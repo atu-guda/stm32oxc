@@ -25,7 +25,7 @@ class RingBuf {
    unsigned isFull() const { return sz == cap; }
    int put( char c ); // blocks, wait
    int tryPut( char c ); // noblocks, fail if busy
-   int puts( const char *s ); // blocks, in one lock, ret: number of char or error
+   int puts( const char *s ); // blocks, in one lock, returns: number of chars or error
    int puts( const char *s, unsigned l ); // blocks, given length
    int puts_ato( const char *s ); // blocks, all or none
    int puts_ato( const char *s, unsigned l ); // blocks, all or none

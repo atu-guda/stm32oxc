@@ -44,7 +44,7 @@ void UsartIO::handleIRQ()
 
   // leds.set( BIT3 ); // DEBUG
 
-  if( status & UART_FLAG_RXNE ) { // char recived
+  if( status & UART_FLAG_RXNE ) { // char received
     // leds.set( BIT2 );
     ++n_work;
     char cr = recvRaw();

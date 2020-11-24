@@ -2,7 +2,7 @@
 #include <oxc_base.h>
 #include <oxc_gpio.h>
 
-// if You need more then one UART,  of requre special actions, do not use
+// if You need more then one UART,  of require special actions, do not use
 // this file.
 
 
@@ -11,7 +11,7 @@ int init_uart( UART_HandleTypeDef *uah, int baud )
   if( !uah ) {
     return 0;
   }
-  memset( uah, 0, sizeof(*uah) ); // to set to 0 all advanced featires, if any
+  memset( uah, 0, sizeof(*uah) ); // to set to 0 all advanced features, if any
   uah->Instance          = BOARD_UART_DEFAULT;
   uah->Init.BaudRate     = baud;
   uah->Init.WordLength   = UART_WORDLENGTH_8B;
