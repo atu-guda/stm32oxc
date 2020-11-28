@@ -1,4 +1,4 @@
-#include <interpreter.h>
+#include <oxc_picoc_interpreter.h>
 // TODO: split
 #include <math.h>
 #include <stdio.h>
@@ -15,16 +15,16 @@ void stm32oxc_SetupFunc( Picoc *pc )
 {
 }
 
-void C_lineno (struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs);
-void C_lineno (struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
+void C_lineno( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
+void C_lineno( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
 {
-    ReturnValue->Val->Integer = Parser->Line;
+  ReturnValue->Val->Integer = Parser->Line;
 }
 
 
 
-void C_xprintf (struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs);
-void C_xprintf (struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
+void C_xprintf( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
+void C_xprintf( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
 {
   printf( "# dbg: NumArgs= %d\n", NumArgs );
   struct Value *na = Param[0];
@@ -48,7 +48,6 @@ struct LibraryFunction stm32oxc_Functions[] =
 
 void PlatformLibraryInit(Picoc *pc)
 {
-
   IncludeRegister( pc, "picoc_stmoxc.h", &stm32oxc_SetupFunc, &stm32oxc_Functions[0], NULL);
 }
 

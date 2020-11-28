@@ -479,6 +479,7 @@ endif
 
 ifeq "$(USE_OXC_PICOC)" "y"
   ALLFLAGS += -I$(OXCINC)/picoc
+  ALLFLAGS += -DOXC_FORCE_DOUBLE=y
   SRCPATHS += $(OXCSRC)/picoc
   SRCS += oxc_picoc_clibrary.c
   SRCS += oxc_picoc_debug.c

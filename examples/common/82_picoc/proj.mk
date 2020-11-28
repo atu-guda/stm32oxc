@@ -23,13 +23,8 @@ USE_OXC_PICOC = y
 # NOUSE_DEFAULT_UART_INIT = y
 
 # picoc uses double
-ALLFLAGS += -DOXC_FORCE_DOUBLE=y
+#ALLFLAGS += -DOXC_FORCE_DOUBLE=y
 
-# TODO: make good place
-PICOC_DIR = /home/atu/proj/misc/picoc
-
-SRCPATHS += $(PICOC_DIR)
-ALLFLAGS += -I$(PICOC_DIR)
 
 SRCS  = main.cpp
 
