@@ -27,6 +27,7 @@ FATFS fs;
 int isUSBH_on = 0, isMSC_ready = 0;
 
 void USBH_HandleEvent( USBH_HandleTypeDef *phost, uint8_t id );
+int init_usbh_msc();
 
 
 #define PICOC_STACK_SIZE (32*1024)
@@ -74,6 +75,12 @@ int main(void)
   fs.fs_type = 0; // none
   fspath[0] = '\0';
 
+  cmdline_handlers[0] = picoc_cmdline_handler;
+  cmdline_handlers[1] = nullptr;
+
+  pc.InteractiveHead = nullptr;
+  init_picoc( &pc );
+
   BOARD_POST_INIT_BLINK;
   leds.reset( 0xFF );
 
@@ -83,10 +90,32 @@ int main(void)
 
   oxc_add_aux_tick_fun( led_task_nortos );
 
+  UVAR('e') = init_usbh_msc();
+
   std_main_loop_nortos( &srl, idle_main_task );
 
   return 0;
 }
+
+// where to call it? requires main loop idle actions
+int init_usbh_msc()
+{
+  int rc = FATFS_LinkDriver( &USBH_Driver, USBDISKPath );
+  if( rc != 0 ) {
+    std_out << "# Error LinkDriver: " << rc << NL;
+    return 1;
+  }
+
+  USBH_Init( &hUSB_Host, USBH_HandleEvent, 0 );
+
+  USBH_RegisterClass( &hUSB_Host, USBH_MSC_CLASS );
+
+  isUSBH_on = 1;
+  USBH_Start( &hUSB_Host );
+
+  return 0;
+}
+
 
 int cmd_test0( int argc, const char * const * argv )
 {
@@ -94,27 +123,31 @@ int cmd_test0( int argc, const char * const * argv )
 
   std_out << "# Test: " << NL;
 
-  int rc = FATFS_LinkDriver( &USBH_Driver, USBDISKPath );
-  if( rc != 0 ) {
-    std_out << "# Error LinkDriver: " << rc << NL;
-    return 1;
+  return 0;
+}
+
+int picoc_cmdline_handler( char *s )
+{
+  // static int nnn = 0;
+
+  if( !s  ||  s[0] != ';' ) { // not my
+    return -1;
   }
 
-  // std_out << "# USBH_Init: " NL;
-  // delay_ms( 10 );
-  USBH_Init( &hUSB_Host, USBH_HandleEvent, 0);
+  const char *cmd = s + 1;
+  std_out << NL "# C: cmd= \"" << cmd << '"' << NL;
+  delay_ms( 10 );
+  int ep_rc =  PicocPlatformSetExitPoint( &pc );
+  if( ep_rc == 0 ) {
+    PicocParse( &pc, "cmd", cmd, strlen(cmd), TRUE, TRUE, FALSE, TRUE );
+  } else {
+    std_out << "## Exit point: " << ep_rc << NL;
+  }
 
-  // std_out << "# USBH_RegisterClass" NL;
-  // delay_ms( 10 );
-  USBH_RegisterClass( &hUSB_Host, USBH_MSC_CLASS );
+  int rc = 0;
 
-  // std_out << "# USBH_Start: " NL;
-  // delay_ms( 10 );
-  isUSBH_on = 1;
-  USBH_Start( &hUSB_Host );
+  return rc;
 
-
-  return 0;
 }
 
 // on: 4,3,2 off: 5
@@ -122,14 +155,20 @@ void USBH_HandleEvent( USBH_HandleTypeDef *phost, uint8_t id )
 {
   // leds.toggle( BIT1 );
   // std_out << "### UP " << (int)id << NL;
+  FRESULT fr;
 
   switch( id ) {
     case HOST_USER_SELECT_CONFIGURATION: // 1
       break;
 
     case HOST_USER_CLASS_ACTIVE:         // 2
-      isMSC_ready = 1;
-      // leds.set( BIT2 );
+      fr = f_mount( &fs, fspath, 1 ); // todo: flar for automount?
+      if( fr == 0 ) {
+        isMSC_ready = 1;
+        leds.set( BIT2 );
+      } else {
+        leds.set( BIT0 );
+      }
       break;
 
     case HOST_USER_CLASS_SELECTED:       // 3
@@ -139,13 +178,14 @@ void USBH_HandleEvent( USBH_HandleTypeDef *phost, uint8_t id )
       break;
 
     case HOST_USER_DISCONNECTION:        // 5
-      // leds.reset( BIT2 );
+      leds.reset( BIT2 );
       f_mount( nullptr, (TCHAR const*)"", 0 );
       isMSC_ready = 0;
       break;
 
     case HOST_USER_UNRECOVERED_ERROR:    // 6
       // leds.set( BIT0 );
+      f_mount( nullptr, (TCHAR const*)"", 0 );
       errno = 7555;
       break;
 
