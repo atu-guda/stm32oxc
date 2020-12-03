@@ -26,4 +26,5 @@ USE_OXC_PICOC = y
 SRCS  = main.cpp
 
 SRCS += oxc_floatfun.c
+SRCS += oxc_picoc_fatfs.cpp
 

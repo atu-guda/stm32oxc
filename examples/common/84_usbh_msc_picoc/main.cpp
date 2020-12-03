@@ -42,7 +42,8 @@ double d_arr[4] = { 1.234, 9.87654321e-10, 5.432198765e12, 1.23456789e-100 };
 double *d_ptr = d_arr;
 char a_char[] = "ABCDE";
 char *p_char = a_char;
-void oxc_picoc_misc_init( Picoc *pc );
+void oxc_picoc_misc_init(  Picoc *pc );
+void oxc_picoc_fatfs_init( Picoc *pc );
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -122,6 +123,8 @@ int cmd_test0( int argc, const char * const * argv )
   // uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 100000000 ); // number of series
 
   std_out << "# Test: " << NL;
+  // int fh = _open( "/STM32.txt", 0 #<{(| O_RDONLY|)}># );
+
 
   return 0;
 }
@@ -202,6 +205,7 @@ int init_picoc( Picoc *ppc )
   PicocInitialise( ppc, PICOC_STACK_SIZE );
   oxc_picoc_math_init( ppc );
   oxc_picoc_misc_init( ppc );
+  oxc_picoc_fatfs_init( ppc );
   PicocIncludeAllSystemHeaders( ppc );
   VariableDefinePlatformVar( ppc, nullptr, "__a",         &(ppc->IntType), (union AnyValue *)&(UVAR('a')), TRUE );
   VariableDefinePlatformVar( ppc, nullptr, "d_arr",      ppc->FPArrayType, (union AnyValue *)d_arr,        TRUE );

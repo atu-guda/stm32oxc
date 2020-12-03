@@ -218,7 +218,7 @@ int _close( int fd );
 int _fstat( int fd, struct stat *st );
 int _isatty( int fd );
 int _lseek( int fd, int ptr, int whence );
-int _open( char *path, int flags, ... );
+int _open( const char *path, int flags, ... );
 int _wait( int *status );
 int _unlink( char *name );
 int _times( struct tms *buf );
