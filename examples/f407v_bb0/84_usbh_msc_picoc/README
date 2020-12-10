@@ -1,0 +1,5 @@
+Test USB host msc (flash drive) + picoc
+
+Forced UART console as USB used for main task.
+
+

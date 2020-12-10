@@ -51,7 +51,10 @@ SUBDIRS = \
   51a_adcdma_n \
   53_adcdma_sd \
   55_dac0 \
-  80_math_stat
+  80_math_stat \
+  82_picoc \
+  83_usbh_msc \
+  84_usbh_msc_picoc
 
 ALL : examples_board
 
