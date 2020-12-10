@@ -270,12 +270,17 @@ USBD_StatusTypeDef USBD_LL_Init( USBD_HandleTypeDef *pdev )
   hpcd.Init.dev_endpoints       = 4;
   hpcd.Init.speed               = PCD_SPEED_FULL;
   hpcd.Init.dma_enable          = DISABLE;
-  hpcd.Init.ep0_mps             = DEP0CTL_MPS_64;
   hpcd.Init.phy_itface          = PCD_PHY_EMBEDDED;
   hpcd.Init.Sof_enable          = DISABLE;
   hpcd.Init.low_power_enable    = DISABLE;
   hpcd.Init.lpm_enable          = DISABLE;
   hpcd.Init.use_dedicated_ep1   = DISABLE;
+#if defined(DEP0CTL_MPS_64)
+  hpcd.Init.ep0_mps             = DEP0CTL_MPS_64;
+#else
+  hpcd.Init.ep0_mps             = EP_MPS_64;
+#endif
+
 #if defined(STM32H7)
   hpcd.Init.battery_charging_enable = DISABLE;
 #endif
