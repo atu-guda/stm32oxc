@@ -34,12 +34,16 @@ int isUSBH_on = 0, isMSC_ready = 0;
 void USBH_HandleEvent( USBH_HandleTypeDef *phost, uint8_t id );
 int init_usbh_msc();
 
-int out_idx = 0, T_off = -10, T_hyst = 20; // TMP: to test menu
+int task_idx = 0, T_off = -10, T_hyst = 20; // TMP: to test menu
 const Menu4bItem menu_main[] = {
-  { "out_idx",  &out_idx,  1,       0,      42, nullptr },
-  {   "T_off",    &T_off, 25, -10000,   500000, nullptr, 2 },
+  { "task_idx",   &task_idx,       1,       0,       42, nullptr },
+  {   "T_off",       &T_off,      25,  -10000,   500000, nullptr, 2 },
   //{ "set_base", nullptr,   0,      0,   100000, fun_set_base }
 };
+
+int run_0();
+int run_1();
+int run_n();
 
 MenuState menu4b_state { menu_main, size( menu_main ), "T\n" };
 void on_btn_while_run( int cmd );
@@ -49,6 +53,10 @@ DevI2C i2cd( &i2ch, 0 );
 HD44780_i2c lcdt( i2cd, 0x3F );
 HD44780_i2c *p_lcdt = &lcdt;
 void oxc_picoc_hd44780_i2c_init( Picoc *pc );
+
+ADS1115 adc( i2cd );
+const unsigned n_adc_ch = 4;
+sreal v_coeffs[n_adc_ch] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 
 #define PICOC_STACK_SIZE (32*1024)
@@ -91,6 +99,61 @@ const CmdInfo* global_cmds[] = {
   nullptr
 };
 
+int run_0()
+{
+  uint32_t n  = UVAR('n');
+  uint32_t t_step = UVAR('t');
+
+  adc.setDefault();
+  uint16_t x_cfg = adc.getDeviceCfg();
+  uint16_t cfg =  ADS1115::cfg_pga_4096 | ADS1115::cfg_rate_860 | ADS1115::cfg_oneShot;
+
+  std_out << "# Task 0 n= " << n << " t_step= " << t_step << " x_cfg= " << HexInt16( x_cfg ) << NL;
+  UVAR('e') = adc.setCfg( cfg );
+  int scale_mv = adc.getScale_mV();
+  sreal kv = 0.001f * scale_mv / 0x7FFF;
+  int16_t vi[n_adc_ch];
+
+  uint32_t tm0, tm00;
+  break_flag = 0;
+  for( decltype(+n) i=0; i<n && !break_flag; ++i ) {
+    uint32_t tcc = HAL_GetTick();
+    if( i == 0 ) {
+      tm0 = tcc; tm00 = tm0;
+    }
+
+    sreal tc = 0.001f * ( tcc - tm00 );
+    sreal v[n_adc_ch];
+
+    int no = adc.getOneShotNch( 0, n_adc_ch-1, vi );
+    std_out << i << ' ' << no << ' ' << tc ;
+    for( decltype(no) j=0; j<no; ++j ) {
+      v[j] = kv * vi[j] * v_coeffs[j];
+      std_out << ' ' << v[j];
+    }
+
+    std_out << NL;
+
+    if( t_step > 0 ) {
+      delay_ms_until_brk( &tm0, t_step );
+    }
+  }
+
+  return 0;
+}
+
+int run_1()
+{
+  std_out << "# Task 1 n= " << NL;
+  return 0;
+}
+
+int run_n()
+{
+  std_out << "# Task N n= " << task_idx << NL;
+  return 0;
+}
+
 void idle_main_task()
 {
   if( isUSBH_on ) {
@@ -107,16 +170,17 @@ int main(void)
   STD_PROLOG_UART;
 
   UVAR('t') = 100;
-  UVAR('n') =  20;
+  UVAR('n') =  10;
 
   UVAR('e') = i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
   i2c_client_def = &lcdt;
   lcdt.init_4b();
   lcdt.cls();
-  lcdt.puts("Init ");
+  lcdt.puts("I ");
 
   init_menu4b_buttons();
+  lcdt.puts("Btn ");
 
   fs.fs_type = 0; // none
   fspath[0] = '\0';
@@ -147,7 +211,6 @@ int main(void)
   return 0;
 }
 
-// where to call it? requires main loop idle actions
 int init_usbh_msc()
 {
   int rc = FATFS_LinkDriver( &USBH_Driver, USBDISKPath );
@@ -172,10 +235,14 @@ int cmd_test0( int argc, const char * const * argv )
   // uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 100000000 ); // number of series
 
   std_out << "# Test: " << NL;
-  // int fh = _open( "/STM32.txt", 0 #<{(| O_RDONLY|)}># );
+  int rc;
+  switch( task_idx ) {
+    case 0:  rc = run_0(); break;
+    case 1:  rc = run_1(); break;
+    default: rc = run_n(); break;
+  }
 
-
-  return 0;
+  return rc;
 }
 
 int picoc_cmdline_handler( char *s )
