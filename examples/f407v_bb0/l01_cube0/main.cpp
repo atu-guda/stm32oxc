@@ -2,6 +2,10 @@
 
 #include <oxc_auto.h>
 #include <oxc_hd44780_i2c.h>
+#include <oxc_ads1115.h>
+#include <oxc_menu4b.h>
+#include <oxc_statdata.h>
+#include <oxc_ds3231.h>
 
 #include <ff_gen_drv_st.h>
 #include <usbh_diskio.h>
@@ -29,6 +33,16 @@ int isUSBH_on = 0, isMSC_ready = 0;
 
 void USBH_HandleEvent( USBH_HandleTypeDef *phost, uint8_t id );
 int init_usbh_msc();
+
+int out_idx = 0, T_off = -10, T_hyst = 20; // TMP: to test menu
+const Menu4bItem menu_main[] = {
+  { "out_idx",  &out_idx,  1,       0,      42, nullptr },
+  {   "T_off",    &T_off, 25, -10000,   500000, nullptr, 2 },
+  //{ "set_base", nullptr,   0,      0,   100000, fun_set_base }
+};
+
+MenuState menu4b_state { menu_main, size( menu_main ), "T\n" };
+void on_btn_while_run( int cmd );
 
 I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );
@@ -61,6 +75,8 @@ int cmd_lcd_xychar( int argc, const char * const * argv );
 CmdInfo CMDINFO_LCD_XYCHAR{ "lcd_xychar", 0, cmd_lcd_xychar, " x y code - put char at x y ln LCD"  };
 int cmd_lcd_puts( int argc, const char * const * argv );
 CmdInfo CMDINFO_LCD_PUTS{ "lcd_puts", 0, cmd_lcd_puts, "string - put string at cur pos ln  LCD"  };
+int cmd_menu( int argc, const char * const * argv );
+CmdInfo CMDINFO_MENU { "menu", 'M', cmd_menu, " N - menu action"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -70,6 +86,7 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_LCD_XYCHAR,
   &CMDINFO_LCD_GOTOXY,
   &CMDINFO_LCD_PUTS,
+  &CMDINFO_MENU,
   FS_CMDS0,
   nullptr
 };
@@ -97,6 +114,9 @@ int main(void)
   i2c_client_def = &lcdt;
   lcdt.init_4b();
   lcdt.cls();
+  lcdt.puts("Init ");
+
+  init_menu4b_buttons();
 
   fs.fs_type = 0; // none
   fspath[0] = '\0';
@@ -106,6 +126,7 @@ int main(void)
 
   pc.InteractiveHead = nullptr;
   init_picoc( &pc );
+  lcdt.puts("picoc ");
 
   BOARD_POST_INIT_BLINK;
   leds.reset( 0xFF );
@@ -115,8 +136,11 @@ int main(void)
   srl.re_ps();
 
   oxc_add_aux_tick_fun( led_task_nortos );
+  oxc_add_aux_tick_fun( menu4b_ev_dispatch );
 
   UVAR('e') = init_usbh_msc();
+  lcdt.puts("usbh ");
+  lcdt.puts_xy( 0, 1, menu4b_state.menu_level0_str );
 
   std_main_loop_nortos( &srl, idle_main_task );
 
@@ -190,7 +214,7 @@ void USBH_HandleEvent( USBH_HandleTypeDef *phost, uint8_t id )
       break;
 
     case HOST_USER_CLASS_ACTIVE:         // 2
-      fr = f_mount( &fs, fspath, 1 ); // todo: flar for automount?
+      fr = f_mount( &fs, fspath, 1 ); // todo: flag for automount?
       if( fr == 0 ) {
         isMSC_ready = 1;
         leds.set( BIT2 );
@@ -276,6 +300,57 @@ int cmd_lcd_puts( int argc, const char * const * argv )
 
   return 0;
 }
+
+// ----------------------------------------  Menu ------------------------------------------------------
+
+int cmd_menu( int argc, const char * const * argv )
+{
+  int cmd_i = arg2long_d( 1, argc, argv, 0 );
+  leds.toggle( BIT1 );
+  return menu4b_cmd( cmd_i );
+}
+
+int menu4b_output( const char *s1, const char *s2 )
+{
+  // lcdt.cls();
+  if( s1 ) {
+    lcdt.puts_xy( 0, 0, s1 );
+  }
+  if( s2 ) {
+    lcdt.puts_xy( 0, 1, s2 );
+  }
+  return 1;
+}
+
+void on_btn_while_run( int cmd )
+{
+  leds.toggle( BIT1 );
+  switch( cmd ) {
+    case  MenuCmd::Esc:
+      break_flag = 1; errno = 10000;
+      break;
+    case  MenuCmd::Up:
+      // ++out_idx;
+      // if( out_idx > (int)size(outInts)-1 ) { out_idx = 0; }
+      break;
+    case  MenuCmd::Down:
+      //--out_idx;
+      //if( out_idx < 0 ) { out_idx = size(outInts)-1; }
+      break;
+    case  MenuCmd::Enter:
+      // btn_run = !btn_run;
+      break;
+    default: break;
+  }
+}
+
+
+
+// ----------------------------------------  ------------------------------------------------------
+
+// ----------------------------------------  ------------------------------------------------------
+
+// ----------------------------------------  ------------------------------------------------------
 
 // ----------------------------------------  ------------------------------------------------------
 

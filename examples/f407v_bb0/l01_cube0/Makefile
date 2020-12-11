@@ -26,15 +26,21 @@ USE_OXC_PICOC = y
 # NOUSE_DEFAULT_UART_INIT = y
 
 SRCS  = main.cpp
+SRCS  += init_menu4b_hard.cpp
 # SRCS += dac.cpp
 # SRCS += adc.cpp
 # SRCS += tim.cpp
 # SRCS += tcalclang.cpp
 
 SRCS += oxc_floatfun.c
+SRCS += oxc_outstr.cpp
 SRCS += oxc_picoc_fatfs.cpp
 SRCS += oxc_hd44780_i2c.cpp
 SRCS += oxc_picoc_hd44780_i2c.cpp
+SRCS += oxc_ads1115.cpp
+SRCS += oxc_menu4b.cpp
+SRCS += oxc_statdata.cpp
+SRCS += oxc_ds3231.cpp
 
 # SRCS += oxc_hd44780_i2c.cpp
 
