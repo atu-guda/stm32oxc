@@ -50,7 +50,7 @@ void HAL_GPIO_EXTI_Callback( uint16_t pin )
   if( ! on_cmd_handler ) {
     menu4b_ev_global = cmd;
   } else {
-    leds.toggle( BIT0 );
+    // leds.toggle( BIT0 );
     on_btn_while_run( cmd );
   }
 

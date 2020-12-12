@@ -83,10 +83,8 @@ int init_picoc( Picoc *ppc );
 extern "C" {
 void oxc_picoc_math_init( Picoc *pc );
 }
-double d_arr[4] = { 1.234, 9.87654321e-10, 5.432198765e12, 1.23456789e-100 };
-double *d_ptr = d_arr;
-char a_char[] = "ABCDE";
-char *p_char = a_char;
+//char a_char[] = "ABCDE";
+//char *p_char = a_char;
 void oxc_picoc_misc_init(  Picoc *pc );
 void oxc_picoc_fatfs_init( Picoc *pc );
 
@@ -133,7 +131,7 @@ int run_common( RUN_FUN pre_fun, RUN_FUN loop_fun )
     }
 
     xfloat tc = 0.001f * ( tcc - tm00 );
-    std_out << tc ;
+    std_out << XFmt( tc, cvtff_fix, 12, 3 ) ;
     loop_fun();
 
     std_out << NL;
@@ -336,11 +334,18 @@ int init_picoc( Picoc *ppc )
 
   PicocIncludeAllSystemHeaders( ppc );
 
-  VariableDefinePlatformVar( ppc, nullptr, "__a",         &(ppc->IntType), (union AnyValue *)&(UVAR('a')), TRUE );
-  VariableDefinePlatformVar( ppc, nullptr, "d_arr",      ppc->FPArrayType, (union AnyValue *)d_arr,        TRUE );
-  VariableDefinePlatformVar( ppc, nullptr, "d_ptr",        ppc->FPPtrType, (union AnyValue *)&d_ptr,       TRUE );
-  VariableDefinePlatformVar( ppc, nullptr, "a_char",   ppc->CharArrayType, (union AnyValue *)a_char,       TRUE );
-  VariableDefinePlatformVar( ppc, nullptr, "p_char",     ppc->CharPtrType, (union AnyValue *)&p_char,      TRUE );
+  //VariableDefinePlatformVar( ppc, nullptr, "a_char",   ppc->CharArrayType, (union AnyValue *)a_char,       TRUE );
+  //VariableDefinePlatformVar( ppc, nullptr, "p_char",     ppc->CharPtrType, (union AnyValue *)&p_char,      TRUE );
+
+  VariableDefinePlatformVar( ppc , nullptr , "__a"          , &(ppc->IntType)   , (union AnyValue *)&(UVAR('a'))    , TRUE );
+  //VariableDefinePlatformVar( ppc , nullptr , "UVAR"         , ppc->IntArrayType , (union AnyValue *)user_vars       , TRUE );
+
+  VariableDefinePlatformVar( ppc , nullptr , "adc_v"        , ppc->FPArrayType  , (union AnyValue *)adc_v           , TRUE );
+  VariableDefinePlatformVar( ppc , nullptr , "adc_v_scales" , ppc->FPArrayType  , (union AnyValue *)adc_v_scales    , TRUE );
+  VariableDefinePlatformVar( ppc , nullptr , "adc_v_bases"  , ppc->FPArrayType  , (union AnyValue *)adc_v_bases     , TRUE );
+  VariableDefinePlatformVar( ppc , nullptr , "adc_vi"       , ppc->IntArrayType , (union AnyValue *)adc_vi          , TRUE );
+  VariableDefinePlatformVar( ppc , nullptr , "adc_no"       , &(ppc->IntType)   , (union AnyValue *)&(adc_no)       , TRUE );
+  VariableDefinePlatformVar( ppc , nullptr , "adc_scale_mv" , &(ppc->IntType)   , (union AnyValue *)&(adc_scale_mv) , TRUE );
   return 0;
 }
 
@@ -401,7 +406,7 @@ int menu4b_output( const char *s1, const char *s2 )
 
 void on_btn_while_run( int cmd )
 {
-  // leds.toggle( BIT0 );
+  leds.toggle( BIT0 );
   switch( cmd ) {
     case  MenuCmd::Esc:
       break_flag = 1; errno = 10000;
@@ -453,7 +458,7 @@ int adc_measure()
 int adc_out_stdout()
 {
   for( decltype(+adc_no) j=0; j<adc_no; ++j ) {
-    std_out << ' ' << adc_v[j];
+    std_out << ' ' << XFmt( adc_v[j], cvtff_fix, 9, 6 );
   }
   return 0;
 }

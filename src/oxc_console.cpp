@@ -194,7 +194,7 @@ int exec_direct( const char *s, int l )
   if( on_cmd_handler ) {
     return 1;
   }
-  AutoIncDec{ on_cmd_handler };
+  AutoIncDec xx_on_cmd_handler{ on_cmd_handler };
 
   // dump8( s,  l+1 );
   char ss[CMDLINE_MAXSZ];
