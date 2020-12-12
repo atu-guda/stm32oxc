@@ -1,6 +1,7 @@
 #include <cerrno>
 
 #include <oxc_auto.h>
+#include <oxc_outstr.h>
 #include <oxc_hd44780_i2c.h>
 #include <oxc_ads1115.h>
 #include <oxc_menu4b.h>
@@ -41,6 +42,8 @@ const Menu4bItem menu_main[] = {
   //{ "set_base", nullptr,   0,      0,   100000, fun_set_base }
 };
 
+using RUN_FUN = int(*)(void);
+int run_common( RUN_FUN pre_fun, RUN_FUN loop_fun );
 int run_0();
 int run_1();
 int run_n();
@@ -55,8 +58,21 @@ HD44780_i2c *p_lcdt = &lcdt;
 void oxc_picoc_hd44780_i2c_init( Picoc *pc );
 
 ADS1115 adc( i2cd );
-const unsigned n_adc_ch = 4;
-sreal v_coeffs[n_adc_ch] = { 1.0f, 1.0f, 1.0f, 1.0f };
+const unsigned adc_n_ch = 4;
+unsigned adc_no = 0;
+const xfloat adc_3_to_20 = 20.0f / 3.0f;
+xfloat adc_v_scales[adc_n_ch] = {  adc_3_to_20, adc_3_to_20,  adc_3_to_20, adc_3_to_20 };
+xfloat adc_v_bases[adc_n_ch]  = {       -10.0f,      -10.0f,       -10.0f,      -10.0f };
+xfloat adc_v[adc_n_ch]        = {         0.0f,        0.0f,         0.0f,        0.0f };
+int    adc_vi[adc_n_ch]       = {            0,           0,            0,           0 };
+int adc_scale_mv = 4096;
+xfloat adc_kv = 0.001f * adc_scale_mv / 0x7FFF;
+int adc_defcfg();
+int adc_measure();
+int adc_out_stdout();
+int adc_out_lcd();
+int adc_pre_loop();
+int adc_loop();
 
 
 #define PICOC_STACK_SIZE (32*1024)
@@ -99,20 +115,14 @@ const CmdInfo* global_cmds[] = {
   nullptr
 };
 
-int run_0()
+int run_common( RUN_FUN pre_fun, RUN_FUN loop_fun )
 {
   uint32_t n  = UVAR('n');
   uint32_t t_step = UVAR('t');
+  lcdt.cls();
+  std_out << "# Task " << task_idx << " n= " << n << " t_step= " << t_step << " on_cmd_handler= " << on_cmd_handler << NL;
 
-  adc.setDefault();
-  uint16_t x_cfg = adc.getDeviceCfg();
-  uint16_t cfg =  ADS1115::cfg_pga_4096 | ADS1115::cfg_rate_860 | ADS1115::cfg_oneShot;
-
-  std_out << "# Task 0 n= " << n << " t_step= " << t_step << " x_cfg= " << HexInt16( x_cfg ) << NL;
-  UVAR('e') = adc.setCfg( cfg );
-  int scale_mv = adc.getScale_mV();
-  sreal kv = 0.001f * scale_mv / 0x7FFF;
-  int16_t vi[n_adc_ch];
+  pre_fun();
 
   uint32_t tm0, tm00;
   break_flag = 0;
@@ -122,15 +132,9 @@ int run_0()
       tm0 = tcc; tm00 = tm0;
     }
 
-    sreal tc = 0.001f * ( tcc - tm00 );
-    sreal v[n_adc_ch];
-
-    int no = adc.getOneShotNch( 0, n_adc_ch-1, vi );
-    std_out << i << ' ' << no << ' ' << tc ;
-    for( decltype(no) j=0; j<no; ++j ) {
-      v[j] = kv * vi[j] * v_coeffs[j];
-      std_out << ' ' << v[j];
-    }
+    xfloat tc = 0.001f * ( tcc - tm00 );
+    std_out << tc ;
+    loop_fun();
 
     std_out << NL;
 
@@ -140,6 +144,12 @@ int run_0()
   }
 
   return 0;
+}
+
+
+int run_0()
+{
+  return run_common( adc_pre_loop, adc_loop );
 }
 
 int run_1()
@@ -169,8 +179,8 @@ int main(void)
 {
   STD_PROLOG_UART;
 
-  UVAR('t') = 100;
-  UVAR('n') =  10;
+  UVAR('t') =     100;
+  UVAR('n') =  100;
 
   UVAR('e') = i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
@@ -391,7 +401,7 @@ int menu4b_output( const char *s1, const char *s2 )
 
 void on_btn_while_run( int cmd )
 {
-  leds.toggle( BIT1 );
+  // leds.toggle( BIT0 );
   switch( cmd ) {
     case  MenuCmd::Esc:
       break_flag = 1; errno = 10000;
@@ -405,6 +415,7 @@ void on_btn_while_run( int cmd )
       //if( out_idx < 0 ) { out_idx = size(outInts)-1; }
       break;
     case  MenuCmd::Enter:
+      break_flag = 1; errno = 10001;
       // btn_run = !btn_run;
       break;
     default: break;
@@ -413,7 +424,66 @@ void on_btn_while_run( int cmd )
 
 
 
-// ----------------------------------------  ------------------------------------------------------
+// ---------------------------------------- ADC ------------------------------------------------------
+
+int adc_defcfg()
+{
+  adc.setDefault();
+  uint16_t cfg =  ADS1115::cfg_pga_4096 | ADS1115::cfg_rate_860 | ADS1115::cfg_oneShot;
+  adc.setCfg( cfg );
+  int r = adc.getDeviceCfg(); // to fill correct inner
+  adc_scale_mv =  adc.getScale_mV();
+  adc_kv = 0.001f * adc_scale_mv / 0x7FFF;
+  return r;
+}
+
+int adc_measure()
+{
+  int16_t vi[adc_n_ch];
+  decltype(+adc_no) no = adc.getOneShotNch( 0, adc_n_ch-1, vi );
+
+  for( decltype(no) j=0; j<no; ++j ) {
+    adc_vi[j] = vi[j];
+    adc_v[j]  = adc_kv * vi[j] * adc_v_scales[j] + adc_v_bases[j];
+  }
+  adc_no = no;
+  return no;
+}
+
+int adc_out_stdout()
+{
+  for( decltype(+adc_no) j=0; j<adc_no; ++j ) {
+    std_out << ' ' << adc_v[j];
+  }
+  return 0;
+}
+
+int adc_out_lcd()
+{
+  OSTR(s,40);
+  for( decltype(+adc_no) j=0; j<adc_no; ++j ) {
+    s_outstr.reset_out();
+    s << XFmt( adc_v[j], cvtff_fix, 7, 4 ) << ' ';
+    lcdt.puts_xy( 0, j, s_outstr.c_str() );
+  }
+  return 0;
+}
+
+int adc_pre_loop()
+{
+  adc_defcfg();
+  uint16_t x_cfg = adc.getDeviceCfg();
+  std_out << "##  x_cfg= " << HexInt16( x_cfg ) << NL;
+  return 1;
+}
+
+int adc_loop()
+{
+  adc_measure();
+  adc_out_stdout();
+  adc_out_lcd();
+  return 1;
+}
 
 // ----------------------------------------  ------------------------------------------------------
 
