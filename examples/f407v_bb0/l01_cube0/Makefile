@@ -25,8 +25,9 @@ USE_OXC_PICOC = y
 
 # NOUSE_DEFAULT_UART_INIT = y
 
-SRCS  = main.cpp
+SRCS  += main.cpp
 SRCS  += init_menu4b_hard.cpp
+SRCS  += dac_init.cpp
 # SRCS += dac.cpp
 # SRCS += adc.cpp
 # SRCS += tim.cpp

@@ -61,8 +61,8 @@ void oxc_picoc_hd44780_i2c_init( Picoc *pc );
 ADS1115 adc( i2cd );
 const unsigned adc_n_ch = 4;
 unsigned adc_no = 0;
-const xfloat adc_3_to_20 = 20.0f / 3.0f;
-xfloat adc_v_scales[adc_n_ch] = {  adc_3_to_20, adc_3_to_20,  adc_3_to_20, adc_3_to_20 };
+const xfloat adc_20_to_3 = 20.0f / 3.0f;
+xfloat adc_v_scales[adc_n_ch] = {  adc_20_to_3, adc_20_to_3,  adc_20_to_3, adc_20_to_3 };
 xfloat adc_v_bases[adc_n_ch]  = {       -10.0f,      -10.0f,       -10.0f,      -10.0f };
 xfloat adc_v[adc_n_ch]        = {         0.0f,        0.0f,         0.0f,        0.0f };
 int    adc_vi[adc_n_ch]       = {            0,           0,            0,           0 };
@@ -78,6 +78,27 @@ void C_adc_defcfg( struct ParseState *Parser, struct Value *ReturnValue, struct 
 void C_adc_measure( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
 void C_adc_out_stdout( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
 void C_adc_out_lcd( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
+
+extern DAC_HandleTypeDef hdac;
+int MX_DAC_Init();
+const unsigned dac_n_ch = 2;
+const unsigned dac_bimask = 0x0FFF; // 12 bit
+const xfloat dac_3_to_20 = 3.0f / 20.0f;
+xfloat dac_vref = 3.0f;
+xfloat dac_v_scales[dac_n_ch] = {  dac_3_to_20, dac_3_to_20 };
+xfloat dac_v_bases[adc_n_ch]  = {       -10.0f,      -10.0f };
+void dac_out1( xfloat v );
+void dac_out2( xfloat v );
+void dac_out12( xfloat v1, xfloat v2 );
+void dac_out1i( int v );
+void dac_out2i( int v );
+void dac_out12i( int v1, int v2 );
+void C_dac_out1( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
+void C_dac_out2( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
+void C_dac_out12( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
+void C_dac_out1i( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
+void C_dac_out2i( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
+void C_dac_out12i( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
 
 MCP23017 mcp_gpio( i2cd );
 void C_pins_out( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
@@ -183,7 +204,7 @@ void idle_main_task()
   };
 }
 
-
+// ---------------------------------------- main -----------------------------------------------
 
 int main(void)
 {
@@ -200,14 +221,21 @@ int main(void)
   lcdt.puts("I ");
 
   init_menu4b_buttons();
-  lcdt.puts("Btn ");
+  lcdt.puts("K");
 
   mcp_gpio.cfg( MCP23017::iocon_intpol  ); // only for int
   mcp_gpio.set_dir_a( 0xFF ); // all input
   mcp_gpio.set_dir_b( 0x00 ); // all output
   mcp_gpio.set_b( 0x00 );
 
-  lcdt.puts("b ");
+  lcdt.puts("P");
+
+  int dac_rc = MX_DAC_Init();
+  lcdt.puts( dac_rc == 0 ? "D " : "-d" );
+  HAL_DAC_SetValue( &hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, 2047 );
+  HAL_DAC_SetValue( &hdac, DAC_CHANNEL_2, DAC_ALIGN_12B_R, 2047 );
+  HAL_DAC_Start( &hdac, DAC_CHANNEL_1 );
+  HAL_DAC_Start( &hdac, DAC_CHANNEL_2 );
 
   fs.fs_type = 0; // none
   fspath[0] = '\0';
@@ -217,7 +245,7 @@ int main(void)
 
   pc.InteractiveHead = nullptr;
   init_picoc( &pc );
-  lcdt.puts("picoc ");
+  lcdt.puts("C ");
 
   BOARD_POST_INIT_BLINK;
   leds.reset( 0xFF );
@@ -348,6 +376,14 @@ struct LibraryFunction picoc_local_Functions[] =
   { C_adc_measure,           "int adc_measure(void);" },
   { C_adc_out_stdout,        "void adc_out_stdout(void);" },
   { C_adc_out_lcd,           "void adc_out_lcd(void);" },
+
+  { C_dac_out1,              "void dac_out1(float);" },
+  { C_dac_out2,              "void dac_out2(float);" },
+  { C_dac_out12,             "void dac_out12(float,float);" },
+  { C_dac_out1i,             "void dac_out1i(int);" },
+  { C_dac_out2i,             "void dac_out2i(int);" },
+  { C_dac_out12i,            "void dac_out12i(int,int);" },
+
   { C_pins_out,              "void pins_out(int);" },
   { C_pins_out_read,         "int  pins_out_read(void);" },
   { C_pins_out_set,          "void pins_out_set(int);" },
@@ -394,6 +430,9 @@ int init_picoc( Picoc *ppc )
   VariableDefinePlatformVar( ppc , nullptr , "adc_vi"       , ppc->IntArrayType , (union AnyValue *)adc_vi          , TRUE );
   VariableDefinePlatformVar( ppc , nullptr , "adc_no"       , &(ppc->IntType)   , (union AnyValue *)&(adc_no)       , TRUE );
   VariableDefinePlatformVar( ppc , nullptr , "adc_scale_mv" , &(ppc->IntType)   , (union AnyValue *)&(adc_scale_mv) , TRUE );
+
+  VariableDefinePlatformVar( ppc , nullptr , "dac_v_scales" , ppc->FPArrayType  , (union AnyValue *)dac_v_scales    , TRUE );
+  VariableDefinePlatformVar( ppc , nullptr , "dac_v_bases"  , ppc->FPArrayType  , (union AnyValue *)dac_v_bases     , TRUE );
 
   return 0;
 }
@@ -596,7 +635,74 @@ void C_pins_out_toggle( struct ParseState *Parser, struct Value *ReturnValue, st
 }
 
 
-// ----------------------------------------  ------------------------------------------------------
+// ---------------------------------------- DAC ------------------------------------------------------
+
+void dac_out1( xfloat v )
+{
+  int iv = (int)( dac_bimask * ( v - dac_v_bases[0] ) * dac_v_scales[0] / dac_vref );
+  dac_out1i( iv );
+}
+
+void dac_out2( xfloat v )
+{
+  int iv = (int)( dac_bimask * ( v - dac_v_bases[1] ) * dac_v_scales[1] / dac_vref );
+  dac_out2i( iv );
+}
+
+void dac_out12( xfloat v1, xfloat v2 )
+{
+  dac_out1( v1 );
+  dac_out2( v2 );
+}
+
+void dac_out1i( int v )
+{
+  v = clamp( v, 0, (int)dac_bimask );
+  HAL_DAC_SetValue( &hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, v );
+}
+
+void dac_out2i( int v )
+{
+  v = clamp( v, 0, (int)dac_bimask );
+  HAL_DAC_SetValue( &hdac, DAC_CHANNEL_2, DAC_ALIGN_12B_R, v );
+}
+
+void dac_out12i( int v1, int v2 )
+{
+  dac_out1i( v1 );
+  dac_out2i( v2 );
+}
+
+void C_dac_out1( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+{
+  dac_out1( Param[0]->Val->FP );
+}
+
+void C_dac_out2( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+{
+  dac_out2( Param[0]->Val->FP );
+}
+
+void C_dac_out12( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+{
+  dac_out12( Param[0]->Val->FP, Param[1]->Val->FP );
+}
+
+void C_dac_out1i( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+{
+  dac_out1i( Param[0]->Val->Integer );
+}
+
+void C_dac_out2i( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+{
+  dac_out2i( Param[0]->Val->Integer );
+}
+
+void C_dac_out12i( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+{
+  dac_out12i( Param[0]->Val->Integer, Param[1]->Val->Integer );
+}
+
 
 // ----------------------------------------  ------------------------------------------------------
 
