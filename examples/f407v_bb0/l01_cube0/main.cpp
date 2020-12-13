@@ -108,6 +108,15 @@ void C_pins_out_reset( struct ParseState *Parser, struct Value *ReturnValue, str
 void C_pins_out_toggle( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
 void C_pins_in( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
 
+extern TIM_HandleTypeDef htim1;
+extern TIM_HandleTypeDef htim2;
+extern TIM_HandleTypeDef htim4;
+extern TIM_HandleTypeDef htim5;
+int MX_TIM1_Init();
+int MX_TIM2_Init();
+int MX_TIM4_Init();
+int MX_TIM5_Init();
+
 #define PICOC_STACK_SIZE (32*1024)
 int picoc_cmdline_handler( char *s );
 Picoc pc;

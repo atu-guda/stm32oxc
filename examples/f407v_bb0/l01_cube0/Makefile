@@ -28,6 +28,7 @@ USE_OXC_PICOC = y
 SRCS  += main.cpp
 SRCS  += init_menu4b_hard.cpp
 SRCS  += dac_init.cpp
+SRCS  += tim_init.cpp
 # SRCS += dac.cpp
 # SRCS += adc.cpp
 # SRCS += tim.cpp
