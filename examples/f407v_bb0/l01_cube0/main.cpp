@@ -7,6 +7,7 @@
 #include <oxc_menu4b.h>
 #include <oxc_statdata.h>
 #include <oxc_ds3231.h>
+#include <oxc_mcp23017.h>
 
 #include <ff_gen_drv_st.h>
 #include <usbh_diskio.h>
@@ -69,11 +70,22 @@ int adc_scale_mv = 4096;
 xfloat adc_kv = 0.001f * adc_scale_mv / 0x7FFF;
 int adc_defcfg();
 int adc_measure();
-int adc_out_stdout();
-int adc_out_lcd();
+void adc_out_stdout();
+void adc_out_lcd();
 int adc_pre_loop();
 int adc_loop();
+void C_adc_defcfg( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
+void C_adc_measure( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
+void C_adc_out_stdout( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
+void C_adc_out_lcd( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
 
+MCP23017 mcp_gpio( i2cd );
+void C_pins_out( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
+void C_pins_out_read( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
+void C_pins_out_set( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
+void C_pins_out_reset( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
+void C_pins_out_toggle( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
+void C_pins_in( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
 
 #define PICOC_STACK_SIZE (32*1024)
 int picoc_cmdline_handler( char *s );
@@ -177,8 +189,8 @@ int main(void)
 {
   STD_PROLOG_UART;
 
-  UVAR('t') =     100;
-  UVAR('n') =  100;
+  UVAR('t') =       100;
+  UVAR('n') =  10000000;
 
   UVAR('e') = i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
@@ -189,6 +201,13 @@ int main(void)
 
   init_menu4b_buttons();
   lcdt.puts("Btn ");
+
+  mcp_gpio.cfg( MCP23017::iocon_intpol  ); // only for int
+  mcp_gpio.set_dir_a( 0xFF ); // all input
+  mcp_gpio.set_dir_b( 0x00 ); // all output
+  mcp_gpio.set_b( 0x00 );
+
+  lcdt.puts("b ");
 
   fs.fs_type = 0; // none
   fspath[0] = '\0';
@@ -321,6 +340,34 @@ void USBH_HandleEvent( USBH_HandleTypeDef *phost, uint8_t id )
   }
 }
 
+// --------------------------------- picoc ----------------------------------------------
+
+struct LibraryFunction picoc_local_Functions[] =
+{
+  { C_adc_defcfg,            "int adc_defcfg(void);" },
+  { C_adc_measure,           "int adc_measure(void);" },
+  { C_adc_out_stdout,        "void adc_out_stdout(void);" },
+  { C_adc_out_lcd,           "void adc_out_lcd(void);" },
+  { C_pins_out,              "void pins_out(int);" },
+  { C_pins_out_read,         "int  pins_out_read(void);" },
+  { C_pins_out_set,          "void pins_out_set(int);" },
+  { C_pins_out_reset,        "void pins_out_reset(int);" },
+  { C_pins_out_toggle,       "void pins_out_toggle(int);" },
+  { C_pins_in,               "int  pins_in(void);" },
+  { NULL,            NULL }
+};
+
+void picoc_local_SetupFunc( Picoc *pc );
+void picoc_local_SetupFunc( Picoc *pc )
+{
+}
+
+void picoc_local_init( Picoc *pc );
+void picoc_local_init( Picoc *pc )
+{
+  IncludeRegister( pc, "local.h", &picoc_local_SetupFunc, picoc_local_Functions, NULL );
+}
+
 int init_picoc( Picoc *ppc )
 {
   if( ppc->InteractiveHead != nullptr ) {
@@ -331,6 +378,7 @@ int init_picoc( Picoc *ppc )
   oxc_picoc_misc_init( ppc );
   oxc_picoc_fatfs_init( ppc );
   oxc_picoc_hd44780_i2c_init( ppc );
+  picoc_local_init( ppc );
 
   PicocIncludeAllSystemHeaders( ppc );
 
@@ -346,6 +394,7 @@ int init_picoc( Picoc *ppc )
   VariableDefinePlatformVar( ppc , nullptr , "adc_vi"       , ppc->IntArrayType , (union AnyValue *)adc_vi          , TRUE );
   VariableDefinePlatformVar( ppc , nullptr , "adc_no"       , &(ppc->IntType)   , (union AnyValue *)&(adc_no)       , TRUE );
   VariableDefinePlatformVar( ppc , nullptr , "adc_scale_mv" , &(ppc->IntType)   , (union AnyValue *)&(adc_scale_mv) , TRUE );
+
   return 0;
 }
 
@@ -455,15 +504,14 @@ int adc_measure()
   return no;
 }
 
-int adc_out_stdout()
+void adc_out_stdout()
 {
   for( decltype(+adc_no) j=0; j<adc_no; ++j ) {
     std_out << ' ' << XFmt( adc_v[j], cvtff_fix, 9, 6 );
   }
-  return 0;
 }
 
-int adc_out_lcd()
+void adc_out_lcd()
 {
   OSTR(s,40);
   for( decltype(+adc_no) j=0; j<adc_no; ++j ) {
@@ -471,7 +519,6 @@ int adc_out_lcd()
     s << XFmt( adc_v[j], cvtff_fix, 7, 4 ) << ' ';
     lcdt.puts_xy( 0, j, s_outstr.c_str() );
   }
-  return 0;
 }
 
 int adc_pre_loop()
@@ -490,7 +537,64 @@ int adc_loop()
   return 1;
 }
 
-// ----------------------------------------  ------------------------------------------------------
+void C_adc_defcfg( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+{
+  int rc = adc_defcfg();
+  ReturnValue->Val->Integer = rc;
+}
+
+void C_adc_measure( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+{
+  int rc = adc_measure();
+  ReturnValue->Val->Integer = rc;
+}
+
+void C_adc_out_stdout( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+{
+  adc_out_stdout();
+}
+
+void C_adc_out_lcd( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+{
+  adc_out_lcd();
+}
+
+// ---------------------------------------- PINS ---------------------------------------------------
+
+void C_pins_out( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+{
+  uint8_t val = (uint8_t)(Param[0]->Val->Integer);
+  mcp_gpio.set_b( val );
+}
+
+void C_pins_in( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+{
+  ReturnValue->Val->Integer = mcp_gpio.get_a();
+}
+
+void C_pins_out_read( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+{
+  ReturnValue->Val->Integer = mcp_gpio.get_b();
+}
+
+void C_pins_out_set( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+{
+  uint8_t val = mcp_gpio.get_b() | (uint8_t)(Param[0]->Val->Integer);
+  mcp_gpio.set_b( val );
+}
+
+void C_pins_out_reset( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+{
+  uint8_t val = mcp_gpio.get_b() & ~(uint8_t)(Param[0]->Val->Integer);
+  mcp_gpio.set_b( val );
+}
+
+void C_pins_out_toggle( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+{
+  uint8_t val = mcp_gpio.get_b() ^ (uint8_t)(Param[0]->Val->Integer);
+  mcp_gpio.set_b( val );
+}
+
 
 // ----------------------------------------  ------------------------------------------------------
 
