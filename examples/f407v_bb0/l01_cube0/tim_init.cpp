@@ -178,13 +178,14 @@ int MX_TIM4_Init()
 
 int MX_TIM5_Init()
 {
+  uint32_t arr_t5 = calc_TIM_arr_for_base_psc( TIM5, 0, 1 ); // 1 Hz init
   htim5.Instance               = TIM5;
   htim5.Init.Prescaler         = 0;
   htim5.Init.CounterMode       = TIM_COUNTERMODE_UP;
-  htim5.Init.Period            = 0xFFFFFFFF;
+  htim5.Init.Period            = arr_t5;
   htim5.Init.ClockDivision     = TIM_CLOCKDIVISION_DIV1;
   htim5.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if( HAL_TIM_Base_Init( &htim5 ) != HAL_OK ) {
+  if( HAL_TIM_PWM_Init( &htim5 ) != HAL_OK ) {
     errno = 7751; return 1;
   }
 
@@ -194,35 +195,42 @@ int MX_TIM5_Init()
     errno = 7752; return 1;
   }
 
-  if( HAL_TIM_PWM_Init( &htim5 ) != HAL_OK ) {
-    errno = 7753; return 1;
-  }
-
   TIM_MasterConfigTypeDef sMasterConfig ;
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
   sMasterConfig.MasterSlaveMode     = TIM_MASTERSLAVEMODE_DISABLE;
   if( HAL_TIMEx_MasterConfigSynchronization( &htim5, &sMasterConfig ) != HAL_OK ) {
-    errno = 7754; return 1;
+    errno = 7753; return 1;
   }
 
   TIM_OC_InitTypeDef sConfigOC ;
   sConfigOC.OCMode     = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse      = 0;
+  sConfigOC.Pulse      = arr_t5 / 10;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if( HAL_TIM_PWM_ConfigChannel( &htim5, &sConfigOC, TIM_CHANNEL_1 ) != HAL_OK ) {
     errno = 7755; return 1;
   }
+
+  sConfigOC.Pulse      = arr_t5 / 5;
   if( HAL_TIM_PWM_ConfigChannel( &htim5, &sConfigOC, TIM_CHANNEL_2 ) != HAL_OK ) {
     errno = 7756; return 1;
   }
+
+  sConfigOC.Pulse      = arr_t5 / 3;
   if( HAL_TIM_PWM_ConfigChannel( &htim5, &sConfigOC, TIM_CHANNEL_3 ) != HAL_OK ) {
     errno = 7757; return 1;
   }
+
+  sConfigOC.Pulse      = arr_t5 / 2;
   if( HAL_TIM_PWM_ConfigChannel( &htim5, &sConfigOC, TIM_CHANNEL_4 ) != HAL_OK ) {
     errno = 7758; return 1;
   }
-  HAL_TIM_MspPostInit( &htim5 );
+  // HAL_TIM_MspPostInit( &htim5 );
+  HAL_TIM_PWM_Start( &htim5, TIM_CHANNEL_1 );
+  HAL_TIM_PWM_Start( &htim5, TIM_CHANNEL_2 );
+  HAL_TIM_PWM_Start( &htim5, TIM_CHANNEL_3 );
+  HAL_TIM_PWM_Start( &htim5, TIM_CHANNEL_4 );
+
   return 0;
 }
 
@@ -242,12 +250,18 @@ void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim_pwm )
 {
   if( htim_pwm->Instance == TIM1 ) {
     __HAL_RCC_TIM1_CLK_ENABLE();
+  } else if ( htim_pwm->Instance == TIM5 ) {
+    __HAL_RCC_TIM5_CLK_ENABLE();
+    // TIM5 GPIO Configuration: A0-A3 --> T5_CH1-4
+    __HAL_RCC_GPIOA_CLK_ENABLE();
+    GpioA.cfgAF_N( GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3, GPIO_AF2_TIM5 );
   }
 }
 
 void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* htim_base )
 {
   GPIO_InitTypeDef GPIO_InitStruct ;
+
   if( htim_base->Instance == TIM2 ) {
     __HAL_RCC_TIM2_CLK_ENABLE();
 
@@ -274,8 +288,6 @@ void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* htim_base )
 
     HAL_NVIC_SetPriority( TIM2_IRQn, 12, 0 );
     HAL_NVIC_EnableIRQ( TIM2_IRQn );
-  } else if( htim_base->Instance == TIM5 ) {
-    __HAL_RCC_TIM5_CLK_ENABLE();
   }
 
 }
@@ -303,10 +315,8 @@ void HAL_TIM_IC_MspInit( TIM_HandleTypeDef* htim_ic )
 void HAL_TIM_MspPostInit( TIM_HandleTypeDef* htim )
 {
   GPIO_InitTypeDef GPIO_InitStruct ;
-  if( htim->Instance == TIM1 ) {
-  /* USER CODE BEGIN TIM1_MspPostInit 0 */
 
-  /* USER CODE END TIM1_MspPostInit 0 */
+  if( htim->Instance == TIM1 ) {
     __HAL_RCC_GPIOE_CLK_ENABLE();
     /**TIM1 GPIO Configuration
     PE8     ------> TIM1_CH1N
@@ -318,32 +328,6 @@ void HAL_TIM_MspPostInit( TIM_HandleTypeDef* htim )
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     GPIO_InitStruct.Alternate = GPIO_AF1_TIM1;
     HAL_GPIO_Init( GPIOE, &GPIO_InitStruct );
-
-  /* USER CODE BEGIN TIM1_MspPostInit 1 */
-
-  /* USER CODE END TIM1_MspPostInit 1 */
-  } else if( htim->Instance == TIM5 ) {
-  /* USER CODE BEGIN TIM5_MspPostInit 0 */
-
-  /* USER CODE END TIM5_MspPostInit 0 */
-
-    __HAL_RCC_GPIOA_CLK_ENABLE();
-    /**TIM5 GPIO Configuration
-    PA0-WKUP     ------> TIM5_CH1
-    PA1     ------> TIM5_CH2
-    PA2     ------> TIM5_CH3
-    PA3     ------> TIM5_CH4
-    */
-    GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3;
-    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-    GPIO_InitStruct.Alternate = GPIO_AF2_TIM5;
-    HAL_GPIO_Init( GPIOA, &GPIO_InitStruct );
-
-  /* USER CODE BEGIN TIM5_MspPostInit 1 */
-
-  /* USER CODE END TIM5_MspPostInit 1 */
   }
 
 }

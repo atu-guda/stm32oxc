@@ -16,6 +16,7 @@
 #include <oxc_fs_cmd0.h>
 
 #include <oxc_picoc.h>
+#include <oxc_picoc_reghelpers.h>
 
 using namespace std;
 using namespace SMLRL;
@@ -74,10 +75,10 @@ void adc_out_stdout();
 void adc_out_lcd();
 int adc_pre_loop();
 int adc_loop();
-void C_adc_defcfg( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_adc_measure( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_adc_out_stdout( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_adc_out_lcd( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
+void C_adc_defcfg( PICOC_FUN_ARGS );
+void C_adc_measure( PICOC_FUN_ARGS );
+void C_adc_out_stdout( PICOC_FUN_ARGS );
+void C_adc_out_lcd( PICOC_FUN_ARGS );
 
 extern DAC_HandleTypeDef hdac;
 int MX_DAC_Init();
@@ -93,29 +94,68 @@ void dac_out12( xfloat v1, xfloat v2 );
 void dac_out1i( int v );
 void dac_out2i( int v );
 void dac_out12i( int v1, int v2 );
-void C_dac_out1( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_dac_out2( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_dac_out12( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_dac_out1i( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_dac_out2i( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_dac_out12i( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
+void C_dac_out1( PICOC_FUN_ARGS );
+void C_dac_out2( PICOC_FUN_ARGS );
+void C_dac_out12( PICOC_FUN_ARGS );
+void C_dac_out1i( PICOC_FUN_ARGS );
+void C_dac_out2i( PICOC_FUN_ARGS );
+void C_dac_out12i( PICOC_FUN_ARGS );
 
 MCP23017 mcp_gpio( i2cd );
-void C_pins_out( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_pins_out_read( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_pins_out_set( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_pins_out_reset( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_pins_out_toggle( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_pins_in( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
+void C_pins_out( PICOC_FUN_ARGS );
+void C_pins_out_read( PICOC_FUN_ARGS );
+void C_pins_out_set( PICOC_FUN_ARGS );
+void C_pins_out_reset( PICOC_FUN_ARGS );
+void C_pins_out_toggle( PICOC_FUN_ARGS );
+void C_pins_in( PICOC_FUN_ARGS );
 
 extern TIM_HandleTypeDef htim1;
 extern TIM_HandleTypeDef htim2;
 extern TIM_HandleTypeDef htim4;
-extern TIM_HandleTypeDef htim5;
+extern TIM_HandleTypeDef htim5; // TIM5 - pwmo_
 int MX_TIM1_Init();
 int MX_TIM2_Init();
 int MX_TIM4_Init();
 int MX_TIM5_Init();
+// pwmo_
+const unsigned pwmo_n_ch = 4;
+#define TIM_PWM TIM5
+uint32_t pwmo_calc_ccr( xfloat d );
+void pwmo_setFreq( xfloat f );
+xfloat pwmo_getFreq();
+void pwmo_setARR( uint32_t arr );
+uint32_t pwmo_getARR();
+void pwmo_setD0( xfloat d );
+void pwmo_setD1( xfloat d );
+void pwmo_setD2( xfloat d );
+void pwmo_setD3( xfloat d );
+void pwmo_setDn( const xfloat *da );
+void pwmo_setCCR0( uint32_t ccr ); // from 0 here
+void pwmo_setCCR1( uint32_t ccr );
+void pwmo_setCCR2( uint32_t ccr );
+void pwmo_setCCR3( uint32_t ccr );
+uint32_t pwmo_getCCR0();
+uint32_t pwmo_getCCR1();
+uint32_t pwmo_getCCR2();
+uint32_t pwmo_getCCR3();
+
+void C_pwmo_setFreq( PICOC_FUN_ARGS );
+void C_pwmo_getFreq( PICOC_FUN_ARGS );
+void C_pwmo_setARR( PICOC_FUN_ARGS );
+void C_pwmo_getARR( PICOC_FUN_ARGS );
+void C_pwmo_setD0( PICOC_FUN_ARGS );
+void C_pwmo_setD1( PICOC_FUN_ARGS );
+void C_pwmo_setD2( PICOC_FUN_ARGS );
+void C_pwmo_setD3( PICOC_FUN_ARGS );
+void C_pwmo_setDn( PICOC_FUN_ARGS );
+void C_pwmo_setCCR0( PICOC_FUN_ARGS );
+void C_pwmo_setCCR1( PICOC_FUN_ARGS );
+void C_pwmo_setCCR2( PICOC_FUN_ARGS );
+void C_pwmo_setCCR3( PICOC_FUN_ARGS );
+void C_pwmo_getCCR0( PICOC_FUN_ARGS );
+void C_pwmo_getCCR1( PICOC_FUN_ARGS );
+void C_pwmo_getCCR2( PICOC_FUN_ARGS );
+void C_pwmo_getCCR3( PICOC_FUN_ARGS );
 
 #define PICOC_STACK_SIZE (32*1024)
 int picoc_cmdline_handler( char *s );
@@ -238,6 +278,9 @@ int main(void)
   mcp_gpio.set_b( 0x00 );
 
   lcdt.puts("P");
+
+  MX_TIM5_Init();
+  lcdt.puts("5");
 
   int dac_rc = MX_DAC_Init();
   lcdt.puts( dac_rc == 0 ? "D " : "-d" );
@@ -399,8 +442,28 @@ struct LibraryFunction picoc_local_Functions[] =
   { C_pins_out_reset,        "void pins_out_reset(int);" },
   { C_pins_out_toggle,       "void pins_out_toggle(int);" },
   { C_pins_in,               "int  pins_in(void);" },
+
+  { C_pwmo_setFreq,          "void pwmo_setFreq( double );" },
+  { C_pwmo_getFreq,          "double pwmo_getFreq();" },
+  { C_pwmo_setARR,           "void pwmo_setARR( int );" },
+  { C_pwmo_getARR,           "int pwmo_getARR();" },
+  { C_pwmo_setD0,            "void pwmo_setD0( double );" },
+  { C_pwmo_setD1,            "void pwmo_setD1( double );" },
+  { C_pwmo_setD2,            "void pwmo_setD2( double );" },
+  { C_pwmo_setD3,            "void pwmo_setD3( double );" },
+  { C_pwmo_setDn,            "void pwmo_setDn( double* );" },
+  { C_pwmo_setCCR0,          "void pwmo_setCCR0( int );  " },
+  { C_pwmo_setCCR1,          "void pwmo_setCCR1( int );  " },
+  { C_pwmo_setCCR2,          "void pwmo_setCCR2( int );  " },
+  { C_pwmo_setCCR3,          "void pwmo_setCCR3( int );  " },
+  { C_pwmo_getCCR0,          "int  pwmo_getCCR0();  " },
+  { C_pwmo_getCCR1,          "int  pwmo_getCCR1();  " },
+  { C_pwmo_getCCR2,          "int  pwmo_getCCR2();  " },
+  { C_pwmo_getCCR3,          "int  pwmo_getCCR3();  " },
+
   { NULL,            NULL }
 };
+
 
 void picoc_local_SetupFunc( Picoc *pc );
 void picoc_local_SetupFunc( Picoc *pc )
@@ -585,61 +648,61 @@ int adc_loop()
   return 1;
 }
 
-void C_adc_defcfg( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_adc_defcfg( PICOC_FUN_ARGS )
 {
   int rc = adc_defcfg();
-  ReturnValue->Val->Integer = rc;
+  RV_INT = rc;
 }
 
-void C_adc_measure( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_adc_measure( PICOC_FUN_ARGS )
 {
   int rc = adc_measure();
-  ReturnValue->Val->Integer = rc;
+  RV_INT = rc;
 }
 
-void C_adc_out_stdout( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_adc_out_stdout( PICOC_FUN_ARGS )
 {
   adc_out_stdout();
 }
 
-void C_adc_out_lcd( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_adc_out_lcd( PICOC_FUN_ARGS )
 {
   adc_out_lcd();
 }
 
 // ---------------------------------------- PINS ---------------------------------------------------
 
-void C_pins_out( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_pins_out( PICOC_FUN_ARGS )
 {
-  uint8_t val = (uint8_t)(Param[0]->Val->Integer);
+  uint8_t val = (uint8_t)(ARG_0_INT);
   mcp_gpio.set_b( val );
 }
 
-void C_pins_in( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_pins_in( PICOC_FUN_ARGS )
 {
-  ReturnValue->Val->Integer = mcp_gpio.get_a();
+  RV_INT = mcp_gpio.get_a();
 }
 
-void C_pins_out_read( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_pins_out_read( PICOC_FUN_ARGS )
 {
-  ReturnValue->Val->Integer = mcp_gpio.get_b();
+  RV_INT = mcp_gpio.get_b();
 }
 
-void C_pins_out_set( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_pins_out_set( PICOC_FUN_ARGS )
 {
-  uint8_t val = mcp_gpio.get_b() | (uint8_t)(Param[0]->Val->Integer);
+  uint8_t val = mcp_gpio.get_b() | (uint8_t)(ARG_0_INT);
   mcp_gpio.set_b( val );
 }
 
-void C_pins_out_reset( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_pins_out_reset( PICOC_FUN_ARGS )
 {
-  uint8_t val = mcp_gpio.get_b() & ~(uint8_t)(Param[0]->Val->Integer);
+  uint8_t val = mcp_gpio.get_b() & ~(uint8_t)(ARG_0_INT);
   mcp_gpio.set_b( val );
 }
 
-void C_pins_out_toggle( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_pins_out_toggle( PICOC_FUN_ARGS )
 {
-  uint8_t val = mcp_gpio.get_b() ^ (uint8_t)(Param[0]->Val->Integer);
+  uint8_t val = mcp_gpio.get_b() ^ (uint8_t)(ARG_0_INT);
   mcp_gpio.set_b( val );
 }
 
@@ -682,36 +745,250 @@ void dac_out12i( int v1, int v2 )
   dac_out2i( v2 );
 }
 
-void C_dac_out1( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_dac_out1( PICOC_FUN_ARGS )
 {
-  dac_out1( Param[0]->Val->FP );
+  dac_out1( ARG_0_FP );
 }
 
-void C_dac_out2( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_dac_out2( PICOC_FUN_ARGS )
 {
-  dac_out2( Param[0]->Val->FP );
+  dac_out2( ARG_0_FP );
 }
 
-void C_dac_out12( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_dac_out12( PICOC_FUN_ARGS )
 {
-  dac_out12( Param[0]->Val->FP, Param[1]->Val->FP );
+  dac_out12( ARG_0_FP, ARG_1_FP );
 }
 
-void C_dac_out1i( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_dac_out1i( PICOC_FUN_ARGS )
 {
-  dac_out1i( Param[0]->Val->Integer );
+  dac_out1i( ARG_0_INT );
 }
 
-void C_dac_out2i( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_dac_out2i( PICOC_FUN_ARGS )
 {
-  dac_out2i( Param[0]->Val->Integer );
+  dac_out2i( ARG_0_INT );
 }
 
-void C_dac_out12i( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_dac_out12i( PICOC_FUN_ARGS )
 {
-  dac_out12i( Param[0]->Val->Integer, Param[1]->Val->Integer );
+  dac_out12i( ARG_0_INT, ARG_1_INT );
 }
 
+
+// ---------------------------------------- pwmo = TIM5 -------------------------------------------
+
+uint32_t pwmo_calc_ccr( xfloat d )
+{
+  d = clamp( d, 0.0, 1.0 );
+  uint32_t arr = TIM_PWM->ARR;
+  return (uint32_t)( arr * d );
+}
+
+void pwmo_setFreq( xfloat f )
+{
+  uint32_t cnt_freq = get_TIM_cnt_freq( TIM_PWM );
+  uint32_t arr = (uint32_t)( cnt_freq / f - 1 );
+  pwmo_setARR( arr );
+}
+
+xfloat pwmo_getFreq()
+{
+  uint32_t freq = get_TIM_cnt_freq( TIM_PWM );
+  uint32_t arr = 1 + TIM_PWM->ARR;
+  return (xfloat)freq / arr;
+}
+
+void pwmo_setARR( uint32_t arr )
+{
+  TIM_PWM->CR1 &= ~1u; // disable
+
+  uint32_t old = TIM_PWM->ARR;
+  if( old < 1 ) {
+    old = 1;
+  }
+  TIM_PWM->ARR = arr;
+  TIM_PWM->CNT  = 0;
+  TIM_PWM->CCR1 = (uint32_t)( (uint64_t)TIM_PWM->CCR1 * arr / old );
+  TIM_PWM->CCR2 = (uint32_t)( (uint64_t)TIM_PWM->CCR2 * arr / old );
+  TIM_PWM->CCR3 = (uint32_t)( (uint64_t)TIM_PWM->CCR3 * arr / old );
+  TIM_PWM->CCR4 = (uint32_t)( (uint64_t)TIM_PWM->CCR4 * arr / old );
+
+  TIM_PWM->CR1 |=  1u; // enable
+  TIM_PWM->EGR  = 1;
+}
+
+uint32_t pwmo_getARR()
+{
+  return TIM_PWM->ARR;
+}
+
+void pwmo_setD0( xfloat d )
+{
+  pwmo_setCCR0( pwmo_calc_ccr( d ) );
+}
+
+void pwmo_setD1( xfloat d )
+{
+  pwmo_setCCR1( pwmo_calc_ccr( d ) );
+
+}
+
+void pwmo_setD2( xfloat d )
+{
+  pwmo_setCCR2( pwmo_calc_ccr( d ) );
+
+}
+
+void pwmo_setD3( xfloat d )
+{
+  pwmo_setCCR3( pwmo_calc_ccr( d ) );
+}
+
+void pwmo_setDn( const xfloat *da )
+{
+  if( da ) {
+    pwmo_setD0( da[0] );
+    pwmo_setD1( da[1] );
+    pwmo_setD2( da[2] );
+    pwmo_setD3( da[3] );
+  }
+}
+
+void pwmo_setCCR0( uint32_t ccr )
+{
+  TIM_PWM->CCR1 = ccr;
+}
+
+void pwmo_setCCR1( uint32_t ccr )
+{
+  TIM_PWM->CCR2 = ccr;
+}
+
+void pwmo_setCCR2( uint32_t ccr )
+{
+  TIM_PWM->CCR3 = ccr;
+}
+
+void pwmo_setCCR3( uint32_t ccr )
+{
+  TIM_PWM->CCR4 = ccr;
+}
+
+uint32_t pwmo_getCCR0()
+{
+  return TIM_PWM->CCR1;
+}
+
+uint32_t pwmo_getCCR1()
+{
+  return TIM_PWM->CCR2;
+}
+
+uint32_t pwmo_getCCR2()
+{
+  return TIM_PWM->CCR3;
+}
+
+uint32_t pwmo_getCCR3()
+{
+  return TIM_PWM->CCR4;
+}
+
+void C_pwmo_setFreq( PICOC_FUN_ARGS )
+{
+  pwmo_setFreq( ARG_0_FP );
+}
+
+void C_pwmo_getFreq( PICOC_FUN_ARGS )
+{
+  RV_FP = pwmo_getFreq();
+}
+
+void C_pwmo_setARR( PICOC_FUN_ARGS )
+{
+  pwmo_setARR( ARG_0_INT );
+
+}
+
+void C_pwmo_getARR( PICOC_FUN_ARGS )
+{
+  RV_INT = pwmo_getARR();
+}
+
+void C_pwmo_setD0( PICOC_FUN_ARGS )
+{
+  pwmo_setD0( ARG_0_FP );
+}
+
+void C_pwmo_setD1( PICOC_FUN_ARGS )
+{
+  pwmo_setD1( ARG_0_FP );
+}
+
+void C_pwmo_setD2( PICOC_FUN_ARGS )
+{
+  pwmo_setD2( ARG_0_FP );
+}
+
+void C_pwmo_setD3( PICOC_FUN_ARGS )
+{
+  pwmo_setD3( ARG_0_FP );
+}
+
+void C_pwmo_setDn( PICOC_FUN_ARGS )
+{
+  // TODO: list or array?
+}
+
+void C_pwmo_setCCR0( PICOC_FUN_ARGS )
+{
+  pwmo_setCCR0( ARG_0_INT );
+}
+
+void C_pwmo_setCCR1( PICOC_FUN_ARGS )
+{
+  pwmo_setCCR1( ARG_0_INT );
+}
+
+void C_pwmo_setCCR2( PICOC_FUN_ARGS )
+{
+  pwmo_setCCR2( ARG_0_INT );
+}
+
+void C_pwmo_setCCR3( PICOC_FUN_ARGS )
+{
+  pwmo_setCCR3( ARG_0_INT );
+}
+
+
+void C_pwmo_getCCR0( PICOC_FUN_ARGS )
+{
+  RV_INT = pwmo_getCCR0();
+}
+
+void C_pwmo_getCCR1( PICOC_FUN_ARGS )
+{
+  RV_INT = pwmo_getCCR1();
+}
+
+void C_pwmo_getCCR2( PICOC_FUN_ARGS )
+{
+  RV_INT = pwmo_getCCR2();
+}
+
+void C_pwmo_getCCR3( PICOC_FUN_ARGS )
+{
+  RV_INT = pwmo_getCCR3();
+}
+
+// ----------------------------------------  ------------------------------------------------------
+
+
+// ----------------------------------------  ------------------------------------------------------
+
+
+// ----------------------------------------  ------------------------------------------------------
 
 // ----------------------------------------  ------------------------------------------------------
 
