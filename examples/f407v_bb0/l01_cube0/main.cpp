@@ -788,15 +788,16 @@ uint32_t pwmo_calc_ccr( xfloat d )
 void pwmo_setFreq( xfloat f )
 {
   uint32_t cnt_freq = get_TIM_cnt_freq( TIM_PWM );
-  uint32_t arr = (uint32_t)( cnt_freq / f - 1 );
+  xfloat arr_x = clamp( cnt_freq / f - 1, (xfloat)1.0, (xfloat)(0xFFFFFFFF) ); // TODO? change PSC?
+  uint32_t arr = (uint32_t)( arr_x );
   pwmo_setARR( arr );
 }
 
 xfloat pwmo_getFreq()
 {
   uint32_t freq = get_TIM_cnt_freq( TIM_PWM );
-  uint32_t arr = 1 + TIM_PWM->ARR;
-  return (xfloat)freq / arr;
+  uint32_t arr = TIM_PWM->ARR;
+  return (xfloat)freq / ( (xfloat)(1) + arr );
 }
 
 void pwmo_setARR( uint32_t arr )
@@ -938,7 +939,7 @@ void C_pwmo_setD3( PICOC_FUN_ARGS )
 
 void C_pwmo_setDn( PICOC_FUN_ARGS )
 {
-  // TODO: list or array?
+  pwmo_setDn( (const double*)(ARG_0_PTR) );
 }
 
 void C_pwmo_setCCR0( PICOC_FUN_ARGS )
