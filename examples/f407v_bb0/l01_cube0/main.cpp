@@ -37,12 +37,18 @@ int isUSBH_on = 0, isMSC_ready = 0;
 void USBH_HandleEvent( USBH_HandleTypeDef *phost, uint8_t id );
 int init_usbh_msc();
 
-int task_idx = 0, T_off = -10, T_hyst = 20; // TMP: to test menu
+int task_idx = 0, t_step_ms = 100, n_loops = 10000000, auto_out = 0;
+int T_off = -10, T_hyst = 20; // TMP: to test menu
+
 const Menu4bItem menu_main[] = {
-  { "task_idx",   &task_idx,       1,       0,       42, nullptr },
-  {   "T_off",       &T_off,      25,  -10000,   500000, nullptr, 2 },
+  {  "task_idx"    &task_idx,      1,       0,         42, nullptr },
+  { "t_step_ms",  &t_step_ms,    100,     100,      10000, nullptr },
+  {   "n_loops"     &n_loops,      1,       1,   10000000, nullptr },
+  {  "auto_out"    &auto_out,      1,       0,          9, nullptr },
+  {     "T_off"       &T_off,      25,  -10000,    500000, nullptr, 2 },
   //{ "set_base", nullptr,   0,      0,   100000, fun_set_base }
 };
+xfloat t_c = 0;
 
 using RUN_FUN = int(*)(void);
 int run_common( RUN_FUN pre_fun, RUN_FUN loop_fun );
@@ -163,7 +169,18 @@ void C_pwmo_getCCR3( PICOC_FUN_ARGS );
 
 extern volatile uint32_t tim2_ccr1x, tim2_ccr2x, tim2_busy;
 uint32_t tim2_ccr1, tim2_ccr2;
-xfloat ifm_0_freq = 0, ifm_0_d = 0;
+xfloat ifm_0_freq = 0, ifm_0_d = 0, ifm_0_t0 = 0, ifm_0_td = 0;
+void ifm_0_measure();
+void ifm_0_enable();
+void ifm_0_disable();
+void C_ifm_0_measure( PICOC_FUN_ARGS );
+void C_ifm_0_enable( PICOC_FUN_ARGS );
+void C_ifm_0_disable( PICOC_FUN_ARGS );
+
+void ifm_out_stdout();
+void ifm_out_lcd();
+int  ifm_pre_loop();
+int  ifm_loop();
 
 #define PICOC_STACK_SIZE (32*1024)
 int picoc_cmdline_handler( char *s );
@@ -208,29 +225,32 @@ const CmdInfo* global_cmds[] = {
 
 int run_common( RUN_FUN pre_fun, RUN_FUN loop_fun )
 {
-  uint32_t n  = UVAR('n');
-  uint32_t t_step = UVAR('t');
   lcdt.cls();
-  std_out << "# Task " << task_idx << " n= " << n << " t_step= " << t_step << " on_cmd_handler= " << on_cmd_handler << NL;
+  std_out << "# Task " << task_idx << " n_loops= " << n_loops << " t_step_ms= " << t_step_ms << NL;
+  OSTR(s,40);
 
   pre_fun();
 
   uint32_t tm0, tm00;
   break_flag = 0;
-  for( decltype(+n) i=0; i<n && !break_flag; ++i ) {
+  for( decltype(+n_loops) i=0; i<n_loops && !break_flag; ++i ) {
     uint32_t tcc = HAL_GetTick();
     if( i == 0 ) {
       tm0 = tcc; tm00 = tm0;
     }
 
-    xfloat tc = 0.001f * ( tcc - tm00 );
-    std_out << XFmt( tc, cvtff_fix, 12, 3 ) ;
+    t_c = 0.001f * ( tcc - tm00 );
+    // TODO: fun
+    s_outstr.reset_out();
+    s << XFmt( t_c, cvtff_fix, 10, 2 );
+    std_out << s_outstr.c_str() << ' ';
     loop_fun();
+    lcdt.puts_xy( 10, 3, s_outstr.c_str() );
 
     std_out << NL;
 
-    if( t_step > 0 ) {
-      delay_ms_until_brk( &tm0, t_step );
+    if( t_step_ms > 0 ) {
+      delay_ms_until_brk( &tm0, t_step_ms );
     }
   }
 
@@ -245,8 +265,9 @@ int run_0()
 
 int run_1()
 {
-  std_out << "# Task 1 n= " << NL;
-  return 0;
+  int rc =  run_common( ifm_pre_loop, ifm_loop );
+  ifm_0_disable();
+  return rc;
 }
 
 int run_n()
@@ -369,16 +390,12 @@ int cmd_t1( int argc, const char * const * argv )
 {
   std_out << "# t1: " << NL;
 
-  oxc_disable_interrupts();
-  tim2_ccr1 = tim2_ccr1x; tim2_ccr2 = tim2_ccr2x;
-  oxc_enable_interrupts();
+  ifm_0_measure();
 
-  uint32_t cnt_freq = get_TIM_cnt_freq( TIM2 );
-  ifm_0_freq = ( tim2_ccr1 > 0 ) ? ( (xfloat)(cnt_freq) / tim2_ccr1  ) : 0;
-  ifm_0_d    = ( tim2_ccr1 > 0 ) ? ( (xfloat)(tim2_ccr2) / tim2_ccr1  ) : 0;
-
-  std_out << "# T2.CCR1= " << tim2_ccr1 << " T2.CCR2= " << tim2_ccr2 << " cnt_freq= " << cnt_freq
-          << " freq= " << ifm_0_freq << " d= " << ifm_0_d << NL;
+  std_out << "# T2.CCR1= " << tim2_ccr1 << " T2.CCR2= " << tim2_ccr2
+          << " freq= " << ifm_0_freq << " d= " << ifm_0_d
+          << " t0= " << ifm_0_t0 << " td= " << ifm_0_td
+          << NL;
 
   return 0;
 }
@@ -492,6 +509,10 @@ struct LibraryFunction picoc_local_Functions[] =
   { C_pwmo_getCCR2,          "int  pwmo_getCCR2();  " },
   { C_pwmo_getCCR3,          "int  pwmo_getCCR3();  " },
 
+  { C_ifm_0_measure,         "void ifm_0_measure();  " },
+  { C_ifm_0_enable,          "void ifm_0_enable();  " },
+  { C_ifm_0_disable,         "void ifm_0_disable();  " },
+
   { NULL,            NULL }
 };
 
@@ -524,7 +545,12 @@ int init_picoc( Picoc *ppc )
   //VariableDefinePlatformVar( ppc, nullptr, "a_char",   ppc->CharArrayType, (union AnyValue *)a_char,       TRUE );
   //VariableDefinePlatformVar( ppc, nullptr, "p_char",     ppc->CharPtrType, (union AnyValue *)&p_char,      TRUE );
 
+  VariableDefinePlatformVar( ppc , nullptr , "t_c"          , &(ppc->FPType)    , (union AnyValue *)&t_c            , TRUE );
   VariableDefinePlatformVar( ppc , nullptr , "__a"          , &(ppc->IntType)   , (union AnyValue *)&(UVAR('a'))    , TRUE );
+  VariableDefinePlatformVar( ppc , nullptr , "task_idx"     , &(ppc->IntType)   , (union AnyValue *)&task_idx       , TRUE );
+  VariableDefinePlatformVar( ppc , nullptr , "n_loops"      , &(ppc->IntType)   , (union AnyValue *)&n_loops        , TRUE );
+  VariableDefinePlatformVar( ppc , nullptr , "t_step_ms"    , &(ppc->IntType)   , (union AnyValue *)&t_step_ms      , TRUE );
+  VariableDefinePlatformVar( ppc , nullptr , "auto_out"     , &(ppc->IntType)   , (union AnyValue *)&auto_out       , TRUE );
   //VariableDefinePlatformVar( ppc , nullptr , "UVAR"         , ppc->IntArrayType , (union AnyValue *)user_vars       , TRUE );
 
   VariableDefinePlatformVar( ppc , nullptr , "adc_v"        , ppc->FPArrayType  , (union AnyValue *)adc_v           , TRUE );
@@ -536,6 +562,11 @@ int init_picoc( Picoc *ppc )
 
   VariableDefinePlatformVar( ppc , nullptr , "dac_v_scales" , ppc->FPArrayType  , (union AnyValue *)dac_v_scales    , TRUE );
   VariableDefinePlatformVar( ppc , nullptr , "dac_v_bases"  , ppc->FPArrayType  , (union AnyValue *)dac_v_bases     , TRUE );
+
+  VariableDefinePlatformVar( ppc , nullptr , "ifm_0_freq"   , &(ppc->FPType)    , (union AnyValue *)&ifm_0_freq     , TRUE );
+  VariableDefinePlatformVar( ppc , nullptr , "ifm_0_d"      , &(ppc->FPType)    , (union AnyValue *)&ifm_0_d        , TRUE );
+  VariableDefinePlatformVar( ppc , nullptr , "ifm_0_t0"     , &(ppc->FPType)    , (union AnyValue *)&ifm_0_t0       , TRUE );
+  VariableDefinePlatformVar( ppc , nullptr , "ifm_0_td"     , &(ppc->FPType)    , (union AnyValue *)&ifm_0_td       , TRUE );
 
   return 0;
 }
@@ -1014,8 +1045,101 @@ void C_pwmo_getCCR3( PICOC_FUN_ARGS )
   RV_INT = pwmo_getCCR3();
 }
 
-// ----------------------------------------  ------------------------------------------------------
+// ---------------------------------------- ifm_0 = TIM2 ------------------------------------------
 
+void ifm_0_measure()
+{
+  uint32_t cr = TIM2->CR1;
+
+  if( ! ( cr & 1  ) ) { // disabled
+    tim2_ccr1 =  0; tim2_ccr2  = 0;
+    ifm_0_freq = 0; ifm_0_d    = 0;
+    ifm_0_t0   = 0; ifm_0_td   = 0;
+    return;
+  }
+
+  oxc_disable_interrupts();
+  tim2_ccr1 = tim2_ccr1x; tim2_ccr2 = tim2_ccr2x;
+  oxc_enable_interrupts();
+
+  uint32_t cnt_freq = get_TIM_cnt_freq( TIM2 );
+  if( cnt_freq < 1 ) { // fallback
+    cnt_freq = 1;
+  }
+
+  xfloat tdt = (xfloat)(1) / (xfloat)(cnt_freq);
+  ifm_0_t0 = tdt * tim2_ccr1;
+  ifm_0_td = tdt * tim2_ccr2;
+
+  if( tim2_ccr1 > 0 ) {
+    ifm_0_freq = (xfloat)(cnt_freq) / tim2_ccr1  ;
+    ifm_0_d    = ( (xfloat)(tim2_ccr2) / tim2_ccr1  );
+  } else {
+    ifm_0_freq = 0;
+    ifm_0_d    = 0;
+  }
+}
+
+void ifm_0_enable()
+{
+  TIM2->CR1 |= 1u;
+  HAL_NVIC_EnableIRQ( TIM2_IRQn );
+}
+
+void ifm_0_disable()
+{
+  TIM2->CR1 &= ~1u;
+  HAL_NVIC_DisableIRQ( TIM2_IRQn );
+}
+
+void C_ifm_0_measure( PICOC_FUN_ARGS )
+{
+  ifm_0_measure();
+}
+
+void C_ifm_0_enable( PICOC_FUN_ARGS )
+{
+  ifm_0_enable();
+}
+
+void C_ifm_0_disable( PICOC_FUN_ARGS )
+{
+  ifm_0_disable();
+}
+
+void ifm_out_stdout()
+{
+  std_out << ' ' << XFmt( ifm_0_freq, cvtff_fix, 9, 3 );
+  std_out << ' ' << XFmt( ifm_0_d,    cvtff_fix, 6, 4 );
+}
+
+void ifm_out_lcd()
+{
+  OSTR(s,40);
+
+  s_outstr.reset_out();
+  s << XFmt( ifm_0_freq, cvtff_fix, 9, 3 ) << ' ';
+  lcdt.puts_xy( 0, 0, s_outstr.c_str() );
+
+  s_outstr.reset_out();
+  s << XFmt( ifm_0_d, cvtff_fix, 6, 4 ) << ' ';
+  lcdt.puts_xy( 12, 0, s_outstr.c_str() );
+
+}
+
+int ifm_pre_loop()
+{
+  ifm_0_enable();
+  return 1;
+}
+
+int ifm_loop()
+{
+  ifm_0_measure();
+  ifm_out_stdout();
+  ifm_out_lcd();
+  return 1;
+}
 
 // ----------------------------------------  ------------------------------------------------------
 
