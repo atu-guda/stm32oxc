@@ -111,12 +111,16 @@ void C_pins_in( PICOC_FUN_ARGS );
 
 extern TIM_HandleTypeDef htim1;
 extern TIM_HandleTypeDef htim2;
+extern TIM_HandleTypeDef htim3;
 extern TIM_HandleTypeDef htim4;
 extern TIM_HandleTypeDef htim5; // TIM5 - pwmo_
+extern TIM_HandleTypeDef htim9;
 int MX_TIM1_Init();
 int MX_TIM2_Init();
+int MX_TIM3_Init();
 int MX_TIM4_Init();
 int MX_TIM5_Init();
+int MX_TIM9_Init();
 // pwmo_
 const unsigned pwmo_n_ch = 4;
 #define TIM_PWM TIM5
@@ -157,6 +161,10 @@ void C_pwmo_getCCR1( PICOC_FUN_ARGS );
 void C_pwmo_getCCR2( PICOC_FUN_ARGS );
 void C_pwmo_getCCR3( PICOC_FUN_ARGS );
 
+extern volatile uint32_t tim2_ccr1x, tim2_ccr2x, tim2_busy;
+uint32_t tim2_ccr1, tim2_ccr2;
+xfloat ifm_0_freq = 0, ifm_0_d = 0;
+
 #define PICOC_STACK_SIZE (32*1024)
 int picoc_cmdline_handler( char *s );
 Picoc pc;
@@ -181,6 +189,8 @@ int cmd_lcd_puts( int argc, const char * const * argv );
 CmdInfo CMDINFO_LCD_PUTS{ "lcd_puts", 0, cmd_lcd_puts, "string - put string at cur pos ln  LCD"  };
 int cmd_menu( int argc, const char * const * argv );
 CmdInfo CMDINFO_MENU { "menu", 'M', cmd_menu, " N - menu action"  };
+int cmd_t1( int argc, const char * const * argv );
+CmdInfo CMDINFO_T1 { "t1", 0, cmd_t1, " - misc test"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -190,6 +200,7 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_LCD_XYCHAR,
   &CMDINFO_LCD_GOTOXY,
   &CMDINFO_LCD_PUTS,
+  &CMDINFO_T1,
   &CMDINFO_MENU,
   FS_CMDS0,
   nullptr
@@ -279,6 +290,8 @@ int main(void)
 
   lcdt.puts("P");
 
+  MX_TIM2_Init();
+  lcdt.puts("2");
   MX_TIM5_Init();
   lcdt.puts("5");
 
@@ -350,6 +363,24 @@ int cmd_test0( int argc, const char * const * argv )
   }
 
   return rc;
+}
+
+int cmd_t1( int argc, const char * const * argv )
+{
+  std_out << "# t1: " << NL;
+
+  oxc_disable_interrupts();
+  tim2_ccr1 = tim2_ccr1x; tim2_ccr2 = tim2_ccr2x;
+  oxc_enable_interrupts();
+
+  uint32_t cnt_freq = get_TIM_cnt_freq( TIM2 );
+  ifm_0_freq = ( tim2_ccr1 > 0 ) ? ( (xfloat)(cnt_freq) / tim2_ccr1  ) : 0;
+  ifm_0_d    = ( tim2_ccr1 > 0 ) ? ( (xfloat)(tim2_ccr2) / tim2_ccr1  ) : 0;
+
+  std_out << "# T2.CCR1= " << tim2_ccr1 << " T2.CCR2= " << tim2_ccr2 << " cnt_freq= " << cnt_freq
+          << " freq= " << ifm_0_freq << " d= " << ifm_0_d << NL;
+
+  return 0;
 }
 
 int picoc_cmdline_handler( char *s )
