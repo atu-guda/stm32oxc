@@ -234,24 +234,24 @@ int MX_TIM5_Init()
 
   TIM_OC_InitTypeDef sConfigOC ;
   sConfigOC.OCMode     = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse      = arr_t5 / 10;
+  sConfigOC.Pulse      = 0; // arr_t5 / 10;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if( HAL_TIM_PWM_ConfigChannel( &htim5, &sConfigOC, TIM_CHANNEL_1 ) != HAL_OK ) {
     errno = 7755; return 1;
   }
 
-  sConfigOC.Pulse      = arr_t5 / 5;
+  // sConfigOC.Pulse      = arr_t5 / 5;
   if( HAL_TIM_PWM_ConfigChannel( &htim5, &sConfigOC, TIM_CHANNEL_2 ) != HAL_OK ) {
     errno = 7756; return 1;
   }
 
-  sConfigOC.Pulse      = arr_t5 / 3;
+  // sConfigOC.Pulse      = arr_t5 / 3;
   if( HAL_TIM_PWM_ConfigChannel( &htim5, &sConfigOC, TIM_CHANNEL_3 ) != HAL_OK ) {
     errno = 7757; return 1;
   }
 
-  sConfigOC.Pulse      = arr_t5 / 2;
+  // sConfigOC.Pulse      = arr_t5 / 2;
   if( HAL_TIM_PWM_ConfigChannel( &htim5, &sConfigOC, TIM_CHANNEL_4 ) != HAL_OK ) {
     errno = 7758; return 1;
   }
@@ -262,6 +262,31 @@ int MX_TIM5_Init()
   HAL_TIM_PWM_Start( &htim5, TIM_CHANNEL_4 );
 
   return 0;
+}
+
+int MX_TIM9_Init()
+{
+  htim9.Instance               = TIM9;
+  htim9.Init.Prescaler         = 0;
+  htim9.Init.CounterMode       = TIM_COUNTERMODE_UP;
+  htim9.Init.Period            = 65535;
+  htim9.Init.ClockDivision     = TIM_CLOCKDIVISION_DIV1;
+  htim9.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if( HAL_TIM_Base_Init( &htim9 ) != HAL_OK ) {
+    errno = 7791; return 1;
+  }
+
+  TIM_SlaveConfigTypeDef sSlaveConfig;
+  sSlaveConfig.SlaveMode       = TIM_SLAVEMODE_EXTERNAL1;
+  sSlaveConfig.InputTrigger    = TIM_TS_TI1FP1;
+  sSlaveConfig.TriggerPolarity = TIM_TRIGGERPOLARITY_RISING;
+  sSlaveConfig.TriggerFilter   = 0;
+  if( HAL_TIM_SlaveConfigSynchro( &htim9, &sSlaveConfig ) != HAL_OK ) {
+    errno = 7792; return 1;
+  }
+  HAL_TIM_Base_Start( &htim9 );
+  return 0;
+
 }
 
 
@@ -310,6 +335,14 @@ void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* htim_base )
     __HAL_RCC_GPIOD_CLK_ENABLE();
     /** TIM3 GPIO Configuration D2 ---> TIM3_ETR */
     GpioD.cfgAF_N( GPIO_PIN_2, GPIO_AF2_TIM3 );
+    return;
+  }
+
+  if( htim_base->Instance == TIM9 )  {
+    __HAL_RCC_TIM9_CLK_ENABLE();
+    __HAL_RCC_GPIOE_CLK_ENABLE();
+    /** TIM9 GPIO Configuration PE5 ---> TIM9_CH1 */
+    GpioE.cfgAF_N( GPIO_PIN_5, GPIO_AF3_TIM9 );
     return;
   }
 
