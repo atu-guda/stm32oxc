@@ -126,6 +126,39 @@ int MX_TIM2_Init()
   return 0;
 }
 
+int MX_TIM3_Init()
+{
+  htim3.Instance               = TIM3;
+  htim3.Init.Prescaler         = 0;
+  htim3.Init.CounterMode       = TIM_COUNTERMODE_UP;
+  htim3.Init.Period            = 65535;
+  htim3.Init.ClockDivision     = TIM_CLOCKDIVISION_DIV1;
+  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if( HAL_TIM_Base_Init( &htim3 ) != HAL_OK ) {
+    errno = 7731; return 1;
+  }
+
+  TIM_SlaveConfigTypeDef sSlaveConfig;
+  sSlaveConfig.SlaveMode               = TIM_SLAVEMODE_EXTERNAL1;
+  sSlaveConfig.InputTrigger            = TIM_TS_ETRF;
+  sSlaveConfig.TriggerPolarity         = TIM_TRIGGERPOLARITY_NONINVERTED;
+  sSlaveConfig.TriggerPrescaler        = TIM_TRIGGERPRESCALER_DIV1;
+  sSlaveConfig.TriggerFilter           = 0;
+  if( HAL_TIM_SlaveConfigSynchro( &htim3, &sSlaveConfig ) != HAL_OK ) {
+    errno = 7731; return 1;
+  }
+
+  TIM_MasterConfigTypeDef sMasterConfig;
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode     = TIM_MASTERSLAVEMODE_DISABLE;
+  if( HAL_TIMEx_MasterConfigSynchronization( &htim3, &sMasterConfig ) != HAL_OK ) {
+    errno = 7731; return 1;
+  }
+  TIM3->CNT = 0;
+  HAL_TIM_Base_Start( &htim3 );
+  return 0;
+}
+
 int MX_TIM4_Init()
 {
   htim4.Instance               = TIM4;
@@ -270,6 +303,16 @@ void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim_pwm )
 
 void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* htim_base )
 {
+  dbg_val0 = 1;
+  if( htim_base->Instance == TIM3 ) {
+    dbg_val0 = 2;
+    __HAL_RCC_TIM3_CLK_ENABLE();
+    __HAL_RCC_GPIOD_CLK_ENABLE();
+    /** TIM3 GPIO Configuration D2 ---> TIM3_ETR */
+    GpioD.cfgAF_N( GPIO_PIN_2, GPIO_AF2_TIM3 );
+    return;
+  }
+
 }
 
 void HAL_TIM_IC_MspInit( TIM_HandleTypeDef* htim_ic )

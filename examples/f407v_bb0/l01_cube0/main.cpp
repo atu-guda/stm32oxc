@@ -41,11 +41,11 @@ int task_idx = 0, t_step_ms = 100, n_loops = 10000000, auto_out = 0;
 int T_off = -10, T_hyst = 20; // TMP: to test menu
 
 const Menu4bItem menu_main[] = {
-  {  "task_idx"    &task_idx,      1,       0,         42, nullptr },
+  {  "task_idx",   &task_idx,      1,       0,         42, nullptr },
   { "t_step_ms",  &t_step_ms,    100,     100,      10000, nullptr },
-  {   "n_loops"     &n_loops,      1,       1,   10000000, nullptr },
-  {  "auto_out"    &auto_out,      1,       0,          9, nullptr },
-  {     "T_off"       &T_off,      25,  -10000,    500000, nullptr, 2 },
+  {   "n_loops",    &n_loops,      1,       1,   10000000, nullptr },
+  {  "auto_out",   &auto_out,      1,       0,          9, nullptr },
+  {     "T_off",      &T_off,      25,  -10000,    500000, nullptr, 2 },
   //{ "set_base", nullptr,   0,      0,   100000, fun_set_base }
 };
 xfloat t_c = 0;
@@ -170,12 +170,16 @@ void C_pwmo_getCCR3( PICOC_FUN_ARGS );
 extern volatile uint32_t tim2_ccr1x, tim2_ccr2x, tim2_busy;
 uint32_t tim2_ccr1, tim2_ccr2;
 xfloat ifm_0_freq = 0, ifm_0_d = 0, ifm_0_t0 = 0, ifm_0_td = 0;
+uint32_t ifm_2_cnt = 0;
+uint16_t ifm_2_cntx = 0;
 void ifm_0_measure();
 void ifm_0_enable();
 void ifm_0_disable();
 void C_ifm_0_measure( PICOC_FUN_ARGS );
 void C_ifm_0_enable( PICOC_FUN_ARGS );
 void C_ifm_0_disable( PICOC_FUN_ARGS );
+void ifm_2_measure();
+void C_ifm_2_measure( PICOC_FUN_ARGS );
 
 void ifm_out_stdout();
 void ifm_out_lcd();
@@ -313,6 +317,8 @@ int main(void)
 
   MX_TIM2_Init();
   lcdt.puts("2");
+  MX_TIM3_Init();
+  lcdt.puts("3");
   MX_TIM5_Init();
   lcdt.puts("5");
 
@@ -391,11 +397,14 @@ int cmd_t1( int argc, const char * const * argv )
   std_out << "# t1: " << NL;
 
   ifm_0_measure();
+  ifm_2_measure();
 
   std_out << "# T2.CCR1= " << tim2_ccr1 << " T2.CCR2= " << tim2_ccr2
           << " freq= " << ifm_0_freq << " d= " << ifm_0_d
           << " t0= " << ifm_0_t0 << " td= " << ifm_0_td
           << NL;
+
+  std_out << "# T3.CNT= " << TIM3->CNT << NL;
 
   return 0;
 }
@@ -512,6 +521,7 @@ struct LibraryFunction picoc_local_Functions[] =
   { C_ifm_0_measure,         "void ifm_0_measure();  " },
   { C_ifm_0_enable,          "void ifm_0_enable();  " },
   { C_ifm_0_disable,         "void ifm_0_disable();  " },
+  { C_ifm_2_measure,         "void ifm_2_measure();  " },
 
   { NULL,            NULL }
 };
@@ -567,6 +577,7 @@ int init_picoc( Picoc *ppc )
   VariableDefinePlatformVar( ppc , nullptr , "ifm_0_d"      , &(ppc->FPType)    , (union AnyValue *)&ifm_0_d        , TRUE );
   VariableDefinePlatformVar( ppc , nullptr , "ifm_0_t0"     , &(ppc->FPType)    , (union AnyValue *)&ifm_0_t0       , TRUE );
   VariableDefinePlatformVar( ppc , nullptr , "ifm_0_td"     , &(ppc->FPType)    , (union AnyValue *)&ifm_0_td       , TRUE );
+  VariableDefinePlatformVar( ppc , nullptr , "ifm_2_cnt"    , &(ppc->IntType)   , (union AnyValue *)&(ifm_2_cnt)    , TRUE );
 
   return 0;
 }
@@ -1111,6 +1122,9 @@ void ifm_out_stdout()
 {
   std_out << ' ' << XFmt( ifm_0_freq, cvtff_fix, 9, 3 );
   std_out << ' ' << XFmt( ifm_0_d,    cvtff_fix, 6, 4 );
+  std_out << ' ' << "11111"; // place for ch1
+  std_out << ' ' << ifm_2_cnt;
+  std_out << ' ' << "33333"; // place for ch3
 }
 
 void ifm_out_lcd()
@@ -1125,10 +1139,16 @@ void ifm_out_lcd()
   s << XFmt( ifm_0_d, cvtff_fix, 6, 4 ) << ' ';
   lcdt.puts_xy( 12, 0, s_outstr.c_str() );
 
+  s_outstr.reset_out();
+  s << ifm_2_cnt << ' ';
+  lcdt.puts_xy( 0, 2, s_outstr.c_str() );
+
 }
 
 int ifm_pre_loop()
 {
+  ifm_2_cnt = 0;
+  ifm_2_cntx = TIM3->CNT;
   ifm_0_enable();
   return 1;
 }
@@ -1136,6 +1156,7 @@ int ifm_pre_loop()
 int ifm_loop()
 {
   ifm_0_measure();
+  ifm_2_measure();
   ifm_out_stdout();
   ifm_out_lcd();
   return 1;
@@ -1144,7 +1165,24 @@ int ifm_loop()
 // ----------------------------------------  ------------------------------------------------------
 
 
-// ----------------------------------------  ------------------------------------------------------
+// ---------------------------------------- ifm2 = TIM3.ETR ----------------------------------------
+
+
+void ifm_2_measure()
+{
+  uint16_t cnt = TIM3->CNT;
+  if( cnt >= ifm_2_cntx ) {
+    ifm_2_cnt += cnt - ifm_2_cntx;
+  } else {
+    ifm_2_cnt += 0x10000 + cnt - ifm_2_cntx;
+  }
+  ifm_2_cntx = cnt;
+}
+
+void C_ifm_2_measure( PICOC_FUN_ARGS )
+{
+  ifm_2_measure();
+}
 
 // ----------------------------------------  ------------------------------------------------------
 
