@@ -9,6 +9,7 @@ TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim4;
 TIM_HandleTypeDef htim5;
+TIM_HandleTypeDef htim8;
 TIM_HandleTypeDef htim9;
 
 int MX_TIM1_Init();
@@ -16,11 +17,11 @@ int MX_TIM2_Init();
 int MX_TIM3_Init();
 int MX_TIM4_Init();
 int MX_TIM5_Init();
+int MX_TIM8_Init();
 int MX_TIM9_Init();
 
 volatile uint32_t tim2_ccr1x = 0, tim2_ccr2x = 0, tim2_busy = 0;
 
-void HAL_TIM_MspPostInit( TIM_HandleTypeDef* htim );
 
 
 int MX_TIM1_Init()
@@ -66,7 +67,7 @@ int MX_TIM1_Init()
   if( HAL_TIMEx_ConfigBreakDeadTime( &htim1, &sBreakDeadTimeConfig ) != HAL_OK ) {
     errno = 7714; return 1;
   }
-  // HAL_TIM_MspPostInit( &htim1 );
+
   return 0;
 }
 
@@ -167,12 +168,12 @@ int MX_TIM4_Init()
   htim4.Init.Period            = 65535;
   htim4.Init.ClockDivision     = TIM_CLOCKDIVISION_DIV1;
   htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if( HAL_TIM_IC_Init( &htim4 ) != HAL_OK ) {
+  if( HAL_TIM_Base_Init( &htim4 ) != HAL_OK ) {
     errno = 7741; return 1;
   }
 
   TIM_SlaveConfigTypeDef sSlaveConfig ;
-  sSlaveConfig.SlaveMode        = TIM_SLAVEMODE_RESET;
+  sSlaveConfig.SlaveMode        = TIM_SLAVEMODE_EXTERNAL1;
   sSlaveConfig.InputTrigger     = TIM_TS_TI1FP1;
   sSlaveConfig.TriggerPolarity  = TIM_INPUTCHANNELPOLARITY_RISING;
   sSlaveConfig.TriggerPrescaler = TIM_ICPSC_DIV1;
@@ -181,27 +182,14 @@ int MX_TIM4_Init()
     errno = 7742; return 1;
   }
 
-  TIM_IC_InitTypeDef sConfigIC ;
-  sConfigIC.ICPolarity  = TIM_INPUTCHANNELPOLARITY_RISING;
-  sConfigIC.ICSelection = TIM_ICSELECTION_DIRECTTI;
-  sConfigIC.ICPrescaler = TIM_ICPSC_DIV1;
-  sConfigIC.ICFilter    = 0;
-  if( HAL_TIM_IC_ConfigChannel( &htim4, &sConfigIC, TIM_CHANNEL_1 ) != HAL_OK ) {
+  TIM_MasterConfigTypeDef sMasterConfig ;
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
+  sMasterConfig.MasterSlaveMode     = TIM_MASTERSLAVEMODE_DISABLE;
+  if( HAL_TIMEx_MasterConfigSynchronization( &htim4, &sMasterConfig ) != HAL_OK ) {
     errno = 7743; return 1;
   }
 
-  sConfigIC.ICPolarity  = TIM_INPUTCHANNELPOLARITY_FALLING;
-  sConfigIC.ICSelection = TIM_ICSELECTION_INDIRECTTI;
-  if( HAL_TIM_IC_ConfigChannel( &htim4, &sConfigIC, TIM_CHANNEL_2 ) != HAL_OK ) {
-    errno = 7744; return 1;
-  }
-
-  TIM_MasterConfigTypeDef sMasterConfig ;
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-  sMasterConfig.MasterSlaveMode     = TIM_MASTERSLAVEMODE_DISABLE;
-  if( HAL_TIMEx_MasterConfigSynchronization( &htim4, &sMasterConfig ) != HAL_OK ) {
-    errno = 7745; return 1;
-  }
+  HAL_TIM_Base_Start( &htim4 );
 
   return 0;
 }
@@ -264,6 +252,37 @@ int MX_TIM5_Init()
   return 0;
 }
 
+int MX_TIM8_Init()
+{
+  htim8.Instance               = TIM8;
+  htim8.Init.Prescaler         = 0;
+  htim8.Init.CounterMode       = TIM_COUNTERMODE_UP;
+  htim8.Init.Period            = 65535;
+  htim8.Init.ClockDivision     = TIM_CLOCKDIVISION_DIV1;
+  htim8.Init.RepetitionCounter = 0;
+  htim8.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if( HAL_TIM_Base_Init( &htim8 ) != HAL_OK ) {
+    errno = 7781; return 1;
+  }
+
+  TIM_SlaveConfigTypeDef sSlaveConfig;
+  sSlaveConfig.SlaveMode    = TIM_SLAVEMODE_EXTERNAL1;
+  sSlaveConfig.InputTrigger = TIM_TS_ITR2;
+  if( HAL_TIM_SlaveConfigSynchro(&htim8, &sSlaveConfig) != HAL_OK ) {
+    errno = 7782; return 1;
+  }
+
+  TIM_MasterConfigTypeDef sMasterConfig;
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode     = TIM_MASTERSLAVEMODE_DISABLE;
+  if( HAL_TIMEx_MasterConfigSynchronization( &htim8, &sMasterConfig ) != HAL_OK ) {
+    errno = 7783; return 1;
+  }
+  HAL_TIM_Base_Start( &htim8 );
+
+  return 0;
+}
+
 int MX_TIM9_Init()
 {
   htim9.Instance               = TIM9;
@@ -308,10 +327,10 @@ void TIM2_IRQHandler()
 //
 // HAL_TIM_PeriodElapsedCallback(htim);
 
-void TIM4_IRQHandler()
-{
-  HAL_TIM_IRQHandler( &htim4 );
-}
+// void TIM4_IRQHandler()
+// {
+//   HAL_TIM_IRQHandler( &htim4 );
+// }
 
 
 void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim_pwm )
@@ -338,6 +357,22 @@ void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* htim_base )
     return;
   }
 
+  if( htim_base->Instance == TIM4 ) {
+    __HAL_RCC_TIM4_CLK_ENABLE();
+    __HAL_RCC_GPIOD_CLK_ENABLE();
+    /** TIM4 GPIO Configuration PD12     ------> TIM4_CH1 */
+    GpioD.cfgAF_N( GPIO_PIN_12, GPIO_AF2_TIM4 );
+
+    // HAL_NVIC_SetPriority( TIM4_IRQn, 12, 0 );
+    // HAL_NVIC_EnableIRQ( TIM4_IRQn );
+    return;
+  }
+
+  if( htim_base->Instance == TIM8 )  {
+    __HAL_RCC_TIM8_CLK_ENABLE();
+    return;
+  }
+
   if( htim_base->Instance == TIM9 )  {
     __HAL_RCC_TIM9_CLK_ENABLE();
     __HAL_RCC_GPIOE_CLK_ENABLE();
@@ -361,38 +396,8 @@ void HAL_TIM_IC_MspInit( TIM_HandleTypeDef* htim_ic )
     return;
   }
 
-  if( htim_ic->Instance == TIM4 ) {
-    __HAL_RCC_TIM4_CLK_ENABLE();
-    __HAL_RCC_GPIOD_CLK_ENABLE();
-    /** TIM4 GPIO Configuration PD12     ------> TIM4_CH1 */
-    GpioD.cfgAF_N( GPIO_PIN_12, GPIO_AF2_TIM4 );
-
-    HAL_NVIC_SetPriority( TIM4_IRQn, 12, 0 );
-    HAL_NVIC_EnableIRQ( TIM4_IRQn );
-    return;
-  }
-
 }
 
-void HAL_TIM_MspPostInit( TIM_HandleTypeDef* htim )
-{
-  // GPIO_InitTypeDef GPIO_InitStruct ;
-  //
-  // if( htim->Instance == TIM1 ) {
-  //   __HAL_RCC_GPIOE_CLK_ENABLE();
-  //   #<{(|*TIM1 GPIO Configuration
-  //   PE8     ------> TIM1_CH1N
-  //   PE9     ------> TIM1_CH1
-  //   |)}>#
-  //   GPIO_InitStruct.Pin = GPIO_PIN_8|GPIO_PIN_9;
-  //   GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  //   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  //   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  //   GPIO_InitStruct.Alternate = GPIO_AF1_TIM1;
-  //   HAL_GPIO_Init( GPIOE, &GPIO_InitStruct );
-  // }
-
-}
 
 void HAL_TIM_PWM_MspDeInit( TIM_HandleTypeDef* htim_pwm )
 {
