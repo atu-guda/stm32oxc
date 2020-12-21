@@ -43,9 +43,11 @@ class DS3231 : public I2CClient {
    int setTime( uint8_t  hour,  uint8_t min, uint8_t  sec );
    int getTime( uint8_t *hour, uint8_t *min, uint8_t *sec );
    int getTimeStr( char *s ); // HH:MM:SS = 9 bytes minimum
+   int getDateTime( int *t ); // 6 ints;
    int setDate( int16_t  year,  uint8_t month, uint8_t  day );
    int getDate( int16_t *year, uint8_t *month, uint8_t *day );
    int getDateStr( char *s ); // YYYY:MM:DD = 11 bytes minimum
+   int getDateTimeStr( char *s ); // YYYYMMDD_HHMMSS = 16 bytes minimum
   protected:
 };
 

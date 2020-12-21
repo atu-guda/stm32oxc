@@ -63,6 +63,7 @@ I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );
 HD44780_i2c lcdt( i2cd, 0x3F );
 HD44780_i2c *p_lcdt = &lcdt;
+DS3231 rtc( i2cd );
 void oxc_picoc_hd44780_i2c_init( Picoc *pc );
 
 ADS1115 adc( i2cd );
@@ -201,6 +202,17 @@ void ifm_out_lcd();
 int  ifm_pre_loop();
 int  ifm_loop();
 
+void rtc_getDateTime( int *t ); // array: y m d H M S
+void C_rtc_getDateTime( PICOC_FUN_ARGS );
+void rtc_getDateStr( char *s ); // YYYY:MM:DD 11+ bytes
+void C_rtc_getDateStr( PICOC_FUN_ARGS );
+void rtc_getTimeStr( char *s ); // HH:MM:SS 9+ bytes
+void C_rtc_getTimeStr( PICOC_FUN_ARGS );
+void rtc_getDateTimeStr( char *s ); // YYYYmmDD_HHMMSS 16+ bytes
+void C_rtc_getDateTimeStr( PICOC_FUN_ARGS );
+void rtc_getFileDateTimeStr( char *s ); // o_YYYYmmDD_HHMMSS_XXX.txt 26+ bytes
+void C_rtc_getFileDateTimeStr( PICOC_FUN_ARGS );
+
 #define PICOC_STACK_SIZE (32*1024)
 int picoc_cmdline_handler( char *s );
 Picoc pc;
@@ -216,13 +228,17 @@ void oxc_picoc_fatfs_init( Picoc *pc );
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
+CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - run task"  };
 int cmd_lcd_gotoxy( int argc, const char * const * argv );
 CmdInfo CMDINFO_LCD_GOTOXY{ "lcd_gotoxy", 0, cmd_lcd_gotoxy, " x y - move pos to LCD (x, y)"  };
 int cmd_lcd_xychar( int argc, const char * const * argv );
-CmdInfo CMDINFO_LCD_XYCHAR{ "lcd_xychar", 0, cmd_lcd_xychar, " x y code - put char at x y ln LCD"  };
+CmdInfo CMDINFO_LCD_XYCHAR{ "lcd_xychar", 0, cmd_lcd_xychar, " x y code - put char at x y to LCD"  };
 int cmd_lcd_puts( int argc, const char * const * argv );
-CmdInfo CMDINFO_LCD_PUTS{ "lcd_puts", 0, cmd_lcd_puts, "string - put string at cur pos ln  LCD"  };
+CmdInfo CMDINFO_LCD_PUTS{ "lcd_puts", 0, cmd_lcd_puts, "string - put string at cur pos to LCD"  };
+int cmd_set_time( int argc, const char * const * argv );
+CmdInfo CMDINFO_SET_TIME { "stime", 0, cmd_set_time, " hour min sec - set RTC time "  };
+int cmd_set_date( int argc, const char * const * argv );
+CmdInfo CMDINFO_SET_DATE { "sdate", 0, cmd_set_date, " year month day - set RTC date "  };
 int cmd_menu( int argc, const char * const * argv );
 CmdInfo CMDINFO_MENU { "menu", 'M', cmd_menu, " N - menu action"  };
 int cmd_t1( int argc, const char * const * argv );
@@ -236,6 +252,8 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_LCD_XYCHAR,
   &CMDINFO_LCD_GOTOXY,
   &CMDINFO_LCD_PUTS,
+  &CMDINFO_SET_TIME,
+  &CMDINFO_SET_DATE,
   &CMDINFO_T1,
   &CMDINFO_MENU,
   FS_CMDS0,
@@ -350,6 +368,9 @@ int main(void)
   HAL_DAC_Start( &hdac, DAC_CHANNEL_1 );
   HAL_DAC_Start( &hdac, DAC_CHANNEL_2 );
 
+  rtc.resetDev();
+  rtc.setCtl( 0 ); // enable only clock on bat
+
   fs.fs_type = 0; // none
   fspath[0] = '\0';
 
@@ -364,6 +385,14 @@ int main(void)
   leds.reset( 0xFF );
 
   pr( NL "##################### " PROJ_NAME NL );
+  char s[40];
+  rtc.getDateStr( s );
+  std_out << "# " << s << ' ';
+  lcdt.puts_xy( 0, 2, s );
+  rtc.getTimeStr( s );
+  std_out << s << NL;
+  lcdt.puts_xy( 12, 2, s );
+
 
   srl.re_ps();
 
@@ -418,19 +447,26 @@ int cmd_t1( int argc, const char * const * argv )
 {
   std_out << "# t1: " << NL;
 
-  ifm_0_measure();
-  ifm_2_measure();
-  ifm_3_measure();
+  char s[40];
+  rtc.getDateStr( s );
+  std_out << "# " << s << ' ';
+  rtc.getTimeStr( s );
+  std_out << s << NL;
 
-  std_out << "# T2.CCR1= " << tim2_ccr1 << " T2.CCR2= " << tim2_ccr2
-          << " freq= " << ifm_0_freq << " d= " << ifm_0_d
-          << " t0= " << ifm_0_t0 << " td= " << ifm_0_td
-          << NL;
 
-  std_out << "# T3.CNT= " << TIM3->CNT << NL;
-  std_out << "# T4.CNT= " << TIM4->CNT << NL;
-  std_out << "# T8.CNT= " << TIM8->CNT << NL;
-  std_out << "# T9.CNT= " << TIM9->CNT << NL;
+  // ifm_0_measure();
+  // ifm_2_measure();
+  // ifm_3_measure();
+  //
+  // std_out << "# T2.CCR1= " << tim2_ccr1 << " T2.CCR2= " << tim2_ccr2
+  //         << " freq= " << ifm_0_freq << " d= " << ifm_0_d
+  //         << " t0= " << ifm_0_t0 << " td= " << ifm_0_td
+  //         << NL;
+  //
+  // std_out << "# T3.CNT= " << TIM3->CNT << NL;
+  // std_out << "# T4.CNT= " << TIM4->CNT << NL;
+  // std_out << "# T8.CNT= " << TIM8->CNT << NL;
+  // std_out << "# T9.CNT= " << TIM9->CNT << NL;
 
   return 0;
 }
@@ -553,9 +589,13 @@ struct LibraryFunction picoc_local_Functions[] =
   { C_ifm_3_measure,         "void ifm_3_measure();  " },
   { C_ifm_3_measure,         "void ifm_3_reset();  " },
 
+  { C_rtc_getDateTime,       "void rtc_getDateTime( int* );  " },
+  { C_rtc_getDateStr,        "void rtc_getDateStr( char* );  " },
+  { C_rtc_getTimeStr,        "void rtc_getTimeStr( char* );  " },
+  { C_rtc_getDateTimeStr,    "void rtc_getDateTimeStr( char* );  " },
+  { C_rtc_getFileDateTimeStr,"void rtc_getFileDateTimeStr( char* );  " },
   { NULL,            NULL }
 };
-
 
 void picoc_local_SetupFunc( Picoc *pc );
 void picoc_local_SetupFunc( Picoc *pc )
@@ -1293,6 +1333,106 @@ void ifm_3_reset()
 void C_ifm_3_reset( PICOC_FUN_ARGS )
 {
   ifm_3_reset();
+}
+
+// ---------------------------------------- RTC ----------------------------------------------------
+
+int cmd_set_time( int argc, const char * const * argv )
+{
+  if( argc < 4 ) {
+    std_out <<  "3 args required" NL ;
+    return 1;
+  }
+  uint8_t t_hour = atoi( argv[1] );
+  uint8_t t_min  = atoi( argv[2] );
+  uint8_t t_sec  = atoi( argv[3] );
+  return rtc.setTime( t_hour, t_min, t_sec );
+}
+
+
+int cmd_set_date( int argc, const char * const * argv )
+{
+  if( argc < 4 ) {
+    std_out <<  "3 args required" NL;
+    return 1;
+  }
+  uint16_t year = atoi( argv[1] );
+  int8_t mon    = atoi( argv[2] );
+  int8_t day    = atoi( argv[3] );
+  return rtc.setDate( year, mon, day );
+}
+
+void rtc_getDateTime( int *t ) // array: y m d H M S
+{
+  if( !t ) {
+    return;
+  }
+
+  rtc.getDateTime( t );
+}
+
+void C_rtc_getDateTime( PICOC_FUN_ARGS )
+{
+  int *t = (int*)(ARG_0_PTR);
+  rtc_getDateTime( t );
+}
+
+void rtc_getDateStr( char *s ) // YYYY:MM:DD 11+ bytes
+{
+  if( !s ) {
+    return;
+  }
+  rtc.getDateStr( s );
+}
+
+void C_rtc_getDateStr( PICOC_FUN_ARGS )
+{
+  char *s = (char*)(ARG_0_PTR);
+  rtc_getDateStr( s );
+}
+
+void rtc_getTimeStr( char *s ) // HH:MM:SS 9+ bytes
+{
+  if( !s ) {
+    return;
+  }
+  rtc.getTimeStr( s );
+}
+
+void C_rtc_getTimeStr( PICOC_FUN_ARGS )
+{
+  char *s = (char*)(ARG_0_PTR);
+  rtc_getTimeStr( s );
+}
+
+void rtc_getDateTimeStr( char *s ) // YYYYmmDD_HHMMSS 16+ bytes
+{
+  if( !s ) {
+    return;
+  }
+  rtc.getDateTimeStr( s );
+}
+
+void C_rtc_getDateTimeStr( PICOC_FUN_ARGS )
+{
+  char *s = (char*)(ARG_0_PTR);
+  rtc_getDateTimeStr( s );
+}
+
+void rtc_getFileDateTimeStr( char *s ) // o_YYYYmmDD_HHMMSS_XXX.txt 26+ bytes
+{
+  if( !s ) {
+    return;
+  }
+  rtc_getDateTimeStr( s+2 );
+  s[0] = 'o'; s[1] = '_';
+  strcat( s, "_XXX.txt" );
+}
+
+void C_rtc_getFileDateTimeStr( PICOC_FUN_ARGS )
+{
+  char *s = (char*)(ARG_0_PTR);
+  rtc_getFileDateTimeStr( s );
 }
 
 
