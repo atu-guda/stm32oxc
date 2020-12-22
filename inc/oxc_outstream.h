@@ -16,6 +16,7 @@ class OutStream {
    DevOut* getOut() { return out; }
    const char* getBuf() const { return out ? out->getBuf() : nullptr; }
    void flush() { if( out ) { out->flush_out(); } }
+   void reset_out() { if( out ) { out->reset_out(); } }
    OutStream& operator=( const OutStream &rhs ) = default;
    void append( char rhs ) { if( out ) { out->putc( rhs ); } }
    void append( const char *rhs ) { if( out ) { out->puts( rhs ); } }

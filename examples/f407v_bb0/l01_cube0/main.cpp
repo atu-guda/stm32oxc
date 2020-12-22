@@ -37,8 +37,37 @@ int isUSBH_on = 0, isMSC_ready = 0;
 void USBH_HandleEvent( USBH_HandleTypeDef *phost, uint8_t id );
 int init_usbh_msc();
 
+const unsigned obuf_sz = 256;
+char obuf_str[obuf_sz];
+OutStr obuf_dev( obuf_str, obuf_sz );
+OutStream obuf( &obuf_dev );
+
+
+const unsigned lcdbuf_sz = 32;
+char lcdbuf_str0[lcdbuf_sz], lcdbuf_str1[lcdbuf_sz], lcdbuf_str2[lcdbuf_sz], lcdbuf_str3[lcdbuf_sz];
+OutStr lcdbuf_dev0( lcdbuf_str0, lcdbuf_sz );
+OutStr lcdbuf_dev1( lcdbuf_str1, lcdbuf_sz );
+OutStr lcdbuf_dev2( lcdbuf_str2, lcdbuf_sz );
+OutStr lcdbuf_dev3( lcdbuf_str3, lcdbuf_sz );
+OutStream lcdbuf0( &lcdbuf_dev0 );
+OutStream lcdbuf1( &lcdbuf_dev1 );
+OutStream lcdbuf2( &lcdbuf_dev2 );
+OutStream lcdbuf3( &lcdbuf_dev3 );
+
+OutStream* obufs[] = { &obuf, &lcdbuf0, &lcdbuf1, &lcdbuf2, &lcdbuf3 };
+constexpr int obufs_sz = size( obufs );
+void obuf_add_str( const char *s, int b );
+void C_obuf_add_str(  PICOC_FUN_ARGS );
+void obuf_clear( unsigned b );
+void C_obuf_clear( PICOC_FUN_ARGS );
+void obuf_add_int( int v, int b );
+void C_obuf_add_int( PICOC_FUN_ARGS );
+void obuf_add_fp( xfloat v, int b );
+void C_obuf_add_fp( PICOC_FUN_ARGS );
+
+
 int task_idx = 0, t_step_ms = 100, n_loops = 10000000, auto_out = 0;
-int T_off = -10, T_hyst = 20; // TMP: to test menu
+int T_off = -10; // TMP: to test menu
 
 const Menu4bItem menu_main[] = {
   {  "task_idx",   &task_idx,      1,       0,         42, nullptr },
@@ -543,6 +572,11 @@ void USBH_HandleEvent( USBH_HandleTypeDef *phost, uint8_t id )
 
 struct LibraryFunction picoc_local_Functions[] =
 {
+  { C_obuf_add_str,          "void obuf_add_str(char*,int);" },
+  { C_obuf_add_int,          "void obuf_add_int(int,int);" },
+  { C_obuf_add_fp,           "void obuf_add_fp(float,int);" },
+  { C_obuf_clear,            "void obuf_clear(int);" },
+
   { C_adc_defcfg,            "int adc_defcfg(void);" },
   { C_adc_measure,           "int adc_measure(void);" },
   { C_adc_out_stdout,        "void adc_out_stdout(void);" },
@@ -631,7 +665,11 @@ int init_picoc( Picoc *ppc )
   VariableDefinePlatformVar( ppc , nullptr , "n_loops"      , &(ppc->IntType)   , (union AnyValue *)&n_loops        , TRUE );
   VariableDefinePlatformVar( ppc , nullptr , "t_step_ms"    , &(ppc->IntType)   , (union AnyValue *)&t_step_ms      , TRUE );
   VariableDefinePlatformVar( ppc , nullptr , "auto_out"     , &(ppc->IntType)   , (union AnyValue *)&auto_out       , TRUE );
-  //VariableDefinePlatformVar( ppc , nullptr , "UVAR"         , ppc->IntArrayType , (union AnyValue *)user_vars       , TRUE );
+  VariableDefinePlatformVar( ppc , nullptr , "obuf_str"     , ppc->CharArrayType, (union AnyValue *)obuf_str        , TRUE );
+  VariableDefinePlatformVar( ppc , nullptr , "lcdbuf_str0"  , ppc->CharArrayType, (union AnyValue *)lcdbuf_str0     , TRUE );
+  VariableDefinePlatformVar( ppc , nullptr , "lcdbuf_str1"  , ppc->CharArrayType, (union AnyValue *)lcdbuf_str1     , TRUE );
+  VariableDefinePlatformVar( ppc , nullptr , "lcdbuf_str2"  , ppc->CharArrayType, (union AnyValue *)lcdbuf_str2     , TRUE );
+  VariableDefinePlatformVar( ppc , nullptr , "lcdbuf_str3"  , ppc->CharArrayType, (union AnyValue *)lcdbuf_str3     , TRUE );
 
   VariableDefinePlatformVar( ppc , nullptr , "adc_v"        , ppc->FPArrayType  , (union AnyValue *)adc_v           , TRUE );
   VariableDefinePlatformVar( ppc , nullptr , "adc_v_scales" , ppc->FPArrayType  , (union AnyValue *)adc_v_scales    , TRUE );
@@ -653,6 +691,59 @@ int init_picoc( Picoc *ppc )
 
   return 0;
 }
+
+// ---------------------------------------- buffers---------------------------------------------------
+
+void obuf_add_str( const char *s, int b )
+{
+  if( b >= 0 && b < obufs_sz ) {
+    *obufs[b] << s;
+  }
+}
+
+void C_obuf_add_str( PICOC_FUN_ARGS )
+{
+  obuf_add_str( (const char*)(ARG_0_PTR), ARG_1_INT );
+}
+
+void obuf_add_int( int v, int b )
+{
+  if( b >= 0 && b < obufs_sz ) {
+    *obufs[b] << v;
+  }
+}
+
+void C_obuf_add_int( PICOC_FUN_ARGS )
+{
+  obuf_add_int( ARG_0_INT, ARG_1_INT  );
+}
+
+void obuf_add_fp( xfloat v, int b )
+{
+  if( b >= 0 && b < obufs_sz ) {
+    *obufs[b] << v;
+  }
+}
+
+void C_obuf_add_fp( PICOC_FUN_ARGS )
+{
+  obuf_add_fp( ARG_0_FP, ARG_1_INT  );
+}
+
+
+void obuf_clear( int b )
+{
+  if( b >= 0 && b < obufs_sz ) {
+    obufs[b]->reset_out();
+  }
+}
+
+void C_obuf_clear( PICOC_FUN_ARGS )
+{
+  obuf_clear( ARG_0_INT );
+}
+
+
 
 // ---------------------------------------- LCD ------------------------------------------------------
 
