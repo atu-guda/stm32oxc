@@ -64,6 +64,12 @@ void obuf_add_int( int v, int b );
 void C_obuf_add_int( PICOC_FUN_ARGS );
 void obuf_add_fp( xfloat v, int b );
 void C_obuf_add_fp( PICOC_FUN_ARGS );
+void obuf_out_stdout( int b );
+void C_obuf_out_stdout( PICOC_FUN_ARGS );
+void obuf_out_ofile( int b );
+void C_obuf_out_ofile( PICOC_FUN_ARGS );
+void lcdbufs_out();
+void C_lcdbufs_out( PICOC_FUN_ARGS );
 
 
 int task_idx = 0, t_step_ms = 100, n_loops = 10000000, auto_out = 0;
@@ -576,6 +582,9 @@ struct LibraryFunction picoc_local_Functions[] =
   { C_obuf_add_int,          "void obuf_add_int(int,int);" },
   { C_obuf_add_fp,           "void obuf_add_fp(float,int);" },
   { C_obuf_clear,            "void obuf_clear(int);" },
+  { C_obuf_out_stdout,       "void obuf_out_stdout(int);" },
+  { C_obuf_out_ofile,        "void obuf_out_ofile(int);" },
+  { C_lcdbufs_out,           "void lcdbufs_out();" },
 
   { C_adc_defcfg,            "int adc_defcfg(void);" },
   { C_adc_measure,           "int adc_measure(void);" },
@@ -741,6 +750,44 @@ void obuf_clear( int b )
 void C_obuf_clear( PICOC_FUN_ARGS )
 {
   obuf_clear( ARG_0_INT );
+}
+
+void obuf_out_stdout( int b )
+{
+  if( b >= 0 && b < obufs_sz ) {
+    std_out << obufs[b]->getOut()->getBuf();
+  }
+}
+
+void C_obuf_out_stdout( PICOC_FUN_ARGS )
+{
+  obuf_out_stdout( ARG_0_INT );
+}
+
+void obuf_out_ofile( int b )
+{
+  if( b >= 0 && b < obufs_sz ) {
+    // std_out << obufs[b]->c_str();
+  }
+}
+
+void C_obuf_out_ofile( PICOC_FUN_ARGS )
+{
+  obuf_out_ofile( ARG_0_INT );
+}
+
+void lcdbufs_out()
+{
+  lcdt.cls();
+  lcdt.puts_xy( 0, 0, lcdbuf_str0 );
+  lcdt.puts_xy( 0, 1, lcdbuf_str1 );
+  lcdt.puts_xy( 0, 2, lcdbuf_str2 );
+  lcdt.puts_xy( 0, 3, lcdbuf_str3 );
+}
+
+void C_lcdbufs_out( PICOC_FUN_ARGS )
+{
+  lcdbufs_out();
 }
 
 
