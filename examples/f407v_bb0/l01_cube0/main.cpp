@@ -113,14 +113,12 @@ int adc_scale_mv = 4096;
 xfloat adc_kv = 0.001f * adc_scale_mv / 0x7FFF;
 int adc_defcfg();
 int adc_measure();
-void adc_out_stdout();
-void adc_out_lcd();
+void adc_out();
 int adc_pre_loop();
 int adc_loop();
 void C_adc_defcfg( PICOC_FUN_ARGS );
 void C_adc_measure( PICOC_FUN_ARGS );
-void C_adc_out_stdout( PICOC_FUN_ARGS );
-void C_adc_out_lcd( PICOC_FUN_ARGS );
+void C_adc_out( PICOC_FUN_ARGS );
 
 extern DAC_HandleTypeDef hdac;
 int MX_DAC_Init();
@@ -232,8 +230,7 @@ void C_ifm_3_measure( PICOC_FUN_ARGS );
 void ifm_3_reset();
 void C_ifm_3_reset( PICOC_FUN_ARGS );
 
-void ifm_out_stdout();
-void ifm_out_lcd();
+void ifm_out();
 int  ifm_pre_loop();
 int  ifm_loop();
 
@@ -312,12 +309,20 @@ int run_common( RUN_FUN pre_fun, RUN_FUN loop_fun )
     }
 
     t_c = 0.001f * ( tcc - tm00 );
-    // TODO: fun
+
+    obuf.reset_out();
+    for( auto o : obufs ) { o->reset_out(); }
+
     s_outstr.reset_out();
     s << XFmt( t_c, cvtff_fix, 10, 2 );
-    std_out << s_outstr.c_str() << ' ';
+    obuf << s_outstr.c_str() << ' ';
+
     loop_fun();
-    lcdt.puts_xy( 10, 3, s_outstr.c_str() );
+
+    obuf_out_stdout( 0 );
+    lcdbufs_out();
+
+    lcdt.puts_xy( 10, 3, s_outstr.c_str() ); // on flag?
 
     std_out << NL;
 
@@ -588,8 +593,7 @@ struct LibraryFunction picoc_local_Functions[] =
 
   { C_adc_defcfg,            "int adc_defcfg(void);" },
   { C_adc_measure,           "int adc_measure(void);" },
-  { C_adc_out_stdout,        "void adc_out_stdout(void);" },
-  { C_adc_out_lcd,           "void adc_out_lcd(void);" },
+  { C_adc_out,               "void adc_out(void);" },
 
   { C_dac_out1,              "void dac_out1(float);" },
   { C_dac_out2,              "void dac_out2(float);" },
@@ -695,6 +699,7 @@ int init_picoc( Picoc *ppc )
   VariableDefinePlatformVar( ppc , nullptr , "ifm_0_t0"     , &(ppc->FPType)    , (union AnyValue *)&ifm_0_t0       , TRUE );
   VariableDefinePlatformVar( ppc , nullptr , "ifm_0_td"     , &(ppc->FPType)    , (union AnyValue *)&ifm_0_td       , TRUE );
   VariableDefinePlatformVar( ppc , nullptr , "ifm_1_freq"   , &(ppc->FPType)    , (union AnyValue *)&ifm_1_freq     , TRUE );
+  VariableDefinePlatformVar( ppc , nullptr , "ifm_1_cnt"    , &(ppc->IntType)   , (union AnyValue *)&ifm_1_cnt      , TRUE );
   VariableDefinePlatformVar( ppc , nullptr , "ifm_2_cnt"    , &(ppc->IntType)   , (union AnyValue *)&(ifm_2_cnt)    , TRUE );
   VariableDefinePlatformVar( ppc , nullptr , "ifm_3_cnt"    , &(ppc->IntType)   , (union AnyValue *)&(ifm_3_cnt)    , TRUE );
 
@@ -898,22 +903,17 @@ int adc_measure()
   return no;
 }
 
-void adc_out_stdout()
+void adc_out()
 {
+  OSTR( s, 40 );
   for( decltype(+adc_no) j=0; j<adc_no; ++j ) {
-    std_out << ' ' << XFmt( adc_v[j], cvtff_fix, 9, 6 );
+    s.reset_out();
+    s << XFmt( adc_v[j], cvtff_fix, 8, 5 );
+    obuf << ' ' << s_outstr.c_str();
+    *obufs[j+1] << s_outstr.c_str();
   }
 }
 
-void adc_out_lcd()
-{
-  OSTR(s,40);
-  for( decltype(+adc_no) j=0; j<adc_no; ++j ) {
-    s_outstr.reset_out();
-    s << XFmt( adc_v[j], cvtff_fix, 7, 4 ) << ' ';
-    lcdt.puts_xy( 0, j, s_outstr.c_str() );
-  }
-}
 
 int adc_pre_loop()
 {
@@ -926,8 +926,7 @@ int adc_pre_loop()
 int adc_loop()
 {
   adc_measure();
-  adc_out_stdout();
-  adc_out_lcd();
+  adc_out();
   return 1;
 }
 
@@ -943,15 +942,11 @@ void C_adc_measure( PICOC_FUN_ARGS )
   RV_INT = rc;
 }
 
-void C_adc_out_stdout( PICOC_FUN_ARGS )
+void C_adc_out( PICOC_FUN_ARGS )
 {
-  adc_out_stdout();
+  adc_out();
 }
 
-void C_adc_out_lcd( PICOC_FUN_ARGS )
-{
-  adc_out_lcd();
-}
 
 // ---------------------------------------- PINS ---------------------------------------------------
 
@@ -1299,6 +1294,7 @@ void ifm_0_measure()
     ifm_0_freq = 0;
     ifm_0_d    = 0;
   }
+  // TODO: auto enable/disable IRQ + flag: was measured
 }
 
 void ifm_0_enable()
@@ -1328,40 +1324,35 @@ void C_ifm_0_disable( PICOC_FUN_ARGS )
   ifm_0_disable();
 }
 
-void ifm_out_stdout()
-{
-  std_out << ' ' << XFmt( ifm_0_freq, cvtff_fix, 9, 3 );
-  std_out << ' ' << XFmt( ifm_0_d,    cvtff_fix, 6, 4 );
-  std_out << ' ' << XFmt( ifm_1_freq, cvtff_fix, 9, 1 );
-  std_out << ' ' << ifm_2_cnt;
-  std_out << ' ' << ifm_3_cnt;
-}
-
-void ifm_out_lcd()
+void ifm_out()
 {
   OSTR(s,40);
+  s.reset_out();
+  s << XFmt( ifm_0_freq, cvtff_fix, 9, 3 );
+  obuf << ' ' << s_buf;
+  lcdbuf0 << s_buf << "   ";
 
-  s_outstr.reset_out();
-  s << XFmt( ifm_0_freq, cvtff_fix, 9, 3 ) << ' ';
-  lcdt.puts_xy( 0, 0, s_outstr.c_str() );
+  s.reset_out();
+  s << XFmt( ifm_0_d,    cvtff_fix, 6, 4 );
+  obuf << ' ' << s_buf;
+  lcdbuf0 << s_buf;
 
-  s_outstr.reset_out();
-  s << XFmt( ifm_0_d, cvtff_fix, 6, 4 ) << ' ';
-  lcdt.puts_xy( 12, 0, s_outstr.c_str() );
+  s.reset_out();
+  s << XFmt( ifm_1_freq, cvtff_fix, 10, 1 );
+  obuf << ' ' << s_buf;
+  lcdbuf1 << s_buf;
 
-  s_outstr.reset_out();
-  s << XFmt( ifm_1_freq, cvtff_fix, 9, 1 ) << ' ';
-  lcdt.puts_xy( 0, 1, s_outstr.c_str() );
+  s.reset_out();
+  s << ' ' << ifm_2_cnt;
+  obuf << ' ' << s_buf;
+  lcdbuf2 << s_buf;
 
-  s_outstr.reset_out();
-  s << ifm_2_cnt << ' ';
-  lcdt.puts_xy( 0, 2, s_outstr.c_str() );
-
-  s_outstr.reset_out();
-  s << ifm_3_cnt << ' ';
-  lcdt.puts_xy( 0, 3, s_outstr.c_str() );
-
+  s.reset_out();
+  s << ' ' << ifm_3_cnt;
+  obuf << ' ' << s_buf;
+  lcdbuf3 << s_buf;
 }
+
 
 int ifm_pre_loop()
 {
@@ -1378,8 +1369,7 @@ int ifm_loop()
   ifm_1_measure();
   ifm_2_measure();
   ifm_3_measure();
-  ifm_out_stdout();
-  ifm_out_lcd();
+  ifm_out();
   return 1;
 }
 
