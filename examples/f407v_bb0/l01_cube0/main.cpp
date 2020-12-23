@@ -260,6 +260,7 @@ void oxc_picoc_math_init( Picoc *pc );
 //char *p_char = a_char;
 void oxc_picoc_misc_init(  Picoc *pc );
 void oxc_picoc_fatfs_init( Picoc *pc );
+char *do_PlatformReadFile( Picoc *pc, const char *FileName );
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -450,6 +451,7 @@ int main(void)
   cmdline_handlers[1] = nullptr;
 
   pc.InteractiveHead = nullptr;
+  PlatformReadFile_fun = do_PlatformReadFile;
   init_picoc( &pc );
   lcdt.puts("C ");
 
@@ -739,6 +741,51 @@ int init_picoc( Picoc *ppc )
   VariableDefinePlatformVar( ppc , nullptr , "ifm_3_cnt"    , &(ppc->IntType)   , (union AnyValue *)&(ifm_3_cnt)    , TRUE );
 
   return 0;
+}
+
+char* do_PlatformReadFile( Picoc *pc, const char *fn )
+{
+  if( !pc || !fn || !fn[0] ) {
+    return nullptr;
+  }
+
+  FILINFO fi;
+
+  auto rc = f_stat( fn, &fi );
+  if( rc != FR_OK ) {
+    std_out << "# Error: f_stat failed, fn=\"" << fn << "\" rc= " << rc << NL;
+    errno = 1000 + rc;
+    return nullptr;
+  }
+
+  // TODO: limit to 32-bit?
+  char *buf = (char*)( malloc( fi.fsize ) );
+  if( !buf ) {
+    std_out << "# Error: fail to alloc fn=\"" << (int)fi.fsize << " bytes "  << NL; // TODO: output long long
+    errno = ENOMEM;
+    return nullptr;
+  }
+
+  FIL f;
+  rc = f_open( &f, fn, FA_READ );
+  if( rc != FR_OK ) {
+    free( buf );
+    std_out << "# Error: fail to open fn=\"" << fn << "\" rc= " << rc << NL;
+    errno = 1000 + rc;
+    return nullptr;
+  }
+
+  unsigned r;
+  rc = f_read( &f, buf, (unsigned)(fi.fsize), &r ); // TODO: iterate?
+  if( rc != FR_OK ) {
+    free( buf );
+    std_out << "# Error: fail to read fn=\"" << fn << "\" rc= " << rc << NL;
+    errno = 1000 + rc;
+    return nullptr;
+  }
+
+  return buf;
+
 }
 
 // ---------------------------------------- buffers---------------------------------------------------

@@ -54,43 +54,15 @@ void PlatformPutc( unsigned char OutCh, union OutputStreamInfo *Stream )
   putchar( OutCh );
 }
 
+PlatformReadFile_fun_t PlatformReadFile_fun = NULL;
+
 /* read a file into memory */
-char *PlatformReadFile( Picoc *pc, const char *FileName );
 char *PlatformReadFile( Picoc *pc, const char *FileName )
 {
-  /* struct stat FileInfo; */
-  /* char *ReadText; */
-  /* FILE *InFile; */
-  /* int BytesRead; */
-  /* char *p; */
-  /*  */
-  /* if (stat(FileName, &FileInfo)) */
-  /*     ProgramFailNoParser(pc, "can't read file %s\n", FileName); */
-  /*  */
-  /* ReadText = malloc(FileInfo.st_size + 1); */
-  /* if (ReadText == NULL) */
-  /*     ProgramFailNoParser(pc, "out of memory\n"); */
-  /*  */
-  /* InFile = fopen(FileName, "r"); */
-  /* if (InFile == NULL) */
-  /*     ProgramFailNoParser(pc, "can't read file %s\n", FileName); */
-  /*  */
-  /* BytesRead = fread(ReadText, 1, FileInfo.st_size, InFile); */
-  /* if (BytesRead == 0) */
-  /*     ProgramFailNoParser(pc, "can't read file %s\n", FileName); */
-  /*  */
-  /* ReadText[BytesRead] = '\0'; */
-  /* fclose(InFile); */
-  /*  */
-  /* if ((ReadText[0] == '#') && (ReadText[1] == '!')) */
-  /* { */
-  /*     for (p = ReadText; (*p != '\r') && (*p != '\n'); ++p) */
-  /*     { */
-  /*         *p = ' '; */
-  /*     } */
-  /* } */
+  if( PlatformReadFile_fun ) {
+    return PlatformReadFile_fun( pc, FileName );
+  }
 
-  // return ReadText;
   return 0;
 }
 

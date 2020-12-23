@@ -313,7 +313,6 @@ void TIM2_IRQHandler()
 {
   // leds.toggle(2);
   tim2_busy = 1;
-  // dbg_val0 = TIM2->SR;
   tim2_ccr1x = TIM2->CCR1; tim2_ccr2x = TIM2->CCR2;
   tim2_busy = 0;
   HAL_TIM_IRQHandler( &htim2 );
@@ -347,9 +346,7 @@ void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim_pwm )
 
 void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* htim_base )
 {
-  dbg_val0 = 1;
   if( htim_base->Instance == TIM3 ) {
-    dbg_val0 = 2;
     __HAL_RCC_TIM3_CLK_ENABLE();
     __HAL_RCC_GPIOD_CLK_ENABLE();
     /** TIM3 GPIO Configuration D2 ---> TIM3_ETR */
