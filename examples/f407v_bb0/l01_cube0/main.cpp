@@ -12,6 +12,7 @@
 #include <ff_gen_drv_st.h>
 #include <usbh_diskio.h>
 #include <ff.h>
+// #include <oxc_io_fatfs.h>
 
 #include <oxc_fs_cmd0.h>
 
@@ -70,6 +71,8 @@ void obuf_out_ofile( int b );
 void C_obuf_out_ofile( PICOC_FUN_ARGS );
 void lcdbufs_out();
 void C_lcdbufs_out( PICOC_FUN_ARGS );
+
+FIL ofile;
 
 
 int task_idx = 0, t_step_ms = 100, n_loops = 10000000, auto_out = 0;
@@ -294,8 +297,30 @@ const CmdInfo* global_cmds[] = {
 
 int run_common( RUN_FUN pre_fun, RUN_FUN loop_fun )
 {
+  obuf.reset_out();
   lcdt.cls();
-  std_out << "# Task " << task_idx << " n_loops= " << n_loops << " t_step_ms= " << t_step_ms << NL;
+
+  obuf << "# Task " << task_idx << " n_loops= " << n_loops << " t_step_ms= " << t_step_ms << ' ';
+
+  char ofilename[64]; ofilename[0] = '\0';
+  bool was_out_open = false;
+  rtc_getFileDateTimeStr( ofilename );
+
+  obuf << " outfile: " << ofilename << NL;
+  std_out << obuf_str;
+
+  if( auto_out ) {
+    f_open( &ofile, ofilename, FA_WRITE | FA_OPEN_ALWAYS );
+    if( ofile.err == FR_OK ) {
+      was_out_open = true;
+      // pfile = &ofile;
+      std_out << "# outfile open OK " << NL;
+      obuf_out_ofile( 0 );
+    } else {
+      std_out << "# Error: fail to open outfile  err= " << ofile.err << NL;
+    }
+  }
+
   OSTR(s,40);
 
   pre_fun();
@@ -319,16 +344,23 @@ int run_common( RUN_FUN pre_fun, RUN_FUN loop_fun )
 
     loop_fun();
 
+    obuf << NL;
+
     obuf_out_stdout( 0 );
+    if( was_out_open ) {
+      obuf_out_ofile( 0 );
+    }
     lcdbufs_out();
 
     lcdt.puts_xy( 10, 3, s_outstr.c_str() ); // on flag?
 
-    std_out << NL;
-
     if( t_step_ms > 0 ) {
       delay_ms_until_brk( &tm0, t_step_ms );
     }
+  }
+
+  if( was_out_open ) {
+    f_close( &ofile );
   }
 
   return 0;
@@ -550,6 +582,7 @@ void USBH_HandleEvent( USBH_HandleTypeDef *phost, uint8_t id )
       fr = f_mount( &fs, fspath, 1 ); // todo: flag for automount?
       if( fr == 0 ) {
         isMSC_ready = 1;
+        errno = 0;
         leds.set( BIT2 );
       } else {
         leds.set( BIT0 );
@@ -569,8 +602,10 @@ void USBH_HandleEvent( USBH_HandleTypeDef *phost, uint8_t id )
       break;
 
     case HOST_USER_UNRECOVERED_ERROR:    // 6
-      // leds.set( BIT0 );
+      leds.set( BIT0 );
+      leds.reset( BIT2 );
       f_mount( nullptr, (TCHAR const*)"", 0 );
+      isMSC_ready = 0;
       errno = 7555;
       break;
 
@@ -772,7 +807,7 @@ void C_obuf_out_stdout( PICOC_FUN_ARGS )
 void obuf_out_ofile( int b )
 {
   if( b >= 0 && b < obufs_sz ) {
-    // std_out << obufs[b]->c_str();
+    f_puts(  obufs[b]->getOut()->getBuf(), &ofile );
   }
 }
 
