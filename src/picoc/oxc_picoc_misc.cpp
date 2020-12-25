@@ -13,65 +13,71 @@ using namespace std;
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 
 
-void C_delay_ms( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_delay_ms( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_getTick( PICOC_FUN_ARGS );
+void C_getTick( PICOC_FUN_ARGS )
 {
-  delay_ms( Param[0]->Val->Integer );
+  RV_INT = HAL_GetTick();
 }
 
-void C_delay_ms_brk( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_delay_ms_brk( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_delay_ms( PICOC_FUN_ARGS );
+void C_delay_ms( PICOC_FUN_ARGS )
 {
-  int rc = delay_ms_brk( Param[0]->Val->Integer );
-  ReturnValue->Val->Integer = rc;
+  delay_ms( ARG_0_INT );
 }
 
-void C_delay_ms_until_brk( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_delay_ms_until_brk( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_delay_ms_brk( PICOC_FUN_ARGS );
+void C_delay_ms_brk( PICOC_FUN_ARGS )
 {
-  int rc = delay_ms_until_brk( (uint32_t*)Param[0]->Val->Pointer, Param[1]->Val->Integer );
-  ReturnValue->Val->Integer = rc;
+  int rc = delay_ms_brk( ARG_0_INT );
+  RV_INT = rc;
 }
 
-void C_leds_set( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_leds_set( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_delay_ms_until_brk( PICOC_FUN_ARGS );
+void C_delay_ms_until_brk( PICOC_FUN_ARGS )
 {
-  leds.set( Param[0]->Val->Integer );
+  int rc = delay_ms_until_brk( (uint32_t*)ARG_0_PTR, ARG_1_INT );
+  RV_INT = rc;
 }
 
-void C_leds_reset( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_leds_reset( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_leds_set( PICOC_FUN_ARGS );
+void C_leds_set( PICOC_FUN_ARGS )
 {
-  leds.reset( Param[0]->Val->Integer );
+  leds.set( ARG_0_INT );
 }
 
-void C_leds_toggle( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_leds_toggle( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_leds_reset( PICOC_FUN_ARGS );
+void C_leds_reset( PICOC_FUN_ARGS )
 {
-  leds.toggle( Param[0]->Val->Integer );
+  leds.reset( ARG_0_INT );
 }
 
-void C_pr_i( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_pr_i( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_leds_toggle( PICOC_FUN_ARGS );
+void C_leds_toggle( PICOC_FUN_ARGS )
 {
-  std_out << ( Param[0]->Val->Integer ) << ' ';
+  leds.toggle( ARG_0_INT );
 }
 
-void C_pr_ih( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_pr_ih( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_pr_i( PICOC_FUN_ARGS );
+void C_pr_i( PICOC_FUN_ARGS )
 {
-  std_out << HexInt( Param[0]->Val->Integer ) << ' ';
+  std_out << ( ARG_0_INT ) << ' ';
 }
 
-void C_pr_p( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_pr_p( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_pr_ih( PICOC_FUN_ARGS );
+void C_pr_ih( PICOC_FUN_ARGS )
 {
-  std_out << HexInt( Param[0]->Val->Pointer ) << ' ';
+  std_out << HexInt( ARG_0_INT ) << ' ';
+}
+
+void C_pr_p( PICOC_FUN_ARGS );
+void C_pr_p( PICOC_FUN_ARGS )
+{
+  std_out << HexInt( ARG_0_PTR ) << ' ';
 }
 
 
-void C_pr_i_l( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_pr_i_l( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_pr_i_l( PICOC_FUN_ARGS );
+void C_pr_i_l( PICOC_FUN_ARGS )
 {
   struct Value *na = Param[0];
   for( int i=0; i<NumArgs; ++i ) {
@@ -80,11 +86,11 @@ void C_pr_i_l( struct ParseState *Parser, struct Value *ReturnValue, struct Valu
   }
 }
 
-void C_pr_i_n( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_pr_i_n( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_pr_i_n( PICOC_FUN_ARGS );
+void C_pr_i_n( PICOC_FUN_ARGS )
 {
-  int n  = Param[1]->Val->Integer;
-  int *v = (int*)( Param[0]->Val->Pointer );
+  int n  = ARG_1_INT;
+  int *v = (int*)( ARG_0_PTR );
   // std_out << "## n= " << n << " v= " << HexInt((void*)(v)) << NL;
   for( int i=0; i<n; ++i ) {
     std_out << ( v[i] ) << ' ';
@@ -92,26 +98,26 @@ void C_pr_i_n( struct ParseState *Parser, struct Value *ReturnValue, struct Valu
 }
 
 
-void C_pr_c( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_pr_c( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_pr_c( PICOC_FUN_ARGS );
+void C_pr_c( PICOC_FUN_ARGS )
 {
-  std_out << char( Param[0]->Val->Integer );
+  std_out << char( ARG_0_INT );
 }
 
-void C_pr_s( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_pr_s( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_pr_s( PICOC_FUN_ARGS );
+void C_pr_s( PICOC_FUN_ARGS )
 {
-  std_out << (const char*)( Param[0]->Val->Pointer );
+  std_out << (const char*)( ARG_0_PTR );
 }
 
-void C_pr_d( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_pr_d( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_pr_d( PICOC_FUN_ARGS );
+void C_pr_d( PICOC_FUN_ARGS )
 {
-  std_out << (double)( Param[0]->Val->FP );
+  std_out << (double)( ARG_0_FP );
 }
 
-void C_pr( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_pr( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_pr( PICOC_FUN_ARGS );
+void C_pr( PICOC_FUN_ARGS )
 {
   struct Value *na = Param[0];
   char sep =  (char)( na->Val->Integer );
@@ -156,82 +162,82 @@ void C_pr( struct ParseState *Parser, struct Value *ReturnValue, struct Value **
   }
 }
 
-void C_char2hex( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_char2hex( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_char2hex( PICOC_FUN_ARGS );
+void C_char2hex( PICOC_FUN_ARGS )
 {
-  uint8_t v =  (uint8_t)( Param[0]->Val->Integer );
-  char *s = (char*)( Param[1]->Val->Pointer );
-  ReturnValue->Val->Pointer = char2hex( v, s );
+  uint8_t v =  (uint8_t)( ARG_0_INT );
+  char *s = (char*)( ARG_1_PTR );
+  RV_PTR = char2hex( v, s );
 }
 
-void C_short2hex( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_short2hex( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_short2hex( PICOC_FUN_ARGS );
+void C_short2hex( PICOC_FUN_ARGS )
 {
-  uint16_t v =  (uint16_t)( Param[0]->Val->Integer );
-  char *s = (char*)( Param[1]->Val->Pointer );
-  ReturnValue->Val->Pointer = short2hex( v, s );
+  uint16_t v =  (uint16_t)( ARG_0_INT );
+  char *s = (char*)( ARG_1_PTR );
+  RV_PTR = short2hex( v, s );
 }
 
 
-void C_word2hex( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_word2hex( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_word2hex( PICOC_FUN_ARGS );
+void C_word2hex( PICOC_FUN_ARGS )
 {
-  uint32_t v =  (uint32_t)( Param[0]->Val->Integer );
+  uint32_t v =  (uint32_t)( ARG_0_INT );
   std_out << "## v= " << HexInt(v) << NL;
-  char *s = (char*)( Param[1]->Val->Pointer );
-  ReturnValue->Val->Pointer = word2hex( v, s );
+  char *s = (char*)( ARG_1_PTR );
+  RV_PTR = word2hex( v, s );
 }
 
-void C_rev16( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_rev16( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_rev16( PICOC_FUN_ARGS );
+void C_rev16( PICOC_FUN_ARGS )
 {
-  uint16_t v =  (uint16_t)( Param[0]->Val->Integer );
-  ReturnValue->Val->Integer = __REV16( v );
+  uint16_t v =  (uint16_t)( ARG_0_INT );
+  RV_INT = __REV16( v );
 }
 
-void C_imin( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_imin( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_imin( PICOC_FUN_ARGS );
+void C_imin( PICOC_FUN_ARGS )
 {
-  ReturnValue->Val->Integer = imin( Param[0]->Val->Integer, Param[1]->Val->Integer );
+  RV_INT = imin( ARG_0_INT, ARG_1_INT );
 }
 
-void C_imax( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_imax( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_imax( PICOC_FUN_ARGS );
+void C_imax( PICOC_FUN_ARGS )
 {
-  ReturnValue->Val->Integer = imax( Param[0]->Val->Integer, Param[1]->Val->Integer );
+  RV_INT = imax( ARG_0_INT, ARG_1_INT );
 }
 
-void C_isign( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_isign( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_isign( PICOC_FUN_ARGS );
+void C_isign( PICOC_FUN_ARGS )
 {
-  ReturnValue->Val->Integer = sign( Param[0]->Val->Integer );
+  RV_INT = sign( ARG_0_INT );
 }
 
-void C_i2dec( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_i2dec( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_i2dec( PICOC_FUN_ARGS );
+void C_i2dec( PICOC_FUN_ARGS )
 {
-  int n           = Param[0]->Val->Integer;
-  char *s         = (char*)Param[1]->Val->Pointer;
-  unsigned min_sz = Param[2]->Val->Integer;
-  char fill_ch    = (char)(Param[3]->Val->Integer);
-  ReturnValue->Val->Pointer = i2dec( n, s, min_sz, fill_ch );
+  int n           = ARG_0_INT;
+  char *s         = (char*)ARG_1_PTR;
+  unsigned min_sz = ARG_2_INT;
+  char fill_ch    = (char)(ARG_3_INT);
+  RV_PTR = i2dec( n, s, min_sz, fill_ch );
 }
 
-void C_dump8( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_dump8( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_dump8( PICOC_FUN_ARGS );
+void C_dump8( PICOC_FUN_ARGS )
 {
-  void *p         = Param[0]->Val->Pointer;
-  unsigned n      = Param[1]->Val->Integer;
-  bool  isAbs     = (bool)Param[2]->Val->Integer;
+  void *p         = ARG_0_PTR;
+  unsigned n      = ARG_1_INT;
+  bool  isAbs     = (bool)ARG_2_INT;
   dump8( p, n, isAbs );
 }
 
-void C_dump32( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_dump32( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_dump32( PICOC_FUN_ARGS );
+void C_dump32( PICOC_FUN_ARGS )
 {
-  void *p         = Param[0]->Val->Pointer;
-  unsigned n      = Param[1]->Val->Integer;
-  bool  isAbs     = (bool)Param[2]->Val->Integer;
+  void *p         = ARG_0_PTR;
+  unsigned n      = ARG_1_INT;
+  bool  isAbs     = (bool)ARG_2_INT;
   dump32( p, n, isAbs );
 }
 
@@ -239,6 +245,7 @@ void C_dump32( struct ParseState *Parser, struct Value *ReturnValue, struct Valu
 
 struct LibraryFunction oxc_picoc_misc_Functions[] =
 {
+  { C_getTick,             "int getTick(void);" },
   { C_delay_ms,            "void delay_ms(int);" },
   { C_delay_ms_brk,        "int delay_ms_brk(int);" },
   { C_delay_ms_until_brk,  "int delay_ms_until_brk(int*,int);" },
@@ -275,9 +282,9 @@ void oxc_picoc_misc_SetupFunc( Picoc *pc )
 void oxc_picoc_misc_init( Picoc *pc );
 void oxc_picoc_misc_init( Picoc *pc )
 {
-  // VariableDefinePlatformVar( pc, NULL, "M_E"       , &pc->FPType, (union AnyValue *)&C_math_M_E       , FALSE );
-  VariableDefinePlatformVar( pc, nullptr, "UVAR",      pc->IntArrayType, (union AnyValue *)(user_vars),  TRUE );
-  VariableDefinePlatformVar( pc, nullptr, "errno",     &pc->IntType,     (union AnyValue *)(errno),      TRUE );
+  VariableDefinePlatformVar( pc, nullptr, "UVAR",       pc->IntArrayType, (union AnyValue *)(user_vars),   TRUE );
+  VariableDefinePlatformVar( pc, nullptr, "errno",      &pc->IntType,     (union AnyValue *)(&errno),      TRUE );
+  VariableDefinePlatformVar( pc, nullptr, "break_flag", &pc->IntType,     (union AnyValue *)(&break_flag), TRUE );
 
   IncludeRegister( pc, "oxc_misc.h", &oxc_picoc_misc_SetupFunc, oxc_picoc_misc_Functions, NULL);
 }

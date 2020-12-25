@@ -4,6 +4,7 @@
 #include <ff.h>
 
 #include <oxc_picoc_interpreter.h>
+#include <oxc_picoc_reghelpers.h>
 
 using namespace std;
 
@@ -60,11 +61,11 @@ const int C_FA_CREATE_ALWAYS = FA_CREATE_ALWAYS;
 const int C_FA_OPEN_ALWAYS   = FA_OPEN_ALWAYS;
 const int C_FA_OPEN_APPEND   = FA_OPEN_APPEND;
 
-void C_f_open( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_f_open( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_f_open( PICOC_FUN_ARGS );
+void C_f_open( PICOC_FUN_ARGS )
 {
-  const char *fn = (const char*)Param[0]->Val->Pointer;
-  int mode = Param[1]->Val->Integer;
+  const char *fn = (const char*)ARG_0_PTR;
+  int mode = ARG_1_INT;
   int found_idx = -1;
   for( unsigned i=0; i< ff_max_open; ++i ) {
     if( ff_fd_busy[i] == false ) {
@@ -74,93 +75,93 @@ void C_f_open( struct ParseState *Parser, struct Value *ReturnValue, struct Valu
   }
 
   if( found_idx < 0 ) {
-    ReturnValue->Val->Integer = -1;
+    RV_INT = -1;
     errno = EMFILE;
     return;
   }
 
   FRESULT fr = f_open( &ff_open_files[found_idx], fn, mode );
   if( fr != FR_OK ) {
-    ReturnValue->Val->Integer = -1;
+    RV_INT = -1;
     errno = fr;
     return;
   }
 
   ff_fd_busy[found_idx] = true; // RACE?
-  ReturnValue->Val->Integer = found_idx;
+  RV_INT = found_idx;
 }
 
 #define FF_CHECK_FD(fd) \
   if( fd < 0 || (unsigned)fd >= ff_max_open || !ff_fd_busy[fd] ) { \
     errno = EBADF; \
-    ReturnValue->Val->Integer = -1; \
+    RV_INT = -1; \
     return; \
   } \
 
 #define CUR_FILE &ff_open_files[fd]
 
-void C_f_close( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_f_close( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_f_close( PICOC_FUN_ARGS );
+void C_f_close( PICOC_FUN_ARGS )
 {
-  int fd = Param[0]->Val->Integer;
+  int fd = ARG_0_INT;
   FF_CHECK_FD( fd );
 
   FRESULT fr = f_close( CUR_FILE );
   if( fr != FR_OK ) {
     errno = fr;
-    ReturnValue->Val->Integer = -1;
+    RV_INT = -1;
     return;
   }
 
   ff_fd_busy[fd] = false; // RACE?
-  ReturnValue->Val->Integer = 0;
+  RV_INT = 0;
 }
 
 
-void C_f_read( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_f_read( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_f_read( PICOC_FUN_ARGS );
+void C_f_read( PICOC_FUN_ARGS )
 {
-  int fd    = Param[0]->Val->Integer;
-  void *buf = Param[1]->Val->Pointer;
-  int r     = Param[2]->Val->Integer;
+  int fd    = ARG_0_INT;
+  void *buf = ARG_1_PTR;
+  int r     = ARG_2_INT;
   FF_CHECK_FD( fd );
 
   unsigned rr = 0;
   FRESULT fr = f_read( CUR_FILE, buf, r, &rr );
   if( fr != FR_OK ) {
     errno = fr;
-    ReturnValue->Val->Integer = -1;
+    RV_INT = -1;
     return;
   }
 
-  ReturnValue->Val->Integer = rr;
+  RV_INT = rr;
 }
 
 
-void C_f_write( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_f_write( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_f_write( PICOC_FUN_ARGS );
+void C_f_write( PICOC_FUN_ARGS )
 {
-  int fd    = Param[0]->Val->Integer;
-  void *buf = Param[1]->Val->Pointer;
-  int w     = Param[2]->Val->Integer;
+  int fd    = ARG_0_INT;
+  void *buf = ARG_1_PTR;
+  int w     = ARG_2_INT;
   FF_CHECK_FD( fd );
 
   unsigned ww = 0;
   FRESULT fr = f_write( CUR_FILE, buf, w, &ww );
   if( fr != FR_OK ) {
     errno = fr;
-    ReturnValue->Val->Integer = -1;
+    RV_INT = -1;
     return;
   }
 
-  ReturnValue->Val->Integer = ww;
+  RV_INT = ww;
 }
 
-void C_f_lseek( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_f_lseek( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_f_lseek( PICOC_FUN_ARGS );
+void C_f_lseek( PICOC_FUN_ARGS )
 {
-  int fd    = Param[0]->Val->Integer;
-  int pos   = Param[1]->Val->Integer; // not uint64_t for picoc
+  int fd    = ARG_0_INT;
+  int pos   = ARG_1_INT; // not uint64_t for picoc
   FF_CHECK_FD( fd );
 
   FRESULT fr = f_lseek( CUR_FILE, pos );
@@ -170,57 +171,57 @@ void C_f_lseek( struct ParseState *Parser, struct Value *ReturnValue, struct Val
 }
 
 
-void C_f_putc( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_f_putc( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_f_putc( PICOC_FUN_ARGS );
+void C_f_putc( PICOC_FUN_ARGS )
 {
-  char  c   = (char)Param[0]->Val->Integer;
-  int fd    = Param[1]->Val->Integer;
+  char  c   = (char)ARG_0_INT;
+  int fd    = ARG_1_INT;
   FF_CHECK_FD( fd );
   f_putc( c, CUR_FILE );
 }
 
-void C_f_puts( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_f_puts( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_f_puts( PICOC_FUN_ARGS );
+void C_f_puts( PICOC_FUN_ARGS )
 {
-  char *s   = (char*)Param[0]->Val->Pointer;
-  int fd    = Param[1]->Val->Integer;
+  char *s   = (char*)ARG_0_PTR;
+  int fd    = ARG_1_INT;
   FF_CHECK_FD( fd );
   f_puts( s, CUR_FILE );
 }
 
-void C_f_gets( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_f_gets( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_f_gets( PICOC_FUN_ARGS );
+void C_f_gets( PICOC_FUN_ARGS )
 {
-  char *buf = (char*)Param[0]->Val->Pointer;
-  int len   = Param[1]->Val->Integer;
-  int fd    = Param[2]->Val->Integer;
+  char *buf = (char*)ARG_0_PTR;
+  int len   = ARG_1_INT;
+  int fd    = ARG_2_INT;
   FF_CHECK_FD( fd );
   char *b = f_gets( buf, len, CUR_FILE );
-  ReturnValue->Val->Integer = b ? strlen( b ) : 0;
+  RV_INT = b ? strlen( b ) : 0;
 }
 
-void C_f_eof( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_f_eof( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_f_eof( PICOC_FUN_ARGS );
+void C_f_eof( PICOC_FUN_ARGS )
 {
-  int fd    = Param[0]->Val->Integer;
+  int fd    = ARG_0_INT;
   FF_CHECK_FD( fd );
-  ReturnValue->Val->Integer = f_eof( CUR_FILE );
+  RV_INT = f_eof( CUR_FILE );
 }
 
-void C_f_size( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_f_size( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_f_size( PICOC_FUN_ARGS );
+void C_f_size( PICOC_FUN_ARGS )
 {
-  int fd    = Param[0]->Val->Integer;
+  int fd    = ARG_0_INT;
   FF_CHECK_FD( fd );
-  ReturnValue->Val->Integer = f_size( CUR_FILE );
+  RV_INT = f_size( CUR_FILE );
 }
 
-void C_f_error( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs );
-void C_f_error( struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs )
+void C_f_error( PICOC_FUN_ARGS );
+void C_f_error( PICOC_FUN_ARGS )
 {
-  int fd    = Param[0]->Val->Integer;
+  int fd    = ARG_0_INT;
   FF_CHECK_FD( fd );
-  ReturnValue->Val->Integer = f_error( CUR_FILE );
+  RV_INT = f_error( CUR_FILE );
 }
 
 

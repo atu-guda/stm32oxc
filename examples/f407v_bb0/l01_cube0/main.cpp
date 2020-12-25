@@ -75,7 +75,7 @@ void C_lcdbufs_out( PICOC_FUN_ARGS );
 FIL ofile;
 
 
-int task_idx = 0, t_step_ms = 100, n_loops = 10000000, auto_out = 0;
+int task_idx = 0, t_step_ms = 100, n_loops = 10000000, auto_out = 0, use_loops = 0, script_rv = 0;
 int T_off = -10; // TMP: to test menu
 
 const Menu4bItem menu_main[] = {
@@ -382,8 +382,31 @@ int run_1()
 
 int run_n()
 {
-  std_out << "# Task N n= " << task_idx << NL;
-  return 0;
+  char task_file[16];
+  strcpy( task_file, "task_00.c" );
+  char c0 = (char)( '0' + ( task_idx % 10 ) );
+  char c1 = (char)( '0' + ( (task_idx/10) % 10 ) );
+  task_file[6] = c0; task_file[5] = c1;
+  std_out << "# Task N n= " << task_idx  << " file: " << task_file << NL;
+
+  use_loops = 0; script_rv = 0;
+  int rc = PicocPlatformScanFile( &pc, task_file );
+  std_out << "# script end, rc= " << rc << " rv= " << script_rv << NL;
+
+  if( rc != 1 ) {
+    return 1;
+  }
+
+  if( script_rv != 0 ) {
+    return script_rv;
+  }
+
+  if( use_loops ) { // set from script
+    std_out << "# starting loops " << NL;
+    // rc =  run_common( file_pre_loop, file_loop );
+  }
+
+  return rc;
 }
 
 void idle_main_task()
@@ -715,6 +738,8 @@ int init_picoc( Picoc *ppc )
   VariableDefinePlatformVar( ppc , nullptr , "n_loops"      , &(ppc->IntType)   , (union AnyValue *)&n_loops        , TRUE );
   VariableDefinePlatformVar( ppc , nullptr , "t_step_ms"    , &(ppc->IntType)   , (union AnyValue *)&t_step_ms      , TRUE );
   VariableDefinePlatformVar( ppc , nullptr , "auto_out"     , &(ppc->IntType)   , (union AnyValue *)&auto_out       , TRUE );
+  VariableDefinePlatformVar( ppc , nullptr , "use_loops"    , &(ppc->IntType)   , (union AnyValue *)&use_loops      , TRUE );
+  VariableDefinePlatformVar( ppc , nullptr , "script_rv"    , &(ppc->IntType)   , (union AnyValue *)&script_rv      , TRUE );
   VariableDefinePlatformVar( ppc , nullptr , "obuf_str"     , ppc->CharArrayType, (union AnyValue *)obuf_str        , TRUE );
   VariableDefinePlatformVar( ppc , nullptr , "lcdbuf_str0"  , ppc->CharArrayType, (union AnyValue *)lcdbuf_str0     , TRUE );
   VariableDefinePlatformVar( ppc , nullptr , "lcdbuf_str1"  , ppc->CharArrayType, (union AnyValue *)lcdbuf_str1     , TRUE );
@@ -759,12 +784,13 @@ char* do_PlatformReadFile( Picoc *pc, const char *fn )
   }
 
   // TODO: limit to 32-bit?
-  char *buf = (char*)( malloc( fi.fsize ) );
+  char *buf = (char*)( malloc( fi.fsize + 2 ) );
   if( !buf ) {
     std_out << "# Error: fail to alloc fn=\"" << (int)fi.fsize << " bytes "  << NL; // TODO: output long long
     errno = ENOMEM;
     return nullptr;
   }
+  memset( buf, 0x00, fi.fsize + 2 );
 
   FIL f;
   rc = f_open( &f, fn, FA_READ );

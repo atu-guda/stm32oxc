@@ -67,9 +67,12 @@ char *PlatformReadFile( Picoc *pc, const char *FileName )
 }
 
 /* read and scan a file for definitions */
-void PicocPlatformScanFile( Picoc *pc, const char *FileName )
+int PicocPlatformScanFile( Picoc *pc, const char *FileName )
 {
-  char *SourceStr = PlatformReadFile(pc, FileName);
+  char *SourceStr = PlatformReadFile( pc, FileName );
+  if( !SourceStr ) {
+    return 0;
+  }
 
   /* ignore "#!/path/to/picoc" .. by replacing the "#!" with "//" */
   if( SourceStr != NULL && SourceStr[0] == '#' && SourceStr[1] == '!' ) {
@@ -77,7 +80,14 @@ void PicocPlatformScanFile( Picoc *pc, const char *FileName )
     SourceStr[1] = '/';
   }
 
-  PicocParse(pc, FileName, SourceStr, strlen(SourceStr), TRUE, FALSE, TRUE, TRUE);
+  int rc = 1;
+  int ep_rc =  PicocPlatformSetExitPoint( pc );
+  if( ep_rc == 0 ) {
+    PicocParse( pc, FileName, SourceStr, strlen(SourceStr), TRUE, FALSE, TRUE, TRUE );
+  } else {
+    rc = 0;
+  }
+  return rc;
 }
 
 /* exit the program */

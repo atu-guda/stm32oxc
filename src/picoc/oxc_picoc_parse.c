@@ -70,14 +70,16 @@ struct Value *ParseFunctionDefinition(struct ParseState *Parser, struct ValueTyp
   int ParamCount = 0;
   Picoc *pc = Parser->pc;
 
-  if (pc->TopStackFrame != NULL)
+  if( pc->TopStackFrame != NULL ) {
     ProgramFail(Parser, "nested function definitions are not allowed");
+  }
 
   LexGetToken(Parser, NULL, TRUE);  /* open bracket */
   ParserCopy(&ParamParser, Parser);
   ParamCount = ParseCountParams(Parser);
-  if (ParamCount > PARAMETER_MAX)
+  if( ParamCount > PARAMETER_MAX ) {
     ProgramFail(Parser, "too many parameters (%d allowed)", PARAMETER_MAX);
+  }
 
   FuncValue = VariableAllocValueAndData(pc, Parser, sizeof(struct FuncDef) + sizeof(struct ValueType *) * ParamCount + sizeof(const char *) * ParamCount, FALSE, NULL, TRUE);
   FuncValue->Typ = &pc->FunctionType;
@@ -87,8 +89,7 @@ struct Value *ParseFunctionDefinition(struct ParseState *Parser, struct ValueTyp
   FuncValue->Val->funcDef.ParamType = (struct ValueType **)((char *)FuncValue->Val + sizeof(struct FuncDef));
   FuncValue->Val->funcDef.ParamName = (char **)((char *)FuncValue->Val->funcDef.ParamType + sizeof(struct ValueType *) * ParamCount);
 
-  for (ParamCount = 0; ParamCount < FuncValue->Val->funcDef.NumParams; ParamCount++)
-  {
+  for( ParamCount = 0; ParamCount < FuncValue->Val->funcDef.NumParams; ParamCount++ ) {
     /* harvest the parameters into the function definition */
     if (ParamCount == FuncValue->Val->funcDef.NumParams-1 && LexGetToken(&ParamParser, NULL, FALSE) == TokenEllipsis)
     {
@@ -936,7 +937,7 @@ enum ParseResult ParseStatement(struct ParseState *Parser, int CheckTrailingSemi
 }
 
 /* quick scan a source file for definitions */
-void PicocParse(Picoc *pc, const char *FileName, const char *Source, int SourceLen, int RunIt, int CleanupNow, int CleanupSource, int EnableDebugger)
+int PicocParse(Picoc *pc, const char *FileName, const char *Source, int SourceLen, int RunIt, int CleanupNow, int CleanupSource, int EnableDebugger)
 {
   struct ParseState Parser;
   enum ParseResult Ok;
@@ -946,11 +947,11 @@ void PicocParse(Picoc *pc, const char *FileName, const char *Source, int SourceL
   void *Tokens = LexAnalyse(pc, RegFileName, Source, SourceLen, NULL);
 
   /* allocate a cleanup node so we can clean up the tokens later */
-  if (!CleanupNow)
-  {
-    NewCleanupNode = HeapAllocMem(pc, sizeof(struct CleanupTokenNode));
-    if (NewCleanupNode == NULL)
+  if( !CleanupNow ) {
+    NewCleanupNode = HeapAllocMem( pc, sizeof(struct CleanupTokenNode) );
+    if (NewCleanupNode == NULL) {
       ProgramFailNoParser(pc, "out of memory");
+    }
 
     NewCleanupNode->Tokens = Tokens;
     if (CleanupSource)
@@ -963,18 +964,21 @@ void PicocParse(Picoc *pc, const char *FileName, const char *Source, int SourceL
   }
 
   /* do the parsing */
-  LexInitParser(&Parser, pc, Source, Tokens, RegFileName, RunIt, EnableDebugger);
+  LexInitParser( &Parser, pc, Source, Tokens, RegFileName, RunIt, EnableDebugger );
 
   do {
     Ok = ParseStatement(&Parser, TRUE);
   } while (Ok == ParseResultOk);
 
-  if (Ok == ParseResultError)
+  if( Ok == ParseResultError) {
     ProgramFail(&Parser, "parse error");
+  }
 
   /* clean up */
-  if (CleanupNow)
+  if( CleanupNow ) {
     HeapFreeMem(pc, Tokens);
+  }
+  return 1;
 }
 
 /* parse interactively */
