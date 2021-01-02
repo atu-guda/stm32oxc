@@ -1,4 +1,4 @@
-// ------------------ first hello-world for cube0
+// ------------------ like task_02.c, but w/o delay
 
 leds_set( 3 );
 pr_s( "# Hello cube!\n" );
@@ -28,12 +28,7 @@ for( int i=0; i<n_loops; ++i ) {
   obuf_add_fp( ifm_0_freq, 2 );
   leds_toggle( 2 );
 
-  // lcd_puts_xy( (i>>2)&15, i&3, "ASD" );
   lcdbufs_out();
-
-  if( delay_ms_until_brk( &t_0, t_step_ms ) ) {
-    break;
-  }
 }
 
 ifm_0_disable();

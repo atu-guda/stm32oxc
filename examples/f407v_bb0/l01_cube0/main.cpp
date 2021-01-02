@@ -75,7 +75,8 @@ void C_lcdbufs_out( PICOC_FUN_ARGS );
 FIL ofile;
 
 
-int task_idx = 0, t_step_ms = 100, n_loops = 10000000, auto_out = 0, use_loops = 0, script_rv = 0;
+int task_idx = 0, t_step_ms = 100, n_loops = 10000000;
+int auto_out = 0, use_loops = 0, script_rv = 0, no_lcd_out = 0;
 int T_off = -10; // TMP: to test menu
 
 const Menu4bItem menu_main[] = {
@@ -740,6 +741,7 @@ int init_picoc( Picoc *ppc )
   VariableDefinePlatformVar( ppc , nullptr , "auto_out"     , &(ppc->IntType)   , (union AnyValue *)&auto_out       , TRUE );
   VariableDefinePlatformVar( ppc , nullptr , "use_loops"    , &(ppc->IntType)   , (union AnyValue *)&use_loops      , TRUE );
   VariableDefinePlatformVar( ppc , nullptr , "script_rv"    , &(ppc->IntType)   , (union AnyValue *)&script_rv      , TRUE );
+  VariableDefinePlatformVar( ppc , nullptr , "no_lcd_out"   , &(ppc->IntType)   , (union AnyValue *)&no_lcd_out     , TRUE );
   VariableDefinePlatformVar( ppc , nullptr , "obuf_str"     , ppc->CharArrayType, (union AnyValue *)obuf_str        , TRUE );
   VariableDefinePlatformVar( ppc , nullptr , "lcdbuf_str0"  , ppc->CharArrayType, (union AnyValue *)lcdbuf_str0     , TRUE );
   VariableDefinePlatformVar( ppc , nullptr , "lcdbuf_str1"  , ppc->CharArrayType, (union AnyValue *)lcdbuf_str1     , TRUE );
@@ -891,11 +893,13 @@ void C_obuf_out_ofile( PICOC_FUN_ARGS )
 
 void lcdbufs_out()
 {
-  lcdt.cls();
-  lcdt.puts_xy( 0, 0, lcdbuf_str0 );
-  lcdt.puts_xy( 0, 1, lcdbuf_str1 );
-  lcdt.puts_xy( 0, 2, lcdbuf_str2 );
-  lcdt.puts_xy( 0, 3, lcdbuf_str3 );
+  if( ! no_lcd_out ) {
+    lcdt.cls();
+    lcdt.puts_xy( 0, 0, lcdbuf_str0 );
+    lcdt.puts_xy( 0, 1, lcdbuf_str1 );
+    lcdt.puts_xy( 0, 2, lcdbuf_str2 );
+    lcdt.puts_xy( 0, 3, lcdbuf_str3 );
+  }
 }
 
 void C_lcdbufs_out( PICOC_FUN_ARGS )
