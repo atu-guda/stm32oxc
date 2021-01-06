@@ -84,7 +84,7 @@ const Menu4bItem menu_main[] = {
   { "t_step_ms",  &t_step_ms,    100,     100,      10000, nullptr },
   {   "n_loops",    &n_loops,      1,       1,   10000000, nullptr },
   {  "auto_out",   &auto_out,      1,       0,          9, nullptr },
-  {     "T_off",      &T_off,      25,  -10000,    500000, nullptr, 2 },
+  {     "T_off",      &T_off,     25,  -10000,     500000, nullptr, 2 },
   //{ "set_base", nullptr,   0,      0,   100000, fun_set_base }
 };
 xfloat t_c = 0;
@@ -263,6 +263,9 @@ void oxc_picoc_misc_init(  Picoc *pc );
 void oxc_picoc_fatfs_init( Picoc *pc );
 char *do_PlatformReadFile( Picoc *pc, const char *FileName );
 
+int file_pre_loop();
+int file_loop();
+
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - run task"  };
@@ -325,7 +328,9 @@ int run_common( RUN_FUN pre_fun, RUN_FUN loop_fun )
 
   OSTR(s,40);
 
-  pre_fun();
+  if( pre_fun != nullptr ) {
+    pre_fun();
+  }
 
   uint32_t tm0, tm00;
   break_flag = 0;
@@ -344,7 +349,9 @@ int run_common( RUN_FUN pre_fun, RUN_FUN loop_fun )
     s << XFmt( t_c, cvtff_fix, 10, 2 );
     obuf << s_outstr.c_str() << ' ';
 
-    loop_fun();
+    if( loop_fun != nullptr ) { // really useless
+      loop_fun();
+    }
 
     obuf << NL;
 
@@ -402,12 +409,48 @@ int run_n()
     return script_rv;
   }
 
-  if( use_loops ) { // set from script
-    std_out << "# starting loops " << NL;
-    // rc =  run_common( file_pre_loop, file_loop );
+  if( !use_loops ) { // set from script
+    return 0;
   }
 
+  if( !VariableDefined( &pc, TableStrRegister( &pc, "loop" ) ) ) {
+    std_out << "# error: function int loop() is not defined";
+    return 1;
+  }
+
+  Value *FuncValue = nullptr;
+  VariableGet( &pc, NULL, TableStrRegister( &pc, "loop" ), &FuncValue );
+  if( FuncValue->Typ->Base != TypeFunction ) {
+    std_out << "# error: loop is not a function - can't call it";
+    return 1;
+  }
+
+  std_out << "# starting loops " << NL;
+  rc =  run_common( file_pre_loop, file_loop );
+
+  if( !VariableDefined( &pc, TableStrRegister( &pc, "post_loop" ) ) ) {
+    return rc;
+  }
+
+  VariableGet( &pc, NULL, TableStrRegister( &pc, "post_loop" ), &FuncValue );
+  if( FuncValue->Typ->Base != TypeFunction ) {
+    return rc;
+  }
+
+  PicocParse( &pc, "post_loop", "post_loop();", strlen( "post_loop();" ), TRUE, TRUE, FALSE, TRUE );
+
   return rc;
+}
+
+int file_pre_loop()
+{
+  return 1;
+}
+
+int file_loop()
+{
+  PicocParse( &pc, "loop", "loop();", strlen( "loop();" ), TRUE, TRUE, FALSE, TRUE );
+  return 1;
 }
 
 void idle_main_task()
