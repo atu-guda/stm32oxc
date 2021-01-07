@@ -65,6 +65,10 @@ void obuf_add_int( int v, int b );
 void C_obuf_add_int( PICOC_FUN_ARGS );
 void obuf_add_fp( xfloat v, int b );
 void C_obuf_add_fp( PICOC_FUN_ARGS );
+void obuf_add_fp_x( xfloat v, int cvtff_type, int width, int prec, int b );
+void C_obuf_add_fp_x( PICOC_FUN_ARGS );
+void obuf_add_fp_c( xfloat v, int b );
+void C_obuf_add_fp_c( PICOC_FUN_ARGS );
 void obuf_out_stdout( int b );
 void C_obuf_out_stdout( PICOC_FUN_ARGS );
 void obuf_out_ofile( int b );
@@ -74,6 +78,7 @@ void C_lcdbufs_out( PICOC_FUN_ARGS );
 
 FIL ofile;
 
+int var_cvtff_fix = cvtff_fix, var_cvtff_exp = cvtff_exp, var_cvtff_auto = cvtff_auto;
 
 int task_idx = 0, t_step_ms = 100, n_loops = 10000000;
 int auto_out = 0, use_loops = 0, script_rv = 0, no_lcd_out = 0;
@@ -690,6 +695,8 @@ struct LibraryFunction picoc_local_Functions[] =
   { C_obuf_add_str,          "void obuf_add_str(char*,int);" },
   { C_obuf_add_int,          "void obuf_add_int(int,int);" },
   { C_obuf_add_fp,           "void obuf_add_fp(float,int);" },
+  { C_obuf_add_fp_x,         "void obuf_add_fp_x(float,int,int,int,int);" },
+  { C_obuf_add_fp_c,         "void obuf_add_fp_c(float,int);" },
   { C_obuf_clear,            "void obuf_clear(int);" },
   { C_obuf_out_stdout,       "void obuf_out_stdout(int);" },
   { C_obuf_out_ofile,        "void obuf_out_ofile(int);" },
@@ -775,6 +782,10 @@ int init_picoc( Picoc *ppc )
 
   //VariableDefinePlatformVar( ppc, nullptr, "a_char",   ppc->CharArrayType, (union AnyValue *)a_char,       TRUE );
   //VariableDefinePlatformVar( ppc, nullptr, "p_char",     ppc->CharPtrType, (union AnyValue *)&p_char,      TRUE );
+
+  VariableDefinePlatformVar( ppc , nullptr , "cvtff_fix"    , &(ppc->IntType)   , (union AnyValue *)&var_cvtff_fix  , FALSE );
+  VariableDefinePlatformVar( ppc , nullptr , "cvtff_exp"    , &(ppc->IntType)   , (union AnyValue *)&var_cvtff_exp  , FALSE );
+  VariableDefinePlatformVar( ppc , nullptr , "cvtff_auto"   , &(ppc->IntType)   , (union AnyValue *)&var_cvtff_auto , FALSE );
 
   VariableDefinePlatformVar( ppc , nullptr , "t_c"          , &(ppc->FPType)    , (union AnyValue *)&t_c            , TRUE );
   VariableDefinePlatformVar( ppc , nullptr , "__a"          , &(ppc->IntType)   , (union AnyValue *)&(UVAR('a'))    , TRUE );
@@ -895,6 +906,31 @@ void obuf_add_fp( xfloat v, int b )
 void C_obuf_add_fp( PICOC_FUN_ARGS )
 {
   obuf_add_fp( ARG_0_FP, ARG_1_INT  );
+}
+
+void obuf_add_fp_x( xfloat v, int cvtff_type, int width, int prec, int b )
+{
+  if( b >= 0 && b < obufs_sz ) {
+    *obufs[b] << XFmt( v, cvtff_type, width, prec );
+  }
+}
+
+void C_obuf_add_fp_x( PICOC_FUN_ARGS )
+{
+  obuf_add_fp_x( ARG_0_FP, ARG_1_INT, ARG_2_INT, ARG_3_INT, ARG_4_INT );
+}
+
+
+void obuf_add_fp_c( xfloat v, int b )
+{
+  if( b >= 0 && b < obufs_sz ) {
+    *obufs[b] << XFmt( v, cvtff_fix, 8, 5 ); // TODO: var for control
+  }
+}
+
+void C_obuf_add_fp_c( PICOC_FUN_ARGS )
+{
+  obuf_add_fp_c( ARG_0_FP, ARG_1_INT  );
 }
 
 
