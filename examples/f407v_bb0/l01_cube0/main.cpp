@@ -114,8 +114,18 @@ ADS1115 adc( i2cd );
 const unsigned adc_n_ch = 4;
 unsigned adc_no = 0;
 const xfloat adc_20_to_3 = 20.0f / 3.0f;
-xfloat adc_v_scales[adc_n_ch] = {  adc_20_to_3, adc_20_to_3,  adc_20_to_3, adc_20_to_3 };
-xfloat adc_v_bases[adc_n_ch]  = {       -10.0f,      -10.0f,       -10.0f,      -10.0f };
+
+//xfloat adc_v_scales[adc_n_ch] = {  adc_20_to_3, adc_20_to_3,  adc_20_to_3, adc_20_to_3 };
+//xfloat adc_v_bases[adc_n_ch]  = {       -10.0f,      -10.0f,       -10.0f,      -10.0f };
+
+// calibration result. TODO: store to flash
+xfloat adc_v_scales[adc_n_ch] = {  6.64549820213293,   6.64069097320211,  6.64970696227185,  6.64620805080418 };
+xfloat adc_v_bases[adc_n_ch]  = {  -9.96804714874007, -9.95256498216527, -9.98097048959749, -9.96997237214724 };
+
+// -9.96804714874007, -9.95256498216527, -9.98097048959749, -9.96997237214724
+// 6.64549820213293,  6.64069097320211,   6.64970696227185,  6.64620805080418
+
+
 xfloat adc_v[adc_n_ch]        = {         0.0f,        0.0f,         0.0f,        0.0f };
 int    adc_vi[adc_n_ch]       = {            0,           0,            0,           0 };
 int adc_scale_mv = 4096;
@@ -1116,7 +1126,7 @@ void adc_out()
   OSTR( s, 40 );
   for( decltype(+adc_no) j=0; j<adc_no; ++j ) {
     s.reset_out();
-    s << XFmt( adc_v[j], cvtff_fix, 8, 5 );
+    s << XFmt( adc_v[j], cvtff_fix, 7, 4 );
     obuf << ' ' << s_outstr.c_str();
     *obufs[j+1] << s_outstr.c_str();
   }
