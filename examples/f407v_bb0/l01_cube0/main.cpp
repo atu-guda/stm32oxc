@@ -81,7 +81,7 @@ FIL ofile;
 int var_cvtff_fix = cvtff_fix, var_cvtff_exp = cvtff_exp, var_cvtff_auto = cvtff_auto;
 
 int task_idx = 0, t_step_ms = 100, n_loops = 10000000;
-int auto_out = 0, use_loops = 0, script_rv = 0, no_lcd_out = 0;
+int auto_out = 0, use_loops = 0, script_rv = 0, no_lcd_out = 0, btn_val = 0;
 int T_off = -10; // TMP: to test menu
 
 const Menu4bItem menu_main[] = {
@@ -598,6 +598,7 @@ int cmd_test0( int argc, const char * const * argv )
 {
   // uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 100000000 ); // number of series
 
+  btn_val = 0;
   std_out << "# Test: " << NL;
   int rc;
   switch( task_idx ) {
@@ -812,6 +813,7 @@ int init_picoc( Picoc *ppc )
   VariableDefinePlatformVar( ppc , nullptr , "use_loops"    , &(ppc->IntType)   , (union AnyValue *)&use_loops      , TRUE );
   VariableDefinePlatformVar( ppc , nullptr , "script_rv"    , &(ppc->IntType)   , (union AnyValue *)&script_rv      , TRUE );
   VariableDefinePlatformVar( ppc , nullptr , "no_lcd_out"   , &(ppc->IntType)   , (union AnyValue *)&no_lcd_out     , TRUE );
+  VariableDefinePlatformVar( ppc , nullptr , "btn_val"      , &(ppc->IntType)   , (union AnyValue *)&btn_val        , TRUE );
   VariableDefinePlatformVar( ppc , nullptr , "obuf_str"     , ppc->CharArrayType, (union AnyValue *)obuf_str        , TRUE );
   VariableDefinePlatformVar( ppc , nullptr , "lcdbuf_str0"  , ppc->CharArrayType, (union AnyValue *)lcdbuf_str0     , TRUE );
   VariableDefinePlatformVar( ppc , nullptr , "lcdbuf_str1"  , ppc->CharArrayType, (union AnyValue *)lcdbuf_str1     , TRUE );
@@ -1075,15 +1077,14 @@ void on_btn_while_run( int cmd )
   leds.toggle( BIT0 );
   switch( cmd ) {
     case  MenuCmd::Esc:
-      break_flag = 1; errno = 10000;
+      // break_flag = 1; errno = 10000;
+      btn_val = 0;
       break;
     case  MenuCmd::Up:
-      // ++out_idx;
-      // if( out_idx > (int)size(outInts)-1 ) { out_idx = 0; }
+      ++btn_val;
       break;
     case  MenuCmd::Down:
-      //--out_idx;
-      //if( out_idx < 0 ) { out_idx = size(outInts)-1; }
+      --btn_val;
       break;
     case  MenuCmd::Enter:
       break_flag = 1; errno = 10001;
