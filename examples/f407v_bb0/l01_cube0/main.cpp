@@ -264,9 +264,10 @@ void oxc_picoc_math_init( Picoc *pc );
 }
 //char a_char[] = "ABCDE";
 //char *p_char = a_char;
-void oxc_picoc_misc_init(  Picoc *pc );
+void oxc_picoc_misc_init( Picoc *pc );
 void oxc_picoc_fatfs_init( Picoc *pc );
 char *do_PlatformReadFile( Picoc *pc, const char *FileName );
+int  picoc_call( const char *code );
 
 int file_pre_loop();
 int file_loop();
@@ -403,7 +404,12 @@ int run_n()
   std_out << "# Task N n= " << task_idx  << " file: " << task_file << NL;
 
   if( VariableDefined( &pc, TableStrRegister( &pc, "loop" ) ) ) {
-    std_out << "# warn: object loop palreasy defined, removing";
+    std_out << "# warn: object loop already defined, removing" NL;
+    picoc_call( "delete loop;" );
+  }
+  if( VariableDefined( &pc, TableStrRegister( &pc, "post_loop" ) ) ) {
+    std_out << "# warn: object post_loop already defined, removing" NL;
+    picoc_call( "delete post_loop;" );
   }
 
   use_loops = 0; script_rv = 0;
@@ -446,7 +452,7 @@ int run_n()
     return rc;
   }
 
-  PicocParse( &pc, "post_loop", "post_loop();", strlen( "post_loop();" ), TRUE, TRUE, FALSE, TRUE );
+  picoc_call( "post_loop();" );
 
   return rc;
 }
@@ -458,7 +464,7 @@ int file_pre_loop()
 
 int file_loop()
 {
-  PicocParse( &pc, "loop", "loop();", strlen( "loop();" ), TRUE, TRUE, FALSE, TRUE );
+  picoc_call( "loop();" );
   return 1;
 }
 
@@ -623,8 +629,6 @@ int cmd_t1( int argc, const char * const * argv )
 
 int picoc_cmdline_handler( char *s )
 {
-  // static int nnn = 0;
-
   if( !s  ||  s[0] != ';' ) { // not my
     return -1;
   }
@@ -632,17 +636,15 @@ int picoc_cmdline_handler( char *s )
   const char *cmd = s + 1;
   std_out << NL "# C: cmd= \"" << cmd << '"' << NL;
   delay_ms( 10 );
+
   int ep_rc =  PicocPlatformSetExitPoint( &pc );
   if( ep_rc == 0 ) {
-    PicocParse( &pc, "cmd", cmd, strlen(cmd), TRUE, TRUE, FALSE, TRUE );
+    picoc_call( cmd );
   } else {
     std_out << "## Exit point: " << ep_rc << NL;
   }
 
-  int rc = 0;
-
-  return rc;
-
+  return ep_rc;
 }
 
 // on: 4,3,2 off: 5
@@ -871,6 +873,17 @@ char* do_PlatformReadFile( Picoc *pc, const char *fn )
   }
 
   return buf;
+
+}
+
+int picoc_call( const char *code )
+{
+  if( code == nullptr || code[0] == '\0' ) {
+    return 0;
+  }
+
+  //                                                    run   cle   cleSo   dbg
+  return PicocParse( &pc, "code", code, strlen( code ), TRUE, TRUE, FALSE, FALSE );
 
 }
 

@@ -13,7 +13,7 @@ lcd_cls();
 
 int t_0 = getTick();
 int t_ct = t_0;
-pr( ' ', i, t_0, "\n" );
+pr( ' ', t_0, t_ct, "\n" );
 
 for( int i=0; i<n_loops; ++i ) {
   t_ct = getTick();
