@@ -402,6 +402,10 @@ int run_n()
   task_file[6] = c0; task_file[5] = c1;
   std_out << "# Task N n= " << task_idx  << " file: " << task_file << NL;
 
+  if( VariableDefined( &pc, TableStrRegister( &pc, "loop" ) ) ) {
+    std_out << "# warn: object loop palreasy defined, removing";
+  }
+
   use_loops = 0; script_rv = 0;
   int rc = PicocPlatformScanFile( &pc, task_file );
   std_out << "# script end, rc= " << rc << " rv= " << script_rv << NL;
