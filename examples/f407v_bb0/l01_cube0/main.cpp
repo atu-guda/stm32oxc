@@ -82,16 +82,24 @@ int var_cvtff_fix = cvtff_fix, var_cvtff_exp = cvtff_exp, var_cvtff_auto = cvtff
 
 int task_idx = 0, t_step_ms = 100, n_loops = 10000000;
 int auto_out = 0, use_loops = 0, script_rv = 0, no_lcd_out = 0, btn_val = 0;
-int T_off = -10; // TMP: to test menu
+int menu_v_out1 = 0, menu_v_out2 = 0;
+int menu_fun_reboot( int );
+int menu_fun_dac_out1( int );
+int menu_fun_dac_out2( int );
+int menu_fun_dac_zero( int );
 
 const Menu4bItem menu_main[] = {
-  {  "task_idx",   &task_idx,      1,       0,         42, nullptr },
-  { "t_step_ms",  &t_step_ms,    100,     100,      10000, nullptr },
-  {   "n_loops",    &n_loops,      1,       1,   10000000, nullptr },
-  {  "auto_out",   &auto_out,      1,       0,          9, nullptr },
-  {     "T_off",      &T_off,     25,  -10000,     500000, nullptr, 2 },
-  //{ "set_base", nullptr,   0,      0,   100000, fun_set_base }
+  //     name            pv         step     min         max  fun      div10
+  {    "task_idx",    &task_idx,      1,       0,         42, nullptr },
+  {   "t_step_ms",   &t_step_ms,    100,     100,      10000, nullptr },
+  {     "n_loops",     &n_loops,      1,       1,   10000000, nullptr },
+  {    "auto_out",    &auto_out,      1,       0,          9, nullptr },
+  {    "dac_out1", &menu_v_out1,      1,     -95,         95, menu_fun_dac_out1, 1 },
+  {    "dac_out2", &menu_v_out2,      1,     -95,         95, menu_fun_dac_out2, 1 },
+  {    "dac_zero",      nullptr,      0,      0,           0, menu_fun_dac_zero },
+  {      "reboot",      nullptr,      0,      0,      100000, menu_fun_reboot }
 };
+
 xfloat t_c = 0;
 
 using RUN_FUN = int(*)(void);
@@ -121,10 +129,6 @@ const xfloat adc_20_to_3 = 20.0f / 3.0f;
 // calibration result. TODO: store to flash
 xfloat adc_v_scales[adc_n_ch] = {  6.64549820213293,   6.64069097320211,  6.64970696227185,  6.64620805080418 };
 xfloat adc_v_bases[adc_n_ch]  = {  -9.96804714874007, -9.95256498216527, -9.98097048959749, -9.96997237214724 };
-
-// -9.96804714874007, -9.95256498216527, -9.98097048959749, -9.96997237214724
-// 6.64549820213293,  6.64069097320211,   6.64970696227185,  6.64620805080418
-
 
 xfloat adc_v[adc_n_ch]        = {         0.0f,        0.0f,         0.0f,        0.0f };
 int    adc_vi[adc_n_ch]       = {            0,           0,            0,           0 };
@@ -335,20 +339,21 @@ int run_common( RUN_FUN pre_fun, RUN_FUN loop_fun )
   bool was_out_open = false;
   rtc_getFileDateTimeStr( ofilename );
 
-  obuf << " outfile: " << ofilename << NL;
-  std_out << obuf_str;
-
   if( auto_out ) {
+    obuf << " outfile: " << ofilename;
+
     f_open( &ofile, ofilename, FA_WRITE | FA_OPEN_ALWAYS );
     if( ofile.err == FR_OK ) {
       was_out_open = true;
       // pfile = &ofile;
-      std_out << "# outfile open OK " << NL;
+      obuf << " OK " << NL;
       obuf_out_ofile( 0 );
     } else {
-      std_out << "# Error: fail to open outfile  err= " << ofile.err << NL;
+      obuf << " Error: " << ofile.err << NL;
     }
   }
+
+  std_out << obuf_str << NL;
 
   OSTR(s,40);
 
@@ -1108,6 +1113,30 @@ void on_btn_while_run( int cmd )
   }
 }
 
+int menu_fun_reboot( int )
+{
+  NVIC_SystemReset();
+  return 0; // fake
+}
+
+int menu_fun_dac_out1( int v10 )
+{
+  dac_out1( 0.1f * v10 );
+  return 0;
+}
+
+int menu_fun_dac_out2( int v20 )
+{
+  dac_out1( 0.1f * v20 );
+  return 0;
+}
+
+int menu_fun_dac_zero( int  )
+{
+  dac_out1( 0.0 );
+  dac_out2( 0.0 );
+  return 0;
+}
 
 
 // ---------------------------------------- ADC ------------------------------------------------------
@@ -1811,7 +1840,7 @@ void rtc_getFileDateTimeStr( char *s ) // o_YYYYmmDD_HHMMSS_XXX.txt 26+ bytes
   }
   rtc_getDateTimeStr( s+2 );
   s[0] = 'o'; s[1] = '_';
-  strcat( s, "_XXX.txt" );
+  strcat( s, "_XXX.txt" ); // TODO: XXX = parameter
 }
 
 void C_rtc_getFileDateTimeStr( PICOC_FUN_ARGS )
