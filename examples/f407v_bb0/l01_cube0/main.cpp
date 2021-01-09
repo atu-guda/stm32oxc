@@ -133,20 +133,28 @@ xfloat adc_kv = 0.001f * adc_scale_mv / 0x7FFF;
 int adc_defcfg();
 int adc_measure();
 void adc_out();
+void adc_out_all();
+void adc_all();
 int adc_pre_loop();
 int adc_loop();
 void C_adc_defcfg( PICOC_FUN_ARGS );
 void C_adc_measure( PICOC_FUN_ARGS );
 void C_adc_out( PICOC_FUN_ARGS );
+void C_adc_out_all( PICOC_FUN_ARGS );
+void C_adc_all( PICOC_FUN_ARGS );
 
 extern DAC_HandleTypeDef hdac;
 int MX_DAC_Init();
 const unsigned dac_n_ch = 2;
 const unsigned dac_bimask = 0x0FFF; // 12 bit
-const xfloat dac_3_to_20 = 3.0f / 20.0f;
+const xfloat dac_3_to_20 = 3.0f / 20.0f; // 0.15
 xfloat dac_vref = 3.0f;
-xfloat dac_v_scales[dac_n_ch] = {  dac_3_to_20, dac_3_to_20 };
-xfloat dac_v_bases[adc_n_ch]  = {       -10.0f,      -10.0f };
+//xfloat dac_v_scales[dac_n_ch] = {  dac_3_to_20, dac_3_to_20 };
+//xfloat dac_v_bases[dac_n_ch]  = {       -10.0f,      -10.0f };
+
+xfloat dac_v_scales[dac_n_ch] = { 0.150868529050905,  0.150349857465586 };
+xfloat dac_v_bases[dac_n_ch]  = { -9.95029804079137, -9.96506009355503  };
+
 void dac_out1( xfloat v );
 void dac_out2( xfloat v );
 void dac_out12( xfloat v1, xfloat v2 );
@@ -526,6 +534,8 @@ int main(void)
   MX_TIM9_Init();
   lcdt.puts("9");
 
+  adc_defcfg();
+
   int dac_rc = MX_DAC_Init();
   lcdt.puts( dac_rc == 0 ? "D " : "-d" );
   HAL_DAC_SetValue( &hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, 2047 );
@@ -722,6 +732,8 @@ struct LibraryFunction picoc_local_Functions[] =
   { C_adc_defcfg,            "int adc_defcfg(void);" },
   { C_adc_measure,           "int adc_measure(void);" },
   { C_adc_out,               "void adc_out(void);" },
+  { C_adc_out_all,           "void adc_out_all(void);" },
+  { C_adc_all,               "void adc_all(void);" },
 
   { C_dac_out1,              "void dac_out1(float);" },
   { C_dac_out2,              "void dac_out2(float);" },
@@ -1133,6 +1145,20 @@ void adc_out()
   }
 }
 
+void adc_out_all()
+{
+  for( auto o : obufs ) { o->reset_out(); }
+  adc_out();
+  obuf_out_stdout( 0 );
+  lcdbufs_out();
+}
+
+void adc_all()
+{
+  adc_measure();
+  adc_out_all();
+}
+
 
 int adc_pre_loop()
 {
@@ -1164,6 +1190,16 @@ void C_adc_measure( PICOC_FUN_ARGS )
 void C_adc_out( PICOC_FUN_ARGS )
 {
   adc_out();
+}
+
+void C_adc_out_all( PICOC_FUN_ARGS )
+{
+  adc_out_all();
+}
+
+void C_adc_all( PICOC_FUN_ARGS )
+{
+  adc_all();
 }
 
 
