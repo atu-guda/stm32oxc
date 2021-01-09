@@ -46,7 +46,7 @@ const unsigned buf_len_double = 72;
 
 class FltFmt : public OutStreamFmt {
   public:
-   explicit FltFmt( float a, uint32_t a_flg = cvtff_auto, int a_w = float_default_width, int a_prec = 99 ) :
+   explicit FltFmt( float a, uint32_t a_flg = cvtff_auto, int a_w = 0, int a_prec = 99 ) :
      v( a ), flg( a_flg ),
      w( ( a_w > 1 ) ? a_w : auto_width ),
      prec( a_prec ) {};
@@ -77,7 +77,7 @@ double arg2double_d( int narg, int argc, const char * const * argv, double def,
 
 class DblFmt : public OutStreamFmt {
   public:
-   explicit DblFmt( double a, uint32_t a_flg = cvtff_auto, int a_w = double_default_width, int a_prec = 99 ) :
+   explicit DblFmt( double a, uint32_t a_flg = cvtff_auto, int a_w = 0, int a_prec = 99 ) :
      v( a ), flg( a_flg ),
      w( ( a_w > 1 ) ? a_w : auto_width ),
      prec( a_prec ) {};
