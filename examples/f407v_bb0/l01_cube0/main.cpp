@@ -61,6 +61,8 @@ void obuf_add_str( const char *s, int b );
 void C_obuf_add_str(  PICOC_FUN_ARGS );
 void obuf_clear( unsigned b );
 void C_obuf_clear( PICOC_FUN_ARGS );
+void obuf_clear_all();
+void C_obuf_clear_all( PICOC_FUN_ARGS );
 void obuf_add_int( int v, int b );
 void C_obuf_add_int( PICOC_FUN_ARGS );
 void obuf_add_fp( xfloat v, int b );
@@ -732,6 +734,7 @@ struct LibraryFunction picoc_local_Functions[] =
   { C_obuf_add_fp_x,         "void obuf_add_fp_x(float,int,int,int,int);" },
   { C_obuf_add_fp_c,         "void obuf_add_fp_c(float,int);" },
   { C_obuf_clear,            "void obuf_clear(int);" },
+  { C_obuf_clear_all,        "void obuf_clear_all(void);" },
   { C_obuf_out_stdout,       "void obuf_out_stdout(int);" },
   { C_obuf_out_ofile,        "void obuf_out_ofile(int);" },
   { C_lcdbufs_out,           "void lcdbufs_out();" },
@@ -992,6 +995,18 @@ void obuf_clear( int b )
 void C_obuf_clear( PICOC_FUN_ARGS )
 {
   obuf_clear( ARG_0_INT );
+}
+
+void obuf_clear_all()
+{
+  for( auto b : obufs ) {
+    b->reset_out();
+  }
+}
+
+void C_obuf_clear_all( PICOC_FUN_ARGS )
+{
+  obuf_clear_all();
 }
 
 void obuf_out_stdout( int b )
