@@ -129,8 +129,8 @@ const xfloat adc_20_to_3 = 20.0f / 3.0f;
 //xfloat adc_v_bases[adc_n_ch]  = {       -10.0f,      -10.0f,       -10.0f,      -10.0f };
 
 // calibration result. TODO: store to flash
-xfloat adc_v_scales[adc_n_ch] = {  6.64549820213293,   6.64069097320211,  6.64970696227185,  6.64620805080418 };
-xfloat adc_v_bases[adc_n_ch]  = {  -9.96804714874007, -9.95256498216527, -9.98097048959749, -9.96997237214724 };
+xfloat adc_v_scales[adc_n_ch] = {  6.64791,   6.64343,  6.65168,  6.64693 };
+xfloat adc_v_bases[adc_n_ch]  = { -9.97233,  -9.95716, -9.98425, -9.97181 };
 
 xfloat adc_v[adc_n_ch]        = {         0.0f,        0.0f,         0.0f,        0.0f };
 int    adc_vi[adc_n_ch]       = {            0,           0,            0,           0 };
@@ -158,8 +158,8 @@ xfloat dac_vref = 3.0f;
 //xfloat dac_v_scales[dac_n_ch] = {  dac_3_to_20, dac_3_to_20 };
 //xfloat dac_v_bases[dac_n_ch]  = {       -10.0f,      -10.0f };
 
-xfloat dac_v_scales[dac_n_ch] = { 0.150868529050905,  0.150349857465586 };
-xfloat dac_v_bases[dac_n_ch]  = { -9.95029804079137, -9.96506009355503  };
+xfloat dac_v_scales[dac_n_ch] = {  0.150833,  0.150286 };
+xfloat dac_v_bases[dac_n_ch]  = { -9.93002,  -9.94564  };
 
 void dac_out1( xfloat v );
 void dac_out2( xfloat v );
