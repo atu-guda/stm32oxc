@@ -1142,7 +1142,7 @@ int menu_fun_dac_out1( int v10 )
 
 int menu_fun_dac_out2( int v20 )
 {
-  dac_out1( 0.1f * v20 );
+  dac_out2( 0.1f * v20 );
   return 0;
 }
 
