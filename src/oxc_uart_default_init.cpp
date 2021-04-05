@@ -23,6 +23,9 @@ int init_uart( UART_HandleTypeDef *uah, int baud )
   return( HAL_UART_Init( uah ) == HAL_OK );
 }
 
+#ifdef HAL_UART_USERINIT_FUN
+void  HAL_UART_USERINIT_FUN( UART_HandleTypeDef* uartHandle );
+#endif
 
 void HAL_UART_MspInit( UART_HandleTypeDef* uah )
 {
@@ -42,6 +45,10 @@ void HAL_UART_MspInit( UART_HandleTypeDef* uah )
     HAL_NVIC_EnableIRQ( BOARD_UART_DEFAULT_IRQ );
     #endif
   }
+
+  #ifdef HAL_UART_USERINIT_FUN
+    HAL_UART_USERINIT_FUN( uah );
+  #endif
 }
 
 void HAL_UART_MspDeInit( UART_HandleTypeDef* uah )
