@@ -31,7 +31,6 @@ void MX_UT61E_DMA_Init(void)
   HAL_NVIC_EnableIRQ(   DMA_UT61E_IRQ );
 }
 
-
 void HAL_UART_UserInit( UART_HandleTypeDef* uartHandle )
 {
   if( uartHandle->Instance != UART_UT61E ) {
@@ -55,13 +54,15 @@ void HAL_UART_UserInit( UART_HandleTypeDef* uartHandle )
   hdma_usart_ut61e_rx.Init.MemInc              = DMA_MINC_ENABLE;
   hdma_usart_ut61e_rx.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
   hdma_usart_ut61e_rx.Init.MemDataAlignment    = DMA_MDATAALIGN_BYTE;
-  // hdma_usart_ut61e_rx.Init.Mode                = DMA_CIRCULAR; // DMA_NORMAL;
-  hdma_usart_ut61e_rx.Init.Mode                = DMA_NORMAL;
+  hdma_usart_ut61e_rx.Init.Mode                = DMA_CIRCULAR;
+  // hdma_usart_ut61e_rx.Init.Mode                = DMA_NORMAL;
   hdma_usart_ut61e_rx.Init.Priority            = DMA_PRIORITY_MEDIUM;
   hdma_usart_ut61e_rx.Init.FIFOMode            = DMA_FIFOMODE_DISABLE;
   if( HAL_DMA_Init( &hdma_usart_ut61e_rx ) != HAL_OK ) {
     return; // Error!
   }
+
+  // HAL_DMA_RegisterCallback( &hdma_usart_ut61e_rx, HAL_DMA_XFER_CPLT_CB_ID, DMA_CC );
 
   __HAL_LINKDMA( uartHandle, hdmarx, hdma_usart_ut61e_rx );
 

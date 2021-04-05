@@ -42,7 +42,7 @@ int main(void)
   BOARD_PROLOG;
 
   UVAR('t') = 100;
-  UVAR('n') = 2000;
+  UVAR('n') = 20;
 
   MX_UT61E_DMA_Init();
   UVAR('z') =  MX_UT61E_UART_Init();
@@ -60,57 +60,50 @@ int main(void)
 void HAL_UARTEx_RxEventCallback( UART_HandleTypeDef *huart, uint16_t sz )
 {
   r_sz = sz;
-  if( r_sz == 0 ) {
-    r_sz = 50;
+
+  // TODO: correct mutex
+  if( sz == UT61E_PKT_SZ ) {
+    for( unsigned i=0; i<UT61E_PKT_SZ; ++i ) {
+      ubuf1[i] = ubuf[i] & 0x7F; // parity bit ???
+    }
+    memset( ubuf,  0, sizeof( ubuf ) );
   }
 
-  if( sz == 14 ) {
-    memmove( ubuf1, ubuf, 14 );
-    // memset( ubuf,  0, sizeof( ubuf ) );
-  }
-  leds.toggle( 1 );
+  // leds.toggle( 1 );
 }
 
 int cmd_test0( int argc, const char * const * argv )
 {
-
+  uint32_t t_step = UVAR('t');
   uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
   std_out << "# T1: n= " << n << NL;
 
-  uint16_t nr = 0;
   r_sz = 0;
   memset( ubuf,  0x00, sizeof( ubuf ) );
   memset( ubuf1, 0x00, sizeof( ubuf1 ) );
 
-  // HAL_UARTEx_ReceiveToIdle_DMA( &huart_ut61e, (uint8_t*)&ubuf, 14 );
+  HAL_UARTEx_ReceiveToIdle_DMA( &huart_ut61e, (uint8_t*)&ubuf, UT61E_PKT_SZ );
 
-  bool restart = true;
+  for( unsigned i=0; i<1000; ++i ) { // try to wait for initial transfer
+    if( r_sz == UT61E_PKT_SZ ) {
+      break;
+    }
+    delay_ms( 1 );
+  }
+
+  uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
+
   break_flag = 0;
   for( decltype (+n) i=0; i<n && !break_flag; ++i ) {
-    // leds.toggle( 4 );
-    // memset( ubuf, 0, sizeof( ubuf ) );
-    // HAL_StatusTypeDef  rc = HAL_UART_Receive( &huart_ut61e, (uint8_t*)&ubuf, 14, 1000 );
-    HAL_UARTEx_ReceiveToIdle( &huart_ut61e, (uint8_t*)&ubuf, 14, &nr, 1000 );
-    // if( restart ) {
-    //   restart = false;
-    //   HAL_UARTEx_ReceiveToIdle_DMA( &huart_ut61e, (uint8_t*)&ubuf, 14 );
-    // }
-    // if( rc != HAL_OK ) {
-    //   // std_out << "# warn: rc= " << rc <<  NL;
-    //   continue;
-    // }
-    dump8( ubuf, 16 );
-    // if( r_sz != 0 ) {
-    //   std_out << "#  r_sz= " << r_sz <<  NL;
-    //
-    // }
-    // if( r_sz == 14 ) {
-    //   restart = true;
-    //   dump8( ubuf, 16 );
-    //
-    // }
+
+    uint32_t tc = HAL_GetTick();
+
+    // TODO: correct mutex
+    std_out << ( tc - tm00 ) << NL;
+    dump8( ubuf1, 16 );
+
     r_sz = 0;
-    delay_ms( 2 );
+    delay_ms_until_brk( &tm0, t_step );
   }
 
   return 0;
