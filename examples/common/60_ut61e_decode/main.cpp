@@ -1,6 +1,9 @@
+#define _GNU_SOURCE
 #include <cstring>
+#include <cmath>
 
 #include <oxc_auto.h>
+#include <oxc_floatfun.h>
 
 #include <oxc_ut61e_decode.h>
 
@@ -34,15 +37,17 @@ void idle_main_task()
 extern DMA_HandleTypeDef hdma_usart_ut61e_rx;
 extern UART_HandleTypeDef huart_ut61e;
 volatile uint32_t r_sz = 0;
-char ubuf[16], ubuf1[16];
+
+char ubuf[16];
+UT61E_package ut61e_pkg;
 
 
 int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 100;
-  UVAR('n') = 20;
+  UVAR('t') = 1000;
+  UVAR('n') = 10;
 
   MX_UT61E_DMA_Init();
   UVAR('z') =  MX_UT61E_UART_Init();
@@ -62,9 +67,10 @@ void HAL_UARTEx_RxEventCallback( UART_HandleTypeDef *huart, uint16_t sz )
   r_sz = sz;
 
   // TODO: correct mutex
+  uint8_t *dst = (uint8_t*)(&ut61e_pkg);
   if( sz == UT61E_PKT_SZ ) {
     for( unsigned i=0; i<UT61E_PKT_SZ; ++i ) {
-      ubuf1[i] = ubuf[i] & 0x7F; // parity bit ???
+      dst[i] = ubuf[i] & 0x7F; // parity bit ???
     }
     memset( ubuf,  0, sizeof( ubuf ) );
   }
@@ -80,7 +86,7 @@ int cmd_test0( int argc, const char * const * argv )
 
   r_sz = 0;
   memset( ubuf,  0x00, sizeof( ubuf ) );
-  memset( ubuf1, 0x00, sizeof( ubuf1 ) );
+  // memset( ubuf1, 0x00, sizeof( ubuf1 ) );
 
   HAL_UARTEx_ReceiveToIdle_DMA( &huart_ut61e, (uint8_t*)&ubuf, UT61E_PKT_SZ );
 
@@ -91,6 +97,7 @@ int cmd_test0( int argc, const char * const * argv )
     delay_ms( 1 );
   }
 
+  char flg_buf[80];
   uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
 
   break_flag = 0;
@@ -100,7 +107,28 @@ int cmd_test0( int argc, const char * const * argv )
 
     // TODO: correct mutex
     std_out << ( tc - tm00 ) << NL;
-    dump8( ubuf1, 16 );
+    dump8( &ut61e_pkg, 16 );
+    if( ! ut61e_pkg.is_good() ) {
+      std_out << "# err: bad package" << NL;
+      dump8( &ut61e_pkg, 16 );
+      continue;
+    }
+
+    if( UVAR('d') > 0 ) {
+      dump8( &ut61e_pkg, 16 );
+    }
+
+    int32_t ival = ut61e_pkg.ival();
+    int32_t p10  = ut61e_pkg.range_exp();
+    if( ival >= UT61E_package::ol_ival ) {
+      p10 = 30;
+    }
+    ut61e_pkg.flagsStr( flg_buf );
+    float v = ival * exp10( p10 );
+
+    std_out << v << ' ' << ival << 'e' << p10
+            << ' ' << ut61e_pkg.value_name() << ' ' << ut61e_pkg.func_name()
+            << ' ' << ut61e_pkg.func_idx() << ' ' << flg_buf << NL;
 
     r_sz = 0;
     delay_ms_until_brk( &tm0, t_step );

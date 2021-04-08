@@ -23,6 +23,8 @@ USE_OXC_DMA = y
 
 SRCS  = main.cpp
 
+SRCS += oxc_floatfun.cpp
+
 SRCS += oxc_ut61e_decode.cpp
 SRCS += uart_for_ut61e.cpp
 
