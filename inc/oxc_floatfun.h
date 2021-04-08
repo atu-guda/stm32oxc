@@ -40,6 +40,9 @@ float arg2float_d( int narg, int argc, const char * const * argv, float def,
                  float vmin = -__FLT_MAX__, float vmax = __FLT_MAX__ );
 // TODO: callback for parameter parsing
 
+xfloat to_SI_prefix( xfloat v, char *c );
+
+
 const unsigned buf_len_float  = 36;
 const unsigned buf_len_double = 72;
 // const char* const def_float_fmt_init = "%#g";

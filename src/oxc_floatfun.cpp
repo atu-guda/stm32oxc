@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <cstring>
 #include <cmath>
 
@@ -147,6 +148,36 @@ OutStream& operator<<( OutStream &os, float rhs ) {
    FltFmt( rhs ).out( os );
    return os;
 };
+
+xfloat to_SI_prefix( xfloat v, char *c )
+{
+  static const char SI_prefixes[] = "yzafpnum kMGTPEZY????";
+  //                                 012345678901234567        y=10^{-24} 1=[8] k=[9] M=[10]
+  int po_x1 = rintf( floor( log10( fabsf( v ) ) ) );
+  if( po_x1 < 0 ) { // shift for negative 0.2 = 200m
+    po_x1 -= 2;
+  }
+
+  int po_x2 = po_x1 / 3;
+
+  // std_out << "# " << v << ' ' << po_x1 << ' ' << po_x2 << NL;
+
+  int idx = po_x2 + 8;
+  if( idx < 0 ) {
+    idx = 8; // no conversion for zero
+  }
+  if( idx >= 16 ) {
+    idx = 8;
+  }
+  po_x2 = idx - 8;
+  int po_x3 = po_x2 * 3;
+  xfloat v1 = v * exp10f( -po_x3 );
+  if( c ) {
+    *c = SI_prefixes[idx];
+  }
+  return v1;
+}
+
 
 
 // -------------------------------------------------------------- 

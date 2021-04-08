@@ -19,12 +19,15 @@ const char* common_help_string = "Appication to decode data from UT61e via UART"
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
+CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test UT61E data"  };
+int cmd_si_test( int argc, const char * const * argv );
+CmdInfo CMDINFO_SI_TEST { "si_test", 'S', cmd_si_test, " - si units "  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
 
   &CMDINFO_TEST0,
+  &CMDINFO_SI_TEST,
   nullptr
 };
 
@@ -105,9 +108,6 @@ int cmd_test0( int argc, const char * const * argv )
 
     uint32_t tc = HAL_GetTick();
 
-    // TODO: correct mutex
-    std_out << ( tc - tm00 ) << NL;
-    dump8( &ut61e_pkg, 16 );
     if( ! ut61e_pkg.is_good() ) {
       std_out << "# err: bad package" << NL;
       dump8( &ut61e_pkg, 16 );
@@ -118,17 +118,25 @@ int cmd_test0( int argc, const char * const * argv )
       dump8( &ut61e_pkg, 16 );
     }
 
+    std_out << ( tc - tm00 ) << ' ';
+
+    // TODO: correct mutex
     int32_t ival = ut61e_pkg.ival();
     int32_t p10  = ut61e_pkg.range_exp();
     if( ival >= UT61E_package::ol_ival ) {
       p10 = 30;
     }
     ut61e_pkg.flagsStr( flg_buf );
-    float v = ival * exp10( p10 );
+    const char *vname = ut61e_pkg.value_name();
 
-    std_out << v << ' ' << ival << 'e' << p10
-            << ' ' << ut61e_pkg.value_name() << ' ' << ut61e_pkg.func_name()
-            << ' ' << ut61e_pkg.func_idx() << ' ' << flg_buf << NL;
+    char si_chr;
+    float v = ival * exp10f( p10 );
+    float v1 = to_SI_prefix( v, &si_chr );
+
+    std_out << FltFmt( v,  cvtff_auto, 11, 4 ) << ' ' << vname << ' '
+            << FltFmt( v1, cvtff_auto, 11, 4 ) << ' ' << si_chr << vname << ' '
+            << ival << 'e' << p10  << ' ' << vname << ' '
+            << ut61e_pkg.func_name()  << ' ' << ut61e_pkg.func_idx() << ' ' << flg_buf << NL;
 
     r_sz = 0;
     delay_ms_until_brk( &tm0, t_step );
@@ -136,6 +144,19 @@ int cmd_test0( int argc, const char * const * argv )
 
   return 0;
 }
+
+int cmd_si_test( int argc, const char * const * argv )
+{
+  xfloat v = 2.1345e-30;
+
+  char c;
+  for( ; v < 1e30f; v *= -10 ) {
+    xfloat v1 = to_SI_prefix( v, &c );
+    std_out << v << ' ' <<  v1 << ' ' <<  c << NL;
+  }
+  return 0;
+}
+
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
