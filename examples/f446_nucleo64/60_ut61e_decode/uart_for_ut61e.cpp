@@ -26,7 +26,7 @@ int MX_UT61E_UART_Init(void)
 
 void MX_UT61E_DMA_Init(void)
 {
-  __HAL_RCC_DMA2_CLK_ENABLE();
+  UART_UT61E_DMA_CLK_ENABLE();
   HAL_NVIC_SetPriority( DMA_UT61E_IRQ, 2, 0 );
   HAL_NVIC_EnableIRQ(   DMA_UT61E_IRQ );
 }
@@ -55,30 +55,27 @@ void HAL_UART_UserInit( UART_HandleTypeDef* uartHandle )
   hdma_usart_ut61e_rx.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
   hdma_usart_ut61e_rx.Init.MemDataAlignment    = DMA_MDATAALIGN_BYTE;
   hdma_usart_ut61e_rx.Init.Mode                = DMA_CIRCULAR;
-  // hdma_usart_ut61e_rx.Init.Mode                = DMA_NORMAL;
   hdma_usart_ut61e_rx.Init.Priority            = DMA_PRIORITY_MEDIUM;
   hdma_usart_ut61e_rx.Init.FIFOMode            = DMA_FIFOMODE_DISABLE;
   if( HAL_DMA_Init( &hdma_usart_ut61e_rx ) != HAL_OK ) {
     return; // Error!
   }
 
-  // HAL_DMA_RegisterCallback( &hdma_usart_ut61e_rx, HAL_DMA_XFER_CPLT_CB_ID, DMA_CC );
-
   __HAL_LINKDMA( uartHandle, hdmarx, hdma_usart_ut61e_rx );
 
-  HAL_NVIC_SetPriority( USART1_IRQn, 4, 0 ); // TODO: ??? + define
-  HAL_NVIC_EnableIRQ( USART1_IRQn );
+  // HAL_NVIC_SetPriority( USART1_IRQn, 4, 0 ); // unused - DMA instead
+  // HAL_NVIC_EnableIRQ( USART1_IRQn );
 }
 
-void USART1_IRQHandler(void)
-{
-  // leds.set( 2 );
-  HAL_UART_IRQHandler( &huart_ut61e );
-}
+// void USART1_IRQHandler(void)
+// {
+//   // leds.set( 2 );
+//   HAL_UART_IRQHandler( &huart_ut61e );
+// }
 
-void DMA2_Stream2_IRQHandler(void)
+void UT61E_DMA_IRQHandler(void)
 {
-  leds.toggle( 2 );
+  // leds.toggle( 2 );
   HAL_DMA_IRQHandler( &hdma_usart_ut61e_rx );
 }
 
