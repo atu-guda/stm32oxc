@@ -1,3 +1,4 @@
+#include <cstdarg>
 #include <cerrno>
 
 #include <oxc_auto.h>
@@ -296,6 +297,9 @@ int  picoc_call( const char *code );
 int file_pre_loop();
 int file_loop();
 
+void C_prf( PICOC_FUN_ARGS );
+void tst_stdarg( const char *s, ... );
+
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - run task"  };
@@ -313,6 +317,10 @@ int cmd_menu( int argc, const char * const * argv );
 CmdInfo CMDINFO_MENU { "menu", 'M', cmd_menu, " N - menu action"  };
 int cmd_t1( int argc, const char * const * argv );
 CmdInfo CMDINFO_T1 { "t1", 0, cmd_t1, " - misc test"  };
+int cmd_tst_stdarg( int argc, const char * const * argv );
+CmdInfo CMDINFO_TST_STDARG { "tst_stdarg", 'A', cmd_tst_stdarg, " - test stdarg"  };
+int cmd_lstnames( int argc, const char * const * argv );
+CmdInfo CMDINFO_LSTNAMES { "lstnames", 'L', cmd_lstnames, " - list picoc names"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -325,6 +333,8 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_SET_TIME,
   &CMDINFO_SET_DATE,
   &CMDINFO_T1,
+  &CMDINFO_TST_STDARG,
+  &CMDINFO_LSTNAMES,
   &CMDINFO_MENU,
   FS_CMDS0,
   nullptr
@@ -791,6 +801,8 @@ struct LibraryFunction picoc_local_Functions[] =
   { C_rtc_getTimeStr,        "void rtc_getTimeStr( char* );  " },
   { C_rtc_getDateTimeStr,    "void rtc_getDateTimeStr( char* );  " },
   { C_rtc_getFileDateTimeStr,"void rtc_getFileDateTimeStr( char* );  " },
+
+  { C_prf,                   "int prf( char*, ... );  " },
   { NULL,            NULL }
 };
 
@@ -1862,6 +1874,156 @@ void C_rtc_getFileDateTimeStr( PICOC_FUN_ARGS )
 {
   char *s = (char*)(ARG_0_PTR);
   rtc_getFileDateTimeStr( s );
+}
+
+
+// ---------------------------------------- stdarg test --------------------------------------------
+
+void tst_stdarg( const char *s, ... )
+{
+  std_out << "# s     = " << HexInt( (void*)s ) << NL;
+  std_out << "# s addr= " << HexInt( (void*)&s ) << NL;
+  dump8( &s, 0x50 );
+  static_assert( sizeof(va_list) == sizeof(void*), "Code only for trivial va_list" );
+  va_list ap;
+  va_start( ap, s );
+  std_out << "# &ap     = " << HexInt( (void*)&ap ) << " size= " << sizeof(ap)
+          << " addr= " << HexInt( (uint32_t)*((uint32_t*)(&ap)) )<<NL;
+  dump8( &ap, 0x10 );
+  dump8( (void*)*((uint32_t*)(&ap)), 0x50 );
+
+  va_end( ap );
+  printf( "#--- %18.10g ---\n", 1.2345678912e-87 );
+}
+
+int cmd_tst_stdarg( int argc, const char * const * argv )
+{
+  std_out << "# stdarg test " << NL;
+  tst_stdarg( "ABCDEFG", 'A', 'Z', (short)0x1234, 0x87654321, -1LL, sizeof(sizeof(int)), 1.12345e-12, 0xAAAAAAAA );
+  return 0;
+}
+
+// ;prf("[ %d %u %ld %f %s %c]\n", (short)1, 1u, 1L, 1.2, "xxx", 'A' );
+void C_prf( PICOC_FUN_ARGS )
+{
+  const unsigned argbuf_sz = 64;
+  char argbuf[argbuf_sz];
+  unsigned a_ofs = 0;
+
+  printf( "# dbg: NumArgs= %d\n", NumArgs );
+  if( NumArgs < 1 ) {
+    RV_INT = 0;
+    return;
+  }
+
+  memset( argbuf, 0, argbuf_sz );
+
+  const char *fmt = (const char*)(ARG_0_PTR);
+  std_out << "# fmt= " << fmt << NL;
+
+  struct Value *na = Param[0];
+  for( int i=0; i<NumArgs; ++i, na = (struct Value *)( (char *)na + MEM_ALIGN(sizeof(struct Value) + TypeStackSizeValue(na)) ) ) {
+    std_out << "#  i= " << i;
+    if( !na || !na->Typ ) {
+      break; // return
+    }
+    auto tp = na->Typ->Base;
+    auto sz = na->Typ->Sizeof;
+    std_out << " tp= " << tp <<  " size= " << sz
+            << " na= " << HexInt( na ) << " vi= " << na->Val->Integer << ' '
+            << a_ofs << ' ';
+
+    switch( tp ) {
+      case TypeVoid:          std_out << "void";
+                              break;
+      case TypeInt:           std_out << "int";
+                              memcpy( argbuf+a_ofs, &(na->Val->Integer), sz );
+                              break;
+      case TypeShort:         std_out << "short";
+                              memcpy( argbuf+a_ofs, &(na->Val->Integer), sz );
+                              break;
+      case TypeChar:          std_out << "char";
+                              memcpy( argbuf+a_ofs, &(na->Val->Character), sz );
+                              break;
+      case TypeLong:          std_out << "long";
+                              memcpy( argbuf+a_ofs, &(na->Val->Integer), sz );
+                              break;
+      case TypeUnsignedInt:   std_out << "unsigned int";
+                              memcpy( argbuf+a_ofs, &(na->Val->Integer), sz );
+                              break;
+      case TypeUnsignedShort: std_out << "unsigned short"; 
+                              memcpy( argbuf+a_ofs, &(na->Val->Integer), sz );
+                              break;
+      case TypeUnsignedLong:  std_out << "unsigned long"; 
+                              memcpy( argbuf+a_ofs, &(na->Val->Integer), sz );
+                              break;
+      case TypeUnsignedChar:  std_out << "unsigned char"; 
+                              memcpy( argbuf+a_ofs, &(na->Val->Character), sz );
+                              break;
+      case TypeFP:            std_out << "double";
+                              memcpy( argbuf+a_ofs, &(na->Val->FP), sz );
+                              break;
+      case TypeFunction:      std_out << "function";
+                              break;
+      case TypeMacro:         std_out << "macro";
+                              break;
+      case TypeStruct:        std_out << "struct ";
+                              break;
+      case TypeUnion:         std_out << "union ";
+                              break;
+      case TypeEnum:          std_out << "enum ";
+                              memcpy( argbuf+a_ofs, &(na->Val->Integer), sz );
+                              break;
+      case TypeGotoLabel:     std_out << "goto label ";
+                              break;
+      case Type_Type:         std_out << "type ";
+                              break;
+                              // case TypeArray:         PrintType(Typ->FromType, Stream); PrintCh('[', Stream); if (Typ->ArraySize != 0) PrintSimpleInt(Typ->ArraySize, Stream); PrintCh(']', Stream); 
+                              break;
+      case TypeArray:         std_out << "array";
+                              break;
+                              // case TypePointer:       if (Typ->FromType) PrintType(Typ->FromType, Stream); PrintCh('*', Stream); 
+                              break;
+      case TypePointer:       std_out << "ptr";
+                              memcpy( argbuf+a_ofs, &(na->Val->Pointer), sz );
+                              break;
+    }
+    std_out << NL;
+
+    if( i < 1 ) {
+      continue; // skip format
+    }
+    a_ofs += (sz+3) & 0xFFFC;
+    if( a_ofs >= argbuf_sz ) {
+      break; // return?
+    }
+  }
+  dump8( argbuf, argbuf_sz );
+}
+
+int cmd_lstnames( int argc, const char * const * argv )
+{
+  unsigned tsize = pc.GlobalTable.Size;
+  std_out << "# lstnames &pc= " << HexInt(&pc) << " size= " << tsize << " OnHeap= " << pc.GlobalTable.OnHeap << NL;
+
+  Table *gtab = &pc.GlobalTable;
+  TableEntry **ppte = gtab->HashTable;
+  std_out << "# ppte= " << HexInt(ppte) << NL;
+
+  std_out << "# key file type hi "  NL;
+
+  for( unsigned hi=0; hi<tsize; ++hi ) {
+    for( TableEntry* te = gtab->HashTable[hi]; te != nullptr; te = te->Next ) {
+      std_out<< "# " << te->p.v.Key <<  " \"" << te->DeclFileName << "\" ";
+      Value *v = te->p.v.Val;
+      if( v ) {
+        std_out << ' ' << v->Typ->Base;
+      }
+      std_out   << ' ' << hi << NL;
+    }
+  }
+
+  return 0;
 }
 
 

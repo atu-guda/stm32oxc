@@ -171,7 +171,7 @@ xfloat to_SI_prefix( xfloat v, char *c )
   }
   po_x2 = idx - 8;
   int po_x3 = po_x2 * 3;
-  xfloat v1 = v * exp10f( -po_x3 );
+  xfloat v1 = v * (xfloat)exp10f( -po_x3 ); // TODO: auto fun selection
   if( c ) {
     *c = SI_prefixes[idx];
   }

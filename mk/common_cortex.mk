@@ -98,10 +98,11 @@ RTINC=$(RTDIR)/include
 
 ALLFLAGS += -g3 -O2
 ALLFLAGS += -Wall -Wextra -Wundef -Wdouble-promotion
-ALLFLAGS += -fno-common -ffunction-sections -fdata-sections
+ALLFLAGS += -fno-common -ffunction-sections -fdata-sections -fno-strict-aliasing
 ALLFLAGS += -DSTM32 -D$(MCINCTYPE) -DHSE_VALUE=$(HSE_VALUE) -DUSE_HAL_LEGACY
-CWARNFLAGS := -Wimplicit-function-declaration -Wmissing-prototypes -Wstrict-prototypes -Wno-unused-parameter -Wno-misleading-indentation
-CXXWARNFLAGS := -Wno-unused-parameter -Wno-register
+WARNFLAGS += -Wall -Wextra -Wundef -Wdouble-promotion -Wno-unused-parameter
+CWARNFLAGS   := $(WARNFLAGS) -Wimplicit-function-declaration -Wmissing-prototypes -Wstrict-prototypes -Wno-misleading-indentation
+CXXWARNFLAGS := $(WARNFLAGS) -Wno-register
 
 ALLFLAGS += -DPROJ_NAME=\"$(PROJ_NAME)\"
 ALLFLAGS += -ffreestanding
