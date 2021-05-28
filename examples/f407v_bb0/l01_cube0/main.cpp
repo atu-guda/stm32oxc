@@ -1933,6 +1933,19 @@ void C_prf( PICOC_FUN_ARGS )
             << " na= " << HexInt( na ) << " vi= " << na->Val->Integer << ' '
             << a_ofs << ' ';
 
+    if( i == 0 ) { // first argument = format
+      if( tp != TypePointer ) {
+        RV_INT = 0;
+        return;
+      }
+      continue;
+    }
+
+    if( sz > (int)sizeof(double) ) {
+      RV_INT = 0;
+      return;
+    }
+
     switch( tp ) {
       case TypeVoid:          std_out << "void";
                               break;
@@ -1951,13 +1964,13 @@ void C_prf( PICOC_FUN_ARGS )
       case TypeUnsignedInt:   std_out << "unsigned int";
                               memcpy( argbuf+a_ofs, &(na->Val->Integer), sz );
                               break;
-      case TypeUnsignedShort: std_out << "unsigned short"; 
+      case TypeUnsignedShort: std_out << "unsigned short";
                               memcpy( argbuf+a_ofs, &(na->Val->Integer), sz );
                               break;
-      case TypeUnsignedLong:  std_out << "unsigned long"; 
+      case TypeUnsignedLong:  std_out << "unsigned long";
                               memcpy( argbuf+a_ofs, &(na->Val->Integer), sz );
                               break;
-      case TypeUnsignedChar:  std_out << "unsigned char"; 
+      case TypeUnsignedChar:  std_out << "unsigned char";
                               memcpy( argbuf+a_ofs, &(na->Val->Character), sz );
                               break;
       case TypeFP:            std_out << "double";
@@ -1990,15 +2003,23 @@ void C_prf( PICOC_FUN_ARGS )
     }
     std_out << NL;
 
-    if( i < 1 ) {
-      continue; // skip format
-    }
-    a_ofs += (sz+3) & 0xFFFC;
+    a_ofs += (sz+3) & 0x00FC;
     if( a_ofs >= argbuf_sz ) {
       break; // return?
     }
   }
-  dump8( argbuf, argbuf_sz );
+  //dump8( argbuf, argbuf_sz );
+
+  //delay_ms(100);
+  va_list ap;
+  char *xxx = argbuf;
+  memcpy( &ap, &xxx, sizeof(ap) );
+  // dump8( &ap, 16 );
+  d// ump8( &argbuf, 16 );
+  //delay_ms(100);
+  int rc = vprintf( fmt, ap );
+  // std_out << "## rc= " << rc << NL;
+  RV_INT = rc;
 }
 
 int cmd_lstnames( int argc, const char * const * argv )
