@@ -297,7 +297,6 @@ int  picoc_call( const char *code );
 int file_pre_loop();
 int file_loop();
 
-int  x_vprintf( const char *s, va_list ap );
 void C_prf( PICOC_FUN_ARGS );
 void tst_stdarg( const char *s, ... );
 
@@ -1880,12 +1879,6 @@ void C_rtc_getFileDateTimeStr( PICOC_FUN_ARGS )
 
 // ---------------------------------------- stdarg test --------------------------------------------
 
-int x_vprintf( const char *s, va_list ap )
-{
-  std_out << "# s= " << s << " ap= " << HexInt( (uint32_t)*((uint32_t*)(&ap)) ) << NL;
-  dump8( (void*)*((uint32_t*)(&ap)), 0x50 );
-  return vprintf( s, ap );
-}
 
 void tst_stdarg( const char *s, ... )
 {
@@ -1896,8 +1889,7 @@ void tst_stdarg( const char *s, ... )
   va_list ap;
   va_start( ap, s );
 
-  //vprintf( s, ap );
-  x_vprintf( s, ap );
+  vprintf( s, ap );
 
   va_end( ap );
   printf( "#--- %18.10g ---\n", 1.2345678912e-87 );
@@ -1915,7 +1907,7 @@ int cmd_tst_stdarg( int argc, const char * const * argv )
 // ;prf("[ %X %lg %s %c]\n", 1, 1.2, "xxx", 'A' );
 void C_prf( PICOC_FUN_ARGS )
 {
-  const unsigned argbuf_sz = 64;
+  const unsigned argbuf_sz = 128;
   alignas(double) char argbuf[argbuf_sz];
   unsigned a_ofs = 0;
 
@@ -1931,19 +1923,15 @@ void C_prf( PICOC_FUN_ARGS )
     RV_INT = 0;
     return;
   }
-  // std_out << "# fmt= " << fmt << NL;
 
   struct Value *na = Param[0];
   for( int i=0; i<NumArgs; ++i, na = (struct Value *)( (char *)na + MEM_ALIGN(sizeof(struct Value) + TypeStackSizeValue(na)) ) ) {
-    // std_out << "#  i= " << i;
+
     if( !na || !na->Typ ) {
       break; // return
     }
     auto tp = na->Typ->Base;
     auto sz = na->Typ->Sizeof;
-    // std_out << " tp= " << tp <<  " size= " << sz
-    //         << " na= " << HexInt( na ) << " vi= " << na->Val->Integer << ' '
-    //         << a_ofs << ' ';
 
     if( i == 0 ) { // first argument = format
       if( tp != TypePointer ) {
@@ -1999,20 +1987,18 @@ void C_prf( PICOC_FUN_ARGS )
       memcpy( argbuf+a_ofs, p, sz );
       a_ofs += (sz+3) & 0x00FC;
     }
-    // std_out << NL;
     // case TypePointer:  if (Typ->FromType)
 
     if( a_ofs >= argbuf_sz - 8 ) { // 8 = guard
       break; // return?
     }
   }
-  dump8( argbuf, argbuf_sz );
+  // dump8( argbuf, argbuf_sz );
 
   va_list ap;
-  char *xxx = argbuf;
+  char *xxx = argbuf; // TODO: bit_cast in newer C++
   memcpy( &ap, &xxx, sizeof(ap) );
-  int rc = x_vprintf( fmt, ap );
-  // std_out << "## rc= " << rc << NL;
+  int rc = vprintf( fmt, ap );
   RV_INT = rc;
 }
 
