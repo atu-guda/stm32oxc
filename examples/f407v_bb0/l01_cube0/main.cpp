@@ -297,6 +297,7 @@ int  picoc_call( const char *code );
 int file_pre_loop();
 int file_loop();
 
+int  x_vprintf( const char *s, va_list ap );
 void C_prf( PICOC_FUN_ARGS );
 void tst_stdarg( const char *s, ... );
 
@@ -1879,6 +1880,13 @@ void C_rtc_getFileDateTimeStr( PICOC_FUN_ARGS )
 
 // ---------------------------------------- stdarg test --------------------------------------------
 
+int x_vprintf( const char *s, va_list ap )
+{
+  std_out << "# s= " << s << " ap= " << HexInt( (uint32_t)*((uint32_t*)(&ap)) ) << NL;
+  dump8( (void*)*((uint32_t*)(&ap)), 0x50 );
+  return vprintf( s, ap );
+}
+
 void tst_stdarg( const char *s, ... )
 {
   std_out << "# s     = " << HexInt( (void*)s ) << NL;
@@ -1887,30 +1895,30 @@ void tst_stdarg( const char *s, ... )
   static_assert( sizeof(va_list) == sizeof(void*), "Code only for trivial va_list" );
   va_list ap;
   va_start( ap, s );
-  std_out << "# &ap     = " << HexInt( (void*)&ap ) << " size= " << sizeof(ap)
-          << " addr= " << HexInt( (uint32_t)*((uint32_t*)(&ap)) )<<NL;
-  dump8( &ap, 0x10 );
-  dump8( (void*)*((uint32_t*)(&ap)), 0x50 );
+
+  //vprintf( s, ap );
+  x_vprintf( s, ap );
 
   va_end( ap );
   printf( "#--- %18.10g ---\n", 1.2345678912e-87 );
+  std_out << "# sz(d)= " << sizeof(double) << " sz(l)= " << sizeof(long) << NL;
 }
 
 int cmd_tst_stdarg( int argc, const char * const * argv )
 {
   std_out << "# stdarg test " << NL;
-  tst_stdarg( "ABCDEFG", 'A', 'Z', (short)0x1234, 0x87654321, -1LL, sizeof(sizeof(int)), 1.12345e-12, 0xAAAAAAAA );
+  tst_stdarg(            "-- %X %lg %X %X %c \n", 0x1234, 1.12345e-12, -1, 0x87654321, 'Z' );
+  std_out << R"!!!(;prf( "-- %X %lg %X %X %c \n", 0x1234, 1.12345e-12, -1, 0x87654321, 'Z' ); )!!!" << NL;
   return 0;
 }
 
-// ;prf("[ %d %u %ld %f %s %c]\n", (short)1, 1u, 1L, 1.2, "xxx", 'A' );
+// ;prf("[ %X %lg %s %c]\n", 1, 1.2, "xxx", 'A' );
 void C_prf( PICOC_FUN_ARGS )
 {
   const unsigned argbuf_sz = 64;
-  char argbuf[argbuf_sz];
+  alignas(double) char argbuf[argbuf_sz];
   unsigned a_ofs = 0;
 
-  printf( "# dbg: NumArgs= %d\n", NumArgs );
   if( NumArgs < 1 ) {
     RV_INT = 0;
     return;
@@ -1919,19 +1927,23 @@ void C_prf( PICOC_FUN_ARGS )
   memset( argbuf, 0, argbuf_sz );
 
   const char *fmt = (const char*)(ARG_0_PTR);
-  std_out << "# fmt= " << fmt << NL;
+  if( !fmt ) {
+    RV_INT = 0;
+    return;
+  }
+  // std_out << "# fmt= " << fmt << NL;
 
   struct Value *na = Param[0];
   for( int i=0; i<NumArgs; ++i, na = (struct Value *)( (char *)na + MEM_ALIGN(sizeof(struct Value) + TypeStackSizeValue(na)) ) ) {
-    std_out << "#  i= " << i;
+    // std_out << "#  i= " << i;
     if( !na || !na->Typ ) {
       break; // return
     }
     auto tp = na->Typ->Base;
     auto sz = na->Typ->Sizeof;
-    std_out << " tp= " << tp <<  " size= " << sz
-            << " na= " << HexInt( na ) << " vi= " << na->Val->Integer << ' '
-            << a_ofs << ' ';
+    // std_out << " tp= " << tp <<  " size= " << sz
+    //         << " na= " << HexInt( na ) << " vi= " << na->Val->Integer << ' '
+    //         << a_ofs << ' ';
 
     if( i == 0 ) { // first argument = format
       if( tp != TypePointer ) {
@@ -1946,78 +1958,60 @@ void C_prf( PICOC_FUN_ARGS )
       return;
     }
 
+    void *p = nullptr;
     switch( tp ) {
-      case TypeVoid:          std_out << "void";
+      case TypeVoid:
+      case TypeFunction:
+      case TypeMacro:
+      case TypeStruct:
+      case TypeUnion:
+      case TypeGotoLabel:
+      case Type_Type:
+      case TypeArray:
                               break;
-      case TypeInt:           std_out << "int";
-                              memcpy( argbuf+a_ofs, &(na->Val->Integer), sz );
+      case TypeChar:
+      case TypeUnsignedChar:
+                              p = &(na->Val->Character);
                               break;
-      case TypeShort:         std_out << "short";
-                              memcpy( argbuf+a_ofs, &(na->Val->Integer), sz );
+      case TypeInt:
+      case TypeShort:
+      case TypeLong:
+      case TypeUnsignedInt:
+      case TypeUnsignedShort:
+      case TypeUnsignedLong:
+      case TypeEnum:
+                              p = &(na->Val->Integer);
                               break;
-      case TypeChar:          std_out << "char";
-                              memcpy( argbuf+a_ofs, &(na->Val->Character), sz );
-                              break;
-      case TypeLong:          std_out << "long";
-                              memcpy( argbuf+a_ofs, &(na->Val->Integer), sz );
-                              break;
-      case TypeUnsignedInt:   std_out << "unsigned int";
-                              memcpy( argbuf+a_ofs, &(na->Val->Integer), sz );
-                              break;
-      case TypeUnsignedShort: std_out << "unsigned short";
-                              memcpy( argbuf+a_ofs, &(na->Val->Integer), sz );
-                              break;
-      case TypeUnsignedLong:  std_out << "unsigned long";
-                              memcpy( argbuf+a_ofs, &(na->Val->Integer), sz );
-                              break;
-      case TypeUnsignedChar:  std_out << "unsigned char";
-                              memcpy( argbuf+a_ofs, &(na->Val->Character), sz );
-                              break;
-      case TypeFP:            std_out << "double";
-                              memcpy( argbuf+a_ofs, &(na->Val->FP), sz );
-                              break;
-      case TypeFunction:      std_out << "function";
-                              break;
-      case TypeMacro:         std_out << "macro";
-                              break;
-      case TypeStruct:        std_out << "struct ";
-                              break;
-      case TypeUnion:         std_out << "union ";
-                              break;
-      case TypeEnum:          std_out << "enum ";
-                              memcpy( argbuf+a_ofs, &(na->Val->Integer), sz );
-                              break;
-      case TypeGotoLabel:     std_out << "goto label ";
-                              break;
-      case Type_Type:         std_out << "type ";
-                              break;
-                              // case TypeArray:         PrintType(Typ->FromType, Stream); PrintCh('[', Stream); if (Typ->ArraySize != 0) PrintSimpleInt(Typ->ArraySize, Stream); PrintCh(']', Stream); 
-                              break;
-      case TypeArray:         std_out << "array";
-                              break;
-                              // case TypePointer:       if (Typ->FromType) PrintType(Typ->FromType, Stream); PrintCh('*', Stream); 
-                              break;
-      case TypePointer:       std_out << "ptr";
-                              memcpy( argbuf+a_ofs, &(na->Val->Pointer), sz );
-                              break;
-    }
-    std_out << NL;
 
-    a_ofs += (sz+3) & 0x00FC;
-    if( a_ofs >= argbuf_sz ) {
+      case TypeFP:
+                              a_ofs += 7; // sizeof(double) - 1;
+                              a_ofs &= 0xFFF8;
+                              p = &(na->Val->FP);
+                              break;
+
+
+      case TypePointer:
+                              p = &(na->Val->Pointer);
+                              break;
+      default: break;
+    }
+    if( p ) {
+      memcpy( argbuf+a_ofs, p, sz );
+      a_ofs += (sz+3) & 0x00FC;
+    }
+    // std_out << NL;
+    // case TypePointer:  if (Typ->FromType)
+
+    if( a_ofs >= argbuf_sz - 8 ) { // 8 = guard
       break; // return?
     }
   }
-  //dump8( argbuf, argbuf_sz );
+  dump8( argbuf, argbuf_sz );
 
-  //delay_ms(100);
   va_list ap;
   char *xxx = argbuf;
   memcpy( &ap, &xxx, sizeof(ap) );
-  // dump8( &ap, 16 );
-  d// ump8( &argbuf, 16 );
-  //delay_ms(100);
-  int rc = vprintf( fmt, ap );
+  int rc = x_vprintf( fmt, ap );
   // std_out << "## rc= " << rc << NL;
   RV_INT = rc;
 }
