@@ -32,7 +32,7 @@ int main(void)
   while( 1 ) {
     bool was_action = false;
     char c = '?', c_err = '-';
-    std_out.clear();
+    std_out.flush();
 
     if( __HAL_USART_GET_FLAG( &uah_console, UART_FLAG_ORE ) ) { // overrun
       c = uah_console.Instance->USART_RX_REG;

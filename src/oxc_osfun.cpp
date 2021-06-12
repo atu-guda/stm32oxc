@@ -72,7 +72,7 @@ int _lseek( int fd, int ptr, int whence )
   return -1;
 }
 
-int _open( char *path, int flags, ... )
+int _open( const char *path, int flags, ... )
 {
   errno = ENFILE;
   return -1;

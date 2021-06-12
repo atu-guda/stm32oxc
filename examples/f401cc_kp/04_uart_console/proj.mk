@@ -1,0 +1,1 @@
+../../common/04_uart_console/proj.mk
