@@ -1,0 +1,5 @@
+Test SSD1396 OLED display driver on I2C1
+
+SCL = B6 + 4.7k pullUp
+SDA = B7 + 4.7k pullUp
+

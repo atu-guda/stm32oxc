@@ -1,0 +1,6 @@
+Use MPU-6050 accel + gyro via I2C
+"D" command - 1 measurement
+
+SCL = B6 + 4.7k pullUp
+SDA = B7 + 4.7k pullUp
+
