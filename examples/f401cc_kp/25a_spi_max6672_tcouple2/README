@@ -1,0 +1,13 @@
+Test 2 MAX6675 thermocouple drv via SPI
+
+Untested on this platform
+
+Used: SPI2:
+B13 = SCK
+B14 = MISO
+B15 = MOSI
+B12 = Soft NSS
+A2  = SNSS2
+
+Used USB_CDC
+
