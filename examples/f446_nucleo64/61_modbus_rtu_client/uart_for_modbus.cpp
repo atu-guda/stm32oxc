@@ -3,8 +3,10 @@
 // using namespace std;
 
 // TMP
-extern char ibuf[256];
+extern const unsigned ibuf_sz;
+extern char ibuf[];
 extern uint16_t ibuf_pos;
+extern uint16_t ibuf_t[];
 
 UART_HandleTypeDef huart_modbus;
 
@@ -24,7 +26,7 @@ int MX_MODBUS_UART_Init(void)
   if( HAL_UART_Init( &huart_modbus ) != HAL_OK ) {
     return 0;
   }
-  UART_MODBUS->CR2 |=  UsartIO::CR1_UE  | UsartIO::CR1_RE | UsartIO::CR1_TE | UsartIO::CR1_RXNEIE;
+  UART_MODBUS->CR1 |=  UsartIO::CR1_UE  | UsartIO::CR1_RE | UsartIO::CR1_TE | UsartIO::CR1_RXNEIE;
   return 1;
 }
 
@@ -67,7 +69,8 @@ void UART_MODBUS_IRQHANDLER(void)
       UVAR('e') = status;
       // reset
     } else {
-      if( ibuf_pos < std::size(ibuf)-2 ) {
+      if( ibuf_pos < 256-2 ) { // TODO: real
+        ibuf_t[ibuf_pos] = TIM11->CNT;
         ibuf[ibuf_pos++] = cr;
       }
     }
