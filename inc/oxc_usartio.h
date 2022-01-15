@@ -8,10 +8,37 @@
 
 class UsartIO : public DevIO {
   public:
-   enum {
-     CR1_UE  = 0x2000,  //* Enable
-     CR1_SBK = 0x0001   //* Break
+   enum { // CR1 reg bits
+     CR1_SBK     = 0x0001,  //* Break
+     CR1_RWU     = 0x0002,  //* Recv wakeup
+     CR1_RE      = 0x0004,  //* Recv enable
+     CR1_TE      = 0x0008,  //* Trans enable
+     CR1_IDLEIE  = 0x0010,  //* Idle IRQ enable
+     CR1_RXNEIE  = 0x0020,  //* RXNE IRQ enable
+     CR1_TCIE    = 0x0040,  //* TC IRQ enable
+     CR1_TXEIE   = 0x0080,  //* TXE IRQ enable
+     CR1_PEE     = 0x0100,  //* PE IRQ enable
+     CR1_PS      = 0x0200,  //* Parity selection:  0 = even,  1 = odd (if PCE)
+     CR1_PCE     = 0x0400,  //* Parity control enable
+     CR1_WAKE    = 0x0800,  //* Wakeup method: 0 = idle, 1 = Addr mark
+     CR1_M       = 0x1000,  //* Word (data) length: 0 = 8, 1 = 9;
+     CR1_UE      = 0x2000,  //* Main Enable
+     CR1_OVER8   = 0x8000,  //* 0 = oversamling by 16, 1: by 8
    };
+
+   enum { // SR reg bits (ofs=0) *E clear: read SR, read DR
+     SR_PE       = 0x0001,  //* Parity error (r)
+     SR_FE       = 0x0002,  //* Frame error  (r)
+     SR_NF       = 0x0004,  //* Noise detected (r)
+     SR_ORE      = 0x0008,  //* Overrun error (r)
+     SR_IDLE     = 0x0010,  //* IDLE condition detected (r)
+     SR_RXNE     = 0x0020,  //* RX not empty (data to read in DR) (rc_w0)
+     SR_TC       = 0x0040,  //* Transmission complete (rc_w0)
+     SR_TXE      = 0x0080,  //* TX empty (you can write next) (r)
+     SR_LBD      = 0x0100,  //* LIN break detected (rc_w0)
+     SR_CTS      = 0x0200,  //* nCTS input toggle (rc_w0)
+   };
+
    UsartIO( UART_HandleTypeDef *a_uah, USART_TypeDef *a_us )
      : uah( a_uah ), us( a_us )
     { }
