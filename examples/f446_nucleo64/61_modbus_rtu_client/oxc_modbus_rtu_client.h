@@ -18,7 +18,7 @@ class MODBUS_RTU_client {
     uint16_t get_obuf_pos() const { return o_pos; }
     uint32_t get_last_uart_status() const { return last_uart_status; }
     client_state get_client_state() const { return state; }
-    void reset() { i_pos = o_pos = 0; state = ST_INIT; last_uart_status = 0; }
+    void reset();
     void handle_UART_IRQ();
     void handle_tick();
   private:

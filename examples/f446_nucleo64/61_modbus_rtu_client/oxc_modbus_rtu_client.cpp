@@ -49,10 +49,15 @@ const uint8_t MODBUS_RTU_client::CRC_lo[256] = {
 MODBUS_RTU_client::MODBUS_RTU_client( USART_TypeDef *a_uart, volatile uint32_t *a_tim_cnt )
   : uart( a_uart ), tim_cnt( a_tim_cnt )
 {
+  reset();
+}
 
+void MODBUS_RTU_client::reset()
+{
+  i_pos = o_pos = 0; state = ST_INIT; last_uart_status = 0;
+  t_char = *tim_cnt;
   memset( ibuf, std::size(ibuf), '\x00' );
   memset( obuf, std::size(obuf), '\x00' );
-  reset();
 }
 
 uint16_t MODBUS_RTU_client::crc( const uint8_t *s, uint16_t l )
@@ -89,11 +94,17 @@ void MODBUS_RTU_client::handle_UART_IRQ()
 
     if( last_uart_status & ( UART_FLAG_ORE | UART_FLAG_FE /*| UART_FLAG_LBD*/ ) ) { // TODO: on MCU
       UVAR('e') = last_uart_status;
-      // reset
+      reset();
     } else {
       if( i_pos < bufsz-2 ) { // TODO: real
-        t_char = *tim_cnt;
-        ibuf[i_pos++] = cr;
+        uint16_t t_c = *tim_cnt;
+        uint16_t d_t = t_c - t_char;
+        t_char = t_c;
+        if( d_t < 20 ) {
+          ibuf[i_pos++] = cr;
+        } else {
+          // bad frame?
+        }
       }
     }
     leds.reset( BIT1 );
@@ -107,9 +118,9 @@ void MODBUS_RTU_client::handle_UART_IRQ()
 
 void MODBUS_RTU_client::handle_tick()
 {
-  if( i_pos> 0 && i_pos < bufsz-2 ) {
-    t_char = *tim_cnt;
-  }
+  uint16_t t_c = *tim_cnt;
+  uint16_t d_t = t_c - t_char;
+  t_char = t_c;
 }
 
 
