@@ -38,16 +38,21 @@ const unsigned ibuf_sz = 256;
 char ibuf[ibuf_sz];
 uint16_t ibuf_pos = 0;
 uint16_t ibuf_t[ibuf_sz];
+void tick_for_modbus();
 
 void idle_main_task()
 {
   // leds.toggle( 1 );
+}
+
+
+void tick_for_modbus()
+{
   if( ibuf_pos> 0 && ibuf_pos < 256-2 ) { // TODO: real
     ibuf_t[ibuf_pos] = TIM11->CNT;
     ibuf[ibuf_pos++] = '\xFF';
   }
 }
-
 
 
 int main(void)
@@ -64,6 +69,7 @@ int main(void)
   BOARD_POST_INIT_BLINK;
 
   oxc_add_aux_tick_fun( led_task_nortos );
+  oxc_add_aux_tick_fun( tick_for_modbus );
 
   std_main_loop_nortos( &srl, idle_main_task );
 
@@ -115,6 +121,7 @@ int cmd_out( int argc, const char * const * argv )
   for( int i=0; i<ibuf_pos; ++i ) {
     uint16_t t_d = ibuf_t[i] - t00;
     std_out << ibuf_t[i] << ' ' << t_d << NL;
+    t00 = ibuf_t[i];
   }
   ibuf_pos = 0;
   memset( ibuf, '\x00', size(ibuf) );
