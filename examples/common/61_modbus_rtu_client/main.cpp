@@ -33,11 +33,8 @@ const CmdInfo* global_cmds[] = {
   nullptr
 };
 
-// MODBUS_RTU_client m_cli;
-const unsigned ibuf_sz = 256;
-char ibuf[ibuf_sz];
-uint16_t ibuf_pos = 0;
-uint16_t ibuf_t[ibuf_sz];
+// USART_TypeDef*, volatile uint32_t*
+MODBUS_RTU_client m_cli( UART_MODBUS, &(TIM11->CNT) );
 void tick_for_modbus();
 
 void idle_main_task()
@@ -48,10 +45,7 @@ void idle_main_task()
 
 void tick_for_modbus()
 {
-  if( ibuf_pos> 0 && ibuf_pos < 256-2 ) { // TODO: real
-    ibuf_t[ibuf_pos] = TIM11->CNT;
-    ibuf[ibuf_pos++] = '\xFF';
-  }
+  m_cli.handle_tick();
 }
 
 
@@ -115,16 +109,12 @@ int cmd_test0( int argc, const char * const * argv )
 
 int cmd_out( int argc, const char * const * argv )
 {
-  std_out <<  "# ibuf_pos:  " << ibuf_pos <<  NL;
-  dump8( ibuf, (ibuf_pos+15) & 0x0FFF0 );
-  uint16_t t00 = ibuf_t[0];
-  for( int i=0; i<ibuf_pos; ++i ) {
-    uint16_t t_d = ibuf_t[i] - t00;
-    std_out << ibuf_t[i] << ' ' << t_d << NL;
-    t00 = ibuf_t[i];
-  }
-  ibuf_pos = 0;
-  memset( ibuf, '\x00', size(ibuf) );
+  auto pos = m_cli.get_ibuf_pos();
+  std_out <<  "# ibuf_pos:  " << pos <<  NL;
+  auto ibuf = m_cli.get_ibuf();
+
+  dump8( ibuf, (pos+15) & 0x0FFF0 );
+  m_cli.reset();
   return 0;
 }
 
@@ -153,6 +143,12 @@ void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* htim_base )
     // HAL_NVIC_SetPriority(TIM1_TRG_COM_TIM11_IRQn, 1, 0);
     // HAL_NVIC_EnableIRQ(TIM1_TRG_COM_TIM11_IRQn);
   }
+}
+
+void UART_MODBUS_IRQHANDLER(void)
+{
+  // leds.set( 2 );
+  m_cli.handle_UART_IRQ();
 }
 
 

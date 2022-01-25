@@ -1,5 +1,6 @@
 #include <oxc_auto.h>
 
+
 // using namespace std;
 
 // TMP
@@ -49,38 +50,6 @@ void HAL_UART_UserInit( UART_HandleTypeDef* uartHandle )
   HAL_NVIC_EnableIRQ(   UART_MODBUS_IRQ );
 }
 
-void UART_MODBUS_IRQHANDLER(void)
-{
-  // leds.set( 2 );
-  int n_work = 0;
-  leds.toggle( 4 );
-  uint32_t status = UART_MODBUS->USART_SR_REG;
-  UVAR('s') = status;
-  ++UVAR('i');
-
-  if( status & UART_FLAG_RXNE ) { // char received
-    ++UVAR('j');
-    leds.set( BIT1 );
-    ++n_work;
-    char cr = UART_MODBUS->USART_RX_REG & (uint16_t)0x0FF;
-    // TODO: trylock
-
-    if( status & ( UART_FLAG_ORE | UART_FLAG_FE /*| UART_FLAG_LBD*/ ) ) { // TODO: on MCU
-      UVAR('e') = status;
-      // reset
-    } else {
-      if( ibuf_pos < 256-2 ) { // TODO: real
-        ibuf_t[ibuf_pos] = TIM11->CNT;
-        ibuf[ibuf_pos++] = cr;
-      }
-    }
-    leds.reset( BIT1 );
-  }
-  if( n_work == 0 ) { // unhandled
-    leds.set( BIT0 );
-  }
-
-}
 
 
 

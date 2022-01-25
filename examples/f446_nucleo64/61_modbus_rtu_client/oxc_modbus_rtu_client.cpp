@@ -46,10 +46,13 @@ const uint8_t MODBUS_RTU_client::CRC_lo[256] = {
   0x44, 0x84, 0x85, 0x45,  0x87, 0x47, 0x46, 0x86,  0x82, 0x42, 0x43, 0x83,  0x41, 0x81, 0x80, 0x40   // F0
 };
 
-MODBUS_RTU_client::MODBUS_RTU_client()
+MODBUS_RTU_client::MODBUS_RTU_client( USART_TypeDef *a_uart, volatile uint32_t *a_tim_cnt )
+  : uart( a_uart ), tim_cnt( a_tim_cnt )
 {
+
   memset( ibuf, std::size(ibuf), '\x00' );
   memset( obuf, std::size(obuf), '\x00' );
+  reset();
 }
 
 uint16_t MODBUS_RTU_client::crc( const uint8_t *s, uint16_t l )
@@ -67,4 +70,46 @@ uint16_t MODBUS_RTU_client::crc( const uint8_t *s, uint16_t l )
   }
   return ( uint16_t )( uh << 8 | ul );
 }
+
+void MODBUS_RTU_client::handle_UART_IRQ()
+{
+  int n_work = 0;
+
+  leds.toggle( 4 );
+  last_uart_status = uart->USART_SR_REG;
+  UVAR('s') = last_uart_status;
+  ++UVAR('i');
+
+  if( last_uart_status & UART_FLAG_RXNE ) { // char received
+    ++UVAR('j');
+    leds.set( BIT1 );
+    ++n_work;
+    char cr = uart->USART_RX_REG & (uint16_t)0x0FF;
+    // TODO: trylock
+
+    if( last_uart_status & ( UART_FLAG_ORE | UART_FLAG_FE /*| UART_FLAG_LBD*/ ) ) { // TODO: on MCU
+      UVAR('e') = last_uart_status;
+      // reset
+    } else {
+      if( i_pos < bufsz-2 ) { // TODO: real
+        t_char = *tim_cnt;
+        ibuf[i_pos++] = cr;
+      }
+    }
+    leds.reset( BIT1 );
+  }
+
+  // debug
+  if( n_work == 0 ) { // unhandled
+    leds.set( BIT0 );
+  }
+}
+
+void MODBUS_RTU_client::handle_tick()
+{
+  if( i_pos> 0 && i_pos < bufsz-2 ) {
+    t_char = *tim_cnt;
+  }
+}
+
 
