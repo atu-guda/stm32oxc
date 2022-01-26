@@ -1,6 +1,6 @@
 #include <oxc_auto.h>
 
-#include <oxc_modbus_rtu_client.h>
+#include <oxc_modbus_rtu_server.h>
 
 #include <cstring>
 
@@ -17,7 +17,7 @@ UART_HandleTypeDef huart1;
 int MX_TIM11_Init();
 TIM_HandleTypeDef htim11;
 
-const char* common_help_string = "Appication to test MODBUS RTU client" NL;
+const char* common_help_string = "Appication to test MODBUS RTU server" NL;
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -34,7 +34,7 @@ const CmdInfo* global_cmds[] = {
 };
 
 // USART_TypeDef*, volatile uint32_t*
-MODBUS_RTU_client m_cli( UART_MODBUS, &(TIM11->CNT) );
+MODBUS_RTU_server m_srv( UART_MODBUS, &(TIM11->CNT) );
 void tick_for_modbus();
 
 void idle_main_task()
@@ -45,7 +45,7 @@ void idle_main_task()
 
 void tick_for_modbus()
 {
-  m_cli.handle_tick();
+  m_srv.handle_tick();
 }
 
 
@@ -109,12 +109,12 @@ int cmd_test0( int argc, const char * const * argv )
 
 int cmd_out( int argc, const char * const * argv )
 {
-  auto pos = m_cli.get_ibuf_pos();
+  auto pos = m_srv.get_ibuf_pos();
   std_out <<  "# ibuf_pos:  " << pos <<  NL;
-  auto ibuf = m_cli.get_ibuf();
+  auto ibuf = m_srv.get_ibuf();
 
   dump8( ibuf, (pos+15) & 0x0FFF0 );
-  m_cli.reset();
+  m_srv.reset();
   return 0;
 }
 
@@ -148,7 +148,7 @@ void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* htim_base )
 void UART_MODBUS_IRQHANDLER(void)
 {
   // leds.set( 2 );
-  m_cli.handle_UART_IRQ();
+  m_srv.handle_UART_IRQ();
 }
 
 

@@ -2,11 +2,11 @@
 
 #include <oxc_auto.h>
 
-#include <oxc_modbus_rtu_client.h>
+#include <oxc_modbus_rtu_server.h>
 
 
 
-const uint8_t MODBUS_RTU_client::CRC_hi[256] = {
+const uint8_t MODBUS_RTU_server::CRC_hi[256] = {
   // 0     1     2     3      4     5     6     7      8     9     A     B      C     D     E     F
   0x00, 0xC1, 0x81, 0x40,  0x01, 0xC0, 0x80, 0x41,  0x01, 0xC0, 0x80, 0x41,  0x00, 0xC1, 0x81, 0x40,  // 00
   0x01, 0xC0, 0x80, 0x41,  0x00, 0xC1, 0x81, 0x40,  0x00, 0xC1, 0x81, 0x40,  0x01, 0xC0, 0x80, 0x41,  // 10
@@ -26,7 +26,7 @@ const uint8_t MODBUS_RTU_client::CRC_hi[256] = {
   0x00, 0xC1, 0x81, 0x40,  0x01, 0xC0, 0x80, 0x41,  0x01, 0xC0, 0x80, 0x41,  0x00, 0xC1, 0x81, 0x40   // F0
 };
 
-const uint8_t MODBUS_RTU_client::CRC_lo[256] = {
+const uint8_t MODBUS_RTU_server::CRC_lo[256] = {
   // 0     1     2     3      4     5     6     7      8     9     A     B      C     D     E     F
   0x00, 0xC0, 0xC1, 0x01,  0xC3, 0x03, 0x02, 0xC2,  0xC6, 0x06, 0x07, 0xC7,  0x05, 0xC5, 0xC4, 0x04,  // 00
   0xCC, 0x0C, 0x0D, 0xCD,  0x0F, 0xCF, 0xCE, 0x0E,  0x0A, 0xCA, 0xCB, 0x0B,  0xC9, 0x09, 0x08, 0xC8,  // 10
@@ -46,13 +46,13 @@ const uint8_t MODBUS_RTU_client::CRC_lo[256] = {
   0x44, 0x84, 0x85, 0x45,  0x87, 0x47, 0x46, 0x86,  0x82, 0x42, 0x43, 0x83,  0x41, 0x81, 0x80, 0x40   // F0
 };
 
-MODBUS_RTU_client::MODBUS_RTU_client( USART_TypeDef *a_uart, volatile uint32_t *a_tim_cnt )
+MODBUS_RTU_server::MODBUS_RTU_server( USART_TypeDef *a_uart, volatile uint32_t *a_tim_cnt )
   : uart( a_uart ), tim_cnt( a_tim_cnt )
 {
   reset();
 }
 
-void MODBUS_RTU_client::reset()
+void MODBUS_RTU_server::reset()
 {
   i_pos = o_pos = 0;
   state = ST_IDLE; // ST_INIT;
@@ -62,7 +62,7 @@ void MODBUS_RTU_client::reset()
   memset( obuf, std::size(obuf), '\x00' );
 }
 
-uint16_t MODBUS_RTU_client::crc( const uint8_t *s, uint16_t l )
+uint16_t MODBUS_RTU_server::crc( const uint8_t *s, uint16_t l )
 {
   if( !s || l < 1 || l > 254 ) {
     return 0; // TODO: error?
@@ -78,7 +78,7 @@ uint16_t MODBUS_RTU_client::crc( const uint8_t *s, uint16_t l )
   return ( uint16_t )( uh << 8 | ul );
 }
 
-bool MODBUS_RTU_client::isCrcGood() const
+bool MODBUS_RTU_server::isCrcGood() const
 {
   if( state != ST_MSG_IN || i_pos < 10 ) { // TODO: real min size
     return false;
@@ -87,7 +87,7 @@ bool MODBUS_RTU_client::isCrcGood() const
   return true;
 }
 
-void MODBUS_RTU_client::handle_UART_IRQ()
+void MODBUS_RTU_server::handle_UART_IRQ()
 {
   int n_work = 0;
 
@@ -127,7 +127,7 @@ void MODBUS_RTU_client::handle_UART_IRQ()
   }
 }
 
-void MODBUS_RTU_client::handle_tick()
+void MODBUS_RTU_server::handle_tick()
 {
   uint16_t t_c = *tim_cnt;
   uint16_t d_t = t_c - t_char;

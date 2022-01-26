@@ -1,4 +1,4 @@
-PROJ_NAME=modbus_rtu_client
+PROJ_NAME=modbus_rtu_server
 
 USE_OXC = y
 USE_OXC_DEVIO = y
@@ -23,6 +23,6 @@ USE_OXC_DMA = y
 
 SRCS  = main.cpp
 
-SRCS += oxc_modbus_rtu_client.cpp
+SRCS += oxc_modbus_rtu_server.cpp
 SRCS += uart_for_modbus.cpp
 
