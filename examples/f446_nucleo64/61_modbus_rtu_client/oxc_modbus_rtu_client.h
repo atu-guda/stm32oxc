@@ -4,14 +4,16 @@
 class MODBUS_RTU_client {
   public:
     enum client_state {
-      ST_INIT = 0,
-      ST_IDLE = 1,
-      ST_RECV = 2,
-      ST_ERR  = 3
+      ST_INIT   = 0, // ? unused?
+      ST_IDLE   = 1,
+      ST_RECV   = 2,
+      ST_MSG_IN = 3,
+      ST_ERR    = 4
     };
     static const uint16_t bufsz = 256;
     MODBUS_RTU_client( USART_TypeDef *a_uart, volatile uint32_t *a_tim_cnt );
     static uint16_t crc( const uint8_t *s, uint16_t l );
+    bool isCrcGood() const;
     const uint8_t* get_ibuf() const { return ibuf; }
     const uint8_t* get_obuf() const { return obuf; }
     uint16_t get_ibuf_pos() const { return i_pos; }

@@ -54,7 +54,9 @@ MODBUS_RTU_client::MODBUS_RTU_client( USART_TypeDef *a_uart, volatile uint32_t *
 
 void MODBUS_RTU_client::reset()
 {
-  i_pos = o_pos = 0; state = ST_INIT; last_uart_status = 0;
+  i_pos = o_pos = 0;
+  state = ST_IDLE; // ST_INIT;
+  last_uart_status = 0;
   t_char = *tim_cnt;
   memset( ibuf, std::size(ibuf), '\x00' );
   memset( obuf, std::size(obuf), '\x00' );
@@ -74,6 +76,15 @@ uint16_t MODBUS_RTU_client::crc( const uint8_t *s, uint16_t l )
     uh = CRC_lo[idx];
   }
   return ( uint16_t )( uh << 8 | ul );
+}
+
+bool MODBUS_RTU_client::isCrcGood() const
+{
+  if( state != ST_MSG_IN || i_pos < 10 ) { // TODO: real min size
+    return false;
+  }
+  // check
+  return true;
 }
 
 void MODBUS_RTU_client::handle_UART_IRQ()
