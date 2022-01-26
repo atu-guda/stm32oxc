@@ -110,10 +110,14 @@ int cmd_test0( int argc, const char * const * argv )
 int cmd_out( int argc, const char * const * argv )
 {
   auto pos = m_srv.get_ibuf_pos();
-  std_out <<  "# ibuf_pos:  " << pos <<  NL;
+  std_out <<  "# ibuf_pos:  " << pos << " state: " << int( m_srv.get_server_state() ) << NL;
   auto ibuf = m_srv.get_ibuf();
 
   dump8( ibuf, (pos+15) & 0x0FFF0 );
+
+  uint16_t v0 = (ibuf[pos-1] << 8) | ibuf[pos-2];
+  uint16_t v1 = MODBUS_RTU_server::crc( ibuf, pos-2 );
+  std_out <<  "# crc0:  " << HexInt16(v0) << " crc1: " << HexInt16(v1) << " good: " << m_srv.isCrcGood() << NL;
   m_srv.reset();
   return 0;
 }

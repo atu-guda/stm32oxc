@@ -80,11 +80,14 @@ uint16_t MODBUS_RTU_server::crc( const uint8_t *s, uint16_t l )
 
 bool MODBUS_RTU_server::isCrcGood() const
 {
-  if( state != ST_MSG_IN || i_pos < 10 ) { // TODO: real min size
+  if( state != ST_MSG_IN || i_pos < 4 ) { // TODO: real min size @ F1 CRC2
     return false;
   }
-  // check
-  return true;
+  uint16_t v0 = (ibuf[i_pos-1] << 8) | ibuf[i_pos-2];
+  uint16_t v1 = crc( ibuf, i_pos-2 );
+  UVAR('v') = v0;
+  UVAR('w') = v1;
+  return v1 == v0;
 }
 
 void MODBUS_RTU_server::handle_UART_IRQ()
@@ -105,19 +108,43 @@ void MODBUS_RTU_server::handle_UART_IRQ()
 
     if( last_uart_status & ( UART_FLAG_ORE | UART_FLAG_FE /*| UART_FLAG_LBD*/ ) ) { // TODO: on MCU
       UVAR('e') = last_uart_status;
-      reset();
-    } else {
-      if( i_pos < bufsz-2 ) { // TODO: real
-        uint16_t t_c = *tim_cnt;
-        uint16_t d_t = t_c - t_char;
-        t_char = t_c;
-        if( d_t < 20 ) {
-          ibuf[i_pos++] = cr;
-        } else {
-          // bad frame?
-        }
-      }
+      state = ST_ERR;
+      return;
     }
+
+    if( state == ST_MSG_IN ) {
+      return;
+    }
+
+    if( state != ST_IDLE && state != ST_RECV ) {
+      UVAR('x') = 1;
+      UVAR('y') = state;
+      state = ST_ERR;
+      return;
+    }
+
+    if( i_pos >= bufsz-2) {
+      state = ST_ERR;
+      UVAR('x') = 2;
+      return;
+    }
+
+    uint16_t t_c = *tim_cnt;
+
+    if( state == ST_IDLE ) {
+      t_char = t_c - 1;
+    }
+    uint16_t d_t = t_c - t_char;
+
+    if( d_t < 20 ) { // TODO: config
+      ibuf[i_pos++] = cr;
+      state = ST_RECV;
+      t_char = t_c;
+    } else {
+      UVAR('x') = 3;
+      state = ST_ERR;
+    }
+
     leds.reset( BIT1 );
   }
 
@@ -129,8 +156,15 @@ void MODBUS_RTU_server::handle_UART_IRQ()
 
 void MODBUS_RTU_server::handle_tick()
 {
+  if( state != ST_RECV ) {
+    return;
+  }
   uint16_t t_c = *tim_cnt;
   uint16_t d_t = t_c - t_char;
+  if( d_t < 100 ) { // TODO: config
+    return;
+  }
+  state = ST_MSG_IN;
   t_char = t_c;
 }
 
