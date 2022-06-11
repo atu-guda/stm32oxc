@@ -1,0 +1,5 @@
+Use AS5600 angle measurement device via I2C
+
+SCL = B8 ? 4.7k pullUp
+SDA = B9 ? 4.7k pullUp
+

@@ -86,6 +86,7 @@ bool HMC5983::startAuto()
   return true;
 }
 
+// TODO: BUG: recurse!?!
 bool HMC5983::readNextAuto( int32_t wait_ms )
 {
   return readNextAuto( wait_ms );
