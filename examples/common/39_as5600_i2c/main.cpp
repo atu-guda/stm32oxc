@@ -63,6 +63,7 @@ int cmd_test0( int argc, const char * const * argv )
 
   std_out <<  NL "Test0: n= "  <<  n  <<  " t= "  <<  t_step <<  NL;
 
+  ang_sens.setStartPosCurr();
 
   uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
 
@@ -72,9 +73,11 @@ int cmd_test0( int argc, const char * const * argv )
     auto alp_r = ang_sens.getAngle();
     uint32_t tcc = HAL_GetTick();
     auto alp_mDeg = AS5600::to_mDeg( alp_r );
+    auto sta = ang_sens.getStatus();
 
     std_out <<  "i= "  <<  i  <<  "  tick: " <<  (tcc - tm00)
-            << " alp_r= " << alp_r << " alp= " << alp_mDeg << NL;
+            << " alp_r= " << alp_r << " alp= " << FloatMult( alp_mDeg, 3 )
+            << ' ' << HexInt8( sta ) << NL;
 
     std_out.flush();
     delay_ms_until_brk( &tm0, t_step );

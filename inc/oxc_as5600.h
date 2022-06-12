@@ -31,45 +31,47 @@ class AS5600 : public I2CClient {
      reg_burn           = 0xFF
    };
    enum CfgBits {
-     cfg_power_mode_nom        = 0x01,
-     cfg_power_mode_lpm1       = 0x02,
-     cfg_power_mode_lpm2       = 0x03,
-     cfg_power_mode_lpm3       = 0x04,
-     cfg_power_mode_default    = cfg_power_mode_nom,
-     cfg_hysteresis_off        = 1,
-     cfg_hysteresis_1lsb       = 2,
-     cfg_hysteresis_2lsb       = 3,
-     cfg_hysteresis_3lsb       = 4,
-     cfg_hysteresis_default    = cfg_hysteresis_off,
-     cfg_output_full           = 1,
-     cfg_output_reduced        = 2,
-     cfg_output_pwm            = 3,
-     cfg_output_default        = cfg_output_full,
-     cfg_pwm_freq_115hz        = 1,
-     cfg_pwm_freq_230hz        = 2,
-     cfg_pwm_freq_460hz        = 3,
-     cfg_pwm_freq_920hz        = 4,
-     cfg_pwm_freq_default      = cfg_pwm_freq_115hz,
-     cfg_slow_filter_16x       = 1,
-     cfg_slow_filter_8x        = 2,
-     cfg_slow_filter_4x        = 3,
-     cfg_slow_filter_2x        = 4,
-     cfg_slow_filter_default   = cfg_slow_filter_16x,
-     cfg_fast_filter_slow_only = 1,
-     cfg_fast_filter_6lsb      = 2,
-     cfg_fast_filter_7lsb      = 3,
-     cfg_fast_filter_9lsb      = 4,
-     cfg_fast_filter_18lsb     = 5,
-     cfg_fast_filter_21lsb     = 6,
-     cfg_fast_filter_24lsb     = 7,
-     cfg_fast_filter_10lsb     = 8,
-     cfg_fast_filter_default   = cfg_fast_filter_slow_only,
-     cfg_watchdog_off          = 1,
-     cfg_watchdog_on           = 2,
-     cfg_watchdog_default      = cfg_watchdog_on
+     cfg_pwr_mode_nom    = 0x00,
+     cfg_pwr_mode_lpm1   = 0x01,
+     cfg_pwr_mode_lpm2   = 0x02,
+     cfg_pwr_mode_lpm3   = 0x03,
+     cfg_pwr_mode_dfl    = cfg_pwr_mode_nom,
+     cfg_hyst_off        = 0x00,
+     cfg_hyst_1lsb       = 0x01 << 2,
+     cfg_hyst_2lsb       = 0x02 << 2,
+     cfg_hyst_3lsb       = 0x03 << 2,
+     cfg_hyst_dfl        = cfg_hyst_off,
+     cfg_out_full        = 0x00,
+     cfg_out_reduced     = 0x01 << 4,
+     cfg_out_pwm         = 0x02 << 4,
+     cfg_out_dfl         = cfg_out_full,
+     cfg_pwm_freq_115hz  = 0x00,
+     cfg_pwm_freq_230hz  = 0x01 << 6,
+     cfg_pwm_freq_460hz  = 0x02 << 6,
+     cfg_pwm_freq_920hz  = 0x03 << 6,
+     cfg_pwm_freq_dfl    = cfg_pwm_freq_115hz,
+     cfg_sfilt_16x       = 0x00,
+     cfg_sfilt_8x        = 0x01 << 8,
+     cfg_sfilt_4x        = 0x02 << 8,
+     cfg_sfilt_2x        = 0x03 << 8,
+     cfg_sfilt_dfl       = cfg_sfilt_16x,
+     cfg_ffilt_slow_only = 0x00 << 10,
+     cfg_ffilt_6lsb      = 0x01 << 10,
+     cfg_ffilt_7lsb      = 0x02 << 10,
+     cfg_ffilt_9lsb      = 0x03 << 10,
+     cfg_ffilt_18lsb     = 0x04 << 10,
+     cfg_ffilt_21lsb     = 0x05 << 10,
+     cfg_ffilt_24lsb     = 0x06 << 10,
+     cfg_ffilt_10lsb     = 0x07 << 10,
+     cfg_ffilt_dfl       = cfg_ffilt_slow_only,
+     cfg_watchdog_off    = 0x00,
+     cfg_watchdog_on     = 0x01 << 13,
+     cfg_watchdog_dfl    = cfg_watchdog_on
    };
    enum StatusBits {
-     status_scale_0_88     =  0x00,
+     status_magn_high    =  0x08,
+     status_magn_low     =  0x10,
+     status_magn_detect  =  0x20
    };
 
    AS5600( DevI2C &a_dev, uint8_t d_addr = def_addr )
@@ -82,23 +84,19 @@ class AS5600 : public I2CClient {
    uint16_t getAngleRaw() { return getReg( reg_raw_angle_high ); }
    uint16_t getAngle()    { return getReg( reg_angle_high ); };
    uint32_t getAngle_mDeg() { return to_mDeg( getAngle() ); }
-   uint16_t getStatus()   { return recv_reg1_8bit( reg_status ); };
-   uint16_t getCfg();
-   bool setCfg( uint16_t cfg );
+   uint8_t  getStatus()   { return recv_reg1_8bit( reg_status ); };
 
-   bool setStartPos( uint16_t pos );
-   bool setStopPos( uint16_t pos );
-   bool setMaxAngle( uint16_t angle );
+   uint16_t getCfg()      { return getReg( reg_conf_high ); };
+   bool setCfg( uint16_t cfg ) { return send_reg1_16bit_rev ( reg_conf_high, cfg ) == 2 ; };
+
+   bool setStartPos( uint16_t pos ) { return send_reg1_16bit_rev ( reg_zpos_high, pos ) == 2 ; };
+   bool setStartPosCurr() { return send_reg1_16bit_rev ( reg_zpos_high, getAngleRaw() ) == 2 ; };
+   bool setStopPos( uint16_t pos )  { return send_reg1_16bit_rev ( reg_mpos_high, pos ) == 2 ; };
+   bool setMaxAngle( uint16_t angle )  { return send_reg1_16bit_rev ( reg_mang_high, angle ) == 2 ; };
    bool setPositiveRotationDirection( uint8_t dir );
-   bool setLowPowerMode( uint8_t mode );
-   bool setHysteresis( uint8_t hysteresis );
-   bool setOutputMode( uint8_t mode, uint8_t freq );
-   bool setSlowFilter( uint8_t mode );
-   bool setFastFilterThreshold( uint8_t threshold );
-   bool setWatchdogTimer( uint8_t mode );
-   bool isMagnetDetected();
-   bool getAGCSetting( uint8_t *const agc);
-   bool getCORDICMagnitude( uint16_t *const mag );
+   bool isMagnetDetected() { return bool( getStatus() & status_magn_detect ); }
+   uint8_t getAGCSetting() { return recv_reg1_8bit( reg_agc ); }
+   uint16_t getCORDICMagnitude() { return getReg( reg_magnitude_high ); }
   protected:
    int32_t alg_ext {0};
    //
