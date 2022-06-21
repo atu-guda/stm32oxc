@@ -83,6 +83,9 @@ int cmd_test0( int argc, const char * const * argv )
     delay_ms_until_brk( &tm0, t_step );
   }
 
+  std_out << "=== " << ang_sens.getAGCSetting() << ' ' <<  ang_sens.getCORDICMagnitude()
+          << ' '    << ang_sens.isMagnetDetected() << ' ' << HexInt8( ang_sens.getStatus() ) << NL;
+
   return 0;
 }
 
