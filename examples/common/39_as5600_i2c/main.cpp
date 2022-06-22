@@ -70,14 +70,15 @@ int cmd_test0( int argc, const char * const * argv )
   break_flag = 0;
   for( int i=0; i<n && !break_flag; ++i ) {
 
-    auto alp_r = ang_sens.getAngle();
+    auto alp_r = ang_sens.getAngleN();
     uint32_t tcc = HAL_GetTick();
     auto alp_mDeg = AS5600::to_mDeg( alp_r );
     auto sta = ang_sens.getStatus();
 
-    std_out <<  "i= "  <<  i  <<  "  tick: " <<  (tcc - tm00)
-            << " alp_r= " << alp_r << " alp= " << FloatMult( alp_mDeg, 3 )
-            << ' ' << HexInt8( sta ) << NL;
+    std_out <<  (tcc - tm00)
+            << ' ' << alp_r << ' ' << FloatMult( alp_mDeg, 3 )
+            << ' ' << HexInt8( sta )
+            << ' ' << ang_sens.getN_turn() << ' ' << ang_sens.getOldVal() << NL;
 
     std_out.flush();
     delay_ms_until_brk( &tm0, t_step );

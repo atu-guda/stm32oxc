@@ -74,42 +74,63 @@ class AS5600 : public I2CClient {
      status_magn_detect  =  0x20
    };
 
+   // one turn scale (12bit)
+   static const uint16_t val2turn = 4096;
+   // changes more then this assumed as next/prev turn
+   static const  int16_t jumpVal  = val2turn/2+8;
+   static const uint32_t mDeg2turn = 360000; // miliDegrees per turn
+
    AS5600( DevI2C &a_dev, uint8_t d_addr = def_addr )
      : I2CClient( a_dev, d_addr ) {};
-   static constexpr int32_t to_mDeg( int32_t ang12bit ) { return ( ang12bit * 360000 / 4096 ); };
-   static constexpr int32_t from_mDeg( int32_t mDeg ) { return ( mDeg * 4096 / 360000 ); };
-   uint16_t getReg( uint8_t reg ){ return recv_reg1_16bit_rev( reg ); }; // reg is 16-bit
-   bool    getRegs( uint8_t reg1, uint8_t n, uint16_t *data ){ return recv_reg1_16bit_n_rev( reg1, (uint16_t*)(data), n ) == n ; }
+   static constexpr int32_t to_mDeg( int32_t ang12bit )
+     { return int32_t( (int64_t)ang12bit * mDeg2turn / val2turn ); };
+   static constexpr int32_t from_mDeg( int32_t mDeg )
+     { return ( mDeg * val2turn / mDeg2turn ); };
+
+   uint16_t getReg( uint8_t reg )
+     { return recv_reg1_16bit_rev( reg ); }; // reg is 16-bit
+   bool    getRegs( uint8_t reg1, uint8_t n, uint16_t *data )
+     { return recv_reg1_16bit_n_rev( reg1, (uint16_t*)(data), n ) == n; }
 
    uint16_t getAngleRaw() { return getReg( reg_raw_angle_high ); }
-   uint16_t getAngle()    { return getReg( reg_angle_high ); };
-   uint32_t getAngle_mDeg() { return to_mDeg( getAngle() ); }
+   uint16_t getAngle();
+   int32_t  getAngleN()
+     { auto v = getAngle(); return val2turn * n_turn + v; }; // order!
+   uint32_t getAngle_mDeg()  { return to_mDeg( getAngle() ); }
+   int32_t  getAngleN_mDeg() { return to_mDeg( getAngleN() ); }
+   uint16_t getOldVal() const { return old_val; }
    uint8_t  getStatus()   { return recv_reg1_8bit( reg_status ); };
 
-   uint16_t getCfg()      { return getReg( reg_conf_high ); };
-   bool setCfg( uint16_t cfg ) { return send_reg1_16bit_rev ( reg_conf_high, cfg ) == 2 ; };
+   uint32_t getN_turn() const { return n_turn; };
+   uint32_t setN_turn( uint32_t n )
+     { auto no = n_turn; n_turn = n; return no; }
 
-   bool setStartPos( uint16_t pos ) { return send_reg1_16bit_rev ( reg_zpos_high, pos ) == 2 ; };
-   bool setStartPosCurr() { return send_reg1_16bit_rev ( reg_zpos_high, getAngleRaw() ) == 2 ; };
-   bool setStopPos( uint16_t pos )  { return send_reg1_16bit_rev ( reg_mpos_high, pos ) == 2 ; };
-   bool setMaxAngle( uint16_t angle )  { return send_reg1_16bit_rev ( reg_mang_high, angle ) == 2 ; };
+   uint16_t getCfg()
+     { return getReg( reg_conf_high ); };
+   bool setCfg( uint16_t cfg )
+     { return send_reg1_16bit_rev ( reg_conf_high, cfg ) == 2 ; };
+
+   bool setStartPos( uint16_t pos )
+   { n_turn = 0; old_val = 0;
+     return send_reg1_16bit_rev ( reg_zpos_high, pos ) == 2;
+   };
+   bool setStartPosCurr()
+     { return setStartPos ( getAngleRaw() ); };
+   bool setStopPos( uint16_t pos )
+     { return send_reg1_16bit_rev ( reg_mpos_high, pos ) == 2; };
+   bool setMaxAngle( uint16_t angle )
+     { return send_reg1_16bit_rev ( reg_mang_high, angle ) == 2; };
    bool setPositiveRotationDirection( uint8_t dir );
-   bool isMagnetDetected() { return bool( getStatus() & status_magn_detect ); }
+   bool isMagnetDetected() { return bool( getStatus() & status_magn_detect );}
    uint8_t getAGCSetting() { return recv_reg1_8bit( reg_agc ); }
    uint16_t getCORDICMagnitude() { return getReg( reg_magnitude_high ); }
   protected:
-   int32_t alg_ext {0};
+   int32_t n_turn {0};
+   uint16_t old_val {0};
    //
 };
 
 
-
-// #define AS5600_AGC_MIN_GAIN_OVERFLOW (uint8_t)(1UL << 3) #<{(|Error bit indicates b-field is too string |)}>#
-// #define AS5600_AGC_MAX_GAIN_OVERFLOW (uint8_t)(1UL << 4) #<{(|Error bit indicates b-field is too weak |)}>#
-// #define AS5600_MAGNET_DETECTED (uint8_t)(1UL << 5)       #<{(|Status bit indicates b-field is detected |)}>#
-//
-// #define AS5600_DIR_CW 1
-// #define AS5600_DIR_CCW 2
 
 #endif
 
