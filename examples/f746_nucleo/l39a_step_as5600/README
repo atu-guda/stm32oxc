@@ -1,0 +1,6 @@
+Control stepmotor and measure angles via
+AS5600 angle measurement device (I2C)
+
+SCL = B8 ? 4.7k pullUp
+SDA = B9 ? 4.7k pullUp
+
