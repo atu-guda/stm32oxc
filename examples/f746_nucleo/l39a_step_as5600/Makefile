@@ -23,7 +23,7 @@ USE_OXC_I2C = y
 
 SRCS  = main.cpp
 
-# SRCS += oxc_floatfun.cpp
+SRCS += oxc_floatfun.cpp
 SRCS += oxc_as5600.cpp
 
 

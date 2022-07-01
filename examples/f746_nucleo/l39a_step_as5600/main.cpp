@@ -1,4 +1,7 @@
+#include <cmath>
+
 #include <oxc_auto.h>
+#include <oxc_floatfun.h>
 
 #include <oxc_as5600.h>
 
@@ -54,7 +57,8 @@ int main(void)
   BOARD_PROLOG;
 
   UVAR('t') = 5;
-  UVAR('n') = 1000;
+  UVAR('n') = 360;
+  UVAR('x') = 147312;
   // config
   UVAR('c') = AS5600::CfgBits::cfg_pwr_mode_nom |  AS5600::CfgBits::cfg_hyst_off;
 
@@ -82,36 +86,72 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
+  float da   = arg2float_d( 1, argc, argv,   5.0f,   -360.0f,   360.0f );
+  float amax = arg2float_d( 2, argc, argv, 360.0f, -36000.0f, 36000.0f );
   uint32_t t_step = UVAR('t');
 
-  std_out <<  NL "Test0: n= "  <<  n  <<  " t= "  <<  t_step
-          << " cfg= " << HexInt16( UVAR('c') ) <<  NL;
+  float k1 = (float)(UVAR('x')) / 360;
+
+  const uint8_t *steps = m_modes[0].steps; // only full-step here
+  int ns = m_modes[0].n_steps;
+
+  std_out <<  NL "Test0: da= "  <<  da << " amax= " << amax  <<  " t= "  <<  t_step
+          << " cfg= " << HexInt16( UVAR('c') ) << " k1= " << k1 << NL;
+
+  if( da * amax <= 0.0f ) {
+    std_out << "## error: bad input params" << NL;
+    return 1;
+  }
+
+  int d = 1;
+  if( da < 0 ) {
+    d = ns - 1; // todo: nmax
+  }
 
   ang_sens.setCfg( UVAR('c') );
 
   ang_sens.setStartPosCurr();
+  delay_ms( 10 );
+  (void)ang_sens.getAngleN();
+  delay_ms( 10 );
 
   uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
 
+  int32_t a_ctic = 0;
+  int ph = 0; // no keep phase arcoss call
   break_flag = 0;
-  for( int i=0; i<n && !break_flag; ++i ) {
+  for( float a=0; fabs(a)<=fabs(amax) && !break_flag; a += da ) {
+
+    int32_t a_i = (int32_t)( a * k1 + 0.5f );
+    int32_t d_a_i = a_i - a_ctic;
+    int32_t d_a_i_u = (d_a_i >= 0) ? d_a_i : -d_a_i;
+
+    for( int i=0; i< d_a_i_u; ++i ) {
+      motor.write( steps[ph] );
+      delay_ms( 5 );
+      ph += d;
+      ph %= ns;
+    }
+    a_ctic = a_i;
+    delay_ms( 20 );
 
     auto alp_r = ang_sens.getAngleN();
-    uint32_t tcc = HAL_GetTick();
     auto alp_mDeg = AS5600::to_mDeg( alp_r );
-    auto sta = ang_sens.getStatus();
+    float a_r = 1.0e-3f * alp_mDeg;
+    float a_e = a - a_r;
 
-    std_out <<  (tcc - tm00)
-            << ' ' << alp_r << ' ' << FloatMult( alp_mDeg, 3 )
-            << ' ' << HexInt8( sta )
-            << ' ' << ang_sens.getN_turn() << ' ' << ang_sens.getOldVal() << NL;
+    uint32_t tcc = HAL_GetTick();
+    // auto sta = ang_sens.getStatus();
+
+    std_out <<  a << ' ' << a_r << ' ' << a_e // << ' ' <<  alp_r
+            <<  ' ' << (tcc - tm00) << NL;
 
     std_out.flush();
-    delay_ms_until_brk( &tm0, t_step );
+    leds.toggle( 2 );
+    delay_ms_brk( 200 /* t_step */ );
   }
 
-  std_out << "=== " << ang_sens.getAGCSetting() << ' ' <<  ang_sens.getCORDICMagnitude()
+  std_out << "#== "  << ang_sens.getAGCSetting()   << ' ' <<  ang_sens.getCORDICMagnitude()
           << ' '    << ang_sens.isMagnetDetected() << ' ' << HexInt8( ang_sens.getStatus() ) << NL;
 
   return 0;
