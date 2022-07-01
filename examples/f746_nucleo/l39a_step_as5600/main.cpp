@@ -59,6 +59,7 @@ int main(void)
   UVAR('t') = 5;
   UVAR('n') = 360;
   UVAR('x') = 147312;
+  UVAR('z') = 200;
   // config
   UVAR('c') = AS5600::CfgBits::cfg_pwr_mode_nom |  AS5600::CfgBits::cfg_hyst_off;
 
@@ -118,7 +119,7 @@ int cmd_test0( int argc, const char * const * argv )
   uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
 
   int32_t a_ctic = 0;
-  int ph = 0; // no keep phase arcoss call
+  int ph = 0; // no keep phase across call
   break_flag = 0;
   for( float a=0; fabs(a)<=fabs(amax) && !break_flag; a += da ) {
 
@@ -126,7 +127,7 @@ int cmd_test0( int argc, const char * const * argv )
     int32_t d_a_i = a_i - a_ctic;
     int32_t d_a_i_u = (d_a_i >= 0) ? d_a_i : -d_a_i;
 
-    for( int i=0; i< d_a_i_u; ++i ) {
+    for( int i=0; i< d_a_i_u && !break_flag; ++i ) {
       motor.write( steps[ph] );
       delay_ms( 5 );
       ph += d;
@@ -136,6 +137,7 @@ int cmd_test0( int argc, const char * const * argv )
     delay_ms( 20 );
 
     auto alp_r = ang_sens.getAngleN();
+    float alp_a = 1.0e-3f * AS5600::to_mDeg( ang_sens.getAngleRaw() );
     auto alp_mDeg = AS5600::to_mDeg( alp_r );
     float a_r = 1.0e-3f * alp_mDeg;
     float a_e = a - a_r;
@@ -144,12 +146,14 @@ int cmd_test0( int argc, const char * const * argv )
     // auto sta = ang_sens.getStatus();
 
     std_out <<  a << ' ' << a_r << ' ' << a_e // << ' ' <<  alp_r
-            <<  ' ' << (tcc - tm00) << NL;
+            <<  ' ' << (tcc - tm00) << ' ' << d_a_i << ' ' << alp_a << NL;
 
     std_out.flush();
-    leds.toggle( 2 );
-    delay_ms_brk( 200 /* t_step */ );
+    leds.set( 2 );
+    delay_ms_brk( UVAR('z') );
+    leds.reset( 2 );
   }
+  motor.write( 0 );
 
   std_out << "#== "  << ang_sens.getAGCSetting()   << ' ' <<  ang_sens.getCORDICMagnitude()
           << ' '    << ang_sens.isMagnetDetected() << ' ' << HexInt8( ang_sens.getStatus() ) << NL;
@@ -161,8 +165,17 @@ int cmd_go( int argc, const char * const * argv )
 {
   static int ph = 0; // to keep phase across call
 
-  int n = arg2long_d( 1, argc, argv, UVAR('n'), -1000000, 10000000 );
+  float nf = arg2float_d( 1, argc, argv, UVAR('n'), -1000000, 10000000 );
+  bool is_deg = ( argc > 2 ) && ( argv[2][0] == 'd' );
   uint32_t t_step = UVAR('t');
+
+  float k1 = (float)(UVAR('x')) / 360;
+  int n = 0;
+  if( is_deg ) {
+    n = (int)( nf * k1 + 0.5f );
+  } else {
+    n = (int)( nf );
+  }
 
   int m = UVAR('m');
   if( m >= n_modes ) {
