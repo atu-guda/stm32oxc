@@ -66,7 +66,7 @@ int main(void)
 
   UVAR('t') = 5;
   UVAR('n') = 360;
-  UVAR('x') = 147312;
+  UVAR('x') = 147443; // 147312
   UVAR('z') = 200;
   // config
   UVAR('c') = AS5600::CfgBits::cfg_pwr_mode_nom |  AS5600::CfgBits::cfg_hyst_off;
