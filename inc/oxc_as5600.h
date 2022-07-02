@@ -93,6 +93,7 @@ class AS5600 : public I2CClient {
      { return recv_reg1_16bit_n_rev( reg1, (uint16_t*)(data), n ) == n; }
 
    uint16_t getAngleRaw() { return getReg( reg_raw_angle_high ); }
+   uint16_t getAngleNoTurn() { return getReg( reg_angle_high ); }
    uint16_t getAngle();
    int32_t  getAngleN()
      { auto v = getAngle(); return val2turn * n_turn + v; }; // order!
@@ -120,7 +121,6 @@ class AS5600 : public I2CClient {
      { return send_reg1_16bit_rev ( reg_mpos_high, pos ) == 2; };
    bool setMaxAngle( uint16_t angle )
      { return send_reg1_16bit_rev ( reg_mang_high, angle ) == 2; };
-   bool setPositiveRotationDirection( uint8_t dir );
    bool isMagnetDetected() { return bool( getStatus() & status_magn_detect );}
    uint8_t getAGCSetting() { return recv_reg1_8bit( reg_agc ); }
    uint16_t getCORDICMagnitude() { return getReg( reg_magnitude_high ); }

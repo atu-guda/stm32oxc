@@ -15,6 +15,8 @@ BOARD_CONSOLE_DEFINES;
 
 PinsOut motor { BOARD_MOTOR_DEFAULT_GPIO, BOARD_MOTOR_DEFAULT_PIN0, 4 };
 
+// TODO: to StepMotor class
+
 const uint8_t half_steps4[] = { 1, 3, 2, 6, 4, 0xC, 8, 9 };
 const uint8_t full_steps4[] = { 1, 2, 4, 8 };
 
@@ -36,6 +38,10 @@ int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
 int cmd_go( int argc, const char * const * argv );
 CmdInfo CMDINFO_GO { "go", 'G', cmd_go, " [n] - go n steps, mode = m;"  };
+int cmd_m( int argc, const char * const * argv );
+CmdInfo CMDINFO_M { "me", 'M', cmd_m, " measure;"  };
+int cmd_set_alp( int argc, const char * const * argv );
+CmdInfo CMDINFO_SET { "set_alp", 'S', cmd_set_alp, " [v=0] - set current value"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -43,6 +49,8 @@ const CmdInfo* global_cmds[] = {
 
   &CMDINFO_TEST0,
   &CMDINFO_GO,
+  &CMDINFO_M,
+  &CMDINFO_SET,
   nullptr
 };
 
@@ -96,7 +104,7 @@ int cmd_test0( int argc, const char * const * argv )
   const uint8_t *steps = m_modes[0].steps; // only full-step here
   int ns = m_modes[0].n_steps;
 
-  std_out <<  NL "Test0: da= "  <<  da << " amax= " << amax  <<  " t= "  <<  t_step
+  std_out <<  NL "# Test0: da= "  <<  da << " amax= " << amax  <<  " t= "  <<  t_step
           << " cfg= " << HexInt16( UVAR('c') ) << " k1= " << k1 << NL;
 
   if( da * amax <= 0.0f ) {
@@ -136,17 +144,15 @@ int cmd_test0( int argc, const char * const * argv )
     a_ctic = a_i;
     delay_ms( 20 );
 
-    auto alp_r = ang_sens.getAngleN();
-    float alp_a = 1.0e-3f * AS5600::to_mDeg( ang_sens.getAngleRaw() );
-    auto alp_mDeg = AS5600::to_mDeg( alp_r );
-    float a_r = 1.0e-3f * alp_mDeg;
-    float a_e = a - a_r;
+    auto alp_real = ang_sens.getAngleN();
+    float alp_real_deg = 1.0e-3f * AS5600::to_mDeg( alp_real );
+    float alp_raw_deg  = 1.0e-3f * AS5600::to_mDeg( ang_sens.getAngleRaw() );
+    float a_e = a - alp_real_deg;
 
     uint32_t tcc = HAL_GetTick();
-    // auto sta = ang_sens.getStatus();
 
-    std_out <<  a << ' ' << a_r << ' ' << a_e // << ' ' <<  alp_r
-            <<  ' ' << (tcc - tm00) << ' ' << d_a_i << ' ' << alp_a << NL;
+    std_out <<  a << ' ' << alp_real_deg << ' ' << a_e
+            <<  ' ' << (tcc - tm00) << ' ' << d_a_i << ' ' << alp_raw_deg << NL;
 
     std_out.flush();
     leds.set( 2 );
@@ -160,6 +166,44 @@ int cmd_test0( int argc, const char * const * argv )
 
   return 0;
 }
+
+int cmd_m( int argc, const char * const * argv )
+{
+  auto  alp_real = ang_sens.getAngleN();
+  float alp_real_deg = 1.0e-3f * AS5600::to_mDeg( alp_real );
+  auto  alp_raw = ang_sens.getAngleRaw();
+  float alp_raw_deg  = 1.0e-3f * AS5600::to_mDeg( alp_raw );
+
+  std_out << alp_real_deg << ' ' << alp_raw_deg
+    << ' ' << alp_real << ' ' << alp_raw << ' ' << ang_sens.getN_turn() << NL;
+
+  return 0;
+}
+
+int cmd_set_alp( int argc, const char * const * argv )
+{
+  float v = arg2float_d( 1, argc, argv, 0, -1000000, 10000000 );
+  std_out <<  NL "# set_alp: v= " << v << NL;
+
+  if( fabs(v) < 1e-5f ) {
+    ang_sens.setStartPosCurr();
+  } else {
+    auto old_a = ang_sens.getAngleRaw();
+    int32_t turns = (int32_t)( roundf( v / 360.0f - 0.49999f ) );
+    v -= 360.0f * turns;
+    int32_t via = old_a - AS5600::from_mDeg( int32_t( v * 1000.0f ) );
+    uint16_t vi = (uint16_t)( via & 0x0FFF );
+
+    // std_out << "## old_a= " << old_a << " via= " << via << " vi= " << vi << " turns= " << turns << NL;
+    // std_out << "## turns= " << ang_sens.getN_turn() << ' ' << ang_sens.getAngleNoTurn() << ' ' << ang_sens.getOldVal() << NL;
+    ang_sens.setStartPos( vi );
+    (void)ang_sens.getAngle(); // to reset old val
+    ang_sens.setN_turn( turns );
+  }
+
+  return 0;
+}
+
 
 int cmd_go( int argc, const char * const * argv )
 {
