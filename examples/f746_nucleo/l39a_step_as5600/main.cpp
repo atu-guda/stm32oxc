@@ -66,7 +66,7 @@ int main(void)
 
   UVAR('t') = 5;
   UVAR('n') = 360;
-  UVAR('x') = 147443; // 147312
+  UVAR('x') = 2048; // 147443; // 147312
   UVAR('z') = 200;
   // config
   UVAR('c') = AS5600::CfgBits::cfg_pwr_mode_nom |  AS5600::CfgBits::cfg_hyst_off;
@@ -137,12 +137,14 @@ int cmd_test0( int argc, const char * const * argv )
 
     for( int i=0; i< d_a_i_u && !break_flag; ++i ) {
       motor.write( steps[ph] );
-      delay_ms( 5 );
+      delay_ms( t_step );
       ph += d;
       ph %= ns;
     }
     a_ctic = a_i;
-    delay_ms( 20 );
+
+    leds.set( 2 );
+    delay_ms_brk( UVAR('z') );
 
     auto alp_real = ang_sens.getAngleN();
     float alp_real_deg = 1.0e-3f * AS5600::to_mDeg( alp_real );
@@ -155,8 +157,6 @@ int cmd_test0( int argc, const char * const * argv )
             <<  ' ' << (tcc - tm00) << ' ' << d_a_i << ' ' << alp_raw_deg << NL;
 
     std_out.flush();
-    leds.set( 2 );
-    delay_ms_brk( UVAR('z') );
     leds.reset( 2 );
   }
   motor.write( 0 );
