@@ -2,6 +2,7 @@
 
 #include <oxc_auto.h>
 #include <oxc_floatfun.h>
+#include <oxc_statdata.h>
 
 #include <oxc_as5600.h>
 
@@ -101,6 +102,8 @@ int cmd_test0( int argc, const char * const * argv )
 
   float k1 = (float)(UVAR('x')) / 360;
 
+  StatChannel sta;
+
   const uint8_t *steps = m_modes[0].steps; // only full-step here
   int ns = m_modes[0].n_steps;
 
@@ -157,12 +160,17 @@ int cmd_test0( int argc, const char * const * argv )
             <<  ' ' << (tcc - tm00) << ' ' << d_a_i << ' ' << alp_raw_deg << NL;
 
     std_out.flush();
+    sta.add( a_e );
     leds.reset( 2 );
   }
   motor.write( 0 );
 
-  std_out << "#== "  << ang_sens.getAGCSetting()   << ' ' <<  ang_sens.getCORDICMagnitude()
+  std_out << "#==s "  << ang_sens.getAGCSetting()   << ' ' <<  ang_sens.getCORDICMagnitude()
           << ' '    << ang_sens.isMagnetDetected() << ' ' << HexInt8( ang_sens.getStatus() ) << NL;
+
+  sta.calc();
+  std_out << "#==a "  << sta.sd   << ' ' << max( fabsf(sta.min), fabsf(sta.max) )
+          <<' '<<  sta.min << ' ' << sta.max << ' ' << sta.mean << ' ' << sta.n << NL;
 
   return 0;
 }
