@@ -145,7 +145,6 @@
 * Deactivated: CRC code cleaned from driver
 */
 
-#define USE_SPI_CRC                     0U
 
 
 #include "stm32f4xx_hal_def.h"
@@ -179,6 +178,10 @@
 #ifdef HAL_CAN_MODULE_ENABLED
   #include "stm32f4xx_hal_can.h"
 #endif /* HAL_CAN_MODULE_ENABLED */
+
+#ifdef HAL_CAN_LEGACY_MODULE_ENABLED
+  #include "stm32f4xx_hal_can_legacy.h"
+#endif /* HAL_CAN_LEGACY_MODULE_ENABLED */
 
 #ifdef HAL_CRC_MODULE_ENABLED
   #include "stm32f4xx_hal_crc.h"

@@ -12,7 +12,7 @@
   *        (when HSE is used as system clock source, directly or through the PLL).
   */
 #if !defined  (HSE_VALUE)
-  #define HSE_VALUE    ((uint32_t)8000000) /*!< Value of the External oscillator in Hz */
+  #define HSE_VALUE    (8000000U) /*!< Value of the External oscillator in Hz */
 #endif /* HSE_VALUE */
 
 /**
@@ -20,7 +20,7 @@
   *        Timeout value
   */
 #if !defined  (HSE_STARTUP_TIMEOUT)
-  #define HSE_STARTUP_TIMEOUT    ((uint32_t)100)   /*!< Time out for HSE start up, in ms */
+  #define HSE_STARTUP_TIMEOUT    (100U)   /*!< Time out for HSE start up, in ms */
 #endif /* HSE_STARTUP_TIMEOUT */
 
 /**
@@ -29,7 +29,7 @@
   *        (when HSI is used as system clock source, directly or through the PLL).
   */
 #if !defined  (HSI_VALUE)
-  #define HSI_VALUE    ((uint32_t)8000000) /*!< Value of the Internal oscillator in Hz*/
+  #define HSI_VALUE    (8000000U) /*!< Value of the Internal oscillator in Hz*/
 #endif /* HSI_VALUE */
 
 /**
@@ -37,7 +37,7 @@
   *        Timeout value
   */
 #if !defined  (HSI_STARTUP_TIMEOUT)
- #define HSI_STARTUP_TIMEOUT   ((uint32_t)5000) /*!< Time out for HSI start up */
+ #define HSI_STARTUP_TIMEOUT   (5000U) /*!< Time out for HSI start up */
 #endif /* HSI_STARTUP_TIMEOUT */
 
 /**
@@ -59,7 +59,7 @@
   * @brief Time out for LSE start up value in ms.
   */
 #if !defined  (LSE_STARTUP_TIMEOUT)
-  #define LSE_STARTUP_TIMEOUT    ((uint32_t)5000)   /*!< Time out for LSE start up, in ms */
+  #define LSE_STARTUP_TIMEOUT    (5000U)   /*!< Time out for LSE start up, in ms */
 #endif /* LSE_STARTUP_TIMEOUT */
 
 /**
@@ -116,13 +116,13 @@
  #include "stm32f3xx_hal_rcc.h"
 #endif /* HAL_RCC_MODULE_ENABLED */
 
-#ifdef HAL_EXTI_MODULE_ENABLED
- #include "stm32f3xx_hal_exti.h"
-#endif /* HAL_EXTI_MODULE_ENABLED */
-
 #ifdef HAL_GPIO_MODULE_ENABLED
  #include "stm32f3xx_hal_gpio.h"
 #endif /* HAL_GPIO_MODULE_ENABLED */
+
+#ifdef HAL_EXTI_MODULE_ENABLED
+  #include "stm32f3xx_hal_exti.h"
+#endif /* HAL_EXTI_MODULE_ENABLED */
 
 #ifdef HAL_DMA_MODULE_ENABLED
   #include "stm32f3xx_hal_dma.h"
@@ -139,6 +139,10 @@
 #ifdef HAL_CAN_MODULE_ENABLED
  #include "stm32f3xx_hal_can.h"
 #endif /* HAL_CAN_MODULE_ENABLED */
+
+#ifdef HAL_CAN_LEGACY_MODULE_ENABLED
+ #include "stm32f3xx_hal_can_legacy.h"
+#endif /* HAL_CAN_LEGACY_MODULE_ENABLED */
 
 #ifdef HAL_CEC_MODULE_ENABLED
  #include "stm32f3xx_hal_cec.h"

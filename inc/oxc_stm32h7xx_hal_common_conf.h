@@ -5,10 +5,6 @@
  extern "C" {
 #endif
 
-// atu: supress warnings
-#ifndef USE_HAL_TIM_REGISTER_CALLBACKS
-#define USE_HAL_TIM_REGISTER_CALLBACKS 0
-#endif
 
 #ifndef USE_SD_TRANSCEIVER
 #define USE_SD_TRANSCEIVER 0
@@ -50,12 +46,19 @@
   *        This value is used by the UART, RTC HAL module to compute the system frequency
   */
 #if !defined  (LSE_VALUE)
-  #define LSE_VALUE    ((uint32_t)32768U) /*!< Value of the External oscillator in Hz*/
+  #define LSE_VALUE    ((uint32_t)32768) /*!< Value of the External oscillator in Hz*/
 #endif /* LSE_VALUE */
 
+
 #if !defined  (LSE_STARTUP_TIMEOUT)
-  #define LSE_STARTUP_TIMEOUT    ((uint32_t)5000U)   /*!< Time out for LSE start up, in ms */
+  #define LSE_STARTUP_TIMEOUT    ((uint32_t)5000)   /*!< Time out for LSE start up, in ms */
 #endif /* LSE_STARTUP_TIMEOUT */
+
+#if !defined  (LSI_VALUE)
+  #define LSI_VALUE  ((uint32_t)32000)      /*!< LSI Typical Value in Hz*/
+#endif /* LSI_VALUE */                      /*!< Value of the Internal Low Speed oscillator in Hz
+                                              The real value may vary depending on the variations
+                                              in voltage and temperature.*/
 
 /**
   * @brief External clock source for I2S peripheral
@@ -147,12 +150,6 @@
 
 /* ################## SPI peripheral configuration ########################## */
 
-/* CRC FEATURE: Use to activate CRC feature inside HAL SPI Driver
-* Activated: CRC code is present inside driver
-* Deactivated: CRC code cleaned from driver
-*/
-
-#define USE_SPI_CRC                     0U
 
 
 #include "stm32h7xx_hal_def.h"
