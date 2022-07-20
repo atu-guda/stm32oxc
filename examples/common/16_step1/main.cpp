@@ -12,14 +12,14 @@ BOARD_CONSOLE_DEFINES;
 
 class StepMotorDriverBase {
   public:
-   virtual void set( uint8_t outs ) noexcept = 0;
+   virtual void set( uint16_t outs ) noexcept = 0;
    virtual void init() noexcept = 0;
 };
 
 class StepMotorDriverGPIO : public StepMotorDriverBase {
   public:
    explicit StepMotorDriverGPIO( PinsOut &a_pins ) noexcept : pins( a_pins ) {}
-   virtual void set( uint8_t outs ) noexcept override { pins.write( outs ); };
+   virtual void set( uint16_t outs ) noexcept override { pins.write( outs ); };
    virtual void init() noexcept override { pins.initHW(); };
   protected:
    PinsOut &pins;
@@ -30,33 +30,33 @@ class StepMotor
   public:
    struct MotorMode {
      std::size_t n_steps;
-     const uint8_t *steps;
+     const uint16_t *steps;
    };
    StepMotor( StepMotorDriverBase &a_drv, std::size_t mode ) noexcept
      : drv( a_drv )
      { setMode( mode ); };
-   // void set( uint8_t v ) noexcept { drv.set( v ); }
+   // void set( uint16_t v ) noexcept { drv.set( v ); }
    void off() noexcept { drv.set( 0 ); }
    void init() noexcept { drv.init(); ph = 0; }
    void setMode( size_t a_mode ) noexcept;
    size_t getMode() const noexcept { return mode; }
-   void setExternMode( const uint8_t *st, size_t ns ) noexcept;
+   void setExternMode( const uint16_t *st, size_t ns ) noexcept;
    size_t getPhase() const noexcept { return ph; }
-   size_t getV() const noexcept { return steps[ph]; }
+   uint16_t getV() const noexcept { return steps[ph]; }
    void setPhase( size_t phase ) noexcept { ph = phase % n_steps; }
    void stepF() { return step(  1 ); }
    void stepB() { return step( -1 ); };
    void step( int v );
   protected:
    StepMotorDriverBase &drv;
-   const uint8_t *steps { nullptr };
+   const uint16_t *steps { nullptr };
    size_t n_steps { 0 };
    size_t ph { 0 };
    size_t mode { 0 };
-   static constexpr uint8_t half_steps4[] { 1, 3, 2, 6, 4, 12, 8, 9 };
-   static constexpr uint8_t full_steps4[] { 1, 2, 4, 8 };
-   static constexpr uint8_t half_steps3[] { 1, 3, 2, 6, 4, 5 };
-   static constexpr uint8_t full_steps3[] { 1, 2, 4 };
+   static constexpr uint16_t half_steps4[] { 1, 3, 2, 6, 4, 12, 8, 9 };
+   static constexpr uint16_t full_steps4[] { 1, 2, 4, 8 };
+   static constexpr uint16_t half_steps3[] { 1, 3, 2, 6, 4, 5 };
+   static constexpr uint16_t full_steps3[] { 1, 2, 4 };
    static constexpr MotorMode m_modes[] = {
      { size(full_steps4), full_steps4 },
      { size(half_steps4), half_steps4 },
@@ -74,7 +74,7 @@ void StepMotor::setMode( size_t a_mode ) noexcept
   ph = 0;
 }
 
-void StepMotor::setExternMode( const uint8_t *st, size_t ns ) noexcept
+void StepMotor::setExternMode( const uint16_t *st, size_t ns ) noexcept
 {
   steps   = st;
   n_steps = ns;
