@@ -5,6 +5,7 @@
 #include <oxc_statdata.h>
 
 #include <oxc_as5600.h>
+#include <oxc_stepmotor_gpio.h>
 
 using namespace std;
 using namespace SMLRL;
@@ -14,23 +15,9 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
-PinsOut motor { BOARD_MOTOR_DEFAULT_GPIO, BOARD_MOTOR_DEFAULT_PIN0, 4 };
+StepMotorDriverGPIO_e m_drv( BOARD_MOTOR_DEFAULT_GPIO, BOARD_MOTOR_DEFAULT_PIN0, 4 );
+StepMotor motor( m_drv, 0 );
 
-// TODO: to StepMotor class
-
-const uint8_t half_steps4[] = { 1, 3, 2, 6, 4, 0xC, 8, 9 };
-const uint8_t full_steps4[] = { 1, 2, 4, 8 };
-
-struct MotorMode {
-  int n_steps;
-  const uint8_t *steps;
-};
-
-MotorMode m_modes[] = {
-  { 4, full_steps4 },
-  { 8, half_steps4 }
-};
-const int n_modes = sizeof(m_modes)/sizeof(MotorMode);
 
 const char* common_help_string = "App to control stepmotor and measure angle by AS5600" NL;
 
@@ -76,8 +63,8 @@ int main(void)
   i2c_dbg = &i2cd;
   i2c_client_def = &ang_sens;
 
-  motor.initHW();
-  motor.set( 0 );
+  motor.init();
+  motor.off();
 
   BOARD_POST_INIT_BLINK;
 
@@ -104,11 +91,11 @@ int cmd_test0( int argc, const char * const * argv )
 
   StatChannel sta;
 
-  const uint8_t *steps = m_modes[0].steps; // only full-step here
-  int ns = m_modes[0].n_steps;
+  int m = UVAR('m');
+  motor.setMode( m );
 
   std_out <<  NL "# Test0: da= "  <<  da << " amax= " << amax  <<  " t= "  <<  t_step
-          << " cfg= " << HexInt16( UVAR('c') ) << " k1= " << k1 << NL;
+          << " cfg= " << HexInt16( UVAR('c') ) << " k1= " << k1 << ' ' << m << NL;
 
   if( da * amax <= 0.0f ) {
     std_out << "## error: bad input params" << NL;
@@ -117,7 +104,7 @@ int cmd_test0( int argc, const char * const * argv )
 
   int d = 1;
   if( da < 0 ) {
-    d = ns - 1; // todo: nmax
+    d = -1;
   }
 
   ang_sens.setCfg( UVAR('c') );
@@ -130,7 +117,6 @@ int cmd_test0( int argc, const char * const * argv )
   uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
 
   int32_t a_ctic = 0;
-  int ph = 0; // no keep phase across call
   break_flag = 0;
   for( float a=0; fabs(a)<=fabs(amax) && !break_flag; a += da ) {
 
@@ -139,10 +125,8 @@ int cmd_test0( int argc, const char * const * argv )
     int32_t d_a_i_u = (d_a_i >= 0) ? d_a_i : -d_a_i;
 
     for( int i=0; i< d_a_i_u && !break_flag; ++i ) {
-      motor.write( steps[ph] );
+      motor.step( d );
       delay_ms( t_step );
-      ph += d;
-      ph %= ns;
     }
     a_ctic = a_i;
 
@@ -163,7 +147,7 @@ int cmd_test0( int argc, const char * const * argv )
     sta.add( a_e );
     leds.reset( 2 );
   }
-  motor.write( 0 );
+  motor.off();
 
   std_out << "#==s "  << ang_sens.getAGCSetting()   << ' ' <<  ang_sens.getCORDICMagnitude()
           << ' '    << ang_sens.isMagnetDetected() << ' ' << HexInt8( ang_sens.getStatus() ) << NL;
@@ -215,8 +199,6 @@ int cmd_set_alp( int argc, const char * const * argv )
 
 int cmd_go( int argc, const char * const * argv )
 {
-  static int ph = 0; // to keep phase across call
-
   float nf = arg2float_d( 1, argc, argv, UVAR('n'), -1000000, 10000000 );
   bool is_deg = ( argc > 2 ) && ( argv[2][0] == 'd' );
   uint32_t t_step = UVAR('t');
@@ -230,13 +212,7 @@ int cmd_go( int argc, const char * const * argv )
   }
 
   int m = UVAR('m');
-  if( m >= n_modes ) {
-    m = 0;
-  }
-
-  const uint8_t *steps = m_modes[m].steps;
-  int ns = m_modes[m].n_steps;
-  if( ph >= ns ||  ph < 0 ) { ph = 0; }
+  motor.setMode( m );
 
 
   std_out <<  "# Go: n= "  <<  n  <<  " t= "  <<  t_step
@@ -244,27 +220,18 @@ int cmd_go( int argc, const char * const * argv )
 
   int d = 1;
   if( n < 0 ) {
-    d = ns - 1; n = -n;
+    d = -1; n = -n;
   }
 
-  uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
+  uint32_t tm0 = HAL_GetTick();
 
   break_flag = 0;
   for( int i=0; i<n && !break_flag; ++i ) {
-
-    if( t_step > 500 ) {
-      std_out <<  " Step  i= " <<  i <<  " ph: "  <<  ph  <<  " v: "  <<  steps[ph]
-         <<  "  tick: " << ( HAL_GetTick() - tm00 )   <<  NL;
-      std_out.flush();
-    }
-    motor.write( steps[ph] );
-    ph += d;
-    ph %= ns;
-
+    motor.step( d );
     delay_ms_until_brk( &tm0, t_step );
   }
 
-  motor.write( 0 );
+  motor.off();
 
   return 0;
 }
