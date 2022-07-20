@@ -20,6 +20,8 @@ USE_OXC_CONSOLE_DEFAULT = y
 # REQUIRE_SPECIAL_CLOCK = y
 
 
-SRCS  = main.cpp
+SRCS += main.cpp
+
+SRCS += oxc_stepmotor.cpp
 
 

@@ -1,6 +1,7 @@
 // #include <ranges>
 
 #include <oxc_auto.h>
+#include <oxc_stepmotor_gpio.h>
 
 using namespace std;
 using namespace SMLRL;
@@ -10,93 +11,6 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
-class StepMotorDriverBase {
-  public:
-   virtual void set( uint16_t outs ) noexcept = 0;
-   virtual void init() noexcept = 0;
-};
-
-class StepMotorDriverGPIO : public StepMotorDriverBase {
-  public:
-   explicit StepMotorDriverGPIO( PinsOut &a_pins ) noexcept : pins( a_pins ) {}
-   virtual void set( uint16_t outs ) noexcept override { pins.write( outs ); };
-   virtual void init() noexcept override { pins.initHW(); };
-  protected:
-   PinsOut &pins;
-};
-
-class StepMotorDriverGPIO_e : public StepMotorDriverBase {
-  public:
-   explicit StepMotorDriverGPIO_e( GpioRegs &gi, uint8_t a_start, uint8_t a_n ) noexcept : pins( gi, a_start, a_n ) {}
-   virtual void set( uint16_t outs ) noexcept override { pins.write( outs ); };
-   virtual void init() noexcept override { pins.initHW(); };
-  protected:
-   PinsOut pins;
-};
-
-class StepMotor
-{
-  public:
-   struct MotorMode {
-     std::size_t n_steps;
-     const uint16_t *steps;
-   };
-   StepMotor( StepMotorDriverBase &a_drv, std::size_t mode ) noexcept
-     : drv( a_drv )
-     { setMode( mode ); };
-   // void set( uint16_t v ) noexcept { drv.set( v ); }
-   void off() noexcept { drv.set( 0 ); }
-   void init() noexcept { drv.init(); ph = 0; }
-   void setMode( size_t a_mode ) noexcept;
-   size_t getMode() const noexcept { return mode; }
-   void setExternMode( const uint16_t *st, size_t ns ) noexcept;
-   size_t getPhase() const noexcept { return ph; }
-   uint16_t getV() const noexcept { return steps[ph]; }
-   void setPhase( size_t phase ) noexcept { ph = phase % n_steps; }
-   void stepF() { return step(  1 ); }
-   void stepB() { return step( -1 ); };
-   void step( int v );
-  protected:
-   StepMotorDriverBase &drv;
-   const uint16_t *steps { nullptr };
-   size_t n_steps { 0 };
-   size_t ph { 0 };
-   size_t mode { 0 };
-   static constexpr uint16_t half_steps4[] { 1, 3, 2, 6, 4, 12, 8, 9 };
-   static constexpr uint16_t full_steps4[] { 1, 2, 4, 8 };
-   static constexpr uint16_t half_steps3[] { 1, 3, 2, 6, 4, 5 };
-   static constexpr uint16_t full_steps3[] { 1, 2, 4 };
-   static constexpr MotorMode m_modes[] = {
-     { size(full_steps4), full_steps4 },
-     { size(half_steps4), half_steps4 },
-     { size(half_steps3), half_steps3 },
-     { size(half_steps3), full_steps3 }
-   };
-   static constexpr size_t n_modes = size(m_modes);
-};
-
-void StepMotor::setMode( size_t a_mode ) noexcept
-{
-  mode    = (mode<n_modes)? a_mode : 0;
-  steps   = m_modes[mode].steps;
-  n_steps = m_modes[mode].n_steps;
-  ph = 0;
-}
-
-void StepMotor::setExternMode( const uint16_t *st, size_t ns ) noexcept
-{
-  steps   = st;
-  n_steps = ns;
-  ph = 0;
-  mode = 0xFF; // fake
-}
-
-void StepMotor::step( int v )
-{
-  ph += (size_t)v;
-  ph %= n_steps;
-  drv.set( steps[ph] );
-}
 
 const char* common_help_string = "App to test stepmotor" NL;
 
