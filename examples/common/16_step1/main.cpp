@@ -25,6 +25,15 @@ class StepMotorDriverGPIO : public StepMotorDriverBase {
    PinsOut &pins;
 };
 
+class StepMotorDriverGPIO_e : public StepMotorDriverBase {
+  public:
+   explicit StepMotorDriverGPIO_e( GpioRegs &gi, uint8_t a_start, uint8_t a_n ) noexcept : pins( gi, a_start, a_n ) {}
+   virtual void set( uint16_t outs ) noexcept override { pins.write( outs ); };
+   virtual void init() noexcept override { pins.initHW(); };
+  protected:
+   PinsOut pins;
+};
+
 class StepMotor
 {
   public:
@@ -84,7 +93,7 @@ void StepMotor::setExternMode( const uint16_t *st, size_t ns ) noexcept
 
 void StepMotor::step( int v )
 {
-  ph += (size_t)v; // TODO: check negative
+  ph += (size_t)v;
   ph %= n_steps;
   drv.set( steps[ph] );
 }
@@ -102,8 +111,9 @@ const CmdInfo* global_cmds[] = {
   nullptr
 };
 
-PinsOut motor { BOARD_MOTOR_DEFAULT_GPIO, BOARD_MOTOR_DEFAULT_PIN0, 4 };
-StepMotorDriverGPIO m_drv( motor );
+//PinsOut motor { BOARD_MOTOR_DEFAULT_GPIO, BOARD_MOTOR_DEFAULT_PIN0, 4 };
+//StepMotorDriverGPIO m_drv( motor );
+StepMotorDriverGPIO_e m_drv( BOARD_MOTOR_DEFAULT_GPIO, BOARD_MOTOR_DEFAULT_PIN0, 4 );
 StepMotor mot( m_drv, 0 );
 
 
