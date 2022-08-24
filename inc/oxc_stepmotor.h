@@ -3,7 +3,8 @@
 
 // abstract stepmotor control
 
-#include <algorithm>
+// for std::size
+#include <iterator>
 
 #include <oxc_base.h>
 

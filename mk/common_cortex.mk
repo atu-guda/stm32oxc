@@ -97,12 +97,11 @@ RTINC=$(RTDIR)/include
 ###################################################
 
 ALLFLAGS += -g3 -O2
-ALLFLAGS += -Wall -Wextra -Wundef -Wdouble-promotion
 ALLFLAGS += -fno-common -ffunction-sections -fdata-sections -fno-strict-aliasing
 ALLFLAGS += -DSTM32 -D$(MCINCTYPE) -DHSE_VALUE=$(HSE_VALUE) -DUSE_HAL_LEGACY
 WARNFLAGS += -Wall -Wextra -Wundef -Wdouble-promotion -Wno-unused-parameter
 CWARNFLAGS   := $(WARNFLAGS) -Wimplicit-function-declaration -Wmissing-prototypes -Wstrict-prototypes -Wno-misleading-indentation
-CXXWARNFLAGS := $(WARNFLAGS) -Wno-register
+CXXWARNFLAGS := $(WARNFLAGS) -Wno-register -Wno-volatile
 
 ALLFLAGS += -DPROJ_NAME=\"$(PROJ_NAME)\"
 ALLFLAGS += -ffreestanding
@@ -516,7 +515,7 @@ OBJS  = $(OBJS0:.s=.o)
 OBJS1 = $(addprefix $(OBJDIR)/,$(OBJS))
 
 CFLAGS   = $(ALLFLAGS)  -std=c11   $(CWARNFLAGS)
-CXXFLAGS = $(ALLFLAGS)  -std=c++17 $(CXXWARNFLAGS) -fno-rtti -fno-exceptions -fno-threadsafe-statics -fno-use-cxa-atexit
+CXXFLAGS = $(ALLFLAGS)  -std=gnu++20 $(CXXWARNFLAGS) -fno-rtti -fno-exceptions -fno-threadsafe-statics -fno-use-cxa-atexit
 
 $(info SRCPATHS is $(SRCPATHS) )
 $(info STM_HAL_INC= $(STM_HAL_INC) )
