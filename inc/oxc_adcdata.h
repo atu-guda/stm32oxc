@@ -299,7 +299,7 @@ struct StatIntData {
 
 inline OutStream& operator<<( OutStream &os, const StatIntData &sd ) { sd.out_parts( os );  return os; } ;
 
-template< int N, typename FL = float >
+template< int N, typename FL >
   StatIntData::StatIntData( const AdcData<N,FL> &adc )
   : n_ch( adc.get_n_col() )
 {
@@ -307,7 +307,7 @@ template< int N, typename FL = float >
   reset();
 }
 
-template< int N, typename FL = float >
+template< int N, typename FL >
   void StatIntData::setScalesFrom( const AdcData<N,FL> &adc )
 {
   FL c0 = adc.get_v_ref() / adc.get_max_val();
@@ -316,7 +316,7 @@ template< int N, typename FL = float >
   }
 }
 
-template< int N, typename FL = float >
+template< int N, typename FL >
   void StatIntData::slurp( const AdcData<N,FL> &adc )
 {
   const unsigned nr = adc.get_n_row();
