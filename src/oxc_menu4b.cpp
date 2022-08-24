@@ -54,7 +54,7 @@ int menu4b_cmd( int cmd_i )
     case MenuLevel::ready:
       switch( cmd ) {
         case MenuCmd::Esc:
-          menu4b_state.level = MenuLevel::select; menu4b_state.index = 0;
+          menu4b_state.level = MenuLevel::sel; menu4b_state.index = 0;
           break;
         case MenuCmd::Up:
           break;
@@ -68,7 +68,7 @@ int menu4b_cmd( int cmd_i )
       };
       break;
 
-    case MenuLevel::select:
+    case MenuLevel::sel:
       switch( cmd ) {
         case MenuCmd::Esc:
           menu4b_state.level = MenuLevel::ready;
@@ -94,7 +94,7 @@ int menu4b_cmd( int cmd_i )
     case MenuLevel::edit:
       switch( cmd ) {
         case MenuCmd::Esc:
-          menu4b_state.level = MenuLevel::select;
+          menu4b_state.level = MenuLevel::sel;
           break;
         case MenuCmd::Up:
           menu4b_state.v += menu4b_state.menu[menu4b_state.index].vstep;
@@ -109,7 +109,7 @@ int menu4b_cmd( int cmd_i )
           if( menu4b_state.menu[menu4b_state.index].fun ) {
             menu4b_state.menu[menu4b_state.index].fun( menu4b_state.v );
           }
-          menu4b_state.level = MenuLevel::select;
+          menu4b_state.level = MenuLevel::sel;
           break;
         default: break;
       };
@@ -128,7 +128,7 @@ int menu4b_cmd( int cmd_i )
   switch( menu4b_state.level ) {
     case MenuLevel::ready:
       break;
-    case MenuLevel::select:
+    case MenuLevel::sel:
       if( menu4b_state.menu[menu4b_state.index].pv ) {
         show_v = *menu4b_state.menu[menu4b_state.index].pv;
       }

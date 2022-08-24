@@ -1,3 +1,5 @@
+#include <cerrno>
+
 #include <oxc_auto.h>
 #include <oxc_tim.h>
 

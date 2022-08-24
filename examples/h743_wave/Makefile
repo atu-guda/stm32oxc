@@ -54,7 +54,7 @@ SUBDIRS = \
   53_adcdma_sd \
   x01_fmc \
   x51_adcdma_fmc \
-  x53a_adcdma_n_fmc_sdcard/
+  x53a_adcdma_n_fmc_sdcard \
   80_math_stat \
 
 

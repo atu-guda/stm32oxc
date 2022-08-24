@@ -233,7 +233,7 @@ int cmd_setcalibr( int argc, const char * const * argv )
 {
   float calibr_I_lsb = arg2float_d( 1, argc, argv, ina226.get_I_lsb_mA()  * 1e-3f, 1e-20f, 1e10f );
   float calibr_R     = arg2float_d( 2, argc, argv, ina226.get_R_sh_uOhm() * 1e-6f, 1e-20f, 1e10f );
-  float V_sh_max =  INA226::lsb_V_sh_nv * 1e-9f * 0x7FFF;
+  float V_sh_max =  (int)(INA226::lsb_V_sh_nv) * 1e-9f * 0x7FFF;
   ina226.set_calibr_val( (uint32_t)(calibr_R * 1e6f), (uint32_t)(calibr_I_lsb * 1e3f) );
   std_out << "# calibr_I_lsb= " << calibr_I_lsb << " calibr_R= " << calibr_R
      << " V_sh_max=  " << V_sh_max

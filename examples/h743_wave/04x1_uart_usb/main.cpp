@@ -1,3 +1,5 @@
+#include <cerrno>
+
 #include <oxc_auto.h>
 
 #include <usbd_cdc.h>

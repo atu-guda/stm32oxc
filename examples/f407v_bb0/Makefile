@@ -54,7 +54,8 @@ SUBDIRS = \
   80_math_stat \
   82_picoc \
   83_usbh_msc \
-  84_usbh_msc_picoc
+  84_usbh_msc_picoc \
+  l01_cube0
 
 ALL : examples_board
 

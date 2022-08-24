@@ -1,4 +1,5 @@
 #include <cstring>
+#include <cerrno>
 
 #include <oxc_auto.h>
 
@@ -127,7 +128,6 @@ int cmd_test0( int argc, const char * const * argv )
 
   uint32_t sampl_t_idx = UVAR('s');
   if( sampl_t_idx >= adc_n_sampl_times ) { sampl_t_idx = adc_n_sampl_times-1; };
-  uint32_t f_sampl_ser = 25000000 / ( sampl_times_cycles[sampl_t_idx] * n_ch );
 
   t_step =  (UVAR('a')+1) * (UVAR('p')+1); // in timer input ticks
   uint32_t tim_f = tim_freq_in / t_step; // timer update freq
@@ -140,8 +140,7 @@ int cmd_test0( int argc, const char * const * argv )
   pr( NL "Test0: n= " ); pr_d( n ); pr( " n_ch= " ); pr_d( n_ch );
   pr( " tim_f= " ); pr_d( tim_f );
   pr( " t_step= " ); pr_d( t_step );
-  pr( " us;  f_sampl_ser= " ); pr_d( f_sampl_ser );
-  pr( " t_wait0= " ); pr_d( t_wait0 );  pr( NL );
+  pr( " us;  t_wait0= " ); pr_d( t_wait0 );  pr( NL );
   ifcvt( t_step, 1000000, buf, 6 );
   pr( " t_step= " ); pr( buf );
   pr( NL );

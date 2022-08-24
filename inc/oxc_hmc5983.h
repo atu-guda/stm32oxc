@@ -87,7 +87,7 @@ class HMC5983 : public I2CClient {
    bool init( CRA odr = cra_odr_75_Hz, Scales scale = scale_1_9 );
    bool read1( int32_t wait_ms = -1 ); // per 1  wait loop, def=no wait, max_loops
    bool startAuto();
-   bool readNextAuto(int32_t wait_ms = -1 );
+   // bool readNextAuto(int32_t wait_ms = -1 ); // TODO: redefine or drop
    bool stopAuto();
    int16_t getReg( uint8_t reg ); // reg is 16-bit
    bool    getRegs( uint8_t reg1, uint8_t n, int16_t *data );

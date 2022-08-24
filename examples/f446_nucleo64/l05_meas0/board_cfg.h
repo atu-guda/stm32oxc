@@ -8,6 +8,8 @@
 
 #define def_stksz 512
 
+#define DELAY_APPROX_COEFF  5010
+
 // special leds C10:C11
 #define BOARD_N_LEDS 2
 #define BOARD_LEDS_GPIOX C
@@ -28,6 +30,20 @@
 #define BOARD_BTN0_ACTIVE_DOWN 0
 #define BOARD_BTN0_IRQNAME  EXTI15_10
 
+
+#define TIM_EXA        TIM1
+#define TIM_EXA_STR    "TIM1"
+#define TIM_EXA_GPIO   GpioA
+#define TIM_EXA_PIN1   GPIO_PIN_8
+#define TIM_EXA_PIN2   GPIO_PIN_9
+#define TIM_EXA_PIN3   GPIO_PIN_10
+#define TIM_EXA_PIN4   GPIO_PIN_11
+#define TIM_EXA_PINS   ( TIM_EXA_PIN1 | TIM_EXA_PIN2 | TIM_EXA_PIN3 | TIM_EXA_PIN4 )
+#define TIM_EXA_CLKEN  __GPIOA_CLK_ENABLE(); __TIM1_CLK_ENABLE();
+#define TIM_EXA_CLKDIS __TIM1_CLK_DISABLE();
+#define TIM_EXA_GPIOAF GPIO_AF1_TIM1
+#define TIM_EXA_IRQ    TIM1_CC_IRQn
+#define TIM_EXA_IRQHANDLER    TIM1_CC_IRQHandler
 
 #define SD_EXA_CK_GPIO   GpioC
 #define SD_EXA_CK_PIN    12
@@ -61,6 +77,13 @@
 #define BOARD_I2C_DEFAULT_IRQ           I2C1_EV_IRQn
 #define BOARD_I2C_DEFAULT_IRQHANDLER    I2C1_EV_IRQHandler
 
+#define BOARD_IN0_GPIO                  GpioC
+#define BOARD_IN0_PINNUM                10
+#define BOARD_IN1_GPIO                  GpioC
+#define BOARD_IN1_PINNUM                11
+#define BOARD_IN2_GPIO                  GpioC
+#define BOARD_IN2_PINNUM                12
+
 
 #define BOARD_SPI_DEFAULT               SPI2
 #define BOARD_SPI_DEFAULT_NAME          "SPI2"
@@ -83,13 +106,15 @@
 #define BOARD_SPI_DEFAULT_DISABLE       __SPI2_CLK_DISABLE();
 #define BOARD_SPI_DEFAULT_IRQ           SPI2_IRQn
 #define BOARD_SPI_DEFAULT_IRQHANDLER    SPI2_IRQHandler
+#define BOARD_SPI_BAUDRATEPRESCALER_FAST SPI_BAUDRATEPRESCALER_2
 
 
+// A8-A11
 #define BOARD_MOTOR_DEFAULT_GPIO        GpioA
 #define BOARD_MOTOR_DEFAULT_PIN0        8
 
 #define BOARD_1W_DEFAULT_GPIO           GpioC
-#define BOARD_1W_DEFAULT_PIN            4
+#define BOARD_1W_DEFAULT_PIN            GPIO_PIN_4
 
 // A0, A1, A6, A7 (0,1,5,7)
 #define BOARD_ADC_DEFAULT_DEV           ADC1
@@ -109,7 +134,31 @@
 #define BOARD_ADC_DEFAULT_CH3           ADC_CHANNEL_13
 #define BOARD_ADC_MEM_MAX               (1024*64)
 // #define BOARD_ADC_MEM_MAX_FMC           (1024*1024*8)
-#define BOARD_ADC_COEFF                 3250
+#define BOARD_ADC_COEFF                 3250000
+#define BOARD_ADC_MALLOC                ::malloc
+#define BOARD_ADC_FREE                  ::free
+// #define BOARD_ADC_MALLOC_EXT            malloc_fmc
+// #define BOARD_ADC_FREE_EXT              free_fmc
+
+#define BOARD_ADC_DEFAULT_CLOCK         ADC_CLOCK_SYNC_PCLK_DIV4
+#define BOARD_ADC_DEFAULT_SAMPL_LARGE   ADC_SAMPLETIME_480CYCLES
+#define BOARD_ADC_DEFAULT_RESOLUTION    ADC_RESOLUTION_12B
+#define BOARD_ADC_DEFAULT_BITS          12
+#define BOARD_ADC_DEFAULT_MAX           0x0FFF
+#define BOARD_ADC_IRQ                   ADC_IRQn
+#define BOARD_ADC_IRQHANDLER            ADC_IRQHandler
+#define BOARD_ADC_DMA_INSTANCE          DMA2_Stream0
+#define BOARD_ADC_DMA_CHANNEL           DMA_CHANNEL_0
+// #define BOARD_ADC_DMA_REQUEST           DMA_REQUEST_ADC1
+#define BOARD_ADC_DMA_DEFAULT_EN        __HAL_RCC_DMA2_CLK_ENABLE();
+#define BOARD_ADC_DMA_DEFAULT_DIS       __HAL_RCC_DMA2_CLK_DISABLE();
+#define BOARD_ADC_DMA_IRQ               DMA2_Stream0_IRQn
+#define BOARD_ADC_DMA_IRQHANDLER        DMA2_Stream0_IRQHandler
+#define BOARD_ADC_DEFAULT_TRIG          ADC_EXTERNALTRIG2_T2_TRGO
+#define BOARD_ADC_DEFAULT_DBLBUF        ((uint32_t)DMA_SxCR_DBM)
+
+//void* malloc_fmc( size_t sz ); // only all FMC memory for now
+//void  free_fmc( void* ptr );
 
 // 0 = DEVICE_FS, 1 = DEVICE_HS
 #define BOARD_USB_DEFAULT_TYPE       0

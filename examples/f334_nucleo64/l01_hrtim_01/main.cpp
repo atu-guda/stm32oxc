@@ -1,3 +1,5 @@
+#include <cerrno>
+
 #include <oxc_auto.h>
 #include <stm32f3xx_hal_hrtim.h>
 

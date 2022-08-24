@@ -18,6 +18,7 @@ SUBDIRS = \
   38_mcp3204_adc_spi \
   38a_mcp3204_adc_spi_tim \
   80_math_stat \
+  l01_hrtim_01
 
   # 05_usb_console \
   # 07_i2c_lcdt \

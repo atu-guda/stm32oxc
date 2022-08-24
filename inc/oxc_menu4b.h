@@ -21,7 +21,7 @@ enum MenuCmd : uint32_t {
 };
 
 enum MenuLevel {
-  ready = 0, select = 1, edit = 2
+  ready = 0, sel = 1, edit = 2
 };
 
 struct MenuState {

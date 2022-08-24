@@ -1,6 +1,7 @@
 #define _GNU_SOURCE
 #include <algorithm>
 #include <cmath>
+#include <cerrno>
 
 // test code consumption
 // #include <vector>

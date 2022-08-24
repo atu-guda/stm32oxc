@@ -4,6 +4,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <oxc_archdef.h>
 // this includes need only for debug! here USBD_DEBUG_LEVEL = 0
@@ -32,7 +33,6 @@
 #define USBD_malloc               malloc
 #define USBD_free                 free
 #define USBD_memset               memset
-// atu: memcpy seems to be buggy TODO: recheck
 #define USBD_memcpy               memcpy
 
 /* DEBUG macros */

@@ -97,20 +97,9 @@
   */
 /*#define USE_FULL_ASSERT    1*/
 
-/* ################## SPI peripheral configuration ########################## */
-
-/* CRC FEATURE: Use to activate CRC feature inside HAL SPI Driver
-* Activated: CRC code is present inside driver
-* Deactivated: CRC code cleaned from driver
-*/
-
-#define USE_SPI_CRC                     0U
-
 
 
 #include "stm32f3xx_hal_def.h"
-#undef UNUSED
-#define UNUSED(x) ((void)((uint32_t)(x)))
 
 #ifdef HAL_RCC_MODULE_ENABLED
  #include "stm32f3xx_hal_rcc.h"

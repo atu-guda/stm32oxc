@@ -24,6 +24,7 @@ SUBDIRS = \
   12b_tim_cnt \
   12c_tim_pwmcnt \
   12d_tim_ws2812 \
+  12e_tim_doubleshot \
   14_tim_enco \
   15_tim_usonic \
   16_step1 \
@@ -35,6 +36,7 @@ SUBDIRS = \
   22_spi_pcd8544_lcd \
   24_i2c_hmc5983 \
   25_spi_max31855_tcouple \
+  25a_spi_max6672_tcouple2 \
   26_i2c_pca9685 \
   27_i2c_ads1115 \
   27a_i2c_ads1115_pwm \

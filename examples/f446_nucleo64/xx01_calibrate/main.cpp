@@ -1,5 +1,6 @@
 #define _GNU_SOURCE
 #include <cmath>
+#include <cstdio>
 
 #include <oxc_auto.h>
 

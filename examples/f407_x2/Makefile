@@ -32,7 +32,7 @@ SUBDIRS = \
   25a_spi_max6672_tcouple2 \
   26_i2c_pca9685 \
   27_i2c_ads1115 \
-  27_i2c_ads1115 \
+  27a_i2c_ads1115_pwm \
   28_spi_ad9833 \
   29_i2c_ina226 \
   29a_i2c_ina226_pwm \

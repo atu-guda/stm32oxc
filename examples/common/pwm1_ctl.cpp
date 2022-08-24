@@ -89,7 +89,7 @@ void PWMData::set_pwm()
   val_r = clamp( val, vmin, vmax );
   uint32_t scl = tim_h.Instance->ARR;
   using tim_ccr_t = decltype( tim_h.Instance->CCR1 );
-  tim_ccr_t nv = (tim_ccr_t)( val_r * scl / 100 );
+  tim_ccr_t nv = val_r * scl / 100;
   if( nv != tim_h.Instance->CCR1 ) {
     tim_h.Instance->CCR1 = nv;
   }
