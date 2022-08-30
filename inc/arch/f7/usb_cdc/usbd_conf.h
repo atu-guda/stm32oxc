@@ -9,10 +9,9 @@
 #include <oxc_archdef.h>
 // this includes need only for debug! here USBD_DEBUG_LEVEL = 0
 // #include <stdio.h>
-// #include <string.h>
 
-// 2.6.0
-#define USBD_OXC_VERSION 206000
+// 2.11.0
+#define USBD_OXC_VERSION 211000
 
 #define DEVICE_FS               0
 #define DEVICE_HS               1

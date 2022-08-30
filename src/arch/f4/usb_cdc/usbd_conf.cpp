@@ -12,8 +12,8 @@
 #endif
 
 extern "C" {
-  USBD_StatusTypeDef USBD_LL_PrepareReceive( USBD_HandleTypeDef *pdev, uint8_t ep_addr, uint8_t *pbuf, IOSIZE_TYPE size );
-  USBD_StatusTypeDef USBD_LL_Transmit( USBD_HandleTypeDef *pdev, uint8_t ep_addr, uint8_t *pbuf, IOSIZE_TYPE size );
+  USBD_StatusTypeDef USBD_LL_PrepareReceive( USBD_HandleTypeDef *pdev, uint8_t ep_addr, uint8_t *pbuf, uint32_t sz );
+  USBD_StatusTypeDef USBD_LL_Transmit( USBD_HandleTypeDef *pdev, uint8_t ep_addr, uint8_t *pbuf, uint32_t sz );
 }
 
 PCD_HandleTypeDef hpcd;
@@ -504,7 +504,7 @@ USBD_StatusTypeDef USBD_Get_USB_Status( HAL_StatusTypeDef hal_status )
 
   switch (hal_status)
   {
-    case HAL_OK :
+    case HAL_OK:
       usb_status = USBD_OK;
       break;
     case HAL_ERROR:

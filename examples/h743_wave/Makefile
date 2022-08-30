@@ -7,7 +7,6 @@ SUBDIRS = \
   03_uart \
   04_uart_console \
   04a_uart_console_nort \
-  04x1_uart_usb \
   05_usb_console \
   05a_def_console \
   05b_usb_console_nort \
@@ -53,10 +52,12 @@ SUBDIRS = \
   51a_adcdma_n \
   53_adcdma_sd \
   x01_fmc \
+  x37a_ad7606_fmc_sdcard \
   x51_adcdma_fmc \
   x53a_adcdma_n_fmc_sdcard \
   80_math_stat \
 
+#  04x1_uart_usb \
 
 
 ALL : examples_h743_wave

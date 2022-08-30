@@ -5,6 +5,7 @@ SUBDIRS = \
   01a_leds_tim_oxc_mu \
   02_leds_rtos \
   03_uart \
+  03a_uart_x1 \
   03b_uart_x2 \
   03d_uart_x4 \
   04_uart_console \
@@ -59,6 +60,7 @@ SUBDIRS = \
   51a_adcdma_n \
   53_adcdma_sd \
   55_dac0 \
+  60_ut61e_decode \
   80_math_stat \
   l03_motor_fb \
   l04_wheels1 \

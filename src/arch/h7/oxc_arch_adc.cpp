@@ -1,3 +1,4 @@
+#include <cerrno>
 #include <algorithm>
 
 #include <oxc_auto.h> // output and debug

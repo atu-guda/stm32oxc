@@ -22,6 +22,7 @@ SUBDIRS = \
   15_tim_usonic \
   16_step1 \
   17_1w_18b20 \
+  24_i2c_hmc5983 \
   27_i2c_ads1115 \
   27a_i2c_ads1115_pwm \
   29_i2c_ina226 \
