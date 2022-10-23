@@ -8,6 +8,8 @@ BOARD_DEFINE_LEDS;
 
 USBCDC_CONSOLE_DEFINES;
 
+PinsOut ledsx( GpioB, 12, 4 );
+
 const char* common_help_string = "Widing machine control app" NL;
 
 // --- local commands;
@@ -35,6 +37,9 @@ int main(void)
   UVAR('t') = 100;
   UVAR('n') =  20;
 
+  ledsx.initHW();
+  ledsx.reset( 0xFF );
+
   BOARD_POST_INIT_BLINK;
 
   oxc_add_aux_tick_fun( led_task_nortos );
@@ -51,6 +56,7 @@ int cmd_test0( int argc, const char * const * argv )
   std_out <<  "# Test0: n= " << n << " t= " << t_step << NL;
 
   // log_add( "Test0 " );
+  uint8_t l_v = 0;
   uint32_t tm0 = HAL_GetTick();
   uint32_t tc0 = tm0, tc00 = tm0;
 
@@ -64,6 +70,9 @@ int cmd_test0( int argc, const char * const * argv )
     if( UVAR('w') ) {
       std_out.flush();
     }
+    ++l_v;
+    l_v &= 0x0F;
+    ledsx.write( l_v );
     leds.toggle( 1 );
     tmc_prev = tcc;
 
