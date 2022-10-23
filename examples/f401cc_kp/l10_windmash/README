@@ -1,0 +1,14 @@
+Winding machine control
+
+Steps:
+0: console: usb
+
+1: control stepmotors via TMC2209 UART
+  + step(timer)
+
+2: sensors: limit switchs and optocoupler (via expander), extra leds
+
+
+3: interface?
+  LCD, buttons, keyboard, LEDS (+digits)
+
