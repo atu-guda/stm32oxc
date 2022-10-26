@@ -9,10 +9,11 @@ USE_OXC_CONSOLE_USB_CDC = y
 # USE_OXC_CONSOLE_DEFAULT = y
 USE_OXC_I2C = y
 # USE_OXC_SPI = y
-# USE_OXC_TIM = y
+USE_OXC_TIM = y
 # USE_OXC_ADC = y
 # USE_OXC_DAC = y
-# USE_OXC_DMA = y
+USE_OXC_DMA = y
+USE_OXC_UART = y
 # USE_OXC_SD  = y
 # USE_OXC_SDFAT = y
 # USE_FREERTOS = y
@@ -23,9 +24,10 @@ USE_OXC_I2C = y
 
 SRCS += main.cpp
 
+SRCS += oxc_usartio.cpp
 #SRCS += oxc_floatfun.cpp
 #SRCS += oxc_statdata.cpp
-SRCS += oxc_as5600.cpp
+#SRCS += oxc_as5600.cpp
 
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )

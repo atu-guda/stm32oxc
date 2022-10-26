@@ -172,6 +172,7 @@ LDFLAGS += -L$(OXCLD)
 LDFLAGS += -T$(LDSCRIPT)
 LDFLAGS += -Wl,-Map=$(PROJ_NAME).map
 LDFLAGS += -Wl,--gc-sections
+LDFLAGS += -Wl,--no-warn-rwx-segments
 LDFLAGS += $(ARCHFLAGS)
 LDFLAGS += -Wl,--start-group -lc -lgcc -lnosys -Wl,--end-group
 
