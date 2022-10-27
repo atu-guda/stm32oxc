@@ -23,6 +23,7 @@ USE_OXC_UART = y
 
 
 SRCS += main.cpp
+SRCS += uart_wm.cpp
 
 SRCS += oxc_usartio.cpp
 #SRCS += oxc_floatfun.cpp
