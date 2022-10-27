@@ -98,7 +98,7 @@ int cmd_test0( int argc, const char * const * argv )
 
     uint32_t  tcc = HAL_GetTick();
     std_out <<  "i= " << i << "  tick= " << ( tcc - tc00 ) << " dt = " << ( tcc - tcb )
-            << " wr_ok=" << wr_ok << " r_n= " << r_n << " w_n= " << w_n 
+            << " wr_ok=" << wr_ok << " r_n= " << r_n << " w_n= " << w_n
             << ' ' << HexInt( motordrv.getSR() ) << NL;
     dump8( in_buf, 16 );
 

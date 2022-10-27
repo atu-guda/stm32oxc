@@ -23,6 +23,8 @@ class DevIn {
    virtual Chst getc( int w_tick = 0 ) = 0;
    virtual int read( char *s, int l, int w_tick = 0 );
    virtual void unget( char c ) = 0;
+   virtual const char* getInBuf() const { return nullptr; }
+   virtual unsigned getInBufSize() const { return 0; }
 };
 
 // declaration of base io functions

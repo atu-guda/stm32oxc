@@ -176,6 +176,7 @@ int DevIO::read( char *s, int l, int w_tick )
     if( ! k.good() ) {
       return n;
     }
+    *s = k.c;
   }
   return n;
 }

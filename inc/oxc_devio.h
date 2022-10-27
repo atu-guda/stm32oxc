@@ -44,6 +44,8 @@ class DevIO : public DevOut, public DevIn {
    void unget( char c ) override { ibuf.tryPut( c ); }
    void setOnRecv( OnRecvFun a_onRecv ) { onRecv = a_onRecv; };
    void setOnSigInt( SigFun a_onSigInt ) { onSigInt = a_onSigInt; };
+   virtual const char* getInBuf() const override { return ibuf.getBuf(); }
+   virtual unsigned getInBufSize() const override { return ibuf.size(); }
 
    virtual void on_tick_action_tx();
    virtual void on_tick_action_rx();
