@@ -257,7 +257,7 @@ class Chst { // char + status
    enum {
      st_good = 0, st_full = 1, st_empty = 2, st_lock = 4
    };
-   Chst( char ch ) : c( ch ), st( st_good ) {};
+   explicit Chst( char ch ) : c( ch ), st( st_good ) {};
    Chst( char ch, uint8_t a_st ) : c( ch ), st( a_st ) {};
    bool good()   const noexcept { return st == st_good;  }
    bool full()   const noexcept { return st == st_full;  }

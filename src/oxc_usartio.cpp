@@ -28,7 +28,7 @@ Chst UsartIO::getc_p( int w_tick )
   for( int i=0; i<w_tick || w_tick == 0; ++i ) { // w_tick == 0 means forever
     if( checkFlag( UART_FLAG_RXNE ) ) {
       char c = recvRaw();
-      return c;
+      return Chst( c );
     }
     taskYieldFun();
   }

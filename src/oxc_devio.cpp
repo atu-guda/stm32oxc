@@ -75,7 +75,7 @@ Chst DevIO::getc( int w_tick )
     }
   }
 
-  return 0;
+  return Chst( '\0', Chst::st_empty );
 }
 
 void DevIO::on_tick_action_tx()
@@ -194,39 +194,39 @@ int DevIO::read_poll( char *s, int l, int w_tick )
   return n;
 }
 
-#define COMMON_FD_TEST(fd) \
+#define COMMON_FD_TEST(fd, bad_rv ) \
   if( fd < 0 || fd > DEVIO_MAX || !devio_fds[fd] ) {\
-    return 0; \
+    return bad_rv; \
   }
 
 Chst getChar( int fd, int w_tick )
 {
-  COMMON_FD_TEST( fd );
+  COMMON_FD_TEST( fd, Chst( '\0', Chst::st_empty ) );
   return devio_fds[fd]->getc( w_tick );
 }
 
 Chst tryGet( int fd )
 {
-  COMMON_FD_TEST( fd );
+  COMMON_FD_TEST( fd, Chst( '\0', Chst::st_empty ) );
   return devio_fds[fd]->tryGet();
 }
 
 unsigned tryGetLine( int fd, char *d, unsigned max_len )
 {
-  COMMON_FD_TEST( fd );
+  COMMON_FD_TEST( fd, 0 );
   return devio_fds[fd]->tryGetLine( d, max_len );
 }
 
 int unget( int fd, char c )
 {
-  COMMON_FD_TEST( fd );
+  COMMON_FD_TEST( fd, 0 );
   devio_fds[fd]->unget( c );
   return 1;
 }
 
 int ungets( int fd, const char *s )
 {
-  COMMON_FD_TEST( fd );
+  COMMON_FD_TEST( fd, 0 );
   for( ; *s; ++s ) {
     devio_fds[fd]->unget( *s );
   }
@@ -235,30 +235,32 @@ int ungets( int fd, const char *s )
 
 int reset_in( int fd )
 {
-  COMMON_FD_TEST( fd );
+  COMMON_FD_TEST( fd, 0 );
   devio_fds[fd]->reset_in();
   return 1;
 }
 
 int reset_out( int fd )
 {
-  COMMON_FD_TEST( fd );
+  COMMON_FD_TEST( fd, 0 );
   devio_fds[fd]->reset_out();
   return 1;
 }
 
 int reset_io( int fd )
 {
-  COMMON_FD_TEST( fd );
+  COMMON_FD_TEST( fd, 0 );
   devio_fds[fd]->reset();
   return 1;
 }
 
 int write( int fd, const char *s, int l )
 {
-  COMMON_FD_TEST( fd );
+  COMMON_FD_TEST( fd, 0 );
   return devio_fds[fd]->write( s, l );
 }
+
+#undef COMMON_FD_TEST
 
 int pr( const char *s, int fd /* = 1 */ )
 {

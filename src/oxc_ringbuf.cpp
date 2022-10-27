@@ -179,7 +179,7 @@ Chst RingBuf::get_nolock()
     e = 0;
   }
   --sz;
-  return c;
+  return Chst( c );
 }
 
 Chst RingBuf::peek_nolock()
@@ -187,7 +187,7 @@ Chst RingBuf::peek_nolock()
   if( sz < 1 ) {
     return Chst( '\0', Chst::st_empty );
   }
-  return b[e];
+  return Chst( b[e] );
 }
 
 
