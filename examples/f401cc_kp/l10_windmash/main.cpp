@@ -2,6 +2,7 @@
 #include <oxc_usartio.h> // TODO: auto
 
 #include "uart_wm.h"
+#include "oxc_tmc2209.h"
 
 using namespace std;
 using namespace SMLRL;
@@ -43,7 +44,7 @@ int main(void)
   STD_PROLOG_USBCDC;
 
   UVAR('t') = 1000;
-  UVAR('n') =    2;
+  UVAR('n') =    4;
 
   ledsx.initHW();
   ledsx.reset( 0xFF );
@@ -72,13 +73,13 @@ int cmd_test0( int argc, const char * const * argv )
   uint32_t t_step = UVAR('t');
   std_out <<  "# Test0: n= " << n << " t= " << t_step << NL;
 
+  // TMC2209_rwdata rd;
+  TMC2209_rreq  rqd;
   char in_buf[80];
 
   // motordrv.enable();
   motordrv.reset();
 
-  // log_add( "Test0 " );
-  // uint8_t l_v = 0;
   uint32_t tm0 = HAL_GetTick();
   uint32_t tc0 = tm0, tc00 = tm0;
 
@@ -86,15 +87,18 @@ int cmd_test0( int argc, const char * const * argv )
   for( int i=0; i<n && !break_flag; ++i ) {
     motordrv.reset();
     uint32_t  tcb = HAL_GetTick();
+    rqd.fill( UVAR('d'), i );
+    // rqd.crc = (uint8_t)i;
     ledsx.set( 1 );
-    auto w_n = motordrv.write( "ABCDE!", 6 );
+    auto w_n = motordrv.write( (const char*)rqd.rawCData(), sizeof(rqd) );
     auto wr_ok = motordrv.wait_eot( 100 );
-    ledsx.reset( 1 );
+    // ledsx.reset( 1 );
     // auto wr_ok = 1;
 
-    delay_ms( 1 );
+    delay_ms( 10 );
     memset( in_buf, '\x00', sizeof(in_buf) );
-    auto r_n = motordrv.read( in_buf, 16, 10 );
+    ledsx.reset( 1 );
+    auto r_n = motordrv.read( in_buf, 16, 100 );
 
     uint32_t  tcc = HAL_GetTick();
     std_out <<  "i= " << i << "  tick= " << ( tcc - tc00 ) << " dt = " << ( tcc - tcb )
@@ -102,9 +106,6 @@ int cmd_test0( int argc, const char * const * argv )
             << ' ' << HexInt( motordrv.getSR() ) << NL;
     dump8( in_buf, 16 );
 
-    // ++l_v;
-    // l_v &= 0x0F;
-    // ledsx.write( l_v );
     leds.toggle( 1 );
 
     delay_ms_until_brk( &tc0, t_step );

@@ -25,10 +25,11 @@ USE_OXC_UART = y
 SRCS += main.cpp
 SRCS += uart_wm.cpp
 
+SRCS += oxc_tmc2209.cpp
+
 SRCS += oxc_usartio.cpp
 #SRCS += oxc_floatfun.cpp
 #SRCS += oxc_statdata.cpp
-#SRCS += oxc_as5600.cpp
 
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
