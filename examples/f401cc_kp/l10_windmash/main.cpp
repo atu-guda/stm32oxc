@@ -1,4 +1,6 @@
 #include <oxc_auto.h>
+#include <oxc_floatfun.h>
+#include <oxc_tim.h>
 #include <oxc_usartio.h> // TODO: auto
 
 #include "uart_wm.h"
@@ -18,21 +20,36 @@ const char* common_help_string = "Widing machine control app" NL;
 
 TIM_HandleTypeDef tim2_h;
 int tim2_cfg();
+uint32_t calc_TIM_arr_for_base_freq_flt( TIM_TypeDef *tim, float base_freq ); // like from oxc_tim.h buf for float
 
 // UART_CONSOLE_DEFINES
 UART_HandleTypeDef uah_motordrv;
 UsartIO motordrv( &uah_motordrv, USART1 );
 
 STD_USART1_IRQ( motordrv );
+uint32_t TMC2209_read_reg( uint8_t dev, uint8_t reg );
+uint32_t TMC2209_read_reg_n_try( uint8_t dev, uint8_t reg, int n_try );
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
+int cmd_start( int argc, const char * const * argv );
+CmdInfo CMDINFO_START { "start", 'S', cmd_start, " - start motor"  };
+int cmd_stop( int argc, const char * const * argv );
+CmdInfo CMDINFO_STOP { "stop", 'P', cmd_stop, " - stop motor"  };
+int cmd_freq( int argc, const char * const * argv );
+CmdInfo CMDINFO_FREQ { "freq", 'F', cmd_freq, " freq value - set freq for motor"  };
+int cmd_readreg( int argc, const char * const * argv );
+CmdInfo CMDINFO_READREG { "readreg", 'R', cmd_readreg, " reg - read TMC2209 register"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
 
   &CMDINFO_TEST0,
+  &CMDINFO_START,
+  &CMDINFO_STOP,
+  &CMDINFO_FREQ,
+  &CMDINFO_READREG,
   nullptr
 };
 
@@ -46,10 +63,11 @@ int main(void)
 {
   STD_PROLOG_USBCDC;
 
-  UVAR('t') =  1000;
-  UVAR('n') =     4;
+  UVAR('t') =   100;
+  UVAR('n') =     8;
   UVAR('a') = 49999; // ARR
-  UVAR('z') =     0; // auto stop after test
+  UVAR('l') =    10; // delay after write
+  UVAR('d') =     0; // TMC2209 device addr
 
   ledsx.initHW();
   ledsx.reset( 0xFF );
@@ -60,7 +78,6 @@ int main(void)
   if( ! tim2_cfg() ) {
     die4led( 2 );
   }
-  HAL_TIM_PWM_Start( &tim2_h, TIM_CHANNEL_2 );
 
   motordrv.setHandleCbreak( false );
   devio_fds[5] = &motordrv;
@@ -86,8 +103,6 @@ int cmd_test0( int argc, const char * const * argv )
   TMC2209_rreq  rqd;
   char in_buf[80];
 
-  tim2_cfg();
-  HAL_TIM_PWM_Start( &tim2_h, TIM_CHANNEL_2 );
 
   // motordrv.enable();
   motordrv.reset();
@@ -107,26 +122,68 @@ int cmd_test0( int argc, const char * const * argv )
     // ledsx.reset( 1 );
     // auto wr_ok = 1;
 
-    delay_ms( 10 );
+    delay_ms( UVAR('l') );
     memset( in_buf, '\x00', sizeof(in_buf) );
     ledsx.reset( 1 );
     auto r_n = motordrv.read( in_buf, 16, 100 );
 
     uint32_t  tcc = HAL_GetTick();
     std_out <<  "i= " << i << "  tick= " << ( tcc - tc00 ) << " dt = " << ( tcc - tcb )
-            << " wr_ok=" << wr_ok << " r_n= " << r_n << " w_n= " << w_n
-            << ' ' << HexInt( motordrv.getSR() ) << NL;
+            << " wr_ok=" << wr_ok << " r_n= " << r_n << " w_n= " << w_n << NL;
     dump8( in_buf, 16 );
 
     leds.toggle( 1 );
 
     delay_ms_until_brk( &tc0, t_step );
   }
-  tim_print_cfg( TIM2 );
-  if( UVAR('z') ) {
-    HAL_TIM_PWM_Stop( &tim2_h, TIM_CHANNEL_2 );
+
+  return 0;
+}
+
+uint32_t TMC2209_read_reg( uint8_t dev, uint8_t reg )
+{
+  TMC2209_rreq  rqd;
+  rqd.fill( dev, reg );
+
+  motordrv.reset();
+  //ledsx.set( 1 );
+  auto w_n = motordrv.write( (const char*)rqd.rawCData(), sizeof(rqd) );
+  if( w_n != sizeof(rqd) ) {
+    return TMC2209_bad_val;
+  }
+  motordrv.wait_eot( 10 );
+
+  char in_buf[16]; // some more
+  // delay_ms( UVAR('l') );
+  memset( in_buf, '\x00', sizeof(in_buf) );
+  auto r_n = motordrv.read( in_buf, 16, 100 );
+  if( r_n != sizeof(TMC2209_rreq) + sizeof(TMC2209_rwdata) ) {
+    return TMC2209_bad_val;
   }
 
+  TMC2209_rwdata *rd = bit_cast<TMC2209_rwdata*>( in_buf + sizeof(TMC2209_rreq) );
+  // TODO: check crc
+  uint32_t v = __builtin_bswap32( rd->data );
+  return v;
+}
+
+uint32_t TMC2209_read_reg_n_try( uint8_t dev, uint8_t reg, int n_try )
+{
+  for( int i=0; i < n_try; ++i ) {
+    uint32_t v = TMC2209_read_reg( dev, reg );
+    if( v != TMC2209_bad_val ) {
+      return v;
+    }
+    delay_ms( 10 );
+  }
+  return TMC2209_bad_val;
+}
+
+int cmd_readreg( int argc, const char * const * argv )
+{
+  uint8_t reg = (uint8_t) arg2long_d( 1, argc, argv, 0, 0, 127 );
+  uint32_t v = TMC2209_read_reg_n_try( UVAR('d'), reg, 50 );
+  std_out << "Reg " << (int)(reg) << " val: " << HexInt( v ) << ' ' << v << NL;
   return 0;
 }
 
@@ -163,6 +220,38 @@ int tim2_cfg()
   }
   // HAL_TIM_PWM_Start( &tim2_h, TIM_CHANNEL_2 );
   return 1;
+}
+
+int cmd_start( int argc, const char * const * argv )
+{
+  HAL_TIM_PWM_Start( &tim2_h, TIM_CHANNEL_2 );
+  return 0;
+}
+
+int cmd_stop( int argc, const char * const * argv )
+{
+  HAL_TIM_PWM_Stop( &tim2_h, TIM_CHANNEL_2 );
+  return 0;
+}
+
+uint32_t calc_TIM_arr_for_base_freq_flt( TIM_TypeDef *tim, float base_freq )
+{
+  uint32_t freq = get_TIM_cnt_freq( tim ); // cnf_freq
+  uint32_t arr = freq / base_freq - 1;
+  return arr;
+}
+
+int cmd_freq( int argc, const char * const * argv )
+{
+  float freq = arg2float_d( 1, argc, argv, 100.0f, 0.0f, 50000.0f );
+  uint32_t arr = calc_TIM_arr_for_base_freq_flt( TIM2, freq );
+  TIM2->ARR = arr;
+  TIM2->CCR2 = arr / 2;
+  TIM2->CNT = 0;
+
+  tim_print_cfg( TIM2 );
+
+  return 0;
 }
 
 void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim )

@@ -28,7 +28,7 @@ SRCS += uart_wm.cpp
 SRCS += oxc_tmc2209.cpp
 
 SRCS += oxc_usartio.cpp
-#SRCS += oxc_floatfun.cpp
+SRCS += oxc_floatfun.cpp
 #SRCS += oxc_statdata.cpp
 
 

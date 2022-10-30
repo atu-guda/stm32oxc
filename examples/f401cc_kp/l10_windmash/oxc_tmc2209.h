@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <bit>
 
+inline const uint32_t TMC2209_bad_val = 0xFFFFFFFF;
+
 uint8_t TMC22xx_calc_crc( const uint8_t *d, unsigned sz  );
 
 // Structure to write data to TMC2209 and to receive replay from it
