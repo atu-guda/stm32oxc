@@ -20,7 +20,10 @@ const char* common_help_string = "Winding machine control app" NL;
 
 TIM_HandleTypeDef tim2_h;
 TIM_HandleTypeDef tim5_h;
+uint32_t volatile tim2_pulses {0}, tim2_need {0};
 int tim2_cfg();
+void tim2_start();
+void tim2_stop();
 uint32_t calc_TIM_arr_for_base_freq_flt( TIM_TypeDef *tim, float base_freq ); // like from oxc_tim.h buf for float
 
 // UART_CONSOLE_DEFINES
@@ -44,6 +47,8 @@ int cmd_readreg( int argc, const char * const * argv );
 CmdInfo CMDINFO_READREG { "readreg", 'R', cmd_readreg, " reg - read TMC2209 register"  };
 int cmd_writereg( int argc, const char * const * argv );
 CmdInfo CMDINFO_WRITEREG { "writereg", 'W', cmd_writereg, " reg val - write TMC2209 register"  };
+int cmd_go( int argc, const char * const * argv );
+CmdInfo CMDINFO_GO { "go", 'G', cmd_go, " turns - go motor some steps"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -54,6 +59,7 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_FREQ,
   &CMDINFO_READREG,
   &CMDINFO_WRITEREG,
+  &CMDINFO_GO,
   nullptr
 };
 
@@ -269,16 +275,28 @@ int tim2_cfg()
 
 int cmd_start( int argc, const char * const * argv )
 {
+  tim2_need = 0;  tim2_pulses = 0;
+  tim2_start();
+  return 0;
+}
+
+void tim2_start()
+{
   HAL_TIM_PWM_Start_IT( &tim2_h, TIM_CHANNEL_2 );
   __HAL_TIM_DISABLE_IT( &tim2_h, TIM_IT_CC2 ); // we need PWM, but IRQ on update event
   __HAL_TIM_ENABLE_IT( &tim2_h, TIM_IT_UPDATE );
-  return 0;
+}
+
+void tim2_stop()
+{
+  HAL_TIM_PWM_Stop_IT( &tim2_h, TIM_CHANNEL_2 );
+  __HAL_TIM_DISABLE_IT( &tim2_h, TIM_IT_UPDATE );
 }
 
 int cmd_stop( int argc, const char * const * argv )
 {
-  HAL_TIM_PWM_Stop_IT( &tim2_h, TIM_CHANNEL_2 );
-  __HAL_TIM_DISABLE_IT( &tim2_h, TIM_IT_UPDATE );
+  tim2_need = 0;  tim2_pulses = 0;
+  tim2_stop();
   return 0;
 }
 
@@ -298,6 +316,42 @@ int cmd_freq( int argc, const char * const * argv )
   TIM2->CNT = 0;
 
   tim_print_cfg( TIM2 );
+
+  return 0;
+}
+
+int cmd_go( int argc, const char * const * argv )
+{
+  // force stop
+  HAL_TIM_PWM_Stop_IT( &tim2_h, TIM_CHANNEL_2 );
+  __HAL_TIM_DISABLE_IT( &tim2_h, TIM_IT_UPDATE );
+
+  bool rev = false;
+  float turns = arg2float_d( 1, argc, argv, 1.0f, -50000.0f, 50000.0f );
+  if( turns < 0 ) {
+    turns = -turns;
+    rev = true;
+  }
+
+  // TODO: common prepare
+  TMC2209_write_reg( 0, 0, rev ? 0x149 : 0x141 );
+
+  uint32_t pulses = (uint32_t)( turns * 200 * 8 ); // TODO: 200-motor param, 8-drv param
+  tim2_pulses = 0;
+  tim2_need = pulses;
+
+  break_flag = 0;
+  tim2_start();
+  for( int i=0; i<10000000 && !break_flag; ++i ) { // TODO: calc time
+    // TODO: check conditions
+    if( tim2_pulses >= pulses ) {
+      break;
+    }
+    delay_ms( 10 );
+  }
+
+  tim2_stop();
+  tim2_need = 0;  tim2_pulses = 0;
 
   return 0;
 }
@@ -334,6 +388,10 @@ void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
 {
   ++UVAR('y');
   ledsx.toggle( 2 );
+  ++tim2_pulses;
+  if( tim2_need > 0 && tim2_pulses >= tim2_need ) {
+    tim2_stop();
+  }
 }
 
 void TIM5_IRQHandler()
