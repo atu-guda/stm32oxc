@@ -16,9 +16,10 @@ USBCDC_CONSOLE_DEFINES;
 
 PinsOut ledsx( GpioB, 12, 4 );
 
-const char* common_help_string = "Widing machine control app" NL;
+const char* common_help_string = "Winding machine control app" NL;
 
 TIM_HandleTypeDef tim2_h;
+TIM_HandleTypeDef tim5_h;
 int tim2_cfg();
 uint32_t calc_TIM_arr_for_base_freq_flt( TIM_TypeDef *tim, float base_freq ); // like from oxc_tim.h buf for float
 
@@ -225,7 +226,7 @@ int cmd_writereg( int argc, const char * const * argv )
 
 int tim2_cfg()
 {
-  int pbase = UVAR('a');
+  int pbase = UVAR('a'); // TODO: ???
   tim2_h.Instance               = TIM2;
   tim2_h.Init.Prescaler         = calc_TIM_psc_for_cnt_freq( TIM_EXA, 1000000  );
   tim2_h.Init.Period            = pbase;
@@ -241,6 +242,14 @@ int tim2_cfg()
   sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
   HAL_TIM_ConfigClockSource( &tim2_h, &sClockSourceConfig );
 
+  TIM_MasterConfigTypeDef sMasterConfig;
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
+  sMasterConfig.MasterSlaveMode     = TIM_MASTERSLAVEMODE_DISABLE;
+  if( HAL_TIMEx_MasterConfigSynchronization( &tim2_h, &sMasterConfig ) != HAL_OK ) {
+    UVAR('e') = 2;
+    return 0;
+  }
+
   TIM_OC_InitTypeDef tim_oc_cfg;
   tim_oc_cfg.OCMode       = TIM_OCMODE_PWM1;
   tim_oc_cfg.OCPolarity   = TIM_OCPOLARITY_HIGH;
@@ -249,24 +258,27 @@ int tim2_cfg()
   tim_oc_cfg.OCIdleState  = TIM_OCIDLESTATE_RESET;
   tim_oc_cfg.OCNIdleState = TIM_OCNIDLESTATE_RESET;
 
-  HAL_TIM_PWM_Stop( &tim2_h, TIM_CHANNEL_2 );
+  HAL_TIM_PWM_Stop_IT( &tim2_h, TIM_CHANNEL_2 );
   tim_oc_cfg.Pulse = pbase / 2;
   if( HAL_TIM_PWM_ConfigChannel( &tim2_h, &tim_oc_cfg, TIM_CHANNEL_2 ) != HAL_OK ) {
+    UVAR('e') = 3;
     return 0;
   }
-  // HAL_TIM_PWM_Start( &tim2_h, TIM_CHANNEL_2 );
   return 1;
 }
 
 int cmd_start( int argc, const char * const * argv )
 {
-  HAL_TIM_PWM_Start( &tim2_h, TIM_CHANNEL_2 );
+  HAL_TIM_PWM_Start_IT( &tim2_h, TIM_CHANNEL_2 );
+  __HAL_TIM_DISABLE_IT( &tim2_h, TIM_IT_CC2 ); // we need PWM, but IRQ on update event
+  __HAL_TIM_ENABLE_IT( &tim2_h, TIM_IT_UPDATE );
   return 0;
 }
 
 int cmd_stop( int argc, const char * const * argv )
 {
-  HAL_TIM_PWM_Stop( &tim2_h, TIM_CHANNEL_2 );
+  HAL_TIM_PWM_Stop_IT( &tim2_h, TIM_CHANNEL_2 );
+  __HAL_TIM_DISABLE_IT( &tim2_h, TIM_IT_UPDATE );
   return 0;
 }
 
@@ -295,7 +307,9 @@ void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim )
   if( htim->Instance == TIM2 ) {
     __GPIOA_CLK_ENABLE(); __TIM2_CLK_ENABLE();
     GpioA.cfgAF_N( GPIO_PIN_1, 1 );
-    // TIM2_IRQn
+    HAL_NVIC_SetPriority( TIM2_IRQn, 8, 0 );
+    HAL_NVIC_EnableIRQ( TIM2_IRQn );
+    UVAR('z') = 7;
     return;
   }
 
@@ -310,6 +324,62 @@ void HAL_TIM_PWM_MspDeInit( TIM_HandleTypeDef* htim )
     return;
   }
 }
+
+void TIM2_IRQHandler()
+{
+  HAL_TIM_IRQHandler( &tim2_h );
+}
+
+void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
+{
+  ++UVAR('y');
+  ledsx.toggle( 2 );
+}
+
+void TIM5_IRQHandler()
+{
+  HAL_TIM_IRQHandler( &tim5_h );
+}
+
+
+void EXTI0_IRQHandler(void)
+{
+  // HAL_GPIO_EXTI_IRQHandler(SW_ALARM_Pin);
+}
+
+void EXTI1_IRQHandler()
+{
+  // HAL_GPIO_EXTI_IRQHandler(SW_LEV_1_Pin);
+}
+
+void EXTI2_IRQHandler()
+{
+  // HAL_GPIO_EXTI_IRQHandler(SW_LEV_2_Pin);
+}
+
+void EXTI3_IRQHandler()
+{
+  // HAL_GPIO_EXTI_IRQHandler(SW_LIM_L_Pin);
+}
+
+void EXTI4_IRQHandler()
+{
+  // HAL_GPIO_EXTI_IRQHandler(SW_LIM_R_Pin);
+}
+
+void EXTI9_5_IRQHandler()
+{
+  // HAL_GPIO_EXTI_IRQHandler(OP_LIM_L_Pin);
+  // HAL_GPIO_EXTI_IRQHandler(OP_LIM_R_Pin);
+  // HAL_GPIO_EXTI_IRQHandler(HALL_ROT_Pin);
+}
+
+
+void EXTI15_10_IRQHandler()
+{
+  // HAL_GPIO_EXTI_IRQHandler(SW_LEV_3_Pin);
+}
+
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 
