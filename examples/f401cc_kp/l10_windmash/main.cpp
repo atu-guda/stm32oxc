@@ -41,6 +41,8 @@ int cmd_freq( int argc, const char * const * argv );
 CmdInfo CMDINFO_FREQ { "freq", 'F', cmd_freq, " freq value - set freq for motor"  };
 int cmd_readreg( int argc, const char * const * argv );
 CmdInfo CMDINFO_READREG { "readreg", 'R', cmd_readreg, " reg - read TMC2209 register"  };
+int cmd_writereg( int argc, const char * const * argv );
+CmdInfo CMDINFO_WRITEREG { "writereg", 'W', cmd_writereg, " reg val - write TMC2209 register"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -50,6 +52,7 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_STOP,
   &CMDINFO_FREQ,
   &CMDINFO_READREG,
+  &CMDINFO_WRITEREG,
   nullptr
 };
 
@@ -66,7 +69,7 @@ int main(void)
   UVAR('t') =   100;
   UVAR('n') =     8;
   UVAR('a') = 49999; // ARR
-  UVAR('l') =    10; // delay after write
+  UVAR('l') =     1; // delay after write
   UVAR('d') =     0; // TMC2209 device addr
 
   ledsx.initHW();
@@ -99,12 +102,9 @@ int cmd_test0( int argc, const char * const * argv )
   uint32_t t_step = UVAR('t');
   std_out <<  "# Test0: n= " << n << " t= " << t_step << NL;
 
-  // TMC2209_rwdata rd;
   TMC2209_rreq  rqd;
   char in_buf[80];
 
-
-  // motordrv.enable();
   motordrv.reset();
 
   uint32_t tm0 = HAL_GetTick();
@@ -140,24 +140,46 @@ int cmd_test0( int argc, const char * const * argv )
   return 0;
 }
 
+// TODO: to class
+int TMC2209_write_reg( uint8_t dev, uint8_t reg, uint32_t v )
+{
+  TMC2209_rwdata wd;
+  wd.fill( dev, reg, v );
+  auto w_n = motordrv.write( (const char*)wd.rawCData(), sizeof(wd) );
+  if( w_n != sizeof(wd) ) {
+    return 0;
+  }
+  motordrv.wait_eot( 10 );
+  return 1;
+}
+
 uint32_t TMC2209_read_reg( uint8_t dev, uint8_t reg )
 {
   TMC2209_rreq  rqd;
   rqd.fill( dev, reg );
 
   motordrv.reset();
-  //ledsx.set( 1 );
+
+  ledsx.set( 1 );
+
   auto w_n = motordrv.write( (const char*)rqd.rawCData(), sizeof(rqd) );
   if( w_n != sizeof(rqd) ) {
+    std_out << "# Err: w_n = " << w_n << NL;
     return TMC2209_bad_val;
   }
   motordrv.wait_eot( 10 );
 
   char in_buf[16]; // some more
-  // delay_ms( UVAR('l') );
+
+  delay_ms( UVAR('l') );
+
   memset( in_buf, '\x00', sizeof(in_buf) );
   auto r_n = motordrv.read( in_buf, 16, 100 );
+
+  ledsx.reset( 1 );
+
   if( r_n != sizeof(TMC2209_rreq) + sizeof(TMC2209_rwdata) ) {
+    std_out << "# Err: r_n = " << r_n << NL;
     return TMC2209_bad_val;
   }
 
@@ -174,7 +196,7 @@ uint32_t TMC2209_read_reg_n_try( uint8_t dev, uint8_t reg, int n_try )
     if( v != TMC2209_bad_val ) {
       return v;
     }
-    delay_ms( 10 );
+    delay_ms( 50 );
   }
   return TMC2209_bad_val;
 }
@@ -184,6 +206,20 @@ int cmd_readreg( int argc, const char * const * argv )
   uint8_t reg = (uint8_t) arg2long_d( 1, argc, argv, 0, 0, 127 );
   uint32_t v = TMC2209_read_reg_n_try( UVAR('d'), reg, 50 );
   std_out << "Reg " << (int)(reg) << " val: " << HexInt( v ) << ' ' << v << NL;
+  return 0;
+}
+
+int cmd_writereg( int argc, const char * const * argv )
+{
+  uint8_t reg = (uint8_t) arg2long_d( 1, argc, argv, 2, 0, 127 ); // 2 - read-only reg - to detect empty param
+  uint32_t  v =           arg2long_d( 2, argc, argv, 0x7FFFFFFF, 0, 0x7FFFFFFF ); // bad value - the same
+  std_out << "# Reg " << (int)(reg) << " val: " << HexInt( v ) << ' ' << v <<  NL;
+  if( reg == 2 || reg == 4 || v == 0x7FFFFFFF ) {
+    std_out << "Error: need 2 correct arguments " << NL;
+    return 1;
+  }
+  int rc = TMC2209_write_reg( UVAR('d'), reg, v );
+  std_out << "# rc= " << rc << NL;
   return 0;
 }
 
