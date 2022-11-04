@@ -33,6 +33,7 @@ UsartIO motordrv( &uah_motordrv, USART1 );
 STD_USART1_IRQ( motordrv );
 uint32_t TMC2209_read_reg( uint8_t dev, uint8_t reg );
 uint32_t TMC2209_read_reg_n_try( uint8_t dev, uint8_t reg, int n_try );
+int TMC2209_write_reg( uint8_t dev, uint8_t reg, uint32_t v );
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -74,9 +75,9 @@ int main(void)
   STD_PROLOG_USBCDC;
 
   UVAR('t') =   100;
-  UVAR('n') =     8;
+  UVAR('n') =     2;
   UVAR('a') = 49999; // ARR
-  UVAR('l') =     1; // delay after write
+  UVAR('l') =    20; // delay
   UVAR('d') =     0; // TMC2209 device addr
 
   ledsx.initHW();
@@ -129,7 +130,7 @@ int cmd_test0( int argc, const char * const * argv )
     // ledsx.reset( 1 );
     // auto wr_ok = 1;
 
-    delay_ms( UVAR('l') );
+    delay_ms( 1 );
     memset( in_buf, '\x00', sizeof(in_buf) );
     ledsx.reset( 1 );
     auto r_n = motordrv.read( in_buf, 16, 100 );
@@ -144,6 +145,14 @@ int cmd_test0( int argc, const char * const * argv )
     delay_ms_until_brk( &tc0, t_step );
   }
 
+  uint32_t r1 = TMC2209_read_reg( 0, 2 );
+  TMC2209_write_reg( 0, 1, 0x149 );
+  uint32_t r2 = TMC2209_read_reg( 0, 2 );
+  TMC2209_write_reg( 0, 1, 0x149 );
+  TMC2209_write_reg( 0, 1, 0x141 );
+  uint32_t r3 = TMC2209_read_reg( 0, 2 );
+  std_out << "# R2: r1= " << HexInt( r1 ) << "  r2= " << HexInt( r2 ) << "  r3= " << HexInt( r3 ) <<NL;
+
   return 0;
 }
 
@@ -152,10 +161,11 @@ int TMC2209_write_reg( uint8_t dev, uint8_t reg, uint32_t v )
 {
   TMC2209_rwdata wd;
   wd.fill( dev, reg, v );
-  auto w_n = motordrv.write( (const char*)wd.rawCData(), sizeof(wd) );
+  auto w_n = motordrv.write_s( (const char*)wd.rawCData(), sizeof(wd) );
   if( w_n != sizeof(wd) ) {
     return 0;
   }
+  delay_mcs( 200 );
   motordrv.wait_eot( 10 );
   return 1;
 }
@@ -169,7 +179,7 @@ uint32_t TMC2209_read_reg( uint8_t dev, uint8_t reg )
 
   ledsx.set( 1 );
 
-  auto w_n = motordrv.write( (const char*)rqd.rawCData(), sizeof(rqd) );
+  auto w_n = motordrv.write_s( (const char*)rqd.rawCData(), sizeof(rqd) );
   if( w_n != sizeof(rqd) ) {
     std_out << "# Err: w_n = " << w_n << NL;
     return TMC2209_bad_val;
@@ -178,12 +188,13 @@ uint32_t TMC2209_read_reg( uint8_t dev, uint8_t reg )
 
   char in_buf[16]; // some more
 
-  delay_ms( UVAR('l') );
+  delay_ms( 1 ); // TODO: config
 
   memset( in_buf, '\x00', sizeof(in_buf) );
+  ledsx.reset( 1 );
+
   auto r_n = motordrv.read( in_buf, 16, 100 );
 
-  ledsx.reset( 1 );
 
   if( r_n != sizeof(TMC2209_rreq) + sizeof(TMC2209_rwdata) ) {
     std_out << "# Err: r_n = " << r_n << NL;
@@ -193,6 +204,7 @@ uint32_t TMC2209_read_reg( uint8_t dev, uint8_t reg )
   TMC2209_rwdata *rd = bit_cast<TMC2209_rwdata*>( in_buf + sizeof(TMC2209_rreq) );
   // TODO: check crc
   uint32_t v = __builtin_bswap32( rd->data );
+  delay_mcs( 100 );
   return v;
 }
 
@@ -339,6 +351,10 @@ int cmd_go( int argc, const char * const * argv )
   uint32_t pulses = (uint32_t)( turns * 200 * 8 ); // TODO: 200-motor param, 8-drv param
   tim2_pulses = 0;
   tim2_need = pulses;
+  auto dt = UVAR('l');
+
+  uint32_t tm0 = HAL_GetTick();
+  uint32_t tc0 = tm0;
 
   break_flag = 0;
   tim2_start();
@@ -347,7 +363,12 @@ int cmd_go( int argc, const char * const * argv )
     if( tim2_pulses >= pulses ) {
       break;
     }
-    delay_ms( 10 );
+    uint32_t r6F = TMC2209_read_reg( 0, 0x6F );
+    uint32_t r41 = TMC2209_read_reg( 0, 0x41 );
+
+    uint32_t tc = HAL_GetTick();
+    std_out << HexInt( r6F ) << ' ' << HexInt( r41 ) << ' ' << (int)( tc - tm0 ) << NL;
+    delay_ms_until_brk( &tc0, dt );
   }
 
   tim2_stop();

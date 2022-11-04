@@ -23,7 +23,7 @@ USE_OXC_UART = y
 
 
 SRCS += main.cpp
-SRCS += uart_wm.cpp
+#SRCS += uart_wm.cpp
 
 SRCS += oxc_tmc2209.cpp
 
