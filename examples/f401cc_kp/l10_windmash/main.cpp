@@ -26,15 +26,15 @@ PinsIn pins_user_stop(   USER_STOP_GPIO,   USER_STOP_PIN0,   USER_STOP_N );
 volatile uint32_t porta_sensors_bits {0};
 volatile uint32_t portb_sensors_bits {0};
 // no user pins for now
-const uint32_t porta_sensor_mask = SWLIM_BIT_LR |  SWLIM_BIT_LL |  SWLIM_BIT_OR |  SWLIM_BIT_OL;
-const uint32_t portb_sensor_mask = TOWER_BIT_UP | TOWER_BIT_CE | TOWER_BIT_DW | DIAG_BIT_ROT | DIAG_BIT_MOV;
+const uint32_t porta_sensor_mask = SWLIM_BITS_ALL;
+const uint32_t portb_sensor_mask = TOWER_BITS_ALL | DIAG_BITS_ALL;
 bool read_sensors(); // returns true at bad condition
 
 const char* common_help_string = "Winding machine control app" NL;
 
 TIM_HandleTypeDef tim2_h;
 TIM_HandleTypeDef tim5_h;
-uint32_t volatile tim2_pulses {0}, tim2_need {0}, tim5_pulses {0};
+uint32_t volatile tim2_pulses {0}, tim2_need {0}, tim5_pulses {0}, tim5_need {0};
 int tim2_cfg();
 void tim2_start();
 void tim2_stop();
@@ -165,8 +165,6 @@ int cmd_test0( int argc, const char * const * argv )
     std_out <<  "i= " << i << "  tick= " << ( tcc - tc00 ) << " dt = " << ( tcc - tcb )
             << " wr_ok=" << wr_ok << " r_n= " << r_n << " w_n= " << w_n << NL;
     dump8( in_buf, 16 );
-
-    leds.toggle( 1 );
 
     delay_ms_until_brk( &tc0, t_step );
   }
@@ -556,6 +554,14 @@ void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
     ++UVAR('x');
     ++tim5_pulses;
     ledsx.toggle( 4 );
+    uint32_t pa = SWLIM_GPIO.IDR & SWLIM_BITS_ALL;
+    if( pa != SWLIM_BITS_ALL ) {
+      tim5_stop();
+      tim2_stop();
+    }
+    if( tim5_need > 0 && tim5_pulses >= tim5_need ) {
+      tim5_stop();
+    }
     return;
   }
 }
