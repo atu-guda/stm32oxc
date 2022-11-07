@@ -3,7 +3,7 @@
 #include <oxc_tim.h>
 #include <oxc_usartio.h> // TODO: auto
 
-#include "uart_wm.h"
+#include "main.h"
 #include "oxc_tmc2209.h"
 
 using namespace std;
@@ -16,14 +16,31 @@ USBCDC_CONSOLE_DEFINES;
 
 PinsOut ledsx( GpioB, 12, 4 );
 
+
+PinsIn pins_tower( TOWER_GPIO, TOWER_PIN0, TOWER_N );
+PinsIn pins_swlim( SWLIM_GPIO, SWLIM_PIN0, SWLIM_N );
+PinsIn pins_diag (  DIAG_GPIO,  DIAG_PIN0,  DIAG_N );
+PinsIn pins_user_start( USER_START_GPIO,  USER_START_PIN0,  USER_START_N );
+PinsIn pins_user_stop(   USER_STOP_GPIO,   USER_STOP_PIN0,   USER_STOP_N );
+
+volatile uint32_t porta_sensors_bits {0};
+volatile uint32_t portb_sensors_bits {0};
+// no user pins for now
+const uint32_t porta_sensor_mask = SWLIM_BIT_LR |  SWLIM_BIT_LL |  SWLIM_BIT_OR |  SWLIM_BIT_OL;
+const uint32_t portb_sensor_mask = TOWER_BIT_UP | TOWER_BIT_CE | TOWER_BIT_DW | DIAG_BIT_ROT | DIAG_BIT_MOV;
+bool read_sensors(); // returns true at bad condition
+
 const char* common_help_string = "Winding machine control app" NL;
 
 TIM_HandleTypeDef tim2_h;
 TIM_HandleTypeDef tim5_h;
-uint32_t volatile tim2_pulses {0}, tim2_need {0};
+uint32_t volatile tim2_pulses {0}, tim2_need {0}, tim5_pulses {0};
 int tim2_cfg();
 void tim2_start();
 void tim2_stop();
+int tim5_cfg();
+void tim5_start();
+void tim5_stop();
 uint32_t calc_TIM_arr_for_base_freq_flt( TIM_TypeDef *tim, float base_freq ); // like from oxc_tim.h buf for float
 
 // UART_CONSOLE_DEFINES
@@ -43,7 +60,7 @@ CmdInfo CMDINFO_START { "start", 'S', cmd_start, " - start motor"  };
 int cmd_stop( int argc, const char * const * argv );
 CmdInfo CMDINFO_STOP { "stop", 'P', cmd_stop, " - stop motor"  };
 int cmd_freq( int argc, const char * const * argv );
-CmdInfo CMDINFO_FREQ { "freq", 'F', cmd_freq, " freq value - set freq for motor"  };
+CmdInfo CMDINFO_FREQ { "freq", 'F', cmd_freq, " freq_value [dev] - set freq for motor"  };
 int cmd_readreg( int argc, const char * const * argv );
 CmdInfo CMDINFO_READREG { "readreg", 'R', cmd_readreg, " reg - read TMC2209 register"  };
 int cmd_writereg( int argc, const char * const * argv );
@@ -83,11 +100,20 @@ int main(void)
   ledsx.initHW();
   ledsx.reset( 0xFF );
 
+  pins_tower.initHW();
+  pins_swlim.initHW();
+  pins_diag.initHW();
+  pins_user_start.initHW();
+  pins_user_stop.initHW();
+
   if( ! init_uart( &uah_motordrv ) ) {
     die4led( 1 );
   }
   if( ! tim2_cfg() ) {
     die4led( 2 );
+  }
+  if( ! tim5_cfg() ) {
+    die4led( 3 );
   }
 
   motordrv.setHandleCbreak( false );
@@ -244,7 +270,7 @@ int cmd_writereg( int argc, const char * const * argv )
 
 int tim2_cfg()
 {
-  int pbase = UVAR('a'); // TODO: ???
+  int pbase = 49999; // TODO: ???
   tim2_h.Instance               = TIM2;
   tim2_h.Init.Prescaler         = calc_TIM_psc_for_cnt_freq( TIM_EXA, 1000000  );
   tim2_h.Init.Period            = pbase;
@@ -285,11 +311,47 @@ int tim2_cfg()
   return 1;
 }
 
-int cmd_start( int argc, const char * const * argv )
+int tim5_cfg()
 {
-  tim2_need = 0;  tim2_pulses = 0;
-  tim2_start();
-  return 0;
+  int pbase = 49999;
+  tim5_h.Instance               = TIM5;
+  tim5_h.Init.Prescaler         = calc_TIM_psc_for_cnt_freq( TIM5, 1000000  );
+  tim5_h.Init.Period            = pbase;
+  tim5_h.Init.ClockDivision     = 0;
+  tim5_h.Init.CounterMode       = TIM_COUNTERMODE_UP;
+  tim5_h.Init.RepetitionCounter = 0;
+  if( HAL_TIM_PWM_Init( &tim5_h ) != HAL_OK ) {
+    UVAR('e') = 3; // like error
+    return 0;
+  }
+
+  TIM_ClockConfigTypeDef sClockSourceConfig;
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  HAL_TIM_ConfigClockSource( &tim5_h, &sClockSourceConfig );
+
+  TIM_MasterConfigTypeDef sMasterConfig;
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
+  sMasterConfig.MasterSlaveMode     = TIM_MASTERSLAVEMODE_DISABLE;
+  if( HAL_TIMEx_MasterConfigSynchronization( &tim5_h, &sMasterConfig ) != HAL_OK ) {
+    UVAR('e') = 4;
+    return 0;
+  }
+
+  TIM_OC_InitTypeDef tim_oc_cfg;
+  tim_oc_cfg.OCMode       = TIM_OCMODE_PWM1;
+  tim_oc_cfg.OCPolarity   = TIM_OCPOLARITY_HIGH;
+  tim_oc_cfg.OCNPolarity  = TIM_OCNPOLARITY_HIGH;
+  tim_oc_cfg.OCFastMode   = TIM_OCFAST_DISABLE;
+  tim_oc_cfg.OCIdleState  = TIM_OCIDLESTATE_RESET;
+  tim_oc_cfg.OCNIdleState = TIM_OCNIDLESTATE_RESET;
+
+  HAL_TIM_PWM_Stop_IT( &tim5_h, TIM_CHANNEL_3 );
+  tim_oc_cfg.Pulse = pbase / 2;
+  if( HAL_TIM_PWM_ConfigChannel( &tim5_h, &tim_oc_cfg, TIM_CHANNEL_3 ) != HAL_OK ) {
+    UVAR('e') = 5;
+    return 0;
+  }
+  return 1;
 }
 
 void tim2_start()
@@ -305,10 +367,48 @@ void tim2_stop()
   __HAL_TIM_DISABLE_IT( &tim2_h, TIM_IT_UPDATE );
 }
 
+void tim5_start()
+{
+  HAL_TIM_PWM_Start_IT( &tim5_h, TIM_CHANNEL_3 );
+  __HAL_TIM_DISABLE_IT( &tim5_h, TIM_IT_CC3 ); // we need PWM, but IRQ on update event
+  __HAL_TIM_ENABLE_IT( &tim5_h, TIM_IT_UPDATE );
+}
+
+void tim5_stop()
+{
+  HAL_TIM_PWM_Stop_IT( &tim5_h, TIM_CHANNEL_3 );
+  __HAL_TIM_DISABLE_IT( &tim5_h, TIM_IT_UPDATE );
+}
+
+
+bool read_sensors()
+{
+  porta_sensors_bits = GPIOA->IDR & porta_sensor_mask;
+  portb_sensors_bits = GPIOB->IDR & portb_sensor_mask;
+  return porta_sensors_bits != porta_sensor_mask; //
+}
+
+int cmd_start( int argc, const char * const * argv )
+{
+  int devs = arg2long_d( 1, argc, argv, 3, 0, 3 );
+  if( devs & 1 ) {
+    tim2_need = 0;  tim2_pulses = 0;
+    tim2_start();
+    std_out << "# TIM2 start " << NL;
+  }
+  if( devs & 2 ) {
+    tim5_pulses = 0;
+    tim5_start();
+    std_out << "# TIM5 start " << NL;
+  }
+  return 0;
+}
+
 int cmd_stop( int argc, const char * const * argv )
 {
-  tim2_need = 0;  tim2_pulses = 0;
+  tim2_need = 0;  tim2_pulses = 0;  tim5_pulses = 0;
   tim2_stop();
+  tim5_stop();
   return 0;
 }
 
@@ -322,21 +422,27 @@ uint32_t calc_TIM_arr_for_base_freq_flt( TIM_TypeDef *tim, float base_freq )
 int cmd_freq( int argc, const char * const * argv )
 {
   float freq = arg2float_d( 1, argc, argv, 100.0f, 0.0f, 50000.0f );
-  uint32_t arr = calc_TIM_arr_for_base_freq_flt( TIM2, freq );
-  TIM2->ARR = arr;
-  TIM2->CCR2 = arr / 2;
-  TIM2->CNT = 0;
+  int dev = arg2long_d( 2, argc, argv, 0, 0, 1 );
+  auto tim = ( dev == 0 ) ? TIM2 : TIM5;
+  uint32_t arr = calc_TIM_arr_for_base_freq_flt( tim, freq );
+  std_out << "# freq= " << freq << ' ' << " ARR= " << arr << " dev= " << dev << NL;
+  tim->ARR = arr;
+  if( dev ) {
+    tim->CCR3 = arr / 2;
+  } else {
+    tim->CCR2 = arr / 2;
+  }
+  tim->CNT = 0;
 
   tim_print_cfg( TIM2 );
+  tim_print_cfg( TIM5 );
 
   return 0;
 }
 
 int cmd_go( int argc, const char * const * argv )
 {
-  // force stop
-  HAL_TIM_PWM_Stop_IT( &tim2_h, TIM_CHANNEL_2 );
-  __HAL_TIM_DISABLE_IT( &tim2_h, TIM_IT_UPDATE );
+  tim2_stop(); tim5_stop();
 
   bool rev = false;
   float turns = arg2float_d( 1, argc, argv, 1.0f, -50000.0f, 50000.0f );
@@ -347,10 +453,12 @@ int cmd_go( int argc, const char * const * argv )
 
   // TODO: common prepare
   TMC2209_write_reg( 0, 0, rev ? 0x149 : 0x141 );
+  TMC2209_write_reg( 1, 0, 0x141 );
 
   uint32_t pulses = (uint32_t)( turns * 200 * 8 ); // TODO: 200-motor param, 8-drv param
   tim2_pulses = 0;
   tim2_need = pulses;
+  tim5_pulses = 0;
   auto dt = UVAR('l');
 
   uint32_t tm0 = HAL_GetTick();
@@ -363,11 +471,17 @@ int cmd_go( int argc, const char * const * argv )
     if( tim2_pulses >= pulses ) {
       break;
     }
-    uint32_t r6F = TMC2209_read_reg( 0, 0x6F );
-    uint32_t r41 = TMC2209_read_reg( 0, 0x41 );
+    uint32_t r6F_m = TMC2209_read_reg( 0, 0x6F );
+    uint32_t r41_m = TMC2209_read_reg( 0, 0x41 );
+    read_sensors();
+    // if( read_sensors() ) {
+    //   break_flag = 1;
+    // }
 
     uint32_t tc = HAL_GetTick();
-    std_out << HexInt( r6F ) << ' ' << HexInt( r41 ) << ' ' << (int)( tc - tm0 ) << NL;
+    std_out << HexInt( r6F_m ) << ' ' << HexInt( r41_m ) << ' '
+            << HexInt16( porta_sensors_bits ) << ' ' << HexInt16( portb_sensors_bits )
+            << ' ' << (int)( tc - tm0 ) << NL;
     delay_ms_until_brk( &tc0, dt );
   }
 
@@ -388,6 +502,15 @@ void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim )
     return;
   }
 
+  if( htim->Instance == TIM5 ) {
+    __GPIOA_CLK_ENABLE(); __TIM5_CLK_ENABLE();
+    GpioA.cfgAF_N( GPIO_PIN_2, GPIO_AF2_TIM5 );
+    HAL_NVIC_SetPriority( TIM5_IRQn, 9, 0 );
+    HAL_NVIC_EnableIRQ( TIM5_IRQn );
+    UVAR('z') += 8;
+    return;
+  }
+
 }
 
 void HAL_TIM_PWM_MspDeInit( TIM_HandleTypeDef* htim )
@@ -398,6 +521,13 @@ void HAL_TIM_PWM_MspDeInit( TIM_HandleTypeDef* htim )
     HAL_NVIC_DisableIRQ( TIM2_IRQn );
     return;
   }
+
+  if( htim->Instance == TIM5 ) {
+    __TIM5_CLK_DISABLE();
+    GpioA.cfgIn_N( GPIO_PIN_2 );
+    HAL_NVIC_DisableIRQ( TIM5_IRQn );
+    return;
+  }
 }
 
 void TIM2_IRQHandler()
@@ -405,20 +535,31 @@ void TIM2_IRQHandler()
   HAL_TIM_IRQHandler( &tim2_h );
 }
 
-void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
-{
-  ++UVAR('y');
-  ledsx.toggle( 2 );
-  ++tim2_pulses;
-  if( tim2_need > 0 && tim2_pulses >= tim2_need ) {
-    tim2_stop();
-  }
-}
-
 void TIM5_IRQHandler()
 {
   HAL_TIM_IRQHandler( &tim5_h );
 }
+
+void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
+{
+  if( htim->Instance == TIM2 ) {
+    ++UVAR('y');
+    ledsx.toggle( 2 );
+    ++tim2_pulses;
+    if( tim2_need > 0 && tim2_pulses >= tim2_need ) {
+      tim2_stop();
+    }
+    return;
+  }
+
+  if( htim->Instance == TIM5 ) {
+    ++UVAR('x');
+    ++tim5_pulses;
+    ledsx.toggle( 4 );
+    return;
+  }
+}
+
 
 
 void EXTI0_IRQHandler(void)
