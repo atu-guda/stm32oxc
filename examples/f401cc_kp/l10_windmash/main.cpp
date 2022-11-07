@@ -65,8 +65,8 @@ int cmd_readreg( int argc, const char * const * argv );
 CmdInfo CMDINFO_READREG { "readreg", 'R', cmd_readreg, " reg - read TMC2209 register"  };
 int cmd_writereg( int argc, const char * const * argv );
 CmdInfo CMDINFO_WRITEREG { "writereg", 'W', cmd_writereg, " reg val - write TMC2209 register"  };
-int cmd_go( int argc, const char * const * argv );
-CmdInfo CMDINFO_GO { "go", 'G', cmd_go, " turns - go motor some steps"  };
+int cmd_rotate( int argc, const char * const * argv );
+CmdInfo CMDINFO_ROTATE { "rot", '\0', cmd_rotate, " turns - rotate"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -77,7 +77,7 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_FREQ,
   &CMDINFO_READREG,
   &CMDINFO_WRITEREG,
-  &CMDINFO_GO,
+  &CMDINFO_ROTATE,
   nullptr
 };
 
@@ -438,7 +438,7 @@ int cmd_freq( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_go( int argc, const char * const * argv )
+int cmd_rotate( int argc, const char * const * argv )
 {
   tim2_stop(); tim5_stop();
 
@@ -458,6 +458,8 @@ int cmd_go( int argc, const char * const * argv )
   tim2_need = pulses;
   tim5_pulses = 0;
   auto dt = UVAR('l');
+
+  std_out << "# rotate: turns= " << turns << " rev= " << rev << " pulses= " << pulses << NL;
 
   uint32_t tm0 = HAL_GetTick();
   uint32_t tc0 = tm0;
