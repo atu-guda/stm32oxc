@@ -64,8 +64,8 @@ int cmd_start( int argc, const char * const * argv );
 CmdInfo CMDINFO_START { "start", 'S', cmd_start, " - start motor"  };
 int cmd_stop( int argc, const char * const * argv );
 CmdInfo CMDINFO_STOP { "stop", 'P', cmd_stop, " - stop motor"  };
-int cmd_freq( int argc, const char * const * argv );
-CmdInfo CMDINFO_FREQ { "freq", 'F', cmd_freq, " freq_value [dev] - set freq for motor"  };
+int cmd_speed( int argc, const char * const * argv );
+CmdInfo CMDINFO_SPEED { "speed", 'F', cmd_speed, " speed [dev] - set speed for motor turn/s or mm/s"  };
 int cmd_readreg( int argc, const char * const * argv );
 CmdInfo CMDINFO_READREG { "readreg", 'R', cmd_readreg, " reg - read TMC2209 register"  };
 int cmd_writereg( int argc, const char * const * argv );
@@ -83,7 +83,7 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_TEST0,
   &CMDINFO_START,
   &CMDINFO_STOP,
-  &CMDINFO_FREQ,
+  &CMDINFO_SPEED,
   &CMDINFO_READREG,
   &CMDINFO_WRITEREG,
   &CMDINFO_ROTATE,
@@ -430,20 +430,30 @@ uint32_t calc_TIM_arr_for_base_freq_flt( TIM_TypeDef *tim, float base_freq )
   return arr;
 }
 
-int cmd_freq( int argc, const char * const * argv )
+int set_drv_speed( int dev, float speed )
 {
-  float freq = arg2float_d( 1, argc, argv, 100.0f, 0.0f, 50000.0f );
-  int dev = arg2long_d( 2, argc, argv, 0, 0, 1 );
   auto tim = ( dev == 0 ) ? TIM2 : TIM5;
+  auto ccr = ( dev == 0 ) ? &(tim->CCR2) : &(tim->CCR3);
+  float freq = motor_step2turn * motor_mstep * speed;
   uint32_t arr = calc_TIM_arr_for_base_freq_flt( tim, freq );
-  std_out << "# freq= " << freq << ' ' << " ARR= " << arr << " dev= " << dev << NL;
+
+  // stop timer during update ??
+  uint32_t old_cr1 = tim->CR1;
+  tim->CR1 &= ~1u; // EN;
   tim->ARR = arr;
-  if( dev ) {
-    tim->CCR3 = arr / 2;
-  } else {
-    tim->CCR2 = arr / 2;
-  }
+  *ccr = arr / 2;
   tim->CNT = 0;
+  tim->CR1 = old_cr1;
+
+  return 0;
+}
+
+int cmd_speed( int argc, const char * const * argv )
+{
+  float speed = arg2float_d( 1, argc, argv, 1.0f, 0.0f, 100.0f );
+  int dev = arg2long_d( 2, argc, argv, 0, 0, 1 );
+
+  set_drv_speed( dev, speed );
 
   tim_print_cfg( TIM2 );
   tim_print_cfg( TIM5 );
@@ -462,14 +472,16 @@ int cmd_rotate( int argc, const char * const * argv )
 
   bool rev = false;
   float turns = arg2float_d( 1, argc, argv, 1.0f, -50000.0f, 50000.0f );
+  float vm = arg2float_d( 2, argc, argv, td.v_rot * 0.001f, 0.0f, 20.0f );
   if( turns < 0 ) {
     turns = -turns;
     rev = true;
   }
+  set_drv_speed( 0, vm );
 
   TMC2209_write_reg( 0, 0, rev ? reg00_def_rev : reg00_def_forv );
 
-  uint32_t pulses = (uint32_t)( turns * 200 * 8 ); // TODO: 200-motor param, 8-drv param
+  uint32_t pulses = (uint32_t)( turns * motor_step2turn * motor_mstep );
   tim2_pulses = 0;
   tim2_need = pulses;
   tim5_pulses = 0;
@@ -520,22 +532,24 @@ int cmd_move( int argc, const char * const * argv )
   bool rev = false;
   float mm = arg2float_d( 1, argc, argv, 1.0f, -200.0f, 200.0f );
   int ignore_opto = arg2long_d( 2, argc, argv, 0, 0, 1 );
+  float vm = arg2float_d( 3, argc, argv, td.v_mov_o * 0.001f, 0.0f, 20.0f );
   if( mm < 0 ) {
     mm = -mm;
     rev = true;
   }
   auto old_sf = sensor_flags;
   sensor_flags = ignore_opto ? SWLIM_BITS_SW : SWLIM_BITS_ALL;
+  set_drv_speed( 1, vm );
 
 
   TMC2209_write_reg( 1, 0, rev ? reg00_def_rev : reg00_def_forv );
 
-  uint32_t pulses = (uint32_t)( mm * 200 * 8 ); // TODO: 200-motor param, 8-drv param, 1 mm/turn: M6
+  uint32_t pulses = (uint32_t)( mm * motor_step2turn * motor_mstep );
   tim5_pulses = 0;
   tim5_need = pulses;
   auto dt = UVAR('l');
 
-  std_out << "# move: mm= " << mm << " rev= " << rev << " pulses= " << pulses << NL;
+  std_out << "# move: mm= " << mm << " rev= " << rev << " pulses= " << pulses << " v= " << vm << NL;
 
   uint32_t tm0 = HAL_GetTick();
   uint32_t tc0 = tm0;

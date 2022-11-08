@@ -47,13 +47,16 @@ inline constexpr uint32_t  USER_STOP_BIT   { 1 << USER_STOP_PIN0 };
 inline constexpr uint32_t reg00_def_forv = 0x000001C1;
 inline constexpr uint32_t reg00_def_rev  = 0x000001C9;
 inline constexpr uint32_t reg10_def      = 0x00031F01;
-inline constexpr uint32_t reg6C_def      = 0x15010053;
+inline constexpr uint32_t reg6C_def      = 0x15010053; // 8 mstep
+
+inline constexpr uint32_t motor_step2turn  = 200;
+inline constexpr uint32_t motor_mstep      =   8;
 
 struct TaskData {
   // visible data
   int n_total {  100 }; // total turns
   int v_rot   {  500 }; // nominal rotation speed, in 1000* turns/sec
-  int v_mov_o { 1000 }; // move-only speed, in um/sec
+  int v_mov_o { 2000 }; // move-only speed, in um/sec
   // calculated data
 };
 
