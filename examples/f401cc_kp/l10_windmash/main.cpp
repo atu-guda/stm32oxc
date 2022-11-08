@@ -266,7 +266,7 @@ uint32_t TMC2209_read_reg( uint8_t dev, uint8_t reg )
 
 
   if( r_n != sizeof(TMC2209_rreq) + sizeof(TMC2209_rwdata) ) {
-    std_out << "# Err: r_n = " << r_n << NL;
+    // std_out << "# Err: r_n = " << r_n << NL;
     return TMC2209_bad_val;
   }
 
@@ -284,7 +284,7 @@ uint32_t TMC2209_read_reg_n_try( uint8_t dev, uint8_t reg, int n_try )
     if( v != TMC2209_bad_val ) {
       return v;
     }
-    delay_ms( 50 );
+    delay_ms( 20 );
   }
   return TMC2209_bad_val;
 }
@@ -313,7 +313,7 @@ int cmd_writereg( int argc, const char * const * argv )
 
 int tim_n_cfg( TIM_HandleTypeDef &t_h, TIM_TypeDef *tim, uint32_t ch )
 {
-  int pbase = 49999; // TODO: ???
+  int pbase = 3124; // TODO: ???
   t_h.Instance               = tim;
   t_h.Init.Prescaler         = calc_TIM_psc_for_cnt_freq( tim, 1000000  );
   t_h.Init.Period            = pbase;
@@ -501,8 +501,8 @@ int cmd_rotate( int argc, const char * const * argv )
     }
     read_sensors();
     delay_bad_mcs( 10 );
-    uint32_t r6F_m = TMC2209_read_reg( 0, 0x6F );
-    uint32_t r41_m = TMC2209_read_reg( 0, 0x41 );
+    uint32_t r6F_m = TMC2209_read_reg_n_try( 0, 0x6F, 4 );
+    uint32_t r41_m = TMC2209_read_reg_n_try( 0, 0x41, 4 );
     // if( ( porta_sensors_bits & sensor_flags ) != sensor_flags ) {
     //    break_flag = 1;
     // }
@@ -562,8 +562,8 @@ int cmd_move( int argc, const char * const * argv )
       break;
     }
     delay_bad_mcs( 10 );
-    uint32_t r6F_m = TMC2209_read_reg( 1, 0x6F );
-    uint32_t r41_m = TMC2209_read_reg( 1, 0x41 );
+    uint32_t r6F_m = TMC2209_read_reg_n_try( 0, 0x6F, 4 );
+    uint32_t r41_m = TMC2209_read_reg_n_try( 0, 0x41, 4 );
     read_sensors();
     if( ( porta_sensors_bits & sensor_flags ) != sensor_flags ) {
        break_flag = 1;
