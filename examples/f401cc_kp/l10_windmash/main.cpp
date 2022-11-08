@@ -29,6 +29,7 @@ volatile uint32_t portb_sensors_bits {0};
 const uint32_t porta_sensor_mask = SWLIM_BITS_ALL;
 const uint32_t portb_sensor_mask = TOWER_BITS_ALL | DIAG_BITS_ALL;
 bool read_sensors(); // returns true at bad condition
+uint32_t sensor_flags = SWLIM_BITS_ALL;
 
 const char* common_help_string = "Winding machine control app" NL;
 
@@ -67,6 +68,8 @@ int cmd_writereg( int argc, const char * const * argv );
 CmdInfo CMDINFO_WRITEREG { "writereg", 'W', cmd_writereg, " reg val - write TMC2209 register"  };
 int cmd_rotate( int argc, const char * const * argv );
 CmdInfo CMDINFO_ROTATE { "rot", '\0', cmd_rotate, " turns - rotate"  };
+int cmd_move( int argc, const char * const * argv );
+CmdInfo CMDINFO_MOVE { "move", 'M', cmd_move, " mm [no_opto] - move"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -78,6 +81,7 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_READREG,
   &CMDINFO_WRITEREG,
   &CMDINFO_ROTATE,
+  &CMDINFO_MOVE,
   nullptr
 };
 
@@ -90,7 +94,7 @@ constexpr NamedInt   ob_v_mov_o  {  "v_mov_o",      &td.v_mov_o  };
 constexpr const NamedObj *const objs_info[] = {
   & ob_v_rot,
   & ob_v_mov_o,
-  & NamedInt{  "n_total",      &td.n_total  },
+  & ob_n_total,
   nullptr
 };
 
@@ -508,8 +512,8 @@ int cmd_rotate( int argc, const char * const * argv )
     uint32_t r6F_m = TMC2209_read_reg( 0, 0x6F );
     uint32_t r41_m = TMC2209_read_reg( 0, 0x41 );
     read_sensors();
-    // if( read_sensors() ) {
-    //   break_flag = 1;
+    // if( ( porta_sensors_bits & sensor_flags ) != sensor_flags ) {
+    //    break_flag = 1;
     // }
 
     uint32_t tc = HAL_GetTick();
@@ -520,7 +524,64 @@ int cmd_rotate( int argc, const char * const * argv )
   }
 
   tim2_stop();
-  tim2_need = 0;  tim2_pulses = 0;
+  tim2_need = 0;
+
+  return 0;
+}
+
+int cmd_move( int argc, const char * const * argv )
+{
+  tim2_stop(); tim5_stop();
+
+  bool rev = false;
+  float mm = arg2float_d( 1, argc, argv, 1.0f, -200.0f, 200.0f );
+  int ignore_opto = arg2long_d( 2, argc, argv, 0, 0, 1 );
+  if( mm < 0 ) {
+    mm = -mm;
+    rev = true;
+  }
+  auto old_sf = sensor_flags;
+  sensor_flags = ignore_opto ? SWLIM_BITS_SW : SWLIM_BITS_ALL;
+
+  // TODO: common prepare
+  TMC2209_write_reg( 1,    0, rev ? 0x1C9 : 0x1C1 );
+  TMC2209_write_reg( 1, 0x6C, 0x15010053 );
+
+  uint32_t pulses = (uint32_t)( mm * 200 * 8 ); // TODO: 200-motor param, 8-drv param, 1 mm/turn: M6
+  tim5_pulses = 0;
+  tim5_need = pulses;
+  auto dt = UVAR('l');
+
+  std_out << "# move: mm= " << mm << " rev= " << rev << " pulses= " << pulses << NL;
+
+  uint32_t tm0 = HAL_GetTick();
+  uint32_t tc0 = tm0;
+
+  break_flag = 0;
+  tim5_start();
+  for( int i=0; i<10000000 && !break_flag; ++i ) { // TODO: calc time
+    // TODO: check conditions
+    if( tim5_pulses >= pulses ) {
+      break;
+    }
+    uint32_t r6F_m = TMC2209_read_reg( 1, 0x6F );
+    uint32_t r41_m = TMC2209_read_reg( 1, 0x41 );
+    read_sensors();
+    if( ( porta_sensors_bits & sensor_flags ) != sensor_flags ) {
+       break_flag = 1;
+    }
+
+    uint32_t tc = HAL_GetTick();
+    std_out << HexInt( r6F_m ) << ' ' << HexInt( r41_m ) << ' '
+            << HexInt16( porta_sensors_bits ) << ' ' << HexInt16( portb_sensors_bits )
+            << ' ' << (int)( tc - tm0 ) << NL;
+    delay_ms_until_brk( &tc0, dt );
+  }
+
+  tim5_stop();
+  tim5_need = 0;
+  UVAR('b') = tim5_pulses;
+  sensor_flags = old_sf;
 
   return 0;
 }
@@ -590,8 +651,8 @@ void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
     ++UVAR('x');
     ++tim5_pulses;
     ledsx.toggle( 4 );
-    uint32_t pa = SWLIM_GPIO.IDR & SWLIM_BITS_ALL;
-    if( pa != SWLIM_BITS_ALL ) {
+    uint32_t pa = SWLIM_GPIO.IDR & sensor_flags;
+    if( pa != sensor_flags ) {
       tim5_stop();
       tim2_stop();
     }
