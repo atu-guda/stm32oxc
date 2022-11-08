@@ -44,6 +44,11 @@ inline constexpr uint32_t  USER_STOP_PIN0  { 3 };
 inline constexpr uint32_t  USER_STOP_N     { 1 };
 inline constexpr uint32_t  USER_STOP_BIT   { 1 << USER_STOP_PIN0 };
 
+inline constexpr uint32_t reg00_def_forv = 0x000001C1;
+inline constexpr uint32_t reg00_def_rev  = 0x000001C9;
+inline constexpr uint32_t reg10_def      = 0x00031F01;
+inline constexpr uint32_t reg6C_def      = 0x15010053;
+
 struct TaskData {
   // visible data
   int n_total {  100 }; // total turns

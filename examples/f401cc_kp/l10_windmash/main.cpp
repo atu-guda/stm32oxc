@@ -53,6 +53,9 @@ uint32_t TMC2209_read_reg( uint8_t dev, uint8_t reg );
 uint32_t TMC2209_read_reg_n_try( uint8_t dev, uint8_t reg, int n_try );
 int TMC2209_write_reg( uint8_t dev, uint8_t reg, uint32_t v );
 
+bool prepare_drv( uint8_t drv ); // true = ok
+int  drv_prepared = 0;
+
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
@@ -70,6 +73,8 @@ int cmd_rotate( int argc, const char * const * argv );
 CmdInfo CMDINFO_ROTATE { "rot", '\0', cmd_rotate, " turns - rotate"  };
 int cmd_move( int argc, const char * const * argv );
 CmdInfo CMDINFO_MOVE { "move", 'M', cmd_move, " mm [no_opto] - move"  };
+int cmd_prep( int argc, const char * const * argv );
+CmdInfo CMDINFO_PREP { "prep", '\0', cmd_prep, " - prepare drivers"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -82,6 +87,7 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_WRITEREG,
   &CMDINFO_ROTATE,
   &CMDINFO_MOVE,
+  &CMDINFO_PREP,
   nullptr
 };
 
@@ -478,6 +484,11 @@ int cmd_freq( int argc, const char * const * argv )
 
 int cmd_rotate( int argc, const char * const * argv )
 {
+  if( ! drv_prepared ) {
+    std_out << "# Error: drivers not prepared" << NL;
+    return  1;
+  }
+
   tim2_stop(); tim5_stop();
 
   bool rev = false;
@@ -487,9 +498,7 @@ int cmd_rotate( int argc, const char * const * argv )
     rev = true;
   }
 
-  // TODO: common prepare
-  TMC2209_write_reg( 0, 0, rev ? 0x149 : 0x141 );
-  TMC2209_write_reg( 1, 0, 0x141 );
+  TMC2209_write_reg( 0, 0, rev ? reg00_def_rev : reg00_def_forv );
 
   uint32_t pulses = (uint32_t)( turns * 200 * 8 ); // TODO: 200-motor param, 8-drv param
   tim2_pulses = 0;
@@ -509,9 +518,10 @@ int cmd_rotate( int argc, const char * const * argv )
     if( tim2_pulses >= pulses ) {
       break;
     }
+    read_sensors();
+    delay_bad_mcs( 10 );
     uint32_t r6F_m = TMC2209_read_reg( 0, 0x6F );
     uint32_t r41_m = TMC2209_read_reg( 0, 0x41 );
-    read_sensors();
     // if( ( porta_sensors_bits & sensor_flags ) != sensor_flags ) {
     //    break_flag = 1;
     // }
@@ -531,6 +541,11 @@ int cmd_rotate( int argc, const char * const * argv )
 
 int cmd_move( int argc, const char * const * argv )
 {
+  if( ! drv_prepared ) {
+    std_out << "# Error: drivers not prepared" << NL;
+    return  1;
+  }
+
   tim2_stop(); tim5_stop();
 
   bool rev = false;
@@ -543,9 +558,8 @@ int cmd_move( int argc, const char * const * argv )
   auto old_sf = sensor_flags;
   sensor_flags = ignore_opto ? SWLIM_BITS_SW : SWLIM_BITS_ALL;
 
-  // TODO: common prepare
-  TMC2209_write_reg( 1,    0, rev ? 0x1C9 : 0x1C1 );
-  TMC2209_write_reg( 1, 0x6C, 0x15010053 );
+
+  TMC2209_write_reg( 1, 0, rev ? reg00_def_rev : reg00_def_forv );
 
   uint32_t pulses = (uint32_t)( mm * 200 * 8 ); // TODO: 200-motor param, 8-drv param, 1 mm/turn: M6
   tim5_pulses = 0;
@@ -564,6 +578,7 @@ int cmd_move( int argc, const char * const * argv )
     if( tim5_pulses >= pulses ) {
       break;
     }
+    delay_bad_mcs( 10 );
     uint32_t r6F_m = TMC2209_read_reg( 1, 0x6F );
     uint32_t r41_m = TMC2209_read_reg( 1, 0x41 );
     read_sensors();
@@ -582,6 +597,40 @@ int cmd_move( int argc, const char * const * argv )
   tim5_need = 0;
   UVAR('b') = tim5_pulses;
   sensor_flags = old_sf;
+
+  return 0;
+}
+
+bool prepare_drv( uint8_t drv )
+{
+  uint32_t r = TMC2209_read_reg_n_try( drv, 0x06, 10 );
+  if( ( r & 0xFF000000 ) != 0x21000000 ) {
+    std_out << "# Error init drv " << drv << " bad signature " << HexInt( r ) << NL;
+    return false;
+  }
+  uint32_t n0 = TMC2209_read_reg_n_try( drv, 0x02, 10 ); // initial counter
+  TMC2209_write_reg( drv, 0x00, reg00_def_forv ); // general config
+  TMC2209_write_reg( drv, 0x10, reg10_def );      // IHOLD, IRUN, IHOLDDELAY
+  TMC2209_write_reg( drv, 0x6C, reg6C_def );      // many bits
+                                                  // 14, 41
+  uint32_t n1 = TMC2209_read_reg_n_try( drv, 0x02, 10 );
+  if( ( ( n1 - n0 ) & 0xFF ) != 3 ) {
+    std_out << "# Error init drv " << drv << " bad counter " << ( n1 - n0 ) << NL;
+    return false;
+  }
+  return true;
+}
+
+int cmd_prep( int argc, const char * const * argv )
+{
+  drv_prepared = 0;
+  if( ! prepare_drv( 0 ) ) {
+    return 1;
+  }
+  if( ! prepare_drv( 1 )  ) {
+    return 2;
+  }
+  drv_prepared = 1;
 
   return 0;
 }
