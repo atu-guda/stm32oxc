@@ -1,7 +1,7 @@
 #include <oxc_auto.h>
 #include <oxc_floatfun.h>
-#include <oxc_tim.h>
 #include <oxc_usartio.h> // TODO: auto
+#include <oxc_namedints.h>
 
 #include "main.h"
 #include "oxc_tmc2209.h"
@@ -81,6 +81,37 @@ const CmdInfo* global_cmds[] = {
   nullptr
 };
 
+TaskData td;
+
+constexpr NamedInt   ob_n_total  {  "n_total",      &td.n_total  };
+constexpr NamedInt   ob_v_rot    {  "v_rot",        &td.v_rot  };
+constexpr NamedInt   ob_v_mov_o  {  "v_mov_o",      &td.v_mov_o  };
+
+constexpr const NamedObj *const objs_info[] = {
+  & ob_v_rot,
+  & ob_v_mov_o,
+  & NamedInt{  "n_total",      &td.n_total  },
+  nullptr
+};
+
+NamedObjs objs( objs_info );
+
+// print/set hook functions
+
+bool print_var_ex( const char *nm, int fmt )
+{
+  return objs.print( nm, fmt );
+}
+
+bool set_var_ex( const char *nm, const char *s )
+{
+  auto ok =  objs.set( nm, s );
+  print_var_ex( nm, 0 );
+  return ok;
+}
+
+
+
 void idle_main_task()
 {
   // leds.toggle( 1 );
@@ -105,6 +136,9 @@ int main(void)
   pins_diag.initHW();
   pins_user_start.initHW();
   pins_user_stop.initHW();
+
+  print_var_hook = print_var_ex;
+  set_var_hook   = set_var_ex;
 
   if( ! init_uart( &uah_motordrv ) ) {
     die4led( 1 );

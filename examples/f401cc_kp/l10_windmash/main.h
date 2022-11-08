@@ -44,5 +44,15 @@ inline constexpr uint32_t  USER_STOP_PIN0  { 3 };
 inline constexpr uint32_t  USER_STOP_N     { 1 };
 inline constexpr uint32_t  USER_STOP_BIT   { 1 << USER_STOP_PIN0 };
 
+struct TaskData {
+  // visible data
+  int n_total {  100 }; // total turns
+  int v_rot   {  500 }; // nominal rotation speed, in 1000* turns/sec
+  int v_mov_o { 1000 }; // move-only speed, in um/sec
+  // calculated data
+};
+
+extern TaskData td; // in main.cpp
+
 #endif
 
