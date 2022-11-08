@@ -76,6 +76,8 @@ int cmd_move( int argc, const char * const * argv );
 CmdInfo CMDINFO_MOVE { "move", 'M', cmd_move, " mm [no_opto] - move"  };
 int cmd_prep( int argc, const char * const * argv );
 CmdInfo CMDINFO_PREP { "prep", '\0', cmd_prep, " - prepare drivers"  };
+int cmd_calc( int argc, const char * const * argv );
+CmdInfo CMDINFO_CALC { "calc", '\0', cmd_calc, "n_tot w_d(um) w_l(um) - calculate task"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -89,19 +91,59 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_ROTATE,
   &CMDINFO_MOVE,
   &CMDINFO_PREP,
+  &CMDINFO_CALC,
   nullptr
 };
 
 TaskData td;
 
-constexpr NamedInt   ob_n_total  {  "n_total",      &td.n_total  };
-constexpr NamedInt   ob_v_rot    {  "v_rot",        &td.v_rot  };
-constexpr NamedInt   ob_v_mov_o  {  "v_mov_o",      &td.v_mov_o  };
+int TaskData::calc( int n_tot, int d_w, int w_l, bool even )
+{
+  n_done = n_ldone = c_lay =  n_lay = 0;
+  if( n_tot < 1 || d_w < 20 || w_l < 2 * d_w ) {
+    n_tot = 0;
+    return 0;
+  }
+  n_total = n_tot; d_wire = d_w; w_len = w_l;
+  unsigned n_lay_max = w_len / d_wire;
+  n_lay = ( n_tot + n_lay_max - 1 ) / n_lay_max;
+  if( even ) {
+    ++n_lay;
+    n_lay &= ~1u;
+  }
+  n_2lay = ( n_total + n_lay / 2 ) / n_lay;
+
+  float d_w_e = 0.001f * w_len / n_2lay;
+  v_mov = (int)(v_rot * d_w_e);
+
+  return 1;
+}
+
+constexpr NamedInt   ob_n_total { "n_total", &td.n_total };
+constexpr NamedInt   ob_d_wire  { "d_wire",  &td.d_wire };
+constexpr NamedInt   ob_w_len   { "w_len",   &td.w_len };
+constexpr NamedInt   ob_v_rot   { "v_rot",   &td.v_rot };
+constexpr NamedInt   ob_v_mov_o { "v_mov_o", &td.v_mov_o };
+constexpr NamedInt   ob_n_lay   { "n_lay",   &td.n_lay };
+constexpr NamedInt   ob_n_2lay  { "n_2lay",  &td.n_2lay };
+constexpr NamedInt   ob_v_mov   { "v_mov",   &td.v_mov };
+constexpr NamedInt   ob_n_done  { "n_done",  &td.n_done, NamedObj::Flags::ro };
+constexpr NamedInt   ob_n_ldone { "n_ldone", &td.n_ldone };
+constexpr NamedInt   ob_c_lay   { "c_lay",   &td.c_lay };
+
 
 constexpr const NamedObj *const objs_info[] = {
+  & ob_n_total,
+  & ob_d_wire,
+  & ob_w_len,
   & ob_v_rot,
   & ob_v_mov_o,
-  & ob_n_total,
+  & ob_n_lay,
+  & ob_n_2lay,
+  & ob_v_mov,
+  & ob_n_done,
+  & ob_n_ldone,
+  & ob_c_lay,
   nullptr
 };
 
@@ -614,6 +656,24 @@ int cmd_prep( int argc, const char * const * argv )
     return 2;
   }
   drv_prepared = 1;
+
+  return 0;
+}
+
+int cmd_calc( int argc, const char * const * argv )
+{
+  int n_t = arg2long_d( 1, argc, argv,     0,  0, 1000000 );
+  int d_w = arg2long_d( 2, argc, argv,   210, 20,    5000 );
+  int w_l = arg2long_d( 3, argc, argv, 20000, 50,  100000 );
+  int eve = arg2long_d( 4, argc, argv,     0,  0,       1 );
+
+  if( ! td.calc( n_t, d_w, w_l, eve ) ) {
+    std_out << "# error: bad input data" << NL;
+    return 1;
+  }
+
+  cmd_pvar( 1, nullptr );
+
 
   return 0;
 }

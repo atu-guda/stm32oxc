@@ -53,11 +53,23 @@ inline constexpr uint32_t motor_step2turn  = 200;
 inline constexpr uint32_t motor_mstep      =   8;
 
 struct TaskData {
-  // visible data
-  int n_total {  100 }; // total turns
-  int v_rot   {  500 }; // nominal rotation speed, in 1000* turns/sec
-  int v_mov_o { 2000 }; // move-only speed, in um/sec
-  // calculated data
+  // input data
+  int n_total {   100 }; // total turns
+  int d_wire  {   210 }; // wire diameter + extra space in um
+  int w_len   { 50000 }; // wire length (in um)
+  // mech
+  int v_rot   {   500 }; // nominal rotation speed, in 1000* turns/sec
+  int v_mov_o {  2000 }; // move-only speed, in um/sec
+  // calculated
+  int n_lay   {     0 }; // number of layers
+  int n_2lay  {     0 }; // turns per layer
+  int v_mov   {     0 }; // speed during main work, in um/sec
+  // status
+  int n_done  {     0 }; // total done
+  int n_ldone {     0 }; // done per layer
+  int c_lay   {     0 }; // current layer
+  // funcs
+  int calc( int n_tot, int d_w, int w_l, bool even );
 };
 
 extern TaskData td; // in main.cpp
