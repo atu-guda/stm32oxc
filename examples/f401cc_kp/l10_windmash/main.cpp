@@ -36,6 +36,7 @@ const char* common_help_string = "Winding machine control app" NL;
 TIM_HandleTypeDef tim2_h;
 TIM_HandleTypeDef tim5_h;
 uint32_t volatile tim2_pulses {0}, tim2_need {0}, tim5_pulses {0}, tim5_need {0};
+int tim_n_cfg( TIM_HandleTypeDef &t_h, TIM_TypeDef *tim, uint32_t ch );
 int tim2_cfg();
 void tim2_start();
 void tim2_stop();
@@ -310,28 +311,28 @@ int cmd_writereg( int argc, const char * const * argv )
   return 0;
 }
 
-int tim2_cfg()
+int tim_n_cfg( TIM_HandleTypeDef &t_h, TIM_TypeDef *tim, uint32_t ch )
 {
   int pbase = 49999; // TODO: ???
-  tim2_h.Instance               = TIM2;
-  tim2_h.Init.Prescaler         = calc_TIM_psc_for_cnt_freq( TIM_EXA, 1000000  );
-  tim2_h.Init.Period            = pbase;
-  tim2_h.Init.ClockDivision     = 0;
-  tim2_h.Init.CounterMode       = TIM_COUNTERMODE_UP;
-  tim2_h.Init.RepetitionCounter = 0;
-  if( HAL_TIM_PWM_Init( &tim2_h ) != HAL_OK ) {
+  t_h.Instance               = tim;
+  t_h.Init.Prescaler         = calc_TIM_psc_for_cnt_freq( tim, 1000000  );
+  t_h.Init.Period            = pbase;
+  t_h.Init.ClockDivision     = 0;
+  t_h.Init.CounterMode       = TIM_COUNTERMODE_UP;
+  t_h.Init.RepetitionCounter = 0;
+  if( HAL_TIM_PWM_Init( &t_h ) != HAL_OK ) {
     UVAR('e') = 1; // like error
     return 0;
   }
 
   TIM_ClockConfigTypeDef sClockSourceConfig;
   sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  HAL_TIM_ConfigClockSource( &tim2_h, &sClockSourceConfig );
+  HAL_TIM_ConfigClockSource( &t_h, &sClockSourceConfig );
 
   TIM_MasterConfigTypeDef sMasterConfig;
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
   sMasterConfig.MasterSlaveMode     = TIM_MASTERSLAVEMODE_DISABLE;
-  if( HAL_TIMEx_MasterConfigSynchronization( &tim2_h, &sMasterConfig ) != HAL_OK ) {
+  if( HAL_TIMEx_MasterConfigSynchronization( &t_h, &sMasterConfig ) != HAL_OK ) {
     UVAR('e') = 2;
     return 0;
   }
@@ -344,56 +345,24 @@ int tim2_cfg()
   tim_oc_cfg.OCIdleState  = TIM_OCIDLESTATE_RESET;
   tim_oc_cfg.OCNIdleState = TIM_OCNIDLESTATE_RESET;
 
-  HAL_TIM_PWM_Stop_IT( &tim2_h, TIM_CHANNEL_2 );
+  HAL_TIM_PWM_Stop_IT( &t_h, ch );
   tim_oc_cfg.Pulse = pbase / 2;
-  if( HAL_TIM_PWM_ConfigChannel( &tim2_h, &tim_oc_cfg, TIM_CHANNEL_2 ) != HAL_OK ) {
+  if( HAL_TIM_PWM_ConfigChannel( &t_h, &tim_oc_cfg, ch ) != HAL_OK ) {
     UVAR('e') = 3;
     return 0;
   }
   return 1;
 }
 
+
+int tim2_cfg()
+{
+  return tim_n_cfg( tim2_h, TIM2, TIM_CHANNEL_2 );
+}
+
 int tim5_cfg()
 {
-  int pbase = 49999;
-  tim5_h.Instance               = TIM5;
-  tim5_h.Init.Prescaler         = calc_TIM_psc_for_cnt_freq( TIM5, 1000000  );
-  tim5_h.Init.Period            = pbase;
-  tim5_h.Init.ClockDivision     = 0;
-  tim5_h.Init.CounterMode       = TIM_COUNTERMODE_UP;
-  tim5_h.Init.RepetitionCounter = 0;
-  if( HAL_TIM_PWM_Init( &tim5_h ) != HAL_OK ) {
-    UVAR('e') = 3; // like error
-    return 0;
-  }
-
-  TIM_ClockConfigTypeDef sClockSourceConfig;
-  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  HAL_TIM_ConfigClockSource( &tim5_h, &sClockSourceConfig );
-
-  TIM_MasterConfigTypeDef sMasterConfig;
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
-  sMasterConfig.MasterSlaveMode     = TIM_MASTERSLAVEMODE_DISABLE;
-  if( HAL_TIMEx_MasterConfigSynchronization( &tim5_h, &sMasterConfig ) != HAL_OK ) {
-    UVAR('e') = 4;
-    return 0;
-  }
-
-  TIM_OC_InitTypeDef tim_oc_cfg;
-  tim_oc_cfg.OCMode       = TIM_OCMODE_PWM1;
-  tim_oc_cfg.OCPolarity   = TIM_OCPOLARITY_HIGH;
-  tim_oc_cfg.OCNPolarity  = TIM_OCNPOLARITY_HIGH;
-  tim_oc_cfg.OCFastMode   = TIM_OCFAST_DISABLE;
-  tim_oc_cfg.OCIdleState  = TIM_OCIDLESTATE_RESET;
-  tim_oc_cfg.OCNIdleState = TIM_OCNIDLESTATE_RESET;
-
-  HAL_TIM_PWM_Stop_IT( &tim5_h, TIM_CHANNEL_3 );
-  tim_oc_cfg.Pulse = pbase / 2;
-  if( HAL_TIM_PWM_ConfigChannel( &tim5_h, &tim_oc_cfg, TIM_CHANNEL_3 ) != HAL_OK ) {
-    UVAR('e') = 5;
-    return 0;
-  }
-  return 1;
+  return tim_n_cfg( tim5_h, TIM5, TIM_CHANNEL_3 );
 }
 
 void tim2_start()
