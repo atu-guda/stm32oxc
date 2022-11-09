@@ -62,6 +62,7 @@ bool prepare_drv( uint8_t drv ); // true = ok
 int ensure_drv_prepared();
 int  drv_prepared = 0;
 int do_move( float mm, float vm, uint8_t dev );
+int do_go( int n );
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -88,6 +89,8 @@ int cmd_repos( int argc, const char * const * argv );
 CmdInfo CMDINFO_REPOS { "repos", '\0', cmd_repos, " mm - reposition to "  };
 int cmd_meas_x( int argc, const char * const * argv );
 CmdInfo CMDINFO_MEAS_X { "meas_x", '\0', cmd_meas_x, " - measure workspace "  };
+int cmd_go( int argc, const char * const * argv );
+CmdInfo CMDINFO_GO { "go", 'G', cmd_go, " [n] - go next layer "  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -104,6 +107,7 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_CALC,
   &CMDINFO_REPOS,
   &CMDINFO_MEAS_X,
+  &CMDINFO_GO,
   nullptr
 };
 
@@ -690,6 +694,107 @@ int cmd_meas_x( int argc, const char * const * argv )
   std_out << "# d_x= " << d_x << ' ' << d_xt << NL;
 
 
+  return rc;
+}
+
+int do_go( int n )
+{
+  if( td.c_lay >= td.n_lay ) {
+    std_out << "# All done!" << NL;
+    return 0;
+  }
+  if( ! ensure_drv_prepared() ) {
+    std_out << "# Error: drivers not prepared" << NL;
+    return  1;
+  }
+
+  int n_l = td.n_2lay - td.n_ldone;
+  std_out << "# go: c_lay= " << td.c_lay << " n_ldone= " << td.n_ldone << " n_l= " << n_l << NL;
+
+  uint32_t pulses = (uint32_t)( n_l * motor_step2turn * motor_mstep );
+  tim2_pulses = 0; tim5_pulses = 0;
+  tim2_need = pulses; // rotaion is a main movement
+  auto dt = UVAR('l'); // todo: common param
+
+  bool rev = false;
+  if( td.c_lay & 1 ) {
+    rev = true;
+  }
+  float v_rot = td.v_rot * 0.001f;
+  set_drv_speed( 0, v_rot );
+  float v_mov = td.v_mov * 0.001f;
+  set_drv_speed( 1, v_mov );
+
+  std_out << "# pulses= " << pulses << " rev= " << rev << " v_rot= " << v_rot << " v_mov= " << v_mov << NL;
+  if( n_l < 1 || n_l > td.n_2lay ) {
+    std_out << "# Error: bad n_l" << NL;
+    return  1;
+  }
+
+  tims_stop( 3 );
+
+  TMC2209_write_reg( 0, 0, reg00_def_forv ); // rot direction
+  TMC2209_write_reg( 1, 0, rev ? reg00_def_rev : reg00_def_forv ); // move direction
+
+  sensor_flags = SWLIM_BITS_ALL;
+
+  uint32_t tm0 = HAL_GetTick();
+  uint32_t tc0 = tm0;
+
+  break_flag = 0;
+  tims_start( 3 );
+  for( int i=0; i<10000000 && !break_flag; ++i ) { // TODO: calc time
+
+    if( tim2_pulses >= pulses ) {
+      break;
+    }
+    delay_bad_mcs( 10 );
+    uint32_t r6F_m0 = TMC2209_read_reg_n_try( 0, 0x6F, 4 );
+    uint32_t r41_m0 = TMC2209_read_reg_n_try( 0, 0x41, 4 );
+    uint32_t r6F_m1 = TMC2209_read_reg_n_try( 1, 0x6F, 4 );
+    uint32_t r41_m1 = TMC2209_read_reg_n_try( 1, 0x41, 4 );
+    read_sensors();
+    if( ( porta_sensors_bits & sensor_flags ) != sensor_flags ) { // TODO: more checks
+       break_flag = 1;
+    }
+
+    uint32_t tc = HAL_GetTick();
+    std_out << HexInt( r6F_m0 ) << ' ' << HexInt( r41_m0 ) << ' '
+            << HexInt( r6F_m1 ) << ' ' << HexInt( r41_m1 ) << ' '
+            << HexInt16( porta_sensors_bits ) << ' ' << HexInt16( portb_sensors_bits )
+            << ' ' << (int)( tc - tm0 ) << NL;
+    delay_ms_until_brk( &tc0, dt );
+  }
+
+  tims_stop( 3 );
+  UVAR('b') = tim2_pulses;
+  UVAR('c') = tim5_pulses;
+  auto d_pulses = tim2_pulses;
+  float d_r = (float) d_pulses / (motor_step2turn * motor_mstep);
+  tim2_need = tim5_need = 0;
+  int add_turns = int( d_r + 0.499f );
+  td.n_ldone += add_turns;
+  td.n_done  += add_turns;
+  if( td.n_ldone >= td.n_2lay ) {
+    td.n_ldone = 0;
+    ++td.c_lay;
+  }
+
+  std_out << "# go: pulses: task= " << pulses << " done=" << tim2_pulses
+          << " delta= " << d_pulses << " d_r= " << d_r << " break= " << break_flag << ' '
+          << HexInt16( porta_sensors_bits ) << ' ' << HexInt16( portb_sensors_bits ) << NL;
+  std_out << "#  add_turns= " << add_turns << " n_ldone= " << td.n_ldone
+          << " n_done= " << td.n_done << " c_lay= " << td.c_lay << NL;
+
+  return break_flag;
+
+}
+
+
+int cmd_go( int argc, const char * const * argv )
+{
+  int n = arg2long_d( 1, argc, argv, 100000, 1, 1000000 );
+  int rc = do_go( n );
   return rc;
 }
 
