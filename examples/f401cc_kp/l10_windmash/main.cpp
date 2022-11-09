@@ -43,6 +43,10 @@ void tim2_stop();
 int tim5_cfg();
 void tim5_start();
 void tim5_stop();
+void tims_start( uint8_t devs );
+void tims_stop( uint8_t devs );
+void timn_start( uint8_t dev );
+void timn_stop( uint8_t dev );
 uint32_t calc_TIM_arr_for_base_freq_flt( TIM_TypeDef *tim, float base_freq ); // like from oxc_tim.h buf for float
 
 // UART_CONSOLE_DEFINES
@@ -55,7 +59,9 @@ uint32_t TMC2209_read_reg_n_try( uint8_t dev, uint8_t reg, int n_try );
 int TMC2209_write_reg( uint8_t dev, uint8_t reg, uint32_t v );
 
 bool prepare_drv( uint8_t drv ); // true = ok
+int ensure_drv_prepared();
 int  drv_prepared = 0;
+int do_move( float mm, float vm, uint8_t dev );
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -433,6 +439,44 @@ void tim5_stop()
   __HAL_TIM_DISABLE_IT( &tim5_h, TIM_IT_UPDATE );
 }
 
+void tims_start( uint8_t devs )
+{
+  if( devs & 1 ) {
+    tim2_start();
+  }
+  if( devs & 2 ) {
+    tim5_start();
+  }
+}
+
+void tims_stop( uint8_t devs )
+{
+  if( devs & 1 ) {
+    tim2_stop();
+  }
+  if( devs & 2 ) {
+    tim5_stop();
+  }
+}
+
+void timn_start( uint8_t dev )
+{
+  if( dev ) {
+    tim5_start();
+  } else {
+    tim2_start();
+  }
+}
+
+void timn_stop( uint8_t dev )
+{
+  if( dev ) {
+    tim5_stop();
+  } else {
+    tim2_stop();
+  }
+}
+
 
 bool read_sensors()
 {
@@ -444,24 +488,14 @@ bool read_sensors()
 int cmd_start( int argc, const char * const * argv )
 {
   int devs = arg2long_d( 1, argc, argv, 3, 0, 3 );
-  if( devs & 1 ) {
-    tim2_need = 0;  tim2_pulses = 0;
-    tim2_start();
-    std_out << "# TIM2 start " << NL;
-  }
-  if( devs & 2 ) {
-    tim5_pulses = 0;
-    tim5_start();
-    std_out << "# TIM5 start " << NL;
-  }
+  tims_start( devs );
   return 0;
 }
 
 int cmd_stop( int argc, const char * const * argv )
 {
-  tim2_need = 0;  tim2_pulses = 0;  tim5_pulses = 0;
-  tim2_stop();
-  tim5_stop();
+  int devs = arg2long_d( 1, argc, argv, 3, 0, 3 );
+  tims_stop( devs );
   return 0;
 }
 
@@ -479,7 +513,7 @@ int set_drv_speed( int dev, float speed )
   float freq = motor_step2turn * motor_mstep * speed;
   uint32_t arr = calc_TIM_arr_for_base_freq_flt( tim, freq );
 
-  // stop timer during update ??
+  // stop timer during update
   uint32_t old_cr1 = tim->CR1;
   tim->CR1 &= ~1u; // EN;
   tim->ARR = arr;
@@ -503,111 +537,48 @@ int cmd_speed( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_rotate( int argc, const char * const * argv )
+int do_move( float mm, float vm, uint8_t dev )
 {
-  if( ! drv_prepared ) {
+  if( ! ensure_drv_prepared() ) {
     std_out << "# Error: drivers not prepared" << NL;
     return  1;
   }
-
-  tim2_stop(); tim5_stop();
-
-  bool rev = false;
-  float turns = arg2float_d( 1, argc, argv, 1.0f, -50000.0f, 50000.0f );
-  float vm = arg2float_d( 2, argc, argv, td.v_rot * 0.001f, 0.0f, 20.0f );
-  if( turns < 0 ) {
-    turns = -turns;
-    rev = true;
-  }
-  set_drv_speed( 0, vm );
-
-  TMC2209_write_reg( 0, 0, rev ? reg00_def_rev : reg00_def_forv );
-
-  uint32_t pulses = (uint32_t)( turns * motor_step2turn * motor_mstep );
-  tim2_pulses = 0;
-  tim2_need = pulses;
-  tim5_pulses = 0;
-  auto dt = UVAR('l');
-
-  std_out << "# rotate: turns= " << turns << " rev= " << rev << " pulses= " << pulses << NL;
-
-  uint32_t tm0 = HAL_GetTick();
-  uint32_t tc0 = tm0;
-
-  break_flag = 0;
-  tim2_start();
-  for( int i=0; i<10000000 && !break_flag; ++i ) { // TODO: calc time
-    // TODO: check conditions
-    if( tim2_pulses >= pulses ) {
-      break;
-    }
-    read_sensors();
-    delay_bad_mcs( 10 );
-    uint32_t r6F_m = TMC2209_read_reg_n_try( 0, 0x6F, 4 );
-    uint32_t r41_m = TMC2209_read_reg_n_try( 0, 0x41, 4 );
-    // if( ( porta_sensors_bits & sensor_flags ) != sensor_flags ) {
-    //    break_flag = 1;
-    // }
-
-    uint32_t tc = HAL_GetTick();
-    std_out << HexInt( r6F_m ) << ' ' << HexInt( r41_m ) << ' '
-            << HexInt16( porta_sensors_bits ) << ' ' << HexInt16( portb_sensors_bits )
-            << ' ' << (int)( tc - tm0 ) << NL;
-    delay_ms_until_brk( &tc0, dt );
-  }
-
-  tim2_stop();
-  tim2_need = 0;
-
-  return 0;
-}
-
-int cmd_move( int argc, const char * const * argv )
-{
-  if( ! drv_prepared ) {
-    std_out << "# Error: drivers not prepared" << NL;
-    return  1;
-  }
-
-  tim2_stop(); tim5_stop();
+  timn_stop( dev );
 
   bool rev = false;
-  float mm = arg2float_d( 1, argc, argv, 1.0f, -200.0f, 200.0f );
-  int ignore_opto = arg2long_d( 2, argc, argv, 0, 0, 1 );
-  float vm = arg2float_d( 3, argc, argv, td.v_mov_o * 0.001f, 0.0f, 20.0f );
   if( mm < 0 ) {
     mm = -mm;
     rev = true;
   }
-  auto old_sf = sensor_flags;
-  sensor_flags = ignore_opto ? SWLIM_BITS_SW : SWLIM_BITS_ALL;
-  set_drv_speed( 1, vm );
+  set_drv_speed( dev, vm );
 
-
-  TMC2209_write_reg( 1, 0, rev ? reg00_def_rev : reg00_def_forv );
+  TMC2209_write_reg( dev, 0, rev ? reg00_def_rev : reg00_def_forv ); // direction
 
   uint32_t pulses = (uint32_t)( mm * motor_step2turn * motor_mstep );
-  tim5_pulses = 0;
-  tim5_need = pulses;
-  auto dt = UVAR('l');
+  auto c_pulses    = dev ? ( &tim5_pulses ) : ( &tim2_pulses );
+  auto need_pulses = dev ? ( &tim5_need )   : ( &tim2_need );
+  *c_pulses = 0;
+  *need_pulses = pulses;
+  auto dt = UVAR('l'); // todo: common param
 
-  std_out << "# move: mm= " << mm << " rev= " << rev << " pulses= " << pulses << " v= " << vm << NL;
+  std_out << "# move: dev= " << (int)dev << " x= " << mm << " rev= " << rev
+          << " pulses= " << pulses << " v= " << vm << NL;
 
   uint32_t tm0 = HAL_GetTick();
   uint32_t tc0 = tm0;
 
   break_flag = 0;
-  tim5_start();
+  timn_start( dev );
   for( int i=0; i<10000000 && !break_flag; ++i ) { // TODO: calc time
-    // TODO: check conditions
-    if( tim5_pulses >= pulses ) {
+
+    if( *c_pulses >= pulses ) {
       break;
     }
     delay_bad_mcs( 10 );
-    uint32_t r6F_m = TMC2209_read_reg_n_try( 0, 0x6F, 4 );
-    uint32_t r41_m = TMC2209_read_reg_n_try( 0, 0x41, 4 );
+    uint32_t r6F_m = TMC2209_read_reg_n_try( dev, 0x6F, 4 );
+    uint32_t r41_m = TMC2209_read_reg_n_try( dev, 0x41, 4 );
     read_sensors();
-    if( ( porta_sensors_bits & sensor_flags ) != sensor_flags ) {
+    if( ( porta_sensors_bits & sensor_flags ) != sensor_flags ) { // TODO: more checks
        break_flag = 1;
     }
 
@@ -618,12 +589,48 @@ int cmd_move( int argc, const char * const * argv )
     delay_ms_until_brk( &tc0, dt );
   }
 
-  tim5_stop();
-  tim5_need = 0;
-  UVAR('b') = tim5_pulses;
+  timn_stop( dev );
+  UVAR('b') = *c_pulses;
+  auto d_pulses = pulses - *c_pulses;
+  float d_x = (float) d_pulses / (motor_step2turn * motor_mstep);
+  *need_pulses = 0;
+
+  std_out << "# move result pulses: task= " << pulses << " done=" << *c_pulses
+          << " delta= " << d_pulses << " d_x= " << d_x << " break= " << break_flag << ' '
+          << HexInt16( porta_sensors_bits ) << ' ' << HexInt16( portb_sensors_bits ) << NL;
+
+  return break_flag;
+}
+
+int cmd_rotate( int argc, const char * const * argv )
+{
+  float turns = arg2float_d( 1, argc, argv, 1.0f, -50000.0f, 50000.0f );
+  float vm = arg2float_d( 2, argc, argv, td.v_rot * 0.001f, 0.0f, 20.0f );
+
+  auto old_sf = sensor_flags;
+  sensor_flags = 0; // FAKE flags
+
+  auto rc =  do_move( turns, vm, 0 );
+
   sensor_flags = old_sf;
 
-  return 0;
+  return rc;
+}
+
+int cmd_move( int argc, const char * const * argv )
+{
+  float mm = arg2float_d( 1, argc, argv, 1.0f, -200.0f, 200.0f );
+  int ignore_opto = arg2long_d( 2, argc, argv, 0, 0, 1 );
+  float vm = arg2float_d( 3, argc, argv, td.v_mov_o * 0.001f, 0.0f, 20.0f );
+
+  auto old_sf = sensor_flags;
+  sensor_flags = ignore_opto ? SWLIM_BITS_SW : SWLIM_BITS_ALL;
+
+  auto rc =  do_move( mm, vm, 1 );
+
+  sensor_flags = old_sf;
+
+  return rc;
 }
 
 bool prepare_drv( uint8_t drv )
@@ -646,18 +653,29 @@ bool prepare_drv( uint8_t drv )
   return true;
 }
 
+int ensure_drv_prepared()
+{
+  if( drv_prepared ) {
+    return 1;
+  }
+  if( ! prepare_drv( 0 ) ) {
+    std_out << " Fail to prepare drv 0" << NL;
+    return 0;
+  }
+  if( ! prepare_drv( 1 )  ) {
+    std_out << " Fail to prepare drv 1" << NL;
+    return 0;
+  }
+  drv_prepared = 1;
+  return 1;
+}
+
 int cmd_prep( int argc, const char * const * argv )
 {
   drv_prepared = 0;
-  if( ! prepare_drv( 0 ) ) {
-    return 1;
-  }
-  if( ! prepare_drv( 1 )  ) {
-    return 2;
-  }
-  drv_prepared = 1;
+  int rc = ensure_drv_prepared();
 
-  return 0;
+  return ( rc != 0 ) ? 1 : 0;
 }
 
 int cmd_calc( int argc, const char * const * argv )
