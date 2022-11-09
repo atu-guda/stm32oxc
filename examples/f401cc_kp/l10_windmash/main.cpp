@@ -77,13 +77,17 @@ CmdInfo CMDINFO_READREG { "readreg", 'R', cmd_readreg, " reg - read TMC2209 regi
 int cmd_writereg( int argc, const char * const * argv );
 CmdInfo CMDINFO_WRITEREG { "writereg", 'W', cmd_writereg, " reg val - write TMC2209 register"  };
 int cmd_rotate( int argc, const char * const * argv );
-CmdInfo CMDINFO_ROTATE { "rot", '\0', cmd_rotate, " turns - rotate"  };
+CmdInfo CMDINFO_ROTATE { "rot", '\0', cmd_rotate, " turns [v] - rotate"  };
 int cmd_move( int argc, const char * const * argv );
-CmdInfo CMDINFO_MOVE { "move", 'M', cmd_move, " mm [no_opto] - move"  };
+CmdInfo CMDINFO_MOVE { "move", 'M', cmd_move, " mm [no_opto] [v] - move"  };
 int cmd_prep( int argc, const char * const * argv );
 CmdInfo CMDINFO_PREP { "prep", '\0', cmd_prep, " - prepare drivers"  };
 int cmd_calc( int argc, const char * const * argv );
 CmdInfo CMDINFO_CALC { "calc", '\0', cmd_calc, "n_tot w_d(um) w_l(um) - calculate task"  };
+int cmd_repos( int argc, const char * const * argv );
+CmdInfo CMDINFO_REPOS { "repos", '\0', cmd_repos, " mm - reposition to "  };
+int cmd_meas_x( int argc, const char * const * argv );
+CmdInfo CMDINFO_MEAS_X { "meas_x", '\0', cmd_meas_x, " - measure workspace "  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -98,6 +102,8 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_MOVE,
   &CMDINFO_PREP,
   &CMDINFO_CALC,
+  &CMDINFO_REPOS,
+  &CMDINFO_MEAS_X,
   nullptr
 };
 
@@ -130,6 +136,7 @@ constexpr NamedInt   ob_d_wire  { "d_wire",  &td.d_wire };
 constexpr NamedInt   ob_w_len   { "w_len",   &td.w_len };
 constexpr NamedInt   ob_v_rot   { "v_rot",   &td.v_rot };
 constexpr NamedInt   ob_v_mov_o { "v_mov_o", &td.v_mov_o };
+constexpr NamedInt   ob_w_len_m { "w_len_m", &td.w_len_m };
 constexpr NamedInt   ob_n_lay   { "n_lay",   &td.n_lay };
 constexpr NamedInt   ob_n_2lay  { "n_2lay",  &td.n_2lay };
 constexpr NamedInt   ob_v_mov   { "v_mov",   &td.v_mov };
@@ -144,6 +151,7 @@ constexpr const NamedObj *const objs_info[] = {
   & ob_w_len,
   & ob_v_rot,
   & ob_v_mov_o,
+  & ob_w_len_m,
   & ob_n_lay,
   & ob_n_2lay,
   & ob_v_mov,
@@ -633,6 +641,59 @@ int cmd_move( int argc, const char * const * argv )
   return rc;
 }
 
+int cmd_repos( int argc, const char * const * argv )
+{
+  float mm = arg2float_d( 1, argc, argv, 1.0f, -200.0f, 200.0f );
+  float vm = td.v_mov_o * 0.001f;
+
+  auto old_sf = sensor_flags;
+  sensor_flags = SWLIM_BITS_ALL;
+
+  float xmm, shi, emm;
+  if( mm > 0 ) {
+    xmm = -200.0f; shi =  0.1; emm = mm - shi;
+  } else {
+    xmm =  200.0f; shi = -0.1; emm = mm - shi;
+  }
+
+  do_move( xmm, vm, 1 );
+  sensor_flags = SWLIM_BITS_SW;
+  do_move( shi, vm, 1 );
+  sensor_flags = SWLIM_BITS_ALL;
+  int rc = do_move( emm, vm, 1 );
+
+  sensor_flags = old_sf;
+  return rc;
+}
+
+int cmd_meas_x( int argc, const char * const * argv )
+{
+  float vm = td.v_mov_o * 0.001f;
+  auto old_sf = sensor_flags;
+
+  sensor_flags = SWLIM_BITS_ALL;
+  do_move( 200.0f, vm, 1 );
+  sensor_flags = SWLIM_BITS_SW;
+  do_move( -0.1, vm, 1 );
+  sensor_flags = SWLIM_BITS_ALL;
+
+  int rc = do_move( -200, vm, 1 );
+  auto d_xt = tim5_pulses;
+  float d_x = 0.1f + (float)(d_xt) / ( motor_step2turn * motor_mstep );
+
+  sensor_flags = SWLIM_BITS_SW;
+  do_move( 0.1, vm, 1 );
+
+  sensor_flags = old_sf;
+
+  td.w_len_m  = (int)( d_x * 1000 );
+  std_out << "# d_x= " << d_x << ' ' << d_xt << NL;
+
+
+  return rc;
+}
+
+
 bool prepare_drv( uint8_t drv )
 {
   uint32_t r = TMC2209_read_reg_n_try( drv, 0x06, 10 );
@@ -692,6 +753,9 @@ int cmd_calc( int argc, const char * const * argv )
 
   cmd_pvar( 1, nullptr );
 
+  if( td.w_len > td.w_len_m ) {
+    std_out << "# WARNING: w_len > w_len_m" << NL;
+  }
 
   return 0;
 }
