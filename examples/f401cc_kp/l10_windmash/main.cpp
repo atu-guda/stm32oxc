@@ -74,11 +74,11 @@ CmdInfo CMDINFO_STOP { "stop", 'P', cmd_stop, " - stop motor"  };
 int cmd_speed( int argc, const char * const * argv );
 CmdInfo CMDINFO_SPEED { "speed", 'F', cmd_speed, " speed [dev] - set speed for motor turn/s or mm/s"  };
 int cmd_readreg( int argc, const char * const * argv );
-CmdInfo CMDINFO_READREG { "readreg", 'R', cmd_readreg, " reg - read TMC2209 register"  };
+CmdInfo CMDINFO_READREG { "readreg", '\0', cmd_readreg, " reg - read TMC2209 register"  };
 int cmd_writereg( int argc, const char * const * argv );
-CmdInfo CMDINFO_WRITEREG { "writereg", 'W', cmd_writereg, " reg val - write TMC2209 register"  };
+CmdInfo CMDINFO_WRITEREG { "writereg", '\0', cmd_writereg, " reg val - write TMC2209 register"  };
 int cmd_rotate( int argc, const char * const * argv );
-CmdInfo CMDINFO_ROTATE { "rot", '\0', cmd_rotate, " turns [v] - rotate"  };
+CmdInfo CMDINFO_ROTATE { "rot", 'R', cmd_rotate, " turns [v] - rotate"  };
 int cmd_move( int argc, const char * const * argv );
 CmdInfo CMDINFO_MOVE { "move", 'M', cmd_move, " mm [no_opto] [v] - move"  };
 int cmd_prep( int argc, const char * const * argv );
@@ -90,7 +90,7 @@ CmdInfo CMDINFO_REPOS { "repos", '\0', cmd_repos, " mm - reposition to "  };
 int cmd_meas_x( int argc, const char * const * argv );
 CmdInfo CMDINFO_MEAS_X { "meas_x", '\0', cmd_meas_x, " - measure workspace "  };
 int cmd_go( int argc, const char * const * argv );
-CmdInfo CMDINFO_GO { "go", 'G', cmd_go, " [n] - go next layer "  };
+CmdInfo CMDINFO_GO { "go", 'G', cmd_go, " [n] - go/continue next layer "  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
