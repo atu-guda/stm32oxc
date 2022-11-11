@@ -115,7 +115,7 @@ TaskData td;
 
 int TaskData::calc( int n_tot, int d_w, int w_l, bool even )
 {
-  n_done = n_ldone = c_lay =  n_lay = 0;
+  n_done = n_ldone = p_ldone = p_ltask = c_lay =  n_lay = 0;
   if( n_tot < 1 || d_w < 20 || w_l < 2 * d_w ) {
     n_tot = 0;
     return 0;
@@ -135,18 +135,27 @@ int TaskData::calc( int n_tot, int d_w, int w_l, bool even )
   return 1;
 }
 
-constexpr NamedInt   ob_n_total { "n_total", &td.n_total };
-constexpr NamedInt   ob_d_wire  { "d_wire",  &td.d_wire };
-constexpr NamedInt   ob_w_len   { "w_len",   &td.w_len };
-constexpr NamedInt   ob_v_rot   { "v_rot",   &td.v_rot };
-constexpr NamedInt   ob_v_mov_o { "v_mov_o", &td.v_mov_o };
-constexpr NamedInt   ob_w_len_m { "w_len_m", &td.w_len_m };
-constexpr NamedInt   ob_n_lay   { "n_lay",   &td.n_lay };
-constexpr NamedInt   ob_n_2lay  { "n_2lay",  &td.n_2lay };
-constexpr NamedInt   ob_v_mov   { "v_mov",   &td.v_mov };
-constexpr NamedInt   ob_n_done  { "n_done",  &td.n_done, NamedObj::Flags::ro };
-constexpr NamedInt   ob_n_ldone { "n_ldone", &td.n_ldone };
-constexpr NamedInt   ob_c_lay   { "c_lay",   &td.c_lay };
+#define ADD_IOBJ_TD(x) constexpr NamedInt   ob_##x { #x, &td.x }
+
+ADD_IOBJ_TD( n_total );
+ADD_IOBJ_TD( d_wire  );
+ADD_IOBJ_TD( w_len   );
+ADD_IOBJ_TD( v_rot   );
+ADD_IOBJ_TD( v_mov_o );
+ADD_IOBJ_TD( w_len_m );
+ADD_IOBJ_TD( s_rot_m );
+ADD_IOBJ_TD( s_mov_m );
+ADD_IOBJ_TD( dt );
+ADD_IOBJ_TD( n_lay   );
+ADD_IOBJ_TD( n_2lay  );
+ADD_IOBJ_TD( v_mov   );
+ADD_IOBJ_TD( n_done  );
+ADD_IOBJ_TD( n_ldone );
+ADD_IOBJ_TD( p_ldone );
+ADD_IOBJ_TD( p_ltask );
+ADD_IOBJ_TD( c_lay   );
+
+#undef ADD_IOBJ_TD
 
 
 constexpr const NamedObj *const objs_info[] = {
@@ -156,11 +165,16 @@ constexpr const NamedObj *const objs_info[] = {
   & ob_v_rot,
   & ob_v_mov_o,
   & ob_w_len_m,
+  & ob_s_rot_m,
+  & ob_s_mov_m,
+  & ob_dt,
   & ob_n_lay,
   & ob_n_2lay,
   & ob_v_mov,
   & ob_n_done,
   & ob_n_ldone,
+  & ob_p_ldone,
+  & ob_p_ltask,
   & ob_c_lay,
   nullptr
 };
@@ -195,9 +209,7 @@ int main(void)
 
   UVAR('t') =   100;
   UVAR('n') =     2;
-  UVAR('a') = 49999; // ARR
-  UVAR('l') =    20; // delay
-  UVAR('d') =     0; // TMC2209 device addr
+  UVAR('d') =     0; // TMC2209 device addr for manual
 
   ledsx.initHW();
   ledsx.reset( 0xFF );
@@ -571,10 +583,12 @@ int do_move( float mm, float vm, uint8_t dev )
   auto need_pulses = dev ? ( &tim5_need )   : ( &tim2_need );
   *c_pulses = 0;
   *need_pulses = pulses;
-  auto dt = UVAR('l'); // todo: common param
+
+  auto dt = td.dt;
+  uint32_t s_max = dev ? td.s_mov_m : td.s_rot_m;
 
   std_out << "# move: dev= " << (int)dev << " x= " << mm << " rev= " << rev
-          << " pulses= " << pulses << " v= " << vm << NL;
+          << " pulses= " << pulses << " v= " << vm << " s_max= " <<  s_max << NL;
 
   uint32_t tm0 = HAL_GetTick();
   uint32_t tc0 = tm0;
@@ -589,18 +603,26 @@ int do_move( float mm, float vm, uint8_t dev )
     delay_bad_mcs( 10 );
     uint32_t r6F_m = TMC2209_read_reg_n_try( dev, 0x6F, 4 );
     if( r6F_m & TMC2209_R6F_badflags ) {
-      break_flag = 1;
+      break_flag = 2;
+      timn_stop( dev );
     }
+
     uint32_t r41_m = TMC2209_read_reg_n_try( dev, 0x41, 4 );
+    if( i > 1  &&  r41_m < s_max ) { // 2 initial ticks have false poitive
+      break_flag = 3;
+      timn_stop( dev );
+    }
+
     read_sensors();
     if( ( porta_sensors_bits & sensor_flags ) != sensor_flags ) { // TODO: more checks
-       break_flag = 1;
+       break_flag = 4;
+       timn_stop( dev );
     }
 
     uint32_t tc = HAL_GetTick();
-    std_out << HexInt( r6F_m ) << ' ' << HexInt( r41_m ) << ' '
+    std_out << HexInt( r6F_m ) << ' '
             << HexInt16( porta_sensors_bits ) << ' ' << HexInt16( portb_sensors_bits )
-            << ' ' << (int)( tc - tm0 ) << NL;
+            << ' ' << r41_m << ' ' << (int)( tc - tm0 ) << NL;
     delay_ms_until_brk( &tc0, dt );
   }
 
@@ -717,7 +739,7 @@ int do_go( int n )
   uint32_t pulses = (uint32_t)( n_l * motor_step2turn * motor_mstep );
   tim2_pulses = 0; tim5_pulses = 0;
   tim2_need = pulses; // rotaion is a main movement
-  auto dt = UVAR('l'); // todo: common param
+  auto dt = td.dt;
 
   bool rev = false;
   if( td.c_lay & 1 ) {
@@ -755,18 +777,30 @@ int do_go( int n )
 
     uint32_t r6F_m0 = TMC2209_read_reg_n_try( 0, 0x6F, 4 );
     if( r6F_m0 & TMC2209_R6F_badflags ) {
-      break_flag = 1;
+      break_flag = 2;
     }
     uint32_t r41_m0 = TMC2209_read_reg_n_try( 0, 0x41, 4 );
+    if( i > 1  &&  r41_m0 < (uint32_t)td.s_rot_m ) { // 2 initial ticks have false poitive
+      break_flag = 3;
+      tims_stop( 3 );
+    }
+
     uint32_t r6F_m1 = TMC2209_read_reg_n_try( 1, 0x6F, 4 );
     if( r6F_m1 & TMC2209_R6F_badflags ) {
-      break_flag = 1;
+      break_flag = 4;
+      tims_stop( 3 );
     }
+
     uint32_t r41_m1 = TMC2209_read_reg_n_try( 1, 0x41, 4 );
+    if( i > 1  &&  r41_m0 < (uint32_t)td.s_mov_m ) {
+      break_flag = 5;
+      tims_stop( 3 );
+    }
 
     read_sensors();
     if( ( porta_sensors_bits & sensor_flags ) != sensor_flags ) { // TODO: more checks
-       break_flag = 1;
+      break_flag = 6;
+      tims_stop( 3 );
     }
 
     uint32_t tc = HAL_GetTick();
