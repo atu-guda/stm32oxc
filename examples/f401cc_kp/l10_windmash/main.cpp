@@ -91,6 +91,8 @@ int cmd_meas_x( int argc, const char * const * argv );
 CmdInfo CMDINFO_MEAS_X { "meas_x", '\0', cmd_meas_x, " - measure workspace "  };
 int cmd_go( int argc, const char * const * argv );
 CmdInfo CMDINFO_GO { "go", 'G', cmd_go, " [n] - go/continue next layer "  };
+int cmd_off( int argc, const char * const * argv );
+CmdInfo CMDINFO_OFF { "off", '\0', cmd_off, " - OFF drivers "  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -108,6 +110,7 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_REPOS,
   &CMDINFO_MEAS_X,
   &CMDINFO_GO,
+  &CMDINFO_OFF,
   nullptr
 };
 
@@ -909,6 +912,14 @@ int cmd_prep( int argc, const char * const * argv )
   int rc = ensure_drv_prepared();
 
   return ( rc != 0 ) ? 1 : 0;
+}
+
+int cmd_off( int argc, const char * const * argv )
+{
+  drv_prepared = 0;
+  TMC2209_write_reg( 0, 0x6C, reg6C_off );
+  TMC2209_write_reg( 1, 0x6C, reg6C_off );
+  return 0;
 }
 
 int cmd_calc( int argc, const char * const * argv )
