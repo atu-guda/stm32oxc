@@ -588,6 +588,9 @@ int do_move( float mm, float vm, uint8_t dev )
     }
     delay_bad_mcs( 10 );
     uint32_t r6F_m = TMC2209_read_reg_n_try( dev, 0x6F, 4 );
+    if( r6F_m & TMC2209_R6F_badflags ) {
+      break_flag = 1;
+    }
     uint32_t r41_m = TMC2209_read_reg_n_try( dev, 0x41, 4 );
     read_sensors();
     if( ( porta_sensors_bits & sensor_flags ) != sensor_flags ) { // TODO: more checks
@@ -749,10 +752,18 @@ int do_go( int n )
       break;
     }
     delay_bad_mcs( 10 );
+
     uint32_t r6F_m0 = TMC2209_read_reg_n_try( 0, 0x6F, 4 );
+    if( r6F_m0 & TMC2209_R6F_badflags ) {
+      break_flag = 1;
+    }
     uint32_t r41_m0 = TMC2209_read_reg_n_try( 0, 0x41, 4 );
     uint32_t r6F_m1 = TMC2209_read_reg_n_try( 1, 0x6F, 4 );
+    if( r6F_m1 & TMC2209_R6F_badflags ) {
+      break_flag = 1;
+    }
     uint32_t r41_m1 = TMC2209_read_reg_n_try( 1, 0x41, 4 );
+
     read_sensors();
     if( ( porta_sensors_bits & sensor_flags ) != sensor_flags ) { // TODO: more checks
        break_flag = 1;

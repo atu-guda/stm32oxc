@@ -52,6 +52,8 @@ inline constexpr uint32_t reg6C_def      = 0x15010053; // 8 mstep
 inline constexpr uint32_t motor_step2turn  = 200;
 inline constexpr uint32_t motor_mstep      =   8;
 
+inline constexpr uint32_t TMC2209_R6F_badflags  = 0x00000F3F; // shorts + overtemp
+
 struct TaskData {
   // input data
   int n_total {   100 }; // total turns
