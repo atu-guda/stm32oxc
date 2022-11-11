@@ -318,7 +318,7 @@ uint32_t TMC2209_read_reg( uint8_t dev, uint8_t reg )
 
   motordrv.reset();
 
-  ledsx.set( 1 );
+  // ledsx.set( 1 );
 
   auto w_n = motordrv.write_s( (const char*)rqd.rawCData(), sizeof(rqd) );
   if( w_n != sizeof(rqd) ) {
@@ -332,7 +332,7 @@ uint32_t TMC2209_read_reg( uint8_t dev, uint8_t reg )
   delay_ms( 1 ); // TODO: config
 
   memset( in_buf, '\x00', sizeof(in_buf) );
-  ledsx.reset( 1 );
+  // ledsx.reset( 1 );
 
   auto r_n = motordrv.read( in_buf, 16, 100 );
 
@@ -590,6 +590,8 @@ int do_move( float mm, float vm, uint8_t dev )
   std_out << "# move: dev= " << (int)dev << " x= " << mm << " rev= " << rev
           << " pulses= " << pulses << " v= " << vm << " s_max= " <<  s_max << NL;
 
+  ledsx.reset( 0x0F );
+
   uint32_t tm0 = HAL_GetTick();
   uint32_t tc0 = tm0;
 
@@ -624,6 +626,10 @@ int do_move( float mm, float vm, uint8_t dev )
             << HexInt16( porta_sensors_bits ) << ' ' << HexInt16( portb_sensors_bits )
             << ' ' << r41_m << ' ' << (int)( tc - tm0 ) << NL;
     delay_ms_until_brk( &tc0, dt );
+  }
+
+  if( break_flag ) {
+    ledsx.set( 1 );
   }
 
   timn_stop( dev );
@@ -733,6 +739,7 @@ int do_go( int n )
     return  1;
   }
 
+  ledsx.reset( 0x0F );
   int n_l = td.n_2lay - td.n_ldone;
   std_out << "# go: c_lay= " << td.c_lay << " n_ldone= " << td.n_ldone << " n_l= " << n_l << NL;
 
@@ -823,6 +830,10 @@ int do_go( int n )
   if( td.n_ldone >= td.n_2lay ) {
     td.n_ldone = 0;
     ++td.c_lay;
+  }
+
+  if( break_flag ) {
+    ledsx.set( 1 );
   }
 
   std_out << "# go: pulses: task= " << pulses << " done=" << tim2_pulses
@@ -963,7 +974,7 @@ void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
 {
   if( htim->Instance == TIM2 ) {
     ++UVAR('y');
-    ledsx.toggle( 2 );
+    // ledsx.toggle( 2 );
     ++tim2_pulses;
     if( tim2_need > 0 && tim2_pulses >= tim2_need ) {
       tim2_stop();
@@ -974,7 +985,7 @@ void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
   if( htim->Instance == TIM5 ) {
     ++UVAR('x');
     ++tim5_pulses;
-    ledsx.toggle( 4 );
+    // ledsx.toggle( 4 );
     uint32_t pa = SWLIM_GPIO.IDR & sensor_flags;
     if( pa != sensor_flags ) {
       tim5_stop();
