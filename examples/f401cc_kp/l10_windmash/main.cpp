@@ -62,7 +62,7 @@ bool prepare_drv( uint8_t drv ); // true = ok
 int ensure_drv_prepared();
 int  drv_prepared = 0;
 int do_move( float mm, float vm, uint8_t dev );
-int do_go( int n );
+int do_go( float nt );
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -128,6 +128,7 @@ int TaskData::calc( int n_tot, int d_w, int w_l, bool even )
     n_lay &= ~1u;
   }
   n_2lay = ( n_total + n_lay / 2 ) / n_lay;
+  p_ltask = n_2lay * motor_step2turn * motor_mstep;
 
   float d_w_e = 0.001f * w_len / n_2lay;
   v_mov = (int)(v_rot * d_w_e);
@@ -610,7 +611,7 @@ int do_move( float mm, float vm, uint8_t dev )
     }
 
     uint32_t r41_m = TMC2209_read_reg_n_try( dev, 0x41, 4 );
-    if( i > 1  &&  r41_m < s_max ) { // 2 initial ticks have false poitive
+    if( i > 1  &&  r41_m < s_max ) { // 2 initial ticks have false positive
       break_flag = 3;
       timn_stop( dev );
     }
@@ -728,7 +729,7 @@ int cmd_meas_x( int argc, const char * const * argv )
   return rc;
 }
 
-int do_go( int n )
+int do_go( float nt )
 {
   if( td.c_lay >= td.n_lay ) {
     std_out << "# All done!" << NL;
@@ -741,9 +742,15 @@ int do_go( int n )
 
   ledsx.reset( 0x0F );
   int n_l = td.n_2lay - td.n_ldone;
-  std_out << "# go: c_lay= " << td.c_lay << " n_ldone= " << td.n_ldone << " n_l= " << n_l << NL;
+  uint32_t pulses = td.p_ltask - td.p_ldone;
+  uint32_t max_pulses = (uint32_t)( nt * motor_step2turn * motor_mstep );
+  if( pulses > max_pulses ) {
+    pulses = max_pulses;
+  }
 
-  uint32_t pulses = (uint32_t)( n_l * motor_step2turn * motor_mstep );
+  std_out << "# go: c_lay= " << td.c_lay << " n_ldone= " << td.n_ldone
+          << " n_l= " << n_l << " pulses: " << pulses << NL;
+
   tim2_pulses = 0; tim5_pulses = 0;
   tim2_need = pulses; // rotaion is a main movement
   auto dt = td.dt;
@@ -787,7 +794,7 @@ int do_go( int n )
       break_flag = 2;
     }
     uint32_t r41_m0 = TMC2209_read_reg_n_try( 0, 0x41, 4 );
-    if( i > 1  &&  r41_m0 < (uint32_t)td.s_rot_m ) { // 2 initial ticks have false poitive
+    if( i > 1  &&  r41_m0 < (uint32_t)td.s_rot_m ) { // 2 initial ticks have false positive
       break_flag = 3;
       tims_stop( 3 );
     }
@@ -819,38 +826,42 @@ int do_go( int n )
   }
 
   tims_stop( 3 );
-  UVAR('b') = tim2_pulses;
-  UVAR('c') = tim5_pulses;
-  auto d_pulses = tim2_pulses;
-  float d_r = (float) d_pulses / (motor_step2turn * motor_mstep);
-  tim2_need = tim5_need = 0;
-  int add_turns = int( d_r + 0.499f );
-  td.n_ldone += add_turns;
-  td.n_done  += add_turns;
-  if( td.n_ldone >= td.n_2lay ) {
-    td.n_ldone = 0;
-    ++td.c_lay;
-  }
 
   if( break_flag ) {
     ledsx.set( 1 );
   }
 
-  std_out << "# go: pulses: task= " << pulses << " done=" << tim2_pulses
-          << " delta= " << d_pulses << " d_r= " << d_r << " break= " << break_flag << ' '
+  UVAR('b') = tim2_pulses;
+  UVAR('c') = tim5_pulses;
+
+  auto d_pulses = tim2_pulses;
+  td.p_ldone += d_pulses;
+  float d_r = (float) d_pulses / (motor_step2turn * motor_mstep);
+  tim2_need = tim5_need = 0;
+  int add_turns = int( d_r + 0.499f );
+  td.n_ldone += add_turns;
+  td.n_done  += add_turns;
+
+  if( td.p_ldone >= td.p_ltask ) {
+    td.n_ldone = 0;
+    td.p_ldone = 0;
+    ++td.c_lay;
+  }
+
+  std_out << "# go: pulses: task= " << pulses << " done=" << d_pulses
+          << " d_r= " << d_r << " break= " << break_flag << ' '
           << HexInt16( porta_sensors_bits ) << ' ' << HexInt16( portb_sensors_bits ) << NL;
   std_out << "#  add_turns= " << add_turns << " n_ldone= " << td.n_ldone
           << " n_done= " << td.n_done << " c_lay= " << td.c_lay << NL;
 
   return break_flag;
-
 }
 
 
 int cmd_go( int argc, const char * const * argv )
 {
-  int n = arg2long_d( 1, argc, argv, 100000, 1, 1000000 );
-  int rc = do_go( n );
+  float nt = arg2float_d( 1, argc, argv, 100000.0f, 0.001f, 1000000.0f );
+  int rc = do_go( nt );
   return rc;
 }
 
