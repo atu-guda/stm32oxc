@@ -30,6 +30,7 @@ const uint32_t porta_sensor_mask = SWLIM_BITS_ALL;
 const uint32_t portb_sensor_mask = TOWER_BITS_ALL | DIAG_BITS_ALL;
 bool read_sensors(); // returns true at bad condition
 uint32_t sensor_flags = SWLIM_BITS_ALL;
+bool check_top { false }, check_bot { false }; // work copy from td, only in go
 
 const char* common_help_string = "Winding machine control app" NL;
 
@@ -150,6 +151,8 @@ ADD_IOBJ_TD( w_len_m );
 ADD_IOBJ_TD( s_rot_m );
 ADD_IOBJ_TD( s_mov_m );
 ADD_IOBJ_TD( dt );
+ADD_IOBJ_TD( check_top );
+ADD_IOBJ_TD( check_bot );
 ADD_IOBJ_TD( n_lay   );
 ADD_IOBJ_TD( n_2lay  );
 ADD_IOBJ_TD( v_mov   );
@@ -172,6 +175,8 @@ constexpr const NamedObj *const objs_info[] = {
   & ob_s_rot_m,
   & ob_s_mov_m,
   & ob_dt,
+  & ob_check_top,
+  & ob_check_bot,
   & ob_n_lay,
   & ob_n_2lay,
   & ob_v_mov,
@@ -241,6 +246,16 @@ int main(void)
   devio_fds[5] = &motordrv;
   devio_fds[6] = &motordrv;
   motordrv.itEnable( UART_IT_RXNE );
+
+  // TOWER_GPIO.setEXTI( TOWER_PIN0, GpioRegs::ExtiEv::down );
+  // TOWER_GPIO.setEXTI( TOWER_PIN1, GpioRegs::ExtiEv::down );
+  // TOWER_GPIO.setEXTI( TOWER_PIN2, GpioRegs::ExtiEv::down );
+  // HAL_NVIC_SetPriority( EXTI0_IRQn, 14, 0 );
+  // // HAL_NVIC_EnableIRQ(   EXTI0_IRQn );
+  // HAL_NVIC_SetPriority( EXTI1_IRQn, 15, 0 );
+  // // HAL_NVIC_EnableIRQ(   EXTI1_IRQn );
+  // HAL_NVIC_SetPriority( EXTI2_IRQn, 14, 0 );
+  // // HAL_NVIC_EnableIRQ(   EXTI2_IRQn );
 
   BOARD_POST_INIT_BLINK;
 
@@ -588,6 +603,8 @@ int do_move( float mm, float vm, uint8_t dev )
   *c_pulses = 0;
   *need_pulses = pulses;
 
+  check_top  = false;  check_bot  = false;
+
   auto dt = td.dt;
   uint32_t s_max = dev ? td.s_mov_m : td.s_rot_m;
 
@@ -779,6 +796,7 @@ int do_go( float nt )
   TMC2209_write_reg( 1, 0, rev ? reg00_def_rev : reg00_def_forv ); // move direction
 
   sensor_flags = SWLIM_BITS_ALL;
+  check_top  = td.check_top;  check_bot  = td.check_bot;
 
   uint32_t tm0 = HAL_GetTick();
   uint32_t tc0 = tm0;
@@ -814,15 +832,15 @@ int do_go( float nt )
       tims_stop( 3 );
     }
 
-    read_sensors();
+    // read_sensors(); // done in IRQ, but copy?
     if( ( porta_sensors_bits & sensor_flags ) != sensor_flags ) { // TODO: more checks
       break_flag = 6;
       tims_stop( 3 );
     }
 
     uint32_t tc = HAL_GetTick();
-    std_out << HexInt( r6F_m0 ) << ' ' << HexInt( r41_m0 ) << ' '
-            << HexInt( r6F_m1 ) << ' ' << HexInt( r41_m1 ) << ' '
+    std_out << HexInt( r6F_m0 ) << ' ' << r41_m0 << ' '
+            << HexInt( r6F_m1 ) << ' ' << r41_m1 << ' '
             << HexInt16( porta_sensors_bits ) << ' ' << HexInt16( portb_sensors_bits )
             << ' ' << (int)( tc - tm0 ) << NL;
     delay_ms_until_brk( &tc0, dt );
@@ -850,6 +868,8 @@ int do_go( float nt )
     td.p_ldone = 0;
     ++td.c_lay;
   }
+
+  check_top  = false;  check_bot  = false;
 
   std_out << "# go: pulses: task= " << pulses << " done=" << d_pulses
           << " d_r= " << d_r << " break= " << break_flag << ' '
@@ -994,6 +1014,9 @@ void TIM5_IRQHandler()
 
 void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
 {
+  read_sensors();
+  uint32_t pa = porta_sensors_bits & sensor_flags;
+
   if( htim->Instance == TIM2 ) {
     ++UVAR('y');
     // ledsx.toggle( 2 );
@@ -1008,11 +1031,21 @@ void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
     ++UVAR('x');
     ++tim5_pulses;
     // ledsx.toggle( 4 );
-    uint32_t pa = SWLIM_GPIO.IDR & sensor_flags;
     if( pa != sensor_flags ) {
-      tim5_stop();
-      tim2_stop();
+      tims_stop( 3 );
+      break_flag = 10;
     }
+
+    if( check_top && ( portb_sensors_bits & TOWER_BIT_UP ) ) { // set = bad
+      tims_stop( 3 );
+      break_flag = 11;
+    }
+
+    if( check_bot && ( ( portb_sensors_bits & TOWER_BIT_DW ) == 0 ) ) { // reset = bad
+      tims_stop( 3 );
+      break_flag = 12;
+    }
+
     if( tim5_need > 0 && tim5_pulses >= tim5_need ) {
       tim5_stop();
     }
@@ -1020,21 +1053,39 @@ void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
   }
 }
 
+void HAL_GPIO_EXTI_Callback( uint16_t pin )
+{
+  ++UVAR('i');
+  switch( pin ) {
+    case TOWER_PIN0:
+      ledsx.toggle( 2 );
+      break;
+    case TOWER_PIN1:
+      ledsx.toggle( 4 );
+      break;
+    case TOWER_PIN2:
+      ledsx.toggle( 8 );
+      break;
+    default:
+      ledsx.toggle( 1 );
+      break;
+  }
+}
 
 
 void EXTI0_IRQHandler(void)
 {
-  // HAL_GPIO_EXTI_IRQHandler(SW_ALARM_Pin);
+  HAL_GPIO_EXTI_IRQHandler( TOWER_PIN0 );
 }
 
 void EXTI1_IRQHandler()
 {
-  // HAL_GPIO_EXTI_IRQHandler(SW_LEV_1_Pin);
+  HAL_GPIO_EXTI_IRQHandler( TOWER_PIN1 );
 }
 
 void EXTI2_IRQHandler()
 {
-  // HAL_GPIO_EXTI_IRQHandler(SW_LEV_2_Pin);
+  HAL_GPIO_EXTI_IRQHandler( TOWER_PIN2 );
 }
 
 void EXTI3_IRQHandler()

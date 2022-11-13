@@ -6,6 +6,8 @@
 // #define TOWER_GPIO GpioB
 inline auto& TOWER_GPIO { GpioB };
 inline constexpr uint32_t TOWER_PIN0 { 0 };
+inline constexpr uint32_t TOWER_PIN1 { TOWER_PIN0 + 1 };
+inline constexpr uint32_t TOWER_PIN2 { TOWER_PIN0 + 2 };
 inline constexpr uint32_t TOWER_N    { 3 };
 inline constexpr uint32_t TOWER_BIT_UP { 1 << TOWER_PIN0 };
 inline constexpr uint32_t TOWER_BIT_CE { TOWER_BIT_UP << 1 };
@@ -67,6 +69,8 @@ struct TaskData {
   int s_rot_m {    80 }; // minimal S stall value for rotation
   int s_mov_m {    50 }; // minimal S stall value for movement
   int      dt {    20 }; // time step durung work in ms
+  int check_top {     1 }; // check top sensor in tower (wire break or end)
+  int check_bot {     1 }; // check bottom sensor in tower (stall)
   // calculated
   int n_lay   {     0 }; // number of layers
   int n_2lay  {     0 }; // turns per layer
