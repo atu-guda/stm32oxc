@@ -34,6 +34,10 @@ bool check_top { false }, check_bot { false }; // work copy from td, only in go
 
 const char* common_help_string = "Winding machine control app" NL;
 
+constexpr uint32_t tim_psc_freq   {  10000000 };
+constexpr uint32_t tim_pbase_init {  tim_psc_freq / 200 };
+
+
 TIM_HandleTypeDef tim2_h;
 TIM_HandleTypeDef tim5_h;
 uint32_t volatile tim2_pulses {0}, tim2_need {0}, tim5_pulses {0}, tim5_need {0};
@@ -124,6 +128,7 @@ int TaskData::calc( int n_tot, int d_w, int w_l, bool even )
     n_tot = 0;
     return 0;
   }
+
   n_total = n_tot; d_wire = d_w; w_len = w_l;
   unsigned n_lay_max = w_len / d_wire;
   n_lay = ( n_tot + n_lay_max - 1 ) / n_lay_max;
@@ -135,7 +140,12 @@ int TaskData::calc( int n_tot, int d_w, int w_l, bool even )
   p_ltask = n_2lay * motor_step2turn * motor_mstep;
 
   float d_w_e = 0.001f * w_len / n_2lay;
-  v_mov = (int)(v_rot * d_w_e);
+  v_mov = (int)( v_rot * d_w_e + 0.4999f );
+
+  // debug:
+  uint32_t d_wire_eff = ( ( w_len * 100  / n_2lay ) + 49 ) / 100;
+  std_out << "# debug: n_lay_max= " << n_lay_max << " n_lay= " << n_lay
+    << " d_w_e= " << d_w_e << " v_mov= " << v_mov << " d_wire_eff= " << d_wire_eff << NL;
 
   return 1;
 }
@@ -160,6 +170,7 @@ ADD_IOBJ_TD( n_done  );
 ADD_IOBJ_TD( n_ldone );
 ADD_IOBJ_TD( p_ldone );
 ADD_IOBJ_TD( p_ltask );
+ADD_IOBJ_TD( p_move );
 ADD_IOBJ_TD( c_lay   );
 
 #undef ADD_IOBJ_TD
@@ -184,6 +195,7 @@ constexpr const NamedObj *const objs_info[] = {
   & ob_n_ldone,
   & ob_p_ldone,
   & ob_p_ltask,
+  & ob_p_move,
   & ob_c_lay,
   nullptr
 };
@@ -404,9 +416,9 @@ int cmd_writereg( int argc, const char * const * argv )
 
 int tim_n_cfg( TIM_HandleTypeDef &t_h, TIM_TypeDef *tim, uint32_t ch )
 {
-  int pbase = 3124; // TODO: ???
+  int pbase = tim_pbase_init;
   t_h.Instance               = tim;
-  t_h.Init.Prescaler         = calc_TIM_psc_for_cnt_freq( tim, 1000000  );
+  t_h.Init.Prescaler         = calc_TIM_psc_for_cnt_freq( tim, tim_psc_freq );
   t_h.Init.Period            = pbase;
   t_h.Init.ClockDivision     = 0;
   t_h.Init.CounterMode       = TIM_COUNTERMODE_UP;
@@ -564,6 +576,9 @@ int set_drv_speed( int dev, float speed )
   tim->CNT = 0;
   tim->CR1 = old_cr1;
 
+  // debug
+  std_out << "# debug: dev= " << dev << " ARR= " << arr << " freq= " << freq << NL;
+
   return 0;
 }
 
@@ -669,7 +684,7 @@ int do_move( float mm, float vm, uint8_t dev )
 int cmd_rotate( int argc, const char * const * argv )
 {
   float turns = arg2float_d( 1, argc, argv, 1.0f, -50000.0f, 50000.0f );
-  float vm = arg2float_d( 2, argc, argv, td.v_rot * 0.001f, 0.0f, 20.0f );
+  float vm = arg2float_d( 2, argc, argv, td.v_rot * speed_scale, 0.0f, 20.0f );
 
   auto old_sf = sensor_flags;
   sensor_flags = 0; // FAKE flags
@@ -685,7 +700,7 @@ int cmd_move( int argc, const char * const * argv )
 {
   float mm = arg2float_d( 1, argc, argv, 1.0f, -200.0f, 200.0f );
   int ignore_opto = arg2long_d( 2, argc, argv, 0, 0, 1 );
-  float vm = arg2float_d( 3, argc, argv, td.v_mov_o * 0.001f, 0.0f, 20.0f );
+  float vm = arg2float_d( 3, argc, argv, td.v_mov_o * speed_scale, 0.0f, 20.0f );
 
   auto old_sf = sensor_flags;
   sensor_flags = ignore_opto ? SWLIM_BITS_SW : SWLIM_BITS_ALL;
@@ -700,7 +715,7 @@ int cmd_move( int argc, const char * const * argv )
 int cmd_repos( int argc, const char * const * argv )
 {
   float mm = arg2float_d( 1, argc, argv, 1.0f, -200.0f, 200.0f );
-  float vm = td.v_mov_o * 0.001f;
+  float vm = td.v_mov_o * speed_scale;
 
   auto old_sf = sensor_flags;
   sensor_flags = SWLIM_BITS_ALL;
@@ -724,7 +739,7 @@ int cmd_repos( int argc, const char * const * argv )
 
 int cmd_meas_x( int argc, const char * const * argv )
 {
-  float vm = td.v_mov_o * 0.001f;
+  float vm = td.v_mov_o * speed_scale;
   auto old_sf = sensor_flags;
 
   sensor_flags = SWLIM_BITS_ALL;
@@ -779,10 +794,11 @@ int do_go( float nt )
   if( td.c_lay & 1 ) {
     rev = true;
   }
-  float v_rot = td.v_rot * 0.001f;
+  float v_rot = td.v_rot * speed_scale;
   set_drv_speed( 0, v_rot );
-  float v_mov = td.v_mov * 0.001f;
+  float v_mov = td.v_mov * speed_scale;
   set_drv_speed( 1, v_mov );
+  td.p_move = 0;
 
   std_out << "# pulses= " << pulses << " rev= " << rev << " v_rot= " << v_rot << " v_mov= " << v_mov << NL;
   if( n_l < 1 || n_l > td.n_2lay ) {
@@ -1030,6 +1046,7 @@ void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
   if( htim->Instance == TIM5 ) {
     ++UVAR('x');
     ++tim5_pulses;
+    ++td.p_move;
     // ledsx.toggle( 4 );
     if( pa != sensor_flags ) {
       tims_stop( 3 );
