@@ -68,6 +68,7 @@ int ensure_drv_prepared();
 int  drv_prepared = 0;
 int do_move( float mm, float vm, uint8_t dev );
 int do_go( float nt );
+const char*  break_flag2str();
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -641,20 +642,20 @@ int do_move( float mm, float vm, uint8_t dev )
     delay_bad_mcs( 10 );
     uint32_t r6F_m = TMC2209_read_reg_n_try( dev, 0x6F, 4 );
     if( r6F_m & TMC2209_R6F_badflags ) {
-      break_flag = 2;
+      break_flag = dev ? (int)(BreakNum::drv_flags_mov) : (int)(BreakNum::drv_flags_rot);
       timn_stop( dev );
     }
 
     uint32_t r41_m = TMC2209_read_reg_n_try( dev, 0x41, 4 );
     if( i > 1  &&  r41_m < s_max ) { // 2 initial ticks have false positive
-      break_flag = 3;
+      break_flag = dev ? (int)(BreakNum::drv_smin_mov) : (int)(BreakNum::drv_smin_rot);
       timn_stop( dev );
     }
 
     read_sensors();
     if( ( porta_sensors_bits & sensor_flags ) != sensor_flags ) { // TODO: more checks
-       break_flag = 4;
-       timn_stop( dev );
+      break_flag = (int)(BreakNum::limits);
+      timn_stop( dev );
     }
 
     uint32_t tc = HAL_GetTick();
@@ -677,6 +678,7 @@ int do_move( float mm, float vm, uint8_t dev )
   std_out << "# move result pulses: task= " << pulses << " done=" << *c_pulses
           << " delta= " << d_pulses << " d_x= " << d_x << " break= " << break_flag << ' '
           << HexInt16( porta_sensors_bits ) << ' ' << HexInt16( portb_sensors_bits ) << NL;
+  std_out << "# " << break_flag2str() << NL;
 
   return break_flag;
 }
@@ -828,23 +830,23 @@ int do_go( float nt )
 
     uint32_t r6F_m0 = TMC2209_read_reg_n_try( 0, 0x6F, 4 );
     if( r6F_m0 & TMC2209_R6F_badflags ) {
-      break_flag = 2;
+      break_flag = (int)(BreakNum::drv_flags_rot);
     }
     uint32_t r41_m0 = TMC2209_read_reg_n_try( 0, 0x41, 4 );
     if( i > 1  &&  r41_m0 < (uint32_t)td.s_rot_m ) { // 2 initial ticks have false positive
-      break_flag = 3;
+      break_flag = (int)(BreakNum::drv_smin_rot);
       tims_stop( 3 );
     }
 
     uint32_t r6F_m1 = TMC2209_read_reg_n_try( 1, 0x6F, 4 );
     if( r6F_m1 & TMC2209_R6F_badflags ) {
-      break_flag = 4;
+      break_flag = (int)(BreakNum::drv_flags_mov);
       tims_stop( 3 );
     }
 
     uint32_t r41_m1 = TMC2209_read_reg_n_try( 1, 0x41, 4 );
     if( i > 1  &&  r41_m0 < (uint32_t)td.s_mov_m ) {
-      break_flag = 5;
+      break_flag = (int)(BreakNum::drv_smin_mov);
       tims_stop( 3 );
     }
 
@@ -892,6 +894,7 @@ int do_go( float nt )
           << HexInt16( porta_sensors_bits ) << ' ' << HexInt16( portb_sensors_bits ) << NL;
   std_out << "#  add_turns= " << add_turns << " n_ldone= " << td.n_ldone
           << " n_done= " << td.n_done << " c_lay= " << td.c_lay << NL;
+  std_out << "# " << break_flag2str() << NL;
 
   return break_flag;
 }
@@ -977,6 +980,25 @@ int cmd_calc( int argc, const char * const * argv )
   }
 
   return 0;
+}
+
+const char*  break_flag2str()
+{
+  static const char* strs[] = {
+    "none",
+    "cbreak",
+    "limits",    // 2
+    "tower_top", // 3
+    "tower_bot", // 4
+    "drv_flags_rot",
+    "drv_smin_rot",
+    "drv_flags_mov",
+    "drv_smin_mov",
+    "?max",
+  };
+  static_assert( std::size(strs) == (unsigned)(BreakNum::max)+1, "Bad break flag strings number" );
+  unsigned bfi = (unsigned)break_flag >= (unsigned)(BreakNum::max) ? (unsigned)(BreakNum::max) : (unsigned)break_flag;
+  return strs[bfi];
 }
 
 void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim )

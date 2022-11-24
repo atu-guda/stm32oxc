@@ -59,6 +59,19 @@ inline constexpr uint32_t TMC2209_R6F_badflags  = 0x00000F3F; // shorts + overte
 
 inline constexpr float speed_scale = 1.0e-6f;
 
+enum class BreakNum {
+  none = 0,
+  cbreak = 1,
+  limits = 2,
+  tower_top = 3,
+  tower_bot = 4,
+  drv_flags_rot = 5,
+  drv_smin_rot  = 6,
+  drv_flags_mov = 7,
+  drv_smin_mov  = 8,
+  max
+};
+
 struct TaskData {
   // input data
   int n_total {   100 }; // total turns
