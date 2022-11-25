@@ -1,0 +1,3 @@
+Leds blink + EXTI line 9_5/1 IRQ w/o FreeRTOS
+Use external LEDS on D7:D10.
+

@@ -1,2 +1,3 @@
 Leds blink + EXTI line 13 IRQ w/o FreeRTOS
 Use external LEDS on C0:C3.
+

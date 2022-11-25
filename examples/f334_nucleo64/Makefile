@@ -4,6 +4,7 @@ SUBDIRS = \
   01_leds_oxc \
   01a_leds_tim_oxc_mu \
   02_leds_rtos \
+  02a_leds_btn \
   03_uart \
   04_uart_console \
   04a_uart_console_nort \

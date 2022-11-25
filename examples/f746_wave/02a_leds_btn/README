@@ -1,0 +1,3 @@
+Leds blink + EXTI line ? IRQ w/o FreeRTOS
+Use external LEDS
+

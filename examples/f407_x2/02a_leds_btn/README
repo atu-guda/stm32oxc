@@ -1,0 +1,2 @@
+Leds blink + EXTI lines 0,1 IRQ w/o FreeRTOS
+
