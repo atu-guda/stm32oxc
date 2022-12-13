@@ -39,16 +39,16 @@ constexpr uint32_t tim_psc_freq   {  10000000 };
 constexpr uint32_t tim_pbase_init {  tim_psc_freq / 200 };
 
 
-TIM_HandleTypeDef tim2_h;
-TIM_HandleTypeDef tim5_h;
-uint32_t volatile tim2_pulses {0}, tim2_need {0}, tim5_pulses {0}, tim5_need {0};
+TIM_HandleTypeDef tim_r_h;
+TIM_HandleTypeDef tim_m_h;
+uint32_t volatile tim_r_pulses {0}, tim_r_need {0}, tim_m_pulses {0}, tim_m_need {0};
 int tim_n_cfg( TIM_HandleTypeDef &t_h, TIM_TypeDef *tim, uint32_t ch );
-int tim2_cfg();
-void tim2_start();
-void tim2_stop();
-int tim5_cfg();
-void tim5_start();
-void tim5_stop();
+int tim_r_cfg();
+void tim_r_start();
+void tim_r_stop();
+int tim_m_cfg();
+void tim_m_start();
+void tim_m_stop();
 void tims_start( uint8_t devs );
 void tims_stop( uint8_t devs );
 void timn_start( uint8_t dev );
@@ -249,10 +249,10 @@ int main(void)
   if( ! init_uart( &uah_motordrv ) ) {
     die4led( 1 );
   }
-  if( ! tim2_cfg() ) {
+  if( ! tim_r_cfg() ) {
     die4led( 2 );
   }
-  if( ! tim5_cfg() ) {
+  if( ! tim_m_cfg() ) {
     die4led( 3 );
   }
 
@@ -465,77 +465,77 @@ int tim_n_cfg( TIM_HandleTypeDef &t_h, TIM_TypeDef *tim, uint32_t ch )
 }
 
 
-int tim2_cfg()
+int tim_r_cfg()
 {
-  return tim_n_cfg( tim2_h, TIM_ROT, TIM_CHANNEL_2 );
+  return tim_n_cfg( tim_r_h, TIM_ROT, TIM_CHANNEL_2 );
 }
 
-int tim5_cfg()
+int tim_m_cfg()
 {
-  return tim_n_cfg( tim5_h, TIM_MOV, TIM_CHANNEL_3 );
+  return tim_n_cfg( tim_m_h, TIM_MOV, TIM_CHANNEL_3 );
 }
 
-void tim2_start()
+void tim_r_start()
 {
-  HAL_TIM_PWM_Start_IT( &tim2_h, TIM_CHANNEL_2 );
-  __HAL_TIM_DISABLE_IT( &tim2_h, TIM_IT_CC2 ); // we need PWM, but IRQ on update event
-  __HAL_TIM_ENABLE_IT( &tim2_h, TIM_IT_UPDATE );
+  HAL_TIM_PWM_Start_IT( &tim_r_h, TIM_CHANNEL_2 );
+  __HAL_TIM_DISABLE_IT( &tim_r_h, TIM_IT_CC2 ); // we need PWM, but IRQ on update event
+  __HAL_TIM_ENABLE_IT( &tim_r_h, TIM_IT_UPDATE );
 }
 
-void tim2_stop()
+void tim_r_stop()
 {
-  HAL_TIM_PWM_Stop_IT( &tim2_h, TIM_CHANNEL_2 );
-  __HAL_TIM_DISABLE_IT( &tim2_h, TIM_IT_UPDATE );
+  HAL_TIM_PWM_Stop_IT( &tim_r_h, TIM_CHANNEL_2 );
+  __HAL_TIM_DISABLE_IT( &tim_r_h, TIM_IT_UPDATE );
 }
 
-void tim5_start()
+void tim_m_start()
 {
-  HAL_TIM_PWM_Start_IT( &tim5_h, TIM_CHANNEL_3 );
-  __HAL_TIM_DISABLE_IT( &tim5_h, TIM_IT_CC3 ); // we need PWM, but IRQ on update event
-  __HAL_TIM_ENABLE_IT( &tim5_h, TIM_IT_UPDATE );
+  HAL_TIM_PWM_Start_IT( &tim_m_h, TIM_CHANNEL_3 );
+  __HAL_TIM_DISABLE_IT( &tim_m_h, TIM_IT_CC3 ); // we need PWM, but IRQ on update event
+  __HAL_TIM_ENABLE_IT( &tim_m_h, TIM_IT_UPDATE );
 }
 
-void tim5_stop()
+void tim_m_stop()
 {
-  HAL_TIM_PWM_Stop_IT( &tim5_h, TIM_CHANNEL_3 );
-  __HAL_TIM_DISABLE_IT( &tim5_h, TIM_IT_UPDATE );
+  HAL_TIM_PWM_Stop_IT( &tim_m_h, TIM_CHANNEL_3 );
+  __HAL_TIM_DISABLE_IT( &tim_m_h, TIM_IT_UPDATE );
 }
 
 void tims_start( uint8_t devs )
 {
   if( devs & 1 ) {
-    tim2_start();
+    tim_r_start();
   }
   if( devs & 2 ) {
-    tim5_start();
+    tim_m_start();
   }
 }
 
 void tims_stop( uint8_t devs )
 {
   if( devs & 1 ) {
-    tim2_stop();
+    tim_r_stop();
   }
   if( devs & 2 ) {
-    tim5_stop();
+    tim_m_stop();
   }
 }
 
 void timn_start( uint8_t dev )
 {
   if( dev ) {
-    tim5_start();
+    tim_m_start();
   } else {
-    tim2_start();
+    tim_r_start();
   }
 }
 
 void timn_stop( uint8_t dev )
 {
   if( dev ) {
-    tim5_stop();
+    tim_m_stop();
   } else {
-    tim2_stop();
+    tim_r_stop();
   }
 }
 
@@ -620,8 +620,8 @@ int do_move( float mm, float vm, uint8_t dev )
   TMC2209_write_reg( dev, 0, rev ? reg00_def_rev : reg00_def_forv ); // direction
 
   uint32_t pulses = (uint32_t)( mm * motor_step2turn * motor_mstep );
-  auto c_pulses    = dev ? ( &tim5_pulses ) : ( &tim2_pulses );
-  auto need_pulses = dev ? ( &tim5_need )   : ( &tim2_need );
+  auto c_pulses    = dev ? ( &tim_m_pulses ) : ( &tim_r_pulses );
+  auto need_pulses = dev ? ( &tim_m_need )   : ( &tim_r_need );
   *c_pulses = 0;
   *need_pulses = pulses;
 
@@ -757,7 +757,7 @@ int cmd_meas_x( int argc, const char * const * argv )
   sensor_flags = SWLIM_BITS_ALL;
 
   int rc = do_move( -200, vm, 1 );
-  auto d_xt = tim5_pulses;
+  auto d_xt = tim_m_pulses;
   float d_x = 0.1f + (float)(d_xt) / ( motor_step2turn * motor_mstep );
 
   sensor_flags = SWLIM_BITS_SW;
@@ -794,8 +794,8 @@ int do_go( float nt )
   std_out << "# go: c_lay= " << td.c_lay << " n_ldone= " << td.n_ldone
           << " n_l= " << n_l << " pulses: " << pulses << NL;
 
-  tim2_pulses = 0; tim5_pulses = 0;
-  tim2_need = pulses; // rotaion is a main movement
+  tim_r_pulses = 0; tim_m_pulses = 0;
+  tim_r_need = pulses; // rotaion is a main movement
   auto dt = td.dt;
 
   bool rev = false;
@@ -829,7 +829,7 @@ int do_go( float nt )
   tims_start( 3 );
   for( int i=0; i<10000000 && !break_flag; ++i ) { // TODO: calc time
 
-    if( tim2_pulses >= pulses ) {
+    if( tim_r_pulses >= pulses ) {
       break;
     }
     delay_bad_mcs( 10 );
@@ -877,13 +877,13 @@ int do_go( float nt )
     ledsx.set( 1 );
   }
 
-  UVAR('b') = tim2_pulses;
-  UVAR('c') = tim5_pulses;
+  UVAR('b') = tim_r_pulses;
+  UVAR('c') = tim_m_pulses;
 
-  auto d_pulses = tim2_pulses;
+  auto d_pulses = tim_r_pulses;
   td.p_ldone += d_pulses;
   float d_r = (float) d_pulses / (motor_step2turn * motor_mstep);
-  tim2_need = tim5_need = 0;
+  tim_r_need = tim_m_need = 0;
   int add_turns = int( d_r + 0.499f );
   td.n_ldone += add_turns;
   td.n_done  += add_turns;
@@ -1049,12 +1049,12 @@ void HAL_TIM_PWM_MspDeInit( TIM_HandleTypeDef* htim )
 
 void TIM2_IRQHandler()
 {
-  HAL_TIM_IRQHandler( &tim2_h );
+  HAL_TIM_IRQHandler( &tim_r_h );
 }
 
 void TIM5_IRQHandler()
 {
-  HAL_TIM_IRQHandler( &tim5_h );
+  HAL_TIM_IRQHandler( &tim_m_h );
 }
 
 void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
@@ -1065,16 +1065,16 @@ void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
   if( htim->Instance == TIM_ROT ) {
     ++UVAR('y');
     // ledsx.toggle( 2 );
-    ++tim2_pulses;
-    if( tim2_need > 0 && tim2_pulses >= tim2_need ) {
-      tim2_stop();
+    ++tim_r_pulses;
+    if( tim_r_need > 0 && tim_r_pulses >= tim_r_need ) {
+      tim_r_stop();
     }
     return;
   }
 
   if( htim->Instance == TIM_MOV ) {
     ++UVAR('x');
-    ++tim5_pulses;
+    ++tim_m_pulses;
     ++td.p_move;
     // ledsx.toggle( 4 );
     if( pa != sensor_flags ) {
@@ -1092,8 +1092,8 @@ void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
       break_flag = (int)(BreakNum::tower_bot);
     }
 
-    if( tim5_need > 0 && tim5_pulses >= tim5_need ) {
-      tim5_stop();
+    if( tim_m_need > 0 && tim_m_pulses >= tim_m_need ) {
+      tim_m_stop();
     }
     return;
   }
