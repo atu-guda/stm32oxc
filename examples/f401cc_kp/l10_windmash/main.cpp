@@ -274,9 +274,9 @@ int main(void)
 
 void init_EXTI()
 {
-  TOWER_GPIO.setEXTI( TOWER_PIN0, GpioRegs::ExtiEv::down );
-  TOWER_GPIO.setEXTI( TOWER_PIN1, GpioRegs::ExtiEv::down );
-  TOWER_GPIO.setEXTI( TOWER_PIN2, GpioRegs::ExtiEv::down );
+  TOWER_GPIO.setEXTI( TOWER_PIN_UP, GpioRegs::ExtiEv::updown );
+  TOWER_GPIO.setEXTI( TOWER_PIN_CE, GpioRegs::ExtiEv::updown );
+  TOWER_GPIO.setEXTI( TOWER_PIN_DW, GpioRegs::ExtiEv::updown );
   HAL_NVIC_SetPriority( EXTI0_IRQn, 15, 0 );
   HAL_NVIC_EnableIRQ(   EXTI0_IRQn );
   HAL_NVIC_SetPriority( EXTI1_IRQn, 15, 0 );
@@ -467,12 +467,12 @@ int tim_n_cfg( TIM_HandleTypeDef &t_h, TIM_TypeDef *tim, uint32_t ch )
 
 int tim2_cfg()
 {
-  return tim_n_cfg( tim2_h, TIM2, TIM_CHANNEL_2 );
+  return tim_n_cfg( tim2_h, TIM_ROT, TIM_CHANNEL_2 );
 }
 
 int tim5_cfg()
 {
-  return tim_n_cfg( tim5_h, TIM5, TIM_CHANNEL_3 );
+  return tim_n_cfg( tim5_h, TIM_MOV, TIM_CHANNEL_3 );
 }
 
 void tim2_start()
@@ -570,7 +570,7 @@ uint32_t calc_TIM_arr_for_base_freq_flt( TIM_TypeDef *tim, float base_freq )
 
 int set_drv_speed( int dev, float speed )
 {
-  auto tim = ( dev == 0 ) ? TIM2 : TIM5;
+  auto tim = ( dev == 0 ) ? TIM_ROT : TIM_MOV;
   auto ccr = ( dev == 0 ) ? &(tim->CCR2) : &(tim->CCR3);
   float freq = motor_step2turn * motor_mstep * speed;
   uint32_t arr = calc_TIM_arr_for_base_freq_flt( tim, freq );
@@ -596,8 +596,8 @@ int cmd_speed( int argc, const char * const * argv )
 
   set_drv_speed( dev, speed );
 
-  tim_print_cfg( TIM2 );
-  tim_print_cfg( TIM5 );
+  tim_print_cfg( TIM_ROT );
+  tim_print_cfg( TIM_MOV );
 
   return 0;
 }
@@ -1010,7 +1010,7 @@ const char*  break_flag2str()
 
 void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim )
 {
-  if( htim->Instance == TIM2 ) {
+  if( htim->Instance == TIM_ROT ) {
     __GPIOA_CLK_ENABLE(); __TIM2_CLK_ENABLE();
     GpioA.cfgAF_N( GPIO_PIN_1, 1 );
     HAL_NVIC_SetPriority( TIM2_IRQn, 8, 0 );
@@ -1019,7 +1019,7 @@ void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim )
     return;
   }
 
-  if( htim->Instance == TIM5 ) {
+  if( htim->Instance == TIM_MOV ) {
     __GPIOA_CLK_ENABLE(); __TIM5_CLK_ENABLE();
     GpioA.cfgAF_N( GPIO_PIN_2, GPIO_AF2_TIM5 );
     HAL_NVIC_SetPriority( TIM5_IRQn, 9, 0 );
@@ -1032,14 +1032,14 @@ void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim )
 
 void HAL_TIM_PWM_MspDeInit( TIM_HandleTypeDef* htim )
 {
-  if( htim->Instance == TIM2 ) {
+  if( htim->Instance == TIM_ROT ) {
     __TIM2_CLK_DISABLE();
     GpioA.cfgIn_N( GPIO_PIN_1 );
     HAL_NVIC_DisableIRQ( TIM2_IRQn );
     return;
   }
 
-  if( htim->Instance == TIM5 ) {
+  if( htim->Instance == TIM_MOV ) {
     __TIM5_CLK_DISABLE();
     GpioA.cfgIn_N( GPIO_PIN_2 );
     HAL_NVIC_DisableIRQ( TIM5_IRQn );
@@ -1062,7 +1062,7 @@ void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
   read_sensors();
   uint32_t pa = porta_sensors_bits & sensor_flags;
 
-  if( htim->Instance == TIM2 ) {
+  if( htim->Instance == TIM_ROT ) {
     ++UVAR('y');
     // ledsx.toggle( 2 );
     ++tim2_pulses;
@@ -1072,24 +1072,24 @@ void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
     return;
   }
 
-  if( htim->Instance == TIM5 ) {
+  if( htim->Instance == TIM_MOV ) {
     ++UVAR('x');
     ++tim5_pulses;
     ++td.p_move;
     // ledsx.toggle( 4 );
     if( pa != sensor_flags ) {
       tims_stop( 3 );
-      break_flag = 10;
+      break_flag = (int)(BreakNum::limits);
     }
 
     if( check_top && ( portb_sensors_bits & TOWER_BIT_UP ) ) { // set = bad
       tims_stop( 3 );
-      break_flag = 11;
+      break_flag = (int)(BreakNum::tower_top);
     }
 
     if( check_bot && ( ( portb_sensors_bits & TOWER_BIT_DW ) == 0 ) ) { // reset = bad
       tims_stop( 3 );
-      break_flag = 12;
+      break_flag = (int)(BreakNum::tower_bot);
     }
 
     if( tim5_need > 0 && tim5_pulses >= tim5_need ) {
@@ -1099,18 +1099,31 @@ void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
   }
 }
 
+
 void HAL_GPIO_EXTI_Callback( uint16_t pin )
 {
   ++UVAR('i');
+  read_sensors();
+
   switch( pin ) {
     case TOWER_BIT_UP:
       ledsx.toggle( 2 );
+      if( check_top && ( portb_sensors_bits & TOWER_BIT_UP ) ) { // set = bad
+        tims_stop( 3 );
+        break_flag = (int)(BreakNum::tower_top);
+        UVAR('z') = 100;
+      }
       break;
     case TOWER_BIT_CE:
-      ledsx.toggle( 4 );
+      // ledsx.toggle( 4 ); // NOP for now
       break;
     case TOWER_BIT_DW:
       ledsx.toggle( 8 );
+      if( check_bot && ( ( portb_sensors_bits & TOWER_BIT_DW ) == 0 ) ) { // reset = bad
+        tims_stop( 3 );
+        break_flag = (int)(BreakNum::tower_bot);
+        UVAR('z') = 102;
+      }
       break;
     default:
       ledsx.toggle( 1 );

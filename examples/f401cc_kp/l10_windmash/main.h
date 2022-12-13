@@ -6,8 +6,11 @@
 // #define TOWER_GPIO GpioB
 inline auto& TOWER_GPIO { GpioB };
 inline constexpr uint32_t TOWER_PIN0 { 0 };
+inline constexpr uint32_t TOWER_PIN_UP { TOWER_PIN0 };
 inline constexpr uint32_t TOWER_PIN1 { TOWER_PIN0 + 1 };
+inline constexpr uint32_t TOWER_PIN_CE { TOWER_PIN1 };
 inline constexpr uint32_t TOWER_PIN2 { TOWER_PIN0 + 2 };
+inline constexpr uint32_t TOWER_PIN_DW { TOWER_PIN2 };
 inline constexpr uint32_t TOWER_N    { 3 };
 inline constexpr uint32_t TOWER_BIT_UP { 1 << TOWER_PIN0 };
 inline constexpr uint32_t TOWER_BIT_CE { TOWER_BIT_UP << 1 };
@@ -45,6 +48,9 @@ inline auto&  USER_STOP_GPIO { GpioA };
 inline constexpr uint32_t  USER_STOP_PIN0  { 3 };
 inline constexpr uint32_t  USER_STOP_N     { 1 };
 inline constexpr uint32_t  USER_STOP_BIT   { 1 << USER_STOP_PIN0 };
+
+#define TIM_ROT TIM2
+#define TIM_MOV TIM5
 
 inline constexpr uint32_t reg00_def_forv = 0x000001C1;
 inline constexpr uint32_t reg00_def_rev  = 0x000001C9;
