@@ -57,10 +57,14 @@ inline constexpr uint32_t  USER_STOP_BIT   { 1 << USER_STOP_PIN0 };
 #define TIM_MOV_EN  __GPIOA_CLK_ENABLE(); __TIM5_CLK_ENABLE();
 #define TIM_ROT_DIS __TIM2_CLK_DISABLE();
 #define TIM_MOV_DIS __TIM5_CLK_DISABLE();
-#define TIM_ROT_IRQ TIM2_IRQn
-#define TIM_MOV_IRQ TIM5_IRQn
+#define TIM_ROT_IRQn TIM2_IRQn
+#define TIM_MOV_IRQn TIM5_IRQn
 #define TIM_ROT_IRQ_HANDLER TIM2_IRQHandler
 #define TIM_MOV_IRQ_HANDLER TIM5_IRQHandler
+#define TIM_ROT_GPIO_PIN GPIO_PIN_1
+#define TIM_MOV_GPIO_PIN GPIO_PIN_2
+#define TIM_ROT_GPIO_AF GPIO_AF1_TIM2
+#define TIM_MOV_GPIO_AF GPIO_AF2_TIM5
 
 inline constexpr uint32_t reg00_def_forv = 0x000001C1;
 inline constexpr uint32_t reg00_def_rev  = 0x000001C9;

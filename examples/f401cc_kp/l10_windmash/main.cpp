@@ -467,37 +467,37 @@ int tim_n_cfg( TIM_HandleTypeDef &t_h, TIM_TypeDef *tim, uint32_t ch )
 
 int tim_r_cfg()
 {
-  return tim_n_cfg( tim_r_h, TIM_ROT, TIM_CHANNEL_2 );
+  return tim_n_cfg( tim_r_h, TIM_ROT, TIM_ROT_CH );
 }
 
 int tim_m_cfg()
 {
-  return tim_n_cfg( tim_m_h, TIM_MOV, TIM_CHANNEL_3 );
+  return tim_n_cfg( tim_m_h, TIM_MOV, TIM_MOV_CH );
 }
 
 void tim_r_start()
 {
-  HAL_TIM_PWM_Start_IT( &tim_r_h, TIM_CHANNEL_2 );
+  HAL_TIM_PWM_Start_IT( &tim_r_h, TIM_ROT_CH );
   __HAL_TIM_DISABLE_IT( &tim_r_h, TIM_IT_CC2 ); // we need PWM, but IRQ on update event
-  __HAL_TIM_ENABLE_IT( &tim_r_h, TIM_IT_UPDATE );
+  __HAL_TIM_ENABLE_IT(  &tim_r_h, TIM_IT_UPDATE );
 }
 
 void tim_r_stop()
 {
-  HAL_TIM_PWM_Stop_IT( &tim_r_h, TIM_CHANNEL_2 );
+  HAL_TIM_PWM_Stop_IT(  &tim_r_h, TIM_ROT_CH );
   __HAL_TIM_DISABLE_IT( &tim_r_h, TIM_IT_UPDATE );
 }
 
 void tim_m_start()
 {
-  HAL_TIM_PWM_Start_IT( &tim_m_h, TIM_CHANNEL_3 );
+  HAL_TIM_PWM_Start_IT( &tim_m_h, TIM_MOV_CH );
   __HAL_TIM_DISABLE_IT( &tim_m_h, TIM_IT_CC3 ); // we need PWM, but IRQ on update event
-  __HAL_TIM_ENABLE_IT( &tim_m_h, TIM_IT_UPDATE );
+  __HAL_TIM_ENABLE_IT(  &tim_m_h, TIM_IT_UPDATE );
 }
 
 void tim_m_stop()
 {
-  HAL_TIM_PWM_Stop_IT( &tim_m_h, TIM_CHANNEL_3 );
+  HAL_TIM_PWM_Stop_IT(  &tim_m_h, TIM_MOV_CH );
   __HAL_TIM_DISABLE_IT( &tim_m_h, TIM_IT_UPDATE );
 }
 
@@ -1011,19 +1011,19 @@ const char*  break_flag2str()
 void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim )
 {
   if( htim->Instance == TIM_ROT ) {
-    __GPIOA_CLK_ENABLE(); __TIM2_CLK_ENABLE();
-    GpioA.cfgAF_N( GPIO_PIN_1, 1 );
-    HAL_NVIC_SetPriority( TIM2_IRQn, 8, 0 );
-    HAL_NVIC_EnableIRQ( TIM2_IRQn );
+    TIM_ROT_EN;
+    GpioA.cfgAF_N( TIM_ROT_GPIO_PIN, TIM_ROT_GPIO_AF );
+    HAL_NVIC_SetPriority( TIM_ROT_IRQn, 8, 0 );
+    HAL_NVIC_EnableIRQ( TIM_ROT_IRQn );
     UVAR('z') = 7;
     return;
   }
 
   if( htim->Instance == TIM_MOV ) {
-    __GPIOA_CLK_ENABLE(); __TIM5_CLK_ENABLE();
-    GpioA.cfgAF_N( GPIO_PIN_2, GPIO_AF2_TIM5 );
-    HAL_NVIC_SetPriority( TIM5_IRQn, 9, 0 );
-    HAL_NVIC_EnableIRQ( TIM5_IRQn );
+    TIM_MOV_EN;
+    GpioA.cfgAF_N( TIM_MOV_GPIO_PIN, TIM_MOV_GPIO_AF );
+    HAL_NVIC_SetPriority( TIM_MOV_IRQn, 9, 0 );
+    HAL_NVIC_EnableIRQ( TIM_MOV_IRQn );
     UVAR('z') += 8;
     return;
   }
@@ -1033,26 +1033,26 @@ void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim )
 void HAL_TIM_PWM_MspDeInit( TIM_HandleTypeDef* htim )
 {
   if( htim->Instance == TIM_ROT ) {
-    __TIM2_CLK_DISABLE();
-    GpioA.cfgIn_N( GPIO_PIN_1 );
-    HAL_NVIC_DisableIRQ( TIM2_IRQn );
+    TIM_ROT_DIS;
+    GpioA.cfgIn_N( TIM_ROT_GPIO_PIN );
+    HAL_NVIC_DisableIRQ( TIM_ROT_IRQn );
     return;
   }
 
   if( htim->Instance == TIM_MOV ) {
-    __TIM5_CLK_DISABLE();
-    GpioA.cfgIn_N( GPIO_PIN_2 );
-    HAL_NVIC_DisableIRQ( TIM5_IRQn );
+    TIM_MOV_DIS;
+    GpioA.cfgIn_N( TIM_MOV_GPIO_PIN );
+    HAL_NVIC_DisableIRQ( TIM_MOV_IRQn );
     return;
   }
 }
 
-void TIM2_IRQHandler()
+void TIM_ROT_IRQ_HANDLER()
 {
   HAL_TIM_IRQHandler( &tim_r_h );
 }
 
-void TIM5_IRQHandler()
+void TIM_MOV_IRQ_HANDLER()
 {
   HAL_TIM_IRQHandler( &tim_m_h );
 }
