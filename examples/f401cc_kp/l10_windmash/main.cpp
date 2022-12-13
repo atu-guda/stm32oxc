@@ -22,6 +22,7 @@ PinsIn pins_swlim( SWLIM_GPIO, SWLIM_PIN0, SWLIM_N );
 PinsIn pins_diag (  DIAG_GPIO,  DIAG_PIN0,  DIAG_N );
 PinsIn pins_user_start( USER_START_GPIO,  USER_START_PIN0,  USER_START_N );
 PinsIn pins_user_stop(   USER_STOP_GPIO,   USER_STOP_PIN0,   USER_STOP_N );
+void init_EXTI();
 
 volatile uint32_t porta_sensors_bits {0};
 volatile uint32_t portb_sensors_bits {0};
@@ -260,15 +261,7 @@ int main(void)
   devio_fds[6] = &motordrv;
   motordrv.itEnable( UART_IT_RXNE );
 
-  // TOWER_GPIO.setEXTI( TOWER_PIN0, GpioRegs::ExtiEv::down );
-  // TOWER_GPIO.setEXTI( TOWER_PIN1, GpioRegs::ExtiEv::down );
-  // TOWER_GPIO.setEXTI( TOWER_PIN2, GpioRegs::ExtiEv::down );
-  // HAL_NVIC_SetPriority( EXTI0_IRQn, 14, 0 );
-  // // HAL_NVIC_EnableIRQ(   EXTI0_IRQn );
-  // HAL_NVIC_SetPriority( EXTI1_IRQn, 15, 0 );
-  // // HAL_NVIC_EnableIRQ(   EXTI1_IRQn );
-  // HAL_NVIC_SetPriority( EXTI2_IRQn, 14, 0 );
-  // // HAL_NVIC_EnableIRQ(   EXTI2_IRQn );
+  init_EXTI();
 
   BOARD_POST_INIT_BLINK;
 
@@ -277,6 +270,19 @@ int main(void)
   std_main_loop_nortos( &srl, idle_main_task );
 
   return 0;
+}
+
+void init_EXTI()
+{
+  TOWER_GPIO.setEXTI( TOWER_PIN0, GpioRegs::ExtiEv::down );
+  TOWER_GPIO.setEXTI( TOWER_PIN1, GpioRegs::ExtiEv::down );
+  TOWER_GPIO.setEXTI( TOWER_PIN2, GpioRegs::ExtiEv::down );
+  HAL_NVIC_SetPriority( EXTI0_IRQn, 15, 0 );
+  HAL_NVIC_EnableIRQ(   EXTI0_IRQn );
+  HAL_NVIC_SetPriority( EXTI1_IRQn, 15, 0 );
+  HAL_NVIC_EnableIRQ(   EXTI1_IRQn );
+  HAL_NVIC_SetPriority( EXTI2_IRQn, 15, 0 );
+  HAL_NVIC_EnableIRQ(   EXTI2_IRQn );
 }
 
 int cmd_test0( int argc, const char * const * argv )
@@ -852,7 +858,7 @@ int do_go( float nt )
 
     // read_sensors(); // done in IRQ, but copy?
     if( ( porta_sensors_bits & sensor_flags ) != sensor_flags ) { // TODO: more checks
-      break_flag = 6;
+      break_flag = (int)(BreakNum::drv_flags_rot );
       tims_stop( 3 );
     }
 
@@ -861,6 +867,7 @@ int do_go( float nt )
             << HexInt( r6F_m1 ) << ' ' << r41_m1 << ' '
             << HexInt16( porta_sensors_bits ) << ' ' << HexInt16( portb_sensors_bits )
             << ' ' << (int)( tc - tm0 ) << NL;
+
     delay_ms_until_brk( &tc0, dt );
   }
 
@@ -1096,13 +1103,13 @@ void HAL_GPIO_EXTI_Callback( uint16_t pin )
 {
   ++UVAR('i');
   switch( pin ) {
-    case TOWER_PIN0:
+    case TOWER_BIT_UP:
       ledsx.toggle( 2 );
       break;
-    case TOWER_PIN1:
+    case TOWER_BIT_CE:
       ledsx.toggle( 4 );
       break;
-    case TOWER_PIN2:
+    case TOWER_BIT_DW:
       ledsx.toggle( 8 );
       break;
     default:
@@ -1114,17 +1121,17 @@ void HAL_GPIO_EXTI_Callback( uint16_t pin )
 
 void EXTI0_IRQHandler(void)
 {
-  HAL_GPIO_EXTI_IRQHandler( TOWER_PIN0 );
+  HAL_GPIO_EXTI_IRQHandler( TOWER_BIT_UP );
 }
 
 void EXTI1_IRQHandler()
 {
-  HAL_GPIO_EXTI_IRQHandler( TOWER_PIN1 );
+  HAL_GPIO_EXTI_IRQHandler( TOWER_BIT_CE );
 }
 
 void EXTI2_IRQHandler()
 {
-  HAL_GPIO_EXTI_IRQHandler( TOWER_PIN2 );
+  HAL_GPIO_EXTI_IRQHandler( TOWER_BIT_DW );
 }
 
 void EXTI3_IRQHandler()
