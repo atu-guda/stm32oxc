@@ -40,7 +40,8 @@ SUBDIRS = \
   36_mcp23017_gpio_i2c \
   37_ad7606_spi \
   38_mcp3204_adc_spi \
-  80_math_stat
+  80_math_stat \
+  l10_windmash
 
   # 16_step1 \
   # 17_1w_18b20 \
