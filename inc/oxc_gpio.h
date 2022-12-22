@@ -4,6 +4,7 @@
 #include <functional>
 
 #include <oxc_base.h>
+#include <oxc_bitops.h>
 
 
 class GpioRegs {

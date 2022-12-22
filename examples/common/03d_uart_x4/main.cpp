@@ -63,12 +63,18 @@ int cmd_test0( int argc, const char * const * argv )
   std_out << NL "Test0: n= " <<  n <<  " t= " << t_step << NL;
   std_out.flush();
 
+  uint32_t bits  {0};
+  // float    fbits {0.0f};
+
   uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
 
   break_flag = 0;
   for( int i=0; i<n && !break_flag; ++i ) {
     uint32_t tmc = HAL_GetTick();
-    std_out << " Fake Action i= "  << i <<  " tick: " << ( tmc - tm00 ) << NL;
+    set_bit( bits, i+1 );
+    reset_bit( bits, i );
+    // set_bit( fbits, i+1 ); // concepts: std::integral required
+    std_out << " Fake Action i= "  << i <<  " tick: " << ( tmc - tm00 ) << ' ' << HexInt(bits) << NL;
     std_out.flush();
     if( UVAR('w') ) {
        dev_console.wait_eot();
