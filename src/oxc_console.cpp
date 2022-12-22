@@ -2,6 +2,7 @@
 #include <oxc_console.h>
 #include <oxc_devio.h>
 #include <oxc_outstream.h>
+#include <oxc_atleave.h>
 
 int console_verbose = 1;
 volatile int on_cmd_handler = 0;

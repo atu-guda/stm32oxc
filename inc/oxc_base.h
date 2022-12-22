@@ -54,6 +54,7 @@ extern volatile int dbg_val0, dbg_val1, dbg_val2, dbg_val3;
 extern volatile int idle_flag;
 extern volatile int break_flag;
 extern volatile int sigint_count;
+extern uint32_t delay_calibrate_value;
 #ifndef TASK_LEDS_QUANT
   #define TASK_LEDS_QUANT 10
 #endif
@@ -67,26 +68,11 @@ typedef const char *const ccstr;
 #define ARR_SZ(x) (sizeof(x) / sizeof(x[0]))
 #define ARR_AND_SZ(x) x, (sizeof(x) / sizeof(x[0]))
 
-#ifdef __cplusplus
-
-
-// helper class to auto decrement values at function exit
-class AutoIncDec {
-  public:
-   explicit AutoIncDec( volatile int &av ) : v(av) { ++v; }
-   ~AutoIncDec() { --v; }
-  private:
-   volatile int &v;
-};
-
-#endif
-
 
 #ifndef NL
   #define NL "\n"
 #endif
 
-extern uint32_t delay_calibrate_value;
 
 typedef uint32_t mu_t; // mutex_t alike
 

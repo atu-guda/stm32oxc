@@ -2,6 +2,7 @@
 
 
 #include <oxc_auto.h>
+#include <oxc_atleave.h>
 
 using namespace std;
 using namespace SMLRL;
@@ -65,6 +66,10 @@ int cmd_test0( int argc, const char * const * argv )
 
   uint32_t bits  {0};
   // float    fbits {0.0f};
+  RestoreAtLeave xx( UVAR('x') );
+  UVAR('x') = 17;
+  DoAtLeave fxx( []() { ++UVAR('y'); } );
+  std_out << "# x= " << UVAR('x') << " y= " << UVAR('y') << NL;
 
   uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
 
