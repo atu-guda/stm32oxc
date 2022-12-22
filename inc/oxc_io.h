@@ -2,6 +2,7 @@
 #define _OXC_IO_H
 
 #include <oxc_base.h>
+#include <oxc_ev.h>
 
 // abstract IO classes (protocols)
 

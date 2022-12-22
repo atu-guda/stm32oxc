@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#include <oxc_ev.h>
+
 #ifdef USE_OXC
 #include <oxc_mutex.h>
 #else
