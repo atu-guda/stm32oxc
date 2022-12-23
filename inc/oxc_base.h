@@ -120,7 +120,6 @@ void wakeFromIRQ( long wake );
 void vApplicationIdleHook(void);
 void vApplicationTickHook(void);
 // misc functions
-void _exit( int rc );
 void die( uint16_t n ) __attribute__((noreturn));
 void Error_Handler( int rc ); // defined at user program
 
@@ -140,26 +139,6 @@ void delay_bad_100ns( uint32_t ns100 );
 void SystemClock_Config(void);
 int  SystemClockCfg(void); // returns: 0: ok >0 + set errno: error
 
-// osfuncs, real or not
-struct stat;
-struct tms;
-int _getpid(void);
-int _kill( int pid, int sig );
-void _exit( int status );
-int _read( int fd, char *buf, int len );
-int _write( int fd, const char *buf, int len );
-int _close( int fd );
-int _fstat( int fd, struct stat *st );
-int _isatty( int fd );
-int _lseek( int fd, int ptr, int whence );
-int _open( const char *path, int flags, ... );
-int _wait( int *status );
-int _unlink( char *name );
-int _times( struct tms *buf );
-int _stat( const char *file, struct stat *st );
-int _link( const char *oldname, const char *newname );
-int _fork(void);
-int _execve( char *name, char **argv, char **env );
 
 typedef void (*AuxTickFun)(void);
 #define AUX_TICK_FUN_N 4

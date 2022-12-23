@@ -2,6 +2,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <oxc_base.h>
+#include <oxc_osfun.h>
 
 #ifndef OXC_FAKE_IO
 #include <oxc_devio.h>
