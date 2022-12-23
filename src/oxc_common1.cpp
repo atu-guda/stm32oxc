@@ -1,4 +1,5 @@
 #include <oxc_gpio.h>
+#include <oxc_ticker.h>
 #include <oxc_common1.h>
 #include <oxc_outstream.h>
 

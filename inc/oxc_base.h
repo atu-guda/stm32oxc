@@ -184,23 +184,6 @@ void oxc_call_aux_tick_funcs(void);
 #endif
 
 
-#ifdef __cplusplus
-
-
-class OxcTicker {
-  public:
-    explicit OxcTicker( int aw )   : w( aw ),    pw( &w )           { start(); } ;
-    OxcTicker( volatile int *apw, int qsz ) : w( *apw ), pw( apw ), q( qsz ) { start(); } ;
-    bool isTick();
-    void start();
-    void setW( int aw ) { w = aw; }
-  protected:
-    int w, next;
-    volatile int *pw;
-    int q = 1;
-};
-
-#endif
 
 
 void default_wait1(void);

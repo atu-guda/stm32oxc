@@ -298,19 +298,5 @@ void delay_mcs( uint32_t mcs )
 
 
 
-void OxcTicker::start()
-{
-  next = HAL_GetTick() + *pw * q;
-}
-
-bool OxcTicker::isTick()
-{
-  int c = HAL_GetTick();
-  if( c < next ) {
-    return false;
-  }
-  next += *pw * q;
-  return true;
-}
 
 

@@ -288,6 +288,7 @@ ifeq "$(USE_OXC_CONSOLE)" "y"
   USE_OXC_DEVIO = y
   SRCS += oxc_console.cpp
   SRCS += oxc_smallrl.cpp
+  SRCS += oxc_ticker.cpp
   SRCS += oxc_common1.cpp
   ALLFLAGS += -DUSE_OXC_CONSOLE
 else
