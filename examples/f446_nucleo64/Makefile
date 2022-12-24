@@ -15,6 +15,7 @@ SUBDIRS = \
   05a_def_console \
   05b_usb_console_nort \
   05c_def_cons_nort \
+  05d_defcons_btn \
   06_i2c_test \
   07_i2c_lcdt \
   08_i2c_mpu6050 \
@@ -67,6 +68,7 @@ SUBDIRS = \
   l04_wheels1 \
   l05_meas0 \
   t01_iprintf \
+  t01_misc \
   xx01_calibrate \
 
 #  03c_uart_x3 \
