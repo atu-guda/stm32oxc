@@ -30,12 +30,45 @@ void aux_tick_fun2(void)
 }
 
 
+void xxx_main_loop_nortos( SmallRL *sm, AuxTickFun f_idle )
+{
+  if( !sm ) {
+    die4led( 0 );
+  }
+
+  UVAR('i') = 0;
+
+  // eat pre-input
+  reset_in( 0 );
+  for( unsigned i=0; i<256; ++i ) {
+    ++UVAR('i');
+    auto v = tryGet( 0 );
+    if( v.empty() ) {
+      break;
+    }
+  }
+
+  while( 1 ) {
+    auto v = tryGet( 0 );
+
+    if( v.good() ) {
+      sm->addChar( v.c );
+    } else {
+      if( f_idle ) {
+        f_idle();
+      }
+      delay_ms( UVAR('q') );
+    }
+  }
+}
+
 int main(void)
 {
   STD_PROLOG_UART;
 
   UVAR('t') = 100;
-  UVAR('n') = 10;
+  UVAR('n') =  10;
+  UVAR('q') =   0;
 
   BOARD_POST_INIT_BLINK;
 
@@ -46,7 +79,7 @@ int main(void)
   oxc_add_aux_tick_fun( led_task_nortos );
   oxc_add_aux_tick_fun( aux_tick_fun2 );
 
-  std_main_loop_nortos( &srl, nullptr );
+  xxx_main_loop_nortos( &srl, nullptr );
 
   return 0;
 }
@@ -75,7 +108,7 @@ int cmd_test0( int argc, const char * const * argv )
 
     // action
     uint32_t tmc = HAL_GetTick();
-    iprintf( " Fake Action i= %d  tick: %lu " NL, i, tmc - tm00 );
+    std_out << i << ' ' << (tmc - tm00) << ' ' << tm0 << NL;
 
     delay_ms_until_brk( &tm0, t_step );
   }
