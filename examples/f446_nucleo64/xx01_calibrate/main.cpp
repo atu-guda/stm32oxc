@@ -3,6 +3,7 @@
 #include <cstdio>
 
 #include <oxc_auto.h>
+#include <oxc_osfun.h>
 
 using namespace std;
 using namespace SMLRL;

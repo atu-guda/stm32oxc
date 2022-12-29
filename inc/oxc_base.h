@@ -3,7 +3,6 @@
 
 #include <oxc_archdef.h>
 
-
 #if REQ_MCBASE != MCBASE
   #error "Required and given MCBASE is not equal"
 #endif
@@ -44,7 +43,16 @@
 #define BIT14 0x4000
 #define BIT15 0x8000
 
-// extern  const int _RAM_SIZE, _FLASH_SIZE, _CCMRAM_SIZE; // not work? 0xFFFFFFFF
+#define BAD_ADDR ((void*)(0xFFFFFFFF))
+#ifndef NL
+  #define NL "\n"
+#endif
+
+typedef __IO uint32_t reg32;
+typedef const char *const ccstr;
+typedef uint32_t mu_t; // mutex_t alike
+
+// from ../ld/stm32_common_base.ld
 extern  const int _sdata, _edata, _sbss, _ebss, _end, _estack;
 
 extern char* __heap_top;
@@ -61,24 +69,10 @@ extern uint32_t delay_calibrate_value;
 // delay is TASK_LEDS_QUANT * task_leds_step,
 extern volatile int task_leds_step; // initial = 50
 
-typedef __IO uint32_t reg32;
-typedef const char *const ccstr;
-#define BAD_ADDR ((void*)(0xFFFFFFFF))
-
-#define ARR_SZ(x) (sizeof(x) / sizeof(x[0]))
-#define ARR_AND_SZ(x) x, (sizeof(x) / sizeof(x[0]))
-
-
-#ifndef NL
-  #define NL "\n"
-#endif
-
-
-typedef uint32_t mu_t; // mutex_t alike
 
 #ifdef __cplusplus
-// template<typename T> class _ShowType; // to output deducted type
-//                                       // _ShowType< decltype(XXXX) > xType;
+ template<typename T> class _ShowType; // to output deducted type
+ //                        // _ShowType< decltype(XXXX) > xType;
  extern "C" {
 #endif
 
@@ -135,6 +129,7 @@ void delay_bad_s( uint32_t s );
 void delay_bad_ms( uint32_t ms );
 void delay_bad_mcs( uint32_t mcs );
 void delay_bad_100ns( uint32_t ns100 );
+void default_wait1(void);
 
 void SystemClock_Config(void);
 int  SystemClockCfg(void); // returns: 0: ok >0 + set errno: error
@@ -148,29 +143,16 @@ int  oxc_del_aux_tick_fun( AuxTickFun f );
 void oxc_clear_aux_tick_funs(void);
 void oxc_call_aux_tick_funcs(void);
 
-#ifdef USE_FREERTOS
-
-  #include <FreeRTOS.h>
-  #include <task.h>
-  #define OXC_DEFAULT_UART_PRTY configKERNEL_INTERRUPT_PRIORITY
-#else
-  #define OXC_DEFAULT_UART_PRTY 5
-#endif
-
-
 #ifdef __cplusplus
 }
 #endif
 
 
 
-
-void default_wait1(void);
-
 #define USE_DIE_ERROR_HANDLER void Error_Handler( int rc ) { die( rc ); };
 #define USE_DIE4LED_ERROR_HANDLER void Error_Handler( int rc ) { die4led( rc ); };
-#define USE_DIE_EXIT void void( int rc ) { die( rc ); };
-#define USE_DIE4LED_EXIT void void( int rc ) { die4led( rc ); };
+#define USE_DIE_EXIT void exit( int rc ) { die( rc ); };
+#define USE_DIE4LED_EXIT void exit( int rc ) { die4led( rc ); };
 
 #ifndef PROLOG_LED_TIME
 #define PROLOG_LED_TIME  50
@@ -218,19 +200,29 @@ void default_wait1(void);
   SET_USBCDC_AS_STDIO( dev_console ); \
   std_out.setOut( devio_fds[1] );
 
+#ifdef USE_FREERTOS
 
+  #include <FreeRTOS.h>
+  #include <task.h>
+  #define OXC_DEFAULT_UART_PRTY configKERNEL_INTERRUPT_PRIORITY
+  //
+  #define SCHEDULER_START \
+    leds.write( 0x00 ); \
+    ready_to_start_scheduler = 1; \
+    vTaskStartScheduler(); \
+    die4led( 0xFF );
+  //
+  #define CREATE_STD_TASKS \
+    xTaskCreate( task_leds,        "leds", 1*def_stksz, nullptr,   1, nullptr ); \
+    xTaskCreate( task_main,        "main", 2*def_stksz, nullptr,   1, nullptr ); \
+    xTaskCreate( task_gchar,      "gchar", 2*def_stksz, nullptr,   1, nullptr );
+    //           code               name    stack_sz      param  prty TaskHandle_t*
+#else
+  #ifndef OXC_DEFAULT_UART_PRTY
+    #define OXC_DEFAULT_UART_PRTY 5
+  #endif
+#endif
 
-#define SCHEDULER_START \
-  leds.write( 0x00 ); \
-  ready_to_start_scheduler = 1; \
-  vTaskStartScheduler(); \
-  die4led( 0xFF );
-
-#define CREATE_STD_TASKS \
-  xTaskCreate( task_leds,        "leds", 1*def_stksz, nullptr,   1, nullptr ); \
-  xTaskCreate( task_main,        "main", 2*def_stksz, nullptr,   1, nullptr ); \
-  xTaskCreate( task_gchar,      "gchar", 2*def_stksz, nullptr,   1, nullptr );
-  //           code               name    stack_sz      param  prty TaskHandle_t*
 
 
 #endif
