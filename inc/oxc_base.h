@@ -122,6 +122,7 @@ void do_delay_calibrate(void);
 void delay_ms( uint32_t ms ); // base on vTaskDelay - switch to scheduler (if avail), or to HAL
 int  delay_ms_brk( uint32_t ms ); // exit with 1 if break_flag is set;
 int  delay_ms_until_brk( uint32_t *tc0, uint32_t ms );
+int  delay_ms_until_brk_ex( uint32_t *tc0, uint32_t ms, bool check_break );
 void delay_mcs( uint32_t mcs );
 // dumb delay functions - loop based - for use w/o timer and for small times
 void delay_bad_n( uint32_t n );

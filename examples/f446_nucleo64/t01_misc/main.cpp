@@ -69,6 +69,7 @@ int main(void)
   UVAR('t') = 100;
   UVAR('n') =  10;
   UVAR('q') =   0;
+  UVAR('l') =   0; // delay type
 
   BOARD_POST_INIT_BLINK;
 
@@ -110,7 +111,14 @@ int cmd_test0( int argc, const char * const * argv )
     uint32_t tmc = HAL_GetTick();
     std_out << i << ' ' << (tmc - tm00) << ' ' << tm0 << NL;
 
-    delay_ms_until_brk( &tm0, t_step );
+    switch( UVAR('l') ) {
+      case 0:  delay_ms_brk( t_step );             break;
+      case 1:  delay_ms_until_brk( &tm0, t_step ); break;
+      case 2:  delay_ms(  t_step );                break;
+      case 3:  HAL_Delay( t_step );                break;
+      case 4:  delay_ms_until_brk_ex( nullptr, t_step, false ); break;
+      default: break; // no delay ;-)
+    }
   }
 
   return 0;

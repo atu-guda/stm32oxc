@@ -227,35 +227,46 @@ int delay_ms_until_brk( uint32_t *tc0, uint32_t ms ) // FreeRTOS version
 // not FreeRTOS
 #else
 
+#ifndef OXC_USE_STD_HAL_DELAY
+void HAL_Delay( uint32_t Delay )
+{
+  return  (void)delay_ms_until_brk_ex( nullptr, Delay, false );
+}
+#endif
+
 void delay_ms( uint32_t ms )
 {
-  HAL_Delay( ms );
+  return (void)delay_ms_until_brk_ex( nullptr, ms, false );
+  // HAL_Delay( ms );
   // delay_bad_ms( ms ); // TODO: config
 }
 
 int delay_ms_brk( uint32_t ms )
 {
-  uint32_t t0 = HAL_GetTick();
-  uint32_t w = ms;
-
-  while( ( HAL_GetTick() - t0 ) < w ) {
-    if( break_flag ) {
-      return 1;
-    }
-    // TODO: idle
-  }
-
-  return 0;
+  return delay_ms_until_brk_ex( nullptr, ms, true );
 }
 
 int delay_ms_until_brk( uint32_t *tc0, uint32_t ms )
 {
-  uint32_t t0 = *tc0;
+  return delay_ms_until_brk_ex( tc0, ms, true );
+}
+
+int  delay_ms_until_brk_ex( uint32_t *tc0, uint32_t ms, bool check_break )
+{
+  // TODO: check SysTick and falldown to delay_bad_ms if need
+  uint32_t t0 = tc0 ? *tc0 : HAL_GetTick();
   uint32_t w = ms;
-  *tc0 += w;
+  if( w < 1 ) {
+    // TODO: catch 0-call
+    ++w;
+  }
+
+  if( tc0 ) {
+    *tc0 += w;
+  }
 
   while( ( HAL_GetTick() - t0 ) < w ) {
-    if( break_flag ) {
+    if( check_break && break_flag ) {
       return 1;
     }
     // TODO: idle
