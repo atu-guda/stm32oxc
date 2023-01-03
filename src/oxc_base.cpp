@@ -178,24 +178,19 @@ void delay_bad_100ns( uint32_t ns100 )
   }
 }
 
-void delay_ms( uint32_t ms )
+#ifdef USE_FREERTOS
+
+void delay_ms( uint32_t ms ) // FreeRTOS version
 {
-  #ifdef USE_FREERTOS
   if( xTaskGetSchedulerState() == taskSCHEDULER_RUNNING ) {
     vTaskDelay( ms / ( ( TickType_t ) 1000 / configTICK_RATE_HZ ) );
   } else {
     delay_bad_ms( ms );
   }
-  #else
-  HAL_Delay( ms );
-  // delay_bad_ms( ms ); // TODO: config
-  #endif
 }
 
-int delay_ms_brk( uint32_t ms )
+int delay_ms_brk( uint32_t ms ) // FreeRTOS version
 {
-  #ifdef USE_FREERTOS
-
   while( ms > 0 ) {
     if( break_flag ) {
       return 1;
@@ -209,26 +204,11 @@ int delay_ms_brk( uint32_t ms )
     ms -= cms;
   }
 
-  #else
-
-  uint32_t t0 = HAL_GetTick();
-  uint32_t w = ms;
-
-  while( ( HAL_GetTick() - t0 ) < w ) {
-    if( break_flag ) {
-      return 1;
-    }
-    // TODO: idle
-  }
-
-  #endif
   return 0;
 }
 
-int delay_ms_until_brk( uint32_t *tc0, uint32_t ms )
+int delay_ms_until_brk( uint32_t *tc0, uint32_t ms ) // FreeRTOS version
 {
-  #ifdef USE_FREERTOS
-
   while( ms > 0 ) {
     if( break_flag ) {
       return 1;
@@ -242,9 +222,34 @@ int delay_ms_until_brk( uint32_t *tc0, uint32_t ms )
     ms -= cms;
   }
   return 0;
+}
 
-  #else
+// not FreeRTOS
+#else
 
+void delay_ms( uint32_t ms )
+{
+  HAL_Delay( ms );
+  // delay_bad_ms( ms ); // TODO: config
+}
+
+int delay_ms_brk( uint32_t ms )
+{
+  uint32_t t0 = HAL_GetTick();
+  uint32_t w = ms;
+
+  while( ( HAL_GetTick() - t0 ) < w ) {
+    if( break_flag ) {
+      return 1;
+    }
+    // TODO: idle
+  }
+
+  return 0;
+}
+
+int delay_ms_until_brk( uint32_t *tc0, uint32_t ms )
+{
   uint32_t t0 = *tc0;
   uint32_t w = ms;
   *tc0 += w;
@@ -256,8 +261,10 @@ int delay_ms_until_brk( uint32_t *tc0, uint32_t ms )
     // TODO: idle
   }
   return 0;
-  #endif
 }
+
+#endif
+// end FreeRTOS/not
 
 
 
