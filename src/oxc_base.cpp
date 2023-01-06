@@ -224,6 +224,29 @@ int delay_ms_until_brk( uint32_t *tc0, uint32_t ms ) // FreeRTOS version
   return 0;
 }
 
+int  delay_ms_until_brk_ex( uint32_t *tc0, uint32_t ms, bool check_break ) // FreeRTOS version
+{
+  uint32_t tc0_local;
+  if( ! tc0 ) {
+    tc0_local = HAL_GetTick(); // TODO: FreeRTOS version
+    tc0 = tco_local;
+  }
+
+  while( ms > 0 ) {
+    if( check_break && break_flag ) {
+      return 1;
+    }
+    uint32_t cms = ( ms > 10 ) ? 10 : ms;
+    if( xTaskGetSchedulerState() == taskSCHEDULER_RUNNING ) {
+      vTaskDelayUntil( tc0, cms );
+    } else {
+      delay_bad_ms( cms );
+    }
+    ms -= cms;
+  }
+  return 0;
+}
+
 // not FreeRTOS
 #else
 
@@ -255,17 +278,16 @@ int  delay_ms_until_brk_ex( uint32_t *tc0, uint32_t ms, bool check_break )
 {
   // TODO: check SysTick and falldown to delay_bad_ms if need
   uint32_t t0 = tc0 ? *tc0 : HAL_GetTick();
-  uint32_t w = ms;
-  if( w < 1 ) {
+  if( ms < 1 ) {
     // TODO: catch 0-call
-    ++w;
+    ++ms;
   }
 
   if( tc0 ) {
-    *tc0 += w;
+    *tc0 += ms;
   }
 
-  while( ( HAL_GetTick() - t0 ) < w ) {
+  while( ( HAL_GetTick() - t0 ) < ms ) {
     if( check_break && break_flag ) {
       return 1;
     }
