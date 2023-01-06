@@ -224,20 +224,12 @@ void test_delays_misc( int n, uint32_t t_step, int tp )
 {
   uint32_t tm0 = HAL_GetTick();
 
-  #ifdef USE_FREERTOS
-  TickType_t tc0 = xTaskGetTickCount(), tc00 = tc0;
-  #else
-  uint32_t tc0 = tm0, tc00 = tm0;
-  #endif
+  TickType tc0 = GET_OS_TICK(), tc00 = tc0;
 
   uint32_t tmc_prev = tc0;
   break_flag = 0;
   for( int i=0; i<n && !break_flag; ++i ) {
-    #ifdef USE_FREERTOS
-    TickType_t tcc = xTaskGetTickCount();
-    #else
-    uint32_t  tcc = HAL_GetTick();
-    #endif
+    TickType tcc = GET_OS_TICK();
     uint32_t tmc = HAL_GetTick();
     std_out << i << ' ' << ( tcc - tc00 )
             << ' ' << ( tmc - tm0 ) << ' ' << ( tmc - tmc_prev ) << ' ' << ( tcc - tmc ) << NL;

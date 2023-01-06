@@ -205,6 +205,12 @@ void oxc_call_aux_tick_funcs(void);
 
   #include <FreeRTOS.h>
   #include <task.h>
+  #define GET_OS_TICK xTaskGetTickCount
+  typedef TickType_t TickType;
+  #ifndef OXC_DELAY_DEFAULT_CHECK
+    #define OXC_DELAY_DEFAULT_CHECK 10
+  #endif
+
   #define OXC_DEFAULT_UART_PRTY configKERNEL_INTERRUPT_PRIORITY
   //
   #define SCHEDULER_START \
@@ -219,6 +225,8 @@ void oxc_call_aux_tick_funcs(void);
     xTaskCreate( task_gchar,      "gchar", 2*def_stksz, nullptr,   1, nullptr );
     //           code               name    stack_sz      param  prty TaskHandle_t*
 #else
+  #define GET_OS_TICK HAL_GetTick
+  typedef uint32_t TickType;
   #ifndef OXC_DEFAULT_UART_PRTY
     #define OXC_DEFAULT_UART_PRTY 5
   #endif
