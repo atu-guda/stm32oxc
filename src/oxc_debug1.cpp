@@ -222,6 +222,7 @@ void print_user_var( int idx )
 
 void test_delays_misc( int n, uint32_t t_step, int tp )
 {
+  delay_ms( 20 );
   uint32_t tm0 = HAL_GetTick();
 
   TickType tc0 = GET_OS_TICK(), tc00 = tc0;
@@ -242,11 +243,13 @@ void test_delays_misc( int n, uint32_t t_step, int tp )
     tmc_prev = tcc;
 
     switch( tp ) {
-      case 0:  delay_ms(  t_step );                break;
+      case 0:  delay_ms( t_step );                break;
       case 1:  delay_ms_brk( t_step );             break;
       case 2:  delay_ms_until_brk( &tc0, t_step ); break;
       case 3:  HAL_Delay( t_step );                break;
       case 4:  delay_ms_until_brk_ex( nullptr, t_step, false ); break;
+      case 5:  delay_bad_ms( t_step ); break;
+      case 9:  oxc_disable_interrupts(); delay_ms( t_step ); oxc_enable_interrupts();  break;
       default: break; // no delay ;-)
     }
 

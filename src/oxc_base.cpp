@@ -204,6 +204,11 @@ int delay_ms_until_brk( uint32_t *tc0, uint32_t ms )
 
 int  delay_ms_until_brk_ex( uint32_t *tc0, uint32_t ms, bool check_break ) // FreeRTOS version
 {
+  if( __get_PRIMASK() ) {
+    delay_bad_ms( ms );
+    return 0;
+  }
+
   TickType tc0_local;
   if( ! tc0 ) {
     tc0_local = GET_OS_TICK();
@@ -231,7 +236,11 @@ int  delay_ms_until_brk_ex( uint32_t *tc0, uint32_t ms, bool check_break ) // Fr
 
 int  delay_ms_until_brk_ex( uint32_t *tc0, uint32_t ms, bool check_break )
 {
-  // TODO: check SysTick and falldown to delay_bad_ms if need
+  if( __get_PRIMASK() ) {
+    delay_bad_ms( ms );
+    return 0;
+  }
+
   uint32_t t0 = tc0 ? *tc0 : HAL_GetTick();
   if( ms < 1 ) {
     // TODO: catch 0-call

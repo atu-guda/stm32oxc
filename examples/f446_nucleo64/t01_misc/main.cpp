@@ -90,7 +90,9 @@ int main(void)
 int cmd_test0( int argc, const char * const * argv )
 {
   int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
-  uint32_t t_step = UVAR('t');
+  uint32_t t_step = arg2long_d( 2, argc, argv, UVAR('t'), 0, 100000 );
+  int tp = arg2long_d( 3, argc, argv, UVAR('v'), 0, 10 );
+  std_out <<  "# test_delays : n= " << n << " t= " << t_step << " tp= " << tp << NL;
 
   std_out
     << "# ctrl= "      << HexInt(__get_CONTROL())
@@ -101,25 +103,7 @@ int cmd_test0( int argc, const char * const * argv )
     << " primask= "    << HexInt(__get_PRIMASK())
     << NL;
 
-
-  uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
-
-  break_flag = 0;
-  for( int i=0; i<n && !break_flag; ++i ) {
-
-    // action
-    uint32_t tmc = HAL_GetTick();
-    std_out << i << ' ' << (tmc - tm00) << ' ' << tm0 << NL;
-
-    switch( UVAR('l') ) {
-      case 0:  delay_ms_brk( t_step );             break;
-      case 1:  delay_ms_until_brk( &tm0, t_step ); break;
-      case 2:  delay_ms(  t_step );                break;
-      case 3:  HAL_Delay( t_step );                break;
-      case 4:  delay_ms_until_brk_ex( nullptr, t_step, false ); break;
-      default: break; // no delay ;-)
-    }
-  }
+  test_delays_misc( n, t_step, tp );
 
   return 0;
 }
