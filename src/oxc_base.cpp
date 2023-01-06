@@ -228,8 +228,8 @@ int  delay_ms_until_brk_ex( uint32_t *tc0, uint32_t ms, bool check_break ) // Fr
 {
   uint32_t tc0_local;
   if( ! tc0 ) {
-    tc0_local = HAL_GetTick(); // TODO: FreeRTOS version
-    tc0 = tco_local;
+    tc0_local = xTaskGetTickCount();
+    tc0 = &tc0_local;
   }
 
   while( ms > 0 ) {

@@ -220,6 +220,82 @@ void print_user_var( int idx )
   std_out << "#> " << (char)( 'a' + idx ) << " = "  << HexInt( user_vars[idx], true ) << " = "  << ( user_vars[idx] ) << NL;
 }
 
+void test_delays_misc( int n, uint32_t t_step, int tp )
+{
+  uint32_t tm0 = HAL_GetTick();
+
+  #ifdef USE_FREERTOS
+  TickType_t tc0 = xTaskGetTickCount(), tc00 = tc0;
+  #else
+  uint32_t tc0 = tm0, tc00 = tm0;
+  #endif
+
+  uint32_t tmc_prev = tc0;
+  break_flag = 0;
+  for( int i=0; i<n && !break_flag; ++i ) {
+    #ifdef USE_FREERTOS
+    TickType_t tcc = xTaskGetTickCount();
+    #else
+    uint32_t  tcc = HAL_GetTick();
+    #endif
+    uint32_t tmc = HAL_GetTick();
+    std_out << i << ' ' << ( tcc - tc00 )
+            << ' ' << ( tmc - tm0 ) << ' ' << ( tmc - tmc_prev ) << ' ' << ( tcc - tmc ) << NL;
+
+    if( UVAR('w') ) {
+      std_out.flush();
+    }
+
+    leds.toggle( 1 );
+    tmc_prev = tcc;
+
+    switch( tp ) {
+      case 0:  delay_ms(  t_step );                break;
+      case 1:  delay_ms_brk( t_step );             break;
+      case 2:  delay_ms_until_brk( &tc0, t_step ); break;
+      case 3:  HAL_Delay( t_step );                break;
+      case 4:  delay_ms_until_brk_ex( nullptr, t_step, false ); break;
+      default: break; // no delay ;-)
+    }
+
+  }
+}
+
+void test_output_rate( int n, int sl, int do_flush )
+{
+  const int max_len = 256;
+  std_out << "# test_rate: n= " << n << " sl= " << sl << NL;
+  char buf[max_len+4]; // for ends and align
+
+  for( int i=0; i<sl-2; ++i ) {
+    buf[i] = (char)( '@' + ( i & 0x3F ) );
+  }
+  buf[sl-2] = '\r';
+  buf[sl-1] = '\n';
+  buf[sl]   = '\0'; // sic, transfer sl bytes,
+
+  uint32_t tm0 = HAL_GetTick();
+
+  unsigned n_lines = 0;
+  break_flag = 0;
+  for( int i=0; i<n && !break_flag; ++i ) {
+    buf[0] =  (char)( '@' + ( i & 0x3F ) );
+    std_out << buf;
+    if( do_flush ) {
+      std_out.flush();
+    }
+    ++n_lines;
+  }
+  uint32_t tm1 = HAL_GetTick();
+  delay_ms( 500 ); // settle
+  unsigned dt = tm1 - tm0;
+  unsigned n_ch = sl * n_lines;
+  std_out << NL "dt= " << dt << " ms, chars: " << n_ch << "  lines: " << n_lines
+          << "  cps: " << ( 1000*n_ch / dt ) << "  lps: " << ( 1000*n_lines / dt ) << NL;
+
+}
+
+
 //----------------------------------------------------------------------
 
 

@@ -45,6 +45,9 @@ extern bool (*set_var_hook)( const char *nm, const char *s );
 // fill string s with information about pin config
 void gpio_pin_info( GPIO_TypeDef *gi, uint16_t pin, char *s );
 
+void test_delays_misc( int n, uint32_t t_step, int tp );
+void test_output_rate( int n, int sl, int do_flush );
+
 extern const char* common_help_string __weak;
 
 #ifdef __cplusplus
