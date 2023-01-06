@@ -185,51 +185,22 @@ void HAL_Delay( uint32_t Delay )
 }
 #endif
 
+void delay_ms( uint32_t ms )
+{
+  return (void)delay_ms_until_brk_ex( nullptr, ms, false );
+}
+
+int delay_ms_brk( uint32_t ms )
+{
+  return delay_ms_until_brk_ex( nullptr, ms, true );
+}
+
+int delay_ms_until_brk( uint32_t *tc0, uint32_t ms )
+{
+  return delay_ms_until_brk_ex( tc0, ms, true );
+}
+
 #ifdef USE_FREERTOS
-
-void delay_ms( uint32_t ms ) // FreeRTOS version
-{
-  if( xTaskGetSchedulerState() == taskSCHEDULER_RUNNING ) {
-    vTaskDelay( ms / ( ( TickType_t ) 1000 / configTICK_RATE_HZ ) );
-  } else {
-    delay_bad_ms( ms );
-  }
-}
-
-int delay_ms_brk( uint32_t ms ) // FreeRTOS version
-{
-  while( ms > 0 ) {
-    if( break_flag ) {
-      return 1;
-    }
-    uint32_t cms = ( ms > OXC_DELAY_DEFAULT_CHECK ) ? OXC_DELAY_DEFAULT_CHECK : ms;
-    if( xTaskGetSchedulerState() == taskSCHEDULER_RUNNING ) {
-      vTaskDelay( cms / ( ( TickType_t ) 1000 / configTICK_RATE_HZ ) );
-    } else {
-      delay_bad_ms( cms );
-    }
-    ms -= cms;
-  }
-
-  return 0;
-}
-
-int delay_ms_until_brk( uint32_t *tc0, uint32_t ms ) // FreeRTOS version
-{
-  while( ms > 0 ) {
-    if( break_flag ) {
-      return 1;
-    }
-    uint32_t cms = ( ms > OXC_DELAY_DEFAULT_CHECK ) ? OXC_DELAY_DEFAULT_CHECK : ms;
-    if( xTaskGetSchedulerState() == taskSCHEDULER_RUNNING ) {
-      vTaskDelayUntil( tc0, cms );
-    } else {
-      delay_bad_ms( cms );
-    }
-    ms -= cms;
-  }
-  return 0;
-}
 
 int  delay_ms_until_brk_ex( uint32_t *tc0, uint32_t ms, bool check_break ) // FreeRTOS version
 {
@@ -257,23 +228,6 @@ int  delay_ms_until_brk_ex( uint32_t *tc0, uint32_t ms, bool check_break ) // Fr
 // not FreeRTOS
 #else
 
-
-void delay_ms( uint32_t ms )
-{
-  return (void)delay_ms_until_brk_ex( nullptr, ms, false );
-  // HAL_Delay( ms );
-  // delay_bad_ms( ms ); // TODO: config
-}
-
-int delay_ms_brk( uint32_t ms )
-{
-  return delay_ms_until_brk_ex( nullptr, ms, true );
-}
-
-int delay_ms_until_brk( uint32_t *tc0, uint32_t ms )
-{
-  return delay_ms_until_brk_ex( tc0, ms, true );
-}
 
 int  delay_ms_until_brk_ex( uint32_t *tc0, uint32_t ms, bool check_break )
 {
