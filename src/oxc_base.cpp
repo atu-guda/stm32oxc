@@ -243,7 +243,6 @@ int  delay_ms_until_brk_ex( uint32_t *tc0, uint32_t ms, bool check_break )
 
   uint32_t t0 = tc0 ? *tc0 : HAL_GetTick();
   if( ms < 1 ) {
-    // TODO: catch 0-call
     ++ms;
   }
 
@@ -251,18 +250,29 @@ int  delay_ms_until_brk_ex( uint32_t *tc0, uint32_t ms, bool check_break )
     *tc0 += ms;
   }
 
-  while( ( HAL_GetTick() - t0 ) < ms ) {
+  while( true ) {
+    uint32_t elap = HAL_GetTick() - t0;
+    if( elap >= ms ) {
+      break;
+    }
     if( check_break && break_flag ) {
       return 1;
     }
-    // TODO: idle
+    if( int rc = on_delay_actions() ) {
+      return rc;
+    }
   }
+
   return 0;
 }
 
 #endif
 // end FreeRTOS/not
 
+__weak int on_delay_actions() // to be redefined by user if need
+{
+  return 0;
+}
 
 
 void delay_bad_n( uint32_t dly )

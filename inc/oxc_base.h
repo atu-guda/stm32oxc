@@ -131,6 +131,9 @@ void delay_bad_ms( uint32_t ms );
 void delay_bad_mcs( uint32_t mcs );
 void delay_bad_100ns( uint32_t ns100 );
 void default_wait1(void);
+int on_delay_actions(); // called from non-FreeRTOS delay_*,
+                        // returns: 0: continue delay, 1+ - break
+                        // must be fast
 
 void SystemClock_Config(void);
 int  SystemClockCfg(void); // returns: 0: ok >0 + set errno: error

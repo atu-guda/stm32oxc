@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include <oxc_auto.h>
+#include <oxc_ticker.h>
 
 using namespace std;
 using namespace SMLRL;
@@ -29,6 +30,17 @@ void aux_tick_fun2(void)
   ixpsr = __get_xPSR();
 }
 
+int delay_led_step { 500 };
+
+int on_delay_actions()
+{
+  static OxcTicker delay_tick( &delay_led_step, 1 );
+  if( delay_tick.isTick() ) {
+    leds.toggle( BIT2 );
+  }
+  return 0;
+}
+
 
 void xxx_main_loop_nortos( SmallRL *sm, AuxTickFun f_idle )
 {
@@ -41,11 +53,11 @@ void xxx_main_loop_nortos( SmallRL *sm, AuxTickFun f_idle )
   // eat pre-input
   reset_in( 0 );
   for( unsigned i=0; i<256; ++i ) {
-    ++UVAR('i');
     auto v = tryGet( 0 );
     if( v.empty() ) {
       break;
     }
+    ++UVAR('i');
   }
 
   while( 1 ) {
