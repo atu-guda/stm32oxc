@@ -78,12 +78,12 @@ extern volatile int task_leds_step; // initial = 50
 
 inline void oxc_enable_interrupts(void)
 {
-  __asm__ volatile ( "CPSIE I\n" );
+  __asm__ volatile ( "CPSIE I" );
 }
 
 inline void oxc_disable_interrupts(void)
 {
-  __asm__ volatile ( "CPSID I\n" );
+  __asm__ volatile ( "CPSID I" );
 }
 
 
@@ -140,7 +140,9 @@ int  SystemClockCfg(void); // returns: 0: ok >0 + set errno: error
 
 
 typedef void (*AuxTickFun)(void);
-#define AUX_TICK_FUN_N 4
+#ifndef AUX_TICK_FUN_N
+  #define AUX_TICK_FUN_N 4
+#endif
 extern AuxTickFun oxc_aux_tick_funcs[AUX_TICK_FUN_N];
 int  oxc_add_aux_tick_fun( AuxTickFun f );
 int  oxc_del_aux_tick_fun( AuxTickFun f );

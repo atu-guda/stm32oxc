@@ -108,7 +108,8 @@ void taskYieldFun()
       delay_bad_mcs( 1 );
     }
   #else
-    delay_mcs( 1 );
+    on_delay_actions();
+    // delay_mcs( 1 );
   #endif
 }
 
@@ -300,8 +301,8 @@ void delay_bad_ms( uint32_t ms )
 
 void delay_mcs( uint32_t mcs )
 {
-  int ms = mcs / 1000;
-  int mcs_r = mcs % 1000;
+  uint32_t ms = mcs / 1000;
+  uint32_t mcs_r = mcs % 1000;
   if( ms ) {
     delay_ms( ms );
   }
