@@ -60,7 +60,9 @@ void xxx_main_loop_nortos( SmallRL *sm, AuxTickFun f_idle )
     ++UVAR('i');
   }
 
-  while( 1 ) {
+  srl.re_ps(); srl.reset();
+
+  while( true ) {
     leds.set( 2 );
     auto v = tryGet_irqdis( 0 );
     leds.reset( 2 );
@@ -88,14 +90,13 @@ int main(void)
 
   UVAR('t') = 100;
   UVAR('n') =  10;
-  UVAR('q') =   1;
+  UVAR('q') =   0;
   UVAR('l') =   0; // delay type
 
   BOARD_POST_INIT_BLINK;
 
-  pr( NL "##################### " PROJ_NAME "##################### "  NL );
+  pr( NL "##################### " PROJ_NAME " #####################"  NL );
 
-  srl.re_ps();
 
   oxc_add_aux_tick_fun( led_task_nortos );
   oxc_add_aux_tick_fun( aux_tick_fun2 );
