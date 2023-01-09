@@ -45,7 +45,6 @@ class RingBuf {
    const char *getBuf() const { return b; }
    unsigned set_n_wait( unsigned n ) { unsigned tmp = n_wait; n_wait = n; return tmp; }
    static void set_wait_fun( void (*vf)(void) ) { wait_fun = vf; }
-  protected:
    int  put_nolock( char c ); // false = fail due to full
    Chst get_nolock();
    Chst peek_nolock();
@@ -55,10 +54,10 @@ class RingBuf {
   protected:
    char *b;                   //* buffer
    const unsigned cap;        //* capacity
-   volatile unsigned sz = 0;  //* size
-   volatile unsigned s  = 0;  //* start index (over the head)
-   volatile unsigned e  = 0;  //* end index
-   unsigned n_wait      = 1000; //* number of wait ticks (ms by default)
+   unsigned sz = 0;  //* size
+   unsigned s  = 0;  //* start index (over the head)
+   unsigned e  = 0;  //* end index
+   unsigned n_wait  = 1000; //* number of wait ticks (ms by default)
    Mu_t mu = Mu_init;
    bool was_alloc = false;
    static void (*wait_fun)(void);

@@ -61,7 +61,9 @@ void xxx_main_loop_nortos( SmallRL *sm, AuxTickFun f_idle )
   }
 
   while( 1 ) {
-    auto v = tryGet( 0 );
+    leds.set( 2 );
+    auto v = tryGet_irqdis( 0 );
+    leds.reset( 2 );
 
     if( v.good() ) {
       sm->addChar( v.c );
@@ -69,7 +71,13 @@ void xxx_main_loop_nortos( SmallRL *sm, AuxTickFun f_idle )
       if( f_idle ) {
         f_idle();
       }
-      delay_ms( UVAR('q') );
+
+      if( UVAR('q') > 0 ) {
+        delay_ms( UVAR('q') );
+      } else {
+        on_delay_actions();
+      }
+
     }
   }
 }
@@ -80,12 +88,12 @@ int main(void)
 
   UVAR('t') = 100;
   UVAR('n') =  10;
-  UVAR('q') =   0;
+  UVAR('q') =   1;
   UVAR('l') =   0; // delay type
 
   BOARD_POST_INIT_BLINK;
 
-  pr( NL "##################### " PROJ_NAME NL );
+  pr( NL "##################### " PROJ_NAME "##################### "  NL );
 
   srl.re_ps();
 

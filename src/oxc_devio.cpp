@@ -15,6 +15,7 @@ DevIO::DevIO( unsigned ibuf_sz, unsigned obuf_sz  )
   for( int i=0; i< DEVIO_MAX; ++i ) {
     if( devios[i] == nullptr ) {
       devios[i] = this;
+      fd = i;
       break;
     }
   }
@@ -63,6 +64,14 @@ int DevIO::write( const char *s, int l )
   }
 
   return ns;
+}
+
+Chst DevIO::tryGet_irqdis()
+{
+  oxc_disable_interrupts();
+  auto rv = ibuf.get_nolock();
+  oxc_enable_interrupts();
+  return rv;
 }
 
 
@@ -210,6 +219,12 @@ Chst tryGet( int fd )
 {
   COMMON_FD_TEST( fd, Chst( '\0', Chst::st_empty ) );
   return devio_fds[fd]->tryGet();
+}
+
+Chst tryGet_irqdis( int fd )
+{
+  COMMON_FD_TEST( fd, Chst( '\0', Chst::st_empty ) );
+  return devio_fds[fd]->tryGet_irqdis();
 }
 
 unsigned tryGetLine( int fd, char *d, unsigned max_len )

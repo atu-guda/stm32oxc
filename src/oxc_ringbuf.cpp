@@ -205,6 +205,11 @@ Chst RingBuf::peek()
 
 Chst RingBuf::tryGet()
 {
+  // no-lock if none
+  if( sz == 0 ) {
+    return Chst( '\0', Chst::st_empty );
+  }
+
   MuTryLock lock( mu );
   if( lock.wasAcq() ) {
     return get_nolock();

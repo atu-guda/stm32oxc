@@ -4,6 +4,8 @@
 #include <oxc_base.h>
 #include <oxc_ev.h>
 
+class RingBuf;
+
 // abstract IO classes (protocols)
 
 class DevOut {
@@ -14,18 +16,21 @@ class DevOut {
    virtual int  putc( char b ) = 0;
    virtual void flush_out()  = 0;
    virtual const char* getBuf() const { return nullptr; }
+   virtual RingBuf* getOutRingBuf() { return nullptr; }
 };
 
 class DevIn {
   public:
    virtual void reset_in() = 0;
    virtual Chst tryGet() = 0;
+   virtual Chst tryGet_irqdis() = 0;
    virtual unsigned tryGetLine( char *d, unsigned max_len ) = 0 ;
    virtual Chst getc( int w_tick = 0 ) = 0;
    virtual int read( char *s, int l, int w_tick = 0 );
    virtual void unget( char c ) = 0;
    virtual const char* getInBuf() const { return nullptr; }
    virtual unsigned getInBufSize() const { return 0; }
+   virtual RingBuf* getInRingBuf() { return nullptr; }
 };
 
 // declaration of base io functions
@@ -33,6 +38,7 @@ class DevIn {
 // for devio, but may be defined by other means
 Chst getChar( int fd, int w_tick );
 Chst tryGet( int fd );
+Chst tryGet_irqdis( int fd );
 unsigned tryGetLine( int fd, char *d, unsigned max_len );
 int unget( int fd, char c );
 int ungets( int fd, const char *s );

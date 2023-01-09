@@ -16,6 +16,7 @@ class DevIO : public DevOut, public DevIn {
    };
 
    DevIO( unsigned ibuf_sz = RX_BUF_SIZE, unsigned obuf_sz = TX_BUF_SIZE );
+   int get_fd() const { return fd; };
    virtual ~DevIO();
    virtual void reset();
    virtual int getErr() const { return err; }
@@ -33,9 +34,11 @@ class DevIO : public DevOut, public DevIn {
    int wait_eot( int w = 0 ); // w=0 means forever, 1 - ok 0 - overtime
    virtual void flush_out() override { wait_eot( wait_tx ); };
    virtual const char* getBuf() const override { return obuf.getBuf(); }
+   virtual RingBuf* getOutRingBuf() override { return &obuf; }
 
    virtual void reset_in() override { ibuf.reset(); }
    virtual Chst tryGet() override { return ibuf.tryGet(); }
+   virtual Chst tryGet_irqdis() override;
    virtual unsigned tryGetLine( char *d, unsigned max_len ) override { return ibuf.tryGetLine( d, max_len ); } ;
    virtual Chst getc( int w_tick = 0 ) override;
    virtual Chst getc_p( int w_tick = 0 ) = 0;
@@ -46,6 +49,7 @@ class DevIO : public DevOut, public DevIn {
    void setOnSigInt( SigFun a_onSigInt ) { onSigInt = a_onSigInt; };
    virtual const char* getInBuf() const override { return ibuf.getBuf(); }
    virtual unsigned getInBufSize() const override { return ibuf.size(); }
+   virtual RingBuf* getInRingBuf() override { return &ibuf; }
 
    virtual void on_tick_action_tx();
    virtual void on_tick_action_rx();
@@ -64,6 +68,7 @@ class DevIO : public DevOut, public DevIn {
    OnRecvFun onRecv = nullptr;
    SigFun onSigInt = nullptr;
    int err = 0;
+   int fd = -1;
    int wait_tx = 1500;
    int wait_rx = 1500;
    bool on_transmit = false;
