@@ -28,7 +28,9 @@ void mu_unlock( mu_t *m );
 class MuLock {
   public:
    MuLock( Mu_t &a_mu ) : mu( a_mu ) { Mu_lock( &mu ); };
+   MuLock( const MuLock &rhs ) = delete;
    ~MuLock()  { Mu_unlock( &mu ); };
+   MuLock& operator=( const MuLock &rhs ) = delete;
   protected:
    Mu_t &mu;
 };
@@ -36,8 +38,10 @@ class MuLock {
 class MuTryLock {
   public:
    MuTryLock( Mu_t &a_mu ) : mu( a_mu ), acq( !Mu_trylock( &mu ) ) { };
+   MuTryLock( const MuLock &rhs ) = delete;
    ~MuTryLock()  { if( acq ) { Mu_unlock( &mu ); } };
    bool wasAcq() const { return acq; }
+   MuTryLock& operator=( const MuTryLock &rhs ) = delete;
   protected:
    Mu_t &mu;
    const bool acq;
