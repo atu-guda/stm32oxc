@@ -34,7 +34,7 @@ bool read_sensors(); // returns true at bad condition
 uint32_t sensor_flags = SWLIM_BITS_ALL;
 bool check_top { false }, check_bot { false }; // work copy from td, only in go
 
-const char* common_help_string = "Winding machine control app" NL;
+const char* common_help_string = "Winding machine control app " __DATE__ " " __TIME__ NL;
 
 constexpr uint32_t tim_psc_freq   {  10000000 };
 constexpr uint32_t tim_pbase_init {  tim_psc_freq / 200 };
@@ -373,11 +373,14 @@ uint32_t TMC2209_read_reg( uint8_t dev, uint8_t reg )
   memset( in_buf, '\x00', sizeof(in_buf) );
   // ledsx.reset( 1 );
 
-  auto r_n = motordrv.read( in_buf, 16, 100 );
+  auto r_n = motordrv.read( in_buf, 16, 200 );
 
 
   if( r_n != sizeof(TMC2209_rreq) + sizeof(TMC2209_rwdata) ) {
-    // std_out << "# Err: r_n = " << r_n << NL;
+    if( UVAR('d') > 0 ) {
+      std_out << "# Err: 12 != r_n = " << r_n << NL;
+      dump8( in_buf, 16 );
+    }
     return TMC2209_bad_val;
   }
 
@@ -816,6 +819,7 @@ int do_go( float nt )
   }
 
   tims_stop( 3 );
+  uint32_t r6F_m0 {0}, r6F_m1 {0};
 
   TMC2209_write_reg( 0, 0, reg00_def_forv ); // rot direction
   TMC2209_write_reg( 1, 0, rev ? reg00_def_rev : reg00_def_forv ); // move direction
@@ -835,7 +839,7 @@ int do_go( float nt )
     }
     delay_bad_mcs( 10 );
 
-    uint32_t r6F_m0 = TMC2209_read_reg_n_try( 0, 0x6F, 4 );
+    r6F_m0 = TMC2209_read_reg_n_try( 0, 0x6F, 4 );
     if( r6F_m0 & TMC2209_R6F_badflags ) {
       break_flag = (int)(BreakNum::drv_flags_rot);
     }
@@ -845,7 +849,7 @@ int do_go( float nt )
       tims_stop( 3 );
     }
 
-    uint32_t r6F_m1 = TMC2209_read_reg_n_try( 1, 0x6F, 4 );
+    r6F_m1 = TMC2209_read_reg_n_try( 1, 0x6F, 4 );
     if( r6F_m1 & TMC2209_R6F_badflags ) {
       break_flag = (int)(BreakNum::drv_flags_mov);
       tims_stop( 3 );
@@ -857,17 +861,19 @@ int do_go( float nt )
       tims_stop( 3 );
     }
 
-    // read_sensors(); // done in IRQ, but copy?
     if( ( porta_sensors_bits & sensor_flags ) != sensor_flags ) { // TODO: more checks
       break_flag = (int)(BreakNum::drv_flags_rot );
       tims_stop( 3 );
     }
 
     uint32_t tc = HAL_GetTick();
-    std_out << HexInt( r6F_m0 ) << ' ' << r41_m0 << ' '
-            << HexInt( r6F_m1 ) << ' ' << r41_m1 << ' '
+    // if debug?
+    // std_out << HexInt( r6F_m0 ) << ... << HexInt( r6F_m1 ) ...
+
+    float d_r_c = (float) ( td.p_ldone + tim_r_pulses ) / (motor_step2turn * motor_mstep);
+    std_out << r41_m0 << ' ' << r41_m1 << ' '
             << HexInt16( porta_sensors_bits ) << ' ' << HexInt16( portb_sensors_bits )
-            << ' ' << (int)( tc - tm0 ) << NL;
+            << ' ' << (int)( tc - tm0 ) << ' ' << FltFmt( d_r_c, cvtff_fix, 8, 2 ) << NL;
 
     delay_ms_until_brk( &tc0, dt );
   }
@@ -877,6 +883,7 @@ int do_go( float nt )
   if( break_flag ) {
     ledsx.set( 1 );
   }
+  std_out << HexInt( r6F_m0 ) << ' ' << HexInt( r6F_m1 ) << NL;
 
   UVAR('b') = tim_r_pulses;
   UVAR('c') = tim_m_pulses;
@@ -892,6 +899,7 @@ int do_go( float nt )
   if( td.p_ldone >= td.p_ltask ) {
     td.n_ldone = 0;
     td.p_ldone = 0;
+    std_out << "###################################################### END layer " << td.c_lay << NL;
     ++td.c_lay;
   }
 
