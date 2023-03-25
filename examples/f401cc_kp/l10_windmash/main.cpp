@@ -364,9 +364,9 @@ uint32_t TMC2209_read_reg( uint8_t dev, uint8_t reg )
     std_out << "# Err: w_n = " << w_n << NL;
     return TMC2209_bad_val;
   }
-  motordrv.wait_eot( 10 );
+  motordrv.wait_eot( 10 ); // TODO: motordrv as abstract actor
 
-  char in_buf[16]; // some more
+  char in_buf[16]; // some more TODO: in object + debug
 
   delay_ms( 1 ); // TODO: config
 
@@ -813,6 +813,7 @@ int do_go( float nt )
   td.p_move = 0;
 
   std_out << "# pulses= " << pulses << " rev= " << rev << " v_rot= " << v_rot << " v_mov= " << v_mov << NL;
+  // TODO: replace with pulses
   if( n_l < 1 || n_l > td.n_2lay ) {
     std_out << "# Error: bad n_l" << NL;
     return  1;
@@ -839,6 +840,7 @@ int do_go( float nt )
     }
     delay_bad_mcs( 10 );
 
+    // TODO: ignore read fail n steps, 4-> param
     r6F_m0 = TMC2209_read_reg_n_try( 0, 0x6F, 4 );
     if( r6F_m0 & TMC2209_R6F_badflags ) {
       break_flag = (int)(BreakNum::drv_flags_rot);
@@ -888,6 +890,7 @@ int do_go( float nt )
   UVAR('b') = tim_r_pulses;
   UVAR('c') = tim_m_pulses;
 
+  // TODO: separate function + fake call
   auto d_pulses = tim_r_pulses;
   td.p_ldone += d_pulses;
   float d_r = (float) d_pulses / (motor_step2turn * motor_mstep);
