@@ -3,6 +3,8 @@
 
 // #include <oxc_gpio.h> from auto
 
+extern int debug;
+
 // #define TOWER_GPIO GpioB
 inline auto& TOWER_GPIO { GpioB };
 inline constexpr uint32_t TOWER_PIN0 { 0 };
@@ -112,7 +114,6 @@ struct TaskData {
   int v_mov   {        0 }; // speed during main work, in um/sec
   // status
   int n_done  {        0 }; // total done
-  int n_ldone {        0 }; // turns done per layer
   int p_ldone {        0 }; // pulses done per layer
   int p_ltask {        0 }; // task in pulses for current run
   int p_move  {        0 }; // number of "move" pulses in current run

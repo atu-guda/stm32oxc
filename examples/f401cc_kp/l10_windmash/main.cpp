@@ -14,6 +14,8 @@ BOARD_DEFINE_LEDS;
 
 USBCDC_CONSOLE_DEFINES;
 
+int debug {0};
+
 PinsOut ledsx( GpioB, 12, 4 );
 
 
@@ -126,7 +128,7 @@ TaskData td;
 
 int TaskData::calc( int n_tot, int d_w, int w_l, bool even )
 {
-  n_done = n_ldone = p_ldone = p_ltask = c_lay =  n_lay = 0;
+  n_done = p_ldone = p_ltask = c_lay =  n_lay = 0;
   if( n_tot < 1 || d_w < 20 || w_l < 2 * d_w ) {
     n_tot = 0;
     return 0;
@@ -153,6 +155,7 @@ int TaskData::calc( int n_tot, int d_w, int w_l, bool even )
   return 1;
 }
 
+#define ADD_IOBJ(x)    constexpr NamedInt   ob_##x { #x, &x }
 #define ADD_IOBJ_TD(x) constexpr NamedInt   ob_##x { #x, &td.x }
 
 ADD_IOBJ_TD( n_total );
@@ -170,11 +173,11 @@ ADD_IOBJ_TD( n_lay   );
 ADD_IOBJ_TD( n_2lay  );
 ADD_IOBJ_TD( v_mov   );
 ADD_IOBJ_TD( n_done  );
-ADD_IOBJ_TD( n_ldone );
 ADD_IOBJ_TD( p_ldone );
 ADD_IOBJ_TD( p_ltask );
-ADD_IOBJ_TD( p_move );
+ADD_IOBJ_TD( p_move  );
 ADD_IOBJ_TD( c_lay   );
+ADD_IOBJ   ( debug   );
 
 #undef ADD_IOBJ_TD
 
@@ -195,11 +198,11 @@ constexpr const NamedObj *const objs_info[] = {
   & ob_n_2lay,
   & ob_v_mov,
   & ob_n_done,
-  & ob_n_ldone,
   & ob_p_ldone,
   & ob_p_ltask,
   & ob_p_move,
   & ob_c_lay,
+  & ob_debug,
   nullptr
 };
 
@@ -306,8 +309,11 @@ int cmd_test0( int argc, const char * const * argv )
     uint32_t  tcb = HAL_GetTick();
     rqd.fill( UVAR('d'), i );
     // rqd.crc = (uint8_t)i;
+
     ledsx.set( 1 );
-    auto w_n = motordrv.write( (const char*)rqd.rawCData(), sizeof(rqd) );
+    std_out << "## Write: " NL;
+    dump8( (const char*)rqd.rawCData(), sizeof(rqd) );
+    auto w_n = motordrv.write_s( (const char*)rqd.rawCData(), sizeof(rqd) );
     auto wr_ok = motordrv.wait_eot( 100 );
     // ledsx.reset( 1 );
     // auto wr_ok = 1;
@@ -315,16 +321,18 @@ int cmd_test0( int argc, const char * const * argv )
     delay_ms( 1 );
     memset( in_buf, '\x00', sizeof(in_buf) );
     ledsx.reset( 1 );
-    auto r_n = motordrv.read( in_buf, 16, 100 );
+    auto r_n = motordrv.read( in_buf, 16, 200 );
 
     uint32_t  tcc = HAL_GetTick();
     std_out <<  "i= " << i << "  tick= " << ( tcc - tc00 ) << " dt = " << ( tcc - tcb )
             << " wr_ok=" << wr_ok << " r_n= " << r_n << " w_n= " << w_n << NL;
-    dump8( in_buf, 16 );
+    std_out << "## read: " NL;
+    dump8( in_buf, r_n );
 
     delay_ms_until_brk( &tc0, t_step );
   }
 
+  std_out << "### Regs: " NL;
   uint32_t r1 = TMC2209_read_reg( 0, 2 );
   TMC2209_write_reg( 0, 1, 0x149 );
   uint32_t r2 = TMC2209_read_reg( 0, 2 );
@@ -377,7 +385,7 @@ uint32_t TMC2209_read_reg( uint8_t dev, uint8_t reg )
 
 
   if( r_n != sizeof(TMC2209_rreq) + sizeof(TMC2209_rwdata) ) {
-    if( UVAR('d') > 0 ) {
+    if( debug > 0 ) {
       std_out << "# Err: 12 != r_n = " << r_n << NL;
       dump8( in_buf, 16 );
     }
@@ -631,7 +639,6 @@ int do_move( float mm, float vm, uint8_t dev )
 
   check_top  = false;  check_bot  = false;
 
-  auto dt = td.dt;
   uint32_t s_max = dev ? td.s_mov_m : td.s_rot_m;
 
   std_out << "# move: dev= " << (int)dev << " x= " << mm << " rev= " << rev
@@ -672,7 +679,7 @@ int do_move( float mm, float vm, uint8_t dev )
     std_out << HexInt( r6F_m ) << ' '
             << HexInt16( porta_sensors_bits ) << ' ' << HexInt16( portb_sensors_bits )
             << ' ' << r41_m << ' ' << (int)( tc - tm0 ) << NL;
-    delay_ms_until_brk( &tc0, dt );
+    delay_ms_until_brk( &tc0, td.dt );
   }
 
   if( break_flag ) {
@@ -788,19 +795,17 @@ int do_go( float nt )
   }
 
   ledsx.reset( 0x0F );
-  int n_l = td.n_2lay - td.n_ldone;
+
   uint32_t pulses = td.p_ltask - td.p_ldone;
   uint32_t max_pulses = (uint32_t)( nt * motor_step2turn * motor_mstep );
   if( pulses > max_pulses ) {
     pulses = max_pulses;
   }
 
-  std_out << "# go: c_lay= " << td.c_lay << " n_ldone= " << td.n_ldone
-          << " n_l= " << n_l << " pulses: " << pulses << NL;
+  std_out << "# go: c_lay= " << td.c_lay <<  " pulses: " << pulses << NL;
 
   tim_r_pulses = 0; tim_m_pulses = 0;
   tim_r_need = pulses; // rotaion is a main movement
-  auto dt = td.dt;
 
   bool rev = false;
   if( td.c_lay & 1 ) {
@@ -814,8 +819,8 @@ int do_go( float nt )
 
   std_out << "# pulses= " << pulses << " rev= " << rev << " v_rot= " << v_rot << " v_mov= " << v_mov << NL;
   // TODO: replace with pulses
-  if( n_l < 1 || n_l > td.n_2lay ) {
-    std_out << "# Error: bad n_l" << NL;
+  if( pulses < 1 || (int)pulses > td.p_ltask ) {
+    std_out << "# Error: bad pulses" << NL;
     return  1;
   }
 
@@ -877,7 +882,7 @@ int do_go( float nt )
             << HexInt16( porta_sensors_bits ) << ' ' << HexInt16( portb_sensors_bits )
             << ' ' << (int)( tc - tm0 ) << ' ' << FltFmt( d_r_c, cvtff_fix, 8, 2 ) << NL;
 
-    delay_ms_until_brk( &tc0, dt );
+    delay_ms_until_brk( &tc0, td.dt );
   }
 
   tims_stop( 3 );
@@ -896,11 +901,9 @@ int do_go( float nt )
   float d_r = (float) d_pulses / (motor_step2turn * motor_mstep);
   tim_r_need = tim_m_need = 0;
   int add_turns = int( d_r + 0.499f );
-  td.n_ldone += add_turns;
   td.n_done  += add_turns;
 
   if( td.p_ldone >= td.p_ltask ) {
-    td.n_ldone = 0;
     td.p_ldone = 0;
     std_out << "###################################################### END layer " << td.c_lay << NL;
     ++td.c_lay;
@@ -911,7 +914,7 @@ int do_go( float nt )
   std_out << "# go: pulses: task= " << pulses << " done=" << d_pulses
           << " d_r= " << d_r << " break= " << break_flag << ' '
           << HexInt16( porta_sensors_bits ) << ' ' << HexInt16( portb_sensors_bits ) << NL;
-  std_out << "#  add_turns= " << add_turns << " n_ldone= " << td.n_ldone
+  std_out << "#  add_turns= " << add_turns
           << " n_done= " << td.n_done << " c_lay= " << td.c_lay << NL;
   std_out << "# " << break_flag2str() << NL;
 
