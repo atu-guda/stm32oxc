@@ -687,7 +687,6 @@ int do_move( float mm, float vm, uint8_t dev )
   }
 
   timn_stop( dev );
-  UVAR('b') = *c_pulses;
   auto d_pulses = pulses - *c_pulses;
   float d_x = (float) d_pulses / (motor_step2turn * motor_mstep);
   *need_pulses = 0;
@@ -794,6 +793,7 @@ int do_go( float nt )
     return  1;
   }
 
+  uint32_t err_bits { 0 };
   ledsx.reset( 0x0F );
 
   uint32_t pulses = td.p_ltask - td.p_ldone;
@@ -818,7 +818,7 @@ int do_go( float nt )
   td.p_move = 0;
 
   std_out << "# pulses= " << pulses << " rev= " << rev << " v_rot= " << v_rot << " v_mov= " << v_mov << NL;
-  // TODO: replace with pulses
+
   if( pulses < 1 || (int)pulses > td.p_ltask ) {
     std_out << "# Error: bad pulses" << NL;
     return  1;
@@ -840,6 +840,8 @@ int do_go( float nt )
   tims_start( 3 );
   for( int i=0; i<10000000 && !break_flag; ++i ) { // TODO: calc time
 
+    const uint32_t t_sl = HAL_GetTick();
+
     if( tim_r_pulses >= pulses ) {
       break;
     }
@@ -849,38 +851,47 @@ int do_go( float nt )
     r6F_m0 = TMC2209_read_reg_n_try( 0, 0x6F, 4 );
     if( r6F_m0 & TMC2209_R6F_badflags ) {
       break_flag = (int)(BreakNum::drv_flags_rot);
+      err_bits |= 1;
+      tims_stop( 3 );
     }
+
     uint32_t r41_m0 = TMC2209_read_reg_n_try( 0, 0x41, 4 );
     if( i > 1  &&  r41_m0 < (uint32_t)td.s_rot_m ) { // 2 initial ticks have false positive
       break_flag = (int)(BreakNum::drv_smin_rot);
+      err_bits |= 2;
       tims_stop( 3 );
     }
 
     r6F_m1 = TMC2209_read_reg_n_try( 1, 0x6F, 4 );
     if( r6F_m1 & TMC2209_R6F_badflags ) {
       break_flag = (int)(BreakNum::drv_flags_mov);
+      err_bits |= 4;
       tims_stop( 3 );
     }
 
     uint32_t r41_m1 = TMC2209_read_reg_n_try( 1, 0x41, 4 );
     if( i > 1  &&  r41_m0 < (uint32_t)td.s_mov_m ) {
       break_flag = (int)(BreakNum::drv_smin_mov);
+      err_bits |= 8;
       tims_stop( 3 );
     }
 
     if( ( porta_sensors_bits & sensor_flags ) != sensor_flags ) { // TODO: more checks
       break_flag = (int)(BreakNum::drv_flags_rot );
+      err_bits |= 16;
       tims_stop( 3 );
     }
 
-    uint32_t tc = HAL_GetTick();
-    // if debug?
-    // std_out << HexInt( r6F_m0 ) << ... << HexInt( r6F_m1 ) ...
+    const uint32_t tc = HAL_GetTick();
 
-    float d_r_c = (float) ( td.p_ldone + tim_r_pulses ) / (motor_step2turn * motor_mstep);
-    std_out << r41_m0 << ' ' << r41_m1 << ' '
-            << HexInt16( porta_sensors_bits ) << ' ' << HexInt16( portb_sensors_bits )
-            << ' ' << (int)( tc - tm0 ) << ' ' << FltFmt( d_r_c, cvtff_fix, 8, 2 ) << NL;
+    const float d_r_c = (float) ( td.p_ldone + tim_r_pulses ) / (motor_step2turn * motor_mstep);
+
+    std_out << FmtInt( tc - tm0, 10 ) << ' '
+            << FmtInt( tc - t_sl, 5 )
+            << FmtInt( r41_m0, 6 ) << ' ' << FmtInt( r41_m1, 6 ) << ' '
+            << HexInt16( porta_sensors_bits ) << ' '
+            << HexInt16( portb_sensors_bits ) << ' '
+            << FltFmt( d_r_c, cvtff_fix, 8, 2 ) << NL;
 
     delay_ms_until_brk( &tc0, td.dt );
   }
@@ -890,9 +901,8 @@ int do_go( float nt )
   if( break_flag ) {
     ledsx.set( 1 );
   }
-  std_out << HexInt( r6F_m0 ) << ' ' << HexInt( r6F_m1 ) << NL;
+  std_out << "# " << HexInt( r6F_m0 ) << ' ' << HexInt( r6F_m1 ) << NL;
 
-  UVAR('b') = tim_r_pulses;
   UVAR('c') = tim_m_pulses;
 
   // TODO: separate function + fake call
@@ -916,7 +926,7 @@ int do_go( float nt )
           << HexInt16( porta_sensors_bits ) << ' ' << HexInt16( portb_sensors_bits ) << NL;
   std_out << "#  add_turns= " << add_turns
           << " n_done= " << td.n_done << " c_lay= " << td.c_lay << NL;
-  std_out << "# " << break_flag2str() << NL;
+  std_out << "# " << break_flag2str() << ' ' << HexInt( err_bits ) << NL;
 
   return break_flag;
 }
