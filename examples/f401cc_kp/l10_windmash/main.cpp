@@ -25,7 +25,6 @@ PinsIn pins_diag (  DIAG_GPIO,  DIAG_PIN0,  DIAG_N );
 PinsIn pins_user_start( USER_START_GPIO,  USER_START_PIN0,  USER_START_N );
 PinsIn pins_user_stop(   USER_STOP_GPIO,   USER_STOP_PIN0,   USER_STOP_N );
 void init_EXTI();
-int check_signals();
 
 volatile uint32_t porta_sensors_bits {0};
 volatile uint32_t portb_sensors_bits {0};
@@ -1153,14 +1152,6 @@ void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
   }
 }
 
-int check_signals()
-{
-  read_sensors();
-  // porta_sensors_bits = GPIOA->IDR & porta_sensor_mask;
-  // portb_sensors_bits = GPIOB->IDR & portb_sensor_mask;
-
-  return 0;
-}
 
 
 void HAL_GPIO_EXTI_Callback( uint16_t pin_bit )

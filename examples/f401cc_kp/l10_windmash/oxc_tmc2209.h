@@ -56,6 +56,23 @@ class TMC_driver {
    virtual int  read( uint8_t *data, int sz ) = 0;
 };
 
+class TMC_devices {
+  public:
+   explicit TMC_devices( TMC_driver *a_drv, uint32_t a_try_max )
+     : drv( a_drv ),  try_max( a_try_max ) {};
+   uint32_t read_reg_1( uint8_t dev, uint8_t reg );
+   uint32_t read_reg( uint8_t dev, uint8_t reg );
+   int write_reg_1( uint8_t dev, uint8_t reg, uint32_t v );
+   int write_reg( uint8_t dev, uint8_t reg, uint32_t v );
+   const uint8_t *get_buf() const { return buf; }
+  private:
+   static const uint32_t buf_sz { 16 };
+   uint8_t buf[buf_sz];
+   TMC_driver *drv;
+   uint32_t try_max;
+   uint32_t wait_max { 20 }; // + set/get
+};
+
 
 
 }; // namespace TMC2209
