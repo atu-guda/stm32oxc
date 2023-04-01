@@ -2,6 +2,7 @@
 #include <oxc_floatfun.h>
 #include <oxc_usartio.h> // TODO: auto
 #include <oxc_namedints.h>
+#include <oxc_atleave.h>
 
 #include "main.h"
 #include "oxc_tmc2209.h"
@@ -40,6 +41,9 @@ const char* common_help_string = "Winding machine control app " __DATE__ " " __T
 
 constexpr uint32_t tim_psc_freq   {  10000000 };
 constexpr uint32_t tim_pbase_init {  tim_psc_freq / 200 };
+
+constexpr float max_move_len { 200.0f };
+constexpr float xlim_move_len { 0.1f };
 
 
 TIM_HandleTypeDef tim_r_h;
@@ -704,80 +708,94 @@ int cmd_rotate( int argc, const char * const * argv )
   float turns = arg2float_d( 1, argc, argv, 1.0f, -50000.0f, 50000.0f );
   float vm = arg2float_d( 2, argc, argv, td.v_rot * speed_scale, 0.0f, 20.0f );
 
-  auto old_sf = sensor_flags;
+  RestoreAtLeave rst_st( sensor_flags );
   sensor_flags = 0; // FAKE flags
 
   auto rc =  do_move( turns, vm, 0 );
-
-  sensor_flags = old_sf;
 
   return rc;
 }
 
 int cmd_move( int argc, const char * const * argv )
 {
-  float mm = arg2float_d( 1, argc, argv, 1.0f, -200.0f, 200.0f );
+  float mm = arg2float_d( 1, argc, argv, 1.0f, -max_move_len, max_move_len );
   int ignore_opto = arg2long_d( 2, argc, argv, 0, 0, 1 );
   float vm = arg2float_d( 3, argc, argv, td.v_mov_o * speed_scale, 0.0f, 20.0f );
 
-  auto old_sf = sensor_flags;
+  RestoreAtLeave rst_st( sensor_flags );
   sensor_flags = ignore_opto ? SWLIM_BITS_SW : SWLIM_BITS_ALL;
 
   auto rc =  do_move( mm, vm, 1 );
-
-  sensor_flags = old_sf;
 
   return rc;
 }
 
 int cmd_repos( int argc, const char * const * argv )
 {
-  float mm = arg2float_d( 1, argc, argv, 1.0f, -200.0f, 200.0f );
+  float mm = arg2float_d( 1, argc, argv, 1.0f, -max_move_len, max_move_len );
   float vm = td.v_mov_o * speed_scale;
-
-  auto old_sf = sensor_flags;
-  sensor_flags = SWLIM_BITS_ALL;
 
   float xmm, shi, emm;
   if( mm > 0 ) {
-    xmm = -200.0f; shi =  0.1; emm = mm - shi;
+    xmm = -max_move_len; shi =  xlim_move_len; emm = mm - shi;
   } else {
-    xmm =  200.0f; shi = -0.1; emm = mm - shi;
+    xmm =  max_move_len; shi = -xlim_move_len; emm = mm - shi;
   }
 
-  do_move( xmm, vm, 1 );
+  RestoreAtLeave rst_st( sensor_flags );
+
+  sensor_flags = SWLIM_BITS_ALL;
+  auto rc = do_move( xmm, vm, 1 );
+  if( break_flag != 0 && break_flag != (int)BreakNum::limits ) {
+    return rc;
+  }
+
   sensor_flags = SWLIM_BITS_SW;
   do_move( shi, vm, 1 );
-  sensor_flags = SWLIM_BITS_ALL;
-  int rc = do_move( emm, vm, 1 );
+  if( break_flag ) {
+    return rc;
+  }
 
-  sensor_flags = old_sf;
+  sensor_flags = SWLIM_BITS_ALL;
+  rc = do_move( emm, vm, 1 );
+
   return rc;
 }
 
 int cmd_meas_x( int argc, const char * const * argv )
 {
   float vm = td.v_mov_o * speed_scale;
-  auto old_sf = sensor_flags;
+  RestoreAtLeave rst_st( sensor_flags );
 
   sensor_flags = SWLIM_BITS_ALL;
-  do_move( 200.0f, vm, 1 );
+  auto rc = do_move( max_move_len, vm, 1 ); // find right limit
+  if( break_flag != 0 && break_flag != (int)BreakNum::limits ) {
+    return rc;
+  }
+
   sensor_flags = SWLIM_BITS_SW;
-  do_move( -0.1, vm, 1 );
-  sensor_flags = SWLIM_BITS_ALL;
+  rc = do_move( -xlim_move_len, vm, 1 );  // substep to left
+  if( break_flag ) {
+    return rc;
+  }
 
-  int rc = do_move( -200, vm, 1 );
+  sensor_flags = SWLIM_BITS_ALL;           // find right limit
+  rc = do_move( -max_move_len, vm, 1 );
+  if( break_flag != 0 && break_flag != (int)BreakNum::limits ) {
+    return rc;
+  }
+
   auto d_xt = tim_m_pulses;
-  float d_x = 0.1f + (float)(d_xt) / ( motor_step2turn * motor_mstep );
+  float d_x = xlim_move_len + (float)(d_xt) / ( motor_step2turn * motor_mstep );
 
   sensor_flags = SWLIM_BITS_SW;
-  do_move( 0.1, vm, 1 );
-
-  sensor_flags = old_sf;
+  rc = do_move( xlim_move_len, vm, 1 ); // substep to right
+  if( break_flag ) {
+    return rc;
+  }
 
   td.w_len_m  = (int)( d_x * 1000 );
   std_out << "# d_x= " << d_x << ' ' << d_xt << NL;
-
 
   return rc;
 }
