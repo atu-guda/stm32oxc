@@ -48,6 +48,16 @@ struct rreq {
 } __attribute__((packed));
 static_assert( sizeof(rreq) == 4, "Bad TMC2209::rreq size" );
 
+//* abstract class - real bust drive by UART....
+class TMC_driver {
+  public:
+   virtual void reset() = 0;
+   virtual int  write( const uint8_t *data, int sz ) = 0;
+   virtual int  read( uint8_t *data, int sz ) = 0;
+};
+
+
+
 }; // namespace TMC2209
 
 #endif

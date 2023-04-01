@@ -4,7 +4,6 @@
 #include <oxc_namedints.h>
 #include <oxc_atleave.h>
 
-#include "oxc_tmc2209.h"
 #include "main.h"
 
 using namespace std;
@@ -65,8 +64,10 @@ uint32_t calc_TIM_arr_for_base_freq_flt( TIM_TypeDef *tim, float base_freq ); //
 // UART_CONSOLE_DEFINES
 UART_HandleTypeDef uah_motordrv;
 UsartIO motordrv( &uah_motordrv, USART1 );
+TMC_UART_drv tmc_uart_drv( &motordrv );
 
 STD_USART1_IRQ( motordrv );
+
 uint32_t TMC2209_read_reg( uint8_t dev, uint8_t reg );
 uint32_t TMC2209_read_reg_n_try( uint8_t dev, uint8_t reg, int n_try );
 int TMC2209_write_reg( uint8_t dev, uint8_t reg, uint32_t v );
@@ -1246,6 +1247,25 @@ void EXTI15_10_IRQHandler()
   // HAL_GPIO_EXTI_IRQHandler(SW_LEV_3_Pin);
 }
 
+// --------------------------------------------------------------------
+// TMC_UART_drv:
+void TMC_UART_drv::reset()
+{
+  drv->reset();
+}
+
+int  TMC_UART_drv::write( const uint8_t *data, int sz )
+{
+  int w_n = drv->write( (const char*)data, sz );
+  drv->wait_eot( 20 ); // TODO: config
+  return w_n;
+}
+
+int  TMC_UART_drv::read( uint8_t *data, int sz )
+{
+  int r_n = drv->read( (char*)data, sz, 20 ); // TODO: config
+  return r_n;
+}
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

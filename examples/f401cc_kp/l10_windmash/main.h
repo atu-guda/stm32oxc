@@ -1,6 +1,7 @@
 #ifndef _MAIN_H
 #define _MAIN_H
 
+#include "oxc_tmc2209.h"
 // #include <oxc_gpio.h> from auto
 
 extern int debug;
@@ -127,6 +128,17 @@ struct TaskData {
 };
 
 extern TaskData td; // in main.cpp
+
+class TMC_UART_drv : public TMC2209::TMC_driver {
+  public:
+   explicit TMC_UART_drv( UsartIO *a_drv ) : drv( a_drv ) {};
+   UsartIO *getDrv() { return drv; };
+   virtual void reset() override;
+   virtual int  write( const uint8_t *data, int sz ) override;
+   virtual int  read( uint8_t *data, int sz ) override;
+  private:
+   UsartIO *drv;
+};
 
 #endif
 
