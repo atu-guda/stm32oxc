@@ -4,14 +4,16 @@
 #include <cstdint>
 #include <bit>
 
-inline const uint32_t TMC2209_bad_val = 0xFFFFFFFF;
+namespace TMC2209 {
 
-uint8_t TMC22xx_calc_crc( const uint8_t *d, unsigned sz  );
+inline const uint32_t bad_val = 0xFFFFFFFF;
+
+uint8_t calc_crc( const uint8_t *d, unsigned sz  );
 
 // TODO: register names
 
 // Structure to write data to TMC2209 and to receive replay from it
-struct TMC2209_rwdata {
+struct rwdata {
   uint8_t  sync;
   uint8_t  addr;
   uint8_t  regnum;
@@ -26,12 +28,12 @@ struct TMC2209_rwdata {
     return std::bit_cast<const uint8_t*>( this );
   }
 } __attribute__((packed));
-static_assert( sizeof(TMC2209_rwdata) == 8, "Bad TMC2209_rwdata size" );
+static_assert( sizeof(rwdata) == 8, "Bad TMC2209::rwdata size" );
 
 
 
 // Structure to requiest data from TMC2209
-struct TMC2209_rreq {
+struct rreq {
   uint8_t  sync;
   uint8_t  addr;
   uint8_t  regnum;
@@ -44,7 +46,9 @@ struct TMC2209_rreq {
     return std::bit_cast<const uint8_t*>( this );
   }
 } __attribute__((packed));
-static_assert( sizeof(TMC2209_rreq) == 4, "Bad TMC2209_rreq size" );
+static_assert( sizeof(rreq) == 4, "Bad TMC2209::rreq size" );
+
+}; // namespace TMC2209
 
 #endif
 

@@ -4,8 +4,8 @@
 #include <oxc_namedints.h>
 #include <oxc_atleave.h>
 
-#include "main.h"
 #include "oxc_tmc2209.h"
+#include "main.h"
 
 using namespace std;
 using namespace SMLRL;
@@ -183,6 +183,7 @@ ADD_IOBJ_TD( p_move  );
 ADD_IOBJ_TD( c_lay   );
 ADD_IOBJ   ( debug   );
 
+#undef ADD_IOBJ
 #undef ADD_IOBJ_TD
 
 
@@ -299,7 +300,7 @@ int cmd_test0( int argc, const char * const * argv )
   uint32_t t_step = UVAR('t');
   std_out <<  "# Test0: n= " << n << " t= " << t_step << NL;
 
-  TMC2209_rreq  rqd;
+  TMC2209::rreq  rqd;
   char in_buf[80];
 
   motordrv.reset();
@@ -351,7 +352,7 @@ int cmd_test0( int argc, const char * const * argv )
 // TODO: to class
 int TMC2209_write_reg( uint8_t dev, uint8_t reg, uint32_t v )
 {
-  TMC2209_rwdata wd;
+  TMC2209::rwdata wd;
   wd.fill( dev, reg, v );
   auto w_n = motordrv.write_s( (const char*)wd.rawCData(), sizeof(wd) );
   if( w_n != sizeof(wd) ) {
@@ -364,7 +365,7 @@ int TMC2209_write_reg( uint8_t dev, uint8_t reg, uint32_t v )
 
 uint32_t TMC2209_read_reg( uint8_t dev, uint8_t reg )
 {
-  TMC2209_rreq  rqd;
+  TMC2209::rreq  rqd;
   rqd.fill( dev, reg );
 
   motordrv.reset();
@@ -374,7 +375,7 @@ uint32_t TMC2209_read_reg( uint8_t dev, uint8_t reg )
   auto w_n = motordrv.write_s( (const char*)rqd.rawCData(), sizeof(rqd) );
   if( w_n != sizeof(rqd) ) {
     std_out << "# Err: w_n = " << w_n << NL;
-    return TMC2209_bad_val;
+    return TMC2209::bad_val;
   }
   motordrv.wait_eot( 10 ); // TODO: motordrv as abstract actor
 
@@ -388,15 +389,15 @@ uint32_t TMC2209_read_reg( uint8_t dev, uint8_t reg )
   auto r_n = motordrv.read( in_buf, 16, 200 );
 
 
-  if( r_n != sizeof(TMC2209_rreq) + sizeof(TMC2209_rwdata) ) {
+  if( r_n != sizeof(TMC2209::rreq) + sizeof(TMC2209::rwdata) ) {
     if( debug > 0 ) {
       std_out << "# Err: 12 != r_n = " << r_n << NL;
       dump8( in_buf, 16 );
     }
-    return TMC2209_bad_val;
+    return TMC2209::bad_val;
   }
 
-  TMC2209_rwdata *rd = bit_cast<TMC2209_rwdata*>( in_buf + sizeof(TMC2209_rreq) );
+  TMC2209::rwdata *rd = bit_cast<TMC2209::rwdata*>( in_buf + sizeof(TMC2209::rreq) );
   // TODO: check crc
   uint32_t v = __builtin_bswap32( rd->data );
   delay_mcs( 100 );
@@ -407,12 +408,12 @@ uint32_t TMC2209_read_reg_n_try( uint8_t dev, uint8_t reg, int n_try )
 {
   for( int i=0; i < n_try; ++i ) {
     uint32_t v = TMC2209_read_reg( dev, reg );
-    if( v != TMC2209_bad_val ) {
+    if( v != TMC2209::bad_val ) {
       return v;
     }
     delay_ms( 20 );
   }
-  return TMC2209_bad_val;
+  return TMC2209::bad_val;
 }
 
 int cmd_readreg( int argc, const char * const * argv )
