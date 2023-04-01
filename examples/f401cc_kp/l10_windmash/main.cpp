@@ -286,6 +286,8 @@ void init_EXTI()
   TOWER_GPIO.setEXTI( TOWER_PIN_UP, GpioRegs::ExtiEv::updown );
   TOWER_GPIO.setEXTI( TOWER_PIN_CE, GpioRegs::ExtiEv::updown );
   TOWER_GPIO.setEXTI( TOWER_PIN_DW, GpioRegs::ExtiEv::updown );
+  TOWER_GPIO.setEXTI( DIAG_PIN_ROT, GpioRegs::ExtiEv::up );
+  TOWER_GPIO.setEXTI( DIAG_PIN_MOV, GpioRegs::ExtiEv::up );
   HAL_NVIC_SetPriority( EXTI0_IRQn, 15, 0 );
   HAL_NVIC_EnableIRQ(   EXTI0_IRQn );
   HAL_NVIC_SetPriority( EXTI1_IRQn, 15, 0 );
@@ -636,6 +638,9 @@ int do_move( float mm, float vm, uint8_t dev )
 
   TMC2209_write_reg( dev, 0, rev ? reg00_def_rev : reg00_def_forv ); // direction
 
+  // DEBUG: TODO: remove
+  TMC2209_write_reg( dev, 0x40, UVAR('s') );      // TODO: dev_prom * 2
+
   uint32_t pulses = (uint32_t)( mm * motor_step2turn * motor_mstep );
   auto c_pulses    = dev ? ( &tim_m_pulses ) : ( &tim_r_pulses );
   auto need_pulses = dev ? ( &tim_m_need )   : ( &tim_r_need );
@@ -970,7 +975,9 @@ bool prepare_drv( uint8_t drv )
   TMC2209_write_reg( drv, 0x00, reg00_def_forv ); // general config
   TMC2209_write_reg( drv, 0x10, reg10_def );      // IHOLD, IRUN, IHOLDDELAY
   TMC2209_write_reg( drv, 0x6C, reg6C_def );      // many bits
+  //TMC2209_write_reg( drv, 0x40, 30 );      // TODO: dev_prom * 2
                                                   // 14, 41
+
   uint32_t n1 = TMC2209_read_reg_n_try( drv, 0x02, 10 );
   if( ( ( n1 - n0 ) & 0xFF ) != 3 ) {
     std_out << "# Error init drv " << drv << " bad counter " << ( n1 - n0 ) << NL;
@@ -1045,6 +1052,8 @@ const char*  break_flag2str()
     "drv_smin_rot",
     "drv_flags_mov",
     "drv_smin_mov",
+    "drv_diag_rot",
+    "drv_diag_mov",
     "?max",
   };
   static_assert( std::size(strs) == (unsigned)(BreakNum::max)+1, "Bad break flag strings number" );
@@ -1178,6 +1187,18 @@ void HAL_GPIO_EXTI_Callback( uint16_t pin_bit )
         UVAR('z') = 102;
       }
       break;
+    case DIAG_BIT_ROT:
+      ledsx.toggle( 2 );
+      tims_stop( 3 );
+      break_flag = (int)(BreakNum::drv_diag_rot);
+      UVAR('z') = 103;
+      break;
+    case DIAG_BIT_MOV:
+      ledsx.toggle( 4 );
+      tims_stop( 3 );
+      break_flag = (int)(BreakNum::drv_diag_mov);
+      UVAR('z') = 104;
+      break;
     default:
       ledsx.toggle( 1 );
       break;
@@ -1215,7 +1236,8 @@ void EXTI9_5_IRQHandler()
   HAL_GPIO_EXTI_IRQHandler( SWLIM_BIT_SL );
   HAL_GPIO_EXTI_IRQHandler( SWLIM_BIT_OR );
   HAL_GPIO_EXTI_IRQHandler( SWLIM_BIT_OL );
-  // HAL_GPIO_EXTI_IRQHandler(HALL_ROT_BIT );
+  HAL_GPIO_EXTI_IRQHandler( DIAG_BIT_ROT );
+  HAL_GPIO_EXTI_IRQHandler( DIAG_BIT_MOV );
 }
 
 

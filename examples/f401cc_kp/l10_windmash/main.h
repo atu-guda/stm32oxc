@@ -36,6 +36,8 @@ inline constexpr uint32_t SWLIM_BITS_OP  { SWLIM_BIT_OR | SWLIM_BIT_OL };
 inline auto&  DIAG_GPIO { GpioB };
 inline constexpr uint32_t  DIAG_PIN0     { 8 };
 inline constexpr uint32_t  DIAG_N        { 2 };
+inline constexpr uint32_t  DIAG_PIN_ROT  { DIAG_PIN0  };
+inline constexpr uint32_t  DIAG_PIN_MOV  { DIAG_PIN_ROT+1 };
 inline constexpr uint32_t  DIAG_BIT_ROT  { 1 << DIAG_PIN0 };
 inline constexpr uint32_t  DIAG_BIT_MOV  { DIAG_BIT_ROT << 1 };
 inline constexpr uint32_t  DIAG_BITS_ALL { DIAG_BIT_ROT | DIAG_BIT_MOV };
@@ -91,6 +93,8 @@ enum class BreakNum {
   drv_smin_rot  = 6,
   drv_flags_mov = 7,
   drv_smin_mov  = 8,
+  drv_diag_rot  = 9,
+  drv_diag_mov  = 10,
   max
 };
 
