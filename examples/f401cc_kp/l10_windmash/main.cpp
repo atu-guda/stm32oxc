@@ -374,7 +374,7 @@ uint32_t TMC2209_read_reg( uint8_t dev, uint8_t reg )
 
   // ledsx.set( 1 );
 
-  auto w_n = motordrv.write_s( (const char*)rqd.rawCData(), sizeof(rqd) );
+  auto w_n = motordrv.write( (const char*)rqd.rawCData(), sizeof(rqd) );
   if( w_n != sizeof(rqd) ) {
     std_out << "# Err: w_n = " << w_n << NL;
     return TMC2209::bad_val;
