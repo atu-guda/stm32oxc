@@ -1192,13 +1192,13 @@ void TMC_UART_drv::reset()
 int  TMC_UART_drv::write( const uint8_t *data, int sz )
 {
   int w_n = drv->write( (const char*)data, sz );
-  drv->wait_eot( 20 ); // TODO: config
+  drv->wait_eot( wait_ms ); // TODO: config
   return w_n;
 }
 
 int  TMC_UART_drv::read( uint8_t *data, int sz )
 {
-  int r_n = drv->read( (char*)data, sz, 20 ); // TODO: config
+  int r_n = drv->read( (char*)data, sz, wait_ms );
   return r_n;
 }
 

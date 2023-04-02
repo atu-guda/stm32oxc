@@ -142,8 +142,11 @@ class TMC_UART_drv : public TMC2209::TMC_driver {
    virtual void reset() override;
    virtual int  write( const uint8_t *data, int sz ) override;
    virtual int  read( uint8_t *data, int sz ) override;
+   void set_wait_ms ( uint32_t ms ) { wait_ms = ms; };
+   uint32_t get_wait_ms() const { return wait_ms; }
   private:
    UsartIO *drv;
+   uint32_t wait_ms { 20 };
 };
 
 #endif
