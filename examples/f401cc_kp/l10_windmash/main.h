@@ -99,6 +99,12 @@ enum class BreakNum {
   max
 };
 
+// pairs of regnum - value to init TMCxxxx.
+struct RegsCmd {
+  uint8_t  reg;
+  uint32_t val;
+};
+
 struct TaskData {
   // input data
   int n_total {   100 }; // total turns

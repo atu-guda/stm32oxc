@@ -903,6 +903,14 @@ int cmd_go( int argc, const char * const * argv )
 }
 
 
+const RegsCmd TMC_init_seq[] = {
+  { 0x00, reg00_def_forv },
+  { 0x10, reg10_def      },
+  { 0x6C, reg6C_def      },
+  { 0x14, 0x0FFFFF       },
+  { 0x40, 0x0FF          },
+};
+
 bool prepare_drv( uint8_t drv )
 {
   uint32_t r = tmc.read_reg( drv, 0x06 );
@@ -911,22 +919,12 @@ bool prepare_drv( uint8_t drv )
     return false;
   }
 
-  // TODO: init seq as data
-  int rc = tmc.write_reg( drv, 0x00, reg00_def_forv ); // general config
-  if( !rc ) {
-    std_out << "# Error init drv " << drv << " reg_0" << NL;
-  }
-  rc = tmc.write_reg( drv, 0x10, reg10_def );      // IHOLD, IRUN, IHOLDDELAY
-  if( !rc ) {
-    std_out << "# Error init drv " << drv << " reg_0x10" << NL;
-  }
-  rc = tmc.write_reg( drv, 0x6C, reg6C_def );      // many bits
-  if( !rc ) {
-    std_out << "# Error init drv " << drv << " reg_0x6C" << NL;
-  }
-  rc = tmc.write_reg( drv, 0x14, 0x0FFFFF );      //  ?
-  if( !rc ) {
-    std_out << "# Error init drv " << drv << " reg_0x14" << NL;
+  for( auto [reg,val] : TMC_init_seq ) {
+    int rc = tmc.write_reg( drv, reg, val );
+    if( !rc ) {
+      std_out << "# Error init drv " << drv << " reg_0" << NL;
+      return false;
+    }
   }
 
   return true;
