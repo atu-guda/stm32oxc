@@ -105,6 +105,11 @@ struct RegsCmd {
   uint32_t val;
 };
 
+struct TMC_stat {
+  uint32_t status; // reg00
+  uint32_t sg_val; // reg41
+};
+
 struct TaskData {
   // input data
   int n_total {   100 }; // total turns
@@ -119,6 +124,7 @@ struct TaskData {
   int      dt {      100 }; // time step durung work in ms
   int check_top {      1 }; // check top sensor in tower (wire break or end)
   int check_bot {      1 }; // check bottom sensor in tower (stall)
+                            // TODO: mult_rot(turn/turn), mult_mov (mm/turn)
   // calculated
   int n_lay   {        0 }; // number of layers
   int n_2lay  {        0 }; // turns per layer

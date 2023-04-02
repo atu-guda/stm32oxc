@@ -240,7 +240,7 @@ int main(void)
   UVAR('t') =   100;
   UVAR('n') =     2;
   UVAR('d') =     0; // TMC2209 device addr for manual
-  UVAR('s') =    20; // tmp: SG treshold
+  UVAR('o') =     0; // more measure and output during move/go
 
   ledsx.initHW();
   ledsx.reset( 0xFF );
@@ -282,6 +282,7 @@ int main(void)
 
 void init_EXTI()
 {
+  // TODO: data driven
   TOWER_GPIO.setEXTI( TOWER_PIN_UP, GpioRegs::ExtiEv::updown );
   TOWER_GPIO.setEXTI( TOWER_PIN_CE, GpioRegs::ExtiEv::updown );
   TOWER_GPIO.setEXTI( TOWER_PIN_DW, GpioRegs::ExtiEv::updown );
@@ -742,6 +743,19 @@ int cmd_meas_x( int argc, const char * const * argv )
   return rc;
 }
 
+int read_TMC_stat( uint8_t dev, TMC_stat &s )
+{
+  s.status = tmc.read_reg( dev, 0x6F );
+  s.sg_val = tmc.read_reg( dev, 0x41 );
+  if( s.status == TMC2209::bad_val ) {
+    return 1;
+  }
+  if( s.sg_val == TMC2209::bad_val ) {
+    return 2;
+  }
+  return 0;
+}
+
 int do_go( float nt )
 {
   if( td.c_lay >= td.n_lay ) {
@@ -788,7 +802,8 @@ int do_go( float nt )
   }
 
   tims_stop( 3 );
-  uint32_t r6F_m0 {0}, r6F_m1 {0};
+
+  TMC_stat st_rot {0,0}, st_mov {0,0};
 
   tmc.write_reg( 0, 0, reg00_def_forv ); // rot direction
   tmc.write_reg( 1, 0, rev ? reg00_def_rev : reg00_def_forv ); // move direction
@@ -810,34 +825,21 @@ int do_go( float nt )
     }
     delay_bad_mcs( 10 );
 
-    // TODO: ignore read fail n steps
-    r6F_m0 = tmc.read_reg( 0, 0x6F );
-    if( r6F_m0 & TMC2209_R6F_badflags ) {
-      break_flag = (int)(BreakNum::drv_flags_rot);
-      err_bits |= 1;
-      tims_stop( 3 );
+    if( UVAR('o' ) ) {
+      read_TMC_stat( 0, st_rot );
+      read_TMC_stat( 1, st_mov );
+      if( st_rot.status & TMC2209_R6F_badflags ) {
+        break_flag = (int)(BreakNum::drv_flags_rot);
+        err_bits |= 1;
+        tims_stop( 3 );
+      }
+      if( st_mov.status & TMC2209_R6F_badflags ) {
+        break_flag = (int)(BreakNum::drv_flags_mov);
+        err_bits |= 4;
+        tims_stop( 3 );
+      }
     }
 
-    uint32_t r41_m0 = tmc.read_reg( 0, 0x41 );
-    if( i > 1  &&  r41_m0 < (uint32_t)td.s_rot_m ) { // 2 initial ticks have false positive
-      break_flag = (int)(BreakNum::drv_smin_rot);
-      err_bits |= 2;
-      tims_stop( 3 );
-    }
-
-    r6F_m1 = tmc.read_reg( 1, 0x6F );
-    if( r6F_m1 & TMC2209_R6F_badflags ) {
-      break_flag = (int)(BreakNum::drv_flags_mov);
-      err_bits |= 4;
-      tims_stop( 3 );
-    }
-
-    uint32_t r41_m1 = tmc.read_reg( 1, 0x41 );
-    if( i > 1  &&  r41_m0 < (uint32_t)td.s_mov_m ) {
-      break_flag = (int)(BreakNum::drv_smin_mov);
-      err_bits |= 8;
-      tims_stop( 3 );
-    }
 
     if( ( porta_sensors_bits & sensor_flags ) != sensor_flags ) { // TODO: more checks
       break_flag = (int)(BreakNum::drv_flags_rot );
@@ -849,10 +851,12 @@ int do_go( float nt )
 
     const float d_r_c = (float) ( td.p_ldone + tim_r_pulses ) / (motor_step2turn * motor_mstep);
 
-    std_out << FmtInt( tc - tm0, 10 ) << ' '
-            << FmtInt( tc - t_sl, 5 )
-            << FmtInt( r41_m0, 6 ) << ' ' << FmtInt( r41_m1, 6 ) << ' '
-            << HexInt16( porta_sensors_bits ) << ' '
+    std_out << FmtInt( tc - tm0, 10 ) << ' ';
+    if( UVAR('o') ) {
+      std_out << FmtInt( tc - t_sl, 5 ) << ' '
+              << FmtInt( st_rot.sg_val, 6 ) << ' ' << FmtInt( st_mov.sg_val, 6 ) << ' ';
+    }
+    std_out << HexInt16( porta_sensors_bits ) << ' '
             << HexInt16( portb_sensors_bits ) << ' '
             << FltFmt( d_r_c, cvtff_fix, 8, 2 ) << NL;
 
@@ -860,11 +864,14 @@ int do_go( float nt )
   }
 
   tims_stop( 3 );
+  read_TMC_stat( 0, st_rot );
+  read_TMC_stat( 1, st_mov );
 
   if( break_flag ) {
     ledsx.set( 1 );
   }
-  std_out << "# " << HexInt( r6F_m0 ) << ' ' << HexInt( r6F_m1 ) << NL;
+  std_out << "# " << HexInt( st_rot.status ) << ' ' << HexInt( st_mov.status )
+          << ' ' << FmtInt( st_rot.sg_val, 6 ) << ' ' << FmtInt( st_mov.sg_val, 6 ) << NL;
 
   UVAR('c') = tim_m_pulses;
 
@@ -1192,7 +1199,7 @@ void TMC_UART_drv::reset()
 int  TMC_UART_drv::write( const uint8_t *data, int sz )
 {
   int w_n = drv->write( (const char*)data, sz );
-  drv->wait_eot( wait_ms ); // TODO: config
+  drv->wait_eot( wait_ms );
   return w_n;
 }
 
