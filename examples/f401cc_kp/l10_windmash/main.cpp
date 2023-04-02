@@ -240,6 +240,7 @@ int main(void)
   UVAR('t') =   100;
   UVAR('n') =     2;
   UVAR('d') =     0; // TMC2209 device addr for manual
+  UVAR('s') =    20; // tmp: SG treshold
 
   ledsx.initHW();
   ledsx.reset( 0xFF );
@@ -284,14 +285,18 @@ void init_EXTI()
   TOWER_GPIO.setEXTI( TOWER_PIN_UP, GpioRegs::ExtiEv::updown );
   TOWER_GPIO.setEXTI( TOWER_PIN_CE, GpioRegs::ExtiEv::updown );
   TOWER_GPIO.setEXTI( TOWER_PIN_DW, GpioRegs::ExtiEv::updown );
-  TOWER_GPIO.setEXTI( DIAG_PIN_ROT, GpioRegs::ExtiEv::up );
-  TOWER_GPIO.setEXTI( DIAG_PIN_MOV, GpioRegs::ExtiEv::up );
+  DIAG_GPIO.setEXTI(  DIAG_PIN_ROT, GpioRegs::ExtiEv::up );
+  DIAG_GPIO.setEXTI(  DIAG_PIN_MOV, GpioRegs::ExtiEv::up );
   HAL_NVIC_SetPriority( EXTI0_IRQn, 15, 0 );
   HAL_NVIC_EnableIRQ(   EXTI0_IRQn );
   HAL_NVIC_SetPriority( EXTI1_IRQn, 15, 0 );
   HAL_NVIC_EnableIRQ(   EXTI1_IRQn );
   HAL_NVIC_SetPriority( EXTI2_IRQn, 15, 0 );
   HAL_NVIC_EnableIRQ(   EXTI2_IRQn );
+  HAL_NVIC_SetPriority( EXTI4_IRQn, 15, 0 );
+  HAL_NVIC_EnableIRQ(   EXTI4_IRQn );
+  HAL_NVIC_SetPriority( EXTI9_5_IRQn, 15, 0 );
+  HAL_NVIC_EnableIRQ(   EXTI9_5_IRQn );
 }
 
 int cmd_test0( int argc, const char * const * argv )
@@ -570,8 +575,6 @@ int do_move( float mm, float vm, uint8_t dev )
 
   tmc.write_reg( dev, 0, rev ? reg00_def_rev : reg00_def_forv ); // direction
 
-  // DEBUG: TODO: remove
-  tmc.write_reg( dev, 0x40, UVAR('s') );      // TODO: dev_prom * 2
 
   uint32_t pulses = (uint32_t)( mm * motor_step2turn * motor_mstep );
   auto c_pulses    = dev ? ( &tim_m_pulses ) : ( &tim_r_pulses );
@@ -582,6 +585,7 @@ int do_move( float mm, float vm, uint8_t dev )
   check_top  = false;  check_bot  = false;
 
   uint32_t s_max = dev ? td.s_mov_m : td.s_rot_m;
+  tmc.write_reg( dev, 0x40, s_max ); // TODO: dep(speed)
 
   std_out << "# move: dev= " << (int)dev << " x= " << mm << " rev= " << rev
           << " pulses= " << pulses << " v= " << vm << " s_max= " <<  s_max << NL;
@@ -773,6 +777,9 @@ int do_go( float nt )
   set_drv_speed( 1, v_mov );
   td.p_move = 0;
 
+  tmc.write_reg( 0, 0x40, td.s_rot_m ); // TODO: dep(speed)
+  tmc.write_reg( 1, 0x40, td.s_mov_m ); // TODO: dep(speed)
+
   std_out << "# pulses= " << pulses << " rev= " << rev << " v_rot= " << v_rot << " v_mov= " << v_mov << NL;
 
   if( pulses < 1 || (int)pulses > td.p_ltask ) {
@@ -903,7 +910,8 @@ bool prepare_drv( uint8_t drv )
     std_out << "# Error init drv " << drv << " bad signature " << HexInt( r ) << NL;
     return false;
   }
-  uint32_t n0 = tmc.read_reg( drv, 0x02 ); // initial counter
+
+  // TODO: init seq as data
   int rc = tmc.write_reg( drv, 0x00, reg00_def_forv ); // general config
   if( !rc ) {
     std_out << "# Error init drv " << drv << " reg_0" << NL;
@@ -916,14 +924,11 @@ bool prepare_drv( uint8_t drv )
   if( !rc ) {
     std_out << "# Error init drv " << drv << " reg_0x6C" << NL;
   }
-  //TMC2209_write_reg( drv, 0x40, 30 );      // TODO: dev_prom * 2
-                                                  // 14, 41
-
-  uint32_t n1 = tmc.read_reg( drv, 0x02 );
-  if( ( ( n1 - n0 ) & 0xFF ) != 3 ) {
-    std_out << "# Error init drv " << drv << " bad counter " << ( n1 - n0 ) << NL;
-    return false;
+  rc = tmc.write_reg( drv, 0x14, 0x0FFFFF );      //  ?
+  if( !rc ) {
+    std_out << "# Error init drv " << drv << " reg_0x14" << NL;
   }
+
   return true;
 }
 
