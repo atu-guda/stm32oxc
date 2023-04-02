@@ -64,12 +64,10 @@ uint32_t calc_TIM_arr_for_base_freq_flt( TIM_TypeDef *tim, float base_freq ); //
 UART_HandleTypeDef uah_motordrv;
 UsartIO motordrv( &uah_motordrv, USART1 );
 TMC_UART_drv tmc_uart_drv( &motordrv );
+TMC2209::TMC_devices tmc( &tmc_uart_drv, 4 );
 
 STD_USART1_IRQ( motordrv );
 
-uint32_t TMC2209_read_reg( uint8_t dev, uint8_t reg );
-uint32_t TMC2209_read_reg_n_try( uint8_t dev, uint8_t reg, int n_try );
-int TMC2209_write_reg( uint8_t dev, uint8_t reg, uint32_t v );
 
 bool prepare_drv( uint8_t drv ); // true = ok
 int ensure_drv_prepared();
@@ -340,88 +338,22 @@ int cmd_test0( int argc, const char * const * argv )
   }
 
   std_out << "### Regs: " NL;
-  uint32_t r1 = TMC2209_read_reg( 0, 2 );
-  TMC2209_write_reg( 0, 1, 0x149 );
-  uint32_t r2 = TMC2209_read_reg( 0, 2 );
-  TMC2209_write_reg( 0, 1, 0x149 );
-  TMC2209_write_reg( 0, 1, 0x141 );
-  uint32_t r3 = TMC2209_read_reg( 0, 2 );
+  uint32_t r1 = tmc.read_reg( 0, 2 );
+  tmc.write_reg( 0, 1, 0x149 );
+  uint32_t r2 = tmc.read_reg( 0, 2 );
+  tmc.write_reg( 0, 1, 0x149 );
+  tmc.write_reg( 0, 1, 0x141 );
+  uint32_t r3 = tmc.read_reg( 0, 2 );
   std_out << "# R2: r1= " << HexInt( r1 ) << "  r2= " << HexInt( r2 ) << "  r3= " << HexInt( r3 ) <<NL;
 
   return 0;
 }
 
-// TODO: to class
-int TMC2209_write_reg( uint8_t dev, uint8_t reg, uint32_t v )
-{
-  TMC2209::rwdata wd;
-  wd.fill( dev, reg, v );
-  auto w_n = motordrv.write_s( (const char*)wd.rawCData(), sizeof(wd) );
-  if( w_n != sizeof(wd) ) {
-    return 0;
-  }
-  delay_mcs( 200 );
-  motordrv.wait_eot( 10 );
-  return 1;
-}
-
-uint32_t TMC2209_read_reg( uint8_t dev, uint8_t reg )
-{
-  TMC2209::rreq  rqd;
-  rqd.fill( dev, reg );
-
-  motordrv.reset();
-
-  // ledsx.set( 1 );
-
-  auto w_n = motordrv.write( (const char*)rqd.rawCData(), sizeof(rqd) );
-  if( w_n != sizeof(rqd) ) {
-    std_out << "# Err: w_n = " << w_n << NL;
-    return TMC2209::bad_val;
-  }
-  motordrv.wait_eot( 10 ); // TODO: motordrv as abstract actor
-
-  char in_buf[16]; // some more TODO: in object + debug
-
-  delay_ms( 1 ); // TODO: config
-
-  memset( in_buf, '\x00', sizeof(in_buf) );
-  // ledsx.reset( 1 );
-
-  auto r_n = motordrv.read( in_buf, 16, 200 );
-
-
-  if( r_n != sizeof(TMC2209::rreq) + sizeof(TMC2209::rwdata) ) {
-    if( debug > 0 ) {
-      std_out << "# Err: 12 != r_n = " << r_n << NL;
-      dump8( in_buf, 16 );
-    }
-    return TMC2209::bad_val;
-  }
-
-  TMC2209::rwdata *rd = bit_cast<TMC2209::rwdata*>( in_buf + sizeof(TMC2209::rreq) );
-  // TODO: check crc
-  uint32_t v = __builtin_bswap32( rd->data );
-  delay_mcs( 100 );
-  return v;
-}
-
-uint32_t TMC2209_read_reg_n_try( uint8_t dev, uint8_t reg, int n_try )
-{
-  for( int i=0; i < n_try; ++i ) {
-    uint32_t v = TMC2209_read_reg( dev, reg );
-    if( v != TMC2209::bad_val ) {
-      return v;
-    }
-    delay_ms( 20 );
-  }
-  return TMC2209::bad_val;
-}
 
 int cmd_readreg( int argc, const char * const * argv )
 {
   uint8_t reg = (uint8_t) arg2long_d( 1, argc, argv, 0, 0, 127 );
-  uint32_t v = TMC2209_read_reg_n_try( UVAR('d'), reg, 50 );
+  uint32_t v = tmc.read_reg( UVAR('d'), reg );
   std_out << "Reg " << (int)(reg) << " val: " << HexInt( v ) << ' ' << v << NL;
   return 0;
 }
@@ -435,7 +367,7 @@ int cmd_writereg( int argc, const char * const * argv )
     std_out << "Error: need 2 correct arguments " << NL;
     return 1;
   }
-  int rc = TMC2209_write_reg( UVAR('d'), reg, v );
+  int rc = tmc.write_reg( UVAR('d'), reg, v );
   std_out << "# rc= " << rc << NL;
   return 0;
 }
@@ -636,10 +568,10 @@ int do_move( float mm, float vm, uint8_t dev )
   }
   set_drv_speed( dev, vm );
 
-  TMC2209_write_reg( dev, 0, rev ? reg00_def_rev : reg00_def_forv ); // direction
+  tmc.write_reg( dev, 0, rev ? reg00_def_rev : reg00_def_forv ); // direction
 
   // DEBUG: TODO: remove
-  TMC2209_write_reg( dev, 0x40, UVAR('s') );      // TODO: dev_prom * 2
+  tmc.write_reg( dev, 0x40, UVAR('s') );      // TODO: dev_prom * 2
 
   uint32_t pulses = (uint32_t)( mm * motor_step2turn * motor_mstep );
   auto c_pulses    = dev ? ( &tim_m_pulses ) : ( &tim_r_pulses );
@@ -667,13 +599,13 @@ int do_move( float mm, float vm, uint8_t dev )
       break;
     }
     delay_bad_mcs( 10 );
-    uint32_t r6F_m = TMC2209_read_reg_n_try( dev, 0x6F, 4 );
+    uint32_t r6F_m = tmc.read_reg( dev, 0x6F );
     if( r6F_m & TMC2209_R6F_badflags ) {
       break_flag = dev ? (int)(BreakNum::drv_flags_mov) : (int)(BreakNum::drv_flags_rot);
       timn_stop( dev );
     }
 
-    uint32_t r41_m = TMC2209_read_reg_n_try( dev, 0x41, 4 );
+    uint32_t r41_m = tmc.read_reg( dev, 0x41 );
     if( i > 1  &&  r41_m < s_max ) { // 2 initial ticks have false positive
       break_flag = dev ? (int)(BreakNum::drv_smin_mov) : (int)(BreakNum::drv_smin_rot);
       timn_stop( dev );
@@ -851,8 +783,8 @@ int do_go( float nt )
   tims_stop( 3 );
   uint32_t r6F_m0 {0}, r6F_m1 {0};
 
-  TMC2209_write_reg( 0, 0, reg00_def_forv ); // rot direction
-  TMC2209_write_reg( 1, 0, rev ? reg00_def_rev : reg00_def_forv ); // move direction
+  tmc.write_reg( 0, 0, reg00_def_forv ); // rot direction
+  tmc.write_reg( 1, 0, rev ? reg00_def_rev : reg00_def_forv ); // move direction
 
   sensor_flags = SWLIM_BITS_ALL;
   check_top  = td.check_top;  check_bot  = td.check_bot;
@@ -871,29 +803,29 @@ int do_go( float nt )
     }
     delay_bad_mcs( 10 );
 
-    // TODO: ignore read fail n steps, 4-> param
-    r6F_m0 = TMC2209_read_reg_n_try( 0, 0x6F, 4 );
+    // TODO: ignore read fail n steps
+    r6F_m0 = tmc.read_reg( 0, 0x6F );
     if( r6F_m0 & TMC2209_R6F_badflags ) {
       break_flag = (int)(BreakNum::drv_flags_rot);
       err_bits |= 1;
       tims_stop( 3 );
     }
 
-    uint32_t r41_m0 = TMC2209_read_reg_n_try( 0, 0x41, 4 );
+    uint32_t r41_m0 = tmc.read_reg( 0, 0x41 );
     if( i > 1  &&  r41_m0 < (uint32_t)td.s_rot_m ) { // 2 initial ticks have false positive
       break_flag = (int)(BreakNum::drv_smin_rot);
       err_bits |= 2;
       tims_stop( 3 );
     }
 
-    r6F_m1 = TMC2209_read_reg_n_try( 1, 0x6F, 4 );
+    r6F_m1 = tmc.read_reg( 1, 0x6F );
     if( r6F_m1 & TMC2209_R6F_badflags ) {
       break_flag = (int)(BreakNum::drv_flags_mov);
       err_bits |= 4;
       tims_stop( 3 );
     }
 
-    uint32_t r41_m1 = TMC2209_read_reg_n_try( 1, 0x41, 4 );
+    uint32_t r41_m1 = tmc.read_reg( 1, 0x41 );
     if( i > 1  &&  r41_m0 < (uint32_t)td.s_mov_m ) {
       break_flag = (int)(BreakNum::drv_smin_mov);
       err_bits |= 8;
@@ -966,19 +898,28 @@ int cmd_go( int argc, const char * const * argv )
 
 bool prepare_drv( uint8_t drv )
 {
-  uint32_t r = TMC2209_read_reg_n_try( drv, 0x06, 10 );
+  uint32_t r = tmc.read_reg( drv, 0x06 );
   if( ( r & 0xFF000000 ) != 0x21000000 ) {
     std_out << "# Error init drv " << drv << " bad signature " << HexInt( r ) << NL;
     return false;
   }
-  uint32_t n0 = TMC2209_read_reg_n_try( drv, 0x02, 10 ); // initial counter
-  TMC2209_write_reg( drv, 0x00, reg00_def_forv ); // general config
-  TMC2209_write_reg( drv, 0x10, reg10_def );      // IHOLD, IRUN, IHOLDDELAY
-  TMC2209_write_reg( drv, 0x6C, reg6C_def );      // many bits
+  uint32_t n0 = tmc.read_reg( drv, 0x02 ); // initial counter
+  int rc = tmc.write_reg( drv, 0x00, reg00_def_forv ); // general config
+  if( !rc ) {
+    std_out << "# Error init drv " << drv << " reg_0" << NL;
+  }
+  rc = tmc.write_reg( drv, 0x10, reg10_def );      // IHOLD, IRUN, IHOLDDELAY
+  if( !rc ) {
+    std_out << "# Error init drv " << drv << " reg_0x10" << NL;
+  }
+  rc = tmc.write_reg( drv, 0x6C, reg6C_def );      // many bits
+  if( !rc ) {
+    std_out << "# Error init drv " << drv << " reg_0x6C" << NL;
+  }
   //TMC2209_write_reg( drv, 0x40, 30 );      // TODO: dev_prom * 2
                                                   // 14, 41
 
-  uint32_t n1 = TMC2209_read_reg_n_try( drv, 0x02, 10 );
+  uint32_t n1 = tmc.read_reg( drv, 0x02 );
   if( ( ( n1 - n0 ) & 0xFF ) != 3 ) {
     std_out << "# Error init drv " << drv << " bad counter " << ( n1 - n0 ) << NL;
     return false;
@@ -1014,8 +955,8 @@ int cmd_prep( int argc, const char * const * argv )
 int cmd_off( int argc, const char * const * argv )
 {
   drv_prepared = 0;
-  TMC2209_write_reg( 0, 0x6C, reg6C_off );
-  TMC2209_write_reg( 1, 0x6C, reg6C_off );
+  tmc.write_reg( 0, 0x6C, reg6C_off );
+  tmc.write_reg( 1, 0x6C, reg6C_off );
   return 0;
 }
 
