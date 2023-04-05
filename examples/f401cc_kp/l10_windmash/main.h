@@ -130,7 +130,6 @@ struct TaskData {
   int n_2lay  {        0 }; // turns per layer
   int v_mov   {        0 }; // speed during main work, in um/sec
   // status
-  int n_done  {        0 }; // total done
   int p_ldone {        0 }; // pulses done per layer
   int p_ltask {        0 }; // task in pulses for current run
   int p_move  {        0 }; // number of "move" pulses in current run

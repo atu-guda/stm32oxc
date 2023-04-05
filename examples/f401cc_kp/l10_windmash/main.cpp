@@ -132,7 +132,7 @@ TaskData td;
 
 int TaskData::calc( int n_tot, int d_w, int w_l, bool even )
 {
-  n_done = p_ldone = p_ltask = c_lay =  n_lay = 0;
+  p_ldone = p_ltask = c_lay =  n_lay = 0;
   if( n_tot < 1 || d_w < 20 || w_l < 2 * d_w ) {
     n_tot = 0;
     return 0;
@@ -176,7 +176,6 @@ ADD_IOBJ_TD( check_bot );
 ADD_IOBJ_TD( n_lay   );
 ADD_IOBJ_TD( n_2lay  );
 ADD_IOBJ_TD( v_mov   );
-ADD_IOBJ_TD( n_done  );
 ADD_IOBJ_TD( p_ldone );
 ADD_IOBJ_TD( p_ltask );
 ADD_IOBJ_TD( p_move  );
@@ -202,7 +201,6 @@ constexpr const NamedObj *const objs_info[] = {
   & ob_n_lay,
   & ob_n_2lay,
   & ob_v_mov,
-  & ob_n_done,
   & ob_p_ldone,
   & ob_p_ltask,
   & ob_p_move,
@@ -861,7 +859,7 @@ int do_go( float nt )
               << FmtInt( st_rot.sg_val, 6 ) << ' ' << FmtInt( st_mov.sg_val, 6 ) << ' ';
     }
     std_out << HexInt16( porta_sensors_bits ) << ' '
-            << HexInt16( portb_sensors_bits ) << ' '
+            << HexInt16( portb_sensors_bits ) << ' ' << td.c_lay << ' '
             << FltFmt( d_r_c, cvtff_fix, 8, 2 ) << NL;
 
     delay_ms_until_brk( &tc0, td.dt );
@@ -884,8 +882,6 @@ int do_go( float nt )
   td.p_ldone += d_pulses;
   float d_r = (float) d_pulses / (motor_step2turn * motor_mstep);
   tim_r_need = tim_m_need = 0;
-  int add_turns = int( d_r + 0.499f );
-  td.n_done  += add_turns;
 
   if( td.p_ldone >= td.p_ltask ) {
     td.p_ldone = 0;
@@ -897,9 +893,8 @@ int do_go( float nt )
 
   std_out << "# go: pulses: task= " << pulses << " done=" << d_pulses
           << " d_r= " << d_r << " break= " << break_flag << ' '
-          << HexInt16( porta_sensors_bits ) << ' ' << HexInt16( portb_sensors_bits ) << NL;
-  std_out << "#  add_turns= " << add_turns
-          << " n_done= " << td.n_done << " c_lay= " << td.c_lay << NL;
+          << HexInt16( porta_sensors_bits ) << ' ' << HexInt16( portb_sensors_bits )
+          << " c_lay= " << td.c_lay << NL;
   std_out << "# " << break_flag2str() << ' ' << HexInt( err_bits ) << NL;
 
   return break_flag;
