@@ -121,7 +121,7 @@ struct TaskData {
   int w_len_m {    50000 }; // max wirering length (in um)
   int s_rot_m {       10 }; // minimal S stall value for rotation
   int s_mov_m {        2 }; // minimal S stall value for movement
-  int      dt {      100 }; // time step durung work in ms
+  int      dt {       20 }; // time step durung work in ms
   int check_top {      1 }; // check top sensor in tower (wire break or end)
   int check_bot {      1 }; // check bottom sensor in tower (stall)
                             // TODO: mult_rot(turn/turn), mult_mov (mm/turn)

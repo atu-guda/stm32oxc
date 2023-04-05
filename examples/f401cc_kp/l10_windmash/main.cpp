@@ -46,7 +46,7 @@ constexpr float xlim_move_len { 0.1f };
 
 TIM_HandleTypeDef tim_r_h;
 TIM_HandleTypeDef tim_m_h;
-uint32_t volatile tim_r_pulses {0}, tim_r_need {0}, tim_m_pulses {0}, tim_m_need {0};
+int volatile tim_r_pulses {0}, tim_r_need {0}, tim_m_pulses {0}, tim_m_need {0};
 int tim_n_cfg( TIM_HandleTypeDef &t_h, TIM_TypeDef *tim, uint32_t ch );
 int tim_r_cfg();
 void tim_r_start();
@@ -65,6 +65,8 @@ UART_HandleTypeDef uah_motordrv;
 UsartIO motordrv( &uah_motordrv, USART1 );
 TMC_UART_drv tmc_uart_drv( &motordrv );
 TMC2209::TMC_devices tmc( &tmc_uart_drv, 4 );
+
+int read_TMC_stat( uint8_t dev, TMC_stat &s );
 
 STD_USART1_IRQ( motordrv );
 
@@ -577,7 +579,7 @@ int do_move( float mm, float vm, uint8_t dev )
   tmc.write_reg( dev, 0, rev ? reg00_def_rev : reg00_def_forv ); // direction
 
 
-  uint32_t pulses = (uint32_t)( mm * motor_step2turn * motor_mstep );
+  int pulses = mm * motor_step2turn * motor_mstep;
   auto c_pulses    = dev ? ( &tim_m_pulses ) : ( &tim_r_pulses );
   auto need_pulses = dev ? ( &tim_m_need )   : ( &tim_r_need );
   *c_pulses = 0;
@@ -592,6 +594,7 @@ int do_move( float mm, float vm, uint8_t dev )
           << " pulses= " << pulses << " v= " << vm << " s_max= " <<  s_max << NL;
 
   ledsx.reset( 0x0F );
+  TMC_stat st_dev {0,0};
 
   uint32_t tm0 = HAL_GetTick();
   uint32_t tc0 = tm0;
@@ -603,17 +606,13 @@ int do_move( float mm, float vm, uint8_t dev )
     if( *c_pulses >= pulses ) {
       break;
     }
-    delay_bad_mcs( 10 );
-    uint32_t r6F_m = tmc.read_reg( dev, 0x6F );
-    if( r6F_m & TMC2209_R6F_badflags ) {
-      break_flag = dev ? (int)(BreakNum::drv_flags_mov) : (int)(BreakNum::drv_flags_rot);
-      timn_stop( dev );
-    }
 
-    uint32_t r41_m = tmc.read_reg( dev, 0x41 );
-    if( i > 1  &&  r41_m < s_max ) { // 2 initial ticks have false positive
-      break_flag = dev ? (int)(BreakNum::drv_smin_mov) : (int)(BreakNum::drv_smin_rot);
-      timn_stop( dev );
+    if( UVAR('o' ) ) {
+      read_TMC_stat( dev, st_dev );
+      if( st_dev.status & TMC2209_R6F_badflags ) {
+        break_flag = dev ? (int)(BreakNum::drv_flags_mov) : (int)(BreakNum::drv_flags_rot);
+        timn_stop( dev );
+      }
     }
 
     read_sensors();
@@ -623,9 +622,15 @@ int do_move( float mm, float vm, uint8_t dev )
     }
 
     uint32_t tc = HAL_GetTick();
-    std_out << HexInt( r6F_m ) << ' '
-            << HexInt16( porta_sensors_bits ) << ' ' << HexInt16( portb_sensors_bits )
-            << ' ' << r41_m << ' ' << (int)( tc - tm0 ) << NL;
+
+    std_out << FmtInt( tc - tm0, 10 ) << ' ';
+    if( UVAR('o') ) {
+        std_out << FmtInt( st_dev.sg_val, 6 ) << ' ';
+    }
+    std_out << HexInt16( porta_sensors_bits ) << ' ' << HexInt16( portb_sensors_bits ) << ' '
+            << FltFmt( (float) (*c_pulses) / (motor_step2turn * motor_mstep), cvtff_fix, 8, 2 )
+            << NL;
+
     delay_ms_until_brk( &tc0, td.dt );
   }
 
@@ -635,7 +640,7 @@ int do_move( float mm, float vm, uint8_t dev )
 
   timn_stop( dev );
   auto d_pulses = pulses - *c_pulses;
-  float d_x = (float) d_pulses / (motor_step2turn * motor_mstep);
+  float d_x = (float) *c_pulses / (motor_step2turn * motor_mstep);
   *need_pulses = 0;
 
   std_out << "# move result pulses: task= " << pulses << " done=" << *c_pulses
@@ -770,8 +775,8 @@ int do_go( float nt )
   uint32_t err_bits { 0 };
   ledsx.reset( 0x0F );
 
-  uint32_t pulses = td.p_ltask - td.p_ldone;
-  uint32_t max_pulses = (uint32_t)( nt * motor_step2turn * motor_mstep );
+  int pulses = td.p_ltask - td.p_ldone;
+  int max_pulses = nt * motor_step2turn * motor_mstep;
   if( pulses > max_pulses ) {
     pulses = max_pulses;
   }
@@ -823,7 +828,6 @@ int do_go( float nt )
     if( tim_r_pulses >= pulses ) {
       break;
     }
-    delay_bad_mcs( 10 );
 
     if( UVAR('o' ) ) {
       read_TMC_stat( 0, st_rot );
