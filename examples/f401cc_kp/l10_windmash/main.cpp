@@ -280,24 +280,27 @@ int main(void)
   return 0;
 }
 
+const EXTI_Info exti_info[] = {
+  { TOWER_GPIO, TOWER_PIN_UP, GpioRegs::ExtiEv::updown, EXTI0_IRQn },
+  { TOWER_GPIO, TOWER_PIN_CE, GpioRegs::ExtiEv::updown, EXTI1_IRQn },
+  { TOWER_GPIO, TOWER_PIN_DW, GpioRegs::ExtiEv::updown, EXTI2_IRQn },
+
+  { SWLIM_GPIO, SWLIM_PIN_SR, GpioRegs::ExtiEv::down,   EXTI4_IRQn },
+  { SWLIM_GPIO, SWLIM_PIN_SL, GpioRegs::ExtiEv::down,   EXTI9_5_IRQn },
+  { SWLIM_GPIO, SWLIM_PIN_OR, GpioRegs::ExtiEv::down,   EXTI9_5_IRQn },
+  { SWLIM_GPIO, SWLIM_PIN_OL, GpioRegs::ExtiEv::down,   EXTI9_5_IRQn },
+
+  {  DIAG_GPIO, DIAG_PIN_ROT, GpioRegs::ExtiEv::up,     EXTI9_5_IRQn },
+  {  DIAG_GPIO, DIAG_PIN_MOV, GpioRegs::ExtiEv::up,     EXTI9_5_IRQn },
+};
+
 void init_EXTI()
 {
-  // TODO: data driven
-  TOWER_GPIO.setEXTI( TOWER_PIN_UP, GpioRegs::ExtiEv::updown );
-  TOWER_GPIO.setEXTI( TOWER_PIN_CE, GpioRegs::ExtiEv::updown );
-  TOWER_GPIO.setEXTI( TOWER_PIN_DW, GpioRegs::ExtiEv::updown );
-  DIAG_GPIO.setEXTI(  DIAG_PIN_ROT, GpioRegs::ExtiEv::up );
-  DIAG_GPIO.setEXTI(  DIAG_PIN_MOV, GpioRegs::ExtiEv::up );
-  HAL_NVIC_SetPriority( EXTI0_IRQn, 15, 0 );
-  HAL_NVIC_EnableIRQ(   EXTI0_IRQn );
-  HAL_NVIC_SetPriority( EXTI1_IRQn, 15, 0 );
-  HAL_NVIC_EnableIRQ(   EXTI1_IRQn );
-  HAL_NVIC_SetPriority( EXTI2_IRQn, 15, 0 );
-  HAL_NVIC_EnableIRQ(   EXTI2_IRQn );
-  HAL_NVIC_SetPriority( EXTI4_IRQn, 15, 0 );
-  HAL_NVIC_EnableIRQ(   EXTI4_IRQn );
-  HAL_NVIC_SetPriority( EXTI9_5_IRQn, 15, 0 );
-  HAL_NVIC_EnableIRQ(   EXTI9_5_IRQn );
+  for( auto &ei : exti_info ) {
+    ei.gpio.setEXTI( ei.pin, ei.dir );
+    HAL_NVIC_SetPriority( ei.exti_n, EXTI_IRQ, 0 );
+    HAL_NVIC_EnableIRQ(   ei.exti_n );
+  }
 }
 
 int cmd_test0( int argc, const char * const * argv )
@@ -1108,12 +1111,13 @@ void HAL_GPIO_EXTI_Callback( uint16_t pin_bit )
 {
   ++UVAR('i');
   read_sensors();
+  bool need_stop { false };
 
   switch( pin_bit ) {
     case TOWER_BIT_UP:
-      ledsx.toggle( 2 );
+      // ledsx.toggle( 2 );
       if( check_top && ( portb_sensors_bits & TOWER_BIT_UP ) ) { // set = bad
-        tims_stop( 3 );
+        need_stop = true;
         break_flag = (int)(BreakNum::tower_top);
         UVAR('z') = 100;
       }
@@ -1122,28 +1126,55 @@ void HAL_GPIO_EXTI_Callback( uint16_t pin_bit )
       // ledsx.toggle( 4 ); // NOP for now
       break;
     case TOWER_BIT_DW:
-      ledsx.toggle( 8 );
+      // ledsx.toggle( 8 );
       if( check_bot && ( ( portb_sensors_bits & TOWER_BIT_DW ) == 0 ) ) { // reset = bad
-        tims_stop( 3 );
+        need_stop = true;
         break_flag = (int)(BreakNum::tower_bot);
         UVAR('z') = 102;
       }
       break;
+
+    case SWLIM_BIT_SR:
+      need_stop = true;
+      // ledsx.toggle( 2 );
+      break_flag = (int)(BreakNum::limits);
+      break;
+    case SWLIM_BIT_SL:
+      need_stop = true;
+      // ledsx.toggle( 4 );
+      break_flag = (int)(BreakNum::limits);
+      break;
+    case SWLIM_BIT_OR:
+      need_stop = true;
+      break_flag = (int)(BreakNum::limits);
+      // ledsx.toggle( 8 );
+      break;
+    case SWLIM_BIT_OL:
+      need_stop = true;
+      break_flag = (int)(BreakNum::limits);
+      // ledsx.toggle( 8 );
+      break;
+
     case DIAG_BIT_ROT:
-      ledsx.toggle( 2 );
-      tims_stop( 3 );
+      // ledsx.toggle( 2 );
+      need_stop = true;
       break_flag = (int)(BreakNum::drv_diag_rot);
       UVAR('z') = 103;
       break;
     case DIAG_BIT_MOV:
-      ledsx.toggle( 4 );
-      tims_stop( 3 );
+      // ledsx.toggle( 4 );
+      need_stop = true;
       break_flag = (int)(BreakNum::drv_diag_mov);
       UVAR('z') = 104;
       break;
     default:
       ledsx.toggle( 1 );
+      ++UVAR('j');
       break;
+  }
+
+  if( need_stop ) {
+    tims_stop( 3 );
   }
 }
 

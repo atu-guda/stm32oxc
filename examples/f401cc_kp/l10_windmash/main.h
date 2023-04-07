@@ -24,6 +24,10 @@ inline constexpr uint32_t TOWER_BITS_ALL { TOWER_BIT_UP | TOWER_BIT_CE | TOWER_B
 inline auto&  SWLIM_GPIO { GpioA };
 inline constexpr uint32_t  SWLIM_PIN0 { 4 };
 inline constexpr uint32_t  SWLIM_N    { 4 };
+inline constexpr uint32_t  SWLIM_PIN_SR { SWLIM_PIN0 };
+inline constexpr uint32_t  SWLIM_PIN_SL { SWLIM_PIN_SR+1 };
+inline constexpr uint32_t  SWLIM_PIN_OR { SWLIM_PIN_SR+2 };
+inline constexpr uint32_t  SWLIM_PIN_OL { SWLIM_PIN_SR+3 };
 // last 2 chars: first S - switch, O - opto, L/R - left/right
 inline constexpr uint32_t SWLIM_BIT_SR { 1 << SWLIM_PIN0 };
 inline constexpr uint32_t SWLIM_BIT_SL { SWLIM_BIT_SR << 1 };
@@ -53,6 +57,14 @@ inline auto&  USER_STOP_GPIO { GpioA };
 inline constexpr uint32_t  USER_STOP_PIN0  { 3 };
 inline constexpr uint32_t  USER_STOP_N     { 1 };
 inline constexpr uint32_t  USER_STOP_BIT   { 1 << USER_STOP_PIN0 };
+
+inline constexpr uint32_t  EXTI_IRQ   { 15 };
+struct EXTI_Info {
+  decltype(SWLIM_GPIO) gpio;
+  uint8_t pin; // number, not bit
+  decltype(GpioRegs::ExtiEv::updown) dir;
+  decltype(EXTI0_IRQn) exti_n;
+};
 
 #define TIM_ROT TIM2
 #define TIM_MOV TIM5
