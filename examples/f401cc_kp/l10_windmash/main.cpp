@@ -74,6 +74,7 @@ STD_USART1_IRQ( motordrv );
 bool prepare_drv( uint8_t drv ); // true = ok
 int ensure_drv_prepared();
 int  drv_prepared = 0;
+void handle_end_layer();
 int do_move( float mm, float vm, uint8_t dev );
 int do_go( float nt );
 const char*  break_flag2str();
@@ -82,11 +83,11 @@ const char*  break_flag2str();
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
 int cmd_start( int argc, const char * const * argv );
-CmdInfo CMDINFO_START { "start", 'S', cmd_start, " - start motor"  };
+CmdInfo CMDINFO_START { "start", '\0', cmd_start, " - start motor"  };
 int cmd_stop( int argc, const char * const * argv );
-CmdInfo CMDINFO_STOP { "stop", 'P', cmd_stop, " - stop motor"  };
+CmdInfo CMDINFO_STOP { "stop", '\0', cmd_stop, " - stop motor"  };
 int cmd_speed( int argc, const char * const * argv );
-CmdInfo CMDINFO_SPEED { "speed", 'F', cmd_speed, " speed [dev] - set speed for motor turn/s or mm/s"  };
+CmdInfo CMDINFO_SPEED { "speed", '\0', cmd_speed, " speed [dev] - set speed for motor turn/s or mm/s"  };
 int cmd_readreg( int argc, const char * const * argv );
 CmdInfo CMDINFO_READREG { "readreg", '\0', cmd_readreg, " reg - read TMC2209 register"  };
 int cmd_writereg( int argc, const char * const * argv );
@@ -100,13 +101,15 @@ CmdInfo CMDINFO_PREP { "prep", '\0', cmd_prep, " - prepare drivers"  };
 int cmd_calc( int argc, const char * const * argv );
 CmdInfo CMDINFO_CALC { "calc", '\0', cmd_calc, "n_tot w_d(um) w_l(um) - calculate task"  };
 int cmd_repos( int argc, const char * const * argv );
-CmdInfo CMDINFO_REPOS { "repos", '\0', cmd_repos, " mm - reposition to "  };
+CmdInfo CMDINFO_REPOS { "repos", 'X', cmd_repos, " mm - reposition to "  };
 int cmd_meas_x( int argc, const char * const * argv );
 CmdInfo CMDINFO_MEAS_X { "meas_x", '\0', cmd_meas_x, " - measure workspace "  };
 int cmd_go( int argc, const char * const * argv );
 CmdInfo CMDINFO_GO { "go", 'G', cmd_go, " [n] - go/continue next layer "  };
 int cmd_off( int argc, const char * const * argv );
 CmdInfo CMDINFO_OFF { "off", '\0', cmd_off, " - OFF drivers "  };
+int cmd_fake( int argc, const char * const * argv );
+CmdInfo CMDINFO_FAKE { "fake", '\0', cmd_fake, " turns - imitate a 'go' "  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -125,6 +128,7 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_MEAS_X,
   &CMDINFO_GO,
   &CMDINFO_OFF,
+  &CMDINFO_FAKE,
   nullptr
 };
 
@@ -762,6 +766,15 @@ int read_TMC_stat( uint8_t dev, TMC_stat &s )
   return 0;
 }
 
+void handle_end_layer()
+{
+  if( td.p_ldone >= td.p_ltask ) {
+    td.p_ldone = 0;
+    std_out << "###################################################### END layer " << td.c_lay << NL;
+    ++td.c_lay;
+  }
+}
+
 int do_go( float nt )
 {
   if( td.c_lay >= td.n_lay ) {
@@ -886,11 +899,7 @@ int do_go( float nt )
   float d_r = (float) d_pulses / (motor_step2turn * motor_mstep);
   tim_r_need = tim_m_need = 0;
 
-  if( td.p_ldone >= td.p_ltask ) {
-    td.p_ldone = 0;
-    std_out << "###################################################### END layer " << td.c_lay << NL;
-    ++td.c_lay;
-  }
+  handle_end_layer();
 
   check_top  = false;  check_bot  = false;
 
@@ -901,6 +910,21 @@ int do_go( float nt )
   std_out << "# " << break_flag2str() << ' ' << HexInt( err_bits ) << NL;
 
   return break_flag;
+}
+
+int cmd_fake( int argc, const char * const * argv )
+{
+  float nt = arg2float_d( 1, argc, argv, 0.0f, -100000.0f, 1000000.0f );
+
+  int d_pulses = nt * motor_step2turn * motor_mstep;
+  td.p_ldone += d_pulses;
+  if( td.p_ldone < 0 ) {
+    td.p_ldone = 0;
+  }
+
+  handle_end_layer();
+
+  return 0;
 }
 
 
