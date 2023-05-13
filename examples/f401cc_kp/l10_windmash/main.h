@@ -89,9 +89,6 @@ inline constexpr uint32_t reg10_def      = 0x00041F01;
 inline constexpr uint32_t reg6C_def      = 0x15010053; // 8 mstep
 inline constexpr uint32_t reg6C_off      = 0x15010050; // 8 mstep + OFF
 
-inline constexpr uint32_t motor_step2turn  = 200;
-inline constexpr uint32_t motor_mstep      =   8;
-
 inline constexpr uint32_t TMC2209_R6F_badflags  = 0x00000F3F; // shorts + overtemp
 
 inline constexpr float speed_scale = 1.0e-6f;
@@ -129,7 +126,7 @@ struct TaskData {
   int w_len   { 50000 }; // wirering length (in um)
   // mech
   int v_rot   {   500000 }; // nominal rotation speed, * speed_scale
-  int v_mov_o {  2000000 }; // move-only speed
+  int v_mov_o {  4000000 }; // move-only speed
   int w_len_m {    50000 }; // max wirering length (in um)
   int s_rot_m {       10 }; // minimal S stall value for rotation
   int s_mov_m {        2 }; // minimal S stall value for movement

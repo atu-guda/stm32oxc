@@ -60,7 +60,6 @@ void timn_start( uint8_t dev );
 void timn_stop( uint8_t dev );
 uint32_t calc_TIM_arr_for_base_freq_flt( TIM_TypeDef *tim, float base_freq ); // like from oxc_tim.h buf for float
 
-// UART_CONSOLE_DEFINES
 UART_HandleTypeDef uah_motordrv;
 UsartIO motordrv( &uah_motordrv, USART1 );
 TMC_UART_drv tmc_uart_drv( &motordrv );
@@ -70,6 +69,10 @@ int read_TMC_stat( uint8_t dev, TMC_stat &s );
 
 STD_USART1_IRQ( motordrv );
 
+inline int turn2puls( float tu ) { return (int)( tu * td.k_rot ); }
+inline int mm2puls( float mm )   { return (int)( mm * td.k_mov ); }
+inline float puls2turn( int puls ) { return (float)(puls) / td.k_rot; }
+inline float puls2mm( int puls )   { return (float)(puls) / td.k_mov; }
 
 bool prepare_drv( uint8_t drv ); // true = ok
 int ensure_drv_prepared();
@@ -150,7 +153,7 @@ int TaskData::calc( int n_tot, int d_w, int w_l, bool even )
     n_lay &= ~1u;
   }
   n_2lay = ( n_total + n_lay / 2 ) / n_lay;
-  p_ltask = n_2lay * motor_step2turn * motor_mstep;
+  p_ltask = turn2puls( n_2lay );
 
   float d_w_e = 0.001f * w_len / n_2lay;
   v_mov = (int)( v_rot * d_w_e + 0.4999f );
@@ -538,9 +541,9 @@ uint32_t calc_TIM_arr_for_base_freq_flt( TIM_TypeDef *tim, float base_freq )
 
 int set_drv_speed( int dev, float speed )
 {
-  auto tim = ( dev == 0 ) ? TIM_ROT : TIM_MOV;
-  auto ccr = ( dev == 0 ) ? &(tim->CCR2) : &(tim->CCR3);
-  float freq = motor_step2turn * motor_mstep * speed;
+  auto tim   = ( dev == 0 ) ? TIM_ROT : TIM_MOV;
+  auto ccr   = ( dev == 0 ) ? &(tim->CCR2) : &(tim->CCR3);
+  float freq = ( dev == 0 ) ? turn2puls( speed ) : mm2puls( speed );
   uint32_t arr = calc_TIM_arr_for_base_freq_flt( tim, freq );
 
   // stop timer during update
@@ -588,7 +591,7 @@ int do_move( float mm, float vm, uint8_t dev )
   tmc.write_reg( dev, 0, rev ? reg00_def_rev : reg00_def_forv ); // direction
 
 
-  int pulses = mm * motor_step2turn * motor_mstep;
+  int pulses       = dev ? mm2puls( mm  )    : turn2puls( mm );
   auto c_pulses    = dev ? ( &tim_m_pulses ) : ( &tim_r_pulses );
   auto need_pulses = dev ? ( &tim_m_need )   : ( &tim_r_need );
   *c_pulses = 0;
@@ -637,7 +640,7 @@ int do_move( float mm, float vm, uint8_t dev )
         std_out << FmtInt( st_dev.sg_val, 6 ) << ' ';
     }
     std_out << HexInt16( porta_sensors_bits ) << ' ' << HexInt16( portb_sensors_bits ) << ' '
-            << FltFmt( (float) (*c_pulses) / (motor_step2turn * motor_mstep), cvtff_fix, 8, 2 )
+            << FltFmt( puls2turn( *c_pulses ), cvtff_fix, 8, 2 )
             << NL;
 
     delay_ms_until_brk( &tc0, td.dt );
@@ -649,7 +652,7 @@ int do_move( float mm, float vm, uint8_t dev )
 
   timn_stop( dev );
   auto d_pulses = pulses - *c_pulses;
-  float d_x = (float) *c_pulses / (motor_step2turn * motor_mstep);
+  float d_x = puls2turn( *c_pulses );
   *need_pulses = 0;
 
   std_out << "# move result pulses: task= " << pulses << " done=" << *c_pulses
@@ -743,7 +746,7 @@ int cmd_meas_x( int argc, const char * const * argv )
   }
 
   auto d_xt = tim_m_pulses;
-  float d_x = xlim_move_len + (float)(d_xt) / ( motor_step2turn * motor_mstep );
+  float d_x = xlim_move_len + puls2mm( d_xt );
 
   sensor_flags = SWLIM_BITS_SW;
   rc = do_move( xlim_move_len, vm, 1 ); // substep to right
@@ -794,7 +797,7 @@ int do_go( float nt )
   ledsx.reset( 0x0F );
 
   int pulses = td.p_ltask - td.p_ldone;
-  int max_pulses = nt * motor_step2turn * motor_mstep;
+  int max_pulses = turn2puls( nt );
   if( pulses > max_pulses ) {
     pulses = max_pulses;
   }
@@ -871,7 +874,7 @@ int do_go( float nt )
 
     const uint32_t tc = HAL_GetTick();
 
-    const float d_r_c = (float) ( td.p_ldone + tim_r_pulses ) / (motor_step2turn * motor_mstep);
+    const float d_r_c = puls2turn ( td.p_ldone + tim_r_pulses );
 
     std_out << FmtInt( tc - tm0, 10 ) << ' ';
     if( UVAR('o') ) {
@@ -897,10 +900,9 @@ int do_go( float nt )
 
   UVAR('c') = tim_m_pulses;
 
-  // TODO: separate function + fake call
   auto d_pulses = tim_r_pulses;
   td.p_ldone += d_pulses;
-  float d_r = (float) d_pulses / (motor_step2turn * motor_mstep);
+  float d_r = puls2turn( d_pulses );
   tim_r_need = tim_m_need = 0;
 
   handle_end_layer();
@@ -920,7 +922,7 @@ int cmd_fake( int argc, const char * const * argv )
 {
   float nt = arg2float_d( 1, argc, argv, 0.0f, -100000.0f, 1000000.0f );
 
-  int d_pulses = nt * motor_step2turn * motor_mstep;
+  int d_pulses = turn2puls( nt );
   td.p_ldone += d_pulses;
   if( td.p_ldone < 0 ) {
     td.p_ldone = 0;
