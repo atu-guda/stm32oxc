@@ -136,6 +136,8 @@ struct TaskData {
   int      dt {       20 }; // time step durung work in ms
   int check_top {      1 }; // check top sensor in tower (wire break or end)
   int check_bot {      1 }; // check bottom sensor in tower (stall)
+  int k_rot     {8 * 200 }; // pulses per turn = 200 stepmotor, 8 microstep
+  int k_mov     {4 * 200 }; // pulses per mm = 200 stepmotor, 8 microstep, 2mm/turn
                             // TODO: mult_rot(turn/turn), mult_mov (mm/turn)
   // calculated
   int n_lay   {        0 }; // number of layers

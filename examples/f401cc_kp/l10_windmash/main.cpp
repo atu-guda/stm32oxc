@@ -177,6 +177,8 @@ ADD_IOBJ_TD( s_mov_m );
 ADD_IOBJ_TD( dt );
 ADD_IOBJ_TD( check_top );
 ADD_IOBJ_TD( check_bot );
+ADD_IOBJ_TD( k_rot );
+ADD_IOBJ_TD( k_mov );
 ADD_IOBJ_TD( n_lay   );
 ADD_IOBJ_TD( n_2lay  );
 ADD_IOBJ_TD( v_mov   );
@@ -202,6 +204,8 @@ constexpr const NamedObj *const objs_info[] = {
   & ob_dt,
   & ob_check_top,
   & ob_check_bot,
+  & ob_k_rot,
+  & ob_k_mov,
   & ob_n_lay,
   & ob_n_2lay,
   & ob_v_mov,
