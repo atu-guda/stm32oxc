@@ -317,6 +317,8 @@ const EXTI_Info exti_info[] = {
 
   {  DIAG_GPIO, DIAG_PIN_ROT, GpioRegs::ExtiEv::up,     EXTI9_5_IRQn },
   {  DIAG_GPIO, DIAG_PIN_MOV, GpioRegs::ExtiEv::up,     EXTI9_5_IRQn },
+
+  {  USER_STOP_GPIO, USER_STOP_PIN0, GpioRegs::ExtiEv::down,     EXTI3_IRQn },
 };
 
 void init_EXTI()
@@ -1211,6 +1213,12 @@ void HAL_GPIO_EXTI_Callback( uint16_t pin_bit )
       break_flag = (int)(BreakNum::drv_diag_mov);
       UVAR('z') = 104;
       break;
+
+    case USER_STOP_BIT:
+      need_stop = true;
+      break_flag = (int)(BreakNum::cbreak);
+      break;
+
     default:
       ledsx.toggle( 1 );
       ++UVAR('j');
@@ -1240,7 +1248,7 @@ void EXTI2_IRQHandler()
 
 void EXTI3_IRQHandler()
 {
-  // HAL_GPIO_EXTI_IRQHandler( SWLIM_BIT_NO? );
+  HAL_GPIO_EXTI_IRQHandler( USER_STOP_BIT );
 }
 
 void EXTI4_IRQHandler()
