@@ -244,7 +244,21 @@ HD44780_i2c lcdt( i2cd, 0x27 );
 
 void idle_main_task()
 {
-  // leds.toggle( 1 );
+  // handle "go" key
+  static uint32_t last_start_tick = HAL_GetTick();
+  static uint16_t ostate = 1;
+  uint16_t cstate = pins_user_start.read();
+  if( cstate == 0 && ostate != 0 ) {
+    uint32_t cur_start_tick = HAL_GetTick();
+    if( cur_start_tick - last_start_tick > 100 ) {
+      leds.toggle( 1 );
+      if( global_smallrl != nullptr && global_smallrl->get()[0] == '\0' ) {
+        ungets( 0, "G\n" );
+      }
+      last_start_tick = cur_start_tick;
+    }
+  }
+  ostate = cstate;
 }
 
 
@@ -289,6 +303,8 @@ int main(void)
   motordrv.itEnable( UART_IT_RXNE );
 
   init_EXTI();
+
+  ensure_drv_prepared();
 
   lcdt.init_4b();
   UVAR('s') = lcdt.getState();
