@@ -2,11 +2,10 @@
 #define _MAIN_H
 
 #include "oxc_tmc2209.h"
-// #include <oxc_gpio.h> from auto
 
 extern int debug;
 
-// #define TOWER_GPIO GpioB
+// TOWER: B0:B2
 inline auto& TOWER_GPIO { GpioB };
 inline constexpr uint32_t TOWER_PIN0 { 0 };
 inline constexpr uint32_t TOWER_PIN_UP { TOWER_PIN0 };
@@ -21,6 +20,7 @@ inline constexpr uint32_t TOWER_BIT_DW { TOWER_BIT_CE << 1 };
 inline constexpr uint32_t TOWER_BITS_ALL { TOWER_BIT_UP | TOWER_BIT_CE | TOWER_BIT_DW  };
 
 
+// LIMITS: A4:A7
 inline auto&  SWLIM_GPIO { GpioA };
 inline constexpr uint32_t  SWLIM_PIN0 { 4 };
 inline constexpr uint32_t  SWLIM_N    { 4 };
@@ -38,6 +38,7 @@ inline constexpr uint32_t SWLIM_BITS_SW  { SWLIM_BIT_SR | SWLIM_BIT_SL };
 inline constexpr uint32_t SWLIM_BITS_OP  { SWLIM_BIT_OR | SWLIM_BIT_OL };
 
 
+// DIAG: B8,B9
 inline auto&  DIAG_GPIO { GpioB };
 inline constexpr uint32_t  DIAG_PIN0     { 8 };
 inline constexpr uint32_t  DIAG_N        { 2 };
@@ -47,12 +48,13 @@ inline constexpr uint32_t  DIAG_BIT_ROT  { 1 << DIAG_PIN0 };
 inline constexpr uint32_t  DIAG_BIT_MOV  { DIAG_BIT_ROT << 1 };
 inline constexpr uint32_t  DIAG_BITS_ALL { DIAG_BIT_ROT | DIAG_BIT_MOV };
 
-
+// USER_START: B10
 inline auto&  USER_START_GPIO { GpioB };
 inline constexpr uint32_t  USER_START_PIN0 { 10 };
 inline constexpr uint32_t  USER_START_N    {  1 };
 inline constexpr uint32_t  USER_START_BIT  {  1 << USER_START_PIN0 };
 
+// USER_STOP: A3
 inline auto&  USER_STOP_GPIO { GpioA };
 inline constexpr uint32_t  USER_STOP_PIN0  { 3 };
 inline constexpr uint32_t  USER_STOP_N     { 1 };

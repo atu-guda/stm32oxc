@@ -1,5 +1,6 @@
 #include <oxc_auto.h>
 #include <oxc_floatfun.h>
+#include <oxc_hd44780_i2c.h>
 #include <oxc_usartio.h> // TODO: auto
 #include <oxc_namedints.h>
 #include <oxc_atleave.h>
@@ -116,6 +117,7 @@ CmdInfo CMDINFO_FAKE { "fake", '\0', cmd_fake, " turns - imitate a 'go' "  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
+  DEBUG_I2C_CMDS,
 
   &CMDINFO_TEST0,
   &CMDINFO_START,
@@ -236,7 +238,9 @@ bool set_var_ex( const char *nm, const char *s )
   return ok;
 }
 
-
+I2C_HandleTypeDef i2ch;
+DevI2C i2cd( &i2ch, 0 );
+HD44780_i2c lcdt( i2cd, 0x27 );
 
 void idle_main_task()
 {
@@ -255,6 +259,10 @@ int main(void)
 
   ledsx.initHW();
   ledsx.reset( 0xFF );
+
+  UVAR('v') = i2c_default_init( i2ch /*, 400000 */ );
+  i2c_dbg = &i2cd;
+  i2c_client_def = &lcdt;
 
   pins_tower.initHW();
   pins_swlim.initHW();
@@ -281,6 +289,12 @@ int main(void)
   motordrv.itEnable( UART_IT_RXNE );
 
   init_EXTI();
+
+  lcdt.init_4b();
+  UVAR('s') = lcdt.getState();
+  lcdt.cls();
+  lcdt.gotoxy( 0, 1 );
+  lcdt.puts( " ptn-hlo!\n\t" );
 
   BOARD_POST_INIT_BLINK;
 
