@@ -238,6 +238,8 @@ bool set_var_ex( const char *nm, const char *s )
   return ok;
 }
 
+const unsigned buf_sz_lcdt { 22 }; // now 16 (16x2), may be 20 (20x4) + 2
+
 I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );
 HD44780_i2c lcdt( i2cd, 0x27 );
@@ -278,6 +280,13 @@ int main(void)
   i2c_dbg = &i2cd;
   i2c_client_def = &lcdt;
 
+  lcdt.init_4b();
+  UVAR('s') = lcdt.getState();
+  lcdt.cls();
+  lcdt.gotoxy( 0, 1 );
+  lcdt.puts( "putin-huilo!" );
+  lcdt.gotoxy( 0, 0 );
+
   pins_tower.initHW();
   pins_swlim.initHW();
   pins_diag.initHW();
@@ -288,12 +297,15 @@ int main(void)
   set_var_hook   = set_var_ex;
 
   if( ! init_uart( &uah_motordrv ) ) {
+    lcdt.puts( "Err: UART" );
     die4led( 1 );
   }
   if( ! tim_r_cfg() ) {
+    lcdt.puts( "Err: timer R" );
     die4led( 2 );
   }
   if( ! tim_m_cfg() ) {
+    lcdt.puts( "Err: timer M" );
     die4led( 3 );
   }
 
@@ -304,17 +316,16 @@ int main(void)
 
   init_EXTI();
 
-  ensure_drv_prepared();
+  auto prep = ensure_drv_prepared();
+  if( ! prep ) {
+    lcdt.puts( "Err: drivers" );
+  }
 
-  lcdt.init_4b();
-  UVAR('s') = lcdt.getState();
-  lcdt.cls();
-  lcdt.gotoxy( 0, 1 );
-  lcdt.puts( " ptn-hlo!\n\t" );
 
   BOARD_POST_INIT_BLINK;
 
   oxc_add_aux_tick_fun( led_task_nortos );
+  lcdt.puts( "RDY! " );
 
   std_main_loop_nortos( &srl, idle_main_task );
 
@@ -816,12 +827,17 @@ void handle_end_layer()
 
 int do_go( float nt )
 {
+  char buf1[buf_sz_lcdt], buf2[buf_sz_lcdt];
+
   if( td.c_lay >= td.n_lay ) {
     std_out << "# All done!" << NL;
+    lcdt.puts_xy( 0, 0, "Done" );
     return 0;
   }
   if( ! ensure_drv_prepared() ) {
     std_out << "# Error: drivers not prepared" << NL;
+    lcdt.puts_xy( 0, 0, "Err " );
+    lcdt.puts_xy( 0, 1, "Drv " );
     return  1;
   }
 
@@ -865,6 +881,8 @@ int do_go( float nt )
 
   tmc.write_reg( 0, 0, reg00_def_forv ); // rot direction
   tmc.write_reg( 1, 0, rev ? reg00_def_rev : reg00_def_forv ); // move direction
+
+  lcdt.puts_xy( 0, 0, "Go  " );
 
   sensor_flags = SWLIM_BITS_ALL;
   check_top  = td.check_top;  check_bot  = td.check_bot;
@@ -917,6 +935,18 @@ int do_go( float nt )
             << HexInt16( portb_sensors_bits ) << ' ' << td.c_lay << ' '
             << FltFmt( d_r_c, cvtff_fix, 8, 2 ) << NL;
 
+    strcpy( buf1, "Go. " );
+    unsigned pos = 4 +  i2dec_n( td.c_lay, buf1+4, 3 );
+    buf1[pos++] = ' ';
+    pos += cvtff( d_r_c, buf1+pos, buf_sz_lcdt-pos, cvtff_fix, 7, 1 );
+    lcdt.puts_xy( 0, 0, buf1 );
+
+    strcpy( buf2, break_flag2str() );
+    pos = 3 + i2dec_n( td.n_lay, buf2+3, 3 );
+    buf2[pos++] = ' ';   buf2[pos++] = ' ';
+    i2dec_n( td.n_2lay, buf2+pos, 8 );
+    lcdt.puts_xy( 0, 1, buf2 );
+
     delay_ms_until_brk( &tc0, td.dt );
   }
 
@@ -946,6 +976,15 @@ int do_go( float nt )
           << HexInt16( porta_sensors_bits ) << ' ' << HexInt16( portb_sensors_bits )
           << " c_lay= " << td.c_lay << NL;
   std_out << "# " << break_flag2str() << ' ' << HexInt( err_bits ) << NL;
+
+
+  if( td.c_lay >= td.n_lay ) {
+    std_out << "# All done! #################################################" << NL;
+    lcdt.puts_xy( 0, 0, "Done " );
+  } else {
+    lcdt.puts_xy( 0, 0, break_flag ? "Err:" : "Wait " );
+  }
+  lcdt.puts_xy( 0, 1, break_flag2str() );
 
   return break_flag;
 }
@@ -1058,18 +1097,18 @@ int cmd_calc( int argc, const char * const * argv )
 const char*  break_flag2str()
 {
   static const char* strs[] = {
-    "none",
-    "cbreak",
-    "limits",    // 2
-    "tower_top", // 3
-    "tower_bot", // 4
-    "drv_flags_rot",
-    "drv_smin_rot",
-    "drv_flags_mov",
-    "drv_smin_mov",
-    "drv_diag_rot",
-    "drv_diag_mov",
-    "?max",
+    "Ok ",
+    "Brk",
+    "Lim", // 2 TODO: SwL, SwR, OpL, OpR
+    "Top", // 3
+    "Bot", // 4
+    "FRo",
+    "SRo",
+    "FMo",
+    "SMo",
+    "DRo",
+    "DMo",
+    "???",
   };
   static_assert( std::size(strs) == (unsigned)(BreakNum::max)+1, "Bad break flag strings number" );
   unsigned bfi = (unsigned)break_flag >= (unsigned)(BreakNum::max) ? (unsigned)(BreakNum::max) : (unsigned)break_flag;

@@ -130,8 +130,8 @@ struct TaskData {
   int v_rot   {   500000 }; // nominal rotation speed, * speed_scale
   int v_mov_o {  4000000 }; // move-only speed
   int w_len_m {    50000 }; // max wirering length (in um)
-  int s_rot_m {       10 }; // minimal S stall value for rotation
-  int s_mov_m {        2 }; // minimal S stall value for movement
+  int s_rot_m {        2 }; // minimal S stall value for rotation
+  int s_mov_m {        1 }; // minimal S stall value for movement
   int      dt {       20 }; // time step durung work in ms
   int check_top {      1 }; // check top sensor in tower (wire break or end)
   int check_bot {      1 }; // check bottom sensor in tower (stall)
