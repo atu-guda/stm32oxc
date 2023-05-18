@@ -283,9 +283,7 @@ int main(void)
   lcdt.init_4b();
   UVAR('s') = lcdt.getState();
   lcdt.cls();
-  lcdt.gotoxy( 0, 1 );
-  lcdt.puts( "putin-huilo!" );
-  lcdt.gotoxy( 0, 0 );
+  lcdt.puts_xy( 0, 1, "putin-huilo!" );
 
   pins_tower.initHW();
   pins_swlim.initHW();
@@ -325,7 +323,7 @@ int main(void)
   BOARD_POST_INIT_BLINK;
 
   oxc_add_aux_tick_fun( led_task_nortos );
-  lcdt.puts( "RDY! " );
+  lcdt.puts_xy( 0, 0, "RDY! " );
 
   std_main_loop_nortos( &srl, idle_main_task );
 
@@ -362,6 +360,7 @@ int cmd_test0( int argc, const char * const * argv )
   int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
   uint32_t t_step = UVAR('t');
   std_out <<  "# Test0: n= " << n << " t= " << t_step << NL;
+  lcdt.puts_xy( 0, 0, "Test0" );
 
   TMC2209::rreq  rqd;
   char in_buf[80];
@@ -618,6 +617,7 @@ int cmd_speed( int argc, const char * const * argv )
 
 int do_move( float mm, float vm, uint8_t dev )
 {
+  lcdt.puts_xy( 0, 0, "Move " );
   if( ! ensure_drv_prepared() ) {
     std_out << "# Error: drivers not prepared" << NL;
     return  1;
@@ -737,6 +737,8 @@ int cmd_repos( int argc, const char * const * argv )
 {
   float mm = arg2float_d( 1, argc, argv, 1.0f, -max_move_len, max_move_len );
   float vm = td.v_mov_o * speed_scale;
+  td.n_lay = 0;
+  lcdt.puts_xy( 0, 0, "Pos " );
 
   float xmm, shi, emm;
   if( mm > 0 ) {
@@ -769,6 +771,8 @@ int cmd_meas_x( int argc, const char * const * argv )
 {
   float vm = td.v_mov_o * speed_scale;
   RestoreAtLeave rst_st( sensor_flags );
+
+  lcdt.puts_xy( 0, 0, "X= " );
 
   sensor_flags = SWLIM_BITS_ALL;
   auto rc = do_move( max_move_len, vm, 1 ); // find right limit
@@ -837,7 +841,7 @@ int do_go( float nt )
   if( ! ensure_drv_prepared() ) {
     std_out << "# Error: drivers not prepared" << NL;
     lcdt.puts_xy( 0, 0, "Err " );
-    lcdt.puts_xy( 0, 1, "Drv " );
+    lcdt.puts_xy( 0, 1, "Drv " ); // TODO: IDX
     return  1;
   }
 
@@ -939,12 +943,15 @@ int do_go( float nt )
     unsigned pos = 4 +  i2dec_n( td.c_lay, buf1+4, 3 );
     buf1[pos++] = ' ';
     pos += cvtff( d_r_c, buf1+pos, buf_sz_lcdt-pos, cvtff_fix, 7, 1 );
+    buf1[pos++] = rev ? '\x7F' : '\x7E';
+    buf1[pos++] = '\0';
     lcdt.puts_xy( 0, 0, buf1 );
 
     strcpy( buf2, break_flag2str() );
-    pos = 3 + i2dec_n( td.n_lay, buf2+3, 3 );
+    buf2[3] = ':';
+    pos = 4 + i2dec_n( td.n_lay, buf2+4, 3 );
     buf2[pos++] = ' ';   buf2[pos++] = ' ';
-    i2dec_n( td.n_2lay, buf2+pos, 8 );
+    i2dec_n( td.n_2lay, buf2+pos, 4 );
     lcdt.puts_xy( 0, 1, buf2 );
 
     delay_ms_until_brk( &tc0, td.dt );
@@ -982,7 +989,7 @@ int do_go( float nt )
     std_out << "# All done! #################################################" << NL;
     lcdt.puts_xy( 0, 0, "Done " );
   } else {
-    lcdt.puts_xy( 0, 0, break_flag ? "Err:" : "Wait " );
+    lcdt.puts_xy( 0, 0, break_flag ? "Err: " : "Wait " );
   }
   lcdt.puts_xy( 0, 1, break_flag2str() );
 
@@ -1059,6 +1066,7 @@ int ensure_drv_prepared()
 
 int cmd_prep( int argc, const char * const * argv )
 {
+  lcdt.puts_xy( 0, 0, "Prep " );
   drv_prepared = 0;
   int rc = ensure_drv_prepared();
 
@@ -1067,6 +1075,7 @@ int cmd_prep( int argc, const char * const * argv )
 
 int cmd_off( int argc, const char * const * argv )
 {
+  lcdt.puts_xy( 0, 0, "Off " );
   drv_prepared = 0;
   tmc.write_reg( 0, 0x6C, reg6C_off );
   tmc.write_reg( 1, 0x6C, reg6C_off );
@@ -1075,6 +1084,7 @@ int cmd_off( int argc, const char * const * argv )
 
 int cmd_calc( int argc, const char * const * argv )
 {
+  lcdt.puts_xy( 0, 0, "Calc " );
   int n_t = arg2long_d( 1, argc, argv,     0,  0, 1000000 );
   int d_w = arg2long_d( 2, argc, argv,   210, 20,    5000 );
   int w_l = arg2long_d( 3, argc, argv, 20000, 50,  100000 );
