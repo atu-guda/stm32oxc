@@ -617,9 +617,10 @@ int cmd_speed( int argc, const char * const * argv )
 
 int do_move( float mm, float vm, uint8_t dev )
 {
-  lcdt.puts_xy( 0, 0, "Move " );
+  lcdt.puts_xy( 0, 0, dev ? "Move " : "Rot  ");
   if( ! ensure_drv_prepared() ) {
     std_out << "# Error: drivers not prepared" << NL;
+    lcdt.puts( "Err: drv" );
     return  1;
   }
   timn_stop( dev );
@@ -671,8 +672,8 @@ int do_move( float mm, float vm, uint8_t dev )
     }
 
     read_sensors();
-    if( ( porta_sensors_bits & sensor_flags ) != sensor_flags ) { // TODO: more checks
-      break_flag = (int)(BreakNum::limits);
+    if( ( porta_sensors_bits & sensor_flags ) != sensor_flags ) {
+      break_flag = sensor_flags_2_BreakNum( porta_sensors_bits );
       timn_stop( dev );
     }
 
@@ -682,8 +683,12 @@ int do_move( float mm, float vm, uint8_t dev )
     if( UVAR('o') ) {
         std_out << FmtInt( st_dev.sg_val, 6 ) << ' ';
     }
+
+    float dlt = dev ? puls2mm( *c_pulses ) : puls2turn( *c_pulses );
+    char buf1[buf_sz_lcdt];
+
     std_out << HexInt16( porta_sensors_bits ) << ' ' << HexInt16( portb_sensors_bits ) << ' '
-            << FltFmt( puls2turn( *c_pulses ), cvtff_fix, 8, 2 )
+            << FltFmt( dlt, cvtff_fix, 8, 2 )
             << NL;
 
     delay_ms_until_brk( &tc0, td.dt );
@@ -695,7 +700,7 @@ int do_move( float mm, float vm, uint8_t dev )
 
   timn_stop( dev );
   auto d_pulses = pulses - *c_pulses;
-  float d_x = puls2turn( *c_pulses );
+  float d_x = dev ? puls2mm( *c_pulses ) : puls2turn( *c_pulses );
   *need_pulses = 0;
 
   std_out << "# move result pulses: task= " << pulses << " done=" << *c_pulses
@@ -712,7 +717,7 @@ int cmd_rotate( int argc, const char * const * argv )
   float vm = arg2float_d( 2, argc, argv, td.v_rot * speed_scale, 0.0f, 20.0f );
 
   RestoreAtLeave rst_st( sensor_flags );
-  sensor_flags = 0; // FAKE flags
+  sensor_flags = SWLIM_BITS_SW;
 
   auto rc =  do_move( turns, vm, 0 );
 
@@ -738,20 +743,21 @@ int cmd_repos( int argc, const char * const * argv )
   float mm = arg2float_d( 1, argc, argv, 1.0f, -max_move_len, max_move_len );
   float vm = td.v_mov_o * speed_scale;
   td.n_lay = 0;
+  int good_lim;
   lcdt.puts_xy( 0, 0, "Pos " );
 
   float xmm, shi, emm;
   if( mm > 0 ) {
-    xmm = -max_move_len; shi =  xlim_move_len; emm = mm - shi;
+    xmm = -max_move_len; shi =  xlim_move_len; emm = mm - shi; good_lim = (int)BreakNum::opl;
   } else {
-    xmm =  max_move_len; shi = -xlim_move_len; emm = mm - shi;
+    xmm =  max_move_len; shi = -xlim_move_len; emm = mm - shi; good_lim = (int)BreakNum::opr;
   }
 
   RestoreAtLeave rst_st( sensor_flags );
 
   sensor_flags = SWLIM_BITS_ALL;
   auto rc = do_move( xmm, vm, 1 );
-  if( break_flag != 0 && break_flag != (int)BreakNum::limits ) {
+  if( break_flag != 0 && break_flag != good_lim ) {
     return rc;
   }
 
@@ -776,7 +782,7 @@ int cmd_meas_x( int argc, const char * const * argv )
 
   sensor_flags = SWLIM_BITS_ALL;
   auto rc = do_move( max_move_len, vm, 1 ); // find right limit
-  if( break_flag != 0 && break_flag != (int)BreakNum::limits ) {
+  if( break_flag != 0 && break_flag != (int)BreakNum::opr ) {
     return rc;
   }
 
@@ -786,9 +792,9 @@ int cmd_meas_x( int argc, const char * const * argv )
     return rc;
   }
 
-  sensor_flags = SWLIM_BITS_ALL;           // find right limit
+  sensor_flags = SWLIM_BITS_ALL;           // find left limit
   rc = do_move( -max_move_len, vm, 1 );
-  if( break_flag != 0 && break_flag != (int)BreakNum::limits ) {
+  if( break_flag != 0 && break_flag != (int)BreakNum::opl ) {
     return rc;
   }
 
@@ -1109,9 +1115,12 @@ const char*  break_flag2str()
   static const char* strs[] = {
     "Ok ",
     "Brk",
-    "Lim", // 2 TODO: SwL, SwR, OpL, OpR
-    "Top", // 3
-    "Bot", // 4
+    "SwL",
+    "SwR",
+    "OpL",
+    "OpR",
+    "Top",
+    "Bot",
     "FRo",
     "SRo",
     "FMo",
@@ -1123,6 +1132,23 @@ const char*  break_flag2str()
   static_assert( std::size(strs) == (unsigned)(BreakNum::max)+1, "Bad break flag strings number" );
   unsigned bfi = (unsigned)break_flag >= (unsigned)(BreakNum::max) ? (unsigned)(BreakNum::max) : (unsigned)break_flag;
   return strs[bfi];
+}
+
+int sensor_flags_2_BreakNum( uint32_t flg )
+{
+  if( flg & SWLIM_BIT_SL ) {
+    return (int)(BreakNum::swl);
+  }
+  if( flg & SWLIM_BIT_SR ) {
+    return (int)(BreakNum::swr);
+  }
+  if( flg & SWLIM_BIT_OL ) {
+    return (int)(BreakNum::opl);
+  }
+  if( flg & SWLIM_BIT_OR ) {
+    return (int)(BreakNum::opr);
+  }
+  return (int)(BreakNum::none);
 }
 
 void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim )
@@ -1196,7 +1222,7 @@ void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
     // ledsx.toggle( 4 );
     if( pa != sensor_flags ) {
       tims_stop( 3 );
-      break_flag = (int)(BreakNum::limits);
+      break_flag = sensor_flags_2_BreakNum( pa );
     }
 
     if( check_top && ( portb_sensors_bits & TOWER_BIT_UP ) ) { // set = bad
@@ -1248,21 +1274,21 @@ void HAL_GPIO_EXTI_Callback( uint16_t pin_bit )
     case SWLIM_BIT_SR:
       need_stop = true;
       // ledsx.toggle( 2 );
-      break_flag = (int)(BreakNum::limits);
+      break_flag = (int)(BreakNum::swr);
       break;
     case SWLIM_BIT_SL:
       need_stop = true;
       // ledsx.toggle( 4 );
-      break_flag = (int)(BreakNum::limits);
+      break_flag = (int)(BreakNum::swl);
       break;
     case SWLIM_BIT_OR:
       need_stop = true;
-      break_flag = (int)(BreakNum::limits);
+      break_flag = (int)(BreakNum::opr);
       // ledsx.toggle( 8 );
       break;
     case SWLIM_BIT_OL:
       need_stop = true;
-      break_flag = (int)(BreakNum::limits);
+      break_flag = (int)(BreakNum::opl);
       // ledsx.toggle( 8 );
       break;
 

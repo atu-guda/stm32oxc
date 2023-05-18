@@ -98,17 +98,22 @@ inline constexpr float speed_scale = 1.0e-6f;
 enum class BreakNum {
   none = 0,
   cbreak = 1,
-  limits = 2,
-  tower_top = 3,
-  tower_bot = 4,
-  drv_flags_rot = 5,
-  drv_smin_rot  = 6,
-  drv_flags_mov = 7,
-  drv_smin_mov  = 8,
-  drv_diag_rot  = 9,
-  drv_diag_mov  = 10,
+  swl,
+  swr,
+  opl,
+  opr,
+  tower_top,
+  tower_bot,
+  drv_flags_rot,
+  drv_smin_rot,
+  drv_flags_mov,
+  drv_smin_mov,
+  drv_diag_rot,
+  drv_diag_mov,
   max
 };
+
+int sensor_flags_2_BreakNum( uint32_t flg );
 
 // pairs of regnum - value to init TMCxxxx.
 struct RegsCmd {
