@@ -69,6 +69,7 @@ TMC_UART_drv tmc_uart_drv( &motordrv );
 TMC2209::TMC_devices tmc( &tmc_uart_drv, 4 );
 
 int read_TMC_stat( uint8_t dev, TMC_stat &s );
+void TMC_set_sval( int dev, int s );
 
 STD_USART1_IRQ( motordrv );
 
@@ -657,7 +658,7 @@ int do_move( float mm, float vm, uint8_t dev )
   check_top  = false;  check_bot  = false;
 
   uint32_t s_max = dev ? td.s_mov_m : td.s_rot_m;
-  tmc.write_reg( dev, 0x40, s_max ); // TODO: dep(speed)
+  TMC_set_sval( dev, s_max );
 
   std_out << "# move: dev= " << (int)dev << " x= " << mm << " rev= " << rev
           << " pulses= " << pulses << " v= " << vm << " s_max= " <<  s_max << NL;
@@ -901,8 +902,8 @@ int do_go( float nt )
   set_drv_speed( 1, v_mov );
   td.p_move = 0;
 
-  tmc.write_reg( 0, 0x40, td.s_rot_m ); // TODO: dep(speed)
-  tmc.write_reg( 1, 0x40, td.s_mov_m ); // TODO: dep(speed)
+  TMC_set_sval( 0, td.s_rot_m ); // TODO: dep(speed)
+  TMC_set_sval( 1, td.s_mov_m );
 
   std_out << "# pulses= " << pulses << " rev= " << rev << " v_rot= " << v_rot << " v_mov= " << v_mov << NL;
 
@@ -1401,6 +1402,14 @@ int  TMC_UART_drv::read( uint8_t *data, int sz )
 {
   int r_n = drv->read( (char*)data, sz, wait_ms );
   return r_n;
+}
+
+void TMC_set_sval( int dev, int s )
+{
+  tmc.write_reg( dev, 0x40, s );
+  if( s < 1 ) {
+    tmc.write_reg( dev, 0x14, 0 ); // no stealth - no break
+  }
 }
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
