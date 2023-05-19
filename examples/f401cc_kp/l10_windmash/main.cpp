@@ -4,6 +4,7 @@
 #include <oxc_usartio.h> // TODO: auto
 #include <oxc_namedints.h>
 #include <oxc_atleave.h>
+#include <oxc_outstr.h>
 
 #include "main.h"
 
@@ -16,6 +17,7 @@ BOARD_DEFINE_LEDS;
 USBCDC_CONSOLE_DEFINES;
 
 int debug {0};
+const unsigned buf_sz_lcdt { 22 }; // now 16 (16x2), may be 20 (20x4) + 2
 
 PinsOut ledsx( GpioB, 12, 4 );
 
@@ -137,6 +139,10 @@ const CmdInfo* global_cmds[] = {
   nullptr
 };
 
+I2C_HandleTypeDef i2ch;
+DevI2C i2cd( &i2ch, 0 );
+HD44780_i2c lcdt( i2cd, 0x27 );
+
 TaskData td;
 
 int TaskData::calc( int n_tot, int d_w, int w_l, bool even )
@@ -160,10 +166,17 @@ int TaskData::calc( int n_tot, int d_w, int w_l, bool even )
   float d_w_e = 0.001f * w_len / n_2lay;
   v_mov = (int)( v_rot * d_w_e + 0.4999f );
 
-  // debug:
-  uint32_t d_wire_eff = ( ( w_len * 100  / n_2lay ) + 49 ) / 100;
   std_out << "# debug: n_lay_max= " << n_lay_max << " n_lay= " << n_lay
-    << " d_w_e= " << d_w_e << " v_mov= " << v_mov << " d_wire_eff= " << d_wire_eff << NL;
+    << " d_w_e= " << d_w_e << " v_mov= " << v_mov << NL;
+
+  OSTR( os1, buf_sz_lcdt );
+  os1.reset_out();
+  os1 << "w: " << FltFmt( (float)d_w / 1000, cvtff_fix, 5, 3 ) << ' '
+      <<             FltFmt( d_w_e,             cvtff_fix, 5, 3 );
+  lcdt.puts_xy( 0, 0, os1.getBuf() );
+  os1.reset_out();
+  os1 << n_lay << '*' << n_2lay << "=" << (n_lay * n_2lay) << ' ';
+  lcdt.puts_xy( 0, 1, os1.getBuf() );
 
   return 1;
 }
@@ -238,11 +251,6 @@ bool set_var_ex( const char *nm, const char *s )
   return ok;
 }
 
-const unsigned buf_sz_lcdt { 22 }; // now 16 (16x2), may be 20 (20x4) + 2
-
-I2C_HandleTypeDef i2ch;
-DevI2C i2cd( &i2ch, 0 );
-HD44780_i2c lcdt( i2cd, 0x27 );
 
 void idle_main_task()
 {
@@ -617,13 +625,18 @@ int cmd_speed( int argc, const char * const * argv )
 
 int do_move( float mm, float vm, uint8_t dev )
 {
-  lcdt.puts_xy( 0, 0, dev ? "Move " : "Rot  ");
+  const char *act_name = dev ? "Move " : "Rot  ";
+  lcdt.cls();
+  lcdt.puts_xy( 0, 0, act_name );
+
   if( ! ensure_drv_prepared() ) {
     std_out << "# Error: drivers not prepared" << NL;
     lcdt.puts( "Err: drv" );
     return  1;
   }
   timn_stop( dev );
+
+  OSTR( os1, buf_sz_lcdt );
 
   bool rev = false;
   if( mm < 0 ) {
@@ -685,11 +698,13 @@ int do_move( float mm, float vm, uint8_t dev )
     }
 
     float dlt = dev ? puls2mm( *c_pulses ) : puls2turn( *c_pulses );
-    char buf1[buf_sz_lcdt];
 
     std_out << HexInt16( porta_sensors_bits ) << ' ' << HexInt16( portb_sensors_bits ) << ' '
             << FltFmt( dlt, cvtff_fix, 8, 2 )
             << NL;
+    os1.reset_out();
+    os1 << act_name << ' ' << ( rev ? '-' : '+' )<<  ' ' << FltFmt( dlt, cvtff_fix, 8, 2 );
+    lcdt.puts_xy( 0, 0, os1.getBuf() );
 
     delay_ms_until_brk( &tc0, td.dt );
   }
@@ -707,6 +722,10 @@ int do_move( float mm, float vm, uint8_t dev )
           << " delta= " << d_pulses << " d_x= " << d_x << " break= " << break_flag << ' '
           << HexInt16( porta_sensors_bits ) << ' ' << HexInt16( portb_sensors_bits ) << NL;
   std_out << "# " << break_flag2str() << NL;
+  os1.reset_out();
+  os1 << ( break_flag ? "Err: " : "Done ") << ' ' << ( rev ? '-' : '+' )<<  ' ' << FltFmt( d_x, cvtff_fix, 8, 2 );
+  lcdt.puts_xy( 0, 0, os1.getBuf() );
+  lcdt.puts_xy( 0, 1, break_flag2str() );
 
   return break_flag;
 }
@@ -747,7 +766,7 @@ int cmd_repos( int argc, const char * const * argv )
   lcdt.puts_xy( 0, 0, "Pos " );
 
   float xmm, shi, emm;
-  if( mm > 0 ) {
+  if( mm >= 0 ) {
     xmm = -max_move_len; shi =  xlim_move_len; emm = mm - shi; good_lim = (int)BreakNum::opl;
   } else {
     xmm =  max_move_len; shi = -xlim_move_len; emm = mm - shi; good_lim = (int)BreakNum::opr;
@@ -810,6 +829,11 @@ int cmd_meas_x( int argc, const char * const * argv )
   td.w_len_m  = (int)( d_x * 1000 );
   std_out << "# d_x= " << d_x << ' ' << d_xt << NL;
 
+  OSTR( os1, buf_sz_lcdt );
+  os1.reset_out();
+  os1 << "dx= " << FltFmt( d_x, cvtff_fix, 8, 2 );
+  lcdt.puts_xy( 3, 1, os1.getBuf() );
+
   return rc;
 }
 
@@ -837,7 +861,9 @@ void handle_end_layer()
 
 int do_go( float nt )
 {
-  char buf1[buf_sz_lcdt], buf2[buf_sz_lcdt];
+  OSTR( os1, buf_sz_lcdt );
+  OSTR( os2, buf_sz_lcdt );
+  lcdt.cls();
 
   if( td.c_lay >= td.n_lay ) {
     std_out << "# All done!" << NL;
@@ -925,8 +951,7 @@ int do_go( float nt )
       }
     }
 
-
-    if( ( porta_sensors_bits & sensor_flags ) != sensor_flags ) { // TODO: more checks
+    if( ( porta_sensors_bits & sensor_flags ) != sensor_flags ) {
       break_flag = (int)(BreakNum::drv_flags_rot );
       err_bits |= 16;
       tims_stop( 3 );
@@ -945,20 +970,15 @@ int do_go( float nt )
             << HexInt16( portb_sensors_bits ) << ' ' << td.c_lay << ' '
             << FltFmt( d_r_c, cvtff_fix, 8, 2 ) << NL;
 
-    strcpy( buf1, "Go. " );
-    unsigned pos = 4 +  i2dec_n( td.c_lay, buf1+4, 3 );
-    buf1[pos++] = ' ';
-    pos += cvtff( d_r_c, buf1+pos, buf_sz_lcdt-pos, cvtff_fix, 7, 1 );
-    buf1[pos++] = rev ? '\x7F' : '\x7E';
-    buf1[pos++] = '\0';
-    lcdt.puts_xy( 0, 0, buf1 );
+    os1.reset_out();
+    os1 << "Go. " << FmtInt( td.c_lay, 3 ) << ' ' << FltFmt( d_r_c, cvtff_fix, 7, 1 )
+        << (rev ? '\x7F' : '\x7E');
+    lcdt.puts_xy( 0, 0, os1.getBuf() );
 
-    strcpy( buf2, break_flag2str() );
-    buf2[3] = ':';
-    pos = 4 + i2dec_n( td.n_lay, buf2+4, 3 );
-    buf2[pos++] = ' ';   buf2[pos++] = ' ';
-    i2dec_n( td.n_2lay, buf2+pos, 4 );
-    lcdt.puts_xy( 0, 1, buf2 );
+    os2.reset_out();
+    os2 << break_flag2str() << ':' << FmtInt( td.n_lay, 3 ) << "  "
+        << FmtInt( td.n_2lay, 4 ) << ' ' << char( '@' + ( portb_sensors_bits & 0x07 ) );
+    lcdt.puts_xy( 0, 1, os2.getBuf() );
 
     delay_ms_until_brk( &tc0, td.dt );
   }
@@ -1105,6 +1125,7 @@ int cmd_calc( int argc, const char * const * argv )
 
   if( td.w_len > td.w_len_m ) {
     std_out << "# WARNING: w_len > w_len_m" << NL;
+    lcdt.puts_xy( 15, 1, "W" );
   }
 
   return 0;
