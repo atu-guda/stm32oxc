@@ -1134,7 +1134,7 @@ int cmd_calc( int argc, const char * const * argv )
 
 const char*  break_flag2str()
 {
-  static const char* strs[] = {
+  static const char *const strs[] = {
     "Ok ",
     "Brk",
     "SwL",

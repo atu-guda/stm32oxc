@@ -7,7 +7,7 @@
 bool BMP085::readCalibrData()
 {
 #ifndef BMP_DEBUG
-  return recv_reg1_16bit_n_rev( reg_calibr_start, (uint16_t*)(&calibr.ac1), n_calibr_data ) == n_calibr_data;
+  return recv_reg1_16bit_n_rev( reg_calibr_start, (uint16_t*)(&calibr), n_calibr_data ) == n_calibr_data;
 #else
   calibr.ac1 = 408;   calibr.ac2 = -72;   calibr.ac3 = -14383;
   calibr.ac4 = 32741; calibr.ac5 = 32757; calibr.ac6 =  23153;

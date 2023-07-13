@@ -20,7 +20,7 @@ class BMP085 : public I2CClient {
      t_wait_T    = 5,
      t_wait_P    = 26
    };
-   struct CalibrData {
+   struct CalibrData  {
      int16_t   ac1, ac2, ac3;
      uint16_t  ac4, ac5, ac6;
      int16_t   b1, b2, mb, mc, md;

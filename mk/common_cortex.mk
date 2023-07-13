@@ -104,7 +104,7 @@ CWARNFLAGS   := $(WARNFLAGS) -Wimplicit-function-declaration -Wmissing-prototype
 CXXWARNFLAGS := $(WARNFLAGS) -Wno-register -Wno-volatile
 
 ALLFLAGS += -DPROJ_NAME=\"$(PROJ_NAME)\"
-ALLFLAGS += -ffreestanding
+#ALLFLAGS += -ffreestanding
 ALLFLAGS += -mlittle-endian
 # ALLFLAGS += --specs=nano.specs
 # ALLFLAGS += -fstack-usage
