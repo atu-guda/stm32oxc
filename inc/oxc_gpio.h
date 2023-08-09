@@ -232,12 +232,25 @@ class Pins
    {
      return ( (v << start) & mask );
    }
+   inline uint16_t read() const
+   {
+     return ( gpio.IDR & mask ) >> start;
+   }
   protected:
    GpioRegs &gpio;
    const uint8_t start, n;
    const uint16_t mask;
    const uint32_t maskR;
 };
+
+// --------------- PinsOut ----------------------------------------
+// PinsOut p( GpioC, 12, 4 ) ; // GPIOD 12:15
+// p.write( 0x0C ); p.set( 0x0F ); p.reset( 0x05 ); p.sr( 0xAA, true ); p.toggle( 0x55 );
+// p.setbit( 0 ); p.resetbit( 15 ); // even read()
+// check:
+// p[1] = 1; p |= 0x0F; p ^= 0xAA;  p %= 0x77; // (reset: not &=, ~&= )
+// p[1].set(); p[0].reset();
+// p = 0x0C; // =write
 
 class PinsOut : public Pins
 {
@@ -246,17 +259,28 @@ class PinsOut : public Pins
      : Pins( gi, a_start, a_n )
      {};
    void initHW();
-   inline void write( uint16_t v )  // set to given, drop old
+   inline void write( uint16_t v )  // set all bits to given, drop old
    {
      gpio.BSSR = mv( v ) | maskR;
    }
-   inline void set( uint16_t v )   // get given to '1' (OR)
+   inline void operator=( uint16_t v ) { write( v ); }
+   inline void set( uint16_t v )   // set given bits to '1' (OR)
    {
      gpio.BSSR = mv( v );
    }
-   inline void reset( uint16_t v ) // AND~
+   inline void operator|=( uint16_t v ) { set( v ); }
+   inline void reset( uint16_t v ) // reset given bits to '0' AND~
    {
      gpio.BSSR = mv( v ) << 16;
+   }
+   inline void operator%=( uint16_t v ) { reset( v ); }
+   inline void setbit( uint8_t i )   // set given (by pos) 1 bit to '1' (OR)
+   {
+     set( 1 << i );
+   }
+   inline void resetbit( uint8_t i )   // reset given (by pos) 1 bit to '0' (AND~)
+   {
+     reset( 1 << i );
    }
    inline void sr( uint16_t bits, bool doSet ) {
      if( doSet ) {
@@ -265,17 +289,42 @@ class PinsOut : public Pins
        reset( bits );
      }
    }
+   inline void srbit( uint8_t i, bool doSet ) {
+     if( doSet ) {
+       setbit( i );
+     } else {
+       resetbit( i );
+     }
+   }
    inline void toggle( uint16_t v ) // XOR
    {
      gpio.ODR ^= mv( v );
    }
+   inline void operator^=( uint16_t v ) { toggle( v ); }
+   inline void togglebit( uint8_t i ) // XOR 1 bit
+   {
+     gpio.ODR ^= mv( 1 << i );
+   }
+   struct bitpos {
+     PinsOut &pins;
+     uint8_t i;
+     inline void operator=( bool b ) { pins.srbit( i, b ); };
+     inline void set() { pins.setbit( i ); }
+     inline void reset() { pins.resetbit( i ); }
+     inline void toggle() { pins.togglebit( i ); }
+   };
+   bitpos operator[]( uint8_t i ) { return { *this, i }; }
+
   protected:
    // none for now
 };
 
 extern PinsOut leds;
 
+// --------------- PinOut ----------------------------------------
 // single output pin
+// PinOut p1( GpioA, 8 ); // GPIOA 8
+// p1.write( true ); p1.set(); p1.reset(); p1.sr( false ); p1.toggle(); p1 = false;
 class PinOut
 {
   public:
@@ -311,6 +360,7 @@ class PinOut
    {
      gpio.ODR ^= mask;
    }
+   inline bool operator=( bool b ) { sr( b ); return b; }
   protected:
    GpioRegs &gpio;
    const uint8_t start;
@@ -320,6 +370,9 @@ class PinOut
 
 [[ noreturn ]] void die4led( uint16_t n );
 
+
+// --------------- PinsIn ----------------------------------------
+// PinsIn pi( GpioB, 12, 4 [, GPIO_{NOPULL,} ] );
 class PinsIn : public Pins
 {
   public:
@@ -328,14 +381,15 @@ class PinsIn : public Pins
        pull( a_pull )
      {};
    void initHW();
-   inline uint16_t read() const
-   {
-     return ( gpio.IDR & mask ) >> start;
-   }
+   // read() moved to parent
+   // inline uint16_t operator (uint16_t)() { return read(); } // ? explicit?
   protected:
    const uint16_t pull;
 };
 
+// --------------- IoPin ?? really pin, not pins? --------------------------------
+// IoPin io( GpioE, 0x11 );
+// io.sw1(); io.sw0(); io.set_sw0( true ); x = io.rw(); y = io.rw_raw();
 class IoPin {
   public:
    constexpr IoPin( GpioRegs &gi, uint16_t a_pin )

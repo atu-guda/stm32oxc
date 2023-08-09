@@ -70,8 +70,8 @@ void idle_main_task()
 {
 }
 
-inline void motors_off() {  en_motors.set();   }
-inline void motors_on()  {  en_motors.reset(); }
+inline void motors_off() {  en_motors = 1;   }
+inline void motors_on()  {  en_motors = 0; }
 
 // ---------------------------------------- main -----------------------------------------------
 
@@ -83,8 +83,8 @@ int main()
   UVAR('t') =        10;
   UVAR('n') =      1000;
 
-  for_each( stepdirs.begin(), stepdirs.end(), []( auto sd) { sd->initHW();  sd->write( 0 ); } );
-  aux3.initHW(); aux3.write( 0 );
+  for_each( stepdirs.begin(), stepdirs.end(), []( auto sd) { sd->initHW();  *sd = 0; } );
+  aux3.initHW(); aux3 = 0;
   en_motors.initHW();
   motors_off();
 
@@ -98,6 +98,19 @@ int main()
   BOARD_POST_INIT_BLINK;
 
   leds.reset( 0xFF );
+
+  // test
+  // delay_ms( 200 );
+  // leds  = 0x0F;      delay_ms( 2000 );
+  // leds  = 0x00;      delay_ms( 2000 );
+  // leds[0] =  1;      delay_ms( 2000 );
+  // leds[3] =  1;      delay_ms( 2000 );
+  // leds[2].toggle();  delay_ms( 2000 );
+  // leds[3].reset();   delay_ms( 2000 );
+  // leds ^= 0x0F;      delay_ms( 2000 );
+  // leds %= 0x0F;      delay_ms( 2000 );
+  // leds |= 0x0F;      delay_ms( 2000 );
+
 
   pr( NL "##################### " PROJ_NAME NL );
 
@@ -130,11 +143,11 @@ int cmd_test0( int argc, const char * const * argv )
 
   break_flag = 0;
   for( int i=0; i<n && !break_flag; ++i ) {
-    uint32_t tmc = HAL_GetTick();
+    // uint32_t tmc = HAL_GetTick();
     // std_out << i << ' ' << ( tmc - tm0 )  << NL;
 
-    leds.toggle( 1 );
-    stepdirs[a]->toggle( 1 );
+    leds[0].toggle();
+    (*stepdirs[a])[0].toggle();
 
     if( dt > 0 ) {
       delay_ms_until_brk( &tc0, dt );
