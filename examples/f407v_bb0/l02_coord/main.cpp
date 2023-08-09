@@ -34,6 +34,9 @@ PinOut en_motors( GpioC, 11 );
 
 PinsOut aux3(  GpioD, 7, 4 );
 
+// just init test
+// PinsIn in_tst( GpioC, 4, 2, GpioRegs::Pull::down );
+
 // B8  = T10.1 = PWM0
 // B9  = T11.1 = PWM1
 // C6  = T3.1  = PWM2
@@ -70,7 +73,7 @@ void idle_main_task()
 {
 }
 
-inline void motors_off() {  en_motors = 1;   }
+inline void motors_off() {  en_motors = 1; }
 inline void motors_on()  {  en_motors = 0; }
 
 // ---------------------------------------- main -----------------------------------------------
@@ -82,11 +85,13 @@ int main()
   UVAR('a') =         2; // Z axis
   UVAR('t') =        10;
   UVAR('n') =      1000;
+  UVAR('u') =       100;
 
   for_each( stepdirs.begin(), stepdirs.end(), []( auto sd) { sd->initHW();  *sd = 0; } );
   aux3.initHW(); aux3 = 0;
   en_motors.initHW();
   motors_off();
+  // in_tst.initHW();
 
   // UVAR('e') = i2c_default_init( i2ch );
   // i2c_dbg = &i2cd;
@@ -151,6 +156,8 @@ int cmd_test0( int argc, const char * const * argv )
 
     if( dt > 0 ) {
       delay_ms_until_brk( &tc0, dt );
+    } else {
+      delay_mcs( UVAR('u') );
     }
 
   }

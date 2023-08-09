@@ -180,7 +180,7 @@ void board_def_btn_init( bool needIRQ )
 void PinsIn::initHW()
 {
   Pins::initHW();
-  gpio.cfgIn_N( mask ); // TODO: pull
+  gpio.cfgIn_N( mask, pull );
 };
 
 // ----------------------------- IoPin -----------------------------

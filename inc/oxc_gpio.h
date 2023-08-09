@@ -376,7 +376,7 @@ class PinOut
 class PinsIn : public Pins
 {
   public:
-   constexpr PinsIn( GpioRegs &gi, uint8_t a_start, uint8_t a_n, uint16_t a_pull = GPIO_NOPULL  )
+   constexpr PinsIn( GpioRegs &gi, uint8_t a_start, uint8_t a_n, GpioRegs::Pull a_pull = GpioRegs::Pull::no )
      : Pins( gi, a_start, a_n ),
        pull( a_pull )
      {};
@@ -384,7 +384,7 @@ class PinsIn : public Pins
    // read() moved to parent
    // inline uint16_t operator (uint16_t)() { return read(); } // ? explicit?
   protected:
-   const uint16_t pull;
+   const GpioRegs::Pull pull;
 };
 
 // --------------- IoPin ?? really pin, not pins? --------------------------------
