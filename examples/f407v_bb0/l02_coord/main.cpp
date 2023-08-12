@@ -34,8 +34,20 @@ PinOut en_motors( GpioC, 11 );
 
 PinsOut aux3(  GpioD, 7, 4 );
 
-// just init test
-// PinsIn in_tst( GpioC, 4, 2, GpioRegs::Pull::down );
+PinsIn x_e(  GpioD, 0, 2, GpioRegs::Pull::down );
+PinsIn yz_e( GpioD, 3, 4, GpioRegs::Pull::down );
+
+//                                   TODO: auto irq N
+const EXTI_init_info extis[] = {
+  { GpioD,  0, GpioRegs::ExtiEv::down,   EXTI0_IRQn,    1,  0 }, // D0: Xe-
+  { GpioD,  1, GpioRegs::ExtiEv::down,   EXTI1_IRQn,    1,  0 }, // D1: Xe+
+  { GpioE,  2, GpioRegs::ExtiEv::updown, EXTI2_IRQn,    1,  0 }, // D2: touch
+  { GpioD,  3, GpioRegs::ExtiEv::down,   EXTI3_IRQn,    1,  0 }, // D3: Ye-
+  { GpioD,  4, GpioRegs::ExtiEv::down,   EXTI4_IRQn,    1,  0 }, // D4: Ye+
+  { GpioD,  5, GpioRegs::ExtiEv::down,   EXTI9_5_IRQn,  1,  0 }, // D5: Ze-
+  { GpioD,  6, GpioRegs::ExtiEv::down,   EXTI9_5_IRQn,  1,  0 }, // D6: Ze+
+  { GpioA, 99, GpioRegs::ExtiEv::down,   EXTI0_IRQn,   15,  0 }  // 99>15: END
+};
 
 // B8  = T10.1 = PWM0
 // B9  = T11.1 = PWM1
@@ -80,9 +92,10 @@ inline void motors_on()  {  en_motors = 0; }
 
 int main()
 {
+  // __HAL_RCC_SYSCFG_CLK_ENABLE();
   STD_PROLOG_UART;
 
-  UVAR('a') =         2; // Z axis
+  UVAR('a') =         1; // Y axis
   UVAR('t') =        10;
   UVAR('n') =      1000;
   UVAR('u') =       100;
@@ -91,7 +104,9 @@ int main()
   aux3.initHW(); aux3 = 0;
   en_motors.initHW();
   motors_off();
-  // in_tst.initHW();
+
+  x_e.initHW(); yz_e.initHW();
+  UVAR('e') = EXTI_inits( extis, true );
 
   // UVAR('e') = i2c_default_init( i2ch );
   // i2c_dbg = &i2cd;
@@ -103,18 +118,6 @@ int main()
   BOARD_POST_INIT_BLINK;
 
   leds.reset( 0xFF );
-
-  // test
-  // delay_ms( 200 );
-  // leds  = 0x0F;      delay_ms( 2000 );
-  // leds  = 0x00;      delay_ms( 2000 );
-  // leds[0] =  1;      delay_ms( 2000 );
-  // leds[3] =  1;      delay_ms( 2000 );
-  // leds[2].toggle();  delay_ms( 2000 );
-  // leds[3].reset();   delay_ms( 2000 );
-  // leds ^= 0x0F;      delay_ms( 2000 );
-  // leds %= 0x0F;      delay_ms( 2000 );
-  // leds |= 0x0F;      delay_ms( 2000 );
 
 
   pr( NL "##################### " PROJ_NAME NL );
@@ -167,6 +170,46 @@ int cmd_test0( int argc, const char * const * argv )
   int rc = break_flag;
 
   return rc + rev;
+}
+
+// ------------------------------ EXTI handlers -------------------
+
+void HAL_GPIO_EXTI_Callback( uint16_t pin_bit )
+{
+  ++UVAR('i'); UVAR('b') = pin_bit;
+  leds.toggle( 2 );
+  break_flag = 256 + pin_bit;
+}
+
+void EXTI0_IRQHandler(void)
+{
+  HAL_GPIO_EXTI_IRQHandler( BIT0 );
+}
+
+void EXTI1_IRQHandler()
+{
+  HAL_GPIO_EXTI_IRQHandler( BIT1 );
+}
+
+void EXTI2_IRQHandler()
+{
+  HAL_GPIO_EXTI_IRQHandler( BIT2 );
+}
+
+void EXTI3_IRQHandler()
+{
+  HAL_GPIO_EXTI_IRQHandler( BIT3 );
+}
+
+void EXTI4_IRQHandler()
+{
+  HAL_GPIO_EXTI_IRQHandler( BIT4 );
+}
+
+void EXTI9_5_IRQHandler()
+{
+  HAL_GPIO_EXTI_IRQHandler( BIT5 );
+  HAL_GPIO_EXTI_IRQHandler( BIT6 );
 }
 
 

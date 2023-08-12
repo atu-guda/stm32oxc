@@ -191,5 +191,21 @@ void IoPin::initHW()
   gpio.cfgOut_N( pin, true );
 }
 
+// --------------- EXTI mass init ------------------
+
+unsigned EXTI_inits( const EXTI_init_info *exti_info, bool initIRQ )
+{
+  unsigned n = 0;
+  for( auto ei = exti_info; ei->pinnum < 16; ++ei ) {
+    ei->gpio.setEXTI( ei->pinnum, ei->dir );
+    if( initIRQ && ei->exti_n >= EXTI0_IRQn ) {
+      HAL_NVIC_SetPriority( ei->exti_n, ei->prty, ei->subprty );
+      HAL_NVIC_EnableIRQ(   ei->exti_n );
+      n += 1000;
+    }
+    ++n;
+  }
+  return n;
+}
 
 // vim: path=.,/usr/share/stm32cube/inc

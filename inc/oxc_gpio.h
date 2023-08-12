@@ -413,6 +413,17 @@ class IoPin {
    const uint16_t pin;
 };
 
+// ------------------ mass EXTI init
+
+struct EXTI_init_info {
+  decltype(GpioA) gpio;
+  uint8_t pinnum; // number, not bit. if > 15 - end;
+  decltype(GpioRegs::ExtiEv::updown) dir;
+  decltype(EXTI0_IRQn) exti_n;
+  uint8_t prty, subprty;
+};
+
+unsigned EXTI_inits( const EXTI_init_info *exti_info, bool initIRQ = true );
 
 #endif
 
