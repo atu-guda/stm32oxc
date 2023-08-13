@@ -29,6 +29,7 @@ PinsOut stepdir_y(  GpioE, 10, 2 );
 PinsOut stepdir_z(  GpioE, 12, 2 );
 
 array stepdirs { &stepdir_x, &stepdir_y, &stepdir_z, &stepdir_e0, &stepdir_e1 };
+const constinit unsigned n_motors { stepdirs.size() };
 
 PinOut en_motors( GpioC, 11 );
 
@@ -41,13 +42,25 @@ PinsIn yz_e( GpioD, 3, 4, GpioRegs::Pull::down );
 const EXTI_init_info extis[] = {
   { GpioD,  0, GpioRegs::ExtiEv::down,   EXTI0_IRQn,    1,  0 }, // D0: Xe-
   { GpioD,  1, GpioRegs::ExtiEv::down,   EXTI1_IRQn,    1,  0 }, // D1: Xe+
-  { GpioE,  2, GpioRegs::ExtiEv::updown, EXTI2_IRQn,    1,  0 }, // D2: touch
+  { GpioE,  2, GpioRegs::ExtiEv::updown, (IRQn_Type)0 /*EXTI2_IRQn*/, 1,  0 }, // E2: touch: dis now
   { GpioD,  3, GpioRegs::ExtiEv::down,   EXTI3_IRQn,    1,  0 }, // D3: Ye-
   { GpioD,  4, GpioRegs::ExtiEv::down,   EXTI4_IRQn,    1,  0 }, // D4: Ye+
   { GpioD,  5, GpioRegs::ExtiEv::down,   EXTI9_5_IRQn,  1,  0 }, // D5: Ze-
   { GpioD,  6, GpioRegs::ExtiEv::down,   EXTI9_5_IRQn,  1,  0 }, // D6: Ze+
   { GpioA, 99, GpioRegs::ExtiEv::down,   EXTI0_IRQn,   15,  0 }  // 99>15: END
 };
+
+// move task description
+struct MoveTask {
+  int8_t dirs[n_motors] { 0, 0, 0, 0, 0 }; // X,Y,Z,E0,E1: 1-forvard, 0-no, -1 - backword
+  uint32_t step_rest[n_motors] { 0, 0, 0, 0, 0 }; // number of steps to do
+};
+
+MoveTask move_task;
+
+volatile uint32_t estop_flags {          0 };
+const    uint32_t estop_mask0 { 0b01111011 };  // exclude E2 - touch
+uint32_t          estop_maskc { estop_mask0 }; // current
 
 // B8  = T10.1 = PWM0
 // B9  = T11.1 = PWM1
@@ -63,20 +76,33 @@ const EXTI_init_info extis[] = {
 // HD44780_i2c *p_lcdt = &lcdt;
 // DS3231 rtc( i2cd );
 
+TIM_HandleTypeDef htim2;
+TIM_HandleTypeDef htim3;
+TIM_HandleTypeDef htim4;
+TIM_HandleTypeDef htim6;
+TIM_HandleTypeDef htim10;
+TIM_HandleTypeDef htim11;
 
-// extern TIM_HandleTypeDef htim1;
-// int MX_TIM1_Init();
+int MX_TIM2_Init();
+int MX_TIM3_Init();
+int MX_TIM4_Init();
+int MX_TIM6_Init();
+int MX_TIM10_Init();
+int MX_TIM11_Init();
 
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " axis N [dt] - test"  };
+int cmd_xtest( int argc, const char * const * argv );
+CmdInfo CMDINFO_XTEST { "xtest", 'X', cmd_xtest, " ??? - xtest"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
   // DEBUG_I2C_CMDS,
 
   &CMDINFO_TEST0,
+  &CMDINFO_XTEST,
   nullptr
 };
 
@@ -92,12 +118,12 @@ inline void motors_on()  {  en_motors = 0; }
 
 int main()
 {
-  // __HAL_RCC_SYSCFG_CLK_ENABLE();
   STD_PROLOG_UART;
 
   UVAR('a') =         1; // Y axis
   UVAR('t') =        10;
   UVAR('n') =      1000;
+  UVAR('s') =         5;
   UVAR('u') =       100;
 
   for_each( stepdirs.begin(), stepdirs.end(), []( auto sd) { sd->initHW();  *sd = 0; } );
@@ -107,6 +133,10 @@ int main()
 
   x_e.initHW(); yz_e.initHW();
   UVAR('e') = EXTI_inits( extis, true );
+
+  if( ! MX_TIM6_Init() ) {
+    die4led( 0x02 );
+  }
 
   // UVAR('e') = i2c_default_init( i2ch );
   // i2c_dbg = &i2cd;
@@ -172,12 +202,63 @@ int cmd_test0( int argc, const char * const * argv )
   return rc + rev;
 }
 
+int cmd_xtest( int argc, const char * const * argv )
+{
+  int a = arg2long_d( 1, argc, argv, UVAR('a'), 0, 100000000 ); // motor index
+  int n = arg2long_d( 2, argc, argv, UVAR('n'), -10000000, 100000000 ); // number of pulses with sign
+  // uint32_t sp = arg2long_d( 3, argc, argv, UVAR('s'), 1, 1000000 ); // skip ticks
+
+  bool rev = false;
+  if( n < 0 ) {
+    n = -n; rev = true;
+  }
+
+  if( (size_t)a > size(stepdirs) ) {
+    std_out << "# Error: bad motor index " << a << NL;
+    return 2;
+  }
+
+  for( auto &d : move_task.dirs )      { d = 0; }
+  for( auto &s : move_task.step_rest ) { s = 0; }
+  move_task.dirs[a] = rev ? -1 : 1;
+  move_task.step_rest[a] = n;
+
+  //stepdirs[a]->sr( 0x02, rev );
+  stepdirs[0]->sr( 0x02, rev );
+  stepdirs[1]->sr( 0x02, rev );
+  stepdirs[2]->sr( 0x02, rev );
+  motors_on();
+  HAL_TIM_Base_Start_IT( &htim6 );
+  uint32_t tm0 = HAL_GetTick(), tc0 = tm0;
+
+
+  break_flag = 0;
+  for( int i=0; i<n && !break_flag; ++i ) {
+    // uint32_t tmc = HAL_GetTick();
+    // std_out << i << ' ' << ( tmc - tm0 )  << NL;
+
+    leds[0].toggle();
+    // (*stepdirs[a])[0].toggle();
+
+    delay_ms_until_brk( &tc0, 100 );
+
+  }
+  HAL_TIM_Base_Stop_IT( &htim6 );
+  motors_off();
+
+  std_out << "# XTest: " << NL;
+  int rc = break_flag;
+
+  return rc + rev;
+}
+
+
 // ------------------------------ EXTI handlers -------------------
 
 void HAL_GPIO_EXTI_Callback( uint16_t pin_bit )
 {
   ++UVAR('i'); UVAR('b') = pin_bit;
-  leds.toggle( 2 );
+  leds[1].toggle();
   break_flag = 256 + pin_bit;
 }
 
@@ -212,6 +293,161 @@ void EXTI9_5_IRQHandler()
   HAL_GPIO_EXTI_IRQHandler( BIT6 );
 }
 
+// ----------------------------- timers -------------------------------------------
+// see: ~/proj/stm32/cube/f407_coord/Core/Src/tim.c
+
+int MX_TIM6_Init()
+{
+  htim6.Instance = TIM6;
+  htim6.Init.Prescaler   = 83; // TODO: my func to calc
+  htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim6.Init.Period      = 49;
+  htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if( HAL_TIM_Base_Init( &htim6 ) != HAL_OK ) {
+    UVAR('e') = 61;
+    return 0;
+  }
+
+  TIM_MasterConfigTypeDef sMasterConfig;
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if( HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig) != HAL_OK ) {
+    UVAR('e') = 62;
+    return 0;
+  }
+  return 1;
+}
+
+void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* tim_baseHandle )
+{
+  if( tim_baseHandle->Instance == TIM2 ) {
+    __HAL_RCC_TIM2_CLK_ENABLE();
+  }
+  else if(tim_baseHandle->Instance == TIM3 )
+  {
+    __HAL_RCC_TIM3_CLK_ENABLE();
+  }
+  else if( tim_baseHandle->Instance == TIM4 )
+  {
+    __HAL_RCC_TIM4_CLK_ENABLE();
+    __HAL_RCC_GPIOD_CLK_ENABLE();
+    // TIM4 GPIO Configuration
+    // D13 --> TIM4_CH2, D14  --> TIM4_CH3, D15 --> TIM4_CH4, GPIO_AF2_TIM4
+    // ......
+    // HAL_NVIC_SetPriority( TIM4_IRQn, 5, 0 );
+    // HAL_NVIC_EnableIRQ( TIM4_IRQn );
+
+  }
+  else if( tim_baseHandle->Instance == TIM6 )
+  {
+    __HAL_RCC_TIM6_CLK_ENABLE();
+    HAL_NVIC_SetPriority( TIM6_DAC_IRQn, 5, 0 );
+    HAL_NVIC_EnableIRQ( TIM6_DAC_IRQn );
+  }
+  else if( tim_baseHandle->Instance == TIM10 )
+  {
+    __HAL_RCC_TIM10_CLK_ENABLE();
+  }
+  else if( tim_baseHandle->Instance == TIM11 )
+  {
+    __HAL_RCC_TIM11_CLK_ENABLE();
+  }
+}
+
+void HAL_TIM_MspPostInit( TIM_HandleTypeDef* timHandle )
+{
+  if( timHandle->Instance == TIM2 ) {
+    // __HAL_RCC_GPIOB_CLK_ENABLE();
+    // TIM2 GPIO Configuration:  B10 --> TIM2_CH3, B11 --> TIM2_CH4, GPIO_AF1_TIM2
+    // ......
+  }
+  else if( timHandle->Instance == TIM3 )
+  {
+    __HAL_RCC_GPIOC_CLK_ENABLE();
+    // TIM3 GPIO Configuration:  C6  --> TIM3_CH1, GPIO_AF2_TIM3
+    // ....
+  }
+  else if( timHandle->Instance == TIM10 )
+  {
+    __HAL_RCC_GPIOB_CLK_ENABLE();
+    // TIM10 GPIO Configuration
+    // B8 --> TIM10_CH1, GPIO_AF3_TIM10
+  }
+  else if(timHandle->Instance == TIM11)
+  {
+    __HAL_RCC_GPIOB_CLK_ENABLE();
+    // TIM11 GPIO Configuration
+    // B9 --> TIM11_CH1, GPIO_AF3_TIM11
+  }
+
+}
+
+void HAL_TIM_Base_MspDeInit( TIM_HandleTypeDef* tim_baseHandle )
+{
+  if( tim_baseHandle->Instance == TIM2 ) {
+    __HAL_RCC_TIM2_CLK_DISABLE();
+  }
+  else if(tim_baseHandle->Instance == TIM3 ) {
+    __HAL_RCC_TIM3_CLK_DISABLE();
+  }
+  else if( tim_baseHandle->Instance == TIM4 ) {
+    __HAL_RCC_TIM4_CLK_DISABLE();
+    HAL_NVIC_DisableIRQ( TIM4_IRQn );
+  }
+  else if(tim_baseHandle->Instance == TIM6 ) {
+    __HAL_RCC_TIM6_CLK_DISABLE();
+    HAL_NVIC_DisableIRQ( TIM6_DAC_IRQn );
+  }
+  else if( tim_baseHandle->Instance == TIM10 ) {
+    __HAL_RCC_TIM10_CLK_DISABLE();
+  }
+  else if(tim_baseHandle->Instance == TIM11 )  {
+    __HAL_RCC_TIM11_CLK_DISABLE();
+
+  }
+}
+
+void TIM4_IRQHandler()
+{
+  HAL_TIM_IRQHandler( &htim4 );
+}
+
+void TIM6_DAC_IRQHandler()
+{
+  HAL_TIM_IRQHandler( &htim6 );
+}
+
+void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
+{
+  static int32_t skip_state = 0;
+  if( htim->Instance == TIM6 ) {
+    leds[3].toggle();
+    ++UVAR('x');
+    ++skip_state;
+    if( skip_state >= UVAR('s') ) {
+      skip_state = 0;
+    }
+    if( skip_state != 1 ) {
+      return;
+    }
+    ++UVAR('y');
+
+    if( move_task.dirs[1] != 0 ) {
+      if( move_task.step_rest[1] > 0 ) {
+        ++UVAR('z');
+        (*stepdirs[0])[0].toggle();
+        (*stepdirs[1])[0].toggle();
+        (*stepdirs[2])[0].toggle();
+        --move_task.step_rest[1];
+      } else {
+        HAL_TIM_Base_Stop_IT( &htim6 );
+        break_flag = 2;
+      }
+    }
+
+    return;
+  }
+}
 
 
 // ----------------------------------------  ------------------------------------------------------
