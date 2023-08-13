@@ -1,8 +1,10 @@
 #include <cstdarg>
 #include <cerrno>
 #include <array>
+#include <cmath>
 
 #include <oxc_auto.h>
+#include <oxc_floatfun.h>
 //#include <oxc_outstr.h>
 //#include <oxc_hd44780_i2c.h>
 //#include <oxc_menu4b.h>
@@ -28,15 +30,14 @@ PinsOut stepdir_x(  GpioE,  8, 2 );
 PinsOut stepdir_y(  GpioE, 10, 2 );
 PinsOut stepdir_z(  GpioE, 12, 2 );
 
-array stepdirs { &stepdir_x, &stepdir_y, &stepdir_z, &stepdir_e0, &stepdir_e1 };
-const constinit unsigned n_motors { stepdirs.size() };
 
 PinOut en_motors( GpioC, 11 );
 
 PinsOut aux3(  GpioD, 7, 4 );
 
 PinsIn x_e(  GpioD, 0, 2, GpioRegs::Pull::down );
-PinsIn yz_e( GpioD, 3, 4, GpioRegs::Pull::down );
+PinsIn y_e(  GpioD, 3, 2, GpioRegs::Pull::down );
+PinsIn z_e(  GpioD, 5, 2, GpioRegs::Pull::down );
 
 //                                   TODO: auto irq N
 const EXTI_init_info extis[] = {
@@ -50,9 +51,27 @@ const EXTI_init_info extis[] = {
   { GpioA, 99, GpioRegs::ExtiEv::down,   EXTI0_IRQn,   15,  0 }  // 99>15: END
 };
 
+// mech params
+struct MechParam {
+  uint32_t tick2mm   ; // tick per mm, = 2* pulses per mm
+  uint32_t max_speed ; // mm/min
+  PinsIn  *endstops  ;
+  PinsOut *motor     ;
+};
+
+const constinit unsigned n_motors { 5 };
+
+MechParam mechs[n_motors] = {
+  {  1600, 300,    &x_e, &stepdir_x  },
+  {  1600, 300,    &y_e, &stepdir_y  },
+  {  1600, 300,    &z_e, &stepdir_z  },
+  {   100, 100, nullptr, &stepdir_e0 },
+  {   100, 100, nullptr, &stepdir_e1 }
+};
+
 // move task description
 struct MoveTask {
-  int8_t dirs[n_motors] { 0, 0, 0, 0, 0 }; // X,Y,Z,E0,E1: 1-forvard, 0-no, -1 - backword
+  int8_t dirs[n_motors] { 0, 0, 0, 0, 0 }; // X,Y,Z,E0,E1: 1-forvard, 0-no, -1 - backward
   uint32_t step_rest[n_motors] { 0, 0, 0, 0, 0 }; // number of steps to do
 };
 
@@ -121,17 +140,25 @@ int main()
   STD_PROLOG_UART;
 
   UVAR('a') =         1; // Y axis
-  UVAR('t') =        10;
+  UVAR('f') =       240; // mm/min = 4mm/s default speed
+  UVAR('t') =         1;
   UVAR('n') =      1000;
-  UVAR('s') =         5;
+  UVAR('s') =         6;
   UVAR('u') =       100;
 
-  for_each( stepdirs.begin(), stepdirs.end(), []( auto sd) { sd->initHW();  *sd = 0; } );
+  for( auto &m : mechs ) {
+    if( m.endstops != nullptr ) {
+      m.endstops->initHW();
+    }
+    if( m.motor != nullptr ) {
+      m.motor->initHW(); m.motor->write( 0 );
+    }
+  }
+
   aux3.initHW(); aux3 = 0;
   en_motors.initHW();
   motors_off();
 
-  x_e.initHW(); yz_e.initHW();
   UVAR('e') = EXTI_inits( extis, true );
 
   if( ! MX_TIM6_Init() ) {
@@ -170,12 +197,18 @@ int cmd_test0( int argc, const char * const * argv )
     n = -n; rev = true;
   }
 
-  if( (size_t)a > size(stepdirs) ) {
+  if( (size_t)a > n_motors  ||  a < 0 ) {
     std_out << "# Error: bad motor index " << a << NL;
     return 2;
   }
 
-  stepdirs[a]->sr( 0x02, rev );
+  auto motor = mechs[a].motor;
+  if( ! motor ) {
+    std_out << "# Error: motor not defined for " << a << NL;
+    return 2;
+  }
+
+  motor->sr( 0x02, rev );
   motors_on();
   uint32_t tm0 = HAL_GetTick(), tc0 = tm0;
 
@@ -185,7 +218,7 @@ int cmd_test0( int argc, const char * const * argv )
     // std_out << i << ' ' << ( tmc - tm0 )  << NL;
 
     leds[0].toggle();
-    (*stepdirs[a])[0].toggle();
+    (*motor)[0].toggle();
 
     if( dt > 0 ) {
       delay_ms_until_brk( &tc0, dt );
@@ -204,41 +237,42 @@ int cmd_test0( int argc, const char * const * argv )
 
 int cmd_xtest( int argc, const char * const * argv )
 {
-  int a = arg2long_d( 1, argc, argv, UVAR('a'), 0, 100000000 ); // motor index
-  int n = arg2long_d( 2, argc, argv, UVAR('n'), -10000000, 100000000 ); // number of pulses with sign
-  // uint32_t sp = arg2long_d( 3, argc, argv, UVAR('s'), 1, 1000000 ); // skip ticks
-
-  bool rev = false;
-  if( n < 0 ) {
-    n = -n; rev = true;
-  }
-
-  if( (size_t)a > size(stepdirs) ) {
-    std_out << "# Error: bad motor index " << a << NL;
-    return 2;
-  }
-
   for( auto &d : move_task.dirs )      { d = 0; }
   for( auto &s : move_task.step_rest ) { s = 0; }
-  move_task.dirs[a] = rev ? -1 : 1;
-  move_task.step_rest[a] = n;
 
-  //stepdirs[a]->sr( 0x02, rev );
-  stepdirs[0]->sr( 0x02, rev );
-  stepdirs[1]->sr( 0x02, rev );
-  stepdirs[2]->sr( 0x02, rev );
+  std_out << "# XTest: " << NL;
+
+  for( unsigned i=0; i<3; ++i ) {
+    const float dc = arg2float_d( i+1, argc, argv, 0, -250.0f, 250.0f );
+    const float step_sz = 1.0f / mechs[i].tick2mm;
+    if( dc > 0.5f * step_sz ) {
+      move_task.dirs[i] =  1;
+      move_task.step_rest[i] =  roundf( dc / step_sz );
+      mechs[i].motor->sr( 0x02, 0 );
+    } else if( dc < -0.5f * step_sz ) {
+      move_task.dirs[i] = -1;
+      move_task.step_rest[i] = -roundf( dc / step_sz );
+      mechs[i].motor->sr( 0x02, 1 );
+    } else {
+      // move_task.dirs[i] =  0; // zeroed before
+      mechs[i].motor->sr( 0x02, 0 ); // just to be determened
+    }
+    std_out << "# " << i << ' ' << dc << ' '
+            << move_task.dirs[i] << ' ' << move_task.step_rest[i] << ' '
+            << move_task.step_rest[i] * step_sz << NL;
+  }
+  // float fe = arg2float_d( 4, argc, argv, UVAR('f'), 0.0f, 500.0f );
+
+
   motors_on();
   HAL_TIM_Base_Start_IT( &htim6 );
   uint32_t tm0 = HAL_GetTick(), tc0 = tm0;
 
 
   break_flag = 0;
-  for( int i=0; i<n && !break_flag; ++i ) {
-    // uint32_t tmc = HAL_GetTick();
-    // std_out << i << ' ' << ( tmc - tm0 )  << NL;
+  for( int i=0; i<10000 && !break_flag; ++i ) { // TODO: estimate time
 
     leds[0].toggle();
-    // (*stepdirs[a])[0].toggle();
 
     delay_ms_until_brk( &tc0, 100 );
 
@@ -246,10 +280,9 @@ int cmd_xtest( int argc, const char * const * argv )
   HAL_TIM_Base_Stop_IT( &htim6 );
   motors_off();
 
-  std_out << "# XTest: " << NL;
   int rc = break_flag;
 
-  return rc + rev;
+  return rc;
 }
 
 
@@ -435,9 +468,9 @@ void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
     if( move_task.dirs[1] != 0 ) {
       if( move_task.step_rest[1] > 0 ) {
         ++UVAR('z');
-        (*stepdirs[0])[0].toggle();
-        (*stepdirs[1])[0].toggle();
-        (*stepdirs[2])[0].toggle();
+        (*mechs[0].motor)[0].toggle();
+        (*mechs[1].motor)[0].toggle();
+        (*mechs[2].motor)[0].toggle();
         --move_task.step_rest[1];
       } else {
         HAL_TIM_Base_Stop_IT( &htim6 );
