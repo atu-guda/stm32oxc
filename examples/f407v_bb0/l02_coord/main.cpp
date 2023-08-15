@@ -72,12 +72,15 @@ MechParam mechs[n_motors] = {
 float d_xyz_max  { 250.0f }; // mm
 
 // move task description
-struct MoveTask {
-  int8_t dirs[n_motors] { 0, 0, 0, 0, 0 }; // X,Y,Z,E0,E1: 1-forvard, 0-no, -1 - backward
-  uint32_t step_rest[n_motors] { 0, 0, 0, 0, 0 }; // number of steps to do
+struct MoveTask1 {
+  int8_t   dir;        // 1-forvard, 0-no, -1 - backward
+  uint32_t step_rest;  // downcount of next
+  uint32_t step_task;  // total ticks in this task
+  uint32_t dlt_err;    // error value in geometry play
+  inline void init() { dir = 0; step_rest = step_task = dlt_err = 0; }
 };
 
-MoveTask move_task;
+MoveTask1 move_task[n_motors+1]; // last idx = time
 
 volatile uint32_t estop_flags {          0 };
 const    uint32_t estop_mask0 { 0b01111011 };  // exclude E2 - touch
@@ -239,8 +242,7 @@ int cmd_test0( int argc, const char * const * argv )
 
 int cmd_xtest( int argc, const char * const * argv )
 {
-  for( auto &d : move_task.dirs )      { d = 0; }
-  for( auto &s : move_task.step_rest ) { s = 0; }
+  for( auto &m : move_task )      { m.init(); }
   UVAR('k') = UVAR('l') = UVAR('x') = UVAR('y') = UVAR('z') = 0;
 
   std_out << "# XTest: " << NL;
@@ -260,26 +262,26 @@ int cmd_xtest( int argc, const char * const * argv )
     const float dc = d_mm[i];
     const float step_sz = 1.0f / mechs[i].tick2mm;
     if( dc > 0.5f * step_sz ) {
-      move_task.dirs[i] =  1;
-      move_task.step_rest[i] =  roundf( dc / step_sz );
+      move_task[i].dir =  1;
+      move_task[i].step_task = move_task[i].step_rest =  roundf( dc / step_sz );
       mechs[i].motor->sr( 0x02, 0 );
     } else if( dc < -0.5f * step_sz ) {
-      move_task.dirs[i] = -1;
-      move_task.step_rest[i] = -roundf( dc / step_sz );
+      move_task[i].dir = -1;
+      move_task[i].step_task = move_task[i].step_rest = -roundf( dc / step_sz );
       mechs[i].motor->sr( 0x02, 1 );
     } else {
-      // move_task.dirs[i] =  0; // zeroed before
+      // move_task[i].dir =  0; // zeroed before
       mechs[i].motor->sr( 0x02, 0 ); // just to be determened
     }
-    if( max_steps < move_task.step_rest[i] ) {
-      max_steps   = move_task.step_rest[i];
+    if( max_steps < move_task[i].step_rest ) {
+      max_steps   = move_task[i].step_rest;
       max_steps_idx = i;
     }
 
-    const float d_c = move_task.step_rest[i] * step_sz;
+    const float d_c = move_task[i].step_rest * step_sz;
     d_mm[i] = d_c;
     std_out << "# " << i << ' ' << dc << ' '
-            << move_task.dirs[i] << ' ' << move_task.step_rest[i] << ' '
+            << move_task[i].dir << ' ' << move_task[i].step_rest << ' '
             << d_c << NL;
     d_l += d_c * d_c;
     feed3_max += mechs[i].max_speed * mechs[i].max_speed;
@@ -308,10 +310,14 @@ int cmd_xtest( int argc, const char * const * argv )
   feed_lim = sqrtf( feed_lim );
 
   std_out << "# feed_lim= " << feed_lim << NL;
-  if( feed_lim < 1e-3f ) {
-    std_out << "#Error: too low speed, exiting" << NL;
+  if( feed[max_steps_idx] < 1e-3f || feed_lim < 1e-3f ) {
+    std_out << "# Error: too low speed, exiting" << NL;
     return 5;
   }
+
+  float t_all = 60 * d_mm[max_steps_idx] / feed[max_steps_idx];
+  uint32_t t_all_tick = 2 + ( uint32_t( t_all * TIM6_count_freq ) & ~1u );
+  std_out << "# t_all= " << t_all << " s = " <<  t_all_tick << NL;
 
   motors_on();
   HAL_TIM_Base_Start_IT( &htim6 );
@@ -519,13 +525,13 @@ void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
 
     bool do_stop = true;
     for( unsigned i=0; i<3; ++i ) {
-      if( move_task.dirs[i] == 0 ) {
+      if( move_task[i].dir == 0 ) {
         continue;
       }
-      if( move_task.step_rest[i] > 0 ) {
+      if( move_task[i].step_rest > 0 ) {
         ++UVAR('x'+i);
         (*mechs[i].motor)[0].toggle();
-        --move_task.step_rest[i];
+        --move_task[i].step_rest;
         do_stop = false;
       }
     }
