@@ -241,6 +241,7 @@ int cmd_xtest( int argc, const char * const * argv )
 {
   for( auto &d : move_task.dirs )      { d = 0; }
   for( auto &s : move_task.step_rest ) { s = 0; }
+  UVAR('k') = UVAR('l') = UVAR('x') = UVAR('y') = UVAR('z') = 0;
 
   std_out << "# XTest: " << NL;
   const unsigned n_mo { 3 }; // 3 = only XYZ motors
@@ -325,7 +326,7 @@ int cmd_xtest( int argc, const char * const * argv )
     delay_ms_until_brk( &tc0, 100 );
 
   }
-  HAL_TIM_Base_Stop_IT( &htim6 );
+  HAL_TIM_Base_Stop_IT( &htim6 ); // may be other breaks, so dup here
   motors_off();
 
   int rc = break_flag;
@@ -379,20 +380,23 @@ void EXTI9_5_IRQHandler()
 
 int MX_TIM6_Init()
 {
-  htim6.Instance = TIM6;
-  htim6.Init.Prescaler   = 83; // TODO: my func to calc
-  htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim6.Init.Period      = 49;
+  auto psc   = calc_TIM_psc_for_cnt_freq( TIM6, TIM6_base_freq );       // 83
+  auto arr   = calc_TIM_arr_for_base_psc( TIM6, psc, TIM6_count_freq ); // 49
+  htim6.Instance               = TIM6;
+  htim6.Init.Prescaler         = psc;
+  htim6.Init.Period            = arr;
+  htim6.Init.CounterMode       = TIM_COUNTERMODE_UP;
   htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if( HAL_TIM_Base_Init( &htim6 ) != HAL_OK ) {
     UVAR('e') = 61;
     return 0;
   }
 
-  TIM_MasterConfigTypeDef sMasterConfig;
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if( HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig) != HAL_OK ) {
+  TIM_MasterConfigTypeDef m_cfg {
+    .MasterOutputTrigger = TIM_TRGO_RESET,
+    .MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE
+  };
+  if( HAL_TIMEx_MasterConfigSynchronization( &htim6, &m_cfg ) != HAL_OK ) {
     UVAR('e') = 62;
     return 0;
   }
