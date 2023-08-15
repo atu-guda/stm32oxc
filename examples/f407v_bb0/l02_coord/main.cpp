@@ -62,9 +62,9 @@ struct MechParam {
 const constinit unsigned n_motors { 5 };
 
 MechParam mechs[n_motors] = {
-  {  1600, 300,    &x_e, &stepdir_x  },
-  {  1600, 300,    &y_e, &stepdir_y  },
-  {  1600, 300,    &z_e, &stepdir_z  },
+  {  1600, 600,    &x_e, &stepdir_x  },
+  {  1600, 600,    &y_e, &stepdir_y  },
+  {  1600, 600,    &z_e, &stepdir_z  },
   {   100, 100, nullptr, &stepdir_e0 },
   {   100, 100, nullptr, &stepdir_e1 }
 };
@@ -73,11 +73,11 @@ float d_xyz_max  { 250.0f }; // mm
 
 // move task description
 struct MoveTask1 {
-  int8_t   dir;        // 1-forvard, 0-no, -1 - backward
-  uint32_t step_rest;  // downcount of next
-  uint32_t step_task;  // total ticks in this task
-  uint32_t dlt_err;    // error value in geometry play
-  inline void init() { dir = 0; step_rest = step_task = dlt_err = 0; }
+  int8_t   dir;   // 1-forvard, 0-no, -1 - backward
+  int step_rest;  // downcount of next
+  int step_task;  // total ticks in this task
+  int d;          // for Brese
+  inline void init() { dir = 0; step_rest = step_task = d = 0; }
 };
 
 MoveTask1 move_task[n_motors+1]; // last idx = time
@@ -114,6 +114,7 @@ int MX_TIM6_Init();
 int MX_TIM10_Init();
 int MX_TIM11_Init();
 
+void TIM6_callback();
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -234,7 +235,6 @@ int cmd_test0( int argc, const char * const * argv )
   }
   motors_off();
 
-  std_out << "# Test: " << NL;
   int rc = break_flag;
 
   return rc + rev;
@@ -251,7 +251,7 @@ int cmd_xtest( int argc, const char * const * argv )
   float feed3_max { 0 }; // mm/min
   float d_l { 0 };
   float d_mm[n_mo];
-  uint32_t max_steps { 0 }, max_steps_idx { 0 };
+  int max_steps { 0 }, max_steps_idx { 0 };
 
   for( unsigned i=0; i<n_mo; ++i ) {
     d_mm[i] = arg2float_d( i+1, argc, argv, 0, -d_xyz_max, d_xyz_max );
@@ -319,13 +319,16 @@ int cmd_xtest( int argc, const char * const * argv )
   uint32_t t_all_tick = 2 + ( uint32_t( t_all * TIM6_count_freq ) & ~1u );
   std_out << "# t_all= " << t_all << " s = " <<  t_all_tick << NL;
 
+  move_task[n_motors].step_rest = move_task[n_motors].step_task = t_all_tick;
+
   motors_on();
   HAL_TIM_Base_Start_IT( &htim6 );
   uint32_t tm0 = HAL_GetTick(), tc0 = tm0;
 
 
   break_flag = 0;
-  for( int i=0; i<10000 && !break_flag; ++i ) { // TODO: estimate time
+  int t_est = (int)( t_all * 11 + 5 ); // + 10%, + 0.5s
+  for( int i=0; i<t_est && !break_flag; ++i ) {
 
     leds[0].toggle();
 
@@ -510,39 +513,39 @@ void TIM6_DAC_IRQHandler()
 
 void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
 {
-  static int32_t skip_state = 0;
   if( htim->Instance == TIM6 ) {
-    leds[3].toggle();
-    ++UVAR('k');
-    ++skip_state;
-    if( skip_state >= UVAR('s') ) {
-      skip_state = 0;
-    }
-    if( skip_state != 1 ) {
-      return;
-    }
-    ++UVAR('l');
-
-    bool do_stop = true;
-    for( unsigned i=0; i<3; ++i ) {
-      if( move_task[i].dir == 0 ) {
-        continue;
-      }
-      if( move_task[i].step_rest > 0 ) {
-        ++UVAR('x'+i);
-        (*mechs[i].motor)[0].toggle();
-        --move_task[i].step_rest;
-        do_stop = false;
-      }
-    }
-
-    if( do_stop ) {
-      HAL_TIM_Base_Stop_IT( &htim6 );
-      break_flag = 2;
-    }
-
+    TIM6_callback();
     return;
   }
+}
+
+void TIM6_callback()
+{
+  ++UVAR('k');
+
+  leds[2].set();
+  bool do_stop = true;
+  for( unsigned i=0; i<3; ++i ) {
+    if( move_task[i].dir == 0  ||  move_task[i].step_rest < 1 ) {
+      continue;
+    }
+    move_task[i].d += 2 * move_task[i].step_task ;
+    do_stop = false;
+    if( move_task[i].d > move_task[n_motors].step_task ) {
+      ++UVAR('x'+i);
+      (*mechs[i].motor)[0].toggle();
+      --move_task[i].step_rest;
+      move_task[i].d -= 2 * move_task[n_motors].step_task;
+    }
+  }
+
+  if( do_stop ) {
+    HAL_TIM_Base_Stop_IT( &htim6 );
+    break_flag = 2;
+  }
+  leds[2].reset();
+
+  return;
 }
 
 
