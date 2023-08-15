@@ -69,6 +69,8 @@ MechParam mechs[n_motors] = {
   {   100, 100, nullptr, &stepdir_e1 }
 };
 
+float d_xyz_max  { 250.0f }; // mm
+
 // move task description
 struct MoveTask {
   int8_t dirs[n_motors] { 0, 0, 0, 0, 0 }; // X,Y,Z,E0,E1: 1-forvard, 0-no, -1 - backward
@@ -241,9 +243,20 @@ int cmd_xtest( int argc, const char * const * argv )
   for( auto &s : move_task.step_rest ) { s = 0; }
 
   std_out << "# XTest: " << NL;
+  const unsigned n_mo { 3 }; // 3 = only XYZ motors
 
-  for( unsigned i=0; i<3; ++i ) {
-    const float dc = arg2float_d( i+1, argc, argv, 0, -250.0f, 250.0f );
+  float feed3_max { 0 }; // mm/min
+  float d_l { 0 };
+  float d_mm[n_mo];
+  uint32_t max_steps { 0 }, max_steps_idx { 0 };
+
+  for( unsigned i=0; i<n_mo; ++i ) {
+    d_mm[i] = arg2float_d( i+1, argc, argv, 0, -d_xyz_max, d_xyz_max );
+  }
+  float fe_mmm = arg2float_d( 4, argc, argv, UVAR('f'), 0.0f, 900.0f );
+
+  for( unsigned i=0; i<n_mo; ++i ) {
+    const float dc = d_mm[i];
     const float step_sz = 1.0f / mechs[i].tick2mm;
     if( dc > 0.5f * step_sz ) {
       move_task.dirs[i] =  1;
@@ -257,12 +270,47 @@ int cmd_xtest( int argc, const char * const * argv )
       // move_task.dirs[i] =  0; // zeroed before
       mechs[i].motor->sr( 0x02, 0 ); // just to be determened
     }
+    if( max_steps < move_task.step_rest[i] ) {
+      max_steps   = move_task.step_rest[i];
+      max_steps_idx = i;
+    }
+
+    const float d_c = move_task.step_rest[i] * step_sz;
+    d_mm[i] = d_c;
     std_out << "# " << i << ' ' << dc << ' '
             << move_task.dirs[i] << ' ' << move_task.step_rest[i] << ' '
-            << move_task.step_rest[i] * step_sz << NL;
+            << d_c << NL;
+    d_l += d_c * d_c;
+    feed3_max += mechs[i].max_speed * mechs[i].max_speed;
   }
-  // float fe = arg2float_d( 4, argc, argv, UVAR('f'), 0.0f, 500.0f );
 
+  d_l = sqrtf( d_l );
+  feed3_max = sqrtf( feed3_max );
+  if( fe_mmm > feed3_max ) {
+    fe_mmm = feed3_max;
+  }
+
+  std_out << "# feed= " << fe_mmm << " mm/min; " << " d_l= " << d_l
+          << " mm;  feed3_max= " << feed3_max
+          << "  max_steps= " << max_steps  << ' ' << max_steps_idx << NL;
+
+  float feed[n_mo];
+  float feed_lim { 0 };
+  for( unsigned i=0; i<n_mo; ++i ) {
+    feed[i] = fe_mmm * d_mm[i] / d_l;
+    if( feed[i] > mechs[i].max_speed ) {
+      feed[i] =   mechs[i].max_speed;
+    }
+    feed_lim += feed[i] * feed[i];
+    std_out << "# feed[" << i << "]= " << feed[i] << NL;
+  }
+  feed_lim = sqrtf( feed_lim );
+
+  std_out << "# feed_lim= " << feed_lim << NL;
+  if( feed_lim < 1e-3f ) {
+    std_out << "#Error: too low speed, exiting" << NL;
+    return 5;
+  }
 
   motors_on();
   HAL_TIM_Base_Start_IT( &htim6 );
@@ -455,7 +503,7 @@ void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
   static int32_t skip_state = 0;
   if( htim->Instance == TIM6 ) {
     leds[3].toggle();
-    ++UVAR('x');
+    ++UVAR('k');
     ++skip_state;
     if( skip_state >= UVAR('s') ) {
       skip_state = 0;
@@ -463,19 +511,24 @@ void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
     if( skip_state != 1 ) {
       return;
     }
-    ++UVAR('y');
+    ++UVAR('l');
 
-    if( move_task.dirs[1] != 0 ) {
-      if( move_task.step_rest[1] > 0 ) {
-        ++UVAR('z');
-        (*mechs[0].motor)[0].toggle();
-        (*mechs[1].motor)[0].toggle();
-        (*mechs[2].motor)[0].toggle();
-        --move_task.step_rest[1];
-      } else {
-        HAL_TIM_Base_Stop_IT( &htim6 );
-        break_flag = 2;
+    bool do_stop = true;
+    for( unsigned i=0; i<3; ++i ) {
+      if( move_task.dirs[i] == 0 ) {
+        continue;
       }
+      if( move_task.step_rest[i] > 0 ) {
+        ++UVAR('x'+i);
+        (*mechs[i].motor)[0].toggle();
+        --move_task.step_rest[i];
+        do_stop = false;
+      }
+    }
+
+    if( do_stop ) {
+      HAL_TIM_Base_Stop_IT( &htim6 );
+      break_flag = 2;
     }
 
     return;
