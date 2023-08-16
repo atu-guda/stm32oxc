@@ -133,6 +133,9 @@ const CmdInfo* global_cmds[] = {
 
 void idle_main_task()
 {
+  const uint32_t ep_mask = 0b01111011;
+  auto epv = GpioD.IDR & ep_mask;
+  leds[1] = ( epv == ep_mask ) ? 0 : 1;
 }
 
 inline void motors_off() {  en_motors = 1; }
@@ -346,7 +349,7 @@ int move_rel( const float *d_mm_i, float fe_mmm )
   int t_est = (int)( t_all * 11 + 5 ); // + 10%, + 0.5s
   for( int i=0; i<t_est && !break_flag; ++i ) {
 
-    leds[0].toggle();
+    leds[3].toggle();
 
     delay_ms_until_brk( &tc0, 100 );
 
