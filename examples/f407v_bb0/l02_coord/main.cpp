@@ -82,9 +82,8 @@ struct MoveTask1 {
 
 MoveTask1 move_task[n_motors+1]; // last idx = time
 
-volatile uint32_t estop_flags {          0 };
-const    uint32_t estop_mask0 { 0b01111011 };  // exclude E2 - touch
-uint32_t          estop_maskc { estop_mask0 }; // current
+int move_rel( const float *d_mm, float fe_mmm );
+
 
 // B8  = T10.1 = PWM0
 // B9  = T11.1 = PWM1
@@ -240,23 +239,18 @@ int cmd_test0( int argc, const char * const * argv )
   return rc + rev;
 }
 
-int cmd_xtest( int argc, const char * const * argv )
+int move_rel( const float *d_mm_i, float fe_mmm )
 {
   for( auto &m : move_task )      { m.init(); }
   UVAR('k') = UVAR('l') = UVAR('x') = UVAR('y') = UVAR('z') = 0;
 
-  std_out << "# XTest: " << NL;
   const unsigned n_mo { 3 }; // 3 = only XYZ motors
+  float d_mm[n_mo];
+  for( unsigned i=0; i<n_mo; ++i ) { d_mm[i] = d_mm_i[i]; } // local copy, as we change it: round(step)-sign
 
   float feed3_max { 0 }; // mm/min
   float d_l { 0 };
-  float d_mm[n_mo];
   int max_steps { 0 }, max_steps_idx { 0 };
-
-  for( unsigned i=0; i<n_mo; ++i ) {
-    d_mm[i] = arg2float_d( i+1, argc, argv, 0, -d_xyz_max, d_xyz_max );
-  }
-  float fe_mmm = arg2float_d( 4, argc, argv, UVAR('f'), 0.0f, 900.0f );
 
   delay_ms( UVAR('v') ); // for filming
 
@@ -369,6 +363,24 @@ int cmd_xtest( int argc, const char * const * argv )
   // TODO: update global coords
 
   int rc = break_flag;
+
+  return rc;
+}
+
+int cmd_xtest( int argc, const char * const * argv )
+{
+  std_out << "# XTest: " << NL;
+  const unsigned n_mo { 3 }; // 3 = only XYZ motors
+
+  float d_mm[n_mo];
+
+  for( unsigned i=0; i<n_mo; ++i ) {
+    d_mm[i] = arg2float_d( i+1, argc, argv, 0, -d_xyz_max, d_xyz_max );
+  }
+  float fe_mmm = arg2float_d( 4, argc, argv, UVAR('f'), 0.0f, 900.0f );
+
+
+  int rc = move_rel( d_mm, fe_mmm );
 
   return rc;
 }
