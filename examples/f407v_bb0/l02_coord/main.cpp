@@ -258,6 +258,8 @@ int cmd_xtest( int argc, const char * const * argv )
   }
   float fe_mmm = arg2float_d( 4, argc, argv, UVAR('f'), 0.0f, 900.0f );
 
+  delay_ms( UVAR('v') ); // for filming
+
   for( unsigned i=0; i<n_mo; ++i ) {
     const float dc = d_mm[i];
     const float step_sz = 1.0f / mechs[i].tick2mm;
@@ -280,9 +282,8 @@ int cmd_xtest( int argc, const char * const * argv )
 
     const float d_c = move_task[i].step_rest * step_sz;
     d_mm[i] = d_c;
-    std_out << "# " << i << ' ' << dc << ' '
-            << move_task[i].dir << ' ' << move_task[i].step_rest << ' '
-            << d_c << NL;
+    std_out << "# " << i << ' ' << dc << ' ' << d_c
+            << move_task[i].dir << ' ' << move_task[i].step_rest << NL;
     d_l += d_c * d_c;
     feed3_max += mechs[i].max_speed * mechs[i].max_speed;
   }
@@ -321,6 +322,27 @@ int cmd_xtest( int argc, const char * const * argv )
 
   move_task[n_motors].step_rest = move_task[n_motors].step_task = t_all_tick;
 
+  // check endstops
+  for( unsigned i=0; i<n_mo; ++i ) {
+    if( mechs[i].endstops == nullptr ) {
+      continue;
+    }
+    uint16_t epv = mechs[i].endstops->read();
+    const auto dir = move_task[i].dir;
+    std_out << "# debug: endstop " << epv << " at " << i << " dir: " << dir << NL;
+    if( dir == 0 || ( epv & 0x03 ) == 0x03 ) { // no move or all clear
+      continue;
+    }
+    if( dir >  0 && ( epv & 0x02 ) ) { // forward and ep+ clear
+      continue;
+    }
+    if( dir <  0 && ( epv & 0x01 ) ) { // backward and ep- clear
+      continue;
+    }
+    std_out << "# Error: endstop " << epv << " at " << i << " dir: " << dir << NL;
+    return 7;
+  }
+
   motors_on();
   HAL_TIM_Base_Start_IT( &htim6 );
   uint32_t tm0 = HAL_GetTick(), tc0 = tm0;
@@ -337,6 +359,14 @@ int cmd_xtest( int argc, const char * const * argv )
   }
   HAL_TIM_Base_Stop_IT( &htim6 ); // may be other breaks, so dup here
   motors_off();
+
+  float real_d[n_mo];
+  for( unsigned i=0; i<n_mo; ++i ) {
+    real_d[i] = float( move_task[i].step_task - move_task[i].step_rest ) * move_task[i].dir / mechs[i].tick2mm;
+    std_out << " d_" << i << " = " << real_d[i];
+    // TODO: stop if essetial mismatch
+  }
+  // TODO: update global coords
 
   int rc = break_flag;
 
