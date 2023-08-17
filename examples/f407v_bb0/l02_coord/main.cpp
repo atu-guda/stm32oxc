@@ -62,14 +62,14 @@ struct MechParam {
 const constinit unsigned n_motors { 5 };
 
 MechParam mechs[n_motors] = {
-  {  1600, 600,    &x_e, &stepdir_x  },
-  {  1600, 600,    &y_e, &stepdir_y  },
-  {  1600, 600,    &z_e, &stepdir_z  },
+  {  1600, 900,    &x_e, &stepdir_x  },
+  {  1600, 900,    &y_e, &stepdir_y  },
+  {  1600, 900,    &z_e, &stepdir_z  },
   {   100, 100, nullptr, &stepdir_e0 },
   {   100, 100, nullptr, &stepdir_e1 }
 };
 
-float d_xyz_max  { 250.0f }; // mm
+float d_xyz_max  { 450.0f }; // mm
 
 // move task description
 struct MoveTask1 {
@@ -112,6 +112,7 @@ int MX_TIM4_Init();
 int MX_TIM6_Init();
 int MX_TIM10_Init();
 int MX_TIM11_Init();
+void HAL_TIM_MspPostInit( TIM_HandleTypeDef* timHandle );
 
 void TIM6_callback();
 
@@ -119,7 +120,9 @@ void TIM6_callback();
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " axis N [dt] - test"  };
 int cmd_xtest( int argc, const char * const * argv );
-CmdInfo CMDINFO_XTEST { "xtest", 'X', cmd_xtest, " ??? - xtest"  };
+CmdInfo CMDINFO_XTEST { "xtest", 'X', cmd_xtest, "dx dy dz [feed] - rel move test"  };
+int cmd_pwr( int argc, const char * const * argv );
+CmdInfo CMDINFO_PWR { "pwr", 'P', cmd_pwr, "ch pow_f  - test PWM power control"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -127,6 +130,7 @@ const CmdInfo* global_cmds[] = {
 
   &CMDINFO_TEST0,
   &CMDINFO_XTEST,
+  &CMDINFO_PWR,
   nullptr
 };
 
@@ -169,6 +173,9 @@ int main()
 
   UVAR('e') = EXTI_inits( extis, true );
 
+  if( ! MX_TIM3_Init() ) {
+    die4led( 0x01 );
+  }
   if( ! MX_TIM6_Init() ) {
     die4led( 0x02 );
   }
@@ -355,7 +362,7 @@ int move_rel( const float *d_mm_i, float fe_mmm )
 
   }
   HAL_TIM_Base_Stop_IT( &htim6 ); // may be other breaks, so dup here
-  motors_off();
+  motors_off(); // TODO: param or move from here
 
   float real_d[n_mo];
   for( unsigned i=0; i<n_mo; ++i ) {
@@ -388,6 +395,44 @@ int cmd_xtest( int argc, const char * const * argv )
   return rc;
 }
 
+int cmd_pwr( int argc, const char * const * argv )
+{
+  int   ch  = arg2long_d(  1, argc, argv, 0, 0, 3 );
+  float pwr = arg2float_d( 2, argc, argv, 0, 0.0f, 100.0f );
+  uint32_t arr, ccr, r;
+
+  switch( ch ) {
+    case 0:
+      HAL_TIM_PWM_Stop( &htim3,  TIM_CHANNEL_1 );
+      arr = htim3.Instance->ARR;
+      ccr = (uint32_t)( arr * pwr / 100.0f );
+      htim3.Instance->CCR1 = ccr;
+      htim3.Instance->CNT  = 0;
+      r = HAL_TIM_PWM_Start( &htim3,  TIM_CHANNEL_1 );
+      std_out << "# ch " << ch << "  pwr " << pwr << " arr= " << arr << " ccr= " << ccr << " r= " << r << NL;
+      break;
+    case 1:
+      arr = htim10.Instance->ARR;
+      ccr = (uint32_t)( arr * pwr / 100.0f );
+      htim10.Instance->CCR1 = ccr;
+      HAL_TIM_PWM_Start( &htim10, TIM_CHANNEL_1 );
+      break;
+    case 2:
+      arr = htim11.Instance->ARR;
+      ccr = (uint32_t)( arr * pwr / 100.0f );
+      htim11.Instance->CCR1 = ccr;
+      HAL_TIM_PWM_Start( &htim11,  TIM_CHANNEL_1 );
+      break;
+    default:
+      HAL_TIM_PWM_Stop( &htim3,  TIM_CHANNEL_1 );
+      HAL_TIM_PWM_Stop( &htim10, TIM_CHANNEL_1 );
+      HAL_TIM_PWM_Stop( &htim11, TIM_CHANNEL_1 );
+      std_out << "# PWR: stop all" << NL;
+      break;
+  }
+  tim_print_cfg( TIM3 );
+  return 0;
+}
 
 // ------------------------------ EXTI handlers -------------------
 
@@ -432,6 +477,64 @@ void EXTI9_5_IRQHandler()
 // ----------------------------- timers -------------------------------------------
 // see: ~/proj/stm32/cube/f407_coord/Core/Src/tim.c
 
+int MX_TIM3_Init()
+{
+  auto psc   = calc_TIM_psc_for_cnt_freq( TIM3, TIM3_base_freq );       // psc = 0, 42MHz
+  auto arr   = calc_TIM_arr_for_base_psc( TIM3, psc, TIM3_count_freq ); // 4199, 10kHz
+  htim3.Instance               = TIM3;
+  htim3.Init.Prescaler         = psc;
+  htim3.Init.CounterMode       = TIM_COUNTERMODE_UP;
+  htim3.Init.Period            = arr;
+  htim3.Init.ClockDivision     = TIM_CLOCKDIVISION_DIV1;
+  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if( HAL_TIM_Base_Init( &htim3 ) != HAL_OK ) {
+    UVAR('e') = 31;
+    return 0;
+  }
+
+  TIM_ClockConfigTypeDef sClockSourceConfig {
+    .ClockSource    = TIM_CLOCKSOURCE_INTERNAL,
+    .ClockPolarity  = TIM_ICPOLARITY_RISING,
+    .ClockPrescaler = TIM_CLOCKPRESCALER_DIV1,
+    .ClockFilter    = 0,
+  };
+  if( HAL_TIM_ConfigClockSource( &htim3, &sClockSourceConfig ) != HAL_OK ) {
+    UVAR('e') = 32;
+    return 0;
+  }
+
+  if( HAL_TIM_PWM_Init( &htim3 ) != HAL_OK ) {
+    UVAR('e') = 33;
+    return 0;
+  }
+
+  TIM_MasterConfigTypeDef sMasterConfig {
+    .MasterOutputTrigger = TIM_TRGO_RESET,
+    .MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE
+  };
+  if( HAL_TIMEx_MasterConfigSynchronization( &htim3, &sMasterConfig ) != HAL_OK ) {
+    UVAR('e') = 34;
+    return 0;
+  }
+
+  TIM_OC_InitTypeDef sConfigOC {
+    .OCMode       = TIM_OCMODE_PWM1,
+    .Pulse        = 0,
+    .OCPolarity   = TIM_OCPOLARITY_HIGH,
+    .OCNPolarity  = TIM_OCNPOLARITY_HIGH,
+    .OCFastMode   = TIM_OCFAST_DISABLE,
+    .OCIdleState  = TIM_OCIDLESTATE_RESET,
+    .OCNIdleState = TIM_OCNIDLESTATE_RESET
+  };
+  if( HAL_TIM_PWM_ConfigChannel( &htim3, &sConfigOC, TIM_CHANNEL_1 ) != HAL_OK ) {
+    UVAR('e') = 35;
+    return 0;
+  }
+
+  HAL_TIM_MspPostInit( &htim3 );
+  return 1;
+}
+
 int MX_TIM6_Init()
 {
   auto psc   = calc_TIM_psc_for_cnt_freq( TIM6, TIM6_base_freq );       // 83
@@ -462,8 +565,7 @@ void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* tim_baseHandle )
   if( tim_baseHandle->Instance == TIM2 ) {
     __HAL_RCC_TIM2_CLK_ENABLE();
   }
-  else if(tim_baseHandle->Instance == TIM3 )
-  {
+  else if(tim_baseHandle->Instance == TIM3 ) {
     __HAL_RCC_TIM3_CLK_ENABLE();
   }
   else if( tim_baseHandle->Instance == TIM4 )
@@ -502,47 +604,39 @@ void HAL_TIM_MspPostInit( TIM_HandleTypeDef* timHandle )
   }
   else if( timHandle->Instance == TIM3 )
   {
-    __HAL_RCC_GPIOC_CLK_ENABLE();
-    // TIM3 GPIO Configuration:  C6  --> TIM3_CH1, GPIO_AF2_TIM3
-    // ....
+    GpioC.enableClk();
+    GpioC.cfgAF( 6, GPIO_AF2_TIM3 );  // TIM3.1: C6 --> TIM3_CH1, GPIO_AF2_TIM3
+  } else if( timHandle->Instance == TIM10 ) {
+    GpioB.enableClk();
+    GpioB.cfgAF( 8, GPIO_AF3_TIM10 ); // TIM10.1: B8 --> TIM10_CH1, GPIO_AF3_TIM10
   }
-  else if( timHandle->Instance == TIM10 )
-  {
-    __HAL_RCC_GPIOB_CLK_ENABLE();
-    // TIM10 GPIO Configuration
-    // B8 --> TIM10_CH1, GPIO_AF3_TIM10
+  else if( timHandle->Instance == TIM11 ) {
+    GpioB.enableClk();
+    GpioB.cfgAF( 9, GPIO_AF3_TIM11 ); // TIM11.1: B9 --> TIM11_CH1, GPIO_AF3_TIM11
   }
-  else if(timHandle->Instance == TIM11)
-  {
-    __HAL_RCC_GPIOB_CLK_ENABLE();
-    // TIM11 GPIO Configuration
-    // B9 --> TIM11_CH1, GPIO_AF3_TIM11
-  }
-
 }
 
 void HAL_TIM_Base_MspDeInit( TIM_HandleTypeDef* tim_baseHandle )
 {
-  if( tim_baseHandle->Instance == TIM2 ) {
+  if(      tim_baseHandle->Instance == TIM2  ) {
     __HAL_RCC_TIM2_CLK_DISABLE();
   }
-  else if(tim_baseHandle->Instance == TIM3 ) {
+  else if( tim_baseHandle->Instance == TIM3  ) {
     __HAL_RCC_TIM3_CLK_DISABLE();
   }
-  else if( tim_baseHandle->Instance == TIM4 ) {
+  else if( tim_baseHandle->Instance == TIM4  ) {
     __HAL_RCC_TIM4_CLK_DISABLE();
     HAL_NVIC_DisableIRQ( TIM4_IRQn );
   }
-  else if(tim_baseHandle->Instance == TIM6 ) {
+  else if( tim_baseHandle->Instance == TIM6  ) {
     __HAL_RCC_TIM6_CLK_DISABLE();
     HAL_NVIC_DisableIRQ( TIM6_DAC_IRQn );
   }
   else if( tim_baseHandle->Instance == TIM10 ) {
     __HAL_RCC_TIM10_CLK_DISABLE();
   }
-  else if(tim_baseHandle->Instance == TIM11 )  {
+  else if( tim_baseHandle->Instance == TIM11 )  {
     __HAL_RCC_TIM11_CLK_DISABLE();
-
   }
 }
 
