@@ -22,7 +22,7 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES_UART;
 
-const char* common_help_string = "Appication coord device control" NL;
+const char* common_help_string = "Application coordinate device control" NL;
 
 PinsOut stepdir_e1( GpioE,  0, 2 );
 PinsOut stepdir_e0( GpioE, 14, 2 );
@@ -39,7 +39,7 @@ PinsIn x_e(  GpioD, 0, 2, GpioRegs::Pull::down );
 PinsIn y_e(  GpioD, 3, 2, GpioRegs::Pull::down );
 PinsIn z_e(  GpioD, 5, 2, GpioRegs::Pull::down );
 
-//                                   TODO: auto irq N
+//                                   TODO: auto IRQ N
 const EXTI_init_info extis[] = {
   { GpioD,  0, GpioRegs::ExtiEv::down,   EXTI0_IRQn,    1,  0 }, // D0: Xe-
   { GpioD,  1, GpioRegs::ExtiEv::down,   EXTI1_IRQn,    1,  0 }, // D1: Xe+
@@ -51,34 +51,16 @@ const EXTI_init_info extis[] = {
   { GpioA, 99, GpioRegs::ExtiEv::down,   EXTI0_IRQn,   15,  0 }  // 99>15: END
 };
 
-// mech params
-struct MechParam {
-  uint32_t tick2mm   ; // tick per mm, = 2* pulses per mm
-  uint32_t max_speed ; // mm/min
-  PinsIn  *endstops  ;
-  PinsOut *motor     ;
-};
-
-const constinit unsigned n_motors { 5 };
 
 MechParam mechs[n_motors] = {
-  {  1600, 900,    &x_e, &stepdir_x  },
-  {  1600, 900,    &y_e, &stepdir_y  },
-  {  1600, 900,    &z_e, &stepdir_z  },
-  {   100, 100, nullptr, &stepdir_e0 },
-  {   100, 100, nullptr, &stepdir_e1 }
+  {  1600, 900,     140,     &x_e, &stepdir_x  },
+  {  1600, 900,     270,     &y_e, &stepdir_y  },
+  {  1600, 900,     110,     &z_e, &stepdir_z  },
+  {   100, 100,  999999,  nullptr, &stepdir_e0 },
+  {   100, 100,  999999,  nullptr, &stepdir_e1 }
 };
 
-float d_xyz_max  { 450.0f }; // mm
-
-// move task description
-struct MoveTask1 {
-  int8_t   dir;   // 1-forvard, 0-no, -1 - backward
-  int step_rest;  // downcount of next
-  int step_task;  // total ticks in this task
-  int d;          // for Brese
-  inline void init() { dir = 0; step_rest = step_task = d = 0; }
-};
+MechState me_st;
 
 MoveTask1 move_task[n_motors+1]; // last idx = time
 
@@ -119,18 +101,21 @@ void TIM6_callback();
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " axis N [dt] - test"  };
-int cmd_xtest( int argc, const char * const * argv );
-CmdInfo CMDINFO_XTEST { "xtest", 'X', cmd_xtest, "dx dy dz [feed] - rel move test"  };
+int cmd_relmove( int argc, const char * const * argv );
+CmdInfo CMDINFO_RELMOVE { "rel", 'R', cmd_relmove, "dx dy dz [feed] - rel move test"  };
 int cmd_pwr( int argc, const char * const * argv );
 CmdInfo CMDINFO_PWR { "pwr", 'P', cmd_pwr, "ch pow_f  - test PWM power control"  };
+int cmd_zero( int argc, const char * const * argv );
+CmdInfo CMDINFO_ZERO { "zero", 'Z', cmd_zero, "[x y z]  - set [zero] point"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
   // DEBUG_I2C_CMDS,
 
   &CMDINFO_TEST0,
-  &CMDINFO_XTEST,
+  &CMDINFO_RELMOVE,
   &CMDINFO_PWR,
+  &CMDINFO_ZERO,
   nullptr
 };
 
@@ -277,7 +262,7 @@ int move_rel( const float *d_mm_i, float fe_mmm )
       mechs[i].motor->sr( 0x02, 1 );
     } else {
       // move_task[i].dir =  0; // zeroed before
-      mechs[i].motor->sr( 0x02, 0 ); // just to be determened
+      mechs[i].motor->sr( 0x02, 0 ); // just to be determined
     }
     if( max_steps < move_task[i].step_rest ) {
       max_steps   = move_task[i].step_rest;
@@ -364,28 +349,28 @@ int move_rel( const float *d_mm_i, float fe_mmm )
   HAL_TIM_Base_Stop_IT( &htim6 ); // may be other breaks, so dup here
   motors_off(); // TODO: param or move from here
 
+  me_st.last_rc = break_flag;
+
   float real_d[n_mo];
   for( unsigned i=0; i<n_mo; ++i ) {
     real_d[i] = float( move_task[i].step_task - move_task[i].step_rest ) * move_task[i].dir / mechs[i].tick2mm;
-    std_out << " d_" << i << " = " << real_d[i];
-    // TODO: stop if essetial mismatch
+    me_st.x[i] += real_d[i];
+    std_out << " d_" << i << " = " << real_d[i] << " x= " << me_st.x[i] << NL;
+    // TODO: stop if essential mismatch
   }
-  // TODO: update global coords
 
-  int rc = break_flag;
-
-  return rc;
+  return ( me_st.last_rc == 2 ) ? 0 : 8;
 }
 
-int cmd_xtest( int argc, const char * const * argv )
+int cmd_relmove( int argc, const char * const * argv )
 {
-  std_out << "# XTest: " << NL;
+  std_out << "# relmove: " << NL;
   const unsigned n_mo { 3 }; // 3 = only XYZ motors
 
   float d_mm[n_mo];
 
   for( unsigned i=0; i<n_mo; ++i ) {
-    d_mm[i] = arg2float_d( i+1, argc, argv, 0, -d_xyz_max, d_xyz_max );
+    d_mm[i] = arg2float_d( i+1, argc, argv, 0, -(float)mechs[i].max_l, (float)mechs[i].max_l );
   }
   float fe_mmm = arg2float_d( 4, argc, argv, UVAR('f'), 0.0f, 900.0f );
 
@@ -431,6 +416,15 @@ int cmd_pwr( int argc, const char * const * argv )
       break;
   }
   tim_print_cfg( TIM3 );
+  return 0;
+}
+
+int cmd_zero( int argc, const char * const * argv )
+{
+  for( unsigned i=0; i<3; ++i ) {
+    me_st.x[i] =  arg2float_d( i+1, argc, argv, 0, -mechs[i].max_l, mechs[i].max_l );
+  }
+  me_st.was_set = true;
   return 0;
 }
 
