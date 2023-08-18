@@ -5,6 +5,7 @@
 
 #include <oxc_auto.h>
 #include <oxc_floatfun.h>
+#include <oxc_atleave.h>
 //#include <oxc_outstr.h>
 //#include <oxc_hd44780_i2c.h>
 //#include <oxc_menu4b.h>
@@ -53,9 +54,9 @@ const EXTI_init_info extis[] = {
 
 
 MechParam mechs[n_motors] = {
-  {  1600, 900,     140,     &x_e, &stepdir_x  },
-  {  1600, 900,     270,     &y_e, &stepdir_y  },
-  {  1600, 900,     110,     &z_e, &stepdir_z  },
+  {  1600, 500,     150,     &x_e, &stepdir_x  }, // TODO: 500 increase after working acceleration
+  {  1600, 500,     300,     &y_e, &stepdir_y  },
+  {  1600, 300,     150,     &z_e, &stepdir_z  },
   {   100, 100,  999999,  nullptr, &stepdir_e0 },
   {   100, 100,  999999,  nullptr, &stepdir_e1 }
 };
@@ -65,6 +66,7 @@ MechState me_st;
 MoveTask1 move_task[n_motors+1]; // last idx = time
 
 int move_rel( const float *d_mm, unsigned n_mo, float fe_mmm );
+int go_home( unsigned axis );
 
 
 // B8  = T10.1 = PWM0
@@ -105,6 +107,8 @@ int cmd_relmove( int argc, const char * const * argv );
 CmdInfo CMDINFO_RELMOVE { "rel", 'R', cmd_relmove, "dx dy dz [feed] - rel move test"  };
 int cmd_absmove( int argc, const char * const * argv );
 CmdInfo CMDINFO_ABSMOVE { "abs", 'A', cmd_absmove, "x y z [feed] - abs move test"  };
+int cmd_home( int argc, const char * const * argv );
+CmdInfo CMDINFO_HOME { "home", 'H', cmd_home, "axis - go home at give axis"  };
 int cmd_pwr( int argc, const char * const * argv );
 CmdInfo CMDINFO_PWR { "pwr", 'P', cmd_pwr, "ch pow_f  - test PWM power control"  };
 int cmd_zero( int argc, const char * const * argv );
@@ -117,6 +121,7 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_TEST0,
   &CMDINFO_RELMOVE,
   &CMDINFO_ABSMOVE,
+  &CMDINFO_HOME,
   &CMDINFO_PWR,
   &CMDINFO_ZERO,
   nullptr
@@ -335,10 +340,8 @@ int move_rel( const float *d_mm_i, unsigned n_mo,  float fe_mmm )
     return 7;
   }
 
-  motors_on();
   HAL_TIM_Base_Start_IT( &htim6 );
   uint32_t tm0 = HAL_GetTick(), tc0 = tm0;
-
 
   break_flag = 0;
   int t_est = (int)( t_all * 11 + 5 ); // + 10%, + 0.5s
@@ -350,7 +353,6 @@ int move_rel( const float *d_mm_i, unsigned n_mo,  float fe_mmm )
 
   }
   HAL_TIM_Base_Stop_IT( &htim6 ); // may be other breaks, so dup here
-  motors_off(); // TODO: param or move from here
 
   me_st.last_rc = break_flag;
 
@@ -372,6 +374,74 @@ int move_rel( const float *d_mm_i, unsigned n_mo,  float fe_mmm )
   return ( me_st.last_rc == 2 ) ? 0 : 8;
 }
 
+int go_home( unsigned axis )
+{
+  if( axis >= n_motors  || axis == 2 ) { // Z unsupported for now, TODO: good sensor
+    std_out << "# Error: bad axis index " << axis << NL;
+    return 0;
+  }
+  auto estp = mechs[axis].endstops;
+  if( mechs[axis].max_l > 20000 || estp == nullptr ) {
+    std_out << "# Error: unsupported axis  " << axis << NL;
+    return 0;
+  }
+
+  me_st.was_set = false;
+
+  const unsigned n_mo { 3 }; // 3 = only XYZ motors
+  float d_mm[n_mo];
+  for( auto &x : d_mm ) { x = 0; }
+
+  DoAtLeave do_off_motors( []() { motors_off(); } );
+  motors_on();
+
+  float fe_quant = (float)mechs[axis].max_speed / 20;
+  d_mm[axis] = -2.0f * (float)mechs[axis].max_l;
+
+  int rc = move_rel( d_mm, n_mo, 16 * fe_quant ); // TODO: max / xxx
+  auto esv = estp->read();
+  if( rc != 9 || esv != 2 ) { // must be bad d_l
+    std_out << "# Error: fail to find endstop " << axis << ' ' << esv << NL;
+    return 0;
+  }
+
+  d_mm[axis] = 2.0f;
+  rc = move_rel( d_mm, n_mo, fe_quant ); // TODO: max / xxx
+  esv = estp->read();
+  if( rc != 0 || esv != 3 ) { // must be ok
+    std_out << "# Error: fail to step from endstop " << axis << ' ' << esv << NL;
+    return 0;
+  }
+
+  d_mm[axis] = -3.0f;
+  rc = move_rel( d_mm, n_mo, fe_quant ); // TODO: max / xxx
+  esv = estp->read();
+  if( esv != 2 ) { // must be sens
+    std_out << "# Error: fail to find endstop2 " << axis << ' ' << esv << NL;
+    return 0;
+  }
+
+  d_mm[axis] = 0.02f;
+  const unsigned n_try = 100;
+  bool found = false;
+  for( unsigned i=0; i<n_try; ++i ) {
+    rc = move_rel( d_mm, n_mo, fe_quant ); // TODO: max / xxx
+    esv = estp->read();
+    if( rc == 0 && esv == 3 ) {
+      std_out << "# Ok: found endstop end at try  " << i << NL;
+      found = true;
+      break;
+    }
+  }
+
+  if( found ) {
+    me_st.was_set = true;
+    me_st.x[axis] = 0;    // TODO: may be no auto?
+    return 1;
+  }
+  return 0;
+}
+
 int cmd_relmove( int argc, const char * const * argv )
 {
   std_out << "# relmove: " << NL;
@@ -384,7 +454,8 @@ int cmd_relmove( int argc, const char * const * argv )
   }
   float fe_mmm = arg2float_d( 4, argc, argv, UVAR('f'), 0.0f, 900.0f );
 
-
+  DoAtLeave do_off_motors( []() { motors_off(); } );
+  motors_on();
   int rc = move_rel( d_mm, n_mo, fe_mmm );
 
   return rc;
@@ -409,10 +480,24 @@ int cmd_absmove( int argc, const char * const * argv )
   }
   float fe_mmm = arg2float_d( 4, argc, argv, UVAR('f'), 0.0f, 900.0f );
 
+  DoAtLeave do_off_motors( []() { motors_off(); } );
+  motors_on();
   int rc = move_rel( d_mm, n_mo, fe_mmm );
 
   return rc;
 }
+
+int cmd_home( int argc, const char * const * argv )
+{
+  unsigned axis = arg2long_d( 1, argc, argv, 0, 0, n_motors );
+
+  std_out << "# home: " << axis << NL;
+
+  int rc = go_home( axis );
+
+  return rc;
+}
+
 
 
 int cmd_pwr( int argc, const char * const * argv )
