@@ -239,6 +239,7 @@ int move_rel( const float *d_mm_i, unsigned n_mo,  float fe_mmm )
   for( auto &m : move_task )      { m.init(); }
   UVAR('k') = UVAR('l') = UVAR('x') = UVAR('y') = UVAR('z') = 0;
 
+  me_st.n_mo = n_mo;
   float d_mm[n_mo];
   for( unsigned i=0; i<n_mo; ++i ) { d_mm[i] = d_mm_i[i]; } // local copy, as we change it: round(step)-sign
 
@@ -388,7 +389,7 @@ int cmd_relmove( int argc, const char * const * argv )
 
 int cmd_pwr( int argc, const char * const * argv )
 {
-  int   ch  = arg2long_d(  1, argc, argv, 0, 0, 3 );
+  int   ch  = arg2long_d(  1, argc, argv, 0, 0, n_pow_ch ); // including limit for ALL_OFF
   float pwr = arg2float_d( 2, argc, argv, 0, 0.0f, 100.0f );
   uint32_t arr, ccr, r;
 
@@ -427,7 +428,7 @@ int cmd_pwr( int argc, const char * const * argv )
 
 int cmd_zero( int argc, const char * const * argv )
 {
-  for( unsigned i=0; i<3; ++i ) {
+  for( unsigned i=0; i<me_st.n_mo; ++i ) {
     me_st.x[i] =  arg2float_d( i+1, argc, argv, 0, -mechs[i].max_l, mechs[i].max_l );
   }
   me_st.was_set = true;
@@ -664,14 +665,14 @@ void TIM6_callback()
 
   leds[2].set();
   bool do_stop = true;
-  for( unsigned i=0; i<3; ++i ) {
+  for( unsigned i=0; i<me_st.n_mo; ++i ) {
     if( move_task[i].dir == 0  ||  move_task[i].step_rest < 1 ) {
       continue;
     }
     move_task[i].d += 2 * move_task[i].step_task ;
     do_stop = false;
     if( move_task[i].d > move_task[n_motors].step_task ) {
-      ++UVAR('x'+i);
+      // ++UVAR('x'+i);
       (*mechs[i].motor)[0].toggle();
       --move_task[i].step_rest;
       move_task[i].d -= 2 * move_task[n_motors].step_task;

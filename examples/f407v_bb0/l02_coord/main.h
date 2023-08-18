@@ -20,7 +20,8 @@ const inline constinit unsigned n_motors { 5 };
 extern MechParam mechs[n_motors];
 
 struct MechState {
-  float x[3];
+  float x[n_motors];
+  uint32_t n_mo { 0 }; // current number of active motors
   uint32_t last_rc;
   bool was_set { false };
 };
@@ -37,6 +38,8 @@ struct MoveTask1 {
 };
 
 extern MoveTask1 move_task[n_motors+1]; // last idx = time
+
+const inline unsigned n_pow_ch { 3 };
 
 #endif
 
