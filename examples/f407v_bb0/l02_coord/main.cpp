@@ -351,12 +351,19 @@ int move_rel( const float *d_mm_i, float fe_mmm )
 
   me_st.last_rc = break_flag;
 
-  float real_d[n_mo];
+  float real_d[n_mo], l_err { 0.0f };
   for( unsigned i=0; i<n_mo; ++i ) {
     real_d[i] = float( move_task[i].step_task - move_task[i].step_rest ) * move_task[i].dir / mechs[i].tick2mm;
     me_st.x[i] += real_d[i];
+    l_err += pow2f( d_mm_i[i] - real_d[i] );
     std_out << " d_" << i << " = " << real_d[i] << " x= " << me_st.x[i] << NL;
     // TODO: stop if essential mismatch
+  }
+  l_err = sqrtf( l_err );
+  std_out << "# l_err= " << l_err;
+
+  if( l_err > 0.1f ) {
+    return 9;
   }
 
   return ( me_st.last_rc == 2 ) ? 0 : 8;

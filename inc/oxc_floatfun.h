@@ -31,6 +31,9 @@ enum cvtff_flags {
 
 extern float exp10if( int x );
 
+inline constexpr xfloat pow2( xfloat x ) { return x * x; }
+inline constexpr float pow2f( float x ) { return x * x; }
+
 constexpr inline  int float_default_width { 11 };
 
 int cvtff( float f, char *buf, unsigned bufsz, uint32_t flg = cvtff_auto, int w = float_default_width, int prec = 99 );
@@ -99,6 +102,8 @@ OutStream& operator<<( OutStream &os, double rhs );
 #endif
 
 #ifdef OXC_HAVE_DOUBLE
+
+inline constexpr double pow2d( double x ) { return x * x; }
 
 #define XFmt DblFmt
 #define xfloat_default_width double_default_width
