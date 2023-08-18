@@ -103,6 +103,8 @@ int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " axis N [dt] - test"  };
 int cmd_relmove( int argc, const char * const * argv );
 CmdInfo CMDINFO_RELMOVE { "rel", 'R', cmd_relmove, "dx dy dz [feed] - rel move test"  };
+int cmd_absmove( int argc, const char * const * argv );
+CmdInfo CMDINFO_ABSMOVE { "abs", 'A', cmd_absmove, "x y z [feed] - abs move test"  };
 int cmd_pwr( int argc, const char * const * argv );
 CmdInfo CMDINFO_PWR { "pwr", 'P', cmd_pwr, "ch pow_f  - test PWM power control"  };
 int cmd_zero( int argc, const char * const * argv );
@@ -114,6 +116,7 @@ const CmdInfo* global_cmds[] = {
 
   &CMDINFO_TEST0,
   &CMDINFO_RELMOVE,
+  &CMDINFO_ABSMOVE,
   &CMDINFO_PWR,
   &CMDINFO_ZERO,
   nullptr
@@ -386,6 +389,31 @@ int cmd_relmove( int argc, const char * const * argv )
 
   return rc;
 }
+
+int cmd_absmove( int argc, const char * const * argv )
+{
+  std_out << "# absmove: " << NL;
+
+  if( ! me_st.was_set ) {
+    std_out << "# Error: zero point not set" << NL;
+    return 2;
+  }
+
+  const unsigned n_mo { 3 }; // 3 = only XYZ motors
+
+  float d_mm[n_mo];
+
+  for( unsigned i=0; i<n_mo; ++i ) {
+    d_mm[i] = arg2float_d( i+1, argc, argv, 0, -(float)mechs[i].max_l, (float)mechs[i].max_l )
+            - me_st.x[i];
+  }
+  float fe_mmm = arg2float_d( 4, argc, argv, UVAR('f'), 0.0f, 900.0f );
+
+  int rc = move_rel( d_mm, n_mo, fe_mmm );
+
+  return rc;
+}
+
 
 int cmd_pwr( int argc, const char * const * argv )
 {
