@@ -392,7 +392,6 @@ int move_rel( const float *d_mm_i, unsigned n_mo,  float fe_mmm )
     me_st.x[i] += real_d[i];
     l_err += pow2f( d_mm_i[i] - real_d[i] );
     std_out << " d_" << i << " = " << real_d[i] << " x= " << me_st.x[i] << NL;
-    // TODO: stop if essential mismatch
   }
   l_err = sqrtf( l_err );
   std_out << "# l_err= " << l_err;
@@ -429,7 +428,7 @@ int go_home( unsigned axis )
   float fe_quant = (float)mechs[axis].max_speed / 20;
   d_mm[axis] = -2.0f * (float)mechs[axis].max_l;
 
-  int rc = move_rel( d_mm, n_mo, 16 * fe_quant ); // TODO: max / xxx
+  int rc = move_rel( d_mm, n_mo, 16 * fe_quant );
   auto esv = estp->read();
   if( rc != 9 || esv != 2 ) { // must be bad d_l
     std_out << "# Error: fail to find endstop " << axis << ' ' << esv << NL;
@@ -437,7 +436,7 @@ int go_home( unsigned axis )
   }
 
   d_mm[axis] = 2.0f;
-  rc = move_rel( d_mm, n_mo, fe_quant ); // TODO: max / xxx
+  rc = move_rel( d_mm, n_mo, fe_quant );
   esv = estp->read();
   if( rc != 0 || esv != 3 ) { // must be ok
     std_out << "# Error: fail to step from endstop " << axis << ' ' << esv << NL;
@@ -445,7 +444,7 @@ int go_home( unsigned axis )
   }
 
   d_mm[axis] = -3.0f;
-  rc = move_rel( d_mm, n_mo, fe_quant ); // TODO: max / xxx
+  rc = move_rel( d_mm, n_mo, fe_quant );
   esv = estp->read();
   if( esv != 2 ) { // must be sens
     std_out << "# Error: fail to find endstop2 " << axis << ' ' << esv << NL;
@@ -456,7 +455,7 @@ int go_home( unsigned axis )
   const unsigned n_try = 100;
   bool found = false;
   for( unsigned i=0; i<n_try; ++i ) {
-    rc = move_rel( d_mm, n_mo, fe_quant ); // TODO: max / xxx
+    rc = move_rel( d_mm, n_mo, fe_quant );
     esv = estp->read();
     if( rc == 0 && esv == 3 ) {
       std_out << "# Ok: found endstop end at try  " << i << NL;
@@ -568,8 +567,10 @@ int pwm_off( unsigned idx )
 int pwm_off_all()
 {
   for( auto t : pwm_tims ) {
-    t->Instance->CCR1 = 0;
-    t->Instance->CNT  = 0;
+    if( t && t->Instance ) {
+      t->Instance->CCR1 = 0;
+      t->Instance->CNT  = 0;
+    }
   }
   return 1;
 }
@@ -588,7 +589,7 @@ int cmd_pwr( int argc, const char * const * argv )
 
   std_out << "# PWR: ch: " << ch << " power: " << pwr << NL;
   int rc  = pwm_set( ch, pwr );
-  tim_print_cfg( pwm_tims[ch]->Instance );
+  // tim_print_cfg( pwm_tims[ch]->Instance );
   return rc == 1 ? 0 : 1;
 }
 
@@ -722,11 +723,8 @@ int MX_TIM6_Init()
     return 0;
   }
 
-  TIM_MasterConfigTypeDef m_cfg {
-    .MasterOutputTrigger = TIM_TRGO_RESET,
-    .MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE
-  };
-  if( HAL_TIMEx_MasterConfigSynchronization( &htim6, &m_cfg ) != HAL_OK ) {
+  if( HAL_TIMEx_MasterConfigSynchronization( &htim6,
+        const_cast<TIM_MasterConfigTypeDef*>(&def_pwm_MasterConfig) ) != HAL_OK ) {
     UVAR('e') = 62;
     return 0;
   }
@@ -735,7 +733,7 @@ int MX_TIM6_Init()
 
 void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* tim_baseHandle )
 {
-  if( tim_baseHandle->Instance == TIM2 ) {
+  if(     tim_baseHandle->Instance == TIM2 ) {
     __HAL_RCC_TIM2_CLK_ENABLE();
   }
   else if(tim_baseHandle->Instance == TIM3 ) {
@@ -764,7 +762,7 @@ void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* tim_baseHandle )
 
 void HAL_TIM_MspPostInit( TIM_HandleTypeDef* timHandle )
 {
-  if( timHandle->Instance == TIM2 ) {
+  if(      timHandle->Instance == TIM2 ) {
     GpioB.cfgAF( 10, GPIO_AF1_TIM2 );  // TIM2.3: B10 PWM3? aux1.6
     GpioB.cfgAF( 11, GPIO_AF1_TIM2 );  // TIM2.4: B11 PWM4? aux1.8
   }
@@ -827,7 +825,7 @@ void TIM6_callback()
 
   leds[2].set();
   bool do_stop = true;
-  for( unsigned i=0; i<me_st.n_mo; ++i ) {
+  for( unsigned i=0; i<me_st.n_mo && break_flag == 0; ++i ) {
     if( move_task[i].dir == 0  ||  move_task[i].step_rest < 1 ) {
       continue;
     }
@@ -841,9 +839,9 @@ void TIM6_callback()
     }
   }
 
-  if( do_stop ) {
+  if( do_stop || break_flag != 0 ) {
     HAL_TIM_Base_Stop_IT( &htim6 );
-    break_flag = 2;
+    break_flag = break_flag ? break_flag : 2;
   }
   leds[2].reset();
 
