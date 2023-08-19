@@ -406,7 +406,7 @@ int move_rel( const float *d_mm_i, unsigned n_mo,  float fe_mmm )
 
 int go_home( unsigned axis )
 {
-  if( axis >= n_motors  || axis == 2 ) { // Z unsupported for now, TODO: good sensor
+  if( axis >= n_motors ) {
     std_out << "# Error: bad axis index " << axis << NL;
     return 0;
   }
