@@ -416,6 +416,7 @@ int go_home( unsigned axis )
     return 0;
   }
 
+  pwm_off_all();
   me_st.was_set = false;
 
   const unsigned n_mo { 3 }; // 3 = only XYZ motors
@@ -598,6 +599,7 @@ void HAL_GPIO_EXTI_Callback( uint16_t pin_bit )
   ++UVAR('i'); UVAR('b') = pin_bit;
   leds[1].toggle();
   break_flag = 0x000F0000 + pin_bit;
+  pwm_off_all();
   // TODO: PWM and break logic
 }
 
