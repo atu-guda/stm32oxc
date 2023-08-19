@@ -151,6 +151,8 @@ int main()
   UVAR('s') =         6;
   UVAR('u') =       100;
 
+  GpioA.enableClk(); GpioB.enableClk(); GpioC.enableClk(); GpioD.enableClk(); GpioE.enableClk();
+
   for( auto &m : mechs ) {
     if( m.endstops != nullptr ) {
       m.endstops->initHW();
@@ -504,17 +506,15 @@ int cmd_pwr( int argc, const char * const * argv )
 {
   int   ch  = arg2long_d(  1, argc, argv, 0, 0, n_pow_ch ); // including limit for ALL_OFF
   float pwr = arg2float_d( 2, argc, argv, 0, 0.0f, 100.0f );
-  uint32_t arr, ccr, r;
+  uint32_t arr, ccr;
 
   switch( ch ) {
     case 0:
-      HAL_TIM_PWM_Stop( &htim3,  TIM_CHANNEL_1 );
       arr = htim3.Instance->ARR;
       ccr = (uint32_t)( arr * pwr / 100.0f );
       htim3.Instance->CCR1 = ccr;
       htim3.Instance->CNT  = 0;
-      r = HAL_TIM_PWM_Start( &htim3,  TIM_CHANNEL_1 );
-      std_out << "# ch " << ch << "  pwr " << pwr << " arr= " << arr << " ccr= " << ccr << " r= " << r << NL;
+      std_out << "# ch " << ch << "  pwr " << pwr << " arr= " << arr << " ccr= " << ccr << NL;
       break;
     case 1:
       arr = htim10.Instance->ARR;
@@ -529,9 +529,9 @@ int cmd_pwr( int argc, const char * const * argv )
       HAL_TIM_PWM_Start( &htim11,  TIM_CHANNEL_1 );
       break;
     default:
-      HAL_TIM_PWM_Stop( &htim3,  TIM_CHANNEL_1 );
-      HAL_TIM_PWM_Stop( &htim10, TIM_CHANNEL_1 );
-      HAL_TIM_PWM_Stop( &htim11, TIM_CHANNEL_1 );
+      htim3.Instance->CCR1  = 0;
+      htim10.Instance->CCR1 = 0;
+      htim11.Instance->CCR1 = 0;
       std_out << "# PWR: stop all" << NL;
       break;
   }
@@ -593,8 +593,11 @@ void EXTI9_5_IRQHandler()
 
 int MX_TIM3_Init()
 {
-  auto psc   = calc_TIM_psc_for_cnt_freq( TIM3, TIM3_base_freq );       // psc = 0, 42MHz
-  auto arr   = calc_TIM_arr_for_base_psc( TIM3, psc, TIM3_count_freq ); // 4199, 10kHz
+  GpioC.reset( 1<<6 );
+  GpioC.cfgOut( 6 );  // try to prevent peek at start
+
+  auto psc   = calc_TIM_psc_for_cnt_freq( TIM3, TIM3_base_freq );       // psc = 0, 84MHz
+  auto arr   = calc_TIM_arr_for_base_psc( TIM3, psc, TIM3_count_freq ); // 8399, 10kHz
   htim3.Instance               = TIM3;
   htim3.Init.Prescaler         = psc;
   htim3.Init.CounterMode       = TIM_COUNTERMODE_UP;
@@ -632,7 +635,7 @@ int MX_TIM3_Init()
   }
 
   TIM_OC_InitTypeDef sConfigOC {
-    .OCMode       = TIM_OCMODE_PWM1,
+    .OCMode       = TIM_OCMODE_PWM1, // TIM_OCMODE_FORCED_INACTIVE,
     .Pulse        = 0,
     .OCPolarity   = TIM_OCPOLARITY_HIGH,
     .OCNPolarity  = TIM_OCNPOLARITY_HIGH,
@@ -644,6 +647,9 @@ int MX_TIM3_Init()
     UVAR('e') = 35;
     return 0;
   }
+
+  // start here, to prevent pulse at start
+  HAL_TIM_PWM_Start( &htim3,  TIM_CHANNEL_1 );
 
   HAL_TIM_MspPostInit( &htim3 );
   return 1;
@@ -718,14 +724,11 @@ void HAL_TIM_MspPostInit( TIM_HandleTypeDef* timHandle )
   }
   else if( timHandle->Instance == TIM3 )
   {
-    GpioC.enableClk();
     GpioC.cfgAF( 6, GPIO_AF2_TIM3 );  // TIM3.1: C6 --> TIM3_CH1, GPIO_AF2_TIM3
   } else if( timHandle->Instance == TIM10 ) {
-    GpioB.enableClk();
     GpioB.cfgAF( 8, GPIO_AF3_TIM10 ); // TIM10.1: B8 --> TIM10_CH1, GPIO_AF3_TIM10
   }
   else if( timHandle->Instance == TIM11 ) {
-    GpioB.enableClk();
     GpioB.cfgAF( 9, GPIO_AF3_TIM11 ); // TIM11.1: B9 --> TIM11_CH1, GPIO_AF3_TIM11
   }
 }
