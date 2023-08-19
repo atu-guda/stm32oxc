@@ -235,7 +235,7 @@ int  delay_ms_until_brk_ex( uint32_t *tc0, uint32_t ms, bool check_break ) // Fr
 #else
 
 
-int  delay_ms_until_brk_ex( uint32_t *tc0, uint32_t ms, bool check_break )
+int  delay_ms_until_brk_ex( uint32_t *tc0, uint32_t ms, int check_break )
 {
   if( __get_PRIMASK() ) {
     delay_bad_ms( ms );
