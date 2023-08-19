@@ -1,10 +1,10 @@
 #ifndef _MAIN_H
 #define _MAIN_H
 
-const inline uint32_t  TIM3_base_freq  { 84'000'000 };
-const inline uint32_t  TIM3_count_freq {      10000 };
-const inline uint32_t  TIM6_base_freq  {  1'000'000 };
-const inline uint32_t  TIM6_count_freq {      20000 };
+const inline uint32_t  TIM_PWM_base_freq   { 84'000'000 };
+const inline uint32_t  TIM_PWM_count_freq  {      10000 };
+const inline uint32_t  TIM6_base_freq   {  1'000'000 };
+const inline uint32_t  TIM6_count_freq  {      20000 };
 
 // mech params
 struct MechParam {
@@ -39,7 +39,6 @@ struct MoveTask1 {
 
 extern MoveTask1 move_task[n_motors+1]; // last idx = time
 
-const inline unsigned n_pow_ch { 3 };
 
 #endif
 

@@ -90,15 +90,43 @@ TIM_HandleTypeDef htim6;
 TIM_HandleTypeDef htim10;
 TIM_HandleTypeDef htim11;
 
+array pwm_tims { &htim3, &htim10, &htim11 };
+
 int MX_TIM2_Init();
-int MX_TIM3_Init();
+int MX_TIM3_Init();  // PMW0
 int MX_TIM4_Init();
-int MX_TIM6_Init();
-int MX_TIM10_Init();
-int MX_TIM11_Init();
+int MX_TIM6_Init();  // tick clock for move
+int MX_TIM10_Init(); // PWM1
+int MX_TIM11_Init(); // PWM2
 void HAL_TIM_MspPostInit( TIM_HandleTypeDef* timHandle );
+int MX_PWM_common_Init( unsigned idx );
 
 void TIM6_callback();
+
+int pwm_set( unsigned idx, float v );
+int pwm_off( unsigned idx );
+int pwm_off_all();
+
+// to common PWM timers init
+const TIM_ClockConfigTypeDef def_pwm_CSC {
+    .ClockSource    = TIM_CLOCKSOURCE_INTERNAL,
+    .ClockPolarity  = TIM_ICPOLARITY_RISING,
+    .ClockPrescaler = TIM_CLOCKPRESCALER_DIV1,
+    .ClockFilter    = 0
+};
+const TIM_MasterConfigTypeDef def_pwm_MasterConfig {
+  .MasterOutputTrigger = TIM_TRGO_RESET,
+  .MasterSlaveMode     = TIM_MASTERSLAVEMODE_DISABLE
+};
+const TIM_OC_InitTypeDef def_pwm_ConfigOC {
+  .OCMode       = TIM_OCMODE_PWM1, // TIM_OCMODE_FORCED_INACTIVE,
+  .Pulse        = 0,
+  .OCPolarity   = TIM_OCPOLARITY_HIGH,
+  .OCNPolarity  = TIM_OCNPOLARITY_HIGH,
+  .OCFastMode   = TIM_OCFAST_DISABLE,
+  .OCIdleState  = TIM_OCIDLESTATE_RESET,
+  .OCNIdleState = TIM_OCNIDLESTATE_RESET
+};
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -168,9 +196,9 @@ int main()
 
   UVAR('e') = EXTI_inits( extis, true );
 
-  if( ! MX_TIM3_Init() ) {
-    die4led( 0x01 );
-  }
+  MX_TIM3_Init();
+  MX_TIM10_Init();
+  MX_TIM11_Init();
   if( ! MX_TIM6_Init() ) {
     die4led( 0x02 );
   }
@@ -500,45 +528,6 @@ int cmd_home( int argc, const char * const * argv )
   return rc;
 }
 
-
-
-int cmd_pwr( int argc, const char * const * argv )
-{
-  int   ch  = arg2long_d(  1, argc, argv, 0, 0, n_pow_ch ); // including limit for ALL_OFF
-  float pwr = arg2float_d( 2, argc, argv, 0, 0.0f, 100.0f );
-  uint32_t arr, ccr;
-
-  switch( ch ) {
-    case 0:
-      arr = htim3.Instance->ARR;
-      ccr = (uint32_t)( arr * pwr / 100.0f );
-      htim3.Instance->CCR1 = ccr;
-      htim3.Instance->CNT  = 0;
-      std_out << "# ch " << ch << "  pwr " << pwr << " arr= " << arr << " ccr= " << ccr << NL;
-      break;
-    case 1:
-      arr = htim10.Instance->ARR;
-      ccr = (uint32_t)( arr * pwr / 100.0f );
-      htim10.Instance->CCR1 = ccr;
-      HAL_TIM_PWM_Start( &htim10, TIM_CHANNEL_1 );
-      break;
-    case 2:
-      arr = htim11.Instance->ARR;
-      ccr = (uint32_t)( arr * pwr / 100.0f );
-      htim11.Instance->CCR1 = ccr;
-      HAL_TIM_PWM_Start( &htim11,  TIM_CHANNEL_1 );
-      break;
-    default:
-      htim3.Instance->CCR1  = 0;
-      htim10.Instance->CCR1 = 0;
-      htim11.Instance->CCR1 = 0;
-      std_out << "# PWR: stop all" << NL;
-      break;
-  }
-  tim_print_cfg( TIM3 );
-  return 0;
-}
-
 int cmd_zero( int argc, const char * const * argv )
 {
   for( unsigned i=0; i<me_st.n_mo; ++i ) {
@@ -548,13 +537,68 @@ int cmd_zero( int argc, const char * const * argv )
   return 0;
 }
 
+
+int pwm_set( unsigned idx, float v )
+{
+  if( idx >= pwm_tims.size() ) {
+    return 0;
+  }
+  auto ti = pwm_tims[idx]->Instance;
+  uint32_t arr = ti->ARR;
+  uint32_t ccr = (uint32_t)( arr * v / 100.0f );
+  ti->CCR1 = ccr;
+  ti->CNT  = 0;
+  // HAL_TIM_PWM_Start( &htim3, TIM_CHANNEL_1 );
+  return 1;
+}
+
+int pwm_off( unsigned idx )
+{
+  if( idx >= pwm_tims.size() ) {
+    return 0;
+  }
+  auto ti = pwm_tims[idx]->Instance;
+  ti->CCR1 = 0;
+  ti->CNT  = 0;
+  //  HAL_TIM_PWM_Stop( &htim3, TIM_CHANNEL_1 );
+  return 1;
+}
+
+int pwm_off_all()
+{
+  for( auto t : pwm_tims ) {
+    t->Instance->CCR1 = 0;
+    t->Instance->CNT  = 0;
+  }
+  return 1;
+}
+
+
+int cmd_pwr( int argc, const char * const * argv )
+{
+  int   ch  = arg2long_d(  1, argc, argv, 0, 0, pwm_tims.size() ); // including limit for ALL_OFF
+  float pwr = arg2float_d( 2, argc, argv, 0, 0.0f, 100.0f );
+
+  if( (unsigned)ch >= pwm_tims.size() ) {
+    pwm_off_all();
+    std_out << "# PWR: stop all" << NL;
+    return 0;
+  }
+
+  std_out << "# PWR: ch: " << ch << " power: " << pwr << NL;
+  int rc  = pwm_set( ch, pwr );
+  tim_print_cfg( pwm_tims[ch]->Instance );
+  return rc == 1 ? 0 : 1;
+}
+
 // ------------------------------ EXTI handlers -------------------
 
 void HAL_GPIO_EXTI_Callback( uint16_t pin_bit )
 {
   ++UVAR('i'); UVAR('b') = pin_bit;
   leds[1].toggle();
-  break_flag = 256 + pin_bit;
+  break_flag = 0x000F0000 + pin_bit;
+  // TODO: PWM and break logic
 }
 
 void EXTI0_IRQHandler(void)
@@ -591,68 +635,75 @@ void EXTI9_5_IRQHandler()
 // ----------------------------- timers -------------------------------------------
 // see: ~/proj/stm32/cube/f407_coord/Core/Src/tim.c
 
-int MX_TIM3_Init()
+int MX_PWM_common_Init( unsigned idx )
 {
-  GpioC.reset( 1<<6 );
-  GpioC.cfgOut( 6 );  // try to prevent peek at start
+  if( idx >= pwm_tims.size() ) {
+    return 0;
+  }
+  auto ti = pwm_tims[idx];
+  if( ti->Instance == nullptr ) {
+    return 0;
+  }
+  auto t = ti->Instance;
+  auto psc   = calc_TIM_psc_for_cnt_freq( t, TIM_PWM_base_freq );
+  auto arr   = calc_TIM_arr_for_base_psc( t, psc, TIM_PWM_count_freq );
 
-  auto psc   = calc_TIM_psc_for_cnt_freq( TIM3, TIM3_base_freq );       // psc = 0, 84MHz
-  auto arr   = calc_TIM_arr_for_base_psc( TIM3, psc, TIM3_count_freq ); // 8399, 10kHz
-  htim3.Instance               = TIM3;
-  htim3.Init.Prescaler         = psc;
-  htim3.Init.CounterMode       = TIM_COUNTERMODE_UP;
-  htim3.Init.Period            = arr;
-  htim3.Init.ClockDivision     = TIM_CLOCKDIVISION_DIV1;
-  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if( HAL_TIM_Base_Init( &htim3 ) != HAL_OK ) {
+  ti->Init.Prescaler         = psc;
+  ti->Init.CounterMode       = TIM_COUNTERMODE_UP;
+  ti->Init.Period            = arr;
+  ti->Init.ClockDivision     = TIM_CLOCKDIVISION_DIV1;
+  ti->Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if( HAL_TIM_Base_Init( ti ) != HAL_OK ) {
     UVAR('e') = 31;
     return 0;
   }
 
-  TIM_ClockConfigTypeDef sClockSourceConfig {
-    .ClockSource    = TIM_CLOCKSOURCE_INTERNAL,
-    .ClockPolarity  = TIM_ICPOLARITY_RISING,
-    .ClockPrescaler = TIM_CLOCKPRESCALER_DIV1,
-    .ClockFilter    = 0,
-  };
-  if( HAL_TIM_ConfigClockSource( &htim3, &sClockSourceConfig ) != HAL_OK ) {
+  if( HAL_TIM_ConfigClockSource( ti,
+        const_cast<TIM_ClockConfigTypeDef*>(&def_pwm_CSC) ) != HAL_OK ) {
     UVAR('e') = 32;
     return 0;
   }
 
-  if( HAL_TIM_PWM_Init( &htim3 ) != HAL_OK ) {
+  if( HAL_TIM_PWM_Init( ti ) != HAL_OK ) {
     UVAR('e') = 33;
     return 0;
   }
 
-  TIM_MasterConfigTypeDef sMasterConfig {
-    .MasterOutputTrigger = TIM_TRGO_RESET,
-    .MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE
-  };
-  if( HAL_TIMEx_MasterConfigSynchronization( &htim3, &sMasterConfig ) != HAL_OK ) {
+  if( HAL_TIMEx_MasterConfigSynchronization( ti,
+        const_cast<TIM_MasterConfigTypeDef*>(&def_pwm_MasterConfig) ) != HAL_OK ) {
     UVAR('e') = 34;
     return 0;
   }
 
-  TIM_OC_InitTypeDef sConfigOC {
-    .OCMode       = TIM_OCMODE_PWM1, // TIM_OCMODE_FORCED_INACTIVE,
-    .Pulse        = 0,
-    .OCPolarity   = TIM_OCPOLARITY_HIGH,
-    .OCNPolarity  = TIM_OCNPOLARITY_HIGH,
-    .OCFastMode   = TIM_OCFAST_DISABLE,
-    .OCIdleState  = TIM_OCIDLESTATE_RESET,
-    .OCNIdleState = TIM_OCNIDLESTATE_RESET
-  };
-  if( HAL_TIM_PWM_ConfigChannel( &htim3, &sConfigOC, TIM_CHANNEL_1 ) != HAL_OK ) {
+  if( HAL_TIM_PWM_ConfigChannel( ti,
+        const_cast<TIM_OC_InitTypeDef*>(&def_pwm_ConfigOC), TIM_CHANNEL_1 ) != HAL_OK ) {
     UVAR('e') = 35;
     return 0;
   }
 
-  // start here, to prevent pulse at start
-  HAL_TIM_PWM_Start( &htim3,  TIM_CHANNEL_1 );
+  // start here
+  HAL_TIM_PWM_Start( ti, TIM_CHANNEL_1 );
 
-  HAL_TIM_MspPostInit( &htim3 );
+  HAL_TIM_MspPostInit( ti );
   return 1;
+}
+
+int MX_TIM3_Init()
+{
+  htim3.Instance = TIM3;
+  return MX_PWM_common_Init( 0 );
+}
+
+int MX_TIM10_Init()
+{
+  htim10.Instance = TIM11;
+  return MX_PWM_common_Init( 1 );
+}
+
+int MX_TIM11_Init()
+{
+  htim11.Instance = TIM11;
+  return MX_PWM_common_Init( 2 );
 }
 
 int MX_TIM6_Init()
@@ -688,29 +739,23 @@ void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* tim_baseHandle )
   else if(tim_baseHandle->Instance == TIM3 ) {
     __HAL_RCC_TIM3_CLK_ENABLE();
   }
-  else if( tim_baseHandle->Instance == TIM4 )
-  {
+  else if( tim_baseHandle->Instance == TIM4 ) {
     __HAL_RCC_TIM4_CLK_ENABLE();
-    __HAL_RCC_GPIOD_CLK_ENABLE();
-    // TIM4 GPIO Configuration
-    // D13 --> TIM4_CH2, D14  --> TIM4_CH3, D15 --> TIM4_CH4, GPIO_AF2_TIM4
-    // ......
+    GpioD.cfgAF( 13, GPIO_AF2_TIM4 );  // TIM4.2 D13 se3
+    GpioD.cfgAF( 14, GPIO_AF2_TIM4 );  // TIM4.3 D13 se2
+    GpioD.cfgAF( 15, GPIO_AF2_TIM4 );  // TIM4.4 D13 se1
     // HAL_NVIC_SetPriority( TIM4_IRQn, 5, 0 );
     // HAL_NVIC_EnableIRQ( TIM4_IRQn );
-
   }
-  else if( tim_baseHandle->Instance == TIM6 )
-  {
+  else if( tim_baseHandle->Instance == TIM6 ) {
     __HAL_RCC_TIM6_CLK_ENABLE();
     HAL_NVIC_SetPriority( TIM6_DAC_IRQn, 5, 0 );
-    HAL_NVIC_EnableIRQ( TIM6_DAC_IRQn );
+    HAL_NVIC_EnableIRQ(   TIM6_DAC_IRQn );
   }
-  else if( tim_baseHandle->Instance == TIM10 )
-  {
+  else if( tim_baseHandle->Instance == TIM10 ) {
     __HAL_RCC_TIM10_CLK_ENABLE();
   }
-  else if( tim_baseHandle->Instance == TIM11 )
-  {
+  else if( tim_baseHandle->Instance == TIM11 ) {
     __HAL_RCC_TIM11_CLK_ENABLE();
   }
 }
@@ -718,18 +763,17 @@ void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* tim_baseHandle )
 void HAL_TIM_MspPostInit( TIM_HandleTypeDef* timHandle )
 {
   if( timHandle->Instance == TIM2 ) {
-    // __HAL_RCC_GPIOB_CLK_ENABLE();
-    // TIM2 GPIO Configuration:  B10 --> TIM2_CH3, B11 --> TIM2_CH4, GPIO_AF1_TIM2
-    // ......
+    GpioB.cfgAF( 10, GPIO_AF1_TIM2 );  // TIM2.3: B10 PWM3? aux1.6
+    GpioB.cfgAF( 11, GPIO_AF1_TIM2 );  // TIM2.4: B11 PWM4? aux1.8
   }
-  else if( timHandle->Instance == TIM3 )
-  {
-    GpioC.cfgAF( 6, GPIO_AF2_TIM3 );  // TIM3.1: C6 --> TIM3_CH1, GPIO_AF2_TIM3
-  } else if( timHandle->Instance == TIM10 ) {
-    GpioB.cfgAF( 8, GPIO_AF3_TIM10 ); // TIM10.1: B8 --> TIM10_CH1, GPIO_AF3_TIM10
+  else if( timHandle->Instance == TIM3 ) {
+    GpioC.cfgAF( 6, GPIO_AF2_TIM3 );  // TIM3.1:  C6 PWM0
+  }
+  else if( timHandle->Instance == TIM10 ) {
+    GpioB.cfgAF( 8, GPIO_AF3_TIM10 ); // TIM10.1: B8 PWM1
   }
   else if( timHandle->Instance == TIM11 ) {
-    GpioB.cfgAF( 9, GPIO_AF3_TIM11 ); // TIM11.1: B9 --> TIM11_CH1, GPIO_AF3_TIM11
+    GpioB.cfgAF( 9, GPIO_AF3_TIM11 ); // TIM11.1: B9 PWM2
   }
 }
 
@@ -752,7 +796,7 @@ void HAL_TIM_Base_MspDeInit( TIM_HandleTypeDef* tim_baseHandle )
   else if( tim_baseHandle->Instance == TIM10 ) {
     __HAL_RCC_TIM10_CLK_DISABLE();
   }
-  else if( tim_baseHandle->Instance == TIM11 )  {
+  else if( tim_baseHandle->Instance == TIM11 ) {
     __HAL_RCC_TIM11_CLK_DISABLE();
   }
 }
