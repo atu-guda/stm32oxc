@@ -79,4 +79,6 @@ class MachStateBase {
    const FunGcodePair *m_funcs;
 };
 
+#define COMMON_GM_CODE_CHECK if( !cb || !ms ) {  return GcodeBlock::rcFatal;  }
+
 #endif

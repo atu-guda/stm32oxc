@@ -35,6 +35,8 @@ PinsOut stepdir_z(  GpioE, 12, 2 );
 
 
 PinOut en_motors( GpioC, 11 );
+inline void motors_off() {  en_motors = 1; }
+inline void motors_on()  {  en_motors = 0; }
 
 PinsOut aux3(  GpioD, 7, 4 );
 
@@ -63,46 +65,130 @@ MachParam machs[n_motors] = {
   {   100, 100,  999999,  nullptr, &stepdir_e1 }
 };
 
+int move_rel( const float *d_mm, unsigned n_mo, float fe_mmm );
+int go_home( unsigned axis );
+
 // --------- gcodes ????
 // really ms is MachState, but conversion in func prts is impossible
+int gcode_G0G1( GcodeBlock *cb, MachStateBase *ms, bool g1 )
+{
+  COMMON_GM_CODE_CHECK;
+
+  if( ! me_st.was_set ) {
+    std_out << "# Error: zero point not set" << NL;
+    return GcodeBlock::rcErr;
+  }
+
+  const unsigned n_mo { 4 };
+
+  xfloat d_mm[n_mo];
+  d_mm[0] = cb->fpv_or_def( 'X', 0 );
+  d_mm[1] = cb->fpv_or_def( 'Y', 0 );
+  d_mm[2] = cb->fpv_or_def( 'Z', 0 );
+  d_mm[3] = cb->fpv_or_def( 'E', 0 );
+  if( !me_st.relmove ) {
+    for( unsigned i=0; i<n_mo; ++i ) {
+      d_mm[i] -= me_st.x[i];
+    }
+  }
+
+  xfloat fe_mmm = g1 ? me_st.fe_g1 : me_st.fe_g0;
+
+  OUT << "# G" << (g1?'1':'0') << " ( ";
+  for( auto xx: d_mm ) {
+    OUT << xx << ' ';
+  }
+  OUT << " ); fe= "<< fe_mmm << NL;
+
+  DoAtLeave do_off_motors( []() { motors_off(); } );
+  motors_on();
+  int rc = move_rel( d_mm, n_mo, fe_mmm );
+
+  return rc == 0 ? GcodeBlock::rcOk : GcodeBlock::rcErr;
+}
+
 int gcode_G0( GcodeBlock *cb, MachStateBase *ms )
 {
-  if( !cb || !ms ) {
-    return GcodeBlock::rcFatal;
-  }
-  xfloat x = cb->fpv_or_def( 'X', 0 );
-  xfloat y = cb->fpv_or_def( 'Y', 0 );
-  xfloat z = cb->fpv_or_def( 'Z', 0 );
-  OUT << "G0 ( " << x << ' ' << y <<  ' ' << z  << " );" << NL;
-  return GcodeBlock::rcOk;
+  return gcode_G0G1( cb, ms, false );
 }
 
 int gcode_G1( GcodeBlock *cb, MachStateBase *ms )
 {
-  if( !cb || !ms ) {
-    return GcodeBlock::rcFatal;
+  return gcode_G0G1( cb, ms, true );
+}
+
+int gcode_G4( GcodeBlock *cb, MachStateBase *ms )
+{
+  COMMON_GM_CODE_CHECK;
+
+  xfloat w = 1000 * cb->fpv_or_def( 'P', 0 );
+  w += 1000 * cb->fpv_or_def( 'S', 1 );
+  std_out << "# wait " << w << NL;
+  delay_ms( w );
+  return GcodeBlock::rcOk;
+}
+
+int gcode_G28( GcodeBlock *cb, MachStateBase *ms )
+{
+  COMMON_GM_CODE_CHECK;
+
+  bool x = cb->is_set('X'); bool y = cb->is_set('Y'); bool z = cb->is_set('Z');
+  if( !x && !y && !z ) {
+    x = y = z = true;
   }
-  xfloat x = cb->fpv_or_def( 'X', 0 );
-  xfloat y = cb->fpv_or_def( 'Y', 0 );
-  xfloat z = cb->fpv_or_def( 'Z', 0 );
-  xfloat e = cb->fpv_or_def( 'E', 0 );
-  xfloat f = cb->fpv_or_def( 'F', 1 ); // TODO: default F
-  // TODO: ifset(f,s)
-  OUT << "G1 ( " << x << ' ' << y <<  ' ' << z << ' ' << e << ' ' << f << " );" << NL;
+  int rc;
+
+  if( y ) {
+    rc  = go_home( 1 );
+    if( rc == 0 ) {
+      return GcodeBlock::rcErr;
+    }
+  }
+
+  if( x ) {
+    rc  = go_home( 0 );
+    if( rc == 0 ) {
+      return GcodeBlock::rcErr;
+    }
+  }
+
+  if( z ) {
+    rc  = go_home( 2 );
+    if( rc == 0 ) {
+      return GcodeBlock::rcErr;
+    }
+  }
+  me_st.was_set = true;
+
+  return rc == 0 ? GcodeBlock::rcOk : GcodeBlock::rcErr;
+}
+
+
+int gcode_G90( GcodeBlock *cb, MachStateBase *ms )
+{
+  me_st.relmove = false;
+  return GcodeBlock::rcOk;
+}
+
+int gcode_G91( GcodeBlock *cb, MachStateBase *ms )
+{
+  me_st.relmove = true;
   return GcodeBlock::rcOk;
 }
 
 const MachStateBase::FunGcodePair mach_g_funcs[] {
-  {  0, gcode_G0 },
-  {  1, gcode_G1 },
+  {  0, gcode_G0  },
+  {  1, gcode_G1  },
+  {  4, gcode_G4  },
+  { 28, gcode_G28 },
+  { 90, gcode_G90 },
+  { 91, gcode_G91 },
   { -1, nullptr } //end
 };
 
 int mcode_M0( GcodeBlock *cb, MachStateBase *ms )
 {
-  if( !cb || !ms ) {
-    return GcodeBlock::rcFatal;
-  }
+  COMMON_GM_CODE_CHECK;
   OUT << "# M0 " << NL;
   // TODO:
   return 0;
@@ -110,9 +196,8 @@ int mcode_M0( GcodeBlock *cb, MachStateBase *ms )
 
 int mcode_M1( GcodeBlock *cb, MachStateBase *ms )
 {
-  if( !cb || !ms ) {
-    return GcodeBlock::rcFatal;
-  }
+  COMMON_GM_CODE_CHECK;
+
   OUT << "# M1 " << NL;
   // TODO:
   return GcodeBlock::rcOk;
@@ -120,9 +205,7 @@ int mcode_M1( GcodeBlock *cb, MachStateBase *ms )
 
 int mcode_M2( GcodeBlock *cb, MachStateBase *ms )
 {
-  if( !cb || !ms ) {
-    return GcodeBlock::rcFatal;
-  }
+  COMMON_GM_CODE_CHECK;
   OUT << "# M2 " << NL;
   // TODO: off all
   return GcodeBlock::rcEnd;
@@ -130,10 +213,22 @@ int mcode_M2( GcodeBlock *cb, MachStateBase *ms )
 
 int mach_prep_fun( GcodeBlock *cb, MachStateBase *ms )
 {
-  if( !cb || !ms ) {
-    return GcodeBlock::rcFatal;
+  COMMON_GM_CODE_CHECK;
+
+  OUT << "## prep ";
+  if( cb->is_set('F') ) {
+    xfloat v = cb->fpv_or_def( 'F', 100 );
+    me_st.fe_g1 = v;
+    OUT << " F= " << v;
   }
-  OUT << "## prep " << NL;
+
+  if( cb->is_set('S') ) {
+    xfloat v = cb->fpv_or_def( 'S', 1 );
+    me_st.spin = v;
+    // TODO: autospin (laser or mill mode)
+    OUT << " S= " << v;
+  }
+  OUT << NL;
   return GcodeBlock::rcOk;
 }
 
@@ -148,14 +243,13 @@ const MachStateBase::FunGcodePair mach_m_funcs[] {
 MachState::MachState( fun_gcode_mg prep, const FunGcodePair *g_f, const FunGcodePair *m_f )
      : MachStateBase( prep, g_f, m_f )
 {
+  for( auto &xx : x ) { xx = 0; }
 }
 
 MachState me_st( mach_prep_fun, mach_g_funcs, mach_m_funcs );
 
 MoveTask1 move_task[n_motors+1]; // last idx = time
 
-int move_rel( const float *d_mm, unsigned n_mo, float fe_mmm );
-int go_home( unsigned axis );
 
 
 // B8  = T10.1 = PWM0
@@ -244,6 +338,31 @@ const CmdInfo* global_cmds[] = {
   nullptr
 };
 
+// handle Gnnn...., Mnnn..., !SOME_OTHER_COMMAND
+int gcode_cmdline_handler( char *s )
+{
+  if( !s ) {
+    return -1;
+  };
+  if( s[0] != '!' && s[0] != 'G' && s[0] != 'M' ) { // not my
+    return -1;
+  };
+
+  const char *cmd = s;
+  if( cmd[0] == '!' ) { // skip '!'
+    ++cmd;
+  }
+  std_out << NL "# gcode: cmd= \"" << cmd << '"' << NL;
+  delay_ms( 10 );
+
+  GcodeBlock cb ( &me_st );
+  int rc = cb.process( cmd );
+  // if( rc >= GcodeBlock::rcEnd ) {
+    std_out << "# rc " << rc << " line \"" << cmd << "\" pos " << cb.get_err_pos() << NL;
+  //}
+
+  return 0;
+}
 
 void idle_main_task()
 {
@@ -252,8 +371,6 @@ void idle_main_task()
   leds[1] = ( epv == ep_mask ) ? 0 : 1;
 }
 
-inline void motors_off() {  en_motors = 1; }
-inline void motors_on()  {  en_motors = 0; }
 
 // ---------------------------------------- main -----------------------------------------------
 
@@ -298,6 +415,9 @@ int main()
   // lcdt.init_4b();
   // lcdt.cls();
   // lcdt.puts("I ");
+
+  cmdline_handlers[0] = gcode_cmdline_handler;
+  cmdline_handlers[1] = nullptr;
 
   BOARD_POST_INIT_BLINK;
 

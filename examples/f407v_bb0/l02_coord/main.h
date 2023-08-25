@@ -21,13 +21,19 @@ const inline constinit unsigned n_motors { 5 };
 
 extern MachParam machs[n_motors];
 
+int gcode_cmdline_handler( char *s );
+
 class MachState : public MachStateBase {
   public:
    MachState( fun_gcode_mg prep, const FunGcodePair *g_f, const FunGcodePair *m_f );
-   float x[n_motors];
+   xfloat x[n_motors];
+   xfloat fe_g0 { 500 };
+   xfloat fe_g1 { 300 };
+   xfloat spin  {   0 };
    uint32_t n_mo { 0 }; // current number of active motors
    uint32_t last_rc;
    bool was_set { false };
+   bool relmove { false };
 };
 
 extern MachState me_st;
