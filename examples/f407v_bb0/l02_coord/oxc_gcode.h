@@ -47,6 +47,8 @@ class GcodeBlock {
     int get_err_pos()  const { return err_pos; };
     int get_err_code() const { return err_code; }
     int get_mach_rc()  const { return mach_rc; }
+    const char* get_str0()  const { return str0; }
+    const char* get_str1()  const { return str1; }
 
   private:
     static const unsigned n_p { 'Z'-'A' + 3 }; // 28, A-Z, end, ?

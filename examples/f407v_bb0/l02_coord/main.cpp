@@ -44,6 +44,51 @@ PinsIn x_e(  GpioD, 0, 2, GpioRegs::Pull::down );
 PinsIn y_e(  GpioD, 3, 2, GpioRegs::Pull::down );
 PinsIn z_e(  GpioD, 5, 2, GpioRegs::Pull::down );
 
+TIM_HandleTypeDef htim2;
+TIM_HandleTypeDef htim3;
+TIM_HandleTypeDef htim4;
+TIM_HandleTypeDef htim6;
+TIM_HandleTypeDef htim10;
+TIM_HandleTypeDef htim11;
+
+array pwm_tims { &htim3, &htim10, &htim11 };
+
+int MX_TIM2_Init();
+int MX_TIM3_Init();  // PMW0
+int MX_TIM4_Init();
+int MX_TIM6_Init();  // tick clock for move
+int MX_TIM10_Init(); // PWM1
+int MX_TIM11_Init(); // PWM2
+void HAL_TIM_MspPostInit( TIM_HandleTypeDef* timHandle );
+int MX_PWM_common_Init( unsigned idx );
+
+void TIM6_callback();
+
+int pwm_set( unsigned idx, float v );
+int pwm_off( unsigned idx );
+int pwm_off_all();
+
+// to common PWM timers init
+const TIM_ClockConfigTypeDef def_pwm_CSC {
+    .ClockSource    = TIM_CLOCKSOURCE_INTERNAL,
+    .ClockPolarity  = TIM_ICPOLARITY_RISING,
+    .ClockPrescaler = TIM_CLOCKPRESCALER_DIV1,
+    .ClockFilter    = 0
+};
+const TIM_MasterConfigTypeDef def_pwm_MasterConfig {
+  .MasterOutputTrigger = TIM_TRGO_RESET,
+  .MasterSlaveMode     = TIM_MASTERSLAVEMODE_DISABLE
+};
+const TIM_OC_InitTypeDef def_pwm_ConfigOC {
+  .OCMode       = TIM_OCMODE_PWM1, // TIM_OCMODE_FORCED_INACTIVE,
+  .Pulse        = 0,
+  .OCPolarity   = TIM_OCPOLARITY_HIGH,
+  .OCNPolarity  = TIM_OCNPOLARITY_HIGH,
+  .OCFastMode   = TIM_OCFAST_DISABLE,
+  .OCIdleState  = TIM_OCIDLESTATE_RESET,
+  .OCNIdleState = TIM_OCNIDLESTATE_RESET
+};
+
 //                                   TODO: auto IRQ N
 const EXTI_init_info extis[] = {
   { GpioD,  0, GpioRegs::ExtiEv::down,   EXTI0_IRQn,    1,  0 }, // D0: Xe-
@@ -86,6 +131,11 @@ int gcode_G0G1( GcodeBlock *cb, MachStateBase *ms, bool g1 )
   d_mm[1] = cb->fpv_or_def( 'Y', 0 );
   d_mm[2] = cb->fpv_or_def( 'Z', 0 );
   d_mm[3] = cb->fpv_or_def( 'E', 0 );
+
+  if( me_st.inchUnit ) {
+    for( auto &v : d_mm ) { v *= 25.4f; }
+  }
+
   if( !me_st.relmove ) {
     for( unsigned i=0; i<n_mo; ++i ) {
       d_mm[i] -= me_st.x[i];
@@ -100,9 +150,15 @@ int gcode_G0G1( GcodeBlock *cb, MachStateBase *ms, bool g1 )
   }
   OUT << " ); fe= "<< fe_mmm << NL;
 
-  DoAtLeave do_off_motors( []() { motors_off(); } );
-  motors_on();
+  if( me_st.mode == MachState::modeLaser &&  me_st.spin > 0 ) {
+    pwm_set( 0, 100 * me_st.spin / me_st.spin100 );
+  }
+
   int rc = move_rel( d_mm, n_mo, fe_mmm );
+
+  if( me_st.mode == MachState::modeLaser ) {
+    pwm_off( 0 );
+  }
 
   return rc == 0 ? GcodeBlock::rcOk : GcodeBlock::rcErr;
 }
@@ -122,9 +178,21 @@ int gcode_G4( GcodeBlock *cb, MachStateBase *ms )
   COMMON_GM_CODE_CHECK;
 
   xfloat w = 1000 * cb->fpv_or_def( 'P', 0 );
-  w += 1000 * cb->fpv_or_def( 'S', 1 );
+  w += cb->fpv_or_def( 'S', 1 );
   std_out << "# wait " << w << NL;
-  delay_ms( w );
+  delay_ms_brk( (uint32_t)w );
+  return GcodeBlock::rcOk;
+}
+
+int gcode_G20( GcodeBlock *cb, MachStateBase *ms )
+{
+  me_st.inchUnit = false;
+  return GcodeBlock::rcOk;
+}
+
+int gcode_G21( GcodeBlock *cb, MachStateBase *ms )
+{
+  me_st.inchUnit = true;
   return GcodeBlock::rcOk;
 }
 
@@ -176,22 +244,50 @@ int gcode_G91( GcodeBlock *cb, MachStateBase *ms )
   return GcodeBlock::rcOk;
 }
 
+int gcode_G92( GcodeBlock *cb, MachStateBase *ms )
+{
+  COMMON_GM_CODE_CHECK;
+  bool a { false };
+  if( cb->is_set('X') ) {
+    me_st.x[0] = cb->fpv_or_def( 'X', 0 ); a = true;
+  }
+  if( cb->is_set('Y') ) {
+    me_st.x[0] = cb->fpv_or_def( 'Y', 0 ); a = true;
+  }
+  if( cb->is_set('Z') ) {
+    me_st.x[0] = cb->fpv_or_def( 'Z', 0 ); a = true;
+  }
+  if( cb->is_set('E') ) {
+    me_st.x[0] = cb->fpv_or_def( 'E', 0 ); a = true;
+  }
+
+  if( a ) {
+    me_st.was_set = true; // do not change if a false
+  }
+
+  return GcodeBlock::rcOk;
+}
+
 const MachStateBase::FunGcodePair mach_g_funcs[] {
   {  0, gcode_G0  },
   {  1, gcode_G1  },
   {  4, gcode_G4  },
+  { 20, gcode_G20 },
+  { 21, gcode_G21 },
   { 28, gcode_G28 },
   { 90, gcode_G90 },
   { 91, gcode_G91 },
+  { 92, gcode_G92 },
   { -1, nullptr } //end
 };
 
+// ------------------------ M codes -------------------------------------------
 int mcode_M0( GcodeBlock *cb, MachStateBase *ms )
 {
   COMMON_GM_CODE_CHECK;
   OUT << "# M0 " << NL;
   // TODO:
-  return 0;
+  return GcodeBlock::rcEnd;
 }
 
 int mcode_M1( GcodeBlock *cb, MachStateBase *ms )
@@ -199,7 +295,7 @@ int mcode_M1( GcodeBlock *cb, MachStateBase *ms )
   COMMON_GM_CODE_CHECK;
 
   OUT << "# M1 " << NL;
-  // TODO:
+  // TODO: pausue
   return GcodeBlock::rcOk;
 }
 
@@ -208,8 +304,104 @@ int mcode_M2( GcodeBlock *cb, MachStateBase *ms )
   COMMON_GM_CODE_CHECK;
   OUT << "# M2 " << NL;
   // TODO: off all
+  pwm_set( 0, 0 );
+  motors_off();
   return GcodeBlock::rcEnd;
 }
+
+int mcode_M3( GcodeBlock *cb, MachStateBase *ms )
+{
+  COMMON_GM_CODE_CHECK;
+  OUT << "# M3 " << NL;
+  me_st.spinOn = true;
+  pwm_set( 0, 100 * me_st.spin / me_st.spin100 ); // no direction
+  return GcodeBlock::rcOk;
+}
+
+int mcode_M4( GcodeBlock *cb, MachStateBase *ms )
+{
+  return mcode_M3( cb, ms );
+}
+
+int mcode_M5( GcodeBlock *cb, MachStateBase *ms )
+{
+  COMMON_GM_CODE_CHECK;
+  OUT << "# M5 " << NL;
+  pwm_off( 0 );
+  me_st.spinOn = false;
+  return GcodeBlock::rcOk;
+}
+
+int mcode_M114( GcodeBlock *cb, MachStateBase *ms )
+{
+  COMMON_GM_CODE_CHECK;
+  static const char a_names[] { "XYZE???" };
+  for( unsigned i=0; i<4; ++i ) { // 4 is XYZE
+    OUT << ' ' << a_names[i] << ": " << ( me_st.x[i] / (me_st.inchUnit ? 25.4f : 1.0f) );
+  }
+  OUT << NL;
+  return GcodeBlock::rcOk;
+}
+
+int mcode_M117( GcodeBlock *cb, MachStateBase *ms )
+{
+  COMMON_GM_CODE_CHECK;
+  OUT << "# M117" << NL;
+  OUT << cb->get_str0() << NL;
+  return GcodeBlock::rcOk;
+}
+
+int mcode_M450( GcodeBlock *cb, MachStateBase *ms )
+{
+  COMMON_GM_CODE_CHECK;
+  static const char* const mode_names[] = { "FFF", "Laser", "CNC" };
+  if( me_st.mode >= MachState::modeMax ) {
+      me_st.mode  = MachState::modeFFF;
+  }
+  OUT << "PrinterMode:" << mode_names[me_st.mode] << NL;
+  return GcodeBlock::rcOk;
+}
+
+int mcode_M451( GcodeBlock *cb, MachStateBase *ms )
+{
+  COMMON_GM_CODE_CHECK;
+  OUT << "# M451 " << NL;
+  me_st.mode  = MachState::modeFFF;
+  return GcodeBlock::rcOk;
+}
+
+int mcode_M452( GcodeBlock *cb, MachStateBase *ms )
+{
+  COMMON_GM_CODE_CHECK;
+  OUT << "# M452 " << NL;
+  me_st.mode  = MachState::modeLaser;
+  return GcodeBlock::rcOk;
+}
+
+int mcode_M453( GcodeBlock *cb, MachStateBase *ms )
+{
+  COMMON_GM_CODE_CHECK;
+  OUT << "# M453 " << NL;
+  me_st.mode  = MachState::modeCNC;
+  return GcodeBlock::rcOk;
+}
+
+
+const MachStateBase::FunGcodePair mach_m_funcs[] {
+  {   0,   mcode_M0 },
+  {   1,   mcode_M1 },
+  {   2,   mcode_M2 },
+  {   3,   mcode_M3 },
+  {   4,   mcode_M4 },
+  {   5,   mcode_M5 },
+  { 114, mcode_M114 },
+  { 117, mcode_M117 },
+  { 450, mcode_M450 },
+  { 451, mcode_M451 },
+  { 452, mcode_M452 },
+  { 453, mcode_M453 },
+  {  -1, nullptr } //end
+};
 
 int mach_prep_fun( GcodeBlock *cb, MachStateBase *ms )
 {
@@ -233,17 +425,11 @@ int mach_prep_fun( GcodeBlock *cb, MachStateBase *ms )
 }
 
 
-const MachStateBase::FunGcodePair mach_m_funcs[] {
-  {  0, mcode_M0 },
-  {  1, mcode_M1 },
-  {  2, mcode_M2 },
-  { -1, nullptr } //end
-};
-
 MachState::MachState( fun_gcode_mg prep, const FunGcodePair *g_f, const FunGcodePair *m_f )
      : MachStateBase( prep, g_f, m_f )
 {
   for( auto &xx : x ) { xx = 0; }
+  for( auto &s : axis_scale ) { s = 1; }
 }
 
 MachState me_st( mach_prep_fun, mach_g_funcs, mach_m_funcs );
@@ -266,50 +452,6 @@ MoveTask1 move_task[n_motors+1]; // last idx = time
 // HD44780_i2c *p_lcdt = &lcdt;
 // DS3231 rtc( i2cd );
 
-TIM_HandleTypeDef htim2;
-TIM_HandleTypeDef htim3;
-TIM_HandleTypeDef htim4;
-TIM_HandleTypeDef htim6;
-TIM_HandleTypeDef htim10;
-TIM_HandleTypeDef htim11;
-
-array pwm_tims { &htim3, &htim10, &htim11 };
-
-int MX_TIM2_Init();
-int MX_TIM3_Init();  // PMW0
-int MX_TIM4_Init();
-int MX_TIM6_Init();  // tick clock for move
-int MX_TIM10_Init(); // PWM1
-int MX_TIM11_Init(); // PWM2
-void HAL_TIM_MspPostInit( TIM_HandleTypeDef* timHandle );
-int MX_PWM_common_Init( unsigned idx );
-
-void TIM6_callback();
-
-int pwm_set( unsigned idx, float v );
-int pwm_off( unsigned idx );
-int pwm_off_all();
-
-// to common PWM timers init
-const TIM_ClockConfigTypeDef def_pwm_CSC {
-    .ClockSource    = TIM_CLOCKSOURCE_INTERNAL,
-    .ClockPolarity  = TIM_ICPOLARITY_RISING,
-    .ClockPrescaler = TIM_CLOCKPRESCALER_DIV1,
-    .ClockFilter    = 0
-};
-const TIM_MasterConfigTypeDef def_pwm_MasterConfig {
-  .MasterOutputTrigger = TIM_TRGO_RESET,
-  .MasterSlaveMode     = TIM_MASTERSLAVEMODE_DISABLE
-};
-const TIM_OC_InitTypeDef def_pwm_ConfigOC {
-  .OCMode       = TIM_OCMODE_PWM1, // TIM_OCMODE_FORCED_INACTIVE,
-  .Pulse        = 0,
-  .OCPolarity   = TIM_OCPOLARITY_HIGH,
-  .OCNPolarity  = TIM_OCNPOLARITY_HIGH,
-  .OCFastMode   = TIM_OCFAST_DISABLE,
-  .OCIdleState  = TIM_OCIDLESTATE_RESET,
-  .OCNIdleState = TIM_OCNIDLESTATE_RESET
-};
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -354,6 +496,9 @@ int gcode_cmdline_handler( char *s )
   }
   std_out << NL "# gcode: cmd= \"" << cmd << '"' << NL;
   delay_ms( 10 );
+
+  DoAtLeave do_off_motors( []() { motors_off(); } );
+  motors_on();
 
   GcodeBlock cb ( &me_st );
   int rc = cb.process( cmd );
@@ -498,7 +643,7 @@ int move_rel( const float *d_mm_i, unsigned n_mo,  float fe_mmm )
 
   for( unsigned i=0; i<n_mo; ++i ) {
     const float dc = d_mm[i];
-    const float step_sz = 1.0f / machs[i].tick2mm;
+    const float step_sz = 1.0f / ( machs[i].tick2mm * me_st.axis_scale[i] );
     if( dc > 0.5f * step_sz ) {
       move_task[i].dir =  1;
       move_task[i].step_task = move_task[i].step_rest =  roundf( dc / step_sz );
@@ -556,6 +701,12 @@ int move_rel( const float *d_mm_i, unsigned n_mo,  float fe_mmm )
   uint32_t t_all_tick = 2 + ( uint32_t( t_all * TIM6_count_freq ) & ~1u );
   std_out << "# t_all= " << t_all << " s = " <<  t_all_tick << NL;
 
+  if( t_all_tick < 3 ) {
+    std_out << "# jump on place" << NL;
+    delay_ms( 1 );
+    return 0;
+  }
+
   move_task[n_motors].step_rest = move_task[n_motors].step_task = t_all_tick;
 
   // check endstops
@@ -597,7 +748,8 @@ int move_rel( const float *d_mm_i, unsigned n_mo,  float fe_mmm )
 
   float real_d[n_mo], l_err { 0.0f };
   for( unsigned i=0; i<n_mo; ++i ) {
-    real_d[i] = float( move_task[i].step_task - move_task[i].step_rest ) * move_task[i].dir / machs[i].tick2mm;
+    real_d[i] = float( move_task[i].step_task - move_task[i].step_rest ) * move_task[i].dir
+      / ( machs[i].tick2mm * me_st.axis_scale[i] );
     me_st.x[i] += real_d[i];
     l_err += pow2f( d_mm_i[i] - real_d[i] );
     std_out << " d_" << i << " = " << real_d[i] << " x= " << me_st.x[i] << NL;

@@ -26,14 +26,23 @@ int gcode_cmdline_handler( char *s );
 class MachState : public MachStateBase {
   public:
    MachState( fun_gcode_mg prep, const FunGcodePair *g_f, const FunGcodePair *m_f );
+   enum MachMode {
+     modeFFF = 0, modeLaser = 1, modeCNC = 2, modeMax = 3
+   };
+   // TODO: protected:
+   MachMode mode { modeFFF };
    xfloat x[n_motors];
+   xfloat axis_scale[n_motors];
    xfloat fe_g0 { 500 };
    xfloat fe_g1 { 300 };
    xfloat spin  {   0 };
+   xfloat spin100  { 1000 };
    uint32_t n_mo { 0 }; // current number of active motors
    uint32_t last_rc;
    bool was_set { false };
    bool relmove { false };
+   bool inchUnit { false };
+   bool spinOn   { false };
 };
 
 extern MachState me_st;
