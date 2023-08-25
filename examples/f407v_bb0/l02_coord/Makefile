@@ -26,6 +26,7 @@ USE_OXC_DMA = y
 # NOUSE_DEFAULT_UART_INIT = y
 
 SRCS  += main.cpp
+SRCS  += oxc_gcode.cpp
 
 SRCS += oxc_floatfun.c
 #SRCS += oxc_outstr.cpp

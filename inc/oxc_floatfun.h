@@ -108,6 +108,7 @@ inline constexpr double pow2d( double x ) { return x * x; }
 #define XFmt DblFmt
 #define xfloat_default_width double_default_width
 #define cvtfx cvtfd
+#define strtoxf strtod
 #define str2xfloat_d str2double_d
 #define arg2xfloat_d arg2double_d
 #define XFLOAT_MAX     __DBL_MAX__
@@ -124,6 +125,7 @@ inline constexpr double pow2d( double x ) { return x * x; }
 #define xfloat_default_width float_default_width
 #define XFmt FltFmt
 #define cvtfx cvtff
+#define strtoxf strtof
 #define str2xfloat_d str2float_d
 #define arg2xfloat_d arg2float_d
 #define XFLOAT_MAX     __FLT_MAX__

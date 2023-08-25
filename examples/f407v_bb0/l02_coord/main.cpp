@@ -15,6 +15,8 @@
 
 #include "main.h"
 
+#define OUT std_out
+
 using namespace std;
 using namespace SMLRL;
 
@@ -53,7 +55,7 @@ const EXTI_init_info extis[] = {
 };
 
 
-MechParam mechs[n_motors] = {
+MachParam machs[n_motors] = {
   {  1600, 500,     150,     &x_e, &stepdir_x  }, // TODO: 500 increase after working acceleration
   {  1600, 500,     300,     &y_e, &stepdir_y  },
   {  1600, 300,     150,     &z_e, &stepdir_z  },
@@ -61,7 +63,94 @@ MechParam mechs[n_motors] = {
   {   100, 100,  999999,  nullptr, &stepdir_e1 }
 };
 
-MechState me_st;
+// --------- gcodes ????
+// really ms is MachState, but conversion in func prts is impossible
+int gcode_G0( GcodeBlock *cb, MachStateBase *ms )
+{
+  if( !cb || !ms ) {
+    return GcodeBlock::rcFatal;
+  }
+  xfloat x = cb->fpv_or_def( 'X', 0 );
+  xfloat y = cb->fpv_or_def( 'Y', 0 );
+  xfloat z = cb->fpv_or_def( 'Z', 0 );
+  OUT << "G0 ( " << x << ' ' << y <<  ' ' << z  << " );" << NL;
+  return GcodeBlock::rcOk;
+}
+
+int gcode_G1( GcodeBlock *cb, MachStateBase *ms )
+{
+  if( !cb || !ms ) {
+    return GcodeBlock::rcFatal;
+  }
+  xfloat x = cb->fpv_or_def( 'X', 0 );
+  xfloat y = cb->fpv_or_def( 'Y', 0 );
+  xfloat z = cb->fpv_or_def( 'Z', 0 );
+  xfloat e = cb->fpv_or_def( 'E', 0 );
+  xfloat f = cb->fpv_or_def( 'F', 1 ); // TODO: default F
+  // TODO: ifset(f,s)
+  OUT << "G1 ( " << x << ' ' << y <<  ' ' << z << ' ' << e << ' ' << f << " );" << NL;
+  return GcodeBlock::rcOk;
+}
+
+const MachStateBase::FunGcodePair mach_g_funcs[] {
+  {  0, gcode_G0 },
+  {  1, gcode_G1 },
+  { -1, nullptr } //end
+};
+
+int mcode_M0( GcodeBlock *cb, MachStateBase *ms )
+{
+  if( !cb || !ms ) {
+    return GcodeBlock::rcFatal;
+  }
+  OUT << "# M0 " << NL;
+  // TODO:
+  return 0;
+}
+
+int mcode_M1( GcodeBlock *cb, MachStateBase *ms )
+{
+  if( !cb || !ms ) {
+    return GcodeBlock::rcFatal;
+  }
+  OUT << "# M1 " << NL;
+  // TODO:
+  return GcodeBlock::rcOk;
+}
+
+int mcode_M2( GcodeBlock *cb, MachStateBase *ms )
+{
+  if( !cb || !ms ) {
+    return GcodeBlock::rcFatal;
+  }
+  OUT << "# M2 " << NL;
+  // TODO: off all
+  return GcodeBlock::rcEnd;
+}
+
+int mach_prep_fun( GcodeBlock *cb, MachStateBase *ms )
+{
+  if( !cb || !ms ) {
+    return GcodeBlock::rcFatal;
+  }
+  OUT << "## prep " << NL;
+  return GcodeBlock::rcOk;
+}
+
+
+const MachStateBase::FunGcodePair mach_m_funcs[] {
+  {  0, mcode_M0 },
+  {  1, mcode_M1 },
+  {  2, mcode_M2 },
+  { -1, nullptr } //end
+};
+
+MachState::MachState( fun_gcode_mg prep, const FunGcodePair *g_f, const FunGcodePair *m_f )
+     : MachStateBase( prep, g_f, m_f )
+{
+}
+
+MachState me_st( mach_prep_fun, mach_g_funcs, mach_m_funcs );
 
 MoveTask1 move_task[n_motors+1]; // last idx = time
 
@@ -181,7 +270,7 @@ int main()
 
   GpioA.enableClk(); GpioB.enableClk(); GpioC.enableClk(); GpioD.enableClk(); GpioE.enableClk();
 
-  for( auto &m : mechs ) {
+  for( auto &m : machs ) {
     if( m.endstops != nullptr ) {
       m.endstops->initHW();
     }
@@ -240,7 +329,7 @@ int cmd_test0( int argc, const char * const * argv )
     return 2;
   }
 
-  auto motor = mechs[a].motor;
+  auto motor = machs[a].motor;
   if( ! motor ) {
     std_out << "# Error: motor not defined for " << a << NL;
     return 2;
@@ -289,18 +378,18 @@ int move_rel( const float *d_mm_i, unsigned n_mo,  float fe_mmm )
 
   for( unsigned i=0; i<n_mo; ++i ) {
     const float dc = d_mm[i];
-    const float step_sz = 1.0f / mechs[i].tick2mm;
+    const float step_sz = 1.0f / machs[i].tick2mm;
     if( dc > 0.5f * step_sz ) {
       move_task[i].dir =  1;
       move_task[i].step_task = move_task[i].step_rest =  roundf( dc / step_sz );
-      mechs[i].motor->sr( 0x02, 0 );
+      machs[i].motor->sr( 0x02, 0 );
     } else if( dc < -0.5f * step_sz ) {
       move_task[i].dir = -1;
       move_task[i].step_task = move_task[i].step_rest = -roundf( dc / step_sz );
-      mechs[i].motor->sr( 0x02, 1 );
+      machs[i].motor->sr( 0x02, 1 );
     } else {
       // move_task[i].dir =  0; // zeroed before
-      mechs[i].motor->sr( 0x02, 0 ); // just to be determined
+      machs[i].motor->sr( 0x02, 0 ); // just to be determined
     }
     if( max_steps < move_task[i].step_rest ) {
       max_steps   = move_task[i].step_rest;
@@ -312,7 +401,7 @@ int move_rel( const float *d_mm_i, unsigned n_mo,  float fe_mmm )
     std_out << "# " << i << ' ' << dc << ' ' << d_c
             << move_task[i].dir << ' ' << move_task[i].step_rest << NL;
     d_l += d_c * d_c;
-    feed3_max += mechs[i].max_speed * mechs[i].max_speed;
+    feed3_max += machs[i].max_speed * machs[i].max_speed;
   }
 
   d_l = sqrtf( d_l );
@@ -329,8 +418,8 @@ int move_rel( const float *d_mm_i, unsigned n_mo,  float fe_mmm )
   float feed_lim { 0 };
   for( unsigned i=0; i<n_mo; ++i ) {
     feed[i] = fe_mmm * d_mm[i] / d_l;
-    if( feed[i] > mechs[i].max_speed ) {
-      feed[i] =   mechs[i].max_speed;
+    if( feed[i] > machs[i].max_speed ) {
+      feed[i] =   machs[i].max_speed;
     }
     feed_lim += feed[i] * feed[i];
     std_out << "# feed[" << i << "]= " << feed[i] << NL;
@@ -351,10 +440,10 @@ int move_rel( const float *d_mm_i, unsigned n_mo,  float fe_mmm )
 
   // check endstops
   for( unsigned i=0; i<n_mo; ++i ) {
-    if( mechs[i].endstops == nullptr ) {
+    if( machs[i].endstops == nullptr ) {
       continue;
     }
-    uint16_t epv = mechs[i].endstops->read();
+    uint16_t epv = machs[i].endstops->read();
     const auto dir = move_task[i].dir;
     std_out << "# debug: endstop " << epv << " at " << i << " dir: " << dir << NL;
     if( dir == 0 || ( epv & 0x03 ) == 0x03 ) { // no move or all clear
@@ -388,7 +477,7 @@ int move_rel( const float *d_mm_i, unsigned n_mo,  float fe_mmm )
 
   float real_d[n_mo], l_err { 0.0f };
   for( unsigned i=0; i<n_mo; ++i ) {
-    real_d[i] = float( move_task[i].step_task - move_task[i].step_rest ) * move_task[i].dir / mechs[i].tick2mm;
+    real_d[i] = float( move_task[i].step_task - move_task[i].step_rest ) * move_task[i].dir / machs[i].tick2mm;
     me_st.x[i] += real_d[i];
     l_err += pow2f( d_mm_i[i] - real_d[i] );
     std_out << " d_" << i << " = " << real_d[i] << " x= " << me_st.x[i] << NL;
@@ -409,8 +498,8 @@ int go_home( unsigned axis )
     std_out << "# Error: bad axis index " << axis << NL;
     return 0;
   }
-  auto estp = mechs[axis].endstops;
-  if( mechs[axis].max_l > 20000 || estp == nullptr ) {
+  auto estp = machs[axis].endstops;
+  if( machs[axis].max_l > 20000 || estp == nullptr ) {
     std_out << "# Error: unsupported axis  " << axis << NL;
     return 0;
   }
@@ -425,8 +514,8 @@ int go_home( unsigned axis )
   DoAtLeave do_off_motors( []() { motors_off(); } );
   motors_on();
 
-  float fe_quant = (float)mechs[axis].max_speed / 20;
-  d_mm[axis] = -2.0f * (float)mechs[axis].max_l;
+  float fe_quant = (float)machs[axis].max_speed / 20;
+  d_mm[axis] = -2.0f * (float)machs[axis].max_l;
 
   int rc = move_rel( d_mm, n_mo, 16 * fe_quant );
   auto esv = estp->read();
@@ -480,7 +569,7 @@ int cmd_relmove( int argc, const char * const * argv )
   float d_mm[n_mo];
 
   for( unsigned i=0; i<n_mo; ++i ) {
-    d_mm[i] = arg2float_d( i+1, argc, argv, 0, -(float)mechs[i].max_l, (float)mechs[i].max_l );
+    d_mm[i] = arg2float_d( i+1, argc, argv, 0, -(float)machs[i].max_l, (float)machs[i].max_l );
   }
   float fe_mmm = arg2float_d( 4, argc, argv, UVAR('f'), 0.0f, 900.0f );
 
@@ -505,7 +594,7 @@ int cmd_absmove( int argc, const char * const * argv )
   float d_mm[n_mo];
 
   for( unsigned i=0; i<n_mo; ++i ) {
-    d_mm[i] = arg2float_d( i+1, argc, argv, 0, -(float)mechs[i].max_l, (float)mechs[i].max_l )
+    d_mm[i] = arg2float_d( i+1, argc, argv, 0, -(float)machs[i].max_l, (float)machs[i].max_l )
             - me_st.x[i];
   }
   float fe_mmm = arg2float_d( 4, argc, argv, UVAR('f'), 0.0f, 900.0f );
@@ -531,7 +620,7 @@ int cmd_home( int argc, const char * const * argv )
 int cmd_zero( int argc, const char * const * argv )
 {
   for( unsigned i=0; i<me_st.n_mo; ++i ) {
-    me_st.x[i] =  arg2float_d( i+1, argc, argv, 0, -mechs[i].max_l, mechs[i].max_l );
+    me_st.x[i] =  arg2float_d( i+1, argc, argv, 0, -machs[i].max_l, machs[i].max_l );
   }
   me_st.was_set = true;
   return 0;
@@ -833,7 +922,7 @@ void TIM6_callback()
     do_stop = false;
     if( move_task[i].d > move_task[n_motors].step_task ) {
       // ++UVAR('x'+i);
-      (*mechs[i].motor)[0].toggle();
+      (*machs[i].motor)[0].toggle();
       --move_task[i].step_rest;
       move_task[i].d -= 2 * move_task[n_motors].step_task;
     }
