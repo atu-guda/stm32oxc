@@ -31,9 +31,11 @@ class GcodeBlock {
       errComment  =  1,
       errString   =  2,
       errChar     =  3,
+      errValue    =  4,
       errMach     = 10
     };
     static const int uninit_val { (int)0x80000000 };
+    static constexpr const char *const axis_chars = "XYZEVUW?";
     explicit GcodeBlock( MachStateBase *a_ms ) : ms( a_ms ) { init(); } ;
     void init();
     void sub_init();

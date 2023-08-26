@@ -33,10 +33,10 @@ class MachState : public MachStateBase {
    MachMode mode { modeFFF };
    xfloat x[n_motors];
    xfloat axis_scale[n_motors];
-   xfloat fe_g0 { 500 };
+   xfloat fe_g0 { 400 };
    xfloat fe_g1 { 300 };
    xfloat spin  {   0 };
-   xfloat spin100  { 1000 };
+   xfloat spin100  { 10000 };
    uint32_t n_mo { 0 }; // current number of active motors
    uint32_t last_rc;
    bool was_set { false };

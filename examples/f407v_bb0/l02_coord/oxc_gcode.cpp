@@ -59,6 +59,9 @@ int GcodeBlock::process( const char *s )
   mach_rc = 0;
   bool to_end { false }; // M117 string and comment to EOL
   bool was_mg { false }; // unhandled G or M was before in string
+  const unsigned val_buf_sz { 40 };
+  char val_buf[val_buf_sz]; // buffer for digital value
+  unsigned vs { 0 };
 
   for( ; *s; ++s ) { // may be more ++
     char c = *s;
@@ -130,10 +133,24 @@ int GcodeBlock::process( const char *s )
           continue;
         }
 
-        fv = strtoxf( s, &eptr );
+        val_buf[0] = '\0';
+        vs = strspn( s, "+-.0123456789" );
+        if( vs >= val_buf_sz-2 ) {
+          err_pos = (int)(s-s0);  err_code = errValue;
+          continue;
+        }
+        memcpy( val_buf, s, vs );
+        val_buf[vs] = '\0';
+        fv = strtoxf( val_buf, &eptr );
+        // OUT << "# dbg_val \"" << val_buf << "\" vs= " << vs << "  fv= " << fv << ' ' << p_name << NL;
+
         fp[p_idx] = fv;  ip[p_idx] = iv = (int)(fv);
-        s = eptr; --s; // ???
-        // OUT << "# dbg fv= " << fv << " p_name= " << p_name << " *s= " << (*s) << NL;
+        if( vs > 0 ) {
+          s += vs-1;
+        } else {
+          --s;
+        }
+        // OUT << "# dbg fv= " << fv << " p_name= " << p_name << " s= \"" << s << '"' << NL;
 
         if( p_name == 'M' || p_name == 'G' ) {
           was_mg = true;

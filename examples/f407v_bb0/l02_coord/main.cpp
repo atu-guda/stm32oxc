@@ -135,20 +135,21 @@ int gcode_G0G1( GcodeBlock *cb, MachStateBase *ms, bool g1 )
   }
 
   const unsigned n_mo { 4 };
+  const xfloat meas_scale = me_st.inchUnit ? 25.4f : 1.0f;
 
-  xfloat d_mm[n_mo];
-  d_mm[0] = cb->fpv_or_def( 'X', 0 );
-  d_mm[1] = cb->fpv_or_def( 'Y', 0 );
-  d_mm[2] = cb->fpv_or_def( 'Z', 0 );
-  d_mm[3] = cb->fpv_or_def( 'E', 0 );
+  xfloat prev_x[n_mo], d_mm[n_mo];
+  for( unsigned i=0; i<n_mo; ++i ) {
+    prev_x[i] = me_st.relmove ? 0 : ( me_st.x[i] / meas_scale );
+  }
 
-  if( me_st.inchUnit ) {
-    for( auto &v : d_mm ) { v *= 25.4f; }
+  for( unsigned i=0; i<n_mo; ++i ) {
+    d_mm[i] = cb->fpv_or_def( GcodeBlock::axis_chars[i], prev_x[i] );
+    d_mm[i] *= meas_scale;
   }
 
   if( !me_st.relmove ) {
     for( unsigned i=0; i<n_mo; ++i ) {
-      d_mm[i] -= me_st.x[i];
+      d_mm[i] -= prev_x[i];
     }
   }
 
@@ -160,8 +161,10 @@ int gcode_G0G1( GcodeBlock *cb, MachStateBase *ms, bool g1 )
   }
   OUT << " ); fe= "<< fe_mmm << NL;
 
-  if( me_st.mode == MachState::modeLaser &&  me_st.spin > 0 ) {
-    pwm_set( 0, 100 * me_st.spin / me_st.spin100 );
+  if( me_st.mode == MachState::modeLaser && g1 && me_st.spin > 0 ) {
+    const xfloat v = 100 * me_st.spin / me_st.spin100;
+    OUT << "# spin= " << me_st.spin << " v= " << v << NL;
+    pwm_set( 0, v );
   }
 
   int rc = move_rel( d_mm, n_mo, fe_mmm );
@@ -196,13 +199,13 @@ int gcode_G4( GcodeBlock *cb, MachStateBase *ms )
 
 int gcode_G20( GcodeBlock *cb, MachStateBase *ms )
 {
-  me_st.inchUnit = false;
+  me_st.inchUnit = true;
   return GcodeBlock::rcOk;
 }
 
 int gcode_G21( GcodeBlock *cb, MachStateBase *ms )
 {
-  me_st.inchUnit = true;
+  me_st.inchUnit = false;
   return GcodeBlock::rcOk;
 }
 
@@ -324,7 +327,9 @@ int mcode_M3( GcodeBlock *cb, MachStateBase *ms )
   COMMON_GM_CODE_CHECK;
   OUT << "# M3 " << NL;
   me_st.spinOn = true;
-  pwm_set( 0, 100 * me_st.spin / me_st.spin100 ); // no direction
+  if( me_st.mode == MachState::modeCNC ) {
+    pwm_set( 0, 100 * me_st.spin / me_st.spin100 ); // no direction
+  }
   return GcodeBlock::rcOk;
 }
 
@@ -345,9 +350,8 @@ int mcode_M5( GcodeBlock *cb, MachStateBase *ms )
 int mcode_M114( GcodeBlock *cb, MachStateBase *ms )
 {
   COMMON_GM_CODE_CHECK;
-  static const char a_names[] { "XYZE???" };
   for( unsigned i=0; i<4; ++i ) { // 4 is XYZE
-    OUT << ' ' << a_names[i] << ": " << ( me_st.x[i] / (me_st.inchUnit ? 25.4f : 1.0f) );
+    OUT << ' ' << GcodeBlock::axis_chars[i] << ": " << ( me_st.x[i] / (me_st.inchUnit ? 25.4f : 1.0f) );
   }
   OUT << NL;
   return GcodeBlock::rcOk;
@@ -592,6 +596,9 @@ int main()
   cmdline_handlers[0] = gcode_cmdline_handler;
   cmdline_handlers[1] = nullptr;
 
+  // just for now
+  me_st.mode = MachState::modeLaser;
+
   BOARD_POST_INIT_BLINK;
 
   leds.reset( 0xFF );
@@ -715,7 +722,7 @@ int move_rel( const float *d_mm_i, unsigned n_mo,  float fe_mmm )
       feed[i] =   machs[i].max_speed;
     }
     feed_lim += feed[i] * feed[i];
-    std_out << "# feed[" << i << "]= " << feed[i] << NL;
+    // std_out << "# feed[" << i << "]= " << feed[i] << NL;
   }
   feed_lim = sqrtf( feed_lim );
 
@@ -744,7 +751,7 @@ int move_rel( const float *d_mm_i, unsigned n_mo,  float fe_mmm )
     }
     uint16_t epv = machs[i].endstops->read();
     const auto dir = move_task[i].dir;
-    std_out << "# debug: endstop " << epv << " at " << i << " dir: " << dir << NL;
+    // std_out << "# debug: endstop " << epv << " at " << i << " dir: " << dir << NL;
     if( dir == 0 || ( epv & 0x03 ) == 0x03 ) { // no move or all clear
       continue;
     }
@@ -814,29 +821,31 @@ int go_home( unsigned axis )
   DoAtLeave do_off_motors( []() { motors_off(); } );
   motors_on();
 
+  // TODO: go from endstops
+
   float fe_quant = (float)machs[axis].max_speed / 20;
   d_mm[axis] = -2.0f * (float)machs[axis].max_l;
 
   int rc = move_rel( d_mm, n_mo, 16 * fe_quant );
   auto esv = estp->read();
   if( rc != 9 || esv != 2 ) { // must be bad d_l
-    std_out << "# Error: fail to find endstop " << axis << ' ' << esv << NL;
+    std_out << "# Error: fail to find endstop axis " << axis << " ph 1 esv " << esv << NL;
     return 0;
   }
 
   d_mm[axis] = 2.0f;
-  rc = move_rel( d_mm, n_mo, fe_quant );
+  rc = move_rel( d_mm, n_mo, 2 * fe_quant );
   esv = estp->read();
   if( rc != 0 || esv != 3 ) { // must be ok
-    std_out << "# Error: fail to step from endstop " << axis << ' ' << esv << NL;
+    std_out << "# Error: fail to step from endstop axis " << axis << " ph 2 esv " << esv << NL;
     return 0;
   }
 
   d_mm[axis] = -3.0f;
-  rc = move_rel( d_mm, n_mo, fe_quant );
+  rc = move_rel( d_mm, n_mo, 2 * fe_quant );
   esv = estp->read();
   if( esv != 2 ) { // must be sens
-    std_out << "# Error: fail to find endstop2 " << axis << ' ' << esv << NL;
+    std_out << "# Error: fail to find endstop axis " << axis << " ph 3 esv " << esv << NL;
     return 0;
   }
 
@@ -844,7 +853,7 @@ int go_home( unsigned axis )
   const unsigned n_try = 100;
   bool found = false;
   for( unsigned i=0; i<n_try; ++i ) {
-    rc = move_rel( d_mm, n_mo, fe_quant );
+    rc = move_rel( d_mm, n_mo, 2 * fe_quant );
     esv = estp->read();
     if( rc == 0 && esv == 3 ) {
       std_out << "# Ok: found endstop end at try  " << i << NL;
@@ -858,6 +867,8 @@ int go_home( unsigned axis )
     me_st.x[axis] = 0;    // TODO: may be no auto?
     return 1;
   }
+
+  std_out << "# Error: fail to find endstop axis " << axis << " ph 4 esv " << esv << NL;
   return 0;
 }
 
@@ -951,7 +962,7 @@ int cmd_gexec( int argc, const char * const * argv )
   DoAtLeave do_off_pwm( []() { pwm_off_all(); } );
   motors_on();
 
-  while( f_gets( s, s_max, &f ) && !break_flag ) {
+  while( true ) {
     if( break_flag || !f_gets( s, s_max, &f ) ) {
       break;
     }
@@ -963,20 +974,26 @@ int cmd_gexec( int argc, const char * const * argv )
     if( s[l-1] == '\x0A' || s[l-1] == '\x0D' ) {
       s[l-1] = '\0';
     }
-    std_out << "# \"" << s << "\" " << nl << ' ' << rsz << NL;
+    std_out << NL "# \"" << s << "\" " << nl << ' ' << rsz << NL;
 
 
     GcodeBlock cb ( &me_st );
     int rc = cb.process( s );
-    break_flag = 0; // may be set by many others
-    std_out << "# rc " << rc;
+    std_out << "# rc " << rc << " br " << break_flag;
+    if( break_flag == 2 ) {
+      break_flag = 0;
+    }
+    motors_off();
+    delay_ms( 50 );
+    motors_on();
+
     if( rc >= GcodeBlock::rcEnd ) {
-      std_out << " line \"" << s << "\" pos " << cb.get_err_pos() << ' ' << cb.get_err_code();
+      std_out << " line \"" << s << "\" pos " << cb.get_err_pos() << ' ' << cb.get_err_code() << NL;
+      break;
     }
     std_out <<  NL;
     ++nl;
   }
-
 
   f_close( &f );
 
