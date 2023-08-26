@@ -1,6 +1,7 @@
 #include <cstdarg>
 #include <cerrno>
 #include <cmath>
+#include <cstring>
 
 #include <oxc_auto.h>
 #include <oxc_floatfun.h>
@@ -475,6 +476,8 @@ int cmd_pwr( int argc, const char * const * argv );
 CmdInfo CMDINFO_PWR { "pwr", 'P', cmd_pwr, "ch pow_f  - test PWM power control"  };
 int cmd_zero( int argc, const char * const * argv );
 CmdInfo CMDINFO_ZERO { "zero", 'Z', cmd_zero, "[x y z]  - set [zero] point"  };
+int cmd_gexec( int argc, const char * const * argv );
+CmdInfo CMDINFO_GEXEC { "gexec", 'X', cmd_gexec, " file  - execute gcode file"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -487,6 +490,7 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_HOME,
   &CMDINFO_PWR,
   &CMDINFO_ZERO,
+  &CMDINFO_GEXEC,
   nullptr
 };
 
@@ -526,6 +530,11 @@ void idle_main_task()
   leds[1] = ( epv == ep_mask ) ? 0 : 1;
 }
 
+int on_delay_actions()
+{
+  // leds.toggle( 1 );
+  return 0;
+}
 
 // ---------------------------------------- main -----------------------------------------------
 
@@ -917,6 +926,62 @@ int cmd_zero( int argc, const char * const * argv )
   return 0;
 }
 
+int cmd_gexec( int argc, const char * const * argv )
+{
+  if( argc < 2 ) {
+    std_out << "# gexec error: need filename" << NL;
+    return 1;
+  }
+  const char *fn = argv[1];
+
+  std_out << "# exec gcode file \"" << fn << '"' << NL;
+
+  FIL f;
+  FRESULT r = f_open( &f, fn, FA_READ );
+  if( r != FR_OK ) {
+    std_out << "# gexec error: fail ro open file \"" << fn << "\" r= " << r << NL;
+    return 2;
+  }
+
+  const unsigned s_max { 256 };
+  char s[s_max];
+  unsigned nl { 0 }, rsz {0};
+
+  DoAtLeave do_off_motors( []() { motors_off(); } );
+  DoAtLeave do_off_pwm( []() { pwm_off_all(); } );
+  motors_on();
+
+  while( f_gets( s, s_max, &f ) && !break_flag ) {
+    if( break_flag || !f_gets( s, s_max, &f ) ) {
+      break;
+    }
+    auto l = strlen( s );
+    rsz += l+1;
+    if( l < 1 ) {
+      ++nl; continue;
+    }
+    if( s[l-1] == '\x0A' || s[l-1] == '\x0D' ) {
+      s[l-1] = '\0';
+    }
+    std_out << "# \"" << s << "\" " << nl << ' ' << rsz << NL;
+
+
+    GcodeBlock cb ( &me_st );
+    int rc = cb.process( s );
+    break_flag = 0; // may be set by many others
+    std_out << "# rc " << rc;
+    if( rc >= GcodeBlock::rcEnd ) {
+      std_out << " line \"" << s << "\" pos " << cb.get_err_pos() << ' ' << cb.get_err_code();
+    }
+    std_out <<  NL;
+    ++nl;
+  }
+
+
+  f_close( &f );
+
+  return r;
+}
 
 int pwm_set( unsigned idx, float v )
 {
