@@ -1,17 +1,20 @@
 #include <cstdarg>
 #include <cerrno>
-#include <array>
 #include <cmath>
 
 #include <oxc_auto.h>
 #include <oxc_floatfun.h>
 #include <oxc_atleave.h>
+#include <oxc_fs_cmd0.h>
 //#include <oxc_outstr.h>
 //#include <oxc_hd44780_i2c.h>
 //#include <oxc_menu4b.h>
 //#include <oxc_statdata.h>
 // #include <oxc_ds3231.h>
 
+
+#include <fatfs_sd_st.h>
+#include <ff.h>
 
 #include "main.h"
 
@@ -26,6 +29,12 @@ BOARD_DEFINE_LEDS;
 BOARD_CONSOLE_DEFINES_UART;
 
 const char* common_help_string = "Application coordinate device control" NL;
+
+extern SD_HandleTypeDef hsd;
+void MX_SDIO_SD_Init();
+uint8_t sd_buf[512]; // one sector
+HAL_SD_CardInfoTypeDef cardInfo;
+FATFS fs;
 
 PinsOut stepdir_e1( GpioE,  0, 2 );
 PinsOut stepdir_e0( GpioE, 14, 2 );
@@ -472,6 +481,7 @@ const CmdInfo* global_cmds[] = {
   // DEBUG_I2C_CMDS,
 
   &CMDINFO_TEST0,
+  FS_CMDS0,
   &CMDINFO_RELMOVE,
   &CMDINFO_ABSMOVE,
   &CMDINFO_HOME,
@@ -560,6 +570,15 @@ int main()
   // lcdt.init_4b();
   // lcdt.cls();
   // lcdt.puts("I ");
+
+  MX_SDIO_SD_Init();
+  UVAR('u') = HAL_SD_Init( &hsd );
+  delay_ms( 10 );
+  UVAR('s') = HAL_SD_GetState( &hsd );
+  UVAR('z') = HAL_SD_GetCardInfo( &hsd, &cardInfo );
+  MX_FATFS_SD_Init();
+  fs.fs_type = 0; // none
+  fspath[0] = '\0';
 
   cmdline_handlers[0] = gcode_cmdline_handler;
   cmdline_handlers[1] = nullptr;
