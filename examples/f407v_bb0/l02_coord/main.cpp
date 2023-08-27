@@ -349,6 +349,8 @@ int cmd_test0( int argc, const char * const * argv )
 int move_rel( const float *d_mm_i, unsigned n_mo,  float fe_mmm )
 {
   for( auto &m : move_task )      { m.init(); }
+  fe_mmm *= me_st.fe_scale / 100;
+  fe_mmm = clamp( fe_mmm, 2.0f, me_st.fe_g0 );
   UVAR('k') = UVAR('l') = UVAR('x') = UVAR('y') = UVAR('z') = 0;
 
   me_st.n_mo = n_mo;
@@ -361,6 +363,7 @@ int move_rel( const float *d_mm_i, unsigned n_mo,  float fe_mmm )
 
   delay_ms( UVAR('v') ); // for filming
 
+  // calculate number of steps on each axis
   for( unsigned i=0; i<n_mo; ++i ) {
     const float dc = d_mm[i];
     const float step_sz = 1.0f / ( machs[i].tick2mm * me_st.axis_scale[i] );

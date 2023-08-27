@@ -33,10 +33,11 @@ class MachState : public MachStateBase {
    MachMode mode { modeFFF };
    xfloat x[n_motors];
    xfloat axis_scale[n_motors];
-   xfloat fe_g0 { 400 };
+   xfloat fe_g0 { 350 };
    xfloat fe_g1 { 300 };
+   xfloat fe_scale { 100.0f };
    xfloat spin  {   0 };
-   xfloat spin100  { 10000 };
+   xfloat spin100  { 10000 }; // scale for laser PWM
    uint32_t n_mo { 0 }; // current number of active motors
    uint32_t last_rc;
    bool was_set { false };

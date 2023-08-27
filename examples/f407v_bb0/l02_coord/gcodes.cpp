@@ -245,6 +245,14 @@ int mcode_M117( GcodeBlock *cb, MachStateBase *ms )
   return GcodeBlock::rcOk;
 }
 
+int mcode_M220( GcodeBlock *cb, MachStateBase *ms )
+{
+  COMMON_GM_CODE_CHECK;
+  me_st.fe_scale = cb->fpv_or_def( 'S', me_st.fe_scale );
+  OUT << "# M220 feed scale " << me_st.fe_scale << NL;
+  return GcodeBlock::rcOk;
+}
+
 int mcode_M450( GcodeBlock *cb, MachStateBase *ms )
 {
   COMMON_GM_CODE_CHECK;
@@ -290,6 +298,7 @@ const MachStateBase::FunGcodePair mach_m_funcs[] {
   {   5,   mcode_M5 },
   { 114, mcode_M114 },
   { 117, mcode_M117 },
+  { 220, mcode_M220 },
   { 450, mcode_M450 },
   { 451, mcode_M451 },
   { 452, mcode_M452 },
@@ -301,7 +310,12 @@ int mach_prep_fun( GcodeBlock *cb, MachStateBase *ms )
 {
   COMMON_GM_CODE_CHECK;
 
-  OUT << "## prep ";
+  OUT << "# prep ";
+  if( cb->is_set('M') ) { // special values for M commands
+    OUT << 'M' << NL;
+    return GcodeBlock::rcOk;
+  }
+
   if( cb->is_set('F') ) {
     xfloat v = cb->fpv_or_def( 'F', 100 );
     me_st.fe_g1 = v;
@@ -311,7 +325,6 @@ int mach_prep_fun( GcodeBlock *cb, MachStateBase *ms )
   if( cb->is_set('S') ) {
     xfloat v = cb->fpv_or_def( 'S', 1 );
     me_st.spin = v;
-    // TODO: autospin (laser or mill mode)
     OUT << " S= " << v;
   }
   OUT << NL;
