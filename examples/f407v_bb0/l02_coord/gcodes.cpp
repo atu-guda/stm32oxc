@@ -42,7 +42,7 @@ int gcode_G0G1( GcodeBlock *cb, MachStateBase *ms, bool g1 )
   OUT << " ); fe= "<< fe_mmm << NL;
 
   if( me_st.mode == MachState::modeLaser && g1 && me_st.spin > 0 ) {
-    const xfloat v = 100 * me_st.spin / me_st.spin100;
+    const xfloat v = me_st.getPwm();
     OUT << "# spin= " << me_st.spin << " v= " << v << NL;
     pwm_set( 0, v );
   }
@@ -205,11 +205,15 @@ int mcode_M2( GcodeBlock *cb, MachStateBase *ms )
 int mcode_M3( GcodeBlock *cb, MachStateBase *ms )
 {
   COMMON_GM_CODE_CHECK;
-  OUT << "# M3 " << NL;
+  me_st.spin = cb->fpv_or_def( 'S', me_st.spin );
+  const xfloat v = me_st.getPwm();
+  OUT << "# M3 " << v << NL;
   me_st.spinOn = true;
   if( me_st.mode == MachState::modeCNC ) {
-    pwm_set( 0, 100 * me_st.spin / me_st.spin100 ); // no direction
+    pwm_set( 0, v ); // no direction
+    OUT << '+';
   }
+  OUT << NL;
   return GcodeBlock::rcOk;
 }
 
@@ -250,6 +254,15 @@ int mcode_M220( GcodeBlock *cb, MachStateBase *ms )
   COMMON_GM_CODE_CHECK;
   me_st.fe_scale = cb->fpv_or_def( 'S', me_st.fe_scale );
   OUT << "# M220 feed scale " << me_st.fe_scale << NL;
+  return GcodeBlock::rcOk;
+}
+
+int mcode_M221( GcodeBlock *cb, MachStateBase *ms )
+{
+  COMMON_GM_CODE_CHECK;
+  me_st.spin100  = cb->fpv_or_def( 'S', me_st.spin100 );
+  me_st.spin_max = cb->fpv_or_def( 'U', me_st.spin_max );
+  OUT << "# M221 spindle scale " << me_st.spin100 << ' ' << me_st.spin_max << NL;
   return GcodeBlock::rcOk;
 }
 
@@ -299,6 +312,7 @@ const MachStateBase::FunGcodePair mach_m_funcs[] {
   { 114, mcode_M114 },
   { 117, mcode_M117 },
   { 220, mcode_M220 },
+  { 221, mcode_M221 },
   { 450, mcode_M450 },
   { 451, mcode_M451 },
   { 452, mcode_M452 },

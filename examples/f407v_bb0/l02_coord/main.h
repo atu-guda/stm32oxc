@@ -38,12 +38,14 @@ class MachState : public MachStateBase {
    xfloat fe_scale { 100.0f };
    xfloat spin  {   0 };
    xfloat spin100  { 10000 }; // scale for laser PWM
+   xfloat spin_max {  90 };   // max PWM in %
    uint32_t n_mo { 0 }; // current number of active motors
    uint32_t last_rc;
    bool was_set { false };
    bool relmove { false };
    bool inchUnit { false };
    bool spinOn   { false };
+   xfloat getPwm() const { return std::clamp( 100 * spin / spin100, 0.0f, spin_max ); }
 };
 
 extern MachState me_st;
