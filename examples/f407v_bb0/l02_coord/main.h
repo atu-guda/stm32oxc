@@ -46,6 +46,9 @@ class MachState : public MachStateBase {
 };
 
 extern MachState me_st;
+int mach_prep_fun( GcodeBlock *cb, MachStateBase *ms );
+extern const MachStateBase::FunGcodePair mach_g_funcs[];
+extern const MachStateBase::FunGcodePair mach_m_funcs[];
 
 // move task description
 struct MoveTask1 {
@@ -58,6 +61,13 @@ struct MoveTask1 {
 
 extern MoveTask1 move_task[n_motors+1]; // last idx = time
 
+void motors_off();
+void motors_on();
+int pwm_set( unsigned idx, float v );
+int pwm_off( unsigned idx );
+int pwm_off_all();
+int move_rel( const float *d_mm, unsigned n_mo, float fe_mmm );
+int go_home( unsigned axis );
 
 #endif
 
