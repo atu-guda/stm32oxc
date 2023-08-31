@@ -137,9 +137,9 @@ MoveTask1 move_task[n_motors+1]; // last idx = time
 
 
 
-// B8  = T10.1 = PWM0
+// C6  = T3.1  = PWM0
 // B9  = T11.1 = PWM1
-// C6  = T3.1  = PWM2
+// B8  = T10.1 = PWM2
 // B10 = T2.3  = PWM3?
 // B11 = T2.4  = PWM4?
 //
@@ -167,6 +167,8 @@ int cmd_zero( int argc, const char * const * argv );
 CmdInfo CMDINFO_ZERO { "zero", 'Z', cmd_zero, "[x y z]  - set [zero] point"  };
 int cmd_gexec( int argc, const char * const * argv );
 CmdInfo CMDINFO_GEXEC { "gexec", 'X', cmd_gexec, " file  - execute gcode file"  };
+int cmd_fire( int argc, const char * const * argv );
+CmdInfo CMDINFO_FIRE { "FIRE", 'F', cmd_fire, " power% time_ms  - fire laser"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -180,6 +182,7 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_PWR,
   &CMDINFO_ZERO,
   &CMDINFO_GEXEC,
+  &CMDINFO_FIRE,
   nullptr
 };
 
@@ -686,6 +689,19 @@ int cmd_gexec( int argc, const char * const * argv )
   f_close( &f );
 
   return r;
+}
+
+int cmd_fire( int argc, const char * const * argv )
+{
+  float pwr = arg2float_d( 1, argc, argv, 0, 0.0f, 100.0f );
+  unsigned dt = arg2long_d( 2, argc, argv, 0, 0, 10000 );
+  std_out << "# fire: pwr= " << pwr << " dt=  " << dt << NL;
+
+  pwm_set( 0, pwr );
+  delay_ms_brk( dt );
+  pwm_set( 0, 0 );
+
+  return 0;
 }
 
 int pwm_set( unsigned idx, float v )
