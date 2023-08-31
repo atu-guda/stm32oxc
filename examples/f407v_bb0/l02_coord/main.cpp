@@ -1,5 +1,5 @@
-#include <cstdarg>
 #include <cerrno>
+#include <climits>
 #include <cmath>
 #include <cstring>
 
@@ -634,9 +634,14 @@ int cmd_gexec( int argc, const char * const * argv )
     std_out << "# gexec error: need filename" << NL;
     return 1;
   }
+
+  int max_lines  = arg2long_d( 2, argc, argv, INT_MAX-1, 0, INT_MAX   );
+  int skip_lines = arg2long_d( 3, argc, argv,         0, 0, INT_MAX-2 );
+
   const char *fn = argv[1];
 
-  std_out << "# exec gcode file \"" << fn << '"' << NL;
+  std_out << "# exec gcode file \"" << fn << "\" max_lines= " << max_lines
+    << " skip_lines= " << skip_lines << NL;
 
   FIL f;
   FRESULT r = f_open( &f, fn, FA_READ );
@@ -647,33 +652,38 @@ int cmd_gexec( int argc, const char * const * argv )
 
   const unsigned s_max { 256 };
   char s[s_max];
-  unsigned nl { 0 }, rsz {0};
+  int nl { 0 }, nle {0}, rsz {0}; // nle - executed lines
 
-  DoAtLeave do_off_motors( []() { motors_off(); } );
-  DoAtLeave do_off_pwm( []() { pwm_off_all(); } );
+  DoAtLeave do_off_all( []() {  pwm_off_all(); motors_off(); } );
   motors_on();
 
-  while( true ) {
+  while( nle < max_lines ) {
     if( break_flag || !f_gets( s, s_max, &f ) ) {
       break;
     }
     auto l = strlen( s );
     rsz += l+1;
-    if( l < 1 ) {
-      ++nl; continue;
-    }
     if( s[l-1] == '\x0A' || s[l-1] == '\x0D' ) {
       s[l-1] = '\0';
     }
     std_out << NL "# \"" << s << "\" " << nl << ' ' << rsz << NL;
 
+    if( nl < skip_lines ) {
+      ++nl;
+      std_out << "# skipped " NL;
+      continue;
+    }
+
 
     GcodeBlock cb ( &me_st );
     int rc = cb.process( s );
-    std_out << "# rc " << rc << " br " << break_flag;
+    ++nle;
+    std_out << "# rc= " << rc << " br= " << break_flag << " nle= " << nle << NL;
     if( break_flag == 2 ) {
       break_flag = 0;
     }
+
+    // TODO: params
     motors_off();
     delay_ms( 50 );
     motors_on();
@@ -693,7 +703,7 @@ int cmd_gexec( int argc, const char * const * argv )
 
 int cmd_fire( int argc, const char * const * argv )
 {
-  float pwr = arg2float_d( 1, argc, argv, 0, 0.0f, 100.0f );
+  float pwr = arg2float_d( 1, argc, argv, 0.05, 0.0f, 100.0f );
   unsigned dt = arg2long_d( 2, argc, argv, 0, 0, 10000 );
   std_out << "# fire: pwr= " << pwr << " dt=  " << dt << NL;
 

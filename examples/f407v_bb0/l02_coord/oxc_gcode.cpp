@@ -46,7 +46,7 @@ int GcodeBlock::process( const char *s )
     return rcFatal;
   }
 
-  if( s[0] == '%' && s[1] == '\0' ) { // start
+  if( s[0] == '\0' || ( s[0] == '%' && s[1] == '\0' ) ) { // start
     return rcOk;
   }
 
