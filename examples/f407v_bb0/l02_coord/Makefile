@@ -30,6 +30,7 @@ SRCS  += oxc_gcode.cpp
 SRCS  += gcodes.cpp
 
 SRCS += oxc_floatfun.cpp
+SRCS += oxc_namedobjs.cpp
 SRCS += oxc_namedints.cpp
 SRCS += oxc_namedfloats.cpp
 SRCS += f4_sdio_init_1bit.cpp

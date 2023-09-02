@@ -33,6 +33,8 @@ BOARD_CONSOLE_DEFINES_UART;
 
 const char* common_help_string = "Application coordinate device control" NL;
 
+int debug { 1 };
+
 extern SD_HandleTypeDef hsd;
 void MX_SDIO_SD_Init();
 uint8_t sd_buf[512]; // one sector
@@ -188,11 +190,20 @@ const CmdInfo* global_cmds[] = {
   nullptr
 };
 
-const constinit NamedInt   ob_break_flag    {    "break_flag",    const_cast<int*>(&break_flag)  }; // may be UB?
-//const NamedFloat ob_f    {    "pwm_min",      get_pwm_min,  set_pwm_min  };
+const constinit NamedInt   ob_break_flag  {    "break_flag",    const_cast<int*>(&break_flag)  }; // may be UB?
+const constinit NamedInt   ob_debug       {    "debug",         &debug  };
+const constinit NamedFloat ob_me_fe_g0    {    "me.fe_g0",      &me_st.fe_g0  };
+const constinit NamedFloat ob_me_fe_g1    {    "me.fe_g1",      &me_st.fe_g1  };
+const constinit NamedFloat ob_me_fe_scale {    "me.fe_scale",   &me_st.fe_scale  };
+const constinit NamedFloat ob_me_spin100  {    "me.spin100",    &me_st.spin100  };
 
 const constinit NamedObj *const objs_info[] = {
   & ob_break_flag,
+  & ob_debug,
+  & ob_me_fe_g0,
+  & ob_me_fe_g1,
+  & ob_me_fe_scale,
+  & ob_me_spin100,
   nullptr
 };
 
@@ -307,6 +318,9 @@ int main()
   fs.fs_type = 0; // none
   fspath[0] = '\0';
 
+  print_var_hook = print_var_ex;
+  set_var_hook   = set_var_ex;
+
   cmdline_handlers[0] = gcode_cmdline_handler;
   cmdline_handlers[1] = nullptr;
 
@@ -390,8 +404,6 @@ int move_rel( const float *d_mm_i, unsigned n_mo,  float fe_mmm )
   float d_l { 0 };
   int max_steps { 0 }, max_steps_idx { 0 };
 
-  delay_ms( UVAR('v') ); // for filming
-
   // calculate number of steps on each axis
   for( unsigned i=0; i<n_mo; ++i ) {
     const float dc = d_mm[i];
@@ -415,8 +427,10 @@ int move_rel( const float *d_mm_i, unsigned n_mo,  float fe_mmm )
 
     const float d_c = move_task[i].step_rest * step_sz;
     d_mm[i] = d_c;
-    std_out << "# " << i << ' ' << dc << ' ' << d_c
-            << move_task[i].dir << ' ' << move_task[i].step_rest << NL;
+    if( debug > 1 ) {
+      std_out << "# " << i << ' ' << dc << ' ' << d_c << ' '
+              << move_task[i].dir << ' ' << move_task[i].step_rest << NL;
+    }
     d_l += d_c * d_c;
     feed3_max += machs[i].max_speed * machs[i].max_speed;
   }
@@ -427,9 +441,11 @@ int move_rel( const float *d_mm_i, unsigned n_mo,  float fe_mmm )
     fe_mmm = feed3_max;
   }
 
-  std_out << "# feed= " << fe_mmm << " mm/min; " << " d_l= " << d_l
-          << " mm;  feed3_max= " << feed3_max
-          << "  max_steps= " << max_steps  << ' ' << max_steps_idx << NL;
+  if( debug > 1 ) {
+    std_out << "# feed= " << fe_mmm << " mm/min; " << " d_l= " << d_l
+            << " mm;  feed3_max= " << feed3_max
+            << "  max_steps= " << max_steps  << ' ' << max_steps_idx << NL;
+  }
 
   float feed[n_mo];
   float feed_lim { 0 };
@@ -443,9 +459,12 @@ int move_rel( const float *d_mm_i, unsigned n_mo,  float fe_mmm )
   }
   feed_lim = sqrtf( feed_lim );
 
-  std_out << "# feed_lim= " << feed_lim << NL;
+  if( debug > 1 ) {
+    std_out << "# feed_lim= " << feed_lim << NL;
+  }
+
   if( feed[max_steps_idx] < 1e-3f || feed_lim < 1e-3f ) {
-    std_out << "# Error: too low speed, exiting" << NL;
+    std_out << "# Error: too low speed, exiting " << feed_lim << NL;
     return 5;
   }
 
@@ -466,19 +485,20 @@ int move_rel( const float *d_mm_i, unsigned n_mo,  float fe_mmm )
     if( machs[i].endstops == nullptr ) {
       continue;
     }
-    uint16_t epv = machs[i].endstops->read();
+    uint16_t esv = machs[i].endstops->read();
     const auto dir = move_task[i].dir;
-    // std_out << "# debug: endstop " << epv << " at " << i << " dir: " << dir << NL;
-    if( dir == 0 || ( epv & 0x03 ) == 0x03 ) { // no move or all clear
+    // TODO: sepatate function: is_endstop_clear_for_dir( uint16_t e, int dir );
+    // std_out << "# debug: endstop " << esv << " at " << i << " dir: " << dir << NL;
+    if( dir == 0 || ( esv & 0x03 ) == 0x03 ) { // no move or all clear
       continue;
     }
-    if( dir >  0 && ( epv & 0x02 ) ) { // forward and ep+ clear
+    if( dir >  0 && ( esv & 0x02 ) ) { // forward and ep+ clear
       continue;
     }
-    if( dir <  0 && ( epv & 0x01 ) ) { // backward and ep- clear
+    if( dir <  0 && ( esv & 0x01 ) ) { // backward and ep- clear
       continue;
     }
-    std_out << "# Error: endstop " << epv << " at " << i << " dir: " << dir << NL;
+    std_out << "# Error: endstop " << esv << " at " << i << " dir: " << dir << NL;
     return 7;
   }
 
@@ -504,12 +524,14 @@ int move_rel( const float *d_mm_i, unsigned n_mo,  float fe_mmm )
       / ( machs[i].tick2mm * me_st.axis_scale[i] );
     me_st.x[i] += real_d[i];
     l_err += pow2f( d_mm_i[i] - real_d[i] );
-    std_out << " d_" << i << " = " << real_d[i] << " x= " << me_st.x[i] << NL;
+    if( debug > 1 ) {
+      std_out << " d_" << i << " = " << real_d[i] << " x= " << me_st.x[i] << NL;
+    }
   }
   l_err = sqrtf( l_err );
-  std_out << "# l_err= " << l_err;
+  std_out << "# l_err= " << l_err << NL;
 
-  if( l_err > 0.1f ) {
+  if( l_err > 0.1f ) { // TODO: param
     return 9;
   }
 
@@ -529,7 +551,9 @@ int go_home( unsigned axis )
   }
 
   pwm_off_all();
-  me_st.was_set = false;
+  // me_st.was_set = false;
+
+  float fe_quant = (float)machs[axis].max_speed / 20;
 
   const unsigned n_mo { 3 }; // 3 = only XYZ motors
   float d_mm[n_mo];
@@ -538,41 +562,61 @@ int go_home( unsigned axis )
   DoAtLeave do_off_motors( []() { motors_off(); } );
   motors_on();
 
-  // TODO: go from endstops, params
+  // TODO: params
+  int rc { 0 };
 
-  float fe_quant = (float)machs[axis].max_speed / 20;
-  d_mm[axis] = -2.0f * (float)machs[axis].max_l;
-
-  int rc = move_rel( d_mm, n_mo, 16 * fe_quant );
+  // if on endstop_minus - go+
   auto esv = estp->read();
-  if( rc != 9 || esv != 2 ) { // must be bad d_l
+  std_out << "# debug: home: avis= " << axis << " esv= " << esv << NL;
+  if( is_endstop_minus_stop( esv ) ) {
+    std_out << "# Warning: move from endstop- " << axis << NL;
+    d_mm[axis] = 5.0f;
+    rc = move_rel( d_mm, n_mo, 16 * fe_quant ); // TODO value
+    std_out << "# rc= " << rc << NL;
+    // TODO: exit if bad
+  }
+
+  esv = estp->read();
+  if( ! is_endstop_clear( esv ) ) {
+    std_out << "# Error: not all clear " << axis << " esv= " << esv << NL;
+    return 0;
+  }
+
+  // go to endstop
+  d_mm[axis] = -2.0f * (float)machs[axis].max_l; // far away
+  rc = move_rel( d_mm, n_mo, 16 * fe_quant ); // up to any endstop, ok
+  esv = estp->read();
+  if( is_endstop_minus_go( esv ) ) { //
     std_out << "# Error: fail to find endstop axis " << axis << " ph 1 esv " << esv << NL;
     return 0;
   }
 
-  d_mm[axis] = 2.0f;
-  rc = move_rel( d_mm, n_mo, 2 * fe_quant );
+  // go slowly away
+  d_mm[axis] = 5.0f;
+  rc = move_rel( d_mm, n_mo, 5 * fe_quant ); // TODO: stop on endstop clear
   esv = estp->read();
-  if( rc != 0 || esv != 3 ) { // must be ok
+  if( rc != 0 || is_endstop_minus_stop(esv) ) { // must be ok
     std_out << "# Error: fail to step from endstop axis " << axis << " ph 2 esv " << esv << NL;
     return 0;
   }
 
-  d_mm[axis] = -3.0f;
+  // go slowly to endstop
+  d_mm[axis] = -5.0f;
   rc = move_rel( d_mm, n_mo, 2 * fe_quant );
   esv = estp->read();
-  if( esv != 2 ) { // must be sens
+  if( is_endstop_minus_go( esv ) ) {
     std_out << "# Error: fail to find endstop axis " << axis << " ph 3 esv " << esv << NL;
     return 0;
   }
 
+  // small steps from
   d_mm[axis] = 0.02f;
   const unsigned n_try = 100;
   bool found = false;
   for( unsigned i=0; i<n_try; ++i ) {
     rc = move_rel( d_mm, n_mo, 2 * fe_quant );
     esv = estp->read();
-    if( rc == 0 && esv == 3 ) {
+    if( rc == 0 && is_endstop_minus_go( esv ) ) {
       std_out << "# Ok: found endstop end at try  " << i << NL;
       found = true;
       break;

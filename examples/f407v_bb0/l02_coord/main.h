@@ -8,6 +8,8 @@ const inline uint32_t  TIM_PWM_count_freq  {      10000 };
 const inline uint32_t  TIM6_base_freq   {  1'000'000 };
 const inline uint32_t  TIM6_count_freq  {      20000 };
 
+extern int debug; // in main.cpp
+
 // mach params
 struct MachParam {
   uint32_t tick2mm   ; // tick per mm, = 2* pulses per mm
@@ -71,6 +73,14 @@ int pwm_off( unsigned idx );
 int pwm_off_all();
 int move_rel( const float *d_mm, unsigned n_mo, float fe_mmm );
 int go_home( unsigned axis );
+
+inline bool is_endstop_minus_stop( uint16_t e ) { return ( (e & 0x01) == 0 ) ; }
+inline bool is_endstop_minus_go(   uint16_t e ) { return ( (e & 0x01) != 0 ) ; }
+inline bool is_endstop_plus_stop(  uint16_t e ) { return ( (e & 0x02) == 0 ) ; }
+inline bool is_endstop_plus_go(    uint16_t e ) { return ( (e & 0x02) != 0 ) ; }
+inline bool is_endstop_any_stop(   uint16_t e ) { return ( (e & 0x03) != 3 ) ; }
+inline bool is_endstop_clear(      uint16_t e ) { return ( (e & 0x03) == 3 ) ; }
+inline bool is_endstop_bad(        uint16_t e ) { return ( (e & 0x03) == 0 ) ; }
 
 #endif
 
