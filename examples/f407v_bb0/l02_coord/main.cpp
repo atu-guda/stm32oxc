@@ -120,11 +120,11 @@ const EXTI_init_info extis[] = {
 
 
 MachParam machs[n_motors] = {
-  {  1600, 500,     150,     &x_e, &stepdir_x  }, // TODO: 500 increase after working acceleration
-  {  1600, 500,     300,     &y_e, &stepdir_y  },
-  {  1600, 300,     150,     &z_e, &stepdir_z  },
-  {   100, 100,  999999,  nullptr, &stepdir_e0 },
-  {   100, 100,  999999,  nullptr, &stepdir_e1 }
+  {  1600, 500,     150, 5.0f, 0.1f,    &x_e, &stepdir_x  }, // TODO: 500 increase after working acceleration
+  {  1600, 500,     300, 5.0f, 0.1f,    &y_e, &stepdir_y  },
+  {  1600, 300,     150, 4.0f, 0.1f,    &z_e, &stepdir_z  },
+  {   100, 100,  999999, 0.0f, 0.1f, nullptr, &stepdir_e0 },
+  {   100, 100,  999999, 0.0f, 0.1f, nullptr, &stepdir_e1 }
 };
 
 
@@ -196,6 +196,12 @@ const constinit NamedFloat ob_me_fe_g0    {    "me.fe_g0",      &me_st.fe_g0  };
 const constinit NamedFloat ob_me_fe_g1    {    "me.fe_g1",      &me_st.fe_g1  };
 const constinit NamedFloat ob_me_fe_scale {    "me.fe_scale",   &me_st.fe_scale  };
 const constinit NamedFloat ob_me_spin100  {    "me.spin100",    &me_st.spin100  };
+const constinit NamedFloat ob_ma_x_es_find_l {    "ma.x.es_find",   &machs[0].es_find_l  };
+const constinit NamedFloat ob_ma_y_es_find_l {    "ma.y.es_find",   &machs[1].es_find_l  };
+const constinit NamedFloat ob_ma_z_es_find_l {    "ma.y.es_find",   &machs[2].es_find_l  };
+const constinit NamedFloat ob_ma_x_k_slow {        "ma.x.k_slow",   &machs[0].k_slow  };
+const constinit NamedFloat ob_ma_y_k_slow {        "ma.y.k_slow",   &machs[1].k_slow  };
+const constinit NamedFloat ob_ma_z_k_slow {        "ma.z.k_slow",   &machs[2].k_slow  };
 
 const constinit NamedObj *const objs_info[] = {
   & ob_break_flag,
@@ -204,6 +210,12 @@ const constinit NamedObj *const objs_info[] = {
   & ob_me_fe_g1,
   & ob_me_fe_scale,
   & ob_me_spin100,
+  & ob_ma_x_es_find_l,
+  & ob_ma_y_es_find_l,
+  & ob_ma_z_es_find_l,
+  & ob_ma_x_k_slow,
+  & ob_ma_y_k_slow,
+  & ob_ma_z_k_slow,
   nullptr
 };
 
@@ -518,6 +530,7 @@ int move_rel( const float *d_mm_i, unsigned n_mo,  float fe_mmm )
 
   me_st.last_rc = break_flag;
 
+  // calculate shift and errors
   float real_d[n_mo], l_err { 0.0f };
   for( unsigned i=0; i<n_mo; ++i ) {
     real_d[i] = float( move_task[i].step_task - move_task[i].step_rest ) * move_task[i].dir
@@ -529,13 +542,10 @@ int move_rel( const float *d_mm_i, unsigned n_mo,  float fe_mmm )
     }
   }
   l_err = sqrtf( l_err );
-  std_out << "# l_err= " << l_err << NL;
 
-  if( l_err > 0.1f ) { // TODO: param
-    return 9;
-  }
-
-  return ( me_st.last_rc == 2 ) ? 0 : 8;
+  int rc = ( me_st.last_rc == 2 ) ? ( (l_err > 0.1f) ? 9 : 0 ) : 8;
+  std_out << "# rc= " << rc << " l_err= " << l_err << NL;
+  return rc;
 }
 
 int go_home( unsigned axis )
@@ -553,7 +563,8 @@ int go_home( unsigned axis )
   pwm_off_all();
   // me_st.was_set = false;
 
-  float fe_quant = (float)machs[axis].max_speed / 20;
+  float fe_slow = (float)machs[axis].max_speed * machs[axis].k_slow;
+  float fe_fast = (float)machs[axis].max_speed * 0.6f; // TODO: param too?
 
   const unsigned n_mo { 3 }; // 3 = only XYZ motors
   float d_mm[n_mo];
@@ -570,8 +581,8 @@ int go_home( unsigned axis )
   std_out << "# debug: home: avis= " << axis << " esv= " << esv << NL;
   if( is_endstop_minus_stop( esv ) ) {
     std_out << "# Warning: move from endstop- " << axis << NL;
-    d_mm[axis] = 5.0f;
-    rc = move_rel( d_mm, n_mo, 16 * fe_quant ); // TODO value
+    d_mm[axis] = machs[axis].es_find_l;
+    rc = move_rel( d_mm, n_mo, 2 * fe_slow );
     std_out << "# rc= " << rc << NL;
     // TODO: exit if bad
   }
@@ -584,7 +595,7 @@ int go_home( unsigned axis )
 
   // go to endstop
   d_mm[axis] = -2.0f * (float)machs[axis].max_l; // far away
-  rc = move_rel( d_mm, n_mo, 16 * fe_quant ); // up to any endstop, ok
+  rc = move_rel( d_mm, n_mo, fe_fast ); // up to any endstop, ok
   esv = estp->read();
   if( is_endstop_minus_go( esv ) ) { //
     std_out << "# Error: fail to find endstop axis " << axis << " ph 1 esv " << esv << NL;
@@ -592,8 +603,8 @@ int go_home( unsigned axis )
   }
 
   // go slowly away
-  d_mm[axis] = 5.0f;
-  rc = move_rel( d_mm, n_mo, 5 * fe_quant ); // TODO: stop on endstop clear
+  d_mm[axis] = machs[axis].es_find_l;
+  rc = move_rel( d_mm, n_mo, fe_slow ); // TODO: stop on endstop clear
   esv = estp->read();
   if( rc != 0 || is_endstop_minus_stop(esv) ) { // must be ok
     std_out << "# Error: fail to step from endstop axis " << axis << " ph 2 esv " << esv << NL;
@@ -601,20 +612,20 @@ int go_home( unsigned axis )
   }
 
   // go slowly to endstop
-  d_mm[axis] = -5.0f;
-  rc = move_rel( d_mm, n_mo, 2 * fe_quant );
+  d_mm[axis] = -1.5f * machs[axis].es_find_l;
+  rc = move_rel( d_mm, n_mo, fe_slow );
   esv = estp->read();
   if( is_endstop_minus_go( esv ) ) {
     std_out << "# Error: fail to find endstop axis " << axis << " ph 3 esv " << esv << NL;
     return 0;
   }
 
-  // small steps from
+  // small steps from, TODO: single with test
   d_mm[axis] = 0.02f;
   const unsigned n_try = 100;
   bool found = false;
   for( unsigned i=0; i<n_try; ++i ) {
-    rc = move_rel( d_mm, n_mo, 2 * fe_quant );
+    rc = move_rel( d_mm, n_mo, fe_slow );
     esv = estp->read();
     if( rc == 0 && is_endstop_minus_go( esv ) ) {
       std_out << "# Ok: found endstop end at try  " << i << NL;

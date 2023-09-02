@@ -15,6 +15,8 @@ struct MachParam {
   uint32_t tick2mm   ; // tick per mm, = 2* pulses per mm
   uint32_t max_speed ; // mm/min
   uint32_t max_l     ; // mm
+  float    es_find_l ; // movement to find endstop, from ES, to = *1.5
+  float    k_slow    ; // slow movement coeff from max_speed
   PinsIn  *endstops  ;
   PinsOut *motor     ;
 };
