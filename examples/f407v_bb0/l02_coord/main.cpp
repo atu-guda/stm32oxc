@@ -439,6 +439,15 @@ int move_rel( const float *d_mm_i, unsigned n_mo,  float fe_mmm )
   float d_l { 0 };
   int max_steps { 0 }, max_steps_idx { 0 };
 
+  if( debug > 0 ) {
+    std_out << "# rel: " << n_mo << ' ';
+    for( unsigned i=0; i<n_mo; ++i ) {
+      std_out << d_mm[i] << ' ';
+    }
+    std_out << fe_mmm << ' ';
+  }
+
+
   // calculate number of steps on each axis
   for( unsigned i=0; i<n_mo; ++i ) {
     const float dc = d_mm[i];
@@ -463,7 +472,7 @@ int move_rel( const float *d_mm_i, unsigned n_mo,  float fe_mmm )
     const float d_c = move_task[i].step_rest * step_sz;
     d_mm[i] = d_c;
     if( debug > 1 ) {
-      std_out << "# " << i << ' ' << dc << ' ' << d_c << ' '
+      std_out << NL "# " << i << ' ' << dc << ' ' << d_c << ' '
               << move_task[i].dir << ' ' << move_task[i].step_rest << NL;
     }
     d_l += d_c * d_c;
@@ -505,7 +514,9 @@ int move_rel( const float *d_mm_i, unsigned n_mo,  float fe_mmm )
 
   float t_all = 60 * d_mm[max_steps_idx] / feed[max_steps_idx];
   uint32_t t_all_tick = 2 + ( uint32_t( t_all * TIM6_count_freq ) & ~1u );
-  std_out << "# t_all= " << t_all << " s = " <<  t_all_tick << NL;
+  if( debug > 0 ) {
+    std_out << " t_all= " << t_all << " s = " <<  t_all_tick << ' ';
+  }
 
   if( t_all_tick < 3 ) {
     std_out << "# jump on place" << NL;
@@ -803,7 +814,6 @@ int cmd_gexec( int argc, const char * const * argv )
       break_flag = 0;
     }
 
-    // TODO: params
     if( me_st.dly_xsteps > 0 ) {
       motors_off();
       delay_ms( me_st.dly_xsteps );
@@ -902,7 +912,7 @@ void HAL_GPIO_EXTI_Callback( uint16_t pin_bit )
   // TODO: PWM and break logic
 }
 
-void EXTI0_IRQHandler(void)
+void EXTI0_IRQHandler()
 {
   HAL_GPIO_EXTI_IRQHandler( BIT0 );
 }
@@ -1031,10 +1041,10 @@ int MX_TIM6_Init()
 
 void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* tim_baseHandle )
 {
-  if(     tim_baseHandle->Instance == TIM2 ) {
+  if(      tim_baseHandle->Instance == TIM2 ) {
     __HAL_RCC_TIM2_CLK_ENABLE();
   }
-  else if(tim_baseHandle->Instance == TIM3 ) {
+  else if( tim_baseHandle->Instance == TIM3 ) {
     __HAL_RCC_TIM3_CLK_ENABLE();
   }
   else if( tim_baseHandle->Instance == TIM4 ) {
