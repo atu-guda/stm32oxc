@@ -7,6 +7,8 @@
 #include <oxc_floatfun.h>
 #include <oxc_atleave.h>
 #include <oxc_fs_cmd0.h>
+#include <oxc_namedints.h>
+#include <oxc_namedfloats.h>
 //#include <oxc_outstr.h>
 //#include <oxc_hd44780_i2c.h>
 //#include <oxc_menu4b.h>
@@ -185,6 +187,30 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_FIRE,
   nullptr
 };
+
+const constinit NamedInt   ob_break_flag    {    "break_flag",    const_cast<int*>(&break_flag)  }; // may be UB?
+//const NamedFloat ob_f    {    "pwm_min",      get_pwm_min,  set_pwm_min  };
+
+const constinit NamedObj *const objs_info[] = {
+  & ob_break_flag,
+  nullptr
+};
+
+NamedObjs objs( objs_info );
+
+// print/set hook functions
+
+bool print_var_ex( const char *nm, int fmt )
+{
+  return objs.print( nm, fmt );
+}
+
+bool set_var_ex( const char *nm, const char *s )
+{
+  auto ok =  objs.set( nm, s );
+  print_var_ex( nm, 0 );
+  return ok;
+}
 
 // handle Gnnn...., Mnnn..., !SOME_OTHER_COMMAND
 int gcode_cmdline_handler( char *s )
@@ -512,7 +538,7 @@ int go_home( unsigned axis )
   DoAtLeave do_off_motors( []() { motors_off(); } );
   motors_on();
 
-  // TODO: go from endstops
+  // TODO: go from endstops, params
 
   float fe_quant = (float)machs[axis].max_speed / 20;
   d_mm[axis] = -2.0f * (float)machs[axis].max_l;
