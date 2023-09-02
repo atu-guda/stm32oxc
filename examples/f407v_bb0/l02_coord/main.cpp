@@ -190,22 +190,24 @@ const CmdInfo* global_cmds[] = {
   nullptr
 };
 
-const constinit NamedInt   ob_break_flag  {    "break_flag",    const_cast<int*>(&break_flag)  }; // may be UB?
-const constinit NamedInt   ob_debug       {    "debug",         &debug  };
-const constinit NamedFloat ob_me_fe_g0    {    "me.fe_g0",      &me_st.fe_g0  };
-const constinit NamedFloat ob_me_fe_g1    {    "me.fe_g1",      &me_st.fe_g1  };
-const constinit NamedFloat ob_me_fe_scale {    "me.fe_scale",   &me_st.fe_scale  };
-const constinit NamedFloat ob_me_spin100  {    "me.spin100",    &me_st.spin100  };
+const constinit NamedInt   ob_break_flag     {    "break_flag",    const_cast<int*>(&break_flag)  }; // may be UB?
+const constinit NamedInt   ob_debug          {    "debug",          &debug  };
+const constinit NamedInt   ob_me_dly_xsteps  {    "me.dly_xsteps",  &me_st.dly_xsteps  };
+const constinit NamedFloat ob_me_fe_g0       {    "me.fe_g0",       &me_st.fe_g0  };
+const constinit NamedFloat ob_me_fe_g1       {    "me.fe_g1",       &me_st.fe_g1  };
+const constinit NamedFloat ob_me_fe_scale    {    "me.fe_scale",    &me_st.fe_scale  };
+const constinit NamedFloat ob_me_spin100     {    "me.spin100",     &me_st.spin100  };
 const constinit NamedFloat ob_ma_x_es_find_l {    "ma.x.es_find",   &machs[0].es_find_l  };
 const constinit NamedFloat ob_ma_y_es_find_l {    "ma.y.es_find",   &machs[1].es_find_l  };
 const constinit NamedFloat ob_ma_z_es_find_l {    "ma.y.es_find",   &machs[2].es_find_l  };
-const constinit NamedFloat ob_ma_x_k_slow {        "ma.x.k_slow",   &machs[0].k_slow  };
-const constinit NamedFloat ob_ma_y_k_slow {        "ma.y.k_slow",   &machs[1].k_slow  };
-const constinit NamedFloat ob_ma_z_k_slow {        "ma.z.k_slow",   &machs[2].k_slow  };
+const constinit NamedFloat ob_ma_x_k_slow    {    "ma.x.k_slow",    &machs[0].k_slow  };
+const constinit NamedFloat ob_ma_y_k_slow    {    "ma.y.k_slow",    &machs[1].k_slow  };
+const constinit NamedFloat ob_ma_z_k_slow    {    "ma.z.k_slow",    &machs[2].k_slow  };
 
 const constinit NamedObj *const objs_info[] = {
   & ob_break_flag,
   & ob_debug,
+  & ob_me_dly_xsteps,
   & ob_me_fe_g0,
   & ob_me_fe_g1,
   & ob_me_fe_scale,
@@ -233,6 +235,28 @@ bool set_var_ex( const char *nm, const char *s )
   auto ok =  objs.set( nm, s );
   print_var_ex( nm, 0 );
   return ok;
+}
+
+const char* endstops2str( uint16_t es, bool touch, char *buf )
+{
+  static char s_buf[8] { "XYZT??" }; // only 5 need
+  if( !buf ) {
+    buf = s_buf;
+  }
+  // pin-dependent code
+  buf[0] = endstop2char( es ); // & 0x03 inside endstop2char fun
+  buf[1] = endstop2char( es >> 3 ); // skip D2: sdio
+  buf[2] = endstop2char( es >> 5 );
+  buf[3] = touch ? '!' : ',';
+  buf[4] = '\0';
+  return buf;
+}
+
+const char* endstops2str_a( char *buf )
+{
+  auto es = endstops_gpio.IDR & endstops_mask;
+  bool touch = touch_gpio.IDR & touch_mask;
+  return endstops2str( es, touch, buf );
 }
 
 // handle Gnnn...., Mnnn..., !SOME_OTHER_COMMAND
@@ -266,9 +290,8 @@ int gcode_cmdline_handler( char *s )
 
 void idle_main_task()
 {
-  const uint32_t ep_mask = 0b01111011;
-  auto epv = GpioD.IDR & ep_mask;
-  leds[1] = ( epv == ep_mask ) ? 0 : 1;
+  auto e = GpioD.IDR & endstops_mask;
+  leds[1] = ( e == endstops_mask ) ? 0 : 1;
 }
 
 int on_delay_actions()
@@ -578,49 +601,65 @@ int go_home( unsigned axis )
 
   // if on endstop_minus - go+
   auto esv = estp->read();
-  std_out << "# debug: home: avis= " << axis << " esv= " << esv << NL;
+  std_out << "# debug: home: axis= " << axis << ' ' << endstops2str_a() << NL;
   if( is_endstop_minus_stop( esv ) ) {
-    std_out << "# Warning: move from endstop- " << axis << NL;
+    if( debug > 0 ) {
+      std_out << "# Warning: move from endstop- " << axis << ' ' << endstops2str_a() << NL;
+    }
     d_mm[axis] = machs[axis].es_find_l;
     rc = move_rel( d_mm, n_mo, 2 * fe_slow );
-    std_out << "# rc= " << rc << NL;
+    if( debug > 0 ) {
+      std_out << "# rc= " << rc << NL;
+    }
     // TODO: exit if bad
   }
 
   esv = estp->read();
   if( ! is_endstop_clear( esv ) ) {
-    std_out << "# Error: not all clear " << axis << " esv= " << esv << NL;
+    std_out << "# Error: not all clear " << axis << ' ' << endstops2str_a() << NL;
     return 0;
   }
 
   // go to endstop
   d_mm[axis] = -2.0f * (float)machs[axis].max_l; // far away
+  if( debug > 0 ) {
+    std_out << "# to_endstop ph 1 " << endstops2str_a() << NL;
+  }
   rc = move_rel( d_mm, n_mo, fe_fast ); // up to any endstop, ok
   esv = estp->read();
   if( is_endstop_minus_go( esv ) ) { //
-    std_out << "# Error: fail to find endstop axis " << axis << " ph 1 esv " << esv << NL;
+    std_out << "# Error: fail to find endstop. axis " << axis << " ph 1 " << esv  << ' ' << endstops2str_a() << NL;
     return 0;
   }
 
   // go slowly away
+  if( debug > 0 ) {
+    std_out << "# go_away ph 2 "  << endstops2str_a() << NL;
+  }
   d_mm[axis] = machs[axis].es_find_l;
   rc = move_rel( d_mm, n_mo, fe_slow ); // TODO: stop on endstop clear
   esv = estp->read();
   if( rc != 0 || is_endstop_minus_stop(esv) ) { // must be ok
-    std_out << "# Error: fail to step from endstop axis " << axis << " ph 2 esv " << esv << NL;
+    std_out << "# Error: fail to step from endstop axis " << axis << " ph 2 " << endstops2str_a() << NL;
     return 0;
   }
 
   // go slowly to endstop
+  if( debug > 0 ) {
+    std_out << "# to_es ph 3 " << endstops2str_a() << NL;
+  }
   d_mm[axis] = -1.5f * machs[axis].es_find_l;
   rc = move_rel( d_mm, n_mo, fe_slow );
   esv = estp->read();
   if( is_endstop_minus_go( esv ) ) {
-    std_out << "# Error: fail to find endstop axis " << axis << " ph 3 esv " << esv << NL;
+    std_out << "# Error: fail to find endstop axis " << axis << " ph 3 " << endstops2str_a() << esv << NL;
     return 0;
   }
 
   // small steps from, TODO: single with test
+  if( debug > 0 ) {
+    std_out << "# go_away st ph 4 " << endstops2str_a() << NL;
+  }
   d_mm[axis] = 0.02f;
   const unsigned n_try = 100;
   bool found = false;
@@ -628,7 +667,7 @@ int go_home( unsigned axis )
     rc = move_rel( d_mm, n_mo, fe_slow );
     esv = estp->read();
     if( rc == 0 && is_endstop_minus_go( esv ) ) {
-      std_out << "# Ok: found endstop end at try  " << i << NL;
+      std_out << "# Ok: found endstop end at try  " << i << ' ' << endstops2str_a() << NL;
       found = true;
       break;
     }
@@ -640,7 +679,7 @@ int go_home( unsigned axis )
     return 1;
   }
 
-  std_out << "# Error: fail to find endstop axis " << axis << " ph 4 esv " << esv << NL;
+  std_out << "# Error: fail to find endstop axis " << axis << " ph 4 " << endstops2str_a() << NL;
   return 0;
 }
 
@@ -727,7 +766,7 @@ int cmd_gexec( int argc, const char * const * argv )
   FIL f;
   FRESULT r = f_open( &f, fn, FA_READ );
   if( r != FR_OK ) {
-    std_out << "# gexec error: fail ro open file \"" << fn << "\" r= " << r << NL;
+    std_out << "# gexec error: fail to open file \"" << fn << "\" r= " << r << NL;
     return 2;
   }
 
@@ -765,9 +804,11 @@ int cmd_gexec( int argc, const char * const * argv )
     }
 
     // TODO: params
-    motors_off();
-    delay_ms( 50 );
-    motors_on();
+    if( me_st.dly_xsteps > 0 ) {
+      motors_off();
+      delay_ms( me_st.dly_xsteps );
+      motors_on();
+    }
 
     if( rc >= GcodeBlock::rcEnd ) {
       std_out << " line \"" << s << "\" pos " << cb.get_err_pos() << ' ' << cb.get_err_code() << NL;

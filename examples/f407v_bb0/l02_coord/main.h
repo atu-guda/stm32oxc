@@ -44,6 +44,7 @@ class MachState : public MachStateBase {
    xfloat spin100  { 10000 }; // scale for laser PWM
    xfloat spin_max {  90 };   // max PWM in %
    uint32_t n_mo { 0 }; // current number of active motors
+   int dly_xsteps { 50 }; // delay between steps in program
    uint32_t last_rc;
    bool was_set { false };
    bool relmove { false };
@@ -83,6 +84,20 @@ inline bool is_endstop_plus_go(    uint16_t e ) { return ( (e & 0x02) != 0 ) ; }
 inline bool is_endstop_any_stop(   uint16_t e ) { return ( (e & 0x03) != 3 ) ; }
 inline bool is_endstop_clear(      uint16_t e ) { return ( (e & 0x03) == 3 ) ; }
 inline bool is_endstop_bad(        uint16_t e ) { return ( (e & 0x03) == 0 ) ; }
+
+inline auto& endstops_gpio { GpioD };
+const uint16_t endstops_mask { 0b01111011 };
+inline char endstop2char( uint16_t e )
+{
+  static const char es_chars[] = "W+-.??";
+  return es_chars[ e & 0x03 ];
+}
+
+inline auto& touch_gpio { GpioE };
+const uint16_t touch_mask { 0b0100 }; // E2
+
+const char* endstops2str( uint16_t es, bool touch, char *buf = nullptr );
+const char* endstops2str_a( char *buf = nullptr );
 
 #endif
 
