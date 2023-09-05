@@ -34,6 +34,8 @@ BOARD_CONSOLE_DEFINES_UART;
 const char* common_help_string = "Application coordinate device control" NL;
 
 int debug { 1 };
+int draw_mode { 0 }; // TODO: to task 0 - none, 1-line
+volatile int tim_mov_tick { 0 }; // set in TIM6_callback
 
 extern SD_HandleTypeDef hsd;
 void MX_SDIO_SD_Init();
@@ -131,8 +133,8 @@ MachParam machs[n_motors] = {
 MachState::MachState( fun_gcode_mg prep, const FunGcodePair *g_f, const FunGcodePair *m_f )
      : MachStateBase( prep, g_f, m_f )
 {
-  for( auto &xx : x ) { xx = 0; }
-  for( auto &s : axis_scale ) { s = 1; }
+  fill_0( x );
+  fill_val( axis_scale, 1 );
 }
 
 MachState me_st( mach_prep_fun, mach_g_funcs, mach_m_funcs );
@@ -173,6 +175,8 @@ int cmd_gexec( int argc, const char * const * argv );
 CmdInfo CMDINFO_GEXEC { "gexec", 'X', cmd_gexec, " file  - execute gcode file"  };
 int cmd_fire( int argc, const char * const * argv );
 CmdInfo CMDINFO_FIRE { "FIRE", 'F', cmd_fire, " power% time_ms  - fire laser"  };
+int cmd_draw_l( int argc, const char * const * argv );
+CmdInfo CMDINFO_DRAW_L { "draw_l", 'L', cmd_draw_l, " [x y z]... - test line drawing"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -187,6 +191,7 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_ZERO,
   &CMDINFO_GEXEC,
   &CMDINFO_FIRE,
+  &CMDINFO_DRAW_L,
   nullptr
 };
 
@@ -455,14 +460,14 @@ int move_rel( const float *d_mm_i, unsigned n_mo,  float fe_mmm )
     if( dc > 0.5f * step_sz ) {
       move_task[i].dir =  1;
       move_task[i].step_task = move_task[i].step_rest =  roundf( dc / step_sz );
-      machs[i].motor->sr( 0x02, 0 );
+      machs[i].set_dir( 1 );
     } else if( dc < -0.5f * step_sz ) {
       move_task[i].dir = -1;
       move_task[i].step_task = move_task[i].step_rest = -roundf( dc / step_sz );
-      machs[i].motor->sr( 0x02, 1 );
+      machs[i].set_dir( -1 );
     } else {
       // move_task[i].dir =  0; // zeroed before
-      machs[i].motor->sr( 0x02, 0 ); // just to be determined
+      machs[i].set_dir( 1 );
     }
     if( max_steps < move_task[i].step_rest ) {
       max_steps   = move_task[i].step_rest;
@@ -602,7 +607,7 @@ int go_home( unsigned axis )
 
   const unsigned n_mo { 3 }; // 3 = only XYZ motors
   float d_mm[n_mo];
-  for( auto &x : d_mm ) { x = 0; }
+  fill_0( d_mm );
 
   DoAtLeave do_off_motors( []() { motors_off(); } );
   motors_on();
@@ -702,9 +707,9 @@ int cmd_relmove( int argc, const char * const * argv )
   float d_mm[n_mo];
 
   for( unsigned i=0; i<n_mo; ++i ) {
-    d_mm[i] = arg2float_d( i+1, argc, argv, 0, -(float)machs[i].max_l, (float)machs[i].max_l );
+    d_mm[i] = arg2xfloat_d( i+1, argc, argv, 0, -(float)machs[i].max_l, (float)machs[i].max_l );
   }
-  float fe_mmm = arg2float_d( 4, argc, argv, UVAR('f'), 0.0f, 900.0f );
+  float fe_mmm = arg2xfloat_d( 4, argc, argv, UVAR('f'), 0.0f, 900.0f );
 
   DoAtLeave do_off_motors( []() { motors_off(); } );
   motors_on();
@@ -727,10 +732,10 @@ int cmd_absmove( int argc, const char * const * argv )
   float d_mm[n_mo];
 
   for( unsigned i=0; i<n_mo; ++i ) {
-    d_mm[i] = arg2float_d( i+1, argc, argv, 0, -(float)machs[i].max_l, (float)machs[i].max_l )
+    d_mm[i] = arg2xfloat_d( i+1, argc, argv, 0, -(float)machs[i].max_l, (float)machs[i].max_l )
             - me_st.x[i];
   }
-  float fe_mmm = arg2float_d( 4, argc, argv, UVAR('f'), 0.0f, 900.0f );
+  float fe_mmm = arg2xfloat_d( 4, argc, argv, UVAR('f'), 0.0f, 900.0f );
 
   DoAtLeave do_off_motors( []() { motors_off(); } );
   motors_on();
@@ -753,7 +758,7 @@ int cmd_home( int argc, const char * const * argv )
 int cmd_zero( int argc, const char * const * argv )
 {
   for( unsigned i=0; i<me_st.n_mo; ++i ) {
-    me_st.x[i] =  arg2float_d( i+1, argc, argv, 0, -machs[i].max_l, machs[i].max_l );
+    me_st.x[i] =  arg2xfloat_d( i+1, argc, argv, 0, -machs[i].max_l, machs[i].max_l );
   }
   me_st.was_set = true;
   return 0;
@@ -835,7 +840,7 @@ int cmd_gexec( int argc, const char * const * argv )
 
 int cmd_fire( int argc, const char * const * argv )
 {
-  float pwr = arg2float_d( 1, argc, argv, 0.05, 0.0f, 100.0f );
+  float pwr = arg2xfloat_d( 1, argc, argv, 0.05, 0.0f, 100.0f );
   unsigned dt = arg2long_d( 2, argc, argv, 0, 0, 10000 );
   std_out << "# fire: pwr= " << pwr << " dt=  " << dt << NL;
 
@@ -845,6 +850,82 @@ int cmd_fire( int argc, const char * const * argv )
 
   return 0;
 }
+
+int cmd_draw_l( int argc, const char * const * argv )
+{
+  const unsigned n_co { 3 }; // TODO: more from task
+  xfloat coo[n_co];    // relative task
+  xfloat cgc[n_co];    // current given coords
+  xfloat k_x_t[n_co];  // dx/t
+  int32_t rci[n_co];   // real coord in ticks
+  int dirs[n_co];      // current direction
+  xfloat len {0};
+  const xfloat k_t { 1.0f / TIM6_count_freq };
+
+  for( unsigned i=0; i<n_co; ++i ) {
+    xfloat v = arg2xfloat_d( i+1, argc, argv, 0, -9000.0f, 9000.0f ); // some may be out of workplace
+    coo[i] = v;
+    len += v * v;
+  }
+
+  // move from here to separate function
+  len = sqrtxf( len );
+  xfloat fe_mmm = me_st.fe_g1 / 2; // for now, 2 = single tick, TODO: div mashs[].tick2mm
+  xfloat t_sec = 60 * len / fe_mmm;
+  uint32_t t_tick = (uint32_t)( TIM6_count_freq * t_sec );
+  std_out << "# draw_l: ";
+  for( auto x : coo ) {
+    std_out << x << ' ';
+  }
+  std_out << fe_mmm << "; l= " << len << " t= " << t_sec << ' ' << t_tick << NL;
+  if( fe_mmm < 2 ) {
+    std_out << "# Error, low feed value" << NL;
+  }
+
+  fill_0( dirs );
+  fill_0( rci );
+  // common: prep_fun
+  for( unsigned i=0; i<n_co; ++i ) {
+    k_x_t[i] = coo[i] / t_sec;
+  }
+
+
+  // TODO: check endstops here or during run?
+  draw_mode = 1;
+  tim_mov_tick = 0; break_flag = 0;
+
+  HAL_TIM_Base_Start_IT( &htim6 );
+
+  // really must be more then t_tick
+  for( unsigned tn=0; tn < t_tick && break_flag == 0; ++tn ) {
+    leds[2].set();
+    while( tim_mov_tick == 0 && break_flag == 0 ) {  /* NOP */  }
+    leds[2].reset();
+    tim_mov_tick = 0;
+    if( break_flag != 0 ) {
+      break;
+    }
+    xfloat t = tn * k_t;
+    for( unsigned i=0; i<n_co; ++i ) {
+      cgc[i] = t * k_x_t[i]; // FUN
+      int32_t xi = cgc[i] * machs[i].tick2mm;
+      if( xi == rci[i] ) { // no move in integer approx
+        continue;
+      }
+      int dir = ( xi > rci[i] ) ? 1 : -1;
+      if( dir != dirs[i] ) { // direction changed
+
+        dirs[i] = dir;
+      }
+
+    }
+  }
+  HAL_TIM_Base_Stop_IT( &htim6 ); // may be not at all?
+
+  draw_mode = 0;
+  return 0;
+}
+
 
 int pwm_set( unsigned idx, float v )
 {
@@ -887,7 +968,7 @@ int pwm_off_all()
 int cmd_pwr( int argc, const char * const * argv )
 {
   int   ch  = arg2long_d(  1, argc, argv, 0, 0, pwm_tims.size() ); // including limit for ALL_OFF
-  float pwr = arg2float_d( 2, argc, argv, 0, 0.0f, 100.0f );
+  float pwr = arg2xfloat_d( 2, argc, argv, 0, 0.0f, 100.0f );
 
   if( (unsigned)ch >= pwm_tims.size() ) {
     pwm_off_all();
@@ -1130,6 +1211,10 @@ void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
 void TIM6_callback()
 {
   ++UVAR('k');
+  if( draw_mode != 0 ) {
+    tim_mov_tick = 1;
+    return;
+  }
 
   leds[2].set();
   bool do_stop = true;
@@ -1156,6 +1241,11 @@ void TIM6_callback()
   return;
 }
 
+// ------------------------------------------------------------
+void MachParam::set_dir( int dir )
+{
+  motor->sr( 0x02, dir >=0 ? 0 : 1 );
+}
 
 // ----------------------------------------  ------------------------------------------------------
 
