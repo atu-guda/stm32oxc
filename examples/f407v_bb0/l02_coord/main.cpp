@@ -12,7 +12,6 @@
 //#include <oxc_outstr.h>
 //#include <oxc_hd44780_i2c.h>
 //#include <oxc_menu4b.h>
-//#include <oxc_statdata.h>
 // #include <oxc_ds3231.h>
 
 
@@ -122,9 +121,9 @@ const EXTI_init_info extis[] = {
 
 
 MachParam machs[n_motors] = {
-  {  1600, 500,     150, 5.0f, 0.1f,    &x_e, &stepdir_x  }, // TODO: 500 increase after working acceleration
-  {  1600, 500,     300, 5.0f, 0.1f,    &y_e, &stepdir_y  },
-  {  1600, 300,     150, 4.0f, 0.1f,    &z_e, &stepdir_z  },
+  {   800, 500,     150, 5.0f, 0.1f,    &x_e, &stepdir_x  }, // TODO: 500 increase after working acceleration
+  {   800, 500,     300, 5.0f, 0.1f,    &y_e, &stepdir_y  },
+  {   800, 300,     150, 4.0f, 0.1f,    &z_e, &stepdir_z  },
   {   100, 100,  999999, 0.0f, 0.1f, nullptr, &stepdir_e0 },
   {   100, 100,  999999, 0.0f, 0.1f, nullptr, &stepdir_e1 }
 };
@@ -914,7 +913,7 @@ int cmd_draw_l( int argc, const char * const * argv )
       }
       int dir = ( xi > rci[i] ) ? 1 : -1;
       if( dir != dirs[i] ) { // direction changed
-
+        machs[i].set_dir( dir );
         dirs[i] = dir;
       }
 
@@ -1101,7 +1100,7 @@ int MX_TIM11_Init()
 int MX_TIM6_Init()
 {
   auto psc   = calc_TIM_psc_for_cnt_freq( TIM6, TIM6_base_freq );       // 83
-  auto arr   = calc_TIM_arr_for_base_psc( TIM6, psc, TIM6_count_freq ); // 49
+  auto arr   = calc_TIM_arr_for_base_psc( TIM6, psc, TIM6_count_freq );
   htim6.Instance               = TIM6;
   htim6.Init.Prescaler         = psc;
   htim6.Init.Period            = arr;
@@ -1225,8 +1224,8 @@ void TIM6_callback()
     move_task[i].d += 2 * move_task[i].step_task ;
     do_stop = false;
     if( move_task[i].d > move_task[n_motors].step_task ) {
-      // ++UVAR('x'+i);
-      (*machs[i].motor)[0].toggle();
+      (machs[i]).step();
+      //
       --move_task[i].step_rest;
       move_task[i].d -= 2 * move_task[n_motors].step_task;
     }
@@ -1244,7 +1243,23 @@ void TIM6_callback()
 // ------------------------------------------------------------
 void MachParam::set_dir( int dir )
 {
-  motor->sr( 0x02, dir >=0 ? 0 : 1 );
+  if( motor ) {
+    if( dir >= 0 ) {
+      motor->reset( 0x02 );
+    } else {
+      motor->set(   0x02 );
+    }
+    delay_mcs( 1 );
+  }
+}
+
+void MachParam::step()
+{
+  if( motor ) {
+    motor->set( 1 );
+    delay_mcs( 1 );
+    motor->reset( 1 );
+  }
 }
 
 // ----------------------------------------  ------------------------------------------------------

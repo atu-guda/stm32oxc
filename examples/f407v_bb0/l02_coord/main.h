@@ -6,7 +6,7 @@
 const inline uint32_t  TIM_PWM_base_freq   { 84'000'000 };
 const inline uint32_t  TIM_PWM_count_freq  {      10000 };
 const inline uint32_t  TIM6_base_freq   {  1'000'000 };
-const inline uint32_t  TIM6_count_freq  {      20000 };
+const inline uint32_t  TIM6_count_freq  {      10000 };
 
 extern int debug; // in main.cpp
 
@@ -20,6 +20,7 @@ struct MachParam {
   PinsIn  *endstops  ;
   PinsOut *motor     ;
   void set_dir( int dir );
+  void step();
 };
 
 const inline constinit unsigned n_motors { 5 };
