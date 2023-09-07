@@ -75,14 +75,14 @@ extern MoveTask1 move_task[n_motors+1]; // last idx = time
 struct MoveInfo {
   enum class Type { stop = 0, line = 1, circle = 2 }; // TODO: more
   enum class Ret  { nop = 0, move = 1, end = 2, err = 3 };
-  using Act_Pfun = Ret (*)( MoveInfo &mi, xfloat t );
+  using Act_Pfun = Ret (*)( MoveInfo &mi, xfloat a );
   static const unsigned max_params { 10 };
   Type type;
   unsigned n_coo;
   xfloat  p[max_params]; // params itself,
   xfloat cf[max_params]; // state: floats - unneeded?
   int    ci[max_params]; // state: ints
-  xfloat k_x_t[max_params]; // t-based coeffs
+  xfloat k_x[max_params]; // a[0:1]-based coeffs
   int    cdirs[n_motors]; // current step direction: -1, 0, 1
   int    pdirs[n_motors]; // previos step direction: -1, 0, 1
   xfloat len;
@@ -91,7 +91,7 @@ struct MoveInfo {
   Act_Pfun step_pfun { nullptr }; // calculate each t
   MoveInfo( MoveInfo::Type tp, unsigned a_n_coo, Act_Pfun pfun );
   void zero_arr();
-  Ret step( xfloat t );
+  Ret calc_step( xfloat a );
 };
 
 void motors_off();

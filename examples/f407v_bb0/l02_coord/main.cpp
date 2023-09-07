@@ -869,7 +869,7 @@ MoveInfo::MoveInfo( MoveInfo::Type tp, unsigned a_n_coo, Act_Pfun pfun  )
 
 void MoveInfo::zero_arr()
 {
-  fill_0( p ); fill_0( cf ); fill_0( ci ); fill_0( k_x_t ); fill_0( pdirs );
+  fill_0( p ); fill_0( cf ); fill_0( ci ); fill_0( k_x ); fill_0( pdirs );
 }
 
 int prep_move_line( MoveInfo &mi, const xfloat *coo, xfloat fe )
@@ -889,33 +889,27 @@ int prep_move_line( MoveInfo &mi, const xfloat *coo, xfloat fe )
   mi.t_tick = (uint32_t)( TIM6_count_freq * mi.t_sec );
 
   for( unsigned i=0; i<mi.n_coo; ++i ) {
-    mi.k_x_t[i] = mi.p[i] / mi.t_sec;
+    mi.k_x[i] = mi.p[i];
   }
   return 0;
 }
 
-MoveInfo::Ret MoveInfo::step( xfloat t )
+MoveInfo::Ret MoveInfo::calc_step( xfloat a )
 {
-  if( step_pfun == nullptr && t < 0 ) {
+  if( step_pfun == nullptr || a < 0 || a > 1 ) {
     return Ret::err;
   }
-  return step_pfun( *this, t );
+  return step_pfun( *this, a );
 }
 
-MoveInfo::Ret step_line_fun( MoveInfo &mi, xfloat t )
+MoveInfo::Ret step_line_fun( MoveInfo &mi, xfloat a )
 {
   bool need_move = false;
   fill_0( mi.cdirs );
 
-  unsigned coord_end { 0 };
   for( unsigned i=0; i<mi.n_coo; ++i ) {
-    xfloat xo = (xfloat)(mi.ci[i]) / machs[i].tick2mm;
 
-    if( ( xo - mi.p[i] ) * ( mi.p[i] > 0 ? 1: -1) >= 0 ) { // TODO: calc before, check dis?
-      ++coord_end;
-    }
-
-    xfloat xf = t * mi.k_x_t[i];
+    xfloat xf = a * mi.k_x[i];
     int xi = xf * machs[i].tick2mm;
     if( xi == mi.ci[i] ) { // no move in integer approx
         continue;
@@ -926,13 +920,6 @@ MoveInfo::Ret step_line_fun( MoveInfo &mi, xfloat t )
     mi.cdirs[i] = dir;
     // machs[i].step();
     // rci[i] = xi; // POST_STEP?
-  }
-
-  if( coord_end > 0 ) {
-    std_out << "# dbg: coord_end= " << coord_end << NL;
-  }
-  if( coord_end >= mi.n_coo ) { // > 0
-    return MoveInfo::Ret::end;
   }
 
   return need_move ?  MoveInfo::Ret::move : MoveInfo::Ret::nop;
@@ -976,17 +963,22 @@ int cmd_draw_l( int argc, const char * const * argv )
 
   // really must be more then t_tick
   for( unsigned tn=0; tn < 2*mi.t_tick && break_flag == 0; ++tn ) {
+    leds[2].reset();
     if( ! wait_next_motor_tick() ) {
       break;
     }
     leds[2].set();
-    xfloat t = tn * k_t; // TODO: accel here
+    xfloat t = tn * k_t;
+    xfloat a = t / mi.t_sec; // TODO: accel here
+    if( a > 1 ) {
+      break; // mark: more
+    }
 
-    auto rc = mi.step( t );
+    auto rc = mi.calc_step( a );
     if( rc == MoveInfo::Ret::nop ) {
       continue;
     }
-    if( rc == MoveInfo::Ret::end || rc == MoveInfo::Ret::err ) {
+    if( rc != MoveInfo::Ret::move ) {
       break; // TODO: keep reason
     }
 
@@ -1001,10 +993,11 @@ int cmd_draw_l( int argc, const char * const * argv )
       }
       machs[i].step();
       mi.ci[i] += dir; // inside post step ????????
+      me_st.x[i] += (xfloat) dir / machs[i].tick2mm;
     }
 
-    leds[2].reset();
   }
+  leds[2].reset();
 
   HAL_TIM_Base_Stop_IT( &htim6 ); // may be not at all?
 
