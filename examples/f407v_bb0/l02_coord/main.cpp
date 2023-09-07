@@ -201,6 +201,11 @@ const constinit NamedFloat ob_me_fe_g0       {    "me.fe_g0",       &me_st.fe_g0
 const constinit NamedFloat ob_me_fe_g1       {    "me.fe_g1",       &me_st.fe_g1  };
 const constinit NamedFloat ob_me_fe_scale    {    "me.fe_scale",    &me_st.fe_scale  };
 const constinit NamedFloat ob_me_spin100     {    "me.spin100",     &me_st.spin100  };
+const constinit NamedFloat ob_me_x           {    "me.x",           &me_st.x[0]  };
+const constinit NamedFloat ob_me_y           {    "me.y",           &me_st.x[1]  };
+const constinit NamedFloat ob_me_z           {    "me.z",           &me_st.x[2]  };
+const constinit NamedFloat ob_me_e0          {    "me.e0",          &me_st.x[3]  };
+const constinit NamedFloat ob_me_e1          {    "me.e1",          &me_st.x[4]  };
 const constinit NamedFloat ob_ma_x_es_find_l {    "ma.x.es_find",   &machs[0].es_find_l  };
 const constinit NamedFloat ob_ma_y_es_find_l {    "ma.y.es_find",   &machs[1].es_find_l  };
 const constinit NamedFloat ob_ma_z_es_find_l {    "ma.y.es_find",   &machs[2].es_find_l  };
@@ -216,6 +221,11 @@ const constinit NamedObj *const objs_info[] = {
   & ob_me_fe_g1,
   & ob_me_fe_scale,
   & ob_me_spin100,
+  & ob_me_x,
+  & ob_me_y,
+  & ob_me_z,
+  & ob_me_e0,
+  & ob_me_e1,
   & ob_ma_x_es_find_l,
   & ob_ma_y_es_find_l,
   & ob_ma_z_es_find_l,
@@ -850,75 +860,152 @@ int cmd_fire( int argc, const char * const * argv )
   return 0;
 }
 
+// -------------------- MoveInfo ------------------------------
+
+MoveInfo::MoveInfo( MoveInfo::Type tp, unsigned a_n_coo, Act_Pfun pfun  )
+  : type( tp ), n_coo( a_n_coo ), step_pfun( pfun )
+{
+}
+
+void MoveInfo::zero_arr()
+{
+  fill_0( p ); fill_0( cf ); fill_0( ci ); fill_0( k_x_t ); fill_0( pdirs );
+}
+
+int prep_move_line( MoveInfo &mi, const xfloat *coo, xfloat fe )
+{
+  // check mi.type == MoveInfo::Type::line; ???
+  if( fe < 2 ) {
+    // TOO low feed
+    return 1;
+  }
+
+  mi.zero_arr(); mi.len = 0;
+  for( unsigned i=0; i<mi.n_coo; ++i ) {
+    mi.p[i] = coo[i]; mi.len += coo[i] * coo[i];
+  }
+  mi.len = sqrtxf( mi.len );
+  mi.t_sec = 60 * mi.len / fe; // only approx, as we can accel/deccel
+  mi.t_tick = (uint32_t)( TIM6_count_freq * mi.t_sec );
+
+  for( unsigned i=0; i<mi.n_coo; ++i ) {
+    mi.k_x_t[i] = mi.p[i] / mi.t_sec;
+  }
+  return 0;
+}
+
+MoveInfo::Ret MoveInfo::step( xfloat t )
+{
+  if( step_pfun == nullptr && t < 0 ) {
+    return Ret::err;
+  }
+  return step_pfun( *this, t );
+}
+
+MoveInfo::Ret step_line_fun( MoveInfo &mi, xfloat t )
+{
+  bool need_move = false;
+  fill_0( mi.cdirs );
+
+  unsigned coord_end { 0 };
+  for( unsigned i=0; i<mi.n_coo; ++i ) {
+    xfloat xo = (xfloat)(mi.ci[i]) / machs[i].tick2mm;
+
+    if( ( xo - mi.p[i] ) * ( mi.p[i] > 0 ? 1: -1) >= 0 ) { // TODO: calc before, check dis?
+      ++coord_end;
+    }
+
+    xfloat xf = t * mi.k_x_t[i];
+    int xi = xf * machs[i].tick2mm;
+    if( xi == mi.ci[i] ) { // no move in integer approx
+        continue;
+    }
+    need_move = true;
+
+    int dir = ( xi > mi.ci[i] ) ? 1 : -1;
+    mi.cdirs[i] = dir;
+    // machs[i].step();
+    // rci[i] = xi; // POST_STEP?
+  }
+
+  if( coord_end > 0 ) {
+    std_out << "# dbg: coord_end= " << coord_end << NL;
+  }
+  if( coord_end >= mi.n_coo ) { // > 0
+    return MoveInfo::Ret::end;
+  }
+
+  return need_move ?  MoveInfo::Ret::move : MoveInfo::Ret::nop;
+}
+
 int cmd_draw_l( int argc, const char * const * argv )
 {
   const unsigned n_co { 3 }; // TODO: more from task
   xfloat coo[n_co];    // relative task
-  xfloat cgc[n_co];    // current given coords
-  xfloat k_x_t[n_co];  // dx/t
-  int32_t rci[n_co];   // real coord in ticks
-  int dirs[n_co];      // current direction
-  xfloat len {0};
   const xfloat k_t { 1.0f / TIM6_count_freq };
+
+  MoveInfo mi( MoveInfo::Type::line, n_co, step_line_fun );
 
   for( unsigned i=0; i<n_co; ++i ) {
     xfloat v = arg2xfloat_d( i+1, argc, argv, 0, -9000.0f, 9000.0f ); // some may be out of workplace
     coo[i] = v;
-    len += v * v;
   }
 
-  // move from here to separate function
-  len = sqrtxf( len );
-  xfloat fe_mmm = me_st.fe_g1 / 2; // for now, 2 = single tick, TODO: div mashs[].tick2mm
-  xfloat t_sec = 60 * len / fe_mmm;
-  uint32_t t_tick = (uint32_t)( TIM6_count_freq * t_sec );
+  xfloat fe_mmm = me_st.fe_g1 ; // for now
+  auto rc_prep =  prep_move_line( mi, coo, fe_mmm );
   std_out << "# draw_l: ";
   for( auto x : coo ) {
     std_out << x << ' ';
   }
-  std_out << fe_mmm << "; l= " << len << " t= " << t_sec << ' ' << t_tick << NL;
-  if( fe_mmm < 2 ) {
-    std_out << "# Error, low feed value" << NL;
+  std_out << fe_mmm << "; l= " << mi.len << " t= " << mi.t_sec << ' ' << mi.t_tick << NL;
+
+  if( rc_prep != 0 ) {
+    std_out << "# Error: fail to prepare MoveInfo for line, rc=" << rc_prep << NL;
   }
 
-  fill_0( dirs );
-  fill_0( rci );
-  // common: prep_fun
-  for( unsigned i=0; i<n_co; ++i ) {
-    k_x_t[i] = coo[i] / t_sec;
-  }
+  DoAtLeave do_off_motors( []() { motors_off(); } );
+  motors_on();
 
 
   // TODO: check endstops here or during run?
   draw_mode = 1;
   tim_mov_tick = 0; break_flag = 0;
 
-  HAL_TIM_Base_Start_IT( &htim6 );
+  HAL_TIM_Base_Start_IT( &htim6 ); // TODO: move to main, no stop
+  wait_next_motor_tick();
 
   // really must be more then t_tick
-  for( unsigned tn=0; tn < t_tick && break_flag == 0; ++tn ) {
-    leds[2].set();
-    while( tim_mov_tick == 0 && break_flag == 0 ) {  /* NOP */  }
-    leds[2].reset();
-    tim_mov_tick = 0;
-    if( break_flag != 0 ) {
+  for( unsigned tn=0; tn < 2*mi.t_tick && break_flag == 0; ++tn ) {
+    if( ! wait_next_motor_tick() ) {
       break;
     }
-    xfloat t = tn * k_t;
+    leds[2].set();
+    xfloat t = tn * k_t; // TODO: accel here
+
+    auto rc = mi.step( t );
+    if( rc == MoveInfo::Ret::nop ) {
+      continue;
+    }
+    if( rc == MoveInfo::Ret::end || rc == MoveInfo::Ret::err ) {
+      break; // TODO: keep reason
+    }
+
     for( unsigned i=0; i<n_co; ++i ) {
-      cgc[i] = t * k_x_t[i]; // FUN
-      int32_t xi = cgc[i] * machs[i].tick2mm;
-      if( xi == rci[i] ) { // no move in integer approx
+      auto dir = mi.cdirs[i];
+      if( dir == 0 ) {
         continue;
       }
-      int dir = ( xi > rci[i] ) ? 1 : -1;
-      if( dir != dirs[i] ) { // direction changed
+      if( dir != mi.pdirs[i] ) { // direction changed
         machs[i].set_dir( dir );
-        dirs[i] = dir;
+        mi.pdirs[i] = dir;
       }
-
+      machs[i].step();
+      mi.ci[i] += dir; // inside post step ????????
     }
+
+    leds[2].reset();
   }
+
   HAL_TIM_Base_Stop_IT( &htim6 ); // may be not at all?
 
   draw_mode = 0;
@@ -1241,6 +1328,15 @@ void TIM6_callback()
 }
 
 // ------------------------------------------------------------
+int wait_next_motor_tick()
+{
+  while( tim_mov_tick == 0 && break_flag == 0 ) {
+    /* NOP */ // TODO: idle action
+  }
+  tim_mov_tick = 0;
+  return break_flag == 0;
+}
+
 void MachParam::set_dir( int dir )
 {
   if( motor ) {

@@ -60,7 +60,7 @@ int mach_prep_fun( GcodeBlock *cb, MachStateBase *ms );
 extern const MachStateBase::FunGcodePair mach_g_funcs[];
 extern const MachStateBase::FunGcodePair mach_m_funcs[];
 
-// move task description
+// move task description. Old version
 struct MoveTask1 {
   int8_t   dir;   // 1-forvard, 0-no, -1 - backward
   int step_rest;  // downcount of next
@@ -71,8 +71,32 @@ struct MoveTask1 {
 
 extern MoveTask1 move_task[n_motors+1]; // last idx = time
 
+// task + state. fill: move_prep_
+struct MoveInfo {
+  enum class Type { stop = 0, line = 1, circle = 2 }; // TODO: more
+  enum class Ret  { nop = 0, move = 1, end = 2, err = 3 };
+  using Act_Pfun = Ret (*)( MoveInfo &mi, xfloat t );
+  static const unsigned max_params { 10 };
+  Type type;
+  unsigned n_coo;
+  xfloat  p[max_params]; // params itself,
+  xfloat cf[max_params]; // state: floats - unneeded?
+  int    ci[max_params]; // state: ints
+  xfloat k_x_t[max_params]; // t-based coeffs
+  int    cdirs[n_motors]; // current step direction: -1, 0, 1
+  int    pdirs[n_motors]; // previos step direction: -1, 0, 1
+  xfloat len;
+  xfloat t_sec; // approx
+  uint32_t t_tick; // in ticks
+  Act_Pfun step_pfun { nullptr }; // calculate each t
+  MoveInfo( MoveInfo::Type tp, unsigned a_n_coo, Act_Pfun pfun );
+  void zero_arr();
+  Ret step( xfloat t );
+};
+
 void motors_off();
 void motors_on();
+int wait_next_motor_tick(); // 0 = was break, not 0 - ok
 int pwm_set( unsigned idx, float v );
 int pwm_off( unsigned idx );
 int pwm_off_all();
