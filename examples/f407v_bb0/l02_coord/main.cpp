@@ -456,6 +456,20 @@ int cmd_test0( int argc, const char * const * argv )
   return rc + rev;
 }
 
+bool is_endstop_clear_for_dir( uint16_t e, int dir )
+{
+  if( dir == 0 || ( e & 0x03 ) == 0x03 ) { // no move or all clear
+    return true;
+  }
+  if( dir >  0 && ( e & 0x02 ) ) { // forward and ep+ clear
+    return true;
+  }
+  if( dir <  0 && ( e & 0x01 ) ) { // backward and ep- clear
+    return true;
+  }
+  return false;
+}
+
 int move_rel( const float *d_mm_i, unsigned n_mo,  float fe_mmm )
 {
   for( auto &m : move_task )      { m.init(); }
@@ -565,15 +579,8 @@ int move_rel( const float *d_mm_i, unsigned n_mo,  float fe_mmm )
     }
     uint16_t esv = machs[i].endstops->read();
     const auto dir = move_task[i].dir;
-    // TODO: sepatate function: is_endstop_clear_for_dir( uint16_t e, int dir );
     // std_out << "# debug: endstop " << esv << " at " << i << " dir: " << dir << NL;
-    if( dir == 0 || ( esv & 0x03 ) == 0x03 ) { // no move or all clear
-      continue;
-    }
-    if( dir >  0 && ( esv & 0x02 ) ) { // forward and ep+ clear
-      continue;
-    }
-    if( dir <  0 && ( esv & 0x01 ) ) { // backward and ep- clear
+    if( is_endstop_clear_for_dir( esv, dir ) ) {
       continue;
     }
     std_out << "# Error: endstop " << esv << " at " << i << " dir: " << dir << NL;
@@ -942,18 +949,38 @@ MoveInfo::Ret step_line_fun( MoveInfo &mi, xfloat a )
   return need_move ?  MoveInfo::Ret::move : MoveInfo::Ret::nop;
 }
 
-// TODO: private member of MashState
-int move_common( MoveInfo &mi, xfloat fe_mmm  )
+int MachState::check_endstops( MoveInfo &mi )
+{
+  // TODO: touch sensor
+  for( unsigned i=0; i<mi.n_coo; ++i ) {
+    if( machs[i].endstops == nullptr ) {
+      continue;
+    }
+    uint16_t esv = machs[i].endstops->read();
+    const auto dir = mi.cdirs[i];
+    // TODO: special case here: request to stop at clear endstop
+    if( i == on_endstop && is_endstop_clear(esv ) ) {
+      return 0;
+    }
+    if( is_endstop_clear_for_dir( esv, dir ) ) {
+      continue;
+    }
+    std_out << "# Error: endstop " << esv << " at " << i << " dir: " << dir << NL;
+    return 0;
+  }
+  return 1;
+}
+
+int MachState::move_common( MoveInfo &mi, xfloat fe_mmm )
 {
   if( mi.type == MoveInfo::Type::stop || mi.step_pfun == nullptr ) {
     return 1;
   }
 
-  fe_mmm *= me_st.fe_scale / 100;
-  fe_mmm = clamp( fe_mmm, 2.0f, me_st.fe_g0 );
+  fe_mmm *= fe_scale / 100;
+  fe_mmm = clamp( fe_mmm, 2.0f, fe_g0 );
   const xfloat k_t { 1.0f / TIM6_count_freq };
 
-  // TODO: check endstops here or during run?
   draw_mode = 1;
   tim_mov_tick = 0; break_flag = 0;
 
@@ -963,28 +990,39 @@ int move_common( MoveInfo &mi, xfloat fe_mmm  )
   int rc {0};
   // really must be more then t_tick
   for( unsigned tn=0; tn < 3*mi.t_tick && break_flag == 0; ++tn ) {
-    leds[2].reset();
-    if( ! wait_next_motor_tick() ) {
-      break;
-    }
+
     leds[2].set();
     xfloat t = tn * k_t;
     xfloat a = t / mi.t_sec; // TODO: accel here
-    if( a > 1 ) {
+    if( a > 1.00001f ) {
+      // rc = 4; /// not a error: my be small overshot
       break; // mark: more
     }
 
     auto rc_calc = mi.calc_step( a );
+
+    if( check_endstops( mi ) == 0 ) {
+      rc = 2;
+      break;
+    }
+
+    leds[2].reset();
+
+    if( wait_next_motor_tick() != 0 ) {
+      rc = 11;
+      break;
+    }
+
     if( rc_calc == MoveInfo::Ret::nop ) {
       continue;
     }
     if( rc_calc != MoveInfo::Ret::move ) {
-      rc = 2;
+      rc = 3;
       break; // TODO: keep reason
     }
 
     for( unsigned i=0; i<mi.n_coo; ++i ) {
-      me_st.step( i, mi.cdirs[i] );
+      step( i, mi.cdirs[i] );
       mi.ci[i] += mi.cdirs[i]; // inside post step ????????
     }
 
@@ -992,11 +1030,11 @@ int move_common( MoveInfo &mi, xfloat fe_mmm  )
   leds[2].reset();
 
   draw_mode = 0;
+  on_endstop = 9999;
   return rc;
 }
 
-// TODO: member of MashState
-int move_line_rel( const xfloat *d_mm, unsigned n_coo, xfloat fe_mmm )
+int MachState::move_line_rel( const xfloat *d_mm, unsigned n_coo, xfloat fe_mmm, unsigned a_on_endstop )
 {
   MoveInfo mi( MoveInfo::Type::line, n_coo, step_line_fun );
 
@@ -1007,6 +1045,7 @@ int move_line_rel( const xfloat *d_mm, unsigned n_coo, xfloat fe_mmm )
     return 1;
   }
 
+  on_endstop = a_on_endstop;
   return move_common( mi, fe_mmm );
 }
 
@@ -1025,7 +1064,7 @@ int cmd_draw_l( int argc, const char * const * argv )
   DoAtLeave do_off_motors( []() { motors_off(); } );
   motors_on();
 
-  auto rc = move_line_rel( coo, n_co, fe_mmm );
+  auto rc = me_st.move_line_rel( coo, n_co, fe_mmm );
 
   if( rc != 0 ) {
     std_out << "# Error: fail to line, rc=" << rc << NL;
@@ -1359,7 +1398,7 @@ int wait_next_motor_tick()
     /* NOP */ // TODO: idle action
   }
   tim_mov_tick = 0;
-  return break_flag == 0;
+  return break_flag;
 }
 
 void MachParam::set_dir( int dir )

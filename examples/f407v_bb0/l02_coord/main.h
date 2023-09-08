@@ -10,6 +10,8 @@ const inline uint32_t  TIM6_count_freq  {      10000 };
 
 extern int debug; // in main.cpp
 
+struct MoveInfo;
+
 // mach params
 struct MachParam {
   uint32_t tick2mm   ; // tick per mm, = 2* pulses per mm
@@ -49,11 +51,15 @@ class MachState : public MachStateBase {
    uint32_t n_mo { 0 }; // current number of active motors
    int dly_xsteps { 50 }; // delay between steps in program
    uint32_t last_rc;
+   unsigned on_endstop { 9999 };
    bool was_set { false };
    bool relmove { false };
    bool inchUnit { false };
    bool spinOn   { false };
    xfloat getPwm() const { return std::clamp( 100 * spin / spin100, 0.0f, spin_max ); }
+   int check_endstops( MoveInfo &mi );
+   int move_common( MoveInfo &mi, xfloat fe_mmm );
+   int move_line_rel( const xfloat *d_mm, unsigned n_coo, xfloat fe_mmm, unsigned a_on_endstop = 9999 );
    int step( unsigned i_motor, int dir );
 };
 
@@ -112,6 +118,7 @@ inline bool is_endstop_plus_go(    uint16_t e ) { return ( (e & 0x02) != 0 ) ; }
 inline bool is_endstop_any_stop(   uint16_t e ) { return ( (e & 0x03) != 3 ) ; }
 inline bool is_endstop_clear(      uint16_t e ) { return ( (e & 0x03) == 3 ) ; }
 inline bool is_endstop_bad(        uint16_t e ) { return ( (e & 0x03) == 0 ) ; }
+bool is_endstop_clear_for_dir( uint16_t e, int dir );
 
 inline auto& endstops_gpio { GpioD };
 const uint16_t endstops_mask { 0b01111011 };
