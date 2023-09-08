@@ -599,7 +599,7 @@ int move_rel( const float *d_mm_i, unsigned n_mo,  float fe_mmm )
     delay_ms_until_brk( &tc0, 100 );
 
   }
-  HAL_TIM_Base_Stop_IT( &htim6 ); // may be other breaks, so dup here
+  // HAL_TIM_Base_Stop_IT( &htim6 ); // may be other breaks, so dup here
 
   me_st.last_rc = break_flag;
 
@@ -657,11 +657,11 @@ int go_home( unsigned axis )
       std_out << "# Warning: move from endstop- " << axis << ' ' << endstops2str_a() << NL;
     }
     d_mm[axis] = machs[axis].es_find_l;
-    rc = move_rel( d_mm, n_mo, 2 * fe_slow );
+    rc = me_st.move_line_rel( d_mm, n_mo, 2 * fe_slow );
     if( debug > 0 ) {
       std_out << "# rc= " << rc << NL;
     }
-    // TODO: exit if bad
+    // TODO: exit if bad?
   }
 
   esv = estp->read();
@@ -675,7 +675,7 @@ int go_home( unsigned axis )
   if( debug > 0 ) {
     std_out << "# to_endstop ph 1 " << endstops2str_a() << NL;
   }
-  rc = move_rel( d_mm, n_mo, fe_fast ); // up to any endstop, ok
+  rc = me_st.move_line_rel( d_mm, n_mo, fe_fast );
   esv = estp->read();
   if( is_endstop_minus_go( esv ) ) { //
     std_out << "# Error: fail to find endstop. axis " << axis << " ph 1 " << esv  << ' ' << endstops2str_a() << NL;
@@ -687,9 +687,9 @@ int go_home( unsigned axis )
     std_out << "# go_away ph 2 "  << endstops2str_a() << NL;
   }
   d_mm[axis] = machs[axis].es_find_l;
-  rc = move_rel( d_mm, n_mo, fe_slow ); // TODO: stop on endstop clear
+  rc = me_st.move_line_rel( d_mm, n_mo, fe_slow, axis );
   esv = estp->read();
-  if( rc != 0 || is_endstop_minus_stop(esv) ) { // must be ok
+  if( is_endstop_any_stop(esv) ) { // must be ok
     std_out << "# Error: fail to step from endstop axis " << axis << " ph 2 " << endstops2str_a() << NL;
     return 0;
   }
@@ -698,39 +698,30 @@ int go_home( unsigned axis )
   if( debug > 0 ) {
     std_out << "# to_es ph 3 " << endstops2str_a() << NL;
   }
-  d_mm[axis] = -1.5f * machs[axis].es_find_l;
-  rc = move_rel( d_mm, n_mo, fe_slow );
+  d_mm[axis] = - 1.5f * machs[axis].es_find_l;
+  rc = me_st.move_line_rel( d_mm, n_mo, fe_slow );
   esv = estp->read();
   if( is_endstop_minus_go( esv ) ) {
     std_out << "# Error: fail to find endstop axis " << axis << " ph 3 " << endstops2str_a() << esv << NL;
     return 0;
   }
 
-  // small steps from, TODO: single with test
+  // go slowly away again
   if( debug > 0 ) {
     std_out << "# go_away st ph 4 " << endstops2str_a() << NL;
   }
-  d_mm[axis] = 0.02f;
-  const unsigned n_try = 100;
-  bool found = false;
-  for( unsigned i=0; i<n_try; ++i ) {
-    rc = move_rel( d_mm, n_mo, fe_slow );
-    esv = estp->read();
-    if( rc == 0 && is_endstop_minus_go( esv ) ) {
-      std_out << "# Ok: found endstop end at try  " << i << ' ' << endstops2str_a() << NL;
-      found = true;
-      break;
-    }
+  d_mm[axis] = machs[axis].es_find_l;
+  rc = me_st.move_line_rel( d_mm, n_mo, fe_slow, axis );
+  esv = estp->read();
+  if( is_endstop_any_stop( esv ) ) {
+    std_out << "# Error: fail to find endstop axis " << axis << " ph 4 " << endstops2str_a() << NL;
+    return 0;
   }
+  me_st.was_set = true;
+  me_st.x[axis] = 0;    // TODO: may be no auto?
+  std_out << "# Ok: found endstop end  "  << endstops2str_a() << NL;
 
-  if( found ) {
-    me_st.was_set = true;
-    me_st.x[axis] = 0;    // TODO: may be no auto?
-    return 1;
-  }
-
-  std_out << "# Error: fail to find endstop axis " << axis << " ph 4 " << endstops2str_a() << NL;
-  return 0;
+  return 1;
 }
 
 int cmd_relmove( int argc, const char * const * argv )
@@ -1360,33 +1351,33 @@ void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
 
 void TIM6_callback()
 {
-  ++UVAR('k');
-  if( draw_mode != 0 ) {
+  // ++UVAR('k');
+  //if( draw_mode != 0 ) {
     tim_mov_tick = 1;
-    return;
-  }
+  //  return;
+  // 
 
-  leds[2].set();
-  bool do_stop = true;
-  for( unsigned i=0; i<me_st.n_mo && break_flag == 0; ++i ) {
-    if( move_task[i].dir == 0  ||  move_task[i].step_rest < 1 ) {
-      continue;
-    }
-    move_task[i].d += 2 * move_task[i].step_task ;
-    do_stop = false;
-    if( move_task[i].d > move_task[n_motors].step_task ) {
-      (machs[i]).step();
-      //
-      --move_task[i].step_rest;
-      move_task[i].d -= 2 * move_task[n_motors].step_task;
-    }
-  }
-
-  if( do_stop || break_flag != 0 ) {
-    HAL_TIM_Base_Stop_IT( &htim6 );
-    break_flag = break_flag ? break_flag : 2;
-  }
-  leds[2].reset();
+  // leds[2].set();
+  // bool do_stop = true;
+  // for( unsigned i=0; i<me_st.n_mo && break_flag == 0; ++i ) {
+  //   if( move_task[i].dir == 0  ||  move_task[i].step_rest < 1 ) {
+  //     continue;
+  //   }
+  //   move_task[i].d += 2 * move_task[i].step_task ;
+  //   do_stop = false;
+  //   if( move_task[i].d > move_task[n_motors].step_task ) {
+  //     (machs[i]).step();
+  //     //
+  //     --move_task[i].step_rest;
+  //     move_task[i].d -= 2 * move_task[n_motors].step_task;
+  //   }
+  // }
+  //
+  // if( do_stop || break_flag != 0 ) {
+  //   HAL_TIM_Base_Stop_IT( &htim6 );
+  //   break_flag = break_flag ? break_flag : 2;
+  // }
+  // leds[2].reset();
 
   return;
 }

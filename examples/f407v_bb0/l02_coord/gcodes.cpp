@@ -101,27 +101,27 @@ int gcode_G28( GcodeBlock *cb, MachStateBase *ms )
 
   if( y ) {
     rc  = go_home( 1 );
-    if( rc == 0 ) {
+    if( rc != 1 ) {
       return GcodeBlock::rcErr;
     }
   }
 
   if( x ) {
     rc  = go_home( 0 );
-    if( rc == 0 ) {
+    if( rc != 1 ) {
       return GcodeBlock::rcErr;
     }
   }
 
   if( z ) {
     rc  = go_home( 2 );
-    if( rc == 0 ) {
+    if( rc != 1 ) {
       return GcodeBlock::rcErr;
     }
   }
   me_st.was_set = true;
 
-  return rc == 0 ? GcodeBlock::rcOk : GcodeBlock::rcErr;
+  return rc == 1 ? GcodeBlock::rcOk : GcodeBlock::rcErr;
 }
 
 
