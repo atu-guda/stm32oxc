@@ -39,6 +39,7 @@ class MachState : public MachStateBase {
    MachMode mode { modeFFF };
    xfloat x[n_motors];
    xfloat axis_scale[n_motors];
+   int dirs[n_motors];  // last/current direction
    xfloat fe_g0 { 350 };
    xfloat fe_g1 { 300 };
    xfloat fe_scale { 100.0f };
@@ -53,6 +54,7 @@ class MachState : public MachStateBase {
    bool inchUnit { false };
    bool spinOn   { false };
    xfloat getPwm() const { return std::clamp( 100 * spin / spin100, 0.0f, spin_max ); }
+   int step( unsigned i_motor, int dir );
 };
 
 extern MachState me_st;
@@ -84,7 +86,6 @@ struct MoveInfo {
   int    ci[max_params]; // state: ints
   xfloat k_x[max_params]; // a[0:1]-based coeffs
   int    cdirs[n_motors]; // current step direction: -1, 0, 1
-  int    pdirs[n_motors]; // previos step direction: -1, 0, 1
   xfloat len;
   xfloat t_sec; // approx
   uint32_t t_tick; // in ticks
@@ -92,6 +93,7 @@ struct MoveInfo {
   MoveInfo( MoveInfo::Type tp, unsigned a_n_coo, Act_Pfun pfun );
   void zero_arr();
   Ret calc_step( xfloat a );
+  int prep_move_line( const xfloat *coo, xfloat fe );
 };
 
 void motors_off();

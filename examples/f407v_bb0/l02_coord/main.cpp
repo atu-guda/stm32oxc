@@ -132,8 +132,26 @@ MachParam machs[n_motors] = {
 MachState::MachState( fun_gcode_mg prep, const FunGcodePair *g_f, const FunGcodePair *m_f )
      : MachStateBase( prep, g_f, m_f )
 {
-  fill_0( x );
+  fill_0( x ); fill_0( dirs );
   fill_val( axis_scale, 1 );
+}
+
+int MachState::step( unsigned i, int dir )
+{
+  if( i >= n_motors ) {
+    return 0;
+  }
+  if( dir == 0 ) {
+    return 0;
+  }
+  if( dir != dirs[i] ) {
+    machs[i].set_dir( dir );
+    dirs[i] = dir;
+  }
+  machs[i].step();
+  x[i] += (xfloat) dir / ( machs[i].tick2mm * axis_scale[i] );
+
+  return 1;
 }
 
 MachState me_st( mach_prep_fun, mach_g_funcs, mach_m_funcs );
@@ -869,27 +887,28 @@ MoveInfo::MoveInfo( MoveInfo::Type tp, unsigned a_n_coo, Act_Pfun pfun  )
 
 void MoveInfo::zero_arr()
 {
-  fill_0( p ); fill_0( cf ); fill_0( ci ); fill_0( k_x ); fill_0( pdirs );
+  fill_0( p ); fill_0( cf ); fill_0( ci ); fill_0( k_x );
 }
 
-int prep_move_line( MoveInfo &mi, const xfloat *coo, xfloat fe )
+int MoveInfo::prep_move_line( const xfloat *coo, xfloat fe )
 {
-  // check mi.type == MoveInfo::Type::line; ???
-  if( fe < 2 ) {
+  // check type == MoveInfo::Type::line; ???
+  if( fe < 2 ) { // ????
     // TOO low feed
     return 1;
   }
 
-  mi.zero_arr(); mi.len = 0;
-  for( unsigned i=0; i<mi.n_coo; ++i ) {
-    mi.p[i] = coo[i]; mi.len += coo[i] * coo[i];
-  }
-  mi.len = sqrtxf( mi.len );
-  mi.t_sec = 60 * mi.len / fe; // only approx, as we can accel/deccel
-  mi.t_tick = (uint32_t)( TIM6_count_freq * mi.t_sec );
+  zero_arr(); len = 0;
 
-  for( unsigned i=0; i<mi.n_coo; ++i ) {
-    mi.k_x[i] = mi.p[i];
+  for( unsigned i=0; i<n_coo; ++i ) {
+    p[i] = coo[i]; len += coo[i] * coo[i];
+  }
+  len = sqrtxf( len );
+  t_sec = 60 * len / fe; // only approx, as we can accel/deccel
+  t_tick = (uint32_t)( TIM6_count_freq * t_sec );
+
+  for( unsigned i=0; i<n_coo; ++i ) {
+    k_x[i] = p[i];
   }
   return 0;
 }
@@ -910,7 +929,7 @@ MoveInfo::Ret step_line_fun( MoveInfo &mi, xfloat a )
   for( unsigned i=0; i<mi.n_coo; ++i ) {
 
     xfloat xf = a * mi.k_x[i];
-    int xi = xf * machs[i].tick2mm;
+    int xi = xf * machs[i].tick2mm * me_st.axis_scale[i];
     if( xi == mi.ci[i] ) { // no move in integer approx
         continue;
     }
@@ -918,41 +937,21 @@ MoveInfo::Ret step_line_fun( MoveInfo &mi, xfloat a )
 
     int dir = ( xi > mi.ci[i] ) ? 1 : -1;
     mi.cdirs[i] = dir;
-    // machs[i].step();
-    // rci[i] = xi; // POST_STEP?
   }
 
   return need_move ?  MoveInfo::Ret::move : MoveInfo::Ret::nop;
 }
 
-int cmd_draw_l( int argc, const char * const * argv )
+// TODO: private member of MashState
+int move_common( MoveInfo &mi, xfloat fe_mmm  )
 {
-  const unsigned n_co { 3 }; // TODO: more from task
-  xfloat coo[n_co];    // relative task
+  if( mi.type == MoveInfo::Type::stop || mi.step_pfun == nullptr ) {
+    return 1;
+  }
+
+  fe_mmm *= me_st.fe_scale / 100;
+  fe_mmm = clamp( fe_mmm, 2.0f, me_st.fe_g0 );
   const xfloat k_t { 1.0f / TIM6_count_freq };
-
-  MoveInfo mi( MoveInfo::Type::line, n_co, step_line_fun );
-
-  for( unsigned i=0; i<n_co; ++i ) {
-    xfloat v = arg2xfloat_d( i+1, argc, argv, 0, -9000.0f, 9000.0f ); // some may be out of workplace
-    coo[i] = v;
-  }
-
-  xfloat fe_mmm = me_st.fe_g1 ; // for now
-  auto rc_prep =  prep_move_line( mi, coo, fe_mmm );
-  std_out << "# draw_l: ";
-  for( auto x : coo ) {
-    std_out << x << ' ';
-  }
-  std_out << fe_mmm << "; l= " << mi.len << " t= " << mi.t_sec << ' ' << mi.t_tick << NL;
-
-  if( rc_prep != 0 ) {
-    std_out << "# Error: fail to prepare MoveInfo for line, rc=" << rc_prep << NL;
-  }
-
-  DoAtLeave do_off_motors( []() { motors_off(); } );
-  motors_on();
-
 
   // TODO: check endstops here or during run?
   draw_mode = 1;
@@ -961,8 +960,9 @@ int cmd_draw_l( int argc, const char * const * argv )
   HAL_TIM_Base_Start_IT( &htim6 ); // TODO: move to main, no stop
   wait_next_motor_tick();
 
+  int rc {0};
   // really must be more then t_tick
-  for( unsigned tn=0; tn < 2*mi.t_tick && break_flag == 0; ++tn ) {
+  for( unsigned tn=0; tn < 3*mi.t_tick && break_flag == 0; ++tn ) {
     leds[2].reset();
     if( ! wait_next_motor_tick() ) {
       break;
@@ -974,36 +974,68 @@ int cmd_draw_l( int argc, const char * const * argv )
       break; // mark: more
     }
 
-    auto rc = mi.calc_step( a );
-    if( rc == MoveInfo::Ret::nop ) {
+    auto rc_calc = mi.calc_step( a );
+    if( rc_calc == MoveInfo::Ret::nop ) {
       continue;
     }
-    if( rc != MoveInfo::Ret::move ) {
+    if( rc_calc != MoveInfo::Ret::move ) {
+      rc = 2;
       break; // TODO: keep reason
     }
 
-    for( unsigned i=0; i<n_co; ++i ) {
-      auto dir = mi.cdirs[i];
-      if( dir == 0 ) {
-        continue;
-      }
-      if( dir != mi.pdirs[i] ) { // direction changed
-        machs[i].set_dir( dir );
-        mi.pdirs[i] = dir;
-      }
-      machs[i].step();
-      mi.ci[i] += dir; // inside post step ????????
-      me_st.x[i] += (xfloat) dir / machs[i].tick2mm;
+    for( unsigned i=0; i<mi.n_coo; ++i ) {
+      me_st.step( i, mi.cdirs[i] );
+      mi.ci[i] += mi.cdirs[i]; // inside post step ????????
     }
 
   }
   leds[2].reset();
 
-  HAL_TIM_Base_Stop_IT( &htim6 ); // may be not at all?
-
   draw_mode = 0;
-  return 0;
+  return rc;
 }
+
+// TODO: member of MashState
+int move_line_rel( const xfloat *d_mm, unsigned n_coo, xfloat fe_mmm )
+{
+  MoveInfo mi( MoveInfo::Type::line, n_coo, step_line_fun );
+
+  auto rc_prep =  mi.prep_move_line( d_mm, fe_mmm );
+
+  if( rc_prep != 0 ) {
+    std_out << "# Error: fail to prepare MoveInfo for line, rc=" << rc_prep << NL;
+    return 1;
+  }
+
+  return move_common( mi, fe_mmm );
+}
+
+int cmd_draw_l( int argc, const char * const * argv )
+{
+  const unsigned n_co { 3 }; // TODO: more from task
+  xfloat coo[n_co];    // relative task
+
+  for( unsigned i=0; i<n_co; ++i ) {
+    xfloat v = arg2xfloat_d( i+1, argc, argv, 0, -9000.0f, 9000.0f ); // some may be out of workplace
+    coo[i] = v;
+  }
+
+  xfloat fe_mmm = me_st.fe_g1 ; // for now
+
+  DoAtLeave do_off_motors( []() { motors_off(); } );
+  motors_on();
+
+  auto rc = move_line_rel( coo, n_co, fe_mmm );
+
+  if( rc != 0 ) {
+    std_out << "# Error: fail to line, rc=" << rc << NL;
+  }
+
+  return rc;
+}
+
+
+// --------------------------- PWM ----------------------------------------
 
 
 int pwm_set( unsigned idx, float v )
