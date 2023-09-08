@@ -47,11 +47,12 @@ int gcode_G0G1( GcodeBlock *cb, MachStateBase *ms, bool g1 )
     pwm_set( 0, v );
   }
 
-  int rc = move_rel( d_mm, n_mo, fe_mmm );
+  int rc = me_st.move_line_rel( d_mm, n_mo, fe_mmm );
 
   if( me_st.mode == MachState::modeLaser ) {
     pwm_off( 0 );
   }
+  OUT << "#  G0G1 rc= "<< rc << " break_flag= " << break_flag << NL;
 
   return rc == 0 ? GcodeBlock::rcOk : GcodeBlock::rcErr;
 }

@@ -33,7 +33,6 @@ BOARD_CONSOLE_DEFINES_UART;
 const char* common_help_string = "Application coordinate device control" NL;
 
 int debug { 1 };
-int draw_mode { 0 }; // TODO: to task 0 - none, 1-line
 volatile int tim_mov_tick { 0 }; // set in TIM6_callback
 
 extern SD_HandleTypeDef hsd;
@@ -155,9 +154,6 @@ int MachState::step( unsigned i, int dir )
 }
 
 MachState me_st( mach_prep_fun, mach_g_funcs, mach_m_funcs );
-
-MoveTask1 move_task[n_motors+1]; // last idx = time
-
 
 
 // C6  = T3.1  = PWM0
@@ -300,6 +296,7 @@ int gcode_cmdline_handler( char *s )
   if( s[0] != '!' && s[0] != 'G' && s[0] != 'M' ) { // not my
     return -1;
   };
+  // TODO: 'G' or 'M' only
 
   const char *cmd = s;
   if( cmd[0] == '!' ) { // skip '!'
@@ -401,6 +398,8 @@ int main()
 
   pr( NL "##################### " PROJ_NAME NL );
 
+  HAL_TIM_Base_Start_IT( &htim6 );
+
   std_main_loop_nortos( &srl, idle_main_task );
 
   return 0;
@@ -470,156 +469,6 @@ bool is_endstop_clear_for_dir( uint16_t e, int dir )
   return false;
 }
 
-int move_rel( const float *d_mm_i, unsigned n_mo,  float fe_mmm )
-{
-  for( auto &m : move_task )      { m.init(); }
-  fe_mmm *= me_st.fe_scale / 100;
-  fe_mmm = clamp( fe_mmm, 2.0f, me_st.fe_g0 );
-  UVAR('k') = UVAR('l') = UVAR('x') = UVAR('y') = UVAR('z') = 0;
-
-  me_st.n_mo = n_mo;
-  float d_mm[n_mo];
-  for( unsigned i=0; i<n_mo; ++i ) { d_mm[i] = d_mm_i[i]; } // local copy, as we change it: round(step)-sign
-
-  float feed3_max { 0 }; // mm/min
-  float d_l { 0 };
-  int max_steps { 0 }, max_steps_idx { 0 };
-
-  if( debug > 0 ) {
-    std_out << "# rel: " << n_mo << ' ';
-    for( unsigned i=0; i<n_mo; ++i ) {
-      std_out << d_mm[i] << ' ';
-    }
-    std_out << fe_mmm << ' ';
-  }
-
-
-  // calculate number of steps on each axis
-  for( unsigned i=0; i<n_mo; ++i ) {
-    const float dc = d_mm[i];
-    const float step_sz = 1.0f / ( machs[i].tick2mm * me_st.axis_scale[i] );
-    if( dc > 0.5f * step_sz ) {
-      move_task[i].dir =  1;
-      move_task[i].step_task = move_task[i].step_rest =  roundf( dc / step_sz );
-      machs[i].set_dir( 1 );
-    } else if( dc < -0.5f * step_sz ) {
-      move_task[i].dir = -1;
-      move_task[i].step_task = move_task[i].step_rest = -roundf( dc / step_sz );
-      machs[i].set_dir( -1 );
-    } else {
-      // move_task[i].dir =  0; // zeroed before
-      machs[i].set_dir( 1 );
-    }
-    if( max_steps < move_task[i].step_rest ) {
-      max_steps   = move_task[i].step_rest;
-      max_steps_idx = i;
-    }
-
-    const float d_c = move_task[i].step_rest * step_sz;
-    d_mm[i] = d_c;
-    if( debug > 1 ) {
-      std_out << NL "# " << i << ' ' << dc << ' ' << d_c << ' '
-              << move_task[i].dir << ' ' << move_task[i].step_rest << NL;
-    }
-    d_l += d_c * d_c;
-    feed3_max += machs[i].max_speed * machs[i].max_speed;
-  }
-
-  d_l = sqrtf( d_l );
-  feed3_max = sqrtf( feed3_max );
-  if( fe_mmm > feed3_max ) {
-    fe_mmm = feed3_max;
-  }
-
-  if( debug > 1 ) {
-    std_out << "# feed= " << fe_mmm << " mm/min; " << " d_l= " << d_l
-            << " mm;  feed3_max= " << feed3_max
-            << "  max_steps= " << max_steps  << ' ' << max_steps_idx << NL;
-  }
-
-  float feed[n_mo];
-  float feed_lim { 0 };
-  for( unsigned i=0; i<n_mo; ++i ) {
-    feed[i] = fe_mmm * d_mm[i] / d_l;
-    if( feed[i] > machs[i].max_speed ) {
-      feed[i] =   machs[i].max_speed;
-    }
-    feed_lim += feed[i] * feed[i];
-    // std_out << "# feed[" << i << "]= " << feed[i] << NL;
-  }
-  feed_lim = sqrtf( feed_lim );
-
-  if( debug > 1 ) {
-    std_out << "# feed_lim= " << feed_lim << NL;
-  }
-
-  if( feed[max_steps_idx] < 1e-3f || feed_lim < 1e-3f ) {
-    std_out << "# Error: too low speed, exiting " << feed_lim << NL;
-    return 5;
-  }
-
-  float t_all = 60 * d_mm[max_steps_idx] / feed[max_steps_idx];
-  uint32_t t_all_tick = 2 + ( uint32_t( t_all * TIM6_count_freq ) & ~1u );
-  if( debug > 0 ) {
-    std_out << " t_all= " << t_all << " s = " <<  t_all_tick << ' ';
-  }
-
-  if( t_all_tick < 3 ) {
-    std_out << "# jump on place" << NL;
-    delay_ms( 1 );
-    return 0;
-  }
-
-  move_task[n_motors].step_rest = move_task[n_motors].step_task = t_all_tick;
-
-  // check endstops
-  for( unsigned i=0; i<n_mo; ++i ) {
-    if( machs[i].endstops == nullptr ) {
-      continue;
-    }
-    uint16_t esv = machs[i].endstops->read();
-    const auto dir = move_task[i].dir;
-    // std_out << "# debug: endstop " << esv << " at " << i << " dir: " << dir << NL;
-    if( is_endstop_clear_for_dir( esv, dir ) ) {
-      continue;
-    }
-    std_out << "# Error: endstop " << esv << " at " << i << " dir: " << dir << NL;
-    return 7;
-  }
-
-  HAL_TIM_Base_Start_IT( &htim6 );
-  uint32_t tm0 = HAL_GetTick(), tc0 = tm0;
-
-  break_flag = 0;
-  int t_est = (int)( t_all * 11 + 5 ); // + 10%, + 0.5s
-  for( int i=0; i<t_est && !break_flag; ++i ) {
-
-    leds[3].toggle();
-
-    delay_ms_until_brk( &tc0, 100 );
-
-  }
-  // HAL_TIM_Base_Stop_IT( &htim6 ); // may be other breaks, so dup here
-
-  me_st.last_rc = break_flag;
-
-  // calculate shift and errors
-  float real_d[n_mo], l_err { 0.0f };
-  for( unsigned i=0; i<n_mo; ++i ) {
-    real_d[i] = float( move_task[i].step_task - move_task[i].step_rest ) * move_task[i].dir
-      / ( machs[i].tick2mm * me_st.axis_scale[i] );
-    me_st.x[i] += real_d[i];
-    l_err += pow2f( d_mm_i[i] - real_d[i] );
-    if( debug > 1 ) {
-      std_out << " d_" << i << " = " << real_d[i] << " x= " << me_st.x[i] << NL;
-    }
-  }
-  l_err = sqrtf( l_err );
-
-  int rc = ( me_st.last_rc == 2 ) ? ( (l_err > 0.1f) ? 9 : 0 ) : 8;
-  std_out << "# rc= " << rc << " l_err= " << l_err << NL;
-  return rc;
-}
 
 int go_home( unsigned axis )
 {
@@ -738,7 +587,7 @@ int cmd_relmove( int argc, const char * const * argv )
 
   DoAtLeave do_off_motors( []() { motors_off(); } );
   motors_on();
-  int rc = move_rel( d_mm, n_mo, fe_mmm );
+  int rc = me_st.move_line_rel( d_mm, n_mo, fe_mmm );
 
   return rc;
 }
@@ -764,7 +613,7 @@ int cmd_absmove( int argc, const char * const * argv )
 
   DoAtLeave do_off_motors( []() { motors_off(); } );
   motors_on();
-  int rc = move_rel( d_mm, n_mo, fe_mmm );
+  int rc = me_st.move_line_rel( d_mm, n_mo, fe_mmm );
 
   return rc;
 }
@@ -913,7 +762,7 @@ int MoveInfo::prep_move_line( const xfloat *coo, xfloat fe )
 
 MoveInfo::Ret MoveInfo::calc_step( xfloat a )
 {
-  if( step_pfun == nullptr || a < 0 || a > 1 ) {
+  if( step_pfun == nullptr ) {
     return Ret::err;
   }
   return step_pfun( *this, a );
@@ -972,10 +821,8 @@ int MachState::move_common( MoveInfo &mi, xfloat fe_mmm )
   fe_mmm = clamp( fe_mmm, 2.0f, fe_g0 );
   const xfloat k_t { 1.0f / TIM6_count_freq };
 
-  draw_mode = 1;
   tim_mov_tick = 0; break_flag = 0;
 
-  HAL_TIM_Base_Start_IT( &htim6 ); // TODO: move to main, no stop
   wait_next_motor_tick();
 
   int rc {0};
@@ -1000,7 +847,7 @@ int MachState::move_common( MoveInfo &mi, xfloat fe_mmm )
     leds[2].reset();
 
     if( wait_next_motor_tick() != 0 ) {
-      rc = 11;
+      rc = 111;
       break;
     }
 
@@ -1008,7 +855,7 @@ int MachState::move_common( MoveInfo &mi, xfloat fe_mmm )
       continue;
     }
     if( rc_calc != MoveInfo::Ret::move ) {
-      rc = 3;
+      rc = 3; UVAR('r') = (int)rc_calc;
       break; // TODO: keep reason
     }
 
@@ -1020,7 +867,6 @@ int MachState::move_common( MoveInfo &mi, xfloat fe_mmm )
   }
   leds[2].reset();
 
-  draw_mode = 0;
   on_endstop = 9999;
   return rc;
 }
@@ -1058,7 +904,7 @@ int cmd_draw_l( int argc, const char * const * argv )
   auto rc = me_st.move_line_rel( coo, n_co, fe_mmm );
 
   if( rc != 0 ) {
-    std_out << "# Error: fail to line, rc=" << rc << NL;
+    std_out << "# Error: fail to make line, rc=" << rc << NL;
   }
 
   return rc;
@@ -1351,34 +1197,7 @@ void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
 
 void TIM6_callback()
 {
-  // ++UVAR('k');
-  //if( draw_mode != 0 ) {
-    tim_mov_tick = 1;
-  //  return;
-  // 
-
-  // leds[2].set();
-  // bool do_stop = true;
-  // for( unsigned i=0; i<me_st.n_mo && break_flag == 0; ++i ) {
-  //   if( move_task[i].dir == 0  ||  move_task[i].step_rest < 1 ) {
-  //     continue;
-  //   }
-  //   move_task[i].d += 2 * move_task[i].step_task ;
-  //   do_stop = false;
-  //   if( move_task[i].d > move_task[n_motors].step_task ) {
-  //     (machs[i]).step();
-  //     //
-  //     --move_task[i].step_rest;
-  //     move_task[i].d -= 2 * move_task[n_motors].step_task;
-  //   }
-  // }
-  //
-  // if( do_stop || break_flag != 0 ) {
-  //   HAL_TIM_Base_Stop_IT( &htim6 );
-  //   break_flag = break_flag ? break_flag : 2;
-  // }
-  // leds[2].reset();
-
+  tim_mov_tick = 1;
   return;
 }
 

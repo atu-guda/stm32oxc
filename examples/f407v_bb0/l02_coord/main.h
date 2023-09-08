@@ -68,16 +68,6 @@ int mach_prep_fun( GcodeBlock *cb, MachStateBase *ms );
 extern const MachStateBase::FunGcodePair mach_g_funcs[];
 extern const MachStateBase::FunGcodePair mach_m_funcs[];
 
-// move task description. Old version
-struct MoveTask1 {
-  int8_t   dir;   // 1-forvard, 0-no, -1 - backward
-  int step_rest;  // downcount of next
-  int step_task;  // total ticks in this task
-  int d;          // for Brese
-  inline void init() { dir = 0; step_rest = step_task = d = 0; }
-};
-
-extern MoveTask1 move_task[n_motors+1]; // last idx = time
 
 // task + state. fill: move_prep_
 struct MoveInfo {
@@ -108,7 +98,6 @@ int wait_next_motor_tick(); // 0 = was break, not 0 - ok
 int pwm_set( unsigned idx, float v );
 int pwm_off( unsigned idx );
 int pwm_off_all();
-int move_rel( const float *d_mm, unsigned n_mo, float fe_mmm );
 int go_home( unsigned axis );
 
 inline bool is_endstop_minus_stop( uint16_t e ) { return ( (e & 0x01) == 0 ) ; }
