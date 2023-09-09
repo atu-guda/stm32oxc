@@ -151,9 +151,13 @@ MachState me_st( mach_prep_fun, mach_g_funcs, mach_m_funcs );
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " axis N [dt] - test"  };
 int cmd_relmove( int argc, const char * const * argv );
-CmdInfo CMDINFO_RELMOVE { "rel", 'R', cmd_relmove, "dx dy dz [feed] - rel move test"  };
+CmdInfo CMDINFO_RELMOVE { "rel", 'R', cmd_relmove, "dx dy dz [feed] - rel move"  };
 int cmd_absmove( int argc, const char * const * argv );
-CmdInfo CMDINFO_ABSMOVE { "abs", 'A', cmd_absmove, "x y z [feed] - abs move test"  };
+CmdInfo CMDINFO_ABSMOVE { "abs", 'A', cmd_absmove, "x y z [feed] - abs move"  };
+int cmd_circ_center( int argc, const char * const * argv );
+CmdInfo CMDINFO_CIRC_CENTER { "circ_c", 'C', cmd_circ_center, "x y i j [feed] [z] [l]- circle with center i,j(rel)"  };
+int cmd_circ_radius( int argc, const char * const * argv );
+CmdInfo CMDINFO_CIRC_RADIUS { "circ_r", '\0', cmd_circ_radius, "x y r [feed] [z] [l]- circle with radius r"  };
 int cmd_home( int argc, const char * const * argv );
 CmdInfo CMDINFO_HOME { "home", 'H', cmd_home, "axis - go home at give axis"  };
 int cmd_pwr( int argc, const char * const * argv );
@@ -164,8 +168,6 @@ int cmd_gexec( int argc, const char * const * argv );
 CmdInfo CMDINFO_GEXEC { "gexec", 'X', cmd_gexec, " file  - execute gcode file"  };
 int cmd_fire( int argc, const char * const * argv );
 CmdInfo CMDINFO_FIRE { "FIRE", 'F', cmd_fire, " power% time_ms  - fire laser"  };
-int cmd_draw_l( int argc, const char * const * argv );
-CmdInfo CMDINFO_DRAW_L { "draw_l", 'L', cmd_draw_l, " [x y z]... - test line drawing"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -175,12 +177,13 @@ const CmdInfo* global_cmds[] = {
   FS_CMDS0,
   &CMDINFO_RELMOVE,
   &CMDINFO_ABSMOVE,
+  &CMDINFO_CIRC_CENTER,
+  &CMDINFO_CIRC_RADIUS,
   &CMDINFO_HOME,
   &CMDINFO_PWR,
   &CMDINFO_ZERO,
   &CMDINFO_GEXEC,
   &CMDINFO_FIRE,
-  &CMDINFO_DRAW_L,
   nullptr
 };
 
@@ -484,7 +487,7 @@ int go_home( unsigned axis )
       std_out << "# Warning: move from endstop- " << axis << ' ' << endstops2str_a() << NL;
     }
     d_mm[axis] = machs[axis].es_find_l;
-    rc = me_st.move_line_rel( d_mm, n_mo, 2 * fe_slow );
+    rc = me_st.move_line( d_mm, n_mo, 2 * fe_slow );
     if( debug > 0 ) {
       std_out << "# rc= " << rc << NL;
     }
@@ -502,7 +505,7 @@ int go_home( unsigned axis )
   if( debug > 0 ) {
     std_out << "# to_endstop ph 1 " << endstops2str_a() << NL;
   }
-  rc = me_st.move_line_rel( d_mm, n_mo, fe_fast );
+  rc = me_st.move_line( d_mm, n_mo, fe_fast );
   esv = estp->read();
   if( is_endstop_minus_go( esv ) ) { //
     std_out << "# Error: fail to find endstop. axis " << axis << " ph 1 " << esv  << ' ' << endstops2str_a() << NL;
@@ -514,7 +517,7 @@ int go_home( unsigned axis )
     std_out << "# go_away ph 2 "  << endstops2str_a() << NL;
   }
   d_mm[axis] = machs[axis].es_find_l;
-  rc = me_st.move_line_rel( d_mm, n_mo, fe_slow, axis );
+  rc = me_st.move_line( d_mm, n_mo, fe_slow, axis );
   esv = estp->read();
   if( is_endstop_any_stop(esv) ) { // must be ok
     std_out << "# Error: fail to step from endstop axis " << axis << " ph 2 " << endstops2str_a() << NL;
@@ -526,7 +529,7 @@ int go_home( unsigned axis )
     std_out << "# to_es ph 3 " << endstops2str_a() << NL;
   }
   d_mm[axis] = - 1.5f * machs[axis].es_find_l;
-  rc = me_st.move_line_rel( d_mm, n_mo, fe_slow );
+  rc = me_st.move_line( d_mm, n_mo, fe_slow );
   esv = estp->read();
   if( is_endstop_minus_go( esv ) ) {
     std_out << "# Error: fail to find endstop axis " << axis << " ph 3 " << endstops2str_a() << esv << NL;
@@ -538,7 +541,7 @@ int go_home( unsigned axis )
     std_out << "# go_away st ph 4 " << endstops2str_a() << NL;
   }
   d_mm[axis] = machs[axis].es_find_l;
-  rc = me_st.move_line_rel( d_mm, n_mo, fe_slow, axis );
+  rc = me_st.move_line( d_mm, n_mo, fe_slow, axis );
   esv = estp->read();
   if( is_endstop_any_stop( esv ) ) {
     std_out << "# Error: fail to find endstop axis " << axis << " ph 4 " << endstops2str_a() << NL;
@@ -565,7 +568,7 @@ int cmd_relmove( int argc, const char * const * argv )
 
   DoAtLeave do_off_motors( []() { motors_off(); } );
   motors_on();
-  int rc = me_st.move_line_rel( d_mm, n_mo, fe_mmm );
+  int rc = me_st.move_line( d_mm, n_mo, fe_mmm );
 
   return rc;
 }
@@ -586,9 +589,21 @@ int cmd_absmove( int argc, const char * const * argv )
 
   DoAtLeave do_off_motors( []() { motors_off(); } );
   motors_on();
-  int rc = me_st.move_line_rel( d_mm, n_mo, fe_mmm );
+  int rc = me_st.move_line( d_mm, n_mo, fe_mmm );
 
   return rc;
+}
+
+int cmd_circ_center( int argc, const char * const * argv )
+{
+  std_out << "# circ_c: empty" << NL;
+  return 0;
+}
+
+int cmd_circ_radius( int argc, const char * const * argv )
+{
+  std_out << "# circ_r: empty" << NL;
+  return 0;
 }
 
 int cmd_home( int argc, const char * const * argv )
@@ -733,6 +748,16 @@ int MoveInfo::prep_move_line( const xfloat *coo, xfloat fe )
   return 0;
 }
 
+int MoveInfo::prep_move_circ_center( const xfloat *coo, xfloat fe )
+{
+  return 1;
+}
+
+int MoveInfo::prep_move_circ_radius( const xfloat *coo, xfloat fe )
+{
+  return 1;
+}
+
 MoveInfo::Ret MoveInfo::calc_step( xfloat a )
 {
   if( step_pfun == nullptr ) {
@@ -741,6 +766,7 @@ MoveInfo::Ret MoveInfo::calc_step( xfloat a )
   return step_pfun( *this, a );
 }
 
+// TODO: make a member?
 MoveInfo::Ret step_line_fun( MoveInfo &mi, xfloat a )
 {
   bool need_move = false;
@@ -760,6 +786,11 @@ MoveInfo::Ret step_line_fun( MoveInfo &mi, xfloat a )
   }
 
   return need_move ?  MoveInfo::Ret::move : MoveInfo::Ret::nop;
+}
+
+MoveInfo::Ret step_circ_fun( MoveInfo &mi, xfloat a )
+{
+  return MoveInfo::Ret::err;
 }
 
 // -------------------------- MachState ----------------------------------------------------
@@ -871,7 +902,7 @@ int MachState::move_common( MoveInfo &mi, xfloat fe_mmm )
   return rc;
 }
 
-int MachState::move_line_rel( const xfloat *d_mm, unsigned n_coo, xfloat fe_mmm, unsigned a_on_endstop )
+int MachState::move_line( const xfloat *d_mm, unsigned n_coo, xfloat fe_mmm, unsigned a_on_endstop )
 {
   MoveInfo mi( MoveInfo::Type::line, n_coo, step_line_fun );
 
@@ -886,30 +917,16 @@ int MachState::move_line_rel( const xfloat *d_mm, unsigned n_coo, xfloat fe_mmm,
   return move_common( mi, fe_mmm );
 }
 
-int cmd_draw_l( int argc, const char * const * argv )
+int MachState::move_circ( const xfloat *d_mm, unsigned n_coo, xfloat fe_mmm )
 {
-  const unsigned n_co { 3 }; // TODO: more from task
-  xfloat coo[n_co];    // relative task
-
-  for( unsigned i=0; i<n_co; ++i ) {
-    xfloat v = arg2xfloat_d( i+1, argc, argv, 0, -9000.0f, 9000.0f ); // some may be out of workplace
-    coo[i] = v;
+  MoveInfo mi( MoveInfo::Type::circle, n_coo, step_circ_fun );
+  auto rc_prep =  mi.prep_move_circ_center( d_mm, fe_mmm ); // TODO: radius by args or separate fun?
+  if( rc_prep != 0 ) {
+    std_out << "# Error: fail to prepare MoveInfo for circle, rc=" << rc_prep << NL;
+    return 1;
   }
-
-  xfloat fe_mmm = me_st.fe_g1 ; // for now
-
-  DoAtLeave do_off_motors( []() { motors_off(); } );
-  motors_on();
-
-  auto rc = me_st.move_line_rel( coo, n_co, fe_mmm );
-
-  if( rc != 0 ) {
-    std_out << "# Error: fail to make line, rc=" << rc << NL;
-  }
-
-  return rc;
+  return move_common( mi, fe_mmm );
 }
-
 
 // --------------------------- PWM ----------------------------------------
 

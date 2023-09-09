@@ -49,7 +49,7 @@ int gcode_G0G1( GcodeBlock *cb, MachStateBase *ms, bool g1 )
     pwm_set( 0, v );
   }
 
-  int rc = me_st.move_line_rel( d_mm, n_mo, fe_mmm );
+  int rc = me_st.move_line( d_mm, n_mo, fe_mmm );
 
   if( me_st.get_mode() == MachState::modeLaser ) {
     pwm_off( 0 );
