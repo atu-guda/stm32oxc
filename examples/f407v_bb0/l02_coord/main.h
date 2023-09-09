@@ -33,34 +33,50 @@ int gcode_cmdline_handler( char *s );
 
 class MachState : public MachStateBase {
   public:
-   MachState( fun_gcode_mg prep, const FunGcodePair *g_f, const FunGcodePair *m_f );
    enum MachMode {
      modeFFF = 0, modeLaser = 1, modeCNC = 2, modeMax = 3
    };
-   // TODO: protected:
+   MachState( fun_gcode_mg prep, const FunGcodePair *g_f, const FunGcodePair *m_f );
+   xfloat getPwm() const { return std::clamp( 100 * spin / spin100, 0.0f, spin_max ); }
+   int check_endstops( MoveInfo &mi );
+   int move_common( MoveInfo &mi, xfloat fe_mmm );
+   int move_line_rel( const xfloat *d_mm, unsigned n_coo, xfloat fe_mmm, unsigned a_on_endstop = 9999 );
+   int step( unsigned i_motor, int dir );
+   MachMode get_mode() const { return mode; };
+   void set_mode( MachMode m ) { if( m < modeMax ) { mode = m; }};
+   xfloat get_xi( unsigned i ) const { return x[i]; }
+   xfloat get_x()  const { return x[0]; }
+   xfloat get_y()  const { return x[1]; }
+   xfloat get_z()  const { return x[2]; }
+   xfloat get_e0() const { return x[3]; }
+   void set_xi( unsigned i, xfloat v ) { x[i] = v; }
+   void set_x(  xfloat v ) { x[0] = v; }
+   void set_y(  xfloat v ) { x[1] = v; }
+   void set_z(  xfloat v ) { x[2] = v; }
+   void set_e0( xfloat v ) { x[3] = v; }
+   int get_dly_xsteps() const { return dly_xsteps; }
+   void set_dly_xsteps( int v ) { dly_xsteps = v; }
+   uint32_t get_n_mo() const { return n_mo; }
+  protected:
    MachMode mode { modeFFF };
+   int dirs[n_motors];  // last/current direction
+   unsigned on_endstop { 9999 };
+   uint32_t last_rc;
+   uint32_t n_mo { 0 }; // current number of active motors
+  public: // for now, TODO: hide
    xfloat x[n_motors];
    xfloat axis_scale[n_motors];
-   int dirs[n_motors];  // last/current direction
    xfloat fe_g0 { 350 };
    xfloat fe_g1 { 300 };
    xfloat fe_scale { 100.0f };
    xfloat spin  {   0 };
    xfloat spin100  { 10000 }; // scale for laser PWM
    xfloat spin_max {  90 };   // max PWM in %
-   uint32_t n_mo { 0 }; // current number of active motors
    int dly_xsteps { 50 }; // delay between steps in program
-   uint32_t last_rc;
-   unsigned on_endstop { 9999 };
    bool was_set { false };
    bool relmove { false };
    bool inchUnit { false };
    bool spinOn   { false };
-   xfloat getPwm() const { return std::clamp( 100 * spin / spin100, 0.0f, spin_max ); }
-   int check_endstops( MoveInfo &mi );
-   int move_common( MoveInfo &mi, xfloat fe_mmm );
-   int move_line_rel( const xfloat *d_mm, unsigned n_coo, xfloat fe_mmm, unsigned a_on_endstop = 9999 );
-   int step( unsigned i_motor, int dir );
 };
 
 extern MachState me_st;

@@ -3,8 +3,10 @@
 
 #define OUT std_out
 
-// --------- gcodes ????
+// --------- gcodes
 // really ms is MachState, but conversion in func prts is impossible
+// TODO: all actions in machine, here only args
+
 int gcode_G0G1( GcodeBlock *cb, MachStateBase *ms, bool g1 )
 {
   COMMON_GM_CODE_CHECK;
@@ -41,7 +43,7 @@ int gcode_G0G1( GcodeBlock *cb, MachStateBase *ms, bool g1 )
   }
   OUT << " ); fe= "<< fe_mmm << NL;
 
-  if( me_st.mode == MachState::modeLaser && g1 && me_st.spin > 0 ) {
+  if( me_st.get_mode() == MachState::modeLaser && g1 && me_st.spin > 0 ) {
     const xfloat v = me_st.getPwm();
     OUT << "# spin= " << me_st.spin << " v= " << v << NL;
     pwm_set( 0, v );
@@ -49,7 +51,7 @@ int gcode_G0G1( GcodeBlock *cb, MachStateBase *ms, bool g1 )
 
   int rc = me_st.move_line_rel( d_mm, n_mo, fe_mmm );
 
-  if( me_st.mode == MachState::modeLaser ) {
+  if( me_st.get_mode() == MachState::modeLaser ) {
     pwm_off( 0 );
   }
   OUT << "#  G0G1 rc= "<< rc << " break_flag= " << break_flag << NL;
@@ -210,7 +212,7 @@ int mcode_M3( GcodeBlock *cb, MachStateBase *ms )
   const xfloat v = me_st.getPwm();
   OUT << "# M3 " << v << NL;
   me_st.spinOn = true;
-  if( me_st.mode == MachState::modeCNC ) {
+  if( me_st.get_mode() == MachState::modeCNC ) {
     pwm_set( 0, v ); // no direction
     OUT << '+';
   }
@@ -270,11 +272,8 @@ int mcode_M221( GcodeBlock *cb, MachStateBase *ms )
 int mcode_M450( GcodeBlock *cb, MachStateBase *ms )
 {
   COMMON_GM_CODE_CHECK;
-  static const char* const mode_names[] = { "FFF", "Laser", "CNC" };
-  if( me_st.mode >= MachState::modeMax ) {
-      me_st.mode  = MachState::modeFFF;
-  }
-  OUT << "PrinterMode:" << mode_names[me_st.mode] << NL;
+  static const char* const mode_names[] = { "FFF", "Laser", "CNC", "??3", "??4", "??5" };
+  OUT << "PrinterMode:" << mode_names[me_st.get_mode()] << NL;
   return GcodeBlock::rcOk;
 }
 
@@ -282,7 +281,7 @@ int mcode_M451( GcodeBlock *cb, MachStateBase *ms )
 {
   COMMON_GM_CODE_CHECK;
   OUT << "# M451 " << NL;
-  me_st.mode  = MachState::modeFFF;
+  me_st.set_mode( MachState::modeFFF );
   return GcodeBlock::rcOk;
 }
 
@@ -290,7 +289,7 @@ int mcode_M452( GcodeBlock *cb, MachStateBase *ms )
 {
   COMMON_GM_CODE_CHECK;
   OUT << "# M452 " << NL;
-  me_st.mode  = MachState::modeLaser;
+  me_st.set_mode( MachState::modeLaser );
   return GcodeBlock::rcOk;
 }
 
@@ -298,7 +297,7 @@ int mcode_M453( GcodeBlock *cb, MachStateBase *ms )
 {
   COMMON_GM_CODE_CHECK;
   OUT << "# M453 " << NL;
-  me_st.mode  = MachState::modeCNC;
+  me_st.set_mode( MachState::modeCNC );
   return GcodeBlock::rcOk;
 }
 

@@ -128,30 +128,6 @@ MachParam machs[n_motors] = {
 };
 
 
-MachState::MachState( fun_gcode_mg prep, const FunGcodePair *g_f, const FunGcodePair *m_f )
-     : MachStateBase( prep, g_f, m_f )
-{
-  fill_0( x ); fill_0( dirs );
-  fill_val( axis_scale, 1 );
-}
-
-int MachState::step( unsigned i, int dir )
-{
-  if( i >= n_motors ) {
-    return 0;
-  }
-  if( dir == 0 ) {
-    return 0;
-  }
-  if( dir != dirs[i] ) {
-    machs[i].set_dir( dir );
-    dirs[i] = dir;
-  }
-  machs[i].step();
-  x[i] += (xfloat) dir / ( machs[i].tick2mm * axis_scale[i] );
-
-  return 1;
-}
 
 MachState me_st( mach_prep_fun, mach_g_funcs, mach_m_funcs );
 
@@ -211,6 +187,7 @@ const CmdInfo* global_cmds[] = {
 const constinit NamedInt   ob_break_flag     {    "break_flag",    const_cast<int*>(&break_flag)  }; // may be UB?
 const constinit NamedInt   ob_debug          {    "debug",          &debug  };
 const constinit NamedInt   ob_me_dly_xsteps  {    "me.dly_xsteps",  &me_st.dly_xsteps  };
+// const constinit NamedInt   ob_me_dly_xsteps  {    "me.dly_xsteps",  [](){ me_st.get_dly_xsteps();}, [](xfloat v){ me_st.set_dly_xsteps(v);}  };
 const constinit NamedFloat ob_me_fe_g0       {    "me.fe_g0",       &me_st.fe_g0  };
 const constinit NamedFloat ob_me_fe_g1       {    "me.fe_g1",       &me_st.fe_g1  };
 const constinit NamedFloat ob_me_fe_scale    {    "me.fe_scale",    &me_st.fe_scale  };
@@ -389,7 +366,7 @@ int main()
   cmdline_handlers[1] = nullptr;
 
   // just for now
-  me_st.mode = MachState::modeLaser;
+  me_st.set_mode ( MachState::modeLaser );
 
   BOARD_POST_INIT_BLINK;
 
@@ -470,6 +447,7 @@ bool is_endstop_clear_for_dir( uint16_t e, int dir )
 }
 
 
+// TODO: move to MachState, simultanious movement
 int go_home( unsigned axis )
 {
   if( axis >= n_motors ) {
@@ -596,18 +574,13 @@ int cmd_absmove( int argc, const char * const * argv )
 {
   std_out << "# absmove: " << NL;
 
-  if( ! me_st.was_set ) {
-    std_out << "# Error: zero point not set" << NL;
-    return 2;
-  }
-
   const unsigned n_mo { 3 }; // 3 = only XYZ motors
 
   float d_mm[n_mo];
 
   for( unsigned i=0; i<n_mo; ++i ) {
     d_mm[i] = arg2xfloat_d( i+1, argc, argv, 0, -(float)machs[i].max_l, (float)machs[i].max_l )
-            - me_st.x[i];
+            - me_st.get_xi( i );
   }
   float fe_mmm = arg2xfloat_d( 4, argc, argv, UVAR('f'), 0.0f, 900.0f );
 
@@ -631,8 +604,8 @@ int cmd_home( int argc, const char * const * argv )
 
 int cmd_zero( int argc, const char * const * argv )
 {
-  for( unsigned i=0; i<me_st.n_mo; ++i ) {
-    me_st.x[i] =  arg2xfloat_d( i+1, argc, argv, 0, -machs[i].max_l, machs[i].max_l );
+  for( unsigned i=0; i<me_st.get_n_mo(); ++i ) {
+    me_st.set_xi( i, arg2xfloat_d( i+1, argc, argv, 0, -machs[i].max_l, machs[i].max_l ) );
   }
   me_st.was_set = true;
   return 0;
@@ -694,7 +667,7 @@ int cmd_gexec( int argc, const char * const * argv )
     }
 
     if( me_st.dly_xsteps > 0 ) {
-      motors_off();
+      motors_off(); // TODO: investigate! + sensors
       delay_ms( me_st.dly_xsteps );
       motors_on();
     }
@@ -787,6 +760,33 @@ MoveInfo::Ret step_line_fun( MoveInfo &mi, xfloat a )
   }
 
   return need_move ?  MoveInfo::Ret::move : MoveInfo::Ret::nop;
+}
+
+// -------------------------- MachState ----------------------------------------------------
+
+MachState::MachState( fun_gcode_mg prep, const FunGcodePair *g_f, const FunGcodePair *m_f )
+     : MachStateBase( prep, g_f, m_f )
+{
+  fill_0( x ); fill_0( dirs );
+  fill_val( axis_scale, 1 );
+}
+
+int MachState::step( unsigned i, int dir )
+{
+  if( i >= n_motors ) {
+    return 0;
+  }
+  if( dir == 0 ) {
+    return 0;
+  }
+  if( dir != dirs[i] ) {
+    machs[i].set_dir( dir );
+    dirs[i] = dir;
+  }
+  machs[i].step();
+  x[i] += (xfloat) dir / ( machs[i].tick2mm * axis_scale[i] );
+
+  return 1;
 }
 
 int MachState::check_endstops( MoveInfo &mi )
