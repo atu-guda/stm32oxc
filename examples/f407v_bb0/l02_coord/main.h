@@ -142,10 +142,6 @@ const uint16_t touch_mask { 0b0100 }; // E2
 const char* endstops2str( uint16_t es, bool touch, char *buf = nullptr );
 const char* endstops2str_a( char *buf = nullptr );
 
-template<typename T> // TODO: array/container only, move to oxc_base?
-void fill_0( T &a ) { for( auto &x : a ) { x = 0; } }
-template<typename T, typename V >
-void fill_val( T &a, V v ) { for( auto &x : a ) { x = v; } }
 
 #endif
 

@@ -7,8 +7,7 @@
 
 void GcodeBlock::init()
 {
-  for( auto &p : fp ) { p =  0; };
-  for( auto &p : ip ) { p = uninit_val; };
+  fill_val( fp, NAN );
   str0[0] = str1[0] = '\0';
   err_code = errNone; err_pos = 0;
 }
@@ -19,8 +18,7 @@ void GcodeBlock::sub_init()
     'X'-'A', 'Y'-'A', 'Z'-'A', 'E'-'A', 'I'-'A', 'J'-'A', 'G'-'A', 'M'-'A', 'T'-'A'
   };
   for( auto i : clear_idx ) {
-    fp[i] = 0;
-    ip[i] = uninit_val;
+    fp[i] = NAN;
   }
 }
 
@@ -29,7 +27,7 @@ void GcodeBlock::dump() const
 {
   OUT << "# ";
   for( unsigned i=0; i< n_p; ++i ) {
-    if( ip[i] == uninit_val ) {
+    if( !std::isfinite(fp[i]) ) {
       continue;
     }
     OUT << char( 'A' + i ) << ' ' << fp[i] << "; ";
@@ -126,7 +124,7 @@ int GcodeBlock::process( const char *s )
 
         if( c == '"' ) { // only some params?
           st0 = st; st =  GcodeState::quoted;
-          fp[p_idx] = 0;  ip[p_idx] = 0;
+          fp[p_idx] = NAN;
           err_pos = (int)(s-s0); // potential error
           err_code = errString;
           qs[0] = '\0'; qs_len = 0;
@@ -144,7 +142,7 @@ int GcodeBlock::process( const char *s )
         fv = strtoxf( val_buf, &eptr );
         // OUT << "# dbg_val \"" << val_buf << "\" vs= " << vs << "  fv= " << fv << ' ' << p_name << NL;
 
-        fp[p_idx] = fv;  ip[p_idx] = iv = (int)(fv);
+        fp[p_idx] = fv;
         if( vs > 0 ) {
           s += vs-1;
         } else {
@@ -201,7 +199,7 @@ int GcodeBlock::process( const char *s )
     case  GcodeState::init :
       break;
     case  GcodeState::param :
-      fp[p_idx] = 0;  ip[p_idx] = 0;
+      fp[p_idx] = 0;
       break;
     case  GcodeState::quoted :
       if( ! to_end ) {
