@@ -58,6 +58,7 @@ class MachState : public MachStateBase {
    int get_dly_xsteps() const { return dly_xsteps; }
    void set_dly_xsteps( int v ) { dly_xsteps = v; }
    uint32_t get_n_mo() const { return n_mo; }
+   int gcode_G1( const GcodeBlock &gc );
   protected:
    MachMode mode { modeFFF };
    int dirs[n_motors];  // last/current direction
@@ -107,6 +108,7 @@ struct MoveInfo {
   void zero_arr();
   Ret calc_step( xfloat a );
   int prep_move_line( const xfloat *coo, xfloat fe );
+  int prep_move_line( const GcodeBlock &gc );
   int prep_move_circ_center( const xfloat *coo, xfloat fe );
   int prep_move_circ_radius( const xfloat *coo, xfloat fe );
 };

@@ -11,10 +11,10 @@ int gcode_G0G1( GcodeBlock *cb, MachStateBase *ms, bool g1 )
 {
   COMMON_GM_CODE_CHECK;
 
-  if( ! me_st.was_set ) {
-    std_out << "# Error: zero point not set" << NL;
-    return GcodeBlock::rcErr;
-  }
+  // if( ! me_st.was_set ) {
+  //   std_out << "# Error: zero point not set" << NL;
+  //   return GcodeBlock::rcErr;
+  // }
 
   const unsigned n_mo { 4 };
   const xfloat meas_scale = me_st.inchUnit ? 25.4f : 1.0f;

@@ -810,6 +810,11 @@ int MoveInfo::prep_move_line( const xfloat *coo, xfloat fe )
   return 0;
 }
 
+int MoveInfo::prep_move_line( const GcodeBlock &gc )
+{
+  return 1;
+}
+
 int MoveInfo::prep_move_circ_center( const xfloat *coo, xfloat fe )
 {
   return 1;
@@ -990,6 +995,10 @@ int MachState::move_circ( const xfloat *d_mm, unsigned n_coo, xfloat fe_mmm )
   return move_common( mi, fe_mmm );
 }
 
+int MachState::gcode_G1( const GcodeBlock &gc )
+{
+  return 1;
+}
 // --------------------------- PWM ----------------------------------------
 
 
