@@ -4,8 +4,6 @@
 #include <oxc_auto.h>
 #include <oxc_floatfun.h>
 
-#define strtoxf strtof
-
 class GcodeBlock;
 class MachStateBase;
 

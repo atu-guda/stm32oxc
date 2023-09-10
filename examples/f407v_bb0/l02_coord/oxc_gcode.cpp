@@ -107,7 +107,7 @@ int GcodeBlock::process( const char *s )
           }
           // OUT << "## p_name " << p_name << ' ' << p_idx << NL;
           if( ( p_name == 'M' || p_name == 'G' ) && was_mg ) {
-            // OUT << "#-- TODO: here to call 1 ms->call_mg" << NL;
+            // OUT << "#-- here to call 1 ms->call_mg" << NL;
             mach_rc = ms->call_mg( this );
             sub_init(); was_mg = false;
             ++n_act; n_el = 0;
@@ -223,7 +223,7 @@ int GcodeBlock::process( const char *s )
   };
 
   if( st != GcodeState::error && n_el > 0 ) {
-    // OUT << "#-- TODO: here to call 2 ms->call_mg" << NL;
+    // OUT << "#-- here to call 2 ms->call_mg" << NL;
     mach_rc = ms->call_mg( this );
     rc = mach_rc; // TODO: ???
     ++n_act;

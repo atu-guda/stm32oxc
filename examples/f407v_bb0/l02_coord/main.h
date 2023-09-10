@@ -17,8 +17,8 @@ struct MachParam {
   uint32_t tick2mm   ; // tick per mm, = 2* pulses per mm
   uint32_t max_speed ; // mm/min
   uint32_t max_l     ; // mm
-  float    es_find_l ; // movement to find endstop, from ES, to = *1.5
-  float    k_slow    ; // slow movement coeff from max_speed
+  xfloat    es_find_l ; // movement to find endstop, from ES, to = *1.5
+  xfloat    k_slow    ; // slow movement coeff from max_speed
   PinsIn  *endstops  ;
   PinsOut *motor     ;
   void set_dir( int dir );
@@ -114,7 +114,7 @@ struct MoveInfo {
 void motors_off();
 void motors_on();
 int wait_next_motor_tick(); // 0 = was break, not 0 - ok
-int pwm_set( unsigned idx, float v );
+int pwm_set( unsigned idx, xfloat v );
 int pwm_off( unsigned idx );
 int pwm_off_all();
 int go_home( unsigned axis );
@@ -142,7 +142,7 @@ const uint16_t touch_mask { 0b0100 }; // E2
 const char* endstops2str( uint16_t es, bool touch, char *buf = nullptr );
 const char* endstops2str_a( char *buf = nullptr );
 
-template<typename T> // TODO: array/container only
+template<typename T> // TODO: array/container only, move to oxc_base?
 void fill_0( T &a ) { for( auto &x : a ) { x = 0; } }
 template<typename T, typename V >
 void fill_val( T &a, V v ) { for( auto &x : a ) { x = v; } }

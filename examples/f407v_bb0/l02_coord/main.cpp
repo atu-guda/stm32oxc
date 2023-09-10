@@ -25,6 +25,10 @@
 using namespace std;
 using namespace SMLRL;
 
+const constinit xfloat k_r2g { 180 / M_PI };
+const constinit xfloat M_PIx2 { 2 * M_PI };
+const constinit xfloat near_l { 1.0e-4 };
+
 USE_DIE4LED_ERROR_HANDLER;
 BOARD_DEFINE_LEDS;
 
@@ -466,11 +470,11 @@ int go_home( unsigned axis )
   pwm_off_all();
   // me_st.was_set = false;
 
-  float fe_slow = (float)machs[axis].max_speed * machs[axis].k_slow;
-  float fe_fast = (float)machs[axis].max_speed * 0.6f; // TODO: param too?
+  xfloat fe_slow = (xfloat)machs[axis].max_speed * machs[axis].k_slow;
+  xfloat fe_fast = (xfloat)machs[axis].max_speed * 0.6f; // TODO: param too?
 
   const unsigned n_mo { 3 }; // 3 = only XYZ motors
-  float d_mm[n_mo];
+  xfloat d_mm[n_mo];
   fill_0( d_mm );
 
   DoAtLeave do_off_motors( []() { motors_off(); } );
@@ -501,7 +505,7 @@ int go_home( unsigned axis )
   }
 
   // go to endstop
-  d_mm[axis] = -2.0f * (float)machs[axis].max_l; // far away
+  d_mm[axis] = -2.0f * (xfloat)machs[axis].max_l; // far away
   if( debug > 0 ) {
     std_out << "# to_endstop ph 1 " << endstops2str_a() << NL;
   }
@@ -559,12 +563,12 @@ int cmd_relmove( int argc, const char * const * argv )
   std_out << "# relmove: " << NL;
   const unsigned n_mo { 3 }; // 3 = only XYZ motors
 
-  float d_mm[n_mo];
+  xfloat d_mm[n_mo];
 
   for( unsigned i=0; i<n_mo; ++i ) {
-    d_mm[i] = arg2xfloat_d( i+1, argc, argv, 0, -(float)machs[i].max_l, (float)machs[i].max_l );
+    d_mm[i] = arg2xfloat_d( i+1, argc, argv, 0, -(xfloat)machs[i].max_l, (xfloat)machs[i].max_l );
   }
-  float fe_mmm = arg2xfloat_d( 4, argc, argv, UVAR('f'), 0.0f, 900.0f );
+  xfloat fe_mmm = arg2xfloat_d( 4, argc, argv, UVAR('f'), 0.0f, 900.0f );
 
   DoAtLeave do_off_motors( []() { motors_off(); } );
   motors_on();
@@ -579,13 +583,13 @@ int cmd_absmove( int argc, const char * const * argv )
 
   const unsigned n_mo { 3 }; // 3 = only XYZ motors
 
-  float d_mm[n_mo];
+  xfloat d_mm[n_mo];
 
   for( unsigned i=0; i<n_mo; ++i ) {
-    d_mm[i] = arg2xfloat_d( i+1, argc, argv, 0, -(float)machs[i].max_l, (float)machs[i].max_l )
+    d_mm[i] = arg2xfloat_d( i+1, argc, argv, 0, -(xfloat)machs[i].max_l, (xfloat)machs[i].max_l )
             - me_st.get_xi( i );
   }
-  float fe_mmm = arg2xfloat_d( 4, argc, argv, UVAR('f'), 0.0f, 900.0f );
+  xfloat fe_mmm = arg2xfloat_d( 4, argc, argv, UVAR('f'), 0.0f, 900.0f );
 
   DoAtLeave do_off_motors( []() { motors_off(); } );
   motors_on();
@@ -596,7 +600,65 @@ int cmd_absmove( int argc, const char * const * argv )
 
 int cmd_circ_center( int argc, const char * const * argv )
 {
-  std_out << "# circ_c: empty" << NL;
+  bool cv = UVAR('c') == 0;
+  xfloat x_e  = arg2xfloat_d( 1, argc, argv, 0 );
+  xfloat y_e  = arg2xfloat_d( 2, argc, argv, 0 );
+  xfloat x_c  = arg2xfloat_d( 3, argc, argv, 1 ); // I
+  xfloat y_c  = arg2xfloat_d( 4, argc, argv, 1 ); // J
+  xfloat fe   = arg2xfloat_d( 5, argc, argv, me_st.fe_g1 ); // F
+  xfloat z_e  = arg2xfloat_d( 6, argc, argv, 0 );
+  xfloat nt   = arg2xfloat_d( 7, argc, argv, 0 ); // L
+
+  std_out << "# circ_c: ( " << x_e << ' ' << y_e << ' ' << z_e
+    << " ) c: ( " << x_c << ' ' << y_c << " ) fe= " << fe << ' ' << nt << ' ' << cv << NL;
+  xfloat r_s = hypotxf( x_c, y_c );
+  xfloat r_e = hypotxf( (x_e-x_c), (y_e-y_c) );
+  if( r_s < 0.1f || r_e < 0.1f ) {
+    std_out << "# err: r?" << NL;
+    return 1;
+  }
+  xfloat alp_s = atan2xf( -y_c, -x_c );
+  xfloat alp_e = atan2xf( (y_e-y_c), (x_e-x_c) );
+
+  bool full_circ = fabsxf(x_e) < near_l && fabsxf(y_e) < near_l;
+
+  if( cv ) {
+    if( alp_e > alp_s ) {
+      alp_e -= M_PIx2;
+    }
+    if( full_circ ) {
+      alp_e = alp_s - M_PIx2;
+    }
+    alp_e -= nt * M_PIx2;
+
+  } else {
+    if( alp_e < alp_s ) {
+      alp_e += M_PIx2;
+    }
+    if( full_circ ) {
+      alp_e = alp_s + M_PIx2;
+    }
+    alp_e += nt * M_PIx2;
+
+  }
+  xfloat l_appr { 0.5f * ( r_s + r_e ) * fabs( alp_e - alp_s ) };
+  l_appr = hypot( l_appr, z_e );
+
+  std_out << "# " << (cv ? 'V' : 'C') << " r_s= "  << r_s << " r_e= " << r_e
+          << " alp_s= " << ( alp_s   * k_r2g ) << " alp_e= " << ( alp_e   * k_r2g )
+          << " d_a= "   << ( ( alp_e - alp_s ) * k_r2g ) << " l_ap= " << l_appr << NL;
+
+
+  // for( xfloat a = 0; a <= 1.00001; a += 0.005 ) {
+  //   xfloat alp = alp_s + a * (alp_e-alp_s);
+  //   xfloat r = r_s + a * ( r_e - r_s );
+  //   xfloat x = x_c + r * cos( alp );
+  //   xfloat y = x_c + r * sin( alp );
+  //   xfloat z = a * z_e;
+  //   std_out << a << ' ' << alp << ' ' << r << ' ' << x << ' ' << y << ' ' << z;
+  //   std_out << NL;
+  // }
+
   return 0;
 }
 
@@ -702,7 +764,7 @@ int cmd_gexec( int argc, const char * const * argv )
 
 int cmd_fire( int argc, const char * const * argv )
 {
-  float pwr = arg2xfloat_d( 1, argc, argv, 0.05, 0.0f, 100.0f );
+  xfloat pwr = arg2xfloat_d( 1, argc, argv, 0.05, 0.0f, 100.0f );
   unsigned dt = arg2long_d( 2, argc, argv, 0, 0, 10000 );
   std_out << "# fire: pwr= " << pwr << " dt=  " << dt << NL;
 
@@ -931,7 +993,7 @@ int MachState::move_circ( const xfloat *d_mm, unsigned n_coo, xfloat fe_mmm )
 // --------------------------- PWM ----------------------------------------
 
 
-int pwm_set( unsigned idx, float v )
+int pwm_set( unsigned idx, xfloat v )
 {
   if( idx >= pwm_tims.size() ) {
     return 0;
@@ -971,8 +1033,8 @@ int pwm_off_all()
 
 int cmd_pwr( int argc, const char * const * argv )
 {
-  int   ch  = arg2long_d(  1, argc, argv, 0, 0, pwm_tims.size() ); // including limit for ALL_OFF
-  float pwr = arg2xfloat_d( 2, argc, argv, 0, 0.0f, 100.0f );
+  int    ch  = arg2long_d(  1, argc, argv, 0, 0, pwm_tims.size() ); // including limit for ALL_OFF
+  xfloat pwr = arg2xfloat_d( 2, argc, argv, 0, 0.0f, 100.0f );
 
   if( (unsigned)ch >= pwm_tims.size() ) {
     pwm_off_all();

@@ -409,7 +409,7 @@ double arg2double_d( int narg, int argc, const char * const * argv, double def, 
 {
   double v = def;
   if(  narg < argc && argv != nullptr ) {
-    v = str2float_d( argv[narg], def, vmin, vmax );
+    v = str2double_d( argv[narg], def, vmin, vmax );
   }
   return v;
 }
