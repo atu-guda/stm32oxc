@@ -159,10 +159,6 @@ int cmd_relmove( int argc, const char * const * argv );
 CmdInfo CMDINFO_RELMOVE { "rel", 'R', cmd_relmove, "dx dy dz [feed] - rel move"  };
 int cmd_absmove( int argc, const char * const * argv );
 CmdInfo CMDINFO_ABSMOVE { "abs", 'A', cmd_absmove, "x y z [feed] - abs move"  };
-int cmd_circ_center( int argc, const char * const * argv );
-CmdInfo CMDINFO_CIRC_CENTER { "circ_c", 'C', cmd_circ_center, "x y i j [feed] [z] [l]- circle with center i,j(rel)"  };
-int cmd_circ_radius( int argc, const char * const * argv );
-CmdInfo CMDINFO_CIRC_RADIUS { "circ_r", '\0', cmd_circ_radius, "x y r [feed] [z] [l]- circle with radius r"  };
 int cmd_home( int argc, const char * const * argv );
 CmdInfo CMDINFO_HOME { "home", 'H', cmd_home, "axis - go home at give axis"  };
 int cmd_pwr( int argc, const char * const * argv );
@@ -182,8 +178,6 @@ const CmdInfo* global_cmds[] = {
   FS_CMDS0,
   &CMDINFO_RELMOVE,
   &CMDINFO_ABSMOVE,
-  &CMDINFO_CIRC_CENTER,
-  &CMDINFO_CIRC_RADIUS,
   &CMDINFO_HOME,
   &CMDINFO_PWR,
   &CMDINFO_ZERO,
@@ -599,75 +593,7 @@ int cmd_absmove( int argc, const char * const * argv )
   return rc;
 }
 
-int cmd_circ_center( int argc, const char * const * argv )
-{
-  bool cv = UVAR('c') == 0;
-  xfloat x_e  = arg2xfloat_d( 1, argc, argv, 0 );
-  xfloat y_e  = arg2xfloat_d( 2, argc, argv, 0 );
-  xfloat x_c  = arg2xfloat_d( 3, argc, argv, 1 ); // I
-  xfloat y_c  = arg2xfloat_d( 4, argc, argv, 1 ); // J
-  xfloat fe   = arg2xfloat_d( 5, argc, argv, me_st.fe_g1 ); // F
-  xfloat z_e  = arg2xfloat_d( 6, argc, argv, 0 );
-  xfloat nt   = arg2xfloat_d( 7, argc, argv, 0 ); // L
 
-  std_out << "# circ_c: ( " << x_e << ' ' << y_e << ' ' << z_e
-    << " ) c: ( " << x_c << ' ' << y_c << " ) fe= " << fe << ' ' << nt << ' ' << cv << NL;
-  xfloat r_s = hypotxf( x_c, y_c );
-  xfloat r_e = hypotxf( (x_e-x_c), (y_e-y_c) );
-  if( r_s < 0.1f || r_e < 0.1f ) {
-    std_out << "# err: r?" << NL;
-    return 1;
-  }
-  xfloat alp_s = atan2xf( -y_c, -x_c );
-  xfloat alp_e = atan2xf( (y_e-y_c), (x_e-x_c) );
-
-  bool full_circ = fabsxf(x_e) < near_l && fabsxf(y_e) < near_l;
-
-  if( cv ) {
-    if( alp_e > alp_s ) {
-      alp_e -= M_PIx2;
-    }
-    if( full_circ ) {
-      alp_e = alp_s - M_PIx2;
-    }
-    alp_e -= nt * M_PIx2;
-
-  } else {
-    if( alp_e < alp_s ) {
-      alp_e += M_PIx2;
-    }
-    if( full_circ ) {
-      alp_e = alp_s + M_PIx2;
-    }
-    alp_e += nt * M_PIx2;
-
-  }
-  xfloat l_appr { 0.5f * ( r_s + r_e ) * fabs( alp_e - alp_s ) };
-  l_appr = hypot( l_appr, z_e );
-
-  std_out << "# " << (cv ? 'V' : 'C') << " r_s= "  << r_s << " r_e= " << r_e
-          << " alp_s= " << ( alp_s   * k_r2g ) << " alp_e= " << ( alp_e   * k_r2g )
-          << " d_a= "   << ( ( alp_e - alp_s ) * k_r2g ) << " l_ap= " << l_appr << NL;
-
-
-  // for( xfloat a = 0; a <= 1.00001; a += 0.005 ) {
-  //   xfloat alp = alp_s + a * (alp_e-alp_s);
-  //   xfloat r = r_s + a * ( r_e - r_s );
-  //   xfloat x = x_c + r * cos( alp );
-  //   xfloat y = x_c + r * sin( alp );
-  //   xfloat z = a * z_e;
-  //   std_out << a << ' ' << alp << ' ' << r << ' ' << x << ' ' << y << ' ' << z;
-  //   std_out << NL;
-  // }
-
-  return 0;
-}
-
-int cmd_circ_radius( int argc, const char * const * argv )
-{
-  std_out << "# circ_r: empty" << NL;
-  return 0;
-}
 
 int cmd_home( int argc, const char * const * argv )
 {
@@ -863,8 +789,41 @@ MoveInfo::Ret step_circ_fun( MoveInfo &mi, xfloat a )
 
 // -------------------------- MachState ----------------------------------------------------
 
+// G: val * 1000, to allow G11.123
+// M: 1000000 + val * 1000
+const MachState::FunGcodePair_new mg_code_funcs[] = {
+  {       0, &MachState::g_move_line     },
+  {    1000, &MachState::g_move_line     },
+  {    2000, &MachState::g_move_circle   },
+  {    3000, &MachState::g_move_circle   },
+  {    4000, &MachState::g_wait          },
+  {   20000, &MachState::g_set_unit_inch },
+  {   21000, &MachState::g_set_unit_mm   },
+  {   28000, &MachState::g_home          },
+  {   90000, &MachState::g_set_absmove   },
+  {   91000, &MachState::g_set_relmove   },
+  {   92000, &MachState::g_set_origin    },
+  { 1000000, &MachState::m_end0           },
+  { 1001000, &MachState::m_pause          },
+  { 1002000, &MachState::m_end            },
+  { 1003000, &MachState::m_set_spin       },
+  { 1004000, &MachState::m_set_spin       },
+  { 1005000, &MachState::m_spin_off       },
+  { 1114000, &MachState::m_out_where      },
+  { 1117000, &MachState::m_out_str        },
+  { 1220000, &MachState::m_set_feed_scale },
+  { 1221000, &MachState::m_set_spin_scale },
+  { 1450000, &MachState::m_out_mode       },
+  { 1451000, &MachState::m_set_mode_fff   },
+  { 1452000, &MachState::m_set_mode_laser },
+  { 1453000, &MachState::m_set_mode_cnc   },
+};
+
+
 MachState::MachState( fun_gcode_mg prep, const FunGcodePair *g_f, const FunGcodePair *m_f )
-     : MachStateBase( prep, g_f, m_f )
+     : MachStateBase( prep, g_f, m_f ),
+       mg_funcs_new( mg_code_funcs ),
+       mg_funcs_new_sz( std::size(mg_code_funcs) )
 {
   ranges::fill( x, 0 ); ranges::fill( dirs, 0 );
   ranges::fill( axis_scale, 1 );
@@ -996,10 +955,290 @@ int MachState::move_circ( const xfloat *d_mm, unsigned n_coo, xfloat fe_mmm )
   return move_common( mi, fe_mmm );
 }
 
-int MachState::gcode_G1( const GcodeBlock &gc )
+int MachState::g_move_line( const GcodeBlock &gc )
 {
-  return 1;
+  const unsigned n_mo { 4 }; // TODO? who set
+  const xfloat meas_scale = inchUnit ? 25.4f : 1.0f;
+
+  xfloat prev_x[n_mo], d_mm[n_mo];
+  for( unsigned i=0; i<n_mo; ++i ) {
+    prev_x[i] = relmove ? 0 : ( x[i] / meas_scale );
+  }
+
+  static constexpr const char *const axis_chars = "XYZEVUW?";
+  for( unsigned i=0; i<n_mo; ++i ) {
+    d_mm[i] = gc.fpv_or_def( axis_chars[i], prev_x[i] );
+    d_mm[i] *= meas_scale;
+  }
+
+  if( !relmove ) {
+    for( unsigned i=0; i<n_mo; ++i ) {
+      d_mm[i] -= prev_x[i];
+    }
+  }
+
+  int g = gc.ipv_or_def( 'G', -1 );
+  if( g < 0 || g > 1 ) {
+    return GcodeBlock::rcErr;
+  }
+  bool g1 { g == 1 };
+
+  xfloat fe_mmm = g1 ? fe_g1 : fe_g0; // TODO: split: 2 different functions
+
+  OUT << "# G" << (g1?'1':'0') << " ( ";
+  for( auto xx: d_mm ) {
+    OUT << xx << ' ';
+  }
+  OUT << " ); fe= "<< fe_mmm << NL;
+
+  if( mode == MachState::modeLaser && g1 && spin > 0 ) {
+    const xfloat v = me_st.getPwm();
+    OUT << "# spin= " << me_st.spin << " v= " << v << NL;
+    pwm_set( 0, v );
+  }
+
+  int rc = move_line( d_mm, n_mo, fe_mmm );
+
+  if( mode == MachState::modeLaser ) {
+    pwm_off( 0 );
+  }
+  OUT << "#  G0G1 rc= "<< rc << " break_flag= " << break_flag << NL;
+
+  return rc == 0 ? GcodeBlock::rcOk : GcodeBlock::rcErr;
 }
+
+int MachState::g_move_circle( const GcodeBlock &gc )
+{
+  return GcodeBlock::rcErr;
+}
+
+int MachState::g_wait( const GcodeBlock &gc )
+{
+  xfloat w = 1000 * gc.fpv_or_def( 'P', 0 );
+  w += gc.fpv_or_def( 'S', 1 );
+  OUT << "# wait " << w << NL;
+  delay_ms_brk( (uint32_t)w );
+  return GcodeBlock::rcOk;
+}
+
+int MachState::g_set_unit_inch( const GcodeBlock &gc ) // G20
+{
+  inchUnit = true;
+  return GcodeBlock::rcOk;
+}
+
+int MachState::g_set_unit_mm( const GcodeBlock &gc ) // G21
+{
+  inchUnit = false;
+  return GcodeBlock::rcOk;
+}
+
+int MachState::g_home( const GcodeBlock &gc ) // G28
+{
+  bool x = gc.is_set('X');
+  bool y = gc.is_set('Y');
+  bool z = gc.is_set('Z');
+  if( !x && !y && !z ) {
+    x = y = z = true;
+  }
+  int rc;
+
+  if( y ) {
+    rc  = go_home( 1 ); // from what?
+    if( rc != 1 ) {
+      return GcodeBlock::rcErr;
+    }
+  }
+
+  if( x ) {
+    rc  = go_home( 0 );
+    if( rc != 1 ) {
+      return GcodeBlock::rcErr;
+    }
+  }
+
+  if( z ) {
+    rc  = go_home( 2 );
+    if( rc != 1 ) {
+      return GcodeBlock::rcErr;
+    }
+  }
+  was_set = true;
+
+  return rc == 1 ? GcodeBlock::rcOk : GcodeBlock::rcErr;
+}
+
+int MachState::g_set_absmove( const GcodeBlock &gc ) // G90
+{
+  relmove = false;
+  return GcodeBlock::rcOk;
+}
+
+int MachState::g_set_relmove( const GcodeBlock &gc ) // G91
+{
+  relmove = true;
+  return GcodeBlock::rcOk;
+}
+
+int MachState::g_set_origin( const GcodeBlock &gc ) // G92
+{
+  static const char axis_chars[] { "XYZEV" };
+  bool a { false };
+  unsigned i {0};
+
+  for( char c : axis_chars ) {
+    if( gc.is_set( c ) ) {
+      x[i] = gc.fpv_or_def( c, 0 ); a = true;
+    }
+    ++i;
+  }
+
+  if( a ) {
+    me_st.was_set = true; // do not change if a false
+  }
+
+  return GcodeBlock::rcOk;
+}
+
+int MachState::m_end0( const GcodeBlock &gc )          // M0
+{
+  pwm_set( 0, 0 );
+  motors_off();
+  return GcodeBlock::rcEnd;
+}
+
+int MachState::m_pause( const GcodeBlock &gc )         // M1
+{
+  // TODO: pause for what?
+  return GcodeBlock::rcOk;
+}
+
+int MachState::m_end( const GcodeBlock &gc )           // M2
+{
+  pwm_set( 0, 0 );
+  motors_off();
+  return GcodeBlock::rcEnd;
+}
+
+int MachState::m_set_spin( const GcodeBlock &gc )      // M3, M4
+{
+  spin = gc.fpv_or_def( 'S', spin );
+  const xfloat v = getPwm();
+  OUT << "# M3 " << v << NL;
+  spinOn = true;
+  if( mode == MachState::modeCNC ) {
+    pwm_set( 0, v ); // no direction
+    OUT << '+';
+  }
+  OUT << NL;
+  return GcodeBlock::rcOk;
+}
+
+int MachState::m_spin_off( const GcodeBlock &gc )      // M5
+{
+  OUT << "# M5 " << NL;
+  pwm_off( 0 );
+  spinOn = false;
+  return GcodeBlock::rcOk;
+}
+
+int MachState::m_out_where( const GcodeBlock &gc )     // M114
+{
+  const char axis_chars[] { "XYZE??" };
+  xfloat k_unit = 1.0f / ( inchUnit ? 25.4f : 1.0f );
+  for( unsigned i=0; i<4; ++i ) {
+    OUT << ' ' << axis_chars[i] << ": " << ( x[i] * k_unit  );
+  }
+  OUT << NL;
+  return GcodeBlock::rcOk;
+}
+
+int MachState::m_out_str( const GcodeBlock &gc )       // M117
+{
+  OUT << "# M117" << NL;
+  OUT << gc.get_str0() << NL;
+  return GcodeBlock::rcOk;
+}
+
+int MachState::m_set_feed_scale( const GcodeBlock &gc )// M220
+{
+  fe_scale = gc.fpv_or_def( 'S', fe_scale );
+  OUT << "# M220 feed scale " << fe_scale << NL;
+  return GcodeBlock::rcOk;
+}
+
+int MachState::m_set_spin_scale( const GcodeBlock &gc )// M221
+{
+  spin100  = gc.fpv_or_def( 'S', spin100 );
+  spin_max = gc.fpv_or_def( 'U', spin_max );
+  OUT << "# M221 spindle scale " << spin100 << ' ' << spin_max << NL;
+  return GcodeBlock::rcOk;
+}
+
+int MachState::m_out_mode( const GcodeBlock &gc )      // M450
+{
+  static const char* const mode_names[] = { "FFF", "Laser", "CNC", "??3", "??4", "??5" };
+  OUT << "PrinterMode:" << mode_names[mode] << NL;
+  return GcodeBlock::rcOk;
+}
+
+int MachState::m_set_mode_fff( const GcodeBlock &gc )  // M451
+{
+  OUT << "# M451 " << NL;
+  set_mode( MachState::modeFFF );
+  return GcodeBlock::rcOk;
+}
+
+int MachState::m_set_mode_laser( const GcodeBlock &gc )// M452
+{
+  OUT << "# M452 " << NL;
+  set_mode( MachState::modeLaser );
+  return GcodeBlock::rcOk;
+}
+
+int MachState::m_set_mode_cnc( const GcodeBlock &gc )  // M453
+{
+  OUT << "# M453 " << NL;
+  set_mode( MachState::modeCNC );
+  return GcodeBlock::rcOk;
+}
+
+
+int MachState::call_mg_new( GcodeBlock &cb )
+{
+  cb.dump(); // debug
+  auto is_g = cb.is_set('G');
+  auto is_m = cb.is_set('M');
+  if( is_g && is_m ) {
+    OUT << "#  MS error: M and G" << NL;
+    return GcodeBlock::rcErr; // TODO: err_val: both commands
+  }
+
+  if( prep_fun ) {
+    auto mach_rc = prep_fun( &cb, this );
+    if( mach_rc >= GcodeBlock::rcErr ) {
+      return mach_rc;
+    }
+  }
+
+  char chfun  = is_m ? 'M' : 'G';
+  int code    = ( is_m ? 1000000 : 0 ) + 1000 * cb.ipv_or_def( chfun, -1 );
+
+  for( unsigned i=0; i<mg_funcs_new_sz; ++i ) {
+    auto [ c, fun ] = mg_funcs_new[i];
+    if( c < 0 ) {
+      OUT << "# warn: unsupported " << chfun << ' ' << code << NL;
+      return GcodeBlock::rcUnsupp;
+    }
+    if( c == code ) {
+      return (this->*fun)( cb );
+    }
+  }
+  OUT << "# Error! Out of range! " << chfun << ' ' << code << NL;
+  return GcodeBlock::rcFatal;
+
+}
+
 // --------------------------- PWM ----------------------------------------
 
 

@@ -16,6 +16,8 @@ int gcode_G0G1( GcodeBlock *cb, MachStateBase *ms, bool g1 )
   //   return GcodeBlock::rcErr;
   // }
 
+  // TODO: move logic to machine
+
   const unsigned n_mo { 4 };
   const xfloat meas_scale = me_st.inchUnit ? 25.4f : 1.0f;
 
@@ -191,7 +193,7 @@ int mcode_M1( GcodeBlock *cb, MachStateBase *ms )
   COMMON_GM_CODE_CHECK;
 
   OUT << "# M1 " << NL;
-  // TODO: pausue
+  // TODO: pause
   return GcodeBlock::rcOk;
 }
 

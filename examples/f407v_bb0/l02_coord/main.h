@@ -36,6 +36,12 @@ class MachState : public MachStateBase {
    enum MachMode {
      modeFFF = 0, modeLaser = 1, modeCNC = 2, modeMax = 3
    };
+   using fun_gcode_mg_new = int(MachState::*)( const GcodeBlock &cb );
+   struct FunGcodePair_new {
+     int num;
+     fun_gcode_mg_new fun;
+   };
+
    MachState( fun_gcode_mg prep, const FunGcodePair *g_f, const FunGcodePair *m_f );
    xfloat getPwm() const { return std::clamp( 100 * spin / spin100, 0.0f, spin_max ); }
    int check_endstops( MoveInfo &mi );
@@ -58,13 +64,37 @@ class MachState : public MachStateBase {
    int get_dly_xsteps() const { return dly_xsteps; }
    void set_dly_xsteps( int v ) { dly_xsteps = v; }
    uint32_t get_n_mo() const { return n_mo; }
-   int gcode_G1( const GcodeBlock &gc );
+   int call_mg_new( GcodeBlock &cb );
+   int g_move_line( const GcodeBlock &gc );     // G0, G1
+   int g_move_circle( const GcodeBlock &gc );   // G2, G3
+   int g_wait( const GcodeBlock &gc );          // G4
+   int g_set_unit_inch( const GcodeBlock &gc ); // G20
+   int g_set_unit_mm( const GcodeBlock &gc );   // G21
+   int g_home( const GcodeBlock &gc );          // G28
+   int g_set_absmove( const GcodeBlock &gc );   // G90
+   int g_set_relmove( const GcodeBlock &gc );   // G91
+   int g_set_origin( const GcodeBlock &gc );    // G92
+   int m_end0( const GcodeBlock &gc );          // M0
+   int m_pause( const GcodeBlock &gc );         // M1
+   int m_end( const GcodeBlock &gc );           // M2
+   int m_set_spin( const GcodeBlock &gc );      // M3, M4
+   int m_spin_off( const GcodeBlock &gc );      // M5
+   int m_out_where( const GcodeBlock &gc );     // M114
+   int m_out_str( const GcodeBlock &gc );       // M117
+   int m_set_feed_scale( const GcodeBlock &gc );// M220
+   int m_set_spin_scale( const GcodeBlock &gc );// M221
+   int m_out_mode( const GcodeBlock &gc );      // M450
+   int m_set_mode_fff( const GcodeBlock &gc );  // M451
+   int m_set_mode_laser( const GcodeBlock &gc );// M452
+   int m_set_mode_cnc( const GcodeBlock &gc );  // M453
   protected:
    MachMode mode { modeFFF };
    int dirs[n_motors];  // last/current direction
    unsigned on_endstop { 9999 };
    uint32_t last_rc;
    uint32_t n_mo { 0 }; // current number of active motors
+   const FunGcodePair_new *mg_funcs_new { nullptr };
+   const unsigned mg_funcs_new_sz;
   public: // for now, TODO: hide
    xfloat x[n_motors];
    xfloat axis_scale[n_motors];
@@ -85,6 +115,7 @@ extern MachState me_st;
 int mach_prep_fun( GcodeBlock *cb, MachStateBase *ms );
 extern const MachStateBase::FunGcodePair mach_g_funcs[];
 extern const MachStateBase::FunGcodePair mach_m_funcs[];
+extern const MachState::FunGcodePair_new mg_code_funcs[];
 
 
 // task + state. fill: move_prep_
