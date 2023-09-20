@@ -1,5 +1,7 @@
 #include <cctype>
 #include <cstring>
+#include <algorithm>
+
 #include <oxc_gcode.h>
 
 #define OUT std_out
@@ -7,7 +9,7 @@
 
 void GcodeBlock::init()
 {
-  fill_val( fp, NAN );
+  std::ranges::fill( fp, NAN );
   str0[0] = str1[0] = '\0';
   err_code = errNone; err_pos = 0;
 }

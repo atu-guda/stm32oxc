@@ -2,6 +2,7 @@
 #include <climits>
 #include <cmath>
 #include <cstring>
+#include <algorithm>
 
 #include <oxc_auto.h>
 #include <oxc_floatfun.h>
@@ -475,7 +476,7 @@ int go_home( unsigned axis )
 
   const unsigned n_mo { 3 }; // 3 = only XYZ motors
   xfloat d_mm[n_mo];
-  fill_0( d_mm );
+  ranges::fill( d_mm, 0 );
 
   DoAtLeave do_off_motors( []() { motors_off(); } );
   motors_on();
@@ -784,7 +785,7 @@ MoveInfo::MoveInfo( MoveInfo::Type tp, unsigned a_n_coo, Act_Pfun pfun  )
 
 void MoveInfo::zero_arr()
 {
-  fill_0( p ); fill_0( cf ); fill_0( ci ); fill_0( k_x );
+  ranges::fill( p, 0 ); ranges::fill( cf, 0 ); ranges::fill( ci, 0 ); ranges::fill( k_x, 0 );
 }
 
 int MoveInfo::prep_move_line( const xfloat *coo, xfloat fe )
@@ -837,7 +838,7 @@ MoveInfo::Ret MoveInfo::calc_step( xfloat a )
 MoveInfo::Ret step_line_fun( MoveInfo &mi, xfloat a )
 {
   bool need_move = false;
-  fill_0( mi.cdirs );
+  ranges::fill( mi.cdirs, 0 );
 
   for( unsigned i=0; i<mi.n_coo; ++i ) {
 
@@ -865,8 +866,8 @@ MoveInfo::Ret step_circ_fun( MoveInfo &mi, xfloat a )
 MachState::MachState( fun_gcode_mg prep, const FunGcodePair *g_f, const FunGcodePair *m_f )
      : MachStateBase( prep, g_f, m_f )
 {
-  fill_0( x ); fill_0( dirs );
-  fill_val( axis_scale, 1 );
+  ranges::fill( x, 0 ); ranges::fill( dirs, 0 );
+  ranges::fill( axis_scale, 1 );
 }
 
 int MachState::step( unsigned i, int dir )

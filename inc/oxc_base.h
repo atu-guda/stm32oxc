@@ -74,11 +74,6 @@ extern volatile int task_leds_step; // initial = 50
  template<typename T> class _ShowType; // to output deducted type
  //                        // _ShowType< decltype(XXXX) > xType;
 
- template<typename T> // TODO: array/container only
-  void fill_0( T &a ) { for( auto &x : a ) { x = 0; } }
- template<typename T, typename V >
-  void fill_val( T &a, V v ) { for( auto &x : a ) { x = v; } }
-
  extern "C" {
 #endif
 
