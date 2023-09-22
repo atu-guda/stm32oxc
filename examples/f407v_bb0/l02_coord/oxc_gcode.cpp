@@ -228,7 +228,7 @@ int GcodeBlock::process( const char *s )
     sub_init(); was_mg = false;
   };
 
-  OUT << "# rc= " << rc << NL;
+  // OUT << "# rc= " << rc << NL;
 
   return rc;
 }

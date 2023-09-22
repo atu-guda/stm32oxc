@@ -28,6 +28,7 @@ using namespace SMLRL;
 
 const constinit xfloat k_r2g { 180 / M_PI };
 const constinit xfloat M_PIx2 { 2 * M_PI };
+const constinit xfloat M_PI2  { M_PI / 2 };
 const constinit xfloat near_l { 1.0e-4 };
 
 USE_DIE4LED_ERROR_HANDLER;
@@ -724,17 +725,11 @@ MoveInfo::MoveInfo( MoveInfo::Type tp, unsigned a_n_coo, Act_Pfun pfun  )
 
 void MoveInfo::zero_arr()
 {
-  ranges::fill( p, 0 ); ranges::fill( cf, 0 ); ranges::fill( ci, 0 ); ranges::fill( k_x, 0 );
+  ranges::fill( p, 0 ); ranges::fill( ci, 0 ); ranges::fill( k_x, 0 );
 }
 
 int MoveInfo::prep_move_line( const xfloat *coo, xfloat fe )
 {
-  // check type == MoveInfo::Type::line; ???
-  if( fe < 2 ) { // ????
-    // TOO low feed
-    return 1;
-  }
-
   zero_arr(); len = 0;
 
   for( unsigned i=0; i<n_coo; ++i ) {
@@ -752,7 +747,19 @@ int MoveInfo::prep_move_line( const xfloat *coo, xfloat fe )
 
 int MoveInfo::prep_move_circ( const xfloat *coo, xfloat fe )
 {
-  return 1;
+  zero_arr();
+  //                       r_s      r_e                alp_e    alp_s
+  xfloat l_appr { 0.5f * ( coo[0] + coo[2] ) * fabsxf( coo[3] - coo[1] ) };
+  len = hypot( l_appr, coo[4] ); // z_e
+  t_sec = 60 * len / fe; // only approx, as we can accel/deccel
+  t_tick = (uint32_t)( TIM6_count_freq * t_sec );
+  for( unsigned i=0; i<max_params; ++i ) { // 10 is N params to circle funcs
+    p[i] = coo[i];
+  }
+
+  k_x[0] = p[3] - p[1]; // alp_e - alp_s
+  k_x[1] = p[2] - p[0]; // r_e   - r_s
+  return 0;
 }
 
 MoveInfo::Ret MoveInfo::calc_step( xfloat a )
@@ -769,10 +776,10 @@ MoveInfo::Ret step_line_fun( MoveInfo &mi, xfloat a )
   bool need_move = false;
   ranges::fill( mi.cdirs, 0 );
 
-  for( unsigned i=0; i<mi.n_coo; ++i ) {
+  for( unsigned i=0; i<mi.n_coo; ++i ) { // TODO: common?
 
     xfloat xf = a * mi.k_x[i];
-    int xi = xf * machs[i].tick2mm * me_st.axis_scale[i];
+    int xi = xf * machs[i].tick2mm * me_st.axis_scale[i]; // TODO: remove me_st from here?!!
     if( xi == mi.ci[i] ) { // no move in integer approx
         continue;
     }
@@ -787,7 +794,32 @@ MoveInfo::Ret step_line_fun( MoveInfo &mi, xfloat a )
 
 MoveInfo::Ret step_circ_fun( MoveInfo &mi, xfloat a )
 {
-  return MoveInfo::Ret::err;
+  bool need_move = false;
+  ranges::fill( mi.cdirs, 0 );
+
+  //             alp_s + a * (alp_e-alp_s);
+  xfloat alp = mi.p[1] + a * mi.k_x[0];
+  //         r_s     + a * ( r_e - r_s );
+  xfloat r = mi.p[0] + a * mi.k_x[1];
+  xfloat xx[mi.n_coo];
+  xx[0]  = mi.p[8] + r * cos( alp ); // x = x_r +
+  xx[1]  = mi.p[9] + r * sin( alp ); // y = x_r +
+  xx[2]  = a * mi.p[5]; // z = a * z_e;
+  xx[3]  = a * mi.p[6]; // z = a * e_e;
+
+  for( unsigned i=0; i<mi.n_coo; ++i ) { // TODO: common?
+
+    int xi = xx[i] * machs[i].tick2mm * me_st.axis_scale[i]; // TODO: remove me_st from here?!!
+    if( xi == mi.ci[i] ) { // no move in integer approx
+        continue;
+    }
+    need_move = true;
+
+    int dir = ( xi > mi.ci[i] ) ? 1 : -1;
+    mi.cdirs[i] = dir;
+  }
+
+  return need_move ?  MoveInfo::Ret::move : MoveInfo::Ret::nop;
 }
 
 // -------------------------- MachState ----------------------------------------------------
@@ -945,11 +977,11 @@ int MachState::move_line( const xfloat *d_mm, unsigned n_coo, xfloat fe_mmm, uns
   return move_common( mi, fe_mmm );
 }
 
-// coords: [0]:r_s, [1]: alp_s, [2]: r_e, [3]: alp_e, [4]: cv?, [5]: z_e, [6]: e_e
-int MachState::move_circ( const xfloat *d_mm, unsigned n_coo, xfloat fe_mmm )
+// coords: [0]:r_s, [1]: alp_s, [2]: r_e, [3]: alp_e, [4]: cv?, [5]: z_e, [6]: e_e, [7]: nt(L) [8]: x_r, [9]: y_r
+int MachState::move_circ( const xfloat *coo, unsigned n_coo, xfloat fe_mmm )
 {
   MoveInfo mi( MoveInfo::Type::circle, n_coo, step_circ_fun );
-  auto rc_prep =  mi.prep_move_circ( d_mm, fe_mmm );
+  auto rc_prep =  mi.prep_move_circ( coo, fe_mmm );
   if( rc_prep != 0 ) {
     std_out << "# Error: fail to prepare MoveInfo for circle, rc=" << rc_prep << NL;
     return 1;
@@ -969,8 +1001,7 @@ int MachState::g_move_line( const GcodeBlock &gc )
 
   static constexpr const char *const axis_chars = "XYZEVUW?";
   for( unsigned i=0; i<n_mo; ++i ) {
-    d_mm[i] = gc.fpv_or_def( axis_chars[i], prev_x[i] );
-    d_mm[i] *= meas_scale;
+    d_mm[i] = meas_scale * gc.fpv_or_def( axis_chars[i], prev_x[i] );
   }
 
   if( !relmove ) {
@@ -979,11 +1010,8 @@ int MachState::g_move_line( const GcodeBlock &gc )
     }
   }
 
-  int g = gc.ipv_or_def( 'G', -1 );
-  if( g < 0 || g > 1 ) {
-    return GcodeBlock::rcErr;
-  }
-  bool g1 { g == 1 };
+  int g = gc.ipv_or_def( 'G', 1 ); // really no check for other: may be used as fallback
+  bool g1 { g != 0 };
 
   xfloat fe_mmm = g1 ? fe_g1 : fe_g0; // TODO: split: 2 different functions
 
@@ -1011,7 +1039,170 @@ int MachState::g_move_line( const GcodeBlock &gc )
 
 int MachState::g_move_circle( const GcodeBlock &gc )
 {
-  return GcodeBlock::rcErr;
+  const unsigned n_mo { 4 }; // TODO? who set
+  const xfloat meas_scale = inchUnit ? 25.4f : 1.0f;
+
+  xfloat prev_x[n_mo], coo[8];
+  for( unsigned i=0; i<n_mo; ++i ) {
+    prev_x[i] = relmove ? 0 : ( x[i] / meas_scale );
+  }
+
+  xfloat x_e = meas_scale * gc.fpv_or_def( 'X', prev_x[0] );
+  xfloat y_e = meas_scale * gc.fpv_or_def( 'Y', prev_x[1] );
+  xfloat z_e = meas_scale * gc.fpv_or_def( 'Z', prev_x[2] );
+  xfloat e_e = meas_scale * gc.fpv_or_def( 'Z', prev_x[3] );
+  xfloat x_r = meas_scale * gc.fpv_or_def( 'I', NAN );
+  xfloat y_r = meas_scale * gc.fpv_or_def( 'J', NAN );
+  xfloat r_1 = meas_scale * gc.fpv_or_def( 'R', NAN );
+  xfloat nt  = meas_scale * gc.fpv_or_def( 'L', 0 );
+  bool cv    = ( gc.ipv_or_def( 'G', 2 ) == 2 );
+
+  if( !relmove ) {
+    x_e -= prev_x[0]; y_e -= prev_x[1]; z_e -= prev_x[2]; e_e -= prev_x[3];
+  }
+  // here only relative value
+
+  bool full_circ = fabsxf( x_e ) < near_l && fabsxf( y_e ) < near_l;
+  bool ij_mode = isfinite( x_r ) && isfinite( y_r );
+  bool r_mode = !ij_mode && isfinite( r_1 );
+
+  if( ! ij_mode && ! r_mode ) {
+    std_out << "# Nor I,J nor R defined" << NL; // TODO: line?
+    return g_move_line( gc );
+  }
+
+  xfloat r_s, r_e;
+  if( ij_mode ) {
+    r_s = hypotxf( x_r, y_r );
+    r_e = hypotxf( ( x_e - x_r ), ( y_e - y_r ) );
+  } else if( r_mode ) {
+    auto ok = calc_G2_R_mode( cv, x_e, y_e, r_1, x_r, y_r );
+    if( !ok ) {
+      std_out << "# Error: fail to calc G2/3 R-mode" << NL;
+      return g_move_line( gc );
+    }
+    r_s = r_e = r_1;
+    if( full_circ ) {
+      std_out << "# full circle unavailable in G2/3 R-mode" << NL;
+      return g_move_line( gc );
+    }
+  }
+
+  if( r_s < 0.1f || r_e < 0.1f ) {
+    std_out << "# err: r?" << NL;
+    return g_move_line( gc );
+  }
+
+  std_out << "# G2/3" << " ( " << x_e << ' ' << y_e << ' ' << z_e
+    << " ) c: ( " << x_r << ' ' << y_r << " ) r_1= " << r_1 << ' ' << nt << NL;
+
+  xfloat alp_s = atan2xf(        -y_r  ,        -x_r   );
+  xfloat alp_e = atan2xf( ( y_e - y_r ), ( x_e - x_r ) );
+
+
+  if( cv ) {
+    if( alp_e > alp_s ) {
+      alp_e -= M_PIx2;
+    }
+    if( full_circ ) {
+      alp_e = alp_s - M_PIx2;
+    }
+    alp_e -= nt * M_PIx2;
+
+  } else {
+    if( alp_e < alp_s ) {
+      alp_e += M_PIx2;
+    }
+    if( full_circ ) {
+      alp_e = alp_s + M_PIx2;
+    }
+    alp_e += nt * M_PIx2;
+  }
+
+  coo[0] = r_s; coo[1] = alp_s; coo[2] = r_e; coo[3] = alp_e;
+  coo[4] = cv;  coo[5] = z_e;   coo[6] = e_e; coo[7] = nt;
+
+  xfloat fe_mmm = fe_g1;
+
+  OUT << "# G" << (cv?'2':'3') << " ( ";
+  for( auto xx: coo ) {
+    OUT << xx << ' ';
+  }
+  OUT << " ); fe= "<< fe_mmm << NL;
+
+  // TODO: common
+  if( mode == MachState::modeLaser && spin > 0 ) {
+    const xfloat v = me_st.getPwm();
+    OUT << "# spin= " << me_st.spin << " v= " << v << NL;
+    pwm_set( 0, v );
+  }
+
+  int rc = move_circ( coo, n_mo, fe_mmm );
+
+  if( mode == MachState::modeLaser ) {
+    pwm_off( 0 );
+  }
+  OUT << "#  G2G3 rc= "<< rc << " break_flag= " << break_flag << NL;
+  return rc == 0 ? GcodeBlock::rcOk : GcodeBlock::rcErr;
+}
+
+bool calc_G2_R_mode( bool cv, xfloat x_e, xfloat y_e, xfloat &r_1, xfloat &x_r, xfloat &y_r )
+{
+  int long_arc_k = 1;
+  if( r_1 < 0 ) {
+    r_1 = -r_1; long_arc_k = -1;
+  }
+  int ccv_k = cv ? 1 : -1;
+
+  xfloat l_e = hypot( x_e, y_e );
+  if( l_e < 1e-3f ) {
+    return false;
+  }
+
+  xfloat alp_1 = atan2( y_e, x_e );
+  xfloat alp_2p = alp_1 + M_PI2;
+  xfloat alp_2m = alp_1 - M_PI2;
+
+  xfloat x_c = x_e / 2;
+  xfloat y_c = y_e / 2;
+  xfloat l_c = hypot( x_c, y_c );
+
+  xfloat h_12 = r_1*r_1 - l_c*l_c;
+  if( h_12 < 1e-3f ) {
+    std_out << "## Error: h_1 is imaginary!" << NL;
+    return false;
+  };
+  xfloat h_1 = sqrt( h_12 );
+
+  xfloat x_rm = x_c + h_1 * cos( alp_2m );
+  xfloat y_rm = y_c + h_1 * sin( alp_2m );
+  xfloat x_rp = x_c + h_1 * cos( alp_2p );
+  xfloat y_rp = y_c + h_1 * sin( alp_2p );
+
+  // printf( "# rm= ( %g, %g ),   rp= ( %g, %g )\n", x_rm, y_rm, x_rp, y_rp );
+
+  xfloat phi_m_s = atan2( 0.0f - y_rm, 0.0f - x_rm );
+  xfloat phi_m_e = atan2( y_e  - y_rm, x_e  - x_rm );
+  xfloat phi_p_s = atan2( 0.0f - y_rp, 0.0f - x_rp );
+  xfloat phi_p_e = atan2( y_e  - y_rp, x_e  - x_rp );
+
+  // printf( "# phi: %f : %f,   %f : %f\n", r2d(phi_m_s), r2d(phi_m_e), r2d(phi_p_s), r2d(phi_p_e) );
+
+  xfloat d_phi_m = phi_m_e - phi_m_s;
+  if( d_phi_m < 0 ) { d_phi_m += M_PIx2; }
+  xfloat d_phi_p = phi_p_e - phi_p_s;
+  if( d_phi_p < 0 ) { d_phi_p += M_PIx2; }
+  xfloat phi_k = ( d_phi_m < d_phi_p ) ? 1 : -1;
+
+  xfloat sel_pm = phi_k * long_arc_k * ccv_k;
+
+  if( sel_pm < 0 ) {
+    x_r = x_rm; y_r = y_rm;
+  } else {
+    x_r = x_rp; y_r = y_rp;
+  }
+
+  return true;
 }
 
 int MachState::g_wait( const GcodeBlock &gc )
@@ -1084,19 +1275,26 @@ int MachState::g_set_relmove( const GcodeBlock &gc ) // G91
 
 int MachState::g_set_origin( const GcodeBlock &gc ) // G92
 {
-  static const char axis_chars[] { "XYZEV" };
-  bool a { false };
+  static const char axis_chars[] { 'X', 'Y', 'Z', 'E', 'V' }; // TODO: common + pair? beware: no ""!
+  bool a { false }, none_set { true };
   unsigned i {0};
 
   for( char c : axis_chars ) {
     if( gc.is_set( c ) ) {
+      none_set = false;
+      break;
+    }
+  }
+
+  for( char c : axis_chars ) {
+    if( gc.is_set( c ) || none_set ) {
       x[i] = gc.fpv_or_def( c, 0 ); a = true;
     }
     ++i;
   }
 
   if( a ) {
-    me_st.was_set = true; // do not change if a false
+    was_set = true; // do not change if a false
   }
 
   return GcodeBlock::rcOk;
@@ -1112,6 +1310,7 @@ int MachState::m_end0( const GcodeBlock &gc )          // M0
 int MachState::m_pause( const GcodeBlock &gc )         // M1
 {
   // TODO: pause for what?
+  OUT << "# pause?" << NL;
   return GcodeBlock::rcOk;
 }
 
@@ -1224,15 +1423,22 @@ int MachState::call_mg( const GcodeBlock &cb )
   char chfun  = is_m ? 'M' : 'G';
   int code    = ( is_m ? 1000000 : 0 ) + 1000 * cb.fpv_or_def( chfun, -10000 );
 
-  for( unsigned i=0; i<mg_funcs_sz; ++i ) {
-    auto [ c, fun ] = mg_funcs[i];
-    if( c == code ) {
-      return (this->*fun)( cb );
-    }
+  auto f = std::find_if( mg_funcs, mg_funcs + mg_funcs_sz, [code]( auto el ) { return el.num == code; } );
+  if( f == mg_funcs + mg_funcs_sz ) {
+    OUT << "# warn: unsupported " << chfun << ' ' << code << NL;
+    return GcodeBlock::rcErr;
   }
-  OUT << "# warn: unsupported " << chfun << ' ' << code << NL;
-  return GcodeBlock::rcFatal;
 
+  auto fun = f->fun;
+  auto rc = (this->*fun)( cb );
+  if( debug > 0 ) {
+    OUT << "# debug: after:";
+    for( auto xx : x ) {
+      OUT << ' ' << xx;
+    }
+    OUT << NL;
+  }
+  return rc;
 }
 
 void MachState::out_mg( bool is_m )
@@ -1256,7 +1462,6 @@ void MachState::out_mg( bool is_m )
 
 int MachState::prep_fun(  const GcodeBlock &gc )
 {
-  OUT << "# MachState::prep ";
   if( gc.is_set('M') ) { // special values for M commands
     OUT << 'M' << NL;
     return GcodeBlock::rcOk;

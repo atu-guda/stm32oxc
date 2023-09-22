@@ -14,10 +14,10 @@ struct MoveInfo;
 
 // mach params
 struct MachParam {
-  uint32_t tick2mm   ; // tick per mm, = 2* pulses per mm
+  uint32_t tick2mm   ; // tick per mm, =  pulses per mm
   uint32_t max_speed ; // mm/min
   uint32_t max_l     ; // mm
-  xfloat    es_find_l ; // movement to find endstop, from ES, to = *1.5
+  xfloat    es_find_l ; // movement to find endstop, from=ES, to = *1.5
   xfloat    k_slow    ; // slow movement coeff from max_speed
   PinsIn  *endstops  ;
   PinsOut *motor     ;
@@ -25,7 +25,7 @@ struct MachParam {
   void step();
 };
 
-const inline constinit unsigned n_motors { 5 };
+const inline constinit unsigned n_motors { 5 }; // TODO: part of Mach
 
 extern MachParam machs[n_motors];
 
@@ -49,7 +49,7 @@ class MachState {
    int move_common( MoveInfo &mi, xfloat fe_mmm );
    // coords: XYZE....
    int move_line( const xfloat *d_mm, unsigned n_coo, xfloat fe_mmm, unsigned a_on_endstop = 9999 );
-   // coords: [0]:r_s, [1]: alp_s, [2]: r_e, [3]: alp_e, [4]: cv?, [5]: z_e, [6]: e_e
+   // coords: [0]:r_s, [1]: alp_s, [2]: r_e, [3]: alp_e, [4]: cv?, [5]: z_e, [6]: e_e, [7]: nt(L) [8]: x_r, [9]: y_r
    int move_circ( const xfloat *d_mm, unsigned n_coo, xfloat fe_mmm );
    int step( unsigned i_motor, int dir );
    MachMode get_mode() const { return mode; };
@@ -130,8 +130,7 @@ struct MoveInfo {
   static const unsigned max_params { 10 };
   Type type;
   unsigned n_coo;
-  xfloat  p[max_params]; // params itself,
-  xfloat cf[max_params]; // state: floats - unneeded?
+  xfloat  p[max_params]; // params itself
   int    ci[max_params]; // state: ints
   xfloat k_x[max_params]; // a[0:1]-based coeffs
   int    cdirs[n_motors]; // current step direction: -1, 0, 1
@@ -153,6 +152,8 @@ int pwm_set( unsigned idx, xfloat v );
 int pwm_off( unsigned idx );
 int pwm_off_all();
 int go_home( unsigned axis );
+
+bool calc_G2_R_mode( bool cv, xfloat x_e, xfloat y_e, xfloat &r_1, xfloat &x_r, xfloat &y_r );
 
 inline bool is_endstop_minus_stop( uint16_t e ) { return ( (e & 0x01) == 0 ) ; }
 inline bool is_endstop_minus_go(   uint16_t e ) { return ( (e & 0x01) != 0 ) ; }

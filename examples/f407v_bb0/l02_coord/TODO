@@ -1,3 +1,11 @@
+Fix speed in G2/G3
+Move axis scale to Mach
 help string for gcodes
+integer coords in Mach
+use "find" algo
 PWM, endstops, motors (=endstops?) - classes + ptr in Mach
+common axis_chars? Max number of axis <=> number of motors ?
+move "home" to MachState
+rename MashState
+special move for home, G0
 
