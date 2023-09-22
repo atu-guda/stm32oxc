@@ -34,9 +34,11 @@ class GcodeBlock {
       errValue    =  4,
       errMach     = 10
     };
+    using ActFun = int(*)( const GcodeBlock &gc );
     static const unsigned n_p { 'Z'-'A' + 3 }; // 28, A-Z, end, ?
     static constexpr const char *const axis_chars = "XYZEVUW?"; // TODO: no?
-    explicit GcodeBlock( MachStateBase *a_ms ) : ms( a_ms ) { init(); } ;
+                                                                //
+    explicit GcodeBlock( MachStateBase *a_ms, ActFun a_f ) : ms( a_ms ), act_fun( a_f ) { init(); } ;
     void init();
     void sub_init();
     int process( const char *s );
@@ -57,8 +59,9 @@ class GcodeBlock {
     static const unsigned max_str_sz { 80 };
     static const unsigned max_gm_funcs { 200 };
     MachStateBase *ms;
+    ActFun act_fun;
     xfloat fp[n_p];              // real params
-    char str0[max_str_sz+1], str1[max_str_sz+1];
+    char str0[max_str_sz+2], str1[max_str_sz+2];
     int err_pos  { 0 };
     int err_code { 0 };
     int mach_rc  { 0 };
@@ -67,7 +70,7 @@ class GcodeBlock {
 
 class MachStateBase {
   public:
-   using fun_gcode_mg = int(*)( GcodeBlock *cb, MachStateBase *ms );
+   using fun_gcode_mg = int(*)( const GcodeBlock *cb, MachStateBase *ms );
    struct FunGcodePair {
      int num;
      fun_gcode_mg fun;

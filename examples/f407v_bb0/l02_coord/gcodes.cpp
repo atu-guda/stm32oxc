@@ -7,7 +7,7 @@
 // really ms is MachState, but conversion in func prts is impossible
 // TODO: all actions in machine, here only args
 
-int gcode_G0G1( GcodeBlock *cb, MachStateBase *ms, bool g1 )
+int gcode_G0G1( const GcodeBlock *cb, MachStateBase *ms, bool g1 )
 {
   COMMON_GM_CODE_CHECK;
 
@@ -61,17 +61,17 @@ int gcode_G0G1( GcodeBlock *cb, MachStateBase *ms, bool g1 )
   return rc == 0 ? GcodeBlock::rcOk : GcodeBlock::rcErr;
 }
 
-int gcode_G0( GcodeBlock *cb, MachStateBase *ms )
+int gcode_G0( const GcodeBlock *cb, MachStateBase *ms )
 {
   return gcode_G0G1( cb, ms, false );
 }
 
-int gcode_G1( GcodeBlock *cb, MachStateBase *ms )
+int gcode_G1( const GcodeBlock *cb, MachStateBase *ms )
 {
   return gcode_G0G1( cb, ms, true );
 }
 
-int gcode_G4( GcodeBlock *cb, MachStateBase *ms )
+int gcode_G4( const GcodeBlock *cb, MachStateBase *ms )
 {
   COMMON_GM_CODE_CHECK;
 
@@ -82,19 +82,19 @@ int gcode_G4( GcodeBlock *cb, MachStateBase *ms )
   return GcodeBlock::rcOk;
 }
 
-int gcode_G20( GcodeBlock *cb, MachStateBase *ms )
+int gcode_G20( const GcodeBlock *cb, MachStateBase *ms )
 {
   me_st.inchUnit = true;
   return GcodeBlock::rcOk;
 }
 
-int gcode_G21( GcodeBlock *cb, MachStateBase *ms )
+int gcode_G21( const GcodeBlock *cb, MachStateBase *ms )
 {
   me_st.inchUnit = false;
   return GcodeBlock::rcOk;
 }
 
-int gcode_G28( GcodeBlock *cb, MachStateBase *ms )
+int gcode_G28( const GcodeBlock *cb, MachStateBase *ms )
 {
   COMMON_GM_CODE_CHECK;
 
@@ -130,19 +130,19 @@ int gcode_G28( GcodeBlock *cb, MachStateBase *ms )
 }
 
 
-int gcode_G90( GcodeBlock *cb, MachStateBase *ms )
+int gcode_G90( const GcodeBlock *cb, MachStateBase *ms )
 {
   me_st.relmove = false;
   return GcodeBlock::rcOk;
 }
 
-int gcode_G91( GcodeBlock *cb, MachStateBase *ms )
+int gcode_G91( const GcodeBlock *cb, MachStateBase *ms )
 {
   me_st.relmove = true;
   return GcodeBlock::rcOk;
 }
 
-int gcode_G92( GcodeBlock *cb, MachStateBase *ms )
+int gcode_G92( const GcodeBlock *cb, MachStateBase *ms )
 {
   COMMON_GM_CODE_CHECK;
   bool a { false };
@@ -180,7 +180,7 @@ const MachStateBase::FunGcodePair mach_g_funcs[] {
 };
 
 // ------------------------ M codes -------------------------------------------
-int mcode_M0( GcodeBlock *cb, MachStateBase *ms )
+int mcode_M0( const GcodeBlock *cb, MachStateBase *ms )
 {
   COMMON_GM_CODE_CHECK;
   OUT << "# M0 " << NL;
@@ -188,7 +188,7 @@ int mcode_M0( GcodeBlock *cb, MachStateBase *ms )
   return GcodeBlock::rcEnd;
 }
 
-int mcode_M1( GcodeBlock *cb, MachStateBase *ms )
+int mcode_M1( const GcodeBlock *cb, MachStateBase *ms )
 {
   COMMON_GM_CODE_CHECK;
 
@@ -197,7 +197,7 @@ int mcode_M1( GcodeBlock *cb, MachStateBase *ms )
   return GcodeBlock::rcOk;
 }
 
-int mcode_M2( GcodeBlock *cb, MachStateBase *ms )
+int mcode_M2( const GcodeBlock *cb, MachStateBase *ms )
 {
   COMMON_GM_CODE_CHECK;
   OUT << "# M2 " << NL;
@@ -207,7 +207,7 @@ int mcode_M2( GcodeBlock *cb, MachStateBase *ms )
   return GcodeBlock::rcEnd;
 }
 
-int mcode_M3( GcodeBlock *cb, MachStateBase *ms )
+int mcode_M3( const GcodeBlock *cb, MachStateBase *ms )
 {
   COMMON_GM_CODE_CHECK;
   me_st.spin = cb->fpv_or_def( 'S', me_st.spin );
@@ -222,12 +222,12 @@ int mcode_M3( GcodeBlock *cb, MachStateBase *ms )
   return GcodeBlock::rcOk;
 }
 
-int mcode_M4( GcodeBlock *cb, MachStateBase *ms )
+int mcode_M4( const GcodeBlock *cb, MachStateBase *ms )
 {
   return mcode_M3( cb, ms );
 }
 
-int mcode_M5( GcodeBlock *cb, MachStateBase *ms )
+int mcode_M5( const GcodeBlock *cb, MachStateBase *ms )
 {
   COMMON_GM_CODE_CHECK;
   OUT << "# M5 " << NL;
@@ -236,7 +236,7 @@ int mcode_M5( GcodeBlock *cb, MachStateBase *ms )
   return GcodeBlock::rcOk;
 }
 
-int mcode_M114( GcodeBlock *cb, MachStateBase *ms )
+int mcode_M114( const GcodeBlock *cb, MachStateBase *ms )
 {
   COMMON_GM_CODE_CHECK;
   for( unsigned i=0; i<4; ++i ) { // 4 is XYZE
@@ -246,7 +246,7 @@ int mcode_M114( GcodeBlock *cb, MachStateBase *ms )
   return GcodeBlock::rcOk;
 }
 
-int mcode_M117( GcodeBlock *cb, MachStateBase *ms )
+int mcode_M117( const GcodeBlock *cb, MachStateBase *ms )
 {
   COMMON_GM_CODE_CHECK;
   OUT << "# M117" << NL;
@@ -254,7 +254,7 @@ int mcode_M117( GcodeBlock *cb, MachStateBase *ms )
   return GcodeBlock::rcOk;
 }
 
-int mcode_M220( GcodeBlock *cb, MachStateBase *ms )
+int mcode_M220( const GcodeBlock *cb, MachStateBase *ms )
 {
   COMMON_GM_CODE_CHECK;
   me_st.fe_scale = cb->fpv_or_def( 'S', me_st.fe_scale );
@@ -262,7 +262,7 @@ int mcode_M220( GcodeBlock *cb, MachStateBase *ms )
   return GcodeBlock::rcOk;
 }
 
-int mcode_M221( GcodeBlock *cb, MachStateBase *ms )
+int mcode_M221( const GcodeBlock *cb, MachStateBase *ms )
 {
   COMMON_GM_CODE_CHECK;
   me_st.spin100  = cb->fpv_or_def( 'S', me_st.spin100 );
@@ -271,7 +271,7 @@ int mcode_M221( GcodeBlock *cb, MachStateBase *ms )
   return GcodeBlock::rcOk;
 }
 
-int mcode_M450( GcodeBlock *cb, MachStateBase *ms )
+int mcode_M450( const GcodeBlock *cb, MachStateBase *ms )
 {
   COMMON_GM_CODE_CHECK;
   static const char* const mode_names[] = { "FFF", "Laser", "CNC", "??3", "??4", "??5" };
@@ -279,7 +279,7 @@ int mcode_M450( GcodeBlock *cb, MachStateBase *ms )
   return GcodeBlock::rcOk;
 }
 
-int mcode_M451( GcodeBlock *cb, MachStateBase *ms )
+int mcode_M451( const GcodeBlock *cb, MachStateBase *ms )
 {
   COMMON_GM_CODE_CHECK;
   OUT << "# M451 " << NL;
@@ -287,7 +287,7 @@ int mcode_M451( GcodeBlock *cb, MachStateBase *ms )
   return GcodeBlock::rcOk;
 }
 
-int mcode_M452( GcodeBlock *cb, MachStateBase *ms )
+int mcode_M452( const GcodeBlock *cb, MachStateBase *ms )
 {
   COMMON_GM_CODE_CHECK;
   OUT << "# M452 " << NL;
@@ -295,7 +295,7 @@ int mcode_M452( GcodeBlock *cb, MachStateBase *ms )
   return GcodeBlock::rcOk;
 }
 
-int mcode_M453( GcodeBlock *cb, MachStateBase *ms )
+int mcode_M453( const GcodeBlock *cb, MachStateBase *ms )
 {
   COMMON_GM_CODE_CHECK;
   OUT << "# M453 " << NL;
@@ -322,7 +322,7 @@ const MachStateBase::FunGcodePair mach_m_funcs[] {
   {  -1, nullptr } //end
 };
 
-int mach_prep_fun( GcodeBlock *cb, MachStateBase *ms )
+int mach_prep_fun( const GcodeBlock *cb, MachStateBase *ms )
 {
   COMMON_GM_CODE_CHECK;
 

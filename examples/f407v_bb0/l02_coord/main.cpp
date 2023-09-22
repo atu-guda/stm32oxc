@@ -287,13 +287,18 @@ int gcode_cmdline_handler( char *s )
   DoAtLeave do_off_motors( []() { motors_off(); } );
   motors_on();
 
-  GcodeBlock cb ( &me_st );
+  GcodeBlock cb ( &me_st, gcode_act_fun_me_st );
   int rc = cb.process( cmd );
   // if( rc >= GcodeBlock::rcEnd ) {
     std_out << "# rc " << rc << " line \"" << cmd << "\" pos " << cb.get_err_pos() << NL;
   //}
 
   return 0;
+}
+
+int gcode_act_fun_me_st( const GcodeBlock &gc )
+{
+  return me_st.call_mg_new( gc );
 }
 
 void idle_main_task()
@@ -662,7 +667,7 @@ int cmd_gexec( int argc, const char * const * argv )
     }
 
 
-    GcodeBlock cb ( &me_st );
+    GcodeBlock cb ( &me_st, gcode_act_fun_me_st );
     int rc = cb.process( s );
     ++nle;
     std_out << "# rc= " << rc << " br= " << break_flag << " nle= " << nle << NL;
@@ -1204,7 +1209,7 @@ int MachState::m_set_mode_cnc( const GcodeBlock &gc )  // M453
 }
 
 
-int MachState::call_mg_new( GcodeBlock &cb )
+int MachState::call_mg_new( const GcodeBlock &cb )
 {
   cb.dump(); // debug
   auto is_g = cb.is_set('G');
