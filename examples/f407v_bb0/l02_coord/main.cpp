@@ -134,7 +134,7 @@ MachParam machs[n_motors] = {
 
 
 
-MachState me_st( mach_prep_fun, mach_g_funcs, mach_m_funcs );
+MachState me_st;
 
 
 // C6  = T3.1  = PWM0
@@ -287,7 +287,7 @@ int gcode_cmdline_handler( char *s )
   DoAtLeave do_off_motors( []() { motors_off(); } );
   motors_on();
 
-  GcodeBlock cb ( &me_st, gcode_act_fun_me_st );
+  GcodeBlock cb ( gcode_act_fun_me_st );
   int rc = cb.process( cmd );
   // if( rc >= GcodeBlock::rcEnd ) {
     std_out << "# rc " << rc << " line \"" << cmd << "\" pos " << cb.get_err_pos() << NL;
@@ -667,7 +667,7 @@ int cmd_gexec( int argc, const char * const * argv )
     }
 
 
-    GcodeBlock cb ( &me_st, gcode_act_fun_me_st );
+    GcodeBlock cb ( gcode_act_fun_me_st );
     int rc = cb.process( s );
     ++nle;
     std_out << "# rc= " << rc << " br= " << break_flag << " nle= " << nle << NL;
@@ -825,10 +825,8 @@ const MachState::FunGcodePair_new mg_code_funcs[] = {
 };
 
 
-MachState::MachState( fun_gcode_mg prep, const FunGcodePair *g_f, const FunGcodePair *m_f )
-     : MachStateBase( prep, g_f, m_f ),
-       mg_funcs_new( mg_code_funcs ),
-       mg_funcs_new_sz( std::size(mg_code_funcs) )
+MachState::MachState()
+     : mg_funcs_new( mg_code_funcs ), mg_funcs_new_sz( std::size( mg_code_funcs ) )
 {
   ranges::fill( x, 0 ); ranges::fill( dirs, 0 );
   ranges::fill( axis_scale, 1 );
@@ -1219,11 +1217,9 @@ int MachState::call_mg_new( const GcodeBlock &cb )
     return GcodeBlock::rcErr; // TODO: err_val: both commands
   }
 
-  if( prep_fun ) {
-    auto mach_rc = prep_fun( &cb, this );
-    if( mach_rc >= GcodeBlock::rcErr ) {
-      return mach_rc;
-    }
+  auto mach_rc = prep_fun( cb );
+  if( mach_rc >= GcodeBlock::rcErr ) {
+    return mach_rc;
   }
 
   char chfun  = is_m ? 'M' : 'G';
@@ -1242,6 +1238,29 @@ int MachState::call_mg_new( const GcodeBlock &cb )
   OUT << "# Error! Out of range! " << chfun << ' ' << code << NL;
   return GcodeBlock::rcFatal;
 
+}
+
+int MachState::prep_fun(  const GcodeBlock &gc )
+{
+  OUT << "# MachState::prep ";
+  if( gc.is_set('M') ) { // special values for M commands
+    OUT << 'M' << NL;
+    return GcodeBlock::rcOk;
+  }
+
+  if( gc.is_set('F') ) {
+    xfloat v = gc.fpv_or_def( 'F', 100 );
+    fe_g1 = v;
+    OUT << " F= " << v;
+  }
+
+  if( gc.is_set('S') ) {
+    xfloat v = gc.fpv_or_def( 'S', 1 );
+    spin = v;
+    OUT << " S= " << v;
+  }
+  OUT << NL;
+  return GcodeBlock::rcOk;
 }
 
 // --------------------------- PWM ----------------------------------------

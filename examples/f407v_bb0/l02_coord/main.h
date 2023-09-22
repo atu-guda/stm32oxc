@@ -32,7 +32,7 @@ extern MachParam machs[n_motors];
 int gcode_cmdline_handler( char *s );
 int gcode_act_fun_me_st( const GcodeBlock &gc );
 
-class MachState : public MachStateBase {
+class MachState {
   public:
    enum MachMode {
      modeFFF = 0, modeLaser = 1, modeCNC = 2, modeMax = 3
@@ -43,7 +43,7 @@ class MachState : public MachStateBase {
      fun_gcode_mg_new fun;
    };
 
-   MachState( fun_gcode_mg prep, const FunGcodePair *g_f, const FunGcodePair *m_f );
+   MachState();
    xfloat getPwm() const { return std::clamp( 100 * spin / spin100, 0.0f, spin_max ); }
    int check_endstops( MoveInfo &mi );
    int move_common( MoveInfo &mi, xfloat fe_mmm );
@@ -67,6 +67,7 @@ class MachState : public MachStateBase {
    uint32_t get_n_mo() const { return n_mo; }
 
    int call_mg_new( const GcodeBlock &cb );
+   int prep_fun(  const GcodeBlock &cb );
 
    int g_move_line( const GcodeBlock &gc );     // G0, G1
    int g_move_circle( const GcodeBlock &gc );   // G2, G3
@@ -115,9 +116,6 @@ class MachState : public MachStateBase {
 };
 
 extern MachState me_st;
-int mach_prep_fun( const GcodeBlock *cb, MachStateBase *ms );
-extern const MachStateBase::FunGcodePair mach_g_funcs[];
-extern const MachStateBase::FunGcodePair mach_m_funcs[];
 extern const MachState::FunGcodePair_new mg_code_funcs[];
 
 

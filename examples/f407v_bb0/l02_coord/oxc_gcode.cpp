@@ -42,7 +42,7 @@ void GcodeBlock::dump() const
 
 int GcodeBlock::process( const char *s )
 {
-  if( !s || !ms ) {
+  if( !s || !act_fun ) {
     return rcFatal;
   }
 
@@ -107,8 +107,7 @@ int GcodeBlock::process( const char *s )
           }
           // OUT << "## p_name " << p_name << ' ' << p_idx << NL;
           if( ( p_name == 'M' || p_name == 'G' ) && was_mg ) {
-            // OUT << "#-- here to call 1 ms->call_mg" << NL;
-            mach_rc = ms->call_mg( this );
+            mach_rc = act_fun( *this );
             sub_init(); was_mg = false;
             ++n_act; n_el = 0;
           };
@@ -223,8 +222,7 @@ int GcodeBlock::process( const char *s )
   };
 
   if( st != GcodeState::error && n_el > 0 ) {
-    // OUT << "#-- here to call 2 ms->call_mg" << NL;
-    mach_rc = ms->call_mg( this );
+    mach_rc = act_fun( *this );
     rc = mach_rc; // TODO: ???
     ++n_act;
     sub_init(); was_mg = false;
@@ -236,43 +234,4 @@ int GcodeBlock::process( const char *s )
 }
 
 
-
-int MachStateBase::call_mg( GcodeBlock *cb )
-{
-  if( !cb ) {
-    return GcodeBlock::rcFatal;
-  };
-
-  cb->dump(); // debug
-  auto is_g = cb->is_set('G');
-  auto is_m = cb->is_set('M');
-  if( is_g && is_m ) {
-    OUT << "#  MS error: M and G" << NL;
-    return GcodeBlock::rcErr; // TODO: err_val: both commands
-  }
-
-  if( prep_fun ) {
-    auto mach_rc = prep_fun( cb, this );
-    if( mach_rc >= GcodeBlock::rcErr ) {
-      return mach_rc;
-    }
-  }
-
-  char chfun  = is_m ? 'M' : 'G';
-  auto funcs  = is_m ? m_funcs : g_funcs;
-  int code    = cb->ipv_or_def( chfun, -1 );
-
-  for( unsigned i=0; i<max_gm_funcs; ++i ) {
-    auto [ c, fun ] = funcs[i];
-    if( c < 0 ) {
-      OUT << "# warn: unsupported " << chfun << ' ' << code << NL;
-      return GcodeBlock::rcUnsupp;
-    }
-    if( c == code ) {
-      return fun( cb, this );
-    }
-  }
-  OUT << "# Error! Out of range! " << chfun << ' ' << code << NL;
-  return GcodeBlock::rcFatal;
-}
 

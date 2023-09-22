@@ -7,7 +7,6 @@
 #include <oxc_floatfun.h>
 
 class GcodeBlock;
-class MachStateBase;
 
 class GcodeBlock {
   public:
@@ -38,7 +37,7 @@ class GcodeBlock {
     static const unsigned n_p { 'Z'-'A' + 3 }; // 28, A-Z, end, ?
     static constexpr const char *const axis_chars = "XYZEVUW?"; // TODO: no?
                                                                 //
-    explicit GcodeBlock( MachStateBase *a_ms, ActFun a_f ) : ms( a_ms ), act_fun( a_f ) { init(); } ;
+    explicit GcodeBlock( ActFun a_f ) : act_fun( a_f ) { init(); } ;
     void init();
     void sub_init();
     int process( const char *s );
@@ -58,7 +57,6 @@ class GcodeBlock {
   private:
     static const unsigned max_str_sz { 80 };
     static const unsigned max_gm_funcs { 200 };
-    MachStateBase *ms;
     ActFun act_fun;
     xfloat fp[n_p];              // real params
     char str0[max_str_sz+2], str1[max_str_sz+2];
@@ -68,22 +66,6 @@ class GcodeBlock {
 };
 
 
-class MachStateBase {
-  public:
-   using fun_gcode_mg = int(*)( const GcodeBlock *cb, MachStateBase *ms );
-   struct FunGcodePair {
-     int num;
-     fun_gcode_mg fun;
-   };
-   MachStateBase( fun_gcode_mg prep, const FunGcodePair *g_f, const FunGcodePair *m_f )
-     : prep_fun( prep ), g_funcs( g_f ), m_funcs( m_f ) {};
-   int call_mg( GcodeBlock *cb );
-   static const unsigned max_gm_funcs { 200 };
-  protected:
-   fun_gcode_mg prep_fun { nullptr };
-   const FunGcodePair *g_funcs;
-   const FunGcodePair *m_funcs;
-};
 
 #define COMMON_GM_CODE_CHECK if( !cb || !ms ) {  return GcodeBlock::rcFatal;  }
 

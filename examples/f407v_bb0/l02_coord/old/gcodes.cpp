@@ -322,28 +322,4 @@ const MachStateBase::FunGcodePair mach_m_funcs[] {
   {  -1, nullptr } //end
 };
 
-int mach_prep_fun( const GcodeBlock *cb, MachStateBase *ms )
-{
-  COMMON_GM_CODE_CHECK;
-
-  OUT << "# prep ";
-  if( cb->is_set('M') ) { // special values for M commands
-    OUT << 'M' << NL;
-    return GcodeBlock::rcOk;
-  }
-
-  if( cb->is_set('F') ) {
-    xfloat v = cb->fpv_or_def( 'F', 100 );
-    me_st.fe_g1 = v;
-    OUT << " F= " << v;
-  }
-
-  if( cb->is_set('S') ) {
-    xfloat v = cb->fpv_or_def( 'S', 1 );
-    me_st.spin = v;
-    OUT << " S= " << v;
-  }
-  OUT << NL;
-  return GcodeBlock::rcOk;
-}
 
