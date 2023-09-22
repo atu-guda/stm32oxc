@@ -143,7 +143,6 @@ struct MoveInfo {
   void zero_arr();
   Ret calc_step( xfloat a );
   int prep_move_line( const xfloat *coo, xfloat fe );
-  int prep_move_line( const GcodeBlock &gc );
   int prep_move_circ( const xfloat *coo, xfloat fe );
 };
 

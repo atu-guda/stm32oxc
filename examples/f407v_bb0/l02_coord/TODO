@@ -1,0 +1,3 @@
+help string for gcodes
+PWM, endstops, motors (=endstops?) - classes + ptr in Mach
+
