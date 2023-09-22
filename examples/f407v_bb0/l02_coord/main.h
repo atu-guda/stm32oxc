@@ -47,7 +47,9 @@ class MachState {
    xfloat getPwm() const { return std::clamp( 100 * spin / spin100, 0.0f, spin_max ); }
    int check_endstops( MoveInfo &mi );
    int move_common( MoveInfo &mi, xfloat fe_mmm );
+   // coords: XYZE....
    int move_line( const xfloat *d_mm, unsigned n_coo, xfloat fe_mmm, unsigned a_on_endstop = 9999 );
+   // coords: [0]:r_s, [1]: alp_s, [2]: r_e, [3]: alp_e, [4]: cv?, [5]: z_e, [6]: e_e
    int move_circ( const xfloat *d_mm, unsigned n_coo, xfloat fe_mmm );
    int step( unsigned i_motor, int dir );
    MachMode get_mode() const { return mode; };
@@ -142,8 +144,7 @@ struct MoveInfo {
   Ret calc_step( xfloat a );
   int prep_move_line( const xfloat *coo, xfloat fe );
   int prep_move_line( const GcodeBlock &gc );
-  int prep_move_circ_center( const xfloat *coo, xfloat fe );
-  int prep_move_circ_radius( const xfloat *coo, xfloat fe );
+  int prep_move_circ( const xfloat *coo, xfloat fe );
 };
 
 void motors_off();

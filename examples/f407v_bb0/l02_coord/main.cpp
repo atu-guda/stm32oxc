@@ -299,9 +299,7 @@ int gcode_cmdline_handler( char *s )
 
   GcodeBlock cb ( gcode_act_fun_me_st );
   int rc = cb.process( cmd );
-  // if( rc >= GcodeBlock::rcEnd ) {
-    std_out << "# rc " << rc << " line \"" << cmd << "\" pos " << cb.get_err_pos() << NL;
-  //}
+  std_out << "# rc " << rc << " line \"" << cmd << "\" pos " << cb.get_err_pos() << NL;
 
   return 0;
 }
@@ -752,17 +750,7 @@ int MoveInfo::prep_move_line( const xfloat *coo, xfloat fe )
   return 0;
 }
 
-int MoveInfo::prep_move_line( const GcodeBlock &gc )
-{
-  return 1;
-}
-
-int MoveInfo::prep_move_circ_center( const xfloat *coo, xfloat fe )
-{
-  return 1;
-}
-
-int MoveInfo::prep_move_circ_radius( const xfloat *coo, xfloat fe )
+int MoveInfo::prep_move_circ( const xfloat *coo, xfloat fe )
 {
   return 1;
 }
@@ -957,10 +945,11 @@ int MachState::move_line( const xfloat *d_mm, unsigned n_coo, xfloat fe_mmm, uns
   return move_common( mi, fe_mmm );
 }
 
+// coords: [0]:r_s, [1]: alp_s, [2]: r_e, [3]: alp_e, [4]: cv?, [5]: z_e, [6]: e_e
 int MachState::move_circ( const xfloat *d_mm, unsigned n_coo, xfloat fe_mmm )
 {
   MoveInfo mi( MoveInfo::Type::circle, n_coo, step_circ_fun );
-  auto rc_prep =  mi.prep_move_circ_center( d_mm, fe_mmm ); // TODO: radius by args or separate fun?
+  auto rc_prep =  mi.prep_move_circ( d_mm, fe_mmm );
   if( rc_prep != 0 ) {
     std_out << "# Error: fail to prepare MoveInfo for circle, rc=" << rc_prep << NL;
     return 1;
