@@ -37,10 +37,10 @@ class MachState {
    enum MachMode {
      modeFFF = 0, modeLaser = 1, modeCNC = 2, modeMax = 3
    };
-   using fun_gcode_mg_new = int(MachState::*)( const GcodeBlock &cb );
-   struct FunGcodePair_new {
+   using fun_gcode_mg = int(MachState::*)( const GcodeBlock &cb );
+   struct FunGcodePair {
      int num;
-     fun_gcode_mg_new fun;
+     fun_gcode_mg fun;
    };
 
    MachState();
@@ -66,7 +66,8 @@ class MachState {
    void set_dly_xsteps( int v ) { dly_xsteps = v; }
    uint32_t get_n_mo() const { return n_mo; }
 
-   int call_mg_new( const GcodeBlock &cb );
+   int call_mg( const GcodeBlock &cb );
+   void out_mg( bool is_m );
    int prep_fun(  const GcodeBlock &cb );
 
    int g_move_line( const GcodeBlock &gc );     // G0, G1
@@ -97,8 +98,8 @@ class MachState {
    unsigned on_endstop { 9999 };
    uint32_t last_rc;
    uint32_t n_mo { 0 }; // current number of active motors
-   const FunGcodePair_new *mg_funcs_new { nullptr };
-   const unsigned mg_funcs_new_sz;
+   const FunGcodePair *mg_funcs { nullptr };
+   const unsigned mg_funcs_sz;
   public: // for now, TODO: hide
    xfloat x[n_motors];
    xfloat axis_scale[n_motors];
@@ -116,7 +117,7 @@ class MachState {
 };
 
 extern MachState me_st;
-extern const MachState::FunGcodePair_new mg_code_funcs[];
+extern const MachState::FunGcodePair mg_code_funcs[];
 
 
 // task + state. fill: move_prep_

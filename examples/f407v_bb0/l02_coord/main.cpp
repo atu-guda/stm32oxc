@@ -284,6 +284,16 @@ int gcode_cmdline_handler( char *s )
   std_out << NL "# gcode: cmd= \"" << cmd << '"' << NL;
   delay_ms( 10 );
 
+  // list
+  if( cmd[0] == 'G' && cmd[1] == '\0' ) {
+    me_st.out_mg( false );
+    return 0;
+  }
+  if( cmd[0] == 'M' && cmd[1] == '\0' ) {
+    me_st.out_mg( true );
+    return 0;
+  }
+
   DoAtLeave do_off_motors( []() { motors_off(); } );
   motors_on();
 
@@ -298,7 +308,7 @@ int gcode_cmdline_handler( char *s )
 
 int gcode_act_fun_me_st( const GcodeBlock &gc )
 {
-  return me_st.call_mg_new( gc );
+  return me_st.call_mg( gc );
 }
 
 void idle_main_task()
@@ -796,7 +806,7 @@ MoveInfo::Ret step_circ_fun( MoveInfo &mi, xfloat a )
 
 // G: val * 1000, to allow G11.123
 // M: 1000000 + val * 1000
-const MachState::FunGcodePair_new mg_code_funcs[] = {
+const MachState::FunGcodePair mg_code_funcs[] = {
   {       0, &MachState::g_move_line     },
   {    1000, &MachState::g_move_line     },
   {    2000, &MachState::g_move_circle   },
@@ -826,7 +836,7 @@ const MachState::FunGcodePair_new mg_code_funcs[] = {
 
 
 MachState::MachState()
-     : mg_funcs_new( mg_code_funcs ), mg_funcs_new_sz( std::size( mg_code_funcs ) )
+     : mg_funcs( mg_code_funcs ), mg_funcs_sz( std::size( mg_code_funcs ) )
 {
   ranges::fill( x, 0 ); ranges::fill( dirs, 0 );
   ranges::fill( axis_scale, 1 );
@@ -1207,7 +1217,7 @@ int MachState::m_set_mode_cnc( const GcodeBlock &gc )  // M453
 }
 
 
-int MachState::call_mg_new( const GcodeBlock &cb )
+int MachState::call_mg( const GcodeBlock &cb )
 {
   cb.dump(); // debug
   auto is_g = cb.is_set('G');
@@ -1223,21 +1233,36 @@ int MachState::call_mg_new( const GcodeBlock &cb )
   }
 
   char chfun  = is_m ? 'M' : 'G';
-  int code    = ( is_m ? 1000000 : 0 ) + 1000 * cb.ipv_or_def( chfun, -1 );
+  int code    = ( is_m ? 1000000 : 0 ) + 1000 * cb.fpv_or_def( chfun, -10000 );
 
-  for( unsigned i=0; i<mg_funcs_new_sz; ++i ) {
-    auto [ c, fun ] = mg_funcs_new[i];
-    if( c < 0 ) {
-      OUT << "# warn: unsupported " << chfun << ' ' << code << NL;
-      return GcodeBlock::rcUnsupp;
-    }
+  for( unsigned i=0; i<mg_funcs_sz; ++i ) {
+    auto [ c, fun ] = mg_funcs[i];
     if( c == code ) {
       return (this->*fun)( cb );
     }
   }
-  OUT << "# Error! Out of range! " << chfun << ' ' << code << NL;
+  OUT << "# warn: unsupported " << chfun << ' ' << code << NL;
   return GcodeBlock::rcFatal;
 
+}
+
+void MachState::out_mg( bool is_m )
+{
+  for( unsigned i=0; i<mg_funcs_sz; ++i ) {
+    auto [ c, fun ] = mg_funcs[i];
+    if( c < 0 ) {
+      return;
+    }
+    if( c < 1000000 ) {
+      if( ! is_m ) {
+        OUT << 'G' << ( c/1000 ) << NL;
+      }
+      continue;
+    }
+    if( is_m ) {
+      OUT << 'M' << ( ( c-1000000 ) / 1000 ) << NL;
+    }
+  }
 }
 
 int MachState::prep_fun(  const GcodeBlock &gc )
