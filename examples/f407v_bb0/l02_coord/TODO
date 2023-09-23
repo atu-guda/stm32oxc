@@ -1,5 +1,5 @@
-Fix speed in G2/G3
 Move axis scale to Mach
+n_motors, n_active_motors?
 help string for gcodes
 integer coords in Mach
 use "find" algo

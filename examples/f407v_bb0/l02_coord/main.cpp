@@ -1174,7 +1174,7 @@ bool calc_G2_R_mode( bool cv, xfloat x_e, xfloat y_e, xfloat &r_1, xfloat &x_r, 
   xfloat l_c = hypot( x_c, y_c );
 
   xfloat h_12 = r_1*r_1 - l_c*l_c;
-  if( h_12 < 1e-3f ) {
+  if( h_12 < 0 ) {
     std_out << "## Error: h_1 is imaginary!" << NL;
     return false;
   };
@@ -1351,9 +1351,9 @@ int MachState::m_spin_off( const GcodeBlock &gc )      // M5
 
 int MachState::m_out_where( const GcodeBlock &gc )     // M114
 {
-  const char axis_chars[] { "XYZE??" };
+  const char axis_chars[] { "XYZEV?" };
   xfloat k_unit = 1.0f / ( inchUnit ? 25.4f : 1.0f );
-  for( unsigned i=0; i<4; ++i ) {
+  for( unsigned i=0; i<5; ++i ) { // TODO: n_active_motor
     OUT << ' ' << axis_chars[i] << ": " << ( x[i] * k_unit  );
   }
   OUT << NL;
