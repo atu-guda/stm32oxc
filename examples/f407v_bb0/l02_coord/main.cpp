@@ -759,6 +759,12 @@ int MoveInfo::prep_move_circ( const xfloat *coo, xfloat fe )
 
   k_x[0] = p[3] - p[1]; // alp_e - alp_s
   k_x[1] = p[2] - p[0]; // r_e   - r_s
+
+  // initial point is not (0,0)
+  ci[0] = ( p[8] + p[0] * cos( p[1] )  ) * machs[0].tick2mm * me_st.axis_scale[0]; // TODO: remove me_st from here?!!
+  ci[1] = ( p[8] + p[0] * sin( p[1] )  ) * machs[1].tick2mm * me_st.axis_scale[1]; // TODO: remove me_st from here?!!
+
+
   return 0;
 }
 
@@ -918,7 +924,7 @@ int MachState::move_common( MoveInfo &mi, xfloat fe_mmm )
 
   int rc {0};
   // really must be more then t_tick
-  for( unsigned tn=0; tn < 3*mi.t_tick && break_flag == 0; ++tn ) {
+  for( unsigned tn=0; tn < 5*mi.t_tick && break_flag == 0; ++tn ) {
 
     leds[2].set();
     xfloat t = tn * k_t;
