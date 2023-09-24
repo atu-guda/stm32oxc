@@ -75,9 +75,11 @@ class MachState {
    int g_move_line( const GcodeBlock &gc );     // G0, G1
    int g_move_circle( const GcodeBlock &gc );   // G2, G3
    int g_wait( const GcodeBlock &gc );          // G4
+   int g_set_plane( const GcodeBlock &gc );     // G17 - X
    int g_set_unit_inch( const GcodeBlock &gc ); // G20
    int g_set_unit_mm( const GcodeBlock &gc );   // G21
    int g_home( const GcodeBlock &gc );          // G28
+   int g_off_compens( const GcodeBlock &gc );   // G40
    int g_set_absmove( const GcodeBlock &gc );   // G90
    int g_set_relmove( const GcodeBlock &gc );   // G91
    int g_set_origin( const GcodeBlock &gc );    // G92

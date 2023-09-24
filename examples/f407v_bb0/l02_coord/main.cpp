@@ -838,9 +838,11 @@ const MachState::FunGcodePair mg_code_funcs[] = {
   {    2000, &MachState::g_move_circle   },
   {    3000, &MachState::g_move_circle   },
   {    4000, &MachState::g_wait          },
+  {   17000, &MachState::g_set_plane     },
   {   20000, &MachState::g_set_unit_inch },
   {   21000, &MachState::g_set_unit_mm   },
   {   28000, &MachState::g_home          },
+  {   40000, &MachState::g_off_compens   },
   {   90000, &MachState::g_set_absmove   },
   {   91000, &MachState::g_set_relmove   },
   {   92000, &MachState::g_set_origin    },
@@ -1220,6 +1222,11 @@ int MachState::g_wait( const GcodeBlock &gc )
   return GcodeBlock::rcOk;
 }
 
+int MachState::g_set_plane( const GcodeBlock &gc ) // G17
+{
+  return GcodeBlock::rcOk; // the only plane
+}
+
 int MachState::g_set_unit_inch( const GcodeBlock &gc ) // G20
 {
   inchUnit = true;
@@ -1265,6 +1272,12 @@ int MachState::g_home( const GcodeBlock &gc ) // G28
   was_set = true;
 
   return rc == 1 ? GcodeBlock::rcOk : GcodeBlock::rcErr;
+}
+
+int MachState::g_off_compens( const GcodeBlock &gc ) // G40 - X
+{
+  OUT << "#  G40 unsipported  " << NL;
+  return GcodeBlock::rcOk; // for now
 }
 
 int MachState::g_set_absmove( const GcodeBlock &gc ) // G90
@@ -1432,7 +1445,7 @@ int MachState::call_mg( const GcodeBlock &cb )
   auto f = std::find_if( mg_funcs, mg_funcs + mg_funcs_sz, [code]( auto el ) { return el.num == code; } );
   if( f == mg_funcs + mg_funcs_sz ) {
     OUT << "# warn: unsupported " << chfun << ' ' << code << NL;
-    return GcodeBlock::rcErr;
+    return GcodeBlock::rcOk;
   }
 
   auto fun = f->fun;
