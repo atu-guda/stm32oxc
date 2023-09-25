@@ -126,11 +126,12 @@ const EXTI_init_info extis[] = {
 
 
 MachParam machs[n_motors] = {
-  {   800, 500,     150, 5.0f, 0.1f,    &x_e, &stepdir_x  }, // TODO: 500 increase after working acceleration
-  {   800, 500,     300, 5.0f, 0.1f,    &y_e, &stepdir_y  },
-  {   800, 300,     150, 4.0f, 0.1f,    &z_e, &stepdir_z  },
-  {   100, 100,  999999, 0.0f, 0.1f, nullptr, &stepdir_e0 },
-  {   100, 100,  999999, 0.0f, 0.1f, nullptr, &stepdir_e1 }
+// tick2mm x  dir max_speed max_l es_find_l k_slow endstops motor
+  {   800, 0,  0,    500,     150,  5.0f,     0.1f,    &x_e, &stepdir_x  }, // TODO: 500 increase after working acceleration
+  {   800, 0,  0,    500,     300,  5.0f,     0.1f,    &y_e, &stepdir_y  },
+  {   800, 0,  0,    300,     150,  4.0f,     0.1f,    &z_e, &stepdir_z  },
+  {   100, 0,  0,    100,  999999,  0.0f,     0.1f, nullptr, &stepdir_e0 },
+  {   100, 0,  0,    100,  999999,  0.0f,     0.1f, nullptr, &stepdir_e1 }
 };
 
 
@@ -596,7 +597,7 @@ int cmd_absmove( int argc, const char * const * argv )
 
   for( unsigned i=0; i<n_mo; ++i ) {
     d_mm[i] = arg2xfloat_d( i+1, argc, argv, 0, -(xfloat)machs[i].max_l, (xfloat)machs[i].max_l )
-            - me_st.get_xi( i );
+            - me_st.get_xn( i );
   }
   xfloat fe_mmm = arg2xfloat_d( 4, argc, argv, UVAR('f'), 0.0f, 900.0f );
 
@@ -742,6 +743,7 @@ int MoveInfo::prep_move_line( const xfloat *coo, xfloat fe )
   for( unsigned i=0; i<n_coo; ++i ) {
     k_x[i] = p[i];
   }
+  OUT << "# debug: prep_move_line: len= " << len << " t_sec= " << t_sec << " t_tick= " << t_tick << NL;
   return 0;
 }
 
@@ -760,10 +762,11 @@ int MoveInfo::prep_move_circ( const xfloat *coo, xfloat fe )
   k_x[0] = p[3] - p[1]; // alp_e - alp_s
   k_x[1] = p[2] - p[0]; // r_e   - r_s
 
-  // initial point is not (0,0)
+  // initial point is not (0,0) TODO: make (0,) -- better calc coords
   ci[0] = ( p[8] + p[0] * cos( p[1] )  ) * machs[0].tick2mm * me_st.axis_scale[0]; // TODO: remove me_st from here?!!
   ci[1] = ( p[8] + p[0] * sin( p[1] )  ) * machs[1].tick2mm * me_st.axis_scale[1]; // TODO: remove me_st from here?!!
 
+  OUT << "# debug: prep_move_circ: len= " << len << " t_sec= " << t_sec << " t_tick= " << t_tick << NL;
 
   return 0;
 }
@@ -878,12 +881,12 @@ int MachState::step( unsigned i, int dir )
   if( dir == 0 ) {
     return 0;
   }
-  if( dir != dirs[i] ) {
+  if( dir != dirs[i] ) { // TODO: use dir from machs, or even make step_dir in MachParam
     machs[i].set_dir( dir );
     dirs[i] = dir;
   }
   machs[i].step();
-  x[i] += (xfloat) dir / ( machs[i].tick2mm * axis_scale[i] );
+  x[i] += (xfloat) dir / ( machs[i].tick2mm * axis_scale[i] ); // TODO: remove
 
   return 1;
 }
@@ -945,7 +948,7 @@ int MachState::move_common( MoveInfo &mi, xfloat fe_mmm )
 
     leds[2].reset();
 
-    if( wait_next_motor_tick() != 0 ) {
+    if( wait_next_motor_tick() != 0 ) { // TODO: loop untill ready + some payload
       rc = 111;
       break;
     }
@@ -960,11 +963,10 @@ int MachState::move_common( MoveInfo &mi, xfloat fe_mmm )
 
     for( unsigned i=0; i<mi.n_coo; ++i ) {
       step( i, mi.cdirs[i] );
-      mi.ci[i] += mi.cdirs[i]; // inside post step ????????
+      mi.ci[i] += mi.cdirs[i]; // inside post step ???????? OR use MachParam::get_x
     }
 
   }
-  leds[2].reset();
 
   on_endstop = 9999;
   return rc;
@@ -1241,29 +1243,29 @@ int MachState::g_set_unit_mm( const GcodeBlock &gc ) // G21
 
 int MachState::g_home( const GcodeBlock &gc ) // G28
 {
-  bool x = gc.is_set('X');
-  bool y = gc.is_set('Y');
-  bool z = gc.is_set('Z');
-  if( !x && !y && !z ) {
-    x = y = z = true;
+  bool s_x = gc.is_set('X');
+  bool s_y = gc.is_set('Y');
+  bool s_z = gc.is_set('Z');
+  if( !s_x && !s_y && !s_z ) {
+    s_x = s_y = s_z = true;
   }
-  int rc;
+  int rc {0};
 
-  if( y ) {
+  if( s_y ) {
     rc  = go_home( 1 ); // from what?
     if( rc != 1 ) {
       return GcodeBlock::rcErr;
     }
   }
 
-  if( x ) {
+  if( s_x ) {
     rc  = go_home( 0 );
     if( rc != 1 ) {
       return GcodeBlock::rcErr;
     }
   }
 
-  if( z ) {
+  if( s_z ) {
     rc  = go_home( 2 );
     if( rc != 1 ) {
       return GcodeBlock::rcErr;
@@ -1307,7 +1309,10 @@ int MachState::g_set_origin( const GcodeBlock &gc ) // G92
 
   for( char c : axis_chars ) {
     if( gc.is_set( c ) || none_set ) {
-      x[i] = gc.fpv_or_def( c, 0 ); a = true;
+      xfloat v = gc.fpv_or_def( c, 0 );
+      x[i] = gc.fpv_or_def( c, 0 ); // TODO: keep one of them
+      machs[i].set_xf( v );
+      a = true;
     }
     ++i;
   }
@@ -1367,9 +1372,16 @@ int MachState::m_out_where( const GcodeBlock &gc )     // M114
   const char axis_chars[] { "XYZEV?" };
   xfloat k_unit = 1.0f / ( inchUnit ? 25.4f : 1.0f );
   for( unsigned i=0; i<5; ++i ) { // TODO: n_active_motor
-    OUT << ' ' << axis_chars[i] << ": " << ( x[i] * k_unit  );
+    OUT << ' ' << axis_chars[i] << ": " << ( x[i] * k_unit  ); // TODO: * scale unit
+  }
+
+  // int-based
+  OUT << NL << '#';
+  for( const auto& m : machs ) {
+    OUT << ' ' << m.get_xf();
   }
   OUT << NL;
+
   return GcodeBlock::rcOk;
 }
 
@@ -1450,10 +1462,19 @@ int MachState::call_mg( const GcodeBlock &cb )
 
   auto fun = f->fun;
   auto rc = (this->*fun)( cb );
+
   if( debug > 0 ) {
-    OUT << "# debug: after:";
+    OUT << "# debug: xx:";
     for( auto xx : x ) {
       OUT << ' ' << xx;
+    }
+    OUT << NL "# debug: xf:";
+    for( const auto &m : machs ) {
+      OUT << ' ' << m.get_xf();
+    }
+    OUT << NL "# debug: xi:";
+    for( const auto &m : machs ) {
+      OUT << ' ' << m.get_x();
     }
     OUT << NL;
   }
@@ -1482,22 +1503,27 @@ void MachState::out_mg( bool is_m )
 int MachState::prep_fun(  const GcodeBlock &gc )
 {
   if( gc.is_set('M') ) { // special values for M commands
-    OUT << 'M' << NL;
+    // OUT << 'M' << NL;
     return GcodeBlock::rcOk;
   }
 
+  bool was_out { false };
   if( gc.is_set('F') ) {
     xfloat v = gc.fpv_or_def( 'F', 100 );
     fe_g1 = v;
     OUT << " F= " << v;
+    was_out = true;
   }
 
   if( gc.is_set('S') ) {
     xfloat v = gc.fpv_or_def( 'S', 1 );
     spin = v;
     OUT << " S= " << v;
+    was_out = true;
   }
-  OUT << NL;
+  if( was_out ) {
+    OUT << NL;
+  }
   return GcodeBlock::rcOk;
 }
 
@@ -1801,8 +1827,13 @@ int wait_next_motor_tick()
   return break_flag;
 }
 
-void MachParam::set_dir( int dir )
+void MachParam::set_dir( int a_dir )
 {
+  if( a_dir == dir ) {
+    return;
+  }
+  dir = a_dir;
+
   if( motor ) {
     if( dir >= 0 ) {
       motor->reset( 0x02 );
@@ -1820,6 +1851,7 @@ void MachParam::step()
     delay_mcs( 1 );
     motor->reset( 1 );
   }
+  x += dir;
 }
 
 // ----------------------------------------  ------------------------------------------------------

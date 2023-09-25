@@ -12,9 +12,12 @@ extern int debug; // in main.cpp
 
 struct MoveInfo;
 
+// TODO: base: common props, here - realization
 // mach params
 struct MachParam {
   uint32_t tick2mm   ; // tick per mm, =  pulses per mm
+  int      x         ; // current pos in pulses, ? int64_t?
+  int      dir       ; // current direcion: -1, 0, 1, but may be more
   uint32_t max_speed ; // mm/min
   uint32_t max_l     ; // mm
   xfloat    es_find_l ; // movement to find endstop, from=ES, to = *1.5
@@ -23,6 +26,11 @@ struct MachParam {
   PinsOut *motor     ;
   void set_dir( int dir );
   void step();
+  int  get_x() const { return x; }
+  void set_x( int a_x ) { x = a_x; }
+  xfloat  get_xf() const { return (xfloat)x / tick2mm; }
+  void set_xf( xfloat a_x ) { x = a_x * tick2mm; }
+  int  mm2tick( xfloat mm ) { return mm * tick2mm; }
 };
 
 const inline constinit unsigned n_motors { 5 }; // TODO: part of Mach
@@ -54,7 +62,7 @@ class MachState {
    int step( unsigned i_motor, int dir );
    MachMode get_mode() const { return mode; };
    void set_mode( MachMode m ) { if( m < modeMax ) { mode = m; }};
-   xfloat get_xi( unsigned i ) const { return x[i]; }
+   xfloat get_xn( unsigned i ) const { return x[i]; }
    xfloat get_x()  const { return x[0]; }
    xfloat get_y()  const { return x[1]; }
    xfloat get_z()  const { return x[2]; }
