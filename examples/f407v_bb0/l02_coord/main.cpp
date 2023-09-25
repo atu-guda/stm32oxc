@@ -926,7 +926,9 @@ int MachState::move_common( MoveInfo &mi, xfloat fe_mmm )
   tim_mov_tick = 0; break_flag = 0;
 
   wait_next_motor_tick();
+  const uint32_t tm_s = HAL_GetTick();
 
+  xfloat last_a { -1 };
   int rc {0};
   // really must be more then t_tick
   for( unsigned tn=0; tn < 5*mi.t_tick && break_flag == 0; ++tn ) {
@@ -934,12 +936,13 @@ int MachState::move_common( MoveInfo &mi, xfloat fe_mmm )
     leds[2].set();
     xfloat t = tn * k_t;
     xfloat a = t / mi.t_sec; // TODO: accel here
-    if( a > 1.00001f ) {
+    if( a > 1.0f ) {
       // rc = 4; /// not a error: my be small overshot
       break; // mark: more
     }
 
     auto rc_calc = mi.calc_step( a );
+    last_a = a;
 
     if( check_endstops( mi ) == 0 ) {
       rc = 2;
@@ -967,6 +970,9 @@ int MachState::move_common( MoveInfo &mi, xfloat fe_mmm )
     }
 
   }
+  const uint32_t tm_e = HAL_GetTick();
+
+  OUT << "# debug: move_common: a= " << last_a << " dt= " << ( tm_e - tm_s ) << NL;
 
   on_endstop = 9999;
   return rc;

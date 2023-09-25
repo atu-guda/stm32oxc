@@ -26,6 +26,7 @@ struct MachParam {
   PinsOut *motor     ;
   void set_dir( int dir );
   void step();
+  void step_dir( int dir ) { set_dir( dir ); step(); }
   int  get_x() const { return x; }
   void set_x( int a_x ) { x = a_x; }
   xfloat  get_xf() const { return (xfloat)x / tick2mm; }
