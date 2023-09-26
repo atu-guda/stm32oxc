@@ -29,7 +29,7 @@ using namespace SMLRL;
 const constinit xfloat k_r2g { 180 / M_PI };
 const constinit xfloat M_PIx2 { 2 * M_PI };
 const constinit xfloat M_PI2  { M_PI / 2 };
-const constinit xfloat near_l { 1.0e-4 };
+const constinit xfloat near_l { 2.0e-3 };
 
 USE_DIE4LED_ERROR_HANDLER;
 BOARD_DEFINE_LEDS;
@@ -859,7 +859,6 @@ Machine::Machine( StepMover *a_movers, unsigned a_n_movers )
      : movers( a_movers ), n_movers( a_n_movers ),
        mg_funcs( mg_code_funcs ), mg_funcs_sz( std::size( mg_code_funcs ) )
 {
-  ranges::fill( dirs, 0 );
   ranges::fill( axis_scale, 1 );
 }
 
@@ -1048,10 +1047,11 @@ int Machine::g_move_circle( const GcodeBlock &gc )
     prev_x[i] = relmove ? 0 : ( movers[i].get_xf() / meas_scale );
   }
 
+  // TODO: data-control
   xfloat x_e = meas_scale * gc.fpv_or_def( 'X', prev_x[0] );
   xfloat y_e = meas_scale * gc.fpv_or_def( 'Y', prev_x[1] );
   xfloat z_e = meas_scale * gc.fpv_or_def( 'Z', prev_x[2] );
-  xfloat e_e = meas_scale * gc.fpv_or_def( 'Z', prev_x[3] );
+  xfloat e_e = meas_scale * gc.fpv_or_def( 'E', prev_x[3] );
   xfloat x_r = meas_scale * gc.fpv_or_def( 'I', NAN );
   xfloat y_r = meas_scale * gc.fpv_or_def( 'J', NAN );
   xfloat r_1 = meas_scale * gc.fpv_or_def( 'R', NAN );
@@ -1076,20 +1076,20 @@ int Machine::g_move_circle( const GcodeBlock &gc )
   if( ij_mode ) {
     r_s = hypotxf( x_r, y_r );
     r_e = hypotxf( ( x_e - x_r ), ( y_e - y_r ) );
-  } else if( r_mode ) {
+  } else { // R-mode, nor-nor handled before
+    if( full_circ ) {
+      std_out << "# full circle unavailable in G2/3 R-mode" << NL;
+      return g_move_line( gc );
+    }
     auto ok = calc_G2_R_mode( cv, x_e, y_e, r_1, x_r, y_r );
     if( !ok ) {
       std_out << "# Error: fail to calc G2/3 R-mode" << NL;
       return g_move_line( gc );
     }
     r_s = r_e = r_1;
-    if( full_circ ) {
-      std_out << "# full circle unavailable in G2/3 R-mode" << NL;
-      return g_move_line( gc );
-    }
   }
 
-  if( r_s < 0.1f || r_e < 0.1f ) {
+  if( r_s < 0.1f || r_e < 0.1f ) { // TODO: minimal_r param?
     std_out << "# err: r?" << NL;
     return g_move_line( gc );
   }

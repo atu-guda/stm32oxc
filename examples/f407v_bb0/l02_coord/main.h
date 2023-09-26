@@ -101,7 +101,6 @@ class Machine {
    StepMover* movers; // TODO: common mover
    const unsigned n_movers;
    MachMode mode { modeFFF };
-   int dirs[n_motors];  // last/current direction
    unsigned on_endstop { 9999 };
    uint32_t last_rc;
    uint32_t n_mo { 0 }; // current number of active motors
