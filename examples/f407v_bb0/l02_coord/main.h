@@ -36,7 +36,7 @@ struct StepMover {
 
 const inline constinit unsigned n_motors { 5 }; // TODO: part of Mach
 
-extern StepMover machs[n_motors];
+extern StepMover s_movers[n_motors];
 
 int gcode_cmdline_handler( char *s );
 int gcode_act_fun_me_st( const GcodeBlock &gc );
@@ -52,7 +52,7 @@ class Machine {
      fun_gcode_mg fun;
    };
 
-   Machine();
+   Machine( StepMover *a_movers, unsigned a_n_movers );
    xfloat getPwm() const { return std::clamp( 100 * spin / spin100, 0.0f, spin_max ); }
    int check_endstops( MoveInfo &mi );
    int move_common( MoveInfo &mi, xfloat fe_mmm );
@@ -63,16 +63,8 @@ class Machine {
    int step( unsigned i_motor, int dir );
    MachMode get_mode() const { return mode; };
    void set_mode( MachMode m ) { if( m < modeMax ) { mode = m; }};
-   xfloat get_xn( unsigned i ) const { return x[i]; }
-   xfloat get_x()  const { return x[0]; }
-   xfloat get_y()  const { return x[1]; }
-   xfloat get_z()  const { return x[2]; }
-   xfloat get_e0() const { return x[3]; }
-   void set_xi( unsigned i, xfloat v ) { x[i] = v; }
-   void set_x(  xfloat v ) { x[0] = v; }
-   void set_y(  xfloat v ) { x[1] = v; }
-   void set_z(  xfloat v ) { x[2] = v; }
-   void set_e0( xfloat v ) { x[3] = v; }
+   xfloat get_xn( unsigned i ) const { return ( i < n_movers ) ? movers[i].get_xf() : 0 ; }
+   void set_xn( unsigned i, xfloat v ) { if( i < n_movers ) { movers[i].set_xf( v ); } }
    int get_dly_xsteps() const { return dly_xsteps; }
    void set_dly_xsteps( int v ) { dly_xsteps = v; }
    uint32_t get_n_mo() const { return n_mo; }
@@ -106,6 +98,8 @@ class Machine {
    int m_set_mode_laser( const GcodeBlock &gc );// M452
    int m_set_mode_cnc( const GcodeBlock &gc );  // M453
   protected:
+   StepMover* movers; // TODO: common mover
+   const unsigned n_movers;
    MachMode mode { modeFFF };
    int dirs[n_motors];  // last/current direction
    unsigned on_endstop { 9999 };
@@ -114,7 +108,6 @@ class Machine {
    const FunGcodePair *mg_funcs { nullptr };
    const unsigned mg_funcs_sz;
   public: // for now, TODO: hide
-   xfloat x[n_motors];
    xfloat axis_scale[n_motors];
    xfloat fe_g0 { 350 };
    xfloat fe_g1 { 300 };

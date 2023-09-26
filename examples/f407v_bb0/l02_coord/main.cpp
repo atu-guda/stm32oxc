@@ -125,7 +125,7 @@ const EXTI_init_info extis[] = {
 };
 
 
-StepMover machs[n_motors] = {
+StepMover s_movers[n_motors] = {
 // tick2mm x  dir max_speed max_l es_find_l k_slow endstops motor
   {   800, 0,  0,    500,     150,  5.0f,     0.1f,    &x_e, &stepdir_x  }, // TODO: 500 increase after working acceleration
   {   800, 0,  0,    500,     300,  5.0f,     0.1f,    &y_e, &stepdir_y  },
@@ -136,7 +136,7 @@ StepMover machs[n_motors] = {
 
 
 
-Machine me_st;
+Machine me_st( s_movers, std::size(s_movers) );
 
 
 // C6  = T3.1  = PWM0
@@ -165,8 +165,6 @@ int cmd_home( int argc, const char * const * argv );
 CmdInfo CMDINFO_HOME { "home", 'H', cmd_home, "axis - go home at give axis"  };
 int cmd_pwr( int argc, const char * const * argv );
 CmdInfo CMDINFO_PWR { "pwr", 'P', cmd_pwr, "ch pow_f  - test PWM power control"  };
-int cmd_zero( int argc, const char * const * argv );
-CmdInfo CMDINFO_ZERO { "zero", 'Z', cmd_zero, "[x y z]  - set [zero] point"  };
 int cmd_gexec( int argc, const char * const * argv );
 CmdInfo CMDINFO_GEXEC { "gexec", 'X', cmd_gexec, " file  - execute gcode file"  };
 int cmd_fire( int argc, const char * const * argv );
@@ -182,7 +180,6 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_ABSMOVE,
   &CMDINFO_HOME,
   &CMDINFO_PWR,
-  &CMDINFO_ZERO,
   &CMDINFO_GEXEC,
   &CMDINFO_FIRE,
   nullptr
@@ -196,17 +193,17 @@ const constinit NamedFloat ob_me_fe_g0       {    "me.fe_g0",       &me_st.fe_g0
 const constinit NamedFloat ob_me_fe_g1       {    "me.fe_g1",       &me_st.fe_g1  };
 const constinit NamedFloat ob_me_fe_scale    {    "me.fe_scale",    &me_st.fe_scale  };
 const constinit NamedFloat ob_me_spin100     {    "me.spin100",     &me_st.spin100  };
-const constinit NamedFloat ob_me_x           {    "me.x",           &me_st.x[0]  };
-const constinit NamedFloat ob_me_y           {    "me.y",           &me_st.x[1]  };
-const constinit NamedFloat ob_me_z           {    "me.z",           &me_st.x[2]  };
-const constinit NamedFloat ob_me_e0          {    "me.e0",          &me_st.x[3]  };
-const constinit NamedFloat ob_me_e1          {    "me.e1",          &me_st.x[4]  };
-const constinit NamedFloat ob_ma_x_es_find_l {    "ma.x.es_find",   &machs[0].es_find_l  };
-const constinit NamedFloat ob_ma_y_es_find_l {    "ma.y.es_find",   &machs[1].es_find_l  };
-const constinit NamedFloat ob_ma_z_es_find_l {    "ma.y.es_find",   &machs[2].es_find_l  };
-const constinit NamedFloat ob_ma_x_k_slow    {    "ma.x.k_slow",    &machs[0].k_slow  };
-const constinit NamedFloat ob_ma_y_k_slow    {    "ma.y.k_slow",    &machs[1].k_slow  };
-const constinit NamedFloat ob_ma_z_k_slow    {    "ma.z.k_slow",    &machs[2].k_slow  };
+// const constinit NamedFloat ob_me_x           {    "me.x",           &me_st.x[0]  };
+// const constinit NamedFloat ob_me_y           {    "me.y",           &me_st.x[1]  };
+// const constinit NamedFloat ob_me_z           {    "me.z",           &me_st.x[2]  };
+// const constinit NamedFloat ob_me_e0          {    "me.e0",          &me_st.x[3]  };
+// const constinit NamedFloat ob_me_e1          {    "me.e1",          &me_st.x[4]  };
+// const constinit NamedFloat ob_ma_x_es_find_l {    "ma.x.es_find",   &s_movers[0].es_find_l  };
+// const constinit NamedFloat ob_ma_y_es_find_l {    "ma.y.es_find",   &s_movers[1].es_find_l  };
+// const constinit NamedFloat ob_ma_z_es_find_l {    "ma.y.es_find",   &s_movers[2].es_find_l  };
+// const constinit NamedFloat ob_ma_x_k_slow    {    "ma.x.k_slow",    &s_movers[0].k_slow  };
+// const constinit NamedFloat ob_ma_y_k_slow    {    "ma.y.k_slow",    &s_movers[1].k_slow  };
+// const constinit NamedFloat ob_ma_z_k_slow    {    "ma.z.k_slow",    &s_movers[2].k_slow  };
 
 const constinit NamedObj *const objs_info[] = {
   & ob_break_flag,
@@ -216,17 +213,17 @@ const constinit NamedObj *const objs_info[] = {
   & ob_me_fe_g1,
   & ob_me_fe_scale,
   & ob_me_spin100,
-  & ob_me_x,
-  & ob_me_y,
-  & ob_me_z,
-  & ob_me_e0,
-  & ob_me_e1,
-  & ob_ma_x_es_find_l,
-  & ob_ma_y_es_find_l,
-  & ob_ma_z_es_find_l,
-  & ob_ma_x_k_slow,
-  & ob_ma_y_k_slow,
-  & ob_ma_z_k_slow,
+  // & ob_me_x,
+  // & ob_me_y,
+  // & ob_me_z,
+  // & ob_me_e0,
+  // & ob_me_e1,
+  // & ob_ma_x_es_find_l,
+  // & ob_ma_y_es_find_l,
+  // & ob_ma_z_es_find_l,
+  // & ob_ma_x_k_slow,
+  // & ob_ma_y_k_slow,
+  // & ob_ma_z_k_slow,
   nullptr
 };
 
@@ -338,7 +335,7 @@ int main()
 
   GpioA.enableClk(); GpioB.enableClk(); GpioC.enableClk(); GpioD.enableClk(); GpioE.enableClk();
 
-  for( auto &m : machs ) {
+  for( auto &m : s_movers ) {
     if( m.endstops != nullptr ) {
       m.endstops->initHW();
     }
@@ -417,7 +414,7 @@ int cmd_test0( int argc, const char * const * argv )
     return 2;
   }
 
-  auto motor = machs[a].motor;
+  auto motor = s_movers[a].motor;
   if( ! motor ) {
     std_out << "# Error: motor not defined for " << a << NL;
     return 2;
@@ -471,8 +468,8 @@ int go_home( unsigned axis )
     std_out << "# Error: bad axis index " << axis << NL;
     return 0;
   }
-  auto estp = machs[axis].endstops;
-  if( machs[axis].max_l > 20000 || estp == nullptr ) {
+  auto estp = s_movers[axis].endstops;
+  if( s_movers[axis].max_l > 20000 || estp == nullptr ) {
     std_out << "# Error: unsupported axis  " << axis << NL;
     return 0;
   }
@@ -480,8 +477,8 @@ int go_home( unsigned axis )
   pwm_off_all();
   // me_st.was_set = false;
 
-  xfloat fe_slow = (xfloat)machs[axis].max_speed * machs[axis].k_slow;
-  xfloat fe_fast = (xfloat)machs[axis].max_speed * 0.6f; // TODO: param too?
+  xfloat fe_slow = (xfloat)s_movers[axis].max_speed * s_movers[axis].k_slow;
+  xfloat fe_fast = (xfloat)s_movers[axis].max_speed * 0.6f; // TODO: param too?
 
   const unsigned n_mo { 3 }; // 3 = only XYZ motors
   xfloat d_mm[n_mo];
@@ -500,7 +497,7 @@ int go_home( unsigned axis )
     if( debug > 0 ) {
       std_out << "# Warning: move from endstop- " << axis << ' ' << endstops2str_a() << NL;
     }
-    d_mm[axis] = machs[axis].es_find_l;
+    d_mm[axis] = s_movers[axis].es_find_l;
     rc = me_st.move_line( d_mm, n_mo, 2 * fe_slow );
     if( debug > 0 ) {
       std_out << "# rc= " << rc << NL;
@@ -515,7 +512,7 @@ int go_home( unsigned axis )
   }
 
   // go to endstop
-  d_mm[axis] = -2.0f * (xfloat)machs[axis].max_l; // far away
+  d_mm[axis] = -2.0f * (xfloat)s_movers[axis].max_l; // far away
   if( debug > 0 ) {
     std_out << "# to_endstop ph 1 " << endstops2str_a() << NL;
   }
@@ -530,7 +527,7 @@ int go_home( unsigned axis )
   if( debug > 0 ) {
     std_out << "# go_away ph 2 "  << endstops2str_a() << NL;
   }
-  d_mm[axis] = machs[axis].es_find_l;
+  d_mm[axis] = s_movers[axis].es_find_l;
   rc = me_st.move_line( d_mm, n_mo, fe_slow, axis );
   esv = estp->read();
   if( is_endstop_any_stop(esv) ) { // must be ok
@@ -542,7 +539,7 @@ int go_home( unsigned axis )
   if( debug > 0 ) {
     std_out << "# to_es ph 3 " << endstops2str_a() << NL;
   }
-  d_mm[axis] = - 1.5f * machs[axis].es_find_l;
+  d_mm[axis] = - 1.5f * s_movers[axis].es_find_l;
   rc = me_st.move_line( d_mm, n_mo, fe_slow );
   esv = estp->read();
   if( is_endstop_minus_go( esv ) ) {
@@ -554,7 +551,7 @@ int go_home( unsigned axis )
   if( debug > 0 ) {
     std_out << "# go_away st ph 4 " << endstops2str_a() << NL;
   }
-  d_mm[axis] = machs[axis].es_find_l;
+  d_mm[axis] = s_movers[axis].es_find_l;
   rc = me_st.move_line( d_mm, n_mo, fe_slow, axis );
   esv = estp->read();
   if( is_endstop_any_stop( esv ) ) {
@@ -562,7 +559,7 @@ int go_home( unsigned axis )
     return 0;
   }
   me_st.was_set = true;
-  me_st.x[axis] = 0;    // TODO: may be no auto?
+  me_st.set_xn( axis, 0 );    // TODO: may be no auto?
   std_out << "# Ok: found endstop end  "  << endstops2str_a() << NL;
 
   return 1;
@@ -576,7 +573,7 @@ int cmd_relmove( int argc, const char * const * argv )
   xfloat d_mm[n_mo];
 
   for( unsigned i=0; i<n_mo; ++i ) {
-    d_mm[i] = arg2xfloat_d( i+1, argc, argv, 0, -(xfloat)machs[i].max_l, (xfloat)machs[i].max_l );
+    d_mm[i] = arg2xfloat_d( i+1, argc, argv, 0, -(xfloat)s_movers[i].max_l, (xfloat)s_movers[i].max_l );
   }
   xfloat fe_mmm = arg2xfloat_d( 4, argc, argv, UVAR('f'), 0.0f, 900.0f );
 
@@ -596,7 +593,7 @@ int cmd_absmove( int argc, const char * const * argv )
   xfloat d_mm[n_mo];
 
   for( unsigned i=0; i<n_mo; ++i ) {
-    d_mm[i] = arg2xfloat_d( i+1, argc, argv, 0, -(xfloat)machs[i].max_l, (xfloat)machs[i].max_l )
+    d_mm[i] = arg2xfloat_d( i+1, argc, argv, 0, -(xfloat)s_movers[i].max_l, (xfloat)s_movers[i].max_l )
             - me_st.get_xn( i );
   }
   xfloat fe_mmm = arg2xfloat_d( 4, argc, argv, UVAR('f'), 0.0f, 900.0f );
@@ -621,14 +618,6 @@ int cmd_home( int argc, const char * const * argv )
   return rc;
 }
 
-int cmd_zero( int argc, const char * const * argv )
-{
-  for( unsigned i=0; i<me_st.get_n_mo(); ++i ) {
-    me_st.set_xi( i, arg2xfloat_d( i+1, argc, argv, 0, -machs[i].max_l, machs[i].max_l ) );
-  }
-  me_st.was_set = true;
-  return 0;
-}
 
 int cmd_gexec( int argc, const char * const * argv )
 {
@@ -685,7 +674,7 @@ int cmd_gexec( int argc, const char * const * argv )
       break_flag = 0;
     }
 
-    if( me_st.dly_xsteps > 0 ) {
+    if( me_st.dly_xsteps > 0 ) { // TODO: move to machine! (and params)
       motors_off(); // TODO: investigate! + sensors
       delay_ms( me_st.dly_xsteps );
       motors_on();
@@ -763,8 +752,8 @@ int MoveInfo::prep_move_circ( const xfloat *coo, xfloat fe )
   k_x[1] = p[2] - p[0]; // r_e   - r_s
 
   // initial point is not (0,0) TODO: make (0,) -- better calc coords
-  ci[0] = ( p[8] + p[0] * cos( p[1] )  ) * machs[0].tick2mm * me_st.axis_scale[0]; // TODO: remove me_st from here?!!
-  ci[1] = ( p[8] + p[0] * sin( p[1] )  ) * machs[1].tick2mm * me_st.axis_scale[1]; // TODO: remove me_st from here?!!
+  ci[0] = ( p[8] + p[0] * cos( p[1] )  ) * s_movers[0].tick2mm * me_st.axis_scale[0]; // TODO: remove me_st from here?!!
+  ci[1] = ( p[8] + p[0] * sin( p[1] )  ) * s_movers[1].tick2mm * me_st.axis_scale[1]; // TODO: remove me_st from here?!!
 
   OUT << "# debug: prep_move_circ: len= " << len << " t_sec= " << t_sec << " t_tick= " << t_tick << NL;
 
@@ -788,7 +777,7 @@ MoveInfo::Ret step_line_fun( MoveInfo &mi, xfloat a )
   for( unsigned i=0; i<mi.n_coo; ++i ) { // TODO: common?
 
     xfloat xf = a * mi.k_x[i];
-    int xi = xf * machs[i].tick2mm * me_st.axis_scale[i]; // TODO: remove me_st from here?!!
+    int xi = xf * s_movers[i].tick2mm * me_st.axis_scale[i]; // TODO: remove me_st from here?!!
     if( xi == mi.ci[i] ) { // no move in integer approx
         continue;
     }
@@ -818,7 +807,7 @@ MoveInfo::Ret step_circ_fun( MoveInfo &mi, xfloat a )
 
   for( unsigned i=0; i<mi.n_coo; ++i ) { // TODO: common?
 
-    int xi = xx[i] * machs[i].tick2mm * me_st.axis_scale[i]; // TODO: remove me_st from here?!!
+    int xi = xx[i] * s_movers[i].tick2mm * me_st.axis_scale[i]; // TODO: remove me_st from here?!!
     if( xi == mi.ci[i] ) { // no move in integer approx
         continue;
     }
@@ -866,27 +855,23 @@ const Machine::FunGcodePair mg_code_funcs[] = {
 };
 
 
-Machine::Machine()
-     : mg_funcs( mg_code_funcs ), mg_funcs_sz( std::size( mg_code_funcs ) )
+Machine::Machine( StepMover *a_movers, unsigned a_n_movers )
+     : movers( a_movers ), n_movers( a_n_movers ),
+       mg_funcs( mg_code_funcs ), mg_funcs_sz( std::size( mg_code_funcs ) )
 {
-  ranges::fill( x, 0 ); ranges::fill( dirs, 0 );
+  ranges::fill( dirs, 0 );
   ranges::fill( axis_scale, 1 );
 }
 
 int Machine::step( unsigned i, int dir )
 {
-  if( i >= n_motors ) {
+  if( i >= n_movers ) {
     return 0;
   }
   if( dir == 0 ) {
     return 0;
   }
-  if( dir != dirs[i] ) { // TODO: use dir from machs, or even make step_dir in StepMover
-    machs[i].set_dir( dir );
-    dirs[i] = dir;
-  }
-  machs[i].step();
-  x[i] += (xfloat) dir / ( machs[i].tick2mm * axis_scale[i] ); // TODO: remove
+  movers[i].step_dir( dir );
 
   return 1;
 }
@@ -894,11 +879,11 @@ int Machine::step( unsigned i, int dir )
 int Machine::check_endstops( MoveInfo &mi )
 {
   // TODO: touch sensor
-  for( unsigned i=0; i<mi.n_coo; ++i ) {
-    if( machs[i].endstops == nullptr ) {
+  for( unsigned i=0; i<mi.n_coo && i<n_movers; ++i ) {
+    if( movers[i].endstops == nullptr ) {
       continue;
     }
-    uint16_t esv = machs[i].endstops->read();
+    uint16_t esv = movers[i].endstops->read();
     const auto dir = mi.cdirs[i];
     // TODO: special case here: request to stop at clear endstop
     if( i == on_endstop && is_endstop_clear(esv ) ) {
@@ -1012,7 +997,7 @@ int Machine::g_move_line( const GcodeBlock &gc )
 
   xfloat prev_x[n_mo], d_mm[n_mo];
   for( unsigned i=0; i<n_mo; ++i ) {
-    prev_x[i] = relmove ? 0 : ( x[i] / meas_scale );
+    prev_x[i] = relmove ? 0 : ( movers[i].get_xf() / meas_scale );
   }
 
   static constexpr const char *const axis_chars = "XYZEVUW?";
@@ -1038,8 +1023,8 @@ int Machine::g_move_line( const GcodeBlock &gc )
   OUT << " ); fe= "<< fe_mmm << NL;
 
   if( mode == Machine::modeLaser && g1 && spin > 0 ) {
-    const xfloat v = me_st.getPwm();
-    OUT << "# spin= " << me_st.spin << " v= " << v << NL;
+    const xfloat v = getPwm();
+    OUT << "# spin= " << spin << " v= " << v << NL;
     pwm_set( 0, v );
   }
 
@@ -1060,7 +1045,7 @@ int Machine::g_move_circle( const GcodeBlock &gc )
 
   xfloat prev_x[n_mo], coo[8];
   for( unsigned i=0; i<n_mo; ++i ) {
-    prev_x[i] = relmove ? 0 : ( x[i] / meas_scale );
+    prev_x[i] = relmove ? 0 : ( movers[i].get_xf() / meas_scale );
   }
 
   xfloat x_e = meas_scale * gc.fpv_or_def( 'X', prev_x[0] );
@@ -1148,8 +1133,8 @@ int Machine::g_move_circle( const GcodeBlock &gc )
 
   // TODO: common
   if( mode == Machine::modeLaser && spin > 0 ) {
-    const xfloat v = me_st.getPwm();
-    OUT << "# spin= " << me_st.spin << " v= " << v << NL;
+    const xfloat v = getPwm();
+    OUT << "# spin= " << spin << " v= " << v << NL;
     pwm_set( 0, v );
   }
 
@@ -1304,7 +1289,6 @@ int Machine::g_set_origin( const GcodeBlock &gc ) // G92
 {
   static const char axis_chars[] { 'X', 'Y', 'Z', 'E', 'V' }; // TODO: common + pair? beware: no ""!
   bool a { false }, none_set { true };
-  unsigned i {0};
 
   for( char c : axis_chars ) {
     if( gc.is_set( c ) ) {
@@ -1313,11 +1297,14 @@ int Machine::g_set_origin( const GcodeBlock &gc ) // G92
     }
   }
 
+  unsigned i {0};
   for( char c : axis_chars ) {
+    if( i >= n_movers ) {
+      break;
+    }
     if( gc.is_set( c ) || none_set ) {
       xfloat v = gc.fpv_or_def( c, 0 );
-      x[i] = gc.fpv_or_def( c, 0 ); // TODO: keep one of them
-      machs[i].set_xf( v );
+      movers[i].set_xf( v );
       a = true;
     }
     ++i;
@@ -1375,16 +1362,11 @@ int Machine::m_spin_off( const GcodeBlock &gc )      // M5
 
 int Machine::m_out_where( const GcodeBlock &gc )     // M114
 {
-  const char axis_chars[] { "XYZEV?" };
+  // const char axis_chars[] { "XYZEV?" };
   xfloat k_unit = 1.0f / ( inchUnit ? 25.4f : 1.0f );
-  for( unsigned i=0; i<5; ++i ) { // TODO: n_active_motor
-    OUT << ' ' << axis_chars[i] << ": " << ( x[i] * k_unit  ); // TODO: * scale unit
-  }
 
-  // int-based
-  OUT << NL << '#';
-  for( const auto& m : machs ) {
-    OUT << ' ' << m.get_xf();
+  for( unsigned i=0; i<n_movers; ++i ) { // TODO: n_active_motor
+    OUT << ' ' << movers[i].get_xf() / k_unit;
   }
   OUT << NL;
 
@@ -1470,17 +1452,13 @@ int Machine::call_mg( const GcodeBlock &cb )
   auto rc = (this->*fun)( cb );
 
   if( debug > 0 ) {
-    OUT << "# debug: xx:";
-    for( auto xx : x ) {
-      OUT << ' ' << xx;
-    }
-    OUT << NL "# debug: xf:";
-    for( const auto &m : machs ) {
-      OUT << ' ' << m.get_xf();
+    OUT << "# debug: xf:";
+    for( unsigned i=0; i<n_movers; ++i ) {
+      OUT << ' ' << movers[i].get_xf();
     }
     OUT << NL "# debug: xi:";
-    for( const auto &m : machs ) {
-      OUT << ' ' << m.get_x();
+    for( unsigned i=0; i<n_movers; ++i ) {
+      OUT << ' ' << movers[i].get_x();
     }
     OUT << NL;
   }
