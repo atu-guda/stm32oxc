@@ -125,7 +125,7 @@ const EXTI_init_info extis[] = {
 };
 
 
-MachParam machs[n_motors] = {
+StepMover machs[n_motors] = {
 // tick2mm x  dir max_speed max_l es_find_l k_slow endstops motor
   {   800, 0,  0,    500,     150,  5.0f,     0.1f,    &x_e, &stepdir_x  }, // TODO: 500 increase after working acceleration
   {   800, 0,  0,    500,     300,  5.0f,     0.1f,    &y_e, &stepdir_y  },
@@ -136,7 +136,7 @@ MachParam machs[n_motors] = {
 
 
 
-MachState me_st;
+Machine me_st;
 
 
 // C6  = T3.1  = PWM0
@@ -383,7 +383,7 @@ int main()
   cmdline_handlers[1] = nullptr;
 
   // just for now
-  me_st.set_mode ( MachState::modeLaser );
+  me_st.set_mode ( Machine::modeLaser );
 
   BOARD_POST_INIT_BLINK;
 
@@ -464,7 +464,7 @@ bool is_endstop_clear_for_dir( uint16_t e, int dir )
 }
 
 
-// TODO: move to MachState, simultanious movement
+// TODO: move to Machine, simultanious movement
 int go_home( unsigned axis )
 {
   if( axis >= n_motors ) {
@@ -831,49 +831,49 @@ MoveInfo::Ret step_circ_fun( MoveInfo &mi, xfloat a )
   return need_move ?  MoveInfo::Ret::move : MoveInfo::Ret::nop;
 }
 
-// -------------------------- MachState ----------------------------------------------------
+// -------------------------- Machine ----------------------------------------------------
 
 // G: val * 1000, to allow G11.123
 // M: 1000000 + val * 1000
-const MachState::FunGcodePair mg_code_funcs[] = {
-  {       0, &MachState::g_move_line     },
-  {    1000, &MachState::g_move_line     },
-  {    2000, &MachState::g_move_circle   },
-  {    3000, &MachState::g_move_circle   },
-  {    4000, &MachState::g_wait          },
-  {   17000, &MachState::g_set_plane     },
-  {   20000, &MachState::g_set_unit_inch },
-  {   21000, &MachState::g_set_unit_mm   },
-  {   28000, &MachState::g_home          },
-  {   40000, &MachState::g_off_compens   },
-  {   90000, &MachState::g_set_absmove   },
-  {   91000, &MachState::g_set_relmove   },
-  {   92000, &MachState::g_set_origin    },
-  { 1000000, &MachState::m_end0           },
-  { 1001000, &MachState::m_pause          },
-  { 1002000, &MachState::m_end            },
-  { 1003000, &MachState::m_set_spin       },
-  { 1004000, &MachState::m_set_spin       },
-  { 1005000, &MachState::m_spin_off       },
-  { 1114000, &MachState::m_out_where      },
-  { 1117000, &MachState::m_out_str        },
-  { 1220000, &MachState::m_set_feed_scale },
-  { 1221000, &MachState::m_set_spin_scale },
-  { 1450000, &MachState::m_out_mode       },
-  { 1451000, &MachState::m_set_mode_fff   },
-  { 1452000, &MachState::m_set_mode_laser },
-  { 1453000, &MachState::m_set_mode_cnc   },
+const Machine::FunGcodePair mg_code_funcs[] = {
+  {       0, &Machine::g_move_line     },
+  {    1000, &Machine::g_move_line     },
+  {    2000, &Machine::g_move_circle   },
+  {    3000, &Machine::g_move_circle   },
+  {    4000, &Machine::g_wait          },
+  {   17000, &Machine::g_set_plane     },
+  {   20000, &Machine::g_set_unit_inch },
+  {   21000, &Machine::g_set_unit_mm   },
+  {   28000, &Machine::g_home          },
+  {   40000, &Machine::g_off_compens   },
+  {   90000, &Machine::g_set_absmove   },
+  {   91000, &Machine::g_set_relmove   },
+  {   92000, &Machine::g_set_origin    },
+  { 1000000, &Machine::m_end0           },
+  { 1001000, &Machine::m_pause          },
+  { 1002000, &Machine::m_end            },
+  { 1003000, &Machine::m_set_spin       },
+  { 1004000, &Machine::m_set_spin       },
+  { 1005000, &Machine::m_spin_off       },
+  { 1114000, &Machine::m_out_where      },
+  { 1117000, &Machine::m_out_str        },
+  { 1220000, &Machine::m_set_feed_scale },
+  { 1221000, &Machine::m_set_spin_scale },
+  { 1450000, &Machine::m_out_mode       },
+  { 1451000, &Machine::m_set_mode_fff   },
+  { 1452000, &Machine::m_set_mode_laser },
+  { 1453000, &Machine::m_set_mode_cnc   },
 };
 
 
-MachState::MachState()
+Machine::Machine()
      : mg_funcs( mg_code_funcs ), mg_funcs_sz( std::size( mg_code_funcs ) )
 {
   ranges::fill( x, 0 ); ranges::fill( dirs, 0 );
   ranges::fill( axis_scale, 1 );
 }
 
-int MachState::step( unsigned i, int dir )
+int Machine::step( unsigned i, int dir )
 {
   if( i >= n_motors ) {
     return 0;
@@ -881,7 +881,7 @@ int MachState::step( unsigned i, int dir )
   if( dir == 0 ) {
     return 0;
   }
-  if( dir != dirs[i] ) { // TODO: use dir from machs, or even make step_dir in MachParam
+  if( dir != dirs[i] ) { // TODO: use dir from machs, or even make step_dir in StepMover
     machs[i].set_dir( dir );
     dirs[i] = dir;
   }
@@ -891,7 +891,7 @@ int MachState::step( unsigned i, int dir )
   return 1;
 }
 
-int MachState::check_endstops( MoveInfo &mi )
+int Machine::check_endstops( MoveInfo &mi )
 {
   // TODO: touch sensor
   for( unsigned i=0; i<mi.n_coo; ++i ) {
@@ -913,7 +913,7 @@ int MachState::check_endstops( MoveInfo &mi )
   return 1;
 }
 
-int MachState::move_common( MoveInfo &mi, xfloat fe_mmm )
+int Machine::move_common( MoveInfo &mi, xfloat fe_mmm )
 {
   if( mi.type == MoveInfo::Type::stop || mi.step_pfun == nullptr ) {
     return 1;
@@ -966,7 +966,7 @@ int MachState::move_common( MoveInfo &mi, xfloat fe_mmm )
 
     for( unsigned i=0; i<mi.n_coo; ++i ) {
       step( i, mi.cdirs[i] );
-      mi.ci[i] += mi.cdirs[i]; // inside post step ???????? OR use MachParam::get_x
+      mi.ci[i] += mi.cdirs[i]; // inside post step ???????? OR use StepMover::get_x
     }
 
   }
@@ -978,7 +978,7 @@ int MachState::move_common( MoveInfo &mi, xfloat fe_mmm )
   return rc;
 }
 
-int MachState::move_line( const xfloat *d_mm, unsigned n_coo, xfloat fe_mmm, unsigned a_on_endstop )
+int Machine::move_line( const xfloat *d_mm, unsigned n_coo, xfloat fe_mmm, unsigned a_on_endstop )
 {
   MoveInfo mi( MoveInfo::Type::line, n_coo, step_line_fun );
 
@@ -994,7 +994,7 @@ int MachState::move_line( const xfloat *d_mm, unsigned n_coo, xfloat fe_mmm, uns
 }
 
 // coords: [0]:r_s, [1]: alp_s, [2]: r_e, [3]: alp_e, [4]: cv?, [5]: z_e, [6]: e_e, [7]: nt(L) [8]: x_r, [9]: y_r
-int MachState::move_circ( const xfloat *coo, unsigned n_coo, xfloat fe_mmm )
+int Machine::move_circ( const xfloat *coo, unsigned n_coo, xfloat fe_mmm )
 {
   MoveInfo mi( MoveInfo::Type::circle, n_coo, step_circ_fun );
   auto rc_prep =  mi.prep_move_circ( coo, fe_mmm );
@@ -1005,7 +1005,7 @@ int MachState::move_circ( const xfloat *coo, unsigned n_coo, xfloat fe_mmm )
   return move_common( mi, fe_mmm );
 }
 
-int MachState::g_move_line( const GcodeBlock &gc )
+int Machine::g_move_line( const GcodeBlock &gc )
 {
   const unsigned n_mo { 4 }; // TODO? who set
   const xfloat meas_scale = inchUnit ? 25.4f : 1.0f;
@@ -1037,7 +1037,7 @@ int MachState::g_move_line( const GcodeBlock &gc )
   }
   OUT << " ); fe= "<< fe_mmm << NL;
 
-  if( mode == MachState::modeLaser && g1 && spin > 0 ) {
+  if( mode == Machine::modeLaser && g1 && spin > 0 ) {
     const xfloat v = me_st.getPwm();
     OUT << "# spin= " << me_st.spin << " v= " << v << NL;
     pwm_set( 0, v );
@@ -1045,7 +1045,7 @@ int MachState::g_move_line( const GcodeBlock &gc )
 
   int rc = move_line( d_mm, n_mo, fe_mmm );
 
-  if( mode == MachState::modeLaser ) {
+  if( mode == Machine::modeLaser ) {
     pwm_off( 0 );
   }
   OUT << "#  G0G1 rc= "<< rc << " break_flag= " << break_flag << NL;
@@ -1053,7 +1053,7 @@ int MachState::g_move_line( const GcodeBlock &gc )
   return rc == 0 ? GcodeBlock::rcOk : GcodeBlock::rcErr;
 }
 
-int MachState::g_move_circle( const GcodeBlock &gc )
+int Machine::g_move_circle( const GcodeBlock &gc )
 {
   const unsigned n_mo { 4 }; // TODO? who set
   const xfloat meas_scale = inchUnit ? 25.4f : 1.0f;
@@ -1147,7 +1147,7 @@ int MachState::g_move_circle( const GcodeBlock &gc )
   OUT << " ); fe= "<< fe_mmm << NL;
 
   // TODO: common
-  if( mode == MachState::modeLaser && spin > 0 ) {
+  if( mode == Machine::modeLaser && spin > 0 ) {
     const xfloat v = me_st.getPwm();
     OUT << "# spin= " << me_st.spin << " v= " << v << NL;
     pwm_set( 0, v );
@@ -1155,7 +1155,7 @@ int MachState::g_move_circle( const GcodeBlock &gc )
 
   int rc = move_circ( coo, n_mo, fe_mmm );
 
-  if( mode == MachState::modeLaser ) {
+  if( mode == Machine::modeLaser ) {
     pwm_off( 0 );
   }
   OUT << "#  G2G3 rc= "<< rc << " break_flag= " << break_flag << NL;
@@ -1221,7 +1221,7 @@ bool calc_G2_R_mode( bool cv, xfloat x_e, xfloat y_e, xfloat &r_1, xfloat &x_r, 
   return true;
 }
 
-int MachState::g_wait( const GcodeBlock &gc )
+int Machine::g_wait( const GcodeBlock &gc )
 {
   xfloat w = 1000 * gc.fpv_or_def( 'P', 0 );
   w += gc.fpv_or_def( 'S', 1 );
@@ -1230,24 +1230,24 @@ int MachState::g_wait( const GcodeBlock &gc )
   return GcodeBlock::rcOk;
 }
 
-int MachState::g_set_plane( const GcodeBlock &gc ) // G17
+int Machine::g_set_plane( const GcodeBlock &gc ) // G17
 {
   return GcodeBlock::rcOk; // the only plane
 }
 
-int MachState::g_set_unit_inch( const GcodeBlock &gc ) // G20
+int Machine::g_set_unit_inch( const GcodeBlock &gc ) // G20
 {
   inchUnit = true;
   return GcodeBlock::rcOk;
 }
 
-int MachState::g_set_unit_mm( const GcodeBlock &gc ) // G21
+int Machine::g_set_unit_mm( const GcodeBlock &gc ) // G21
 {
   inchUnit = false;
   return GcodeBlock::rcOk;
 }
 
-int MachState::g_home( const GcodeBlock &gc ) // G28
+int Machine::g_home( const GcodeBlock &gc ) // G28
 {
   bool s_x = gc.is_set('X');
   bool s_y = gc.is_set('Y');
@@ -1282,25 +1282,25 @@ int MachState::g_home( const GcodeBlock &gc ) // G28
   return rc == 1 ? GcodeBlock::rcOk : GcodeBlock::rcErr;
 }
 
-int MachState::g_off_compens( const GcodeBlock &gc ) // G40 - X
+int Machine::g_off_compens( const GcodeBlock &gc ) // G40 - X
 {
   OUT << "#  G40 unsipported  " << NL;
   return GcodeBlock::rcOk; // for now
 }
 
-int MachState::g_set_absmove( const GcodeBlock &gc ) // G90
+int Machine::g_set_absmove( const GcodeBlock &gc ) // G90
 {
   relmove = false;
   return GcodeBlock::rcOk;
 }
 
-int MachState::g_set_relmove( const GcodeBlock &gc ) // G91
+int Machine::g_set_relmove( const GcodeBlock &gc ) // G91
 {
   relmove = true;
   return GcodeBlock::rcOk;
 }
 
-int MachState::g_set_origin( const GcodeBlock &gc ) // G92
+int Machine::g_set_origin( const GcodeBlock &gc ) // G92
 {
   static const char axis_chars[] { 'X', 'Y', 'Z', 'E', 'V' }; // TODO: common + pair? beware: no ""!
   bool a { false }, none_set { true };
@@ -1330,34 +1330,34 @@ int MachState::g_set_origin( const GcodeBlock &gc ) // G92
   return GcodeBlock::rcOk;
 }
 
-int MachState::m_end0( const GcodeBlock &gc )          // M0
+int Machine::m_end0( const GcodeBlock &gc )          // M0
 {
   pwm_set( 0, 0 );
   motors_off();
   return GcodeBlock::rcEnd;
 }
 
-int MachState::m_pause( const GcodeBlock &gc )         // M1
+int Machine::m_pause( const GcodeBlock &gc )         // M1
 {
   // TODO: pause for what?
   OUT << "# pause?" << NL;
   return GcodeBlock::rcOk;
 }
 
-int MachState::m_end( const GcodeBlock &gc )           // M2
+int Machine::m_end( const GcodeBlock &gc )           // M2
 {
   pwm_set( 0, 0 );
   motors_off();
   return GcodeBlock::rcEnd;
 }
 
-int MachState::m_set_spin( const GcodeBlock &gc )      // M3, M4
+int Machine::m_set_spin( const GcodeBlock &gc )      // M3, M4
 {
   spin = gc.fpv_or_def( 'S', spin );
   const xfloat v = getPwm();
   OUT << "# M3 " << v << NL;
   spinOn = true;
-  if( mode == MachState::modeCNC ) {
+  if( mode == Machine::modeCNC ) {
     pwm_set( 0, v ); // no direction
     OUT << '+';
   }
@@ -1365,7 +1365,7 @@ int MachState::m_set_spin( const GcodeBlock &gc )      // M3, M4
   return GcodeBlock::rcOk;
 }
 
-int MachState::m_spin_off( const GcodeBlock &gc )      // M5
+int Machine::m_spin_off( const GcodeBlock &gc )      // M5
 {
   OUT << "# M5 " << NL;
   pwm_off( 0 );
@@ -1373,7 +1373,7 @@ int MachState::m_spin_off( const GcodeBlock &gc )      // M5
   return GcodeBlock::rcOk;
 }
 
-int MachState::m_out_where( const GcodeBlock &gc )     // M114
+int Machine::m_out_where( const GcodeBlock &gc )     // M114
 {
   const char axis_chars[] { "XYZEV?" };
   xfloat k_unit = 1.0f / ( inchUnit ? 25.4f : 1.0f );
@@ -1391,21 +1391,21 @@ int MachState::m_out_where( const GcodeBlock &gc )     // M114
   return GcodeBlock::rcOk;
 }
 
-int MachState::m_out_str( const GcodeBlock &gc )       // M117
+int Machine::m_out_str( const GcodeBlock &gc )       // M117
 {
   OUT << "# M117" << NL;
   OUT << gc.get_str0() << NL;
   return GcodeBlock::rcOk;
 }
 
-int MachState::m_set_feed_scale( const GcodeBlock &gc )// M220
+int Machine::m_set_feed_scale( const GcodeBlock &gc )// M220
 {
   fe_scale = gc.fpv_or_def( 'S', fe_scale );
   OUT << "# M220 feed scale " << fe_scale << NL;
   return GcodeBlock::rcOk;
 }
 
-int MachState::m_set_spin_scale( const GcodeBlock &gc )// M221
+int Machine::m_set_spin_scale( const GcodeBlock &gc )// M221
 {
   spin100  = gc.fpv_or_def( 'S', spin100 );
   spin_max = gc.fpv_or_def( 'U', spin_max );
@@ -1413,36 +1413,36 @@ int MachState::m_set_spin_scale( const GcodeBlock &gc )// M221
   return GcodeBlock::rcOk;
 }
 
-int MachState::m_out_mode( const GcodeBlock &gc )      // M450
+int Machine::m_out_mode( const GcodeBlock &gc )      // M450
 {
   static const char* const mode_names[] = { "FFF", "Laser", "CNC", "??3", "??4", "??5" };
   OUT << "PrinterMode:" << mode_names[mode] << NL;
   return GcodeBlock::rcOk;
 }
 
-int MachState::m_set_mode_fff( const GcodeBlock &gc )  // M451
+int Machine::m_set_mode_fff( const GcodeBlock &gc )  // M451
 {
   OUT << "# M451 " << NL;
-  set_mode( MachState::modeFFF );
+  set_mode( Machine::modeFFF );
   return GcodeBlock::rcOk;
 }
 
-int MachState::m_set_mode_laser( const GcodeBlock &gc )// M452
+int Machine::m_set_mode_laser( const GcodeBlock &gc )// M452
 {
   OUT << "# M452 " << NL;
-  set_mode( MachState::modeLaser );
+  set_mode( Machine::modeLaser );
   return GcodeBlock::rcOk;
 }
 
-int MachState::m_set_mode_cnc( const GcodeBlock &gc )  // M453
+int Machine::m_set_mode_cnc( const GcodeBlock &gc )  // M453
 {
   OUT << "# M453 " << NL;
-  set_mode( MachState::modeCNC );
+  set_mode( Machine::modeCNC );
   return GcodeBlock::rcOk;
 }
 
 
-int MachState::call_mg( const GcodeBlock &cb )
+int Machine::call_mg( const GcodeBlock &cb )
 {
   cb.dump(); // debug
   auto is_g = cb.is_set('G');
@@ -1487,7 +1487,7 @@ int MachState::call_mg( const GcodeBlock &cb )
   return rc;
 }
 
-void MachState::out_mg( bool is_m )
+void Machine::out_mg( bool is_m )
 {
   for( unsigned i=0; i<mg_funcs_sz; ++i ) {
     auto [ c, fun ] = mg_funcs[i];
@@ -1506,7 +1506,7 @@ void MachState::out_mg( bool is_m )
   }
 }
 
-int MachState::prep_fun(  const GcodeBlock &gc )
+int Machine::prep_fun(  const GcodeBlock &gc )
 {
   if( gc.is_set('M') ) { // special values for M commands
     // OUT << 'M' << NL;
@@ -1833,7 +1833,7 @@ int wait_next_motor_tick()
   return break_flag;
 }
 
-void MachParam::set_dir( int a_dir )
+void StepMover::set_dir( int a_dir )
 {
   if( a_dir == dir ) {
     return;
@@ -1850,7 +1850,7 @@ void MachParam::set_dir( int a_dir )
   }
 }
 
-void MachParam::step()
+void StepMover::step()
 {
   if( motor ) {
     motor->set( 1 );

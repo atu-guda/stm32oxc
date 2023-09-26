@@ -14,7 +14,7 @@ struct MoveInfo;
 
 // TODO: base: common props, here - realization
 // mach params
-struct MachParam {
+struct StepMover {
   uint32_t tick2mm   ; // tick per mm, =  pulses per mm
   int      x         ; // current pos in pulses, ? int64_t?
   int      dir       ; // current direcion: -1, 0, 1, but may be more
@@ -36,23 +36,23 @@ struct MachParam {
 
 const inline constinit unsigned n_motors { 5 }; // TODO: part of Mach
 
-extern MachParam machs[n_motors];
+extern StepMover machs[n_motors];
 
 int gcode_cmdline_handler( char *s );
 int gcode_act_fun_me_st( const GcodeBlock &gc );
 
-class MachState {
+class Machine {
   public:
    enum MachMode {
      modeFFF = 0, modeLaser = 1, modeCNC = 2, modeMax = 3
    };
-   using fun_gcode_mg = int(MachState::*)( const GcodeBlock &cb );
+   using fun_gcode_mg = int(Machine::*)( const GcodeBlock &cb );
    struct FunGcodePair {
      int num;
      fun_gcode_mg fun;
    };
 
-   MachState();
+   Machine();
    xfloat getPwm() const { return std::clamp( 100 * spin / spin100, 0.0f, spin_max ); }
    int check_endstops( MoveInfo &mi );
    int move_common( MoveInfo &mi, xfloat fe_mmm );
@@ -129,8 +129,8 @@ class MachState {
    bool spinOn   { false };
 };
 
-extern MachState me_st;
-extern const MachState::FunGcodePair mg_code_funcs[];
+extern Machine me_st;
+extern const Machine::FunGcodePair mg_code_funcs[];
 
 
 // task + state. fill: move_prep_
