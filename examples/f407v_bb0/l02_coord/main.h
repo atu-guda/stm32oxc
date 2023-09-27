@@ -3,6 +3,10 @@
 
 #include <oxc_gcode.h>
 
+const inline constinit xfloat k_r2g { 180 / M_PI };
+const inline constinit xfloat M_PIx2 { 2 * M_PI };
+const inline constinit xfloat M_PI2  { M_PI / 2 };
+
 const inline uint32_t  TIM_PWM_base_freq   { 84'000'000 };
 const inline uint32_t  TIM_PWM_count_freq  {      10000 };
 const inline uint32_t  TIM6_base_freq   {  1'000'000 };
@@ -109,6 +113,7 @@ class Machine {
    const unsigned mg_funcs_sz;
    xfloat r_min { 0.1f };
    xfloat r_max { 10000.0f };
+   xfloat near_l { 2.0e-3 };
   public: // for now, TODO: hide
    xfloat axis_scale[n_motors];
    xfloat fe_g0 { 350 };

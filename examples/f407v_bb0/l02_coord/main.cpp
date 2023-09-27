@@ -26,11 +26,6 @@
 using namespace std;
 using namespace SMLRL;
 
-const constinit xfloat k_r2g { 180 / M_PI };
-const constinit xfloat M_PIx2 { 2 * M_PI };
-const constinit xfloat M_PI2  { M_PI / 2 };
-const constinit xfloat near_l { 2.0e-3 };
-
 USE_DIE4LED_ERROR_HANDLER;
 BOARD_DEFINE_LEDS;
 
@@ -768,7 +763,7 @@ MoveInfo::Ret MoveInfo::calc_step( xfloat a )
   return step_pfun( *this, a );
 }
 
-// TODO: make a member?
+// not a member - to allow external funcs
 MoveInfo::Ret step_line_fun( MoveInfo &mi, xfloat a )
 {
   bool need_move = false;
