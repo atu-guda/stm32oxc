@@ -1090,13 +1090,14 @@ int Machine::g_move_circle( const GcodeBlock &gc )
     r_s = r_e = r_1;
   }
 
-  if( r_s < 0.1f || r_e < 0.1f ) { // TODO: minimal_r param?
-    std_out << "# err: r?" << NL;
+  std_out << "# G2/3" << " ( " << x_e << ' ' << y_e << ' ' << z_e
+    << " ) c: ( " << x_r << ' ' << y_r << " ) r_1= " << r_1 << ' ' << nt << NL;
+
+  if( r_s < r_min || r_e < r_min || r_s > r_max || r_e > r_max  ) {
+    std_out << "# err: bad r, fallback" << NL;
     return g_move_line( gc );
   }
 
-  std_out << "# G2/3" << " ( " << x_e << ' ' << y_e << ' ' << z_e
-    << " ) c: ( " << x_r << ' ' << y_r << " ) r_1= " << r_1 << ' ' << nt << NL;
 
   xfloat alp_s = atan2xf(        -y_r  ,        -x_r   );
   xfloat alp_e = atan2xf( ( y_e - y_r ), ( x_e - x_r ) );
@@ -1270,7 +1271,7 @@ int Machine::g_home( const GcodeBlock &gc ) // G28
 
 int Machine::g_off_compens( const GcodeBlock &gc ) // G40 - X
 {
-  OUT << "#  G40 unsipported  " << NL;
+  OUT << "#  G40 unsupported  " << NL;
   return GcodeBlock::rcOk; // for now
 }
 
@@ -1369,7 +1370,7 @@ int Machine::m_out_where( const GcodeBlock &gc )     // M114
   for( unsigned i=0; i<n_movers; ++i ) { // TODO: n_active_motor
     OUT << ' ' << movers[i].get_xf() / k_unit;
   }
-  OUT << NL;
+  OUT << NL "# F= " << fe_g1 << " S= " << spin << " / " << spin100 << NL;
 
   return GcodeBlock::rcOk;
 }

@@ -107,6 +107,8 @@ class Machine {
    uint32_t n_mo { 0 }; // current number of active motors
    const FunGcodePair *mg_funcs { nullptr };
    const unsigned mg_funcs_sz;
+   xfloat r_min { 0.1f };
+   xfloat r_max { 10000.0f };
   public: // for now, TODO: hide
    xfloat axis_scale[n_motors];
    xfloat fe_g0 { 350 };
