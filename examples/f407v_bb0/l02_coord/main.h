@@ -50,6 +50,7 @@ class Machine {
    struct FunGcodePair {
      int num;
      fun_gcode_mg fun;
+     const char* helpstr;
    };
 
    Machine( StepMover *a_movers, unsigned a_n_movers );

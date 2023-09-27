@@ -825,33 +825,33 @@ MoveInfo::Ret step_circ_fun( MoveInfo &mi, xfloat a )
 // G: val * 1000, to allow G11.123
 // M: 1000000 + val * 1000
 const Machine::FunGcodePair mg_code_funcs[] = {
-  {       0, &Machine::g_move_line     },
-  {    1000, &Machine::g_move_line     },
-  {    2000, &Machine::g_move_circle   },
-  {    3000, &Machine::g_move_circle   },
-  {    4000, &Machine::g_wait          },
-  {   17000, &Machine::g_set_plane     },
-  {   20000, &Machine::g_set_unit_inch },
-  {   21000, &Machine::g_set_unit_mm   },
-  {   28000, &Machine::g_home          },
-  {   40000, &Machine::g_off_compens   },
-  {   90000, &Machine::g_set_absmove   },
-  {   91000, &Machine::g_set_relmove   },
-  {   92000, &Machine::g_set_origin    },
-  { 1000000, &Machine::m_end0           },
-  { 1001000, &Machine::m_pause          },
-  { 1002000, &Machine::m_end            },
-  { 1003000, &Machine::m_set_spin       },
-  { 1004000, &Machine::m_set_spin       },
-  { 1005000, &Machine::m_spin_off       },
-  { 1114000, &Machine::m_out_where      },
-  { 1117000, &Machine::m_out_str        },
-  { 1220000, &Machine::m_set_feed_scale },
-  { 1221000, &Machine::m_set_spin_scale },
-  { 1450000, &Machine::m_out_mode       },
-  { 1451000, &Machine::m_set_mode_fff   },
-  { 1452000, &Machine::m_set_mode_laser },
-  { 1453000, &Machine::m_set_mode_cnc   },
+  {       0, &Machine::g_move_line     , "move fast X Y Z..." },
+  {    1000, &Machine::g_move_line     , "move X Y Z E F_feed S_spin" },
+  {    2000, &Machine::g_move_circle   , "circle X Y Z [ I J ] R (CV)" },
+  {    3000, &Machine::g_move_circle   , "circle X Y Z [ I J ] R (CCV)" },
+  {    4000, &Machine::g_wait          , "wait S_ms P_s" },
+  {   17000, &Machine::g_set_plane     , "set plane XY -" },
+  {   20000, &Machine::g_set_unit_inch , "set Inch" },
+  {   21000, &Machine::g_set_unit_mm   , "set mm" },
+  {   28000, &Machine::g_home          , "home X Y Z" },
+  {   40000, &Machine::g_off_compens   , "off compens -" },
+  {   90000, &Machine::g_set_absmove   , "set ABS move" },
+  {   91000, &Machine::g_set_relmove   , "set REL move" },
+  {   92000, &Machine::g_set_origin    , "set origin XYZ" },
+  { 1000000, &Machine::m_end0           , "end0" },
+  { 1001000, &Machine::m_pause          , "pause ?" },
+  { 1002000, &Machine::m_end            , "end" },
+  { 1003000, &Machine::m_set_spin       , "on spin CV S" },
+  { 1004000, &Machine::m_set_spin       , "on spin CCV S" },
+  { 1005000, &Machine::m_spin_off       , "off spin" },
+  { 1114000, &Machine::m_out_where      , "where" },
+  { 1117000, &Machine::m_out_str        , "out string" },
+  { 1220000, &Machine::m_set_feed_scale , "set feed scale S %" },
+  { 1221000, &Machine::m_set_spin_scale , "set spin scale S U_max %" },
+  { 1450000, &Machine::m_out_mode       , "out mode" },
+  { 1451000, &Machine::m_set_mode_fff   , "mode_FFF" },
+  { 1452000, &Machine::m_set_mode_laser , "mode_laser" },
+  { 1453000, &Machine::m_set_mode_cnc   , "mode_cnc" },
 };
 
 
@@ -914,15 +914,15 @@ int Machine::move_common( MoveInfo &mi, xfloat fe_mmm )
 
   xfloat last_a { -1 };
   int rc {0};
+  bool keep_move { true };
   // really must be more then t_tick
-  for( unsigned tn=0; tn < 5*mi.t_tick && break_flag == 0; ++tn ) {
+  for( unsigned tn=0; tn < 5*mi.t_tick && keep_move && break_flag == 0; ++tn ) {
 
     leds[2].set();
     xfloat t = tn * k_t;
     xfloat a = t / mi.t_sec; // TODO: accel here
     if( a > 1.0f ) {
-      // rc = 4; /// not a error: my be small overshot
-      break; // mark: more
+      a = 1.0f; keep_move = false;
     }
 
     auto rc_calc = mi.calc_step( a );
@@ -954,6 +954,7 @@ int Machine::move_common( MoveInfo &mi, xfloat fe_mmm )
     }
 
   }
+  leds[2].reset();
   const uint32_t tm_e = HAL_GetTick();
 
   OUT << "# debug: move_common: a= " << last_a << " dt= " << ( tm_e - tm_s ) << NL;
@@ -1468,18 +1469,18 @@ int Machine::call_mg( const GcodeBlock &cb )
 void Machine::out_mg( bool is_m )
 {
   for( unsigned i=0; i<mg_funcs_sz; ++i ) {
-    auto [ c, fun ] = mg_funcs[i];
+    auto [ c, fun, hs ] = mg_funcs[i];
     if( c < 0 ) {
       return;
     }
     if( c < 1000000 ) {
       if( ! is_m ) {
-        OUT << 'G' << ( c/1000 ) << NL;
+        OUT << 'G' << ( c/1000 ) << ' ' << hs << NL;
       }
       continue;
     }
     if( is_m ) {
-      OUT << 'M' << ( ( c-1000000 ) / 1000 ) << NL;
+      OUT << 'M' << ( ( c-1000000 ) / 1000 ) << ' ' << hs << NL;
     }
   }
 }
