@@ -113,6 +113,7 @@ class Machine {
    const unsigned mg_funcs_sz;
    xfloat r_min { 0.1f };
    xfloat r_max { 10000.0f };
+   xfloat alp_min { M_PI / 180 };
    xfloat near_l { 2.0e-3 };
   public: // for now, TODO: hide
    xfloat axis_scale[n_motors];

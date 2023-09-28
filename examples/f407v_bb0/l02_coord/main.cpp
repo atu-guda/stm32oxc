@@ -734,9 +734,15 @@ int MoveInfo::prep_move_line( const xfloat *coo, xfloat fe )
 int MoveInfo::prep_move_circ( const xfloat *coo, xfloat fe )
 {
   zero_arr();
-  //                       r_s      r_e                alp_e    alp_s
-  xfloat l_appr { 0.5f * ( coo[0] + coo[2] ) * fabsxf( coo[3] - coo[1] ) };
-  len = hypot( l_appr, coo[4] ); // z_e
+  const xfloat &r_s   { coo[0] };
+  const xfloat &alp_s { coo[1] };
+  const xfloat &r_e   { coo[2] };
+  const xfloat &alp_e { coo[3] };
+  const xfloat &z_e   { coo[4] };
+
+  xfloat l_appr { 0.5f * ( r_s + r_s ) * fabsxf( alp_e - alp_s ) };
+  len = hypot( l_appr, r_e - r_s, z_e ); // e_e ?
+
   t_sec = 60 * len / fe; // only approx, as we can accel/deccel
   t_tick = (uint32_t)( TIM6_count_freq * t_sec );
   for( unsigned i=0; i<max_params; ++i ) { // 10 is N params to circle funcs
@@ -745,10 +751,8 @@ int MoveInfo::prep_move_circ( const xfloat *coo, xfloat fe )
 
   k_x[0] = p[3] - p[1]; // alp_e - alp_s
   k_x[1] = p[2] - p[0]; // r_e   - r_s
-
-  // initial point is not (0,0) TODO: make (0,) -- better calc coords
-  ci[0] = ( p[8] + p[0] * cos( p[1] )  ) * s_movers[0].tick2mm * me_st.axis_scale[0]; // TODO: remove me_st from here?!!
-  ci[1] = ( p[8] + p[0] * sin( p[1] )  ) * s_movers[1].tick2mm * me_st.axis_scale[1]; // TODO: remove me_st from here?!!
+  k_x[2] = - ( p[8] + p[0] * cos( p[1] ) ); // initial point shift
+  k_x[3] = - ( p[8] + p[0] * sin( p[1] ) );
 
   OUT << "# debug: prep_move_circ: len= " << len << " t_sec= " << t_sec << " t_tick= " << t_tick << NL;
 
@@ -794,17 +798,17 @@ MoveInfo::Ret step_circ_fun( MoveInfo &mi, xfloat a )
   xfloat &alp_s { mi.p[1]   };
   xfloat &z_e   { mi.p[5]   };
   xfloat &e_e   { mi.p[6]   };
-  xfloat &x_r   { mi.p[8]   };
-  xfloat &y_r   { mi.p[9]   };
   xfloat &k_alp { mi.k_x[0] };
   xfloat &k_r   { mi.k_x[1] };
+  xfloat &x_0   { mi.k_x[2] };
+  xfloat &y_0   { mi.k_x[3] };
 
   xfloat alp =  alp_s + a * k_alp;
   xfloat r   =  r_s   + a * k_r;
 
   xfloat xx[mi.n_coo];
-  xx[0]  = x_r + r * cos( alp );
-  xx[1]  = y_r + r * sin( alp );
+  xx[0]  = x_0 + r * cos( alp );
+  xx[1]  = y_0 + r * sin( alp );
   xx[2]  = a * z_e;
   xx[3]  = a * e_e;
 
@@ -1123,6 +1127,11 @@ int Machine::g_move_circle( const GcodeBlock &gc )
       alp_e = alp_s + M_PIx2;
     }
     alp_e += nt * M_PIx2;
+  }
+
+  if( fabsxf( alp_e - alp_s ) < alp_min  ) {
+    std_out << "# err: bad d_alp, fallback" << NL;
+    return g_move_line( gc );
   }
 
   coo[0] = r_s; coo[1] = alp_s; coo[2] = r_e; coo[3] = alp_e;
