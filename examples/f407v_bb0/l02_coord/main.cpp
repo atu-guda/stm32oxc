@@ -375,6 +375,7 @@ int main()
   cmdline_handlers[1] = nullptr;
 
   // just for now
+  me_st.set_n_mo( 3 );
   me_st.set_mode ( Machine::modeLaser );
 
   BOARD_POST_INIT_BLINK;
@@ -439,6 +440,20 @@ int cmd_test0( int argc, const char * const * argv )
   int rc = break_flag;
 
   return rc + rev;
+}
+
+bool EndStopGpioPos::is_clear_for_dir( int dir ) const
+{
+  if( dir == 0 || ( v & mainBits ) == mainBits ) { // no move or all clear
+    return true;
+  }
+  if( dir >  0 && ( v & plusBit  ) ) { // forward and ep+ clear
+    return true;
+  }
+  if( dir <  0 && ( v & minusBit ) ) { // backward and ep- clear
+    return true;
+  }
+  return false;
 }
 
 bool is_endstop_clear_for_dir( uint16_t e, int dir )

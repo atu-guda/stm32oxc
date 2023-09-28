@@ -7,6 +7,9 @@ const inline constinit xfloat k_r2g { 180 / M_PI };
 const inline constinit xfloat M_PIx2 { 2 * M_PI };
 const inline constinit xfloat M_PI2  { M_PI / 2 };
 
+inline auto& touch_gpio { GpioE };
+const uint16_t touch_mask { 0b0100 }; // E2
+
 const inline uint32_t  TIM_PWM_base_freq   { 84'000'000 };
 const inline uint32_t  TIM_PWM_count_freq  {      10000 };
 const inline uint32_t  TIM6_base_freq   {  1'000'000 };
@@ -14,6 +17,67 @@ const inline uint32_t  TIM6_count_freq  {      10000 };
 
 extern int debug; // in main.cpp
 
+class EndStop {
+  public:
+   EndStop() = default;
+   virtual int initHW() = 0;
+   virtual uint16_t read() = 0;
+   uint16_t get() const { return v; }
+   virtual bool is_minus_stop() const = 0;
+   virtual bool is_minus_go()   const = 0;
+   virtual bool is_plus_stop()  const = 0;
+   virtual bool is_plus_go()    const = 0;
+   virtual bool is_any_stop()   const = 0;
+   virtual bool is_clear()      const = 0;
+   virtual bool is_bad()        const = 0;
+   virtual bool is_clear_for_dir( int dir ) const = 0;
+   virtual char toChar() const = 0;
+  protected:
+   uint16_t v {0};
+};
+
+// 2+ pins with positive clear status
+class EndStopGpioPos : public EndStop {
+  public:
+   enum StopBits { minusBit = 0x01, plusBit = 0x02, extraBit = 0x04, mainBits = 0x03 };
+   EndStopGpioPos( GpioRegs &a_gi, uint8_t a_start, uint8_t a_n = 2 )
+     : pins( a_gi, a_start, a_n, GpioRegs::Pull::down ) {}
+   virtual int initHW() override { pins.initHW(); return 1; };
+   virtual uint16_t read() override { v = pins.read(); return v; }
+   virtual bool is_minus_stop() const override { return ( ( v & minusBit ) == 0 ) ; }
+   virtual bool is_minus_go()   const override { return ( ( v & minusBit ) != 0 ) ; }
+   virtual bool is_plus_stop()  const override { return ( ( v & plusBit  ) == 0 ) ; }
+   virtual bool is_plus_go()    const override { return ( ( v & plusBit  ) != 0 ) ; }
+   virtual bool is_any_stop()   const override { return ( ( v & mainBits ) != mainBits ) ; }
+   virtual bool is_clear()      const override { return ( ( v & mainBits ) == mainBits ) ; }
+   virtual bool is_bad()        const override { return ( ( v & mainBits ) == 0 ) ; }
+   virtual bool is_clear_for_dir( int dir ) const override;
+   virtual char toChar() const override {
+     static const char es_chars[] { "X+-.??" };
+     return es_chars[ v & mainBits];
+   }
+  protected:
+   PinsIn pins;
+};
+
+inline bool is_endstop_minus_stop( uint16_t e ) { return ( (e & 0x01) == 0 ) ; }
+inline bool is_endstop_minus_go(   uint16_t e ) { return ( (e & 0x01) != 0 ) ; }
+inline bool is_endstop_plus_stop(  uint16_t e ) { return ( (e & 0x02) == 0 ) ; }
+inline bool is_endstop_plus_go(    uint16_t e ) { return ( (e & 0x02) != 0 ) ; }
+inline bool is_endstop_any_stop(   uint16_t e ) { return ( (e & 0x03) != 3 ) ; }
+inline bool is_endstop_clear(      uint16_t e ) { return ( (e & 0x03) == 3 ) ; }
+inline bool is_endstop_bad(        uint16_t e ) { return ( (e & 0x03) == 0 ) ; }
+bool is_endstop_clear_for_dir( uint16_t e, int dir );
+
+inline auto& endstops_gpio { GpioD };
+const uint16_t endstops_mask { 0b01111011 };
+inline char endstop2char( uint16_t e )
+{
+  static const char es_chars[] = "W+-.??";
+  return es_chars[ e & 0x03 ];
+}
+const char* endstops2str( uint16_t es, bool touch, char *buf = nullptr );
+const char* endstops2str_a( char *buf = nullptr );
 
 // TODO: base: common props, here - realization
 // mach params
@@ -90,7 +154,8 @@ class Machine {
    void set_xn( unsigned i, xfloat v ) { if( i < n_movers ) { movers[i].set_xf( v ); } }
    int get_dly_xsteps() const { return dly_xsteps; }
    void set_dly_xsteps( int v ) { dly_xsteps = v; }
-   uint32_t get_n_mo() const { return n_mo; } // ????
+   unsigned get_n_mo() const { return n_mo; } // ????
+   void set_n_mo( unsigned n ) { n_mo = std::min( n_mo, n_movers ); }
 
    int call_mg( const GcodeBlock &cb );
    void out_mg( bool is_m );
@@ -126,7 +191,7 @@ class Machine {
    MachMode mode { modeFFF };
    unsigned on_endstop { 9999 };
    uint32_t last_rc;
-   uint32_t n_mo { 0 }; // current number of active motors
+   unsigned n_mo { 0 }; // current number of active motors
    const FunGcodePair *mg_funcs { nullptr };
    const unsigned mg_funcs_sz;
    xfloat r_min { 0.1f };
@@ -162,28 +227,6 @@ int go_home( unsigned axis );
 
 bool calc_G2_R_mode( bool cv, xfloat x_e, xfloat y_e, xfloat &r_1, xfloat &x_r, xfloat &y_r );
 
-inline bool is_endstop_minus_stop( uint16_t e ) { return ( (e & 0x01) == 0 ) ; }
-inline bool is_endstop_minus_go(   uint16_t e ) { return ( (e & 0x01) != 0 ) ; }
-inline bool is_endstop_plus_stop(  uint16_t e ) { return ( (e & 0x02) == 0 ) ; }
-inline bool is_endstop_plus_go(    uint16_t e ) { return ( (e & 0x02) != 0 ) ; }
-inline bool is_endstop_any_stop(   uint16_t e ) { return ( (e & 0x03) != 3 ) ; }
-inline bool is_endstop_clear(      uint16_t e ) { return ( (e & 0x03) == 3 ) ; }
-inline bool is_endstop_bad(        uint16_t e ) { return ( (e & 0x03) == 0 ) ; }
-bool is_endstop_clear_for_dir( uint16_t e, int dir );
-
-inline auto& endstops_gpio { GpioD };
-const uint16_t endstops_mask { 0b01111011 };
-inline char endstop2char( uint16_t e )
-{
-  static const char es_chars[] = "W+-.??";
-  return es_chars[ e & 0x03 ];
-}
-
-inline auto& touch_gpio { GpioE };
-const uint16_t touch_mask { 0b0100 }; // E2
-
-const char* endstops2str( uint16_t es, bool touch, char *buf = nullptr );
-const char* endstops2str_a( char *buf = nullptr );
 
 
 #endif
