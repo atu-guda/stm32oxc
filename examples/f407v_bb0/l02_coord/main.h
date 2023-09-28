@@ -14,7 +14,6 @@ const inline uint32_t  TIM6_count_freq  {      10000 };
 
 extern int debug; // in main.cpp
 
-struct MoveInfo;
 
 // TODO: base: common props, here - realization
 // mach params
@@ -46,6 +45,25 @@ extern StepMover s_movers[n_motors];
 int gcode_cmdline_handler( char *s );
 int gcode_act_fun_me_st( const GcodeBlock &gc );
 
+// task + state. fill: move_prep_
+struct MoveInfo {
+  enum class Type { stop = 0, line = 1, circle = 2 }; // TODO: more
+  enum class Ret  { nop = 0, move = 1, end = 2, err = 3 }; // TODO: obsolete?
+  using Act_Pfun = Ret (*)( MoveInfo &mi, xfloat a, xfloat *coo );
+  static const unsigned max_params { 10 };
+  Type type;
+  unsigned n_coo;
+  xfloat  p[max_params]; // params itself
+  xfloat k_x[max_params]; // coeffs
+  xfloat len;
+  Act_Pfun step_pfun { nullptr }; // calculate each t
+  MoveInfo( MoveInfo::Type tp, unsigned a_n_coo, Act_Pfun pfun );
+  void zero_arr();
+  Ret calc_step( xfloat a, xfloat *coo );
+  int prep_move_line( const xfloat *prm );
+  int prep_move_circ( const xfloat *prm );
+};
+
 class Machine {
   public:
    enum MachMode {
@@ -66,14 +84,13 @@ class Machine {
    int move_line( const xfloat *d_mm, unsigned n_coo, xfloat fe_mmm, unsigned a_on_endstop = 9999 );
    // coords: [0]:r_s, [1]: alp_s, [2]: r_e, [3]: alp_e, [4]: cv?, [5]: z_e, [6]: e_e, [7]: nt(L) [8]: x_r, [9]: y_r
    int move_circ( const xfloat *d_mm, unsigned n_coo, xfloat fe_mmm );
-   int step( unsigned i_motor, int dir );
    MachMode get_mode() const { return mode; };
-   void set_mode( MachMode m ) { if( m < modeMax ) { mode = m; }};
+   void set_mode( MachMode m ) { if( m < modeMax ) { mode = m; }}; // TODO: more actions
    xfloat get_xn( unsigned i ) const { return ( i < n_movers ) ? movers[i].get_xf() : 0 ; }
    void set_xn( unsigned i, xfloat v ) { if( i < n_movers ) { movers[i].set_xf( v ); } }
    int get_dly_xsteps() const { return dly_xsteps; }
    void set_dly_xsteps( int v ) { dly_xsteps = v; }
-   uint32_t get_n_mo() const { return n_mo; }
+   uint32_t get_n_mo() const { return n_mo; } // ????
 
    int call_mg( const GcodeBlock &cb );
    void out_mg( bool is_m );
@@ -116,8 +133,8 @@ class Machine {
    xfloat r_max { 10000.0f };
    xfloat alp_min { M_PI / 180 };
    xfloat near_l { 2.0e-3 };
-  public: // for now, TODO: hide
    xfloat axis_scale[n_motors];
+  public: // for now, TODO: hide
    xfloat fe_g0 { 350 };
    xfloat fe_g1 { 300 };
    xfloat fe_scale { 100.0f };
@@ -134,25 +151,6 @@ class Machine {
 extern Machine me_st;
 extern const Machine::FunGcodePair mg_code_funcs[];
 
-
-// task + state. fill: move_prep_
-struct MoveInfo {
-  enum class Type { stop = 0, line = 1, circle = 2 }; // TODO: more
-  enum class Ret  { nop = 0, move = 1, end = 2, err = 3 };
-  using Act_Pfun = Ret (*)( MoveInfo &mi, xfloat a, xfloat *coo );
-  static const unsigned max_params { 10 };
-  Type type;
-  unsigned n_coo;
-  xfloat  p[max_params]; // params itself
-  xfloat k_x[max_params]; // coeffs
-  xfloat len;
-  Act_Pfun step_pfun { nullptr }; // calculate each t
-  MoveInfo( MoveInfo::Type tp, unsigned a_n_coo, Act_Pfun pfun );
-  void zero_arr();
-  Ret calc_step( xfloat a, xfloat *coo );
-  int prep_move_line( const xfloat *prm );
-  int prep_move_circ( const xfloat *prm );
-};
 
 void motors_off();
 void motors_on();

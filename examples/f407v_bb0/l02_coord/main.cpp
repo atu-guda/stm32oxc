@@ -842,18 +842,6 @@ Machine::Machine( StepMover *a_movers, unsigned a_n_movers )
   ranges::fill( axis_scale, 1 );
 }
 
-int Machine::step( unsigned i, int dir )
-{
-  if( i >= n_movers ) {
-    return 0;
-  }
-  if( dir == 0 ) {
-    return 0;
-  }
-  movers[i].step_dir( dir );
-
-  return 1;
-}
 
 int Machine::check_endstops( MoveInfo &mi )
 {
