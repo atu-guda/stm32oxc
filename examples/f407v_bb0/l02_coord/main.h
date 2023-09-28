@@ -89,8 +89,9 @@ struct StepMover {
   uint32_t max_l     ; // mm
   xfloat    es_find_l ; // movement to find endstop, from=ES, to = *1.5
   xfloat    k_slow    ; // slow movement coeff from max_speed
-  PinsIn  *endstops  ;
+  EndStop  *endstops  ;
   PinsOut *motor     ;
+  void initHW();
   void set_dir( int dir );
   void step();
   void step_dir( int dir ) { set_dir( dir ); step(); }
@@ -156,6 +157,8 @@ class Machine {
    void set_dly_xsteps( int v ) { dly_xsteps = v; }
    unsigned get_n_mo() const { return n_mo; } // ????
    void set_n_mo( unsigned n ) { n_mo = std::min( n_mo, n_movers ); }
+   const char* endstops2str( char *buf = nullptr ) const;
+   const char* endstops2str_read( char *buf = nullptr );
 
    int call_mg( const GcodeBlock &cb );
    void out_mg( bool is_m );

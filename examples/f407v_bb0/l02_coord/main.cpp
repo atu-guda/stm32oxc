@@ -61,9 +61,9 @@ void motors_on()  {
 
 PinsOut aux3(  GpioD, 7, 4 );
 
-PinsIn x_e(  GpioD, 0, 2, GpioRegs::Pull::down );
-PinsIn y_e(  GpioD, 3, 2, GpioRegs::Pull::down );
-PinsIn z_e(  GpioD, 5, 2, GpioRegs::Pull::down );
+EndStopGpioPos estp_x(  GpioD, 0, 2 );
+EndStopGpioPos estp_y(  GpioD, 3, 2 );
+EndStopGpioPos estp_z(  GpioD, 5, 2 );
 
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
@@ -122,9 +122,9 @@ const EXTI_init_info extis[] = {
 
 StepMover s_movers[n_motors] = {
 // tick2mm x  dir max_speed max_l es_find_l k_slow endstops motor
-  {   800, 0,  0,    500,     150,  5.0f,     0.1f,    &x_e, &stepdir_x  }, // TODO: 500 increase after working acceleration
-  {   800, 0,  0,    500,     300,  5.0f,     0.1f,    &y_e, &stepdir_y  },
-  {   800, 0,  0,    300,     150,  4.0f,     0.1f,    &z_e, &stepdir_z  },
+  {   800, 0,  0,    500,     150,  5.0f,     0.1f, &estp_x, &stepdir_x  }, // TODO: 500 increase after working acceleration
+  {   800, 0,  0,    500,     300,  5.0f,     0.1f, &estp_y, &stepdir_y  },
+  {   800, 0,  0,    300,     150,  4.0f,     0.1f, &estp_z, &stepdir_z  },
   {   100, 0,  0,    100,  999999,  0.0f,     0.1f, nullptr, &stepdir_e0 },
   {   100, 0,  0,    100,  999999,  0.0f,     0.1f, nullptr, &stepdir_e1 }
 };
@@ -331,13 +331,9 @@ int main()
   GpioA.enableClk(); GpioB.enableClk(); GpioC.enableClk(); GpioD.enableClk(); GpioE.enableClk();
 
   for( auto &m : s_movers ) {
-    if( m.endstops != nullptr ) {
-      m.endstops->initHW();
-    }
-    if( m.motor != nullptr ) {
-      m.motor->initHW(); m.motor->write( 0 );
-    }
+    m.initHW();
   }
+  // TODO: me_st.initHW();
 
   aux3.initHW(); aux3 = 0;
   en_motors.initHW();
@@ -392,6 +388,16 @@ int main()
   return 0;
 }
 
+void StepMover::initHW()
+{
+  if( endstops ) {
+    endstops->initHW();
+  }
+  if( motor ) {
+    motor->initHW();
+    motor->write( 0 );
+  }
+};
 
 
 int cmd_test0( int argc, const char * const * argv )
@@ -503,9 +509,10 @@ int go_home( unsigned axis )
   // if on endstop_minus - go+
   auto esv = estp->read();
   std_out << "# debug: home: axis= " << axis << ' ' << endstops2str_a() << NL;
-  if( is_endstop_minus_stop( esv ) ) {
+
+  if( estp->is_minus_stop() ) {
     if( debug > 0 ) {
-      std_out << "# Warning: move from endstop- " << axis << ' ' << endstops2str_a() << NL;
+      std_out << "# Warning: move from endstop- " << axis << ' ' << estp->toChar() << NL;
     }
     d_mm[axis] = s_movers[axis].es_find_l;
     rc = me_st.move_line( d_mm, n_mo, 2 * fe_slow );
@@ -516,61 +523,61 @@ int go_home( unsigned axis )
   }
 
   esv = estp->read();
-  if( ! is_endstop_clear( esv ) ) {
-    std_out << "# Error: not all clear " << axis << ' ' << endstops2str_a() << NL;
+  if( ! estp->is_clear() ) {
+    std_out << "# Error: not all clear " << axis << ' ' << estp->toChar() << NL;
     return 0;
   }
 
   // go to endstop
   d_mm[axis] = -2.0f * (xfloat)s_movers[axis].max_l; // far away
   if( debug > 0 ) {
-    std_out << "# to_endstop ph 1 " << endstops2str_a() << NL;
+    std_out << "# to_endstop ph 1 " << estp->toChar() << NL;
   }
   rc = me_st.move_line( d_mm, n_mo, fe_fast );
   esv = estp->read();
-  if( is_endstop_minus_go( esv ) ) { //
-    std_out << "# Error: fail to find endstop. axis " << axis << " ph 1 " << esv  << ' ' << endstops2str_a() << NL;
+  if( estp->is_minus_go() ) { //
+    std_out << "# Error: fail to find endstop. axis " << axis << " ph 1 " << esv  << ' ' << estp->toChar() << NL;
     return 0;
   }
 
   // go slowly away
   if( debug > 0 ) {
-    std_out << "# go_away ph 2 "  << endstops2str_a() << NL;
+    std_out << "# go_away ph 2 "  << estp->toChar()<< NL;
   }
   d_mm[axis] = s_movers[axis].es_find_l;
   rc = me_st.move_line( d_mm, n_mo, fe_slow, axis );
   esv = estp->read();
-  if( is_endstop_any_stop(esv) ) { // must be ok
-    std_out << "# Error: fail to step from endstop axis " << axis << " ph 2 " << endstops2str_a() << NL;
+  if( estp->is_any_stop() ) { // must be ok
+    std_out << "# Error: fail to step from endstop axis " << axis << " ph 2 " << estp->toChar() << NL;
     return 0;
   }
 
   // go slowly to endstop
   if( debug > 0 ) {
-    std_out << "# to_es ph 3 " << endstops2str_a() << NL;
+    std_out << "# to_es ph 3 " << estp->toChar() << NL;
   }
   d_mm[axis] = - 1.5f * s_movers[axis].es_find_l;
   rc = me_st.move_line( d_mm, n_mo, fe_slow );
   esv = estp->read();
-  if( is_endstop_minus_go( esv ) ) {
-    std_out << "# Error: fail to find endstop axis " << axis << " ph 3 " << endstops2str_a() << esv << NL;
+  if( estp->is_minus_go() ) {
+    std_out << "# Error: fail to find endstop axis " << axis << " ph 3 " << estp->toChar() << esv << NL;
     return 0;
   }
 
   // go slowly away again
   if( debug > 0 ) {
-    std_out << "# go_away st ph 4 " << endstops2str_a() << NL;
+    std_out << "# go_away st ph 4 " << estp->toChar() << NL;
   }
   d_mm[axis] = s_movers[axis].es_find_l;
   rc = me_st.move_line( d_mm, n_mo, fe_slow, axis );
   esv = estp->read();
-  if( is_endstop_any_stop( esv ) ) {
-    std_out << "# Error: fail to find endstop axis " << axis << " ph 4 " << endstops2str_a() << NL;
+  if( estp->is_any_stop() ) {
+    std_out << "# Error: fail to find endstop axis " << axis << " ph 4 " << estp->toChar() << NL;
     return 0;
   }
   me_st.was_set = true;
   me_st.set_xn( axis, 0 );    // TODO: may be no auto?
-  std_out << "# Ok: found endstop end  "  << endstops2str_a() << NL;
+  std_out << "# Ok: found endstop end  "  << estp->toChar() << NL;
 
   return 1;
 }
@@ -861,7 +868,7 @@ Machine::Machine( StepMover *a_movers, unsigned a_n_movers )
 int Machine::check_endstops( MoveInfo &mi )
 {
   // TODO: touch sensor
-  for( unsigned i=0; i<mi.n_coo && i<n_movers; ++i ) {
+  for( unsigned i=0; i<n_mo; ++i ) {
     if( movers[i].endstops == nullptr ) {
       continue;
     }
@@ -878,6 +885,34 @@ int Machine::check_endstops( MoveInfo &mi )
     return 0;
   }
   return 1;
+}
+
+const char* Machine::endstops2str( char *buf ) const
+{
+  static char sbuf[n_motors+2];
+  if( !buf ) {
+    buf = sbuf;
+  }
+  std::fill( buf, buf+sizeof(sbuf), ' ' );
+  buf[ sizeof(sbuf) - 1 ] = '\0';
+
+  for( unsigned i=0; i<n_mo; ++i ) {
+    if( movers[i].endstops ) {
+      buf[i] = 'X'; // TODO: movers[i].endstops->toChar();
+    }
+    buf[i+1] = '\0';
+  }
+  return buf;
+}
+
+const char* Machine::endstops2str_read( char *buf )
+{
+  for( unsigned i=0; i<n_mo; ++i ) {
+    if( movers[i].endstops ) {
+      movers[i].endstops->read();
+    }
+  }
+  return endstops2str( buf );
 }
 
 int Machine::move_common( MoveInfo &mi, xfloat fe_mmm )
@@ -975,7 +1010,6 @@ int Machine::move_circ( const xfloat *coo, unsigned n_coo, xfloat fe_mmm )
 
 int Machine::g_move_line( const GcodeBlock &gc )
 {
-  const unsigned n_mo { 4 }; // TODO? who set
   const xfloat meas_scale = inchUnit ? 25.4f : 1.0f;
 
   xfloat prev_x[n_mo], d_mm[n_mo];
