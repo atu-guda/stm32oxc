@@ -710,10 +710,10 @@ MoveInfo::MoveInfo( MoveInfo::Type tp, unsigned a_n_coo, Act_Pfun pfun  )
 
 void MoveInfo::zero_arr()
 {
-  ranges::fill( p, 0 ); ranges::fill( ci, 0 ); ranges::fill( k_x, 0 );
+  ranges::fill( p, 0 ); ranges::fill( k_x, 0 );
 }
 
-int MoveInfo::prep_move_line( const xfloat *prm, xfloat fe )
+int MoveInfo::prep_move_line( const xfloat *prm )
 {
   zero_arr(); len = 0;
 
@@ -721,17 +721,17 @@ int MoveInfo::prep_move_line( const xfloat *prm, xfloat fe )
     p[i] = prm[i]; len += prm[i] * prm[i];
   }
   len = sqrtxf( len );
-  t_sec = 60 * len / fe; // only approx, as we can accel/deccel
-  t_tick = (uint32_t)( TIM6_count_freq * t_sec );
+  // t_sec = 60 * len / fe; // only approx, as we can accel/deccel
+  // t_tick = (uint32_t)( TIM6_count_freq * t_sec );
 
   for( unsigned i=0; i<n_coo; ++i ) {
     k_x[i] = p[i];
   }
-  OUT << "# debug: prep_move_line: len= " << len << " t_sec= " << t_sec << " t_tick= " << t_tick << NL;
+  OUT << "# debug: prep_move_line: len= " << len << NL;
   return 0;
 }
 
-int MoveInfo::prep_move_circ( const xfloat *prm, xfloat fe )
+int MoveInfo::prep_move_circ( const xfloat *prm )
 {
   zero_arr();
   const xfloat &r_s   { prm[0] };
@@ -743,8 +743,8 @@ int MoveInfo::prep_move_circ( const xfloat *prm, xfloat fe )
   xfloat l_appr { 0.5f * ( r_s + r_s ) * fabsxf( alp_e - alp_s ) };
   len = hypot( l_appr, r_e - r_s, z_e ); // e_e ?
 
-  t_sec = 60 * len / fe; // only approx, as we can accel/deccel
-  t_tick = (uint32_t)( TIM6_count_freq * t_sec );
+  // t_sec = 60 * len / fe; // only approx, as we can accel/deccel
+  // t_tick = (uint32_t)( TIM6_count_freq * t_sec );
   for( unsigned i=0; i<max_params; ++i ) { // 10 is N params to circle funcs
     p[i] = prm[i];
   }
@@ -754,7 +754,7 @@ int MoveInfo::prep_move_circ( const xfloat *prm, xfloat fe )
   k_x[2] = - ( p[8] + p[0] * cos( p[1] ) ); // initial point shift
   k_x[3] = - ( p[8] + p[0] * sin( p[1] ) );
 
-  OUT << "# debug: prep_move_circ: len= " << len << " t_sec= " << t_sec << " t_tick= " << t_tick << NL;
+  OUT << "# debug: prep_move_circ: len= " << len << NL;
 
   return 0;
 }
@@ -770,30 +770,15 @@ MoveInfo::Ret MoveInfo::calc_step( xfloat a, xfloat *coo )
 // not a member - to allow external funcs
 MoveInfo::Ret step_line_fun( MoveInfo &mi, xfloat a, xfloat *coo )
 {
-  bool need_move = false;
-  ranges::fill( mi.cdirs, 0 );
-
   for( unsigned i=0; i<mi.n_coo; ++i ) { // TODO: common?
-
-    xfloat xf = a * mi.k_x[i];
-    coo[i] = xf;
-    int xi = xf * s_movers[i].tick2mm * me_st.axis_scale[i]; // TODO: remove me_st from here?!!
-    if( xi == mi.ci[i] ) { // no move in integer approx
-        continue;
-    }
-    need_move = true;
-
-    int dir = ( xi > mi.ci[i] ) ? 1 : -1;
-    mi.cdirs[i] = dir;
+    coo[i] =  a * mi.k_x[i];
   }
 
-  return need_move ?  MoveInfo::Ret::move : MoveInfo::Ret::nop;
+  return MoveInfo::Ret::move;
 }
 
 MoveInfo::Ret step_circ_fun( MoveInfo &mi, xfloat a, xfloat *coo )
 {
-  bool need_move = false;
-  ranges::fill( mi.cdirs, 0 );
   // aliases
   xfloat &r_s   { mi.p[0]   };
   xfloat &alp_s { mi.p[1]   };
@@ -812,19 +797,7 @@ MoveInfo::Ret step_circ_fun( MoveInfo &mi, xfloat a, xfloat *coo )
   coo[2]  = a * z_e;
   coo[3]  = a * e_e;
 
-  for( unsigned i=0; i<mi.n_coo; ++i ) { // TODO: common?
-
-    int xi = coo[i] * s_movers[i].tick2mm * me_st.axis_scale[i]; // TODO: remove me_st from here?!!
-    if( xi == mi.ci[i] ) { // no move in integer approx
-        continue;
-    }
-    need_move = true;
-
-    int dir = ( xi > mi.ci[i] ) ? 1 : -1;
-    mi.cdirs[i] = dir;
-  }
-
-  return need_move ?  MoveInfo::Ret::move : MoveInfo::Ret::nop;
+  return MoveInfo::Ret::move;
 }
 
 // -------------------------- Machine ----------------------------------------------------
@@ -890,7 +863,7 @@ int Machine::check_endstops( MoveInfo &mi )
       continue;
     }
     uint16_t esv = movers[i].endstops->read();
-    const auto dir = mi.cdirs[i];
+    const auto dir = movers[i].dir;
     // TODO: special case here: request to stop at clear endstop
     if( i == on_endstop && is_endstop_clear(esv ) ) {
       return 0;
@@ -914,6 +887,9 @@ int Machine::move_common( MoveInfo &mi, xfloat fe_mmm )
   fe_mmm = clamp( fe_mmm, 2.0f, fe_g0 );
   const xfloat k_t { 1.0f / TIM6_count_freq };
 
+  xfloat t_sec = 60 * mi.len / fe_mmm; // only approx, as we can accel/deccel
+  uint32_t t_tick = (uint32_t)( TIM6_count_freq * t_sec );
+
   tim_mov_tick = 0; break_flag = 0;
 
   wait_next_motor_tick();
@@ -921,20 +897,24 @@ int Machine::move_common( MoveInfo &mi, xfloat fe_mmm )
 
   xfloat last_a { -1 };
   xfloat coo[n_movers];
+  xfloat o_coo[n_movers];
+  for( unsigned i=0; i<mi.n_coo; ++i ) {
+    o_coo[i] = movers[i].get_xf();
+  }
   int rc {0};
   bool keep_move { true };
 
   // really must be more then t_tick
-  for( unsigned tn=0; tn < 5*mi.t_tick && keep_move && break_flag == 0; ++tn ) {
+  for( unsigned tn=0; tn < 5*t_tick && keep_move && break_flag == 0; ++tn ) {
 
     leds[2].set();
     xfloat t = tn * k_t;
-    xfloat a = t / mi.t_sec; // TODO: accel here
+    xfloat a = t / t_sec; // TODO: accel here
     if( a > 1.0f ) {
       a = 1.0f; keep_move = false;
     }
 
-    auto rc_calc = mi.calc_step( a, coo );
+    mi.calc_step( a, coo );
     last_a = a;
 
     if( check_endstops( mi ) == 0 ) {
@@ -949,17 +929,8 @@ int Machine::move_common( MoveInfo &mi, xfloat fe_mmm )
       break;
     }
 
-    if( rc_calc == MoveInfo::Ret::nop ) {
-      continue;
-    }
-    if( rc_calc != MoveInfo::Ret::move ) {
-      rc = 3; UVAR('r') = (int)rc_calc;
-      break; // TODO: keep reason
-    }
-
     for( unsigned i=0; i<mi.n_coo; ++i ) {
-      step( i, mi.cdirs[i] );
-      mi.ci[i] += mi.cdirs[i]; // inside post step ???????? OR use StepMover::get_x
+      movers[i].step_to( coo[i] + o_coo[i] ); // check?
     }
 
   }
@@ -976,7 +947,7 @@ int Machine::move_line( const xfloat *d_mm, unsigned n_coo, xfloat fe_mmm, unsig
 {
   MoveInfo mi( MoveInfo::Type::line, n_coo, step_line_fun );
 
-  auto rc_prep =  mi.prep_move_line( d_mm, fe_mmm );
+  auto rc_prep =  mi.prep_move_line( d_mm );
 
   if( rc_prep != 0 ) {
     std_out << "# Error: fail to prepare MoveInfo for line, rc=" << rc_prep << NL;
@@ -991,7 +962,7 @@ int Machine::move_line( const xfloat *d_mm, unsigned n_coo, xfloat fe_mmm, unsig
 int Machine::move_circ( const xfloat *coo, unsigned n_coo, xfloat fe_mmm )
 {
   MoveInfo mi( MoveInfo::Type::circle, n_coo, step_circ_fun );
-  auto rc_prep =  mi.prep_move_circ( coo, fe_mmm );
+  auto rc_prep =  mi.prep_move_circ( coo );
   if( rc_prep != 0 ) {
     std_out << "# Error: fail to prepare MoveInfo for circle, rc=" << rc_prep << NL;
     return 1;
@@ -1846,12 +1817,22 @@ void StepMover::set_dir( int a_dir )
 
 void StepMover::step()
 {
+  if( dir == 0 ) {
+    return;
+  }
   if( motor ) {
     motor->set( 1 );
     delay_mcs( 1 );
     motor->reset( 1 );
   }
   x += dir;
+}
+
+void StepMover::step_to( xfloat to )
+{
+  int to_i = mm2tick( to );
+  int d = ( to_i > x ) ? 1 : ( ( to_i < x ) ? -1 : 0 );
+  step_dir( d );
 }
 
 // ----------------------------------------  ------------------------------------------------------

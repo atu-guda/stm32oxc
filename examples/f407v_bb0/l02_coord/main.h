@@ -31,6 +31,7 @@ struct StepMover {
   void set_dir( int dir );
   void step();
   void step_dir( int dir ) { set_dir( dir ); step(); }
+  void step_to( xfloat to );
   int  get_x() const { return x; }
   void set_x( int a_x ) { x = a_x; }
   xfloat  get_xf() const { return (xfloat)x / tick2mm; }
@@ -143,18 +144,14 @@ struct MoveInfo {
   Type type;
   unsigned n_coo;
   xfloat  p[max_params]; // params itself
-  int    ci[max_params]; // state: ints
-  xfloat k_x[max_params]; // a[0:1]-based coeffs
-  int    cdirs[n_motors]; // current step direction: -1, 0, 1
+  xfloat k_x[max_params]; // coeffs
   xfloat len;
-  xfloat t_sec; // approx
-  uint32_t t_tick; // in ticks
   Act_Pfun step_pfun { nullptr }; // calculate each t
   MoveInfo( MoveInfo::Type tp, unsigned a_n_coo, Act_Pfun pfun );
   void zero_arr();
   Ret calc_step( xfloat a, xfloat *coo );
-  int prep_move_line( const xfloat *prm, xfloat fe );
-  int prep_move_circ( const xfloat *prm, xfloat fe );
+  int prep_move_line( const xfloat *prm );
+  int prep_move_circ( const xfloat *prm );
 };
 
 void motors_off();
