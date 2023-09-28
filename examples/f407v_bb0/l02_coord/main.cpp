@@ -713,12 +713,12 @@ void MoveInfo::zero_arr()
   ranges::fill( p, 0 ); ranges::fill( ci, 0 ); ranges::fill( k_x, 0 );
 }
 
-int MoveInfo::prep_move_line( const xfloat *coo, xfloat fe )
+int MoveInfo::prep_move_line( const xfloat *prm, xfloat fe )
 {
   zero_arr(); len = 0;
 
   for( unsigned i=0; i<n_coo; ++i ) {
-    p[i] = coo[i]; len += coo[i] * coo[i];
+    p[i] = prm[i]; len += prm[i] * prm[i];
   }
   len = sqrtxf( len );
   t_sec = 60 * len / fe; // only approx, as we can accel/deccel
@@ -731,14 +731,14 @@ int MoveInfo::prep_move_line( const xfloat *coo, xfloat fe )
   return 0;
 }
 
-int MoveInfo::prep_move_circ( const xfloat *coo, xfloat fe )
+int MoveInfo::prep_move_circ( const xfloat *prm, xfloat fe )
 {
   zero_arr();
-  const xfloat &r_s   { coo[0] };
-  const xfloat &alp_s { coo[1] };
-  const xfloat &r_e   { coo[2] };
-  const xfloat &alp_e { coo[3] };
-  const xfloat &z_e   { coo[4] };
+  const xfloat &r_s   { prm[0] };
+  const xfloat &alp_s { prm[1] };
+  const xfloat &r_e   { prm[2] };
+  const xfloat &alp_e { prm[3] };
+  const xfloat &z_e   { prm[4] };
 
   xfloat l_appr { 0.5f * ( r_s + r_s ) * fabsxf( alp_e - alp_s ) };
   len = hypot( l_appr, r_e - r_s, z_e ); // e_e ?
@@ -746,7 +746,7 @@ int MoveInfo::prep_move_circ( const xfloat *coo, xfloat fe )
   t_sec = 60 * len / fe; // only approx, as we can accel/deccel
   t_tick = (uint32_t)( TIM6_count_freq * t_sec );
   for( unsigned i=0; i<max_params; ++i ) { // 10 is N params to circle funcs
-    p[i] = coo[i];
+    p[i] = prm[i];
   }
 
   k_x[0] = p[3] - p[1]; // alp_e - alp_s
@@ -759,16 +759,16 @@ int MoveInfo::prep_move_circ( const xfloat *coo, xfloat fe )
   return 0;
 }
 
-MoveInfo::Ret MoveInfo::calc_step( xfloat a )
+MoveInfo::Ret MoveInfo::calc_step( xfloat a, xfloat *coo )
 {
-  if( step_pfun == nullptr ) {
+  if( step_pfun == nullptr || coo == nullptr ) {
     return Ret::err;
   }
-  return step_pfun( *this, a );
+  return step_pfun( *this, a, coo );
 }
 
 // not a member - to allow external funcs
-MoveInfo::Ret step_line_fun( MoveInfo &mi, xfloat a )
+MoveInfo::Ret step_line_fun( MoveInfo &mi, xfloat a, xfloat *coo )
 {
   bool need_move = false;
   ranges::fill( mi.cdirs, 0 );
@@ -776,6 +776,7 @@ MoveInfo::Ret step_line_fun( MoveInfo &mi, xfloat a )
   for( unsigned i=0; i<mi.n_coo; ++i ) { // TODO: common?
 
     xfloat xf = a * mi.k_x[i];
+    coo[i] = xf;
     int xi = xf * s_movers[i].tick2mm * me_st.axis_scale[i]; // TODO: remove me_st from here?!!
     if( xi == mi.ci[i] ) { // no move in integer approx
         continue;
@@ -789,7 +790,7 @@ MoveInfo::Ret step_line_fun( MoveInfo &mi, xfloat a )
   return need_move ?  MoveInfo::Ret::move : MoveInfo::Ret::nop;
 }
 
-MoveInfo::Ret step_circ_fun( MoveInfo &mi, xfloat a )
+MoveInfo::Ret step_circ_fun( MoveInfo &mi, xfloat a, xfloat *coo )
 {
   bool need_move = false;
   ranges::fill( mi.cdirs, 0 );
@@ -806,15 +807,14 @@ MoveInfo::Ret step_circ_fun( MoveInfo &mi, xfloat a )
   xfloat alp =  alp_s + a * k_alp;
   xfloat r   =  r_s   + a * k_r;
 
-  xfloat xx[mi.n_coo];
-  xx[0]  = x_0 + r * cos( alp );
-  xx[1]  = y_0 + r * sin( alp );
-  xx[2]  = a * z_e;
-  xx[3]  = a * e_e;
+  coo[0]  = x_0 + r * cos( alp );
+  coo[1]  = y_0 + r * sin( alp );
+  coo[2]  = a * z_e;
+  coo[3]  = a * e_e;
 
   for( unsigned i=0; i<mi.n_coo; ++i ) { // TODO: common?
 
-    int xi = xx[i] * s_movers[i].tick2mm * me_st.axis_scale[i]; // TODO: remove me_st from here?!!
+    int xi = coo[i] * s_movers[i].tick2mm * me_st.axis_scale[i]; // TODO: remove me_st from here?!!
     if( xi == mi.ci[i] ) { // no move in integer approx
         continue;
     }
@@ -920,8 +920,10 @@ int Machine::move_common( MoveInfo &mi, xfloat fe_mmm )
   const uint32_t tm_s = HAL_GetTick();
 
   xfloat last_a { -1 };
+  xfloat coo[n_movers];
   int rc {0};
   bool keep_move { true };
+
   // really must be more then t_tick
   for( unsigned tn=0; tn < 5*mi.t_tick && keep_move && break_flag == 0; ++tn ) {
 
@@ -932,7 +934,7 @@ int Machine::move_common( MoveInfo &mi, xfloat fe_mmm )
       a = 1.0f; keep_move = false;
     }
 
-    auto rc_calc = mi.calc_step( a );
+    auto rc_calc = mi.calc_step( a, coo );
     last_a = a;
 
     if( check_endstops( mi ) == 0 ) {

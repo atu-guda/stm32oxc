@@ -138,7 +138,7 @@ extern const Machine::FunGcodePair mg_code_funcs[];
 struct MoveInfo {
   enum class Type { stop = 0, line = 1, circle = 2 }; // TODO: more
   enum class Ret  { nop = 0, move = 1, end = 2, err = 3 };
-  using Act_Pfun = Ret (*)( MoveInfo &mi, xfloat a );
+  using Act_Pfun = Ret (*)( MoveInfo &mi, xfloat a, xfloat *coo );
   static const unsigned max_params { 10 };
   Type type;
   unsigned n_coo;
@@ -152,9 +152,9 @@ struct MoveInfo {
   Act_Pfun step_pfun { nullptr }; // calculate each t
   MoveInfo( MoveInfo::Type tp, unsigned a_n_coo, Act_Pfun pfun );
   void zero_arr();
-  Ret calc_step( xfloat a );
-  int prep_move_line( const xfloat *coo, xfloat fe );
-  int prep_move_circ( const xfloat *coo, xfloat fe );
+  Ret calc_step( xfloat a, xfloat *coo );
+  int prep_move_line( const xfloat *prm, xfloat fe );
+  int prep_move_circ( const xfloat *prm, xfloat fe );
 };
 
 void motors_off();
