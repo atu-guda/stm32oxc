@@ -789,16 +789,24 @@ MoveInfo::Ret step_circ_fun( MoveInfo &mi, xfloat a )
 {
   bool need_move = false;
   ranges::fill( mi.cdirs, 0 );
+  // aliases
+  xfloat &r_s   { mi.p[0]   };
+  xfloat &alp_s { mi.p[1]   };
+  xfloat &z_e   { mi.p[5]   };
+  xfloat &e_e   { mi.p[6]   };
+  xfloat &x_r   { mi.p[8]   };
+  xfloat &y_r   { mi.p[9]   };
+  xfloat &k_alp { mi.k_x[0] };
+  xfloat &k_r   { mi.k_x[1] };
 
-  //             alp_s + a * (alp_e-alp_s);
-  xfloat alp = mi.p[1] + a * mi.k_x[0];
-  //         r_s     + a * ( r_e - r_s );
-  xfloat r = mi.p[0] + a * mi.k_x[1];
+  xfloat alp =  alp_s + a * k_alp;
+  xfloat r   =  r_s   + a * k_r;
+
   xfloat xx[mi.n_coo];
-  xx[0]  = mi.p[8] + r * cos( alp ); // x = x_r +
-  xx[1]  = mi.p[9] + r * sin( alp ); // y = x_r +
-  xx[2]  = a * mi.p[5]; // z = a * z_e;
-  xx[3]  = a * mi.p[6]; // z = a * e_e;
+  xx[0]  = x_r + r * cos( alp );
+  xx[1]  = y_r + r * sin( alp );
+  xx[2]  = a * z_e;
+  xx[3]  = a * e_e;
 
   for( unsigned i=0; i<mi.n_coo; ++i ) { // TODO: common?
 
