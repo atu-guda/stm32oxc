@@ -10,6 +10,9 @@ const inline constinit xfloat M_PI2  { M_PI / 2 };
 inline auto& touch_gpio { GpioE };
 const uint16_t touch_mask { 0b0100 }; // E2
 
+inline auto& endstops_gpio { GpioD };
+const uint16_t endstops_mask { 0b01111011 };
+
 const inline uint32_t  TIM_PWM_base_freq   { 84'000'000 };
 const inline uint32_t  TIM_PWM_count_freq  {      10000 };
 const inline uint32_t  TIM6_base_freq   {  1'000'000 };
@@ -60,24 +63,6 @@ class EndStopGpioPos : public EndStop {
    PinsIn pins;
 };
 
-inline bool is_endstop_minus_stop( uint16_t e ) { return ( (e & 0x01) == 0 ) ; }
-inline bool is_endstop_minus_go(   uint16_t e ) { return ( (e & 0x01) != 0 ) ; }
-inline bool is_endstop_plus_stop(  uint16_t e ) { return ( (e & 0x02) == 0 ) ; }
-inline bool is_endstop_plus_go(    uint16_t e ) { return ( (e & 0x02) != 0 ) ; }
-inline bool is_endstop_any_stop(   uint16_t e ) { return ( (e & 0x03) != 3 ) ; }
-inline bool is_endstop_clear(      uint16_t e ) { return ( (e & 0x03) == 3 ) ; }
-inline bool is_endstop_bad(        uint16_t e ) { return ( (e & 0x03) == 0 ) ; }
-bool is_endstop_clear_for_dir( uint16_t e, int dir );
-
-inline auto& endstops_gpio { GpioD };
-const uint16_t endstops_mask { 0b01111011 };
-inline char endstop2char( uint16_t e )
-{
-  static const char es_chars[] = "W+-.??";
-  return es_chars[ e & 0x03 ];
-}
-const char* endstops2str( uint16_t es, bool touch, char *buf = nullptr );
-const char* endstops2str_a( char *buf = nullptr );
 
 // TODO: base: common props, here - realization
 // mach params

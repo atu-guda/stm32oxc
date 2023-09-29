@@ -238,27 +238,6 @@ bool set_var_ex( const char *nm, const char *s )
   return ok;
 }
 
-const char* endstops2str( uint16_t es, bool touch, char *buf )
-{
-  static char s_buf[8] { "XYZT??" }; // only 5 need
-  if( !buf ) {
-    buf = s_buf;
-  }
-  // pin-dependent code
-  buf[0] = endstop2char( es ); // & 0x03 inside endstop2char fun
-  buf[1] = endstop2char( es >> 3 ); // skip D2: sdio
-  buf[2] = endstop2char( es >> 5 );
-  buf[3] = touch ? '!' : ',';
-  buf[4] = '\0';
-  return buf;
-}
-
-const char* endstops2str_a( char *buf )
-{
-  auto es = endstops_gpio.IDR & endstops_mask;
-  bool touch = touch_gpio.IDR & touch_mask;
-  return endstops2str( es, touch, buf );
-}
 
 // handle Gnnn...., Mnnn..., !SOME_OTHER_COMMAND
 int gcode_cmdline_handler( char *s )
@@ -508,7 +487,7 @@ int go_home( unsigned axis )
 
   // if on endstop_minus - go+
   auto esv = estp->read();
-  std_out << "# debug: home: axis= " << axis << ' ' << endstops2str_a() << NL;
+  std_out << "# debug: home: axis= " << axis << ' ' << estp->toChar() << NL;
 
   if( estp->is_minus_stop() ) {
     if( debug > 0 ) {
@@ -869,16 +848,17 @@ int Machine::check_endstops( MoveInfo &mi )
 {
   // TODO: touch sensor
   for( unsigned i=0; i<n_mo; ++i ) {
-    if( movers[i].endstops == nullptr ) {
+    auto estp = movers[i].endstops;
+    if( estp == nullptr ) {
       continue;
     }
-    uint16_t esv = movers[i].endstops->read();
-    const auto dir = movers[i].dir;
+    uint16_t esv = estp->read();
+    const auto dir = movers[i].dir; // TO early
     // TODO: special case here: request to stop at clear endstop
-    if( i == on_endstop && is_endstop_clear(esv ) ) {
+    if( i == on_endstop && estp->is_clear() ) {
       return 0;
     }
-    if( is_endstop_clear_for_dir( esv, dir ) ) {
+    if( estp->is_clear_for_dir( dir ) ) {
       continue;
     }
     std_out << "# Error: endstop " << esv << " at " << i << " dir: " << dir << NL;
