@@ -27,8 +27,6 @@ class GcodeBlock {
     };
     using ActFun = ReturnCode(*)( const GcodeBlock &gc );
     static const unsigned n_p { 'Z'-'A' + 3 }; // 28, A-Z, end, ?
-    static constexpr const char *const axis_chars = "XYZEVUW?"; // TODO: no?
-                                                                //
     explicit GcodeBlock( ActFun a_f ) : act_fun( a_f ) { init(); } ;
     void init();
     void sub_init();

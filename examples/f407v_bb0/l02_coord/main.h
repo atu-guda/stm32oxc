@@ -1,6 +1,8 @@
 #ifndef _MAIN_H
 #define _MAIN_H
 
+#include <span>
+
 #include <oxc_gcode.h>
 
 const inline constinit xfloat M_r2g { 180 / M_PI };
@@ -160,7 +162,8 @@ class Machine {
      const char* helpstr;
    };
 
-   Machine( StepMover **a_movers, unsigned a_n_movers );
+   Machine( std::span<StepMover*> a_movers );
+   Machine( const Machine &rhs ) = delete;
    xfloat getPwm() const { return std::clamp( 100 * spin / spin100, 0.0f, spin_max ); }
    int check_endstops( MoveInfo &mi );
    ReturnCode move_common( MoveInfo &mi, xfloat fe_mmm );
@@ -170,12 +173,12 @@ class Machine {
    ReturnCode move_circ( const xfloat *d_mm, xfloat fe_mmm );
    MachMode get_mode() const { return mode; };
    void set_mode( MachMode m ) { if( m < modeMax ) { mode = m; }}; // TODO: more actions
-   xfloat get_xn( unsigned i ) const { return ( i < n_movers ) ? movers[i]->get_xf() : 0 ; }
-   void set_xn( unsigned i, xfloat v ) { if( i < n_movers ) { movers[i]->set_xf( v ); } }
+   xfloat get_xn( unsigned i ) const { return ( i < movers.size() ) ? movers[i]->get_xf() : 0 ; }
+   void set_xn( unsigned i, xfloat v ) { if( i < movers.size() ) { movers[i]->set_xf( v ); } }
    int get_dly_xsteps() const { return dly_xsteps; }
    void set_dly_xsteps( int v ) { dly_xsteps = v; }
    unsigned get_n_mo() const { return n_mo; }
-   void set_n_mo( unsigned n ) { n_mo = std::min( n_mo, n_movers ); }
+   void set_n_mo( unsigned n ) { n_mo = std::min( n_mo, movers.size() ); }
    const char* endstops2str( char *buf = nullptr ) const;
    const char* endstops2str_read( char *buf = nullptr );
 
@@ -208,8 +211,7 @@ class Machine {
    ReturnCode m_set_mode_laser( const GcodeBlock &gc );// M452
    ReturnCode m_set_mode_cnc( const GcodeBlock &gc );  // M453
   protected:
-   StepMover** movers; // TODO: common mover
-   const unsigned n_movers;
+   std::span<StepMover*> movers;
    MachMode mode { modeFFF };
    unsigned on_endstop { 9999 };
    uint32_t last_rc;

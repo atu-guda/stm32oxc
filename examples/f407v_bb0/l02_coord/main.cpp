@@ -88,7 +88,7 @@ StepMover mover_v( &stepdir_v, nullptr, 100, 100, 999999 );
 StepMover* s_movers[n_motors] { &mover_x, &mover_y, &mover_z, &mover_e, &mover_v };
 
 
-Machine me_st( s_movers, std::size(s_movers) );
+Machine me_st( s_movers );
 
 
 // C6  = T3.1  = PWM0
@@ -724,8 +724,8 @@ const Machine::FunGcodePair mg_code_funcs[] = {
 };
 
 
-Machine::Machine( StepMover **a_movers, unsigned a_n_movers )
-     : movers( a_movers ), n_movers( a_n_movers ),
+Machine::Machine( std::span<StepMover*> a_movers )
+     : movers( a_movers ),
        mg_funcs( mg_code_funcs ), mg_funcs_sz( std::size( mg_code_funcs ) )
 {
   ranges::fill( axis_scale, 1 );
@@ -802,8 +802,8 @@ ReturnCode Machine::move_common( MoveInfo &mi, xfloat fe_mmm )
   const uint32_t tm_s = HAL_GetTick();
 
   xfloat last_a { -1 };
-  xfloat coo[n_movers];
-  xfloat o_coo[n_movers];
+  xfloat coo[movers.size()];
+  xfloat o_coo[movers.size()];
   for( unsigned i=0; i<mi.n_coo; ++i ) {
     o_coo[i] = movers[i]->get_xf();
   }
@@ -1200,7 +1200,7 @@ ReturnCode Machine::g_set_origin( const GcodeBlock &gc ) // G92
 
   unsigned i {0};
   for( char c : axis_chars ) {
-    if( i >= n_movers ) {
+    if( i > movers.size() ) {
       break;
     }
     if( gc.is_set( c ) || none_set ) {
@@ -1266,8 +1266,8 @@ ReturnCode Machine::m_out_where( const GcodeBlock &gc )     // M114
   // const char axis_chars[] { "XYZEV?" };
   xfloat k_unit = 1.0f / ( inchUnit ? 25.4f : 1.0f );
 
-  for( unsigned i=0; i<n_movers; ++i ) { // TODO: n_active_motor
-    OUT << ' ' << movers[i]->get_xf() / k_unit;
+  for( auto pm: movers ) {
+    OUT << ' ' << pm->get_xf() / k_unit;
   }
   OUT << NL "# F= " << fe_g1 << " S= " << spin << " / " << spin100 << NL;
 
@@ -1354,12 +1354,12 @@ ReturnCode Machine::call_mg( const GcodeBlock &cb )
 
   if( debug > 0 ) {
     OUT << "# debug: xf:";
-    for( unsigned i=0; i<n_movers; ++i ) {
-      OUT << ' ' << movers[i]->get_xf();
+    for( auto pm: movers ) {
+      OUT << ' ' << pm->get_xf();
     }
     OUT << NL "# debug: xi:";
-    for( unsigned i=0; i<n_movers; ++i ) {
-      OUT << ' ' << movers[i]->get_x();
+    for( auto pm: movers ) {
+      OUT << ' ' << pm->get_x();
     }
     OUT << NL;
   }
