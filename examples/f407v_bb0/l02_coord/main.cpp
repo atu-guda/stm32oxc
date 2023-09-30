@@ -649,25 +649,25 @@ int MoveInfo::prep_move_circ( const xfloat *prm )
   return 0;
 }
 
-MachRc MoveInfo::calc_step( xfloat a, xfloat *coo )
+ReturnCode MoveInfo::calc_step( xfloat a, xfloat *coo )
 {
   if( !isGood() || coo == nullptr ) {
-    return MachRc::Err;
+    return ReturnCode::rcErr;
   }
   return step_pfun( *this, a, coo );
 }
 
 // not a member - to allow external funcs
-MachRc step_line_fun( MoveInfo &mi, xfloat a, xfloat *coo )
+ReturnCode step_line_fun( MoveInfo &mi, xfloat a, xfloat *coo )
 {
   for( unsigned i=0; i<mi.n_coo; ++i ) { // TODO: common?
     coo[i] =  a * mi.k_x[i];
   }
 
-  return MachRc::Ok;
+  return ReturnCode::rcOk;
 }
 
-MachRc step_circ_fun( MoveInfo &mi, xfloat a, xfloat *coo )
+ReturnCode step_circ_fun( MoveInfo &mi, xfloat a, xfloat *coo )
 {
   // aliases
   xfloat &r_s   { mi.p[0]   };
@@ -687,7 +687,7 @@ MachRc step_circ_fun( MoveInfo &mi, xfloat a, xfloat *coo )
   coo[2]  = a * z_e;
   coo[3]  = a * e_e;
 
-  return MachRc::Ok;
+  return ReturnCode::rcOk;
 }
 
 // -------------------------- Machine ----------------------------------------------------
@@ -822,7 +822,7 @@ int Machine::move_common( MoveInfo &mi, xfloat fe_mmm )
     }
 
     last_a = a;
-    if( mi.calc_step( a, coo ) != MachRc::Ok ) {
+    if( mi.calc_step( a, coo ) >= ReturnCode::rcErr ) {
       rc = 3;
       break;
     }
@@ -1552,6 +1552,7 @@ void StepMover::step()
   if( dir == 0 ) {
     return;
   }
+  // TODO: check endstops
   if( motor ) {
     motor->set( 1 );
     delay_mcs( 1 );

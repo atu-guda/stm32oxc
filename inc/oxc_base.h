@@ -69,6 +69,15 @@ extern uint32_t delay_calibrate_value;
 // delay is TASK_LEDS_QUANT * task_leds_step,
 extern volatile int task_leds_step; // initial = 50
 
+enum ReturnCode {
+  rcOk = 0,
+  rcInfo = 1,
+  rcWarn = 2,
+  rcExtra = 3,
+  rcErr = 4,
+  rcFatal = 5
+};
+
 
 #ifdef __cplusplus
  template<typename T> class _ShowType; // to output deducted type
