@@ -194,7 +194,7 @@ class Machine {
    xfloat alp_min { M_PI / 180 };
    xfloat near_l { 2.0e-3 };
    xfloat axis_scale[n_motors];
-  public: // for now, TODO: hide
+  // public: // for now, TODO: hide
    xfloat fe_g0 { 350 };
    xfloat fe_g1 { 300 };
    xfloat fe_scale { 100.0f };

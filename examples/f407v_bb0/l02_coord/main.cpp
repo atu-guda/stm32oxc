@@ -497,7 +497,6 @@ int go_home( unsigned axis )
     std_out << "# Error: fail to find endstop axis " << axis << " ph 4 " << estp->toChar() << NL;
     return 0;
   }
-  me_st.was_set = true;
   me_st.set_xn( axis, 0 );    // TODO: may be no auto?
   std_out << "# Ok: found endstop end  "  << estp->toChar() << NL;
 
@@ -608,12 +607,6 @@ int cmd_gexec( int argc, const char * const * argv )
     std_out << "# rc= " << rc << " br= " << break_flag << " nle= " << nle << NL;
     if( break_flag == 2 ) {
       break_flag = 0;
-    }
-
-    if( me_st.dly_xsteps > 0 ) { // TODO: move to machine! (and params)
-      motors_off(); // TODO: investigate! + sensors
-      delay_ms( me_st.dly_xsteps );
-      motors_on();
     }
 
     if( rc >= GcodeBlock::rcEnd ) {
@@ -837,7 +830,7 @@ const char* Machine::endstops2str_read( char *buf )
 
 int Machine::move_common( MoveInfo &mi, xfloat fe_mmm )
 {
-  if( mi.type == MoveInfo::Type::stop || mi.step_pfun == nullptr ) {
+  if( mi.type == MoveInfo::Type::stop || mi.step_pfun == nullptr ) { // TODO: MoveInfo::isGood()
     return 1;
   }
 
@@ -896,6 +889,12 @@ int Machine::move_common( MoveInfo &mi, xfloat fe_mmm )
   const uint32_t tm_e = HAL_GetTick();
 
   OUT << "# debug: move_common: a= " << last_a << " dt= " << ( tm_e - tm_s ) << NL;
+
+  if( dly_xsteps > 0 ) { // TODO: rework
+    motors_off(); // TODO: investigate! + sensors
+    delay_ms( dly_xsteps );
+    motors_on();
+  }
 
   on_endstop = 9999;
   return rc;
