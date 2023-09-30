@@ -693,25 +693,25 @@ int MoveInfo::prep_move_circ( const xfloat *prm )
   return 0;
 }
 
-MoveInfo::Ret MoveInfo::calc_step( xfloat a, xfloat *coo )
+MachRc MoveInfo::calc_step( xfloat a, xfloat *coo )
 {
-  if( step_pfun == nullptr || coo == nullptr ) {
-    return Ret::err;
+  if( !isGood() || coo == nullptr ) {
+    return MachRc::Err;
   }
   return step_pfun( *this, a, coo );
 }
 
 // not a member - to allow external funcs
-MoveInfo::Ret step_line_fun( MoveInfo &mi, xfloat a, xfloat *coo )
+MachRc step_line_fun( MoveInfo &mi, xfloat a, xfloat *coo )
 {
   for( unsigned i=0; i<mi.n_coo; ++i ) { // TODO: common?
     coo[i] =  a * mi.k_x[i];
   }
 
-  return MoveInfo::Ret::move;
+  return MachRc::Ok;
 }
 
-MoveInfo::Ret step_circ_fun( MoveInfo &mi, xfloat a, xfloat *coo )
+MachRc step_circ_fun( MoveInfo &mi, xfloat a, xfloat *coo )
 {
   // aliases
   xfloat &r_s   { mi.p[0]   };
@@ -731,7 +731,7 @@ MoveInfo::Ret step_circ_fun( MoveInfo &mi, xfloat a, xfloat *coo )
   coo[2]  = a * z_e;
   coo[3]  = a * e_e;
 
-  return MoveInfo::Ret::move;
+  return MachRc::Ok;
 }
 
 // -------------------------- Machine ----------------------------------------------------
@@ -830,7 +830,7 @@ const char* Machine::endstops2str_read( char *buf )
 
 int Machine::move_common( MoveInfo &mi, xfloat fe_mmm )
 {
-  if( mi.type == MoveInfo::Type::stop || mi.step_pfun == nullptr ) { // TODO: MoveInfo::isGood()
+  if( !mi.isGood() ) {
     return 1;
   }
 
@@ -865,8 +865,11 @@ int Machine::move_common( MoveInfo &mi, xfloat fe_mmm )
       a = 1.0f; keep_move = false;
     }
 
-    mi.calc_step( a, coo );
     last_a = a;
+    if( mi.calc_step( a, coo ) != MachRc::Ok ) {
+      rc = 3;
+      break;
+    }
 
     if( check_endstops( mi ) == 0 ) {
       rc = 2;

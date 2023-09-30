@@ -105,8 +105,7 @@ int gcode_act_fun_me_st( const GcodeBlock &gc );
 // task + state. fill: move_prep_
 struct MoveInfo {
   enum class Type { stop = 0, line = 1, circle = 2 }; // TODO: more or remove
-  enum class Ret  { nop = 0, move = 1, end = 2, err = 3 }; // TODO: obsolete?
-  using Act_Pfun = Ret (*)( MoveInfo &mi, xfloat a, xfloat *coo );
+  using Act_Pfun = MachRc (*)( MoveInfo &mi, xfloat a, xfloat *coo );
   static const unsigned max_params { 10 };
   Type type;
   unsigned n_coo;
@@ -115,8 +114,9 @@ struct MoveInfo {
   xfloat len;
   Act_Pfun step_pfun { nullptr }; // calculate each t
   MoveInfo( MoveInfo::Type tp, unsigned a_n_coo, Act_Pfun pfun );
+  bool isGood() const { return step_pfun != nullptr && type != Type::stop ; }
   void zero_arr();
-  Ret calc_step( xfloat a, xfloat *coo );
+  MachRc calc_step( xfloat a, xfloat *coo );
   int prep_move_line( const xfloat *prm );
   int prep_move_circ( const xfloat *prm );
 };
