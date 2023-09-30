@@ -8,8 +8,7 @@
 #include <oxc_floatfun.h>
 #include <oxc_atleave.h>
 #include <oxc_fs_cmd0.h>
-#include <oxc_namedints.h>
-#include <oxc_namedfloats.h>
+
 //#include <oxc_outstr.h>
 //#include <oxc_hd44780_i2c.h>
 //#include <oxc_menu4b.h>
@@ -180,63 +179,7 @@ const CmdInfo* global_cmds[] = {
   nullptr
 };
 
-const constinit NamedInt   ob_break_flag     {    "break_flag",    const_cast<int*>(&break_flag)  }; // may be UB?
-const constinit NamedInt   ob_debug          {    "debug",          &debug  };
-const constinit NamedInt   ob_me_dly_xsteps  {    "me.dly_xsteps",  &me_st.dly_xsteps  };
-// const constinit NamedInt   ob_me_dly_xsteps  {    "me.dly_xsteps",  [](){ me_st.get_dly_xsteps();}, [](xfloat v){ me_st.set_dly_xsteps(v);}  };
-const constinit NamedFloat ob_me_fe_g0       {    "me.fe_g0",       &me_st.fe_g0  };
-const constinit NamedFloat ob_me_fe_g1       {    "me.fe_g1",       &me_st.fe_g1  };
-const constinit NamedFloat ob_me_fe_scale    {    "me.fe_scale",    &me_st.fe_scale  };
-const constinit NamedFloat ob_me_spin100     {    "me.spin100",     &me_st.spin100  };
-// const constinit NamedFloat ob_me_x           {    "me.x",           &me_st.x[0]  };
-// const constinit NamedFloat ob_me_y           {    "me.y",           &me_st.x[1]  };
-// const constinit NamedFloat ob_me_z           {    "me.z",           &me_st.x[2]  };
-// const constinit NamedFloat ob_me_e0          {    "me.e0",          &me_st.x[3]  };
-// const constinit NamedFloat ob_me_e1          {    "me.e1",          &me_st.x[4]  };
-// const constinit NamedFloat ob_ma_x_es_find_l {    "ma.x.es_find",   &s_movers[0].es_find_l  };
-// const constinit NamedFloat ob_ma_y_es_find_l {    "ma.y.es_find",   &s_movers[1].es_find_l  };
-// const constinit NamedFloat ob_ma_z_es_find_l {    "ma.y.es_find",   &s_movers[2].es_find_l  };
-// const constinit NamedFloat ob_ma_x_k_slow    {    "ma.x.k_slow",    &s_movers[0].k_slow  };
-// const constinit NamedFloat ob_ma_y_k_slow    {    "ma.y.k_slow",    &s_movers[1].k_slow  };
-// const constinit NamedFloat ob_ma_z_k_slow    {    "ma.z.k_slow",    &s_movers[2].k_slow  };
 
-const constinit NamedObj *const objs_info[] = {
-  & ob_break_flag,
-  & ob_debug,
-  & ob_me_dly_xsteps,
-  & ob_me_fe_g0,
-  & ob_me_fe_g1,
-  & ob_me_fe_scale,
-  & ob_me_spin100,
-  // & ob_me_x,
-  // & ob_me_y,
-  // & ob_me_z,
-  // & ob_me_e0,
-  // & ob_me_e1,
-  // & ob_ma_x_es_find_l,
-  // & ob_ma_y_es_find_l,
-  // & ob_ma_z_es_find_l,
-  // & ob_ma_x_k_slow,
-  // & ob_ma_y_k_slow,
-  // & ob_ma_z_k_slow,
-  nullptr
-};
-
-NamedObjs objs( objs_info );
-
-// print/set hook functions
-
-bool print_var_ex( const char *nm, int fmt )
-{
-  return objs.print( nm, fmt );
-}
-
-bool set_var_ex( const char *nm, const char *s )
-{
-  auto ok =  objs.set( nm, s );
-  print_var_ex( nm, 0 );
-  return ok;
-}
 
 
 // handle Gnnn...., Mnnn..., !SOME_OTHER_COMMAND
@@ -343,8 +286,8 @@ int main()
   fs.fs_type = 0; // none
   fspath[0] = '\0';
 
-  print_var_hook = print_var_ex;
-  set_var_hook   = set_var_ex;
+  // print_var_hook = print_var_ex;
+  // set_var_hook   = set_var_ex;
 
   cmdline_handlers[0] = gcode_cmdline_handler;
   cmdline_handlers[1] = nullptr;
