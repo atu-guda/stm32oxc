@@ -18,6 +18,28 @@ const inline uint32_t  TIM_PWM_count_freq  {      10000 };
 const inline uint32_t  TIM6_base_freq      {  1'000'000 };
 const inline uint32_t  TIM6_count_freq     {      10000 };
 
+
+extern TIM_HandleTypeDef htim2;
+extern TIM_HandleTypeDef htim3;
+extern TIM_HandleTypeDef htim4;
+extern TIM_HandleTypeDef htim6;
+extern TIM_HandleTypeDef htim10;
+extern TIM_HandleTypeDef htim11;
+
+inline const unsigned n_tim_pwm { 3 };
+extern TIM_HandleTypeDef* pwm_tims[n_tim_pwm];
+
+int MX_TIM2_Init();
+int MX_TIM3_Init();  // PMW0
+int MX_TIM4_Init();
+int MX_TIM6_Init();  // tick clock for move
+int MX_TIM10_Init(); // PWM1
+int MX_TIM11_Init(); // PWM2
+void HAL_TIM_MspPostInit( TIM_HandleTypeDef* timHandle );
+int MX_PWM_common_Init( unsigned idx );
+
+void TIM6_callback();
+
 extern int debug; // in main.cpp
 
 enum class MachRc {

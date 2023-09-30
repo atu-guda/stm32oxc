@@ -27,6 +27,7 @@ USE_OXC_SDFAT = y
 
 SRCS  += main.cpp
 SRCS  += oxc_gcode.cpp
+SRCS  += tim_funcs.cpp
 # SRCS  += gcodes.cpp
 
 SRCS += oxc_floatfun.cpp
