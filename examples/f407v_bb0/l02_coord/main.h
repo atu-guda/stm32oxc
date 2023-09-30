@@ -131,9 +131,9 @@ class Machine {
    int check_endstops( MoveInfo &mi );
    int move_common( MoveInfo &mi, xfloat fe_mmm );
    // coords: XYZE....
-   int move_line( const xfloat *d_mm, unsigned n_coo, xfloat fe_mmm, unsigned a_on_endstop = 9999 );
+   int move_line( const xfloat *d_mm, xfloat fe_mmm, unsigned a_on_endstop = 9999 );
    // coords: [0]:r_s, [1]: alp_s, [2]: r_e, [3]: alp_e, [4]: cv?, [5]: z_e, [6]: e_e, [7]: nt(L) [8]: x_r, [9]: y_r
-   int move_circ( const xfloat *d_mm, unsigned n_coo, xfloat fe_mmm );
+   int move_circ( const xfloat *d_mm, xfloat fe_mmm );
    MachMode get_mode() const { return mode; };
    void set_mode( MachMode m ) { if( m < modeMax ) { mode = m; }}; // TODO: more actions
    xfloat get_xn( unsigned i ) const { return ( i < n_movers ) ? movers[i].get_xf() : 0 ; }

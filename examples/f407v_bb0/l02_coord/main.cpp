@@ -494,7 +494,7 @@ int go_home( unsigned axis )
       std_out << "# Warning: move from endstop- " << axis << ' ' << estp->toChar() << NL;
     }
     d_mm[axis] = s_movers[axis].es_find_l;
-    rc = me_st.move_line( d_mm, n_mo, 2 * fe_slow );
+    rc = me_st.move_line( d_mm, 2 * fe_slow );
     if( debug > 0 ) {
       std_out << "# rc= " << rc << NL;
     }
@@ -512,7 +512,7 @@ int go_home( unsigned axis )
   if( debug > 0 ) {
     std_out << "# to_endstop ph 1 " << estp->toChar() << NL;
   }
-  rc = me_st.move_line( d_mm, n_mo, fe_fast );
+  rc = me_st.move_line( d_mm, fe_fast );
   esv = estp->read();
   if( estp->is_minus_go() ) { //
     std_out << "# Error: fail to find endstop. axis " << axis << " ph 1 " << esv  << ' ' << estp->toChar() << NL;
@@ -524,7 +524,7 @@ int go_home( unsigned axis )
     std_out << "# go_away ph 2 "  << estp->toChar()<< NL;
   }
   d_mm[axis] = s_movers[axis].es_find_l;
-  rc = me_st.move_line( d_mm, n_mo, fe_slow, axis );
+  rc = me_st.move_line( d_mm, fe_slow, axis );
   esv = estp->read();
   if( estp->is_any_stop() ) { // must be ok
     std_out << "# Error: fail to step from endstop axis " << axis << " ph 2 " << estp->toChar() << NL;
@@ -536,7 +536,7 @@ int go_home( unsigned axis )
     std_out << "# to_es ph 3 " << estp->toChar() << NL;
   }
   d_mm[axis] = - 1.5f * s_movers[axis].es_find_l;
-  rc = me_st.move_line( d_mm, n_mo, fe_slow );
+  rc = me_st.move_line( d_mm, fe_slow );
   esv = estp->read();
   if( estp->is_minus_go() ) {
     std_out << "# Error: fail to find endstop axis " << axis << " ph 3 " << estp->toChar() << esv << NL;
@@ -548,7 +548,7 @@ int go_home( unsigned axis )
     std_out << "# go_away st ph 4 " << estp->toChar() << NL;
   }
   d_mm[axis] = s_movers[axis].es_find_l;
-  rc = me_st.move_line( d_mm, n_mo, fe_slow, axis );
+  rc = me_st.move_line( d_mm, fe_slow, axis );
   esv = estp->read();
   if( estp->is_any_stop() ) {
     std_out << "# Error: fail to find endstop axis " << axis << " ph 4 " << estp->toChar() << NL;
@@ -564,18 +564,17 @@ int go_home( unsigned axis )
 int cmd_relmove( int argc, const char * const * argv )
 {
   std_out << "# relmove: " << NL;
-  const unsigned n_mo { 3 }; // 3 = only XYZ motors
 
-  xfloat d_mm[n_mo];
+  xfloat d_mm[n_motors];
 
-  for( unsigned i=0; i<n_mo; ++i ) {
+  for( unsigned i=0; i<n_motors; ++i ) {
     d_mm[i] = arg2xfloat_d( i+1, argc, argv, 0, -(xfloat)s_movers[i].max_l, (xfloat)s_movers[i].max_l );
   }
   xfloat fe_mmm = arg2xfloat_d( 4, argc, argv, UVAR('f'), 0.0f, 900.0f );
 
   DoAtLeave do_off_motors( []() { motors_off(); } );
   motors_on();
-  int rc = me_st.move_line( d_mm, n_mo, fe_mmm );
+  int rc = me_st.move_line( d_mm, fe_mmm );
 
   return rc;
 }
@@ -584,11 +583,9 @@ int cmd_absmove( int argc, const char * const * argv )
 {
   std_out << "# absmove: " << NL;
 
-  const unsigned n_mo { 3 }; // 3 = only XYZ motors
+  xfloat d_mm[n_motors];
 
-  xfloat d_mm[n_mo];
-
-  for( unsigned i=0; i<n_mo; ++i ) {
+  for( unsigned i=0; i<n_motors; ++i ) {
     d_mm[i] = arg2xfloat_d( i+1, argc, argv, 0, -(xfloat)s_movers[i].max_l, (xfloat)s_movers[i].max_l )
             - me_st.get_xn( i );
   }
@@ -596,7 +593,7 @@ int cmd_absmove( int argc, const char * const * argv )
 
   DoAtLeave do_off_motors( []() { motors_off(); } );
   motors_on();
-  int rc = me_st.move_line( d_mm, n_mo, fe_mmm );
+  int rc = me_st.move_line( d_mm, fe_mmm );
 
   return rc;
 }
@@ -961,9 +958,9 @@ int Machine::move_common( MoveInfo &mi, xfloat fe_mmm )
   return rc;
 }
 
-int Machine::move_line( const xfloat *d_mm, unsigned n_coo, xfloat fe_mmm, unsigned a_on_endstop )
+int Machine::move_line( const xfloat *d_mm, xfloat fe_mmm, unsigned a_on_endstop )
 {
-  MoveInfo mi( MoveInfo::Type::line, n_coo, step_line_fun );
+  MoveInfo mi( MoveInfo::Type::line, n_mo, step_line_fun );
 
   auto rc_prep =  mi.prep_move_line( d_mm );
 
@@ -977,9 +974,9 @@ int Machine::move_line( const xfloat *d_mm, unsigned n_coo, xfloat fe_mmm, unsig
 }
 
 // coords: [0]:r_s, [1]: alp_s, [2]: r_e, [3]: alp_e, [4]: cv?, [5]: z_e, [6]: e_e, [7]: nt(L) [8]: x_r, [9]: y_r
-int Machine::move_circ( const xfloat *coo, unsigned n_coo, xfloat fe_mmm )
+int Machine::move_circ( const xfloat *coo, xfloat fe_mmm )
 {
-  MoveInfo mi( MoveInfo::Type::circle, n_coo, step_circ_fun );
+  MoveInfo mi( MoveInfo::Type::circle, n_mo, step_circ_fun );
   auto rc_prep =  mi.prep_move_circ( coo );
   if( rc_prep != 0 ) {
     std_out << "# Error: fail to prepare MoveInfo for circle, rc=" << rc_prep << NL;
@@ -1025,7 +1022,7 @@ int Machine::g_move_line( const GcodeBlock &gc )
     pwm_set( 0, v );
   }
 
-  int rc = move_line( d_mm, n_mo, fe_mmm );
+  int rc = move_line( d_mm, fe_mmm );
 
   if( mode == Machine::modeLaser ) {
     pwm_off( 0 );
@@ -1142,7 +1139,7 @@ int Machine::g_move_circle( const GcodeBlock &gc )
     pwm_set( 0, v );
   }
 
-  int rc = move_circ( coo, n_mo, fe_mmm );
+  int rc = move_circ( coo, fe_mmm );
 
   if( mode == Machine::modeLaser ) {
     pwm_off( 0 );
