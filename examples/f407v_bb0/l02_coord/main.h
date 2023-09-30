@@ -15,10 +15,17 @@ const uint16_t endstops_mask { 0b01111011 };
 
 const inline uint32_t  TIM_PWM_base_freq   { 84'000'000 };
 const inline uint32_t  TIM_PWM_count_freq  {      10000 };
-const inline uint32_t  TIM6_base_freq   {  1'000'000 };
-const inline uint32_t  TIM6_count_freq  {      10000 };
+const inline uint32_t  TIM6_base_freq      {  1'000'000 };
+const inline uint32_t  TIM6_count_freq     {      10000 };
 
 extern int debug; // in main.cpp
+
+enum class MachRc {
+  Ok = 0,
+  Warn = 1,
+  Err = 2,
+  Fatal = 3
+};
 
 class EndStop {
   public:
@@ -97,7 +104,7 @@ int gcode_act_fun_me_st( const GcodeBlock &gc );
 
 // task + state. fill: move_prep_
 struct MoveInfo {
-  enum class Type { stop = 0, line = 1, circle = 2 }; // TODO: more
+  enum class Type { stop = 0, line = 1, circle = 2 }; // TODO: more or remove
   enum class Ret  { nop = 0, move = 1, end = 2, err = 3 }; // TODO: obsolete?
   using Act_Pfun = Ret (*)( MoveInfo &mi, xfloat a, xfloat *coo );
   static const unsigned max_params { 10 };
@@ -140,7 +147,7 @@ class Machine {
    void set_xn( unsigned i, xfloat v ) { if( i < n_movers ) { movers[i].set_xf( v ); } }
    int get_dly_xsteps() const { return dly_xsteps; }
    void set_dly_xsteps( int v ) { dly_xsteps = v; }
-   unsigned get_n_mo() const { return n_mo; } // ????
+   unsigned get_n_mo() const { return n_mo; }
    void set_n_mo( unsigned n ) { n_mo = std::min( n_mo, n_movers ); }
    const char* endstops2str( char *buf = nullptr ) const;
    const char* endstops2str_read( char *buf = nullptr );
