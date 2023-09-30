@@ -886,7 +886,7 @@ int Machine::move_circ( const xfloat *coo, xfloat fe_mmm )
   return move_common( mi, fe_mmm );
 }
 
-int Machine::g_move_line( const GcodeBlock &gc )
+ReturnCode Machine::g_move_line( const GcodeBlock &gc )
 {
   const xfloat meas_scale = inchUnit ? 25.4f : 1.0f;
 
@@ -930,10 +930,10 @@ int Machine::g_move_line( const GcodeBlock &gc )
   }
   OUT << "#  G0G1 rc= "<< rc << " break_flag= " << break_flag << NL;
 
-  return rc == 0 ? GcodeBlock::rcOk : GcodeBlock::rcErr;
+  return rc == 0 ? ReturnCode::rcOk : ReturnCode::rcErr; // TODO: fix - pass
 }
 
-int Machine::g_move_circle( const GcodeBlock &gc )
+ReturnCode Machine::g_move_circle( const GcodeBlock &gc )
 {
   const unsigned n_mo { 4 }; // TODO? who set
   const xfloat meas_scale = inchUnit ? 25.4f : 1.0f;
@@ -1046,7 +1046,7 @@ int Machine::g_move_circle( const GcodeBlock &gc )
     pwm_off( 0 );
   }
   OUT << "#  G2G3 rc= "<< rc << " break_flag= " << break_flag << NL;
-  return rc == 0 ? GcodeBlock::rcOk : GcodeBlock::rcErr;
+  return rc == 0 ? ReturnCode::rcOk : ReturnCode::rcErr; // TODO: fix - pass
 }
 
 bool calc_G2_R_mode( bool cv, xfloat x_e, xfloat y_e, xfloat &r_1, xfloat &x_r, xfloat &y_r )
@@ -1108,33 +1108,33 @@ bool calc_G2_R_mode( bool cv, xfloat x_e, xfloat y_e, xfloat &r_1, xfloat &x_r, 
   return true;
 }
 
-int Machine::g_wait( const GcodeBlock &gc )
+ReturnCode Machine::g_wait( const GcodeBlock &gc )
 {
   xfloat w = 1000 * gc.fpv_or_def( 'P', 0 );
   w += gc.fpv_or_def( 'S', 1 );
   OUT << "# wait " << w << NL;
   delay_ms_brk( (uint32_t)w );
-  return GcodeBlock::rcOk;
+  return ReturnCode::rcOk;
 }
 
-int Machine::g_set_plane( const GcodeBlock &gc ) // G17
+ReturnCode Machine::g_set_plane( const GcodeBlock &gc ) // G17
 {
-  return GcodeBlock::rcOk; // the only plane
+  return ReturnCode::rcOk; // the only plane
 }
 
-int Machine::g_set_unit_inch( const GcodeBlock &gc ) // G20
+ReturnCode Machine::g_set_unit_inch( const GcodeBlock &gc ) // G20
 {
   inchUnit = true;
-  return GcodeBlock::rcOk;
+  return ReturnCode::rcOk;
 }
 
-int Machine::g_set_unit_mm( const GcodeBlock &gc ) // G21
+ReturnCode Machine::g_set_unit_mm( const GcodeBlock &gc ) // G21
 {
   inchUnit = false;
-  return GcodeBlock::rcOk;
+  return ReturnCode::rcOk;
 }
 
-int Machine::g_home( const GcodeBlock &gc ) // G28
+ReturnCode Machine::g_home( const GcodeBlock &gc ) // G28
 {
   bool s_x = gc.is_set('X');
   bool s_y = gc.is_set('Y');
@@ -1147,47 +1147,47 @@ int Machine::g_home( const GcodeBlock &gc ) // G28
   if( s_y ) {
     rc  = go_home( 1 ); // from what?
     if( rc != 1 ) {
-      return GcodeBlock::rcErr;
+      return ReturnCode::rcErr;
     }
   }
 
   if( s_x ) {
     rc  = go_home( 0 );
     if( rc != 1 ) {
-      return GcodeBlock::rcErr;
+      return ReturnCode::rcErr;
     }
   }
 
   if( s_z ) {
     rc  = go_home( 2 );
     if( rc != 1 ) {
-      return GcodeBlock::rcErr;
+      return ReturnCode::rcErr;
     }
   }
   was_set = true;
 
-  return rc == 1 ? GcodeBlock::rcOk : GcodeBlock::rcErr;
+  return rc == 1 ? ReturnCode::rcOk : ReturnCode::rcErr;
 }
 
-int Machine::g_off_compens( const GcodeBlock &gc ) // G40 - X
+ReturnCode Machine::g_off_compens( const GcodeBlock &gc ) // G40 - X
 {
   OUT << "#  G40 unsupported  " << NL;
-  return GcodeBlock::rcOk; // for now
+  return ReturnCode::rcOk; // for now
 }
 
-int Machine::g_set_absmove( const GcodeBlock &gc ) // G90
+ReturnCode Machine::g_set_absmove( const GcodeBlock &gc ) // G90
 {
   relmove = false;
-  return GcodeBlock::rcOk;
+  return ReturnCode::rcOk;
 }
 
-int Machine::g_set_relmove( const GcodeBlock &gc ) // G91
+ReturnCode Machine::g_set_relmove( const GcodeBlock &gc ) // G91
 {
   relmove = true;
-  return GcodeBlock::rcOk;
+  return ReturnCode::rcOk;
 }
 
-int Machine::g_set_origin( const GcodeBlock &gc ) // G92
+ReturnCode Machine::g_set_origin( const GcodeBlock &gc ) // G92
 {
   static const char axis_chars[] { 'X', 'Y', 'Z', 'E', 'V' }; // TODO: common + pair? beware: no ""!
   bool a { false }, none_set { true };
@@ -1216,31 +1216,31 @@ int Machine::g_set_origin( const GcodeBlock &gc ) // G92
     was_set = true; // do not change if a false
   }
 
-  return GcodeBlock::rcOk;
+  return ReturnCode::rcOk;
 }
 
-int Machine::m_end0( const GcodeBlock &gc )          // M0
+ReturnCode Machine::m_end0( const GcodeBlock &gc )          // M0
 {
   pwm_set( 0, 0 );
   motors_off();
-  return GcodeBlock::rcEnd;
+  return ReturnCode::rcEnd;
 }
 
-int Machine::m_pause( const GcodeBlock &gc )         // M1
+ReturnCode Machine::m_pause( const GcodeBlock &gc )         // M1
 {
   // TODO: pause for what?
   OUT << "# pause?" << NL;
-  return GcodeBlock::rcOk;
+  return ReturnCode::rcOk;
 }
 
-int Machine::m_end( const GcodeBlock &gc )           // M2
+ReturnCode Machine::m_end( const GcodeBlock &gc )           // M2
 {
   pwm_set( 0, 0 );
   motors_off();
-  return GcodeBlock::rcEnd;
+  return ReturnCode::rcEnd;
 }
 
-int Machine::m_set_spin( const GcodeBlock &gc )      // M3, M4
+ReturnCode Machine::m_set_spin( const GcodeBlock &gc )      // M3, M4
 {
   spin = gc.fpv_or_def( 'S', spin );
   const xfloat v = getPwm();
@@ -1251,18 +1251,18 @@ int Machine::m_set_spin( const GcodeBlock &gc )      // M3, M4
     OUT << '+';
   }
   OUT << NL;
-  return GcodeBlock::rcOk;
+  return ReturnCode::rcOk;
 }
 
-int Machine::m_spin_off( const GcodeBlock &gc )      // M5
+ReturnCode Machine::m_spin_off( const GcodeBlock &gc )      // M5
 {
   OUT << "# M5 " << NL;
   pwm_off( 0 );
   spinOn = false;
-  return GcodeBlock::rcOk;
+  return ReturnCode::rcOk;
 }
 
-int Machine::m_out_where( const GcodeBlock &gc )     // M114
+ReturnCode Machine::m_out_where( const GcodeBlock &gc )     // M114
 {
   // const char axis_chars[] { "XYZEV?" };
   xfloat k_unit = 1.0f / ( inchUnit ? 25.4f : 1.0f );
@@ -1272,57 +1272,57 @@ int Machine::m_out_where( const GcodeBlock &gc )     // M114
   }
   OUT << NL "# F= " << fe_g1 << " S= " << spin << " / " << spin100 << NL;
 
-  return GcodeBlock::rcOk;
+  return ReturnCode::rcOk;
 }
 
-int Machine::m_out_str( const GcodeBlock &gc )       // M117
+ReturnCode Machine::m_out_str( const GcodeBlock &gc )       // M117
 {
   OUT << "# M117" << NL;
   OUT << gc.get_str0() << NL;
-  return GcodeBlock::rcOk;
+  return ReturnCode::rcOk;
 }
 
-int Machine::m_set_feed_scale( const GcodeBlock &gc )// M220
+ReturnCode Machine::m_set_feed_scale( const GcodeBlock &gc )// M220
 {
   fe_scale = gc.fpv_or_def( 'S', fe_scale );
   OUT << "# M220 feed scale " << fe_scale << NL;
-  return GcodeBlock::rcOk;
+  return ReturnCode::rcOk;
 }
 
-int Machine::m_set_spin_scale( const GcodeBlock &gc )// M221
+ReturnCode Machine::m_set_spin_scale( const GcodeBlock &gc )// M221
 {
   spin100  = gc.fpv_or_def( 'S', spin100 );
   spin_max = gc.fpv_or_def( 'U', spin_max );
   OUT << "# M221 spindle scale " << spin100 << ' ' << spin_max << NL;
-  return GcodeBlock::rcOk;
+  return ReturnCode::rcOk;
 }
 
-int Machine::m_out_mode( const GcodeBlock &gc )      // M450
+ReturnCode Machine::m_out_mode( const GcodeBlock &gc )      // M450
 {
   static const char* const mode_names[] = { "FFF", "Laser", "CNC", "??3", "??4", "??5" };
   OUT << "PrinterMode:" << mode_names[mode] << NL;
-  return GcodeBlock::rcOk;
+  return ReturnCode::rcOk;
 }
 
-int Machine::m_set_mode_fff( const GcodeBlock &gc )  // M451
+ReturnCode Machine::m_set_mode_fff( const GcodeBlock &gc )  // M451
 {
   OUT << "# M451 " << NL;
   set_mode( Machine::modeFFF );
-  return GcodeBlock::rcOk;
+  return ReturnCode::rcOk;
 }
 
-int Machine::m_set_mode_laser( const GcodeBlock &gc )// M452
+ReturnCode Machine::m_set_mode_laser( const GcodeBlock &gc )// M452
 {
   OUT << "# M452 " << NL;
   set_mode( Machine::modeLaser );
-  return GcodeBlock::rcOk;
+  return ReturnCode::rcOk;
 }
 
-int Machine::m_set_mode_cnc( const GcodeBlock &gc )  // M453
+ReturnCode Machine::m_set_mode_cnc( const GcodeBlock &gc )  // M453
 {
   OUT << "# M453 " << NL;
   set_mode( Machine::modeCNC );
-  return GcodeBlock::rcOk;
+  return ReturnCode::rcOk;
 }
 
 
@@ -1333,11 +1333,11 @@ int Machine::call_mg( const GcodeBlock &cb )
   auto is_m = cb.is_set('M');
   if( is_g && is_m ) {
     OUT << "#  MS error: M and G" << NL;
-    return GcodeBlock::rcErr; // TODO: err_val: both commands
+    return ReturnCode::rcErr; // TODO: err_val: both commands
   }
 
   auto mach_rc = prep_fun( cb );
-  if( mach_rc >= GcodeBlock::rcErr ) {
+  if( mach_rc >= ReturnCode::rcErr ) {
     return mach_rc;
   }
 
@@ -1347,7 +1347,7 @@ int Machine::call_mg( const GcodeBlock &cb )
   auto f = std::find_if( mg_funcs, mg_funcs + mg_funcs_sz, [code]( auto el ) { return el.num == code; } );
   if( f == mg_funcs + mg_funcs_sz ) {
     OUT << "# warn: unsupported " << chfun << ' ' << code << NL;
-    return GcodeBlock::rcOk;
+    return ReturnCode::rcOk;
   }
 
   auto fun = f->fun;
@@ -1390,7 +1390,7 @@ int Machine::prep_fun(  const GcodeBlock &gc )
 {
   if( gc.is_set('M') ) { // special values for M commands
     // OUT << 'M' << NL;
-    return GcodeBlock::rcOk;
+    return ReturnCode::rcOk;
   }
 
   bool was_out { false };

@@ -17,7 +17,7 @@ class GcodeBlock {
       comment,  // between ( ), ; + to_end
       error     // + to_end?
     };
-    enum RcCode {
+    enum RcCode { // TODO: ReturnCore
       rcOk     =  0,
       rcWarn   =  1,
       rcUnsupp =  2,

@@ -142,7 +142,7 @@ class Machine {
    enum MachMode {
      modeFFF = 0, modeLaser = 1, modeCNC = 2, modeMax = 3
    };
-   using fun_gcode_mg = int(Machine::*)( const GcodeBlock &cb );
+   using fun_gcode_mg = ReturnCode(Machine::*)( const GcodeBlock &cb );
    struct FunGcodePair {
      int num;
      fun_gcode_mg fun;
@@ -172,30 +172,30 @@ class Machine {
    void out_mg( bool is_m );
    int prep_fun(  const GcodeBlock &cb );
 
-   int g_move_line( const GcodeBlock &gc );     // G0, G1
-   int g_move_circle( const GcodeBlock &gc );   // G2, G3
-   int g_wait( const GcodeBlock &gc );          // G4
-   int g_set_plane( const GcodeBlock &gc );     // G17 - X
-   int g_set_unit_inch( const GcodeBlock &gc ); // G20
-   int g_set_unit_mm( const GcodeBlock &gc );   // G21
-   int g_home( const GcodeBlock &gc );          // G28
-   int g_off_compens( const GcodeBlock &gc );   // G40
-   int g_set_absmove( const GcodeBlock &gc );   // G90
-   int g_set_relmove( const GcodeBlock &gc );   // G91
-   int g_set_origin( const GcodeBlock &gc );    // G92
-   int m_end0( const GcodeBlock &gc );          // M0
-   int m_pause( const GcodeBlock &gc );         // M1
-   int m_end( const GcodeBlock &gc );           // M2
-   int m_set_spin( const GcodeBlock &gc );      // M3, M4
-   int m_spin_off( const GcodeBlock &gc );      // M5
-   int m_out_where( const GcodeBlock &gc );     // M114
-   int m_out_str( const GcodeBlock &gc );       // M117
-   int m_set_feed_scale( const GcodeBlock &gc );// M220
-   int m_set_spin_scale( const GcodeBlock &gc );// M221
-   int m_out_mode( const GcodeBlock &gc );      // M450
-   int m_set_mode_fff( const GcodeBlock &gc );  // M451
-   int m_set_mode_laser( const GcodeBlock &gc );// M452
-   int m_set_mode_cnc( const GcodeBlock &gc );  // M453
+   ReturnCode g_move_line( const GcodeBlock &gc );     // G0, G1
+   ReturnCode g_move_circle( const GcodeBlock &gc );   // G2, G3
+   ReturnCode g_wait( const GcodeBlock &gc );          // G4
+   ReturnCode g_set_plane( const GcodeBlock &gc );     // G17 - X
+   ReturnCode g_set_unit_inch( const GcodeBlock &gc ); // G20
+   ReturnCode g_set_unit_mm( const GcodeBlock &gc );   // G21
+   ReturnCode g_home( const GcodeBlock &gc );          // G28
+   ReturnCode g_off_compens( const GcodeBlock &gc );   // G40
+   ReturnCode g_set_absmove( const GcodeBlock &gc );   // G90
+   ReturnCode g_set_relmove( const GcodeBlock &gc );   // G91
+   ReturnCode g_set_origin( const GcodeBlock &gc );    // G92
+   ReturnCode m_end0( const GcodeBlock &gc );          // M0
+   ReturnCode m_pause( const GcodeBlock &gc );         // M1
+   ReturnCode m_end( const GcodeBlock &gc );           // M2
+   ReturnCode m_set_spin( const GcodeBlock &gc );      // M3, M4
+   ReturnCode m_spin_off( const GcodeBlock &gc );      // M5
+   ReturnCode m_out_where( const GcodeBlock &gc );     // M114
+   ReturnCode m_out_str( const GcodeBlock &gc );       // M117
+   ReturnCode m_set_feed_scale( const GcodeBlock &gc );// M220
+   ReturnCode m_set_spin_scale( const GcodeBlock &gc );// M221
+   ReturnCode m_out_mode( const GcodeBlock &gc );      // M450
+   ReturnCode m_set_mode_fff( const GcodeBlock &gc );  // M451
+   ReturnCode m_set_mode_laser( const GcodeBlock &gc );// M452
+   ReturnCode m_set_mode_cnc( const GcodeBlock &gc );  // M453
   protected:
    StepMover* movers; // TODO: common mover
    const unsigned n_movers;

@@ -74,8 +74,9 @@ enum ReturnCode {
   rcInfo = 1,
   rcWarn = 2,
   rcExtra = 3,
-  rcErr = 4,
-  rcFatal = 5
+  rcEnd = 4,
+  rcErr = 10,
+  rcFatal = 20
 };
 
 
