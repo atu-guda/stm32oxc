@@ -46,7 +46,7 @@ extern int debug; // in main.cpp
 class EndStop {
   public:
    EndStop() = default;
-   virtual int initHW() = 0;
+   virtual ReturnCode initHW() = 0;
    virtual uint16_t read() = 0;
    uint16_t get() const { return v; }
    virtual bool is_minus_stop() const = 0;
@@ -68,7 +68,7 @@ class EndStopGpioPos : public EndStop {
    enum StopBits { minusBit = 0x01, plusBit = 0x02, extraBit = 0x04, mainBits = 0x03 };
    EndStopGpioPos( GpioRegs &a_gi, uint8_t a_start, uint8_t a_n = 2 )
      : pins( a_gi, a_start, a_n, GpioRegs::Pull::down ) {}
-   virtual int initHW() override { pins.initHW(); return 1; };
+   virtual ReturnCode initHW() override { pins.initHW(); return rcOk; };
    virtual uint16_t read() override { v = pins.read(); return v; }
    virtual bool is_minus_stop() const override { return ( ( v & minusBit ) == 0 ) ; }
    virtual bool is_minus_go()   const override { return ( ( v & minusBit ) != 0 ) ; }
@@ -88,6 +88,7 @@ class EndStopGpioPos : public EndStop {
 
 
 // TODO: base: common props, here - realization
+// TODO: ctor, [ptr]
 // mach params
 struct StepMover {
   uint32_t tick2mm   ; // tick per mm, =  pulses per mm
@@ -116,7 +117,7 @@ const inline constinit unsigned n_motors { 5 }; // TODO: part of Mach
 extern StepMover s_movers[n_motors];
 
 int gcode_cmdline_handler( char *s );
-int gcode_act_fun_me_st( const GcodeBlock &gc );
+ReturnCode gcode_act_fun_me_st( const GcodeBlock &gc );
 
 // task + state. fill: move_prep_
 struct MoveInfo {
@@ -133,8 +134,8 @@ struct MoveInfo {
   bool isGood() const { return step_pfun != nullptr && type != Type::stop ; }
   void zero_arr();
   ReturnCode calc_step( xfloat a, xfloat *coo );
-  int prep_move_line( const xfloat *prm );
-  int prep_move_circ( const xfloat *prm );
+  ReturnCode prep_move_line( const xfloat *prm );
+  ReturnCode prep_move_circ( const xfloat *prm );
 };
 
 class Machine {
@@ -152,11 +153,11 @@ class Machine {
    Machine( StepMover *a_movers, unsigned a_n_movers );
    xfloat getPwm() const { return std::clamp( 100 * spin / spin100, 0.0f, spin_max ); }
    int check_endstops( MoveInfo &mi );
-   int move_common( MoveInfo &mi, xfloat fe_mmm );
+   ReturnCode move_common( MoveInfo &mi, xfloat fe_mmm );
    // coords: XYZE....
-   int move_line( const xfloat *d_mm, xfloat fe_mmm, unsigned a_on_endstop = 9999 );
+   ReturnCode move_line( const xfloat *d_mm, xfloat fe_mmm, unsigned a_on_endstop = 9999 );
    // coords: [0]:r_s, [1]: alp_s, [2]: r_e, [3]: alp_e, [4]: cv?, [5]: z_e, [6]: e_e, [7]: nt(L) [8]: x_r, [9]: y_r
-   int move_circ( const xfloat *d_mm, xfloat fe_mmm );
+   ReturnCode move_circ( const xfloat *d_mm, xfloat fe_mmm );
    MachMode get_mode() const { return mode; };
    void set_mode( MachMode m ) { if( m < modeMax ) { mode = m; }}; // TODO: more actions
    xfloat get_xn( unsigned i ) const { return ( i < n_movers ) ? movers[i].get_xf() : 0 ; }
@@ -168,9 +169,9 @@ class Machine {
    const char* endstops2str( char *buf = nullptr ) const;
    const char* endstops2str_read( char *buf = nullptr );
 
-   int call_mg( const GcodeBlock &cb );
+   ReturnCode call_mg( const GcodeBlock &cb );
+   ReturnCode prep_fun(  const GcodeBlock &cb );
    void out_mg( bool is_m );
-   int prep_fun(  const GcodeBlock &cb );
 
    ReturnCode g_move_line( const GcodeBlock &gc );     // G0, G1
    ReturnCode g_move_circle( const GcodeBlock &gc );   // G2, G3
@@ -231,10 +232,10 @@ extern const Machine::FunGcodePair mg_code_funcs[];
 void motors_off();
 void motors_on();
 int wait_next_motor_tick(); // 0 = was break, not 0 - ok
-int pwm_set( unsigned idx, xfloat v );
-int pwm_off( unsigned idx );
-int pwm_off_all();
-int go_home( unsigned axis );
+ReturnCode pwm_set( unsigned idx, xfloat v );
+ReturnCode pwm_off( unsigned idx );
+ReturnCode pwm_off_all();
+ReturnCode go_home( unsigned axis );
 
 bool calc_G2_R_mode( bool cv, xfloat x_e, xfloat y_e, xfloat &r_1, xfloat &x_r, xfloat &y_r );
 

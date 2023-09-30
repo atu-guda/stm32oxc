@@ -180,7 +180,7 @@ int gcode_cmdline_handler( char *s )
   return 0;
 }
 
-int gcode_act_fun_me_st( const GcodeBlock &gc )
+ReturnCode gcode_act_fun_me_st( const GcodeBlock &gc )
 {
   return me_st.call_mg( gc );
 }
@@ -360,16 +360,16 @@ bool is_endstop_clear_for_dir( uint16_t e, int dir )
 
 
 // TODO: move to Machine, simultanious movement
-int go_home( unsigned axis )
+ReturnCode go_home( unsigned axis )
 {
   if( axis >= n_motors ) {
     std_out << "# Error: bad axis index " << axis << NL;
-    return 0;
+    return rcErr;
   }
   auto estp = s_movers[axis].endstops;
   if( s_movers[axis].max_l > 20000 || estp == nullptr ) {
     std_out << "# Error: unsupported axis  " << axis << NL;
-    return 0;
+    return rcErr;
   }
 
   pwm_off_all();
@@ -386,7 +386,7 @@ int go_home( unsigned axis )
   motors_on();
 
   // TODO: params
-  int rc { 0 };
+  ReturnCode rc { rcOk };
 
   // if on endstop_minus - go+
   auto esv = estp->read();
@@ -407,7 +407,7 @@ int go_home( unsigned axis )
   esv = estp->read();
   if( ! estp->is_clear() ) {
     std_out << "# Error: not all clear " << axis << ' ' << estp->toChar() << NL;
-    return 0;
+    return rcErr;
   }
 
   // go to endstop
@@ -419,7 +419,7 @@ int go_home( unsigned axis )
   esv = estp->read();
   if( estp->is_minus_go() ) { //
     std_out << "# Error: fail to find endstop. axis " << axis << " ph 1 " << esv  << ' ' << estp->toChar() << NL;
-    return 0;
+    return rcErr;
   }
 
   // go slowly away
@@ -431,7 +431,7 @@ int go_home( unsigned axis )
   esv = estp->read();
   if( estp->is_any_stop() ) { // must be ok
     std_out << "# Error: fail to step from endstop axis " << axis << " ph 2 " << estp->toChar() << NL;
-    return 0;
+    return rcErr;
   }
 
   // go slowly to endstop
@@ -443,7 +443,7 @@ int go_home( unsigned axis )
   esv = estp->read();
   if( estp->is_minus_go() ) {
     std_out << "# Error: fail to find endstop axis " << axis << " ph 3 " << estp->toChar() << esv << NL;
-    return 0;
+    return rcErr;
   }
 
   // go slowly away again
@@ -455,12 +455,12 @@ int go_home( unsigned axis )
   esv = estp->read();
   if( estp->is_any_stop() ) {
     std_out << "# Error: fail to find endstop axis " << axis << " ph 4 " << estp->toChar() << NL;
-    return 0;
+    return rcErr;
   }
   me_st.set_xn( axis, 0 );    // TODO: may be no auto?
   std_out << "# Ok: found endstop end  "  << estp->toChar() << NL;
 
-  return 1;
+  return rcOk;
 }
 
 int cmd_relmove( int argc, const char * const * argv )
@@ -508,7 +508,7 @@ int cmd_home( int argc, const char * const * argv )
 
   std_out << "# home: " << axis << NL;
 
-  int rc = go_home( axis );
+  ReturnCode rc = go_home( axis );
 
   return rc;
 }
@@ -562,14 +562,14 @@ int cmd_gexec( int argc, const char * const * argv )
 
 
     GcodeBlock cb ( gcode_act_fun_me_st );
-    int rc = cb.process( s );
+    auto rc = cb.process( s );
     ++nle;
     std_out << "# rc= " << rc << " br= " << break_flag << " nle= " << nle << NL;
     if( break_flag == 2 ) {
       break_flag = 0;
     }
 
-    if( rc >= GcodeBlock::rcEnd ) {
+    if( rc >= ReturnCode::rcEnd ) {
       std_out << " line \"" << s << "\" pos " << cb.get_err_pos() << ' ' << cb.get_err_code() << NL;
       break;
     }
@@ -607,7 +607,7 @@ void MoveInfo::zero_arr()
   ranges::fill( p, 0 ); ranges::fill( k_x, 0 );
 }
 
-int MoveInfo::prep_move_line( const xfloat *prm )
+ReturnCode MoveInfo::prep_move_line( const xfloat *prm )
 {
   zero_arr(); len = 0;
 
@@ -620,10 +620,10 @@ int MoveInfo::prep_move_line( const xfloat *prm )
     k_x[i] = p[i];
   }
   OUT << "# debug: prep_move_line: len= " << len << NL;
-  return 0;
+  return rcOk;
 }
 
-int MoveInfo::prep_move_circ( const xfloat *prm )
+ReturnCode MoveInfo::prep_move_circ( const xfloat *prm )
 {
   zero_arr();
   const xfloat &r_s   { prm[0] };
@@ -646,7 +646,7 @@ int MoveInfo::prep_move_circ( const xfloat *prm )
 
   OUT << "# debug: prep_move_circ: len= " << len << NL;
 
-  return 0;
+  return rcOk;
 }
 
 ReturnCode MoveInfo::calc_step( xfloat a, xfloat *coo )
@@ -784,10 +784,10 @@ const char* Machine::endstops2str_read( char *buf )
   return endstops2str( buf );
 }
 
-int Machine::move_common( MoveInfo &mi, xfloat fe_mmm )
+ReturnCode Machine::move_common( MoveInfo &mi, xfloat fe_mmm )
 {
   if( !mi.isGood() ) {
-    return 1;
+    return rcErr;
   }
 
   fe_mmm *= fe_scale / 100;
@@ -808,7 +808,7 @@ int Machine::move_common( MoveInfo &mi, xfloat fe_mmm )
   for( unsigned i=0; i<mi.n_coo; ++i ) {
     o_coo[i] = movers[i].get_xf();
   }
-  int rc {0};
+  ReturnCode rc { rcOk };
   bool keep_move { true };
 
   // really must be more then t_tick
@@ -822,20 +822,20 @@ int Machine::move_common( MoveInfo &mi, xfloat fe_mmm )
     }
 
     last_a = a;
-    if( mi.calc_step( a, coo ) >= ReturnCode::rcErr ) {
-      rc = 3;
+    if( ReturnCode rc_c = mi.calc_step( a, coo ) ; rc >= ReturnCode::rcErr ) {
+      rc = rc_c;
       break;
     }
 
     if( check_endstops( mi ) == 0 ) {
-      rc = 2;
+      rc = rcErr; // rcEnd?
       break;
     }
 
     leds[2].reset();
 
     if( wait_next_motor_tick() != 0 ) { // TODO: loop untill ready + some payload
-      rc = 111;
+      rc = rcErr;
       break;
     }
 
@@ -859,7 +859,7 @@ int Machine::move_common( MoveInfo &mi, xfloat fe_mmm )
   return rc;
 }
 
-int Machine::move_line( const xfloat *d_mm, xfloat fe_mmm, unsigned a_on_endstop )
+ReturnCode Machine::move_line( const xfloat *d_mm, xfloat fe_mmm, unsigned a_on_endstop )
 {
   MoveInfo mi( MoveInfo::Type::line, n_mo, step_line_fun );
 
@@ -867,7 +867,7 @@ int Machine::move_line( const xfloat *d_mm, xfloat fe_mmm, unsigned a_on_endstop
 
   if( rc_prep != 0 ) {
     std_out << "# Error: fail to prepare MoveInfo for line, rc=" << rc_prep << NL;
-    return 1;
+    return rcErr;
   }
 
   on_endstop = a_on_endstop;
@@ -875,13 +875,13 @@ int Machine::move_line( const xfloat *d_mm, xfloat fe_mmm, unsigned a_on_endstop
 }
 
 // coords: [0]:r_s, [1]: alp_s, [2]: r_e, [3]: alp_e, [4]: cv?, [5]: z_e, [6]: e_e, [7]: nt(L) [8]: x_r, [9]: y_r
-int Machine::move_circ( const xfloat *coo, xfloat fe_mmm )
+ReturnCode Machine::move_circ( const xfloat *coo, xfloat fe_mmm )
 {
   MoveInfo mi( MoveInfo::Type::circle, n_mo, step_circ_fun );
   auto rc_prep =  mi.prep_move_circ( coo );
   if( rc_prep != 0 ) {
     std_out << "# Error: fail to prepare MoveInfo for circle, rc=" << rc_prep << NL;
-    return 1;
+    return rcErr;
   }
   return move_common( mi, fe_mmm );
 }
@@ -923,14 +923,14 @@ ReturnCode Machine::g_move_line( const GcodeBlock &gc )
     pwm_set( 0, v );
   }
 
-  int rc = move_line( d_mm, fe_mmm );
+  ReturnCode rc = move_line( d_mm, fe_mmm );
 
   if( mode == Machine::modeLaser ) {
     pwm_off( 0 );
   }
   OUT << "#  G0G1 rc= "<< rc << " break_flag= " << break_flag << NL;
 
-  return rc == 0 ? ReturnCode::rcOk : ReturnCode::rcErr; // TODO: fix - pass
+  return rc;
 }
 
 ReturnCode Machine::g_move_circle( const GcodeBlock &gc )
@@ -1040,13 +1040,13 @@ ReturnCode Machine::g_move_circle( const GcodeBlock &gc )
     pwm_set( 0, v );
   }
 
-  int rc = move_circ( coo, fe_mmm );
+  auto rc = move_circ( coo, fe_mmm );
 
   if( mode == Machine::modeLaser ) {
     pwm_off( 0 );
   }
   OUT << "#  G2G3 rc= "<< rc << " break_flag= " << break_flag << NL;
-  return rc == 0 ? ReturnCode::rcOk : ReturnCode::rcErr; // TODO: fix - pass
+  return rc;
 }
 
 bool calc_G2_R_mode( bool cv, xfloat x_e, xfloat y_e, xfloat &r_1, xfloat &x_r, xfloat &y_r )
@@ -1142,31 +1142,31 @@ ReturnCode Machine::g_home( const GcodeBlock &gc ) // G28
   if( !s_x && !s_y && !s_z ) {
     s_x = s_y = s_z = true;
   }
-  int rc {0};
+  ReturnCode rc { rcOk };
 
   if( s_y ) {
     rc  = go_home( 1 ); // from what?
-    if( rc != 1 ) {
-      return ReturnCode::rcErr;
+    if( rc >= rcErr ) {
+      return rc;
     }
   }
 
   if( s_x ) {
     rc  = go_home( 0 );
-    if( rc != 1 ) {
-      return ReturnCode::rcErr;
+    if( rc >= rcErr ) {
+      return rc;
     }
   }
 
   if( s_z ) {
     rc  = go_home( 2 );
-    if( rc != 1 ) {
-      return ReturnCode::rcErr;
+    if( rc >= rcErr ) {
+      return rc;
     }
   }
   was_set = true;
 
-  return rc == 1 ? ReturnCode::rcOk : ReturnCode::rcErr;
+  return rc;
 }
 
 ReturnCode Machine::g_off_compens( const GcodeBlock &gc ) // G40 - X
@@ -1326,7 +1326,7 @@ ReturnCode Machine::m_set_mode_cnc( const GcodeBlock &gc )  // M453
 }
 
 
-int Machine::call_mg( const GcodeBlock &cb )
+ReturnCode Machine::call_mg( const GcodeBlock &cb )
 {
   cb.dump(); // debug
   auto is_g = cb.is_set('G');
@@ -1386,7 +1386,7 @@ void Machine::out_mg( bool is_m )
   }
 }
 
-int Machine::prep_fun(  const GcodeBlock &gc )
+ReturnCode Machine::prep_fun(  const GcodeBlock &gc )
 {
   if( gc.is_set('M') ) { // special values for M commands
     // OUT << 'M' << NL;
@@ -1410,38 +1410,38 @@ int Machine::prep_fun(  const GcodeBlock &gc )
   if( was_out ) {
     OUT << NL;
   }
-  return GcodeBlock::rcOk;
+  return ReturnCode::rcOk;
 }
 
 // --------------------------- PWM ----------------------------------------
 
 
-int pwm_set( unsigned idx, xfloat v )
+ReturnCode pwm_set( unsigned idx, xfloat v )
 {
   if( idx >= n_tim_pwm ) {
-    return 0;
+    return rcErr;
   }
   auto ti = pwm_tims[idx]->Instance;
   uint32_t arr = ti->ARR;
   uint32_t ccr = (uint32_t)( arr * v / 100.0f );
   ti->CCR1 = ccr;
   ti->CNT  = 0;
-  return 1;
+  return rcOk;
 }
 
-int pwm_off( unsigned idx )
+ReturnCode pwm_off( unsigned idx )
 {
   if( idx >= n_tim_pwm ) {
-    return 0;
+    return rcErr;
   }
   auto ti = pwm_tims[idx]->Instance;
   ti->CCR1 = 0;
   ti->CNT  = 0;
   //  HAL_TIM_PWM_Stop( &htim3, TIM_CHANNEL_1 );
-  return 1;
+  return rcOk;
 }
 
-int pwm_off_all()
+ReturnCode pwm_off_all()
 {
   for( auto t : pwm_tims ) {
     if( t && t->Instance ) {
@@ -1449,7 +1449,7 @@ int pwm_off_all()
       t->Instance->CNT  = 0;
     }
   }
-  return 1;
+  return rcOk;
 }
 
 
@@ -1465,9 +1465,9 @@ int cmd_pwr( int argc, const char * const * argv )
   }
 
   std_out << "# PWR: ch: " << ch << " power: " << pwr << NL;
-  int rc  = pwm_set( ch, pwr );
+  auto rc  = pwm_set( ch, pwr );
   // tim_print_cfg( pwm_tims[ch]->Instance );
-  return rc == 1 ? 0 : 1;
+  return (int)rc; // rcOk = 0 = cmd_ok
 }
 
 // ------------------------------ EXTI handlers -------------------

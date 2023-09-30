@@ -40,7 +40,7 @@ void GcodeBlock::dump() const
 
 
 
-int GcodeBlock::process( const char *s )
+ReturnCode GcodeBlock::process( const char *s )
 {
   if( !s || !act_fun ) {
     return rcFatal;
@@ -56,7 +56,7 @@ int GcodeBlock::process( const char *s )
   char p_name { ' ' };
   unsigned p_idx { 0 }, n_el { 0 }, n_act { 0 };
   char qs[max_str_sz+1]; qs[0] = '\0'; unsigned qs_len { 0 };
-  mach_rc = 0;
+  mach_rc = rcOk;
   bool to_end { false }; // M117 string and comment to EOL
   bool was_mg { false }; // unhandled G or M was before in string
   const unsigned val_buf_sz { 40 };
@@ -192,10 +192,10 @@ int GcodeBlock::process( const char *s )
 
   }
 
-  int rc { 0 };
+  ReturnCode rc { rcOk };
   switch( st ) {
     case  GcodeState::error :
-      rc = 2;
+      rc = rcErr;
       break;
     case  GcodeState::init :
       break;
