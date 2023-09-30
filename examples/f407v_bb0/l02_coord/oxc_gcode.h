@@ -46,7 +46,6 @@ class GcodeBlock {
 
   private:
     static const unsigned max_str_sz { 80 };
-    static const unsigned max_gm_funcs { 200 };
     ActFun act_fun;
     xfloat fp[n_p];              // real params
     char str0[max_str_sz+2], str1[max_str_sz+2];

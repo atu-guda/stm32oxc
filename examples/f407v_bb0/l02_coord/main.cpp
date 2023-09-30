@@ -168,7 +168,7 @@ int gcode_cmdline_handler( char *s )
     return 0;
   }
 
-  DoAtLeave do_off_motors( []() { motors_off(); } );
+  DoAtLeave do_off_motors( []() { motors_off(); } ); // ??? param?
   motors_on();
 
   GcodeBlock cb ( gcode_act_fun_me_st );
@@ -210,15 +210,8 @@ int main()
 
   GpioA.enableClk(); GpioB.enableClk(); GpioC.enableClk(); GpioD.enableClk(); GpioE.enableClk();
 
-  for( auto &m : s_movers ) {
-    if( m ) {
-      m->initHW();
-    }
-  }
-  // TODO: me_st.initHW();
-
   aux3.initHW(); aux3 = 0;
-  en_motors.initHW();
+  en_motors.initHW(); // TODO: to machine
   motors_off();
 
   UVAR('e') = EXTI_inits( extis, true );
@@ -226,9 +219,9 @@ int main()
   MX_TIM3_Init();
   MX_TIM10_Init();
   MX_TIM11_Init();
-  if( ! MX_TIM6_Init() ) {
-    die4led( 0x02 );
-  }
+  MX_TIM6_Init();
+
+  me_st.initHW();
 
   // UVAR('e') = i2c_default_init( i2ch );
   // i2c_dbg = &i2cd;
@@ -269,17 +262,6 @@ int main()
 
   return 0;
 }
-
-void StepMover::initHW()
-{
-  if( endstops ) {
-    endstops->initHW();
-  }
-  if( motor ) {
-    motor->initHW();
-    motor->write( 0 );
-  }
-};
 
 
 int cmd_test0( int argc, const char * const * argv )
@@ -344,19 +326,6 @@ bool EndStopGpioPos::is_clear_for_dir( int dir ) const
   return false;
 }
 
-bool is_endstop_clear_for_dir( uint16_t e, int dir )
-{
-  if( dir == 0 || ( e & 0x03 ) == 0x03 ) { // no move or all clear
-    return true;
-  }
-  if( dir >  0 && ( e & 0x02 ) ) { // forward and ep+ clear
-    return true;
-  }
-  if( dir <  0 && ( e & 0x01 ) ) { // backward and ep- clear
-    return true;
-  }
-  return false;
-}
 
 
 // TODO: move to Machine, simultanious movement
@@ -725,12 +694,20 @@ const Machine::FunGcodePair mg_code_funcs[] = {
 
 
 Machine::Machine( std::span<StepMover*> a_movers )
-     : movers( a_movers ),
+     : movers( std::move(a_movers) ),
        mg_funcs( mg_code_funcs ), mg_funcs_sz( std::size( mg_code_funcs ) )
 {
   ranges::fill( axis_scale, 1 );
 }
 
+void Machine::initHW()
+{
+  for( auto pm : movers ) {
+    if( pm ) {
+      pm->initHW();
+    }
+  }
+}
 
 int Machine::check_endstops( MoveInfo &mi )
 {
@@ -776,7 +753,7 @@ const char* Machine::endstops2str( char *buf ) const
 const char* Machine::endstops2str_read( char *buf )
 {
   for( unsigned i=0; i<n_mo; ++i ) {
-    if( movers[i]->get_endstops() ) {
+    if( movers[i] && movers[i]->get_endstops() ) {
       movers[i]->get_endstops()->read();
     }
   }
@@ -1536,6 +1513,17 @@ StepMover::StepMover( PinsOut *a_motor, EndStop *a_endstops, uint32_t a_tick_2mm
 {
 }
 
+void StepMover::initHW()
+{
+  if( endstops ) {
+    endstops->initHW();
+  }
+  if( motor ) {
+    motor->initHW();
+    motor->write( 0 );
+  }
+};
+
 void StepMover::set_dir( int a_dir )
 {
   if( a_dir == dir ) {
@@ -1543,7 +1531,7 @@ void StepMover::set_dir( int a_dir )
   }
   dir = a_dir;
 
-  if( motor ) {
+  if( motor && true_mode ) {
     if( dir >= 0 ) {
       motor->reset( 0x02 );
     } else {
@@ -1553,25 +1541,52 @@ void StepMover::set_dir( int a_dir )
   }
 }
 
-void StepMover::step()
+ReturnCode StepMover::step()
 {
   if( dir == 0 ) {
-    return;
+    return rcOk;
   }
+  auto rc = check_es();
+  if( rc != rcOk ) {
+    return rc;
+  }
+
   // TODO: check endstops
-  if( motor ) {
+  if( motor && true_mode ) {
     motor->set( 1 );
     delay_mcs( 1 );
     motor->reset( 1 );
   }
   x += dir;
+  return rcOk;
 }
 
-void StepMover::step_to( xfloat to )
+ReturnCode StepMover::step_to( xfloat to )
 {
   int to_i = mm2tick( to );
   int d = ( to_i > x ) ? 1 : ( ( to_i < x ) ? -1 : 0 );
-  step_dir( d );
+  return step_dir( d );
+}
+
+ReturnCode StepMover::check_es()
+{
+  if( ! endstops || dir == 0 ) {
+    return rcOk;
+  }
+  endstops->read();
+  if( endstops->is_bad() ) {
+    return rcFatal;
+  }
+
+  switch( es_mode ) {
+    case EndstopMode::All:
+      return endstops->is_clear() ? rcOk : rcErr;
+    case EndstopMode::Dir:
+      return endstops->is_clear_for_dir( dir ) ? rcOk : rcErr;
+    case EndstopMode::From: // move from endstop
+      return endstops->is_clear_for_dir( dir ) ? rcEnd : rcOk;
+  }
+  return rcErr; // unlikely
 }
 
 // ----------------------------------------  ------------------------------------------------------

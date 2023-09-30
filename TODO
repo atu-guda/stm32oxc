@@ -1,12 +1,13 @@
-Bug: adcdma_n: limit output to n
+More ReturnCode usage
 Events in main loop
+Bug: adcdma_n: limit output to n
 ADC_Info: more common / split
 F7 DMA:
     The SD card works with DMA when disabling the cache memories in HAL_MspInit();
     The SD card works without DMA when cache memories are enabled;
     Adding SCB_CleanInvalidateDCache() before starting the DMA for reading, and SCB_CleanDCache() before starting the DMA for writing makes the SD card work with DMA and caches.
 Fix bug with small floats output
-STD_POST_EXEC redesing: weak?
+STD_POST_EXEC redesign: weak?
 USB CDC: DevIO: hook for connect/disconnect
 07b - all arches (need keyboard)
 substitute vars (or by any hook) in cmdline: oxc_console.cpp: exec_direct?

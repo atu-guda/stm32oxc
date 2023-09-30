@@ -94,12 +94,14 @@ class EndStopGpioPos : public EndStop {
 // mach params
 class StepMover {
   public:
+   enum class EndstopMode { All, Dir, From };
    StepMover( PinsOut *a_motor, EndStop *a_endstops, uint32_t a_tick_2mm, uint32_t a_max_speed, uint32_t a_max_l );
    void initHW();
    void set_dir( int dir );
-   void step();
-   void step_dir( int dir ) { set_dir( dir ); step(); }
-   void step_to( xfloat to );
+   ReturnCode step();
+   ReturnCode step_dir( int dir ) { set_dir( dir ); return step(); }
+   ReturnCode step_to( xfloat to );
+   ReturnCode check_es();
    int  get_x() const { return x; }
    int  get_dir() const { return dir; }
    void set_x( int a_x ) { x = a_x; }
@@ -108,13 +110,17 @@ class StepMover {
    int  mm2tick( xfloat mm ) { return mm * tick2mm; }
    uint32_t get_max_speed() const { return max_speed; };
    uint32_t get_max_l() const { return max_l; };
-   xfloat get_es_find_l() const { return es_find_l; };
+   xfloat get_es_find_l() const { return es_find_l; }; // remove?
    xfloat get_k_slow() const { return k_slow; };
    PinsOut* get_motor() { return motor; } // not const, remove?
-   EndStop* get_endstops() { return endstops; } // not const, remove?
+   EndStop* get_endstops() { return endstops; } // not const, remove? + ask funcs
+   void set_es_mode( EndstopMode a_m ) { es_mode = a_m; }
+   void set_true_mode( bool m ) { true_mode = m; }
+   bool get_true_mode() const { return true_mode; }
   protected:
    PinsOut *motor     ;
-   EndStop  *endstops  ;
+   EndStop  *endstops ;
+   EndstopMode es_mode { EndstopMode::All };
    uint32_t tick2mm   ; // tick per mm, =  pulses per mm
    uint32_t max_speed ; // mm/min
    uint32_t max_l     ; // mm
@@ -122,6 +128,7 @@ class StepMover {
    int      dir       { 0 }; // current direcion: -1, 0, 1, but may be more
    xfloat   es_find_l { 5.0f }; // movement to find endstop, from=ES, to = *1.5
    xfloat   k_slow    { 0.1f }; // slow movement coeff from max_speed
+   bool     true_mode { true };
 };
 
 const inline constinit unsigned n_motors { 5 }; // TODO: part of Mach
@@ -164,6 +171,7 @@ class Machine {
 
    Machine( std::span<StepMover*> a_movers );
    Machine( const Machine &rhs ) = delete;
+   void initHW();
    xfloat getPwm() const { return std::clamp( 100 * spin / spin100, 0.0f, spin_max ); }
    int check_endstops( MoveInfo &mi );
    ReturnCode move_common( MoveInfo &mi, xfloat fe_mmm );
