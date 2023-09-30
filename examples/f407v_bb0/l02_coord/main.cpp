@@ -41,8 +41,8 @@ uint8_t sd_buf[512]; // one sector
 HAL_SD_CardInfoTypeDef cardInfo;
 FATFS fs;
 
-PinsOut stepdir_e1( GpioE,  0, 2 );
-PinsOut stepdir_e0( GpioE, 14, 2 );
+PinsOut stepdir_v( GpioE,  0, 2 );
+PinsOut stepdir_e( GpioE, 14, 2 );
 PinsOut stepdir_x(  GpioE,  8, 2 );
 PinsOut stepdir_y(  GpioE, 10, 2 );
 PinsOut stepdir_z(  GpioE, 12, 2 );
@@ -79,15 +79,13 @@ const EXTI_init_info extis[] = {
 };
 
 
-StepMover s_movers[n_motors] = {
-// tick2mm x  dir max_speed max_l es_find_l k_slow endstops motor
-  {   800, 0,  0,    500,     150,  5.0f,     0.1f, &estp_x, &stepdir_x  }, // TODO: 500 increase after working acceleration
-  {   800, 0,  0,    500,     300,  5.0f,     0.1f, &estp_y, &stepdir_y  },
-  {   800, 0,  0,    300,     150,  4.0f,     0.1f, &estp_z, &stepdir_z  },
-  {   100, 0,  0,    100,  999999,  0.0f,     0.1f, nullptr, &stepdir_e0 },
-  {   100, 0,  0,    100,  999999,  0.0f,     0.1f, nullptr, &stepdir_e1 }
-};
+StepMover mover_x( &stepdir_x, &estp_x, 800, 500, 150 );
+StepMover mover_y( &stepdir_y, &estp_y, 800, 500, 300 );
+StepMover mover_z( &stepdir_z, &estp_z, 800, 300, 150 );
+StepMover mover_e( &stepdir_e, nullptr, 100, 100, 999999 );
+StepMover mover_v( &stepdir_v, nullptr, 100, 100, 999999 );
 
+StepMover* s_movers[n_motors] { &mover_x, &mover_y, &mover_z, &mover_e, &mover_v };
 
 
 Machine me_st( s_movers, std::size(s_movers) );
@@ -213,7 +211,9 @@ int main()
   GpioA.enableClk(); GpioB.enableClk(); GpioC.enableClk(); GpioD.enableClk(); GpioE.enableClk();
 
   for( auto &m : s_movers ) {
-    m.initHW();
+    if( m ) {
+      m->initHW();
+    }
   }
   // TODO: me_st.initHW();
 
@@ -298,7 +298,7 @@ int cmd_test0( int argc, const char * const * argv )
     return 2;
   }
 
-  auto motor = s_movers[a].motor;
+  auto motor = s_movers[a]->get_motor(); // TODO: remove, bad
   if( ! motor ) {
     std_out << "# Error: motor not defined for " << a << NL;
     return 2;
@@ -366,8 +366,8 @@ ReturnCode go_home( unsigned axis )
     std_out << "# Error: bad axis index " << axis << NL;
     return rcErr;
   }
-  auto estp = s_movers[axis].endstops;
-  if( s_movers[axis].max_l > 20000 || estp == nullptr ) {
+  auto estp = s_movers[axis]->get_endstops();
+  if( s_movers[axis]->get_max_l() > 20000 || estp == nullptr ) {
     std_out << "# Error: unsupported axis  " << axis << NL;
     return rcErr;
   }
@@ -375,8 +375,8 @@ ReturnCode go_home( unsigned axis )
   pwm_off_all();
   // me_st.was_set = false;
 
-  xfloat fe_slow = (xfloat)s_movers[axis].max_speed * s_movers[axis].k_slow;
-  xfloat fe_fast = (xfloat)s_movers[axis].max_speed * 0.6f; // TODO: param too?
+  xfloat fe_slow = (xfloat)s_movers[axis]->get_max_speed() * s_movers[axis]->get_k_slow();
+  xfloat fe_fast = (xfloat)s_movers[axis]->get_max_speed() * 0.6f; // TODO: param too?
 
   const unsigned n_mo { 3 }; // 3 = only XYZ motors
   xfloat d_mm[n_mo];
@@ -396,7 +396,7 @@ ReturnCode go_home( unsigned axis )
     if( debug > 0 ) {
       std_out << "# Warning: move from endstop- " << axis << ' ' << estp->toChar() << NL;
     }
-    d_mm[axis] = s_movers[axis].es_find_l;
+    d_mm[axis] = s_movers[axis]->get_es_find_l();
     rc = me_st.move_line( d_mm, 2 * fe_slow );
     if( debug > 0 ) {
       std_out << "# rc= " << rc << NL;
@@ -411,7 +411,7 @@ ReturnCode go_home( unsigned axis )
   }
 
   // go to endstop
-  d_mm[axis] = -2.0f * (xfloat)s_movers[axis].max_l; // far away
+  d_mm[axis] = -2.0f * (xfloat)s_movers[axis]->get_max_l(); // far away
   if( debug > 0 ) {
     std_out << "# to_endstop ph 1 " << estp->toChar() << NL;
   }
@@ -426,7 +426,7 @@ ReturnCode go_home( unsigned axis )
   if( debug > 0 ) {
     std_out << "# go_away ph 2 "  << estp->toChar()<< NL;
   }
-  d_mm[axis] = s_movers[axis].es_find_l;
+  d_mm[axis] = s_movers[axis]->get_es_find_l();
   rc = me_st.move_line( d_mm, fe_slow, axis );
   esv = estp->read();
   if( estp->is_any_stop() ) { // must be ok
@@ -438,7 +438,7 @@ ReturnCode go_home( unsigned axis )
   if( debug > 0 ) {
     std_out << "# to_es ph 3 " << estp->toChar() << NL;
   }
-  d_mm[axis] = - 1.5f * s_movers[axis].es_find_l;
+  d_mm[axis] = - 1.5f * s_movers[axis]->get_es_find_l();
   rc = me_st.move_line( d_mm, fe_slow );
   esv = estp->read();
   if( estp->is_minus_go() ) {
@@ -450,7 +450,7 @@ ReturnCode go_home( unsigned axis )
   if( debug > 0 ) {
     std_out << "# go_away st ph 4 " << estp->toChar() << NL;
   }
-  d_mm[axis] = s_movers[axis].es_find_l;
+  d_mm[axis] = s_movers[axis]->get_es_find_l();
   rc = me_st.move_line( d_mm, fe_slow, axis );
   esv = estp->read();
   if( estp->is_any_stop() ) {
@@ -470,7 +470,7 @@ int cmd_relmove( int argc, const char * const * argv )
   xfloat d_mm[n_motors];
 
   for( unsigned i=0; i<n_motors; ++i ) {
-    d_mm[i] = arg2xfloat_d( i+1, argc, argv, 0, -(xfloat)s_movers[i].max_l, (xfloat)s_movers[i].max_l );
+    d_mm[i] = arg2xfloat_d( i+1, argc, argv, 0 );
   }
   xfloat fe_mmm = arg2xfloat_d( 4, argc, argv, UVAR('f'), 0.0f, 900.0f );
 
@@ -488,10 +488,9 @@ int cmd_absmove( int argc, const char * const * argv )
   xfloat d_mm[n_motors];
 
   for( unsigned i=0; i<n_motors; ++i ) {
-    d_mm[i] = arg2xfloat_d( i+1, argc, argv, 0, -(xfloat)s_movers[i].max_l, (xfloat)s_movers[i].max_l )
-            - me_st.get_xn( i );
+    d_mm[i] = arg2xfloat_d( i+1, argc, argv, 0 ) - me_st.get_xn( i );
   }
-  xfloat fe_mmm = arg2xfloat_d( 4, argc, argv, UVAR('f'), 0.0f, 900.0f );
+  xfloat fe_mmm = arg2xfloat_d( 4, argc, argv, UVAR('f'), 0.0f, 9000.0f ); // large to test limiting
 
   DoAtLeave do_off_motors( []() { motors_off(); } );
   motors_on();
@@ -725,7 +724,7 @@ const Machine::FunGcodePair mg_code_funcs[] = {
 };
 
 
-Machine::Machine( StepMover *a_movers, unsigned a_n_movers )
+Machine::Machine( StepMover **a_movers, unsigned a_n_movers )
      : movers( a_movers ), n_movers( a_n_movers ),
        mg_funcs( mg_code_funcs ), mg_funcs_sz( std::size( mg_code_funcs ) )
 {
@@ -737,12 +736,12 @@ int Machine::check_endstops( MoveInfo &mi )
 {
   // TODO: touch sensor
   for( unsigned i=0; i<n_mo; ++i ) {
-    auto estp = movers[i].endstops;
+    auto estp = movers[i]->get_endstops();
     if( estp == nullptr ) {
       continue;
     }
     uint16_t esv = estp->read();
-    const auto dir = movers[i].dir; // TO early
+    const auto dir = movers[i]->get_dir(); // TO early
     // TODO: special case here: request to stop at clear endstop
     if( i == on_endstop && estp->is_clear() ) {
       return 0;
@@ -766,8 +765,8 @@ const char* Machine::endstops2str( char *buf ) const
   buf[ sizeof(sbuf) - 1 ] = '\0';
 
   for( unsigned i=0; i<n_mo; ++i ) {
-    if( movers[i].endstops ) {
-      buf[i] = 'X'; // TODO: movers[i].endstops->toChar();
+    if( movers[i]->get_endstops() ) {
+      buf[i] =  movers[i]->get_endstops()->toChar();
     }
     buf[i+1] = '\0';
   }
@@ -777,8 +776,8 @@ const char* Machine::endstops2str( char *buf ) const
 const char* Machine::endstops2str_read( char *buf )
 {
   for( unsigned i=0; i<n_mo; ++i ) {
-    if( movers[i].endstops ) {
-      movers[i].endstops->read();
+    if( movers[i]->get_endstops() ) {
+      movers[i]->get_endstops()->read();
     }
   }
   return endstops2str( buf );
@@ -806,7 +805,7 @@ ReturnCode Machine::move_common( MoveInfo &mi, xfloat fe_mmm )
   xfloat coo[n_movers];
   xfloat o_coo[n_movers];
   for( unsigned i=0; i<mi.n_coo; ++i ) {
-    o_coo[i] = movers[i].get_xf();
+    o_coo[i] = movers[i]->get_xf();
   }
   ReturnCode rc { rcOk };
   bool keep_move { true };
@@ -840,7 +839,7 @@ ReturnCode Machine::move_common( MoveInfo &mi, xfloat fe_mmm )
     }
 
     for( unsigned i=0; i<mi.n_coo; ++i ) {
-      movers[i].step_to( coo[i] + o_coo[i] ); // check?
+      movers[i]->step_to( coo[i] + o_coo[i] ); // check?
     }
 
   }
@@ -892,7 +891,7 @@ ReturnCode Machine::g_move_line( const GcodeBlock &gc )
 
   xfloat prev_x[n_mo], d_mm[n_mo];
   for( unsigned i=0; i<n_mo; ++i ) {
-    prev_x[i] = relmove ? 0 : ( movers[i].get_xf() / meas_scale );
+    prev_x[i] = relmove ? 0 : ( movers[i]->get_xf() / meas_scale );
   }
 
   static constexpr const char *const axis_chars = "XYZEVUW?";
@@ -940,7 +939,7 @@ ReturnCode Machine::g_move_circle( const GcodeBlock &gc )
 
   xfloat prev_x[n_mo], coo[8];
   for( unsigned i=0; i<n_mo; ++i ) {
-    prev_x[i] = relmove ? 0 : ( movers[i].get_xf() / meas_scale );
+    prev_x[i] = relmove ? 0 : ( movers[i]->get_xf() / meas_scale );
   }
 
   // TODO: data-control
@@ -1206,7 +1205,7 @@ ReturnCode Machine::g_set_origin( const GcodeBlock &gc ) // G92
     }
     if( gc.is_set( c ) || none_set ) {
       xfloat v = gc.fpv_or_def( c, 0 );
-      movers[i].set_xf( v );
+      movers[i]->set_xf( v );
       a = true;
     }
     ++i;
@@ -1268,7 +1267,7 @@ ReturnCode Machine::m_out_where( const GcodeBlock &gc )     // M114
   xfloat k_unit = 1.0f / ( inchUnit ? 25.4f : 1.0f );
 
   for( unsigned i=0; i<n_movers; ++i ) { // TODO: n_active_motor
-    OUT << ' ' << movers[i].get_xf() / k_unit;
+    OUT << ' ' << movers[i]->get_xf() / k_unit;
   }
   OUT << NL "# F= " << fe_g1 << " S= " << spin << " / " << spin100 << NL;
 
@@ -1356,11 +1355,11 @@ ReturnCode Machine::call_mg( const GcodeBlock &cb )
   if( debug > 0 ) {
     OUT << "# debug: xf:";
     for( unsigned i=0; i<n_movers; ++i ) {
-      OUT << ' ' << movers[i].get_xf();
+      OUT << ' ' << movers[i]->get_xf();
     }
     OUT << NL "# debug: xi:";
     for( unsigned i=0; i<n_movers; ++i ) {
-      OUT << ' ' << movers[i].get_x();
+      OUT << ' ' << movers[i]->get_x();
     }
     OUT << NL;
   }
@@ -1528,6 +1527,13 @@ int wait_next_motor_tick()
   }
   tim_mov_tick = 0;
   return break_flag;
+}
+
+// --------------------------------- StepMover -------------------
+
+StepMover::StepMover( PinsOut *a_motor, EndStop *a_endstops, uint32_t a_tick_2mm, uint32_t a_max_speed, uint32_t a_max_l )
+  : motor( a_motor ), endstops( a_endstops ), tick2mm( a_tick_2mm ), max_speed( a_max_speed ), max_l( a_max_l )
+{
 }
 
 void StepMover::set_dir( int a_dir )

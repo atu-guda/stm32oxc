@@ -3,7 +3,7 @@
 
 #include <oxc_gcode.h>
 
-const inline constinit xfloat k_r2g { 180 / M_PI };
+const inline constinit xfloat M_r2g { 180 / M_PI };
 const inline constinit xfloat M_PIx2 { 2 * M_PI };
 const inline constinit xfloat M_PI2  { M_PI / 2 };
 
@@ -36,7 +36,7 @@ int MX_TIM6_Init();  // tick clock for move
 int MX_TIM10_Init(); // PWM1
 int MX_TIM11_Init(); // PWM2
 void HAL_TIM_MspPostInit( TIM_HandleTypeDef* timHandle );
-int MX_PWM_common_Init( unsigned idx );
+int MX_PWM_common_Init( unsigned idx ); // TODO: channels
 
 void TIM6_callback();
 
@@ -90,31 +90,41 @@ class EndStopGpioPos : public EndStop {
 // TODO: base: common props, here - realization
 // TODO: ctor, [ptr]
 // mach params
-struct StepMover {
-  uint32_t tick2mm   ; // tick per mm, =  pulses per mm
-  int      x         ; // current pos in pulses, ? int64_t?
-  int      dir       ; // current direcion: -1, 0, 1, but may be more
-  uint32_t max_speed ; // mm/min
-  uint32_t max_l     ; // mm
-  xfloat    es_find_l ; // movement to find endstop, from=ES, to = *1.5
-  xfloat    k_slow    ; // slow movement coeff from max_speed
-  EndStop  *endstops  ;
-  PinsOut *motor     ;
-  void initHW();
-  void set_dir( int dir );
-  void step();
-  void step_dir( int dir ) { set_dir( dir ); step(); }
-  void step_to( xfloat to );
-  int  get_x() const { return x; }
-  void set_x( int a_x ) { x = a_x; }
-  xfloat  get_xf() const { return (xfloat)x / tick2mm; }
-  void set_xf( xfloat a_x ) { x = a_x * tick2mm; }
-  int  mm2tick( xfloat mm ) { return mm * tick2mm; }
+class StepMover {
+  public:
+   StepMover( PinsOut *a_motor, EndStop *a_endstops, uint32_t a_tick_2mm, uint32_t a_max_speed, uint32_t a_max_l );
+   void initHW();
+   void set_dir( int dir );
+   void step();
+   void step_dir( int dir ) { set_dir( dir ); step(); }
+   void step_to( xfloat to );
+   int  get_x() const { return x; }
+   int  get_dir() const { return dir; }
+   void set_x( int a_x ) { x = a_x; }
+   xfloat  get_xf() const { return (xfloat)x / tick2mm; }
+   void set_xf( xfloat a_x ) { x = a_x * tick2mm; }
+   int  mm2tick( xfloat mm ) { return mm * tick2mm; }
+   uint32_t get_max_speed() const { return max_speed; };
+   uint32_t get_max_l() const { return max_l; };
+   xfloat get_es_find_l() const { return es_find_l; };
+   xfloat get_k_slow() const { return k_slow; };
+   PinsOut* get_motor() { return motor; } // not const, remove?
+   EndStop* get_endstops() { return endstops; } // not const, remove?
+  protected:
+   PinsOut *motor     ;
+   EndStop  *endstops  ;
+   uint32_t tick2mm   ; // tick per mm, =  pulses per mm
+   uint32_t max_speed ; // mm/min
+   uint32_t max_l     ; // mm
+   int      x         { 0 }; // current pos in pulses, ? int64_t?
+   int      dir       { 0 }; // current direcion: -1, 0, 1, but may be more
+   xfloat   es_find_l { 5.0f }; // movement to find endstop, from=ES, to = *1.5
+   xfloat   k_slow    { 0.1f }; // slow movement coeff from max_speed
 };
 
 const inline constinit unsigned n_motors { 5 }; // TODO: part of Mach
 
-extern StepMover s_movers[n_motors];
+extern StepMover* s_movers[n_motors];
 
 int gcode_cmdline_handler( char *s );
 ReturnCode gcode_act_fun_me_st( const GcodeBlock &gc );
@@ -150,7 +160,7 @@ class Machine {
      const char* helpstr;
    };
 
-   Machine( StepMover *a_movers, unsigned a_n_movers );
+   Machine( StepMover **a_movers, unsigned a_n_movers );
    xfloat getPwm() const { return std::clamp( 100 * spin / spin100, 0.0f, spin_max ); }
    int check_endstops( MoveInfo &mi );
    ReturnCode move_common( MoveInfo &mi, xfloat fe_mmm );
@@ -160,8 +170,8 @@ class Machine {
    ReturnCode move_circ( const xfloat *d_mm, xfloat fe_mmm );
    MachMode get_mode() const { return mode; };
    void set_mode( MachMode m ) { if( m < modeMax ) { mode = m; }}; // TODO: more actions
-   xfloat get_xn( unsigned i ) const { return ( i < n_movers ) ? movers[i].get_xf() : 0 ; }
-   void set_xn( unsigned i, xfloat v ) { if( i < n_movers ) { movers[i].set_xf( v ); } }
+   xfloat get_xn( unsigned i ) const { return ( i < n_movers ) ? movers[i]->get_xf() : 0 ; }
+   void set_xn( unsigned i, xfloat v ) { if( i < n_movers ) { movers[i]->set_xf( v ); } }
    int get_dly_xsteps() const { return dly_xsteps; }
    void set_dly_xsteps( int v ) { dly_xsteps = v; }
    unsigned get_n_mo() const { return n_mo; }
@@ -198,7 +208,7 @@ class Machine {
    ReturnCode m_set_mode_laser( const GcodeBlock &gc );// M452
    ReturnCode m_set_mode_cnc( const GcodeBlock &gc );  // M453
   protected:
-   StepMover* movers; // TODO: common mover
+   StepMover** movers; // TODO: common mover
    const unsigned n_movers;
    MachMode mode { modeFFF };
    unsigned on_endstop { 9999 };
