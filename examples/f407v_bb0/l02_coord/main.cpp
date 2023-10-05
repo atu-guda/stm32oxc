@@ -266,50 +266,12 @@ int main()
 
 int cmd_test0( int argc, const char * const * argv )
 {
-  int a = arg2long_d( 1, argc, argv, UVAR('a'), 0, 100000000 ); // motor index
-  int n = arg2long_d( 2, argc, argv, UVAR('n'), -10000000, 100000000 ); // number of pulses with sign
-  uint32_t dt = arg2long_d( 3, argc, argv, UVAR('t'), 0, 1000 ); // ticks in ms
+  // int a = arg2long_d( 1, argc, argv, UVAR('a'), 0, 100000000 ); // motor index
+  // int n = arg2long_d( 2, argc, argv, UVAR('n'), -10000000, 100000000 ); // number of pulses with sign
+  // uint32_t dt = arg2long_d( 3, argc, argv, UVAR('t'), 0, 1000 ); // ticks in ms
 
-  bool rev = false;
-  if( n < 0 ) {
-    n = -n; rev = true;
-  }
 
-  if( (size_t)a > n_motors  ||  a < 0 ) {
-    std_out << "# Error: bad motor index " << a << NL;
-    return 2;
-  }
-
-  auto motor = s_movers[a]->get_motor(); // TODO: remove, bad
-  if( ! motor ) {
-    std_out << "# Error: motor not defined for " << a << NL;
-    return 2;
-  }
-
-  motor->sr( 0x02, rev );
-  motors_on();
-  uint32_t tm0 = HAL_GetTick(), tc0 = tm0;
-
-  break_flag = 0;
-  for( int i=0; i<n && !break_flag; ++i ) {
-    // uint32_t tmc = HAL_GetTick();
-    // std_out << i << ' ' << ( tmc - tm0 )  << NL;
-
-    leds[0].toggle();
-    (*motor)[0].toggle();
-
-    if( dt > 0 ) {
-      delay_ms_until_brk( &tc0, dt );
-    } else {
-      delay_mcs( UVAR('u') );
-    }
-
-  }
-  motors_off();
-
-  int rc = break_flag;
-
-  return rc + rev;
+  return 0;
 }
 
 bool EndStopGpioPos::is_clear_for_dir( int dir ) const
@@ -766,6 +728,9 @@ ReturnCode Machine::move_common( MoveInfo &mi, xfloat fe_mmm )
     return rcErr;
   }
 
+  if( fe_mmm < 2.0f ) {
+    fe_mmm = ( move_mode & moveFast ) ? fe_g0 : fe_g1;
+  }
   fe_mmm *= fe_scale / 100;
   fe_mmm = clamp( fe_mmm, 2.0f, fe_g0 );
   const xfloat k_t { 1.0f / TIM6_count_freq };
@@ -786,6 +751,13 @@ ReturnCode Machine::move_common( MoveInfo &mi, xfloat fe_mmm )
   }
   ReturnCode rc { rcOk };
   bool keep_move { true };
+  bool onoff_laser = ( move_mode & moveActive ) && ( mode == modeLaser ) && ( spin > 0 );
+
+  if( onoff_laser ) {
+    const xfloat v = getPwm();
+    OUT << "# power= " << spin << " v= " << v << NL;
+    pwm_set( 0, v );
+  }
 
   // really must be more then t_tick
   for( unsigned tn=0; tn < 5*t_tick && keep_move && break_flag == 0; ++tn ) {
@@ -803,11 +775,6 @@ ReturnCode Machine::move_common( MoveInfo &mi, xfloat fe_mmm )
       break;
     }
 
-    if( check_endstops( mi ) == 0 ) {
-      rc = rcErr; // rcEnd?
-      break;
-    }
-
     leds[2].reset();
 
     if( wait_next_motor_tick() != 0 ) { // TODO: loop untill ready + some payload
@@ -815,12 +782,26 @@ ReturnCode Machine::move_common( MoveInfo &mi, xfloat fe_mmm )
       break;
     }
 
-    for( unsigned i=0; i<mi.n_coo; ++i ) {
-      movers[i]->step_to( coo[i] + o_coo[i] ); // check?
+    unsigned n_ok { 0 };
+    for( unsigned i=0; i<mi.n_coo && keep_move ; ++i ) {
+      auto rc_s = movers[i]->step_to( coo[i] + o_coo[i] );
+      if( rc_s == rcOk ) {
+        ++n_ok;
+        continue;
+      }
+      if( rc_s >= rcErr ) {
+        keep_move = false;
+        break;
+      }
     }
 
   }
   leds[2].reset();
+
+  if( onoff_laser ) {
+    pwm_off( 0 );
+  }
+
   const uint32_t tm_e = HAL_GetTick();
 
   OUT << "# debug: move_common: a= " << last_a << " dt= " << ( tm_e - tm_s ) << NL;
@@ -861,6 +842,52 @@ ReturnCode Machine::move_circ( const xfloat *coo, xfloat fe_mmm )
   }
   return move_common( mi, fe_mmm );
 }
+
+ReturnCode Machine::go_home( uint16_t motor_bits )
+{
+  if( motor_bits == 0 ) {
+    motor_bits = 0x07; // XYZ
+  }
+
+  // calc - coords for given movers
+  xfloat coo[n_motors];
+  std::ranges::fill( coo, 0 );
+  for( uint16_t i=0, b=0x01; i<3; ++i, b<<=1 ) {
+    if( ( motor_bits & b ) == 0 ) {
+      continue;
+    }
+    auto mover = movers[i];
+    if( mover ) {
+      // drop bit from motor_bits
+      continue;
+    }
+    auto estp = mover->get_endstops();
+    if( !estp ) {
+      // drop bit from motor_bits
+      continue;
+    }
+    mover->set_es_mode( StepMover::EndstopMode::Dir );
+    coo[i] = -5000; // 5 m, for equal speed on all axis
+  }
+
+  // endstops : Dir
+  // fast go to enstops(-): moveAllStop, moveFast
+  // check given movers: all given : is_minus_stop
+  // for given {
+  //   mover: From
+  //   move: slow? all clear
+  //   mover: All
+  //   move: slow, is_minus_stop
+  //   mover: From
+  //   move: slow? all clear
+  //   ? mover: All
+  //   move: slow + 0.2 / 1mm ? all clear
+  //
+  // }
+  return rcErr;
+}
+
+// ---------------- G and M code funcs --------------------------
 
 ReturnCode Machine::g_move_line( const GcodeBlock &gc )
 {
@@ -1546,12 +1573,12 @@ ReturnCode StepMover::step()
   if( dir == 0 ) {
     return rcOk;
   }
+
   auto rc = check_es();
   if( rc != rcOk ) {
     return rc;
   }
 
-  // TODO: check endstops
   if( motor && true_mode ) {
     motor->set( 1 );
     delay_mcs( 1 );
@@ -1575,14 +1602,14 @@ ReturnCode StepMover::check_es()
   }
   endstops->read();
   if( endstops->is_bad() ) {
-    return rcFatal;
+    return rcErr;
   }
 
   switch( es_mode ) {
     case EndstopMode::All:
-      return endstops->is_clear() ? rcOk : rcErr;
+      return endstops->is_clear() ? rcOk : rcEnd;
     case EndstopMode::Dir:
-      return endstops->is_clear_for_dir( dir ) ? rcOk : rcErr;
+      return endstops->is_clear_for_dir( dir ) ? rcOk : rcEnd;
     case EndstopMode::From: // move from endstop
       return endstops->is_clear_for_dir( dir ) ? rcEnd : rcOk;
   }

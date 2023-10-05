@@ -162,6 +162,9 @@ class Machine {
    enum MachMode {
      modeFFF = 0, modeLaser = 1, modeCNC = 2, modeMax = 3
    };
+   enum MoveMode { // flags
+     moveCommon = 0, moveActive = 1, moveFast = 2, moveAllStop = 4
+   };
    using fun_gcode_mg = ReturnCode(Machine::*)( const GcodeBlock &cb );
    struct FunGcodePair {
      int num;
@@ -179,6 +182,7 @@ class Machine {
    ReturnCode move_line( const xfloat *d_mm, xfloat fe_mmm, unsigned a_on_endstop = 9999 );
    // coords: [0]:r_s, [1]: alp_s, [2]: r_e, [3]: alp_e, [4]: cv?, [5]: z_e, [6]: e_e, [7]: nt(L) [8]: x_r, [9]: y_r
    ReturnCode move_circ( const xfloat *d_mm, xfloat fe_mmm );
+   ReturnCode go_home( uint16_t motor_bits );
    MachMode get_mode() const { return mode; };
    void set_mode( MachMode m ) { if( m < modeMax ) { mode = m; }}; // TODO: more actions
    xfloat get_xn( unsigned i ) const { return ( i < movers.size() ) ? movers[i]->get_xf() : 0 ; }
@@ -187,6 +191,8 @@ class Machine {
    void set_dly_xsteps( int v ) { dly_xsteps = v; }
    unsigned get_n_mo() const { return n_mo; }
    void set_n_mo( unsigned n ) { n_mo = std::min( n_mo, movers.size() ); }
+   MoveMode get_move_mode() const { return move_mode; }
+   void set_move_mode( MoveMode m ) { move_mode = m; }
    const char* endstops2str( char *buf = nullptr ) const;
    const char* endstops2str_read( char *buf = nullptr );
 
@@ -221,6 +227,7 @@ class Machine {
   protected:
    std::span<StepMover*> movers;
    MachMode mode { modeFFF };
+   MoveMode move_mode { moveCommon };
    unsigned on_endstop { 9999 };
    uint32_t last_rc;
    unsigned n_mo { 0 }; // current number of active motors
