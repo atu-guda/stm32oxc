@@ -266,12 +266,14 @@ int main()
 
 int cmd_test0( int argc, const char * const * argv )
 {
-  // int a = arg2long_d( 1, argc, argv, UVAR('a'), 0, 100000000 ); // motor index
+  int mo_idx = arg2long_d( 1, argc, argv, 1, 0, 100000000 ); // motor index
   // int n = arg2long_d( 2, argc, argv, UVAR('n'), -10000000, 100000000 ); // number of pulses with sign
   // uint32_t dt = arg2long_d( 3, argc, argv, UVAR('t'), 0, 1000 ); // ticks in ms
 
+  auto rc = me_st.go_from_es( mo_idx );
+  OUT << "# debug: mo_idx= " << mo_idx << " rc= " << rc << NL;
 
-  return 0;
+  return rc;
 }
 
 bool EndStopGpioPos::is_clear_for_dir( int dir ) const
@@ -309,8 +311,8 @@ ReturnCode go_home( unsigned axis )
   xfloat fe_slow = (xfloat)s_movers[axis]->get_max_speed() * s_movers[axis]->get_k_slow();
   xfloat fe_fast = (xfloat)s_movers[axis]->get_max_speed() * 0.6f; // TODO: param too?
 
-  const unsigned n_mo { 3 }; // 3 = only XYZ motors
-  xfloat d_mm[n_mo];
+  const unsigned n_mot { 3 }; // 3 = only XYZ motors
+  xfloat d_mm[n_mot];
   ranges::fill( d_mm, 0 );
 
   DoAtLeave do_off_motors( []() { motors_off(); } );
@@ -549,7 +551,11 @@ ReturnCode MoveInfo::prep_move_line( const xfloat *prm )
   for( unsigned i=0; i<n_coo; ++i ) {
     k_x[i] = p[i];
   }
-  OUT << "# debug: prep_move_line: len= " << len << NL;
+  OUT << "# debug: prep_move_line: len= " << len << " n_coo=" << n_coo;
+  for( unsigned i=0; i<n_coo; ++i ) {
+    OUT << ' ' << p[i];
+  }
+  OUT << NL;
   return rcOk;
 }
 
@@ -656,7 +662,7 @@ const Machine::FunGcodePair mg_code_funcs[] = {
 
 
 Machine::Machine( std::span<StepMover*> a_movers )
-     : movers( std::move(a_movers) ),
+     : movers( a_movers ),
        mg_funcs( mg_code_funcs ), mg_funcs_sz( std::size( mg_code_funcs ) )
 {
   ranges::fill( axis_scale, 1 );
@@ -671,28 +677,6 @@ void Machine::initHW()
   }
 }
 
-int Machine::check_endstops( MoveInfo &mi )
-{
-  // TODO: touch sensor
-  for( unsigned i=0; i<n_mo; ++i ) {
-    auto estp = movers[i]->get_endstops();
-    if( estp == nullptr ) {
-      continue;
-    }
-    uint16_t esv = estp->read();
-    const auto dir = movers[i]->get_dir(); // TO early
-    // TODO: special case here: request to stop at clear endstop
-    if( i == on_endstop && estp->is_clear() ) {
-      return 0;
-    }
-    if( estp->is_clear_for_dir( dir ) ) {
-      continue;
-    }
-    std_out << "# Error: endstop " << esv << " at " << i << " dir: " << dir << NL;
-    return 0;
-  }
-  return 1;
-}
 
 const char* Machine::endstops2str( char *buf ) const
 {
@@ -789,6 +773,7 @@ ReturnCode Machine::move_common( MoveInfo &mi, xfloat fe_mmm )
         ++n_ok;
         continue;
       }
+      rc = rc_s;
       if( rc_s >= rcErr ) {
         keep_move = false;
         break;
@@ -804,7 +789,7 @@ ReturnCode Machine::move_common( MoveInfo &mi, xfloat fe_mmm )
 
   const uint32_t tm_e = HAL_GetTick();
 
-  OUT << "# debug: move_common: a= " << last_a << " dt= " << ( tm_e - tm_s ) << NL;
+  OUT << "# debug: move_common: a= " << last_a << " dt= " << ( tm_e - tm_s ) << " fe= " << fe_mmm << NL;
 
   if( dly_xsteps > 0 ) { // TODO: rework
     motors_off(); // TODO: investigate! + sensors
@@ -887,6 +872,43 @@ ReturnCode Machine::go_home( uint16_t motor_bits )
   return rcErr;
 }
 
+ReturnCode Machine::go_from_es( unsigned mover_idx )
+{
+  if( mover_idx >= n_mo ) {
+    OUT << "# Err: bad mover index " << mover_idx << ' ' << n_mo << NL;
+    return rcErr;
+  }
+  auto mover = movers[mover_idx];
+  if( !mover ) {
+    OUT << "# Err: bad mover ptr " << mover_idx << ' ' << n_mo << NL;
+    return rcErr;
+  }
+  auto es = mover->get_endstops();
+  if( !es ) {
+    OUT << "# Err: no endstop for " << mover_idx << NL;
+    return rcErr;
+  }
+
+  es->read();
+  if( es->is_minus_go() ) {
+    OUT << "# Err: not on endstop " << mover_idx << NL;
+    return rcErr;
+  }
+  mover->set_es_mode( StepMover::EndstopMode::From );
+
+  xfloat coo[n_motors];
+  std::ranges::fill( coo, 0 );
+
+  DoAtLeave do_off_motors( []() { motors_off(); } );
+  motors_on(); // TODO: tmp
+
+  coo[mover_idx] = mover->get_es_find_l();
+  auto rc = move_line( coo, fe_g1 * mover->get_k_slow() );
+  mover->set_es_mode( StepMover::EndstopMode::Dir );
+
+  return rc;
+}
+
 // ---------------- G and M code funcs --------------------------
 
 ReturnCode Machine::g_move_line( const GcodeBlock &gc )
@@ -938,7 +960,6 @@ ReturnCode Machine::g_move_line( const GcodeBlock &gc )
 
 ReturnCode Machine::g_move_circle( const GcodeBlock &gc )
 {
-  const unsigned n_mo { 4 }; // TODO? who set
   const xfloat meas_scale = inchUnit ? 25.4f : 1.0f;
 
   xfloat prev_x[n_mo], coo[8];
@@ -1273,7 +1294,8 @@ ReturnCode Machine::m_out_where( const GcodeBlock &gc )     // M114
   for( auto pm: movers ) {
     OUT << ' ' << pm->get_xf() / k_unit;
   }
-  OUT << NL "# F= " << fe_g1 << " S= " << spin << " / " << spin100 << NL;
+  OUT << NL "# F= " << fe_g1 << " S= " << spin << " / " << spin100
+      << " n_mo= " << n_mo << ' ' << movers.size() << ' ' << endstops2str_read() << NL;
 
   return ReturnCode::rcOk;
 }
@@ -1479,7 +1501,7 @@ void HAL_GPIO_EXTI_Callback( uint16_t pin_bit )
 {
   ++UVAR('i'); UVAR('b') = pin_bit;
   leds[1].toggle();
-  break_flag = 0x000F0000 + pin_bit;
+  // break_flag = 0x000F0000 + pin_bit;
   pwm_off_all();
   // TODO: PWM and break logic
 }
@@ -1611,7 +1633,7 @@ ReturnCode StepMover::check_es()
     case EndstopMode::Dir:
       return endstops->is_clear_for_dir( dir ) ? rcOk : rcEnd;
     case EndstopMode::From: // move from endstop
-      return endstops->is_clear_for_dir( dir ) ? rcEnd : rcOk;
+      return ( endstops->is_clear_for_dir( dir ) && ! endstops->is_clear() ) ? rcOk : rcEnd;
   }
   return rcErr; // unlikely
 }

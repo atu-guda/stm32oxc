@@ -176,13 +176,13 @@ class Machine {
    Machine( const Machine &rhs ) = delete;
    void initHW();
    xfloat getPwm() const { return std::clamp( 100 * spin / spin100, 0.0f, spin_max ); }
-   int check_endstops( MoveInfo &mi );
    ReturnCode move_common( MoveInfo &mi, xfloat fe_mmm );
    // coords: XYZE....
    ReturnCode move_line( const xfloat *d_mm, xfloat fe_mmm, unsigned a_on_endstop = 9999 );
    // coords: [0]:r_s, [1]: alp_s, [2]: r_e, [3]: alp_e, [4]: cv?, [5]: z_e, [6]: e_e, [7]: nt(L) [8]: x_r, [9]: y_r
    ReturnCode move_circ( const xfloat *d_mm, xfloat fe_mmm );
    ReturnCode go_home( uint16_t motor_bits );
+   ReturnCode go_from_es( unsigned mover_idx );
    MachMode get_mode() const { return mode; };
    void set_mode( MachMode m ) { if( m < modeMax ) { mode = m; }}; // TODO: more actions
    xfloat get_xn( unsigned i ) const { return ( i < movers.size() ) ? movers[i]->get_xf() : 0 ; }
@@ -190,7 +190,7 @@ class Machine {
    int get_dly_xsteps() const { return dly_xsteps; }
    void set_dly_xsteps( int v ) { dly_xsteps = v; }
    unsigned get_n_mo() const { return n_mo; }
-   void set_n_mo( unsigned n ) { n_mo = std::min( n_mo, movers.size() ); }
+   void set_n_mo( unsigned n ) { n_mo = std::min( n, movers.size() ); }
    MoveMode get_move_mode() const { return move_mode; }
    void set_move_mode( MoveMode m ) { move_mode = m; }
    const char* endstops2str( char *buf = nullptr ) const;
@@ -228,8 +228,7 @@ class Machine {
    std::span<StepMover*> movers;
    MachMode mode { modeFFF };
    MoveMode move_mode { moveCommon };
-   unsigned on_endstop { 9999 };
-   uint32_t last_rc;
+   unsigned on_endstop { 9999 }; // TODO: remove
    unsigned n_mo { 0 }; // current number of active motors
    const FunGcodePair *mg_funcs { nullptr };
    const unsigned mg_funcs_sz;
