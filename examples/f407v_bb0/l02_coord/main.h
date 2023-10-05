@@ -246,6 +246,7 @@ class Machine {
    xfloat spin_max {  90 };   // max PWM in %
    int dly_xsteps { 50 }; // delay between steps in program
    bool was_set { false };
+   bool bounded_move { true };
    bool relmove { false };
    bool inchUnit { false };
    bool spinOn   { false };

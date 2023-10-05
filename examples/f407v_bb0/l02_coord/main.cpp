@@ -778,6 +778,15 @@ ReturnCode Machine::move_common( MoveInfo &mi, xfloat fe_mmm )
         keep_move = false;
         break;
       }
+      if( rc_s >= rcEnd && bounded_move ) {
+        keep_move = false;
+        break;
+      }
+    }
+
+    if( n_ok < 1 ) {
+      rc = rcEnd;
+      break;
     }
 
   }
@@ -831,7 +840,7 @@ ReturnCode Machine::move_circ( const xfloat *coo, xfloat fe_mmm )
 ReturnCode Machine::go_home( uint16_t motor_bits )
 {
   if( motor_bits == 0 ) {
-    motor_bits = 0x07; // XYZ
+    motor_bits = 0x07; // XYZ TODO: or more?
   }
 
   // calc - coords for given movers
@@ -902,6 +911,7 @@ ReturnCode Machine::go_from_es( unsigned mover_idx )
   DoAtLeave do_off_motors( []() { motors_off(); } );
   motors_on(); // TODO: tmp
 
+  bounded_move = true;
   coo[mover_idx] = mover->get_es_find_l();
   auto rc = move_line( coo, fe_g1 * mover->get_k_slow() );
   mover->set_es_mode( StepMover::EndstopMode::Dir );
@@ -935,6 +945,7 @@ ReturnCode Machine::g_move_line( const GcodeBlock &gc )
   bool g1 { g != 0 };
 
   xfloat fe_mmm = g1 ? fe_g1 : fe_g0; // TODO: split: 2 different functions
+  bounded_move = g1;
 
   OUT << "# G" << (g1?'1':'0') << " ( ";
   for( auto xx: d_mm ) {
@@ -961,6 +972,7 @@ ReturnCode Machine::g_move_line( const GcodeBlock &gc )
 ReturnCode Machine::g_move_circle( const GcodeBlock &gc )
 {
   const xfloat meas_scale = inchUnit ? 25.4f : 1.0f;
+  bounded_move = true;
 
   xfloat prev_x[n_mo], coo[8];
   for( unsigned i=0; i<n_mo; ++i ) {
