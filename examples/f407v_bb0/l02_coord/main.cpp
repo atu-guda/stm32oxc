@@ -895,23 +895,15 @@ ReturnCode Machine::g_move_line( const GcodeBlock &gc )
   xfloat fe_mmm = g1 ? fe_g1 : fe_g0; // TODO: split: 2 different functions
   bounded_move = g1;
 
+  // TODO: comment after after debug
   OUT << "# G" << (g1?'1':'0') << " ( ";
   for( auto xx: d_mm ) {
     OUT << xx << ' ';
   }
   OUT << " ); fe= "<< fe_mmm << NL;
 
-  if( mode == Machine::modeLaser && g1 && spin > 0 ) {
-    const xfloat v = getPwm();
-    OUT << "# spin= " << spin << " v= " << v << NL;
-    pwm_set( 0, v );
-  }
-
   ReturnCode rc = move_line( d_mm, fe_mmm );
 
-  if( mode == Machine::modeLaser ) {
-    pwm_off( 0 );
-  }
   OUT << "#  G0G1 rc= "<< rc << " break_flag= " << break_flag << NL;
 
   return rc;
@@ -922,21 +914,39 @@ ReturnCode Machine::g_move_circle( const GcodeBlock &gc )
   const xfloat meas_scale = inchUnit ? 25.4f : 1.0f;
   bounded_move = true;
 
-  xfloat prev_x[n_mo], coo[8];
+  xfloat coo[13]; // some of them is unused late, but for common
+
+  xfloat &r_s   { coo[0]  };
+  xfloat &alp_s { coo[1]  };
+  xfloat &r_e   { coo[2]  };
+  xfloat &alp_e { coo[3]  };
+  xfloat &cv    { coo[4]  };
+  xfloat &z_e   { coo[5]  };
+  xfloat &e_e   { coo[6]  };
+  xfloat &nt    { coo[7]  };
+  xfloat &x_e   { coo[8]  };
+  xfloat &y_e   { coo[9]  };
+  xfloat &x_r   { coo[10] };
+  xfloat &y_r   { coo[11] };
+  xfloat &r_1   { coo[12] };
+  //
+
+
+  xfloat prev_x[n_mo];
   for( unsigned i=0; i<n_mo; ++i ) {
     prev_x[i] = relmove ? 0 : ( movers[i]->get_xf() / meas_scale );
   }
 
   // TODO: data-control
-  xfloat x_e = meas_scale * gc.fpv_or_def( 'X', prev_x[0] );
-  xfloat y_e = meas_scale * gc.fpv_or_def( 'Y', prev_x[1] );
-  xfloat z_e = meas_scale * gc.fpv_or_def( 'Z', prev_x[2] );
-  xfloat e_e = meas_scale * gc.fpv_or_def( 'E', prev_x[3] );
-  xfloat x_r = meas_scale * gc.fpv_or_def( 'I', NAN );
-  xfloat y_r = meas_scale * gc.fpv_or_def( 'J', NAN );
-  xfloat r_1 = meas_scale * gc.fpv_or_def( 'R', NAN );
-  xfloat nt  = int( gc.fpv_or_def( 'L', 0 ) );
-  bool cv    = gc.ipv_or_def( 'G', 2 ) == 2;
+  x_e = meas_scale * gc.fpv_or_def( 'X', prev_x[0] );
+  y_e = meas_scale * gc.fpv_or_def( 'Y', prev_x[1] );
+  z_e = meas_scale * gc.fpv_or_def( 'Z', prev_x[2] );
+  e_e = meas_scale * gc.fpv_or_def( 'E', prev_x[3] );
+  x_r = meas_scale * gc.fpv_or_def( 'I', NAN );
+  y_r = meas_scale * gc.fpv_or_def( 'J', NAN );
+  r_1 = meas_scale * gc.fpv_or_def( 'R', NAN );
+  nt  = int( gc.fpv_or_def( 'L', 0 ) );
+  cv  = gc.ipv_or_def( 'G', 2 ) == 2;
 
   if( !relmove ) {
     x_e -= prev_x[0]; y_e -= prev_x[1]; z_e -= prev_x[2]; e_e -= prev_x[3];
@@ -948,11 +958,10 @@ ReturnCode Machine::g_move_circle( const GcodeBlock &gc )
   bool r_mode = !ij_mode && isfinite( r_1 );
 
   if( ! ij_mode && ! r_mode ) {
-    std_out << "# Nor I,J nor R defined" << NL; // TODO: line?
+    std_out << "# Nor I,J nor R defined" << NL;
     return g_move_line( gc );
   }
 
-  xfloat r_s, r_e;
   if( ij_mode ) {
     r_s = hypotxf( x_r, y_r );
     r_e = hypotxf( ( x_e - x_r ), ( y_e - y_r ) );
@@ -977,10 +986,8 @@ ReturnCode Machine::g_move_circle( const GcodeBlock &gc )
     return g_move_line( gc );
   }
 
-
-  xfloat alp_s = atan2xf(        -y_r  ,        -x_r   );
-  xfloat alp_e = atan2xf( ( y_e - y_r ), ( x_e - x_r ) );
-
+  alp_s = atan2xf(        -y_r  ,        -x_r   );
+  alp_e = atan2xf( ( y_e - y_r ), ( x_e - x_r ) );
 
   if( cv ) {
     if( alp_e > alp_s ) {
@@ -1006,29 +1013,17 @@ ReturnCode Machine::g_move_circle( const GcodeBlock &gc )
     return g_move_line( gc );
   }
 
-  coo[0] = r_s; coo[1] = alp_s; coo[2] = r_e; coo[3] = alp_e;
-  coo[4] = cv;  coo[5] = z_e;   coo[6] = e_e; coo[7] = nt;
-
   xfloat fe_mmm = fe_g1;
 
+  // TODO: comment after after debug
   OUT << "# G" << (cv?'2':'3') << " ( ";
   for( auto xx: coo ) {
     OUT << xx << ' ';
   }
   OUT << " ); fe= "<< fe_mmm << NL;
 
-  // TODO: common
-  if( mode == Machine::modeLaser && spin > 0 ) {
-    const xfloat v = getPwm();
-    OUT << "# spin= " << spin << " v= " << v << NL;
-    pwm_set( 0, v );
-  }
-
   auto rc = move_circ( coo, fe_mmm );
 
-  if( mode == Machine::modeLaser ) {
-    pwm_off( 0 );
-  }
   OUT << "#  G2G3 rc= "<< rc << " break_flag= " << break_flag << NL;
   return rc;
 }
