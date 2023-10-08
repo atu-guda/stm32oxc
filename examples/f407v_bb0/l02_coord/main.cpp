@@ -732,11 +732,11 @@ ReturnCode Machine::move_line( const xfloat *d_mm, xfloat fe_mmm )
   return move_common( mi, fe_mmm );
 }
 
-// coords: [0]:r_s, [1]: alp_s, [2]: r_e, [3]: alp_e, [4]: cv?, [5]: z_e, [6]: e_e, [7]: nt(L) [8]: x_r, [9]: y_r
-ReturnCode Machine::move_circ( const xfloat *coo, xfloat fe_mmm )
+// prm: [0]:r_s, [1]: alp_s, [2]: r_e, [3]: alp_e, [4]: cv?, [5]: z_e, [6]: e_e, [7]: nt(L) [8]: x_e, [9]: y_e
+ReturnCode Machine::move_circ( const xfloat *prm, xfloat fe_mmm )
 {
   MoveInfo mi( MoveInfo::Type::circle, n_mo, step_circ_fun );
-  auto rc_prep =  mi.prep_move_circ( coo );
+  auto rc_prep =  mi.prep_move_circ( prm );
   if( rc_prep != 0 ) {
     std_out << "# Error: fail to prepare MoveInfo for circle, rc=" << rc_prep << NL;
     return rcErr;
