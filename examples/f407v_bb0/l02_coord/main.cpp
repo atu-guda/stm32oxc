@@ -214,7 +214,7 @@ int main()
   en_motors.initHW(); // TODO: to machine
   motors_off();
 
-  UVAR('e') = EXTI_inits( extis, true );
+  EXTI_inits( extis, true );
 
   MX_TIM3_Init();
   MX_TIM10_Init();
@@ -291,111 +291,6 @@ bool EndStopGpioPos::is_clear_for_dir( int dir ) const
 }
 
 
-
-// TODO: move to Machine, simultanious movement
-ReturnCode go_home( unsigned axis )
-{
-  if( axis >= n_motors ) {
-    std_out << "# Error: bad axis index " << axis << NL;
-    return rcErr;
-  }
-  auto estp = s_movers[axis]->get_endstops();
-  if( s_movers[axis]->get_max_l() > 20000 || estp == nullptr ) {
-    std_out << "# Error: unsupported axis  " << axis << NL;
-    return rcErr;
-  }
-
-  pwm_off_all();
-  // me_st.was_set = false;
-
-  xfloat fe_slow = (xfloat)s_movers[axis]->get_max_speed() * s_movers[axis]->get_k_slow();
-  xfloat fe_fast = (xfloat)s_movers[axis]->get_max_speed() * 0.6f; // TODO: param too?
-
-  const unsigned n_mot { 3 }; // 3 = only XYZ motors
-  xfloat d_mm[n_mot];
-  ranges::fill( d_mm, 0 );
-
-  DoAtLeave do_off_motors( []() { motors_off(); } );
-  motors_on();
-
-  // TODO: params
-  ReturnCode rc { rcOk };
-
-  // if on endstop_minus - go+
-  auto esv = estp->read();
-  std_out << "# debug: home: axis= " << axis << ' ' << estp->toChar() << NL;
-
-  if( estp->is_minus_stop() ) {
-    if( debug > 0 ) {
-      std_out << "# Warning: move from endstop- " << axis << ' ' << estp->toChar() << NL;
-    }
-    d_mm[axis] = s_movers[axis]->get_es_find_l();
-    rc = me_st.move_line( d_mm, 2 * fe_slow );
-    if( debug > 0 ) {
-      std_out << "# rc= " << rc << NL;
-    }
-    // TODO: exit if bad?
-  }
-
-  esv = estp->read();
-  if( ! estp->is_clear() ) {
-    std_out << "# Error: not all clear " << axis << ' ' << estp->toChar() << NL;
-    return rcErr;
-  }
-
-  // go to endstop
-  d_mm[axis] = -2.0f * (xfloat)s_movers[axis]->get_max_l(); // far away
-  if( debug > 0 ) {
-    std_out << "# to_endstop ph 1 " << estp->toChar() << NL;
-  }
-  rc = me_st.move_line( d_mm, fe_fast );
-  esv = estp->read();
-  if( estp->is_minus_go() ) { //
-    std_out << "# Error: fail to find endstop. axis " << axis << " ph 1 " << esv  << ' ' << estp->toChar() << NL;
-    return rcErr;
-  }
-
-  // go slowly away
-  if( debug > 0 ) {
-    std_out << "# go_away ph 2 "  << estp->toChar()<< NL;
-  }
-  d_mm[axis] = s_movers[axis]->get_es_find_l();
-  rc = me_st.move_line( d_mm, fe_slow, axis );
-  esv = estp->read();
-  if( estp->is_any_stop() ) { // must be ok
-    std_out << "# Error: fail to step from endstop axis " << axis << " ph 2 " << estp->toChar() << NL;
-    return rcErr;
-  }
-
-  // go slowly to endstop
-  if( debug > 0 ) {
-    std_out << "# to_es ph 3 " << estp->toChar() << NL;
-  }
-  d_mm[axis] = - 1.5f * s_movers[axis]->get_es_find_l();
-  rc = me_st.move_line( d_mm, fe_slow );
-  esv = estp->read();
-  if( estp->is_minus_go() ) {
-    std_out << "# Error: fail to find endstop axis " << axis << " ph 3 " << estp->toChar() << esv << NL;
-    return rcErr;
-  }
-
-  // go slowly away again
-  if( debug > 0 ) {
-    std_out << "# go_away st ph 4 " << estp->toChar() << NL;
-  }
-  d_mm[axis] = s_movers[axis]->get_es_find_l();
-  rc = me_st.move_line( d_mm, fe_slow, axis );
-  esv = estp->read();
-  if( estp->is_any_stop() ) {
-    std_out << "# Error: fail to find endstop axis " << axis << " ph 4 " << estp->toChar() << NL;
-    return rcErr;
-  }
-  me_st.set_xn( axis, 0 );    // TODO: may be no auto?
-  std_out << "# Ok: found endstop end  "  << estp->toChar() << NL;
-
-  return rcOk;
-}
-
 int cmd_relmove( int argc, const char * const * argv )
 {
   std_out << "# relmove: " << NL;
@@ -440,7 +335,7 @@ int cmd_home( int argc, const char * const * argv )
 
   std_out << "# home: " << axis << NL;
 
-  ReturnCode rc = go_home( axis );
+  ReturnCode rc = me_st.go_home( axis );
 
   return rc;
 }
@@ -628,6 +523,8 @@ ReturnCode step_circ_fun( MoveInfo &mi, xfloat a, xfloat *coo )
 
 // -------------------------- Machine ----------------------------------------------------
 
+const char Machine::axis_chars[] { "XYZEUVWABC" }; // beware of '\0'
+
 // G: val * 1000, to allow G11.123
 // M: 1000000 + val * 1000
 const Machine::FunGcodePair mg_code_funcs[] = {
@@ -712,6 +609,7 @@ ReturnCode Machine::move_common( MoveInfo &mi, xfloat fe_mmm )
     return rcErr;
   }
 
+  errno = 0;
   if( fe_mmm < 2.0f ) {
     fe_mmm = ( move_mode & moveFast ) ? fe_g0 : fe_g1;
   }
@@ -753,21 +651,25 @@ ReturnCode Machine::move_common( MoveInfo &mi, xfloat fe_mmm )
       a = 1.0f; keep_move = false;
     }
 
+    ReturnCode rc_c = mi.calc_step( a, coo );
     last_a = a;
-    if( ReturnCode rc_c = mi.calc_step( a, coo ) ; rc >= ReturnCode::rcErr ) {
+
+    leds[2].reset();
+    if( rc >= ReturnCode::rcErr ) {
+      errno = 2001;
       rc = rc_c;
       break;
     }
 
-    leds[2].reset();
 
     if( wait_next_motor_tick() != 0 ) { // TODO: loop untill ready + some payload
+      errno = 2002;
       rc = rcErr;
       break;
     }
 
     unsigned n_ok { 0 };
-    for( unsigned i=0; i<mi.n_coo && keep_move ; ++i ) {
+    for( unsigned i=0; i<mi.n_coo; ++i ) {
       auto rc_s = movers[i]->step_to( coo[i] + o_coo[i] );
       if( rc_s == rcOk ) {
         ++n_ok;
@@ -776,20 +678,23 @@ ReturnCode Machine::move_common( MoveInfo &mi, xfloat fe_mmm )
       rc = rc_s;
       if( rc_s >= rcErr ) {
         keep_move = false;
+        errno = 2003;
         break;
       }
       if( rc_s >= rcEnd && bounded_move ) {
         keep_move = false;
+        errno = 2004;
         break;
       }
     }
 
     if( n_ok < 1 ) {
       rc = rcEnd;
+      errno = 2005;
       break;
     }
 
-  }
+  } // t-loop
   leds[2].reset();
 
   if( onoff_laser ) {
@@ -798,7 +703,8 @@ ReturnCode Machine::move_common( MoveInfo &mi, xfloat fe_mmm )
 
   const uint32_t tm_e = HAL_GetTick();
 
-  OUT << "# debug: move_common: a= " << last_a << " dt= " << ( tm_e - tm_s ) << " fe= " << fe_mmm << NL;
+  OUT << "# debug: move_common: a= " << last_a << " rc= " << rc << " dt= " << ( tm_e - tm_s )
+    << " fe= " << fe_mmm << ' ' << endstops2str_read() << NL;
 
   if( dly_xsteps > 0 ) { // TODO: rework
     motors_off(); // TODO: investigate! + sensors
@@ -806,11 +712,10 @@ ReturnCode Machine::move_common( MoveInfo &mi, xfloat fe_mmm )
     motors_on();
   }
 
-  on_endstop = 9999;
   return rc;
 }
 
-ReturnCode Machine::move_line( const xfloat *d_mm, xfloat fe_mmm, unsigned a_on_endstop )
+ReturnCode Machine::move_line( const xfloat *d_mm, xfloat fe_mmm )
 {
   MoveInfo mi( MoveInfo::Type::line, n_mo, step_line_fun );
 
@@ -821,7 +726,6 @@ ReturnCode Machine::move_line( const xfloat *d_mm, xfloat fe_mmm, unsigned a_on_
     return rcErr;
   }
 
-  on_endstop = a_on_endstop;
   return move_common( mi, fe_mmm );
 }
 
@@ -837,7 +741,7 @@ ReturnCode Machine::move_circ( const xfloat *coo, xfloat fe_mmm )
   return move_common( mi, fe_mmm );
 }
 
-ReturnCode Machine::go_home( uint16_t motor_bits )
+ReturnCode Machine::go_home( unsigned motor_bits )
 {
   if( motor_bits == 0 ) {
     motor_bits = 0x07; // XYZ TODO: or more?
@@ -846,39 +750,62 @@ ReturnCode Machine::go_home( uint16_t motor_bits )
   // calc - coords for given movers
   xfloat coo[n_motors];
   std::ranges::fill( coo, 0 );
-  for( uint16_t i=0, b=0x01; i<3; ++i, b<<=1 ) {
+
+  for( unsigned i=0, b=0x01; i<n_mo; ++i, b<<=1 ) {
     if( ( motor_bits & b ) == 0 ) {
       continue;
     }
     auto mover = movers[i];
-    if( mover ) {
-      // drop bit from motor_bits
+    if( ! mover ) {
+      motor_bits &= ~b; // drop bit from motor_bits for nonexitent
       continue;
     }
     auto estp = mover->get_endstops();
     if( !estp ) {
-      // drop bit from motor_bits
+      motor_bits &= ~b;
       continue;
     }
     mover->set_es_mode( StepMover::EndstopMode::Dir );
     coo[i] = -5000; // 5 m, for equal speed on all axis
   }
 
-  // endstops : Dir
-  // fast go to enstops(-): moveAllStop, moveFast
-  // check given movers: all given : is_minus_stop
-  // for given {
-  //   mover: From
-  //   move: slow? all clear
-  //   mover: All
-  //   move: slow, is_minus_stop
-  //   mover: From
-  //   move: slow? all clear
-  //   ? mover: All
-  //   move: slow + 0.2 / 1mm ? all clear
-  //
-  // }
-  return rcErr;
+  // fast to all endstops
+  bounded_move = false;
+  auto rc = move_line( coo, fe_g1 );
+  if( rc != rcEnd ) {
+    OUT << "# Error: fail to find all endstops: " << endstops2str_read() << ' ' << rc << NL;
+    return rcErr;
+  }
+
+  std::ranges::fill( coo, 0 );
+  for( unsigned i=0, b=0x01; i<n_mo; ++i, b<<=1 ) {
+    if( ( motor_bits & b ) == 0 ) {
+      continue;
+    }
+    auto mover = movers[i]; // checked before
+    auto estp = mover->get_endstops();
+    rc = go_from_es_nc( i, mover, estp );
+    OUT << "# debug: from 1/ " << i << ' ' << rc << NL;
+    if( rc >= rcErr ) {
+      break;
+    }
+    rc = go_to_es_nc( i, mover, estp );
+    OUT << "# debug: from 2/ " << i << ' ' << rc << NL;
+    if( rc >= rcErr ) {
+      break;
+    }
+    rc = go_from_es_nc( i, mover, estp );
+    OUT << "# debug: from 2/ " << i << ' ' << rc << NL;
+    if( rc >= rcErr ) {
+      break;
+    }
+    mover->set_x( 0 );
+  }
+
+  // TODO: substep out of?
+
+  bounded_move = true;
+  return rc;
 }
 
 ReturnCode Machine::go_from_es( unsigned mover_idx )
@@ -898,6 +825,11 @@ ReturnCode Machine::go_from_es( unsigned mover_idx )
     return rcErr;
   }
 
+  return go_from_es_nc( mover_idx, mover, es );
+}
+
+ReturnCode Machine::go_from_es_nc( unsigned mover_idx, StepMover *mover, EndStop *es )
+{
   es->read();
   if( es->is_minus_go() ) {
     OUT << "# Err: not on endstop " << mover_idx << NL;
@@ -908,14 +840,28 @@ ReturnCode Machine::go_from_es( unsigned mover_idx )
   xfloat coo[n_motors];
   std::ranges::fill( coo, 0 );
 
-  DoAtLeave do_off_motors( []() { motors_off(); } );
-  motors_on(); // TODO: tmp
-
   bounded_move = true;
   coo[mover_idx] = mover->get_es_find_l();
   auto rc = move_line( coo, fe_g1 * mover->get_k_slow() );
   mover->set_es_mode( StepMover::EndstopMode::Dir );
+  return rc;
+}
 
+ReturnCode Machine::go_to_es_nc( unsigned mover_idx, StepMover *mover, EndStop *es )
+{
+  es->read();
+  if( es->is_any_stop() ) {
+    OUT << "# Err: not clear " << mover_idx << NL;
+    return rcErr;
+  }
+  mover->set_es_mode( StepMover::EndstopMode::Dir );
+
+  xfloat coo[n_motors];
+  std::ranges::fill( coo, 0 );
+
+  bounded_move = true;
+  coo[mover_idx] = - mover->get_es_find_l();
+  auto rc = move_line( coo, fe_g1 * mover->get_k_slow() );
   return rc;
 }
 
@@ -930,8 +876,10 @@ ReturnCode Machine::g_move_line( const GcodeBlock &gc )
     prev_x[i] = relmove ? 0 : ( movers[i]->get_xf() / meas_scale );
   }
 
-  static constexpr const char *const axis_chars = "XYZEVUW?";
   for( unsigned i=0; i<n_mo; ++i ) {
+    if( axis_chars[i] == '\0' ) {
+      break;
+    }
     d_mm[i] = meas_scale * gc.fpv_or_def( axis_chars[i], prev_x[i] );
   }
 
@@ -987,8 +935,8 @@ ReturnCode Machine::g_move_circle( const GcodeBlock &gc )
   xfloat x_r = meas_scale * gc.fpv_or_def( 'I', NAN );
   xfloat y_r = meas_scale * gc.fpv_or_def( 'J', NAN );
   xfloat r_1 = meas_scale * gc.fpv_or_def( 'R', NAN );
-  xfloat nt  = meas_scale * gc.fpv_or_def( 'L', 0 );
-  bool cv    = ( gc.ipv_or_def( 'G', 2 ) == 2 );
+  xfloat nt  = int( gc.fpv_or_def( 'L', 0 ) );
+  bool cv    = gc.ipv_or_def( 'G', 2 ) == 2;
 
   if( !relmove ) {
     x_e -= prev_x[0]; y_e -= prev_x[1]; z_e -= prev_x[2]; e_e -= prev_x[3];
@@ -1172,37 +1120,22 @@ ReturnCode Machine::g_set_unit_mm( const GcodeBlock &gc ) // G21
 
 ReturnCode Machine::g_home( const GcodeBlock &gc ) // G28
 {
-  bool s_x = gc.is_set('X');
-  bool s_y = gc.is_set('Y');
-  bool s_z = gc.is_set('Z');
-  if( !s_x && !s_y && !s_z ) {
-    s_x = s_y = s_z = true;
-  }
-  ReturnCode rc { rcOk };
-
-  if( s_y ) {
-    rc  = go_home( 1 ); // from what?
-    if( rc >= rcErr ) {
-      return rc;
+  unsigned bit_s { 0 };
+  for( unsigned i = 0, bm = 1; i<n_mo; ++i, bm<<=1 ) {
+    char c = axis_chars[i];
+    if( c == '\0' ) {
+      break;
+    }
+    if( gc.is_set( c ) ) {
+      bit_s |= bm;
     }
   }
 
-  if( s_x ) {
-    rc  = go_home( 0 );
-    if( rc >= rcErr ) {
-      return rc;
-    }
+  if( bit_s == 0 ) {
+    bit_s = 7; // XYZ
   }
 
-  if( s_z ) {
-    rc  = go_home( 2 );
-    if( rc >= rcErr ) {
-      return rc;
-    }
-  }
-  was_set = true;
-
-  return rc;
+  return this->go_home( bit_s ); // TODO: remove this after removeing global go_home
 }
 
 ReturnCode Machine::g_off_compens( const GcodeBlock &gc ) // G40 - X
@@ -1225,10 +1158,12 @@ ReturnCode Machine::g_set_relmove( const GcodeBlock &gc ) // G91
 
 ReturnCode Machine::g_set_origin( const GcodeBlock &gc ) // G92
 {
-  static const char axis_chars[] { 'X', 'Y', 'Z', 'E', 'V' }; // TODO: common + pair? beware: no ""!
   bool a { false }, none_set { true };
 
   for( char c : axis_chars ) {
+    if( c == '\0' ) {
+      break;
+    }
     if( gc.is_set( c ) ) {
       none_set = false;
       break;
@@ -1237,6 +1172,9 @@ ReturnCode Machine::g_set_origin( const GcodeBlock &gc ) // G92
 
   unsigned i {0};
   for( char c : axis_chars ) {
+    if( c == '\0' ) {
+      break;
+    }
     if( i > movers.size() ) {
       break;
     }
@@ -1300,7 +1238,6 @@ ReturnCode Machine::m_spin_off( const GcodeBlock &gc )      // M5
 
 ReturnCode Machine::m_out_where( const GcodeBlock &gc )     // M114
 {
-  // const char axis_chars[] { "XYZEV?" };
   xfloat k_unit = 1.0f / ( inchUnit ? 25.4f : 1.0f );
 
   for( auto pm: movers ) {

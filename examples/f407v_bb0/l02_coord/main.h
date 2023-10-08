@@ -120,7 +120,7 @@ class StepMover {
   protected:
    PinsOut *motor     ;
    EndStop  *endstops ;
-   EndstopMode es_mode { EndstopMode::All };
+   EndstopMode es_mode { EndstopMode::Dir };
    uint32_t tick2mm   ; // tick per mm, =  pulses per mm
    uint32_t max_speed ; // mm/min
    uint32_t max_l     ; // mm
@@ -178,10 +178,10 @@ class Machine {
    xfloat getPwm() const { return std::clamp( 100 * spin / spin100, 0.0f, spin_max ); }
    ReturnCode move_common( MoveInfo &mi, xfloat fe_mmm );
    // coords: XYZE....
-   ReturnCode move_line( const xfloat *d_mm, xfloat fe_mmm, unsigned a_on_endstop = 9999 );
+   ReturnCode move_line( const xfloat *d_mm, xfloat fe_mmm );
    // coords: [0]:r_s, [1]: alp_s, [2]: r_e, [3]: alp_e, [4]: cv?, [5]: z_e, [6]: e_e, [7]: nt(L) [8]: x_r, [9]: y_r
    ReturnCode move_circ( const xfloat *d_mm, xfloat fe_mmm );
-   ReturnCode go_home( uint16_t motor_bits );
+   ReturnCode go_home( unsigned motor_bits );
    ReturnCode go_from_es( unsigned mover_idx );
    MachMode get_mode() const { return mode; };
    void set_mode( MachMode m ) { if( m < modeMax ) { mode = m; }}; // TODO: more actions
@@ -224,11 +224,14 @@ class Machine {
    ReturnCode m_set_mode_fff( const GcodeBlock &gc );  // M451
    ReturnCode m_set_mode_laser( const GcodeBlock &gc );// M452
    ReturnCode m_set_mode_cnc( const GcodeBlock &gc );  // M453
+   static const char* get_axis_chars() { return axis_chars; }
   protected:
+   ReturnCode go_from_es_nc( unsigned mover_idx, StepMover *mover, EndStop *es );
+   ReturnCode go_to_es_nc(   unsigned mover_idx, StepMover *mover, EndStop *es );
+
    std::span<StepMover*> movers;
    MachMode mode { modeFFF };
    MoveMode move_mode { moveCommon };
-   unsigned on_endstop { 9999 }; // TODO: remove
    unsigned n_mo { 0 }; // current number of active motors
    const FunGcodePair *mg_funcs { nullptr };
    const unsigned mg_funcs_sz;
@@ -250,6 +253,7 @@ class Machine {
    bool relmove { false };
    bool inchUnit { false };
    bool spinOn   { false };
+   static const char axis_chars[];
 };
 
 extern Machine me_st;
@@ -262,7 +266,6 @@ int wait_next_motor_tick(); // 0 = was break, not 0 - ok
 ReturnCode pwm_set( unsigned idx, xfloat v );
 ReturnCode pwm_off( unsigned idx );
 ReturnCode pwm_off_all();
-ReturnCode go_home( unsigned axis );
 
 bool calc_G2_R_mode( bool cv, xfloat x_e, xfloat y_e, xfloat &r_1, xfloat &x_r, xfloat &y_r );
 
