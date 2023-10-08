@@ -432,53 +432,62 @@ MoveInfo::MoveInfo( MoveInfo::Type tp, unsigned a_n_coo, Act_Pfun pfun  )
 
 void MoveInfo::zero_arr()
 {
-  ranges::fill( p, 0 ); ranges::fill( k_x, 0 );
+  ranges::fill( k_x, 0 );
 }
 
 ReturnCode MoveInfo::prep_move_line( const xfloat *prm )
 {
   zero_arr(); len = 0;
 
+  pa = prm;
   for( unsigned i=0; i<n_coo; ++i ) {
-    p[i] = prm[i]; len += prm[i] * prm[i];
+    len += prm[i] * prm[i];
   }
   len = sqrtxf( len );
 
-  for( unsigned i=0; i<n_coo; ++i ) {
-    k_x[i] = p[i];
-  }
   OUT << "# debug: prep_move_line: len= " << len << " n_coo=" << n_coo;
-  for( unsigned i=0; i<n_coo; ++i ) {
-    OUT << ' ' << p[i];
+  for( unsigned i=0; i<n_coo && i < max_n_koeffs; ++i ) {
+    k_x[i] = prm[i];
+    OUT << ' ' << k_x[i];
   }
   OUT << NL;
+
   return rcOk;
 }
 
 ReturnCode MoveInfo::prep_move_circ( const xfloat *prm )
 {
   zero_arr();
-  const xfloat &r_s   { prm[0] };
-  const xfloat &alp_s { prm[1] };
-  const xfloat &r_e   { prm[2] };
-  const xfloat &alp_e { prm[3] };
-  const xfloat &z_e   { prm[4] };
-  const xfloat &x_r   { prm[8] };
-  const xfloat &y_r   { prm[9] };
+  pa = prm;
+
+  // copy from g_move_circle + const
+  const xfloat &r_s   { prm[0]  };
+  const xfloat &alp_s { prm[1]  };
+  const xfloat &r_e   { prm[2]  };
+  const xfloat &alp_e { prm[3]  };
+  // const xfloat &cv    { prm[4]  };
+  const xfloat &z_e   { prm[5]  };
+  // const xfloat &e_e   { prm[6]  };
+  // const xfloat &nt    { prm[7]  };
+  // const xfloat &x_e   { prm[8]  };
+  // const xfloat &y_e   { prm[9]  };
+  // const xfloat &x_r   { prm[10] };
+  // const xfloat &y_r   { prm[11] };
+  // const xfloat &r_1   { prm[12] };
 
   xfloat l_appr { 0.5f * ( r_s + r_s ) * fabsxf( alp_e - alp_s ) };
   len = hypot( l_appr, r_e - r_s, z_e ); // e_e ?
 
-  for( unsigned i=0; i<max_params; ++i ) { // 10 is N params to circle funcs
-    p[i] = prm[i];
-  }
-
   k_x[0] = alp_e - alp_s;
   k_x[1] = r_e   - r_s;
-  k_x[2] = - ( x_r + r_s * cos( alp_s ) ); // initial point shift
-  k_x[3] = - ( y_r + r_s * sin( alp_s ) );
+  k_x[2] = - ( r_s * cos( alp_s ) ); // initial point shift
+  k_x[3] = - ( r_s * sin( alp_s ) );
 
-  OUT << "# debug: prep_move_circ: len= " << len << NL;
+  OUT << "# debug: prep_move_circ: len= " << len;
+  for( unsigned i=0; i<6; ++i ) {
+    OUT << ' ' << k_x[i];
+  }
+  OUT << NL;
 
   return rcOk;
 }
@@ -504,17 +513,18 @@ ReturnCode step_line_fun( MoveInfo &mi, xfloat a, xfloat *coo )
 ReturnCode step_circ_fun( MoveInfo &mi, xfloat a, xfloat *coo )
 {
   // aliases
-  xfloat &r_s   { mi.p[0]   };
-  xfloat &alp_s { mi.p[1]   };
-  xfloat &z_e   { mi.p[5]   };
-  xfloat &e_e   { mi.p[6]   };
-  xfloat &k_alp { mi.k_x[0] };
-  xfloat &k_r   { mi.k_x[1] };
-  xfloat &x_0   { mi.k_x[2] };
-  xfloat &y_0   { mi.k_x[3] };
+  const xfloat &r_s   { mi.pa[0]  };
+  const xfloat &alp_s { mi.pa[1]  };
+  const xfloat &z_e   { mi.pa[5]   };
+  const xfloat &e_e   { mi.pa[6]   };
 
-  xfloat alp =  alp_s + a * k_alp;
-  xfloat r   =  r_s   + a * k_r;
+  const xfloat &k_alp { mi.k_x[0] };
+  const xfloat &k_r   { mi.k_x[1] };
+  const xfloat &x_0   { mi.k_x[2] };
+  const xfloat &y_0   { mi.k_x[3] };
+
+  const xfloat alp =  alp_s + a * k_alp;
+  const xfloat r   =  r_s   + a * k_r;
 
   coo[0]  = x_0 + r * cos( alp );
   coo[1]  = y_0 + r * sin( alp );
@@ -732,7 +742,6 @@ ReturnCode Machine::move_line( const xfloat *d_mm, xfloat fe_mmm )
   return move_common( mi, fe_mmm );
 }
 
-// prm: [0]:r_s, [1]: alp_s, [2]: r_e, [3]: alp_e, [4]: cv?, [5]: z_e, [6]: e_e, [7]: nt(L) [8]: x_e, [9]: y_e
 ReturnCode Machine::move_circ( const xfloat *prm, xfloat fe_mmm )
 {
   MoveInfo mi( MoveInfo::Type::circle, n_mo, step_circ_fun );
