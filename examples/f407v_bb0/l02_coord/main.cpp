@@ -367,6 +367,7 @@ int cmd_gexec( int argc, const char * const * argv )
   char s[s_max];
   int nl { 0 }, nle {0}, rsz {0}; // nle - executed lines
 
+  errno = 0;
   DoAtLeave do_off_all( []() {  pwm_off_all(); motors_off(); } );
   motors_on();
 
@@ -462,6 +463,8 @@ ReturnCode MoveInfo::prep_move_circ( const xfloat *prm )
   const xfloat &r_e   { prm[2] };
   const xfloat &alp_e { prm[3] };
   const xfloat &z_e   { prm[4] };
+  const xfloat &x_r   { prm[8] };
+  const xfloat &y_r   { prm[9] };
 
   xfloat l_appr { 0.5f * ( r_s + r_s ) * fabsxf( alp_e - alp_s ) };
   len = hypot( l_appr, r_e - r_s, z_e ); // e_e ?
@@ -470,10 +473,10 @@ ReturnCode MoveInfo::prep_move_circ( const xfloat *prm )
     p[i] = prm[i];
   }
 
-  k_x[0] = p[3] - p[1]; // alp_e - alp_s
-  k_x[1] = p[2] - p[0]; // r_e   - r_s
-  k_x[2] = - ( p[8] + p[0] * cos( p[1] ) ); // initial point shift
-  k_x[3] = - ( p[8] + p[0] * sin( p[1] ) );
+  k_x[0] = alp_e - alp_s;
+  k_x[1] = r_e   - r_s;
+  k_x[2] = - ( x_r + r_s * cos( alp_s ) ); // initial point shift
+  k_x[3] = - ( y_r + r_s * sin( alp_s ) );
 
   OUT << "# debug: prep_move_circ: len= " << len << NL;
 
@@ -914,21 +917,21 @@ ReturnCode Machine::g_move_circle( const GcodeBlock &gc )
   const xfloat meas_scale = inchUnit ? 25.4f : 1.0f;
   bounded_move = true;
 
-  xfloat coo[13]; // some of them is unused late, but for common
+  xfloat prm[13]; // some of them is unused late, but for common
 
-  xfloat &r_s   { coo[0]  };
-  xfloat &alp_s { coo[1]  };
-  xfloat &r_e   { coo[2]  };
-  xfloat &alp_e { coo[3]  };
-  xfloat &cv    { coo[4]  };
-  xfloat &z_e   { coo[5]  };
-  xfloat &e_e   { coo[6]  };
-  xfloat &nt    { coo[7]  };
-  xfloat &x_e   { coo[8]  };
-  xfloat &y_e   { coo[9]  };
-  xfloat &x_r   { coo[10] };
-  xfloat &y_r   { coo[11] };
-  xfloat &r_1   { coo[12] };
+  xfloat &r_s   { prm[0]  };
+  xfloat &alp_s { prm[1]  };
+  xfloat &r_e   { prm[2]  };
+  xfloat &alp_e { prm[3]  };
+  xfloat &cv    { prm[4]  };
+  xfloat &z_e   { prm[5]  };
+  xfloat &e_e   { prm[6]  };
+  xfloat &nt    { prm[7]  };
+  xfloat &x_e   { prm[8]  };
+  xfloat &y_e   { prm[9]  };
+  xfloat &x_r   { prm[10] };
+  xfloat &y_r   { prm[11] };
+  xfloat &r_1   { prm[12] };
   //
 
 
@@ -1017,12 +1020,12 @@ ReturnCode Machine::g_move_circle( const GcodeBlock &gc )
 
   // TODO: comment after after debug
   OUT << "# G" << (cv?'2':'3') << " ( ";
-  for( auto xx: coo ) {
+  for( auto xx: prm ) {
     OUT << xx << ' ';
   }
   OUT << " ); fe= "<< fe_mmm << NL;
 
-  auto rc = move_circ( coo, fe_mmm );
+  auto rc = move_circ( prm, fe_mmm );
 
   OUT << "#  G2G3 rc= "<< rc << " break_flag= " << break_flag << NL;
   return rc;
