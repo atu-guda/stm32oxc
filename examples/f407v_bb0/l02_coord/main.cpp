@@ -892,14 +892,14 @@ ReturnCode Machine::g_move_line( const GcodeBlock &gc )
 
   xfloat prev_x[n_mo], d_mm[n_mo];
   for( unsigned i=0; i<n_mo; ++i ) {
-    prev_x[i] = relmove ? 0 : ( movers[i]->get_xf() / meas_scale );
+    prev_x[i] = movers[i]->get_xf();
   }
 
   for( unsigned i=0; i<n_mo; ++i ) {
     if( axis_chars[i] == '\0' ) {
       break;
     }
-    d_mm[i] = meas_scale * gc.fpv_or_def( axis_chars[i], prev_x[i] );
+    d_mm[i] = meas_scale * gc.fpv_or_def( axis_chars[i], prev_x[i] / meas_scale );
   }
 
   if( !relmove ) {
@@ -953,14 +953,14 @@ ReturnCode Machine::g_move_circle( const GcodeBlock &gc )
 
   xfloat prev_x[n_mo];
   for( unsigned i=0; i<n_mo; ++i ) {
-    prev_x[i] = relmove ? 0 : ( movers[i]->get_xf() / meas_scale );
+    prev_x[i] = movers[i]->get_xf();
   }
 
   // TODO: data-control
-  x_e = meas_scale * gc.fpv_or_def( 'X', prev_x[0] );
-  y_e = meas_scale * gc.fpv_or_def( 'Y', prev_x[1] );
-  z_e = meas_scale * gc.fpv_or_def( 'Z', prev_x[2] );
-  e_e = meas_scale * gc.fpv_or_def( 'E', prev_x[3] );
+  x_e = meas_scale * gc.fpv_or_def( 'X', prev_x[0] / meas_scale );
+  y_e = meas_scale * gc.fpv_or_def( 'Y', prev_x[1] / meas_scale );
+  z_e = meas_scale * gc.fpv_or_def( 'Z', prev_x[2] / meas_scale );
+  e_e = meas_scale * gc.fpv_or_def( 'E', prev_x[3] / meas_scale );
   x_r = meas_scale * gc.fpv_or_def( 'I', NAN );
   y_r = meas_scale * gc.fpv_or_def( 'J', NAN );
   r_1 = meas_scale * gc.fpv_or_def( 'R', NAN );
