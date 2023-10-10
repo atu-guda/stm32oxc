@@ -190,7 +190,7 @@ class Machine {
    int get_dly_xsteps() const { return dly_xsteps; }
    void set_dly_xsteps( int v ) { dly_xsteps = v; }
    unsigned get_n_mo() const { return n_mo; }
-   void set_n_mo( unsigned n ) { n_mo = std::min( n, movers.size() ); }
+   void set_n_mo( unsigned n ) { n_mo = std::min( n, movers.size() ); active_movers_bits = ~0u >> (sizeof(unsigned)-n_mo); }
    MoveMode get_move_mode() const { return move_mode; }
    void set_move_mode( MoveMode m ) { move_mode = m; }
    const char* endstops2str( char *buf = nullptr ) const;
@@ -233,6 +233,7 @@ class Machine {
    MachMode mode { modeFFF };
    MoveMode move_mode { moveCommon };
    unsigned n_mo { 0 }; // current number of active motors
+   unsigned active_movers_bits { 0 }; // some motors may be ignored at some actions
    const FunGcodePair *mg_funcs { nullptr };
    const unsigned mg_funcs_sz;
    xfloat r_min { 0.1f };

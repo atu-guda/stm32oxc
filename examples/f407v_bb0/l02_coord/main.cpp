@@ -683,6 +683,10 @@ ReturnCode Machine::move_common( MoveInfo &mi, xfloat fe_mmm )
 
     unsigned n_ok { 0 };
     for( unsigned i=0; i<mi.n_coo; ++i ) {
+      if( ! ( active_movers_bits & ( 1u << i ) ) ) {
+        continue;
+      }
+      // TODO: bitfield of active motors
       auto rc_s = movers[i]->step_to( coo[i] + o_coo[i] );
       if( rc_s == rcOk ) {
         ++n_ok;
@@ -702,7 +706,9 @@ ReturnCode Machine::move_common( MoveInfo &mi, xfloat fe_mmm )
     }
 
     if( n_ok < 1 ) {
-      rc = rcEnd;
+      if( rc < rcEnd ) {
+        rc = rcEnd; // TODO: or worse
+      }
       errno = 2005;
       break;
     }
@@ -781,6 +787,8 @@ ReturnCode Machine::go_home( unsigned motor_bits )
     coo[i] = -5000; // 5 m, for equal speed on all axis
   }
 
+  RestoreAtLeave rst_mo_bits( active_movers_bits, motor_bits );
+
   // fast to all endstops
   bounded_move = false;
   auto rc = move_line( coo, fe_g1 );
@@ -789,7 +797,6 @@ ReturnCode Machine::go_home( unsigned motor_bits )
     return rcErr;
   }
 
-  std::ranges::fill( coo, 0 );
   for( unsigned i=0, b=0x01; i<n_mo; ++i, b<<=1 ) {
     if( ( motor_bits & b ) == 0 ) {
       continue;
