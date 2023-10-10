@@ -178,9 +178,9 @@ class Machine {
    xfloat getPwm() const { return std::clamp( 100 * spin / spin100, 0.0f, spin_max ); }
    ReturnCode move_common( MoveInfo &mi, xfloat fe_mmm );
    // coords: XYZE....
-   ReturnCode move_line( const xfloat *d_mm, xfloat fe_mmm );
+   ReturnCode move_line( const xfloat *prm, xfloat fe_mmm );
    // coords: [0]:r_s, [1]: alp_s, [2]: r_e, [3]: alp_e, [4]: cv?, [5]: z_e, [6]: e_e, [7]: nt(L) [8]: x_r, [9]: y_r
-   ReturnCode move_circ( const xfloat *d_mm, xfloat fe_mmm );
+   ReturnCode move_circ( const xfloat *prm, xfloat fe_mmm );
    ReturnCode go_home( unsigned motor_bits );
    ReturnCode go_from_es( unsigned mover_idx );
    MachMode get_mode() const { return mode; };

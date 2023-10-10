@@ -115,8 +115,8 @@ int cmd_absmove( int argc, const char * const * argv );
 CmdInfo CMDINFO_ABSMOVE { "abs", 'A', cmd_absmove, "x y z [feed] - abs move"  };
 int cmd_home( int argc, const char * const * argv );
 CmdInfo CMDINFO_HOME { "home", 'H', cmd_home, "axis - go home at give axis"  };
-int cmd_pwr( int argc, const char * const * argv );
-CmdInfo CMDINFO_PWR { "pwr", 'P', cmd_pwr, "ch pow_f  - test PWM power control"  };
+int cmd_pwm( int argc, const char * const * argv );
+CmdInfo CMDINFO_PWM { "pwm", 'P', cmd_pwm, "ch pow_f  - test PWM power control"  };
 int cmd_gexec( int argc, const char * const * argv );
 CmdInfo CMDINFO_GEXEC { "gexec", 'X', cmd_gexec, " file  - execute gcode file"  };
 int cmd_fire( int argc, const char * const * argv );
@@ -131,7 +131,7 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_RELMOVE,
   &CMDINFO_ABSMOVE,
   &CMDINFO_HOME,
-  &CMDINFO_PWR,
+  &CMDINFO_PWM,
   &CMDINFO_GEXEC,
   &CMDINFO_FIRE,
   nullptr
@@ -734,11 +734,11 @@ ReturnCode Machine::move_common( MoveInfo &mi, xfloat fe_mmm )
   return rc;
 }
 
-ReturnCode Machine::move_line( const xfloat *d_mm, xfloat fe_mmm )
+ReturnCode Machine::move_line( const xfloat *prm, xfloat fe_mmm )
 {
   MoveInfo mi( MoveInfo::Type::line, n_mo, step_line_fun );
 
-  auto rc_prep =  mi.prep_move_line( d_mm );
+  auto rc_prep =  mi.prep_move_line( prm );
 
   if( rc_prep != 0 ) {
     std_out << "# Error: fail to prepare MoveInfo for line, rc=" << rc_prep << NL;
@@ -762,7 +762,7 @@ ReturnCode Machine::move_circ( const xfloat *prm, xfloat fe_mmm )
 ReturnCode Machine::go_home( unsigned motor_bits )
 {
   if( motor_bits == 0 ) {
-    motor_bits = 0x07; // XYZ TODO: or more?
+    motor_bits = active_movers_bits;
   }
 
   // calc - coords for given movers
@@ -890,7 +890,7 @@ ReturnCode Machine::g_move_line( const GcodeBlock &gc )
 {
   const xfloat meas_scale = inchUnit ? 25.4f : 1.0f;
 
-  xfloat prev_x[n_mo], d_mm[n_mo];
+  xfloat prev_x[n_mo], prm[n_mo];
   for( unsigned i=0; i<n_mo; ++i ) {
     prev_x[i] = movers[i]->get_xf();
   }
@@ -899,12 +899,12 @@ ReturnCode Machine::g_move_line( const GcodeBlock &gc )
     if( axis_chars[i] == '\0' ) {
       break;
     }
-    d_mm[i] = meas_scale * gc.fpv_or_def( axis_chars[i], prev_x[i] / meas_scale );
+    prm[i] = meas_scale * gc.fpv_or_def( axis_chars[i], prev_x[i] / meas_scale );
   }
 
   if( !relmove ) {
     for( unsigned i=0; i<n_mo; ++i ) {
-      d_mm[i] -= prev_x[i];
+      prm[i] -= prev_x[i];
     }
   }
 
@@ -916,12 +916,12 @@ ReturnCode Machine::g_move_line( const GcodeBlock &gc )
 
   // TODO: comment after after debug
   OUT << "# G" << (g1?'1':'0') << " ( ";
-  for( auto xx: d_mm ) {
+  for( auto xx: prm ) {
     OUT << xx << ' ';
   }
   OUT << " ); fe= "<< fe_mmm << NL;
 
-  ReturnCode rc = move_line( d_mm, fe_mmm );
+  ReturnCode rc = move_line( prm, fe_mmm );
 
   OUT << "#  G0G1 rc= "<< rc << " break_flag= " << break_flag << NL;
 
@@ -1145,11 +1145,7 @@ ReturnCode Machine::g_home( const GcodeBlock &gc ) // G28
     }
   }
 
-  if( bit_s == 0 ) {
-    bit_s = 7; // XYZ
-  }
-
-  return this->go_home( bit_s ); // TODO: remove this after removeing global go_home
+  return go_home( bit_s );
 }
 
 ReturnCode Machine::g_off_compens( const GcodeBlock &gc ) // G40 - X
@@ -1441,18 +1437,18 @@ ReturnCode pwm_off_all()
 }
 
 
-int cmd_pwr( int argc, const char * const * argv )
+int cmd_pwm( int argc, const char * const * argv )
 {
   int    ch  = arg2long_d(  1, argc, argv, 0, 0, n_tim_pwm ); // including limit for ALL_OFF
   xfloat pwr = arg2xfloat_d( 2, argc, argv, 0, 0.0f, 100.0f );
 
   if( (unsigned)ch >= n_tim_pwm ) {
     pwm_off_all();
-    std_out << "# PWR: stop all" << NL;
+    std_out << "# PWM: stop all" << NL;
     return 0;
   }
 
-  std_out << "# PWR: ch: " << ch << " power: " << pwr << NL;
+  std_out << "# PWM: ch: " << ch << " power: " << pwr << NL;
   auto rc  = pwm_set( ch, pwr );
   // tim_print_cfg( pwm_tims[ch]->Instance );
   return (int)rc; // rcOk = 0 = cmd_ok
