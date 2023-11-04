@@ -412,8 +412,8 @@ int cmd_fire( int argc, const char * const * argv )
 
 // -------------------- MoveInfo ------------------------------
 
-MoveInfo::MoveInfo( MoveInfo::Type tp, unsigned a_n_coo, Act_Pfun pfun  )
-  : type( tp ), n_coo( a_n_coo ), step_pfun( pfun )
+MoveInfo::MoveInfo( unsigned a_n_coo, Act_Pfun pfun  )
+  : n_coo( a_n_coo ), step_pfun( pfun )
 {
 }
 
@@ -740,7 +740,7 @@ ReturnCode Machine::move_common( MoveInfo &mi, xfloat fe_mmm )
 
 ReturnCode Machine::move_line( const xfloat *prm, xfloat fe_mmm )
 {
-  MoveInfo mi( MoveInfo::Type::line, n_mo, step_line_fun );
+  MoveInfo mi( n_mo, step_line_fun );
 
   auto rc_prep =  mi.prep_move_line( prm );
 
@@ -754,7 +754,7 @@ ReturnCode Machine::move_line( const xfloat *prm, xfloat fe_mmm )
 
 ReturnCode Machine::move_circ( const xfloat *prm, xfloat fe_mmm )
 {
-  MoveInfo mi( MoveInfo::Type::circle, n_mo, step_circ_fun );
+  MoveInfo mi( n_mo, step_circ_fun );
   auto rc_prep =  mi.prep_move_circ( prm );
   if( rc_prep != 0 ) {
     std_out << "# Error: fail to prepare MoveInfo for circle, rc=" << rc_prep << NL;

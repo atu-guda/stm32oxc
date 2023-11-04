@@ -98,17 +98,15 @@ ReturnCode gcode_act_fun_me_st( const GcodeBlock &gc );
 
 // task + state. fill: move_prep_
 struct MoveInfo {
-  enum class Type { stop = 0, line = 1, circle = 2 }; // TODO: more or remove
   using Act_Pfun = ReturnCode (*)( MoveInfo &mi, xfloat a, xfloat *coo );
   static const unsigned max_n_koeffs { 10 };
-  Type type;
   unsigned n_coo;
   const xfloat  *pa { nullptr }; // ptr to parameters, stores somewhere
   xfloat k_x[max_n_koeffs]; // coeffs
   xfloat len;
   Act_Pfun step_pfun { nullptr }; // calculate each t
-  MoveInfo( MoveInfo::Type tp, unsigned a_n_coo, Act_Pfun pfun );
-  bool isGood() const { return pa != nullptr && step_pfun != nullptr && type != Type::stop ; }
+  MoveInfo( unsigned a_n_coo, Act_Pfun pfun );
+  bool isGood() const { return pa != nullptr && step_pfun != nullptr ; }
   void zero_arr();
   ReturnCode calc_step( xfloat a, xfloat *coo );
   ReturnCode prep_move_line( const xfloat *prm );
