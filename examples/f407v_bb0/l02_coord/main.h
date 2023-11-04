@@ -165,11 +165,18 @@ class Machine {
    enum MoveMode { // flags
      moveCommon = 0, moveActive = 1, moveFast = 2, moveAllStop = 4
    };
+
    using fun_gcode_mg = ReturnCode(Machine::*)( const GcodeBlock &cb );
    struct FunGcodePair {
      int num;
      fun_gcode_mg fun;
      const char* helpstr;
+   };
+
+   struct VarInfo {
+     const char *const name;
+     xfloat Machine::*const fptr;
+     int    Machine::*const iptr;
    };
 
    Machine( std::span<StepMover*> a_movers );
@@ -195,6 +202,9 @@ class Machine {
    void set_move_mode( MoveMode m ) { move_mode = m; }
    const char* endstops2str( char *buf = nullptr ) const;
    const char* endstops2str_read( char *buf = nullptr );
+   ReturnCode set_val( const char *name, xfloat v );
+   xfloat get_val( const char *name ) const ; // NAN if not found
+   void   out_vals() const; // NAN if not found
 
    ReturnCode call_mg( const GcodeBlock &cb );
    ReturnCode prep_fun(  const GcodeBlock &cb );
@@ -224,6 +234,11 @@ class Machine {
    ReturnCode m_set_mode_fff( const GcodeBlock &gc );  // M451
    ReturnCode m_set_mode_laser( const GcodeBlock &gc );// M452
    ReturnCode m_set_mode_cnc( const GcodeBlock &gc );  // M453
+   // local codes
+   ReturnCode m_list_vars( const GcodeBlock &gc );     // M995
+   ReturnCode m_set_var(   const GcodeBlock &gc );     // M996 name=S, value = V
+   ReturnCode m_get_var(   const GcodeBlock &gc );     // M997 name=S
+
    static const char* get_axis_chars() { return axis_chars; }
   protected:
    ReturnCode go_from_es_nc( unsigned mover_idx, StepMover *mover, EndStop *es );
@@ -241,20 +256,22 @@ class Machine {
    xfloat alp_min { M_PI / 180 };
    xfloat near_l { 2.0e-3 };
    xfloat axis_scale[n_motors];
-  // public: // for now, TODO: hide
+   xfloat fe_min { 2.0f };
    xfloat fe_g0 { 350 };
    xfloat fe_g1 { 300 };
    xfloat fe_scale { 100.0f };
    xfloat spin  {   0 };
    xfloat spin100  { 10000 }; // scale for laser PWM
    xfloat spin_max {  90 };   // max PWM in %
-   int dly_xsteps { 50 }; // delay between steps in program
+   int dly_xsteps { 10 }; // delay between steps in program, ms
+   int reen_motors { 0 }; // disable/enable motors after each move
    bool was_set { false };
    bool bounded_move { true };
    bool relmove { false };
    bool inchUnit { false };
    bool spinOn   { false };
    static const char axis_chars[];
+   static const VarInfo var_info[];
 };
 
 extern Machine me_st;

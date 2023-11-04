@@ -568,8 +568,20 @@ const Machine::FunGcodePair mg_code_funcs[] = {
   { 1451000, &Machine::m_set_mode_fff   , "mode_FFF" },
   { 1452000, &Machine::m_set_mode_laser , "mode_laser" },
   { 1453000, &Machine::m_set_mode_cnc   , "mode_cnc" },
+  { 1995000, &Machine::m_list_vars      , "list_vars" },
+  { 1996000, &Machine::m_set_var        , "set_var S \"\" V v" },
+  { 1997000, &Machine::m_get_var        , "get_var S \"\"" },
 };
 
+const Machine::VarInfo Machine::var_info[] = {
+  { "fe_g0",          &Machine::fe_g0,       nullptr },
+  { "fe_g1",          &Machine::fe_g1,       nullptr },
+  { "fe_min",         &Machine::fe_min,      nullptr },
+  { "fe_scale",       &Machine::fe_scale,    nullptr },
+  { "near_l",         &Machine::near_l  ,    nullptr },
+  { "dly_xsteps",     nullptr,               &Machine::dly_xsteps },
+  { "reen_motors",    nullptr,               &Machine::reen_motors },
+};
 
 Machine::Machine( std::span<StepMover*> a_movers )
      : movers( a_movers ),
@@ -623,11 +635,12 @@ ReturnCode Machine::move_common( MoveInfo &mi, xfloat fe_mmm )
   }
 
   errno = 0;
-  if( fe_mmm < 2.0f ) {
-    fe_mmm = ( move_mode & moveFast ) ? fe_g0 : fe_g1;
+  const xfloat  fe_max = ( move_mode & moveFast ) ? fe_g0 : fe_g1;
+  if( fe_mmm < fe_min ) {
+    fe_mmm = fe_max;
   }
   fe_mmm *= fe_scale / 100;
-  fe_mmm = clamp( fe_mmm, 2.0f, fe_g0 );
+  fe_mmm = clamp( fe_mmm, fe_min, fe_max );
   const xfloat k_t { 1.0f / TIM6_count_freq };
 
   xfloat t_sec = 60 * mi.len / fe_mmm; // only approx, as we can accel/deccel
@@ -725,9 +738,13 @@ ReturnCode Machine::move_common( MoveInfo &mi, xfloat fe_mmm )
   OUT << "# debug: move_common: a= " << last_a << " rc= " << rc << " dt= " << ( tm_e - tm_s )
     << " fe= " << fe_mmm << ' ' << endstops2str_read() << NL;
 
-  if( dly_xsteps > 0 ) { // TODO: rework
+  if( reen_motors ) {
     motors_off(); // TODO: investigate! + sensors
+  }
+  if( dly_xsteps > 0 ) {
     delay_ms( dly_xsteps );
+  }
+  if( reen_motors ) {
     motors_on();
   }
 
@@ -1309,6 +1326,81 @@ ReturnCode Machine::m_set_mode_cnc( const GcodeBlock &gc )  // M453
   return ReturnCode::rcOk;
 }
 
+// local codes
+ReturnCode Machine::m_list_vars( const GcodeBlock &gc )     // M995
+{
+  out_vals();
+  return ReturnCode::rcOk;
+}
+
+ReturnCode Machine::m_set_var(   const GcodeBlock &gc )     // M996 name=S, value = V
+{
+  return set_val( gc.get_str0(), gc.fpv( 'V' ) );
+}
+
+ReturnCode Machine::m_get_var(   const GcodeBlock &gc )     // M997 name=S
+{
+  auto v = get_val( gc.get_str0() );
+  OUT << "# " << gc.get_str0() << " = ";
+  if ( isfinite( v ) )  {
+    OUT << v << NL;
+    return ReturnCode::rcOk;
+  }
+  OUT << "NAN" << NL;
+  return ReturnCode::rcErr;
+}
+
+
+ReturnCode Machine::set_val( const char *name, xfloat v )
+{
+  if( !name ) {
+    return ReturnCode::rcErr;
+  }
+  for( const auto &vi: var_info ) {
+    if( strcmp( name, vi.name ) == 0 ) {
+      if( vi.fptr ) {
+        this->*(vi.fptr) = v;
+        return ReturnCode::rcOk;
+      } else if( vi.iptr ) {
+        this->*(vi.iptr) = (int)v;
+        return ReturnCode::rcOk;
+      }
+      return ReturnCode::rcErr;
+    }
+  }
+  return ReturnCode::rcErr;
+}
+
+xfloat Machine::get_val( const char *name ) const
+{
+  if( !name ) {
+    return NAN;
+  }
+  for( const auto &vi: var_info ) {
+    if( strcmp( name, vi.name ) == 0 ) {
+      if( vi.fptr ) {
+        return this->*(vi.fptr);
+      } else if( vi.iptr ) {
+        return (int)( this->*(vi.iptr) );
+      }
+      return NAN;
+    }
+  }
+  return NAN;
+}
+
+void   Machine::out_vals() const
+{
+  for( const auto &vi: var_info ) {
+    OUT << "# " <<  vi.name << " = ";
+    if( vi.fptr ) {
+      OUT << (this->*(vi.fptr)) ;
+    } else if( vi.iptr ) {
+      OUT << (int)( this->*(vi.iptr) );
+    }
+    OUT << NL;
+  }
+}
 
 ReturnCode Machine::call_mg( const GcodeBlock &cb )
 {

@@ -1,0 +1,84 @@
+G17 ; XY plane
+G40 ; compens off
+G21 ; set units to millimeters
+G90 ; use absolute coordinates
+;M3  ; spingle on cv
+;M8  ;  cooleant on
+; M220 S50; feed scale %
+; M221 S50 U60; spin (power) scale and max power %
+; M452 ; mode - laser, 451 - FFF, 453 - CNC
+;F250; ? manual
+;S500; ? manual
+
+
+; square place
+G1 X100 Y0
+G1 X100 Y100
+G1 X0 Y100
+G1 X0 Y0
+G1 X100 Y100
+G0 X0 Y100
+G1 X100 Y0
+G0 X50  Y0
+G1 X50  Y100
+G0 X0   Y50
+G1 X100 Y50
+G0 X0 Y0
+
+; low angle lines
+G1 X100    Y1
+G1  X99  Y100
+G1 X0     Y99
+G1 X1    Y0
+G1 X0    Y0
+
+; other lines
+G1 X100    Y10
+G1  X90   Y100
+G1   X0    Y90
+G1  X10     Y0
+
+G1 X100    Y20
+G1  X80   Y100
+G1   X0    Y80
+G1  X20     Y0
+
+G1 X100    Y30
+G1  X70   Y100
+G1   X0    Y70
+G1  X30     Y0
+
+G1 X100    Y40
+G1  X60   Y100
+G1   X0    Y60
+G1  X40     Y0
+
+; center
+G1 X50 Y50
+; test relative
+G91 ; rel
+; 2cm square
+G1 X20 Y0
+G1 X0 Y20
+G1 X-20 Y0
+G1 X0 Y-20
+; ihcn
+G20
+G1 X1  Y0
+G1 X0  Y1
+G1 X-1 Y0
+G1 X0 Y-1
+
+G90; abs
+
+G1 X0 Y1
+G1 X1 Y1
+G1 X1 Y0
+
+G21 ; back to mm
+
+;M5   ; laser off
+;M9 ; coolant off
+G0 X0 Y0
+
+M2 ; END

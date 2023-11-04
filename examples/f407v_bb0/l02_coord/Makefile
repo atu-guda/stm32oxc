@@ -31,9 +31,9 @@ SRCS  += tim_funcs.cpp
 # SRCS  += gcodes.cpp
 
 SRCS += oxc_floatfun.cpp
-#SRCS += oxc_namedobjs.cpp
-#SRCS += oxc_namedints.cpp
-#SRCS += oxc_namedfloats.cpp
+# SRCS += oxc_namedobjs.cpp
+# SRCS += oxc_namedints.cpp
+# SRCS += oxc_namedfloats.cpp
 SRCS += f4_sdio_init_1bit.cpp
 #SRCS += oxc_outstr.cpp
 #SRCS += oxc_hd44780_i2c.cpp

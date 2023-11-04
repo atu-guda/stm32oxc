@@ -1,0 +1,68 @@
+G17 ; XY plane
+G40 ; compens off
+G21 ; set units to millimeters
+G90 ; use absolute coordinates
+;M3  ; spingle on cv
+;M8  ;  cooleant on
+; M220 S50; feed scale %
+; M221 S50 U60; spin (power) scale and max power %
+; M452 ; mode - laser, 451 - FFF, 453 - CNC
+;F250; ? manual
+;S500; ? manual
+
+
+; square place
+G1 X100 Y0
+G1 X100 Y100
+G1 X0 Y100
+G1 X0 Y0
+G1 X100 Y100
+G0 X0 Y100
+G1 X100 Y0
+G0 X50  Y0
+G1 X50  Y100
+G0 X0   Y50
+G1 X100 Y50
+G0 X0 Y0
+
+; full circles. I,J- realtive
+G0 X50 Y0
+G2 X50 Y0 I0 J50
+G0 X50 Y2
+G3 X50 Y2 I0 J48
+G3 X50 Y2 I0 J-0.5
+
+; quoter parts
+G0 X50 Y0
+G2 X100  Y50 I50  J0
+G2  X50 Y100 I0   J50
+G2   X0  Y50 I-50 J0
+G2  X50   Y0 I0   J-50
+
+; near, CCV, large radius
+G3 X100  Y50 I-150  J200
+G3  X50 Y100 I-200  J-150
+G3   X0  Y50 I150   J-200
+G3  X50   Y0 I200   J150
+
+; halfs
+G2 X50 Y100 I2000  J50
+G3 X50   Y0 I5000  J-50
+G3 X50 Y100 I-2000  J50
+G2 X50   Y0 I-5000  J-50
+;
+
+; more
+G3 X90 Y100 I-200 J100
+G2 X10 Y100 I-40  J100
+G3 X50   Y0 I200  J100
+
+;up
+G0 X70 Y100
+G3 X70 Y105 I0 J50 L5
+G0 X30 Y100
+G2 X30 Y110 I0 J30 L5
+
+G0 X0Y0
+M2
+
