@@ -7,7 +7,6 @@
 // 2+ pins with positive clear status
 class EndStopGpioPos : public EndStop {
   public:
-   enum StopBits { minusBit = 0x01, plusBit = 0x02, extraBit = 0x04, mainBits = 0x03 };
    EndStopGpioPos( GpioRegs &a_gi, uint8_t a_start, uint8_t a_n = 2 )
      : pins( a_gi, a_start, a_n, GpioRegs::Pull::down ) {}
    virtual ReturnCode initHW() override { pins.initHW(); return rcOk; };
