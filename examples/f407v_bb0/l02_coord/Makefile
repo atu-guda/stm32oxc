@@ -31,6 +31,7 @@ SRCS  += tim_funcs.cpp
 SRCS  += endstopgpio.cpp
 SRCS  += moveinfo.cpp
 SRCS  += stepmotor.cpp
+SRCS  += stepmover.cpp
 # SRCS  += gcodes.cpp
 
 SRCS += oxc_floatfun.cpp
