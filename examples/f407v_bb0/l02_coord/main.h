@@ -20,7 +20,7 @@ inline auto& endstops_gpio { GpioD };
 const uint16_t endstops_mask { 0b01111011 };
 
 const inline uint32_t  TIM_PWM_base_freq   { 84'000'000 };
-const inline uint32_t  TIM_PWM_count_freq  {      10000 };
+const inline uint32_t  TIM_PWM_count_freq  {       5000 };
 const inline uint32_t  TIM6_base_freq      {  1'000'000 };
 const inline uint32_t  TIM6_count_freq     {      10000 };
 
@@ -42,7 +42,7 @@ int MX_TIM6_Init();  // tick clock for move
 int MX_TIM10_Init(); // PWM1
 int MX_TIM11_Init(); // PWM2
 void HAL_TIM_MspPostInit( TIM_HandleTypeDef* timHandle );
-int MX_PWM_common_Init( unsigned idx ); // TODO: channels
+int MX_PWM_common_Init( unsigned idx, unsigned channel );
 
 void TIM6_callback();
 

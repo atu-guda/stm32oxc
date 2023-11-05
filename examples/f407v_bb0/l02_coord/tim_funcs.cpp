@@ -37,7 +37,7 @@ const TIM_OC_InitTypeDef def_pwm_ConfigOC {
 
 // except TIM6_callback
 
-int MX_PWM_common_Init( unsigned idx )
+int MX_PWM_common_Init( unsigned idx, unsigned channel )
 {
   if( idx >= n_tim_pwm ) {
     return 0;
@@ -78,13 +78,13 @@ int MX_PWM_common_Init( unsigned idx )
   }
 
   if( HAL_TIM_PWM_ConfigChannel( ti,
-        const_cast<TIM_OC_InitTypeDef*>(&def_pwm_ConfigOC), TIM_CHANNEL_1 ) != HAL_OK ) {
+        const_cast<TIM_OC_InitTypeDef*>(&def_pwm_ConfigOC), channel ) != HAL_OK ) {
     UVAR('e') = 35;
     return 0;
   }
 
   // start here
-  HAL_TIM_PWM_Start( ti, TIM_CHANNEL_1 );
+  HAL_TIM_PWM_Start( ti, channel );
 
   HAL_TIM_MspPostInit( ti );
   return 1;
@@ -93,19 +93,19 @@ int MX_PWM_common_Init( unsigned idx )
 int MX_TIM3_Init()
 {
   htim3.Instance = TIM3;
-  return MX_PWM_common_Init( 0 );
+  return MX_PWM_common_Init( 0, TIM_CHANNEL_1 );
 }
 
 int MX_TIM10_Init()
 {
   htim10.Instance = TIM11;
-  return MX_PWM_common_Init( 1 );
+  return MX_PWM_common_Init( 1, TIM_CHANNEL_1  );
 }
 
 int MX_TIM11_Init()
 {
   htim11.Instance = TIM11;
-  return MX_PWM_common_Init( 2 );
+  return MX_PWM_common_Init( 2, TIM_CHANNEL_1  );
 }
 
 int MX_TIM6_Init()
