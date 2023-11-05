@@ -41,11 +41,11 @@ uint8_t sd_buf[512]; // one sector
 HAL_SD_CardInfoTypeDef cardInfo;
 FATFS fs;
 
-PinsOut stepdir_v( GpioE,  0, 2 );
-PinsOut stepdir_e( GpioE, 14, 2 );
-PinsOut stepdir_x(  GpioE,  8, 2 );
-PinsOut stepdir_y(  GpioE, 10, 2 );
-PinsOut stepdir_z(  GpioE, 12, 2 );
+StepMotorGpio2 stepdir_v( STEPDIR_V_GPIO, STEPDIR_V_STARTPIN );
+StepMotorGpio2 stepdir_e( STEPDIR_E_GPIO, STEPDIR_E_STARTPIN );
+StepMotorGpio2 stepdir_x( STEPDIR_X_GPIO, STEPDIR_X_STARTPIN );
+StepMotorGpio2 stepdir_y( STEPDIR_Y_GPIO, STEPDIR_Y_STARTPIN );
+StepMotorGpio2 stepdir_z( STEPDIR_Z_GPIO, STEPDIR_Z_STARTPIN );
 
 
 PinOut en_motors( GpioC, 11 );
@@ -79,11 +79,11 @@ const EXTI_init_info extis[] = {
 };
 
 
-StepMover mover_x( &stepdir_x, &estp_x, 800, 500, 150 );
-StepMover mover_y( &stepdir_y, &estp_y, 800, 500, 300 );
-StepMover mover_z( &stepdir_z, &estp_z, 800, 300, 150 );
-StepMover mover_e( &stepdir_e, nullptr, 100, 100, 999999 );
-StepMover mover_v( &stepdir_v, nullptr, 100, 100, 999999 );
+StepMover mover_x( stepdir_x, &estp_x, 800, 500, 150 );
+StepMover mover_y( stepdir_y, &estp_y, 800, 500, 300 );
+StepMover mover_z( stepdir_z, &estp_z, 800, 300, 150 );
+StepMover mover_e( stepdir_e, nullptr, 100, 100, 999999 );
+StepMover mover_v( stepdir_v, nullptr, 100, 100, 999999 );
 
 StepMover* s_movers[n_motors] { &mover_x, &mover_y, &mover_z, &mover_e, &mover_v };
 
@@ -1062,7 +1062,7 @@ ReturnCode Machine::g_set_relmove( const GcodeBlock &gc ) // G91
 
 ReturnCode Machine::g_set_origin( const GcodeBlock &gc ) // G92
 {
-  bool a { false }, none_set { true };
+  bool none_set { true };
 
   for( char c : axis_chars ) {
     if( c == '\0' ) {
@@ -1085,13 +1085,8 @@ ReturnCode Machine::g_set_origin( const GcodeBlock &gc ) // G92
     if( gc.is_set( c ) || none_set ) {
       xfloat v = gc.fpv_or_def( c, 0 );
       movers[i]->set_xf( v );
-      a = true;
     }
     ++i;
-  }
-
-  if( a ) {
-    was_set = true; // do not change if a false
   }
 
   return ReturnCode::rcOk;
@@ -1485,7 +1480,7 @@ int wait_next_motor_tick()
 
 // --------------------------------- StepMover -------------------
 
-StepMover::StepMover( PinsOut *a_motor, EndStop *a_endstops, uint32_t a_tick_2mm, uint32_t a_max_speed, uint32_t a_max_l )
+StepMover::StepMover( StepMotor &a_motor, EndStop *a_endstops, uint32_t a_tick_2mm, uint32_t a_max_speed, uint32_t a_max_l )
   : motor( a_motor ), endstops( a_endstops ), tick2mm( a_tick_2mm ), max_speed( a_max_speed ), max_l( a_max_l )
 {
 }
@@ -1495,31 +1490,17 @@ void StepMover::initHW()
   if( endstops ) {
     endstops->initHW();
   }
-  if( motor ) {
-    motor->initHW();
-    motor->write( 0 );
-  }
+  motor.initHW();
 };
 
 void StepMover::set_dir( int a_dir )
 {
-  if( a_dir == dir ) {
-    return;
-  }
-  dir = a_dir;
-
-  if( motor && true_mode ) {
-    if( dir >= 0 ) {
-      motor->reset( 0x02 );
-    } else {
-      motor->set(   0x02 );
-    }
-    delay_mcs( 1 );
-  }
+  motor.set_dir( a_dir );
 }
 
 ReturnCode StepMover::step()
 {
+  auto dir = motor.get_dir();
   if( dir == 0 ) {
     return rcOk;
   }
@@ -1529,10 +1510,8 @@ ReturnCode StepMover::step()
     return rc;
   }
 
-  if( motor && true_mode ) {
-    motor->set( 1 );
-    delay_mcs( 1 );
-    motor->reset( 1 );
+  if( true_mode ) {
+    motor.step();
   }
   x += dir;
   return rcOk;
@@ -1547,6 +1526,7 @@ ReturnCode StepMover::step_to( xfloat to )
 
 ReturnCode StepMover::check_es()
 {
+  auto dir = motor.get_dir();
   if( ! endstops || dir == 0 ) {
     return rcOk;
   }

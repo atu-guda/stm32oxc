@@ -6,7 +6,19 @@
 #include <oxc_gcode.h>
 
 #include "endstopgpio.h"
+#include "stepmotor.h"
 #include "moveinfo.h"
+
+#define STEPDIR_X_GPIO     GpioE
+#define STEPDIR_X_STARTPIN 8
+#define STEPDIR_Y_GPIO     GpioE
+#define STEPDIR_Y_STARTPIN 10
+#define STEPDIR_Z_GPIO     GpioE
+#define STEPDIR_Z_STARTPIN 12
+#define STEPDIR_E_GPIO     GpioE
+#define STEPDIR_E_STARTPIN 14
+#define STEPDIR_V_GPIO     GpioE
+#define STEPDIR_V_STARTPIN 0
 
 
 const inline constinit xfloat M_r2g { 180 / M_PI };
@@ -55,7 +67,7 @@ extern int debug; // in main.cpp
 class StepMover {
   public:
    enum class EndstopMode { All, Dir, From };
-   StepMover( PinsOut *a_motor, EndStop *a_endstops, uint32_t a_tick_2mm, uint32_t a_max_speed, uint32_t a_max_l );
+   StepMover( StepMotor &a_motor, EndStop *a_endstops, uint32_t a_tick_2mm, uint32_t a_max_speed, uint32_t a_max_l );
    void initHW();
    void set_dir( int dir );
    ReturnCode step();
@@ -63,7 +75,7 @@ class StepMover {
    ReturnCode step_to( xfloat to );
    ReturnCode check_es();
    int  get_x() const { return x; }
-   int  get_dir() const { return dir; }
+   int  get_dir() const { return motor.get_dir(); }
    void set_x( int a_x ) { x = a_x; }
    xfloat  get_xf() const { return (xfloat)x / tick2mm; }
    void set_xf( xfloat a_x ) { x = a_x * tick2mm; }
@@ -72,20 +84,19 @@ class StepMover {
    uint32_t get_max_l() const { return max_l; };
    xfloat get_es_find_l() const { return es_find_l; }; // remove?
    xfloat get_k_slow() const { return k_slow; };
-   PinsOut* get_motor() { return motor; } // not const, remove?
+   StepMotor& get_motor() { return motor; } // not const, remove?
    EndStop* get_endstops() { return endstops; } // not const, remove? + ask funcs
    void set_es_mode( EndstopMode a_m ) { es_mode = a_m; }
    void set_true_mode( bool m ) { true_mode = m; }
    bool get_true_mode() const { return true_mode; }
   protected:
-   PinsOut *motor     ;
+   StepMotor &motor     ;
    EndStop  *endstops ;
    EndstopMode es_mode { EndstopMode::Dir };
    uint32_t tick2mm   ; // tick per mm, =  pulses per mm
    uint32_t max_speed ; // mm/min
    uint32_t max_l     ; // mm
    int      x         { 0 }; // current pos in pulses, ? int64_t?
-   int      dir       { 0 }; // current direcion: -1, 0, 1, but may be more
    xfloat   es_find_l { 5.0f }; // movement to find endstop, from=ES, to = *1.5
    xfloat   k_slow    { 0.1f }; // slow movement coeff from max_speed
    bool     true_mode { true };
@@ -209,7 +220,6 @@ class Machine {
    xfloat spin_max {  90 };   // max PWM in %
    int dly_xsteps { 10 }; // delay between steps in program, ms
    int reen_motors { 0 }; // disable/enable motors after each move
-   bool was_set { false };
    bool bounded_move { true };
    bool relmove { false };
    bool inchUnit { false };
