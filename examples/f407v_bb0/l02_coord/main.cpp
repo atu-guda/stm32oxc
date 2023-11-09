@@ -30,7 +30,7 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES_UART;
 
-const char* common_help_string = "Application coordinate device control" NL;
+const char* common_help_string = "Application coordinate device control " __DATE__ " " __TIME__ NL;
 
 int debug { 1 };
 volatile int tim_mov_tick { 0 }; // set in TIM6_callback
@@ -109,6 +109,8 @@ Machine me_st( s_movers );
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " axis N [dt] - test"  };
+int cmd_set_debug( int argc, const char * const * argv );
+CmdInfo CMDINFO_SET_DEBUG { "debug", '\000', cmd_set_debug, " val - det debug value"  };
 int cmd_relmove( int argc, const char * const * argv );
 CmdInfo CMDINFO_RELMOVE { "rel", 'R', cmd_relmove, "dx dy dz [feed] - rel move"  };
 int cmd_absmove( int argc, const char * const * argv );
@@ -127,6 +129,7 @@ const CmdInfo* global_cmds[] = {
   // DEBUG_I2C_CMDS,
 
   &CMDINFO_TEST0,
+  &CMDINFO_SET_DEBUG,
   FS_CMDS0,
   &CMDINFO_RELMOVE,
   &CMDINFO_ABSMOVE,
@@ -270,12 +273,20 @@ int cmd_test0( int argc, const char * const * argv )
   // int n = arg2long_d( 2, argc, argv, UVAR('n'), -10000000, 100000000 ); // number of pulses with sign
   // uint32_t dt = arg2long_d( 3, argc, argv, UVAR('t'), 0, 1000 ); // ticks in ms
 
-  auto rc = me_st.go_from_es( mo_idx );
-  OUT << "# debug: mo_idx= " << mo_idx << " rc= " << rc << NL;
+  // auto rc = me_st.go_from_es( mo_idx );
+  OUT << "# debug: mo_idx= " << mo_idx << NL;
 
-  return rc;
+  return 0;
 }
 
+int cmd_set_debug( int argc, const char * const * argv )
+{
+  debug = arg2long_d( 1, argc, argv, 1 );
+
+  OUT << "# debug: = " << debug << NL;
+
+  return 0;
+}
 
 
 int cmd_relmove( int argc, const char * const * argv )
@@ -540,7 +551,9 @@ ReturnCode Machine::move_common( MoveInfo &mi, xfloat fe_mmm )
 
   if( onoff_laser ) {
     const xfloat v = getPwm();
-    OUT << "# power= " << spin << " v= " << v << NL;
+    if( debug ) {
+      OUT << "# power= " << spin << " v= " << v << NL;
+    }
     pwm_set( 0, v );
   }
 
@@ -558,7 +571,7 @@ ReturnCode Machine::move_common( MoveInfo &mi, xfloat fe_mmm )
     last_a = a;
 
     leds[2].reset();
-    if( rc >= ReturnCode::rcErr ) {
+    if( rc_c >= ReturnCode::rcErr ) {
       errno = 2001;
       rc = rc_c;
       break;
@@ -612,8 +625,10 @@ ReturnCode Machine::move_common( MoveInfo &mi, xfloat fe_mmm )
 
   const uint32_t tm_e = HAL_GetTick();
 
-  OUT << "# debug: move_common: a= " << last_a << " rc= " << rc << " dt= " << ( tm_e - tm_s )
-    << " fe= " << fe_mmm << ' ' << endstops2str_read() << NL;
+  if( debug ) {
+    OUT << "# debug: move_common: a= " << last_a << " rc= " << rc << " dt= " << ( tm_e - tm_s )
+      << " fe= " << fe_mmm << ' ' << endstops2str_read() << NL;
+  }
 
   if( reen_motors ) {
     motors_off(); // TODO: investigate! + sensors
@@ -685,6 +700,7 @@ ReturnCode Machine::go_home( unsigned motor_bits )
 
   // fast to all endstops
   bounded_move = false;
+  move_mode = moveCommon;
   auto rc = move_line( coo, fe_g1 );
   if( rc != rcEnd ) {
     OUT << "# Error: fail to find all endstops: " << endstops2str_read() << ' ' << rc << NL;
@@ -698,17 +714,23 @@ ReturnCode Machine::go_home( unsigned motor_bits )
     auto mover = movers[i]; // checked before
     auto estp = mover->get_endstops();
     rc = go_from_es_nc( i, mover, estp );
-    OUT << "# debug: from 1/ " << i << ' ' << rc << NL;
+    if( debug ) {
+      OUT << "# debug: from 1/ " << i << ' ' << rc << NL;
+    }
     if( rc >= rcErr ) {
       break;
     }
     rc = go_to_es_nc( i, mover, estp );
-    OUT << "# debug: from 2/ " << i << ' ' << rc << NL;
+    if( debug ) {
+      OUT << "# debug: from 2/ " << i << ' ' << rc << NL;
+    }
     if( rc >= rcErr ) {
       break;
     }
     rc = go_from_es_nc( i, mover, estp );
-    OUT << "# debug: from 2/ " << i << ' ' << rc << NL;
+    if( debug ) {
+      OUT << "# debug: from 2/ " << i << ' ' << rc << NL;
+    }
     if( rc >= rcErr ) {
       break;
     }
@@ -755,6 +777,7 @@ ReturnCode Machine::go_from_es_nc( unsigned mover_idx, StepMover *mover, EndStop
 
   bounded_move = true;
   coo[mover_idx] = mover->get_es_find_l();
+  move_mode = moveCommon;
   auto rc = move_line( coo, fe_g1 * mover->get_k_slow() );
   mover->set_es_mode( StepMover::EndstopMode::Dir );
   return rc;
@@ -773,6 +796,7 @@ ReturnCode Machine::go_to_es_nc( unsigned mover_idx, StepMover *mover, EndStop *
   std::ranges::fill( coo, 0 );
 
   bounded_move = true;
+  move_mode = moveCommon;
   coo[mover_idx] = - mover->get_es_find_l();
   auto rc = move_line( coo, fe_g1 * mover->get_k_slow() );
   return rc;
@@ -809,15 +833,20 @@ ReturnCode Machine::g_move_line( const GcodeBlock &gc )
   bounded_move = g1;
 
   // TODO: comment after after debug
-  OUT << "# G" << (g1?'1':'0') << " ( ";
-  for( auto xx: prm ) {
-    OUT << xx << ' ';
+  if( debug ) {
+    OUT << "# G" << (g1?'1':'0') << " ( ";
+    for( auto xx: prm ) {
+      OUT << xx << ' ';
+    }
+    OUT << " ); fe= "<< fe_mmm << NL;
   }
-  OUT << " ); fe= "<< fe_mmm << NL;
 
+  move_mode = g1 ? moveActive : moveFast;
   ReturnCode rc = move_line( prm, fe_mmm );
 
-  OUT << "#  G0G1 rc= "<< rc << " break_flag= " << break_flag << NL;
+  if( debug ) {
+    OUT << "#  G0G1 rc= "<< rc << " break_flag= " << break_flag << NL;
+  }
 
   return rc;
 }
@@ -880,22 +909,24 @@ ReturnCode Machine::g_move_circle( const GcodeBlock &gc )
     r_e = hypotxf( ( x_e - x_r ), ( y_e - y_r ) );
   } else { // R-mode, nor-nor handled before
     if( full_circ ) {
-      std_out << "# full circle unavailable in G2/3 R-mode" << NL;
+      OUT << "# full circle unavailable in G2/3 R-mode" << NL;
       return g_move_line( gc );
     }
     auto ok = calc_G2_R_mode( cv, x_e, y_e, r_1, x_r, y_r );
     if( !ok ) {
-      std_out << "# Error: fail to calc G2/3 R-mode" << NL;
+      OUT << "# Error: fail to calc G2/3 R-mode" << NL;
       return g_move_line( gc );
     }
     r_s = r_e = r_1;
   }
 
-  std_out << "# G2/3" << " ( " << x_e << ' ' << y_e << ' ' << z_e
-    << " ) c: ( " << x_r << ' ' << y_r << " ) r_1= " << r_1 << ' ' << nt << NL;
+  if( debug ) {
+    OUT << "# G2/3" << " ( " << x_e << ' ' << y_e << ' ' << z_e
+      << " ) c: ( " << x_r << ' ' << y_r << " ) r_1= " << r_1 << ' ' << nt << NL;
+  }
 
   if( r_s < r_min || r_e < r_min || r_s > r_max || r_e > r_max  ) {
-    std_out << "# err: bad r, fallback" << NL;
+    OUT << "# err: bad r, fallback" << NL;
     return g_move_line( gc );
   }
 
@@ -929,15 +960,20 @@ ReturnCode Machine::g_move_circle( const GcodeBlock &gc )
   xfloat fe_mmm = fe_g1;
 
   // TODO: comment after after debug
-  OUT << "# G" << (cv?'2':'3') << " ( ";
-  for( auto xx: prm ) {
-    OUT << xx << ' ';
+  if( debug ) {
+    OUT << "# G" << (cv?'2':'3') << " ( ";
+    for( auto xx: prm ) {
+      OUT << xx << ' ';
+    }
+    OUT << " ); fe= "<< fe_mmm << NL;
   }
-  OUT << " ); fe= "<< fe_mmm << NL;
 
+  move_mode = moveActive;
   auto rc = move_circ( prm, fe_mmm );
 
-  OUT << "#  G2G3 rc= "<< rc << " break_flag= " << break_flag << NL;
+  if( debug ) {
+    OUT << "#  G2G3 rc= "<< rc << " break_flag= " << break_flag << NL;
+  }
   return rc;
 }
 
@@ -1280,7 +1316,7 @@ ReturnCode Machine::call_mg( const GcodeBlock &cb )
   auto is_g = cb.is_set('G');
   auto is_m = cb.is_set('M');
   if( is_g && is_m ) {
-    OUT << "#  MS error: M and G" << NL;
+    OUT << "#  M/G error: M and G" << NL;
     return ReturnCode::rcErr; // TODO: err_val: both commands
   }
 
@@ -1345,15 +1381,19 @@ ReturnCode Machine::prep_fun(  const GcodeBlock &gc )
   if( gc.is_set('F') ) {
     xfloat v = gc.fpv_or_def( 'F', 100 );
     fe_g1 = v;
-    OUT << " F= " << v;
-    was_out = true;
+    if( debug ) {
+      OUT << "# F= " << v;
+      was_out = true;
+    }
   }
 
   if( gc.is_set('S') ) {
     xfloat v = gc.fpv_or_def( 'S', 1 );
     spin = v;
-    OUT << " S= " << v;
-    was_out = true;
+    if( debug ) {
+      OUT << "# S= " << v;
+      was_out = true;
+    }
   }
   if( was_out ) {
     OUT << NL;

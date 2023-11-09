@@ -6,6 +6,7 @@
 
 using namespace std;
 
+extern int debug; // remove after globalization
 #define OUT std_out
 
 // -------------------- MoveInfo ------------------------------
@@ -30,12 +31,17 @@ ReturnCode MoveInfo::prep_move_line( const xfloat *prm )
   }
   len = sqrtxf( len );
 
-  OUT << "# debug: prep_move_line: len= " << len << " n_coo=" << n_coo;
   for( unsigned i=0; i<n_coo && i < max_n_koeffs; ++i ) {
     k_x[i] = prm[i];
-    OUT << ' ' << k_x[i];
   }
-  OUT << NL;
+
+  if( debug ) {
+    OUT << "# debug: prep_move_line: len= " << len;
+    for( unsigned i=0; i<n_coo && i < max_n_koeffs; ++i ) {
+      OUT << ' ' << k_x[i];
+    }
+    OUT << NL;
+  }
 
   return rcOk;
 }
@@ -68,11 +74,13 @@ ReturnCode MoveInfo::prep_move_circ( const xfloat *prm )
   k_x[2] = - ( r_s * cos( alp_s ) ); // initial point shift
   k_x[3] = - ( r_s * sin( alp_s ) );
 
-  OUT << "# debug: prep_move_circ: len= " << len;
-  for( unsigned i=0; i<6; ++i ) {
-    OUT << ' ' << k_x[i];
+  if( debug ) {
+    OUT << "# debug: prep_move_circ: len= " << len;
+    for( unsigned i=0; i<6; ++i ) {
+      OUT << ' ' << k_x[i];
+    }
+    OUT << NL;
   }
-  OUT << NL;
 
   return rcOk;
 }
