@@ -233,13 +233,12 @@ void PrintFP(double Num, struct OutputStream *Stream)
   PrintInt((long)Num, 0, FALSE, FALSE, Stream);
   PrintCh('.', Stream);
   Num = (Num - (long)Num) * 10;
-  if (abs(Num) >= 1e-7)
-  {
-    for (MaxDecimal = 6; MaxDecimal > 0 && abs(Num) >= 1e-7; Num = (Num - (long)(Num + 1e-7)) * 10, MaxDecimal--)
+  if( fabs(Num) >= 1e-7 ) {
+    for (MaxDecimal = 6; MaxDecimal > 0 && fabs(Num) >= 1e-7; Num = (Num - (long)(Num + 1e-7)) * 10, MaxDecimal--)
       PrintCh('0' + (long)(Num + 1e-7), Stream);
-  }
-  else
+  } else {
     PrintCh('0', Stream);
+  }
 
   if (Exponent != 0)
   {

@@ -203,7 +203,7 @@ int delay_ms_until_brk( uint32_t *tc0, uint32_t ms )
 
 #ifdef USE_FREERTOS
 
-int  delay_ms_until_brk_ex( uint32_t *tc0, uint32_t ms, bool check_break ) // FreeRTOS version
+int  delay_ms_until_brk_ex( uint32_t *tc0, uint32_t ms, int check_break ) // FreeRTOS version
 {
   if( __get_PRIMASK() ) {
     delay_bad_ms( ms );

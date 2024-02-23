@@ -117,7 +117,7 @@ void task_send( void *prm UNUSED_ARG )
     HAL_GPIO_WritePin( GPIOA, GPIO_PIN_4 , GPIO_PIN_SET );
 
     tx_buf[0] = '\0';
-    i2dec( tcc - tc00, buf, 8, '0' );  strncat( tx_buf, buf, 12 ); strncat( tx_buf, " ", 1 );
+    i2dec( tcc - tc00, buf, 8, '0' );  strncat( tx_buf, buf, 12 ); strncat( tx_buf, " ", 2 );
 
     // try even if error
     int32_t tif =  ( v[3] >> 4 ) | ( v[2] << 4 );
@@ -125,14 +125,14 @@ void task_send( void *prm UNUSED_ARG )
       tif |= 0xFFFFF000;
     }
     int32_t tid4 = tif * 625;
-    ifcvt( tid4, 10000, buf, 4 ); strncat( tx_buf, buf, 14 ); strncat( tx_buf, " ", 1 );
+    ifcvt( tid4, 10000, buf, 4 ); strncat( tx_buf, buf, 14 ); strncat( tx_buf, " ", 2 );
 
     int32_t tof =  ( v[1] >> 2 ) | ( v[0] << 6 );
     if( tof & 0x2000 ) {
       tof |= 0xFFFFC000;
     }
     int tod4 = tof * 25;
-    ifcvt( tod4, 100, buf, 2 ); strncat( tx_buf, buf, 14 ); strncat( tx_buf, " ", 1 );
+    ifcvt( tod4, 100, buf, 2 ); strncat( tx_buf, buf, 14 ); strncat( tx_buf, " ", 2 );
 
     if( v[1] & MAX31855_FAIL ) {
       lbits |= 1;

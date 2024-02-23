@@ -18,7 +18,6 @@ using namespace std;
 
 #define debug (UVAR('d'))
 
-constexpr inline float pow2( float x ) { return x * x; }
 
 PWMInfo::PWMInfo( float a_R0, float a_V_00, float a_k_gv1, float freq )
   : R_0( a_R0 ), V_00( a_V_00 ), k_gv1( a_k_gv1 ), T_0( 1.0f / freq )
