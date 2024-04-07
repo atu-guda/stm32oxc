@@ -1,0 +1,12 @@
+Drone parts measurement system
+
+Speed: optocouple + TIM2.1 (A0)
+Weight: HX711 (C11=data,C10=clock)
+
+
+Future: I/V INA226
+SCL = B8 ? 4.7k pullUp
+SDA = B9 ? 4.7k pullUp
+
+Future: d-shot
+
