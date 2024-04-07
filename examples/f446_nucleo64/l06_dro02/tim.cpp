@@ -1,5 +1,3 @@
-#include <errno.h>
-
 #include <oxc_auto.h>
 
 
