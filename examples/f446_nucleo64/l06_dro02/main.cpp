@@ -1,4 +1,5 @@
 #include <oxc_auto.h>
+#include <oxc_floatfun.h>
 
 using namespace std;
 using namespace SMLRL;
@@ -37,7 +38,7 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 100;
+  UVAR('t') = 500;
   UVAR('n') =  20;
 
   hx711_sck.initHW();
@@ -58,22 +59,28 @@ int cmd_test0( int argc, const char * const * argv )
   uint32_t t_step = UVAR('t');
   std_out <<  "# Test0: n= " << n << " t= " << t_step << NL;
 
+  // float scale = -1.0f / 0x01000000;
+  float scale = -5.149e-7f;
+  float shift = -72.97e-3f;
+  int32_t sum_i { 0 };
+
   uint32_t tm0 = HAL_GetTick();
 
-  uint32_t tc0 = tm0, tc00 = tm0;
+  uint32_t tc0 = tm0; //, tc00 = tm0;
 
   break_flag = 0;
   for( int i=0; i<n && !break_flag; ++i ) {
-    uint32_t  tcc = HAL_GetTick();
-    // hx711_sck.toggle();
-    // uint16_t h_d = hx711_dat.read();
+    // uint32_t  tcc = HAL_GetTick();
     int32_t v_f = hx711_read();
+    float v = v_f * scale + shift;
+    sum_i += v_f;
     std_out <<  "i= " << i // << "  tick= " << ( tcc - tc00 )
-            << " v_f= " <<  HexInt( v_f ) << ' ' << v_f << ' ' << NL;
+            << " v_f= " <<  HexInt( v_f ) << ' ' << v_f << ' ' << v << NL;
     leds.toggle( 4 );
 
     delay_ms_until_brk( &tc0, t_step );
   }
+  std_out << "# av: " << float(sum_i) / n << NL;
 
   return 0;
 }
@@ -105,10 +112,15 @@ int32_t hx711_read()
     delay_hx711();
   }
 
+  // TODO: param
   hx711_sck.set();
   delay_hx711();
   hx711_sck.reset();
   delay_hx711();
+
+  if( cnt & 0x00800000 ) {
+    cnt |= 0xFF000000;
+  }
 
   return (int32_t)(cnt);
 }
