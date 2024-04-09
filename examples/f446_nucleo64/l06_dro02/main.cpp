@@ -1,6 +1,8 @@
 #include <oxc_auto.h>
 #include <oxc_floatfun.h>
 
+#include "dro02.h"
+
 using namespace std;
 using namespace SMLRL;
 
@@ -40,9 +42,13 @@ int main(void)
 
   UVAR('t') = 500;
   UVAR('n') =  20;
+  UVAR('s') = 5194; // scale, * 1e-10
+  UVAR('o') = 0; // offset, g
 
   hx711_sck.initHW();
   hx711_dat.initHW();
+
+  MX_TIM2_Init();
 
   BOARD_POST_INIT_BLINK;
 
@@ -60,8 +66,8 @@ int cmd_test0( int argc, const char * const * argv )
   std_out <<  "# Test0: n= " << n << " t= " << t_step << NL;
 
   // float scale = -1.0f / 0x01000000;
-  float scale = -5.149e-7f;
-  float shift = -72.97e-3f;
+  float scale = - UVAR('s') * 1e-10f;
+  float shift = UVAR('o') * 1e-3f;
   int32_t sum_i { 0 };
 
   uint32_t tm0 = HAL_GetTick();
@@ -73,10 +79,13 @@ int cmd_test0( int argc, const char * const * argv )
     // uint32_t  tcc = HAL_GetTick();
     int32_t v_f = hx711_read();
     float v = v_f * scale + shift;
+    float f = ( tim2_catch > 0 ) ? ( 1e6f / tim2_catch ) : 0.0f;
     sum_i += v_f;
     std_out <<  "i= " << i // << "  tick= " << ( tcc - tc00 )
-            << " v_f= " <<  HexInt( v_f ) << ' ' << v_f << ' ' << v << NL;
-    leds.toggle( 4 );
+            << " v_f= " <<  HexInt( v_f ) << ' ' << v_f << ' ' << v
+            << " cap= " << tim2_catch << " f= " << f
+            << NL;
+    // leds.toggle( 4 );
 
     delay_ms_until_brk( &tc0, t_step );
   }
