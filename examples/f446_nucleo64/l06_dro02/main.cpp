@@ -1,3 +1,4 @@
+#include <cstring>
 #include <oxc_auto.h>
 #include <oxc_floatfun.h>
 
@@ -18,14 +19,21 @@ PinsIn hx711_dat( GpioC, 11, 1 );
 inline void delay_hx711() { delay_bad_mcs( 2 ); }; // TODO: try 1
 int32_t hx711_read();
 
+// UsartIO fc_io( &huart1, huart1.Instance );
+
+int motor_pwr( int v );
+
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
+int cmd_test_fc( int argc, const char * const * argv );
+CmdInfo CMDINFO_TEST_FC { "test_fc", 'F', cmd_test_fc, " - test FC interaction"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
 
   &CMDINFO_TEST0,
+  &CMDINFO_TEST_FC,
   nullptr
 };
 
@@ -49,6 +57,8 @@ int main(void)
   hx711_dat.initHW();
 
   MX_TIM2_Init();
+  MX_FC_UART_Init();
+  HAL_UART_Transmit( &huart1, (const uint8_t*)"#\n", 2, 1000 );
 
   BOARD_POST_INIT_BLINK;
 
@@ -65,7 +75,7 @@ int cmd_test0( int argc, const char * const * argv )
   uint32_t t_step = UVAR('t');
   std_out <<  "# Test0: n= " << n << " t= " << t_step << NL;
 
-  // float scale = -1.0f / 0x01000000;
+
   float scale = - UVAR('s') * 1e-10f;
   float shift = UVAR('o') * 1e-3f;
   int32_t sum_i { 0 };
@@ -76,7 +86,7 @@ int cmd_test0( int argc, const char * const * argv )
 
   break_flag = 0;
   for( int i=0; i<n && !break_flag; ++i ) {
-    // uint32_t  tcc = HAL_GetTick();
+
     int32_t v_f = hx711_read();
     float v = v_f * scale + shift;
     float f = ( tim2_catch > 0 ) ? ( 1e6f / tim2_catch ) : 0.0f;
@@ -85,7 +95,7 @@ int cmd_test0( int argc, const char * const * argv )
             << " v_f= " <<  HexInt( v_f ) << ' ' << v_f << ' ' << v
             << " cap= " << tim2_catch << " f= " << f
             << NL;
-    // leds.toggle( 4 );
+    tim2_catch = 0;
 
     delay_ms_until_brk( &tc0, t_step );
   }
@@ -132,6 +142,33 @@ int32_t hx711_read()
   }
 
   return (int32_t)(cnt);
+}
+
+int motor_pwr( int v )
+{
+  char sbuf[64];
+  char rbuf[128];
+
+  strcpy( sbuf, "motor 0 " );
+  char xbuf[16]; i2dec( v+1000, xbuf );
+  strcat( sbuf, xbuf );
+  strcat( sbuf, "\n" );
+  HAL_UART_Transmit( &huart1, (const uint8_t*)sbuf, strlen(sbuf), 1000 );
+  HAL_UART_Receive( &huart1, (uint8_t*)rbuf, sizeof(rbuf), 100 );
+  return 0;
+}
+
+int cmd_test_fc( int argc, const char * const * argv )
+{
+  int v = arg2long_d( 1, argc, argv, 10, 0, 1000 );
+
+  motor_pwr( v );
+
+  delay_ms( 2000 );
+
+  motor_pwr( 0 );
+
+  return 0;
 }
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

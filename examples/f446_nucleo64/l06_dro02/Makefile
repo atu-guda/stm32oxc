@@ -23,10 +23,13 @@ USE_OXC_DMA = y
 
 # NOUSE_DEFAULT_UART_INIT = y
 
-SRCS  = main.cpp
+SRCS += main.cpp
 SRCS += tim.cpp
+SRCS += usart.cpp
 
 SRCS += oxc_floatfun.cpp
+
+
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
 # see ../common/f4_modules.mk

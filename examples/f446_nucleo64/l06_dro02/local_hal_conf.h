@@ -1,0 +1,18 @@
+#ifndef _LOCAL_HAL_CONF_H
+#define _LOCAL_HAL_CONF_H
+
+// #define HAL_UART_MODULE_ENABLED
+
+#define UART_FC USART1
+#define UART_FC_CLK_ENABLE __HAL_RCC_USART1_CLK_ENABLE
+
+#define UART_FC_GPIO GpioA
+#define UART_FC_GPIO_PINS ( BIT9 | BIT10 )
+#define UART_FC_GPIO_AF GPIO_AF7_USART1
+
+#define HAL_UART_USERINIT_FUN HAL_UART_UserInit
+
+
+
+#endif
+
