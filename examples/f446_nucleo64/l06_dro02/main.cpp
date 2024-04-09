@@ -28,12 +28,15 @@ int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
 int cmd_test_fc( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST_FC { "test_fc", 'F', cmd_test_fc, " - test FC interaction"  };
+int cmd_run( int argc, const char * const * argv );
+CmdInfo CMDINFO_RUN { "run", 'R', cmd_run, " max_v - test FC interaction"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
 
   &CMDINFO_TEST0,
   &CMDINFO_TEST_FC,
+  &CMDINFO_RUN,
   nullptr
 };
 
@@ -48,7 +51,10 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 500;
+  UVAR('a') =  200; // max
+  UVAR('b') =    5; // step
+  UVAR('c') =   20; // min_v
+  UVAR('t') = 2000;
   UVAR('n') =  20;
   UVAR('s') = 5194; // scale, * 1e-10
   UVAR('o') = 0; // offset, g
@@ -100,6 +106,43 @@ int cmd_test0( int argc, const char * const * argv )
     delay_ms_until_brk( &tc0, t_step );
   }
   std_out << "# av: " << float(sum_i) / n << NL;
+
+  return 0;
+}
+
+int cmd_run( int argc, const char * const * argv )
+{
+  int max_v = arg2long_d( 1, argc, argv, UVAR('a'), 0, 500 );
+  int dlt_v = arg2long_d( 2, argc, argv, UVAR('b'), 1, 100 );
+  uint32_t t_step = UVAR('t');
+  std_out <<  "# : max_v= " << max_v << " dlt_v" << dlt_v << " t= " << t_step << NL;
+
+  float scale = - UVAR('s') * 1e-10f;
+  float shift = UVAR('o') * 1e-3f;
+
+  break_flag = 0;
+  int last_v = UVAR('c');
+  for( int v=last_v; v<=max_v && !break_flag; v += dlt_v ) {
+    last_v = v;
+
+    motor_pwr( v );
+    delay_ms_brk( t_step );
+
+    int32_t wei_i = hx711_read();
+    float wei = wei_i * scale + shift;
+    float freq = ( tim2_catch > 0 ) ? ( 1e6f / tim2_catch ) : 0.0f;
+    tim2_catch = 0;
+    std_out <<  v << ' ' << wei << ' ' << freq << NL;
+  }
+
+  break_flag = 0;
+  std_out << "# spindown " << NL;
+  for( int v=last_v; v>20 && !break_flag; v = v * 80 / 100 ) {
+    std_out << "# v= " << v << NL;
+    motor_pwr( v );
+    delay_ms( 500 );
+  }
+  motor_pwr( 0 );
 
   return 0;
 }
