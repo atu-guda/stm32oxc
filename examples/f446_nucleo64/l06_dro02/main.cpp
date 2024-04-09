@@ -64,7 +64,6 @@ int main(void)
 
   MX_TIM2_Init();
   MX_FC_UART_Init();
-  HAL_UART_Transmit( &huart1, (const uint8_t*)"#\n", 2, 1000 );
 
   BOARD_POST_INIT_BLINK;
 
@@ -81,6 +80,7 @@ int cmd_test0( int argc, const char * const * argv )
   uint32_t t_step = UVAR('t');
   std_out <<  "# Test0: n= " << n << " t= " << t_step << NL;
 
+  HAL_UART_Transmit( &huart1, (const uint8_t*)"#\n", 2, 1000 );
 
   float scale = - UVAR('s') * 1e-10f;
   float shift = UVAR('o') * 1e-3f;
@@ -116,6 +116,8 @@ int cmd_run( int argc, const char * const * argv )
   int dlt_v = arg2long_d( 2, argc, argv, UVAR('b'), 1, 100 );
   uint32_t t_step = UVAR('t');
   std_out <<  "# : max_v= " << max_v << " dlt_v" << dlt_v << " t= " << t_step << NL;
+
+  HAL_UART_Transmit( &huart1, (const uint8_t*)"#\n", 2, 1000 );
 
   float scale = - UVAR('s') * 1e-10f;
   float shift = UVAR('o') * 1e-3f;
@@ -204,6 +206,8 @@ int motor_pwr( int v )
 int cmd_test_fc( int argc, const char * const * argv )
 {
   int v = arg2long_d( 1, argc, argv, 10, 0, 1000 );
+
+  HAL_UART_Transmit( &huart1, (const uint8_t*)"#\n", 2, 1000 );
 
   motor_pwr( v );
 
