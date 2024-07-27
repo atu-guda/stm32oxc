@@ -1,0 +1,11 @@
+Test TIM1 as double shot  = 2 * single shot output
+out: A0
+user vars (autocalc):
+ p - prescaler
+ a - ARR
+
+T t_1 t_delay t_2
+t_x - in ms
+
+
+

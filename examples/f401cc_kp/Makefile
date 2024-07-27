@@ -20,6 +20,7 @@ SUBDIRS = \
   10_i2c_pcf8591 \
   11_i2c_ds3231 \
   12_tim_pwm \
+  12e_tim_doubleshot \
   14_tim_enco \
   15_tim_usonic \
   18_i2c_ssd1306_oled \

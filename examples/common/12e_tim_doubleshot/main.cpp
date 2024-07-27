@@ -84,7 +84,7 @@ int cmd_test0( int argc, const char * const * argv )
 {
   int t_1 = arg2long_d( 1, argc, argv,   200,    1, 2000 );
   int t_d = arg2long_d( 2, argc, argv,   100,    0, 2000 );
-  int t_2 = arg2long_d( 3, argc, argv,   300,    0, 2000 );
+  int t_2 = arg2long_d( 3, argc, argv,     0,    0, 2000 );
 
   uint16_t arr1 = (uint16_t)( t_1 * 10 );
   uint16_t ccr1 = 0;
