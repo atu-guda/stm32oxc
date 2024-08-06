@@ -312,6 +312,8 @@
  #include <oxc_stm32f7xx_hal_common_conf.h>
 #elif defined(STM32H7)
  #include <oxc_stm32h7xx_hal_common_conf.h>
+#elif defined(STM32G4)
+ #include <oxc_stm32g4xx_hal_common_conf.h>
 #else
   #error "Unsupported MCU"
 #endif

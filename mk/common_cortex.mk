@@ -6,7 +6,7 @@
 # BOARDNAME for STM BSP dirs
 
 ifndef MCTYPE
-  $(error MCTYPE not specified)
+  $(error MCTYPE not specified (like STM32F446) )
 endif
 
 ifndef MCINCTYPE
@@ -23,18 +23,18 @@ $(info PROJ_NAME= $(PROJ_NAME) BOARDNAME= $(BOARDNAME) BSPNAME= $(BSPNAME) )
 $(info MCTYPE= $(MCTYPE)  MCBASE= $(MCBASE)  MCSUFF= $(MCSUFF) MCSUFF_U= $(MCSUFF_U) )
 
 # OXCDIR := oxc // from Makefile TODO: from pkgconfig
-OXCINC = $(OXCDIR)/inc
-OXCSRC = $(OXCDIR)/src
-OXCSRCARCH = $(OXCDIR)/src/arch/$(MCSUFF)
-OXCINCARCH = $(OXCDIR)/inc/arch/$(MCSUFF)
-OXCINCBSP  = $(OXCDIR)/inc/bsp/$(BSPNAME)
-OXCBOARDDIR=$(OXCSRC)/bsp/$(BSPNAME)
-STMBOARDDIR=$(STM32_HAL_FW_DIR)/Drivers/BSP/$(BOARDNAME)
-STMCOMPONENTS=$(STM32_HAL_FW_DIR)/Drivers/BSP/Components
-OXCLD = $(OXCDIR)/ld
+OXCINC        = $(OXCDIR)/inc
+OXCSRC        = $(OXCDIR)/src
+OXCSRCARCH    = $(OXCDIR)/src/arch/$(MCSUFF)
+OXCINCARCH    = $(OXCDIR)/inc/arch/$(MCSUFF)
+OXCINCBSP     = $(OXCDIR)/inc/bsp/$(BSPNAME)
+OXCBOARDDIR   = $(OXCSRC)/bsp/$(BSPNAME)
+STMBOARDDIR   = $(STM32_HAL_FW_DIR)/Drivers/BSP/$(BOARDNAME)
+STMCOMPONENTS = $(STM32_HAL_FW_DIR)/Drivers/BSP/Components
+OXCLD         = $(OXCDIR)/ld
 
 ifndef FATFS_DIR
-  FATFS_DIR := /usr/share/fatfs/source
+  FATFS_DIR = /usr/share/fatfs/source
 endif
 
 ifndef STM32_HAL_REPODIR
@@ -75,15 +75,14 @@ STM_HAL_SRC := \
 # $(error Debug stop )
 
 # common variables and rules to make stm32 binaries
-TARGET:=arm-none-eabi
-CC:=$(TARGET)-gcc
-CXX:=$(TARGET)-g++
-CPP:=$(TARGET)-cpp
-AS:=$(TARGET)-gcc -x assembler-with-cpp
-OBJCOPY:=$(TARGET)-objcopy
-OBJDUMP:=$(TARGET)-objdump
-LINK=$(CXX)
-
+TARGET  = arm-none-eabi
+CC      = $(TARGET)-gcc
+CXX     = $(TARGET)-g++
+CPP     = $(TARGET)-cpp
+AS      = $(TARGET)-gcc -x assembler-with-cpp
+OBJCOPY = $(TARGET)-objcopy
+OBJDUMP = $(TARGET)-objdump
+LINK    = $(CXX)
 
 
 DEPSDIR=.deps
@@ -91,14 +90,14 @@ OBJDIR=.objs
 
 
 # FreeRTOS: rtos/Source -> /usr/share/FreeRTOS/Source (or ../common/rtos ...)
-RTDIR=/usr/share/FreeRTOS/Source
-RTINC=$(RTDIR)/include
+RTDIR = /usr/share/FreeRTOS/Source
+RTINC = $(RTDIR)/include
 
 ###################################################
 
-ALLFLAGS += -g3 -O2
-ALLFLAGS += -fno-common -ffunction-sections -fdata-sections -fno-strict-aliasing
-ALLFLAGS += -DSTM32 -D$(MCINCTYPE) -DHSE_VALUE=$(HSE_VALUE) -DUSE_HAL_LEGACY
+ALLFLAGS  += -g3 -O2
+ALLFLAGS  += -fno-common -ffunction-sections -fdata-sections -fno-strict-aliasing
+ALLFLAGS  += -DSTM32 -D$(MCINCTYPE) -DHSE_VALUE=$(HSE_VALUE) -DUSE_HAL_LEGACY
 WARNFLAGS += -Wall -Wextra -Wundef -Wdouble-promotion -Wno-unused-parameter
 CWARNFLAGS   := $(WARNFLAGS) -Wimplicit-function-declaration -Wmissing-prototypes -Wstrict-prototypes -Wno-misleading-indentation
 CXXWARNFLAGS := $(WARNFLAGS) -Wno-register -Wno-volatile
@@ -152,6 +151,10 @@ ifeq "$(MCBASE)" "STM32F4"
 endif
 ifeq "$(MCBASE)" "STM32F7"
   ARCHFLAGS += -mthumb -mcpu=cortex-m7 -mfloat-abi=$(FLOAT_ABI) -mfpu=fpv4-sp-d16
+  KNOWN_MCU := yes
+endif
+ifeq "$(MCBASE)" "STM32G4"
+  ARCHFLAGS += -mthumb -mcpu=cortex-m4 -mfloat-abi=$(FLOAT_ABI) -mfpu=fpv4-sp-d16
   KNOWN_MCU := yes
 endif
 ifeq "$(MCBASE)" "STM32H7"
@@ -512,12 +515,15 @@ vpath %.ld  $(OXCLD)
 
 
 OBJS0a = $(SRCS:.cpp=.o)
-OBJS0 = $(OBJS0a:.c=.o)
-OBJS  = $(OBJS0:.s=.o)
-OBJS1 = $(addprefix $(OBJDIR)/,$(OBJS))
+OBJS0  = $(OBJS0a:.c=.o)
+OBJS   = $(OBJS0:.s=.o)
+OBJS1  = $(addprefix $(OBJDIR)/,$(OBJS))
 
-CFLAGS   = $(ALLFLAGS)  -std=c11   $(CWARNFLAGS)
-CXXFLAGS = $(ALLFLAGS)  -std=gnu++20 $(CXXWARNFLAGS) -fno-rtti -fno-exceptions -fno-threadsafe-statics -fno-use-cxa-atexit
+C_STD   ?= c11
+CXX_STD ?= gnu++23
+
+CFLAGS   = $(ALLFLAGS)  -std=$(C_STD)   $(CWARNFLAGS)
+CXXFLAGS = $(ALLFLAGS)  -std=$(CXX_STD) $(CXXWARNFLAGS) -fno-rtti -fno-exceptions -fno-threadsafe-statics -fno-use-cxa-atexit
 
 $(info SRCPATHS is $(SRCPATHS) )
 $(info STM_HAL_INC= $(STM_HAL_INC) )

@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <oxc_auto.h>
 #include <oxc_ds3231.h>
 

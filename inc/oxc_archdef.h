@@ -101,6 +101,18 @@
  #define EXTIREG_RTSR RTSR1
  #define EXTIREG_FTSR FTSR1
  #define EXTIREG_IMR  IMR1
+#elif defined (STM32G4)
+ #include <stm32g4xx_hal.h>
+ #define SET_BIT_REG   BSRR
+ #define RESET_BIT_REG BSRR
+ #define RESET_BIT_SHIFT 16
+ #define GPIO_SPEED_MAX GPIO_SPEED_FREQ_VERY_HIGH
+ #define GPIO_EN_REG      AHB2ENR
+ #define GPIO_EN_BIT0 RCC_AHB2ENR_GPIOAEN
+ #define EXTICFG_PLACE SYSCFG
+ #define EXTIREG_RTSR RTSR
+ #define EXTIREG_FTSR FTSR
+ #define EXTIREG_IMR  IMR
 #else
   #error "Unsupported MCU"
 #endif
