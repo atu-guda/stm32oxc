@@ -3,11 +3,12 @@
 
 #define _BOARD_CFG_DEFINED
 
-// definition of resoures for STM32F431CC blacK pill board
+// definition of resoures for STM32F431BC blacK pill board
 // headers must be included manualy in C/CPP file
 
 #define def_stksz 512
 
+// TODO: measure and fix
 #define DELAY_APPROX_COEFF  5010
 
 #ifndef NEED_LEDS_EXTRA

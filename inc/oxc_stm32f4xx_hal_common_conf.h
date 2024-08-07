@@ -75,7 +75,7 @@
  /* The prefetch will be enabled in SystemClock_Config(), depending on the used
    STM32F405/415/07/417 device: RevA (prefetch must be off) or RevZ (prefetch can be on/off) */
 
-   /* ########################## Assert Selection ############################## */
+/* ########################## Assert Selection ############################## */
 /**
   * @brief Uncomment the line below to expanse the "assert_param" macro in the
   *        HAL drivers code

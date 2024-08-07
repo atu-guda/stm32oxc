@@ -1,9 +1,10 @@
 # Must be set before:
 # MCTYPE like STM32F446
 # may be
-# BSPNAME
+# BSPNAME - for inc/bsp/=, src/bsp/=
 # MCINCTYPE like STM32F103xB (for HAL define), default: $(MCTYPE)xx
 # BOARDNAME for STM BSP dirs
+# EXTRA_USER_FLAGS for manual add during build, like -H
 
 ifndef MCTYPE
   $(error MCTYPE not specified (like STM32F446) )
@@ -96,7 +97,7 @@ RTINC = $(RTDIR)/include
 ###################################################
 
 ALLFLAGS  += -g3 -O2
-ALLFLAGS  += -fno-common -ffunction-sections -fdata-sections -fno-strict-aliasing
+ALLFLAGS  += -fno-common -ffunction-sections -fdata-sections -fno-strict-aliasing -mlittle-endian
 ALLFLAGS  += -DSTM32 -D$(MCINCTYPE) -DHSE_VALUE=$(HSE_VALUE) -DUSE_HAL_LEGACY
 WARNFLAGS += -Wall -Wextra -Wundef -Wdouble-promotion -Wno-unused-parameter
 CWARNFLAGS   := $(WARNFLAGS) -Wimplicit-function-declaration -Wmissing-prototypes -Wstrict-prototypes -Wno-misleading-indentation
@@ -104,14 +105,13 @@ CXXWARNFLAGS := $(WARNFLAGS) -Wno-register -Wno-volatile
 
 ALLFLAGS += -DPROJ_NAME=\"$(PROJ_NAME)\"
 #ALLFLAGS += -ffreestanding
-ALLFLAGS += -mlittle-endian
 # ALLFLAGS += --specs=nano.specs
 # ALLFLAGS += -fstack-usage
 ifeq "$(NO_STDLIB)" "y"
   ALLFLAGS += -nostdlib
 endif
 
-ALLFLAGS  += -D$(MCTYPE) -D$(MCBASE) -DMCTYPE=$(MCTYPE) -DMCBASE=$(MCBASE)
+ALLFLAGS  += -D$(MCTYPE) -D$(MCBASE) -DMCTYPE=$(MCTYPE) -DMCBASE=$(MCBASE) $(EXTRA_USER_FLAGS)
 
 
 ifeq "$(USE_FLOAT_SOFTFP)" "y"

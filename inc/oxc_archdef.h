@@ -110,9 +110,9 @@
  #define GPIO_EN_REG      AHB2ENR
  #define GPIO_EN_BIT0 RCC_AHB2ENR_GPIOAEN
  #define EXTICFG_PLACE SYSCFG
- #define EXTIREG_RTSR RTSR
- #define EXTIREG_FTSR FTSR
- #define EXTIREG_IMR  IMR
+ #define EXTIREG_RTSR RTSR1
+ #define EXTIREG_FTSR FTSR1
+ #define EXTIREG_IMR  IMR1
 #else
   #error "Unsupported MCU"
 #endif
