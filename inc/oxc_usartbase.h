@@ -45,6 +45,11 @@
  #define USART_TX_REG TDR
  #define USART_RX_REG RDR
  #define USART_SR_REG ISR
+#elif defined(STM32G4)
+ #include <stm32g4xx_hal_usart.h>
+ #define USART_TX_REG TDR
+ #define USART_RX_REG RDR
+ #define USART_SR_REG ISR
 #else
   #error "Unsupported MCU"
 #endif

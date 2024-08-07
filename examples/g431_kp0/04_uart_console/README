@@ -1,3 +1,4 @@
+Using  UART as console via SmallRL.
 Used USART1 with UART-USB board.
 
 A9 = TX

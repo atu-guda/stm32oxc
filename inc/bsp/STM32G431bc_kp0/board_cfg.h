@@ -13,10 +13,10 @@
 
 #ifndef NEED_LEDS_EXTRA
 
-// single onboard LED is C13
+// single onboard LED is C6 to GND
 #define BOARD_N_LEDS      1
 #define BOARD_LEDS_GPIOX  C
-#define BOARD_LEDS_OFS   13
+#define BOARD_LEDS_OFS    6
 
 #define BOARD_DEFINE_LEDS PinsOut leds( BOARD_LEDS_GPIO, BOARD_LEDS_OFS, BOARD_N_LEDS );
 #else
@@ -47,10 +47,10 @@
 #define LED_BSP_ERR       LED_BSP_RED
 
 #define BOARD_BTN0_EXIST  1
-#define BOARD_BTN0_GPIOX  A
-#define BOARD_BTN0_N      0
+#define BOARD_BTN0_GPIOX  C
+#define BOARD_BTN0_N     13
 #define BOARD_BTN0_ACTIVE_DOWN 0
-#define BOARD_BTN0_IRQNAME EXTI0
+#define BOARD_BTN0_IRQNAME EXTI15_10
 
 // #define BOARD_BTN1_EXIST   1
 // #define BOARD_BTN1_GPIOX   C
