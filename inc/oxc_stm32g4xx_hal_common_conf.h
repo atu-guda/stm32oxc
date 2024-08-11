@@ -94,7 +94,7 @@ The real value may vary depending on the variations in voltage and temperature.*
 
 #include "stm32g4xx_hal_def.h"
 #undef UNUSED
-#define UNUSED(x) ((void)((uint32_t)(x)))
+#define UNUSED(x) ((void)((x)))
 
 #ifdef HAL_RCC_MODULE_ENABLED
   #include "stm32g4xx_hal_rcc.h"

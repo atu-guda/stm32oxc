@@ -27,6 +27,7 @@ ifneq "$(NO_COMMON_HAL_MODULES)" "y"
   SRCS += stm32g4xx_hal_cortex.c
   SRCS += stm32g4xx_hal_gpio.c
   SRCS += stm32g4xx_hal_rcc.c
+  SRCS += stm32g4xx_hal_rcc_ex.c
   SRCS += stm32g4xx_hal_pwr.c
   SRCS += stm32g4xx_hal_pwr_ex.c
 endif

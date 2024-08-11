@@ -9,7 +9,6 @@
 #include <oxc_archdef.h>
 // this includes need only for debug! here USBD_DEBUG_LEVEL = 0
 // #include <stdio.h>
-// #include <string.h>
 
 // 2.10.0
 #define USBD_OXC_VERSION 210000
@@ -25,7 +24,6 @@
 #define USBD_SUPPORT_USER_STRING              0
 #define USBD_SELF_POWERED                     1
 #define USBD_LPM_ENABLED                      0
-#define USBD_LPM_ENABLED                      0
 #define USBD_CLASS_BOS_ENABLED                0
 #define USBD_DEBUG_LEVEL                      0
 
@@ -34,6 +32,7 @@
 #define USBD_malloc               malloc
 #define USBD_free                 free
 #define USBD_memset               memset
+// atu: memcpy seems to be buggy TODO: recheck
 #define USBD_memcpy               memcpy
 
 /* DEBUG macros */
