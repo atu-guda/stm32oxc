@@ -72,8 +72,8 @@ void OTG_FS_EP1_IN_IRQHandler(void)
 }
 #endif
 
-static USBD_StatusTypeDef USBD_Get_USB_Status(HAL_StatusTypeDef hal_status);
-static void SystemClockConfig_Resume(void);
+USBD_StatusTypeDef USBD_Get_USB_Status(HAL_StatusTypeDef hal_status);
+void SystemClockConfig_Resume(void);
 extern void SystemClock_Config(void);
 
 /*******************************************************************************

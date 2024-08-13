@@ -43,29 +43,49 @@ int UsbcdcIO::write_s( const char *s, int l )
     return 0;
   }
 
-  on_transmit = true;
-  USBD_CDC_SetTxBuffer( &usb_dev, (uint8_t*)s, l );
-  uint8_t rc;
-  for( int n_try = 0; n_try < wait_tx; ++n_try ) {
-    if( hcdc->TxState ) {
-      delay_bad_mcs( 100 );
-      continue;
+  uint8_t rc = 1;
+  for( int n_try = 0; n_try < 2*wait_tx; ++n_try ) {
+    if( ! hcdc->TxState && ! on_transmit ) {
+      rc = 0;
+      break;
     }
+    delay_bad_mcs( 50 );
+  }
+
+  if( rc != 0 ) {
+    err = USBD_BUSY;
+    return -1;
+  }
+
+  on_transmit = true;
+
+  USBD_CDC_SetTxBuffer( &usb_dev, (uint8_t*)s, l );
+  for( int n_try = 0; n_try < wait_tx; ++n_try ) {
     rc = USBD_CDC_TransmitPacket( &usb_dev );
     if( rc == USBD_OK ) {
-      on_transmit = false;
-      return l;
+      break;
     }
     if( rc != USBD_BUSY ) {
-      err = rc;
-      on_transmit = false;
-      return 0;
+      err = rc;  errno = EIO;
+      break;
     }
     delay_bad_mcs( 100 );
+    rc = USBD_BUSY;
   }
-  err = USBD_BUSY;
+
+  if( rc != USBD_OK ) {
+    l = -1; err = rc;
+  }
+
+  for( int n_try = 0; n_try < 2*wait_tx; ++n_try ) {
+    if( ! hcdc->TxState  && ! on_transmit ) {
+      break;
+    }
+    delay_bad_mcs( 50 );
+  }
+
   on_transmit = false;
-  return 0;
+  return l;
 }
 
 int8_t UsbcdcIO::CDC_Itf_Init()
@@ -185,5 +205,8 @@ int8_t UsbcdcIO::CDC_Itf_Receive( uint8_t* Buf, uint32_t *Len )
 
 int8_t UsbcdcIO::CDC_Itf_TransmitCplt( uint8_t * /*pbuf*/, uint32_t * /*Len*/, uint8_t /*epnum*/ )
 {
+  if( static_usbcdcio ) {
+    static_usbcdcio->on_transmit = false;
+  }
   return USBD_OK;
 }

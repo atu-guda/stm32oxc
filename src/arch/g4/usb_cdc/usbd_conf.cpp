@@ -249,8 +249,8 @@ USBD_StatusTypeDef USBD_LL_Init( USBD_HandleTypeDef *pdev )
   hpcd.pData                    = pdev;
   pdev->pData                   = &hpcd;
 
-  hpcd.Instance                 = USB;
-  hpcd.Init.dev_endpoints       = 8;
+  hpcd.Instance                 = BOARD_USB_DEFAULT_INSTANCE;
+  hpcd.Init.dev_endpoints       = 4;
   hpcd.Init.speed               = PCD_SPEED_FULL;
   hpcd.Init.phy_itface          = PCD_PHY_EMBEDDED;
   hpcd.Init.Sof_enable          = DISABLE;
@@ -263,7 +263,7 @@ USBD_StatusTypeDef USBD_LL_Init( USBD_HandleTypeDef *pdev )
 #endif
 
   #if ( USE_HAL_PCD_REGISTER_CALLBACKS != 0 )
-  /* register Msp Callbacks (before the Init) */
+  /* register Msp Callbacks (before the Init) atu: not now*/
   HAL_PCD_RegisterCallback( &hpcd, HAL_PCD_MSPINIT_CB_ID,   PCD_MspInit );
   HAL_PCD_RegisterCallback( &hpcd, HAL_PCD_MSPDEINIT_CB_ID, PCD_MspDeInit );
   #endif /* USE_HAL_PCD_REGISTER_CALLBACKS */

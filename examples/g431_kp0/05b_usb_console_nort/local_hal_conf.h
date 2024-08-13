@@ -5,7 +5,7 @@
 // and restore symlink to common main.cpp
 
 #define NEED_LEDS_EXTRA 1
-#define PROLOG_LED_TIME 1000
+// #define PROLOG_LED_TIME 1000
 
 // AUX modules : full list: ../common/hal_modules_list.h
 //
