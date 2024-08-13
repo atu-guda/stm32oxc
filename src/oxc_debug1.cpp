@@ -258,7 +258,7 @@ void test_delays_misc( int n, uint32_t t_step, int tp )
 
 void test_output_rate( int n, int sl, int do_flush )
 {
-  const int max_len = 256;
+  const int max_len = 512;
   std_out << "# test_rate: n= " << n << " sl= " << sl << NL;
   char buf[max_len+4]; // for ends and align
 
@@ -462,7 +462,7 @@ CmdInfo CMDINFO_INFO {  "info",  0, cmd_info,       " - Output general info" };
 int cmd_echo( int argc, const char * const * argv )
 {
   std_out << NL;
-  for( int i=0; i<argc; ++i ) {
+  for( int i=1; i<argc; ++i ) {
     std_out << argv[i] << ' ';
   }
   std_out << NL;
