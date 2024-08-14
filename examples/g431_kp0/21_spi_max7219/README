@@ -1,0 +1,9 @@
+Test MAX7219 LED 8x8 segment LED driver via SPI
+
+Used: SPI2:
+B13 = SCK
+B14 = MISO
+B15 = MOSI
+B12 = Soft NSS
+
+

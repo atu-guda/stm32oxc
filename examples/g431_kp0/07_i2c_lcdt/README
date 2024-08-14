@@ -1,0 +1,6 @@
+Control HD44780 LCD display via i2c port expander PCF8574
+Use "test" command to send string, on/off display
+
+SCL = A15 + 4.7k pullUp
+SDA = B7  + 4.7k pullUp
+

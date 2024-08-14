@@ -1,9 +1,10 @@
+#include <errno.h>
 #include <oxc_gpio.h>
 
 int i2c_default_init( I2C_HandleTypeDef &i2c, int speed )
 {
   i2c.Instance              = BOARD_I2C_DEFAULT;
-  #if defined (STM32F3) || defined (STM32F7) || defined (STM32H7)
+  #if defined (STM32F3) || defined (STM32F7) || defined (STM32H7) || defined (STM32G4)
   if( speed == 1000000 ) {
     i2c.Init.Timing           = BOARD_I2C_DEFAULT_TIMING_1M;
   } else if ( speed == 400000 ) {
@@ -27,7 +28,7 @@ int i2c_default_init( I2C_HandleTypeDef &i2c, int speed )
     return 0;
   }
 
-  #if defined (STM32F3) || defined (STM32F7)
+  #if defined (STM32F3) || defined (STM32F7) || defined (STM32G4)
   HAL_I2CEx_AnalogFilter_Config( &i2c, I2C_ANALOGFILTER_ENABLED );
   // HAL_I2CEx_ConfigDigitalFilter( &i2c, 0 );
   #endif
@@ -38,6 +39,17 @@ int i2c_default_init( I2C_HandleTypeDef &i2c, int speed )
 void HAL_I2C_MspInit( I2C_HandleTypeDef *i2c )
 {
   if( i2c->Instance == BOARD_I2C_DEFAULT ) {
+
+    #ifdef BOARD_I2C_DEFAULT_CLOCKNAME
+    RCC_PeriphCLKInitTypeDef PeriphClkInit;
+    PeriphClkInit.PeriphClockSelection = BOARD_I2C_DEFAULT_CLOCKNAME;
+    PeriphClkInit.I2c1ClockSelection   = RCC_I2C1CLKSOURCE_SYSCLK;
+    if( HAL_RCCEx_PeriphCLKConfig( &PeriphClkInit ) != HAL_OK ) {
+      errno = 3333;
+      return;
+    }
+    #endif
+
     BOARD_I2C_DEFAULT_ENABLE;
 
     BOARD_I2C_DEFAULT_GPIO_SCL.cfgAF( BOARD_I2C_DEFAULT_GPIO_PIN_SCL, BOARD_I2C_DEFAULT_GPIO_AF, true );

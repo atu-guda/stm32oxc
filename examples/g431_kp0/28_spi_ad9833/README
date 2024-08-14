@@ -1,0 +1,8 @@
+Test AD9833: programmable waveform generator
+
+Used: SPI2:
+B13 = SCK
+B14 = MISO
+B15 = MOSI
+B12 = Soft NSS
+

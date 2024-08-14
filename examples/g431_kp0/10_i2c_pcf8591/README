@@ -1,0 +1,9 @@
+Use ADC/DAC PCF8591 via I2C (addr: 0x48-ox4F, used  0x48)
+4 channel: ADC
+1 channel: DAC
+Send seq:
+addr, cfg_byte, [DAC data....]
+
+SCL = A15 + 4.7k pullUp
+SDA = B7  + 4.7k pullUp
+

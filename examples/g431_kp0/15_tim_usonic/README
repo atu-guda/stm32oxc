@@ -1,0 +1,11 @@
+Test TIMx as usonic sensor HC-SR04 driver
+out: A0: CH1
+in:  A1: CH2
+c \approx 340 m/s + echo: 170 m/s
+1mm - 5.88mks
+144Mhz / 855: 1tick = 1mm
+TIMx.CH1: pulser
+TIMx.CH2: both edge receiver: IRQ
+Vcc for sensor: 5v required: with 3.3: no good return pulse
+
+??? hangs on this arch on sensor?

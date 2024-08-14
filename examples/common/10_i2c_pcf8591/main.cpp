@@ -34,7 +34,7 @@ int main(void)
   BOARD_PROLOG;
 
   UVAR('t') = 1000;
-  UVAR('n') = 10;
+  UVAR('n') = 20;
 
   UVAR('e') = i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
@@ -74,9 +74,9 @@ int cmd_test0( int argc, const char * const * argv )
   for( int i=0; i<n && !break_flag; ++i ) {
 
     adc.getIn( d_in, n_ch );
-    std_out << "[" << i << "]  ";
+    std_out << i;
     for( int j=0; j<n_ch; ++j ) {
-      std_out << d_in[j] << ' ';
+      std_out << ' ' << d_in[j];
     }
     adc.setOut( i & 0xFF );
 
