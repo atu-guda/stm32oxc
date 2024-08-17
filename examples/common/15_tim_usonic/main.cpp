@@ -67,7 +67,7 @@ int cmd_test0( int argc, const char * const * argv )
   break_flag = 0;
   for( int i=0; i<n && !break_flag; ++i ) {
 
-    std_out <<  "["  <<  i  <<  "]  l= "  << UVAR('l')  <<  NL;
+    std_out <<  i  <<  ' '  << UVAR('l') << ' ' << UVAR('o') << ' ' << UVAR('m') <<  NL;
     std_out.flush();
     delay_ms_until_brk( &tm0, t_step );
   }
@@ -83,7 +83,7 @@ void init_usonic()
   // 5.8 mks approx 1mm 170000 = v_c/2 in mm/s, 998 or 846
   tim_h.Init.Prescaler         = calc_TIM_psc_for_cnt_freq( TIM_EXA, 170000 );
   tim_h.Instance               = TIM_EXA;
-  tim_h.Init.Period            = 8500; // F approx 20Hz: for future motor PWM
+  tim_h.Init.Period            = calc_TIM_arr_for_base_psc( TIM_EXA, tim_h.Init.Prescaler, 20 ); // 20 Hz - to use with servo
   tim_h.Init.ClockDivision     = 0;
   tim_h.Init.CounterMode       = TIM_COUNTERMODE_UP;
   tim_h.Init.RepetitionCounter = 0;
@@ -114,7 +114,6 @@ void init_usonic()
   }
 
   TIM_IC_InitTypeDef  tim_ic_cfg;
-  // tim_ic_cfg.ICPolarity = TIM_ICPOLARITY_RISING;
   tim_ic_cfg.ICPolarity  = TIM_ICPOLARITY_BOTHEDGE; // rising - start, falling - stop
   tim_ic_cfg.ICSelection = TIM_ICSELECTION_DIRECTTI;
   tim_ic_cfg.ICPrescaler = TIM_ICPSC_DIV1;
@@ -135,26 +134,33 @@ void init_usonic()
 
 void TIM_EXA_IRQHANDLER(void)
 {
+  // leds.toggle( BIT0 );
   HAL_TIM_IRQHandler( &tim_h );
 }
 
 void HAL_TIM_IC_CaptureCallback( TIM_HandleTypeDef *htim )
 {
-  uint32_t cap2;
   static uint32_t c_old = 0xFFFFFFFF;
-  if( htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2 )  {
-    cap2 = HAL_TIM_ReadCapturedValue( htim, TIM_CHANNEL_2 );
-    if( cap2 > c_old ) {
-      UVAR('l') = cap2 - c_old ;
-      leds.reset( BIT2 );
-    } else {
-      leds.set( BIT2 );
-    }
-    c_old = cap2;
-
-    UVAR('m') = cap2;
-    UVAR('z') = htim->Instance->CNT;
+  // leds.toggle( BIT0 );
+  ++UVAR('i');
+  if( htim->Channel != HAL_TIM_ACTIVE_CHANNEL_2 )  {
+    return;
   }
+  ++UVAR('j');
+
+  uint32_t cap2 = HAL_TIM_ReadCapturedValue( htim, TIM_CHANNEL_2 );
+  if( cap2 > c_old ) {
+    UVAR('l') = cap2 - c_old ;
+    leds.reset( BIT2 );
+  } else {
+    leds.set( BIT2 );
+  }
+  UVAR('o') = c_old;
+  c_old = cap2;
+
+  UVAR('m') = cap2;
+  UVAR('y') = htim->Instance->CCR2;
+  UVAR('z') = htim->Instance->CNT;
 }
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

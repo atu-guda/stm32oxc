@@ -1,0 +1,9 @@
+Test TIM2 as PWM output with fade
+out: A0 - A3
+user vars:
+ p - prescaler
+ a - ARR
+
+T val1 val2 val3 val4
+
+

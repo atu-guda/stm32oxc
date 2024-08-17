@@ -71,7 +71,7 @@
 #define TIM_EXA_CLKDIS __TIM2_CLK_DISABLE();
 #define TIM_EXA_GPIOAF 1
 #define TIM_EXA_IRQ    TIM2_IRQn
-// #define TIM_EXA_IRQHANDLER    TIM8_CC_IRQHandler
+#define TIM_EXA_IRQHANDLER    TIM2_IRQHandler
 
 #define BOARD_UART_DEFAULT            USART1
 #define BOARD_UART_DEFAULT_GPIO       GpioA

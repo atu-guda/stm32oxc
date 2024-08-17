@@ -13,7 +13,7 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
-const char* common_help_string = "App to test timer as conter" NL;
+const char* common_help_string = "App to test timer as ???" NL;
 
 TIM_HandleTypeDef tim_pwm_h;
 TIM_HandleTypeDef tim_cnt_h;
@@ -22,7 +22,7 @@ int MX_TIM_IN_Init();
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
+CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " [t] [n] - test counter"  };
 
 int cmd_tinit( int argc, const char * const * argv );
 CmdInfo CMDINFO_TINIT { "tinit", 'I', cmd_tinit, " - reinit timer"  };
@@ -83,7 +83,7 @@ int cmd_test0( int argc, const char * const * argv )
     int v = (i+1) * UVAR('s');
     uint32_t pv = v * ( pbase + 1 ) / 100;
     TIM_EXA->CCR1 = pv;
-    delay_ms( 1000 ); // wait for steady state
+    delay_ms( 100 ); // wait for steady state
 
     TIM_IN->CNT = 0;
     delay_ms_brk( t );
@@ -173,7 +173,7 @@ int MX_TIM_IN_Init()
   sSlaveConfig.InputTrigger    = TIM_TS_TI1FP1;
   sSlaveConfig.TriggerPolarity = TIM_TRIGGERPOLARITY_RISING;
   sSlaveConfig.TriggerFilter   = 7;
-  if( HAL_TIM_SlaveConfigSynchronization( &tim_cnt_h, &sSlaveConfig ) != HAL_OK ) {
+  if( HAL_TIM_SlaveConfigSynchro( &tim_cnt_h, &sSlaveConfig ) != HAL_OK ) {
     errno = 1001;
     return 0;
   }

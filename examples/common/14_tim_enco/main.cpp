@@ -86,7 +86,7 @@ int cmd_test0( int argc, const char * const * argv )
 void init_enco()
 {
   tim_h.Instance               = TIM_EXA;
-  tim_h.Init.Period            = 0xFFFF;
+  tim_h.Init.Period            = 0xFFFFFFFF;
   tim_h.Init.Prescaler         = 0; // 0?
   tim_h.Init.ClockDivision     = 0;
   tim_h.Init.CounterMode       = TIM_COUNTERMODE_UP;
