@@ -24,7 +24,6 @@
  #include <stm32f3xx_hal_adc.h>
  #define ADC_FREQ_MAX 72000000
 #elif defined (STM32F4)
- #include <stm32f4xx_ll_adc.h>
  #include <stm32f4xx_hal_adc.h>
  #define ADC_FREQ_MAX 36000000
  // not defined in stm32f4xx_hal_adc.h
@@ -54,6 +53,10 @@
  #include <stm32h7xx_ll_adc.h>
  #include <stm32h7xx_hal_adc.h>
  #define ADC_FREQ_MAX 50000000
+#elif defined(STM32G4)
+ #include <stm32g4xx_hal_adc.h>
+ // ??? TODO:?
+ #define ADC_FREQ_MAX 36000000
 #else
   #error "Unsupported MCU"
 #endif

@@ -139,23 +139,27 @@
 #define BOARD_1W_DEFAULT_GPIO           GpioB
 #define BOARD_1W_DEFAULT_PIN            GPIO_PIN_5
 
-// ADC: B0, B1, C4, C5 (8,9,14,15)
+// ADC: A0, A1, A2, A3 (1,2,3,4)
 #define BOARD_ADC_DEFAULT_DEV           ADC1
-#define BOARD_ADC_DEFAULT_EN            __HAL_RCC_ADC1_CLK_ENABLE();
-#define BOARD_ADC_DEFAULT_DIS           __HAL_RCC_ADC1_CLK_DISABLE();
-#define BOARD_ADC_DEFAULT_GPIO0         GpioB
+#define BOARD_ADC_DEFAULT_EN            { RCC_PeriphCLKInitTypeDef pci; \
+  pci.PeriphClockSelection = RCC_PERIPHCLK_ADC12; \
+  pci.Adc12ClockSelection = RCC_ADC12CLKSOURCE_SYSCLK; \
+  HAL_RCCEx_PeriphCLKConfig( &pci ); \
+  __HAL_RCC_ADC12_CLK_ENABLE(); }
+#define BOARD_ADC_DEFAULT_DIS           __HAL_RCC_ADC12_CLK_DISABLE();
+#define BOARD_ADC_DEFAULT_GPIO0         GpioA
 #define BOARD_ADC_DEFAULT_PIN0          0
-#define BOARD_ADC_DEFAULT_CH0           ADC_CHANNEL_8
-#define BOARD_ADC_DEFAULT_GPIO1         GpioB
+#define BOARD_ADC_DEFAULT_CH0           ADC_CHANNEL_1
+#define BOARD_ADC_DEFAULT_GPIO1         GpioA
 #define BOARD_ADC_DEFAULT_PIN1          1
-#define BOARD_ADC_DEFAULT_CH1           ADC_CHANNEL_9
-#define BOARD_ADC_DEFAULT_GPIO2         GpioC
-#define BOARD_ADC_DEFAULT_PIN2          4
-#define BOARD_ADC_DEFAULT_CH2           ADC_CHANNEL_14
-#define BOARD_ADC_DEFAULT_GPIO3         GpioC
-#define BOARD_ADC_DEFAULT_PIN3          5
-#define BOARD_ADC_DEFAULT_CH3           ADC_CHANNEL_15
-#define BOARD_ADC_MEM_MAX               (1024*16)
+#define BOARD_ADC_DEFAULT_CH1           ADC_CHANNEL_2
+#define BOARD_ADC_DEFAULT_GPIO2         GpioA
+#define BOARD_ADC_DEFAULT_PIN2          2
+#define BOARD_ADC_DEFAULT_CH2           ADC_CHANNEL_3
+#define BOARD_ADC_DEFAULT_GPIO3         GpioA
+#define BOARD_ADC_DEFAULT_PIN3          3
+#define BOARD_ADC_DEFAULT_CH3           ADC_CHANNEL_4
+#define BOARD_ADC_MEM_MAX               (1024*8)
 // #define BOARD_ADC_MEM_MAX_FMC           (1024*1024*8)
 #define BOARD_ADC_COEFF                 3250000
 #define BOARD_ADC_MALLOC                ::malloc
@@ -163,8 +167,8 @@
 // #define BOARD_ADC_MALLOC_EXT            malloc_fmc
 // #define BOARD_ADC_FREE_EXT              free_fmc
 
-#define BOARD_ADC_DEFAULT_CLOCK         ADC_CLOCK_SYNC_PCLK_DIV2
-#define BOARD_ADC_DEFAULT_SAMPL_LARGE   ADC_SAMPLETIME_480CYCLES
+#define BOARD_ADC_DEFAULT_CLOCK         ADC_CLOCK_SYNC_PCLK_DIV4
+#define BOARD_ADC_DEFAULT_SAMPL_LARGE   ADC_SAMPLETIME_640CYCLES_5
 #define BOARD_ADC_DEFAULT_RESOLUTION    ADC_RESOLUTION_12B
 #define BOARD_ADC_DEFAULT_BITS          12
 #define BOARD_ADC_DEFAULT_MAX           0x0FFF
