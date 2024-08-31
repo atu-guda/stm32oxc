@@ -473,7 +473,7 @@ int cmd_echo( int argc, const char * const * argv )
 
   std_out << "# argc= " << argc << NL;
   for( int i=0; i<argc; ++i ) {
-    std_out << "# arg" << i << " = \"" << argv[i] << "\"" NL;
+    std_out << "# arg" << i << " = \"" << argv[i] << "\" " << strlen(argv[i]) << NL;
   }
   return 0;
 }

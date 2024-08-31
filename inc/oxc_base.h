@@ -89,18 +89,18 @@ enum ReturnCode {
 
 inline void oxc_enable_interrupts(void)
 {
-  __asm__ volatile ( "CPSIE I" );
+  __asm__ volatile ( "CPSIE I" : : : "memory");
 }
 
 inline void oxc_disable_interrupts(void)
 {
-  __asm__ volatile ( "CPSID I" );
+  __asm__ volatile ( "CPSID I" : : : "memory" );
 }
 
 
 inline void oxc_dmb(void)
 {
-  __asm__ volatile ( "dmb" );
+  __asm__ volatile ( "DMB 0xF" : : : "memory" );
 }
 
 inline uint32_t oxc_ldrex( volatile uint32_t *addr )

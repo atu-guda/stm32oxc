@@ -11,7 +11,7 @@ class DevIO : public DevOut, public DevIn {
    using OnRecvFun = void (*)( const char *s, int l );
    using SigFun = void (*)( int v );
    enum {
-     TX_BUF_SIZE = 256, //* low-level transmit buffer size
+     TX_BUF_SIZE = 256, //* low-level transmit buffer size TODO: compile-time constant?
      RX_BUF_SIZE = 128 //* low-level receive buffer size
    };
 
@@ -37,7 +37,7 @@ class DevIO : public DevOut, public DevIn {
    virtual RingBuf* getOutRingBuf() override { return &obuf; }
 
    virtual void reset_in() override { ibuf.reset(); }
-   virtual Chst tryGet() override { return ibuf.tryGet(); }
+   virtual Chst tryGet() override { return tryGet_irqdis(); }
    virtual Chst tryGet_irqdis() override;
    virtual unsigned tryGetLine( char *d, unsigned max_len ) override { return ibuf.tryGetLine( d, max_len ); } ;
    virtual Chst getc( int w_tick = 0 ) override;
@@ -49,7 +49,7 @@ class DevIO : public DevOut, public DevIn {
    void setOnSigInt( SigFun a_onSigInt ) { onSigInt = a_onSigInt; };
    virtual const char* getInBuf() const override { return ibuf.getBuf(); }
    virtual unsigned getInBufSize() const override { return ibuf.size(); }
-   virtual RingBuf* getInRingBuf() override { return &ibuf; }
+   // virtual RingBuf* getInRingBuf() override { return &ibuf; }
 
    virtual void on_tick_action_tx();
    virtual void on_tick_action_rx();

@@ -68,9 +68,12 @@ int DevIO::write( const char *s, int l )
 
 Chst DevIO::tryGet_irqdis()
 {
+  bool was_irqs_enabled = ( __get_PRIMASK() == 0 );
   oxc_disable_interrupts();
   auto rv = ibuf.get_nolock();
-  oxc_enable_interrupts();
+  if( was_irqs_enabled ) {
+    oxc_enable_interrupts();
+  }
   return rv;
 }
 
@@ -78,7 +81,7 @@ Chst DevIO::tryGet_irqdis()
 Chst DevIO::getc( int w_tick )
 {
   for( int i=0; i < w_tick || w_tick == 0; ++i ) { // w_tick == 0 means forever
-    auto v = ibuf.tryGet();
+    auto v = tryGet();
     if( v.good() ) {
       return v;
     }
@@ -102,11 +105,20 @@ void DevIO::on_tick_action_tx()
 
 void DevIO::on_tick_action_rx() // really a fallback, may be called from IRQ!
 {
-  if( onRecv != nullptr ) {
-    auto v = ibuf.tryGet();
-    if( v.good() ) {
-      onRecv( &v.c, 1 );
-    }
+  if( onRecv == nullptr ) {
+    return;
+  }
+
+  // crude, but we may not know correct IRQ
+  bool was_irqs_enabled = ( __get_PRIMASK() == 0 );
+  oxc_disable_interrupts();
+  auto v = ibuf.get_nolock();
+  if( was_irqs_enabled ) {
+    oxc_enable_interrupts();
+  }
+
+  if( v.good() ) {
+    onRecv( &v.c, 1 );
   }
 }
 
