@@ -129,8 +129,8 @@ unsigned adc_o_w = 8; // output width
 unsigned adc_o_p = 5; // outpit precision
 
 // calibration result. TODO: store to flash
-xfloat adc_v_scales[adc_n_ch] = {  6.64791,   6.64343,  6.65168,  6.64693 };
-xfloat adc_v_bases[adc_n_ch]  = { -9.97233,  -9.95716, -9.98425, -9.97181 };
+xfloat adc_v_scales[adc_n_ch] = { 8.308680889E-4f, 8.303192882E-4f, 8.315120462E-4f, 8.309786363E-4f  };
+xfloat adc_v_bases[adc_n_ch]  = { -9.965390f,     -9.949429f,      -9.978844f,       -9.966677f    };
 
 xfloat adc_v[adc_n_ch]        = {         0.0f,        0.0f,         0.0f,        0.0f };
 int    adc_vi[adc_n_ch]       = {            0,           0,            0,           0 };
@@ -161,8 +161,9 @@ const unsigned dac_n_ch = 2;
 const unsigned dac_bitmask = 0x0FFF; // 12 bit
 xfloat dac_vref = 3.0f;
 
-xfloat dac_v_scales[dac_n_ch] = {  0.151366f,  0.150828f };
-xfloat dac_v_bases[dac_n_ch]  = { -9.88554f,  -9.90227f  };
+xfloat dac_v_scales[dac_n_ch] = { 206.610971f, 205.901167f };
+// xfloat dac_v_scales[dac_n_ch] = {  0.151366f,  0.150828f };
+xfloat dac_v_bases[dac_n_ch]  = { 2042.323686, 2038.485565f  };
 xfloat dac_v[dac_n_ch]        = {     0.0f,      0.0f  }; // expected to set (not given)
 int    dac_vi[dac_n_ch]       = {        0,         0  }; // used to set
 
@@ -1196,7 +1197,7 @@ int adc_defcfg()
   adc.setCfg( cfg );
   int r = adc.getDeviceCfg(); // to fill correct inner
   adc_scale_mv =  adc.getScale_mV();
-  adc_kv = 0.001f * adc_scale_mv / 0x7FFF;
+  adc_kv = 0.001f * adc_scale_mv / 0x7FFF; // TODO: scale to 1.0 by default and use!
   return r;
 }
 
@@ -1207,7 +1208,8 @@ int adc_measure()
 
   for( decltype(no) j=0; j<no; ++j ) {
     adc_vi[j] = vi[j];
-    adc_v[j]  = adc_kv * vi[j] * adc_v_scales[j] + adc_v_bases[j];
+    // adc_v[j]  = adc_kv * vi[j] * adc_v_scales[j] + adc_v_bases[j];
+    adc_v[j]  = vi[j] * adc_v_scales[j] + adc_v_bases[j];
   }
   adc_no = no;
   return no;
@@ -1373,7 +1375,8 @@ void C_pins_out_toggle( PICOC_FUN_ARGS )
 void dac_out_n( int n, xfloat v )
 {
   n = clamp( n, 0, (int)dac_n_ch-1 );
-  int iv = (int)( dac_bitmask * ( v - dac_v_bases[n] ) * dac_v_scales[n] / dac_vref );
+  // int iv = (int)( dac_bitmask * ( v - dac_v_bases[n] ) * dac_v_scales[n] / dac_vref );
+  int iv = (int) ( v  * dac_v_scales[n] + dac_v_bases[n] ); // TODO: vref restore?
   dac_out_ni( n, iv );
 }
 
@@ -1398,7 +1401,7 @@ void dac_out_ni( int n, int v )
   n = clamp( n, 0, (int)dac_n_ch-1 );
   v = clamp( v, 0, (int)dac_bitmask );
   dac_vi[n] = v;
-  dac_v[n]  = dac_v_bases[n] + v * dac_vref / ( dac_bitmask * dac_v_scales[n] ) ;
+  dac_v[n]  = ( v - dac_v_bases[n] )/ dac_v_scales[n];
   HAL_DAC_SetValue( &hdac, ( n==0 ) ? DAC_CHANNEL_1 : DAC_CHANNEL_2, DAC_ALIGN_12B_R, v );
 }
 
