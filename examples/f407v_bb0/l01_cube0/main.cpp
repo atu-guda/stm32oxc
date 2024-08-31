@@ -1,5 +1,6 @@
 #include <cstdarg>
 #include <cerrno>
+#include <algorithm>
 
 #include <oxc_auto.h>
 #include <oxc_outstr.h>
@@ -123,11 +124,9 @@ void oxc_picoc_hd44780_i2c_init( Picoc *pc );
 
 ADS1115 adc( i2cd );
 const unsigned adc_n_ch = 4;
-unsigned adc_no = 0;
-const xfloat adc_20_to_3 = 20.0f / 3.0f;
-
-//xfloat adc_v_scales[adc_n_ch] = {  adc_20_to_3, adc_20_to_3,  adc_20_to_3, adc_20_to_3 };
-//xfloat adc_v_bases[adc_n_ch]  = {       -10.0f,      -10.0f,       -10.0f,      -10.0f };
+unsigned adc_no  = 0; // channels get last time, usually adc_n_ch
+unsigned adc_o_w = 8; // output width
+unsigned adc_o_p = 5; // outpit precision
 
 // calibration result. TODO: store to flash
 xfloat adc_v_scales[adc_n_ch] = {  6.64791,   6.64343,  6.65168,  6.64693 };
@@ -140,39 +139,48 @@ xfloat adc_kv = 0.001f * adc_scale_mv / 0x7FFF;
 int adc_defcfg();
 int adc_measure();
 void adc_out();
+void adc_out_i();
 void adc_out_all();
+void adc_out_all_i();
 void adc_all();
+void adc_all_i();
 int adc_pre_loop();
 int adc_loop();
 void C_adc_defcfg( PICOC_FUN_ARGS );
 void C_adc_measure( PICOC_FUN_ARGS );
 void C_adc_out( PICOC_FUN_ARGS );
+void C_adc_out_i( PICOC_FUN_ARGS );
 void C_adc_out_all( PICOC_FUN_ARGS );
+void C_adc_out_all_i( PICOC_FUN_ARGS );
 void C_adc_all( PICOC_FUN_ARGS );
+void C_adc_all_i( PICOC_FUN_ARGS );
 
 extern DAC_HandleTypeDef hdac;
 int MX_DAC_Init();
 const unsigned dac_n_ch = 2;
-const unsigned dac_bimask = 0x0FFF; // 12 bit
-const xfloat dac_3_to_20 = 3.0f / 20.0f; // 0.15
+const unsigned dac_bitmask = 0x0FFF; // 12 bit
 xfloat dac_vref = 3.0f;
-//xfloat dac_v_scales[dac_n_ch] = {  dac_3_to_20, dac_3_to_20 };
-//xfloat dac_v_bases[dac_n_ch]  = {       -10.0f,      -10.0f };
 
-xfloat dac_v_scales[dac_n_ch] = {  0.150833,  0.150286 };
-xfloat dac_v_bases[dac_n_ch]  = { -9.93002,  -9.94564  };
+xfloat dac_v_scales[dac_n_ch] = {  0.151366f,  0.150828f };
+xfloat dac_v_bases[dac_n_ch]  = { -9.88554f,  -9.90227f  };
+xfloat dac_v[dac_n_ch]        = {     0.0f,      0.0f  }; // expected to set (not given)
+int    dac_vi[dac_n_ch]       = {        0,         0  }; // used to set
 
+void dac_out_n( int n, xfloat v );
 void dac_out1( xfloat v );
 void dac_out2( xfloat v );
 void dac_out12( xfloat v1, xfloat v2 );
+void dac_out_ni( int n, int v );
 void dac_out1i( int v );
 void dac_out2i( int v );
 void dac_out12i( int v1, int v2 );
+void C_dac_out_n( PICOC_FUN_ARGS );
 void C_dac_out1( PICOC_FUN_ARGS );
 void C_dac_out2( PICOC_FUN_ARGS );
 void C_dac_out12( PICOC_FUN_ARGS );
 void C_dac_out1i( PICOC_FUN_ARGS );
 void C_dac_out2i( PICOC_FUN_ARGS );
+void C_dac_out_ni( PICOC_FUN_ARGS );
 void C_dac_out12i( PICOC_FUN_ARGS );
 
 MCP23017 mcp_gpio( i2cd );
@@ -182,6 +190,7 @@ void C_pins_out_set( PICOC_FUN_ARGS );
 void C_pins_out_reset( PICOC_FUN_ARGS );
 void C_pins_out_toggle( PICOC_FUN_ARGS );
 void C_pins_in( PICOC_FUN_ARGS );
+void C_pin_in( PICOC_FUN_ARGS );
 
 extern TIM_HandleTypeDef htim1;
 extern TIM_HandleTypeDef htim2;
@@ -278,6 +287,7 @@ void rtc_getDateTimeStr( char *s ); // YYYYmmDD_HHMMSS 16+ bytes
 void C_rtc_getDateTimeStr( PICOC_FUN_ARGS );
 void rtc_getFileDateTimeStr( char *s ); // o_YYYYmmDD_HHMMSS_XXX.txt 26+ bytes
 void C_rtc_getFileDateTimeStr( PICOC_FUN_ARGS );
+void C_flush( PICOC_FUN_ARGS );
 
 #define PICOC_STACK_SIZE (32*1024)
 int picoc_cmdline_handler( char *s );
@@ -754,12 +764,17 @@ struct LibraryFunction picoc_local_Functions[] =
   { C_adc_out,               "void adc_out(void);" },
   { C_adc_out_all,           "void adc_out_all(void);" },
   { C_adc_all,               "void adc_all(void);" },
+  { C_adc_out_i,             "void adc_out_i(void);" },
+  { C_adc_out_all_i,         "void adc_out_all_i(void);" },
+  { C_adc_all_i,             "void adc_all_i(void);" },
 
+  { C_dac_out_n,             "void dac_out_n(int,float);" },
   { C_dac_out1,              "void dac_out1(float);" },
   { C_dac_out2,              "void dac_out2(float);" },
   { C_dac_out12,             "void dac_out12(float,float);" },
   { C_dac_out1i,             "void dac_out1i(int);" },
   { C_dac_out2i,             "void dac_out2i(int);" },
+  { C_dac_out_ni,            "void dac_out_ni(int,int);" },
   { C_dac_out12i,            "void dac_out12i(int,int);" },
 
   { C_pins_out,              "void pins_out(int);" },
@@ -768,6 +783,7 @@ struct LibraryFunction picoc_local_Functions[] =
   { C_pins_out_reset,        "void pins_out_reset(int);" },
   { C_pins_out_toggle,       "void pins_out_toggle(int);" },
   { C_pins_in,               "int  pins_in(void);" },
+  { C_pin_in,                "int  pin_in(int);" },
 
   { C_pwmo_setFreq,          "void pwmo_setFreq( double );" },
   { C_pwmo_getFreq,          "double pwmo_getFreq();" },
@@ -801,6 +817,7 @@ struct LibraryFunction picoc_local_Functions[] =
   { C_rtc_getTimeStr,        "void rtc_getTimeStr( char* );  " },
   { C_rtc_getDateTimeStr,    "void rtc_getDateTimeStr( char* );  " },
   { C_rtc_getFileDateTimeStr,"void rtc_getFileDateTimeStr( char* );  " },
+  { C_flush,                 "void flush();  " },
 
   { C_prf,                   "int prf( char*, ... );  " },
   { NULL,            NULL }
@@ -859,10 +876,14 @@ int init_picoc( Picoc *ppc )
   VariableDefinePlatformVar( ppc , nullptr , "adc_v_bases"  , ppc->FPArrayType  , (union AnyValue *)adc_v_bases     , TRUE );
   VariableDefinePlatformVar( ppc , nullptr , "adc_vi"       , ppc->IntArrayType , (union AnyValue *)adc_vi          , TRUE );
   VariableDefinePlatformVar( ppc , nullptr , "adc_no"       , &(ppc->IntType)   , (union AnyValue *)&(adc_no)       , TRUE );
+  VariableDefinePlatformVar( ppc , nullptr , "adc_o_w"      , &(ppc->IntType)   , (union AnyValue *)&(adc_o_w)      , TRUE );
+  VariableDefinePlatformVar( ppc , nullptr , "adc_o_p"      , &(ppc->IntType)   , (union AnyValue *)&(adc_o_p)      , TRUE );
   VariableDefinePlatformVar( ppc , nullptr , "adc_scale_mv" , &(ppc->IntType)   , (union AnyValue *)&(adc_scale_mv) , TRUE );
 
   VariableDefinePlatformVar( ppc , nullptr , "dac_v_scales" , ppc->FPArrayType  , (union AnyValue *)dac_v_scales    , TRUE );
   VariableDefinePlatformVar( ppc , nullptr , "dac_v_bases"  , ppc->FPArrayType  , (union AnyValue *)dac_v_bases     , TRUE );
+  VariableDefinePlatformVar( ppc , nullptr , "dac_v"        , ppc->FPArrayType  , (union AnyValue *)dac_v           , TRUE );
+  VariableDefinePlatformVar( ppc , nullptr , "dac_vi"       , ppc->IntArrayType , (union AnyValue *)dac_vi          , TRUE );
 
   VariableDefinePlatformVar( ppc , nullptr , "ifm_0_freq"   , &(ppc->FPType)    , (union AnyValue *)&ifm_0_freq     , TRUE );
   VariableDefinePlatformVar( ppc , nullptr , "ifm_0_d"      , &(ppc->FPType)    , (union AnyValue *)&ifm_0_d        , TRUE );
@@ -1197,11 +1218,23 @@ void adc_out()
   OSTR( s, 40 );
   for( decltype(+adc_no) j=0; j<adc_no; ++j ) {
     s.reset_out();
-    s << XFmt( adc_v[j], cvtff_fix, 7, 4 );
+    s << XFmt( adc_v[j], cvtff_fix, adc_o_w, adc_o_p );
     obuf << ' ' << s_outstr.c_str();
     *obufs[j+1] << s_outstr.c_str();
   }
 }
+
+void adc_out_i()
+{
+  OSTR( s, 40 );
+  for( decltype(+adc_no) j=0; j<adc_no; ++j ) {
+    s.reset_out();
+    s << adc_vi[j];
+    obuf << ' ' << s_outstr.c_str();
+    *obufs[j+1] << s_outstr.c_str();
+  }
+}
+
 
 void adc_out_all()
 {
@@ -1211,11 +1244,27 @@ void adc_out_all()
   lcdbufs_out();
 }
 
+void adc_out_all_i()
+{
+  for( auto o : obufs ) { o->reset_out(); }
+  adc_out_i();
+  obuf_out_stdout( 0 );
+  lcdbufs_out();
+}
+
+
 void adc_all()
 {
   adc_measure();
   adc_out_all();
 }
+
+void adc_all_i()
+{
+  adc_measure();
+  adc_out_all_i();
+}
+
 
 
 int adc_pre_loop()
@@ -1250,14 +1299,29 @@ void C_adc_out( PICOC_FUN_ARGS )
   adc_out();
 }
 
+void C_adc_out_i( PICOC_FUN_ARGS )
+{
+  adc_out_i();
+}
+
 void C_adc_out_all( PICOC_FUN_ARGS )
 {
   adc_out_all();
 }
 
+void C_adc_out_all_i( PICOC_FUN_ARGS )
+{
+  adc_out_all_i();
+}
+
 void C_adc_all( PICOC_FUN_ARGS )
 {
   adc_all();
+}
+
+void C_adc_all_i( PICOC_FUN_ARGS )
+{
+  adc_all_i();
 }
 
 
@@ -1272,6 +1336,12 @@ void C_pins_out( PICOC_FUN_ARGS )
 void C_pins_in( PICOC_FUN_ARGS )
 {
   RV_INT = mcp_gpio.get_a();
+}
+
+void C_pin_in( PICOC_FUN_ARGS )
+{
+  uint8_t val = (uint8_t)(ARG_0_INT);
+  RV_INT = ( mcp_gpio.get_a() >> val ) & 1;
 }
 
 void C_pins_out_read( PICOC_FUN_ARGS )
@@ -1300,16 +1370,21 @@ void C_pins_out_toggle( PICOC_FUN_ARGS )
 
 // ---------------------------------------- DAC ------------------------------------------------------
 
+void dac_out_n( int n, xfloat v )
+{
+  n = clamp( n, 0, (int)dac_n_ch-1 );
+  int iv = (int)( dac_bitmask * ( v - dac_v_bases[n] ) * dac_v_scales[n] / dac_vref );
+  dac_out_ni( n, iv );
+}
+
 void dac_out1( xfloat v )
 {
-  int iv = (int)( dac_bimask * ( v - dac_v_bases[0] ) * dac_v_scales[0] / dac_vref );
-  dac_out1i( iv );
+  dac_out_n( 0, v );
 }
 
 void dac_out2( xfloat v )
 {
-  int iv = (int)( dac_bimask * ( v - dac_v_bases[1] ) * dac_v_scales[1] / dac_vref );
-  dac_out2i( iv );
+  dac_out_n( 1, v );
 }
 
 void dac_out12( xfloat v1, xfloat v2 )
@@ -1318,22 +1393,35 @@ void dac_out12( xfloat v1, xfloat v2 )
   dac_out2( v2 );
 }
 
+void dac_out_ni( int n, int v )
+{
+  n = clamp( n, 0, (int)dac_n_ch-1 );
+  v = clamp( v, 0, (int)dac_bitmask );
+  dac_vi[n] = v;
+  dac_v[n]  = dac_v_bases[n] + v * dac_vref / ( dac_bitmask * dac_v_scales[n] ) ;
+  HAL_DAC_SetValue( &hdac, ( n==0 ) ? DAC_CHANNEL_1 : DAC_CHANNEL_2, DAC_ALIGN_12B_R, v );
+}
+
+
 void dac_out1i( int v )
 {
-  v = clamp( v, 0, (int)dac_bimask );
-  HAL_DAC_SetValue( &hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, v );
+  dac_out_ni( 0, v );
 }
 
 void dac_out2i( int v )
 {
-  v = clamp( v, 0, (int)dac_bimask );
-  HAL_DAC_SetValue( &hdac, DAC_CHANNEL_2, DAC_ALIGN_12B_R, v );
+  dac_out_ni( 1, v );
 }
 
 void dac_out12i( int v1, int v2 )
 {
   dac_out1i( v1 );
   dac_out2i( v2 );
+}
+
+void C_dac_out_n( PICOC_FUN_ARGS )
+{
+  dac_out_n( ARG_0_INT, ARG_1_FP );
 }
 
 void C_dac_out1( PICOC_FUN_ARGS )
@@ -1364,6 +1452,11 @@ void C_dac_out2i( PICOC_FUN_ARGS )
 void C_dac_out12i( PICOC_FUN_ARGS )
 {
   dac_out12i( ARG_0_INT, ARG_1_INT );
+}
+
+void C_dac_out_ni( PICOC_FUN_ARGS )
+{
+  dac_out_ni( ARG_0_INT, ARG_1_INT );
 }
 
 
@@ -1876,6 +1969,10 @@ void C_rtc_getFileDateTimeStr( PICOC_FUN_ARGS )
   rtc_getFileDateTimeStr( s );
 }
 
+void C_flush( PICOC_FUN_ARGS )
+{
+  std_out.flush();
+}
 
 // ---------------------------------------- stdarg test --------------------------------------------
 
@@ -2004,18 +2101,27 @@ void C_prf( PICOC_FUN_ARGS )
 
 int cmd_lstnames( int argc, const char * const * argv )
 {
+  const char *subs { "" };
+  if( argc > 1 ) {
+    subs = argv[1];
+  }
+
   unsigned tsize = pc.GlobalTable.Size;
-  std_out << "# lstnames &pc= " << HexInt(&pc) << " size= " << tsize << " OnHeap= " << pc.GlobalTable.OnHeap << NL;
+  std_out << "## lstnames &pc= " << HexInt(&pc) << " size= " << tsize << " OnHeap= " << pc.GlobalTable.OnHeap << NL;
 
   Table *gtab = &pc.GlobalTable;
   TableEntry **ppte = gtab->HashTable;
-  std_out << "# ppte= " << HexInt(ppte) << NL;
+  std_out << "## ppte= " << HexInt(ppte) << " subs: \"" << subs << "\"" NL;
 
-  std_out << "# key file type hi "  NL;
+  std_out << "## key file type hi "  NL;
 
   for( unsigned hi=0; hi<tsize; ++hi ) {
-    for( TableEntry* te = gtab->HashTable[hi]; te != nullptr; te = te->Next ) {
-      std_out<< "# " << te->p.v.Key <<  " \"" << te->DeclFileName << "\" ";
+    for( const TableEntry* te = gtab->HashTable[hi]; te != nullptr; te = te->Next ) {
+      const char *oname = te->p.v.Key;
+      if( subs[0] != '\0' && strstr( oname, subs ) == nullptr ) {
+        continue;
+      }
+      std_out<< "# " << oname <<  " \"" << te->DeclFileName << "\" ";
       Value *v = te->p.v.Val;
       if( v ) {
         std_out << ' ' << v->Typ->Base;
