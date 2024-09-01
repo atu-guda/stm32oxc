@@ -129,13 +129,13 @@ unsigned adc_o_w = 8; // output width
 unsigned adc_o_p = 5; // outpit precision
 
 // calibration result. TODO: store to flash
-xfloat adc_v_scales[adc_n_ch] = { 8.308680889E-4f, 8.303192882E-4f, 8.315120462E-4f, 8.309786363E-4f  };
-xfloat adc_v_bases[adc_n_ch]  = { -9.965390f,     -9.949429f,      -9.978844f,       -9.966677f    };
+xfloat adc_v_scales[adc_n_ch] = {  8.299420E-04f,   8.291177E-04f,   8.302860E-04f,    8.298045E-04f   };
+xfloat adc_v_bases[adc_n_ch]  = { -9.95298487158f, -9.93398440656f, -9.963334554497f, -9.952166616965f };
 
 xfloat adc_v[adc_n_ch]        = {         0.0f,        0.0f,         0.0f,        0.0f };
 int    adc_vi[adc_n_ch]       = {            0,           0,            0,           0 };
 int adc_scale_mv = 4096;
-xfloat adc_kv = 0.001f * adc_scale_mv / 0x7FFF;
+xfloat adc_kv = adc_scale_mv / 4096.0f;
 int adc_defcfg();
 int adc_measure();
 void adc_out();
@@ -1197,7 +1197,7 @@ int adc_defcfg()
   adc.setCfg( cfg );
   int r = adc.getDeviceCfg(); // to fill correct inner
   adc_scale_mv =  adc.getScale_mV();
-  adc_kv = 0.001f * adc_scale_mv / 0x7FFF; // TODO: scale to 1.0 by default and use!
+  adc_kv = adc_scale_mv / 4096.0f; // scale to 1.0 by
   return r;
 }
 
@@ -1208,8 +1208,7 @@ int adc_measure()
 
   for( decltype(no) j=0; j<no; ++j ) {
     adc_vi[j] = vi[j];
-    // adc_v[j]  = adc_kv * vi[j] * adc_v_scales[j] + adc_v_bases[j];
-    adc_v[j]  = vi[j] * adc_v_scales[j] + adc_v_bases[j];
+    adc_v[j]  = vi[j] * adc_kv * adc_v_scales[j] + adc_v_bases[j];
   }
   adc_no = no;
   return no;
