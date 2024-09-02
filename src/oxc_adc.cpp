@@ -5,9 +5,9 @@
 
 AdcDma_n_status adcdma_n_status;
 
-ADC_Info::ADC_Info( ADC_TypeDef* _hadc, const AdcChannelInfo *ch_i )
+ADC_Info::ADC_Info( ADC_TypeDef* hadc_, const AdcChannelInfo *ch_i )
 {
-  hadc.Instance  = _hadc;
+  hadc.Instance  = hadc_;
   set_channels( ch_i );
 
   reset_cnt();
@@ -31,11 +31,9 @@ uint32_t ADC_Info::set_channels( const AdcChannelInfo *ch_i )
 
 void ADC_Info::reset_cnt()
 {
-  // n_ch_max = 4;
   end_dma = 0;
   dma_error = 0;
   n_series = 0;
-  // n_series_todo = 0;
   n_good = 0;
   n_bad = 0;
   last_SR = good_SR = bad_SR = last_end = last_error = last_status = 0;

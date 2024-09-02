@@ -56,7 +56,7 @@
 #elif defined(STM32G4)
  #include <stm32g4xx_hal_adc.h>
  // ??? TODO:?
- #define ADC_FREQ_MAX 36000000
+ #define ADC_FREQ_MAX 56000000
 #else
   #error "Unsupported MCU"
 #endif
@@ -65,7 +65,7 @@
 struct AdcChannelInfo {
   uint32_t channel; // like ADC_CHANNEL_17
   GpioRegs &gpio;   // like GpioA
-  uint8_t  pin_num; // like 15 - not bit, 15 - END
+  uint8_t  pin_num; // like 0..15 - not bit, >15 - END
 };
 
 struct AdcSampleTimeInfo {
@@ -111,7 +111,6 @@ struct ADC_Info {
   uint32_t last_status = 0;
 
 
-  [[deprecated]] ADC_Info() { reset_cnt(); } // TODO: remove
   ADC_Info( ADC_TypeDef* _hadc, const AdcChannelInfo *ch_i );
   uint32_t set_channels( const AdcChannelInfo *ch_i );
   void reset_cnt();
@@ -146,20 +145,11 @@ struct AdcDma_n_status {
 };
 extern AdcDma_n_status adcdma_n_status;
 
-// TODO: different for F1, F3
-// [[deprecated]]
-const uint32_t adc_n_sampl_times = 7;
-extern const uint32_t sampl_times_codes[adc_n_sampl_times];
-extern const uint32_t sampl_times_cycles[adc_n_sampl_times];
 
 extern "C" {
  void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc );
  void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc );
 }
-
-[[deprecated]] uint32_t calc_ADC_clk( uint32_t presc, int *div_val );
-[[deprecated]] uint32_t hint_ADC_presc();
-[[deprecated]] void pr_ADC_state( const ADC_Info &adc );
 
 uint32_t ADC_getFreqIn( ADC_HandleTypeDef* hadc );
 uint32_t ADC_calc_div( ADC_HandleTypeDef* hadc, uint32_t freq_max, uint32_t *div_val );

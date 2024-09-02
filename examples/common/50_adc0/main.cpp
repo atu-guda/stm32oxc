@@ -89,6 +89,8 @@ int cmd_test0( int argc, const char * const * argv )
     << " freq_in= " << adc_arch_clock_in
     << " freq_max= " << ADC_FREQ_MAX << NL;
 
+  delay_ms( 100 );
+
   if( s_div == 0  ||  div_bits == 0xFFFFFFFF ) {
     std_out << "# error: fail to calc divisor" NL;
     return 7;
@@ -98,6 +100,8 @@ int cmd_test0( int argc, const char * const * argv )
   const uint32_t adc_clock_ns = (unsigned)( ( 1000000000LL + adc_freq - 1 ) / adc_freq );
   std_out << "# div= " << s_div << " bits: " << HexInt( div_bits ) << " freq: " << adc_freq
           << " adc_clock_ns: " << adc_clock_ns << NL;
+
+  delay_ms( 100 );
 
   uint32_t stime_ns = ADC_conv_time_tick( stime_idx, n_ch, BOARD_ADC_DEFAULT_BITS );
   if( stime_ns == 0xFFFFFFFF ) {
@@ -115,6 +119,8 @@ int cmd_test0( int argc, const char * const * argv )
   std_out << "# stime_idx= " << stime_idx << " 10ticks= " << adc_arch_sampletimes[stime_idx].stime10
           << " stime_ns= "  << stime_ns  << " code= " <<  adc_arch_sampletimes[stime_idx].code
           << " t_wait0= " << t_wait0 << " ms" NL;
+
+  delay_ms( 100 );
 
   adc.prepare_single_manual( div_bits, adc_arch_sampletimes[stime_idx].code, BOARD_ADC_DEFAULT_RESOLUTION );
 

@@ -6,6 +6,10 @@
 #endif
 
 
+#ifndef USE_FLASH_ECC
+#define USE_FLASH_ECC 0
+#endif
+
 #ifndef USE_SD_TRANSCEIVER
 #define USE_SD_TRANSCEIVER 0
 #endif

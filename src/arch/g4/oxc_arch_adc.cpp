@@ -22,7 +22,7 @@ const unsigned adc_arch_sampletimes_n = std::size( adc_arch_sampletimes );
 
 uint32_t ADC_getFreqIn( ADC_HandleTypeDef* /* hadc */ )
 {
-
+  // TODO: get source
   return HAL_RCC_GetPCLK2Freq();
 }
 
@@ -39,20 +39,17 @@ uint32_t ADC_calc_div( ADC_HandleTypeDef* hadc, uint32_t freq_max, uint32_t *div
   uint32_t bits = 0;
 
 
-  if( dm <= 2 ) {
+  if( dm <= 1 ) {
+    bits = ADC_CLOCK_SYNC_PCLK_DIV1;
+    div = 1;
+  } else if( dm <= 2 ) {
     bits = ADC_CLOCK_SYNC_PCLK_DIV2;
     div = 2;
   } else if( dm <= 4 ) {
     bits = ADC_CLOCK_SYNC_PCLK_DIV4;
     div = 4;
-  } else if( dm <= 6 ) {
-    bits = ADC_CLOCK_SYNC_PCLK_DIV6;
-    div = 6;
-  } else if( dm <= 6 ) {
-    bits = ADC_CLOCK_SYNC_PCLK_DIV8;
-    div = 8;
   } else  {
-    div = 0;
+    div = 0x777;
     bits = 0xFFFFFFFF;
   }
 
@@ -85,17 +82,14 @@ uint32_t ADC_calcfreq( ADC_HandleTypeDef* hadc, ADC_freq_info *fi )
 
   fi->freq_in = freq = HAL_RCC_GetPCLK2Freq();
   switch( cclock ) {
+    case ADC_CLOCK_SYNC_PCLK_DIV1:
+      fi->div1 = 1;
+      break;
     case ADC_CLOCK_SYNC_PCLK_DIV2:
       fi->div1 = 2;
       break;
     case ADC_CLOCK_SYNC_PCLK_DIV4:
       fi->div1 = 4;
-      break;
-    case ADC_CLOCK_SYNC_PCLK_DIV6:
-      fi->div1 = 6;
-      break;
-    case ADC_CLOCK_SYNC_PCLK_DIV8:
-      fi->div1 = 8;
       break;
     default:
       fi->devbits |= 0x4000; // debug: unknown
@@ -114,9 +108,8 @@ uint32_t ADC_calcfreq( ADC_HandleTypeDef* hadc, ADC_freq_info *fi )
 void ADC_Info::pr_state() const
 {
   std_out
-     << "# ADC: SR= "  << HexInt( BOARD_ADC_DEFAULT_DEV->SR  )
-     <<  "  CR1= "      << HexInt( BOARD_ADC_DEFAULT_DEV->CR1 )
-     <<  "  CR2= "      << HexInt( BOARD_ADC_DEFAULT_DEV->CR2 )
+     << "# ADC: SR= "  << HexInt( BOARD_ADC_DEFAULT_DEV->ISR  )
+     <<  "  CR1= "      << HexInt( BOARD_ADC_DEFAULT_DEV->CR )
      <<  "  SQR1= "    << HexInt( BOARD_ADC_DEFAULT_DEV->SQR1 )
      <<  NL;
   std_out << "# adc_clk= " << adc_clk << " end_dma= " << end_dma << " n_series= " << n_series
@@ -179,6 +172,10 @@ uint32_t ADC_Info::prepare_base( uint32_t presc, uint32_t sampl_cycl, uint32_t r
   hadc.Init.ExternalTrigConv         = ADC_SOFTWARE_START;
   hadc.Init.ExternalTrigConvEdge     = ADC_EXTERNALTRIGCONVEDGE_NONE;
   hadc.Init.DataAlign                = ADC_DATAALIGN_RIGHT;
+  hadc.Init.GainCompensation         = 0;
+  hadc.Init.Overrun                  = ADC_OVR_DATA_PRESERVED;
+  hadc.Init.OversamplingMode         = DISABLE;
+  hadc.Init.LowPowerAutoWait         = DISABLE;
   hadc.Init.DMAContinuousRequests    = DISABLE;
   return 1;
 }
@@ -194,6 +191,14 @@ uint32_t ADC_Info::prepare_single_manual( uint32_t presc, uint32_t sampl_cycl, u
   hadc.Init.NbrOfConversion          = 1;
   hadc.Init.ExternalTrigConv         = ADC_SOFTWARE_START;
   hadc.Init.ExternalTrigConvEdge     = ADC_EXTERNALTRIGCONVEDGE_NONE;
+
+  ADC_MultiModeTypeDef mmode;
+  mmode.Mode = ADC_MODE_INDEPENDENT;
+  if( HAL_ADCEx_MultiModeConfigChannel( &hadc, &mmode ) != HAL_OK ) {
+    errno = 3005;
+    return 0;
+  }
+
   prepared = 1;
   return 1;
 }
@@ -230,10 +235,6 @@ uint32_t ADC_Info::prepare_multi_ev_n( uint32_t n_ch, uint32_t presc, uint32_t s
   if( ! prepare_base( presc, sampl_cycl, resol ) ) {
     return 0;
   }
-
-  #if defined(STM32F7)
-    __HAL_RCC_DAC_CLK_ENABLE(); // !!!!!!!!!!!!! see errata - need for timer interaction
-  #endif
 
   hadc.Init.ScanConvMode             = ADC_SCAN_ENABLE;
   hadc.Init.EOCSelection             = ADC_EOC_SEQ_CONV;
@@ -275,9 +276,9 @@ uint32_t ADC_Info::init_common()
 int ADC_Info::DMA_reinit( uint32_t mode )
 {
   // std_out << "# debug: DMA_reinit start" NL;
-  hdma_adc.Instance                 = BOARD_ADC_DMA_INSTANCE;
+  hdma_adc.Instance                 = 0; // TODO: fix board_cfg.h BOARD_ADC_DMA_INSTANCE;
 
-  hdma_adc.Init.Channel             = BOARD_ADC_DMA_CHANNEL;
+  // hdma_adc.Init.Channel             = BOARD_ADC_DMA_CHANNEL;
   hdma_adc.Init.Direction           = DMA_PERIPH_TO_MEMORY;
   hdma_adc.Init.PeriphInc           = DMA_PINC_DISABLE;
   hdma_adc.Init.MemInc              = DMA_MINC_ENABLE;
@@ -285,7 +286,7 @@ int ADC_Info::DMA_reinit( uint32_t mode )
   hdma_adc.Init.MemDataAlignment    = DMA_MDATAALIGN_HALFWORD;
   hdma_adc.Init.Mode                = mode; // DMA_NORMAL, DMA_CIRCULAR, DMA_PFCTRL, DMA_DOUBLE_BUFFER_M0, DMA_DOUBLE_BUFFER_M1
   hdma_adc.Init.Priority            = DMA_PRIORITY_HIGH; // DMA_PRIORITY_LOW, DMA_PRIORITY_MEDIUM, DMA_PRIORITY_HIGH, DMA_PRIORITY_VERY_HIGH
-  hdma_adc.Init.FIFOMode            = DMA_FIFOMODE_DISABLE;
+  // hdma_adc.Init.FIFOMode            = DMA_FIFOMODE_DISABLE;
   // hdma_adc.Init.FIFOThreshold    = DMA_FIFO_THRESHOLD_HALFFULL;
   // hdma_adc.Init.MemBurst         = DMA_MBURST_SINGLE;
   // hdma_adc.Init.PeriphBurst      = DMA_PBURST_SINGLE;
@@ -311,7 +312,7 @@ void ADC_Info::convCpltCallback( ADC_HandleTypeDef *hadc )
       end_dma |= 1; // not always
     }
   }
-  good_SR =  last_SR = hadc->Instance->SR;
+  good_SR =  last_SR = hadc->Instance->ISR;
   last_end = 1;
   last_error = 0;
   ++n_good;
@@ -325,7 +326,7 @@ void ADC_Info::errorCallback( ADC_HandleTypeDef *hadc )
 {
   // leds.set( BIT0 );
   end_dma |= 2;
-  bad_SR = last_SR = hadc->Instance->SR;
+  bad_SR = last_SR = hadc->Instance->ISR;
   // tim2_deinit();
   last_end  = 2;
   last_error = HAL_ADC_GetError( hadc );
