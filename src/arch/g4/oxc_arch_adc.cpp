@@ -164,10 +164,10 @@ uint32_t ADC_Info::prepare_base( uint32_t presc, uint32_t sampl_cycl, uint32_t r
 
   hadc.Init.ClockPrescaler           = presc;
   hadc.Init.Resolution               = resol;
-  // hadc.Init.ScanConvMode             = ADC_SCAN_DISABLE;
-  // hadc.Init.EOCSelection             = ADC_EOC_SINGLE_CONV;
+  hadc.Init.ScanConvMode             = ADC_SCAN_DISABLE;
+  hadc.Init.EOCSelection             = ADC_EOC_SINGLE_CONV;
   hadc.Init.ContinuousConvMode       = DISABLE;
-  // hadc.Init.NbrOfConversion          = 1;
+  hadc.Init.NbrOfConversion          = 1;
   hadc.Init.DiscontinuousConvMode    = DISABLE;
   hadc.Init.ExternalTrigConv         = ADC_SOFTWARE_START;
   hadc.Init.ExternalTrigConvEdge     = ADC_EXTERNALTRIGCONVEDGE_NONE;
@@ -192,12 +192,6 @@ uint32_t ADC_Info::prepare_single_manual( uint32_t presc, uint32_t sampl_cycl, u
   hadc.Init.ExternalTrigConv         = ADC_SOFTWARE_START;
   hadc.Init.ExternalTrigConvEdge     = ADC_EXTERNALTRIGCONVEDGE_NONE;
 
-  ADC_MultiModeTypeDef mmode;
-  mmode.Mode = ADC_MODE_INDEPENDENT;
-  if( HAL_ADCEx_MultiModeConfigChannel( &hadc, &mmode ) != HAL_OK ) {
-    errno = 3005;
-    return 0;
-  }
 
   prepared = 1;
   return 1;
@@ -260,7 +254,12 @@ uint32_t ADC_Info::init_common()
     return 0;
   }
 
-  // no ADC multi-mode here
+  ADC_MultiModeTypeDef mmode;
+  mmode.Mode = ADC_MODE_INDEPENDENT;
+  if( HAL_ADCEx_MultiModeConfigChannel( &hadc, &mmode ) != HAL_OK ) {
+    errno = 3005;
+    return 0;
+  }
 
   uint32_t n_ch_init = init_adc_channels();
   if( n_ch_init != n_ch_max )  {
@@ -278,7 +277,7 @@ int ADC_Info::DMA_reinit( uint32_t mode )
   // std_out << "# debug: DMA_reinit start" NL;
   hdma_adc.Instance                 = 0; // TODO: fix board_cfg.h BOARD_ADC_DMA_INSTANCE;
 
-  // hdma_adc.Init.Channel             = BOARD_ADC_DMA_CHANNEL;
+  // hdma_adc.Init.Channel             = BOARD_ADC_DMA_CHANNEL; // ????
   hdma_adc.Init.Direction           = DMA_PERIPH_TO_MEMORY;
   hdma_adc.Init.PeriphInc           = DMA_PINC_DISABLE;
   hdma_adc.Init.MemInc              = DMA_MINC_ENABLE;

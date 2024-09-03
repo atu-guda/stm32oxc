@@ -53,6 +53,10 @@ int main(void)
 
   BOARD_POST_INIT_BLINK;
 
+  // arch-dep:
+  HAL_SYSCFG_EnableVREFBUF();
+  HAL_SYSCFG_VREFBUF_HighImpedanceConfig( SYSCFG_VREFBUF_HIGH_IMPEDANCE_DISABLE );
+
   std_out << NL "##################### " PROJ_NAME NL;
 
   srl.re_ps();
@@ -123,6 +127,16 @@ int cmd_test0( int argc, const char * const * argv )
   delay_ms( 100 );
 
   adc.prepare_single_manual( div_bits, adc_arch_sampletimes[stime_idx].code, BOARD_ADC_DEFAULT_RESOLUTION );
+
+  if( UVAR('d') > 0 ) {
+    adc.pr_state();
+  }
+  if( UVAR('d') > 1 ) {
+    dump32( BOARD_ADC_DEFAULT_DEV, 0x200 );
+  }
+
+  std_out << "Prepared!" << NL;
+  delay_ms( 100 );
 
   if( ! adc.init_common() ) {
     std_out << "# error: fail to init ADC: errno= " << errno << NL;
