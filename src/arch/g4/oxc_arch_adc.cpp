@@ -108,8 +108,8 @@ uint32_t ADC_calcfreq( ADC_HandleTypeDef* hadc, ADC_freq_info *fi )
 void ADC_Info::pr_state() const
 {
   std_out
-     << "# ADC: SR= "  << HexInt( BOARD_ADC_DEFAULT_DEV->ISR  )
-     <<  "  CR1= "      << HexInt( BOARD_ADC_DEFAULT_DEV->CR )
+     << "# ADC: ISR= " << HexInt( BOARD_ADC_DEFAULT_DEV->ISR  )
+     <<  "  CR= "      << HexInt( BOARD_ADC_DEFAULT_DEV->CR )
      <<  "  SQR1= "    << HexInt( BOARD_ADC_DEFAULT_DEV->SQR1 )
      <<  NL;
   std_out << "# adc_clk= " << adc_clk << " end_dma= " << end_dma << " n_series= " << n_series
@@ -268,7 +268,7 @@ uint32_t ADC_Info::init_common()
     return 0;
   }
 
-  // no calibration
+  // no calibration ?
 
   return 1;
 }
