@@ -1,0 +1,6 @@
+ADC with DMA
+
+Clock: common to this arch, ADC up to 36 MHz
+4 channel: A0, A1, A2, A3 - fast
+
+Console: standard

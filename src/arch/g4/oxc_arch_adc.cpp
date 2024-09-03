@@ -278,9 +278,9 @@ uint32_t ADC_Info::init_common()
 int ADC_Info::DMA_reinit( uint32_t mode )
 {
   // std_out << "# debug: DMA_reinit start" NL;
-  hdma_adc.Instance                 = 0; // TODO: fix board_cfg.h BOARD_ADC_DMA_INSTANCE;
+  hdma_adc.Instance                 = BOARD_ADC_DMA_INSTANCE; // TODO: fix board_cfg.h BOARD_ADC_DMA_INSTANCE;
 
-  // hdma_adc.Init.Channel             = BOARD_ADC_DMA_CHANNEL; // ????
+  hdma_adc.Init.Request             = BOARD_ADC_DMA_REQUEST;
   hdma_adc.Init.Direction           = DMA_PERIPH_TO_MEMORY;
   hdma_adc.Init.PeriphInc           = DMA_PINC_DISABLE;
   hdma_adc.Init.MemInc              = DMA_MINC_ENABLE;

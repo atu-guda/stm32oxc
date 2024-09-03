@@ -174,14 +174,14 @@
 #define BOARD_ADC_DEFAULT_MAX           0x0FFF
 #define BOARD_ADC_IRQ                   ADC1_2_IRQn
 #define BOARD_ADC_IRQHANDLER            ADC1_2_IRQHandler
-#define BOARD_ADC_DMA_INSTANCE          DMA1_Stream0
-#define BOARD_ADC_DMA_CHANNEL           DMA_CHANNEL_0
+#define BOARD_ADC_DMA_INSTANCE          DMA1_Channel1
+#define BOARD_ADC_DMA_CHANNEL           DMA_CHANNEL_1
 #define BOARD_ADC_DMA_REQUEST           DMA_REQUEST_ADC1
 #define BOARD_ADC_DMA_DEFAULT_EN        __HAL_RCC_DMAMUX1_CLK_ENABLE();__HAL_RCC_DMA1_CLK_ENABLE();
 #define BOARD_ADC_DMA_DEFAULT_DIS       __HAL_RCC_DMA1_CLK_DISABLE();
 #define BOARD_ADC_DMA_IRQ               DMA1_Channel1_IRQn
 #define BOARD_ADC_DMA_IRQHANDLER        DMA1_Channel1_IRQHandler
-#define BOARD_ADC_DEFAULT_TRIG          ADC_EXTERNALTRIG2_T2_TRGO
+#define BOARD_ADC_DEFAULT_TRIG          ADC_EXTERNALTRIG_T2_TRGO
 #define BOARD_ADC_DEFAULT_DBLBUF        ((uint32_t)DMA_SxCR_DBM)
 
 //void* malloc_fmc( size_t sz ); // only all FMC memory for now

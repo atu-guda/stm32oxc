@@ -1,0 +1,6 @@
+ADC up to 4 channels usage with DMA, but manual start
+
+4 channel: A0, A1, A2, A3 - fast
+
+
+Console: standard

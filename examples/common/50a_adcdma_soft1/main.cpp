@@ -144,6 +144,7 @@ int cmd_test0( int argc, const char * const * argv )
   if( UVAR('d') > 1 ) {
     dump32( BOARD_ADC_DEFAULT_DEV, 0x100 );
   }
+  delay_ms( 10 );
   // log_reset();
 
   // or such
@@ -165,7 +166,8 @@ int cmd_test0( int argc, const char * const * argv )
   adcd.set_d_t( t_step_us * 1e-6f );
   adcd.set_v_ref_uV( UVAR('v') );
   // adcd.fill( 0 ); // debug?
-  std_out << "# n_col= " << adcd.get_n_col() << " n_row= " << adcd.get_n_row() << " data: " << HexInt(adcd.data()) << " size_all= " << adcd.size_all() << NL;
+  std_out << "# n_col= " << adcd.get_n_col() << " n_row= " << adcd.get_n_row()
+          << " data: " << HexInt(adcd.data()) << " size_all= " << adcd.size_all() << NL;
 
   StatIntData sdat( n_ch, k_all );
   sdat.setScalesFrom( adcd );
