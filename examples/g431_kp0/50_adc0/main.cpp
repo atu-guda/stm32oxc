@@ -53,10 +53,6 @@ int main(void)
 
   BOARD_POST_INIT_BLINK;
 
-  // arch-dep:
-  HAL_SYSCFG_EnableVREFBUF();
-  HAL_SYSCFG_VREFBUF_HighImpedanceConfig( SYSCFG_VREFBUF_HIGH_IMPEDANCE_DISABLE );
-
   std_out << NL "##################### " PROJ_NAME NL;
 
   srl.re_ps();

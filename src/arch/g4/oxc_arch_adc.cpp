@@ -135,6 +135,9 @@ uint32_t ADC_Info::init_adc_channels()
 
   ADC_ChannelConfTypeDef sConfig;
   sConfig.SamplingTime = sampl_cycl_common;
+  sConfig.SingleDiff   = ADC_SINGLE_ENDED;
+  sConfig.OffsetNumber = ADC_OFFSET_NONE;
+  sConfig.Offset = 0;
 
   uint32_t n = 0;
 

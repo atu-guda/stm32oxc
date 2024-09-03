@@ -124,6 +124,16 @@ int cmd_test0( int argc, const char * const * argv )
 
   adc.prepare_single_manual( div_bits, adc_arch_sampletimes[stime_idx].code, BOARD_ADC_DEFAULT_RESOLUTION );
 
+  if( UVAR('d') > 0 ) {
+    adc.pr_state();
+  }
+  if( UVAR('d') > 1 ) {
+    dump32( BOARD_ADC_DEFAULT_DEV, 0x200 );
+  }
+
+  std_out << "Prepared!" << NL;
+  delay_ms( 100 );
+
   if( ! adc.init_common() ) {
     std_out << "# error: fail to init ADC: errno= " << errno << NL;
   }
