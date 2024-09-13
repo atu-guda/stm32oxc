@@ -142,7 +142,7 @@ uint32_t ADC_Info::init_adc_channels()
   uint32_t n = 0;
 
   for( decltype(+n_ch_max) i=0; i<n_ch_max; ++i ) {
-    if( ch_info[i].pin_num > 15 ) {
+    if( ch_info[i].pin_num >= AdcChannelInfo::pin_num_end ) {
       break;
     }
 
@@ -270,6 +270,10 @@ uint32_t ADC_Info::init_common()
     return 0;
   }
 
+  if( HAL_ADCEx_Calibration_Start( &hadc, ADC_SINGLE_ENDED ) != HAL_OK ) {
+    errno = 3004;
+    return 0;
+  }
   // no calibration ?
 
   return 1;

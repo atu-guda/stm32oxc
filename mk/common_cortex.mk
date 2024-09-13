@@ -433,6 +433,26 @@ ifeq "$(USE_OXC_SDRAM)" "y"
 endif
 
 
+ifeq "$(USE_OXC_OPAMP)" "y"
+  USE_OXC = y
+  # SRCS += bsp_opamp_msp.cpp
+  # SRCS += oxc_opamp_common.cpp
+  SRCS += stm32$(MCSUFF)xx_hal_opamp.c
+  SRCS += stm32$(MCSUFF)xx_hal_opamp_ex.c
+  # TODO: better if for all arches
+  ifeq "$(MCSUFF)" "f1"
+    $(error OPAMP is not available for $(MCSUFF) )
+  endif
+  ifeq "$(MCSUFF)" "f4"
+    $(error OPAMP is not available for $(MCSUFF) )
+  endif
+  ifeq "$(MCSUFF)" "f7"
+    $(error OPAMP is not available for $(MCSUFF) )
+  endif
+  ALLFLAGS += -DUSE_OXC_OPAMP
+endif
+
+
 ifeq "$(USE_OXC)" "y"
   SRCPATHS += $(OXCSRC) $(OXCSRCARCH)
   ALLFLAGS += -DUSE_OXC -I$(OXCINC) -I$(OXCINCBSP) -I$(OXCINCARCH) -I$(OXCINC)/fake

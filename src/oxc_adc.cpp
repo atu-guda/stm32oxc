@@ -22,7 +22,7 @@ uint32_t ADC_Info::set_channels( const AdcChannelInfo *ch_i )
   }
 
   for( ; ; ++n_ch_max ) {
-    if( ch_i[n_ch_max].pin_num > 15 ) {
+    if( ch_i[n_ch_max].pin_num >= AdcChannelInfo::pin_num_end ) {
       break;
     }
   }
@@ -47,8 +47,11 @@ uint32_t ADC_Info::init_gpio_channels()
 
   unsigned n = 0;
   for( decltype(+n_ch_max) i=0; i<n_ch_max; ++i ) {
-    if( ch_info[i].pin_num > 15 ) {
+    if( ch_info[i].pin_num >= AdcChannelInfo::pin_num_end ) {
       break;
+    }
+    if( ch_info[i].pin_num >= AdcChannelInfo::pin_num_spec ) { // special
+      continue;
     }
     ch_info[i].gpio.enableClk();
     ch_info[i].gpio.cfgAnalog( ch_info[i].pin_num );

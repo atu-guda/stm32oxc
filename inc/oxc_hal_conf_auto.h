@@ -277,6 +277,10 @@
   #define HAL_DMA_MODULE_ENABLED
 #endif
 
+#ifdef USE_OXC_OPAMP
+  #define HAL_OPAMP_MODULE_ENABLED
+#endif
+
 #ifdef USE_OXC_SD
   #define HAL_SD_MODULE_ENABLED
   #define HAL_DMA_MODULE_ENABLED

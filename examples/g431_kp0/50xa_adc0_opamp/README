@@ -1,0 +1,9 @@
+Try ADC usage: manual conversion mode + OPAMP
+Clock: APB2/4 = 144/4 = 36 sync
+
+Channels:
+ A7 -> OPAMP1(PGA) - ADC1
+ CH?,
+
+
+

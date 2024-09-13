@@ -11,16 +11,32 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
-const char* common_help_string = "App to test ADC in one-shot mode one channel" NL
+// arch-dependent app
+
+const char* common_help_string = "App to test ADC + OPAMP in one-shot mode one channel" NL
  " var t - delay time in us" NL
  " var n - default number of measurements" NL
  " var s - sample time index" NL
  " var b - supress normal output" NL
- " var v - reference voltage in uV " NL;
+ " var v - reference voltage in uV " NL
+ " var g - PGA gain idx " NL;
 
+const uint32_t pga_vals[] = {
+ OPAMP_PGA_GAIN_2_OR_MINUS_1,
+ OPAMP_PGA_GAIN_4_OR_MINUS_3,
+ OPAMP_PGA_GAIN_8_OR_MINUS_7,
+ OPAMP_PGA_GAIN_16_OR_MINUS_15,
+ OPAMP_PGA_GAIN_32_OR_MINUS_31,
+ OPAMP_PGA_GAIN_64_OR_MINUS_63
+};
+
+ OPAMP_HandleTypeDef hopamp;
+int MX_OPAMP_Init( int pga_idx );
+
+// TODO: param
 const AdcChannelInfo adc_channels[] = {
-  { BOARD_ADC_DEFAULT_CH0, BOARD_ADC_DEFAULT_GPIO0, BOARD_ADC_DEFAULT_PIN0 },
-  {                     0,                   GpioA, AdcChannelInfo::pin_num_end } // END
+  { ADC_CHANNEL_VOPAMP1, BOARD_ADC_DEFAULT_GPIO0, 7 },
+  {                   0,                   GpioA, 255 } // END
 };
 
 ADC_Info adc( BOARD_ADC_DEFAULT_DEV, adc_channels );
@@ -30,7 +46,7 @@ int v_adc_ref = BOARD_ADC_COEFF; // in uV, measured before test
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " [n] - test ADC "  };
+CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " [n] - test ADC + OPAMP"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -50,6 +66,7 @@ int main(void)
   UVAR('c') = adc.n_ch_max; // number of channels - 1 for this program, but need for next test
   UVAR('s') = adc_arch_sampletimes_n - 1;
   UVAR('v') = v_adc_ref;
+  UVAR('g') = 0;
 
   BOARD_POST_INIT_BLINK;
 
@@ -83,6 +100,14 @@ int cmd_test0( int argc, const char * const * argv )
   const uint32_t adc_arch_clock_in = ADC_getFreqIn( &adc.hadc );
   uint32_t s_div = 0;
   uint32_t div_bits = ADC_calc_div( &adc.hadc, ADC_FREQ_MAX, &s_div );
+
+  if( UVAR('d') > 1 ) {
+    dump32( OPAMP1, 0x40 );
+  }
+
+  HAL_OPAMP_Stop( &hopamp );
+  UVAR('e') = MX_OPAMP_Init( UVAR('g') );
+  HAL_OPAMP_Start( &hopamp );
 
   std_out <<  NL "# Test0: n= " << n << " n_ch= " << n_ch
     << " t= " << t_step_us << " us, freq_sampl= " << freq_sampl
@@ -124,27 +149,11 @@ int cmd_test0( int argc, const char * const * argv )
 
   adc.prepare_single_manual( div_bits, adc_arch_sampletimes[stime_idx].code, BOARD_ADC_DEFAULT_RESOLUTION );
 
-  if( UVAR('d') > 0 ) {
-    adc.pr_state();
-  }
-  if( UVAR('d') > 1 ) {
-    dump32( BOARD_ADC_DEFAULT_DEV, 0x200 );
-  }
-
-  std_out << "Prepared!" << NL;
   delay_ms( 100 );
 
   if( ! adc.init_common() ) {
     std_out << "# error: fail to init ADC: errno= " << errno << NL;
   }
-
-  if( UVAR('d') > 0 ) {
-    adc.pr_state();
-  }
-  if( UVAR('d') > 1 ) {
-    dump32( BOARD_ADC_DEFAULT_DEV, 0x100 );
-  }
-  // log_reset();
 
   // or such
   ADC_freq_info fi;
@@ -188,15 +197,9 @@ int cmd_test0( int argc, const char * const * argv )
   std_out << sdat << NL;
 
 
-  if( UVAR('d') > 0 ) {
-    adc.pr_state();
-  }
   if( UVAR('d') > 1 ) {
-    dump32( BOARD_ADC_DEFAULT_DEV, 0x200 );
+    dump32( OPAMP1, 0x40 );
   }
-
-
-  // HAL_ADC_Stop( &adc.hadc1 );
 
   return 0;
 }
@@ -221,13 +224,39 @@ void HAL_ADC_MspDeInit( ADC_HandleTypeDef* adcHandle )
 }
 
 
+int MX_OPAMP_Init( int pga_idx )
+{
+  pga_idx = std::clamp( pga_idx, 0, (int)std::size(pga_vals)-1 );
+  hopamp.Instance                    = OPAMP1; // TODO: arch param
+  hopamp.Init.PowerMode              = OPAMP_POWERMODE_NORMALSPEED;
+  hopamp.Init.Mode                   = OPAMP_PGA_MODE;
+  hopamp.Init.NonInvertingInput      = OPAMP_NONINVERTINGINPUT_IO2;
+  hopamp.Init.InternalOutput         = UVAR('o') ? DISABLE: ENABLE;
+  hopamp.Init.TimerControlledMuxmode = OPAMP_TIMERCONTROLLEDMUXMODE_DISABLE;
+  hopamp.Init.PgaConnect             = OPAMP_PGA_CONNECT_INVERTINGINPUT_NO;
+  hopamp.Init.PgaGain                = pga_vals[pga_idx];
+  hopamp.Init.UserTrimming           = OPAMP_TRIMMING_FACTORY;
+  if( HAL_OPAMP_Init( &hopamp ) != HAL_OK ) {
+    errno = 8000;
+    return 0;
+  }
 
+  if( UVAR('o') ) {
+    HAL_OPAMP_SelfCalibrate( &hopamp );
+  }
 
+  return 1;
+}
 
+void HAL_OPAMP_MspInit(OPAMP_HandleTypeDef* opampHandle)
+{
+  // TODO: auto from ADC ?
+}
 
-// TODO: if ! HAVE_FLOAT
-//int vv = v * ( UVAR('v') / 100 ) / BOARD_ADC_DEFAULT_MAX; // 100 = 1000/10
-//std_out << " v= " << v <<  " vv= " << FloatMult( vv, 4 );
+void HAL_OPAMP_MspDeInit(OPAMP_HandleTypeDef* opampHandle)
+{
+  // TODO: auto from ADC ?
+}
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

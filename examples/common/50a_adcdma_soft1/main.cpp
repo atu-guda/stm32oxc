@@ -25,7 +25,7 @@ const AdcChannelInfo adc_channels[] = {
   { BOARD_ADC_DEFAULT_CH1, BOARD_ADC_DEFAULT_GPIO1, BOARD_ADC_DEFAULT_PIN1 },
   { BOARD_ADC_DEFAULT_CH2, BOARD_ADC_DEFAULT_GPIO2, BOARD_ADC_DEFAULT_PIN2 },
   { BOARD_ADC_DEFAULT_CH3, BOARD_ADC_DEFAULT_GPIO3, BOARD_ADC_DEFAULT_PIN3 },
-  {                     0,                   GpioA,                    255 } // END
+  {                     0,                   GpioA, AdcChannelInfo::pin_num_end } // END
 };
 
 using AdcDataX = AdcData<BOARD_ADC_DEFAULT_BITS,xfloat>;
