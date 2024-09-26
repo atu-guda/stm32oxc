@@ -81,6 +81,7 @@ inline void term_clear( int fd = 1 )     { prl( "\033[2J", 4, fd ); };
 typedef int (*CmdlineHandler)( char *s );
 
 extern CmdlineHandler cmdline_handlers[CMDLINE_MAX_HANDLERS];
+extern CmdlineHandler cmdline_fallback_handler;
 
 
 typedef int (*CmdFun)( int argc, const char * const * argv );

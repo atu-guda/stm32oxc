@@ -316,6 +316,7 @@ void C_rtc_getFileDateTimeStr( PICOC_FUN_ARGS );
 void C_flush( PICOC_FUN_ARGS );
 
 #define PICOC_STACK_SIZE (32*1024)
+int picoc_cmdline_handler_fb( char *s );
 int picoc_cmdline_handler( char *s );
 Picoc pc;
 int init_picoc( Picoc *ppc );
@@ -614,6 +615,7 @@ int main(void)
 
   cmdline_handlers[0] = picoc_cmdline_handler;
   cmdline_handlers[1] = nullptr;
+  cmdline_fallback_handler = picoc_cmdline_handler_fb;
 
   pc.InteractiveHead = nullptr;
   PlatformReadFile_fun = do_PlatformReadFile;
@@ -711,24 +713,27 @@ int cmd_t1( int argc, const char * const * argv )
   return 0;
 }
 
-int picoc_cmdline_handler( char *s )
+int picoc_cmdline_handler_fb( char *s )
 {
-  if( !s  ||  s[0] != ';' ) { // not my
-    return -1;
-  }
-
-  const char *cmd = s + 1;
-  std_out << NL "# C: cmd= \"" << cmd << '"' << NL;
+  std_out << NL "# C: cmd= \"" << s << '"' << NL;
   delay_ms( 10 );
 
   int ep_rc =  PicocPlatformSetExitPoint( &pc );
   if( ep_rc == 0 ) {
-    picoc_call( cmd );
+    picoc_call( s );
   } else {
     std_out << "## Exit point: " << ep_rc << NL;
   }
 
   return ep_rc;
+}
+
+int picoc_cmdline_handler( char *s )
+{
+  if( !s  ||  s[0] != ';' ) { // not my
+    return -1;
+  }
+  return picoc_cmdline_handler_fb ( s + 1 );
 }
 
 // on: 4,3,2 off: 5
@@ -1637,6 +1642,7 @@ void dadc_scan1()
     adc_measure();
     std_out << v0 << ' ';
     adc_out_all();
+    leds[1].toggle();
   }
   dac_out1( 0 );
 }
@@ -1652,6 +1658,7 @@ void dadc_scan2()
       adc_measure();
       std_out << v0 << ' ' << v1 << ' ';
       adc_out_all();
+      leds[1].toggle();
     }
     std_out << NL; // for gnuplot blocs
   }

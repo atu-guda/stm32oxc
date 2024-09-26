@@ -8,6 +8,7 @@ int console_verbose = 1;
 volatile int on_cmd_handler = 0;
 
 CmdlineHandler cmdline_handlers[CMDLINE_MAX_HANDLERS];
+CmdlineHandler cmdline_fallback_handler { nullptr };
 
 void term_cmd1( int n, char c, int fd )
 {
@@ -207,6 +208,7 @@ int exec_direct( const char *s, int l )
     }
     int rc = cmdline_handlers[i]( ss );
     if( rc >= 0 ) {
+      break_flag = 0;  idle_flag = 1;
       return rc;
     }
   }
@@ -256,32 +258,36 @@ int exec_direct( const char *s, int l )
     }
   }
 
+  if( f == nullptr ) {
+    if( cmdline_fallback_handler != nullptr ) {
+      int rc = cmdline_fallback_handler( ss );
+      break_flag = 0;  idle_flag = 1;
+      return rc;
+    }
+    std_out << "# ERR:  Unknown command \"" << argv[0] << "\"" NL;
+  }
+
   // TODO: and substs here
 
   std_out << NL;
-  if( f != 0 ) {
-      int rc = 0;
-      if( console_verbose > 0 ) {
-        std_out << "#== CMD: " << nm;
-        for( int i=1; i<argc; ++i ) {
-          std_out << ' ' << argv[i];
-        }
-        std_out << NL;
-        delay_ms( 5 );
-      }
+  if( console_verbose > 0 ) {
+    std_out << "#== CMD: " << nm;
+    for( int i=1; i<argc; ++i ) {
+      std_out << ' ' << argv[i];
+    }
+    std_out << NL;
+    delay_ms( 5 );
+  }
 
-      break_flag = 0;
-      uint32_t tm0 = HAL_GetTick();
-      rc = f( argc, argv );
-      uint32_t tm1 = HAL_GetTick();
+  break_flag = 0;
+  uint32_t tm0 = HAL_GetTick();
+  int rc = f( argc, argv );
+  uint32_t tm1 = HAL_GetTick();
 
-      break_flag = 0;  idle_flag = 1;
-      if( console_verbose > 0 ) {
-        std_out << NL "#== END: \"" << nm << "\" rc=" <<  rc << " t= " << tm1 - tm0 << NL;
-        delay_ms( 10 );
-      }
-  } else {
-    std_out << "# ERR:  Unknown command \"" << argv[0] << "\"" NL;
+  break_flag = 0;  idle_flag = 1;
+  if( console_verbose > 0 ) {
+    std_out << NL "#== END: \"" << nm << "\" rc=" <<  rc << " t= " << ( tm1 - tm0 ) << NL;
+    delay_ms( 10 );
   }
 
   return 0;

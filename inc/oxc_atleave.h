@@ -3,6 +3,8 @@
 
 #include <concepts>
 
+// Warning: do not forget object variable
+// RestoreAtLeave r_xxx( var, 123 );
 
 //* helper template class to auto decrement values at function exit
 template<std::integral T>
