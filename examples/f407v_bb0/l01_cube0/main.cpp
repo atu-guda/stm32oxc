@@ -3,6 +3,7 @@
 #include <algorithm>
 
 #include <oxc_auto.h>
+#include <oxc_atleave.h>
 #include <oxc_outstr.h>
 #include <oxc_hd44780_i2c.h>
 #include <oxc_ads1115.h>
@@ -46,7 +47,8 @@ OutStr obuf_dev( obuf_str, obuf_sz );
 OutStream obuf( &obuf_dev );
 
 
-const unsigned lcdbuf_sz = 32;
+const unsigned lcdbuf_sz { 32 };
+const unsigned o_sz      { 40 };
 char lcdbuf_str0[lcdbuf_sz], lcdbuf_str1[lcdbuf_sz], lcdbuf_str2[lcdbuf_sz], lcdbuf_str3[lcdbuf_sz];
 OutStr lcdbuf_dev0( lcdbuf_str0, lcdbuf_sz );
 OutStr lcdbuf_dev1( lcdbuf_str1, lcdbuf_sz );
@@ -123,18 +125,25 @@ DS3231 rtc( i2cd );
 void oxc_picoc_hd44780_i2c_init( Picoc *pc );
 
 ADS1115 adc( i2cd );
-const unsigned adc_n_ch = 4;
-unsigned adc_no  = 0; // channels get last time, usually adc_n_ch
-unsigned adc_o_w = 8; // output width
-unsigned adc_o_p = 5; // outpit precision
+const unsigned adc_n_ch { 4 };
+unsigned adc_no   { 0 }; // channels get last time, usually adc_n_ch
+unsigned adc_o_w  { 8 }; // output width
+unsigned adc_o_p  { 5 }; // output precision
+int      adc_o_nl { 0 }; // add newline after output
+int adc_scale_mv { 4096 };
+int adc_nm { 1 };  // number of iteration in adc_measure
 
+// calibration measurement results
+xfloat adc_c_v_up[adc_n_ch] = {  0,   0,   0,  0   };
+xfloat adc_c_v_do[adc_n_ch] = {  0,   0,   0,  0   };
+int    adc_c_i_up[adc_n_ch] = {  0,   0,   0,  0   };
+int    adc_c_i_do[adc_n_ch] = {  0,   0,   0,  0   };
 // calibration result. TODO: store to flash
 xfloat adc_v_scales[adc_n_ch] = {  8.299420E-04f,   8.291177E-04f,   8.302860E-04f,    8.298045E-04f   };
 xfloat adc_v_bases[adc_n_ch]  = { -9.95298487158f, -9.93398440656f, -9.963334554497f, -9.952166616965f };
 
 xfloat adc_v[adc_n_ch]        = {         0.0f,        0.0f,         0.0f,        0.0f };
 int    adc_vi[adc_n_ch]       = {            0,           0,            0,           0 };
-int adc_scale_mv = 4096;
 xfloat adc_kv = adc_scale_mv / 4096.0f;
 int adc_defcfg();
 int adc_measure();
@@ -144,6 +153,10 @@ void adc_out_all();
 void adc_out_all_i();
 void adc_all();
 void adc_all_i();
+void adc_cal_to( xfloat v, int chan_bits, xfloat *va, int *ia );
+void adc_cal_min( xfloat v, int chan_bits );
+void adc_cal_max( xfloat v, int chan_bits );
+void adc_cal_calc( int chan_bits );
 int adc_pre_loop();
 int adc_loop();
 void C_adc_defcfg( PICOC_FUN_ARGS );
@@ -154,6 +167,9 @@ void C_adc_out_all( PICOC_FUN_ARGS );
 void C_adc_out_all_i( PICOC_FUN_ARGS );
 void C_adc_all( PICOC_FUN_ARGS );
 void C_adc_all_i( PICOC_FUN_ARGS );
+void C_adc_cal_min( PICOC_FUN_ARGS );
+void C_adc_cal_max( PICOC_FUN_ARGS );
+void C_adc_cal_calc( PICOC_FUN_ARGS );
 
 extern DAC_HandleTypeDef hdac;
 int MX_DAC_Init();
@@ -378,7 +394,7 @@ int run_common( RUN_FUN pre_fun, RUN_FUN loop_fun )
 
   std_out << obuf_str << NL;
 
-  OSTR(s,40);
+  OSTR(s,obufs_sz);
 
   if( pre_fun != nullptr ) {
     pre_fun();
@@ -591,7 +607,7 @@ int main(void)
   leds.reset( 0xFF );
 
   pr( NL "##################### " PROJ_NAME NL );
-  char s[40];
+  char s[o_sz];
   rtc.getDateStr( s );
   std_out << "# " << s << ' ';
   lcdt.puts_xy( 0, 2, s );
@@ -654,7 +670,7 @@ int cmd_t1( int argc, const char * const * argv )
 {
   std_out << "# t1: " << NL;
 
-  char s[40];
+  char s[o_sz];
   rtc.getDateStr( s );
   std_out << "# " << s << ' ';
   rtc.getTimeStr( s );
@@ -768,6 +784,9 @@ struct LibraryFunction picoc_local_Functions[] =
   { C_adc_out_i,             "void adc_out_i(void);" },
   { C_adc_out_all_i,         "void adc_out_all_i(void);" },
   { C_adc_all_i,             "void adc_all_i(void);" },
+  { C_adc_cal_min,           "void adc_cal_min(float,int);" },
+  { C_adc_cal_max,           "void adc_cal_max(float,int);" },
+  { C_adc_cal_calc,          "void adc_cal_calc(int);" },
 
   { C_dac_out_n,             "void dac_out_n(int,float);" },
   { C_dac_out1,              "void dac_out1(float);" },
@@ -875,11 +894,17 @@ int init_picoc( Picoc *ppc )
   VariableDefinePlatformVar( ppc , nullptr , "adc_v"        , ppc->FPArrayType  , (union AnyValue *)adc_v           , TRUE );
   VariableDefinePlatformVar( ppc , nullptr , "adc_v_scales" , ppc->FPArrayType  , (union AnyValue *)adc_v_scales    , TRUE );
   VariableDefinePlatformVar( ppc , nullptr , "adc_v_bases"  , ppc->FPArrayType  , (union AnyValue *)adc_v_bases     , TRUE );
+  VariableDefinePlatformVar( ppc , nullptr , "adc_c_v_up"   , ppc->FPArrayType  , (union AnyValue *)adc_c_v_up      , TRUE );
+  VariableDefinePlatformVar( ppc , nullptr , "adc_c_v_do"   , ppc->FPArrayType  , (union AnyValue *)adc_c_v_do      , TRUE );
   VariableDefinePlatformVar( ppc , nullptr , "adc_vi"       , ppc->IntArrayType , (union AnyValue *)adc_vi          , TRUE );
+  VariableDefinePlatformVar( ppc , nullptr , "adc_c_i_up"   , ppc->IntArrayType , (union AnyValue *)adc_c_i_up      , TRUE );
+  VariableDefinePlatformVar( ppc , nullptr , "adc_c_i_do"   , ppc->IntArrayType , (union AnyValue *)adc_c_i_do      , TRUE );
   VariableDefinePlatformVar( ppc , nullptr , "adc_no"       , &(ppc->IntType)   , (union AnyValue *)&(adc_no)       , TRUE );
   VariableDefinePlatformVar( ppc , nullptr , "adc_o_w"      , &(ppc->IntType)   , (union AnyValue *)&(adc_o_w)      , TRUE );
   VariableDefinePlatformVar( ppc , nullptr , "adc_o_p"      , &(ppc->IntType)   , (union AnyValue *)&(adc_o_p)      , TRUE );
+  VariableDefinePlatformVar( ppc , nullptr , "adc_o_nl"     , &(ppc->IntType)   , (union AnyValue *)&(adc_o_nl)     , TRUE );
   VariableDefinePlatformVar( ppc , nullptr , "adc_scale_mv" , &(ppc->IntType)   , (union AnyValue *)&(adc_scale_mv) , TRUE );
+  VariableDefinePlatformVar( ppc , nullptr , "adc_nm"       , &(ppc->IntType)   , (union AnyValue *)&(adc_nm)       , TRUE );
 
   VariableDefinePlatformVar( ppc , nullptr , "dac_v_scales" , ppc->FPArrayType  , (union AnyValue *)dac_v_scales    , TRUE );
   VariableDefinePlatformVar( ppc , nullptr , "dac_v_bases"  , ppc->FPArrayType  , (union AnyValue *)dac_v_bases     , TRUE );
@@ -1203,20 +1228,33 @@ int adc_defcfg()
 
 int adc_measure()
 {
-  int16_t vi[adc_n_ch];
-  decltype(+adc_no) no = adc.getOneShotNch( 0, adc_n_ch-1, vi );
+  int32_t vi_sum[adc_n_ch];
+  for( auto &x : vi_sum ) { x = 0; }
+  unsigned n_sum {0};
 
-  for( decltype(no) j=0; j<no; ++j ) {
-    adc_vi[j] = vi[j];
-    adc_v[j]  = vi[j] * adc_kv * adc_v_scales[j] + adc_v_bases[j];
+  for( int n = 0; n < adc_nm; ++n ) {
+    int16_t vi[adc_n_ch];
+    decltype(+adc_no) no = adc.getOneShotNch( 0, adc_n_ch-1, vi );
+    n_sum += no;
+
+    for( decltype(+adc_n_ch) j=0; j<adc_n_ch; ++j ) {
+      vi_sum[j] += vi[j];
+    }
   }
-  adc_no = no;
-  return no;
+
+  for( decltype(+adc_n_ch) j=0; j<adc_n_ch; ++j ) {
+    adc_vi[j] = vi_sum[j] / adc_nm;
+    adc_v[j]  = adc_vi[j] * adc_kv * adc_v_scales[j] + adc_v_bases[j];
+  }
+
+  n_sum /= adc_nm;
+  adc_no = n_sum;
+  return adc_no;
 }
 
 void adc_out()
 {
-  OSTR( s, 40 );
+  OSTR( s, o_sz );
   for( decltype(+adc_no) j=0; j<adc_no; ++j ) {
     s.reset_out();
     s << XFmt( adc_v[j], cvtff_fix, adc_o_w, adc_o_p );
@@ -1227,7 +1265,7 @@ void adc_out()
 
 void adc_out_i()
 {
-  OSTR( s, 40 );
+  OSTR( s, o_sz );
   for( decltype(+adc_no) j=0; j<adc_no; ++j ) {
     s.reset_out();
     s << adc_vi[j];
@@ -1242,6 +1280,9 @@ void adc_out_all()
   for( auto o : obufs ) { o->reset_out(); }
   adc_out();
   obuf_out_stdout( 0 );
+  if( adc_o_nl ) {
+    std_out << '\n';
+  }
   lcdbufs_out();
 }
 
@@ -1266,6 +1307,50 @@ void adc_all_i()
   adc_out_all_i();
 }
 
+
+void adc_cal_to( xfloat v, int chan_bits, xfloat *va, int *ia )
+{
+  RestoreAtLeave( adc_nm, 20 );
+  adc_measure();
+  for( unsigned i=0; i < adc_n_ch; ++i ) {
+    if( chan_bits & ( 1 << i ) ) {
+      va[i] = v;
+      ia[i] = adc_vi[i];
+      std_out << "# cal " << i <<  ' ' << ia[i] << ' ' << v << ' ' << adc_v[i] << NL;
+    }
+  }
+}
+
+void adc_cal_min( xfloat v, int chan_bits )
+{
+  adc_cal_to( v, chan_bits, adc_c_v_do, adc_c_i_do );
+}
+
+void adc_cal_max( xfloat v, int chan_bits )
+{
+  adc_cal_to( v, chan_bits, adc_c_v_up, adc_c_i_up );
+}
+
+void adc_cal_calc( int chan_bits )
+{
+  for( unsigned i=0; i < adc_n_ch; ++i ) {
+    if( ! (chan_bits & ( 1 << i ) ) ) {
+      continue;
+    }
+    std_out << "# cal: ch " << i << ' ' << adc_c_v_do[i] << ' ' << adc_c_v_up[i]
+      <<  ' ' << adc_c_i_do[i] << ' ' <<  adc_c_i_up[i]
+      <<  ' ' << adc_v_scales[i] << ' ' << adc_v_bases[i] << NL;
+
+    if( adc_c_v_do[i] >= adc_c_v_up[i]  ||  adc_c_i_do[i] >= adc_c_i_up[i]  ) {
+      std_out << "# cal: bad data" << NL;
+      continue;
+    }
+    xfloat k = ( adc_c_v_up[i] - adc_c_v_do[i] ) / ( adc_c_i_up[i] - adc_c_i_do[i] );
+    adc_v_scales[i] = k / adc_kv;
+    adc_v_bases[i]  = adc_c_v_do[i] - k * adc_c_i_do[i];
+    std_out << "# cal: " << adc_v_scales[i] << ' ' << adc_v_bases[i] << NL;
+  }
+}
 
 
 int adc_pre_loop()
@@ -1325,6 +1410,25 @@ void C_adc_all_i( PICOC_FUN_ARGS )
   adc_all_i();
 }
 
+void C_adc_cal_min( PICOC_FUN_ARGS )
+{
+  xfloat v = ARG_0_FP;
+  int bits = ARG_1_INT;
+  adc_cal_min( v, bits );
+}
+
+void C_adc_cal_max( PICOC_FUN_ARGS )
+{
+  xfloat v = ARG_0_FP;
+  int bits = ARG_1_INT;
+  adc_cal_max( v, bits );
+}
+
+void C_adc_cal_calc( PICOC_FUN_ARGS )
+{
+  int bits = ARG_0_INT;
+  adc_cal_calc( bits );
+}
 
 // ---------------------------------------- PINS ---------------------------------------------------
 
@@ -1734,7 +1838,7 @@ void C_ifm_0_disable( PICOC_FUN_ARGS )
 
 void ifm_out()
 {
-  OSTR(s,40);
+  OSTR(s,o_sz);
   s.reset_out();
   s << XFmt( ifm_0_freq, cvtff_fix, 9, 3 );
   obuf << ' ' << s_buf;
