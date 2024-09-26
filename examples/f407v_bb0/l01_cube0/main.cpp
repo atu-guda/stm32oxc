@@ -126,9 +126,9 @@ void oxc_picoc_hd44780_i2c_init( Picoc *pc );
 
 ADS1115 adc( i2cd );
 const unsigned adc_n_ch { 4 };
-unsigned adc_no   { 0 }; // channels get last time, usually adc_n_ch
-unsigned adc_o_w  { 8 }; // output width
-unsigned adc_o_p  { 5 }; // output precision
+uint32_t adc_no   { 0 }; // channels get last time, usually adc_n_ch
+uint32_t adc_o_w  { 8 }; // output width
+uint32_t adc_o_p  { 5 }; // output precision
 int      adc_o_nl { 0 }; // add newline after output
 int adc_scale_mv { 4096 };
 int adc_nm { 1 };  // number of iteration in adc_measure
@@ -199,6 +199,15 @@ void C_dac_out1i( PICOC_FUN_ARGS );
 void C_dac_out2i( PICOC_FUN_ARGS );
 void C_dac_out_ni( PICOC_FUN_ARGS );
 void C_dac_out12i( PICOC_FUN_ARGS );
+
+// dadc - for dadc_scan[12]
+xfloat v0_min { 0 }, v0_max { 1.0 }, v0_step { 0.05 };
+xfloat v1_min { 0 }, v1_max { 1.0 }, v1_step { 0.05 };
+int scan_delay { 100 }; // in ms
+void dadc_scan1();
+void dadc_scan2();
+void C_dadc_scan1( PICOC_FUN_ARGS );
+void C_dadc_scan2( PICOC_FUN_ARGS );
 
 MCP23017 mcp_gpio( i2cd );
 void C_pins_out( PICOC_FUN_ARGS );
@@ -320,6 +329,14 @@ void oxc_picoc_misc_init( Picoc *pc );
 void oxc_picoc_fatfs_init( Picoc *pc );
 char *do_PlatformReadFile( Picoc *pc, const char *FileName );
 int  picoc_call( const char *code );
+void picoc_local_SetupFunc( Picoc *pc );
+void picoc_local_init( Picoc *pc );
+void picoc_reg_int( const char *nm, int &var, int rw = TRUE );
+void picoc_reg_u32t( const char *nm, uint32_t &var, int rw = TRUE );
+void picoc_reg_int_arr( const char *nm, int *arr, int rw = TRUE );
+void picoc_reg_float( const char *nm, xfloat &var, int rw = TRUE );
+void picoc_reg_float_arr( const char *nm, xfloat *arr, int rw = TRUE );
+void picoc_reg_char_arr( const char *nm, char *arr, int rw = TRUE );
 
 int file_pre_loop();
 int file_loop();
@@ -797,6 +814,9 @@ struct LibraryFunction picoc_local_Functions[] =
   { C_dac_out_ni,            "void dac_out_ni(int,int);" },
   { C_dac_out12i,            "void dac_out12i(int,int);" },
 
+  { C_dadc_scan1,            "void dadc_scan1();" },
+  { C_dadc_scan2,            "void dadc_scan2();" },
+
   { C_pins_out,              "void pins_out(int);" },
   { C_pins_out_read,         "int  pins_out_read(void);" },
   { C_pins_out_set,          "void pins_out_set(int);" },
@@ -843,16 +863,47 @@ struct LibraryFunction picoc_local_Functions[] =
   { NULL,            NULL }
 };
 
-void picoc_local_SetupFunc( Picoc *pc );
 void picoc_local_SetupFunc( Picoc *pc )
 {
 }
 
-void picoc_local_init( Picoc *pc );
 void picoc_local_init( Picoc *pc )
 {
   IncludeRegister( pc, "local.h", &picoc_local_SetupFunc, picoc_local_Functions, NULL );
 }
+
+void picoc_reg_int( const char *nm, int &var, int rw /*= TRUE */ )
+{
+  VariableDefinePlatformVar( &pc, nullptr , nm, &(pc.IntType), (union AnyValue *)&var, rw );
+}
+
+void picoc_reg_u32t( const char *nm, uint32_t &var, int rw /*= TRUE */ )
+{
+  VariableDefinePlatformVar( &pc, nullptr , nm, &(pc.IntType), (union AnyValue *)&var, rw );
+}
+
+void picoc_reg_int_arr( const char *nm, int *arr, int rw /*= TRUE */  )
+{
+  VariableDefinePlatformVar( &pc, nullptr , nm, pc.IntArrayType, (union AnyValue *)arr, rw );
+}
+
+void picoc_reg_float( const char *nm, xfloat &var, int rw /*= TRUE */ )
+{
+  VariableDefinePlatformVar( &pc, nullptr , nm, &(pc.FPType), (union AnyValue *)&var, rw );
+}
+
+
+void picoc_reg_float_arr( const char *nm, xfloat *arr, int rw /*= TRUE */  )
+{
+  VariableDefinePlatformVar( &pc, nullptr , nm, pc.FPArrayType, (union AnyValue *)arr, rw );
+}
+
+void picoc_reg_char_arr( const char *nm, char *arr, int rw /*= TRUE */  )
+{
+  VariableDefinePlatformVar( &pc, nullptr , nm, pc.CharArrayType, (union AnyValue *)arr, rw );
+}
+
+
 
 int init_picoc( Picoc *ppc )
 {
@@ -871,54 +922,61 @@ int init_picoc( Picoc *ppc )
   //VariableDefinePlatformVar( ppc, nullptr, "a_char",   ppc->CharArrayType, (union AnyValue *)a_char,       TRUE );
   //VariableDefinePlatformVar( ppc, nullptr, "p_char",     ppc->CharPtrType, (union AnyValue *)&p_char,      TRUE );
 
-  VariableDefinePlatformVar( ppc , nullptr , "cvtff_fix"    , &(ppc->IntType)   , (union AnyValue *)&var_cvtff_fix  , FALSE );
-  VariableDefinePlatformVar( ppc , nullptr , "cvtff_exp"    , &(ppc->IntType)   , (union AnyValue *)&var_cvtff_exp  , FALSE );
-  VariableDefinePlatformVar( ppc , nullptr , "cvtff_auto"   , &(ppc->IntType)   , (union AnyValue *)&var_cvtff_auto , FALSE );
+  picoc_reg_int( "cvtff_fix", var_cvtff_fix   , FALSE );
+  picoc_reg_int( "cvtff_exp", var_cvtff_exp   , FALSE );
+  picoc_reg_int( "cvtff_auto", var_cvtff_auto  , FALSE );
 
-  VariableDefinePlatformVar( ppc , nullptr , "t_c"          , &(ppc->FPType)    , (union AnyValue *)&t_c            , TRUE );
-  VariableDefinePlatformVar( ppc , nullptr , "__a"          , &(ppc->IntType)   , (union AnyValue *)&(UVAR('a'))    , TRUE );
-  VariableDefinePlatformVar( ppc , nullptr , "task_idx"     , &(ppc->IntType)   , (union AnyValue *)&task_idx       , TRUE );
-  VariableDefinePlatformVar( ppc , nullptr , "n_loops"      , &(ppc->IntType)   , (union AnyValue *)&n_loops        , TRUE );
-  VariableDefinePlatformVar( ppc , nullptr , "t_step_ms"    , &(ppc->IntType)   , (union AnyValue *)&t_step_ms      , TRUE );
-  VariableDefinePlatformVar( ppc , nullptr , "auto_out"     , &(ppc->IntType)   , (union AnyValue *)&auto_out       , TRUE );
-  VariableDefinePlatformVar( ppc , nullptr , "use_loops"    , &(ppc->IntType)   , (union AnyValue *)&use_loops      , TRUE );
-  VariableDefinePlatformVar( ppc , nullptr , "script_rv"    , &(ppc->IntType)   , (union AnyValue *)&script_rv      , TRUE );
-  VariableDefinePlatformVar( ppc , nullptr , "no_lcd_out"   , &(ppc->IntType)   , (union AnyValue *)&no_lcd_out     , TRUE );
-  VariableDefinePlatformVar( ppc , nullptr , "btn_val"      , &(ppc->IntType)   , (union AnyValue *)&btn_val        , TRUE );
-  VariableDefinePlatformVar( ppc , nullptr , "obuf_str"     , ppc->CharArrayType, (union AnyValue *)obuf_str        , TRUE );
-  VariableDefinePlatformVar( ppc , nullptr , "lcdbuf_str0"  , ppc->CharArrayType, (union AnyValue *)lcdbuf_str0     , TRUE );
-  VariableDefinePlatformVar( ppc , nullptr , "lcdbuf_str1"  , ppc->CharArrayType, (union AnyValue *)lcdbuf_str1     , TRUE );
-  VariableDefinePlatformVar( ppc , nullptr , "lcdbuf_str2"  , ppc->CharArrayType, (union AnyValue *)lcdbuf_str2     , TRUE );
-  VariableDefinePlatformVar( ppc , nullptr , "lcdbuf_str3"  , ppc->CharArrayType, (union AnyValue *)lcdbuf_str3     , TRUE );
+  picoc_reg_float( "t_c", t_c );
+  picoc_reg_int( "task_idx", task_idx );
+  picoc_reg_int( "n_loops", n_loops );
+  picoc_reg_int( "t_step_ms", t_step_ms );
+  picoc_reg_int( "auto_out", auto_out );
+  picoc_reg_int( "use_loops", use_loops );
+  picoc_reg_int( "script_rv", script_rv );
+  picoc_reg_int( "no_lcd_out", no_lcd_out );
+  picoc_reg_int( "btn_val", btn_val );
+  picoc_reg_char_arr( "obuf_str", obuf_str );
+  picoc_reg_char_arr( "lcdbuf_str0", lcdbuf_str0 );
+  picoc_reg_char_arr( "lcdbuf_str1", lcdbuf_str1 );
+  picoc_reg_char_arr( "lcdbuf_str2", lcdbuf_str2 );
+  picoc_reg_char_arr( "lcdbuf_str3", lcdbuf_str3 );
 
-  VariableDefinePlatformVar( ppc , nullptr , "adc_v"        , ppc->FPArrayType  , (union AnyValue *)adc_v           , TRUE );
-  VariableDefinePlatformVar( ppc , nullptr , "adc_v_scales" , ppc->FPArrayType  , (union AnyValue *)adc_v_scales    , TRUE );
-  VariableDefinePlatformVar( ppc , nullptr , "adc_v_bases"  , ppc->FPArrayType  , (union AnyValue *)adc_v_bases     , TRUE );
-  VariableDefinePlatformVar( ppc , nullptr , "adc_c_v_up"   , ppc->FPArrayType  , (union AnyValue *)adc_c_v_up      , TRUE );
-  VariableDefinePlatformVar( ppc , nullptr , "adc_c_v_do"   , ppc->FPArrayType  , (union AnyValue *)adc_c_v_do      , TRUE );
-  VariableDefinePlatformVar( ppc , nullptr , "adc_vi"       , ppc->IntArrayType , (union AnyValue *)adc_vi          , TRUE );
-  VariableDefinePlatformVar( ppc , nullptr , "adc_c_i_up"   , ppc->IntArrayType , (union AnyValue *)adc_c_i_up      , TRUE );
-  VariableDefinePlatformVar( ppc , nullptr , "adc_c_i_do"   , ppc->IntArrayType , (union AnyValue *)adc_c_i_do      , TRUE );
-  VariableDefinePlatformVar( ppc , nullptr , "adc_no"       , &(ppc->IntType)   , (union AnyValue *)&(adc_no)       , TRUE );
-  VariableDefinePlatformVar( ppc , nullptr , "adc_o_w"      , &(ppc->IntType)   , (union AnyValue *)&(adc_o_w)      , TRUE );
-  VariableDefinePlatformVar( ppc , nullptr , "adc_o_p"      , &(ppc->IntType)   , (union AnyValue *)&(adc_o_p)      , TRUE );
-  VariableDefinePlatformVar( ppc , nullptr , "adc_o_nl"     , &(ppc->IntType)   , (union AnyValue *)&(adc_o_nl)     , TRUE );
-  VariableDefinePlatformVar( ppc , nullptr , "adc_scale_mv" , &(ppc->IntType)   , (union AnyValue *)&(adc_scale_mv) , TRUE );
-  VariableDefinePlatformVar( ppc , nullptr , "adc_nm"       , &(ppc->IntType)   , (union AnyValue *)&(adc_nm)       , TRUE );
+  picoc_reg_float_arr( "adc_v", adc_v );
+  picoc_reg_float_arr( "adc_v_scales", adc_v_scales );
+  picoc_reg_float_arr( "adc_v_bases", adc_v_bases );
+  picoc_reg_float_arr( "adc_c_v_up", adc_c_v_up );
+  picoc_reg_float_arr( "adc_c_v_do", adc_c_v_do );
+  picoc_reg_int_arr( "adc_vi", adc_vi );
+  picoc_reg_int_arr( "adc_c_i_up", adc_c_i_up );
+  picoc_reg_int_arr( "adc_c_i_do", adc_c_i_do );
+  picoc_reg_u32t( "adc_no", adc_no );
+  picoc_reg_u32t( "adc_o_w", adc_o_w );
+  picoc_reg_u32t( "adc_o_p", adc_o_p );
+  picoc_reg_int( "adc_o_nl", adc_o_nl );
+  picoc_reg_int( "adc_scale_mv", adc_scale_mv );
+  picoc_reg_int( "adc_nm", adc_nm );
 
-  VariableDefinePlatformVar( ppc , nullptr , "dac_v_scales" , ppc->FPArrayType  , (union AnyValue *)dac_v_scales    , TRUE );
-  VariableDefinePlatformVar( ppc , nullptr , "dac_v_bases"  , ppc->FPArrayType  , (union AnyValue *)dac_v_bases     , TRUE );
-  VariableDefinePlatformVar( ppc , nullptr , "dac_v"        , ppc->FPArrayType  , (union AnyValue *)dac_v           , TRUE );
-  VariableDefinePlatformVar( ppc , nullptr , "dac_vi"       , ppc->IntArrayType , (union AnyValue *)dac_vi          , TRUE );
+  picoc_reg_float_arr( "dac_v_scales", dac_v_scales );
+  picoc_reg_float_arr( "dac_v_bases", dac_v_bases );
+  picoc_reg_float_arr( "dac_v", dac_v );
+  picoc_reg_int_arr( "dac_vi", dac_vi );
 
-  VariableDefinePlatformVar( ppc , nullptr , "ifm_0_freq"   , &(ppc->FPType)    , (union AnyValue *)&ifm_0_freq     , TRUE );
-  VariableDefinePlatformVar( ppc , nullptr , "ifm_0_d"      , &(ppc->FPType)    , (union AnyValue *)&ifm_0_d        , TRUE );
-  VariableDefinePlatformVar( ppc , nullptr , "ifm_0_t0"     , &(ppc->FPType)    , (union AnyValue *)&ifm_0_t0       , TRUE );
-  VariableDefinePlatformVar( ppc , nullptr , "ifm_0_td"     , &(ppc->FPType)    , (union AnyValue *)&ifm_0_td       , TRUE );
-  VariableDefinePlatformVar( ppc , nullptr , "ifm_1_freq"   , &(ppc->FPType)    , (union AnyValue *)&ifm_1_freq     , TRUE );
-  VariableDefinePlatformVar( ppc , nullptr , "ifm_1_cnt"    , &(ppc->IntType)   , (union AnyValue *)&ifm_1_cnt      , TRUE );
-  VariableDefinePlatformVar( ppc , nullptr , "ifm_2_cnt"    , &(ppc->IntType)   , (union AnyValue *)&(ifm_2_cnt)    , TRUE );
-  VariableDefinePlatformVar( ppc , nullptr , "ifm_3_cnt"    , &(ppc->IntType)   , (union AnyValue *)&(ifm_3_cnt)    , TRUE );
+  picoc_reg_float( "v0_min", v0_min );
+  picoc_reg_float( "v0_max", v0_max );
+  picoc_reg_float( "v0_mstep", v0_step );
+  picoc_reg_float( "v1_min", v1_min );
+  picoc_reg_float( "v1_max", v1_max );
+  picoc_reg_float( "v1_mstep", v1_step );
+  picoc_reg_int( "scan_delay", scan_delay );
+
+  picoc_reg_float( "ifm_0_freq", ifm_0_freq );
+  picoc_reg_float( "ifm_0_d", ifm_0_d );
+  picoc_reg_float( "ifm_0_t0", ifm_0_t0 );
+  picoc_reg_float( "ifm_0_td", ifm_0_td );
+  picoc_reg_float( "ifm_1_freq", ifm_1_freq );
+  picoc_reg_u32t( "ifm_1_cnt", ifm_1_cnt );
+  picoc_reg_u32t( "ifm_2_cnt", ifm_2_cnt );
+  picoc_reg_u32t( "ifm_3_cnt", ifm_3_cnt );
 
   return 0;
 }
@@ -1232,7 +1290,7 @@ int adc_measure()
   for( auto &x : vi_sum ) { x = 0; }
   unsigned n_sum {0};
 
-  for( int n = 0; n < adc_nm; ++n ) {
+  for( int n = 0; n < adc_nm && !break_flag; ++n ) {
     int16_t vi[adc_n_ch];
     decltype(+adc_no) no = adc.getOneShotNch( 0, adc_n_ch-1, vi );
     n_sum += no;
@@ -1310,7 +1368,8 @@ void adc_all_i()
 
 void adc_cal_to( xfloat v, int chan_bits, xfloat *va, int *ia )
 {
-  RestoreAtLeave( adc_nm, 20 );
+  RestoreAtLeave r_xx( adc_nm );
+  if( adc_nm < 20 ) { adc_nm = 20; }
   adc_measure();
   for( unsigned i=0; i < adc_n_ch; ++i ) {
     if( chan_bits & ( 1 << i ) ) {
@@ -1565,6 +1624,49 @@ void C_dac_out_ni( PICOC_FUN_ARGS )
   dac_out_ni( ARG_0_INT, ARG_1_INT );
 }
 
+
+// ---------------------------------------- dadc - scan -------------------------------------------
+
+void dadc_scan1()
+{
+  RestoreAtLeave r_xx( adc_o_nl, 1 );
+  break_flag = 0;
+  for( xfloat v0 = v0_min; v0 <= v0_max && ! break_flag; v0 += v0_step ) {
+    dac_out1( v0 );
+    delay_ms( scan_delay );
+    adc_measure();
+    std_out << v0 << ' ';
+    adc_out_all();
+  }
+  dac_out1( 0 );
+}
+
+void dadc_scan2()
+{
+  RestoreAtLeave r_xx( adc_o_nl, 1 );
+  break_flag = 0;
+  for( xfloat v1 = v1_min; v1 <= v1_max && ! break_flag; v1 += v1_step ) {
+    for( xfloat v0 = v0_min; v0 <= v0_max && ! break_flag; v0 += v0_step ) {
+      dac_out12( v0, v1 );
+      delay_ms( scan_delay );
+      adc_measure();
+      std_out << v0 << ' ' << v1 << ' ';
+      adc_out_all();
+    }
+    std_out << NL; // for gnuplot blocs
+  }
+  dac_out12( 0, 0 );
+}
+
+void C_dadc_scan1( PICOC_FUN_ARGS )
+{
+  dadc_scan1();
+}
+
+void C_dadc_scan2( PICOC_FUN_ARGS )
+{
+  dadc_scan2();
+}
 
 // ---------------------------------------- pwmo = TIM5 -------------------------------------------
 
