@@ -1,33 +1,57 @@
-#include <FreeRTOS.h>
-#include <semphr.h>
 #include <ff.h>
+#include <stdlib.h>
 
-// functions for FreeRTOS sync for FATFS
+// Use dynamic memory allocation is used
+#if FF_USE_LFN == 3
 
-int ff_cre_syncobj ( BYTE vol, FF_SYNC_t *sobj ) // 0 = fail
+
+void* ff_memalloc ( UINT msize )
 {
-  *sobj = xSemaphoreCreateMutex();
-  return ( sobj != nullptr );
-}
-
-int ff_del_syncobj( FF_SYNC_t sobj )
-{
-  if( !sobj ) {
-    return false;
-  }
-  vQueueDelete( sobj );
-  return true;
+  return malloc( (size_t)msize );
 }
 
 
-int ff_req_grant( FF_SYNC_t sobj )
+void ff_memfree ( void* mblock )
 {
-  return xSemaphoreTake( sobj, FF_FS_TIMEOUT );
+  free( mblock );
+}
+
+#endif
+
+
+
+
+#if FF_FS_REENTRANT
+#include <FreeRTOS.h>
+#include "semphr.h"
+static SemaphoreHandle_t Mutex[FF_VOLUMES + 1];	/* Table of mutex handle */
+
+// Returns 1:Function succeeded or 0:Could not create the mutex
+// vol: Mutex ID: Volume mutex (0 to FF_VOLUMES - 1) or system mutex (FF_VOLUMES)
+int ff_mutex_create ( int vol )
+{
+  Mutex[vol] = xSemaphoreCreateMutex();
+  return (int)( Mutex[vol] != NULL );
 }
 
 
-void ff_rel_grant( FF_SYNC_t sobj )
+void ff_mutex_delete ( int vol )
 {
-  xSemaphoreGive( sobj );
+  vSemaphoreDelete(Mutex[vol]);
 }
+
+
+/* Returns 1:Succeeded or 0:Timeout */
+int ff_mutex_take ( int vol )
+{
+  return (int)( xSemaphoreTake(Mutex[vol], FF_FS_TIMEOUT) == pdTRUE );
+}
+
+
+void ff_mutex_give( int vol )
+{
+  xSemaphoreGive( Mutex[vol] );
+}
+
+#endif	/* FF_FS_REENTRANT */
 

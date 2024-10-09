@@ -1,3 +1,6 @@
+file (DevIO flags)
+oxc_gpio.cpp : split f1/other
+gpio: init by list
 More ReturnCode usage
 Events in main loop
 Bug: adcdma_n: limit output to n

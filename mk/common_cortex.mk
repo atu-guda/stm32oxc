@@ -409,9 +409,7 @@ ifeq "$(USE_OXC_FATFS)" "y"
   SRCS += ff_gen_drv_st.c
   SRCS += diskio_st.c
   SRCS += oxc_fs_cmd0.cpp
-  ifeq "$(USE_FREERTOS)" "y"
-    SRCS += oxc_ff_syncobj.cpp
-  endif
+  SRCS += oxc_ff_syncobj.cpp
 endif
 
 ifeq "$(USE_OXC_DEBUG)" "y"
