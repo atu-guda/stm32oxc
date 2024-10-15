@@ -1,6 +1,7 @@
 #include <cstdarg>
 #include <cerrno>
 #include <algorithm>
+// #include <charconv>
 
 #include <oxc_auto.h>
 #include <oxc_atleave.h>
@@ -709,6 +710,16 @@ int cmd_t1( int argc, const char * const * argv )
   rtc.getTimeStr( s );
   std_out << s << NL;
 
+  // +110k code!!!
+  // chars_format::scientific
+  // chars_format::fixed
+  // chars_format::hex
+  // chars_format::general
+  // auto rv = std::to_chars( begin(s), end(s), adc_v[0], chars_format::general, 10 );
+  // if( rv.ec == std::errc{} #<{(|rv|)}># ) {
+  //   std_out << s << NL;
+  // }
+
 
   // ifm_0_measure();
   // ifm_2_measure();
@@ -1286,8 +1297,7 @@ int menu_fun_dac_out2( int v20 )
 
 int menu_fun_dac_zero( int  )
 {
-  dac_out1( 0.0 );
-  dac_out2( 0.0 );
+  dac_out12( 0.0f, 0.0f );
   return 0;
 }
 
