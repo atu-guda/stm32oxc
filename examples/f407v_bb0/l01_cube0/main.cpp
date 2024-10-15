@@ -176,6 +176,7 @@ int MX_DAC_Init();
 const unsigned dac_n_ch = 2;
 const unsigned dac_bitmask = 0x0FFF; // 12 bit
 xfloat dac_vref = 3.0f;
+const xfloat dac_vmax = 10.0f;
 
 xfloat dac_v_scales[dac_n_ch] = { 206.610971f, 205.901167f };
 // xfloat dac_v_scales[dac_n_ch] = {  0.151366f,  0.150828f };
@@ -204,8 +205,12 @@ void C_dac_out12i( PICOC_FUN_ARGS );
 xfloat v0_min { 0 }, v0_max { 1.0 }, v0_step { 0.05 };
 xfloat v1_min { 0 }, v1_max { 1.0 }, v1_step { 0.05 };
 int scan_delay { 100 }; // in ms
+void dadc1( xfloat v0 );
+void dadc2( xfloat v0, xfloat v1 );
 void dadc_scan1();
 void dadc_scan2();
+void C_dadc1( PICOC_FUN_ARGS );
+void C_dadc2( PICOC_FUN_ARGS );
 void C_dadc_scan1( PICOC_FUN_ARGS );
 void C_dadc_scan2( PICOC_FUN_ARGS );
 
@@ -363,9 +368,15 @@ CmdInfo CMDINFO_MENU { "menu", 'M', cmd_menu, " N - menu action"  };
 int cmd_t1( int argc, const char * const * argv );
 CmdInfo CMDINFO_T1 { "t1", 0, cmd_t1, " - misc test"  };
 int cmd_tst_stdarg( int argc, const char * const * argv );
-CmdInfo CMDINFO_TST_STDARG { "tst_stdarg", 'A', cmd_tst_stdarg, " - test stdarg"  };
+CmdInfo CMDINFO_TST_STDARG { "tst_stdarg", '\0', cmd_tst_stdarg, " - test stdarg"  };
 int cmd_lstnames( int argc, const char * const * argv );
-CmdInfo CMDINFO_LSTNAMES { "lstnames", 'L', cmd_lstnames, " - list picoc names"  };
+CmdInfo CMDINFO_LSTNAMES { "lstnames", 'L', cmd_lstnames, " [part] - list picoc names"  };
+int cmd_adcall( int argc, const char * const * argv );
+CmdInfo CMDINFO_ADCALL { "adcall", 'A', cmd_adcall, " - measure and output all ADC"  };
+int cmd_dadc1( int argc, const char * const * argv );
+CmdInfo CMDINFO_DADC1 { "dadc1", 'D', cmd_dadc1, " v0 - set DAC0 and measure and output all ADC"  };
+int cmd_dadc2( int argc, const char * const * argv );
+CmdInfo CMDINFO_DADC2 { "dadc2", '\0', cmd_dadc2, " v0 v1 - set DAC0,1 and measure and output all ADC"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -380,6 +391,9 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_T1,
   &CMDINFO_TST_STDARG,
   &CMDINFO_LSTNAMES,
+  &CMDINFO_ADCALL,
+  &CMDINFO_DADC1,
+  &CMDINFO_DADC2,
   &CMDINFO_MENU,
   FS_CMDS0,
   nullptr
@@ -819,6 +833,8 @@ struct LibraryFunction picoc_local_Functions[] =
   { C_dac_out_ni,            "void dac_out_ni(int,int);" },
   { C_dac_out12i,            "void dac_out12i(int,int);" },
 
+  { C_dadc1     ,            "void dadc1(float);" },
+  { C_dadc2     ,            "void dadc1(float,float);" },
   { C_dadc_scan1,            "void dadc_scan1();" },
   { C_dadc_scan2,            "void dadc_scan2();" },
 
@@ -1632,17 +1648,35 @@ void C_dac_out_ni( PICOC_FUN_ARGS )
 
 // ---------------------------------------- dadc - scan -------------------------------------------
 
-void dadc_scan1()
+void dadc1( xfloat v0 )
 {
   RestoreAtLeave r_xx( adc_o_nl, 1 );
+  dac_out1( v0 );
+  delay_ms( scan_delay );
+  adc_measure();
+  std_out << v0 << ' ';
+  adc_out_all();
+  delay_ms( 2 );
+}
+
+void dadc2( xfloat v0, xfloat v1 )
+{
+  RestoreAtLeave r_xx( adc_o_nl, 1 );
+  dac_out12( v0, v1 );
+  delay_ms( scan_delay );
+  adc_measure();
+  std_out << v0 << ' ' << v1 << ' ';
+  adc_out_all();
+  delay_ms( 2 );
+}
+
+
+void dadc_scan1()
+{
   break_flag = 0;
   for( xfloat v0 = v0_min; v0 <= v0_max && ! break_flag; v0 += v0_step ) {
-    dac_out1( v0 );
-    delay_ms( scan_delay );
-    adc_measure();
-    std_out << v0 << ' ';
-    adc_out_all();
-    leds[1].toggle();
+    dadc1( v0 );
+    // leds[1].toggle(); // no: power line influenced
   }
   dac_out1( 0 );
 }
@@ -1653,16 +1687,22 @@ void dadc_scan2()
   break_flag = 0;
   for( xfloat v1 = v1_min; v1 <= v1_max && ! break_flag; v1 += v1_step ) {
     for( xfloat v0 = v0_min; v0 <= v0_max && ! break_flag; v0 += v0_step ) {
-      dac_out12( v0, v1 );
-      delay_ms( scan_delay );
-      adc_measure();
-      std_out << v0 << ' ' << v1 << ' ';
-      adc_out_all();
-      leds[1].toggle();
+      dadc2( v0, v1 );
+      // leds[1].toggle();
     }
     std_out << NL; // for gnuplot blocs
   }
   dac_out12( 0, 0 );
+}
+
+void C_dadc1( PICOC_FUN_ARGS )
+{
+  dadc1( ARG_0_FP );
+}
+
+void C_dadc2( PICOC_FUN_ARGS )
+{
+  dadc2( ARG_0_FP, ARG_1_FP );
 }
 
 void C_dadc_scan1( PICOC_FUN_ARGS )
@@ -2348,6 +2388,26 @@ int cmd_lstnames( int argc, const char * const * argv )
   return 0;
 }
 
+int cmd_adcall( int argc, const char * const * argv )
+{
+  adc_all();
+  return 0;
+}
+
+int cmd_dadc1( int argc, const char * const * argv )
+{
+  xfloat v0 = arg2float_d( 1, argc, argv, v0_min, -dac_vmax, dac_vmax );
+  dadc1( v0 );
+  return 0;
+}
+
+int cmd_dadc2( int argc, const char * const * argv )
+{
+  xfloat v0 = arg2float_d( 1, argc, argv, v0_min, -dac_vmax, dac_vmax );
+  xfloat v1 = arg2float_d( 2, argc, argv, v1_min, -dac_vmax, dac_vmax );
+  dadc2( v0, v1 );
+  return 0;
+}
 
 // ----------------------------------------  ------------------------------------------------------
 
