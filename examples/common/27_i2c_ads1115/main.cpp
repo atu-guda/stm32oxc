@@ -126,7 +126,7 @@ int cmd_test0( int argc, const char * const * argv )
       std_out <<  FltFmt( 0.001f * dt, cvtff_auto, 12, 4 );
     }
 
-    sreal vf0 = 0.001f * scale_mv * v0  * v_coeffs[0] / 32678;
+    xfloat vf0 = 0.001f * scale_mv * v0  * v_coeffs[0] / 32678;
 
     sdat.add( &vf0 );
 
@@ -177,7 +177,7 @@ int cmd_getNch( int argc, const char * const * argv )
   std_out <<  "# cfg= " << HexInt16( x_cfg ) << " scale_mv = " << scale_mv << NL;
 
   int16_t vi[4];
-  sreal kv = 0.001f * scale_mv / 0x7FFF;
+  xfloat kv = 0.001f * scale_mv / 0x7FFF;
 
   leds.set(   BIT0 | BIT1 | BIT2 ); delay_ms( 100 );
   leds.reset( BIT0 | BIT1 | BIT2 );
@@ -194,7 +194,7 @@ int cmd_getNch( int argc, const char * const * argv )
       tm0 = tcc; tm00 = tm0;
     }
     float tc = 0.001f * ( tcc - tm00 );
-    sreal v[n_ch];
+    xfloat v[n_ch];
 
     if( UVAR('l') ) {  leds.set( BIT2 ); }
     int no = adc.getOneShotNch( 0, e_ch, vi );

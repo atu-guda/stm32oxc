@@ -170,7 +170,7 @@ int cmd_test0( int argc, const char * const * argv )
   unsigned n_ch = 2;
   uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 100000000 ); // number of series
 
-  std_out << "# Test: sizeof(sreal)= " << sizeof(sreal) << "  sizeof(xfloat)= " << sizeof(xfloat) << NL;
+  std_out << "# Test: sizeof(xfloat)= " << sizeof(xfloat) << "  sizeof(xfloat)= " << sizeof(xfloat) << NL;
 
   StatData sdat( n_ch );
 
@@ -182,7 +182,7 @@ int cmd_test0( int argc, const char * const * argv )
     //   tm0 = tcc; tm00 = tm0;
     // }
 
-    sreal v[n_ch];
+    xfloat v[n_ch];
     v[0] = 1.0f * UVAR('a') +         ( ( i & 1 ) ? UVAR('b') : (-UVAR('b') ) );
     v[1] = 5.1f * UVAR('a') - 12.3f * ( ( i & 1 ) ? UVAR('b') : (-UVAR('b') ) );
 

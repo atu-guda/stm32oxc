@@ -113,7 +113,7 @@ int cmd_test0( int argc, const char * const * argv )
   std_out <<  "# cfg= " << HexInt16( x_cfg ) << " scale_mv = " << scale_mv << NL;
 
   int16_t ADC_buf[n_ADC_ch_max];
-  sreal kv = 0.001f * scale_mv / 0x7FFF;
+  xfloat kv = 0.001f * scale_mv / 0x7FFF;
 
   std_out << "# n = " << n << " n_ch= " << n_ch << " t_step= " << t_step << NL;
   std_out << "# skip_pwm= " << skip_pwm << NL << "# Coeffs: ";
@@ -146,7 +146,7 @@ int cmd_test0( int argc, const char * const * argv )
     }
 
     float tc = 0.001f * ( tcc - tm00 );
-    sreal v[n_ch+1]; // +1 for PWM
+    xfloat v[n_ch+1]; // +1 for PWM
 
     if( UVAR('l') ) {  leds.set( BIT2 ); }
     unsigned no = adc.getOneShotNch( 0, e_ch, ADC_buf );
@@ -160,7 +160,7 @@ int cmd_test0( int argc, const char * const * argv )
       std_out <<  FltFmt( tc, cvtff_auto, 12, 4 );
     }
     for( decltype(n_ch) j=0; j<n_ch; ++j ) {
-      sreal cv = kv * ADC_buf[j] * v_coeffs[j];
+      xfloat cv = kv * ADC_buf[j] * v_coeffs[j];
       v[j] = cv;
     }
     v[n_ch] = pwmdat.get_v_real();

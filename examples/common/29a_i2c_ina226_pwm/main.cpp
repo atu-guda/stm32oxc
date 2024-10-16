@@ -163,8 +163,8 @@ int cmd_test0( int argc, const char * const * argv )
       break;
     }
 
-    float tc = 0.001f * ( tcc - tm00 );
-    sreal v[n_ch+1]; // +1 for PWM
+    xfloat tc = 0.001f * ( tcc - tm00 );
+    xfloat v[n_ch+1]; // +1 for PWM
 
     if( UVAR('l') ) {  leds.set( BIT2 ); }
 

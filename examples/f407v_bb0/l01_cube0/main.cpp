@@ -206,6 +206,7 @@ void C_dac_out12i( PICOC_FUN_ARGS );
 xfloat v0_min { 0 }, v0_max { 1.0 }, v0_step { 0.05 };
 xfloat v1_min { 0 }, v1_max { 1.0 }, v1_step { 0.05 };
 int scan_delay { 100 }; // in ms
+void dadc_common( xfloat v0, xfloat v1, bool ch2 );
 void dadc1( xfloat v0 );
 void dadc2( xfloat v0, xfloat v1 );
 void dadc_scan1();
@@ -348,7 +349,7 @@ void picoc_reg_char_arr( const char *nm, char *arr, int rw = TRUE );
 int file_pre_loop();
 int file_loop();
 
-void C_prf( PICOC_FUN_ARGS );
+// void C_prf( PICOC_FUN_ARGS );
 void tst_stdarg( const char *s, ... );
 
 // --- local commands;
@@ -368,8 +369,8 @@ int cmd_menu( int argc, const char * const * argv );
 CmdInfo CMDINFO_MENU { "menu", 'M', cmd_menu, " N - menu action"  };
 int cmd_t1( int argc, const char * const * argv );
 CmdInfo CMDINFO_T1 { "t1", 0, cmd_t1, " - misc test"  };
-int cmd_tst_stdarg( int argc, const char * const * argv );
-CmdInfo CMDINFO_TST_STDARG { "tst_stdarg", '\0', cmd_tst_stdarg, " - test stdarg"  };
+// int cmd_tst_stdarg( int argc, const char * const * argv );
+// CmdInfo CMDINFO_TST_STDARG { "tst_stdarg", '\0', cmd_tst_stdarg, " - test stdarg"  };
 int cmd_lstnames( int argc, const char * const * argv );
 CmdInfo CMDINFO_LSTNAMES { "lstnames", 'L', cmd_lstnames, " [part] - list picoc names"  };
 int cmd_adcall( int argc, const char * const * argv );
@@ -390,7 +391,7 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_SET_TIME,
   &CMDINFO_SET_DATE,
   &CMDINFO_T1,
-  &CMDINFO_TST_STDARG,
+  // &CMDINFO_TST_STDARG,
   &CMDINFO_LSTNAMES,
   &CMDINFO_ADCALL,
   &CMDINFO_DADC1,
@@ -588,35 +589,36 @@ int main(void)
   i2c_client_def = &lcdt;
   lcdt.init_4b();
   lcdt.cls();
-  lcdt.puts("I ");
+  lcdt.putch( 'I' );
 
   init_menu4b_buttons();
-  lcdt.puts("K");
+  lcdt.putch( 'K' );
 
   mcp_gpio.cfg( MCP23017::iocon_intpol  ); // only for int
   mcp_gpio.set_dir_a( 0xFF ); // all input
   mcp_gpio.set_dir_b( 0x00 ); // all output
   mcp_gpio.set_b( 0x00 );
 
-  lcdt.puts("P");
+  lcdt.putch( 'p' );
 
   MX_TIM2_Init();
-  lcdt.puts("2");
+  lcdt.putch( '2' );
   MX_TIM3_Init();
-  lcdt.puts("3");
+  lcdt.putch( '3' );
   MX_TIM4_Init();
-  lcdt.puts("4");
+  lcdt.putch( '4' );
   MX_TIM5_Init();
-  lcdt.puts("5");
+  lcdt.putch( '5' );
   MX_TIM8_Init();
-  lcdt.puts("8");
+  lcdt.putch( '8' );
   MX_TIM9_Init();
-  lcdt.puts("9");
+  lcdt.putch( '9' );
 
   adc_defcfg();
+  lcdt.putch(  'A'  );
 
   int dac_rc = MX_DAC_Init();
-  lcdt.puts( dac_rc == 0 ? "D " : "-d" );
+  lcdt.putch( dac_rc == 0 ? 'D' : 'd' );
   HAL_DAC_SetValue( &hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, 2047 );
   HAL_DAC_SetValue( &hdac, DAC_CHANNEL_2, DAC_ALIGN_12B_R, 2047 );
   HAL_DAC_Start( &hdac, DAC_CHANNEL_1 );
@@ -624,9 +626,12 @@ int main(void)
 
   rtc.resetDev();
   rtc.setCtl( 0 ); // enable only clock on bat
+  lcdt.putch( 't' );
 
   fs.fs_type = 0; // none
   fspath[0] = '\0';
+
+  delay_ms( 10 );
 
   cmdline_handlers[0] = picoc_cmdline_handler;
   cmdline_handlers[1] = nullptr;
@@ -635,7 +640,7 @@ int main(void)
   pc.InteractiveHead = nullptr;
   PlatformReadFile_fun = do_PlatformReadFile;
   init_picoc( &pc );
-  lcdt.puts("C ");
+  lcdt.putch( 'c' );
 
   BOARD_POST_INIT_BLINK;
   leds.reset( 0xFF );
@@ -649,7 +654,6 @@ int main(void)
   std_out << s << NL;
   lcdt.puts_xy( 12, 2, s );
 
-
   srl.re_ps();
 
   oxc_add_aux_tick_fun( led_task_nortos );
@@ -657,8 +661,10 @@ int main(void)
   oxc_add_aux_tick_fun( menu4b_ev_dispatch );
 
   UVAR('e') = init_usbh_msc();
-  lcdt.puts("usbh ");
+  lcdt.putch( 'u' );
   lcdt.puts_xy( 0, 1, menu4b_state.menu_level0_str );
+
+  delay_ms( 10 );
 
   std_main_loop_nortos( &srl, idle_main_task );
 
@@ -703,38 +709,6 @@ int cmd_test0( int argc, const char * const * argv )
 int cmd_t1( int argc, const char * const * argv )
 {
   std_out << "# t1: " << NL;
-
-  char s[o_sz];
-  rtc.getDateStr( s );
-  std_out << "# " << s << ' ';
-  rtc.getTimeStr( s );
-  std_out << s << NL;
-
-  // +110k code!!!
-  // chars_format::scientific
-  // chars_format::fixed
-  // chars_format::hex
-  // chars_format::general
-  // auto rv = std::to_chars( begin(s), end(s), adc_v[0], chars_format::general, 10 );
-  // if( rv.ec == std::errc{} #<{(|rv|)}># ) {
-  //   std_out << s << NL;
-  // }
-
-
-  // ifm_0_measure();
-  // ifm_2_measure();
-  // ifm_3_measure();
-  //
-  // std_out << "# T2.CCR1= " << tim2_ccr1 << " T2.CCR2= " << tim2_ccr2
-  //         << " freq= " << ifm_0_freq << " d= " << ifm_0_d
-  //         << " t0= " << ifm_0_t0 << " td= " << ifm_0_td
-  //         << NL;
-  //
-  // std_out << "# T3.CNT= " << TIM3->CNT << NL;
-  // std_out << "# T4.CNT= " << TIM4->CNT << NL;
-  // std_out << "# T8.CNT= " << TIM8->CNT << NL;
-  // std_out << "# T9.CNT= " << TIM9->CNT << NL;
-
   return 0;
 }
 
@@ -891,7 +865,7 @@ struct LibraryFunction picoc_local_Functions[] =
   { C_rtc_getFileDateTimeStr,"void rtc_getFileDateTimeStr( char* );  " },
   { C_flush,                 "void flush();  " },
 
-  { C_prf,                   "int prf( char*, ... );  " },
+  //{ C_prf,                   "int prf( char*, ... );  " },
   { NULL,            NULL }
 };
 
@@ -1658,26 +1632,33 @@ void C_dac_out_ni( PICOC_FUN_ARGS )
 
 // ---------------------------------------- dadc - scan -------------------------------------------
 
-void dadc1( xfloat v0 )
+void dadc_common( xfloat v0, xfloat v1, bool ch2 )
 {
   RestoreAtLeave r_xx( adc_o_nl, 1 );
-  dac_out1( v0 );
+  if( ch2 ) {
+    dac_out12( v0, v1 );
+  } else {
+    dac_out1( v0 );
+  }
   delay_ms( scan_delay );
   adc_measure();
-  std_out << v0 << ' ';
+  std_out << v0 << ' ' << v1 << ' ';
+  if( ch2 ) {
+    std_out << v1 << ' ';
+  }
   adc_out_all();
   delay_ms( 2 );
 }
 
+
+void dadc1( xfloat v0 )
+{
+  dadc_common( v0, 0, false );
+}
+
 void dadc2( xfloat v0, xfloat v1 )
 {
-  RestoreAtLeave r_xx( adc_o_nl, 1 );
-  dac_out12( v0, v1 );
-  delay_ms( scan_delay );
-  adc_measure();
-  std_out << v0 << ' ' << v1 << ' ';
-  adc_out_all();
-  delay_ms( 2 );
+  dadc_common( v0, v1, true );
 }
 
 
@@ -1693,7 +1674,6 @@ void dadc_scan1()
 
 void dadc_scan2()
 {
-  RestoreAtLeave r_xx( adc_o_nl, 1 );
   break_flag = 0;
   for( xfloat v1 = v1_min; v1 <= v1_max && ! break_flag; v1 += v1_step ) {
     for( xfloat v0 = v0_min; v0 <= v0_max && ! break_flag; v0 += v0_step ) {
@@ -2258,111 +2238,111 @@ void tst_stdarg( const char *s, ... )
   std_out << "# sz(d)= " << sizeof(double) << " sz(l)= " << sizeof(long) << NL;
 }
 
-int cmd_tst_stdarg( int argc, const char * const * argv )
-{
-  std_out << "# stdarg test " << NL;
-  tst_stdarg(            "-- %X %lg %X %X %c \n", 0x1234, 1.12345e-12, -1, 0x87654321, 'Z' );
-  std_out << R"!!!(;prf( "-- %X %lg %X %X %c \n", 0x1234, 1.12345e-12, -1, 0x87654321, 'Z' ); )!!!" << NL;
-  return 0;
-}
+// int cmd_tst_stdarg( int argc, const char * const * argv )
+// {
+//   std_out << "# stdarg test " << NL;
+//   tst_stdarg(            "-- %X %lg %X %X %c \n", 0x1234, 1.12345e-12, -1, 0x87654321, 'Z' );
+//   std_out << R"!!!(;prf( "-- %X %lg %X %X %c \n", 0x1234, 1.12345e-12, -1, 0x87654321, 'Z' ); )!!!" << NL;
+//   return 0;
+// }
 
 // ;prf("[ %X %lg %s %c]\n", 1, 1.2, "xxx", 'A' );
-void C_prf( PICOC_FUN_ARGS )
-{
-  const unsigned argbuf_sz = 128;
-  alignas(double) char argbuf[argbuf_sz];
-  unsigned a_ofs = 0;
-
-  if( NumArgs < 1 ) {
-    RV_INT = 0;
-    return;
-  }
-
-  memset( argbuf, 0, argbuf_sz );
-
-  const char *fmt = (const char*)(ARG_0_PTR);
-  if( !fmt ) {
-    RV_INT = 0;
-    return;
-  }
-
-  struct Value *na = Param[0];
-  for( int i=0; i<NumArgs; ++i, na = (struct Value *)( (char *)na + MEM_ALIGN(sizeof(struct Value) + TypeStackSizeValue(na)) ) ) {
-
-    if( !na || !na->Typ ) {
-      break; // return
-    }
-    auto tp = na->Typ->Base;
-    auto sz = na->Typ->Sizeof;
-
-    if( i == 0 ) { // first argument = format
-      if( tp != TypePointer ) {
-        RV_INT = 0;
-        return;
-      }
-      continue;
-    }
-
-    if( sz > (int)sizeof(double) ) {
-      RV_INT = 0;
-      return;
-    }
-
-    void *p = nullptr;
-    switch( tp ) {
-      case TypeVoid:
-      case TypeFunction:
-      case TypeMacro:
-      case TypeStruct:
-      case TypeUnion:
-      case TypeGotoLabel:
-      case Type_Type:
-      case TypeArray:
-                              break;
-      case TypeChar:
-      case TypeUnsignedChar:
-                              p = &(na->Val->Character);
-                              break;
-      case TypeInt:
-      case TypeShort:
-      case TypeLong:
-      case TypeUnsignedInt:
-      case TypeUnsignedShort:
-      case TypeUnsignedLong:
-      case TypeEnum:
-                              p = &(na->Val->Integer);
-                              break;
-
-      case TypeFP:
-                              a_ofs += 7; // sizeof(double) - 1;
-                              a_ofs &= 0xFFF8;
-                              p = &(na->Val->FP);
-                              break;
-
-
-      case TypePointer:
-                              p = &(na->Val->Pointer);
-                              break;
-      default: break;
-    }
-    if( p ) {
-      memcpy( argbuf+a_ofs, p, sz );
-      a_ofs += (sz+3) & 0x00FC;
-    }
-    // case TypePointer:  if (Typ->FromType)
-
-    if( a_ofs >= argbuf_sz - 8 ) { // 8 = guard
-      break; // return?
-    }
-  }
-  // dump8( argbuf, argbuf_sz );
-
-  va_list ap;
-  char *xxx = argbuf; // TODO: bit_cast in newer C++
-  memcpy( &ap, &xxx, sizeof(ap) );
-  int rc = vprintf( fmt, ap );
-  RV_INT = rc;
-}
+// void C_prf( PICOC_FUN_ARGS )
+// {
+//   const unsigned argbuf_sz = 128;
+//   alignas(double) char argbuf[argbuf_sz];
+//   unsigned a_ofs = 0;
+//
+//   if( NumArgs < 1 ) {
+//     RV_INT = 0;
+//     return;
+//   }
+//
+//   memset( argbuf, 0, argbuf_sz );
+//
+//   const char *fmt = (const char*)(ARG_0_PTR);
+//   if( !fmt ) {
+//     RV_INT = 0;
+//     return;
+//   }
+//
+//   struct Value *na = Param[0];
+//   for( int i=0; i<NumArgs; ++i, na = (struct Value *)( (char *)na + MEM_ALIGN(sizeof(struct Value) + TypeStackSizeValue(na)) ) ) {
+//
+//     if( !na || !na->Typ ) {
+//       break; // return
+//     }
+//     auto tp = na->Typ->Base;
+//     auto sz = na->Typ->Sizeof;
+//
+//     if( i == 0 ) { // first argument = format
+//       if( tp != TypePointer ) {
+//         RV_INT = 0;
+//         return;
+//       }
+//       continue;
+//     }
+//
+//     if( sz > (int)sizeof(double) ) {
+//       RV_INT = 0;
+//       return;
+//     }
+//
+//     void *p = nullptr;
+//     switch( tp ) {
+//       case TypeVoid:
+//       case TypeFunction:
+//       case TypeMacro:
+//       case TypeStruct:
+//       case TypeUnion:
+//       case TypeGotoLabel:
+//       case Type_Type:
+//       case TypeArray:
+//                               break;
+//       case TypeChar:
+//       case TypeUnsignedChar:
+//                               p = &(na->Val->Character);
+//                               break;
+//       case TypeInt:
+//       case TypeShort:
+//       case TypeLong:
+//       case TypeUnsignedInt:
+//       case TypeUnsignedShort:
+//       case TypeUnsignedLong:
+//       case TypeEnum:
+//                               p = &(na->Val->Integer);
+//                               break;
+//
+//       case TypeFP:
+//                               a_ofs += 7; // sizeof(double) - 1;
+//                               a_ofs &= 0xFFF8;
+//                               p = &(na->Val->FP);
+//                               break;
+//
+//
+//       case TypePointer:
+//                               p = &(na->Val->Pointer);
+//                               break;
+//       default: break;
+//     }
+//     if( p ) {
+//       memcpy( argbuf+a_ofs, p, sz );
+//       a_ofs += (sz+3) & 0x00FC;
+//     }
+//     // case TypePointer:  if (Typ->FromType)
+//
+//     if( a_ofs >= argbuf_sz - 8 ) { // 8 = guard
+//       break; // return?
+//     }
+//   }
+//   // dump8( argbuf, argbuf_sz );
+//
+//   va_list ap;
+//   char *xxx = argbuf; // TODO: bit_cast in newer C++
+//   memcpy( &ap, &xxx, sizeof(ap) );
+//   int rc = vprintf( fmt, ap );
+//   RV_INT = rc;
+// }
 
 int cmd_lstnames( int argc, const char * const * argv )
 {

@@ -7,12 +7,11 @@
   #include <oxc_devio.h>
   #include <oxc_floatfun.h>
   #define HOST_OSTREAM OutStream
-  using sreal = float;
 #else
   #include <iostream>
   #define HOST_OSTREAM std::ostream
   #define NL "\n"
-  using sreal = double;
+  using xfloat = double;
 #endif
 
 template<typename T>
@@ -25,32 +24,32 @@ void sumKahet( T v, T &sum, T &kah )
 }
 
 struct StatChannel {
-  sreal min = std::numeric_limits<sreal>::max(),
-        max = std::numeric_limits<sreal>::min(),
+  xfloat min = std::numeric_limits<xfloat>::max(),
+        max = std::numeric_limits<xfloat>::min(),
         sum = 0, sum2 = 0, mean = 0, mean2 = 0, sd = 0, kah = 0, kah2 = 0;
   unsigned n = 0;
   StatChannel() = default;
   void reset() {
-    min = std::numeric_limits<sreal>::max();
-    max = std::numeric_limits<sreal>::min();
+    min = std::numeric_limits<xfloat>::max();
+    max = std::numeric_limits<xfloat>::min();
     sum = sum2 = mean = mean2 = sd = kah =  kah2 = 0 ;
     n = 0;
   }
-  void add( sreal v );
+  void add( xfloat v );
   void calc();
 };
 
 struct StatChannelXY : public StatChannel {
-  sreal sum_xy = 0, kah_xy = 0;
+  xfloat sum_xy = 0, kah_xy = 0;
   StatChannelXY() = default;
   void reset() {
     StatChannel::reset(); sum_xy = kah_xy = 0;
   }
-  void add( sreal v, sreal vy );
+  void add( xfloat v, xfloat vy );
 };
 
 struct RegreResults {
-  sreal a, b, r;
+  xfloat a, b, r;
   enum ErrorType { noError = 0, diffSize, smallSize, smallDenom, smallDz };
   ErrorType err;
 };
@@ -61,7 +60,7 @@ struct StatData {
   static const constexpr unsigned max_n_ch = 8;
 
   struct StructPart {
-    const sreal StatChannel::* pptr;
+    const xfloat StatChannel::* pptr;
     const char* const label;
   };
 
@@ -72,10 +71,10 @@ struct StatData {
   //
   explicit StatData( unsigned nch );
   auto getNch() const { return n_ch; }
-  void add( const sreal *v );
+  void add( const xfloat *v );
   void reset();
   void calc();
-  void out_part( HOST_OSTREAM &os, const sreal StatChannel::* pptr, const char *lbl ) const;
+  void out_part( HOST_OSTREAM &os, const xfloat StatChannel::* pptr, const char *lbl ) const;
   void out_parts( HOST_OSTREAM &os ) const;
   //
   static const constexpr StructPart structParts[] = {

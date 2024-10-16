@@ -6,9 +6,9 @@ using namespace std;
 
 // ------------------------ StatChannel ---------------------------------------------
 
-void StatChannel::add( sreal v )
+void StatChannel::add( xfloat v )
 {
-  sreal v2 = v * v;
+  xfloat v2 = v * v;
 
   sumKahet( v,  sum,  kah );
   sumKahet( v2, sum2, kah2 );
@@ -22,7 +22,7 @@ void StatChannel::calc()
 {
   mean  = sum  / n;
   mean2 = sum2 / n;
-  if constexpr ( sizeof(sreal) == sizeof(float) ) {
+  if constexpr ( sizeof(xfloat) == sizeof(float) ) {
     sd  = sqrtf( mean2  - mean * mean );
   } else {
     sd  = sqrt( mean2  - mean * mean );
@@ -31,7 +31,7 @@ void StatChannel::calc()
 
 // ------------------------ StatChannelXY ---------------------------------------------
 
-void StatChannelXY::add( sreal v, sreal vy )
+void StatChannelXY::add( xfloat v, xfloat vy )
 {
   StatChannel::add( v );
   sumKahet( v * vy, sum_xy, kah_xy );
@@ -50,23 +50,23 @@ bool regre( const StatChannelXY &x, const StatChannel &y, RegreResults &r )
     return false;
   }
 
-  float dd = x.n * x.sum2 - x.sum * x.sum;
+  xfloat dd = x.n * x.sum2 - x.sum * x.sum;
 
   if( fabsf( dd ) < 1e-6f ) {
     r.err = RegreResults::smallDenom;
     return false;
   }
 
-  const float t1 = x.n * x.sum_xy - x.sum * y.sum;
+  const xfloat t1 = x.n * x.sum_xy - x.sum * y.sum;
   r.a = t1 / dd;
   r.b = ( y.sum * x.sum2 - x.sum * x.sum_xy ) / dd;
 
-  const float dz = ( x.n * x.sum2 - x.sum * x.sum ) * ( x.n * y.sum2 - y.sum * y.sum );
-  if( dz < 1e-6f ) {
+  const xfloat dz = ( x.n * x.sum2 - x.sum * x.sum ) * ( x.n * y.sum2 - y.sum * y.sum );
+  if( dz < (xfloat)1e-6f ) {
     r.err = RegreResults::smallDz;
     return false;
   }
-  if constexpr( sizeof(sreal) == sizeof(float) ) {
+  if constexpr( sizeof(xfloat) == sizeof(float) ) {
     r.r = t1 / sqrtf( dz );
   } else {
     r.r = t1 / sqrt( dz );
@@ -92,7 +92,7 @@ void StatData::reset()
   n = 0;
 }
 
-void StatData::add( const sreal *v )
+void StatData::add( const xfloat *v )
 {
   for( decltype(+n_ch) j=0; j<n_ch; ++j ) {
     d[j].add( v[j] );
@@ -107,7 +107,7 @@ void StatData::calc()
   }
 }
 
-void StatData::out_part( HOST_OSTREAM &os, const sreal StatChannel::* pptr, const char *lbl ) const
+void StatData::out_part( HOST_OSTREAM &os, const xfloat StatChannel::* pptr, const char *lbl ) const
 {
   os << NL "# " << lbl << "   ";
   for( decltype(+n_ch) j=0; j<n_ch; ++j ) {
