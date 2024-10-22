@@ -177,11 +177,11 @@
 #define BOARD_ADC_DEFAULT_GPIO3         GpioC
 #define BOARD_ADC_DEFAULT_PIN3          1
 #define BOARD_ADC_DEFAULT_CH3           ADC_CHANNEL_11
-#define BOARD_ADC_MEM_MAX               (1024*512)
+#define BOARD_ADC_MEM_MAX               (1024*412)
 #define BOARD_ADC_MEM_MAX_FMC           (1024*1024*8)
 #define BOARD_ADC_COEFF                 3298000
-#define BOARD_ADC_MALLOC                malloc_axi
-#define BOARD_ADC_FREE                  free_axi
+#define BOARD_ADC_MALLOC                malloc
+#define BOARD_ADC_FREE                  free
 #define BOARD_ADC_MALLOC_EXT            malloc_fmc
 #define BOARD_ADC_FREE_EXT              free_fmc
 
@@ -204,7 +204,7 @@
 void* malloc_fmc( size_t sz ); // only all FMC memory for now
 void  free_fmc( void* ptr );
 
-void* malloc_axi( size_t sz ); // only all AXI memory for now
+void* malloc_axi( size_t sz ); // only all AXI memory for now - unused
 void  free_axi( void* ptr );
 
 // 0 = DEVICE_FS, 1 = DEVICE_HS

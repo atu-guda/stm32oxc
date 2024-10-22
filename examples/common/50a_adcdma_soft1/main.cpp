@@ -155,7 +155,7 @@ int cmd_test0( int argc, const char * const * argv )
   //         << " bits: " << HexInt( fi.devbits ) << NL;
 
 
-  // really need for H7 - DMA not work with ordinary memory
+  // really need for H7 - DMA not work with ordinary memory ???
   adcd.free();
   if( ! adcd.alloc( n_ch, 1 ) ) {
     std_out << "# Error: fail to alloc buffer" << NL;
