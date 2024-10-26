@@ -103,6 +103,7 @@
 #define BOARD_IN2_PINNUM                12
 
 
+#ifndef BOARD_SPI_DEFAULT
 #define BOARD_SPI_DEFAULT               SPI2
 #define BOARD_SPI_DEFAULT_NAME          "SPI2"
 #define BOARD_SPI_DEFAULT_GPIO_ALL      GpioB
@@ -125,6 +126,7 @@
 #define BOARD_SPI_DEFAULT_IRQ           SPI2_IRQn
 #define BOARD_SPI_DEFAULT_IRQHANDLER    SPI2_IRQHandler
 #define BOARD_SPI_BAUDRATEPRESCALER_FAST SPI_BAUDRATEPRESCALER_2
+#endif
 
 
 // A8-A11

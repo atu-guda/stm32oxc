@@ -98,6 +98,7 @@
 #define BOARD_IN2_PINNUM                10
 
 
+#ifndef BOARD_SPI_DEFAULT
 #define BOARD_SPI_DEFAULT               SPI1
 #define BOARD_SPI_DEFAULT_NAME          "SPI1"
 #define BOARD_SPI_DEFAULT_GPIO_ALL      GpioA
@@ -120,6 +121,7 @@
 #define BOARD_SPI_DEFAULT_IRQ           SPI1_IRQn
 #define BOARD_SPI_DEFAULT_IRQHANDLER    SPI1_IRQHandler
 #define BOARD_SPI_BAUDRATEPRESCALER_FAST SPI_BAUDRATEPRESCALER_2
+#endif
 
 
 #define BOARD_MOTOR_DEFAULT_GPIO        GpioE
