@@ -37,7 +37,7 @@ I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );
 INA226 ina226( i2cd );
 const uint32_t n_ADC_ch_max = 4; // current - in UVAR('c')
-float v_coeffs[n_ADC_ch_max] = { 1.0f, 1.0f, 1.0f, 1.0f };
+xfloat v_coeffs[n_ADC_ch_max] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 bool isGoodINA226( INA226 &ina, bool print = true );
 
@@ -197,10 +197,10 @@ int cmd_getVIP( int argc, const char * const * argv )
 
     if( UVAR('l') ) {  leds.set( BIT2 ); }
 
-    v[0] = ina226.getVbus_uV()  * 1e-6f * v_coeffs[0];
-    v[1] = ina226.getI_mA_reg() * 1e-3f * v_coeffs[1];
-    v[2] = ina226.getI_uA() * 1e-6f     * v_coeffs[2];
-    v[3] = ina226.getP()                * v_coeffs[3];
+    v[0] = ina226.getVbus_uV()  * (xfloat)1e-6f * v_coeffs[0];
+    v[1] = ina226.getI_mA_reg() * (xfloat)1e-3f * v_coeffs[1];
+    v[2] = ina226.getI_uA()     * (xfloat)1e-6f * v_coeffs[2];
+    v[3] = ina226.getP()                        * v_coeffs[3];
 
     if( UVAR('l') ) {  leds.reset( BIT2 ); }
 

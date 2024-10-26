@@ -56,7 +56,7 @@ I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );
 ADS1115 adc( i2cd );
 const uint32_t n_ADC_ch_max = 4; // current - in UVAR('c')
-float v_coeffs[n_ADC_ch_max] = { 1.0f, 1.0f, 1.0f, 1.0f };
+xfloat v_coeffs[n_ADC_ch_max] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 
 int main(void)

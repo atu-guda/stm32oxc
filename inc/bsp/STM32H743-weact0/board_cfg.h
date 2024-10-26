@@ -39,15 +39,15 @@
 #define BOARD_BTN0_EXIST   1
 #define BOARD_BTN0_GPIOX   C
 #define BOARD_BTN0_N       13
-#define BOARD_BTN0_ACTIVE_DOWN 1
+#define BOARD_BTN0_ACTIVE_DOWN 0
 #define BOARD_BTN0_IRQNAME EXTI15_10
 
 // more
 #define BOARD_BTN1_EXIST   1
 #define BOARD_BTN1_GPIOX   E
-#define BOARD_BTN1_N       3
-#define BOARD_BTN1_ACTIVE_DOWN 1
-#define BOARD_BTN1_IRQNAME   EXTI3
+#define BOARD_BTN1_N       6
+#define BOARD_BTN1_ACTIVE_DOWN 0
+#define BOARD_BTN1_IRQNAME   EXTI9_5
 
 
 #define TIM_EXA        TIM8

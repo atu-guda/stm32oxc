@@ -37,7 +37,7 @@ I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );
 INA226 ina226( i2cd );
 const uint32_t n_ADC_ch_max = 2; // current - in UVAR('c'). not ADC: INA226
-float v_coeffs[n_ADC_ch_max] = { 1.0f, 1.0f };
+float v_coeffs[n_ADC_ch_max] = { 1.0f, 1.0f }; // xfloat requires NamedDouble adn/or NamedXfloat
 
 bool isGoodINA226( INA226 &ina, bool print = true );
 

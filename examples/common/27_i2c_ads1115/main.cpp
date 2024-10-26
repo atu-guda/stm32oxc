@@ -38,7 +38,7 @@ I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );
 ADS1115 adc( i2cd );
 const uint32_t n_ADC_ch_max = 4; // current - in UVAR('c')
-float v_coeffs[n_ADC_ch_max] = { 1.0f, 1.0f, 1.0f, 1.0f };
+xfloat v_coeffs[n_ADC_ch_max] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 
 int main(void)
@@ -75,6 +75,7 @@ int cmd_test0( int argc, const char * const * argv )
 
   uint16_t x_cfg = adc.getDeviceCfg();
   std_out <<  NL "# Test0: n= " <<  n <<  " t= " <<  t_step <<  "  cfg= " <<  HexInt16( x_cfg ) << NL;
+  std_out << "# sizeof(xfloat)= " << sizeof(xfloat) << NL;
   bool is_cont = UVAR('o');
 
   adc.setDefault();
@@ -126,7 +127,7 @@ int cmd_test0( int argc, const char * const * argv )
       std_out <<  FltFmt( 0.001f * dt, cvtff_auto, 12, 4 );
     }
 
-    xfloat vf0 = 0.001f * scale_mv * v0  * v_coeffs[0] / 32678;
+    xfloat vf0 = (xfloat)0.001f * scale_mv * v0  * v_coeffs[0] / 32678;
 
     sdat.add( &vf0 );
 

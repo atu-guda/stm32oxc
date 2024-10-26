@@ -1,3 +1,4 @@
+type info and NamedObj rework
 file (DevIO flags)
 oxc_gpio.cpp : split f1/other
 gpio: init by list
