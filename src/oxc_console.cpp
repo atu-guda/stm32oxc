@@ -260,6 +260,7 @@ int exec_direct( const char *s, int l )
 
   if( f == nullptr ) {
     if( cmdline_fallback_handler != nullptr ) {
+      memmove( ss, s, l+1 ); // re-copy, as we changed ss
       int rc = cmdline_fallback_handler( ss );
       break_flag = 0;  idle_flag = 1;
       return rc;
