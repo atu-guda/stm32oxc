@@ -66,7 +66,6 @@ SUBDIRS = \
   80_math_stat \
   l03_motor_fb \
   l04_wheels1 \
-  l05_meas0 \
   t01_iprintf \
   t01_misc \
   xx01_calibrate \

@@ -1,5 +1,5 @@
-Test TIM8 as PWM output
-out: I5,6,7,2
+Test TIM1 as PWM output
+out: E9, E11, E13, E14
 user vars:
  p - prescaler
  a - ARR
@@ -9,10 +9,8 @@ user vars:
  o - polarity: 0: HIGH 1: LOW
 T val1 val2 val3 val4
 
-Attension: TIM inner input clock is 2 * APB2 = 168 MHz
-
-For servo:
- p = PSC =  199 -> freq1 = 1MHz
+For servo: NO?
+ p = PSC = 199  -> freq1 = 1MHz
  a = ARR = 9999 -> freq2 = 100Hz (10 ms)
  so values in 'T' command is in microseconds,
   typicaly 500 -- 2500 (may vary)

@@ -1,0 +1,6 @@
+Test AD7606 SPI ADC
+
+RST  = SPI_EXT1   = D8
+CNVSt = SPI_EXT2  = D9
+BUSY = BOARD_IN0_ = D14
+

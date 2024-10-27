@@ -1,0 +1,7 @@
+ADC up to 4 channels usage with DMA, but manual start
+
+Clock: common to this arch, ADC up to 50 MHz
+4 channel: A6, A7, B0, B1
+
+
+Console: standard

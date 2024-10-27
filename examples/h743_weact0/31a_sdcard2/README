@@ -1,0 +1,8 @@
+Unstable work for now
+Try to use SD card via SDIO 1 bit wire
+Try FatFS w/o FreeRTOS
+
+C8  = dat0 (MISO)
+C12 = CLK  (SCK)
+D2  = CMD  (MOSI)
+

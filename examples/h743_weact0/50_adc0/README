@@ -1,0 +1,6 @@
+ADC usage: manual conversion mode
+
+Clock: common to this arch, ADC up to 50 MHz
+4 channel: A6, A7, B0, B1
+
+
