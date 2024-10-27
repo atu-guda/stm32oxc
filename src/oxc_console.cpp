@@ -264,7 +264,8 @@ int exec_direct( const char *s, int l )
       break_flag = 0;  idle_flag = 1;
       return rc;
     }
-    std_out << "# ERR:  Unknown command \"" << argv[0] << "\"" NL;
+    std_out << NL << "# ERR:  Unknown command \"" << argv[0] << "\"" NL;
+    return 1;
   }
 
   // TODO: and substs here
