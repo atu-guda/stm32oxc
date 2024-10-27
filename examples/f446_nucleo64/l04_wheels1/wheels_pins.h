@@ -54,16 +54,33 @@
 #define M_dir_l_GPIO_Port GpioC
 #define M_dir_ln_Pin GPIO_PIN_9
 #define M_dir_ln_GPIO_Port GpioC
+enum motor_bits {
+  motor_bit_r  = 0x01,
+  motor_bit_rn = 0x02,
+  motor_bits_r = motor_bit_r | motor_bit_rn,
+  // bit 0x04 is reserved
+  motor_bit_l  = 0x08,
+  motor_bit_ln = 0x10,
+  motor_bits_l = motor_bit_l | motor_bit_ln,
+  motor_bits   = motor_bits_r | motor_bits_l
+};
 
 // IR proxy sensors pins
 #define prox_fr_Pin GPIO_PIN_12
 #define prox_fr_GPIO_Port GpioB
-#define prox_frB13_Pin GPIO_PIN_13
-#define prox_frB13_GPIO_Port GpioB
+#define prox_fl_Pin GPIO_PIN_13
+#define prox_fl_GPIO_Port GpioB
 #define prox_br_Pin GPIO_PIN_14
 #define prox_br_GPIO_Port GpioB
 #define prox_bl_Pin GPIO_PIN_15
 #define prox_bl_GPIO_Port GpioB
+enum {
+  PROXY_FL = 1, PROXY_FR = 2, PROXY_BR = 4, PROXY_BL = 8,
+  PROXY_FA = PROXY_FL | PROXY_FR,
+  PROXY_BA = PROXY_BL | PROXY_BR,
+  PROXY_A  = PROXY_FA | PROXY_BA
+
+};
 
 // system
 #define TMS_Pin GPIO_PIN_13

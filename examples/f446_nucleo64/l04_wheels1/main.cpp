@@ -17,17 +17,10 @@ const char* common_help_string = "Test model car: motors, sensors...." NL;
 const int go_tick = 100; // 0.1 s
 
 PinsOut motor_dir( GpioC, 5, 5 );
-const int motor_bits_r = 0x03; // bit 0x04 is reserved
-const int motor_bits_l = 0x18;
-const int motor_bits   = motor_bits_r | motor_bits_l;
+uint8_t calc_dir_bits( int r_w, int l_w ); // from enum motor_bits
 
 PinsIn proxy_sens( GpioB, 12, 4 );
-enum {
-  PROXY_FL = 1, PROXY_FR = 2, PROXY_BR = 4, PROXY_BL = 8,
-  PROXY_FA = PROXY_FL | PROXY_FR,
-  PROXY_BA = PROXY_BL | PROXY_BR
-};
-const int us_forward_min = 100; // minimal distance via US while forward movind
+int us_forward_min = 100; // minimal distance via US while forward moving TODO: adjust
 
 TIM_HandleTypeDef tim1_h, tim3_h, tim4_h, tim14_h;
 void tim1_cfg(); // PWM (1,2), US: (pulse: 3, echo: 4 )
@@ -35,15 +28,16 @@ void tim3_cfg(); // count( R )
 void tim4_cfg();  // count( L )
 void tim14_cfg(); // servo( 1 )
 const int tim1_period = 8500; // approx 20Hz
-void set_motor_pwm( int r, int l );
+void set_motor_pwm( int r, int l ); // 0-100 %
 void set_us_dir( int dir ); // -90:90
-int us_dir_zero = 1420;
+int us_dir_zero = 1420; // CCR units
 int us_dir_scale = 10;
-const int us_scan_min = -80, us_scan_max = 80, us_scan_step = 10,
+const int us_scan_min = -80, us_scan_max = 80, us_scan_step = 10, // degree
           us_scan_n = 1 + ( (us_scan_max - us_scan_min) / us_scan_step ) ;
 int us_scans[ us_scan_n ];
 
-volatile int us_dir = 0;
+volatile int us_dir {0}, us_l {0}, us_l0 {0}, us_i {0};
+int read_new_us_l();
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -126,9 +120,42 @@ int cmd_test0( int argc, const char * const * argv )
 
 void set_motor_pwm( int r, int l )
 {
-  TIM1->CCR1 = tim1_period * abs(r) / 100;
-  TIM1->CCR2 = tim1_period * abs(l) / 100;
+  auto peri = TIM1->ARR;
+  TIM1->CCR1 = peri * abs(r) / 100;
+  TIM1->CCR2 = peri * abs(l) / 100;
 }
+
+uint8_t calc_dir_bits( int r, int l )
+{
+  uint8_t bits {0};
+  if( r > 0 ) {
+    bits = motor_bit_r;
+  } else if ( r < 0 ) {
+    bits = motor_bit_rn;
+  } // if 0 - keep zero
+
+  if( l > 0 ) {
+    bits |= motor_bit_l;
+  } else if ( l < 0 ) {
+    bits |= motor_bit_ln;
+  }
+
+  return bits;
+}
+
+int read_new_us_l()
+{
+  int us_i_0 { us_i };
+  for( int i = 0; i < 1000; ++i ) {
+    if( us_i != us_i_0 ) {
+      return us_l;
+    }
+    delay_ms( 1 );
+  }
+  return us_l; // fallback
+}
+
+// --------------------------- commands ---------------------------------------
 
 int cmd_go( int argc, const char * const * argv )
 {
@@ -138,37 +165,31 @@ int cmd_go( int argc, const char * const * argv )
 
   std_out <<  NL "go: t= "  <<  t  <<  " r= "  <<  r_w  <<  " l= "  <<  l_w  << NL;
 
-  uint8_t bits = r_w > 0 ?    1 : 0;
-  bits        |= r_w < 0 ?    2 : 0;
-  bits        |= l_w > 0 ?    8 : 0;
-  bits        |= l_w < 0 ? 0x10 : 0;
-
   if( us_dir != 0 ) {
     set_us_dir( 0 );
     delay_ms( 500 );
   }
-  set_motor_pwm( r_w, l_w );
 
-  motor_dir.write( bits );
+  motor_dir.write( calc_dir_bits( r_w, l_w ) );
+  set_motor_pwm( r_w, l_w );
 
   bool proxy_flag = false;
   uint16_t cnt_l0 = TIM4->CNT, cnt_r0 = TIM3->CNT;
-  uint16_t cnt_l, cnt_r;
 
   for( ; t > 0 && !break_flag && !proxy_flag; t -= go_tick ) {
 
-    if( ( r_w + l_w ) > 0 && UVAR('l') < us_forward_min ) {
-      std_out <<  "Minimal forward US distance detected "  << UVAR('l') <<  NL;
+    if( ( r_w + l_w ) > 0 && us_l0 < us_forward_min ) {
+      std_out <<  "Minimal forward US distance detected "  << us_l0 <<  NL;
       break;
     }
 
-    uint16_t prox = ~proxy_sens.read() & 0x0F; // inverse senors
+    uint16_t prox = ~proxy_sens.read() & PROXY_A; // inverse sensors
     if( prox ) {
       std_out <<  "Prox: "  << HexInt(  prox )  <<  NL;
-      if( ( r_w > 0 && prox & PROXY_FR ) ||
-          ( r_w < 0 && prox & PROXY_BR ) ||
-          ( l_w > 0 && prox & PROXY_FL ) ||
-          ( l_w < 0 && prox & PROXY_BL ) )
+      if( ( r_w > 0 && ( prox & PROXY_FR ) ) ||
+          ( r_w < 0 && ( prox & PROXY_BR ) ) ||
+          ( l_w > 0 && ( prox & PROXY_FL ) ) ||
+          ( l_w < 0 && ( prox & PROXY_BL ) ) )
       {
         proxy_flag = true; // break?
       }
@@ -182,7 +203,8 @@ int cmd_go( int argc, const char * const * argv )
     std_out <<  "Break!" NL;
   }
 
-  cnt_l = TIM4->CNT - cnt_l0, cnt_r = TIM3->CNT - cnt_r0; // TODO: * direction
+  uint16_t cnt_l = TIM4->CNT - cnt_l0;
+  uint16_t cnt_r = TIM3->CNT - cnt_r0; // TODO: * direction
   std_out <<  "Counts: left: "  <<  cnt_l << " right: " <<  cnt_r  <<  NL;
 
 
@@ -222,7 +244,7 @@ int cmd_us_scan( int argc, const char * const * argv )
   for( int i=0, d = us_scan_min; i < us_scan_n && d <= us_scan_max; ++i, d += us_scan_step ) {
     set_us_dir( d );
     delay_ms( 200 );
-    int l = UVAR('c');
+    int l = read_new_us_l();
     us_scans[ i ] = l;
     std_out <<  d  <<  ' '  <<  l  <<  NL;
   }
@@ -245,6 +267,7 @@ void tim1_cfg()
     UVAR('e') = 111; // like error
     return;
   }
+  UVAR( 'p') = tim1_h.Init.Prescaler;
 
   TIM_ClockConfigTypeDef sClockSourceConfig;
   sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
@@ -305,21 +328,23 @@ void TIM1_CC_IRQHandler(void)
 
 void HAL_TIM_IC_CaptureCallback( TIM_HandleTypeDef *htim )
 {
-  uint32_t cap2;
   static uint32_t c_old = 0xFFFFFFFF;
-  if( htim->Channel == HAL_TIM_ACTIVE_CHANNEL_4 )  {
-    leds.toggle( BIT1 );
-    cap2 = HAL_TIM_ReadCapturedValue( htim, TIM_CHANNEL_4 );
-    if( cap2 > c_old ) {
-      uint32_t l = cap2 - c_old;
-      UVAR('c') = l;
-      if( us_dir == 0 ) {
-        UVAR('l') = l;
-      }
-      // leds.toggle( BIT2 );
-    }
-    c_old = cap2;
+  if( htim->Channel != HAL_TIM_ACTIVE_CHANNEL_4 )  { // only US sensor
+    return;
   }
+
+  leds.toggle( BIT1 );
+  uint32_t cap2 = HAL_TIM_ReadCapturedValue( htim, TIM_CHANNEL_4 );
+  if( cap2 > c_old ) {
+    uint32_t l = cap2 - c_old;
+    us_l = UVAR('c') = l;
+    if( us_dir == 0 ) {
+      us_l0 = UVAR('l') = l;
+    }
+    ++us_i;
+    // leds.toggle( BIT2 );
+  }
+  c_old = cap2;
 }
 
 void tim3_cfg()
@@ -392,7 +417,6 @@ void tim4_cfg()
   }
 
   TIM4->CR1 = 1; // test
-
 }
 
 
@@ -454,9 +478,9 @@ void HAL_TIM_Base_MspDeInit( TIM_HandleTypeDef* tim_baseHandle )
   if( tim_baseHandle->Instance == TIM1 )   {
     HAL_NVIC_DisableIRQ( TIM1_CC_IRQn );
     __HAL_RCC_TIM1_CLK_DISABLE();
-  } else if(tim_baseHandle->Instance == TIM3 ) {
+  } else if( tim_baseHandle->Instance == TIM3  ) {
     __HAL_RCC_TIM3_CLK_DISABLE();
-  } else if( tim_baseHandle->Instance == TIM4 ) {
+  } else if( tim_baseHandle->Instance == TIM4  ) {
     __HAL_RCC_TIM4_CLK_DISABLE();
   } else if( tim_baseHandle->Instance == TIM14 ) {
     __HAL_RCC_TIM14_CLK_DISABLE();

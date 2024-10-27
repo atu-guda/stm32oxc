@@ -59,4 +59,5 @@ session.vim
 extra/unhex_adc/*.txt
 
 *.kdev4
+.~lock*
 
