@@ -14,7 +14,7 @@ BOARD_CONSOLE_DEFINES;
 
 const char* common_help_string = "Test model car: motors, sensors...." NL;
 
-const int go_tick = 100; // 0.1 s
+int go_tick = 100; // 0.1 s
 
 PinsOut motor_dir( GpioC, 5, 5 );
 uint8_t calc_dir_bits( int r_w, int l_w ); // from enum motor_bits
@@ -29,6 +29,7 @@ void tim4_cfg();  // count( L )
 void tim14_cfg(); // servo( 1 )
 const int tim1_period = 8500; // approx 20Hz
 void set_motor_pwm( int r, int l ); // 0-100 %
+
 void set_us_dir( int dir ); // -90:90
 int us_dir_zero = 1420; // CCR units
 int us_dir_scale = 10;
@@ -39,6 +40,14 @@ int us_scans[ us_scan_n ];
 volatile int us_dir {0}, us_l {0}, us_l0 {0}, us_i {0};
 int read_new_us_l();
 
+// run steps
+
+const int max_run_steps { 20 };
+int n_run_steps { 0 };
+RunStepData run_steps[max_run_steps];
+
+int run_single_step( int n );
+
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
@@ -48,6 +57,12 @@ int cmd_us_dir( int argc, const char * const * argv );
 CmdInfo CMDINFO_US_DIR { "us_dir", 0, cmd_us_dir, " [dir=0] (-90:90)"  };
 int cmd_us_scan( int argc, const char * const * argv );
 CmdInfo CMDINFO_US_SCAN { "us_scan", 'U', cmd_us_scan, " - scan via US sensor"  };
+int cmd_set_step( int argc, const char * const * argv );
+CmdInfo CMDINFO_SET_STEP { "set_step", 'P', cmd_set_step, " n l_r l_l p_c t_max p_c0 t_c0 - set run step"  };
+int cmd_print_steps( int argc, const char * const * argv );
+CmdInfo CMDINFO_PRINT_STEPS { "print_steps", '\000', cmd_print_steps, " - print steps data"  };
+int cmd_run_steps( int argc, const char * const * argv );
+CmdInfo CMDINFO_RUN_STEPS { "run_steps", 'R', cmd_run_steps, " [n_s] [n_e] - run steps"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -57,6 +72,9 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_GO,
   &CMDINFO_US_DIR,
   &CMDINFO_US_SCAN,
+  &CMDINFO_SET_STEP,
+  &CMDINFO_PRINT_STEPS,
+  &CMDINFO_RUN_STEPS,
   nullptr
 };
 
@@ -120,9 +138,11 @@ int cmd_test0( int argc, const char * const * argv )
 
 void set_motor_pwm( int r, int l )
 {
+  // TODO:
   auto peri = TIM1->ARR;
   TIM1->CCR1 = peri * abs(r) / 100;
   TIM1->CCR2 = peri * abs(l) / 100;
+  TIM1->CNT  = 0;
 }
 
 uint8_t calc_dir_bits( int r, int l )
@@ -159,9 +179,9 @@ int read_new_us_l()
 
 int cmd_go( int argc, const char * const * argv )
 {
-  int t    = arg2long_d( 1, argc, argv, 1000,  0, 10000 );
-  int r_w  = arg2long_d( 2, argc, argv,   50, -100, 100 );
-  int l_w  = arg2long_d( 3, argc, argv,  r_w, -100, 100 );
+  int t    = arg2long_d( 1, argc, argv, 1000,  0, 100000 );
+  int r_w  = arg2long_d( 2, argc, argv,   50, -100,  100 );
+  int l_w  = arg2long_d( 3, argc, argv,  r_w, -100,  100 );
 
   std_out <<  NL "go: t= "  <<  t  <<  " r= "  <<  r_w  <<  " l= "  <<  l_w  << NL;
 
@@ -174,7 +194,7 @@ int cmd_go( int argc, const char * const * argv )
   set_motor_pwm( r_w, l_w );
 
   bool proxy_flag = false;
-  uint16_t cnt_l0 = TIM4->CNT, cnt_r0 = TIM3->CNT;
+  TIM4->CNT = 0; TIM3->CNT = 0; // reset wheel tick counters
 
   for( ; t > 0 && !break_flag && !proxy_flag; t -= go_tick ) {
 
@@ -183,7 +203,7 @@ int cmd_go( int argc, const char * const * argv )
       break;
     }
 
-    uint16_t prox = ~proxy_sens.read() & PROXY_A; // inverse sensors
+    uint16_t prox = ~proxy_sens.read() & PROXY_ALL; // inverse sensors
     if( prox ) {
       std_out <<  "Prox: "  << HexInt(  prox )  <<  NL;
       if( ( r_w > 0 && ( prox & PROXY_FR ) ) ||
@@ -203,10 +223,9 @@ int cmd_go( int argc, const char * const * argv )
     std_out <<  "Break!" NL;
   }
 
-  uint16_t cnt_l = TIM4->CNT - cnt_l0;
-  uint16_t cnt_r = TIM3->CNT - cnt_r0; // TODO: * direction
+  uint16_t cnt_l = TIM4->CNT;
+  uint16_t cnt_r = TIM3->CNT; // TODO: * direction
   std_out <<  "Counts: left: "  <<  cnt_l << " right: " <<  cnt_r  <<  NL;
-
 
   return 0;
 }
@@ -218,6 +237,7 @@ void set_us_dir( int dir )
   uint32_t d = us_dir_zero + dir * us_dir_scale; // TODO: calibrate
 
   TIM14->CCR1 = d;
+  TIM14->CNT  = 0;
   delay_ms( 10 );
 
   UVAR('d') = d;
@@ -253,6 +273,63 @@ int cmd_us_scan( int argc, const char * const * argv )
 
   return 0;
 }
+
+int cmd_set_step( int argc, const char * const * argv )
+{
+  int n  = arg2long_d( 1, argc, argv,  -1, -1,  max_run_steps-1 );
+  if( n < 0 ) {
+    n = n_run_steps;
+  }
+  if( n >= max_run_steps ) {
+    std_out << "# error: n too large: " << n << NL;
+    return 1;
+  }
+
+  RunStepData &s = run_steps[n];
+
+  s.l_r = arg2long_d( 2, argc, argv,     50, -20000,  20000 );
+  s.l_l = arg2long_d( 3, argc, argv,  s.l_r, -20000,  20000 );
+  s.p_c = arg2long_d( 4, argc, argv, 30,  0,  100 );
+  s.t_max = arg2long_d( 5, argc, argv, 10000,  0,  100000 );
+  s.p_c0 = arg2long_d( 6, argc, argv, -1,  0,  100 );
+  s.t_0 = arg2long_d( 7, argc, argv, -1,  0,  s.t_max );
+
+  if( n_run_steps <= n ) {
+    n_run_steps = n+1;
+  }
+  std_out << "# " << n << ' ';
+  s.print();
+  std_out << NL;
+  return 0;
+}
+
+int cmd_print_steps( int argc, const char * const * argv )
+{
+  for( int i=0; i< n_run_steps; ++i ) {
+    std_out << "# " << i << ' ';
+    run_steps[i].print();
+    std_out << NL;
+  }
+  return 0;
+}
+
+int cmd_run_steps( int argc, const char * const * argv )
+{
+  int n_s = arg2long_d( 1, argc, argv,  0,   0,   n_run_steps-1 );
+  int n_e = arg2long_d( 2, argc, argv,  n_s, n_s, n_run_steps-1 );
+  std_out << "# run steps: " << n_s << " ... " << n_e << NL;
+
+  for( int i=n_s; i<n_e; ++i ) {
+    auto rc = run_single_step( i );
+    std_out << "# i= " << i << " rc= " << rc << NL;
+    if( rc != 0 ) {
+      break;
+    }
+  }
+  // stop motors
+  return 0;
+}
+
 
 void tim1_cfg()
 {
@@ -485,6 +562,24 @@ void HAL_TIM_Base_MspDeInit( TIM_HandleTypeDef* tim_baseHandle )
   } else if( tim_baseHandle->Instance == TIM14 ) {
     __HAL_RCC_TIM14_CLK_DISABLE();
   }
+}
+
+// ----------------------------------- steps
+void RunStepData::print() const
+{
+  std_out << l_r << ' ' << l_l << ' ' << p_c << ' ' << t_max << ' '
+          << p_c0 << ' ' << t_0;
+}
+
+int run_single_step( int n )
+{
+  if( n >= n_run_steps || n < 0 ) {
+    return 1;
+  }
+  // check previous condition if exits and seed (need state)
+  // calc start and run params
+  // run
+  return 0;
 }
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

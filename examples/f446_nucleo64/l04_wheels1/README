@@ -1,15 +1,17 @@
 Test model car: motors, sensors....
 
+
 Motor dir crl (via LM286)
  R: C5, nR = C6, aux = C7, L = C8, nL = C9 (PinsOut motor_dir)
 Motor PWM: A8, A9 (TIM1.1, TIM1.2) 20Hz
-Motor sensors (IR): A6, A7 ()
+Motor sensors (IR): A6, A7 () 20 tick/turn
+Wheel D = 65mm
 
 Servo (for US) out: B6
 
 US: pulse: A10 (T1.3), sens: A11 (T1.4)
 
-Proxy sensors: B12 (fr), B13 (br), ????
+Proxy sensors: B12 (FR=BB), B13 (FL=GG), B14 (BR=BK), B15 (BL=GK)
 
 Will use some I2C devices on I2C1
 
@@ -17,8 +19,12 @@ SCL = B8 ? 4.7k pullUp
 SDA = B9 ? 4.7k pullUp
 
 
+Free for now
+A0, A1, A4, A5, A12, A15?, B0, B1, B2, B4, B5, B7, B10, C4, C7?, C10, C11, C12, D2
 
-Used USART2 with ST_Link VCP or via BT:
+
+
+Used USART2 with ST_Link VCP or via BT or Wemos
 A2  = USART2_TX
 A3  = USART2_RX
 

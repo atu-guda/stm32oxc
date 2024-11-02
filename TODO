@@ -1,3 +1,5 @@
+Check MMU init in H7
+test SDcard in blue H7
 type info and NamedObj rework
 file (DevIO flags)
 oxc_gpio.cpp : split f1/other

@@ -78,7 +78,7 @@ enum {
   PROXY_FL = 1, PROXY_FR = 2, PROXY_BR = 4, PROXY_BL = 8,
   PROXY_FA = PROXY_FL | PROXY_FR,
   PROXY_BA = PROXY_BL | PROXY_BR,
-  PROXY_A  = PROXY_FA | PROXY_BA
+  PROXY_ALL = PROXY_FA | PROXY_BA
 
 };
 
@@ -89,6 +89,16 @@ enum {
 #define TCK_GPIO_Port GpioA
 #define SWO_Pin GPIO_PIN_3
 #define SWO_GPIO_Port GpioB
+
+struct RunStepData {
+  int l_r, l_l; // in mm
+  int p_c;      // central pwm, %
+  int t_max;    // max time, ms;
+  int p_c0;     // initial pwm, %, if <0 = get previous?
+  int t_0;      // initial ramp time
+                // // flags
+  void print() const;
+};
 
 
 #endif
