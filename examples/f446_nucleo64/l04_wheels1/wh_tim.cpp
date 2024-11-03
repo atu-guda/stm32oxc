@@ -76,7 +76,7 @@ void TIM1_CC_IRQHandler(void)
 
 void tim3_cfg()
 {
-  tim3_h.Instance               = TIM3;
+  tim3_h.Instance               = TIM_N_R;
   tim3_h.Init.Prescaler         = 0;
   tim3_h.Init.Period            = 0xFFFF; // max: unused ? or 0?
   tim3_h.Init.ClockDivision     = 0;
@@ -111,12 +111,12 @@ void tim3_cfg()
   HAL_TIM_IC_ConfigChannel( &tim3_h, &sConfigIC, TIM_CHANNEL_1 );
   HAL_TIM_IC_Init( &tim3_h );
 
-  TIM3->CR1 = 1; // test
+  TIM_N_R->CR1 |= 1; // test
 }
 
 void tim4_cfg()
 {
-  tim4_h.Instance               = TIM4;
+  tim4_h.Instance               = TIM_N_L;
   tim4_h.Init.Prescaler         = 0;
   tim4_h.Init.Period            = 0xFFFF;
   tim4_h.Init.ClockDivision     = 0;
@@ -143,15 +143,15 @@ void tim4_cfg()
     UVAR('e') = 1123;
   }
 
-  TIM4->CR1 = 1; // test
+  TIM_N_L->CR1 |= 1; // test
 }
 
 
 void tim14_cfg()
 {
-  tim14_h.Instance               = TIM14;
+  tim14_h.Instance               = TIM_SERVO;
   // cnt_freq: 1MHz,
-  tim14_h.Init.Prescaler         = calc_TIM_psc_for_cnt_freq( TIM14, 1000000 );
+  tim14_h.Init.Prescaler         = calc_TIM_psc_for_cnt_freq( TIM_SERVO, 1000000 );
   tim14_h.Init.Period            = 9999; // 100 Hz, pwm in us 500:2500
   tim14_h.Init.ClockDivision     = 0;
   tim14_h.Init.CounterMode       = TIM_COUNTERMODE_UP;
@@ -182,17 +182,17 @@ void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* tim_baseHandle )
     /** TIM1:  A8 ---> TIM1_CH1,  A9  ---> TIM1_CH2,  A10  ---> TIM1_CH3,  PA11 ---> TIM1_CH4   */
     T1_ALL_GPIO_Port.cfgAF_N( T1_1_M_Right_Pin | T1_2_M_Left_Pin | T1_3_US_Pulse_Pin | T1_4_US_Echo_Pin, GPIO_AF1_TIM1 );
   }
-  else if( tim_baseHandle->Instance == TIM3 ) {
+  else if( tim_baseHandle->Instance == TIM_N_R ) {
     __HAL_RCC_TIM3_CLK_ENABLE();
-    /** TIM4:  A6     ------> TIM3_CH1  */
+    /** TIM_N_L:  A6     ------> TIM3_CH1  */
     GpioA.cfgAF_N( T3_1_M_count_R_Pin, GPIO_AF2_TIM3 );
   }
-  else if( tim_baseHandle->Instance == TIM4 ) {
+  else if( tim_baseHandle->Instance == TIM_N_L ) {
     __HAL_RCC_TIM4_CLK_ENABLE();
     /** TIM4:  B6     ------> TIM4_CH1  */
     T4_1_M_count_l_GPIO_Port.cfgAF_N( T4_1_M_count_l_Pin, GPIO_AF2_TIM4 );
   }
-  else if( tim_baseHandle->Instance == TIM14 ) {
+  else if( tim_baseHandle->Instance == TIM_SERVO ) {
     __HAL_RCC_TIM14_CLK_ENABLE();
     /** TIM14 GPIO Configuration   A7     ------> TIM14_CH1     */
     T14_1_servo_GPIO_Port.cfgAF_N( T14_1_servo_Pin, GPIO_AF9_TIM14 );
@@ -205,11 +205,11 @@ void HAL_TIM_Base_MspDeInit( TIM_HandleTypeDef* tim_baseHandle )
   if( tim_baseHandle->Instance == TIM1 )   {
     HAL_NVIC_DisableIRQ( TIM1_CC_IRQn );
     __HAL_RCC_TIM1_CLK_DISABLE();
-  } else if( tim_baseHandle->Instance == TIM3  ) {
+  } else if( tim_baseHandle->Instance == TIM_N_R  ) {
     __HAL_RCC_TIM3_CLK_DISABLE();
-  } else if( tim_baseHandle->Instance == TIM4  ) {
+  } else if( tim_baseHandle->Instance == TIM_N_L  ) {
     __HAL_RCC_TIM4_CLK_DISABLE();
-  } else if( tim_baseHandle->Instance == TIM14 ) {
+  } else if( tim_baseHandle->Instance == TIM_SERVO ) {
     __HAL_RCC_TIM14_CLK_DISABLE();
   }
 }

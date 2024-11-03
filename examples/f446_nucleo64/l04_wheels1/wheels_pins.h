@@ -31,6 +31,10 @@
 #define T1_4_US_Echo_GPIO_Port GpioA
 #define T1_ALL_GPIO_Port GpioA
 
+#define TIM_N_L TIM4
+#define TIM_N_R TIM3
+#define TIM_SERVO TIM14
+
 // TIM3: 1 = A6 = right wheel counter
 #define T3_1_M_count_R_Pin GPIO_PIN_6
 #define T3_1_M_count_R_GPIO_Port GpioA
@@ -100,8 +104,13 @@ struct RunStepData {
   int p_c0;     // initial pwm, %, if <0 = get previous?
   int t_0;      // initial ramp time
                 // // flags
-  void print() const;
+  void print( OutStream &os) const;
 };
+
+const int tick_per_turn { 20 };
+const int wheel_len { 204 }; // = (D=65mm*pi)
+
+inline OutStream& operator<<( OutStream &os, const RunStepData &d ) { d.print( os ); return os; };
 
 struct RunState {
   int r_w, l_w;

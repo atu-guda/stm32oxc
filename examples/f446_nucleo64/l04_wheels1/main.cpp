@@ -62,7 +62,7 @@ CmdInfo CMDINFO_US_SCAN { "us_scan", 'U', cmd_us_scan, " - scan via US sensor"  
 int cmd_set_step( int argc, const char * const * argv );
 CmdInfo CMDINFO_SET_STEP { "set_step", 'P', cmd_set_step, " n l_r l_l p_c t_max p_c0 t_c0 - set run step"  };
 int cmd_print_steps( int argc, const char * const * argv );
-CmdInfo CMDINFO_PRINT_STEPS { "print_steps", '\000', cmd_print_steps, " - print steps data"  };
+CmdInfo CMDINFO_PRINT_STEPS { "print_steps", 'O', cmd_print_steps, " - print steps data"  };
 int cmd_run_steps( int argc, const char * const * argv );
 CmdInfo CMDINFO_RUN_STEPS { "run_steps", 'R', cmd_run_steps, " [n_s] [n_e] - run steps"  };
 
@@ -136,16 +136,16 @@ void print_tim_info( TIM_TypeDef *tim, const char *tname )
 int cmd_test0( int argc, const char * const * argv )
 {
   std_out <<  NL "Test0: " NL;
-  print_tim_info( TIM1, "TIM1" );
-  print_tim_info( TIM3, "TIM3" );
-  print_tim_info( TIM4, "TIM4" );
-  print_tim_info( TIM14, "TIM14" );
+  print_tim_info( TIM1, "TIM1=(PWM,US)" );
+  print_tim_info( TIM_N_R, "TIM3=TIM_N_R" );
+  print_tim_info( TIM_N_L, "TIM4=TIM_B_L" );
+  print_tim_info( TIM_SERVO, "TIM14=TIM_SERVO" );
   return 0;
 }
 
 void set_motor_pwm( int r, int l )
 {
-  auto peri = TIM1->ARR;
+  const auto peri = TIM1->ARR;
   TIM1->CCR1 = peri * abs(r) / 100;
   TIM1->CCR2 = peri * abs(l) / 100;
   TIM1->CNT  = 0;
@@ -229,7 +229,7 @@ int cmd_go( int argc, const char * const * argv )
   set_motor_pwm( r_w, l_w );
 
   bool proxy_flag = false;
-  TIM4->CNT = 0; TIM3->CNT = 0; // reset wheel tick counters
+  TIM_N_L->CNT = 0; TIM_N_R->CNT = 0; // reset wheel tick counters
 
   for( ; t > 0 && !break_flag && !proxy_flag; t -= go_tick ) {
 
@@ -253,8 +253,8 @@ int cmd_go( int argc, const char * const * argv )
     std_out <<  "Break!" NL;
   }
 
-  uint16_t cnt_l = TIM4->CNT;
-  uint16_t cnt_r = TIM3->CNT;
+  uint16_t cnt_l = TIM_N_L->CNT;
+  uint16_t cnt_r = TIM_N_R->CNT;
   std_out <<  "Counts: right: "  <<  cnt_r << " left: " <<  cnt_l  <<  NL;
 
   return 0;
@@ -266,8 +266,8 @@ void set_us_dir( int dir )
   if( dir >  100 ) { dir =  100; }
   uint32_t d = us_dir_zero + dir * us_dir_scale; // TODO: calibrate
 
-  TIM14->CCR1 = d;
-  TIM14->CNT  = 0;
+  TIM_SERVO->CCR1 = d;
+  TIM_SERVO->CNT  = 0;
   delay_ms( 10 );
 
   UVAR('d') = d;
@@ -327,26 +327,22 @@ int cmd_set_step( int argc, const char * const * argv )
   if( n_run_steps <= n ) {
     n_run_steps = n+1;
   }
-  std_out << "# " << n << ' ';
-  s.print();
-  std_out << NL;
+  std_out << "# " << n << ' ' << s << NL;
   return 0;
 }
 
 int cmd_print_steps( int argc, const char * const * argv )
 {
   for( int i=0; i< n_run_steps; ++i ) {
-    std_out << "# " << i << ' ';
-    run_steps[i].print();
-    std_out << NL;
+    std_out << "# " << i << ' ' <<  run_steps[i] << NL;
   }
   return 0;
 }
 
 int cmd_run_steps( int argc, const char * const * argv )
 {
-  int n_s = arg2long_d( 1, argc, argv,  0,   0,   n_run_steps-1 );
-  int n_e = arg2long_d( 2, argc, argv,  n_s, n_s, n_run_steps-1 );
+  int n_s = arg2long_d( 1, argc, argv,  0,               0,   n_run_steps-1 );
+  int n_e = arg2long_d( 2, argc, argv,  n_s, n_run_steps-1, n_run_steps-1 );
   std_out << "# run steps: " << n_s << " ... " << n_e << NL;
 
   for( int i=n_s; i<n_e; ++i ) {
@@ -384,9 +380,9 @@ void HAL_TIM_IC_CaptureCallback( TIM_HandleTypeDef *htim )
 
 
 // ----------------------------------- steps
-void RunStepData::print() const
+void RunStepData::print( OutStream &os ) const
 {
-  std_out << l_r << ' ' << l_l << ' ' << p_c << ' ' << t_max << ' '
+  os << l_r << ' ' << l_l << ' ' << p_c << ' ' << t_max << ' '
           << p_c0 << ' ' << t_0;
 }
 
@@ -396,8 +392,13 @@ int run_single_step( int n )
     return 1;
   }
   const RunStepData &sd = run_steps[n];
+  std_out << "# " << n << ' ' << sd << NL;
 
-  // check previous condition if exits and seed (need state)
+  // TODO: check previous condition if exists and seed (need state)
+
+  int tick_r = abs(sd.l_r) * tick_per_turn / wheel_len;
+  int tick_l = abs(sd.l_l) * tick_per_turn / wheel_len;
+  std_out << "# ticks: r: " << tick_r << " l: " << tick_l << NL;
   // calc start and run params
   // run
   return 0;
