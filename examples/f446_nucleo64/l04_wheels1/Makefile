@@ -23,7 +23,8 @@ USE_OXC_TIM = y
 
 # NOUSE_DEFAULT_UART_INIT = y
 
-SRCS  = main.cpp
+SRCS  += main.cpp
+SRCS  += wh_tim.cpp
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
 # see ../common/f4_modules.mk

@@ -90,6 +90,9 @@ enum {
 #define SWO_Pin GPIO_PIN_3
 #define SWO_GPIO_Port GpioB
 
+extern TIM_HandleTypeDef tim1_h, tim3_h, tim4_h, tim14_h;
+extern int us_dir_zero; // CCR units
+
 struct RunStepData {
   int l_r, l_l; // in mm
   int p_c;      // central pwm, %
