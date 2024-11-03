@@ -100,6 +100,12 @@ struct RunStepData {
   void print() const;
 };
 
+struct RunState {
+  int r_w, l_w;
+  uint16_t prox;
+  void reset() { r_w = l_w = 0; prox = 0; };
+};
+
 
 #endif
 

@@ -14,12 +14,14 @@ BOARD_CONSOLE_DEFINES;
 
 const char* common_help_string = "Test model car: motors, sensors...." NL;
 
-int go_tick = 100; // 0.1 s
+RunState rs;
+
 
 PinsOut motor_dir( GpioC, 5, 5 );
 uint8_t calc_dir_bits( int r_w, int l_w ); // from enum motor_bits
 
 PinsIn proxy_sens( GpioB, 12, 4 );
+int is_proxy_obstacle();
 int us_forward_min = 100; // minimal distance via US while forward moving TODO: adjust
 
 TIM_HandleTypeDef tim1_h, tim3_h, tim4_h, tim14_h;
@@ -28,7 +30,7 @@ void tim3_cfg(); // count( R )
 void tim4_cfg();  // count( L )
 void tim14_cfg(); // servo( 1 )
 const int tim1_period = 8500; // approx 20Hz
-void set_motor_pwm( int r, int l ); // 0-100 %
+void set_motor_pwm( int r, int l ); // 0-100 %, and update state
 
 void set_us_dir( int dir ); // -90:90
 int us_dir_zero = 1420; // CCR units
@@ -89,8 +91,11 @@ int main(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
-  UVAR('t') = 1000;
-  UVAR('n') = 10;
+  UVAR('t') = 1000; // default 'go' time
+  UVAR('g') =  100; // 'go' tick
+  UVAR('w') =   40; // default 'go' PWM
+  UVAR('n') =   10; // unused
+  UVAR('o') =    1; // ignore proxymity sensors
 
   motor_dir.initHW();
   motor_dir.reset( 0x1F );
@@ -104,6 +109,8 @@ int main(void)
   tim3_cfg();
   tim4_cfg();
   tim14_cfg();
+
+  rs.reset();
 
   BOARD_POST_INIT_BLINK;
 
@@ -138,11 +145,11 @@ int cmd_test0( int argc, const char * const * argv )
 
 void set_motor_pwm( int r, int l )
 {
-  // TODO:
   auto peri = TIM1->ARR;
   TIM1->CCR1 = peri * abs(r) / 100;
   TIM1->CCR2 = peri * abs(l) / 100;
   TIM1->CNT  = 0;
+  rs.r_w = r; rs.l_w = l;
 }
 
 uint8_t calc_dir_bits( int r, int l )
@@ -175,13 +182,40 @@ int read_new_us_l()
   return us_l; // fallback
 }
 
+// returns 0 if clear or all bits if obstavle for given move
+int is_proxy_obstacle()
+{
+  uint16_t prox = (~proxy_sens.read()) & PROXY_ALL; // inverse sensors
+  rs.prox = prox;
+  if( UVAR('o') ) {
+    return 0;
+  }
+  if( prox == 0 ) { // optimization: all clear
+    return 0;
+  }
+
+  if( ( rs.r_w > 0 && ( prox & PROXY_FR ) ) ||
+      ( rs.r_w < 0 && ( prox & PROXY_BR ) ) ||
+      ( rs.l_w > 0 && ( prox & PROXY_FL ) ) ||
+      ( rs.l_w < 0 && ( prox & PROXY_BL ) )    ) {
+    leds.set( 8 );
+    std_out <<  "Prox: "  << HexInt( prox )  <<  NL;
+    return prox;
+  }
+  return 0;
+}
+
 // --------------------------- commands ---------------------------------------
 
 int cmd_go( int argc, const char * const * argv )
 {
-  int t    = arg2long_d( 1, argc, argv, 1000,  0, 100000 );
-  int r_w  = arg2long_d( 2, argc, argv,   50, -100,  100 );
-  int l_w  = arg2long_d( 3, argc, argv,  r_w, -100,  100 );
+  int t    = arg2long_d( 1, argc, argv, UVAR('t'),  -1, 100000 );
+  int r_w  = arg2long_d( 2, argc, argv, UVAR('w'), -100,  100 );
+  int l_w  = arg2long_d( 3, argc, argv,       r_w, -100,  100 );
+  int go_tick = UVAR('g');
+  if( t < 0 ) { // -1 = default time flag
+    t = UVAR('t');
+  }
 
   std_out <<  NL "go: t= "  <<  t  <<  " r= "  <<  r_w  <<  " l= "  <<  l_w  << NL;
 
@@ -190,6 +224,7 @@ int cmd_go( int argc, const char * const * argv )
     delay_ms( 500 );
   }
 
+  leds.reset( 9 );
   motor_dir.write( calc_dir_bits( r_w, l_w ) );
   set_motor_pwm( r_w, l_w );
 
@@ -198,22 +233,17 @@ int cmd_go( int argc, const char * const * argv )
 
   for( ; t > 0 && !break_flag && !proxy_flag; t -= go_tick ) {
 
-    if( ( r_w + l_w ) > 0 && us_l0 < us_forward_min ) {
+    if( ( r_w + l_w ) > 5 && us_l0 < us_forward_min ) {
+      leds.set( 1 );
       std_out <<  "Minimal forward US distance detected "  << us_l0 <<  NL;
       break;
     }
 
-    uint16_t prox = ~proxy_sens.read() & PROXY_ALL; // inverse sensors
-    if( prox ) {
-      std_out <<  "Prox: "  << HexInt(  prox )  <<  NL;
-      if( ( r_w > 0 && ( prox & PROXY_FR ) ) ||
-          ( r_w < 0 && ( prox & PROXY_BR ) ) ||
-          ( l_w > 0 && ( prox & PROXY_FL ) ) ||
-          ( l_w < 0 && ( prox & PROXY_BL ) ) )
-      {
-        proxy_flag = true; // break?
-      }
+    if( is_proxy_obstacle() ) {
+      proxy_flag = true;
+      continue; // really break;
     }
+
     delay_ms( t > go_tick ? go_tick : t );
   }
 
@@ -335,7 +365,7 @@ void tim1_cfg()
 {
   tim1_h.Instance               = TIM1;
   // US defines tick: 5.8 mks approx 1mm 170000 = v_c/2 in mm/s, 998 or 846
-  tim1_h.Init.Prescaler         = calc_TIM_psc_for_cnt_freq( TIM1, 170000 );
+  tim1_h.Init.Prescaler         = calc_TIM_psc_for_cnt_freq( TIM1, 170000 ); // 987 on test
   tim1_h.Init.Period            = tim1_period; // F approx 20Hz: for  motor PWM
   tim1_h.Init.ClockDivision     = 0;
   tim1_h.Init.CounterMode       = TIM_COUNTERMODE_UP;
@@ -344,7 +374,6 @@ void tim1_cfg()
     UVAR('e') = 111; // like error
     return;
   }
-  UVAR( 'p') = tim1_h.Init.Prescaler;
 
   TIM_ClockConfigTypeDef sClockSourceConfig;
   sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
