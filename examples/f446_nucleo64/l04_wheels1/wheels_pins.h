@@ -99,12 +99,17 @@ extern int us_dir_zero; // CCR units
 
 struct RunStepData {
   int l_r, l_l; // in mm
-  int p_c;      // central pwm, %
+  int p_c;      // central pwm, %, 0 = scan
   int t_max;    // max time, ms;
   int p_c0;     // initial pwm, %, if <0 = get previous?
   int t_0;      // initial ramp time
                 // // flags
   void print( OutStream &os) const;
+};
+
+struct RunTestElem {
+  const RunStepData *d;
+  int ne;
 };
 
 const int tick_per_turn { 20 };

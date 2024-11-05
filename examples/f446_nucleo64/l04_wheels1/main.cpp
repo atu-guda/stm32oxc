@@ -1,4 +1,6 @@
 #include <stdlib.h>
+#include <algorithm>
+
 #include <oxc_auto.h>
 #include <oxc_tim.h>
 
@@ -41,6 +43,7 @@ int us_scans[ us_scan_n ];
 
 volatile int us_dir {0}, us_l {0}, us_l0 {0}, us_i {0};
 int read_new_us_l();
+int do_us_scan();
 
 // run steps
 
@@ -65,6 +68,8 @@ int cmd_print_steps( int argc, const char * const * argv );
 CmdInfo CMDINFO_PRINT_STEPS { "print_steps", 'O', cmd_print_steps, " - print steps data"  };
 int cmd_run_steps( int argc, const char * const * argv );
 CmdInfo CMDINFO_RUN_STEPS { "run_steps", 'R', cmd_run_steps, " [n_s] [n_e] - run steps"  };
+int cmd_set_test( int argc, const char * const * argv );
+CmdInfo CMDINFO_SET_TEST { "set_test", 'Q', cmd_set_test, " [idx] - set test task"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -77,6 +82,7 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_SET_STEP,
   &CMDINFO_PRINT_STEPS,
   &CMDINFO_RUN_STEPS,
+  &CMDINFO_SET_TEST,
   nullptr
 };
 
@@ -138,7 +144,7 @@ int cmd_test0( int argc, const char * const * argv )
   std_out <<  NL "Test0: " NL;
   print_tim_info( TIM1, "TIM1=(PWM,US)" );
   print_tim_info( TIM_N_R, "TIM3=TIM_N_R" );
-  print_tim_info( TIM_N_L, "TIM4=TIM_B_L" );
+  print_tim_info( TIM_N_L, "TIM4=TIM_N_L" );
   print_tim_info( TIM_SERVO, "TIM14=TIM_SERVO" );
   return 0;
 }
@@ -235,7 +241,7 @@ int cmd_go( int argc, const char * const * argv )
 
     if( ( r_w + l_w ) > 5 && us_l0 < us_forward_min ) {
       leds.set( 1 );
-      std_out <<  "Minimal forward US distance detected "  << us_l0 <<  NL;
+      std_out <<  "# warn: US= "  << us_l0 <<  NL;
       break;
     }
 
@@ -286,9 +292,8 @@ int cmd_us_dir( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_us_scan( int argc, const char * const * argv )
+int do_us_scan()
 {
-  std_out <<  NL "us_scan: "  <<  us_dir << NL;
   set_us_dir( us_scan_min ); // to settle before
   delay_ms( 300 );
   for( int i=0, d = us_scan_min; i < us_scan_n && d <= us_scan_max; ++i, d += us_scan_step ) {
@@ -304,9 +309,16 @@ int cmd_us_scan( int argc, const char * const * argv )
   return 0;
 }
 
+
+int cmd_us_scan( int argc, const char * const * argv )
+{
+  std_out <<  NL "us_scan: "  <<  us_dir << NL;
+  return do_us_scan();
+}
+
 int cmd_set_step( int argc, const char * const * argv )
 {
-  int n  = arg2long_d( 1, argc, argv,  -1, -1,  max_run_steps-1 );
+  int n  = arg2long_d( 1, argc, argv,  -1, -1,  n_run_steps );
   if( n < 0 ) {
     n = n_run_steps;
   }
@@ -317,8 +329,8 @@ int cmd_set_step( int argc, const char * const * argv )
 
   RunStepData &s = run_steps[n];
 
-  s.l_r = arg2long_d( 2, argc, argv,     50, -20000,  20000 );
-  s.l_l = arg2long_d( 3, argc, argv,  s.l_r, -20000,  20000 );
+  s.l_r = arg2long_d( 2, argc, argv,  wheel_len, -20000,  20000 );
+  s.l_l = arg2long_d( 3, argc, argv,      s.l_r, -20000,  20000 );
   s.p_c = arg2long_d( 4, argc, argv, 30,  0,  100 );
   s.t_max = arg2long_d( 5, argc, argv, 10000,  0,  100000 );
   s.p_c0 = arg2long_d( 6, argc, argv, -1,  0,  100 );
@@ -341,11 +353,11 @@ int cmd_print_steps( int argc, const char * const * argv )
 
 int cmd_run_steps( int argc, const char * const * argv )
 {
-  int n_s = arg2long_d( 1, argc, argv,  0,               0,   n_run_steps-1 );
-  int n_e = arg2long_d( 2, argc, argv,  n_s, n_run_steps-1, n_run_steps-1 );
+  int n_s = arg2long_d( 1, argc, argv,              0,  0, n_run_steps-1 );
+  int n_e = arg2long_d( 2, argc, argv,  n_run_steps-1,  0, n_run_steps-1 );
   std_out << "# run steps: " << n_s << " ... " << n_e << NL;
 
-  for( int i=n_s; i<n_e; ++i ) {
+  for( int i=n_s; i<=n_e; ++i ) { // <= sic, as n_e - index
     auto rc = run_single_step( i );
     std_out << "# i= " << i << " rc= " << rc << NL;
     if( rc != 0 ) {
@@ -353,6 +365,44 @@ int cmd_run_steps( int argc, const char * const * argv )
     }
   }
   // stop motors
+  return 0;
+}
+
+const RunStepData run_test_0[] {
+  {  1000,  1000, 30, 10000, 15, 1000 },
+  {     0,     0,  0, 10000,  0,    0 },
+  {  -500,  500,  35, 10000,  0,    0 },
+  {     0,     0,  0, 10000,  0,    0 },
+  { -1000, -1000, 30, 10000, 15, 1000 },
+};
+
+const RunStepData run_test_1[] {
+  {  1000,  1000, 30, 10000, 15, 1000 },
+  { -1000, -1000, 30, 10000, 15, 1000 },
+  {  1000,  1000, 30, 10000, 15, 1000 },
+  { -1000, -1000, 30, 10000, 15, 1000 },
+  {  1000,  1000, 30, 10000, 15, 1000 },
+  { -1000, -1000, 30, 10000, 15, 1000 },
+  {  1000,  1000, 30, 10000, 15, 1000 },
+  { -1000, -1000, 30, 10000, 15, 1000 },
+  {  1000,  1000, 30, 10000, 15, 1000 },
+  { -1000, -1000, 30, 10000, 15, 1000 },
+};
+
+RunTestElem run_tests[] {
+  { run_test_0, size(run_test_0) },
+  { run_test_1, size(run_test_1) },
+};
+
+int cmd_set_test( int argc, const char * const * argv )
+{
+  int n_t = arg2long_d( 1, argc, argv, 0, 0, size(run_tests)-1 );
+  const RunTestElem &te = run_tests[n_t];
+  n_run_steps = 0;
+  for( int i=0; i <te.ne && i < (int)size(run_steps); ++i ) {
+    run_steps[i] = (te.d)[i];
+    ++n_run_steps;
+  }
   return 0;
 }
 
@@ -389,19 +439,74 @@ void RunStepData::print( OutStream &os ) const
 int run_single_step( int n )
 {
   if( n >= n_run_steps || n < 0 ) {
-    return 1;
+    return 256;
   }
   const RunStepData &sd = run_steps[n];
   std_out << "# " << n << ' ' << sd << NL;
 
+  // special case:
+  if( sd.p_c == 0 ) {
+    return do_us_scan();
+  }
+
   // TODO: check previous condition if exists and seed (need state)
 
-  int tick_r = abs(sd.l_r) * tick_per_turn / wheel_len;
-  int tick_l = abs(sd.l_l) * tick_per_turn / wheel_len;
-  std_out << "# ticks: r: " << tick_r << " l: " << tick_l << NL;
   // calc start and run params
+  int la_r = abs( sd.l_r ), la_l = abs( sd.l_l );
+  int tick_r = la_r * tick_per_turn / wheel_len;
+  int tick_l = la_l * tick_per_turn / wheel_len;
+  int r_w = clamp( 2 * sd.p_c * sd.l_r / ( la_r + la_l ), -100, 100 );
+  int l_w = clamp( 2 * sd.p_c * sd.l_l / ( la_r + la_l ), -100, 100 );
+  int t = sd.t_max;
+  std_out << "# ticks,w r: " << tick_r << ' ' << r_w  << " l: " << tick_l << ' ' << l_w << NL;
+  int go_tick = UVAR('g');
+
+  if( us_dir != 0 ) {
+    set_us_dir( 0 );
+    delay_ms( 500 );
+  }
+
+  int rc = 0;
+  leds.reset( 9 );
+  motor_dir.write( calc_dir_bits( r_w, l_w ) );
+  set_motor_pwm( r_w, l_w );
+
+  bool proxy_flag = false;
+  TIM_N_L->CNT = 0; TIM_N_R->CNT = 0; // reset wheel tick counters
   // run
-  return 0;
+  for( ; t > 0 && !break_flag && !proxy_flag; t -= go_tick ) {
+    rc = 8;
+
+    if( ( r_w + l_w ) > 5 && us_l0 < us_forward_min ) { // TODO: function(v)
+      leds.set( 1 );
+      std_out <<  "# warn: US= "  << us_l0 <<  NL;
+      rc = 2;
+      break;
+    }
+
+    if( is_proxy_obstacle() ) {
+      proxy_flag = true;
+      rc = 4;
+      break;
+    }
+
+    int n_r = TIM_N_R->CNT;
+    int n_l = TIM_N_L->CNT;
+    std_out <<  "# n_r: "  <<  n_r << " n_l: " <<  n_l  <<  NL;
+    if( n_r >= tick_r || n_l >= tick_l ) {
+      rc = 0;
+      break;
+    }
+
+    delay_ms( t > go_tick ? go_tick : t );
+  }
+  motor_dir.reset( motor_bits );
+  set_motor_pwm( 0, 0 );
+  if( break_flag ) {
+    rc |= 1;
+  }
+
+  return rc;
 }
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
