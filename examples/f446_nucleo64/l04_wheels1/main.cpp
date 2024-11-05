@@ -24,7 +24,7 @@ uint8_t calc_dir_bits( int r_w, int l_w ); // from enum motor_bits
 
 PinsIn proxy_sens( GpioB, 12, 4 );
 int is_proxy_obstacle();
-int us_forward_min = 100; // minimal distance via US while forward moving TODO: adjust
+int us_forward_min = 150; // minimal distance via US while forward moving TODO: adjust
 
 TIM_HandleTypeDef tim1_h, tim3_h, tim4_h, tim14_h;
 void tim1_cfg(); // PWM (1,2), US: (pulse: 3, echo: 4 )
@@ -331,7 +331,7 @@ int cmd_set_step( int argc, const char * const * argv )
 
   s.l_r = arg2long_d( 2, argc, argv,  wheel_len, -20000,  20000 );
   s.l_l = arg2long_d( 3, argc, argv,      s.l_r, -20000,  20000 );
-  s.p_c = arg2long_d( 4, argc, argv, 30,  0,  100 );
+  s.p_c = arg2long_d( 4, argc, argv, 30,  -10,  100 );
   s.t_max = arg2long_d( 5, argc, argv, 10000,  0,  100000 );
   s.p_c0 = arg2long_d( 6, argc, argv, -1,  0,  100 );
   s.t_0 = arg2long_d( 7, argc, argv, -1,  0,  s.t_max );
@@ -371,7 +371,7 @@ int cmd_run_steps( int argc, const char * const * argv )
 const RunStepData run_test_0[] {
   {  1000,  1000, 30, 10000, 15, 1000 },
   {     0,     0,  0, 10000,  0,    0 },
-  {  -500,  500,  35, 10000,  0,    0 },
+  {  -250,   250, 35, 10000,  0,    0 },
   {     0,     0,  0, 10000,  0,    0 },
   { -1000, -1000, 30, 10000, 15, 1000 },
 };
@@ -389,9 +389,22 @@ const RunStepData run_test_1[] {
   { -1000, -1000, 30, 10000, 15, 1000 },
 };
 
+const RunStepData run_test_2[] {
+  {  1000,  1000, 30, 10000, 15, 1000 },
+  {  -250,   250, 35, 10000,  0,    0 },
+  {  1000,  1000, 30, 10000, 15, 1000 },
+  {  -250,   250, 35, 10000,  0,    0 },
+  {  1000,  1000, 30, 10000, 15, 1000 },
+  {  -250,   250, 35, 10000,  0,    0 },
+  {  1000,  1000, 30, 10000, 15, 1000 },
+  {  -250,   250, 35, 10000,  0,    0 },
+  {     0,     0,  0, 10000,  0,    0 },
+};
+
 RunTestElem run_tests[] {
   { run_test_0, size(run_test_0) },
   { run_test_1, size(run_test_1) },
+  { run_test_2, size(run_test_2) },
 };
 
 int cmd_set_test( int argc, const char * const * argv )
@@ -444,8 +457,8 @@ int run_single_step( int n )
   const RunStepData &sd = run_steps[n];
   std_out << "# " << n << ' ' << sd << NL;
 
-  // special case:
-  if( sd.p_c == 0 ) {
+  // special case: TODO: more actions
+  if( sd.p_c < 1 ) {
     return do_us_scan();
   }
 
@@ -492,7 +505,7 @@ int run_single_step( int n )
 
     int n_r = TIM_N_R->CNT;
     int n_l = TIM_N_L->CNT;
-    std_out <<  "# n_r: "  <<  n_r << " n_l: " <<  n_l  <<  NL;
+    std_out <<  "# "  <<  n_r << ' ' <<  n_l  << ' ' << us_l0 << ' ' << us_i <<  NL;
     if( n_r >= tick_r || n_l >= tick_l ) {
       rc = 0;
       break;
