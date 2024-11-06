@@ -33,6 +33,7 @@ void tim4_cfg();  // count( L )
 void tim14_cfg(); // servo( 1 )
 const int tim1_period = 8500; // approx 20Hz
 void set_motor_pwm( int r, int l ); // 0-100 %, and update state
+void set_motor_pwm_dir( int r, int l ); // -100 - 100 %, and update state
 
 void set_us_dir( int dir ); // -90:90
 int us_dir_zero = 1420; // CCR units
@@ -158,6 +159,12 @@ void set_motor_pwm( int r, int l )
   rs.r_w = r; rs.l_w = l;
 }
 
+void set_motor_pwm_dir( int r, int l )
+{
+  motor_dir.write( calc_dir_bits( r, l ) );
+  set_motor_pwm( r, l );
+}
+
 uint8_t calc_dir_bits( int r, int l )
 {
   uint8_t bits {0};
@@ -231,8 +238,7 @@ int cmd_go( int argc, const char * const * argv )
   }
 
   leds.reset( 9 );
-  motor_dir.write( calc_dir_bits( r_w, l_w ) );
-  set_motor_pwm( r_w, l_w );
+  set_motor_pwm_dir( r_w, l_w );
 
   bool proxy_flag = false;
   TIM_N_L->CNT = 0; TIM_N_R->CNT = 0; // reset wheel tick counters
@@ -253,8 +259,7 @@ int cmd_go( int argc, const char * const * argv )
     delay_ms( t > go_tick ? go_tick : t );
   }
 
-  motor_dir.reset( motor_bits );
-  set_motor_pwm( 0, 0 );
+  set_motor_pwm_dir( 0, 0 );
   if( break_flag ) {
     std_out <<  "Break!" NL;
   }
@@ -481,8 +486,7 @@ int run_single_step( int n )
 
   int rc = 0;
   leds.reset( 9 );
-  motor_dir.write( calc_dir_bits( r_w, l_w ) );
-  set_motor_pwm( r_w, l_w );
+  set_motor_pwm_dir( r_w, l_w );
 
   bool proxy_flag = false;
   TIM_N_L->CNT = 0; TIM_N_R->CNT = 0; // reset wheel tick counters
@@ -513,8 +517,7 @@ int run_single_step( int n )
 
     delay_ms( t > go_tick ? go_tick : t );
   }
-  motor_dir.reset( motor_bits );
-  set_motor_pwm( 0, 0 );
+  set_motor_pwm_dir( 0, 0 );
   if( break_flag ) {
     rc |= 1;
   }
