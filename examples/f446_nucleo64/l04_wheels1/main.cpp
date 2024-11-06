@@ -51,7 +51,8 @@ const int max_run_steps { 20 };
 int n_run_steps { 0 };
 RunStepData run_steps[max_run_steps];
 
-int run_single_step( int n );
+int run_single_step( const RunStepData &sd );
+void parse_step_args( int argc, const char * const * argv, RunStepData &sd, int base );
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -68,6 +69,8 @@ int cmd_print_steps( int argc, const char * const * argv );
 CmdInfo CMDINFO_PRINT_STEPS { "print_steps", 'O', cmd_print_steps, " - print steps data"  };
 int cmd_run_steps( int argc, const char * const * argv );
 CmdInfo CMDINFO_RUN_STEPS { "run_steps", 'R', cmd_run_steps, " [n_s] [n_e] - run steps"  };
+int cmd_run_direct( int argc, const char * const * argv );
+CmdInfo CMDINFO_RUN_DIRECT { "run_direct", 'X', cmd_run_direct, " [params] - run step"  };
 int cmd_set_test( int argc, const char * const * argv );
 CmdInfo CMDINFO_SET_TEST { "set_test", 'Q', cmd_set_test, " [idx] - set test task"  };
 
@@ -82,6 +85,7 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_SET_STEP,
   &CMDINFO_PRINT_STEPS,
   &CMDINFO_RUN_STEPS,
+  &CMDINFO_RUN_DIRECT,
   &CMDINFO_SET_TEST,
   nullptr
 };
@@ -322,6 +326,17 @@ int cmd_us_scan( int argc, const char * const * argv )
   return do_us_scan();
 }
 
+void parse_step_args( int argc, const char * const * argv, RunStepData &sd, int base )
+{
+  sd.l_r   = arg2long_d( base+0, argc, argv, wheel_len, -20000,   20000 );
+  sd.l_l   = arg2long_d( base+1, argc, argv,    sd.l_r, -20000,   20000 );
+  sd.p_c   = arg2long_d( base+2, argc, argv,        30,    -10,     100 );
+  sd.t_max = arg2long_d( base+3, argc, argv,     10000,      0,  100000 );
+  sd.p_c0  = arg2long_d( base+4, argc, argv,        -1,      0,     100 );
+  sd.t_0   = arg2long_d( base+5, argc, argv,        -1,      0, sd.t_max );
+}
+
+
 int cmd_set_step( int argc, const char * const * argv )
 {
   int n  = arg2long_d( 1, argc, argv,  -1, -1,  n_run_steps );
@@ -333,19 +348,13 @@ int cmd_set_step( int argc, const char * const * argv )
     return 1;
   }
 
-  RunStepData &s = run_steps[n];
-
-  s.l_r = arg2long_d( 2, argc, argv,  wheel_len, -20000,  20000 );
-  s.l_l = arg2long_d( 3, argc, argv,      s.l_r, -20000,  20000 );
-  s.p_c = arg2long_d( 4, argc, argv, 30,  -10,  100 );
-  s.t_max = arg2long_d( 5, argc, argv, 10000,  0,  100000 );
-  s.p_c0 = arg2long_d( 6, argc, argv, -1,  0,  100 );
-  s.t_0 = arg2long_d( 7, argc, argv, -1,  0,  s.t_max );
+  RunStepData &sd = run_steps[n];
+  parse_step_args( argc, argv, sd, 2 );
 
   if( n_run_steps <= n ) {
     n_run_steps = n+1;
   }
-  std_out << "# " << n << ' ' << s << NL;
+  std_out << "# " << n << ' ' << sd << NL;
   return 0;
 }
 
@@ -364,14 +373,23 @@ int cmd_run_steps( int argc, const char * const * argv )
   std_out << "# run steps: " << n_s << " ... " << n_e << NL;
 
   for( int i=n_s; i<=n_e; ++i ) { // <= sic, as n_e - index
-    auto rc = run_single_step( i );
+    auto rc = run_single_step( run_steps[i] );
     std_out << "# i= " << i << " rc= " << rc << NL;
     if( rc != 0 ) {
       break;
     }
   }
-  // stop motors
   return 0;
+}
+
+int cmd_run_direct( int argc, const char * const * argv )
+{
+  RunStepData sd;
+  parse_step_args( argc, argv, sd, 1 );
+  std_out << "# run: " << sd << NL;
+  auto rc = run_single_step( sd );
+  std_out << "# rc= " << rc << NL;
+  return rc;
 }
 
 const RunStepData run_test_0[] {
@@ -455,13 +473,9 @@ void RunStepData::print( OutStream &os ) const
           << p_c0 << ' ' << t_0;
 }
 
-int run_single_step( int n )
+int run_single_step( const RunStepData &sd )
 {
-  if( n >= n_run_steps || n < 0 ) {
-    return 256;
-  }
-  const RunStepData &sd = run_steps[n];
-  std_out << "# " << n << ' ' << sd << NL;
+  std_out << "# " << sd << NL;
 
   // special case: TODO: more actions
   if( sd.p_c < 1 ) {
