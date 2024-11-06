@@ -24,7 +24,6 @@ uint8_t calc_dir_bits( int r_w, int l_w ); // from enum motor_bits
 
 PinsIn proxy_sens( GpioB, 12, 4 );
 int is_proxy_obstacle();
-int us_forward_min = 150; // minimal distance via US while forward moving TODO: adjust
 
 TIM_HandleTypeDef tim1_h, tim3_h, tim4_h, tim14_h;
 void tim1_cfg(); // PWM (1,2), US: (pulse: 3, echo: 4 )
@@ -103,6 +102,7 @@ int main(void)
   UVAR('w') =   40; // default 'go' PWM
   UVAR('n') =   10; // unused
   UVAR('o') =    1; // ignore proxymity sensors
+  UVAR('u') =  150; // us_forward_min
 
   motor_dir.initHW();
   motor_dir.reset( 0x1F );
@@ -240,6 +240,7 @@ int cmd_go( int argc, const char * const * argv )
   leds.reset( 9 );
   set_motor_pwm_dir( r_w, l_w );
 
+  int us_forward_min = UVAR('u');
   bool proxy_flag = false;
   TIM_N_L->CNT = 0; TIM_N_R->CNT = 0; // reset wheel tick counters
 
@@ -488,6 +489,7 @@ int run_single_step( int n )
   leds.reset( 9 );
   set_motor_pwm_dir( r_w, l_w );
 
+  int us_forward_min = UVAR('u');
   bool proxy_flag = false;
   TIM_N_L->CNT = 0; TIM_N_R->CNT = 0; // reset wheel tick counters
   // run
