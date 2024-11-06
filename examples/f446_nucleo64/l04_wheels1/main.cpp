@@ -52,7 +52,6 @@ int n_run_steps { 0 };
 RunStepData run_steps[max_run_steps];
 
 int run_single_step( const RunStepData &sd );
-void parse_step_args( int argc, const char * const * argv, RunStepData &sd, int base );
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
@@ -326,14 +325,14 @@ int cmd_us_scan( int argc, const char * const * argv )
   return do_us_scan();
 }
 
-void parse_step_args( int argc, const char * const * argv, RunStepData &sd, int base )
+void RunStepData::parse_args( int argc, const char * const * argv, int base )
 {
-  sd.l_r   = arg2long_d( base+0, argc, argv, wheel_len, -20000,   20000 );
-  sd.l_l   = arg2long_d( base+1, argc, argv,    sd.l_r, -20000,   20000 );
-  sd.p_c   = arg2long_d( base+2, argc, argv,        30,    -10,     100 );
-  sd.t_max = arg2long_d( base+3, argc, argv,     10000,      0,  100000 );
-  sd.p_c0  = arg2long_d( base+4, argc, argv,        -1,      0,     100 );
-  sd.t_0   = arg2long_d( base+5, argc, argv,        -1,      0, sd.t_max );
+  l_r   = arg2long_d( base+0, argc, argv, wheel_len, -20000,   20000 );
+  l_l   = arg2long_d( base+1, argc, argv,       l_r, -20000,   20000 );
+  p_c   = arg2long_d( base+2, argc, argv,        30,    -10,     100 );
+  t_max = arg2long_d( base+3, argc, argv,     10000,      0,  100000 );
+  p_c0  = arg2long_d( base+4, argc, argv,        -1,      0,     100 );
+  t_0   = arg2long_d( base+5, argc, argv,        -1,      0,    t_max );
 }
 
 
@@ -349,7 +348,7 @@ int cmd_set_step( int argc, const char * const * argv )
   }
 
   RunStepData &sd = run_steps[n];
-  parse_step_args( argc, argv, sd, 2 );
+  sd.parse_args( argc, argv, 2 );
 
   if( n_run_steps <= n ) {
     n_run_steps = n+1;
@@ -385,7 +384,7 @@ int cmd_run_steps( int argc, const char * const * argv )
 int cmd_run_direct( int argc, const char * const * argv )
 {
   RunStepData sd;
-  parse_step_args( argc, argv, sd, 1 );
+  sd.parse_args( argc, argv, 1 );
   std_out << "# run: " << sd << NL;
   auto rc = run_single_step( sd );
   std_out << "# rc= " << rc << NL;

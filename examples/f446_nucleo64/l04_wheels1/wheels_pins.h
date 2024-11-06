@@ -104,8 +104,11 @@ struct RunStepData {
   int p_c0;     // initial pwm, %, if <0 = get previous?
   int t_0;      // initial ramp time
                 // // flags
-  void print( OutStream &os) const;
+  void print( OutStream &os ) const;
+  void parse_args( int argc, const char * const * argv, int base );
 };
+
+inline OutStream& operator<<( OutStream &os, const RunStepData &d ) { d.print( os ); return os; };
 
 struct RunTestElem {
   const RunStepData *d;
@@ -114,8 +117,6 @@ struct RunTestElem {
 
 const int tick_per_turn { 20 };
 const int wheel_len { 204 }; // = (D=65mm*pi)
-
-inline OutStream& operator<<( OutStream &os, const RunStepData &d ) { d.print( os ); return os; };
 
 struct RunState {
   int r_w, l_w;
