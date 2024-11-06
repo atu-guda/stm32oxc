@@ -4,7 +4,7 @@
 #include <oxc_auto.h>
 #include <oxc_tim.h>
 
-#include "wheels_pins.h"
+#include "main.h"
 
 using namespace std;
 using namespace SMLRL;
