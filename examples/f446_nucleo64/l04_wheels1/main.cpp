@@ -93,6 +93,29 @@ const CmdInfo* global_cmds[] = {
 I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 ); // zero add means no real device
 
+// 1000 * n_r/n_l on pwm
+int k_wheels[] = {
+   833,  //   5  0
+   833,  //  10  1
+  1187,  //  15  2
+  1173,  //  20  3
+  1122,  //  25  4
+  1097,  //  30  5
+  1062,  //  35  6
+  1043,  //  40  7
+  1030,  //  45  8
+  1010,  //  50  9
+  1005,  //  55  10
+  1003,  //  60  11
+   989,  //  65  12
+   976,  //  70  13
+   974,  //  75  14
+   978,  //  80  15
+   983,  //  85  16
+   995,  //  90  17
+  1009,  //  95  18
+  1019   // 100  19
+};
 
 int main(void)
 {
@@ -489,8 +512,10 @@ int run_single_step( const RunStepData &sd )
   int tick_l = la_l * tick_per_turn / wheel_len;
   int r_w = clamp( 2 * sd.p_c * sd.l_r / ( la_r + la_l ), -100, 100 );
   int l_w = clamp( 2 * sd.p_c * sd.l_l / ( la_r + la_l ), -100, 100 );
+  int k_idx = clamp( ( (abs(r_w)+abs(l_w) )/10 - 1 ), 0, (int)(size(k_wheels)-1) );
+  l_w = l_w * k_wheels[k_idx] / 1000;
   int t = sd.t_max;
-  std_out << "# ticks,w r: " << tick_r << ' ' << r_w  << " l: " << tick_l << ' ' << l_w << NL;
+  std_out << "# ticks,w r: " << tick_r << ' ' << r_w  << " l: " << tick_l << ' ' << l_w << ' ' << k_idx << NL;
   int go_tick = UVAR('g');
 
   if( us_dir != 0 ) {
@@ -507,7 +532,7 @@ int run_single_step( const RunStepData &sd )
   TIM_N_L->CNT = 0; TIM_N_R->CNT = 0; // reset wheel tick counters
   // run
   for( ; t > 0 && !break_flag && !proxy_flag; t -= go_tick ) {
-    rc = 8;
+    rc = 8; // run out of time
 
     if( ( r_w + l_w ) > 5 && us_l0 < us_forward_min ) { // TODO: function(v)
       leds.set( 1 );
