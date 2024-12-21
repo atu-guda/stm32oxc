@@ -1,6 +1,7 @@
 #ifndef __OXC_STM32F3XX_HAL_COMMON_CONF_H
 #define __OXC_STM32F3XX_HAL_COMMON_CONF_H
 
+
 #ifdef __cplusplus
  extern "C" {
 #endif
@@ -15,10 +16,6 @@
   #define HSE_VALUE    (8000000U) /*!< Value of the External oscillator in Hz */
 #endif /* HSE_VALUE */
 
-/**
-  * @brief In the following line adjust the External High Speed oscillator (HSE) Startup
-  *        Timeout value
-  */
 #if !defined  (HSE_STARTUP_TIMEOUT)
   #define HSE_STARTUP_TIMEOUT    (100U)   /*!< Time out for HSE start up, in ms */
 #endif /* HSE_STARTUP_TIMEOUT */
@@ -52,12 +49,9 @@
   * @brief External Low Speed oscillator (LSE) value.
   */
 #if !defined  (LSE_VALUE)
- #define LSE_VALUE  ((uint32_t)32768)    /*!< Value of the External Low Speed oscillator in Hz */
+  #define LSE_VALUE  (32768U)    /*!< Value of the External Low Speed oscillator in Hz */
 #endif /* LSE_VALUE */
 
-/**
-  * @brief Time out for LSE start up value in ms.
-  */
 #if !defined  (LSE_STARTUP_TIMEOUT)
   #define LSE_STARTUP_TIMEOUT    (5000U)   /*!< Time out for LSE start up, in ms */
 #endif /* LSE_STARTUP_TIMEOUT */

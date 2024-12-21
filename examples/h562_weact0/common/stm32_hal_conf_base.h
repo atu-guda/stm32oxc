@@ -1,11 +1,11 @@
 #ifndef __STM32_HAL_CONF_H
 #define __STM32_HAL_CONF_H
 
-// base configuaration file for oxc h743 weact board examples
+// base configuaration file for oxc h562 weact board examples
 
-#define REQ_MCBASE STM32H7
+#define REQ_MCBASE STM32H5
 #ifndef REQ_SYSCLK_FREQ
-  #define REQ_SYSCLK_FREQ 400
+  #define REQ_SYSCLK_FREQ 200
 #endif
 
 

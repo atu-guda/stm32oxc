@@ -1,39 +1,29 @@
 #ifndef __OXC_STM32H7XX_HAL_COMMON_CONF_H
 #define __OXC_STM32H7XX_HAL_COMMON_CONF_H
 
+
 #ifdef __cplusplus
  extern "C" {
 #endif
 
 
-#ifndef USE_FLASH_ECC
-#define USE_FLASH_ECC 0
-#endif
 
-#ifndef USE_SD_TRANSCEIVER
-#define USE_SD_TRANSCEIVER 0
-#endif
-
-   /* ########################## Oscillator Values adaptation ####################*/
+/* ########################## Oscillator Values adaptation ####################*/
 /**
   * @brief Adjust the value of External High Speed oscillator (HSE) used in your application.
   *        This value is used by the RCC HAL module to compute the system frequency
   *        (when HSE is used as system clock source, directly or through the PLL).
   */
 #if !defined  (HSE_VALUE)
-  #define HSE_VALUE    ((uint32_t)8000000U) /*!< Value of the External oscillator in Hz */
+  #define HSE_VALUE    8000000U /*!< Value of the External oscillator in Hz */
 #endif /* HSE_VALUE */
 
 #if !defined  (HSE_STARTUP_TIMEOUT)
-  #define HSE_STARTUP_TIMEOUT    ((uint32_t)100U)   /*!< Time out for HSE start up, in ms */
+  #define HSE_STARTUP_TIMEOUT    100U   /*!< Time out for HSE start up, in ms */
 #endif /* HSE_STARTUP_TIMEOUT */
 
-/**
-  * @brief Internal  oscillator (CSI) default value.
-  *        This value is the default CSI value after Reset.
-  */
 #if !defined  (CSI_VALUE)
-  #define CSI_VALUE    ((uint32_t)4000000) /*!< Value of the Internal oscillator in Hz*/
+  #define CSI_VALUE              4000000UL /*!< Value of the Internal oscillator in Hz*/
 #endif /* CSI_VALUE */
 
 /**
@@ -42,7 +32,7 @@
   *        (when HSI is used as system clock source, directly or through the PLL).
   */
 #if !defined  (HSI_VALUE)
-  #define HSI_VALUE    ((uint32_t)64000000) /*!< Value of the Internal oscillator in Hz*/
+  #define HSI_VALUE    (64000000) /*!< Value of the Internal oscillator in Hz*/
 #endif /* HSI_VALUE */
 
 /**
@@ -50,7 +40,7 @@
   *        This value is used by the UART, RTC HAL module to compute the system frequency
   */
 #if !defined  (LSE_VALUE)
-  #define LSE_VALUE    ((uint32_t)32768) /*!< Value of the External oscillator in Hz*/
+  #define LSE_VALUE  32768UL    /*!< Value of the External oscillator in Hz*/
 #endif /* LSE_VALUE */
 
 
@@ -80,9 +70,9 @@
 /**
   * @brief This is the HAL system configuration section
   */
-#define  VDD_VALUE                    ((uint32_t)3300U) /*!< Value of VDD in mv */
+#define  VDD_VALUE                    (3300U) /*!< Value of VDD in mv */
 // TODO: check
-#define  TICK_INT_PRIORITY            ((uint32_t)0x0F) /*!< tick interrupt priority */
+#define  TICK_INT_PRIORITY            (0x0FU) /*!< tick interrupt priority */
 #define  USE_RTOS                     0
 #ifndef  PREFETCH_ENABLE
 #define  PREFETCH_ENABLE              1
@@ -94,7 +84,7 @@
   * @brief Uncomment the line below to expanse the "assert_param" macro in the
   *        HAL drivers code
   */
-/* #define USE_FULL_ASSERT    1 */
+/* #define USE_FULL_ASSERT    1U */
 
 /* ################## Ethernet peripheral configuration ##################### */
 

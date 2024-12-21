@@ -157,6 +157,10 @@ ifeq "$(MCBASE)" "STM32G4"
   ARCHFLAGS += -mthumb -mcpu=cortex-m4 -mfloat-abi=$(FLOAT_ABI) -mfpu=fpv4-sp-d16
   KNOWN_MCU := yes
 endif
+ifeq "$(MCBASE)" "STM32H5"
+  ARCHFLAGS += -mthumb -mcpu=cortex-m33 -mfloat-abi=$(FLOAT_ABI) -mfpu=fpv5-sp-d16
+  KNOWN_MCU := yes
+endif
 ifeq "$(MCBASE)" "STM32H7"
   ARCHFLAGS += -mthumb -mcpu=cortex-m7 -mfloat-abi=$(FLOAT_ABI) -mfpu=fpv5-d16
   KNOWN_MCU := yes

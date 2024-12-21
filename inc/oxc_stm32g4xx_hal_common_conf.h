@@ -45,10 +45,10 @@
   * @brief Internal Low Speed oscillator (LSI) value.
   */
 #if !defined  (LSI_VALUE)
-/*!< Value of the Internal Low Speed oscillator in Hz
-The real value may vary depending on the variations in voltage and temperature.*/
- #define LSI_VALUE  (32000UL)     /*!< LSI Typical Value in Hz*/
-#endif /* LSI_VALUE */
+ #define LSI_VALUE  (32000UL)
+#endif /* LSI_VALUE */                      /*!< Value of the Internal Low Speed oscillator in Hz
+                                             The real value may vary depending on the variations
+                                             in voltage and temperature.*/
 /**
   * @brief External Low Speed oscillator (LSE) value.
   *        This value is used by the UART, RTC HAL module to compute the system frequency
@@ -78,7 +78,8 @@ The real value may vary depending on the variations in voltage and temperature.*
   * @brief This is the HAL system configuration section
   */
 #define  VDD_VALUE                   (3300UL) /*!< Value of VDD in mv */
-#define  TICK_INT_PRIORITY           (15UL)    /*!< tick interrupt priority (lowest by default)  */
+// TODO: check
+#define  TICK_INT_PRIORITY            (0x0FU) /*!< tick interrupt priority */
 #define  USE_RTOS                     0U
 #define  PREFETCH_ENABLE              0U
 #define  INSTRUCTION_CACHE_ENABLE     1U
