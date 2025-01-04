@@ -1,0 +1,3 @@
+Leds blink + EXTI line 2/3 G2/G3 IRQ w/o FreeRTOS
+Use external LEDS on H8:H11
+
