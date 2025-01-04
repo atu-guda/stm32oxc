@@ -43,7 +43,7 @@
 #define BOARD_BTN0_IRQNAME EXTI13
 
 // more
-#define BOARD_BTN1_EXIST   0
+#define BOARD_BTN1_EXIST   1
 #define BOARD_BTN1_GPIOX   A
 #define BOARD_BTN1_N       0
 #define BOARD_BTN1_ACTIVE_DOWN 0

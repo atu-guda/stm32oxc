@@ -5,6 +5,18 @@ using namespace std;
 USE_DIE4LED_ERROR_HANDLER;
 BOARD_DEFINE_LEDS;
 
+// handle H5 2 different callbacks
+#ifdef EXTI_RPR1_RPIF0_Msk
+  #if BOARD_BTN0_ACTIVE_DOWN == 0
+    #define EXTI_CALLBACK_FUN HAL_GPIO_EXTI_Rising_Callback
+  #else
+    #define EXTI_CALLBACK_FUN HAL_GPIO_EXTI_Falling_Callback
+    #warning Falling!
+  #endif
+#else
+  #define EXTI_CALLBACK_FUN HAL_GPIO_EXTI_Callback
+#endif
+
 void MX_GPIO_Init(void);
 
 
@@ -36,7 +48,6 @@ void MX_GPIO_Init(void)
   board_def_btn_init( true );
 }
 
-//  if( __HAL_GPIO_EXTI_GET_IT( GPIO_Pin ) != RESET )
 
 #if defined(BOARD_BTN0_EXIST) && BOARD_BTN0_EXIST != 0
 #define EXTI_BIT0 BOARD_BTN0_BIT
@@ -64,7 +75,7 @@ void BOARD_BTN1_IRQHANDLER(void)
 #define EXTI_BIT1 0
 #endif
 
-void HAL_GPIO_EXTI_Callback( uint16_t pin )
+void EXTI_CALLBACK_FUN( uint16_t pin )
 {
   uint32_t curr_tick = HAL_GetTick();
   // leds.toggle( BIT3 );
