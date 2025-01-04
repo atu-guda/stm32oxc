@@ -96,10 +96,12 @@ void GpioRegs::enableClk() const
 
 void GpioRegs::setEXTI( uint8_t pin, ExtiEv ev )
 {
-  uint32_t tmp = EXTICFG_PLACE->EXTICR[ pin >> 2 ];
-  tmp &= ~( 0x0F             << ( 4 * ( pin & 0x03 ) ) );
-  tmp |=  ( GpioIdx( *this ) << ( 4 * ( pin & 0x03 ) ) );
-  EXTICFG_PLACE->EXTICR[ pin >> 2 ] = tmp;
+  const unsigned reg_idx = pin >> 2;
+  constexpr uint32_t exti_mask = (1<<EXTI_CFG_BITS) - 1;
+  uint32_t tmp = EXTICFG_PLACE->EXTICR[ reg_idx ];
+  tmp &= ~( exti_mask        << ( EXTI_CFG_BITS * ( pin & 0x03 ) ) ); // reset for this pin
+  tmp |=  ( GpioIdx( *this ) << ( EXTI_CFG_BITS * ( pin & 0x03 ) ) ); // and set given
+  EXTICFG_PLACE->EXTICR[ reg_idx ] = tmp;
 
   uint32_t mask_pos = 1 << pin;
   uint32_t mask_neg = ~mask_pos;
@@ -153,7 +155,7 @@ void PinsOut::initHW()
 void board_def_btn_init( bool needIRQ )
 {
 
-#ifdef BOARD_BTN0_EXIST
+#if defined(BOARD_BTN0_EXIST) && BOARD_BTN0_EXIST != 0
   BOARD_BTN0_GPIO.enableClk(); // TODO: config
   BOARD_BTN0_GPIO.cfgIn( BOARD_BTN0_N, BOARD_BTN0_PULL );
   BOARD_BTN0_GPIO.setEXTI( BOARD_BTN0_N, BOARD_BTN0_MODE );
@@ -163,7 +165,7 @@ void board_def_btn_init( bool needIRQ )
   }
 #endif
 
-#ifdef BOARD_BTN1_EXIST
+#if defined(BOARD_BTN1_EXIST) && BOARD_BTN1_EXIST != 0
   BOARD_BTN1_GPIO.enableClk();
   BOARD_BTN1_GPIO.cfgIn( BOARD_BTN1_N, BOARD_BTN1_PULL );
   BOARD_BTN1_GPIO.setEXTI( BOARD_BTN1_N, BOARD_BTN1_MODE );

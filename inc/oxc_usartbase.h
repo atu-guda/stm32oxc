@@ -40,6 +40,11 @@
  #define USART_TX_REG TDR
  #define USART_RX_REG RDR
  #define USART_SR_REG ISR
+#elif defined(STM32H5)
+ #include <stm32h5xx_hal_usart.h>
+ #define USART_TX_REG TDR
+ #define USART_RX_REG RDR
+ #define USART_SR_REG ISR
 #elif defined(STM32H7)
  #include <stm32h7xx_hal_usart.h>
  #define USART_TX_REG TDR

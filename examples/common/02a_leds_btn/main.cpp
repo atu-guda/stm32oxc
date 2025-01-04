@@ -38,7 +38,7 @@ void MX_GPIO_Init(void)
 
 //  if( __HAL_GPIO_EXTI_GET_IT( GPIO_Pin ) != RESET )
 
-#ifdef BOARD_BTN0_EXIST
+#if defined(BOARD_BTN0_EXIST) && BOARD_BTN0_EXIST != 0
 #define EXTI_BIT0 BOARD_BTN0_BIT
 void BOARD_BTN0_IRQHANDLER(void)
 {
@@ -52,7 +52,7 @@ void BOARD_BTN0_IRQHANDLER(void)
 #define EXTI_BIT0 0
 #endif
 
-#ifdef BOARD_BTN1_EXIST
+#if defined(BOARD_BTN1_EXIST) && BOARD_BTN1_EXIST != 0
 #define EXTI_BIT1 BOARD_BTN1_BIT
 #ifndef BOARD_BTN0_1_SAME_IRQ
 void BOARD_BTN1_IRQHANDLER(void)
