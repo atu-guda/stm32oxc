@@ -328,7 +328,7 @@ void gpio_pin_info( GPIO_TypeDef *gi, uint16_t pin, char *s )
   s[j++] = 0;
 }
 
-#elif defined (STM32F2) || defined (STM32F3) || defined (STM32F4) || defined (STM32F7) || defined (STM32H7) || defined (STM32G4)
+#elif defined (STM32F2) || defined (STM32F3) || defined (STM32F4) || defined (STM32F7)  || defined (STM32H5) || defined (STM32H7) || defined (STM32G4)
 
 static const char *pin_moder_name[] = { "Inp", "Out", "AFn", "Ana", "?m?" };
 static const char *pin_speed_name[] = { "Low", "Lo1", "Med", "Hig", "?s?" };
@@ -398,7 +398,7 @@ int cmd_info( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
      << " HSE_VALUE: " << HSE_VALUE
      << " SystemCoreClock: " << SystemCoreClock << NL;
 
-  std_out << "# errno= " << errno << " sigint_count="  << sigint_count << NL
+  std_out << "# errno= " << errno << " sigint_count= "  << sigint_count << " DCV= " << delay_calibrate_value << NL
      << "# dbg_val0= "  << dbg_val0 <<  " = "  << HexInt( dbg_val0, true )
      << " dbg_val1= " << dbg_val1 <<  " = "  << HexInt( dbg_val1, true ) << NL
      << "# dbg_val2= "  << dbg_val2 <<  " = "  << HexInt( dbg_val2, true )

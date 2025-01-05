@@ -1,0 +1,3 @@
+REQUIRE_SPECIAL_CLOCK = y
+SRCS += stm32h5_clock_HSE200_8x.c
+

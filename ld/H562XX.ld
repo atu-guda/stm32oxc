@@ -1,4 +1,4 @@
-_FLASH_SIZE  = 2048K ;
+_FLASH_SIZE  = 1024K ;
 _RAM_SIZE    =  640K ;
 _CCMRAM_SIZE =    0K ;
 
