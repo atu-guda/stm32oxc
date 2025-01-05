@@ -1,17 +1,15 @@
 
 SUBDIRS = \
   00_leds \
-  # 01_leds_oxc \
-  # 01a_leds_tim_oxc_mu \
-  # 02_leds_rtos \
-  # 02a_leds_btn \
-  # 03_uart \
-  # 04_uart_console \
-  # 04a_uart_console_nort \
-  # 05_usb_console \
-  # 05a_def_console \
-  # 05b_usb_console_nort \
-  # 05c_def_cons_nort \
+  01_leds_oxc \
+  01a_leds_tim_oxc_mu \
+  02_leds_rtos \
+  02a_leds_btn \
+  03_uart \
+  04_uart_console \
+  04a_uart_console_nort \
+  05a_def_console \
+  05c_def_cons_nort \
   # 06_i2c_test \
   # 07_i2c_lcdt \
   # 08_i2c_mpu6050 \
