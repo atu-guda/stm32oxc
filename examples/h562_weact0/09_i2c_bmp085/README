@@ -1,0 +1,5 @@
+Use barometer BMP085 via I2C
+
+SCL = B6
+SDA = B7
+

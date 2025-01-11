@@ -4,7 +4,7 @@
 int i2c_default_init( I2C_HandleTypeDef &i2c, int speed )
 {
   i2c.Instance              = BOARD_I2C_DEFAULT;
-  #if defined (STM32F3) || defined (STM32F7) || defined (STM32H7) || defined (STM32G4)
+  #if defined (STM32F3) || defined (STM32F7) || defined (STM32H5) || defined (STM32H7) || defined (STM32G4)
   if( speed == 1000000 ) {
     i2c.Init.Timing           = BOARD_I2C_DEFAULT_TIMING_1M;
   } else if ( speed == 400000 ) {

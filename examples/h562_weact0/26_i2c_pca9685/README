@@ -1,0 +1,4 @@
+Test PCA9685 PWM controller I2C1
+
+SCL = B6
+SDA = B7

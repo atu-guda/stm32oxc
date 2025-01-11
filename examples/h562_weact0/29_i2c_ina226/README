@@ -1,0 +1,5 @@
+Use INA226 I/V measuring device ViA I2C
+
+SCL = B6
+SDA = B7
+

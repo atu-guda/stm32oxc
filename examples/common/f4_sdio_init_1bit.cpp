@@ -22,7 +22,7 @@ void MX_SDIO_SD_Init()
 {
   hsd.Instance                 = SDIO_X;
   hsd.Init.ClockEdge           = SDIO_CLOCK_X;
-#ifndef STM32H7
+#if ! defined(STM32H7) && ! defined(STM32H5)
   hsd.Init.ClockBypass         = SDIO_BYPASS_X;
 #endif
   hsd.Init.ClockPowerSave      = SDIO_PS_X;

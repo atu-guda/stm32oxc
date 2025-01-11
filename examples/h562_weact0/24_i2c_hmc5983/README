@@ -1,0 +1,5 @@
+Test hmc5983 magnitometr on I2C1
+
+SCL = B6
+SDA = B7
+

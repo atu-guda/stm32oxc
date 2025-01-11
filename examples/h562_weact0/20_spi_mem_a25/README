@@ -1,0 +1,11 @@
+Test SPI AT25F512/1024 memory
+!WD=p3 and !!HOLD=p7 = 1
+
+Tested ???
+
+Used: SPI2:
+B13 = SCK
+B14 = MISO
+B15 = MOSI
++B12 = Soft NSS
+

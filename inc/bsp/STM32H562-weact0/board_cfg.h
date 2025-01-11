@@ -16,8 +16,8 @@
 #define BOARD_LEDS_GPIOX C
 #define BOARD_LEDS_OFS  0
 
-// extra is ???
-// #define BOARD_N_LEDS_EXTRA 8
+// extra is B2?
+#define BOARD_N_LEDS_EXTRA 1
 
 // #define BOARD_DEFINE_LEDS_EXTRA PinsOut leds( BOARD_LEDS_GPIO, BOARD_LEDS_OFS, BOARD_N_LEDS_EXTRA );
 
@@ -50,19 +50,19 @@
 #define BOARD_BTN1_IRQNAME   EXTI0
 
 
-#define TIM_EXA        TIM1
-#define TIM_EXA_STR    "TIM1"
-#define TIM_EXA_GPIO   GpioE
-#define TIM_EXA_PIN1   GPIO_PIN_9
-#define TIM_EXA_PIN2   GPIO_PIN_11
-#define TIM_EXA_PIN3   GPIO_PIN_13
-#define TIM_EXA_PIN4   GPIO_PIN_14
+#define TIM_EXA        TIM2
+#define TIM_EXA_STR    "TIM2"
+#define TIM_EXA_GPIO   GpioA
+#define TIM_EXA_PIN1   GPIO_PIN_0
+#define TIM_EXA_PIN2   GPIO_PIN_1
+#define TIM_EXA_PIN3   GPIO_PIN_2
+#define TIM_EXA_PIN4   GPIO_PIN_3
 #define TIM_EXA_PINS   ( TIM_EXA_PIN1 | TIM_EXA_PIN2 | TIM_EXA_PIN3 | TIM_EXA_PIN4 )
-#define TIM_EXA_CLKEN  __GPIOE_CLK_ENABLE(); __TIM1_CLK_ENABLE();
-#define TIM_EXA_CLKDIS __TIM1_CLK_DISABLE();
-#define TIM_EXA_GPIOAF GPIO_AF1_TIM1
-#define TIM_EXA_IRQ    TIM1_CC_IRQn
-#define TIM_EXA_IRQHANDLER    TIM1_CC_IRQHandler
+#define TIM_EXA_CLKEN  __GPIOA_CLK_ENABLE(); __TIM2_CLK_ENABLE();
+#define TIM_EXA_CLKDIS __TIM2_CLK_DISABLE();
+#define TIM_EXA_GPIOAF GPIO_AF1_TIM2
+#define TIM_EXA_IRQ    TIM2_IRQn
+#define TIM_EXA_IRQHANDLER    TIM2_IRQHandler
 
 #define SD_EXA_CK_GPIO   GpioC
 #define SD_EXA_CK_PIN    12
@@ -72,7 +72,7 @@
 #define SD_EXA_CMD_PIN   2
 #define SD_EXA_CLKEN     __HAL_RCC_SDMMC1_CLK_ENABLE();  __HAL_RCC_GPIOC_CLK_ENABLE();  __HAL_RCC_GPIOD_CLK_ENABLE();
 #define SD_EXA_CLKDIS    __HAL_RCC_SDMMC1_CLK_DISABLE();
-#define SD_EXA_GPIOAF    GPIO_AF12_SDIO1
+#define SD_EXA_GPIOAF    GPIO_AF12_SDMMC1
 
 #define BOARD_UART_DEFAULT            USART1
 #define BOARD_UART_DEFAULT_GPIO       GpioA
@@ -87,28 +87,28 @@
 #define BOARD_I2C_DEFAULT               I2C1
 #define BOARD_I2C_DEFAULT_NAME          "I2C1"
 #define BOARD_I2C_DEFAULT_SPEED         100000
-// 100 kHz over 400 MHz
-#define BOARD_I2C_DEFAULT_TIMING_100    0x10C0ECFF
+// 100 kHz over 200 MHz
+#define BOARD_I2C_DEFAULT_TIMING_100    0x30C0EDFF
 // 400 kHz over 200 MHz
 #define BOARD_I2C_DEFAULT_TIMING_400    0x109035B7
 // 1   MHz over 200 MHz
 #define BOARD_I2C_DEFAULT_TIMING_1M     0x00902787
 #define BOARD_I2C_DEFAULT_GPIO_SCL      GpioB
 #define BOARD_I2C_DEFAULT_GPIO_SDA      GpioB
-#define BOARD_I2C_DEFAULT_GPIO_PIN_SCL  8
-#define BOARD_I2C_DEFAULT_GPIO_PIN_SDA  9
+#define BOARD_I2C_DEFAULT_GPIO_PIN_SCL  6
+#define BOARD_I2C_DEFAULT_GPIO_PIN_SDA  7
 #define BOARD_I2C_DEFAULT_GPIO_AF       GPIO_AF4_I2C1
 #define BOARD_I2C_DEFAULT_ENABLE        __I2C1_CLK_ENABLE(); __GPIOB_CLK_ENABLE();
 #define BOARD_I2C_DEFAULT_DISABLE       __I2C1_CLK_DISABLE();
 #define BOARD_I2C_DEFAULT_IRQ           I2C1_EV_IRQn
 #define BOARD_I2C_DEFAULT_IRQHANDLER    I2C1_EV_IRQHandler
 
-#define BOARD_IN0_GPIO                  GpioD
-#define BOARD_IN0_PINNUM                14
-#define BOARD_IN1_GPIO                  GpioD
-#define BOARD_IN1_PINNUM                15
-#define BOARD_IN2_GPIO                  GpioD
-#define BOARD_IN2_PINNUM                2
+#define BOARD_IN0_GPIO                  GpioC
+#define BOARD_IN0_PINNUM                5
+#define BOARD_IN1_GPIO                  GpioC
+#define BOARD_IN1_PINNUM                6
+#define BOARD_IN2_GPIO                  GpioC
+#define BOARD_IN2_PINNUM                7
 
 
 #ifndef BOARD_SPI_DEFAULT
@@ -124,10 +124,10 @@
 #define BOARD_SPI_DEFAULT_GPIO_SNSS     GpioB
 // here number, as input to PinsOut
 #define BOARD_SPI_DEFAULT_GPIO_PIN_SNSS 12
-#define BOARD_SPI_DEFAULT_GPIO_EXT1     GpioD
-#define BOARD_SPI_DEFAULT_GPIO_PIN_EXT1 8
-#define BOARD_SPI_DEFAULT_GPIO_EXT2     GpioD
-#define BOARD_SPI_DEFAULT_GPIO_PIN_EXT2 9
+#define BOARD_SPI_DEFAULT_GPIO_EXT1     GpioC
+#define BOARD_SPI_DEFAULT_GPIO_PIN_EXT1 6
+#define BOARD_SPI_DEFAULT_GPIO_EXT2     GpioC
+#define BOARD_SPI_DEFAULT_GPIO_PIN_EXT2 7
 #define BOARD_SPI_DEFAULT_GPIO_AF       GPIO_AF5_SPI2
 #define BOARD_SPI_DEFAULT_ENABLE        __SPI2_CLK_ENABLE(); __GPIOB_CLK_ENABLE();
 #define BOARD_SPI_DEFAULT_DISABLE       __SPI2_CLK_DISABLE();
@@ -136,12 +136,12 @@
 #define BOARD_SPI_BAUDRATEPRESCALER_FAST SPI_BAUDRATEPRESCALER_4
 #endif
 
-// E9-E12
-#define BOARD_MOTOR_DEFAULT_GPIO        GpioE
-#define BOARD_MOTOR_DEFAULT_PIN0        9
+// C6-C9 ?
+#define BOARD_MOTOR_DEFAULT_GPIO        GpioC
+#define BOARD_MOTOR_DEFAULT_PIN0        6
 //
-#define BOARD_1W_DEFAULT_GPIO           GpioE
-#define BOARD_1W_DEFAULT_PIN            GPIO_PIN_9
+#define BOARD_1W_DEFAULT_GPIO           GpioB
+#define BOARD_1W_DEFAULT_PIN            GPIO_PIN_0
 
 // ADC
 #define BOARD_ADC_DEFAULT_DEV           ADC1
