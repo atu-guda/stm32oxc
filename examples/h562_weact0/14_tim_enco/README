@@ -1,0 +1,6 @@
+Test TIM2 as encoder input
+in: A0, A1
+Not so stable work.
+Dont forget about capacitors.
+
+
