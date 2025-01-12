@@ -12,6 +12,6 @@ T val1 val2 val3 val4
 For servo: NO?
  p = PSC = 199  -> freq1 = 1MHz
  a = ARR = 9999 -> freq2 = 100Hz (10 ms)
- so values in 'T' command is in microseconds,
+ so values in 'T' command is in microseconds (r=1),
   typicaly 500 -- 2500 (may vary)
 

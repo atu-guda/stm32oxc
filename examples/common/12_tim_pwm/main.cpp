@@ -34,11 +34,19 @@ CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
 int cmd_tinit( int argc, const char * const * argv );
 CmdInfo CMDINFO_TINIT { "tinit", 'I', cmd_tinit, " - reinit timer"  };
 
+int cmd_servo( int argc, const char * const * argv );
+CmdInfo CMDINFO_SERVO { "servo", 'S', cmd_servo, " - prepare to servo control"  };
+
+int cmd_go_servo( int argc, const char * const * argv );
+CmdInfo CMDINFO_GO_SERVO { "go_servo", 'G', cmd_go_servo, " v0 v1 v2 v3 - set servo 0-1000"  };
+
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
 
   &CMDINFO_TEST0,
   &CMDINFO_TINIT,
+  &CMDINFO_SERVO,
+  &CMDINFO_GO_SERVO,
   nullptr
 };
 
@@ -50,6 +58,8 @@ const uint32_t countmodes[] = {
   TIM_COUNTERMODE_CENTERALIGNED3
 };
 const auto n_countmodes = size(countmodes);
+
+bool on_servo { false };
 
 
 int main(void)
@@ -63,6 +73,8 @@ int main(void)
   UVAR('r') = 0;    // flag: raw values
   UVAR('m') = 0;    // mode: 0: up, 1: down, 2: updown
   UVAR('o') = 0;    // pOlarity 0: high 1: low
+  UVAR('x') =  500;    // servo start value (us)
+  UVAR('y') = 2500;    // servo end value (us)
 
   BOARD_POST_INIT_BLINK;
 
@@ -103,6 +115,29 @@ int cmd_test0( int argc, const char * const * argv )
   return 0;
 }
 
+int cmd_go_servo( int argc, const char * const * argv )
+{
+  if( !on_servo ) {
+    cmd_servo( argc, argv );
+  }
+  if( !on_servo ) {
+    return 1;
+  }
+
+  uint32_t scale = UVAR('y') - UVAR('x');
+  for( auto &ch : pwmc ) {
+    if( argc <= (int)(ch.idx+1) ) {
+      break;
+    }
+    ch.v = UVAR('x')  + scale * strtol( argv[ch.idx+1], 0, 0 ) / 1000;
+  }
+  pwm_update();
+  tim_print_cfg( TIM_EXA );
+
+  return 0;
+}
+
+
 int cmd_tinit( int argc, const char * const * argv )
 {
   tim_cfg();
@@ -110,6 +145,29 @@ int cmd_tinit( int argc, const char * const * argv )
 
   return 0;
 }
+
+int cmd_servo( int argc, const char * const * argv )
+{
+  uint32_t psc = calc_TIM_psc_for_cnt_freq( TIM_EXA, 1000000 );
+  uint32_t arr = calc_TIM_arr_for_base_psc( TIM_EXA, psc, 100 );
+  UVAR('p') = psc;
+  UVAR('a') = arr;
+  UVAR('m') = 0;
+  UVAR('o') = 0;
+  UVAR('r') = 1;
+  uint32_t v0 = ( UVAR('x') + UVAR('y') ) / 2;
+  for( auto &ch : pwmc ) {
+    ch.ccr = v0;
+    ch.v   = v0;
+  }
+  tim_cfg();
+  tim_print_cfg( TIM_EXA );
+  on_servo = true;
+
+  return 0;
+}
+
+
 
 //  ----------------------------- configs ----------------
 
@@ -150,7 +208,7 @@ void pwm_recalc()
 
   for( auto ch : pwmc ) {
     HAL_TIM_PWM_Stop( &tim_h, ch.ch );
-    tim_oc_cfg.Pulse = ch.v * pbase / 100;
+    tim_oc_cfg.Pulse = UVAR('r') ? ( ch.v ) : ( ch.v * pbase / 100 ) ;
     if( HAL_TIM_PWM_ConfigChannel( &tim_h, &tim_oc_cfg, ch.ch ) != HAL_OK ) {
       UVAR('e') = 11 + ch.idx;
       return;
@@ -165,13 +223,9 @@ void pwm_update()
   tim_h.Instance->PSC  = UVAR('p');
   int pbase = UVAR('a');
   tim_h.Instance->ARR  = pbase;
-  int scl = pbase;
-  if( UVAR('r') ) { // raw values
-    scl = 100;
-  }
 
   for( auto ch : pwmc ) {
-    ch.ccr = ch.v * scl / 100;
+    ch.ccr = UVAR('r') ? ch.v : ( ch.v * pbase / 100 );
   }
 }
 
