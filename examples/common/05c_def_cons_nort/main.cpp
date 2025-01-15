@@ -1,3 +1,4 @@
+#include <climits>
 #include <oxc_auto.h>
 
 using namespace std;
@@ -21,12 +22,15 @@ int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
 int cmd_test_rate( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST_RATE { "test_rate", 0, cmd_test_rate, "[ n [len] ] - test output rate"  };
+int cmd_test_val( int argc, const char * const * argv );
+CmdInfo CMDINFO_TEST_VAL { "test_val", 'v', cmd_test_val, "[arg ] - test arg2log* converter"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
 
   &CMDINFO_TEST0,
   &CMDINFO_TEST_RATE,
+  &CMDINFO_TEST_VAL,
   nullptr
 };
 
@@ -43,6 +47,8 @@ int main(void)
 
   UVAR('t') = 100;
   UVAR('n') =  20;
+  UVAR('u') = -23;
+  UVAR('v') =  42;
 
   BOARD_POST_INIT_BLINK;
 
@@ -50,6 +56,14 @@ int main(void)
 
   std_main_loop_nortos( &srl, idle_main_task );
 
+  return 0;
+}
+
+int cmd_test_val( int argc, const char * const * argv )
+{
+  int v0 = arg2long_d( 1, argc, argv,  UVAR('v'), INT_MIN, INT_MAX );
+  int v1 = arg2long_d( 2, argc, argv,  UVAR('u'),    -500,    1500 );
+  std_out << "# " << v0 << ' ' << v1 << NL;
   return 0;
 }
 

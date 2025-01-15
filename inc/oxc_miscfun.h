@@ -52,11 +52,12 @@ inline int imax( int a, int b  ) { return (a>b) ? a : b; }
 
 // converts given arg to int, with check and limits
 bool arg2long( int narg, int argc, const char * const * argv, long *v,
-               long vmin= INT32_MIN, int vmax = INT32_MAX );
+               long vmin= INT32_MIN, long vmax = INT32_MAX );
 // the same with default value
 long arg2long_d( int narg, int argc, const char * const * argv, long def,
                  long vmin = INT32_MIN, long vmax = INT32_MAX );
 // TODO: callback for parameter parsing
+__weak int* int_val_ptr( const char *s  );
 
  // swap bytes in 16-bits
 inline uint16_t rev16( uint16_t v ) { return (uint16_t)__REV16( v );}

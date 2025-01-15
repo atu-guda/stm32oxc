@@ -1,7 +1,11 @@
 #include <cstdlib>
+#include <cctype>
 #include <cstring>
+#include <algorithm>
 
 #include <oxc_miscfun.h>
+// for user_vars
+#include <oxc_debug1.h>
 
 using namespace std;
 
@@ -140,23 +144,53 @@ char* ifcvt( int v, int mult, char *s, unsigned min_sz_frac,  unsigned min_sz_in
   return s;
 }
 
+__weak int* int_val_ptr( const char *s  )
+{
+  if( !s || s[0] != '$' || s[2] != '\0' || s[1] < 'a' || s[1] > 'z' ) {
+    return nullptr;
+  }
+  return &( user_vars[ s[1] - 'a'] );
+}
 
 
 bool arg2long( int narg, int argc, const char * const * argv, long *v,
-               long vmin, int vmax )
+               long vmin, long vmax )
 {
-  if( narg >= argc || !argv || !v ) {
+  if( narg >= argc || !argv || !v || narg >= argc ) {
     return false;
   }
-  // TODO: callback
+
+  const char *s = argv[narg];
+
+  if( int *vx = int_val_ptr( s ) ) {
+    *v = *vx;
+    return true;
+  }
+
+  // special strings: < > %n
+  if( s[0] == '=' &&  s[1] == '<' && s[2] == '\0' ) {
+    *v = vmin;
+    return true;
+  }
+  if( s[0] == '=' &&  s[1] == '>' && s[2] == '\0' ) {
+    *v = vmax;
+    return true;
+  }
+
+  if( s[0] == '%' && isdigit(s[1]) ) {
+    const int percent = std::clamp( atoi(s+1), 0, 100 );
+    *v = vmin + ( vmax - vmin ) * percent / 100;
+    return true;
+  }
+
+  //
   char *eptr;
-  long l = strtol( argv[narg], &eptr, 0 );
+  const long l = strtol( argv[narg], &eptr, 0 );
+  // any non-digital string (like 'def') will get it
   if( *eptr != 0 ) {
     return false;
   }
-  if( l < vmin ) { l = vmin; };
-  if( l > vmax ) { l = vmax; };
-  *v = l;
+  *v = clamp( l, vmin, vmax );
   return true;
 }
 
