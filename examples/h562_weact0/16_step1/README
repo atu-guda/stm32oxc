@@ -1,0 +1,6 @@
+Control different stepmotors.
+A0:A3
+bipolar 2 coil: mode0,mode1 0:1 coil1 2:3 coil2 (via LM298 or so)
+monopolar 4 coil
+
+

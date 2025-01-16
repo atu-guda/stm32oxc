@@ -1,0 +1,4 @@
+use: 1-wire 18B20 (initial) on B0 ???
+Pull-up (4.7k) required!
+
+Pin used simultaneously for input and output.
