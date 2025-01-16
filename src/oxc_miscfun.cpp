@@ -124,7 +124,6 @@ char* i2dec( int n, char *s, unsigned min_sz, char fill_ch )
 
 char* ifcvt( int v, int mult, char *s, unsigned min_sz_frac,  unsigned min_sz_int, char plus_ch  )
 {
-  char t[INT_STR_SZ_DEC];
   if( !s ) {
     return nullptr;
   }
@@ -139,6 +138,8 @@ char* ifcvt( int v, int mult, char *s, unsigned min_sz_frac,  unsigned min_sz_in
   s[0] = sig; s[1] = '\0';
   char int_fill = ' ';
   if( min_sz_int > 1 ) { int_fill = '0'; };
+
+  char t[INT_STR_SZ_DEC];
   i2dec( i1, t, min_sz_int,  int_fill ); strncat( s, t, INT_STR_SZ_DEC ); strncat( s, ".", INT_STR_SZ_DEC );
   i2dec( i2, t, min_sz_frac, '0'     );  strncat( s, t, INT_STR_SZ_DEC );
   return s;

@@ -23,10 +23,8 @@ void PCA9685::sleep()
 
 void PCA9685::set( uint8_t ch, uint16_t on, uint16_t off )
 {
-  uint16_t s[2];
-  s[0] = on & v_out_mask; s[1] =  off & v_out_mask;
-  uint8_t reg = ch2regOn( ch );
-  send_reg1( reg, (uint8_t*)s, sizeof(s) );
+  uint16_t s[2] { uint16_t(on & v_out_mask), uint16_t(off & v_out_mask) };
+  send_reg1( ch2regOn( ch ), (uint8_t*)s, sizeof(s) );
 }
 
 void PCA9685::setServoMinMax( uint32_t min_us, uint32_t max_us )
@@ -41,56 +39,40 @@ void PCA9685::setServoMinMax( uint32_t min_us, uint32_t max_us )
 
 void PCA9685::setServo( uint8_t ch, int val )
 {
-  uint16_t s[2];
-  s[0] = 0; s[1] = servo2v( val );
-  uint8_t reg = ch2regOn( ch );
-  send_reg1( reg, (uint8_t*)s, sizeof(s) );
+  uint16_t s[2] { 0, servo2v( val ) };
+  send_reg1( ch2regOn( ch ), (uint8_t*)s, sizeof(s) );
 }
 
 void PCA9685::off( uint8_t ch )
 {
-  uint8_t reg = ch2regOff( ch ) + 1;
-  send_reg1_8bit( reg, bit_onoff );
+  send_reg1_8bit( ch2regOff( ch ) + 1, bit_onoff );
 }
 
 void PCA9685::setAllServo( int val )
 {
-  uint16_t s[2];
-  s[0] = 0; s[1] = servo2v( val );
-  uint8_t reg = reg_all_s;
-  send_reg1( reg, (uint8_t*)&s, sizeof(s) );
+  uint16_t s[2] { 0, servo2v( val ) };
+  send_reg1( reg_all_s, (uint8_t*)&s, sizeof(s) );
 }
 
-uint8_t PCA9685::freq2prec( uint32_t freq ) // static
-{
-  uint32_t pr = ( base_freq / ( 4096 * freq ) ) - 1;
-  if( pr > 255 ) {
-    pr = 255;
-  }
-  if( pr < 3 ) {
-    pr = 3;
-  }
-  return (uint8_t)pr;
-}
+// uint8_t PCA9685::freq2prec( uint32_t freq ) // static
+// {
+//   return (uint8_t) std::clamp( ( base_freq / ( 4096 * freq ) ) - 1, 3ul, 255ul );
+// }
 
 void PCA9685::offAll()
 {
-  uint8_t reg = reg_all_s + 3;
-  send_reg1_8bit( reg, bit_onoff );
+  send_reg1_8bit( reg_all_s + 3, bit_onoff );
 }
 
-uint32_t PCA9685::servo2t( int a )
+uint32_t PCA9685::servo2t( int a ) const
 {
-  uint32_t t = servo_mid + (int)servo_dvt * a / ( 2 * servo_in_max );
-  return t;
+  return servo_mid + (int)servo_dvt * a / ( 2 * servo_in_max );
 }
 
 
-uint16_t PCA9685::servo2v( int a )
+uint16_t PCA9685::servo2v( int a ) const
 {
   uint32_t t = servo_mid + (int)servo_dvt * a / ( 2 * servo_in_max );
-  uint16_t r = us2v( t );
-  r &= v_out_mask;
-  return r;
+  return ( us2v( t ) & v_out_mask );
 }
 

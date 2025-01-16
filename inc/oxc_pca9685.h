@@ -1,6 +1,7 @@
 #ifndef _OXC_PCA9685_H
 #define _OXC_PCA9685_H
 
+#include <algorithm>
 #include <oxc_i2c.h>
 
 // PCA9685: 16-channel 12-bit PWM controller, good for servo ...
@@ -25,8 +26,8 @@ class PCA9685 : public I2CClient {
      presc_100Hz   = 60,
      presc_200Hz   = 30,
      presc_def     = presc_50Hz,
-     servo_us_min  = 700,
-     servo_us_max  = 2200,
+     servo_us_min  = 500,
+     servo_us_max  = 2500,
      servo_in_max  = 1000,
      v_out_mask    = 0x0FFF, // 12bit : most used 0x01FF
      n_ch          = 16
@@ -43,16 +44,18 @@ class PCA9685 : public I2CClient {
    void sleep();
    void set( uint8_t ch, uint16_t on, uint16_t off ); // 0-4096
    void setServoMinMax( uint32_t min_us, uint32_t max_us );
-   uint16_t servo2v( int a ); // converts value (-1000:1000) to 'off' ticks
-   uint32_t servo2t( int a ); // converts value (-1000:1000) to time in us
+   uint16_t servo2v( int a ) const; // converts value (-1000:1000) to 'off' ticks
+   uint32_t servo2t( int a ) const; // converts value (-1000:1000) to time in us
    void setServo( uint8_t ch, int val ); // value is signed!
    void off( uint8_t ch ); // to on - use set!
    void setAllServo( int val );
    void offAll();
 
-   static uint8_t freq2prec( uint32_t freq ); // conversion frequency to prescaler value with limits
-   static uint8_t ch2regOff( uint8_t ch_idx ) { return reg_led0s + 4*ch_idx + 2; } // 2: reg(off)
-   static uint8_t ch2regOn(  uint8_t ch_idx ) { return reg_led0s + 4*ch_idx; } // 2: reg(on)
+   static inline constexpr uint8_t freq2prec( uint32_t freq ) // conversion frequency to prescaler value with limits
+     { return (uint8_t) std::clamp( ( base_freq / ( 4096 * freq ) ) - 1, 3ul, 255ul ); }
+                                              //
+   static inline constexpr uint8_t ch2regOff( uint8_t ch_idx ) { return reg_led0s + 4*ch_idx + 2; } // 2: reg(off)
+   static inline constexpr uint8_t ch2regOn(  uint8_t ch_idx ) { return reg_led0s + 4*ch_idx; } // 2: reg(on)
   protected:
    uint8_t presc;
    uint32_t servo_min = servo_us_min;
