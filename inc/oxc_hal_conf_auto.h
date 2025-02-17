@@ -256,6 +256,10 @@
   #define USE_HAL_WWDG_REGISTER_CALLBACKS 0
 #endif
 
+#ifndef USBD_USER_REGISTER_CALLBACK
+  #define USBD_USER_REGISTER_CALLBACK 0
+#endif
+
 // more enables
 
 #ifndef ART_ACCELERATOR_ENABLE
