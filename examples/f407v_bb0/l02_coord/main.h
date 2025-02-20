@@ -2,6 +2,7 @@
 #define _MAIN_H
 
 #include <span>
+#include <algorithm>
 
 #include <oxc_gcode.h>
 

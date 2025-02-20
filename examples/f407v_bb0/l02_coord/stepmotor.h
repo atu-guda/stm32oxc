@@ -22,7 +22,6 @@ class StepMotorFake : public StepMotor{
    virtual void step() override {};
    virtual void set_dir( int d ) override { dir = d; }
   protected:
-   int dir = 0;
 };
 
 
