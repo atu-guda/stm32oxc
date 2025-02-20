@@ -14,9 +14,9 @@ inline constexpr uint32_t TOWER_PIN_CE { TOWER_PIN1 };
 inline constexpr uint32_t TOWER_PIN2 { TOWER_PIN0 + 2 };
 inline constexpr uint32_t TOWER_PIN_DW { TOWER_PIN2 };
 inline constexpr uint32_t TOWER_N    { 3 };
-inline constexpr uint32_t TOWER_BIT_UP { 1 << TOWER_PIN0 };
-inline constexpr uint32_t TOWER_BIT_CE { TOWER_BIT_UP << 1 };
-inline constexpr uint32_t TOWER_BIT_DW { TOWER_BIT_CE << 1 };
+inline constexpr uint32_t TOWER_BIT_DW { 1 << TOWER_PIN0 };
+inline constexpr uint32_t TOWER_BIT_CE { TOWER_BIT_DW << 1 };
+inline constexpr uint32_t TOWER_BIT_UP { TOWER_BIT_CE << 1 };
 inline constexpr uint32_t TOWER_BITS_ALL { TOWER_BIT_UP | TOWER_BIT_CE | TOWER_BIT_DW  };
 
 
@@ -71,6 +71,8 @@ struct EXTI_Info {
   decltype(GpioRegs::ExtiEv::updown) dir;
   decltype(EXTI0_IRQn) exti_n;
 };
+
+#define MOTORS_UART USART1
 
 #define TIM_BIT_ROT 1
 #define TIM_BIT_MOV 2

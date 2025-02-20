@@ -50,11 +50,11 @@ constexpr float xlim_move_len { 0.1f };
 TIM_HandleTypeDef tim_r_h;
 TIM_HandleTypeDef tim_m_h;
 int volatile tim_r_pulses {0}, tim_r_need {0}, tim_m_pulses {0}, tim_m_need {0};
-int tim_n_cfg( TIM_HandleTypeDef &t_h, TIM_TypeDef *tim, uint32_t ch );
-int tim_r_cfg();
+int  tim_n_cfg( TIM_HandleTypeDef &t_h, TIM_TypeDef *tim, uint32_t ch );
+int  tim_r_cfg();
 void tim_r_start();
 void tim_r_stop();
-int tim_m_cfg();
+int  tim_m_cfg();
 void tim_m_start();
 void tim_m_stop();
 void tims_start( uint8_t devs );
@@ -64,7 +64,7 @@ void timn_stop( uint8_t dev );
 uint32_t calc_TIM_arr_for_base_freq_flt( TIM_TypeDef *tim, float base_freq ); // like from oxc_tim.h buf for float
 
 UART_HandleTypeDef uah_motordrv;
-UsartIO motordrv( &uah_motordrv, USART1 );
+UsartIO motordrv( &uah_motordrv, MOTORS_UART );
 TMC_UART_drv tmc_uart_drv( &motordrv );
 TMC2209::TMC_devices tmc( &tmc_uart_drv, 4 );
 
@@ -90,11 +90,11 @@ const char*  break_flag2str();
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
 int cmd_start( int argc, const char * const * argv );
-CmdInfo CMDINFO_START { "start", '\0', cmd_start, " - start motor"  };
+CmdInfo CMDINFO_START { "start", '\0', cmd_start, "[bits] - start motors"  };
 int cmd_stop( int argc, const char * const * argv );
-CmdInfo CMDINFO_STOP { "stop", '\0', cmd_stop, " - stop motor"  };
+CmdInfo CMDINFO_STOP { "stop", 'P', cmd_stop, "[bits] - stop motors"  };
 int cmd_speed( int argc, const char * const * argv );
-CmdInfo CMDINFO_SPEED { "speed", '\0', cmd_speed, " speed [dev] - set speed for motor turn/s or mm/s"  };
+CmdInfo CMDINFO_SPEED { "speed", 'Q', cmd_speed, " speed [dev] - set speed for motor turn/s or mm/s"  };
 int cmd_readreg( int argc, const char * const * argv );
 CmdInfo CMDINFO_READREG { "readreg", '\0', cmd_readreg, " reg - read TMC2209 register"  };
 int cmd_writereg( int argc, const char * const * argv );
@@ -257,9 +257,9 @@ void idle_main_task()
 {
   // handle "go" key
   static uint32_t last_start_tick = HAL_GetTick();
-  static uint16_t ostate = 1;
-  uint16_t cstate = pins_user_start.read();
-  if( cstate == 0 && ostate != 0 ) {
+  static uint16_t ostate_go = 1;
+  uint16_t cstate_go = pins_user_start.read();
+  if( cstate_go == 0 && ostate_go != 0 ) {
     uint32_t cur_start_tick = HAL_GetTick();
     if( cur_start_tick - last_start_tick > 100 ) {
       leds.toggle( 1 );
@@ -269,7 +269,7 @@ void idle_main_task()
       last_start_tick = cur_start_tick;
     }
   }
-  ostate = cstate;
+  ostate_go = cstate_go;
 }
 
 
@@ -300,6 +300,7 @@ int main(void)
   pins_user_start.initHW();
   pins_user_stop.initHW();
   pin_nen.initHW();
+  pin_nen.set();
 
   print_var_hook = print_var_ex;
   set_var_hook   = set_var_ex;
@@ -580,17 +581,19 @@ bool read_sensors()
 {
   porta_sensors_bits = (~GPIOA->IDR) & porta_sensor_mask;
   portb_sensors_bits = GPIOB->IDR & portb_sensor_mask;
+  UVAR('a') = porta_sensors_bits;
+  UVAR('b') = portb_sensors_bits;
   return porta_sensors_bits != porta_sensor_mask; //
 }
 
 int cmd_start( int argc, const char * const * argv )
 {
-  int devs = arg2long_d( 1, argc, argv, 3, 0, 3 );
+  int devs = arg2long_d( 1, argc, argv, 0, 0, 3 ); // by default - none
   tims_start( devs );
   return 0;
 }
 
-int cmd_stop( int argc, const char * const * argv )
+int cmd_stop( int argc, const char * const * argv ) // by default - all
 {
   int devs = arg2long_d( 1, argc, argv, 3, 0, 3 );
   tims_stop( devs );
@@ -643,6 +646,7 @@ int do_move( float mm, float vm, uint8_t dev )
   lcdt.cls();
   lcdt.puts_xy( 0, 0, act_name );
 
+  pin_nen.set();
   if( ! ensure_drv_prepared() ) {
     std_out << "# Error: drivers not prepared" << NL;
     lcdt.puts_xy( 0, 1, "Err: drv" );
@@ -678,6 +682,7 @@ int do_move( float mm, float vm, uint8_t dev )
 
   ledsx.reset( 0x0F );
   TMC_stat st_dev {0,0};
+  pin_nen.reset();
 
   uint32_t tm0 = HAL_GetTick();
   uint32_t tc0 = tm0;
@@ -881,10 +886,12 @@ int do_go( float nt )
 
   if( td.c_lay >= td.n_lay ) {
     // TODO: action on go button after? on/off motors?
+    pin_nen.toggle();
     std_out << "# All done!" << NL;
     lcdt.puts_xy( 0, 0, "Done" );
     return 0;
   }
+
   if( ! ensure_drv_prepared() ) {
     std_out << "# Error: drivers not prepared" << NL;
     lcdt.puts_xy( 0, 0, "Err " );
@@ -942,6 +949,7 @@ int do_go( float nt )
   uint32_t tc0 = tm0;
 
   break_flag = 0;
+  read_sensors();
   tims_start( TIM_BIT_ALL );
   for( int i=0; i<10000000 && !break_flag; ++i ) { // TODO: calc time
 
@@ -1118,8 +1126,9 @@ int cmd_off( int argc, const char * const * argv )
 {
   lcdt.puts_xy( 0, 0, "Off " );
   drv_prepared = 0;
-  tmc.write_reg( 0, 0x6C, reg6C_off );
-  tmc.write_reg( 1, 0x6C, reg6C_off );
+  pin_nen.set();
+  // tmc.write_reg( 0, 0x6C, reg6C_off );
+  // tmc.write_reg( 1, 0x6C, reg6C_off );
   return 0;
 }
 
@@ -1194,7 +1203,6 @@ void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim )
     GpioA.cfgAF_N( TIM_ROT_GPIO_PIN, TIM_ROT_GPIO_AF );
     HAL_NVIC_SetPriority( TIM_ROT_IRQn, 8, 0 );
     HAL_NVIC_EnableIRQ( TIM_ROT_IRQn );
-    UVAR('z') = 7;
     return;
   }
 
@@ -1203,7 +1211,6 @@ void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim )
     GpioA.cfgAF_N( TIM_MOV_GPIO_PIN, TIM_MOV_GPIO_AF );
     HAL_NVIC_SetPriority( TIM_MOV_IRQn, 9, 0 );
     HAL_NVIC_EnableIRQ( TIM_MOV_IRQn );
-    UVAR('z') += 8;
     return;
   }
 
@@ -1264,11 +1271,13 @@ void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
     if( check_top && ( portb_sensors_bits & TOWER_BIT_UP ) ) { // set = bad
       tims_stop( TIM_BIT_ALL );
       break_flag = (int)(BreakNum::tower_top);
+      UVAR('z') = 200;
     }
 
     if( check_bot && ( ( portb_sensors_bits & TOWER_BIT_DW ) == 0 ) ) { // reset = bad
       tims_stop( TIM_BIT_ALL );
       break_flag = (int)(BreakNum::tower_bot);
+      UVAR('z') = 201;
     }
 
     if( tim_m_need > 0 && tim_m_pulses >= tim_m_need ) {
@@ -1360,7 +1369,7 @@ void HAL_GPIO_EXTI_Callback( uint16_t pin_bit )
 
 void EXTI0_IRQHandler(void)
 {
-  HAL_GPIO_EXTI_IRQHandler( TOWER_BIT_UP );
+  HAL_GPIO_EXTI_IRQHandler( TOWER_BIT_DW );
 }
 
 void EXTI1_IRQHandler()
@@ -1370,7 +1379,7 @@ void EXTI1_IRQHandler()
 
 void EXTI2_IRQHandler()
 {
-  HAL_GPIO_EXTI_IRQHandler( TOWER_BIT_DW );
+  HAL_GPIO_EXTI_IRQHandler( TOWER_BIT_UP );
 }
 
 void EXTI3_IRQHandler()
