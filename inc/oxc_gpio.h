@@ -361,6 +361,12 @@ class PinOut
      gpio.ODR ^= mask;
    }
    inline bool operator=( bool b ) { sr( b ); return b; }
+   inline uint8_t read_in() {
+     return ( gpio.IDR & mask ) ? 1 : 0;
+   };
+   inline uint8_t read_out() {
+     return ( gpio.ODR & mask ) ? 1 : 0;
+   };
   protected:
    GpioRegs &gpio;
    const uint8_t start;

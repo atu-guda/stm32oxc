@@ -18,6 +18,9 @@ USBCDC_CONSOLE_DEFINES;
 
 int debug {0};
 const unsigned buf_sz_lcdt { 22 }; // now 16 (16x2), may be 20 (20x4) + 2
+char state_ch { '?' };
+void make_state_str( char *s );
+
 
 PinsOut ledsx( GpioB, 12, 4 );
 
@@ -38,7 +41,7 @@ bool read_sensors(); // returns true at bad condition
 uint32_t sensor_flags = SWLIM_BITS_ALL;
 bool check_top { false }, check_bot { false }; // work copy from td, only in go
 
-const char* common_help_string = "Winding machine control app " __DATE__ " " __TIME__ NL;
+const char* common_help_string = "Wind_mach " __DATE__ " " __TIME__ NL;
 
 constexpr uint32_t tim_psc_freq   {  10000000 };
 constexpr uint32_t tim_pbase_init {  tim_psc_freq / 200 };
@@ -170,13 +173,18 @@ int TaskData::calc( int n_tot, int d_w, int w_l, bool even )
   std_out << "# debug: n_lay_max= " << n_lay_max << " n_lay= " << n_lay
     << " d_w_e= " << d_w_e << " v_mov= " << v_mov << NL;
 
+  char s[buf_sz_lcdt];
+  read_sensors();
+  make_state_str( s );
   OSTR( os1, buf_sz_lcdt );
   os1.reset_out();
-  os1 << "w: " << FltFmt( (float)d_w / 1000, cvtff_fix, 5, 3 ) << ' '
-      <<             FltFmt( d_w_e,             cvtff_fix, 5, 3 );
+  os1 << s << "w: " << FltFmt( (float)d_w / 1000, cvtff_fix, 5, 3 );
+  lcdt.cls();
   lcdt.puts_xy( 0, 0, os1.getBuf() );
+
   os1.reset_out();
-  os1 << n_lay << '*' << n_2lay << "=" << (n_lay * n_2lay) << ' ';
+  os1 << n_lay << '*' << n_2lay << "=" << (n_lay * n_2lay) << ' '
+      << FltFmt( d_w_e,             cvtff_fix, 5, 3 );
   lcdt.puts_xy( 0, 1, os1.getBuf() );
 
   return 1;
@@ -255,6 +263,11 @@ bool set_var_ex( const char *nm, const char *s )
 
 void idle_main_task()
 {
+  char s[buf_sz_lcdt];
+  read_sensors();
+  make_state_str( s );
+  lcdt.puts_xy( 0, 0, s );
+
   // handle "go" key
   static uint32_t last_start_tick = HAL_GetTick();
   static uint16_t ostate_go = 1;
@@ -292,7 +305,7 @@ int main(void)
   lcdt.init_4b();
   UVAR('s') = lcdt.getState();
   lcdt.cls();
-  lcdt.puts_xy( 5, 0, "putin-huilo!" );
+  lcdt.puts_xy( 0, 1, "putin-huilo!" );
 
   pins_tower.initHW();
   pins_swlim.initHW();
@@ -342,6 +355,40 @@ int main(void)
   std_main_loop_nortos( &srl, idle_main_task );
 
   return 0;
+}
+
+void make_state_str( char *s )
+{
+  if( !s ) {
+    return;
+  };
+  s[0] = state_ch;
+
+  static const char sx1l[] = "{[<|?!.";
+  unsigned idx = ( ( porta_sensors_bits >> (SWLIM_PIN_SL-1) ) & 2 ) |
+                 ( ( porta_sensors_bits >> (SWLIM_PIN_OL  ) ) & 1 );
+  s[1] = sx1l[idx];
+  // s[1] = idx + '0';
+
+
+  static const char sx1r[] = "}]>|?!.";
+  idx = ( ( porta_sensors_bits >> (SWLIM_PIN_SR-1) ) & 2 ) |
+        ( ( porta_sensors_bits >> (SWLIM_PIN_OR  ) ) & 1 );
+  s[3] = sx1r[idx];
+  //s[3] = idx + '0';
+
+  static const char sx2[] = "_=2-456^?!.";
+  idx = portb_sensors_bits & TOWER_BITS_ALL;
+  s[2] = sx2[idx];
+
+  static const char sdr[] = ".rmx*RMX?!.";
+  idx = ( portb_sensors_bits >> DIAG_PIN0 ) & 3;
+  if( pin_nen.read_in() == 0 ) {
+    idx |= 0x04;
+  }
+  s[4] = sdr[idx];
+
+  s[5] = '\0';
 }
 
 const EXTI_Info exti_info[] = {
@@ -642,14 +689,14 @@ int cmd_speed( int argc, const char * const * argv )
 
 int do_move( float mm, float vm, uint8_t dev )
 {
-  const char *act_name = dev ? "Move " : "Rot  ";
   lcdt.cls();
-  lcdt.puts_xy( 0, 0, act_name );
+  // lcdt.puts_xy( 0, 0, act_name );
+  char s[buf_sz_lcdt];
 
   pin_nen.set();
   if( ! ensure_drv_prepared() ) {
     std_out << "# Error: drivers not prepared" << NL;
-    lcdt.puts_xy( 0, 1, "Err: drv" );
+    lcdt.puts_xy( 1, 1, "Err: drv" );
     return  1;
   }
   timn_stop( dev );
@@ -718,11 +765,13 @@ int do_move( float mm, float vm, uint8_t dev )
 
     float dlt = dev ? puls2mm( *c_pulses ) : puls2turn( *c_pulses );
 
+    make_state_str( s );
+
     std_out << HexInt16( porta_sensors_bits ) << ' ' << HexInt16( portb_sensors_bits ) << ' '
             << FltFmt( dlt, cvtff_fix, 8, 2 )
             << NL;
     os1.reset_out();
-    os1 << act_name << ' ' << ( rev ? '-' : '+' )<<  ' ' << FltFmt( dlt, cvtff_fix, 8, 2 );
+    os1 << s << ' ' << ( rev ? '-' : '+' )<<  ' ' << FltFmt( dlt, cvtff_fix, 8, 2 );
     lcdt.puts_xy( 0, 0, os1.getBuf() );
 
     delay_ms_until_brk( &tc0, td.dt );
@@ -757,6 +806,7 @@ int cmd_rotate( int argc, const char * const * argv )
   RestoreAtLeave rst_st( sensor_flags );
   sensor_flags = SWLIM_BITS_SW;
 
+  state_ch = '^';
   auto rc =  do_move( turns, vm, 0 );
 
   return rc;
@@ -771,6 +821,7 @@ int cmd_move( int argc, const char * const * argv )
   RestoreAtLeave rst_st( sensor_flags );
   sensor_flags = ignore_opto ? SWLIM_BITS_SW : SWLIM_BITS_ALL;
 
+  state_ch = '-';
   auto rc =  do_move( mm, vm, 1 );
 
   return rc;
@@ -800,12 +851,14 @@ int cmd_repos( int argc, const char * const * argv )
   }
 
   sensor_flags = SWLIM_BITS_SW;
+  state_ch =  '\x7F';
   do_move( shi, vm, 1 );
   if( break_flag ) {
     return rc;
   }
 
   sensor_flags = SWLIM_BITS_ALL;
+  state_ch = '\x7E';
   rc = do_move( emm, vm, 1 );
 
   return rc;
@@ -818,12 +871,14 @@ int cmd_meas_x( int argc, const char * const * argv )
 
   lcdt.puts_xy( 0, 0, "X= " );
 
+  state_ch = '\x7E';
   sensor_flags = SWLIM_BITS_ALL;
   auto rc = do_move( max_move_len, vm, 1 ); // find right limit
   if( break_flag != 0 && break_flag != (int)BreakNum::opr ) {
     return rc;
   }
 
+  state_ch = '\x7F';
   sensor_flags = SWLIM_BITS_SW;
   rc = do_move( -xlim_move_len, vm, 1 );  // substep to left
   if( break_flag ) {
@@ -840,6 +895,7 @@ int cmd_meas_x( int argc, const char * const * argv )
   float d_x = xlim_move_len + puls2mm( d_xt );
 
   sensor_flags = SWLIM_BITS_SW;
+  state_ch = '\x7E';
   rc = do_move( xlim_move_len, vm, 1 ); // substep to right
   if( break_flag ) {
     return rc;
@@ -875,6 +931,7 @@ void handle_end_layer()
     td.p_ldone = 0;
     std_out << "###################################################### END layer " << td.c_lay << NL;
     ++td.c_lay;
+    state_ch = '!';
   }
 }
 
@@ -883,17 +940,20 @@ int do_go( float nt )
   OSTR( os1, buf_sz_lcdt );
   OSTR( os2, buf_sz_lcdt );
   lcdt.cls();
+  char s[buf_sz_lcdt];
 
   if( td.c_lay >= td.n_lay ) {
     // TODO: action on go button after? on/off motors?
     pin_nen.toggle();
     std_out << "# All done!" << NL;
-    lcdt.puts_xy( 0, 0, "Done" );
+    // lcdt.puts_xy( 0, 0, "Done" );
+    state_ch = '!';
     return 0;
   }
 
   if( ! ensure_drv_prepared() ) {
     std_out << "# Error: drivers not prepared" << NL;
+    state_ch = 'E';
     lcdt.puts_xy( 0, 0, "Err " );
     lcdt.puts_xy( 0, 1, "Drv " ); // TODO: IDX
     return  1;
@@ -940,7 +1000,7 @@ int do_go( float nt )
   tmc.write_reg( 0, 0, reg00_def_forv ); // rot direction
   tmc.write_reg( 1, 0, rev ? reg00_def_rev : reg00_def_forv ); // move direction
 
-  lcdt.puts_xy( 0, 0, "Go  " );
+  // lcdt.puts_xy( 0, 0, "Go  " );
 
   sensor_flags = SWLIM_BITS_ALL;
   check_top  = td.check_top;  check_bot  = td.check_bot;
@@ -950,6 +1010,7 @@ int do_go( float nt )
 
   break_flag = 0;
   read_sensors();
+  state_ch = '+';
   tims_start( TIM_BIT_ALL );
   for( int i=0; i<10000000 && !break_flag; ++i ) { // TODO: calc time
 
@@ -974,6 +1035,8 @@ int do_go( float nt )
       }
     }
 
+    read_sensors();
+
     if( ( porta_sensors_bits & sensor_flags ) != sensor_flags ) {
       break_flag = (int)(BreakNum::drv_flags_rot );
       err_bits |= 16;
@@ -983,6 +1046,8 @@ int do_go( float nt )
     const uint32_t tc = HAL_GetTick();
 
     const float d_r_c = puls2turn ( td.p_ldone + tim_r_pulses );
+
+    make_state_str( s );
 
     std_out << FmtInt( tc - tm0, 10 ) << ' ';
     if( UVAR('o') ) {
@@ -994,13 +1059,12 @@ int do_go( float nt )
             << FltFmt( d_r_c, cvtff_fix, 8, 2 ) << NL;
 
     os1.reset_out();
-    os1 << "Go. " << FmtInt( td.c_lay, 3 ) << ' ' << FltFmt( d_r_c, cvtff_fix, 7, 1 )
-        << (rev ? '\x7F' : '\x7E');
+    os1 << s << FmtInt( td.c_lay, 3 ) << ' ' << FltFmt( d_r_c, cvtff_fix, 7, 1 );
     lcdt.puts_xy( 0, 0, os1.getBuf() );
 
     os2.reset_out();
     os2 << break_flag2str() << ':' << FmtInt( td.n_lay, 3 ) << "  "
-        << FmtInt( td.n_2lay, 4 ) << ' ' << char( '@' + ( portb_sensors_bits & 0x07 ) );
+        << FmtInt( td.n_2lay, 4 ) << (rev ? '\x7F' : '\x7E');
     lcdt.puts_xy( 0, 1, os2.getBuf() );
 
     delay_ms_until_brk( &tc0, td.dt );
@@ -1036,9 +1100,11 @@ int do_go( float nt )
 
   if( td.c_lay >= td.n_lay ) {
     std_out << "# All done! #################################################" << NL;
-    lcdt.puts_xy( 0, 0, "Done " );
+    state_ch = '!';
+    // lcdt.puts_xy( 0, 0, "Done " );
   } else {
-    lcdt.puts_xy( 0, 0, break_flag ? "Err: " : "Wait " );
+    // lcdt.puts_xy( 0, 0, break_flag ? "Err: " : "Wait " );
+    state_ch = break_flag ? 'E' : 'W';
   }
   lcdt.puts_xy( 0, 1, break_flag2str() );
 
@@ -1102,14 +1168,17 @@ int ensure_drv_prepared()
     return 1;
   }
   if( ! prepare_drv( 0 ) ) {
+    state_ch = 'R';
     std_out << " Fail to prepare drv 0" << NL;
     return 0;
   }
   if( ! prepare_drv( 1 )  ) {
+    state_ch = 'M';
     std_out << " Fail to prepare drv 1" << NL;
     return 0;
   }
   drv_prepared = 1;
+  state_ch = '.';
   return 1;
 }
 
@@ -1151,6 +1220,7 @@ int cmd_calc( int argc, const char * const * argv )
     std_out << "# WARNING: w_len > w_len_m" << NL;
     lcdt.puts_xy( 15, 1, "W" );
   }
+  state_ch = 'C';
 
   return 0;
 }
