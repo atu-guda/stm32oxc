@@ -815,12 +815,12 @@ int do_move( float mm, float vm, uint8_t dev )
 int cmd_rotate( int argc, const char * const * argv )
 {
   float turns = arg2float_d( 1, argc, argv, 1.0f, -50000.0f, 50000.0f );
-  float vm = arg2float_d( 2, argc, argv, td.v_rot, 0.0f, 20.0f );
+  float vm = arg2float_d( 2, argc, argv, 0.5f, 0.0f, 20.0f );
 
   RestoreAtLeave rst_st( sensor_flags );
   sensor_flags = SWLIM_BITS_SW;
 
-  state_ch = '^';
+  state_ch = ( turns > 0 ) ? '^' : 'v';
   auto rc =  do_move( turns, vm, 0 );
 
   return rc;
@@ -835,7 +835,7 @@ int cmd_move( int argc, const char * const * argv )
   RestoreAtLeave rst_st( sensor_flags );
   sensor_flags = ignore_opto ? SWLIM_BITS_SW : SWLIM_BITS_ALL;
 
-  state_ch = '>';
+  state_ch = ( mm > 0 ) ? '>' : '<';
   auto rc =  do_move( mm, vm, 1 );
 
   return rc;
@@ -894,7 +894,7 @@ int cmd_meas_x( int argc, const char * const * argv )
 
   state_ch = '<';
   sensor_flags = SWLIM_BITS_SW;
-  rc = do_move( -xlim_move_len, vm, 1 );  // substep to left
+  rc = do_move( -xlim_move_len, vm/2, 1 );  // substep to left
   if( break_flag ) {
     return rc;
   }
@@ -910,7 +910,7 @@ int cmd_meas_x( int argc, const char * const * argv )
 
   sensor_flags = SWLIM_BITS_SW;
   state_ch = '>';
-  rc = do_move( xlim_move_len, vm, 1 ); // substep to right
+  rc = do_move( xlim_move_len, vm/2, 1 ); // substep to right
   if( break_flag ) {
     return rc;
   }
