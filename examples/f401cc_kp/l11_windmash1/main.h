@@ -136,8 +136,8 @@ struct TMC_stat {
 struct TaskData {
   // input data
   int n_total   { 100    }; // total turns
-  float d_wire  {  0.21f }; // wire diameter + extra space in um
-  float w_len   { 50.0f  }; // wirering length (in mm)
+  float d_wire  {  0.3f  }; // wire diameter + extra space in um
+  float w_len   { 40.0f  }; // wirering length (in mm)
   // mech
   float v_rot   {   2.0f }; // nominal rotation speed (turns/s)
   float a_rot   {   1.0f }; // rotation acceleration (turns/s^2)
@@ -145,12 +145,12 @@ struct TaskData {
   float w_len_m {  50.0f }; // max wirering length (in um)
   int s_rot_m   {      1 }; // minimal S stall value for rotation
   int s_mov_m   {      1 }; // minimal S stall value for movement
-  int      dt {       20 }; // time step durung work in ms
+  int      dt   {     20 }; // time step durung work in ms
   int check_top {      1 }; // check top sensor in tower (wire break or end)
   int check_bot {      1 }; // check bottom sensor in tower (stall)
   int k_rot     {8 * 200 }; // pulses per turn = 200 stepmotor, 8 microstep
   int k_mov     {4 * 200 }; // pulses per mm = 200 stepmotor, 8 microstep, 2mm/turn
-                            // TODO: mult_rot(turn/turn), mult_mov (mm/turn)
+
   // calculated
   int n_lay   {        0 }; // number of layers
   int n_2lay  {        0 }; // turns per layer

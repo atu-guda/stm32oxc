@@ -956,7 +956,7 @@ int do_go( float nt )
   char s[buf_sz_lcdt];
 
   if( td.c_lay >= td.n_lay ) {
-    // TODO: action on go button after? on/off motors?
+    // action on go button after: on/off motors
     pin_nen.toggle();
     std_out << "# All done!" << NL;
     // lcdt.puts_xy( 0, 0, "Done" );
@@ -970,6 +970,7 @@ int do_go( float nt )
     lcdt.puts_xy( 0, 1, "ErrDrv " ); // TODO: IDX
     return  1;
   }
+  pin_nen.set();
 
   uint32_t err_bits { 0 };
   ledsx.reset( 0x0F );
@@ -1014,6 +1015,8 @@ int do_go( float nt )
   tims_stop( TIM_BIT_ALL );
 
   TMC_stat st_rot {0,0}, st_mov {0,0};
+
+  pin_nen.reset();
 
   tmc.write_reg( 0, 0, reg00_def_forv ); // rot direction
   tmc.write_reg( 1, 0, rev ? reg00_def_rev : reg00_def_forv ); // move direction
@@ -1065,8 +1068,15 @@ int do_go( float nt )
     const uint32_t tc = HAL_GetTick();
     const float tcf = float( tc - tm0 ) * 1e-3f;
 
-    float v_rot = std::clamp( td.a_rot * tcf, v_rot_0, v_rot_max );
-    float v_mov = std::clamp( v_rot * k_rot_mov, v_mov_0, v_mov_max );
+    const float d_r_c = puls2turn ( td.p_ldone + tim_r_pulses );
+    const float r_todo = td.n_2lay - d_r_c;
+    const float t_todo = r_todo / std::max( v_rot_old, 0.01f ); // approx on max speed
+
+    float v_rot   = std::clamp( td.a_rot * tcf,        v_rot_0, v_rot_max );
+    float v_rot_e = std::clamp( td.a_rot * t_todo * 2, v_rot_0, v_rot_max ); // *2 - deaccel may be faster
+    v_rot = std::min( v_rot, v_rot_e );
+
+    float v_mov   = std::clamp( v_rot * k_rot_mov, v_mov_0, v_mov_max );
     if( std::fabsf( v_rot_old - v_rot ) > 0.1f || ( tc - t_set_speed ) > 1000 ) {
       set_drv_speed( 0, v_rot ); v_rot_old = v_rot;
       set_drv_speed( 1, v_mov ); v_mov_old = v_mov;
@@ -1075,8 +1085,6 @@ int do_go( float nt )
       v_rot = v_rot_old;
       v_mov = v_mov_old;
     }
-
-    const float d_r_c = puls2turn ( td.p_ldone + tim_r_pulses );
 
     make_state_str( s );
 
