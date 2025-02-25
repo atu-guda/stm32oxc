@@ -3,6 +3,7 @@
 #include <oxc_hd44780_i2c.h>
 #include <oxc_usartio.h> // TODO: auto
 #include <oxc_namedints.h>
+#include <oxc_namedfloats.h>
 #include <oxc_atleave.h>
 #include <oxc_outstr.h>
 
@@ -149,16 +150,16 @@ HD44780_i2c lcdt( i2cd, 0x27 );
 
 TaskData td;
 
-int TaskData::calc( int n_tot, int d_w, int w_l, bool even )
+int TaskData::calc( int n_tot, float d_w, float w_l, bool even )
 {
   p_ldone = p_ltask = c_lay =  n_lay = 0;
-  if( n_tot < 1 || d_w < 20 || w_l < 2 * d_w ) {
+  if( n_tot < 1 || d_w < 0.01f || w_l < 2 * d_w ) {
     n_tot = 0;
     return 0;
   }
 
   n_total = n_tot; d_wire = d_w; w_len = w_l;
-  unsigned n_lay_max = w_len / d_wire;
+  unsigned n_lay_max = (unsigned) ( w_len / d_wire );
   n_lay = ( n_tot + n_lay_max - 1 ) / n_lay_max;
   if( even ) {
     ++n_lay;
@@ -167,12 +168,13 @@ int TaskData::calc( int n_tot, int d_w, int w_l, bool even )
   n_2lay = ( n_total + n_lay / 2 ) / n_lay;
   p_ltask = turn2puls( n_2lay );
 
-  float d_w_e = 0.001f * w_len / n_2lay;
-  v_mov = (int)( v_rot * d_w_e + 0.4999f );
+  float d_w_e = w_len / n_2lay;
+  v_mov = v_rot * d_w_e;
 
   std_out << "# debug: n_lay_max= " << n_lay_max << " n_lay= " << n_lay
     << " d_w_e= " << d_w_e << " v_mov= " << v_mov << NL;
 
+  // TODO: move to cmd_, here only calc
   char s[buf_sz_lcdt];
   read_sensors();
   make_state_str( s );
@@ -192,13 +194,15 @@ int TaskData::calc( int n_tot, int d_w, int w_l, bool even )
 
 #define ADD_IOBJ(x)    constexpr NamedInt   ob_##x { #x, &x }
 #define ADD_IOBJ_TD(x) constexpr NamedInt   ob_##x { #x, &td.x }
+#define ADD_FOBJ(x)    constexpr NamedFloat ob_##x { #x, &x }
+#define ADD_FOBJ_TD(x) constexpr NamedFloat ob_##x { #x, &td.x }
 
 ADD_IOBJ_TD( n_total );
-ADD_IOBJ_TD( d_wire  );
-ADD_IOBJ_TD( w_len   );
-ADD_IOBJ_TD( v_rot   );
-ADD_IOBJ_TD( v_mov_o );
-ADD_IOBJ_TD( w_len_m );
+ADD_FOBJ_TD( d_wire  );
+ADD_FOBJ_TD( w_len   );
+ADD_FOBJ_TD( v_rot   );
+ADD_FOBJ_TD( v_mov_o );
+ADD_FOBJ_TD( w_len_m );
 ADD_IOBJ_TD( s_rot_m );
 ADD_IOBJ_TD( s_mov_m );
 ADD_IOBJ_TD( dt );
@@ -208,7 +212,7 @@ ADD_IOBJ_TD( k_rot );
 ADD_IOBJ_TD( k_mov );
 ADD_IOBJ_TD( n_lay   );
 ADD_IOBJ_TD( n_2lay  );
-ADD_IOBJ_TD( v_mov   );
+ADD_FOBJ_TD( v_mov   );
 ADD_IOBJ_TD( p_ldone );
 ADD_IOBJ_TD( p_ltask );
 ADD_IOBJ_TD( p_move  );
@@ -636,6 +640,7 @@ bool read_sensors()
 int cmd_start( int argc, const char * const * argv )
 {
   int devs = arg2long_d( 1, argc, argv, 0, 0, 3 ); // by default - none
+  state_ch = (char)('0' + devs);
   tims_start( devs );
   return 0;
 }
@@ -643,6 +648,7 @@ int cmd_start( int argc, const char * const * argv )
 int cmd_stop( int argc, const char * const * argv ) // by default - all
 {
   int devs = arg2long_d( 1, argc, argv, 3, 0, 3 );
+  state_ch = (char)('@' + devs);
   tims_stop( devs );
   return 0;
 }
@@ -660,7 +666,7 @@ int set_drv_speed( int dev, float speed )
   float freq = ( dev == 0 ) ? turn2puls( speed ) : mm2puls( speed );
   uint32_t arr = calc_TIM_arr_for_base_freq_flt( tim, freq );
 
-  // stop timer during update
+  // stop timer during update // TODO: IRQ
   uint32_t old_cr1 = tim->CR1;
   tim->CR1 &= ~1u; // EN;
   tim->ARR = arr;
@@ -669,7 +675,9 @@ int set_drv_speed( int dev, float speed )
   tim->CR1 = old_cr1;
 
   // debug
-  std_out << "# debug: dev= " << dev << " ARR= " << arr << " freq= " << freq << NL;
+  if( debug ) {
+    std_out << "# debug: dev= " << dev << " ARR= " << arr << " freq= " << freq << NL;
+  }
 
   return 0;
 }
@@ -767,7 +775,7 @@ int do_move( float mm, float vm, uint8_t dev )
 
     make_state_str( s );
 
-    std_out << HexInt16( porta_sensors_bits ) << ' ' << HexInt16( portb_sensors_bits ) << ' '
+    std_out << s << ' ' << HexInt16( porta_sensors_bits ) << ' ' << HexInt16( portb_sensors_bits ) << ' '
             << FltFmt( dlt, cvtff_fix, 8, 2 )
             << NL;
     os1.reset_out();
@@ -801,7 +809,7 @@ int do_move( float mm, float vm, uint8_t dev )
 int cmd_rotate( int argc, const char * const * argv )
 {
   float turns = arg2float_d( 1, argc, argv, 1.0f, -50000.0f, 50000.0f );
-  float vm = arg2float_d( 2, argc, argv, td.v_rot * speed_scale, 0.0f, 20.0f );
+  float vm = arg2float_d( 2, argc, argv, td.v_rot, 0.0f, 20.0f );
 
   RestoreAtLeave rst_st( sensor_flags );
   sensor_flags = SWLIM_BITS_SW;
@@ -816,12 +824,12 @@ int cmd_move( int argc, const char * const * argv )
 {
   float mm = arg2float_d( 1, argc, argv, 1.0f, -max_move_len, max_move_len );
   int ignore_opto = arg2long_d( 2, argc, argv, 0, 0, 1 );
-  float vm = arg2float_d( 3, argc, argv, td.v_mov_o * speed_scale, 0.0f, 20.0f );
+  float vm = arg2float_d( 3, argc, argv, td.v_mov_o, 0.0f, 20.0f );
 
   RestoreAtLeave rst_st( sensor_flags );
   sensor_flags = ignore_opto ? SWLIM_BITS_SW : SWLIM_BITS_ALL;
 
-  state_ch = '-';
+  state_ch = '>';
   auto rc =  do_move( mm, vm, 1 );
 
   return rc;
@@ -830,7 +838,7 @@ int cmd_move( int argc, const char * const * argv )
 int cmd_repos( int argc, const char * const * argv )
 {
   float mm = arg2float_d( 1, argc, argv, 1.0f, -max_move_len, max_move_len );
-  float vm = td.v_mov_o * speed_scale;
+  float vm = td.v_mov_o;
   td.n_lay = 0;
   int good_lim;
   lcdt.puts_xy( 0, 0, "Pos " );
@@ -851,14 +859,14 @@ int cmd_repos( int argc, const char * const * argv )
   }
 
   sensor_flags = SWLIM_BITS_SW;
-  state_ch =  '\x7F';
+  state_ch =  '<';
   do_move( shi, vm, 1 );
   if( break_flag ) {
     return rc;
   }
 
   sensor_flags = SWLIM_BITS_ALL;
-  state_ch = '\x7E';
+  state_ch = '>';
   rc = do_move( emm, vm, 1 );
 
   return rc;
@@ -866,19 +874,19 @@ int cmd_repos( int argc, const char * const * argv )
 
 int cmd_meas_x( int argc, const char * const * argv )
 {
-  float vm = td.v_mov_o * speed_scale;
+  float vm = td.v_mov_o;
   RestoreAtLeave rst_st( sensor_flags );
 
   lcdt.puts_xy( 0, 0, "X= " );
 
-  state_ch = '\x7E';
+  state_ch = '>';
   sensor_flags = SWLIM_BITS_ALL;
   auto rc = do_move( max_move_len, vm, 1 ); // find right limit
   if( break_flag != 0 && break_flag != (int)BreakNum::opr ) {
     return rc;
   }
 
-  state_ch = '\x7F';
+  state_ch = '<';
   sensor_flags = SWLIM_BITS_SW;
   rc = do_move( -xlim_move_len, vm, 1 );  // substep to left
   if( break_flag ) {
@@ -895,7 +903,7 @@ int cmd_meas_x( int argc, const char * const * argv )
   float d_x = xlim_move_len + puls2mm( d_xt );
 
   sensor_flags = SWLIM_BITS_SW;
-  state_ch = '\x7E';
+  state_ch = '>';
   rc = do_move( xlim_move_len, vm, 1 ); // substep to right
   if( break_flag ) {
     return rc;
@@ -954,8 +962,7 @@ int do_go( float nt )
   if( ! ensure_drv_prepared() ) {
     std_out << "# Error: drivers not prepared" << NL;
     state_ch = 'E';
-    lcdt.puts_xy( 0, 0, "Err " );
-    lcdt.puts_xy( 0, 1, "Drv " ); // TODO: IDX
+    lcdt.puts_xy( 0, 1, "ErrDrv " ); // TODO: IDX
     return  1;
   }
 
@@ -977,9 +984,9 @@ int do_go( float nt )
   if( td.c_lay & 1 ) {
     rev = true;
   }
-  float v_rot = td.v_rot * speed_scale;
+  float v_rot = td.v_rot;
   set_drv_speed( 0, v_rot );
-  float v_mov = td.v_mov * speed_scale;
+  float v_mov = td.v_mov;
   set_drv_speed( 1, v_mov );
   td.p_move = 0;
 
@@ -1054,7 +1061,7 @@ int do_go( float nt )
       std_out << FmtInt( tc - t_sl, 5 ) << ' '
               << FmtInt( st_rot.sg_val, 6 ) << ' ' << FmtInt( st_mov.sg_val, 6 ) << ' ';
     }
-    std_out << HexInt16( porta_sensors_bits ) << ' '
+    std_out << s << ' ' << HexInt16( porta_sensors_bits ) << ' '
             << HexInt16( portb_sensors_bits ) << ' ' << td.c_lay << ' '
             << FltFmt( d_r_c, cvtff_fix, 8, 2 ) << NL;
 
@@ -1205,8 +1212,8 @@ int cmd_calc( int argc, const char * const * argv )
 {
   lcdt.puts_xy( 0, 0, "Calc " );
   int n_t = arg2long_d( 1, argc, argv,     0,  0, 1000000 );
-  int d_w = arg2long_d( 2, argc, argv,   210, 20,    5000 );
-  int w_l = arg2long_d( 3, argc, argv, 20000, 50,  100000 );
+  float d_w = arg2float_d( 2, argc, argv,  0.21f, 0.02f,   10.0f );
+  float w_l = arg2float_d( 3, argc, argv,  20.0f, 0.05f,  100.0f );
   int eve = arg2long_d( 4, argc, argv,     0,  0,       1 );
 
   if( ! td.calc( n_t, d_w, w_l, eve ) ) {
@@ -1218,7 +1225,7 @@ int cmd_calc( int argc, const char * const * argv )
 
   if( td.w_len > td.w_len_m ) {
     std_out << "# WARNING: w_len > w_len_m" << NL;
-    lcdt.puts_xy( 15, 1, "W" );
+    lcdt.puts_xy( 0, 1, "W" );
   }
   state_ch = 'C';
 

@@ -30,6 +30,7 @@ SRCS += oxc_tmc2209.cpp
 SRCS += oxc_usartio.cpp
 SRCS += oxc_floatfun.cpp
 SRCS += oxc_namedints.cpp
+SRCS += oxc_namedfloats.cpp
 SRCS += oxc_namedobjs.cpp
 SRCS += oxc_outstr.cpp
 #SRCS += oxc_statdata.cpp

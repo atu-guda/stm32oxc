@@ -102,8 +102,6 @@ inline constexpr uint32_t reg6C_off      = 0x15010050; // 8 mstep + OFF
 
 inline constexpr uint32_t TMC2209_R6F_badflags  = 0x00000F3F; // shorts + overtemp
 
-inline constexpr float speed_scale = 1.0e-6f;
-
 enum class BreakNum {
   none = 0,
   cbreak = 1,
@@ -137,15 +135,15 @@ struct TMC_stat {
 
 struct TaskData {
   // input data
-  int n_total {   100 }; // total turns
-  int d_wire  {   210 }; // wire diameter + extra space in um
-  int w_len   { 50000 }; // wirering length (in um)
+  int n_total   { 100    }; // total turns
+  float d_wire  {  0.21f }; // wire diameter + extra space in um
+  float w_len   { 50.0f  }; // wirering length (in mm)
   // mech
-  int v_rot   {   500000 }; // nominal rotation speed, * speed_scale
-  int v_mov_o {  4000000 }; // move-only speed
-  int w_len_m {    50000 }; // max wirering length (in um)
-  int s_rot_m {        2 }; // minimal S stall value for rotation
-  int s_mov_m {        1 }; // minimal S stall value for movement
+  float v_rot   {   0.5f }; // nominal rotation speed
+  float v_mov_o {   4.0f }; // move-only speed
+  float w_len_m {  50.0f }; // max wirering length (in um)
+  int s_rot_m   {      2 }; // minimal S stall value for rotation
+  int s_mov_m   {      1 }; // minimal S stall value for movement
   int      dt {       20 }; // time step durung work in ms
   int check_top {      1 }; // check top sensor in tower (wire break or end)
   int check_bot {      1 }; // check bottom sensor in tower (stall)
@@ -155,14 +153,14 @@ struct TaskData {
   // calculated
   int n_lay   {        0 }; // number of layers
   int n_2lay  {        0 }; // turns per layer
-  int v_mov   {        0 }; // speed during main work, in um/sec
+  float v_mov {        0 }; // speed during main work, in mm/sec
   // status
   int p_ldone {        0 }; // pulses done per layer
   int p_ltask {        0 }; // task in pulses for current run
   int p_move  {        0 }; // number of "move" pulses in current run
   int c_lay   {        0 }; // current layer
   // funcs
-  int calc( int n_tot, int d_w, int w_l, bool even );
+  int calc( int n_tot, float d_w, float w_l, bool even ); // return 0 if bad
 };
 
 extern TaskData td; // in main.cpp
