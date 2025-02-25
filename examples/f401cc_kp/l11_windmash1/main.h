@@ -139,10 +139,11 @@ struct TaskData {
   float d_wire  {  0.21f }; // wire diameter + extra space in um
   float w_len   { 50.0f  }; // wirering length (in mm)
   // mech
-  float v_rot   {   0.5f }; // nominal rotation speed
+  float v_rot   {   2.0f }; // nominal rotation speed (turns/s)
+  float a_rot   {   1.0f }; // rotation acceleration (turns/s^2)
   float v_mov_o {   4.0f }; // move-only speed
   float w_len_m {  50.0f }; // max wirering length (in um)
-  int s_rot_m   {      2 }; // minimal S stall value for rotation
+  int s_rot_m   {      1 }; // minimal S stall value for rotation
   int s_mov_m   {      1 }; // minimal S stall value for movement
   int      dt {       20 }; // time step durung work in ms
   int check_top {      1 }; // check top sensor in tower (wire break or end)

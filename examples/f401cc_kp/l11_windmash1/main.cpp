@@ -1,3 +1,6 @@
+#include <algorithm>
+#include <cmath>
+
 #include <oxc_auto.h>
 #include <oxc_floatfun.h>
 #include <oxc_hd44780_i2c.h>
@@ -201,6 +204,7 @@ ADD_IOBJ_TD( n_total );
 ADD_FOBJ_TD( d_wire  );
 ADD_FOBJ_TD( w_len   );
 ADD_FOBJ_TD( v_rot   );
+ADD_FOBJ_TD( a_rot   );
 ADD_FOBJ_TD( v_mov_o );
 ADD_FOBJ_TD( w_len_m );
 ADD_IOBJ_TD( s_rot_m );
@@ -228,6 +232,7 @@ constexpr const NamedObj *const objs_info[] = {
   & ob_d_wire,
   & ob_w_len,
   & ob_v_rot,
+  & ob_a_rot,
   & ob_v_mov_o,
   & ob_w_len_m,
   & ob_s_rot_m,
@@ -981,19 +986,25 @@ int do_go( float nt )
   tim_r_need = pulses; // rotaion is a main movement
 
   bool rev = false;
-  if( td.c_lay & 1 ) {
+  if( td.c_lay & 1 ) { // TODO: RTL start flag
     rev = true;
   }
-  float v_rot = td.v_rot;
-  set_drv_speed( 0, v_rot );
-  float v_mov = td.v_mov;
-  set_drv_speed( 1, v_mov );
+  const float v_rot_max = td.v_rot;
+  const float v_rot_0   = v_rot_max * 0.1f; // starting speed TODO: param
+  set_drv_speed( 0, v_rot_0 );
+  float v_rot_old = v_rot_0;
+  const float v_mov_max = td.v_mov;
+  const float v_mov_0 = v_mov_max * 0.1f;
+  set_drv_speed( 1, v_mov_0 );
+  float v_mov_old = v_mov_0;
+  const float k_rot_mov = v_mov_max / v_rot_max;
   td.p_move = 0;
 
   TMC_set_sval( 0, td.s_rot_m ); // TODO: dep(speed)
   TMC_set_sval( 1, td.s_mov_m );
 
-  std_out << "# pulses= " << pulses << " rev= " << rev << " v_rot= " << v_rot << " v_mov= " << v_mov << NL;
+  std_out << "# pulses= " << pulses << " rev= " << rev << " v_rot_max= " << v_rot_max
+          << " v_mov_max= " << v_mov_max << NL;
 
   if( pulses < 1 || (int)pulses > td.p_ltask ) {
     std_out << "# Error: bad pulses" << NL;
@@ -1014,6 +1025,7 @@ int do_go( float nt )
 
   const uint32_t tm0 = HAL_GetTick();
   uint32_t tc0 = tm0;
+  uint32_t t_set_speed = tm0;
 
   break_flag = 0;
   read_sensors();
@@ -1051,6 +1063,18 @@ int do_go( float nt )
     }
 
     const uint32_t tc = HAL_GetTick();
+    const float tcf = float( tc - tm0 ) * 1e-3f;
+
+    float v_rot = std::clamp( td.a_rot * tcf, v_rot_0, v_rot_max );
+    float v_mov = std::clamp( v_rot * k_rot_mov, v_mov_0, v_mov_max );
+    if( std::fabsf( v_rot_old - v_rot ) > 0.1f || ( tc - t_set_speed ) > 1000 ) {
+      set_drv_speed( 0, v_rot ); v_rot_old = v_rot;
+      set_drv_speed( 1, v_mov ); v_mov_old = v_mov;
+      t_set_speed = tc;
+    } else {
+      v_rot = v_rot_old;
+      v_mov = v_mov_old;
+    }
 
     const float d_r_c = puls2turn ( td.p_ldone + tim_r_pulses );
 
@@ -1063,7 +1087,8 @@ int do_go( float nt )
     }
     std_out << s << ' ' << HexInt16( porta_sensors_bits ) << ' '
             << HexInt16( portb_sensors_bits ) << ' ' << td.c_lay << ' '
-            << FltFmt( d_r_c, cvtff_fix, 8, 2 ) << NL;
+            << FltFmt( d_r_c, cvtff_fix, 8, 2 )
+            << ' ' << v_rot << ' ' << v_mov << ' ' << tcf << NL;
 
     os1.reset_out();
     os1 << s << FmtInt( td.c_lay, 3 ) << ' ' << FltFmt( d_r_c, cvtff_fix, 7, 1 );
@@ -1211,10 +1236,10 @@ int cmd_off( int argc, const char * const * argv )
 int cmd_calc( int argc, const char * const * argv )
 {
   lcdt.puts_xy( 0, 0, "Calc " );
-  int n_t = arg2long_d( 1, argc, argv,     0,  0, 1000000 );
-  float d_w = arg2float_d( 2, argc, argv,  0.21f, 0.02f,   10.0f );
-  float w_l = arg2float_d( 3, argc, argv,  20.0f, 0.05f,  100.0f );
-  int eve = arg2long_d( 4, argc, argv,     0,  0,       1 );
+  int n_t = arg2long_d( 1, argc, argv,     100,  0, 1000000 );
+  float d_w = arg2float_d( 2, argc, argv,  0.35f, 0.02f,   10.0f );
+  float w_l = arg2float_d( 3, argc, argv,  40.0f, 0.05f,  100.0f );
+  int eve = arg2long_d( 4, argc, argv,     1,  0,       1 );
 
   if( ! td.calc( n_t, d_w, w_l, eve ) ) {
     std_out << "# error: bad input data" << NL;
