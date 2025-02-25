@@ -113,7 +113,7 @@ CmdInfo CMDINFO_MOVE { "move", 'M', cmd_move, " mm [no_opto] [v] - move"  };
 int cmd_prep( int argc, const char * const * argv );
 CmdInfo CMDINFO_PREP { "prep", '\0', cmd_prep, " - prepare drivers"  };
 int cmd_calc( int argc, const char * const * argv );
-CmdInfo CMDINFO_CALC { "calc", '\0', cmd_calc, "n_tot w_d(um) w_l(um) - calculate task"  };
+CmdInfo CMDINFO_CALC { "calc", '\0', cmd_calc, "n_tot w_d(mm) w_l(mm) [even] [rtl] - calculate task"  };
 int cmd_repos( int argc, const char * const * argv );
 CmdInfo CMDINFO_REPOS { "repos", 'X', cmd_repos, " mm - reposition to "  };
 int cmd_meas_x( int argc, const char * const * argv );
@@ -153,7 +153,7 @@ HD44780_i2c lcdt( i2cd, 0x27 );
 
 TaskData td;
 
-int TaskData::calc( int n_tot, float d_w, float w_l, bool even )
+int TaskData::calc( int n_tot, float d_w, float w_l, bool even, int a_rtl )
 {
   p_ldone = p_ltask = c_lay =  n_lay = 0;
   if( n_tot < 1 || d_w < 0.01f || w_l < 2 * d_w ) {
@@ -173,6 +173,7 @@ int TaskData::calc( int n_tot, float d_w, float w_l, bool even )
 
   float d_w_e = w_len / n_2lay;
   v_mov = v_rot * d_w_e;
+  rtl = a_rtl;
 
   std_out << "# debug: n_lay_max= " << n_lay_max << " n_lay= " << n_lay
     << " d_w_e= " << d_w_e << " v_mov= " << v_mov << NL;
@@ -987,7 +988,7 @@ int do_go( float nt )
   tim_r_need = pulses; // rotaion is a main movement
 
   bool rev = false;
-  if( td.c_lay & 1 ) { // TODO: RTL start flag
+  if( ( td.c_lay + td.rtl ) & 1 ) {
     rev = true;
   }
   const float v_rot_max = td.v_rot;
@@ -1248,8 +1249,9 @@ int cmd_calc( int argc, const char * const * argv )
   float d_w = arg2float_d( 2, argc, argv,  0.35f, 0.02f,   10.0f );
   float w_l = arg2float_d( 3, argc, argv,  40.0f, 0.05f,  100.0f );
   int eve = arg2long_d( 4, argc, argv,     1,  0,       1 );
+  int rtl = arg2long_d( 5, argc, argv,     0,  0,       1 );
 
-  if( ! td.calc( n_t, d_w, w_l, eve ) ) {
+  if( ! td.calc( n_t, d_w, w_l, eve, rtl ) ) {
     std_out << "# error: bad input data" << NL;
     return 1;
   }

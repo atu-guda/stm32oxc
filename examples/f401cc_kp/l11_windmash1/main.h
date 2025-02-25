@@ -138,6 +138,7 @@ struct TaskData {
   int n_total   { 100    }; // total turns
   float d_wire  {  0.3f  }; // wire diameter + extra space in um
   float w_len   { 40.0f  }; // wirering length (in mm)
+  int   rtl     {    0   }; // right-to-left flag
   // mech
   float v_rot   {   2.0f }; // nominal rotation speed (turns/s)
   float a_rot   {   1.0f }; // rotation acceleration (turns/s^2)
@@ -161,7 +162,7 @@ struct TaskData {
   int p_move  {        0 }; // number of "move" pulses in current run
   int c_lay   {        0 }; // current layer
   // funcs
-  int calc( int n_tot, float d_w, float w_l, bool even ); // return 0 if bad
+  int calc( int n_tot, float d_w, float w_l, bool even, int a_rtl ); // return 0 if bad
 };
 
 extern TaskData td; // in main.cpp
