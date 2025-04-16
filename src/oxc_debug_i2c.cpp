@@ -155,6 +155,7 @@ int subcmd_i2c_recv_rx( int argc, const char * const * argv, bool is2byte )
 
   std_out <<  NL "I2C recv r2 from  " <<  HexInt8( addr ) <<  " : "  << HexInt16( reg ) <<  " n= " << n;
 
+  memset( gbuf_a, 0, sizeof(gbuf_a) );
   i2c_dbg->resetDev();
 
   uint8_t old_addr = i2c_dbg->getAddr();
@@ -165,6 +166,15 @@ int subcmd_i2c_recv_rx( int argc, const char * const * argv, bool is2byte )
   if( rc > 0 ) {
     dump8( gbuf_a, n );
   }
+  if( rc >= 2 ) {
+    int16_t v16 = *((int16_t*)gbuf_a);
+    int16_t v16r = rev16( v16 );
+    int32_t v32 = *((int32_t*)gbuf_a); // even here, as may be 24-bit...
+    int32_t v32r = rev32( v32 );
+    std_out << "# v16= " << v16 << ' ' << HexInt16(v16) << " rev= " << v16r
+            << " v32= "  << v32 << ' ' << HexInt(v32)   << " rev= " << v32r << ' ' << HexInt(v32r) << NL;
+  }
+
 
   return 0;
 }

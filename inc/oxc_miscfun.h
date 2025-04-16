@@ -62,6 +62,8 @@ __weak int* int_val_ptr( const char *s  );
  // swap bytes in 16-bits
 inline uint16_t rev16( uint16_t v ) { return (uint16_t)__REV16( v );}
 void rev16( uint16_t *v, int n );
+ // swap bytes in 32-bits
+inline uint32_t rev32( uint32_t v ) { return (uint32_t)__REV( v );}
 
 inline uint8_t uint8_to_bcd( uint8_t v ) {
   return ( v % 10 ) + (( v / 10 ) << 4);
