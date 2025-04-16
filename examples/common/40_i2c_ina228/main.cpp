@@ -49,6 +49,8 @@ int main(void)
   UVAR('t') = 100; // 100 ms
   UVAR('n') = 20;
   UVAR('c') = 4;
+  UVAR('g') = INA228::cfg_default;
+  UVAR('a') = 0xFB68; // default
   UVAR('p') = 0x40; // default addr for debug
 
   UVAR('e') = i2c_default_init( i2ch /*, 400000 */ );
@@ -98,10 +100,12 @@ int cmd_test0( int argc, const char * const * argv )
     return 3;
   }
 
-  uint16_t cfg = INA228::cfg_default;
+  uint16_t cfg = UVAR('g');
   UVAR('e') = ina228.setCfg( cfg );
+  ina228.setAdcCfg( UVAR('a') );
   x_cfg = ina228.getCfg();
-  std_out <<  "# cfg= " << HexInt16( x_cfg ) <<  NL;
+  std_out <<  "# cfg= " << HexInt16( x_cfg ) << ' ' << HexInt16( ina228.getAdcCfg() ) << NL;
+  const xfloat k_i = ( x_cfg & INA228::cfg_adcrange ) ? 78.125e-9f : 312.5e-9f;
 
   StatData sdat( 2 );
 
@@ -111,7 +115,9 @@ int cmd_test0( int argc, const char * const * argv )
   uint32_t tm0, tm00;
   int rc = 0;
   bool do_out = ! UVAR('b');
+  delay_ms( t_step );
 
+  uint16_t diag {0};
   break_flag = 0;
   for( decltype(n) i=0; i<n && !break_flag; ++i ) {
 
@@ -121,12 +127,15 @@ int cmd_test0( int argc, const char * const * argv )
     }
 
     if( UVAR('l') ) {  leds.set( BIT2 ); }
+    while( ! ( ( diag = ina228.getDiag() ) & 0x02 ) && ! break_flag ) {
+      delay_ms( 2 );
+    }
     int32_t v_sh_raw  = ina228.getVsh_raw();
     int32_t v_bus_raw = ina228.getVbus_raw();
     if( UVAR('l') ) {  leds.reset( BIT2 ); }
 
     xfloat v[2];
-    v[0] = v_sh_raw  * 312.5e-9f;
+    v[0] = v_sh_raw  * k_i;
     v[1] = v_bus_raw * 195.3124e-6f;
 
     int dt = tcc - tm00; // ms
@@ -139,7 +148,7 @@ int cmd_test0( int argc, const char * const * argv )
     if( do_out ) {
       std_out  << ' '  <<  v[0] <<  ' ' <<  v[1]
           << ' ' << HexInt(v_sh_raw) << ' ' << HexInt(v_bus_raw)
-          << ' ' << v_sh_raw << ' ' << v_bus_raw
+          << ' ' << HexInt16( diag )
           << NL;
     }
 

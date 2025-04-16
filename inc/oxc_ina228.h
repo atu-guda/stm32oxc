@@ -106,6 +106,7 @@ class INA228 : public I2CClient {
    bool calibrate()  { return setCalibr( 5120000 / ( I_lsb_mA * R_sh_uOhm ) ); }
    uint16_t getCfg() { return readReg( reg_cfg ); }
    uint16_t getAdcCfg() { return readReg( reg_adccfg ); }
+   uint16_t getDiag()   { return readReg( reg_diag ); }
    int32_t read24cvt( uint8_t reg );
    int32_t getVsh_raw()  { return last_Vsh  = read24cvt( reg_shunt_v ); }
    int32_t getVbus_raw() { return last_Vbus = read24cvt( reg_bus_v   ); };
