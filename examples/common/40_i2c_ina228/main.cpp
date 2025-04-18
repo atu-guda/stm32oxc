@@ -5,6 +5,7 @@
 #include <oxc_statdata.h>
 
 #include <oxc_ina228.h>
+
 using namespace std;
 using namespace SMLRL;
 
@@ -108,7 +109,8 @@ int cmd_test0( int argc, const char * const * argv )
   std_out <<  "# cfg= " << HexInt16( x_cfg ) << ' ' << HexInt16( ina228.getAdcCfg() ) << NL;
   const xfloat k_i = ( x_cfg & INA228::cfg_adcrange ) ? 78.125e-9f : 312.5e-9f;
 
-  StatData sdat( 2 );
+  const unsigned n_ch { 4 };
+  StatData sdat( n_ch );
 
   leds.set(   BIT0 | BIT1 | BIT2 ); delay_ms( 100 );
   leds.reset( BIT0 | BIT1 | BIT2 );
@@ -131,9 +133,11 @@ int cmd_test0( int argc, const char * const * argv )
     auto[v_sh_raw,v_bus_raw]  = ina228.getVV();
     if( UVAR('l') ) {  leds.reset( BIT2 ); }
 
-    xfloat v[2];
+    xfloat v[n_ch];
     v[0] = v_sh_raw  * k_i;
     v[1] = v_bus_raw * 195.3124e-6f;
+    v[2] = v_sh_raw;
+    v[3] = v_bus_raw;
 
     int dt = tcc - tm00; // ms
     if( do_out ) {
