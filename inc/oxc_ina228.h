@@ -136,17 +136,20 @@ class INA228 : public I2CClient {
    uint16_t getDiag()   { return (last_diag = readReg( reg_diag )); }
    uint16_t getLastDiag() const  { return last_diag; }
    int32_t read24cvt( uint8_t reg );
-   int32_t getVsh_raw()  { return last_Vsh  = read24cvt( reg_shunt_v ); }
-   int32_t getVbus_raw() { return last_Vbus = read24cvt( reg_bus_v   ); }
-   std::pair<int32_t,int32_t> getVV_raw() { return { getVsh_raw(), getVbus_raw() }; }
+   int32_t getVsh()  { return last_Vsh  = read24cvt( reg_shunt_v ); }
+   int32_t getVbus() { return last_Vbus = read24cvt( reg_bus_v   ); }
+   std::pair<int32_t,int32_t> getVV() { return { getVsh(), getVbus() }; }
+   int32_t getI() { return last_I = read24cvt( reg_I ); }
+   int16_t getT() { return last_T = readReg( reg_T ); }
    int32_t get_last_Vsh()  const { return last_Vsh; }
    int32_t get_last_Vbus() const { return last_Vbus; }
-   int32_t getVbus_uV () { return getVbus_raw() * lsb_V_bus_uv; }
+   int32_t get_last_I() const { return last_I; }
+   int32_t get_last_T() const { return last_T; }
+   int32_t getVbus_uV () { return getVbus() * lsb_V_bus_uv; }
    int32_t getP()     { return read24cvt( reg_P ); }
-   int32_t getI_raw() { return read24cvt( reg_I ); }
    int32_t Vsh2I_nA( int16_t v_raw ) const { return (int32_t)( (long long) v_raw * 1000 * lsb_V_sh_nv / R_sh_uOhm); }
-   int32_t getI_nA() { return Vsh2I_nA( getVsh_raw() ); }
-   int32_t getI_mA_reg() { return getI_raw() * I_lsb_mA; }
+   int32_t getI_nA() { return Vsh2I_nA( getVsh() ); }
+   int32_t getI_mA_reg() { return getI() * I_lsb_mA; }
    uint16_t readReg( uint8_t reg ) { return recv_reg1_16bit_rev( reg, 0 ); };
    bool writeReg( uint8_t reg, uint16_t val ) { return send_reg1_16bit_rev( reg, val ) == 2; };
    int waitEOC( int max_wait = 10000 ); // returs: 0: ok, 1-overtime, 2-break
@@ -157,6 +160,8 @@ class INA228 : public I2CClient {
    uint32_t I_lsb_mA = 1;
    int32_t  last_Vsh  { 0 };
    int32_t  last_Vbus { 0 };
+   int32_t  last_I    { 0 };
+   int32_t  last_T    { 0 };
    int16_t  last_diag { 0 };
 };
 

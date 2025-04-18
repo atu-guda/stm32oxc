@@ -128,7 +128,7 @@ int cmd_test0( int argc, const char * const * argv )
 
     if( UVAR('l') ) {  leds.set( BIT2 ); }
     int wrc = ina228.waitEOC();
-    auto[v_sh_raw,v_bus_raw]  = ina228.getVV_raw();
+    auto[v_sh_raw,v_bus_raw]  = ina228.getVV();
     if( UVAR('l') ) {  leds.reset( BIT2 ); }
 
     xfloat v[2];
@@ -154,6 +154,9 @@ int cmd_test0( int argc, const char * const * argv )
 
   sdat.calc();
   std_out << sdat << NL;
+  auto T_raw = ina228.getT();
+  auto I_raw = ina228.getI();
+  std_out << "# T_raw= " << T_raw << ' ' << (7.8125e-3f*T_raw) << " I_raw= " << I_raw << NL;
 
   return rc;
 }
