@@ -1,6 +1,8 @@
 #ifndef _OXC_INA228_H
 #define _OXC_INA228_H
 
+#include <utility>
+
 // INA228 I2C 20-bit shunt + voltage (calc: I and P) sensor
 // header-only
 
@@ -34,46 +36,71 @@ class INA228 : public I2CClient {
      reg_id_manuf        = 0x3E,
      reg_id_dev          = 0x3F,
 
-     // reg_mask_en         = 0x06,
-     // reg_alert_lim       = 0x07,
      // --------- cfg bits -----------
-     cfg_default         = 0x0000,
      cfg_rst             = 0x8000,
      cfg_rstacc          = 0x4000,
      cfg_convdelay_mask  = 0x3FC0, // 8 bit,  1 bit = 2ms (initial ADC delay)
+     cfg_convdelay_shift = 6,      // shift 0xFF left to get initial conv delay
      cfg_tempcomp        = 0x0020,
      cfg_adcrange        = 0x0010, // 1 - 40.96 mV, 0 = 163.84 mV
+     cfg_default         = 0x0000,
+     cfg_def_scale1      = cfg_adcrange,
 
-     cfg_mode_down       = 0x0000,
-     cfg_mode_cont       = 0x0004,
-     cfg_mode_shunt_only = 0x0001,
-     cfg_mode_bus_only   = 0x0002,
-     cfg_mode_shunt_bus  = 0x0003,
-     cfg_mode_def        = cfg_mode_cont | cfg_mode_shunt_bus,
-     cfg_shunt_t_0140    = 0x0000, // in us
-     cfg_shunt_t_0204    = 0x0008,
-     cfg_shunt_t_0332    = 0x0010,
-     cfg_shunt_t_0588    = 0x0018,
-     cfg_shunt_t_1100    = 0x0020, // def
-     cfg_shunt_t_2116    = 0x0028,
-     cfg_shunt_t_4156    = 0x0030,
-     cfg_shunt_t_8244    = 0x0038,
-     cfg_bus_t_0140      = 0x0000, // in us
-     cfg_bus_t_0204      = 0x0040,
-     cfg_bus_t_0332      = 0x0080,
-     cfg_bus_t_0588      = 0x00C0,
-     cfg_bus_t_1100      = 0x0100, //def
-     cfg_bus_t_2116      = 0x0140,
-     cfg_bus_t_4156      = 0x0180,
-     cfg_bus_t_8244      = 0x01C0,
-     cfg_avg_1           = 0x0000,
-     cfg_avg_4           = ( 0x0001 << 9 ),
-     cfg_avg_16          = ( 0x0002 << 9 ),
-     cfg_avg_64          = ( 0x0003 << 9 ),
-     cfg_avg_128         = ( 0x0004 << 9 ),
-     cfg_avg_256         = ( 0x0005 << 9 ),
-     cfg_avg_512         = ( 0x0006 << 9 ),
-     cfg_avg_1024        = ( 0x0007 << 9 ),
+     acfg_mode_mask       = 0xF000,
+     acfg_mode_down       = 0x0000,
+     acfg_mode_trig_b     = 0x1000, // trigggered Vbus only
+     acfg_mode_trig_s     = 0x2000, // trigggered shunt only
+     acfg_mode_trig_bs    = 0x3000, // trigggered bus,shunt
+     acfg_mode_trig_t     = 0x4000, // trigggered temp only
+     acfg_mode_trig_bt    = 0x5000, // trigggered temp,vbus
+     acfg_mode_trig_st    = 0x6000, // trigggered temp,shunt
+     acfg_mode_trig_vst   = 0x7000, // trigggered all
+     acfg_mode_cont_b     = 0x9000, // continuous Vbus only
+     acfg_mode_cont_s     = 0xA000, // continuous shunt only
+     acfg_mode_cont_bs    = 0xB000, // continuous bus,shunt - ok in w/o T
+     acfg_mode_cont_t     = 0xC000, // continuous temp only
+     acfg_mode_cont_bt    = 0xD000, // continuous temp,vbus
+     acfg_mode_cont_st    = 0xE000, // continuous temp,shunt
+     acfg_mode_cont_vst   = 0xF000, // continuous all - default
+
+     acfg_ct_bus_0050    = (0u << 9), // in us
+     acfg_ct_bus_0084    = (1u << 9),
+     acfg_ct_bus_0150    = (2u << 9),
+     acfg_ct_bus_0280    = (3u << 9),
+     acfg_ct_bus_0540    = (4u << 9),
+     acfg_ct_bus_1052    = (5u << 9), // def
+     acfg_ct_bus_2074    = (6u << 9),
+     acfg_ct_bus_4120    = (7u << 9),
+
+     acfg_ct_sh_0050     = (0u << 6), // in us
+     acfg_ct_sh_0084     = (1u << 6),
+     acfg_ct_sh_0150     = (2u << 6),
+     acfg_ct_sh_0280     = (3u << 6),
+     acfg_ct_sh_0540     = (4u << 6),
+     acfg_ct_sh_1052     = (5u << 6), // def
+     acfg_ct_sh_2074     = (6u << 6),
+     acfg_ct_sh_4120     = (7u << 6), // better
+
+     acfg_ct_t_0050      = (0u << 3), // in us
+     acfg_ct_t_0084      = (1u << 3),
+     acfg_ct_t_0150      = (2u << 3),
+     acfg_ct_t_0280      = (3u << 3),
+     acfg_ct_t_0540      = (4u << 3),
+     acfg_ct_t_1052      = (5u << 3), //def
+     acfg_ct_t_2074      = (6u << 3),
+     acfg_ct_t_4120      = (7u << 3),
+
+     acfg_avg_mask        = 0x0007,
+     acfg_avg_1           = 0x0000, // def
+     acfg_avg_4           = 0x0001,
+     acfg_avg_16          = 0x0002,
+     acfg_avg_64          = 0x0003,
+     acfg_avg_128         = 0x0004,
+     acfg_avg_256         = 0x0005,
+     acfg_avg_512         = 0x0006,
+     acfg_avg_1024        = 0x0007,
+     acfg_mode_def        = acfg_mode_cont_vst | acfg_ct_bus_1052 | acfg_ct_sh_1052 | acfg_ct_t_1052,
+
      // --------- mask_en bits -----------
      mask_en_len         = 0x0001,
      mask_en_apol        = 0x0002,
@@ -106,10 +133,12 @@ class INA228 : public I2CClient {
    bool calibrate()  { return setCalibr( 5120000 / ( I_lsb_mA * R_sh_uOhm ) ); }
    uint16_t getCfg() { return readReg( reg_cfg ); }
    uint16_t getAdcCfg() { return readReg( reg_adccfg ); }
-   uint16_t getDiag()   { return readReg( reg_diag ); }
+   uint16_t getDiag()   { return (last_diag = readReg( reg_diag )); }
+   uint16_t getLastDiag() const  { return last_diag; }
    int32_t read24cvt( uint8_t reg );
    int32_t getVsh_raw()  { return last_Vsh  = read24cvt( reg_shunt_v ); }
-   int32_t getVbus_raw() { return last_Vbus = read24cvt( reg_bus_v   ); };
+   int32_t getVbus_raw() { return last_Vbus = read24cvt( reg_bus_v   ); }
+   std::pair<int32_t,int32_t> getVV_raw() { return { getVsh_raw(), getVbus_raw() }; }
    int32_t get_last_Vsh()  const { return last_Vsh; }
    int32_t get_last_Vbus() const { return last_Vbus; }
    int32_t getVbus_uV () { return getVbus_raw() * lsb_V_bus_uv; }
@@ -120,11 +149,15 @@ class INA228 : public I2CClient {
    int32_t getI_mA_reg() { return getI_raw() * I_lsb_mA; }
    uint16_t readReg( uint8_t reg ) { return recv_reg1_16bit_rev( reg, 0 ); };
    bool writeReg( uint8_t reg, uint16_t val ) { return send_reg1_16bit_rev( reg, val ) == 2; };
+   int waitEOC( int max_wait = 10000 ); // returs: 0: ok, 1-overtime, 2-break
+   constexpr static inline uint16_t calc_acfg( uint8_t md, uint8_t ct_b, uint8_t ct_s, uint8_t ct_t, uint8_t avg )
+     { return md << 12 | ((ct_b&7)<<9) | ((ct_s&7)<<6) | ((ct_t&7)<<3) | (avg&7); };
   protected:
    uint32_t R_sh_uOhm = 1500;
    uint32_t I_lsb_mA = 1;
-   int32_t  last_Vsh  = 0;
-   int32_t  last_Vbus = 0;
+   int32_t  last_Vsh  { 0 };
+   int32_t  last_Vbus { 0 };
+   int16_t  last_diag { 0 };
 };
 
 #endif

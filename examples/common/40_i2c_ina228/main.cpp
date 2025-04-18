@@ -50,8 +50,9 @@ int main(void)
   UVAR('n') = 20;
   UVAR('c') = 4;
   UVAR('g') = INA228::cfg_default;
-  UVAR('a') = 0xFB68; // default
+  UVAR('a') = INA228::acfg_mode_def; // 0xFB68; // default
   UVAR('p') = 0x40; // default addr for debug
+  UVAR('s') = 0;    // scale 0 - TODO
 
   UVAR('e') = i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
@@ -117,7 +118,6 @@ int cmd_test0( int argc, const char * const * argv )
   bool do_out = ! UVAR('b');
   delay_ms( t_step );
 
-  uint16_t diag {0};
   break_flag = 0;
   for( decltype(n) i=0; i<n && !break_flag; ++i ) {
 
@@ -127,11 +127,8 @@ int cmd_test0( int argc, const char * const * argv )
     }
 
     if( UVAR('l') ) {  leds.set( BIT2 ); }
-    while( ! ( ( diag = ina228.getDiag() ) & 0x02 ) && ! break_flag ) {
-      delay_ms( 2 );
-    }
-    int32_t v_sh_raw  = ina228.getVsh_raw();
-    int32_t v_bus_raw = ina228.getVbus_raw();
+    int wrc = ina228.waitEOC();
+    auto[v_sh_raw,v_bus_raw]  = ina228.getVV_raw();
     if( UVAR('l') ) {  leds.reset( BIT2 ); }
 
     xfloat v[2];
@@ -148,7 +145,7 @@ int cmd_test0( int argc, const char * const * argv )
     if( do_out ) {
       std_out  << ' '  <<  v[0] <<  ' ' <<  v[1]
           << ' ' << HexInt(v_sh_raw) << ' ' << HexInt(v_bus_raw)
-          << ' ' << HexInt16( diag )
+          << ' ' << HexInt16( ina228.getLastDiag() ) << ' ' << wrc
           << NL;
     }
 
