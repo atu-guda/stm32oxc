@@ -23,6 +23,8 @@ int cmd_getVIP( int argc, const char * const * argv );
 CmdInfo CMDINFO_GETVIP { "getVIP", 'G', cmd_getVIP, " - get V_bus, I_sh, P"  };
 int cmd_setcalibr( int argc, const char * const * argv );
 CmdInfo CMDINFO_SETCALIBR { "set_calibr", 'K', cmd_setcalibr, " I_lsb R_sh - calibrate for given shunt"  };
+int cmd_calc_acfg( int argc, const char * const * argv );
+CmdInfo CMDINFO_CALC_ACFG { "calc_acfg", 'A', cmd_calc_acfg, "ct_b ct_s ct_t avg - calc ADCconfig val ->'a' "  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -31,6 +33,7 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_TEST0,
   &CMDINFO_GETVIP,
   &CMDINFO_SETCALIBR,
+  &CMDINFO_CALC_ACFG,
   nullptr
 };
 
@@ -241,6 +244,17 @@ int cmd_setcalibr( int argc, const char * const * argv )
   return 0;
 }
 
+int cmd_calc_acfg( int argc, const char * const * argv )
+{
+  auto md   = (uint8_t)arg2long_d( 1, argc, argv, 0x0B, 0, 0x0F );
+  auto ct_b = (uint8_t)arg2long_d( 2, argc, argv,    5, 0, 7 );
+  auto ct_s = (uint8_t)arg2long_d( 3, argc, argv,    5, 0, 7 );
+  auto ct_t = (uint8_t)arg2long_d( 4, argc, argv,    5, 0, 7 );
+  auto avg  = (uint8_t)arg2long_d( 5, argc, argv,    0, 0, 7 );
+  UVAR('a') =  INA228::calc_acfg( md, ct_b, ct_s, ct_t, avg );
+  std_out << "# acfg= " << HexInt16( UVAR('a') ) << NL;
+  return 0;
+}
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
