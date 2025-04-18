@@ -124,6 +124,7 @@ class INA228 : public I2CClient {
 
    INA228( DevI2C &a_dev, uint8_t d_addr = def_addr )
      : I2CClient( a_dev, d_addr ) {};
+   uint32_t isBad(); // returns 0 if good and VID:PID if bad
    bool setCfg(    uint16_t v )   { return writeReg( reg_cfg,     v ); };
    bool setAdcCfg( uint16_t v )   { return writeReg( reg_adccfg,  v ); };
    bool setCalibr( uint16_t v )   { return writeReg( reg_shunt_cal, v ); };

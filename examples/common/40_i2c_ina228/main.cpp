@@ -40,7 +40,6 @@ INA228 ina228( i2cd );
 const uint32_t n_ADC_ch_max = 4; // current - in UVAR('c')
 xfloat v_coeffs[n_ADC_ch_max] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
-bool isGoodINA228( INA228 &ina, bool print = true );
 
 
 int main(void)
@@ -72,21 +71,6 @@ int main(void)
   return 0;
 }
 
-bool isGoodINA228( INA228 &ina, bool print )
-{
-  uint16_t id_manuf = ina.readReg( INA228::reg_id_manuf );
-  uint16_t id_dev   = ina.readReg( INA228::reg_id_dev );
-  if( print ) {
-    std_out << "# id_manuf= " << HexInt16( id_manuf ) << "  id_dev= " << HexInt16( id_dev ) << NL;
-  }
-  if( id_manuf != INA228::id_manuf || id_dev != INA228::id_dev ) {
-    if( print ) {
-      std_out << "# Error: bad ids!" << NL;
-    }
-    return false;
-  }
-  return true;
-}
 
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
@@ -98,7 +82,8 @@ int cmd_test0( int argc, const char * const * argv )
   uint16_t x_cfg = ina228.getCfg();
   std_out <<  NL "# Test0: n= " <<  n <<  " t= " <<  t_step <<  "  cfg= " <<  HexInt16( x_cfg ) << NL;
 
-  if( ! isGoodINA228( ina228, true ) ) {
+  if( uint32_t id = ina228.isBad() ) {
+    std_out << "# Bad INA228 id: " << HexInt(id) << NL;
     return 3;
   }
 
@@ -177,9 +162,6 @@ int cmd_getVIP( int argc, const char * const * argv )
   // uint16_t x_cfg = ina228.getCfg();
   // std_out <<  NL "# getVIP: n= " <<  n <<  " t= " <<  t_step <<  "  cfg= " <<  HexInt16( x_cfg ) << NL;
   //
-  // if( ! isGoodINA228( ina228, true ) ) {
-  //   return 3;
-  // }
   //
   // uint16_t cfg = INA228::cfg_default;
   // UVAR('e') = ina228.setCfg( cfg );

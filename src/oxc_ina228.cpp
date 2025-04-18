@@ -1,5 +1,16 @@
 #include <oxc_ina228.h>
 
+// returns 0 if good and VID:PID if bad
+uint32_t INA228::isBad()
+{
+  uint16_t id_manuf = readReg( INA228::reg_id_manuf );
+  uint16_t id_dev   = readReg( INA228::reg_id_dev );
+  if( id_manuf == INA228::id_manuf && id_dev == INA228::id_dev ) {
+    return 0;
+  }
+  return (id_manuf<<16) | id_dev;
+}
+
 int32_t INA228::read24cvt( uint8_t reg )
 {
   uint32_t v { 0 };
