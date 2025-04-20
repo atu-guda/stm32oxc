@@ -234,13 +234,17 @@ int cmd_getVIP( int argc, const char * const * argv )
 
 int cmd_setcalibr( int argc, const char * const * argv )
 {
-  // float calibr_I_lsb = arg2float_d( 1, argc, argv, ina228.get_I_lsb_mA()  * 1e-3f, 1e-20f, 1e10f );
-  // float calibr_R     = arg2float_d( 2, argc, argv, ina228.get_R_sh_uOhm() * 1e-6f, 1e-20f, 1e10f );
-  // float V_sh_max =  (int)(INA228::lsb_V_sh_nv) * 1e-9f * 0x7FFF;
-  // ina228.set_calibr_val( (uint32_t)(calibr_R * 1e6f), (uint32_t)(calibr_I_lsb * 1e3f) );
-  // std_out << "# calibr_I_lsb= " << calibr_I_lsb << " calibr_R= " << calibr_R
-  //    << " V_sh_max=  " << V_sh_max
-  //    << " I_max= " << ( V_sh_max / calibr_R ) << " / " << ( calibr_I_lsb * 0x7FFF ) << NL;
+  xfloat calibr_I_max = arg2float_d( 1, argc, argv, 1.0f, 1e-20f, 1e10f );
+  xfloat calibr_R     = arg2float_d( 2, argc, argv, 0.1f, 1e-20f, 1e10f );
+  xfloat calibr_I_lsb = calibr_I_max / (1<<19);
+  uint16_t cal_v = (uint16_t)( 13107.2e6f * calibr_I_lsb * calibr_R );
+  ina228.set_calibr_val( (uint32_t)(calibr_R * 1e6f), (uint32_t)(calibr_I_lsb*1e3f) );
+  ina228.setCalibr( cal_v );
+  ina228.getVsh(); // drop
+  ina228.waitEOC();
+  int32_t I = ina228.getI();
+  std_out << "# calibr_I_lsb= " << calibr_I_lsb << " calibr_R= " << calibr_R
+          << " cal_v=  " << cal_v << " I=" << I << " = " << (I*calibr_I_lsb) <<NL;
   return 0;
 }
 

@@ -128,10 +128,10 @@ class INA228 : public I2CClient {
    bool setCfg(    uint16_t v )   { return writeReg( reg_cfg,     v ); };
    bool setAdcCfg( uint16_t v )   { return writeReg( reg_adccfg,  v ); };
    bool setCalibr( uint16_t v )   { return writeReg( reg_shunt_cal, v ); };
-   uint32_t get_R_sh_uOhm() const { return R_sh_uOhm; }
+   uint32_t get_R_sh_mOhm() const { return R_sh_mOhm; }
    uint32_t get_I_lsb_mA() const  { return I_lsb_mA; }
-   void set_calibr_val( uint32_t R_uOhm, uint32_t I_mA ) { R_sh_uOhm = R_uOhm; I_lsb_mA = I_mA; }
-   bool calibrate()  { return setCalibr( 5120000 / ( I_lsb_mA * R_sh_uOhm ) ); }
+   void set_calibr_val( uint32_t R_mOhm, uint32_t I_max_mA ) { R_sh_Ohm = R_mOhm; I_max_mA = I_mA; }
+   bool calibrate()  { return setCalibr( R_sh_mOhm * I_max_mA / 40 ); } // TODO: *4
    uint16_t getCfg() { return readReg( reg_cfg ); }
    uint16_t getAdcCfg() { return readReg( reg_adccfg ); }
    uint16_t getDiag()   { return (last_diag = readReg( reg_diag )); }
@@ -157,8 +157,8 @@ class INA228 : public I2CClient {
    constexpr static inline uint16_t calc_acfg( uint8_t md, uint8_t ct_b, uint8_t ct_s, uint8_t ct_t, uint8_t avg )
      { return md << 12 | ((ct_b&7)<<9) | ((ct_s&7)<<6) | ((ct_t&7)<<3) | (avg&7); };
   protected:
-   uint32_t R_sh_uOhm = 1500;
-   uint32_t I_lsb_mA = 1;
+   uint32_t R_sh_mOhm { 100 };
+   uint32_t I_max_mA  { 100 };
    int32_t  last_Vsh  { 0 };
    int32_t  last_Vbus { 0 };
    int32_t  last_I    { 0 };
