@@ -29,7 +29,7 @@ int32_t INA228::read24cvt( uint8_t reg )
 int INA228::waitEOC( int max_wait )
 {
   for( int i=0; i<max_wait && !break_flag; ++i ) {
-    if( getDiag() & 0x02 ) {
+    if( getDiag() & diag_cnvrf ) {
       return 0;
     }
     delay_ms( 1 );

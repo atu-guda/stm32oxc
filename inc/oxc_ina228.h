@@ -101,18 +101,24 @@ class INA228 : public I2CClient {
      acfg_avg_1024        = 0x0007,
      acfg_mode_def        = acfg_mode_cont_vst | acfg_ct_bus_1052 | acfg_ct_sh_1052 | acfg_ct_t_1052,
 
-     // --------- mask_en bits -----------
-     mask_en_len         = 0x0001,
-     mask_en_apol        = 0x0002,
-     mask_en_ovf         = 0x0004,
-     mask_en_cvrf        = 0x0008,
-     mask_en_aff         = 0x0010,
-     mask_en_cnvr        = 0x0400,
-     mask_en_pol         = 0x0800,
-     mask_en_bul         = 0x1000,
-     mask_en_bol         = 0x2000,
-     mask_en_sul         = 0x4000,
-     mask_en_sol         = 0x8000,
+     // diag/alert bits
+     diag_memstat        = 0x0001, // 1 if mem ok
+     diag_cnvrf          = 0x0002, // conversion complete (EOC)
+     diag_pol            = 0x0004, // power low
+     diag_busul          = 0x0008, // bus low
+     diag_busol          = 0x0010, // bus over high
+     diag_shnul          = 0x0020, // shunt low
+     diag_shnol          = 0x0040, // shunt high
+     diag_tmpol          = 0x0080, // temp low
+     diag_xxx0           = 0x0100, // res
+     diag_mathof         = 0x0200, // math over
+     diag_chargeof       = 0x0400, // charge over
+     diag_energyof       = 0x0800, // energy over
+     diag_apol           = 0x1000, // alert pn polarity: 0 = normal, act-low, OD
+     diag_slowalert      = 0x2000, // alert(avg)
+     diag_cnvr           = 0x4000, // EOC->alert
+     diag_alatch         = 0x8000, // latch alert
+
      // --------- id values -----------
      id_manuf            = 0x5449, // "TI"
      id_dev              = 0x2281,
