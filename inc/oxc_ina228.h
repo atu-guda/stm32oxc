@@ -118,44 +118,49 @@ class INA228 : public I2CClient {
      id_dev              = 0x2281,
    };
    enum {
-     lsb_V_sh_nv         = 2500,
-     lsb_V_bus_uv        = 1250
+     lsb_V_sh_nvx16_0    = 5000, // low res,  312.5   nV/bit = 5000/16
+     lsb_V_sh_nvx16_1    = 1250, // high res,  78.125 nV/bit = 1250/16
+     lsb_V_bus_uvx16     = 3125, // 195.3125 uV/bit = 3125/16
    };
 
    INA228( DevI2C &a_dev, uint8_t d_addr = def_addr )
      : I2CClient( a_dev, d_addr ) {};
    uint32_t isBad(); // returns 0 if good and VID:PID if bad
-   bool setCfg(    uint16_t v )   { return writeReg( reg_cfg,     v ); };
+   bool setCfg(    uint16_t v )   { highRes = bool(v & cfg_adcrange ); return writeReg( reg_cfg, v ); };
    bool setAdcCfg( uint16_t v )   { return writeReg( reg_adccfg,  v ); };
    bool setCalibr( uint16_t v )   { return writeReg( reg_shunt_cal, v ); };
    uint32_t get_R_sh_mOhm() const { return R_sh_mOhm; }
-   uint32_t get_I_lsb_mA() const  { return I_lsb_mA; }
-   void set_calibr_val( uint32_t R_mOhm, uint32_t I_max_mA ) { R_sh_Ohm = R_mOhm; I_max_mA = I_mA; }
-   bool calibrate()  { return setCalibr( R_sh_mOhm * I_max_mA / 40 ); } // TODO: *4
+   uint32_t get_I_lsb_nA() const  { return int32_t( (int64_t)I_max_mA * 1000000 / (1u<<19) ); }
+   void set_calibr_val( uint32_t R_mOhm, uint32_t I_max_mA_ ) { R_sh_mOhm = R_mOhm; I_max_mA = I_max_mA_; }
+   bool calibrate()  { return setCalibr( ( highRes ? 4:1) * R_sh_mOhm * I_max_mA / 40 ); } // TODO: *4
    uint16_t getCfg() { return readReg( reg_cfg ); }
    uint16_t getAdcCfg() { return readReg( reg_adccfg ); }
    uint16_t getDiag()   { return (last_diag = readReg( reg_diag )); }
    uint16_t getLastDiag() const  { return last_diag; }
    int32_t read24cvt( uint8_t reg );
-   int32_t getVsh()  { return last_Vsh  = read24cvt( reg_shunt_v ); }
-   int32_t getVbus() { return last_Vbus = read24cvt( reg_bus_v   ); }
+   int32_t getVsh()  { return last_Vsh  = read24cvt( reg_shunt_v ); } // raw
+   int32_t getVbus() { return last_Vbus = read24cvt( reg_bus_v   ); } // raw
    std::pair<int32_t,int32_t> getVV() { return { getVsh(), getVbus() }; }
-   int32_t getI() { return last_I = read24cvt( reg_I ); }
-   int16_t getT() { return last_T = readReg( reg_T ); }
+   int32_t getI() { return last_I = read24cvt( reg_I ); } // see get_I_lsb_nA()
+   int16_t getT() { return last_T = readReg( reg_T ); } // (*7.8125e-3f)
    int32_t get_last_Vsh()  const { return last_Vsh; }
+   int32_t get_last_Vsh_nVx16()  const { return Vsh_raw_to_nVx16(last_Vsh); }
    int32_t get_last_Vbus() const { return last_Vbus; }
+   int32_t get_last_Vbus_uVx16() const { return Vbus_raw_to_uVx16(last_Vbus); }
    int32_t get_last_I() const { return last_I; }
    int32_t get_last_T() const { return last_T; }
-   int32_t getVbus_uV () { return getVbus() * lsb_V_bus_uv; }
+   int32_t getVbus_uVx16() { return Vbus_raw_to_uVx16( getVbus() ); } // * ( 1e-6f / 16 = 6.25e-8f ) to Volt, q28x4
+   int32_t getVsh_nVx16()  { return Vsh_raw_to_nVx16(  getVbus() ); } // * ( 1e-9f / 16 = 6.25e-11f ) to Volt, q28x4
+   static int32_t Vbus_raw_to_uVx16( int32_t v ) { return v * lsb_V_bus_uvx16; } // ret: uV*16: q24x8
+   int32_t Vsh_raw_to_nVx16( int32_t v ) const 
+     { return v * ( highRes ? lsb_V_sh_nvx16_1 : lsb_V_sh_nvx16_0) ; } // ret: nV*16: q24x8, nonstatic: highRes dep
    int32_t getP()     { return read24cvt( reg_P ); }
-   int32_t Vsh2I_nA( int16_t v_raw ) const { return (int32_t)( (long long) v_raw * 1000 * lsb_V_sh_nv / R_sh_uOhm); }
-   int32_t getI_nA() { return Vsh2I_nA( getVsh() ); }
-   int32_t getI_mA_reg() { return getI() * I_lsb_mA; }
-   uint16_t readReg( uint8_t reg ) { return recv_reg1_16bit_rev( reg, 0 ); };
-   bool writeReg( uint8_t reg, uint16_t val ) { return send_reg1_16bit_rev( reg, val ) == 2; };
+   uint16_t readReg( uint8_t reg ) { return recv_reg1_16bit_rev( reg, 0 ); };                   // only 16-bit
+   bool writeReg( uint8_t reg, uint16_t val ) { return send_reg1_16bit_rev( reg, val ) == 2; }; // only 16-bit
    int waitEOC( int max_wait = 10000 ); // returs: 0: ok, 1-overtime, 2-break
    constexpr static inline uint16_t calc_acfg( uint8_t md, uint8_t ct_b, uint8_t ct_s, uint8_t ct_t, uint8_t avg )
      { return md << 12 | ((ct_b&7)<<9) | ((ct_s&7)<<6) | ((ct_t&7)<<3) | (avg&7); };
+   bool isHighRes() const { return highRes; };
   protected:
    uint32_t R_sh_mOhm { 100 };
    uint32_t I_max_mA  { 100 };
@@ -164,6 +169,7 @@ class INA228 : public I2CClient {
    int32_t  last_I    { 0 };
    int32_t  last_T    { 0 };
    int16_t  last_diag { 0 };
+   bool     highRes { false };
 };
 
 #endif

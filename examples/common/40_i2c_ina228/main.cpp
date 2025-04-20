@@ -19,10 +19,6 @@ const char* common_help_string = "App to test INA228 I2C device" NL;
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test V_sh, V_bus"  };
-int cmd_getVIP( int argc, const char * const * argv );
-CmdInfo CMDINFO_GETVIP { "getVIP", 'G', cmd_getVIP, " - get V_bus, I_sh, P"  };
-int cmd_setcalibr( int argc, const char * const * argv );
-CmdInfo CMDINFO_SETCALIBR { "set_calibr", 'K', cmd_setcalibr, " I_lsb R_sh - calibrate for given shunt"  };
 int cmd_calc_acfg( int argc, const char * const * argv );
 CmdInfo CMDINFO_CALC_ACFG { "calc_acfg", 'A', cmd_calc_acfg, "ct_b ct_s ct_t avg - calc ADCconfig val ->'a' "  };
 
@@ -31,8 +27,6 @@ const CmdInfo* global_cmds[] = {
   DEBUG_I2C_CMDS,
 
   &CMDINFO_TEST0,
-  &CMDINFO_GETVIP,
-  &CMDINFO_SETCALIBR,
   &CMDINFO_CALC_ACFG,
   nullptr
 };
@@ -43,6 +37,10 @@ INA228 ina228( i2cd );
 const uint32_t n_ADC_ch_max = 4; // current - in UVAR('c')
 xfloat v_coeffs[n_ADC_ch_max] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
+// TODO: move as inline to oxc_floatfun.h ( + namespace? )
+const xfloat mx16_to_1 { 6.25e-5f  };
+const xfloat ux16_to_1 { 6.25e-8f  };
+const xfloat nx16_to_1 { 6.25e-11f };
 
 
 int main(void)
@@ -51,11 +49,14 @@ int main(void)
 
   UVAR('t') = 100; // 100 ms
   UVAR('n') = 20;
+  UVAR('l') = 1; // LED indication for waitOEC
   UVAR('c') = 4;
-  UVAR('g') = INA228::cfg_default;
-  UVAR('a') = INA228::acfg_mode_def; // 0xFB68; // default
+  UVAR('g') = INA228::cfg_default; // 0x10 = highRes
+  UVAR('a') = INA228::acfg_mode_def; // 0xFB68;
   UVAR('p') = 0x40; // default addr for debug
-  UVAR('s') = 0;    // scale 0 - TODO
+  UVAR('s') = 0;    // scale 0-1
+  UVAR('r') = 100;  // R_sh in mOhm
+  UVAR('i') = 100;  // I_max in mA
 
   UVAR('e') = i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
@@ -90,12 +91,13 @@ int cmd_test0( int argc, const char * const * argv )
     return 3;
   }
 
-  uint16_t cfg = UVAR('g');
+  uint16_t cfg = UVAR('s') ? INA228::cfg_adcrange : INA228::cfg_default;
   UVAR('e') = ina228.setCfg( cfg );
   ina228.setAdcCfg( UVAR('a') );
   x_cfg = ina228.getCfg();
   std_out <<  "# cfg= " << HexInt16( x_cfg ) << ' ' << HexInt16( ina228.getAdcCfg() ) << NL;
-  const xfloat k_i = ( x_cfg & INA228::cfg_adcrange ) ? 78.125e-9f : 312.5e-9f;
+  ina228.set_calibr_val( UVAR('r'), UVAR('i') );
+  ina228.calibrate();
 
   const unsigned n_ch { 4 };
   StatData sdat( n_ch );
@@ -122,8 +124,8 @@ int cmd_test0( int argc, const char * const * argv )
     if( UVAR('l') ) {  leds.reset( BIT2 ); }
 
     xfloat v[n_ch];
-    v[0] = v_sh_raw  * k_i;
-    v[1] = v_bus_raw * 195.3124e-6f;
+    v[0] = ina228.get_last_Vsh_nVx16() * nx16_to_1;
+    v[1] = ina228.get_last_Vbus_uVx16() * ux16_to_1;
     v[2] = v_sh_raw;
     v[3] = v_bus_raw;
 
@@ -148,105 +150,16 @@ int cmd_test0( int argc, const char * const * argv )
   std_out << sdat << NL;
   auto T_raw = ina228.getT();
   auto I_raw = ina228.getI();
-  std_out << "# T_raw= " << T_raw << ' ' << (7.8125e-3f*T_raw) << " I_raw= " << I_raw << NL;
+  xfloat I_A = I_raw * ina228.get_I_lsb_nA() * 1e-9f;
+  std_out << "# T_raw= " << T_raw << ' ' << (7.8125e-3f*T_raw)
+          << " I_raw= " << I_raw << ' ' << I_A << ' ' << ina228.get_I_lsb_nA() << NL;
+  std_out << "# highRes= " << ina228.isHighRes() << NL;
 
   return rc;
 }
 
-int cmd_getVIP( int argc, const char * const * argv )
-{
-  // uint32_t t_step = UVAR('t');
-  // uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 1000000 ); // number of series
-  // unsigned n_ch = 4;
-  //
-  // StatData sdat( n_ch );
-  //
-  // ina228.setCfg( INA228::cfg_rst );
-  // uint16_t x_cfg = ina228.getCfg();
-  // std_out <<  NL "# getVIP: n= " <<  n <<  " t= " <<  t_step <<  "  cfg= " <<  HexInt16( x_cfg ) << NL;
-  //
-  //
-  // uint16_t cfg = INA228::cfg_default;
-  // UVAR('e') = ina228.setCfg( cfg );
-  // x_cfg = ina228.getCfg();
-  // ina228.calibrate();
-  // std_out <<  "# cfg= " << HexInt16( x_cfg ) <<  " I_lsb_mA= " << ina228.get_I_lsb_mA()
-  //    << " R_sh_uOhm= " << ina228.get_R_sh_uOhm() << NL;
-  //
-  // std_out << "# Coeffs: ";
-  // for( decltype(n_ch) j=0; j<n_ch; ++j ) {
-  //   std_out << ' ' << v_coeffs[j];
-  // }
-  // std_out << NL;
-  //
-  // leds.set(   BIT0 | BIT1 | BIT2 ); delay_ms( 100 );
-  // leds.reset( BIT0 | BIT1 | BIT2 );
-  //
-  // uint32_t tm0, tm00;
-  // int rc = 0;
-  // bool do_out = ! UVAR('b');
-  //
-  // break_flag = 0;
-  // for( decltype(n) i=0; i<n && !break_flag; ++i ) {
-  //
-  //   uint32_t tcc = HAL_GetTick();
-  //   if( i == 0 ) {
-  //     tm0 = tcc; tm00 = tm0;
-  //   }
-  //
-  //   xfloat tc = 0.001f * ( tcc - tm00 );
-  //   xfloat v[n_ch];
-  //
-  //   if( UVAR('l') ) {  leds.set( BIT2 ); }
-  //
-  //   v[0] = ina228.getVbus_uV()  * (xfloat)1e-6f * v_coeffs[0];
-  //   v[1] = ina228.getI_mA_reg() * (xfloat)1e-3f * v_coeffs[1];
-  //   v[2] = ina228.getI_uA()     * (xfloat)1e-6f * v_coeffs[2];
-  //   v[3] = ina228.getP()                        * v_coeffs[3];
-  //
-  //   if( UVAR('l') ) {  leds.reset( BIT2 ); }
-  //
-  //   if( do_out ) {
-  //     std_out <<  FltFmt( tc, cvtff_auto, 12, 4 );
-  //   }
-  //
-  //   sdat.add( v );
-  //
-  //   if( do_out ) {
-  //     for( auto vc : v ) {
-  //       std_out  << ' '  <<  vc;
-  //     }
-  //     std_out << NL;
-  //   }
-  //
-  //   delay_ms_until_brk( &tm0, t_step );
-  // }
-  //
-  // sdat.calc();
-  // std_out << sdat << NL;
-  //
-  // delay_ms( 10 );
-
-  return 0;
-  //return rc;
-}
 
 
-int cmd_setcalibr( int argc, const char * const * argv )
-{
-  xfloat calibr_I_max = arg2float_d( 1, argc, argv, 1.0f, 1e-20f, 1e10f );
-  xfloat calibr_R     = arg2float_d( 2, argc, argv, 0.1f, 1e-20f, 1e10f );
-  xfloat calibr_I_lsb = calibr_I_max / (1<<19);
-  uint16_t cal_v = (uint16_t)( 13107.2e6f * calibr_I_lsb * calibr_R );
-  ina228.set_calibr_val( (uint32_t)(calibr_R * 1e6f), (uint32_t)(calibr_I_lsb*1e3f) );
-  ina228.setCalibr( cal_v );
-  ina228.getVsh(); // drop
-  ina228.waitEOC();
-  int32_t I = ina228.getI();
-  std_out << "# calibr_I_lsb= " << calibr_I_lsb << " calibr_R= " << calibr_R
-          << " cal_v=  " << cal_v << " I=" << I << " = " << (I*calibr_I_lsb) <<NL;
-  return 0;
-}
 
 int cmd_calc_acfg( int argc, const char * const * argv )
 {
