@@ -38,6 +38,7 @@ SUBDIRS = \
   37_ad7606_spi \
   38_mcp3204_adc_spi \
   38a_mcp3204_adc_spi_tim \
+  40_i2c_ina228 \
   80_math_stat \
   x03_tcop
 

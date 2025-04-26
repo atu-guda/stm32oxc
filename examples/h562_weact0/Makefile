@@ -37,6 +37,7 @@ SUBDIRS = \
   29a_i2c_ina226_pwm \
   35_mcp4725_dac_i2c \
   36_mcp23017_gpio_i2c \
+  40_i2c_ina228 \
   80_math_stat \
   # 37_ad7606_spi \
   # 37a_ad7606_spi_tim \

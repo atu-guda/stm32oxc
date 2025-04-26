@@ -1,0 +1,5 @@
+Use INA228 I/V measuring device ViA I2C
+
+SCL = A8 + 4.7k pullUp
+SDA = C9 + 4.7k pullUp
+

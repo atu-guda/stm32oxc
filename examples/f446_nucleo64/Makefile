@@ -56,6 +56,7 @@ SUBDIRS = \
   37a_ad7606_spi_tim \
   38_mcp3204_adc_spi \
   38a_mcp3204_adc_spi_tim \
+  40_i2c_ina228 \
   50_adc0 \
   50a_adcdma_soft1 \
   51_adcdma \
