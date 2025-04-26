@@ -2,6 +2,9 @@
 #include <iterator>
 #include <algorithm>
 
+// #include <optional>
+#include <expected>
+
 #include <oxc_auto.h>
 #include <oxc_statdata.h>
 #include <oxc_namedints.h>
@@ -24,6 +27,8 @@ int cmd_testout( int argc, const char * const * argv );
 CmdInfo CMDINFO_TESTOUT { "testout", 'O', cmd_testout, " - test output"  };
 int cmd_testsplit( int argc, const char * const * argv );
 CmdInfo CMDINFO_TESTSPLIT { "testspit", 'X', cmd_testsplit, " expr - test var split"  };
+int cmd_testopt( int argc, const char * const * argv );
+CmdInfo CMDINFO_TESTOPT { "testopt", 'Y', cmd_testopt, " n - test optiona/expected"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -31,6 +36,7 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_TEST0,
   &CMDINFO_TESTOUT,
   &CMDINFO_TESTSPLIT,
+  &CMDINFO_TESTOPT,
   nullptr
 };
 
@@ -74,6 +80,14 @@ bool set_ivf( int v, int /* idx */ )
   return true;
 }
 
+std::expected<xfloat,int> op_fun( int v )
+{
+  if( v & 1 ) {
+    return 0.001f * v;
+  }
+  // return {};
+  return std::unexpected( 100 + v );
+}
 
 constexpr NamedFloat fl0_W_max   {   "W_max",     &W_max  };
 constexpr NamedFloat fl0_V_max   {   "V_max",     &V_max  };
@@ -170,7 +184,9 @@ int cmd_test0( int argc, const char * const * argv )
   unsigned n_ch = 2;
   uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 100000000 ); // number of series
 
-  std_out << "# Test: sizeof(xfloat)= " << sizeof(xfloat) << "  sizeof(xfloat)= " << sizeof(xfloat) << NL;
+  std_out << "# Test: sizeof(float)= " << sizeof(float)
+          << "  sizeof(xfloat)= "      << sizeof(xfloat)
+          << "  sizeof(double)= "      << sizeof(double) << NL;
 
   StatData sdat( n_ch );
 
@@ -254,6 +270,27 @@ int cmd_testsplit( int argc, const char * const * argv )
   std_out << "ok= " << ok << " nm=\"" << nm0 << "\" nm1=\"" << nm1
           << "\" idx= " << idx << " *eptr='" << (*eptr) << '\'' << NL;
   fl0.print( argv[1] );
+  return 0;
+}
+
+int cmd_testopt( int argc, const char * const * argv )
+{
+  int n = arg2long_d( 1, argc, argv, 0  );
+  auto ov = op_fun( n );
+  if( ov ) {
+    std_out << "# ov= " << ov.value() << NL;
+  } else {
+    std_out << "# e: " << ov.error() << ' ' << ov.value_or( 42.1f ) << NL;
+  }
+
+  // test except
+  //try {
+  if( n > 10 ) {
+    std_out << "# ov= " << ov.value() << NL;
+  }
+  // } catch(...) {};
+
+
   return 0;
 }
 
