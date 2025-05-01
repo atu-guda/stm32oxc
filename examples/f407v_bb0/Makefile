@@ -57,7 +57,8 @@ SUBDIRS = \
   82_picoc \
   83_usbh_msc \
   84_usbh_msc_picoc \
-  l01_cube0
+  l01_cube0 \
+  l02_coord 
 
 ALL : examples_board
 

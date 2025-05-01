@@ -6,6 +6,8 @@ SUBDIRS = \
   02_leds_rtos \
   02a_leds_btn \
   03_uart \
+  03a_uart_x1 \
+  03b_uart_x2 \
   04_uart_console \
   04a_uart_console_nort \
   05a_def_console \

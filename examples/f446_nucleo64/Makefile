@@ -69,6 +69,7 @@ SUBDIRS = \
   l04_wheels1 \
   t01_iprintf \
   t01_misc \
+  t02_tim \
   xx01_calibrate \
 
 #  03c_uart_x3 \

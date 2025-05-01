@@ -45,6 +45,10 @@ SUBDIRS = \
   37_ad7606_spi \
   38_mcp3204_adc_spi \
   40_i2c_ina228 \
+  50_adc0 \
+  50a_adcdma_soft1 \
+  50xa_adc0_opamp \
+  51_adcdma \
   80_math_stat \
 
   # 16_step1 \
@@ -54,9 +58,7 @@ SUBDIRS = \
   # 31_sdcard2 \
   # 31a_sdcard2 \
   # 38a_mcp3204_adc_spi_tim \
-  # 50_adc0 \
   # 50a_adcdma_soft1 \
-  # 51_adcdma \
   # 51a_adcdma_n \
   # 53_adcdma_sd \
 #  55_dac0 \

@@ -6,7 +6,6 @@ using namespace SMLRL;
 USE_DIE4LED_ERROR_HANDLER;
 BOARD_DEFINE_LEDS;
 
-
 BOARD_CONSOLE_DEFINES;
 
 #if defined(USE_OXC_CONSOLE_UART)
@@ -18,15 +17,11 @@ BOARD_CONSOLE_DEFINES;
 #endif
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
-int cmd_test_rate( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST_RATE { "test_rate", 0, cmd_test_rate, "[ n [len] ] - test output rate"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
 
-  &CMDINFO_TEST0,
+  &CMDINFO_TEST_DELAYS,
   &CMDINFO_TEST_RATE,
   nullptr
 };
@@ -52,9 +47,6 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
   default_main_loop();
   vTaskDelete(NULL);
 }
-
-
-
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

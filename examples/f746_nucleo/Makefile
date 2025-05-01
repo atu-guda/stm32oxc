@@ -57,7 +57,8 @@ SUBDIRS = \
   80_math_stat \
   82_picoc \
   83_usbh_msc \
-  84_usbh_msc_picoc 
+  84_usbh_msc_picoc \
+  l39a_step_as5600 
 
 
 ALL : examples_f746_nucleo

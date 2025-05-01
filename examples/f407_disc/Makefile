@@ -12,6 +12,7 @@ SUBDIRS = \
   05a_def_console \
   05b_usb_console_nort \
   05c_def_cons_nort \
+  05d_defcons_btn \
   06_i2c_test \
   07_i2c_lcdt \
   08_i2c_mpu6050 \

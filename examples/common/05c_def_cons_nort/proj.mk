@@ -23,5 +23,4 @@ USE_OXC_CONSOLE_DEFAULT = y
 
 SRCS  = main.cpp
 
-SRCS += empty_test0_function.cpp
 

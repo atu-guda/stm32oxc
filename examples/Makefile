@@ -4,15 +4,18 @@ SUBDIRS = \
   f303_disc \
   f334_nucleo64 \
   f401cc_kp \
-  f407_x2 \
   f407_disc \
+  f407_x2 \
   f407v_bb0 \
   f407z_black0 \
-  f446_nucleo64 \
   f429i_disc \
+  f446_nucleo64 \
   f746_nucleo \
   f746_wave \
-  h743_wave
+  g431_kp0 \
+  h562_weact0 \
+  h743_wave \
+  h743_weact0
 
 #  f427_netdu \
 

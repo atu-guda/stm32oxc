@@ -13,13 +13,12 @@ BOARD_CONSOLE_DEFINES;
 const char* common_help_string = "Appication to test console with buttons IRQ" NL;
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
 
-  &CMDINFO_TEST0,
+  &CMDINFO_TEST_DELAYS,
+  &CMDINFO_TEST_RATE,
   nullptr
 };
 
@@ -47,36 +46,6 @@ int main(void)
 
   return 0;
 }
-
-int cmd_test0( int argc, const char * const * argv )
-{
-  int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
-  uint32_t t_step = UVAR('t');
-  std_out <<  "# Test0: n= " << n << " t= " << t_step << NL;
-
-  uint32_t tm0 = HAL_GetTick();
-
-  uint32_t tc0 = tm0, tc00 = tm0;
-
-  uint32_t tmc_prev = tc0;
-  break_flag = 0;
-  for( int i=0; i<n && !break_flag; ++i ) {
-    uint32_t  tcc = HAL_GetTick();
-    std_out <<  "i= " << i << "  tick= " << ( tcc - tc00 )
-            << " dlt= " << ( tcc - tmc_prev )
-            << " c= " << UVAR('c') << ' ' << UVAR('i') << ' ' << UVAR('j') << NL;
-    if( UVAR('w') ) {
-      std_out.flush();
-    }
-    leds.toggle( 4 );
-    tmc_prev = tcc;
-
-    delay_ms_until_brk( &tc0, t_step );
-  }
-
-  return 0;
-}
-
 
 
 

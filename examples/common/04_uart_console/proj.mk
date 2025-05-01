@@ -23,5 +23,4 @@ USE_FREERTOS = y
 
 SRCS  = main.cpp
 
-SRCS += empty_test0_function.cpp
 

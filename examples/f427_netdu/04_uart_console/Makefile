@@ -17,7 +17,6 @@ OXCDIR = /usr/share/stm32oxc
 
 SRCS  = main.cpp
 
-SRCS += empty_test0_function.cpp
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
 # list: see ../common/f4_modules.mk
