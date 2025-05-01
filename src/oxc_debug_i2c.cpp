@@ -48,7 +48,7 @@ int cmd_i2c_scan( int argc, const char * const * argv )
   std_out <<  NL "I2C scan end." NL ;
   return 0;
 }
-CmdInfo CMDINFO_I2C_SCAN {
+const CmdInfo CMDINFO_I2C_SCAN {
   "i2c_scan",  0, cmd_i2c_scan, "[start [end]] - scan I2C in range"
 };
 
@@ -72,7 +72,7 @@ int cmd_i2c_send( int argc, const char * const * argv )
 
   return 0;
 }
-CmdInfo CMDINFO_I2C_SEND {
+const CmdInfo CMDINFO_I2C_SEND {
   "i2c_send",  0, cmd_i2c_send,   "val [addr] - send to I2C (def addr=var[p])"
 };
 
@@ -107,7 +107,7 @@ int cmd_i2c_send_r1( int argc, const char * const * argv )
 {
   return subcmd_i2c_send_rx( argc, argv, false );
 }
-CmdInfo CMDINFO_I2C_SEND_R1 {
+const CmdInfo CMDINFO_I2C_SEND_R1 {
   "i2c_send1", 0, cmd_i2c_send_r1, "reg val - send to I2C(reg), reg_sz=1 (addr=var[p])"
 };
 
@@ -115,7 +115,7 @@ int cmd_i2c_send_r2( int argc, const char * const * argv )
 {
   return subcmd_i2c_send_rx( argc, argv, true );
 }
-CmdInfo CMDINFO_I2C_SEND_R2 {
+const CmdInfo CMDINFO_I2C_SEND_R2 {
   "i2c_send2",  0,  cmd_i2c_send_r2, "reg val - send to I2C(reg), reg_sz=2 (addr=var[p])"
 };
 
@@ -142,7 +142,7 @@ int cmd_i2c_recv( int argc, const char * const * argv )
 
   return 0;
 }
-CmdInfo CMDINFO_I2C_RECV {
+const CmdInfo CMDINFO_I2C_RECV {
   "i2c_recv",  0, cmd_i2c_recv,    "[addr [nr]] - recv from I2C (def addr=var[p])"
 };
 
@@ -183,7 +183,7 @@ int cmd_i2c_recv_r1( int argc, const char * const * argv )
 {
   return subcmd_i2c_recv_rx( argc, argv, false );
 }
-CmdInfo CMDINFO_I2C_RECV_R1 {
+const CmdInfo CMDINFO_I2C_RECV_R1 {
   "i2c_recv1",  0,  cmd_i2c_recv_r1, "reg [n] - recv from I2C(reg), reg_sz=1 (addr=var[p])"
 };
 
@@ -193,7 +193,7 @@ int cmd_i2c_recv_r2( int argc, const char * const * argv )
 {
   return subcmd_i2c_recv_rx( argc, argv, true );
 }
-CmdInfo CMDINFO_I2C_RECV_R2 {
+const CmdInfo CMDINFO_I2C_RECV_R2 {
   "i2c_recv2",  0,  cmd_i2c_recv_r2, "reg [n] - recv from I2C(reg), reg_sz=2 (addr=var[p])"
 };
 
@@ -211,7 +211,7 @@ int cmd_i2c_setaddr( int argc, const char * const * argv )
   i2c_client_def->setAddr( addr );
   return 0;
 }
-CmdInfo CMDINFO_I2C_SETADDR {
+const CmdInfo CMDINFO_I2C_SETADDR {
   "i2c_setaddr",  0,  cmd_i2c_setaddr, " addr - set default device addr "
 };
 

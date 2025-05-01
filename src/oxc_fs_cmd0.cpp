@@ -6,14 +6,14 @@
 #include <oxc_fs_cmd0.h>
 
 
-CmdInfo CMDINFO_MOUNT { "mount", 0, cmd_mount, " [path] - mount FAT filesystem"  };
-CmdInfo CMDINFO_UMOUNT { "umount", 0, cmd_umount, " - umount FAT filesystem"  };
-CmdInfo CMDINFO_FSINFO { "fsinfo", 0, cmd_fsinfo, " info about FAT filesystem"  };
-CmdInfo CMDINFO_LS { "ls", 0, cmd_ls, " [path] - list directory contents"  };
-CmdInfo CMDINFO_CAT { "cat", 0, cmd_cat, " path [max [noout]] - output file contents to stdout"  };
-CmdInfo CMDINFO_APPSTR { "appstr", 0, cmd_appstr, " file string  - append string to file"  };
-CmdInfo CMDINFO_WBLOCKS { "wblocks", 0, cmd_wblocks, " file [n_blocks]  - write blocks to file"  };
-CmdInfo CMDINFO_RM { "rm", 0, cmd_rm, " file - remove file"  };
+const CmdInfo CMDINFO_MOUNT { "mount", 0, cmd_mount, " [path] - mount FAT filesystem"  };
+const CmdInfo CMDINFO_UMOUNT { "umount", 0, cmd_umount, " - umount FAT filesystem"  };
+const CmdInfo CMDINFO_FSINFO { "fsinfo", 0, cmd_fsinfo, " info about FAT filesystem"  };
+const CmdInfo CMDINFO_LS { "ls", 0, cmd_ls, " [path] - list directory contents"  };
+const CmdInfo CMDINFO_CAT { "cat", 0, cmd_cat, " path [max [noout]] - output file contents to stdout"  };
+const CmdInfo CMDINFO_APPSTR { "appstr", 0, cmd_appstr, " file string  - append string to file"  };
+const CmdInfo CMDINFO_WBLOCKS { "wblocks", 0, cmd_wblocks, " file [n_blocks]  - write blocks to file"  };
+const CmdInfo CMDINFO_RM { "rm", 0, cmd_rm, " file - remove file"  };
 
 char fspath[fspath_sz];
 extern FATFS fs; // from main?

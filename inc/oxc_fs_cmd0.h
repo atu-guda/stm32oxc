@@ -8,21 +8,21 @@ const int fspath_sz = 32;
 extern char fspath[fspath_sz];
 
 int cmd_mount( int argc, const char * const * argv );
-extern CmdInfo CMDINFO_MOUNT;
+extern const CmdInfo CMDINFO_MOUNT;
 int cmd_umount( int argc, const char * const * argv );
-extern CmdInfo CMDINFO_UMOUNT;
+extern const CmdInfo CMDINFO_UMOUNT;
 int cmd_fsinfo( int argc, const char * const * argv );
-extern CmdInfo CMDINFO_FSINFO;
+extern const CmdInfo CMDINFO_FSINFO;
 int cmd_ls( int argc, const char * const * argv );
-extern CmdInfo CMDINFO_LS;
+extern const CmdInfo CMDINFO_LS;
 int cmd_cat( int argc, const char * const * argv );
-extern CmdInfo CMDINFO_CAT;
+extern const CmdInfo CMDINFO_CAT;
 int cmd_appstr( int argc, const char * const * argv );
-extern CmdInfo CMDINFO_APPSTR;
+extern const CmdInfo CMDINFO_APPSTR;
 int cmd_wblocks( int argc, const char * const * argv );
-extern CmdInfo CMDINFO_WBLOCKS;
+extern const CmdInfo CMDINFO_WBLOCKS;
 int cmd_rm( int argc, const char * const * argv );
-extern CmdInfo CMDINFO_RM;
+extern const CmdInfo CMDINFO_RM;
 
 #define FS_CMDS0 \
   &CMDINFO_MOUNT, \

@@ -11,24 +11,24 @@ extern I2CClient *i2c_client_def;
 
 
 int cmd_i2c_scan( int argc, const char * const * argv );
-extern CmdInfo CMDINFO_I2C_SCAN;
+extern const CmdInfo CMDINFO_I2C_SCAN;
 int cmd_i2c_send( int argc, const char * const * argv );
-extern CmdInfo CMDINFO_I2C_SEND;
+extern const CmdInfo CMDINFO_I2C_SEND;
 int subcmd_i2c_send_rx( int argc, const char * const * argv, bool is2byte );
 int cmd_i2c_send_r1( int argc, const char * const * argv );
-extern CmdInfo CMDINFO_I2C_SEND_R1;
+extern const CmdInfo CMDINFO_I2C_SEND_R1;
 int cmd_i2c_send_r2( int argc, const char * const * argv );
-extern CmdInfo CMDINFO_I2C_SEND_R2;
+extern const CmdInfo CMDINFO_I2C_SEND_R2;
 int cmd_i2c_recv( int argc, const char * const * argv );
-extern CmdInfo CMDINFO_I2C_RECV;
+extern const CmdInfo CMDINFO_I2C_RECV;
 
 int subcmd_i2c_recv_rx( int argc, const char * const * argv, bool is2byte );
 int cmd_i2c_recv_r1( int argc, const char * const * argv );
-extern CmdInfo CMDINFO_I2C_RECV_R1;
+extern const CmdInfo CMDINFO_I2C_RECV_R1;
 int cmd_i2c_recv_r2( int argc, const char * const * argv );
-extern CmdInfo CMDINFO_I2C_RECV_R2;
+extern const CmdInfo CMDINFO_I2C_RECV_R2;
 int cmd_i2c_setaddr( int argc, const char * const * argv );
-extern CmdInfo CMDINFO_I2C_SETADDR;
+extern const CmdInfo CMDINFO_I2C_SETADDR;
 
 #define DEBUG_I2C_CMDS \
   &CMDINFO_I2C_SCAN, \
