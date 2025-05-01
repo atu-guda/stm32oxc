@@ -78,9 +78,7 @@
   * @brief This is the HAL system configuration section
   */
 #define  VDD_VALUE                   (3300UL) /*!< Value of VDD in mv */
-// TODO: check
-#define  TICK_INT_PRIORITY            (0x0FU) /*!< tick interrupt priority */
-#define  USE_RTOS                     0U
+// TICK_INT_PRIORITY, USE_RTOS in oxc_hal_conf_auto.h for now to allow local override
 #define  PREFETCH_ENABLE              0U
 #define  INSTRUCTION_CACHE_ENABLE     1U
 #define  DATA_CACHE_ENABLE            1U

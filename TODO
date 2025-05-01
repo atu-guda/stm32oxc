@@ -1,3 +1,4 @@
+Control TICK_INT_PRIORITY in oxc_stm32hYxx_hal_common_conf.h
 Check MMU init in H7
 test SDcard in blue H7
 type info and NamedObj rework

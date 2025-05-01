@@ -13,6 +13,14 @@
   #include "../common/stm32_hal_conf_base.h"
 #endif
 
+#ifndef  TICK_INT_PRIORITY
+  #define  TICK_INT_PRIORITY (0x0FU)
+#endif
+
+#ifndef  USE_RTOS
+  #define  USE_RTOS 0
+#endif
+
 // to prevent warnings
 // if another value is needed, use local_hal_conf.h
 

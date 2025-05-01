@@ -76,8 +76,7 @@
   */
 
 #define  VDD_VALUE                    ((uint32_t)3300) /*!< Value of VDD in mv */
-#define  TICK_INT_PRIORITY            (0x0FU) /*!< tick interrupt priority */
-#define  USE_RTOS                     0
+// TICK_INT_PRIORITY, USE_RTOS in oxc_hal_conf_auto.h for now to allow local override
 #ifndef  PREFETCH_ENABLE
 #define  PREFETCH_ENABLE              1
 #endif
