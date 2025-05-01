@@ -16,6 +16,8 @@ using namespace SMLRL;
 #define PS1_OUTSZ  2
 #endif
 
+int main_loop_delay_nortos { 10 };
+
 #if defined USE_FREERTOS
 
 void task_leds( void *prm UNUSED_ARG )
@@ -131,7 +133,7 @@ void std_main_loop_nortos( SmallRL *sm, AuxTickFun f_idle )
       if( f_idle ) {
         f_idle();
       }
-      delay_ms( 10 );
+      delay_ms( main_loop_delay_nortos );
     }
   }
 }

@@ -20,6 +20,8 @@ BOARD_CONSOLE_DEFINES;
 // --- local commands;
 int cmd_test_val( int argc, const char * const * argv );
 const CmdInfo CMDINFO_TEST_VAL { "test_val", 'v', cmd_test_val, "[arg ] - test arg2long* converter"  };
+int cmd_test_mdelay( int argc, const char * const * argv );
+const CmdInfo CMDINFO_TEST_MDELAY { "test_mdelay", 'X', cmd_test_mdelay, "[v] - test main loop delay"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -27,12 +29,13 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_TEST_DELAYS,
   &CMDINFO_TEST_RATE,
   &CMDINFO_TEST_VAL,
+  &CMDINFO_TEST_MDELAY,
   nullptr
 };
 
 void idle_main_task()
 {
-  // leds.toggle( 1 );
+  leds.toggle( 1 );
 }
 
 
@@ -60,6 +63,14 @@ int cmd_test_val( int argc, const char * const * argv )
   int v0 = arg2long_d( 1, argc, argv,  UVAR('v'), INT_MIN, INT_MAX );
   int v1 = arg2long_d( 2, argc, argv,  UVAR('u'),    -500,    1500 );
   std_out << "# " << v0 << ' ' << v1 << NL;
+  return 0;
+}
+
+int cmd_test_mdelay( int argc, const char * const * argv )
+{
+  int v = arg2long_d( 1, argc, argv,  10, 0, 5000 );
+  main_loop_delay_nortos = v;
+  std_out << "# mdelay: " << main_loop_delay_nortos << NL;
   return 0;
 }
 

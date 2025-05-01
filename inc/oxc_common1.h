@@ -4,6 +4,8 @@
 #include <oxc_devio.h>
 #include <oxc_smallrl.h>
 
+extern int main_loop_delay_nortos;
+
 
 // SmallRL storage and config
 int smallrl_print( const char *s, int l ) __weak;
