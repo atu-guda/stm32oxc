@@ -67,6 +67,7 @@ SUBDIRS = \
   80_math_stat \
   l03_motor_fb \
   l04_wheels1 \
+  l06_dro02 \
   t01_iprintf \
   t01_misc \
   t02_tim \

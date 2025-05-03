@@ -1,4 +1,9 @@
-Control TICK_INT_PRIORITY in oxc_stm32hYxx_hal_common_conf.h
+Events in main loop
+Better split main loop/irq/idle
+07b - all arches (need keyboard) - rework with events?
+move HX711 code from f446_nucleo64/l06_dro02 to lib
+Modbus client/server
+
 Check MMU init in H7
 test SDcard in blue H7
 type info and NamedObj rework
@@ -6,7 +11,6 @@ file (DevIO flags)
 oxc_gpio.cpp : split f1/other
 gpio: init by list
 More ReturnCode usage
-Events in main loop
 Bug: adcdma_n: limit output to n
 ADC_Info: more common / split
 F7 DMA:
@@ -16,7 +20,6 @@ F7 DMA:
 Fix bug with small floats output
 STD_POST_EXEC redesign: weak?
 USB CDC: DevIO: hook for connect/disconnect
-07b - all arches (need keyboard)
 substitute vars (or by any hook) in cmdline: oxc_console.cpp: exec_direct?
 oxc_smallrl: UTF-8 minimal handling
 common RCC init Rewrite Sysinit
