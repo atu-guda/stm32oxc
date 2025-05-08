@@ -33,17 +33,19 @@ extern uint32_t SystemCoreClock;
 #define configMAX_CO_ROUTINE_PRIORITIES   ( 2 )
 
 #define configUSE_MUTEXES                 1
-#define configUSE_RECURSIVE_MUTEXES       0
+#define configUSE_RECURSIVE_MUTEXES       1
+#define configUSE_APPLICATION_TASK_TAG    0
 #define configUSE_COUNTING_SEMAPHORES     1
 #define configQUEUE_REGISTRY_SIZE         8
 #define configUSE_QUEUE_SETS              0
 #define configUSE_TIME_SLICING            0
 #define configUSE_NEWLIB_REENTRANT        0
 #define configENABLE_BACKWARD_COMPATIBILITY  0
-// #define configNUM_THREAD_LOCAL_STORAGE_POINTERS 5
+#define configNUM_THREAD_LOCAL_STORAGE_POINTERS 5
 
 // void vApplicationIdleHook( void );
 #define configUSE_IDLE_HOOK               0
+#define configUSE_PASSIVE_IDLE_HOOK       0
 // void vApplicationTickHook( void );
 #define configUSE_TICK_HOOK               0
 #define configCHECK_FOR_STACK_OVERFLOW    0
@@ -51,6 +53,7 @@ extern uint32_t SystemCoreClock;
 
 #define configGENERATE_RUN_TIME_STATS     0
 #define configUSE_TRACE_FACILITY          0
+#define configUSE_STATS_FORMATTING_FUNCTIONS 0
 
 // #define configUSE_TIMERS                        1
 // #define configTIMER_TASK_PRIORITY               3
@@ -78,6 +81,10 @@ to exclude the API function. */
 #define INCLUDE_xEventGroupSetBitFromISR        0
 #define INCLUDE_vTaskCleanUpResources           0
 #define INCLUDE_xTimerPendFunctionCall          0
+#define INCLUDE_xTaskAbortDelay                 0
+#define INCLUDE_xTaskGetHandle                  1
+#define INCLUDE_xTaskResumeFromISR              1
+#define INCLUDE_xQueueGetMutexHolder            1
 
 /* Cortex-M specific definitions. */
 #ifdef __NVIC_PRIO_BITS
