@@ -9,7 +9,7 @@ class SSD1306 : public I2CClient {
    enum {
      BASE_ADDR = 0x3C,
      X_SZ = 128,
-     Y_SZ = 64,
+     Y_SZ = 64, // TODO: can change
      CMD_1 = 0x80,
      CMD_N = 0x00,
      DATA_1 = 0xC0,

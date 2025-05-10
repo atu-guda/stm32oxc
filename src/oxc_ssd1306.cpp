@@ -24,8 +24,8 @@ int  SSD1306::data1( uint8_t d )
 
 int  SSD1306::init()
 {
-  // static const constexpr uint8_t on_cmd[] = { 0x00, 0x8D, 0x14, 0xAF };
-  uint8_t on_cmd[] = { 0x00, 0x8D, 0x14, 0xAF };
+  static const constexpr uint8_t on_cmd[] = { 0x00, 0x8D, 0x14, 0xAF }; // BUG: why not?
+  // uint8_t on_cmd[] = { 0x00, 0x8D, 0x14, 0xAF };
   return send( on_cmd, 4 );
 }
 

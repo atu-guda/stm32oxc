@@ -6,7 +6,7 @@ using namespace std;
 #include <oxc_miscfun.h>
 #include <oxc_pixbuf.h>
 
-  PixBuf::PixBuf( uint16_t a_width, uint16_t a_height, uint16_t a_bpp )
+PixBuf::PixBuf( uint16_t a_width, uint16_t a_height, uint16_t a_bpp )
   : width( a_width ), height( a_height ), bpp( a_bpp ),
     sz( uint32_t(width) * height * bpp / 8 ),
     xscr( new uint8_t[sz+PRE_BUF] ),
@@ -45,11 +45,9 @@ void PixBuf::rect( uint16_t x1,  uint16_t y1, uint16_t x2, uint16_t y2, uint32_t
 
 void PixBuf::box(  uint16_t x1,  uint16_t y1, uint16_t x2, uint16_t y2, uint32_t col )
 {
-  // bad fallback realization
+  // fallback realization
   for( uint16_t y=y1; y<=y2; ++y ) {
-    for( uint16_t x=x1; x<=x2; ++x ) {
-      pix( x, y, col );
-    }
+    hline( x1, y, x2, col );
   }
 }
 
@@ -61,7 +59,7 @@ void PixBuf::line(  uint16_t x1,  uint16_t y1, uint16_t x2, uint16_t y2, uint32_
     return vline( x1, y1, y2, col );
   }
   if( dy == 0 ) {
-    return hline( x1, x2, y1, col );
+    return hline( x1, y1, x2, col );
   }
 
   int d = 0;

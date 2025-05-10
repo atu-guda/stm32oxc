@@ -9,12 +9,12 @@
 class PixBuf {
   public:
    enum {
-     PRE_BUF = 4, // bytes before real buffer: for transfer cmd
+     PRE_BUF = 4, // bytes before real buffer: for transfer cmd TODO: param: different drivers
      STRBOX_BG = 1,
      STRBOX_BORDER = 2,
      STRBOX_ALL = STRBOX_BG | STRBOX_BORDER
    };
-   PixBuf( uint16_t a_width, uint16_t a_height, uint16_t a_bpp );
+   PixBuf( uint16_t a_width, uint16_t a_height, uint16_t a_bpp ); // TODO: init: for change size
    PixBuf( const PixBuf &r );
    ~PixBuf();
    uint8_t* fb() { return scr; }
@@ -39,8 +39,8 @@ class PixBuf {
   protected:
    uint16_t width, height, bpp;
    uint32_t sz; // in bytes;
-   uint8_t *xscr;
-   uint8_t *scr;
+   uint8_t *xscr; // allocated space
+   uint8_t *scr;  // buffer itself
 };
 
 #endif

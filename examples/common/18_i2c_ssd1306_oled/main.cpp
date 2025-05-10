@@ -25,8 +25,14 @@ CmdInfo CMDINFO_CLS { "cls", 'X', cmd_cls, " - clear screen"  };
 int cmd_vline( int argc, const char * const * argv );
 CmdInfo CMDINFO_VLINE { "vline", 0, cmd_vline, " [start [end]] - test vline"  };
 
+int cmd_lines( int argc, const char * const * argv );
+CmdInfo CMDINFO_LINES { "lines", 'L', cmd_lines, " [n [d]] - test lines"  };
+
 int cmd_line( int argc, const char * const * argv );
-CmdInfo CMDINFO_LINE { "line", 'L', cmd_line, " - test line"  };
+CmdInfo CMDINFO_LINE  { "line", 'l', cmd_line, " [x0 y0 x1 y1] - test line"  };
+
+int cmd_puts( int argc, const char * const * argv );
+CmdInfo CMDINFO_PUTS  { "puts", 'p', cmd_puts, " str [ x y szi] - test string"  };
 
 int cmd_contr( int argc, const char * const * argv );
 CmdInfo CMDINFO_CONTR { "contr",  0, cmd_contr, " [v] - test contrast"  };
@@ -38,7 +44,9 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_TEST0,
   &CMDINFO_CLS,
   &CMDINFO_VLINE,
+  &CMDINFO_LINES,
   &CMDINFO_LINE,
+  &CMDINFO_PUTS,
   &CMDINFO_CONTR,
   nullptr
 };
@@ -82,26 +90,27 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
+  int dly = UVAR('t');
   screen.init();
 
-  delay_ms( 500 );
+  delay_ms( dly );
   screen.contrast( 0x20 );
-  delay_ms( 500 );
+  delay_ms( dly );
   screen.contrast( 0xF0 );
-  delay_ms( 500 );
+  delay_ms( dly );
   // screen.full_on();
-  // delay_ms( 500 );
+  // delay_ms( dly );
   // screen.on_ram();
   //
-  // delay_ms( 500 );
+  // delay_ms( dly );
   screen.inverse();
-  delay_ms( 500 );
+  delay_ms( dly );
   screen.no_inverse();
   //
   //
-  // delay_ms( 500 );
+  // delay_ms( dly );
   // screen.switch_off();
-  // delay_ms( 1000 );
+  // delay_ms( dly );
   screen.switch_on();
 
   screen.mode_horisontal();
@@ -138,8 +147,8 @@ int cmd_test0( int argc, const char * const * argv )
   pb0.circle( xcen, ycen, 1*ystp, 1 );
 
   pb0.outChar( 2, 2, 'A', &Font12,  0 );
-  pb0.outStrBox(      2*ystp,  7*ystp, "String", &Font8, 1, 0, 1, PixBuf::STRBOX_ALL );
-  pb0.outStrBox( xmax-7*ystp,  7*ystp, "Str2",   &Font8, 0, 1, 0, PixBuf::STRBOX_BG );
+  pb0.outStrBox(      2*ystp,  7*ystp, "String8", &Font8,  1, 0, 1, PixBuf::STRBOX_ALL );
+  pb0.outStrBox( xmax-10*ystp, 7*ystp, "Str16",   &Font16, 0, 1, 0, PixBuf::STRBOX_BG );
 
   screen.out( pb0 );
 
@@ -170,7 +179,7 @@ int cmd_vline( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_line( int argc, const char * const * argv )
+int cmd_lines( int argc, const char * const * argv )
 {
   uint16_t nl = arg2long_d( 1, argc, argv,  36, 0, 1024 );
   uint16_t dn = arg2long_d( 2, argc, argv,  360/nl, 1, 512 );
@@ -192,6 +201,39 @@ int cmd_line( int argc, const char * const * argv )
 
   return 0;
 }
+
+int cmd_line( int argc, const char * const * argv )
+{
+  uint16_t x0 = arg2long_d( 1, argc, argv,  0,  0, 512 );
+  uint16_t y0 = arg2long_d( 2, argc, argv,  0,  0, 512 );
+  uint16_t x1 = arg2long_d( 3, argc, argv, 64,  0, 512 );
+  uint16_t y1 = arg2long_d( 4, argc, argv, 64,  0, 512 );
+
+  std_out <<  NL "line: "  << x0 << ' ' << y0 << ' ' << x1 << ' ' << y1  <<  NL;
+
+
+  pb0.line( x0, y0, x1, y1, 1 );
+
+  screen.out( pb0 );
+
+  return 0;
+}
+
+int cmd_puts( int argc, const char * const * argv )
+{
+  static const sFONT* fonts[] = { &Font8, &Font12, &Font16, &Font20, &Font24 };
+  const char *s = argv[1] ? argv[1] : "W";
+  uint16_t x0  = arg2long_d( 2, argc, argv,  0,  0, 512 );
+  uint16_t y0  = arg2long_d( 3, argc, argv,  0,  0, 512 );
+  uint16_t sid = arg2long_d( 4, argc, argv,  0,  0, size(fonts)-1 );
+
+  pb0.outStr( x0, y0, s, fonts[sid], 1 );
+
+  screen.out( pb0 );
+
+  return 0;
+}
+
 
 int cmd_contr( int argc, const char * const * argv )
 {
