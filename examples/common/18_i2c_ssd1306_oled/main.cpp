@@ -17,7 +17,10 @@ const char* common_help_string = "App to test ssd1306 based OLED screen" NL;
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
+CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test basic actions"  };
+
+int cmd_send( int argc, const char * const * argv );
+CmdInfo CMDINFO_SEND { "send", 'S', cmd_send, "XX [XX] - send cmd [with arg]"  }; // debug ctrl
 
 int cmd_cls( int argc, const char * const * argv );
 CmdInfo CMDINFO_CLS { "cls", 'X', cmd_cls, " - clear screen"  };
@@ -32,7 +35,10 @@ int cmd_line( int argc, const char * const * argv );
 CmdInfo CMDINFO_LINE  { "line", 'l', cmd_line, " [x0 y0 x1 y1] - test line"  };
 
 int cmd_puts( int argc, const char * const * argv );
-CmdInfo CMDINFO_PUTS  { "puts", 'p', cmd_puts, " str [ x y szi] - test string"  };
+CmdInfo CMDINFO_PUTS  { "puts", 's', cmd_puts, " str [ x y szi] - test string"  };
+
+int cmd_pix( int argc, const char * const * argv );
+CmdInfo CMDINFO_PIX  { "pix", 'x', cmd_pix, " x y col - test pixel"  };
 
 int cmd_contr( int argc, const char * const * argv );
 CmdInfo CMDINFO_CONTR { "contr",  0, cmd_contr, " [v] - test contrast"  };
@@ -42,11 +48,13 @@ const CmdInfo* global_cmds[] = {
   DEBUG_I2C_CMDS,
 
   &CMDINFO_TEST0,
+  &CMDINFO_SEND,
   &CMDINFO_CLS,
   &CMDINFO_VLINE,
   &CMDINFO_LINES,
   &CMDINFO_LINE,
   &CMDINFO_PUTS,
+  &CMDINFO_PIX,
   &CMDINFO_CONTR,
   nullptr
 };
@@ -114,6 +122,7 @@ int cmd_test0( int argc, const char * const * argv )
   screen.switch_on();
 
   screen.mode_horisontal();
+  // screen.mode_vertical();
 
 
   pb0.fillAll( 0 );
@@ -154,6 +163,25 @@ int cmd_test0( int argc, const char * const * argv )
 
   return 0;
 }
+
+int cmd_send( int argc, const char * const * argv )
+{
+  uint8_t c0 = (uint8_t) arg2long_d( 1, argc, argv,    0,  0, 0xFF );
+  uint8_t c1 = (uint8_t) arg2long_d( 2, argc, argv,    0,  0, 0xFF );
+
+  if( argc > 2 ) {
+    std_out <<  NL "cmd2:  "  <<  HexInt8(c0) << ' ' << HexInt8(c1) << NL;
+    screen.cmd2( c0, c1 );
+  } else {
+    std_out <<  NL "cmd1:  "  <<  HexInt8(c0) << NL;
+    screen.cmd1( c0 );
+  }
+
+  screen.out( pb0 );
+
+  return 0;
+}
+
 
 int cmd_cls( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
 {
@@ -233,6 +261,20 @@ int cmd_puts( int argc, const char * const * argv )
 
   return 0;
 }
+
+int cmd_pix( int argc, const char * const * argv )
+{
+  uint16_t x0  = arg2long_d( 1, argc, argv,  0,  0, 512 );
+  uint16_t y0  = arg2long_d( 2, argc, argv,  0,  0, 512 );
+  uint16_t c   = arg2long_d( 3, argc, argv,  1,  0, 255 );
+
+  pb0.pix( x0, y0, c );
+
+  screen.out( pb0 );
+
+  return 0;
+}
+
 
 
 int cmd_contr( int argc, const char * const * argv )
