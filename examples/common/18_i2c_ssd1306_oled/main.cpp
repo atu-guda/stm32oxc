@@ -62,8 +62,8 @@ const CmdInfo* global_cmds[] = {
 
 I2C_HandleTypeDef i2ch;
 
-const uint16_t xmax = SSD1306::X_SZ, ymax = SSD1306::Y_SZ;
-const uint16_t xcen = xmax/2, ycen = ymax/2, ystp = ymax / 10;
+const uint16_t xmax = SSD1306::X_SZ, ymax = SSD1306::Y_SZ_MAX;
+uint16_t xcen = xmax/2, ycen = ymax/2, ystp = ymax / 10;
 PixBuf1V pb0( xmax, ymax );
 
 DevI2C i2cd( &i2ch, 0 );
@@ -76,6 +76,7 @@ int main(void)
 
   UVAR('t') = 1000;
   UVAR('n') = 20;
+  UVAR('y') =  0; // 1= y = 32, 0 - 64
 
   UVAR('e') = i2c_default_init( i2ch, 400000 );
   i2c_dbg = &i2cd;
@@ -99,7 +100,8 @@ int main(void)
 int cmd_test0( int argc, const char * const * argv )
 {
   int dly = UVAR('t');
-  screen.init();
+  screen.init( UVAR('y') );
+  ycen = screen.getYsz() / 2; ystp = ycen / 5;
 
   delay_ms( dly );
   screen.contrast( 0x20 );
@@ -121,7 +123,7 @@ int cmd_test0( int argc, const char * const * argv )
   // delay_ms( dly );
   screen.switch_on();
 
-  screen.mode_horisontal();
+  // screen.mode_horisontal();
   // screen.mode_vertical();
 
 
@@ -166,16 +168,14 @@ int cmd_test0( int argc, const char * const * argv )
 
 int cmd_send( int argc, const char * const * argv )
 {
-  uint8_t c0 = (uint8_t) arg2long_d( 1, argc, argv,    0,  0, 0xFF );
-  uint8_t c1 = (uint8_t) arg2long_d( 2, argc, argv,    0,  0, 0xFF );
-
-  if( argc > 2 ) {
-    std_out <<  NL "cmd2:  "  <<  HexInt8(c0) << ' ' << HexInt8(c1) << NL;
-    screen.cmd2( c0, c1 );
-  } else {
-    std_out <<  NL "cmd1:  "  <<  HexInt8(c0) << NL;
-    screen.cmd1( c0 );
+  const unsigned max_cmd_bytes { 8 };
+  uint8_t ca[max_cmd_bytes];
+  int n_cmd = argc-1;
+  for( int i=0; i<n_cmd; ++i ) {
+    ca[i] = strtol( argv[i+1], 0, 0 );
   }
+  // dump8( ca, n_cmd );
+  screen.cmdN( ca, n_cmd );
 
   screen.out( pb0 );
 
