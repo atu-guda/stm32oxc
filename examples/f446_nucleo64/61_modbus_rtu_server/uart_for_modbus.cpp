@@ -27,12 +27,13 @@ int MX_MODBUS_UART_Init(void)
   if( HAL_UART_Init( &huart_modbus ) != HAL_OK ) {
     return 0;
   }
-  UART_MODBUS->CR1 |=  UsartIO::CR1_UE  | UsartIO::CR1_RE | UsartIO::CR1_TE | UsartIO::CR1_RXNEIE;
+  // UART_MODBUS->CR2 |=  UsartIO::CR1_UE  | UsartIO::CR1_RE | UsartIO::CR1_TE | UsartIO::CR1_RXNEIE;
   return 1;
 }
 
 void HAL_UART_UserInit( UART_HandleTypeDef* uartHandle )
 {
+  // UVAR('z') |= 1;
   if( uartHandle->Instance != UART_MODBUS ) {
     return;
   }
@@ -46,8 +47,9 @@ void HAL_UART_UserInit( UART_HandleTypeDef* uartHandle )
     UART_MODBUS_GPIO.cfgIn_N( UART_MODBUS_GPIO_RX );
   #endif
 
-  HAL_NVIC_SetPriority( UART_MODBUS_IRQ, 3, 0 );
-  HAL_NVIC_EnableIRQ(   UART_MODBUS_IRQ );
+  // HAL_NVIC_SetPriority( UART_MODBUS_IRQ, 3, 0 );
+  // HAL_NVIC_EnableIRQ(   UART_MODBUS_IRQ );
+  // UVAR('z') |= 2; // works
 }
 
 

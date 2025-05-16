@@ -12,7 +12,6 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
-UART_HandleTypeDef huart1;
 
 int MX_TIM11_Init();
 TIM_HandleTypeDef htim11;
@@ -24,16 +23,19 @@ int cmd_test0( int argc, const char * const * argv );
 CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
 int cmd_out( int argc, const char * const * argv );
 CmdInfo CMDINFO_OUT { "out", 'O', cmd_out, " - print and clear ibuf"  };
+int cmd_writeReg( int argc, const char * const * argv );
+CmdInfo CMDINFO_WRITEREG { "write_reg", 'W', cmd_writeReg, "reg val - write 1 reg"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
 
   &CMDINFO_TEST0,
   &CMDINFO_OUT,
+  &CMDINFO_WRITEREG,
   nullptr
 };
 
-// USART_TypeDef*, volatile uint32_t*
+//                    USART_TypeDef*, volatile uint32_t*
 MODBUS_RTU_server m_srv( UART_MODBUS, &(TIM11->CNT) );
 void tick_for_modbus();
 
@@ -55,10 +57,11 @@ int main(void)
 
   UVAR('t') = 100;
   UVAR('n') =   4;
+  UVAR('u') =   2; // default unit addr
   UVAR('a') =  '@';
 
   MX_TIM11_Init();
-  MX_MODBUS_UART_Init();
+  UVAR('e') = MX_MODBUS_UART_Init();
 
   BOARD_POST_INIT_BLINK;
 
@@ -113,15 +116,22 @@ int cmd_out( int argc, const char * const * argv )
   std_out <<  "# ibuf_pos:  " << pos << " state: " << int( m_srv.get_server_state() ) << NL;
   auto ibuf = m_srv.get_ibuf();
 
-  dump8( ibuf, (pos+15) & 0x0FFF0 );
+  dump8( ibuf, 0x20 );
 
-  uint16_t v0 = (ibuf[pos-1] << 8) | ibuf[pos-2];
-  uint16_t v1 = MODBUS_RTU_server::crc( ibuf, pos-2 );
-  std_out <<  "# crc0:  " << HexInt16(v0) << " crc1: " << HexInt16(v1) << " good: " << m_srv.isCrcGood() << NL;
   m_srv.reset();
   return 0;
 }
 
+int cmd_writeReg( int argc, const char * const * argv )
+{
+  uint16_t reg = arg2long_d( 1, argc, argv, 0, 0, 0xFFFF );
+  uint16_t val = arg2long_d( 2, argc, argv, 0, 0, 0xFFFF );
+
+  std_out <<  "# write1reg :  " << reg << ' ' << val << ' ' << UVAR('u') << NL;
+  auto rc = m_srv.writeReg( UVAR('u'), reg, val );
+  std_out << "# rc " << rc << NL;
+  return 0;
+}
 
 // Timer parts
 
@@ -151,7 +161,7 @@ void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* htim_base )
 
 void UART_MODBUS_IRQHANDLER(void)
 {
-  // leds.set( 2 );
+  leds.set( 2 );
   m_srv.handle_UART_IRQ();
 }
 
