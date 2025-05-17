@@ -172,7 +172,7 @@ uint16_t ModbusRtuReadNRespHead::get_v( unsigned i ) const
 
 // ================================================= server ===============================
 
-MODBUS_RTU_server::MODBUS_RTU_server( USART_TypeDef *a_uart )
+MODBUS_RTU_server::MODBUS_RTU_server( UART_HandleTypeDef *a_uart )
   : uart( a_uart )
 {
   reset();
@@ -202,8 +202,8 @@ ReturnCode MODBUS_RTU_server::writeReg( uint8_t addr, uint16_t reg, uint16_t val
 
   // dump8( obuf, sizeof(ModbusRtuWrite1Req) );
 
-  HAL_UART_Receive( &huart_modbus, (uint8_t*)ibuf, sizeof(ibuf), 0 ); // clear
-  auto rc = HAL_UART_Transmit( &huart_modbus, obuf, sizeof(ModbusRtuWrite1Req), tout_write );
+  HAL_UART_Receive( uart, (uint8_t*)ibuf, sizeof(ibuf), 0 ); // clear
+  auto rc = HAL_UART_Transmit( uart, obuf, sizeof(ModbusRtuWrite1Req), tout_write );
   if( rc != HAL_OK ) {
     err = errTransmit;
     return rcErr;
@@ -216,7 +216,7 @@ ReturnCode MODBUS_RTU_server::writeReg( uint8_t addr, uint16_t reg, uint16_t val
   // BUG: need correct read, but this method works for now
   byte_span sp_i { ModbusRtuWrite1Req::make_span( ibuf ) };
   std::ranges::fill( sp_i, '\0' );
-  rc = HAL_UART_Receive( &huart_modbus, (uint8_t*)ibuf, sizeof(ModbusRtuWrite1Req), tout_read );
+  rc = HAL_UART_Receive( uart, (uint8_t*)ibuf, sizeof(ModbusRtuWrite1Req), tout_read );
 
   // dump8( ibuf, sizeof(ModbusRtuWrite1Req) );
 
@@ -262,8 +262,8 @@ ReturnCode MODBUS_RTU_server::readRegs( uint8_t addr, uint16_t start, uint16_t n
 
   // dump8( obuf, sizeof(ModbusRtuReadNReq) );
 
-  HAL_UART_Receive( &huart_modbus, (uint8_t*)ibuf, sizeof(ibuf), 0 ); // clear
-  auto rc = HAL_UART_Transmit( &huart_modbus, obuf, sizeof(ModbusRtuReadNReq), tout_write );
+  HAL_UART_Receive( uart, (uint8_t*)ibuf, sizeof(ibuf), 0 ); // clear
+  auto rc = HAL_UART_Transmit( uart, obuf, sizeof(ModbusRtuReadNReq), tout_write );
   if( rc != HAL_OK ) {
     err = errTransmit;
     return rcErr;
@@ -272,7 +272,7 @@ ReturnCode MODBUS_RTU_server::readRegs( uint8_t addr, uint16_t start, uint16_t n
   // BUG: need correct read, but this method works for now
   byte_span sp_i { ModbusRtuReadNRespHead::make_span( ibuf, n ) };
   std::ranges::fill( sp_i, '\0' );
-  rc = HAL_UART_Receive( &huart_modbus, (uint8_t*)ibuf, sp_i.size(), tout_read );
+  rc = HAL_UART_Receive( uart, (uint8_t*)ibuf, sp_i.size(), tout_read );
 
   // dump8( ibuf, sp_o.size() );
 

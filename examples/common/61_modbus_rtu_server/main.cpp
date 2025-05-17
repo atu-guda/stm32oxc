@@ -40,9 +40,8 @@ const CmdInfo* global_cmds[] = {
   nullptr
 };
 
-//                    USART_TypeDef*, volatile uint32_t*
-MODBUS_RTU_server m_srv( UART_MODBUS );
-// void tick_for_modbus();
+extern UART_HandleTypeDef huart_modbus;
+MODBUS_RTU_server m_srv( &huart_modbus );
 
 void idle_main_task()
 {

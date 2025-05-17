@@ -1,8 +1,9 @@
+UsartIO - only one ptr hold
 Events in main loop
 Better split main loop/irq/idle
 07b - all arches (need keyboard) - rework with events?
-move HX711 code from f446_nucleo64/l06_dro02 to lib
-Modbus client/server
+Modbus client
+Modbus server
 
 Check MMU init in H7
 test SDcard in blue H7
