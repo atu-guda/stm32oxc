@@ -26,6 +26,8 @@ int cmd_writeReg( int argc, const char * const * argv );
 CmdInfo CMDINFO_WRITEREG { "write_reg", 'W', cmd_writeReg, "reg val - write 1 reg"  };
 int cmd_readRegs( int argc, const char * const * argv );
 CmdInfo CMDINFO_READREGS { "read_regs", 'R', cmd_readRegs, "start n - read n regs"  };
+int cmd_readReg( int argc, const char * const * argv );
+CmdInfo CMDINFO_READREG { "read_reg", '\0', cmd_readReg, "i - read 1 reg"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -34,6 +36,7 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_OUT,
   &CMDINFO_WRITEREG,
   &CMDINFO_READREGS,
+  &CMDINFO_READREG,
   nullptr
 };
 
@@ -139,8 +142,6 @@ int cmd_readRegs( int argc, const char * const * argv )
 
   std_out << "# rc " << rc << ' ' << errno << NL;
 
-  dump8( m_srv.get_ibuf(), 0x40 );
-
   if( rc == rcOk ) {
     for( uint16_t i=start; i<start+n; ++i ) {
       auto v = m_srv.getReg( i );
@@ -148,6 +149,19 @@ int cmd_readRegs( int argc, const char * const * argv )
     }
   }
   return rc;
+}
+
+
+int cmd_readReg( int argc, const char * const * argv )
+{
+  uint16_t i = arg2long_d( 1, argc, argv, 0, 0, 0xFFFF );
+
+  std_out <<  "# readNReg :  " << i << UVAR('u') << NL;
+  auto v = m_srv.readGetReg( UVAR('u'), i );
+
+  std_out << "# v= "  << HexInt16(v) << ' ' << v << NL;
+
+  return 0;
 }
 
 

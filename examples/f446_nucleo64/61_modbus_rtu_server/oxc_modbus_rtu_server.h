@@ -115,6 +115,7 @@ class MODBUS_RTU_server {
     ReturnCode readRegs( uint8_t addr, uint16_t start, uint16_t n );
     uint16_t getNReadedRegs() const { return n_readed_regs; }
     uint16_t getReg( uint16_t i ) const;
+    uint16_t readGetReg( uint8_t addr, uint16_t i );
   private:
     uint8_t ibuf[ibufsz];
     uint8_t obuf[obufsz];
