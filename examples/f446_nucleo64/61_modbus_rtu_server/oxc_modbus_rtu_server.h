@@ -103,6 +103,17 @@ class MODBUS_RTU_server {
       tout_write = 100,
       tout_read  = 500
     };
+    enum Errors {
+      errOk = 0,
+      errBadParam = 1,
+      errTransmit = 2,
+      errReceive  = 3,
+      errCRC      = 4,
+      errReplErr  = 5, // modbus error responce
+      errAddr     = 6, // wrong replay address
+      errFun      = 7, // wrong func number, but not error
+
+    };
     static const uint16_t ibufsz { 256 };
     static const uint16_t obufsz {  32 }; // as w do not write N regs
     explicit MODBUS_RTU_server( USART_TypeDef *a_uart ); // TODO: oxc or handle?
@@ -116,6 +127,8 @@ class MODBUS_RTU_server {
     uint16_t getNReadedRegs() const { return n_readed_regs; }
     uint16_t getReg( uint16_t i ) const;
     uint16_t readGetReg( uint8_t addr, uint16_t i );
+    Errors getError() const { return err; }
+    uint8_t getReplError() const { return errRepl; }
   private:
     uint8_t ibuf[ibufsz];
     uint8_t obuf[obufsz];
@@ -124,6 +137,8 @@ class MODBUS_RTU_server {
     uint32_t last_uart_status { 0 };
     uint16_t n_readed_regs { 0 };
     uint16_t start_reg { 0 };
+    Errors err { errOk };
+    uint8_t errRepl { 0 };
 
 };
 

@@ -187,6 +187,7 @@ void MODBUS_RTU_server::reset()
   // state = ST_IDLE;
   last_uart_status = 0;
   n_readed_regs = 0; start_reg = 0;
+  err = errOk;  errRepl = 0;
   std::ranges::fill( ibuf, '\x00' );
   std::ranges::fill( obuf, '\x00' );
 }
@@ -194,10 +195,11 @@ void MODBUS_RTU_server::reset()
 
 ReturnCode MODBUS_RTU_server::writeReg( uint8_t addr, uint16_t reg, uint16_t val )
 {
+  err = errOk;  errRepl = 0;
   byte_span sp_o { ModbusRtuWrite1Req::make_span( obuf ) };
   auto rc_b = ModbusRtuWrite1Req::make( addr, reg, val, sp_o );
   if( !rc_b ) {
-    errno = 5000;
+    err = errBadParam;
     return rcErr;
   }
   n_readed_regs = 0; start_reg = 0;
@@ -207,7 +209,7 @@ ReturnCode MODBUS_RTU_server::writeReg( uint8_t addr, uint16_t reg, uint16_t val
   HAL_UART_Receive( &huart_modbus, (uint8_t*)ibuf, sizeof(ibuf), 0 ); // clear
   auto rc = HAL_UART_Transmit( &huart_modbus, obuf, sizeof(ModbusRtuWrite1Req), tout_write );
   if( rc != HAL_OK ) {
-    errno = 5001;
+    err = errTransmit;
     return rcErr;
   }
 
@@ -223,19 +225,24 @@ ReturnCode MODBUS_RTU_server::writeReg( uint8_t addr, uint16_t reg, uint16_t val
   // dump8( ibuf, sizeof(ModbusRtuWrite1Req) );
 
   if ( rc != HAL_OK ) {
-    errno = 5002;
+    err = errReceive; errRepl = ibuf[2]; // as bad rc handling
     return rcErr;
   }
   if( !checkRtuCrc( sp_i ) ) {
-    errno = 5003;
+    err = errCRC;
     return rcErr;
   }
+
   if( ibuf[0] != addr ) {
-    errno = 5004;
+    err = errAddr;
+    return rcErr;
+  }
+  if( ibuf[1] & 0x80 ) {
+    err = errReplErr; errRepl = ibuf[2];
     return rcErr;
   }
   if( ibuf[1] != (uint8_t)ModbusFunctionCode::WriteSingleReg ) {
-    errno = 5005;
+    err = errFun;
     return rcErr;
   }
   return rcOk;
@@ -243,8 +250,9 @@ ReturnCode MODBUS_RTU_server::writeReg( uint8_t addr, uint16_t reg, uint16_t val
 
 ReturnCode MODBUS_RTU_server::readRegs( uint8_t addr, uint16_t start, uint16_t n )
 {
+  err = errOk;  errRepl = 0;
   if( addr < 1 ||  n > 125 || ((unsigned)start+n) > 0xFFFE ) {
-    errno = 5010;
+    err = errBadParam;
     return rcErr;
   }
   n_readed_regs = 0; start_reg = 0;
@@ -252,7 +260,7 @@ ReturnCode MODBUS_RTU_server::readRegs( uint8_t addr, uint16_t start, uint16_t n
   byte_span sp_o { ModbusRtuReadNReq::make_span( obuf ) };
   auto rc_b = ModbusRtuReadNReq::make( addr, start, n, sp_o );
   if( !rc_b ) {
-    errno = 5000;
+    err = errBadParam;
     return rcErr;
   }
 
@@ -261,7 +269,7 @@ ReturnCode MODBUS_RTU_server::readRegs( uint8_t addr, uint16_t start, uint16_t n
   HAL_UART_Receive( &huart_modbus, (uint8_t*)ibuf, sizeof(ibuf), 0 ); // clear
   auto rc = HAL_UART_Transmit( &huart_modbus, obuf, sizeof(ModbusRtuReadNReq), tout_write );
   if( rc != HAL_OK ) {
-    errno = 5001;
+    err = errTransmit;
     return rcErr;
   }
 
@@ -273,19 +281,23 @@ ReturnCode MODBUS_RTU_server::readRegs( uint8_t addr, uint16_t start, uint16_t n
   // dump8( ibuf, sp_o.size() );
 
   if ( rc != HAL_OK ) {
-    errno = 5002;
+    err = errReceive; errRepl = ibuf[2]; // as bad rc handling
     return rcErr;
   }
   if( !checkRtuCrc( sp_i ) ) {
-    errno = 5003;
+    err = errCRC;
     return rcErr;
   }
   if( ibuf[0] != addr ) {
-    errno = 5004;
+    err = errAddr;
+    return rcErr;
+  }
+  if( ibuf[1] & 0x80 ) {
+    err = errReplErr; errRepl = ibuf[2];
     return rcErr;
   }
   if( ibuf[1] != (uint8_t)ModbusFunctionCode::ReadHoldingRegs ) {
-    errno = 5005;
+    err = errFun;
     return rcErr;
   }
   n_readed_regs = n; start_reg = start;
@@ -314,3 +326,4 @@ uint16_t MODBUS_RTU_server::readGetReg( uint8_t addr, uint16_t i )
   auto vs = std::bit_cast<uint16_t *>( ibuf+sizeof(ModbusRtuReadNRespHead) );
   return rev16( *vs );
 }
+

@@ -125,9 +125,8 @@ int cmd_writeReg( int argc, const char * const * argv )
   uint16_t val = arg2long_d( 2, argc, argv, 0, 0, 0xFFFF );
 
   std_out <<  "# write1reg :  " << reg << ' ' << val << ' ' << UVAR('u') << NL;
-  errno = 0;
   auto rc = m_srv.writeReg( UVAR('u'), reg, val );
-  std_out << "# rc " << rc << ' ' << errno << NL;
+  std_out << "# rc " << rc << ' ' << m_srv.getError() << ' ' << m_srv.getReplError() << NL;
   return rc;
 }
 
@@ -137,10 +136,9 @@ int cmd_readRegs( int argc, const char * const * argv )
   uint16_t n     = arg2long_d( 2, argc, argv, 1, 1, 125 );
 
   std_out <<  "# readNRegs :  " << start << ' ' << n << ' ' << UVAR('u') << NL;
-  errno = 0;
   auto rc = m_srv.readRegs( UVAR('u'), start, n );
 
-  std_out << "# rc " << rc << ' ' << errno << NL;
+  std_out << "# rc " << rc << ' ' << m_srv.getError() << ' ' << m_srv.getReplError() << NL;
 
   if( rc == rcOk ) {
     for( uint16_t i=start; i<start+n; ++i ) {
