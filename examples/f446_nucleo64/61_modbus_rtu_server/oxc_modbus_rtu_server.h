@@ -127,6 +127,8 @@ class MODBUS_RTU_server {
     Errors getError() const { return err; }
     uint8_t getReplError() const { return errRepl; }
   private:
+    // ReturnCode readRepl( byte_span sp_i );
+    ReturnCode sendReadRepl( const byte_span sp_o, byte_span sp_i ); // common actions on writeReg, readRegs
     uint8_t ibuf[ibufsz];
     uint8_t obuf[obufsz];
     UART_HandleTypeDef *uart;

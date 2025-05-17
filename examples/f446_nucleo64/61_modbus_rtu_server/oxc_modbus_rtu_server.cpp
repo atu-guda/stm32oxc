@@ -202,46 +202,9 @@ ReturnCode MODBUS_RTU_server::writeReg( uint8_t addr, uint16_t reg, uint16_t val
 
   // dump8( obuf, sizeof(ModbusRtuWrite1Req) );
 
-  HAL_UART_Receive( uart, (uint8_t*)ibuf, sizeof(ibuf), 0 ); // clear
-  auto rc = HAL_UART_Transmit( uart, obuf, sizeof(ModbusRtuWrite1Req), tout_write );
-  if( rc != HAL_OK ) {
-    err = errTransmit;
-    return rcErr;
-  }
-
-  if( addr == 0 ) { // broadcast = no replay
-    return rcOk;
-  }
-
-  // BUG: need correct read, but this method works for now
   byte_span sp_i { ModbusRtuWrite1Req::make_span( ibuf ) };
-  std::ranges::fill( sp_i, '\0' );
-  rc = HAL_UART_Receive( uart, (uint8_t*)ibuf, sizeof(ModbusRtuWrite1Req), tout_read );
-
-  // dump8( ibuf, sizeof(ModbusRtuWrite1Req) );
-
-  if ( rc != HAL_OK ) {
-    err = errReceive; errRepl = ibuf[2]; // as bad rc handling
-    return rcErr;
-  }
-  if( !checkRtuCrc( sp_i ) ) {
-    err = errCRC;
-    return rcErr;
-  }
-
-  if( ibuf[0] != addr ) {
-    err = errAddr;
-    return rcErr;
-  }
-  if( ibuf[1] & 0x80 ) {
-    err = errReplErr; errRepl = ibuf[2];
-    return rcErr;
-  }
-  if( ibuf[1] != (uint8_t)ModbusFunctionCode::WriteSingleReg ) {
-    err = errFun;
-    return rcErr;
-  }
-  return rcOk;
+  auto retc = sendReadRepl( sp_o, sp_i );
+  return retc;
 }
 
 ReturnCode MODBUS_RTU_server::readRegs( uint8_t addr, uint16_t start, uint16_t n )
@@ -260,42 +223,12 @@ ReturnCode MODBUS_RTU_server::readRegs( uint8_t addr, uint16_t start, uint16_t n
     return rcErr;
   }
 
-  // dump8( obuf, sizeof(ModbusRtuReadNReq) );
-
-  HAL_UART_Receive( uart, (uint8_t*)ibuf, sizeof(ibuf), 0 ); // clear
-  auto rc = HAL_UART_Transmit( uart, obuf, sizeof(ModbusRtuReadNReq), tout_write );
-  if( rc != HAL_OK ) {
-    err = errTransmit;
-    return rcErr;
-  }
-
-  // BUG: need correct read, but this method works for now
   byte_span sp_i { ModbusRtuReadNRespHead::make_span( ibuf, n ) };
-  std::ranges::fill( sp_i, '\0' );
-  rc = HAL_UART_Receive( uart, (uint8_t*)ibuf, sp_i.size(), tout_read );
+  auto retc = sendReadRepl( sp_o, sp_i );
+  if( retc != rcOk ) {
+    return retc;
+  }
 
-  // dump8( ibuf, sp_o.size() );
-
-  if ( rc != HAL_OK ) {
-    err = errReceive; errRepl = ibuf[2]; // as bad rc handling
-    return rcErr;
-  }
-  if( !checkRtuCrc( sp_i ) ) {
-    err = errCRC;
-    return rcErr;
-  }
-  if( ibuf[0] != addr ) {
-    err = errAddr;
-    return rcErr;
-  }
-  if( ibuf[1] & 0x80 ) {
-    err = errReplErr; errRepl = ibuf[2];
-    return rcErr;
-  }
-  if( ibuf[1] != (uint8_t)ModbusFunctionCode::ReadHoldingRegs ) {
-    err = errFun;
-    return rcErr;
-  }
   n_readed_regs = n; start_reg = start;
   return rcOk;
 }
@@ -312,6 +245,48 @@ uint16_t MODBUS_RTU_server::getReg( uint16_t i ) const
   auto vs = std::bit_cast<uint16_t *>( ibuf+sizeof(ModbusRtuReadNRespHead) );
   return rev16( vs[i] );
 }
+
+ReturnCode MODBUS_RTU_server::sendReadRepl( const byte_span sp_o, byte_span sp_i )
+{
+  HAL_UART_Receive( uart, (uint8_t*)ibuf, sizeof(ibuf), 0 ); // clear
+  auto rc = HAL_UART_Transmit( uart, obuf, sp_o.size(), tout_write );
+  if( rc != HAL_OK ) {
+    err = errTransmit;
+    return rcErr;
+  }
+
+  if( obuf[0] == 0 ) { // broadcast = no replay
+    return rcOk;
+  }
+  // BUG: need correct read, but this method works for now
+  std::ranges::fill( sp_i, '\0' );
+  uint16_t nr;
+  rc = HAL_UARTEx_ReceiveToIdle( uart, (uint8_t*)ibuf, sp_i.size(), &nr, tout_read );
+
+  if ( rc != HAL_OK || nr < 2 ) {
+    err = errReceive;
+    return rcErr;
+  }
+  if( ibuf[1] & 0x80 ) {
+    err = errReplErr; errRepl = ibuf[2];
+    return rcErr;
+  }
+
+  if( nr != sp_i.size() || !checkRtuCrc( sp_i ) ) {
+    err = errCRC;
+    return rcErr;
+  }
+  if( ibuf[0] != obuf[0] ) {
+    err = errAddr;
+    return rcErr;
+  }
+  if( ibuf[1] != obuf[1] ) {
+    err = errFun;
+    return rcErr;
+  }
+  return rcOk;
+}
+
 
 std::expected<uint16_t,ReturnCode> MODBUS_RTU_server::readGetReg( uint8_t addr, uint16_t i )
 {
