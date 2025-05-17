@@ -192,13 +192,13 @@ void MODBUS_RTU_server::reset()
 }
 
 
-bool MODBUS_RTU_server::writeReg( uint8_t addr, uint16_t reg, uint16_t val )
+ReturnCode MODBUS_RTU_server::writeReg( uint8_t addr, uint16_t reg, uint16_t val )
 {
   byte_span sp_o { ModbusRtuWrite1Req::make_span( obuf ) };
   auto rc_b = ModbusRtuWrite1Req::make( addr, reg, val, sp_o );
   if( !rc_b ) {
     errno = 5000;
-    return rc_b;
+    return rcErr;
   }
   n_readed_regs = 0; start_reg = 0;
 
@@ -208,11 +208,11 @@ bool MODBUS_RTU_server::writeReg( uint8_t addr, uint16_t reg, uint16_t val )
   auto rc = HAL_UART_Transmit( &huart_modbus, obuf, sizeof(ModbusRtuWrite1Req), tout_write );
   if( rc != HAL_OK ) {
     errno = 5001;
-    return false;
+    return rcErr;
   }
 
   if( addr == 0 ) { // broadcast = no replay
-      return true;
+    return rcOk;
   }
 
   // BUG: need correct read, but this method works for now
@@ -224,28 +224,28 @@ bool MODBUS_RTU_server::writeReg( uint8_t addr, uint16_t reg, uint16_t val )
 
   if ( rc != HAL_OK ) {
     errno = 5002;
-    return false;
+    return rcErr;
   }
   if( !checkRtuCrc( sp_i ) ) {
     errno = 5003;
-    return false;
+    return rcErr;
   }
   if( ibuf[0] != addr ) {
     errno = 5004;
-    return false;
+    return rcErr;
   }
   if( ibuf[1] != (uint8_t)ModbusFunctionCode::WriteSingleReg ) {
     errno = 5005;
-    return false;
+    return rcErr;
   }
-  return true;
+  return rcOk;
 }
 
-bool MODBUS_RTU_server::readRegs( uint8_t addr, uint16_t start, uint16_t n )
+ReturnCode MODBUS_RTU_server::readRegs( uint8_t addr, uint16_t start, uint16_t n )
 {
   if( addr < 1 ||  n > 125 || ((unsigned)start+n) > 0xFFFE ) {
     errno = 5010;
-    return false;
+    return rcErr;
   }
   n_readed_regs = 0; start_reg = 0;
 
@@ -253,16 +253,16 @@ bool MODBUS_RTU_server::readRegs( uint8_t addr, uint16_t start, uint16_t n )
   auto rc_b = ModbusRtuReadNReq::make( addr, start, n, sp_o );
   if( !rc_b ) {
     errno = 5000;
-    return rc_b;
+    return rcErr;
   }
 
-  dump8( obuf, sizeof(ModbusRtuReadNReq) );
+  // dump8( obuf, sizeof(ModbusRtuReadNReq) );
 
   HAL_UART_Receive( &huart_modbus, (uint8_t*)ibuf, sizeof(ibuf), 0 ); // clear
   auto rc = HAL_UART_Transmit( &huart_modbus, obuf, sizeof(ModbusRtuReadNReq), tout_write );
   if( rc != HAL_OK ) {
     errno = 5001;
-    return false;
+    return rcErr;
   }
 
   // BUG: need correct read, but this method works for now
@@ -270,26 +270,26 @@ bool MODBUS_RTU_server::readRegs( uint8_t addr, uint16_t start, uint16_t n )
   std::ranges::fill( sp_i, '\0' );
   rc = HAL_UART_Receive( &huart_modbus, (uint8_t*)ibuf, sp_i.size(), tout_read );
 
-  dump8( ibuf, sp_o.size() );
+  // dump8( ibuf, sp_o.size() );
 
   if ( rc != HAL_OK ) {
     errno = 5002;
-    return false;
+    return rcErr;
   }
   if( !checkRtuCrc( sp_i ) ) {
     errno = 5003;
-    return false;
+    return rcErr;
   }
   if( ibuf[0] != addr ) {
     errno = 5004;
-    return false;
+    return rcErr;
   }
   if( ibuf[1] != (uint8_t)ModbusFunctionCode::ReadHoldingRegs ) {
     errno = 5005;
-    return false;
+    return rcErr;
   }
   n_readed_regs = n; start_reg = start;
-  return true;
+  return rcOk;
 }
 
 uint16_t MODBUS_RTU_server::getReg( uint16_t i ) const

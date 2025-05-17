@@ -109,9 +109,8 @@ int cmd_test0( int argc, const char * const * argv )
 int cmd_out( int argc, const char * const * argv )
 {
   std_out <<  "#  " << NL;
-  auto ibuf = m_srv.get_ibuf();
 
-  dump8( ibuf, 0x40 );
+  dump8( m_srv.get_ibuf(), 0x40 );
 
   m_srv.reset();
   return 0;
@@ -126,7 +125,7 @@ int cmd_writeReg( int argc, const char * const * argv )
   errno = 0;
   auto rc = m_srv.writeReg( UVAR('u'), reg, val );
   std_out << "# rc " << rc << ' ' << errno << NL;
-  return !rc;
+  return rc;
 }
 
 int cmd_readRegs( int argc, const char * const * argv )
@@ -140,16 +139,15 @@ int cmd_readRegs( int argc, const char * const * argv )
 
   std_out << "# rc " << rc << ' ' << errno << NL;
 
-  auto ibuf = m_srv.get_ibuf();
-  dump8( ibuf, 0x40 );
+  dump8( m_srv.get_ibuf(), 0x40 );
 
-  if( rc ) {
+  if( rc == rcOk ) {
     for( uint16_t i=start; i<start+n; ++i ) {
       auto v = m_srv.getReg( i );
       std_out << "# " << HexInt16(i) << ' ' << HexInt16(v) << ' ' << v << NL;
     }
   }
-  return !rc;
+  return rc;
 }
 
 

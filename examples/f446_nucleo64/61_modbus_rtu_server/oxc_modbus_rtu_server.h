@@ -103,20 +103,21 @@ class MODBUS_RTU_server {
       tout_write = 100,
       tout_read  = 500
     };
-    static const uint16_t bufsz = 256;
+    static const uint16_t ibufsz { 256 };
+    static const uint16_t obufsz {  32 }; // as w do not write N regs
     explicit MODBUS_RTU_server( USART_TypeDef *a_uart ); // TODO: oxc or handle?
     const uint8_t* get_ibuf() const { return ibuf; }
     const uint8_t* get_obuf() const { return obuf; }
     uint32_t get_last_uart_status() const { return last_uart_status; }
     // server_state get_server_state() const { return state; }
     void reset();
-    bool writeReg( uint8_t addr, uint16_t reg, uint16_t val ); // TODO: return code
-    bool readRegs( uint8_t addr, uint16_t start, uint16_t n );
+    ReturnCode writeReg( uint8_t addr, uint16_t reg, uint16_t val ); // TODO: return code
+    ReturnCode readRegs( uint8_t addr, uint16_t start, uint16_t n );
     uint16_t getNReadedRegs() const { return n_readed_regs; }
     uint16_t getReg( uint16_t i ) const;
   private:
-    uint8_t ibuf[bufsz];
-    uint8_t obuf[bufsz];
+    uint8_t ibuf[ibufsz];
+    uint8_t obuf[obufsz];
     USART_TypeDef *uart;
     // server_state state = ST_INIT;
     uint32_t last_uart_status { 0 };
