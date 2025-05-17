@@ -176,121 +176,79 @@ uint16_t ModbusRtuReadNRespHead::get_v( unsigned i ) const
 
 // ================================================= server ===============================
 
-MODBUS_RTU_server::MODBUS_RTU_server( USART_TypeDef *a_uart, volatile uint32_t *a_tim_cnt )
-  : uart( a_uart ), tim_cnt( a_tim_cnt )
+MODBUS_RTU_server::MODBUS_RTU_server( USART_TypeDef *a_uart )
+  : uart( a_uart )
 {
   reset();
 }
 
 void MODBUS_RTU_server::reset()
 {
-  i_pos = o_pos = 0;
-  state = ST_IDLE; // ST_INIT;
+  state = ST_IDLE;
   last_uart_status = 0;
-  t_char = *tim_cnt;
+  n_readed_regs = 0;
   std::ranges::fill( ibuf, '\x00' );
   std::ranges::fill( obuf, '\x00' );
 }
 
-
-void MODBUS_RTU_server::handle_UART_IRQ()
-{
-  int n_work = 0;
-
-  leds.toggle( 4 );
-  last_uart_status = uart->USART_SR_REG;
-  UVAR('s') = last_uart_status;
-  ++UVAR('i');
-
-  if( last_uart_status & UART_FLAG_RXNE ) { // char received
-    ++UVAR('j');
-    leds.set( BIT1 );
-    ++n_work;
-    char cr = uart->USART_RX_REG & (uint16_t)0x0FF;
-    // TODO: trylock
-
-    if( last_uart_status & ( UART_FLAG_ORE | UART_FLAG_FE /*| UART_FLAG_LBD*/ ) ) { // TODO: on MCU
-      UVAR('e') = last_uart_status;
-      state = ST_ERR;
-      return;
-    }
-
-    if( state == ST_MSG_IN ) {
-      return;
-    }
-
-    if( state != ST_IDLE && state != ST_RECV ) {
-      UVAR('x') = 1;
-      UVAR('y') = state;
-      state = ST_ERR;
-      return;
-    }
-
-    if( i_pos >= bufsz-2) {
-      state = ST_ERR;
-      UVAR('x') = 2;
-      return;
-    }
-
-    uint16_t t_c = *tim_cnt;
-
-    if( state == ST_IDLE ) {
-      t_char = t_c - 1;
-    }
-    uint16_t d_t = t_c - t_char;
-
-    if( d_t < 20 ) { // TODO: config
-      ibuf[i_pos++] = cr;
-      state = ST_RECV;
-      t_char = t_c;
-    } else {
-      UVAR('x') = 3;
-      state = ST_ERR;
-    }
-
-    leds.reset( BIT1 );
-  }
-
-  // debug
-  if( n_work == 0 ) { // unhandled
-    leds.set( BIT0 );
-  }
-}
-
-void MODBUS_RTU_server::handle_tick()
-{
-  if( state != ST_RECV ) {
-    return;
-  }
-  uint16_t t_c = *tim_cnt;
-  uint16_t d_t = t_c - t_char;
-  if( d_t < 100 ) { // TODO: config
-    return;
-  }
-  state = ST_MSG_IN;
-  t_char = t_c;
-}
 
 bool MODBUS_RTU_server::writeReg( uint8_t addr, uint16_t reg, uint16_t val )
 {
   byte_span sp_o { obuf, sizeof(ModbusRtuWrite1Req) };
   auto rc_b = ModbusRtuWrite1Req::make( addr, reg, val, sp_o );
   if( !rc_b ) {
-    std_out << "# err: ModbusRtuWrite1Req::make" << NL;
+    errno = 5000;
     return rc_b;
   }
+  n_readed_regs = 0;
 
   dump8( obuf, sizeof(ModbusRtuWrite1Req) );
-  auto rc = HAL_UART_Transmit( &huart_modbus, obuf, sizeof(ModbusRtuWrite1Req), 10 );
+  HAL_UART_Receive( &huart_modbus, (uint8_t*)ibuf, sizeof(ibuf), 0 ); // clear
+  auto rc = HAL_UART_Transmit( &huart_modbus, obuf, sizeof(ModbusRtuWrite1Req), 100 );
   if( rc != HAL_OK ) {
     std_out << "# err: transmit: " << rc << NL;
+    errno = 5001;
     return false;
   }
 
-  // tmp place and action
-  rc = HAL_UART_Receive( &huart_modbus, (uint8_t*)gbuf_b, sizeof(ModbusRtuWrite1Req), 1000 );
-  dump8( gbuf_b, sizeof(ModbusRtuWrite1Req) );
-  return ( rc == HAL_OK );
-
+  // tmp action
+  byte_span sp_i { ibuf, sizeof(ModbusRtuWrite1Req) };
+  std::ranges::fill( sp_i, '\0' );
+  rc = HAL_UART_Receive( &huart_modbus, (uint8_t*)ibuf, sizeof(ModbusRtuWrite1Req), 500 );
+  UVAR('i') = rc;
+  dump8( ibuf, sizeof(ModbusRtuWrite1Req) );
+  if ( rc != HAL_OK ) {
+    errno = 5002;
+    return false;
+  }
+  if( !checkRtuCrc( sp_i ) ) {
+    errno = 5003;
+    return false;
+  }
+  if( ibuf[0] != addr ) {
+    errno = 5004;
+    return false;
+  }
+  if( ibuf[1] != (uint8_t)ModbusFunctionCode::WriteSingleReg ) {
+    errno = 5005;
+    return false;
+  }
+  return true;
 }
 
+bool MODBUS_RTU_server::readRegs( uint8_t addr, uint16_t start, uint16_t n )
+{
+  if( addr < 1 || start > 0xFFF0 || n > 97 ) {
+    errno = 5010;
+    return false;
+  }
+  n_readed_regs = 0;
+
+  byte_span sp_o { obuf, sizeof(ModbusRtuReadNReq) };
+  auto rc_b = ModbusRtuReadNReq::make( addr, start, n, sp_o );
+  if( !rc_b ) {
+    errno = 5000;
+    return rc_b;
+  }
+  return true;
+}

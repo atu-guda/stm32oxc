@@ -48,7 +48,6 @@ struct ModbusRtuReadNReq {
   // void dump() const;
   static bool make( uint8_t addr, uint16_t start, uint16_t n, byte_span s );
   static bool check( cbyte_span s );
-  // static void dump_s( cbyte_span s ) { std::bit_cast<ModbusRtuReadNReq*>(s.data())->dump(); std::cout << "Crc_c:" << HexInt16( calcRtuCrcSub(s) ) << std::endl; };
 } __attribute__((__packed__));
 
 struct ModbusRtuWrite1Req {
@@ -65,7 +64,6 @@ struct ModbusRtuWrite1Req {
   // void dump() const;
   static bool make( uint8_t addr, uint16_t reg, uint16_t val, byte_span s );
   static bool check( cbyte_span s );
-  // static void dump_s( cbyte_span s ) { std::bit_cast<ModbusRtuWrite1Req*>(s.data())->dump(); std::cout << "Crc_c:" << HexInt16( calcRtuCrcSub(s) ) << std::endl; };
 } __attribute__((__packed__));
 
 struct ModbusRtuReadNRespHead {
@@ -83,7 +81,6 @@ struct ModbusRtuReadNRespHead {
   // void dump() const;
   static bool make( uint8_t addr, uint8_t a_n, const uint16_t *vals, byte_span s );
   static bool check( cbyte_span s );
-  // static void dump_s( cbyte_span s ) { std::bit_cast<ModbusRtuReadNRespHead*>(s.data())->dump(); std::cout << "Crc_c:" << HexInt16( calcRtuCrcSub(s) ) << std::endl; };
 } __attribute__((__packed__));
 
 
@@ -101,27 +98,22 @@ class MODBUS_RTU_server {
       ST_ERR    = 4
     };
     static const uint16_t bufsz = 256;
-    MODBUS_RTU_server( USART_TypeDef *a_uart, volatile uint32_t *a_tim_cnt );
+    explicit MODBUS_RTU_server( USART_TypeDef *a_uart );
     const uint8_t* get_ibuf() const { return ibuf; }
     const uint8_t* get_obuf() const { return obuf; }
-    unsigned get_ibuf_pos() const { return i_pos; }
-    unsigned get_obuf_pos() const { return o_pos; }
     uint32_t get_last_uart_status() const { return last_uart_status; }
     server_state get_server_state() const { return state; }
     void reset();
-    void handle_UART_IRQ();
-    void handle_tick();
     bool writeReg( uint8_t addr, uint16_t reg, uint16_t val );
+    bool readRegs( uint8_t addr, uint16_t start, uint16_t n );
+    uint16_t getNReadedRegs() const { return n_readed_regs; }
   private:
-
     uint8_t ibuf[bufsz];
     uint8_t obuf[bufsz];
     USART_TypeDef *uart;
-    volatile uint32_t *tim_cnt;
-    unsigned i_pos = 0, o_pos = 0;
-    uint16_t t_char = 0;
     server_state state = ST_INIT;
-    uint32_t last_uart_status = 0;
+    uint32_t last_uart_status { 0 };
+    uint16_t n_readed_regs { 0 };
 
 };
 

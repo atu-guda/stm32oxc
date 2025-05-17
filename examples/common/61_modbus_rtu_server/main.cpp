@@ -1,3 +1,5 @@
+#include <errno.h>
+
 #include <oxc_auto.h>
 
 #include <oxc_modbus_rtu_server.h>
@@ -12,9 +14,6 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
-
-int MX_TIM11_Init();
-TIM_HandleTypeDef htim11;
 
 const char* common_help_string = "Appication to test MODBUS RTU server" NL;
 
@@ -36,8 +35,8 @@ const CmdInfo* global_cmds[] = {
 };
 
 //                    USART_TypeDef*, volatile uint32_t*
-MODBUS_RTU_server m_srv( UART_MODBUS, &(TIM11->CNT) );
-void tick_for_modbus();
+MODBUS_RTU_server m_srv( UART_MODBUS );
+// void tick_for_modbus();
 
 void idle_main_task()
 {
@@ -45,10 +44,6 @@ void idle_main_task()
 }
 
 
-void tick_for_modbus()
-{
-  m_srv.handle_tick();
-}
 
 
 int main(void)
@@ -60,13 +55,11 @@ int main(void)
   UVAR('u') =   2; // default unit addr
   UVAR('a') =  '@';
 
-  MX_TIM11_Init();
   UVAR('e') = MX_MODBUS_UART_Init();
 
   BOARD_POST_INIT_BLINK;
 
   oxc_add_aux_tick_fun( led_task_nortos );
-  oxc_add_aux_tick_fun( tick_for_modbus );
 
   std_main_loop_nortos( &srl, idle_main_task );
 
@@ -112,11 +105,10 @@ int cmd_test0( int argc, const char * const * argv )
 
 int cmd_out( int argc, const char * const * argv )
 {
-  auto pos = m_srv.get_ibuf_pos();
-  std_out <<  "# ibuf_pos:  " << pos << " state: " << int( m_srv.get_server_state() ) << NL;
+  std_out <<  "#  state: " << int( m_srv.get_server_state() ) << NL;
   auto ibuf = m_srv.get_ibuf();
 
-  dump8( ibuf, 0x20 );
+  dump8( ibuf, 0x40 );
 
   m_srv.reset();
   return 0;
@@ -128,42 +120,19 @@ int cmd_writeReg( int argc, const char * const * argv )
   uint16_t val = arg2long_d( 2, argc, argv, 0, 0, 0xFFFF );
 
   std_out <<  "# write1reg :  " << reg << ' ' << val << ' ' << UVAR('u') << NL;
+  errno = 0;
   auto rc = m_srv.writeReg( UVAR('u'), reg, val );
-  std_out << "# rc " << rc << NL;
-  return 0;
+  std_out << "# rc " << rc << ' ' << errno << NL;
+  return !rc;
 }
 
 // Timer parts
 
-int MX_TIM11_Init()
-{
-  htim11.Instance               = TIM11;
-  htim11.Init.Prescaler         = 1679; // TODO: calc
-  htim11.Init.CounterMode       = TIM_COUNTERMODE_UP;
-  htim11.Init.Period            = 65535;
-  htim11.Init.ClockDivision     = TIM_CLOCKDIVISION_DIV1;
-  htim11.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if( HAL_TIM_Base_Init( &htim11 ) != HAL_OK ) {
-    return 0;
-  }
-  HAL_TIM_Base_Start( &htim11 );
-  return 1;
-}
-
-void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* htim_base )
-{
-  if( htim_base->Instance == TIM11 ) {
-    __HAL_RCC_TIM11_CLK_ENABLE();
-    // HAL_NVIC_SetPriority(TIM1_TRG_COM_TIM11_IRQn, 1, 0);
-    // HAL_NVIC_EnableIRQ(TIM1_TRG_COM_TIM11_IRQn);
-  }
-}
-
-void UART_MODBUS_IRQHANDLER(void)
-{
-  leds.set( 2 );
-  m_srv.handle_UART_IRQ();
-}
+// void UART_MODBUS_IRQHANDLER(void)
+// {
+//   leds.set( 2 );
+//   m_srv.handle_UART_IRQ();
+// }
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
