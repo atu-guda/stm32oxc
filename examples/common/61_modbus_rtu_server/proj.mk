@@ -23,6 +23,7 @@ USE_OXC_DMA = y
 
 SRCS  = main.cpp
 
+SRCS += oxc_modbus_rtu_base.cpp
 SRCS += oxc_modbus_rtu_server.cpp
 SRCS += uart_for_modbus.cpp
 
