@@ -29,6 +29,7 @@ enum class ModbusFunctionCode : uint8_t {
 // TODO: use 16-bit algo
 extern const uint8_t ModbusRtu_CRC_hi[256];
 extern const uint8_t ModbusRtu_CRC_lo[256];
+extern const uint16_t ModbusRtu_CRC_table[256];
 
 uint16_t calcRtuCrc( cbyte_span s );
 uint16_t calcRtuCrcSub( cbyte_span s ); // w/o last 2 bytes
