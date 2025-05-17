@@ -157,7 +157,11 @@ int cmd_readReg( int argc, const char * const * argv )
   std_out <<  "# readNReg :  " << i << UVAR('u') << NL;
   auto v = m_srv.readGetReg( UVAR('u'), i );
 
-  std_out << "# v= "  << HexInt16(v) << ' ' << v << NL;
+  if( v ) {
+    std_out << "# v= "  << HexInt16(v.value()) << ' ' << v.value() << NL;
+  } else {
+    std_out << "# rc " << v.error() << ' ' << m_srv.getError() << ' ' << m_srv.getReplError() << NL;
+  }
 
   return 0;
 }

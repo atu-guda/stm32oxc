@@ -2,6 +2,7 @@
 #define _OXC_MODBUS_RTU_SERVER_H
 
 #include <span>
+#include <expected>
 
 // TODO: move to common include file
 using byte_span = std::span<uint8_t>;
@@ -126,7 +127,7 @@ class MODBUS_RTU_server {
     ReturnCode readRegs( uint8_t addr, uint16_t start, uint16_t n );
     uint16_t getNReadedRegs() const { return n_readed_regs; }
     uint16_t getReg( uint16_t i ) const;
-    uint16_t readGetReg( uint8_t addr, uint16_t i );
+    std::expected<uint16_t,ReturnCode> readGetReg( uint8_t addr, uint16_t i );
     Errors getError() const { return err; }
     uint8_t getReplError() const { return errRepl; }
   private:

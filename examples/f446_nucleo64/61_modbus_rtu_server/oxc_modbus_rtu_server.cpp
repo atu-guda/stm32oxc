@@ -317,11 +317,11 @@ uint16_t MODBUS_RTU_server::getReg( uint16_t i ) const
   return rev16( vs[i] );
 }
 
-uint16_t MODBUS_RTU_server::readGetReg( uint8_t addr, uint16_t i )
+std::expected<uint16_t,ReturnCode> MODBUS_RTU_server::readGetReg( uint8_t addr, uint16_t i )
 {
   auto rc = readRegs( addr, i, 1 );
   if( rc != rcOk ) {
-    return 0; // TODO: try std::expected + measure diff
+    return std::unexpected{ rc };
   }
   auto vs = std::bit_cast<uint16_t *>( ibuf+sizeof(ModbusRtuReadNRespHead) );
   return rev16( *vs );
