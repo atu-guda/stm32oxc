@@ -24,6 +24,8 @@ int cmd_out( int argc, const char * const * argv );
 CmdInfo CMDINFO_OUT { "out", 'O', cmd_out, " - print and clear ibuf"  };
 int cmd_writeReg( int argc, const char * const * argv );
 CmdInfo CMDINFO_WRITEREG { "write_reg", 'W', cmd_writeReg, "reg val - write 1 reg"  };
+int cmd_readRegs( int argc, const char * const * argv );
+CmdInfo CMDINFO_READREGS { "read_regs", 'R', cmd_readRegs, "start n - read n regs"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -31,6 +33,7 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_TEST0,
   &CMDINFO_OUT,
   &CMDINFO_WRITEREG,
+  &CMDINFO_READREGS,
   nullptr
 };
 
@@ -105,7 +108,7 @@ int cmd_test0( int argc, const char * const * argv )
 
 int cmd_out( int argc, const char * const * argv )
 {
-  std_out <<  "#  state: " << int( m_srv.get_server_state() ) << NL;
+  std_out <<  "#  " << NL;
   auto ibuf = m_srv.get_ibuf();
 
   dump8( ibuf, 0x40 );
@@ -126,13 +129,30 @@ int cmd_writeReg( int argc, const char * const * argv )
   return !rc;
 }
 
-// Timer parts
+int cmd_readRegs( int argc, const char * const * argv )
+{
+  uint16_t start = arg2long_d( 1, argc, argv, 0, 0, 0xFFFF );
+  uint16_t n     = arg2long_d( 2, argc, argv, 1, 1, 125 );
 
-// void UART_MODBUS_IRQHANDLER(void)
-// {
-//   leds.set( 2 );
-//   m_srv.handle_UART_IRQ();
-// }
+  std_out <<  "# readNRegs :  " << start << ' ' << n << ' ' << UVAR('u') << NL;
+  errno = 0;
+  auto rc = m_srv.readRegs( UVAR('u'), start, n );
+
+  std_out << "# rc " << rc << ' ' << errno << NL;
+
+  auto ibuf = m_srv.get_ibuf();
+  dump8( ibuf, 0x40 );
+
+  if( rc ) {
+    for( uint16_t i=start; i<start+n; ++i ) {
+      auto v = m_srv.getReg( i );
+      std_out << "# " << HexInt16(i) << ' ' << HexInt16(v) << ' ' << v << NL;
+    }
+  }
+  return !rc;
+}
+
+
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

@@ -7,6 +7,8 @@
 using byte_span = std::span<uint8_t>;
 using cbyte_span = std::span<const uint8_t>;
 
+// TODO: namespace oxc_modbus
+
 enum class ModbusFunctionCode : uint8_t {
   ReadCoils            =    1,
   ReadDiscreteInputs   =    2,
@@ -23,6 +25,7 @@ enum class ModbusFunctionCode : uint8_t {
   ReportServirID       =   17
 };
 
+// TODO: use 16-bit algo
 extern const uint8_t ModbusRtu_CRC_hi[256];
 extern const uint8_t ModbusRtu_CRC_lo[256];
 
@@ -48,6 +51,8 @@ struct ModbusRtuReadNReq {
   // void dump() const;
   static bool make( uint8_t addr, uint16_t start, uint16_t n, byte_span s );
   static bool check( cbyte_span s );
+  static byte_span  make_span( uint8_t *buf )        { return { buf, sizeof(ModbusRtuReadNReq) }; };
+  static cbyte_span make_cspan( const uint8_t *buf ) { return { buf, sizeof(ModbusRtuReadNReq) }; };
 } __attribute__((__packed__));
 
 struct ModbusRtuWrite1Req {
@@ -59,11 +64,12 @@ struct ModbusRtuWrite1Req {
   void fill( uint8_t a_addr, uint16_t a_reg, uint16_t a_val ) {
     addr = a_addr;  fun = ModbusFunctionCode::WriteSingleReg;
     reg = rev16( a_reg );  val = rev16( a_val );
-    // not embedRtuCrc( s );
   }
   // void dump() const;
   static bool make( uint8_t addr, uint16_t reg, uint16_t val, byte_span s );
   static bool check( cbyte_span s );
+  static byte_span  make_span( uint8_t *buf )        { return { buf, sizeof(ModbusRtuWrite1Req) }; };
+  static cbyte_span make_cspan( const uint8_t *buf ) { return { buf, sizeof(ModbusRtuWrite1Req) }; };
 } __attribute__((__packed__));
 
 struct ModbusRtuReadNRespHead {
@@ -75,12 +81,15 @@ struct ModbusRtuReadNRespHead {
   void fill( uint8_t a_addr, uint8_t a_n ) {
     addr = a_addr;  fun = ModbusFunctionCode::ReadHoldingRegs;
     bytes = (uint8_t)a_n*2;
-    // not embedRtuCrc( s ); // no fill data here - need separate func
   }
   uint16_t get_v( unsigned i ) const;
   // void dump() const;
   static bool make( uint8_t addr, uint8_t a_n, const uint16_t *vals, byte_span s );
   static bool check( cbyte_span s );
+  static byte_span  make_span( uint8_t *buf, uint16_t n )
+    { return { buf, sizeof(ModbusRtuReadNRespHead) + sizeof(uint16_t)*(n+1) }; };
+  static cbyte_span make_cspan( const uint8_t *buf, uint16_t n )
+    { return { buf, sizeof(ModbusRtuReadNRespHead) + sizeof(uint16_t)*(n+1)  }; };
 } __attribute__((__packed__));
 
 
@@ -90,30 +99,29 @@ extern UART_HandleTypeDef huart_modbus;
 
 class MODBUS_RTU_server {
   public:
-    enum server_state {
-      ST_INIT   = 0, // ? unused?
-      ST_IDLE   = 1,
-      ST_RECV   = 2,
-      ST_MSG_IN = 3,
-      ST_ERR    = 4
+    enum timeouts {
+      tout_write = 100,
+      tout_read  = 500
     };
     static const uint16_t bufsz = 256;
-    explicit MODBUS_RTU_server( USART_TypeDef *a_uart );
+    explicit MODBUS_RTU_server( USART_TypeDef *a_uart ); // TODO: oxc or handle?
     const uint8_t* get_ibuf() const { return ibuf; }
     const uint8_t* get_obuf() const { return obuf; }
     uint32_t get_last_uart_status() const { return last_uart_status; }
-    server_state get_server_state() const { return state; }
+    // server_state get_server_state() const { return state; }
     void reset();
-    bool writeReg( uint8_t addr, uint16_t reg, uint16_t val );
+    bool writeReg( uint8_t addr, uint16_t reg, uint16_t val ); // TODO: return code
     bool readRegs( uint8_t addr, uint16_t start, uint16_t n );
     uint16_t getNReadedRegs() const { return n_readed_regs; }
+    uint16_t getReg( uint16_t i ) const;
   private:
     uint8_t ibuf[bufsz];
     uint8_t obuf[bufsz];
     USART_TypeDef *uart;
-    server_state state = ST_INIT;
+    // server_state state = ST_INIT;
     uint32_t last_uart_status { 0 };
     uint16_t n_readed_regs { 0 };
+    uint16_t start_reg { 0 };
 
 };
 
