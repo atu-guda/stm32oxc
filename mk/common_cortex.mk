@@ -434,6 +434,16 @@ ifeq "$(USE_OXC_SDRAM)" "y"
   ALLFLAGS += -DUSE_OXC_SDRAM
 endif
 
+ifeq "$(USE_OXC_MODBUS_RTU)" "y"
+  USE_OXC = y
+  # SRCS += stm32$(MCSUFF)xx_hal_uart.c
+  SRCS += oxc_modbus_rtu_base.cpp
+  SRCS += oxc_modbus_rtu_server.cpp
+  ALLFLAGS += -DUSE_OXC_MODBUS_RTU
+  # ALLFLAGS += -DUSE_OXC_UART
+endif
+
+
 
 ifeq "$(USE_OXC_OPAMP)" "y"
   USE_OXC = y

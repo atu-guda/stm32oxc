@@ -18,12 +18,11 @@ USE_OXC_DMA = y
 # NOUSE_OXC_OSFUN = y
 # FREERTOS_HEAP = heap_2.c # # default: heap_3.c
 # REQUIRE_SPECIAL_CLOCK = y
+USE_OXC_MODBUS_RTU = y
 
 # NOUSE_DEFAULT_UART_INIT = y
 
 SRCS  = main.cpp
 
-SRCS += oxc_modbus_rtu_base.cpp
-SRCS += oxc_modbus_rtu_server.cpp
 SRCS += uart_for_modbus.cpp
 
