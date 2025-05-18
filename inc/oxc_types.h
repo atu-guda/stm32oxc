@@ -1,6 +1,8 @@
 #ifndef _OXC_TYPES_H
 #define _OXC_TYPES_H
 
+#include <stdint.h>
+
 // types and deines for both C and C++
 
 #define UNUSED_ARG __attribute__((unused))
@@ -47,6 +49,9 @@ enum ReturnCode {
   rcFatal = 20
 };
 
+#ifndef   __IO
+  #define __IO volatile
+#endif
 typedef __IO uint32_t reg32;
 typedef const char *const ccstr;
 typedef uint32_t mu_t; // mutex_t alike

@@ -1,6 +1,8 @@
 #ifndef _OXC_MODBUS_RTU_BASE_H
 #define _OXC_MODBUS_RTU_BASE_H
 
+#include <oxc_base.h>
+#include <oxc_miscfun.h>
 #include <oxc_cpptypes.h>
 
 

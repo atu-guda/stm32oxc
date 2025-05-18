@@ -1,0 +1,1 @@
+../../common/62_modbus_rd6006/main.cpp
