@@ -1,12 +1,8 @@
 #ifndef _OXC_MODBUS_RTU_BASE_H
 #define _OXC_MODBUS_RTU_BASE_H
 
-#include <span>
-#include <expected>
+#include <oxc_cpptypes.h>
 
-// TODO: move to common include file
-using byte_span = std::span<uint8_t>;
-using cbyte_span = std::span<const uint8_t>;
 
 // TODO: namespace oxc_modbus
 

@@ -7,50 +7,13 @@
   #error "Required and given MCBASE is not equal"
 #endif
 
-#define UNUSED_ARG __attribute__((unused))
-
-#if defined ( __GNUC__ )
-  #ifndef __weak
-    #define __weak   __attribute__((weak))
-  #endif
-  #ifndef __packed
-    #define __packed __attribute__((__packed__))
-  #endif
-#endif
-
+#include <oxc_types.h>
 #include <oxc_irqlist.h>
 
 #include "board_cfg.h"
 
 #include <oxc_post_board_cfg.h>
 
-
-#define PORT_BITS 16
-#define BIT0  0x0001
-#define BIT1  0x0002
-#define BIT2  0x0004
-#define BIT3  0x0008
-#define BIT4  0x0010
-#define BIT5  0x0020
-#define BIT6  0x0040
-#define BIT7  0x0080
-#define BIT8  0x0100
-#define BIT9  0x0200
-#define BIT10 0x0400
-#define BIT11 0x0800
-#define BIT12 0x1000
-#define BIT13 0x2000
-#define BIT14 0x4000
-#define BIT15 0x8000
-
-#define BAD_ADDR ((void*)(0xFFFFFFFF))
-#ifndef NL
-  #define NL "\n"
-#endif
-
-typedef __IO uint32_t reg32;
-typedef const char *const ccstr;
-typedef uint32_t mu_t; // mutex_t alike
 
 // from ../ld/stm32_common_base.ld
 extern  const int _sdata, _edata, _sbss, _ebss, _end, _estack;
@@ -69,21 +32,8 @@ extern uint32_t delay_calibrate_value;
 // delay is TASK_LEDS_QUANT * task_leds_step,
 extern volatile int task_leds_step; // initial = 50
 
-enum ReturnCode {
-  rcOk = 0,
-  rcInfo = 1,
-  rcWarn = 2,
-  rcExtra = 3,
-  rcEnd = 4,
-  rcErr = 10,
-  rcFatal = 20
-};
-
 
 #ifdef __cplusplus
- template<typename T> class _ShowType; // to output deducted type
- //                        // _ShowType< decltype(XXXX) > xType;
-
  extern "C" {
 #endif
 
@@ -150,7 +100,6 @@ void SystemClock_Config(void);
 int  SystemClockCfg(void); // returns: 0: ok >0 + set errno: error
 
 
-typedef void (*AuxTickFun)(void);
 #ifndef AUX_TICK_FUN_N
   #define AUX_TICK_FUN_N 4
 #endif
