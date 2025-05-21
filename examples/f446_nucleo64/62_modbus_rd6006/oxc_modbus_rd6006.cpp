@@ -3,7 +3,7 @@
 ReturnCode RD6006_Modbus::init()
 {
   scale = 0;
-  auto sig { mbus.readGetReg( addr, regSig ) };
+  auto sig { mbus.readGetReg_ntry( addr, regSig ) };
   if( !sig ) {
     return rcErr;
   }
@@ -20,7 +20,7 @@ ReturnCode RD6006_Modbus::init()
 
 uint32_t RD6006_Modbus::readV_mV()
 {
-  auto v { mbus.readGetReg( addr, regVout ) };
+  auto v { mbus.readGetReg_ntry( addr, regVout ) };
   if( !v || !scale ) {
     return 0;
   }
@@ -29,7 +29,7 @@ uint32_t RD6006_Modbus::readV_mV()
 
 uint32_t RD6006_Modbus::readI_100uA()
 {
-  auto v { mbus.readGetReg( addr, regIout ) };
+  auto v { mbus.readGetReg_ntry( addr, regIout ) };
   if( !v || !scale ) {
     return 0;
   }
@@ -41,9 +41,9 @@ std::pair<uint32_t,uint32_t> RD6006_Modbus::read_VI()
   if( !scale ) {
     return {0,0};
   }
-  mbus.readRegs( addr, 0, 0x14 ); // FAKE to re-read?
-  delay_ms( 50 );
-  auto rc = mbus.readRegs( addr, 0, 0x14 );
+  // mbus.readRegs( addr, 0, 0x14 ); // FAKE to re-read?
+  // delay_ms( 50 );
+  auto rc = mbus.readRegs_ntry( addr, regVout, 2 );
   if( rc != rcOk ) {
     return {0,0};
   }

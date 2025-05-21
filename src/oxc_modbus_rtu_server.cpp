@@ -69,6 +69,33 @@ ReturnCode MODBUS_RTU_server::readRegs( uint8_t addr, uint16_t start, uint16_t n
   return rcOk;
 }
 
+ReturnCode MODBUS_RTU_server::writeReg_ntry( uint8_t addr, uint16_t reg, uint16_t val )
+{
+  ReturnCode rc;
+  for( uint32_t i=0; i<n_try && !break_flag; ++i ) {
+    rc = writeReg( addr, reg, val );
+    if( rc == rcOk ) {
+      return rc;
+    }
+    delay_ms_brk( t_try );
+  }
+  return rc;
+}
+
+ReturnCode MODBUS_RTU_server::readRegs_ntry( uint8_t addr, uint16_t start, uint16_t n )
+{
+  ReturnCode rc;
+  for( uint32_t i=0; i<n_try && !break_flag; ++i ) {
+    rc = readRegs( addr, start, n );
+    if( rc == rcOk ) {
+      return rc;
+    }
+    delay_ms_brk( t_try );
+  }
+  return rc;
+}
+
+
 uint16_t MODBUS_RTU_server::getReg( uint16_t i ) const
 {
   if( i < start_reg ) {
@@ -133,4 +160,15 @@ std::expected<uint16_t,ReturnCode> MODBUS_RTU_server::readGetReg( uint8_t addr, 
   auto vs = std::bit_cast<uint16_t *>( ibuf+sizeof(ModbusRtuReadNRespHead) );
   return rev16( *vs );
 }
+
+std::expected<uint16_t,ReturnCode> MODBUS_RTU_server::readGetReg_ntry( uint8_t addr, uint16_t i )
+{
+  auto rc = readRegs_ntry( addr, i, 1 );
+  if( rc != rcOk ) {
+    return std::unexpected{ rc };
+  }
+  auto vs = std::bit_cast<uint16_t *>( ibuf+sizeof(ModbusRtuReadNRespHead) );
+  return rev16( *vs );
+}
+
 

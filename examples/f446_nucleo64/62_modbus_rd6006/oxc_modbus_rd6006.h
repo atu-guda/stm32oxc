@@ -18,6 +18,7 @@ class RD6006_Modbus {
      regVin      = 0x0E,
      regLock     = 0x0F,
      regErr      = 0x10, // 1 = OVP, 2 = OCP
+     regCC       = 0x11,
      regOn       = 0x12
    };
    enum Vals {
@@ -31,18 +32,25 @@ class RD6006_Modbus {
    uint8_t getAddr() const  { return addr; }
    ReturnCode init();
    uint32_t getScale() const { return scale; };
-   ReturnCode on()  { return scale ? mbus.writeReg( addr, regOn, 1 ) : rcErr; }
-   ReturnCode off() { return scale ? mbus.writeReg( addr, regOn, 0 ) : rcErr; }
-   ReturnCode onoff( bool do_on ) { return scale ? mbus.writeReg( addr, regOn, do_on ) : rcErr; }
-   bool isOn() { auto v { mbus.readGetReg( addr, regOn) }; return v ? bool(v.value()) : false; }
-   ReturnCode lock()   { return mbus.writeReg( addr, regLock, 1 ); }
-   ReturnCode unlock() { return mbus.writeReg( addr, regLock, 0 ); }
-   uint16_t readErr() { auto v { mbus.readGetReg( addr, regErr ) }; return v.has_value() ? v.value() : 0xFF; }
+   ReturnCode on()  { return scale ? mbus.writeReg_ntry( addr, regOn, 1 ) : rcErr; }
+   ReturnCode off() { return scale ? mbus.writeReg_ntry( addr, regOn, 0 ) : rcErr; }
+   ReturnCode onoff( bool do_on ) { return scale ? mbus.writeReg_ntry( addr, regOn, do_on ) : rcErr; }
+   bool isOn() { auto v { mbus.readGetReg_ntry( addr, regOn) }; return v ? bool(v.value()) : false; }
+   ReturnCode lock()   { return mbus.writeReg_ntry( addr, regLock, 1 ); }
+   ReturnCode unlock() { return mbus.writeReg_ntry( addr, regLock, 0 ); }
+   // read - with read, get - by readed before
+   uint16_t readErr() { auto v { mbus.readGetReg_ntry( addr, regErr ) }; return v.has_value() ? v.value() : 0xFF; }
+   uint16_t readCC()  { auto v { mbus.readGetReg_ntry( addr, regCC )  }; return v.has_value() ? v.value() : 0xFF; }
+   ReturnCode readMain() { return mbus.readRegs_ntry( addr, 0, 0x14 ); }
 
-   ReturnCode setV( uint32_t v_mV )  { return mbus.writeReg( addr, regVset, v_mV * scale / 10 ); }
-   ReturnCode setI( uint32_t i_100uA ) { return mbus.writeReg( addr, regIset, i_100uA * scale / 10 ); }
+   ReturnCode setV( uint32_t v_mV )  { return mbus.writeReg_ntry( addr, regVset, v_mV * scale / 10 ); }
+   ReturnCode setI( uint32_t i_100uA ) { return mbus.writeReg_ntry( addr, regIset, i_100uA * scale / 10 ); }
    uint32_t readV_mV();
    uint32_t readI_100uA();
+   uint32_t getV_mV() const    { return mbus.getReg( regVout ) * 10 / scale; }
+   uint32_t getI_100uA() const { return mbus.getReg( regIout ) * 10 / scale; }
+   uint16_t get_CC()  const { return mbus.getReg( regCC  ); }
+   uint16_t get_Err() const { return mbus.getReg( regErr ); }
    std::pair<uint32_t,uint32_t> read_VI();
 
   private:

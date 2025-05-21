@@ -72,7 +72,7 @@ int main(void)
   BOARD_PROLOG;
 
   UVAR('t') = 2000;
-  UVAR('l') =    1; // break beasurement if OVC or OVP
+  UVAR('l') =    1; // break measurement if CC mode
   UVAR('n') =   10;
   UVAR('u') =    2; // default unit addr
 
@@ -109,14 +109,7 @@ int cmd_test0( int argc, const char * const * argv )
   delay_ms_brk( t_step );
 
   for( int i=0; i<n && !break_flag; ++i ) {
-    ReturnCode rc;
-    for( int j=0; j<10 && !break_flag; ++j ) {
-      rc = rd.setV( v_set );
-      if( rc == rcOk ) {
-        break;
-      }
-      delay_ms_brk( 100 );
-    }
+    ReturnCode rc = rd.setV( v_set );
     if( rc != rcOk ) {
       std_out << "# setV error: " << rc << NL;
       break;
@@ -125,17 +118,27 @@ int cmd_test0( int argc, const char * const * argv )
     if( delay_ms_brk( t_step ) ) {
       break;
     }
-    auto err = rd.readErr();
-    auto [V,I] = rd.read_VI();
-    std_out << v_set << ' ' << V  << ' ' << I << ' ' << ' ' << err << NL;
-    if( err && UVAR('l') ) {
+    rc = rd.readMain();
+    if( rc != rcOk ) {
+      std_out << "# readMain error: " << rc << NL;
+      break;
+    }
+    auto err = rd.get_Err();
+    auto cc  = rd.get_CC();
+    uint32_t V = rd.getV_mV();
+    uint32_t I = rd.getI_100uA();
+    std_out << v_set << ' ' << V  << ' ' << I << ' ' << ' ' << cc << ' ' << err << NL;
+    if( err || ( cc && UVAR('l') && v_set > 80 ) ) { // 80 is mear minial v/o fake CC
       break;
     }
 
     v_set += dv;
   }
 
-  rd.off();
+  break_flag = 0;
+  std_out << "# prepare to OFF: " ;
+  delay_ms( 200 );
+  std_out << rd.off() << NL;
 
   return 0;
 }

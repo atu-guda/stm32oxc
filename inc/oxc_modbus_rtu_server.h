@@ -33,11 +33,19 @@ class MODBUS_RTU_server {
     void reset();
     ReturnCode writeReg( uint8_t addr, uint16_t reg, uint16_t val );
     ReturnCode readRegs( uint8_t addr, uint16_t start, uint16_t n );
+    ReturnCode writeReg_ntry( uint8_t addr, uint16_t reg, uint16_t val );
+    ReturnCode readRegs_ntry( uint8_t addr, uint16_t start, uint16_t n );
     uint16_t getNReadedRegs() const { return n_readed_regs; }
     uint16_t getReg( uint16_t i ) const;
     std::expected<uint16_t,ReturnCode> readGetReg( uint8_t addr, uint16_t i );
+    std::expected<uint16_t,ReturnCode> readGetReg_ntry( uint8_t addr, uint16_t i );
     Errors getError() const { return err; }
     uint8_t getReplError() const { return errRepl; }
+    uint32_t get_n_try() const  { return n_try; }
+    void set_n_try( uint32_t n ) { n_try = n; }
+    uint32_t get_t_try() const  { return t_try; }
+    void set_t_try( uint32_t t ) { t_try = t; }
+
   private:
     // ReturnCode readRepl( byte_span sp_i );
     ReturnCode sendReadRepl( const byte_span sp_o, byte_span sp_i ); // common actions on writeReg, readRegs
@@ -46,6 +54,8 @@ class MODBUS_RTU_server {
     UART_HandleTypeDef *uart;
     // server_state state = ST_INIT;
     uint32_t last_uart_status { 0 };
+    uint32_t n_try { 10 };
+    uint32_t t_try { 100 };
     uint16_t n_readed_regs { 0 };
     uint16_t start_reg { 0 };
     Errors err { errOk };
