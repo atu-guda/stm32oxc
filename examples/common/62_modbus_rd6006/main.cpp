@@ -71,10 +71,10 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 1000;
-  UVAR('n') =    4;
+  UVAR('t') = 2000;
+  UVAR('l') =    1; // break beasurement if OVC or OVP
+  UVAR('n') =   10;
   UVAR('u') =    2; // default unit addr
-  UVAR('a') =   '@';
 
   UVAR('e') = MX_MODBUS_UART_Init();
 
@@ -90,36 +90,52 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
+  int n  = arg2long_d( 1, argc, argv,  UVAR('n'), 0 );
+  int v0 = arg2long_d( 2, argc, argv,  0, 0, 50000 );
+  int dv = arg2long_d( 3, argc, argv, 10, 0, 10000 );
   uint32_t t_step = UVAR('t');
-  std_out <<  "# Test0: n= " << n << " t= " << t_step << NL;
+  std_out <<  "# Test0: n= " << n << " t= " << t_step
+          << " v0= " << v0 << " dv= " << dv << NL;
 
-  uint32_t tm0 = HAL_GetTick();
-
-  uint32_t tc0 = tm0, tc00 = tm0;
-  uint16_t  txx0 = TIM11->CNT;
-
-
-  uint32_t tmc_prev = tc0;
-  break_flag = 0;
-  for( int i=0; i<n && !break_flag; ++i ) {
-    uint32_t  tcc = HAL_GetTick();
-    uint16_t  txx1 = TIM11->CNT;
-    uint16_t  txx2 = TIM11->CNT;
-    if( i == 0 ) {
-      txx0 = txx1;
-    }
-    uint16_t txx_d = txx1 - txx0;
-    std_out <<  "i= " << i << "  tick= " << ( tcc - tc00 )
-            << " dlt= " << ( tcc - tmc_prev ) << ' '
-            << txx1 << ' ' << txx2 << ' ' << txx_d << NL;
-    tmc_prev = tcc;
-    txx0 = txx1;
-
-    UART_MODBUS->USART_TX_REG = (uint8_t)UVAR('a');
-
-    delay_ms_until_brk( &tc0, t_step );
+  uint32_t scale = rd.getScale();
+  if( ! scale ) {
+    std_out << "# Error: scale = 0. init? " NL;
+    return 2;
   }
+
+  break_flag = 0;
+  auto v_set = v0;
+  rd.on();
+  delay_ms_brk( t_step );
+
+  for( int i=0; i<n && !break_flag; ++i ) {
+    ReturnCode rc;
+    for( int j=0; j<10 && !break_flag; ++j ) {
+      rc = rd.setV( v_set );
+      if( rc == rcOk ) {
+        break;
+      }
+      delay_ms_brk( 100 );
+    }
+    if( rc != rcOk ) {
+      std_out << "# setV error: " << rc << NL;
+      break;
+    }
+
+    if( delay_ms_brk( t_step ) ) {
+      break;
+    }
+    auto err = rd.readErr();
+    auto [V,I] = rd.read_VI();
+    std_out << v_set << ' ' << V  << ' ' << I << ' ' << ' ' << err << NL;
+    if( err && UVAR('l') ) {
+      break;
+    }
+
+    v_set += dv;
+  }
+
+  rd.off();
 
   return 0;
 }
@@ -153,7 +169,7 @@ int cmd_measure( int argc, const char * const * argv )
 {
   uint32_t scale = rd.getScale();
   if( ! scale ) {
-    std_out << " measure Error " NL;
+    std_out << " measure Error: scale = 0 " NL;
     return 2;
   }
   auto err = rd.readErr();
