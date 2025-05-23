@@ -1,6 +1,7 @@
 #include <cerrno>
 
 #include <oxc_auto.h>
+#include <oxc_main.h>
 
 #include <ff_gen_drv_st.h>
 #include <usbh_diskio.h>

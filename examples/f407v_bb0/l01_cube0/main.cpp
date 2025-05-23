@@ -4,6 +4,7 @@
 // #include <charconv>
 
 #include <oxc_auto.h>
+#include <oxc_main.h>
 #include <oxc_atleave.h>
 #include <oxc_outstr.h>
 #include <oxc_hd44780_i2c.h>

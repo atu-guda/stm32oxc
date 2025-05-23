@@ -1,7 +1,7 @@
 #include <cstring>
 
-
 #include <oxc_auto.h>
+#include <oxc_main.h>
 
 #include <utility>
 

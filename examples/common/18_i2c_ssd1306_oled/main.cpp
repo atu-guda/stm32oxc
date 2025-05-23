@@ -2,6 +2,7 @@
 #include <algorithm>
 
 #include <oxc_auto.h>
+#include <oxc_main.h>
 
 #include <oxc_ssd1306.h>
 

@@ -1,6 +1,7 @@
 #include <cerrno>
 
 #include <oxc_auto.h>
+#include <oxc_main.h>
 #include <stm32f3xx_hal_hrtim.h>
 
 using namespace std;

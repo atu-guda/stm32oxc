@@ -1,10 +1,7 @@
-// #include <cstring>
-// #include <iterator>
-// #include <cstdlib>
 #include <climits>
 
 #include <oxc_auto.h>
-#include <oxc_tim.h>
+#include <oxc_main.h>
 
 // local configs requires
 #ifndef DEFINES_FOR_WS2812

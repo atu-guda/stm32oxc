@@ -1,6 +1,7 @@
 #include <cerrno>
 
 #include <oxc_auto.h>
+#include <oxc_main.h>
 
 #include <lsm303dlhc.h>
 

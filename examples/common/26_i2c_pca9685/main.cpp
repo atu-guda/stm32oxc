@@ -1,6 +1,7 @@
 // #include <cmath> // lerp?
 
 #include <oxc_auto.h>
+#include <oxc_main.h>
 
 #include <oxc_pca9685.h>
 

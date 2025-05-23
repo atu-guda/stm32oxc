@@ -1,4 +1,5 @@
 #include <oxc_auto.h>
+#include <oxc_main.h>
 
 #include <oxc_hmc5983.h>
 #include <oxc_bartext.h>

@@ -1,0 +1,1 @@
+../../common/39_as5600_i2c/main.cpp

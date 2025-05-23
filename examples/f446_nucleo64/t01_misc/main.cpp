@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include <oxc_auto.h>
+#include <oxc_main.h>
 #include <oxc_ticker.h>
 
 using namespace std;

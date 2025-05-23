@@ -1,4 +1,5 @@
 #include <oxc_auto.h>
+#include <oxc_main.h>
 #include <oxc_hd44780_i2c.h>
 
 using namespace std;

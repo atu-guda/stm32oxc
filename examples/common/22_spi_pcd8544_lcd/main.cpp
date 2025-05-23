@@ -3,6 +3,7 @@
 #include <algorithm>
 
 #include <oxc_auto.h>
+#include <oxc_main.h>
 
 #include <oxc_pcd8544.h>
 

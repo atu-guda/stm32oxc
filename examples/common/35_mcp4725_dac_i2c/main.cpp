@@ -1,4 +1,5 @@
 #include <oxc_auto.h>
+#include <oxc_main.h>
 #include <oxc_mcp4725.h>
 
 using namespace std;

@@ -1,6 +1,7 @@
 #include <cstring>
 
 #include <oxc_auto.h>
+#include <oxc_main.h>
 
 #define Din_GPIO_Port GPIOB
 #define Din_0_Pin GPIO_PIN_3
@@ -123,7 +124,6 @@ void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc )
 
 void MX_DigitalIn_Init()
 {
-  GPIO_InitTypeDef gio;
   __HAL_AFIO_REMAP_SWJ_NOJTAG(); // to use B3
   __HAL_RCC_GPIOB_CLK_ENABLE();
 

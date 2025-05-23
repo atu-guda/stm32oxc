@@ -1,4 +1,5 @@
 #include <oxc_auto.h>
+#include <oxc_main.h>
 
 #include <board_sdram.h>
 #include <stm32f429i_discovery_ts.h>

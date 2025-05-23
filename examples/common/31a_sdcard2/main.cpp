@@ -1,6 +1,7 @@
 #include <cstring>
 
 #include <oxc_auto.h>
+#include <oxc_main.h>
 #include <oxc_fs_cmd0.h>
 
 #include <fatfs_sd_st.h>

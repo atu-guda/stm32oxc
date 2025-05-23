@@ -5,6 +5,7 @@
 #include <oxc_console.h>
 #include <oxc_smallrl.h>
 #include <oxc_debug1.h>
+#include <oxc_main.h>
 
 
 using namespace std;

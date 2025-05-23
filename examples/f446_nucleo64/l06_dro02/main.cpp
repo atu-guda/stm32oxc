@@ -1,5 +1,6 @@
 #include <cstring>
 #include <oxc_auto.h>
+#include <oxc_main.h>
 #include <oxc_floatfun.h>
 
 #include "dro02.h"

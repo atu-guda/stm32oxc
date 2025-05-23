@@ -2,6 +2,7 @@
 #include <cmath>
 
 #include <oxc_auto.h>
+#include <oxc_main.h>
 #include <oxc_floatfun.h>
 #include <oxc_hd44780_i2c.h>
 #include <oxc_usartio.h> // TODO: auto

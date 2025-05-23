@@ -5,6 +5,7 @@
 #include <algorithm>
 
 #include <oxc_auto.h>
+#include <oxc_main.h>
 #include <oxc_floatfun.h>
 #include <oxc_atleave.h>
 #include <oxc_fs_cmd0.h>

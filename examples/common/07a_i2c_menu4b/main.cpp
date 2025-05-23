@@ -1,6 +1,7 @@
 #include <cerrno>
 
 #include <oxc_auto.h>
+#include <oxc_main.h>
 #include <oxc_hd44780_i2c.h>
 #include <oxc_menu4b.h>
 

@@ -1,6 +1,7 @@
 #include <cerrno>
 
 #include <oxc_auto.h>
+#include <oxc_main.h>
 #include <oxc_adcdata.h>
 #include <oxc_adcdata_cmds.h>
 

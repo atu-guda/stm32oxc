@@ -1,6 +1,7 @@
 // #include <ranges>
 
 #include <oxc_auto.h>
+#include <oxc_main.h>
 #include <oxc_stepmotor_gpio.h>
 
 using namespace std;

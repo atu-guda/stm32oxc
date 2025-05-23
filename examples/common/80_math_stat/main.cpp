@@ -6,6 +6,7 @@
 #include <expected>
 
 #include <oxc_auto.h>
+#include <oxc_main.h>
 #include <oxc_statdata.h>
 #include <oxc_namedints.h>
 #include <oxc_namedfloats.h>

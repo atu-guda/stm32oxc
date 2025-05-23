@@ -1,7 +1,7 @@
 #include <cerrno>
 
 #include <oxc_auto.h>
-#include <oxc_tim.h>
+#include <oxc_main.h>
 
 #include "tim_cnt.h"
 

@@ -1,4 +1,5 @@
 #include <oxc_auto.h>
+#include <oxc_main.h>
 
 #include <oxc_spi_max7219.h>
 

@@ -1,8 +1,8 @@
-#define _GNU_SOURCE
 #include <cmath>
 #include <cstdio>
 
 #include <oxc_auto.h>
+#include <oxc_main.h>
 #include <oxc_osfun.h>
 
 using namespace std;

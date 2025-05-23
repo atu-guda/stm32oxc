@@ -3,6 +3,7 @@
 
 #include <oxc_auto.h>
 #include <oxc_atleave.h>
+#include <oxc_main.h>
 
 using namespace std;
 using namespace SMLRL;

@@ -1,6 +1,7 @@
-#include <errno.h>
+#include <cerrno>
 
 #include <oxc_auto.h>
+#include <oxc_main.h>
 
 #include <oxc_modbus_rtu_server.h>
 
