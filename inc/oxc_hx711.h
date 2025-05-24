@@ -15,6 +15,8 @@ class HX711 {
      uint32_t rc;
      int32_t  v;
      bool isOk() const { return rc == rc_Ok; }
+     int32_t value_or( int32_t def ) const { return ( rc == rc_Ok ) ? v : def; }
+     int32_t value_or_0() const { return ( rc == rc_Ok ) ? v : 0; }
    };
    HX711(  GpioRegs &gi_sck, uint8_t pn_sck,  GpioRegs &gi_dat, uint8_t pn_dat )
      : sck( gi_sck, pn_sck ), dat( gi_dat, pn_dat, 1 ) {};

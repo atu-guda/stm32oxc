@@ -3,9 +3,13 @@
 
 #include <oxc_auto.h>
 #include <oxc_main.h>
-
+#include <oxc_floatfun.h>
+#include <oxc_hx711.h>
+#include <oxc_statdata.h>
+#include <oxc_namedfloats.h>
 #include <oxc_modbus_rd6006.h>
 
+#include "momeas.h"
 
 using namespace std;
 using namespace SMLRL;
@@ -15,12 +19,12 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
+const char* common_help_string = "App to measure brushed motor params" NL;
 
-const char* common_help_string = "Appication to test RD6006 PSU via MODBUS RTU server" NL;
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
+CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, "n v0 dv - test "  };
 int cmd_init( int argc, const char * const * argv );
 CmdInfo CMDINFO_INIT { "init", '\0', cmd_init, " - init RD6006"  };
 int cmd_writeReg( int argc, const char * const * argv );
@@ -34,11 +38,13 @@ CmdInfo CMDINFO_ON { "on", '\0', cmd_on, "- set ON"  };
 int cmd_off( int argc, const char * const * argv );
 CmdInfo CMDINFO_OFF { "off", '\0', cmd_off, "- set OFF"  };
 int cmd_measure( int argc, const char * const * argv );
-CmdInfo CMDINFO_MEASURE { "measure", 'M', cmd_measure, "- measure "  };
+CmdInfo CMDINFO_MEASURE { "measure", 'M', cmd_measure, "- measure V,I"  };
 int cmd_setV( int argc, const char * const * argv );
 CmdInfo CMDINFO_SETV { "setV", 'V', cmd_setV, "mV [r] - set output voltage "  };
 int cmd_setI( int argc, const char * const * argv );
 CmdInfo CMDINFO_SETI { "setI", 'I', cmd_setI, "100uA  [r]- set output current "  };
+int cmd_measF( int argc, const char * const * argv );
+CmdInfo CMDINFO_MEASF { "seasF", 'F', cmd_measF, "- measure force "  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -53,12 +59,45 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_MEASURE,
   &CMDINFO_SETV,
   &CMDINFO_SETI,
+  &CMDINFO_MEASF,
   nullptr
 };
 
 extern UART_HandleTypeDef huart_modbus;
 MODBUS_RTU_server m_srv( &huart_modbus );
 RD6006_Modbus rd( m_srv );
+
+HX711 hx711( HX711_SCK_GPIO, HX711_SCK_PIN, HX711_DAT_GPIO, HX711_DAT_PIN );
+// -0.032854652221894 5.06179479849053e-07
+xfloat hx_a =  5.0617948e-07f;
+xfloat hx_b =  -0.032854f;
+
+#define ADD_IOBJ(x)    constexpr NamedInt   ob_##x { #x, &x }
+#define ADD_FOBJ(x)    constexpr NamedFloat ob_##x { #x, &x }
+ADD_FOBJ( hx_a  );
+ADD_FOBJ( hx_b  );
+
+constexpr const NamedObj *const objs_info[] = {
+  & ob_hx_a,
+  & ob_hx_b,
+  nullptr
+};
+
+NamedObjs objs( objs_info );
+
+// print/set hook functions
+
+bool print_var_ex( const char *nm, int fmt )
+{
+  return objs.print( nm, fmt );
+}
+
+bool set_var_ex( const char *nm, const char *s )
+{
+  auto ok =  objs.set( nm, s );
+  print_var_ex( nm, 0 );
+  return ok;
+}
 
 void idle_main_task()
 {
@@ -72,12 +111,20 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 2000;
+  UVAR('t') = 5000; // settle before measure
   UVAR('l') =    1; // break measurement if CC mode
   UVAR('n') =   10;
-  UVAR('u') =    2; // default unit addr
+  UVAR('u') =    2; // default MODBUS unit addr
+  UVAR('n') =   20;
+  UVAR('s') = 5194; // scale, * 1e-10
+  UVAR('o') = 0; // offset, g
 
   UVAR('e') = MX_MODBUS_UART_Init();
+
+  hx711.initHW();
+
+  print_var_hook = print_var_ex;
+  set_var_hook   = set_var_ex;
 
   BOARD_POST_INIT_BLINK;
 
@@ -87,6 +134,7 @@ int main(void)
 
   return 0;
 }
+
 
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
@@ -106,7 +154,9 @@ int cmd_test0( int argc, const char * const * argv )
 
   break_flag = 0;
   auto v_set = v0;
+  rd.setV( v_set );
   rd.on();
+  hx711.read( HX711::HX711_mode::mode_A_x128 );
   delay_ms_brk( t_step );
 
   for( int i=0; i<n && !break_flag; ++i ) {
@@ -127,8 +177,15 @@ int cmd_test0( int argc, const char * const * argv )
     auto err = rd.get_Err();
     auto cc  = rd.get_CC();
     uint32_t V = rd.getV_mV();
+    xfloat V_f = V * 1e-3f;
     uint32_t I = rd.getI_100uA();
-    std_out << v_set << ' ' << V  << ' ' << I << ' ' << ' ' << cc << ' ' << err << NL;
+    xfloat I_f = I * 1e-4f;
+
+    auto fo_ret = hx711.read( HX711::HX711_mode::mode_A_x128 );
+    auto fo_i = fo_ret.isOk() ? fo_ret.v : 0;
+    xfloat fo = fo_i * hx_a + hx_b;
+
+    std_out << (v_set*1e-3f) << ' ' << V_f  << ' ' << I_f << ' ' << fo << ' ' << cc << ' ' << err << NL;
     if( err || ( cc && UVAR('l') && v_set > 80 ) ) { // 80 is mear minial v/o fake CC
       break;
     }
@@ -206,6 +263,19 @@ int cmd_setI( int argc, const char * const * argv )
   return 0;
 }
 
+// ------------------------------------------------------------ 
+
+int cmd_measF( int argc, const char * const * argv )
+{
+  auto fo_ret = hx711.read( HX711::HX711_mode::mode_A_x128 );
+  auto fo_i = fo_ret.isOk() ? fo_ret.v : 0;
+  xfloat fo = fo_i * hx_a + hx_b;
+  std_out << "# force: " << fo_i << ' ' << fo << NL;
+  return 0;
+}
+
+// ------------------------------------------------------------ 
+
 // keep for debug
 
 int cmd_writeReg( int argc, const char * const * argv )
@@ -254,7 +324,6 @@ int cmd_readReg( int argc, const char * const * argv )
 
   return 0;
 }
-
 
 
 
