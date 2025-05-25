@@ -73,7 +73,7 @@ const CmdInfo* global_cmds[] = {
 };
 
 void set_pwm_freq( uint32_t f );
-void set_pwm_v1000( uint32_t v1000 );
+void set_pwm_vs( uint32_t vs );
 
 extern UART_HandleTypeDef huart_modbus;
 MODBUS_RTU_server m_srv( &huart_modbus );
@@ -128,10 +128,11 @@ int main(void)
   UVAR('t') = 5000; // settle before measure
   UVAR('l') =    1; // break measurement if CC mode
   UVAR('u') =    2; // default MODBUS unit addr
-  UVAR('m') =   20; // default force measure count
+  UVAR('m') =   30; // default force measure count
   UVAR('n') =   20; // default main loop count
   UVAR('f') =  100; // base PWM frequency
   UVAR('g') =    0; // PWM frequency shift
+  UVAR('s') = 12000; // PWM scale = max
 
   UVAR('e') = MX_MODBUS_UART_Init();
 
@@ -141,7 +142,7 @@ int main(void)
   HAL_TIM_Base_Start( &htim_cnt );
   MX_TIM_PWM_Init();
   set_pwm_freq( 100 );
-  set_pwm_v1000( 0 );
+  set_pwm_vs( 0 );
   HAL_TIM_PWM_Start( &htim_pwm, TIM_PWM_CHANNEL );
 
 
@@ -161,15 +162,15 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  int n  = arg2long_d( 1, argc, argv,  UVAR('n'), 0 );
-  int v0 = arg2long_d( 2, argc, argv,  0, 0, 50000 );
-  int dv = arg2long_d( 3, argc, argv, 10, 0, 10000 );
-  int pwm0 = arg2long_d( 4, argc, argv,  0, 0, 1000 );
-  int dpwm = arg2long_d( 5, argc, argv,  0, 0, 1000 );
+  int n    = arg2long_d( 1, argc, argv,  UVAR('n'), 0 );
+  int v0   = arg2long_d( 2, argc, argv,  0, 0, 50000 );
+  int dv   = arg2long_d( 3, argc, argv, 10, 0, 10000 );
+  int pwm0 = arg2long_d( 4, argc, argv,  0, 0 );
+  int dpwm = arg2long_d( 5, argc, argv,  0, 0, UVAR('s') );
   uint32_t t_step = UVAR('t');
   std_out <<  "# Test0: n= " << n << " t= " << t_step
-          << " v0= " << v0 << " dv= " << dv << " pwm0= " << pwm0 << " dpwm= " << dpwm << NL;
-  std_out << "#     1            2          3       4     5     6         7      8        9    10  11  " NL;
+          << " v0= " << v0 << " dv= " << dv << " pwm0= " << pwm0 << " dpwm= " << dpwm << " pwm_max= " << UVAR('s') << NL;
+  std_out << "#     1            2          3       4     5     6         7      8        9    10  11 12" NL;
   std_out << "#   V_set        V_out      I_out    pwm  freq    F        nF     rpx      dt    cnt cc e" NL;
 
   uint32_t scale = rd.getScale();
@@ -181,7 +182,7 @@ int cmd_test0( int argc, const char * const * argv )
   break_flag = 0;
   auto freq = UVAR('f');
   auto pwm = pwm0;
-  set_pwm_v1000( pwm );
+  set_pwm_vs( pwm );
   auto v_set = v0;
   rd.setV( v_set );
   rd.on();
@@ -201,7 +202,7 @@ int cmd_test0( int argc, const char * const * argv )
       set_pwm_freq( freq );
     }
     if( dpwm !=0 || UVAR('g') != 0 ) {
-      set_pwm_v1000( pwm );
+      set_pwm_vs( pwm );
     }
 
     if( delay_ms_brk( t_step ) ) { // settle
@@ -238,7 +239,7 @@ int cmd_test0( int argc, const char * const * argv )
   }
 
   break_flag = 0;
-  set_pwm_v1000( 0 );
+  set_pwm_vs( 0 );
   std_out << "# prepare to OFF: " ;
   delay_ms( 200 );
   std_out << rd.off() << NL;
@@ -339,9 +340,9 @@ uint32_t measure_f( int n )
 
 int cmd_pwm( int argc, const char * const * argv )
 {
-  uint32_t pwm_1000 = arg2long_d( 1, argc, argv, 0, 0, 1000 );
-  set_pwm_v1000( pwm_1000 );
-  std_out << "# pwm: " << pwm_1000 << ' ' << NL;
+  uint32_t pwm_s = arg2long_d( 1, argc, argv, 0, 0 );
+  set_pwm_vs( pwm_s );
+  std_out << "# pwm: " << pwm_s << ' ' << xfloat(pwm_s)/UVAR('s') << NL;
   return 0;
 }
 
@@ -349,20 +350,25 @@ int cmd_freq( int argc, const char * const * argv )
 {
   uint32_t f = arg2long_d( 1, argc, argv, 1000, 1, 200000 );
   set_pwm_freq( f );
-  std_out << "# freq: " << f << ' ' << NL;
+  std_out << "# freq: " << f << NL;
   return 0;
 }
 
-void set_pwm_v1000( uint32_t v1000 )
+void set_pwm_vs( uint32_t vs )
 {
-  auto ccr = uint32_t((uint64_t)TIM_PWM->ARR * v1000 / 1000);
+  uint32_t scale = ( UVAR('s') > 0 ) ? UVAR('s') : 1;
+  auto ccr = uint32_t((uint64_t)TIM_PWM->ARR * vs / scale );
   TIM_PWM->PWM_CCR = ccr;
 }
 
 void set_pwm_freq( uint32_t f )
 {
+  auto old_arr = TIM_PWM->ARR;
+  if( old_arr < 1 ) { old_arr = 1; }
+  auto old_ccr = TIM_PWM->PWM_CCR;
   auto arr = calc_TIM_arr_for_base_freq( TIM_PWM, f );
   TIM_PWM->ARR = arr;
+  TIM_PWM->PWM_CCR = uint32_t( (uint64_t)old_ccr * arr / old_arr );
   TIM_PWM->CNT = 0;
 }
 
