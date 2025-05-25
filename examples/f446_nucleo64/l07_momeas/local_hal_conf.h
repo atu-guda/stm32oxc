@@ -31,6 +31,8 @@ int MX_MODBUS_UART_Init(void);
 #define TIM_PWM_PIN   GPIO_PIN_1
 #define TIM_PWM_AF    GPIO_AF2_TIM5
 #define TIM_PWM_GPIO  GpioA
+#define TIM_PWM_CHANNEL TIM_CHANNEL_2
+#define PWM_CCR CCR2
 
 #endif
 

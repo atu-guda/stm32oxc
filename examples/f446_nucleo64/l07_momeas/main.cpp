@@ -45,6 +45,12 @@ int cmd_setI( int argc, const char * const * argv );
 CmdInfo CMDINFO_SETI { "setI", 'I', cmd_setI, "100uA  [r]- set output current "  };
 int cmd_measF( int argc, const char * const * argv );
 CmdInfo CMDINFO_MEASF { "seasF", 'F', cmd_measF, "- measure force "  };
+int cmd_pwm( int argc, const char * const * argv );
+CmdInfo CMDINFO_PWM { "pwm", '\0', cmd_pwm, "v - set PWM 0-1000 "  };
+int cmd_freq( int argc, const char * const * argv );
+CmdInfo CMDINFO_FREQ { "freq", '\0', cmd_freq, "f - set PWM freq "  };
+int cmd_timinfo( int argc, const char * const * argv );
+CmdInfo CMDINFO_TIMINFO { "timinfo", '\0', cmd_timinfo, " - info about timers"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -60,8 +66,14 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_SETV,
   &CMDINFO_SETI,
   &CMDINFO_MEASF,
+  &CMDINFO_PWM,
+  &CMDINFO_FREQ,
+  &CMDINFO_TIMINFO,
   nullptr
 };
+
+void set_pwm_freq( uint32_t f );
+void set_pwm_v1000( uint32_t v1000 );
 
 extern UART_HandleTypeDef huart_modbus;
 MODBUS_RTU_server m_srv( &huart_modbus );
@@ -70,7 +82,9 @@ RD6006_Modbus rd( m_srv );
 HX711 hx711( HX711_SCK_GPIO, HX711_SCK_PIN, HX711_DAT_GPIO, HX711_DAT_PIN );
 // -0.032854652221894 5.06179479849053e-07
 xfloat hx_a =  5.0617948e-07f;
-xfloat hx_b =  -0.032854f;
+xfloat hx_b =  -0.03399918f;
+StatChannel st_f;
+uint32_t measure_f( int n );
 
 #define ADD_IOBJ(x)    constexpr NamedInt   ob_##x { #x, &x }
 #define ADD_FOBJ(x)    constexpr NamedFloat ob_##x { #x, &x }
@@ -113,15 +127,23 @@ int main(void)
 
   UVAR('t') = 5000; // settle before measure
   UVAR('l') =    1; // break measurement if CC mode
-  UVAR('n') =   10;
   UVAR('u') =    2; // default MODBUS unit addr
-  UVAR('n') =   20;
-  UVAR('s') = 5194; // scale, * 1e-10
-  UVAR('o') = 0; // offset, g
+  UVAR('m') =   20; // default force measure count
+  UVAR('n') =   20; // default main loop count
+  UVAR('f') =  100; // base PWM frequency
+  UVAR('g') =    0; // PWM frequency shift
 
   UVAR('e') = MX_MODBUS_UART_Init();
 
   hx711.initHW();
+
+  MX_TIM_CNT_Init();
+  HAL_TIM_Base_Start( &htim_cnt );
+  MX_TIM_PWM_Init();
+  set_pwm_freq( 100 );
+  set_pwm_v1000( 0 );
+  HAL_TIM_PWM_Start( &htim_pwm, TIM_PWM_CHANNEL );
+
 
   print_var_hook = print_var_ex;
   set_var_hook   = set_var_ex;
@@ -142,9 +164,13 @@ int cmd_test0( int argc, const char * const * argv )
   int n  = arg2long_d( 1, argc, argv,  UVAR('n'), 0 );
   int v0 = arg2long_d( 2, argc, argv,  0, 0, 50000 );
   int dv = arg2long_d( 3, argc, argv, 10, 0, 10000 );
+  int pwm0 = arg2long_d( 4, argc, argv,  0, 0, 1000 );
+  int dpwm = arg2long_d( 5, argc, argv,  0, 0, 1000 );
   uint32_t t_step = UVAR('t');
   std_out <<  "# Test0: n= " << n << " t= " << t_step
-          << " v0= " << v0 << " dv= " << dv << NL;
+          << " v0= " << v0 << " dv= " << dv << " pwm0= " << pwm0 << " dpwm= " << dpwm << NL;
+  std_out << "#     1            2          3       4     5     6         7      8        9    10  11  " NL;
+  std_out << "#   V_set        V_out      I_out    pwm  freq    F        nF     rpx      dt    cnt cc e" NL;
 
   uint32_t scale = rd.getScale();
   if( ! scale ) {
@@ -153,25 +179,44 @@ int cmd_test0( int argc, const char * const * argv )
   }
 
   break_flag = 0;
+  auto freq = UVAR('f');
+  auto pwm = pwm0;
+  set_pwm_v1000( pwm );
   auto v_set = v0;
   rd.setV( v_set );
   rd.on();
-  hx711.read( HX711::HX711_mode::mode_A_x128 );
+  hx711.read( HX711::HX711_mode::mode_A_x128 ); // to init for next measurement
   delay_ms_brk( t_step );
 
   for( int i=0; i<n && !break_flag; ++i ) {
-    ReturnCode rc = rd.setV( v_set );
-    if( rc != rcOk ) {
-      std_out << "# setV error: " << rc << NL;
+    ReturnCode rc;
+    if( dv != 0 ) {
+      rc = rd.setV( v_set );
+      if( rc != rcOk ) {
+        std_out << "# setV error: " << rc << NL;
+        break;
+      }
+    }
+    if( UVAR('g') != 0 ) {
+      set_pwm_freq( freq );
+    }
+    if( dpwm !=0 || UVAR('g') != 0 ) {
+      set_pwm_v1000( pwm );
+    }
+
+    if( delay_ms_brk( t_step ) ) { // settle
       break;
     }
 
-    if( delay_ms_brk( t_step ) ) {
-      break;
-    }
+    uint32_t t0 = GET_OS_TICK();
+    TIM_CNT->CNT = 0;
+    measure_f( UVAR('m') );
+    uint32_t t1 = GET_OS_TICK() - t0;
+    uint32_t cnt = TIM_CNT->CNT;
+
     rc = rd.readMain();
     if( rc != rcOk ) {
-      std_out << "# readMain error: " << rc << NL;
+      std_out << "# MODBUS readMain error: " << rc << NL;
       break;
     }
     auto err = rd.get_Err();
@@ -181,19 +226,19 @@ int cmd_test0( int argc, const char * const * argv )
     uint32_t I = rd.getI_100uA();
     xfloat I_f = I * 1e-4f;
 
-    auto fo_ret = hx711.read( HX711::HX711_mode::mode_A_x128 );
-    auto fo_i = fo_ret.isOk() ? fo_ret.v : 0;
-    xfloat fo = fo_i * hx_a + hx_b;
+    std_out << (v_set*1e-3f) << ' ' << V_f  << ' ' << I_f << ' ' << FmtInt(pwm,4) << ' ' << FmtInt(freq,5)
+      << st_f.mean << ' '  << FmtInt(st_f.n,3) << ' ' << (xfloat)(cnt)/t1 << ' ' << t1 << ' ' << FmtInt(cnt,5)
+      << ' ' << cc << ' ' << err << NL;
 
-    std_out << (v_set*1e-3f) << ' ' << V_f  << ' ' << I_f << ' ' << fo << ' ' << cc << ' ' << err << NL;
     if( err || ( cc && UVAR('l') && v_set > 80 ) ) { // 80 is mear minial v/o fake CC
       break;
     }
 
-    v_set += dv;
+    v_set += dv; pwm += dpwm; freq += UVAR('g');
   }
 
   break_flag = 0;
+  set_pwm_v1000( 0 );
   std_out << "# prepare to OFF: " ;
   delay_ms( 200 );
   std_out << rd.off() << NL;
@@ -230,7 +275,7 @@ int cmd_measure( int argc, const char * const * argv )
 {
   uint32_t scale = rd.getScale();
   if( ! scale ) {
-    std_out << " measure Error: scale = 0 " NL;
+    std_out << "# measure Error: scale = 0 " NL;
     return 2;
   }
   auto err = rd.readErr();
@@ -267,16 +312,71 @@ int cmd_setI( int argc, const char * const * argv )
 
 int cmd_measF( int argc, const char * const * argv )
 {
-  auto fo_ret = hx711.read( HX711::HX711_mode::mode_A_x128 );
-  auto fo_i = fo_ret.isOk() ? fo_ret.v : 0;
-  xfloat fo = fo_i * hx_a + hx_b;
-  std_out << "# force: " << fo_i << ' ' << fo << NL;
+  int n = arg2long_d( 1, argc, argv, UVAR('m'), 1, 10000 );
+
+  TickType t0 = GET_OS_TICK();
+  measure_f( n );
+  TickType t1 = GET_OS_TICK();
+
+  std_out << "# force: " << st_f.mean << ' ' << st_f.n << ' ' << st_f.sd << ' ' << ( t1-t0 )<< NL;
+  return 0;
+}
+
+uint32_t measure_f( int n )
+{
+  st_f.reset();
+  for( int i=0; i<n; ++i ) {
+    auto fo_ret = hx711.read( HX711::HX711_mode::mode_A_x128 );
+    if( fo_ret.isOk() ) {
+      auto fo_i = fo_ret.isOk() ? fo_ret.v : 0;
+      xfloat fo = fo_i * hx_a + hx_b;
+      st_f.add( fo );
+    }
+  }
+  st_f.calc();
+  return st_f.n;
+}
+
+int cmd_pwm( int argc, const char * const * argv )
+{
+  uint32_t pwm_1000 = arg2long_d( 1, argc, argv, 0, 0, 1000 );
+  set_pwm_v1000( pwm_1000 );
+  std_out << "# pwm: " << pwm_1000 << ' ' << NL;
+  return 0;
+}
+
+int cmd_freq( int argc, const char * const * argv )
+{
+  uint32_t f = arg2long_d( 1, argc, argv, 1000, 1, 200000 );
+  set_pwm_freq( f );
+  std_out << "# freq: " << f << ' ' << NL;
+  return 0;
+}
+
+void set_pwm_v1000( uint32_t v1000 )
+{
+  auto ccr = uint32_t((uint64_t)TIM_PWM->ARR * v1000 / 1000);
+  TIM_PWM->PWM_CCR = ccr;
+}
+
+void set_pwm_freq( uint32_t f )
+{
+  auto arr = calc_TIM_arr_for_base_freq( TIM_PWM, f );
+  TIM_PWM->ARR = arr;
+  TIM_PWM->CNT = 0;
+}
+
+
+int cmd_timinfo( int argc, const char * const * argv )
+{
+  tim_print_cfg( TIM_CNT );
+  tim_print_cfg( TIM_PWM );
   return 0;
 }
 
 // ------------------------------------------------------------ 
 
-// keep for debug
+// keep for debug. TODO: move to lib
 
 int cmd_writeReg( int argc, const char * const * argv )
 {
