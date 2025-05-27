@@ -86,14 +86,18 @@ xfloat hx_b =  -0.03399918f;
 StatChannel st_f;
 uint32_t measure_f( int n );
 
+xfloat gears_r { 18.8f }; // gears ratio
+
 #define ADD_IOBJ(x)    constexpr NamedInt   ob_##x { #x, &x }
 #define ADD_FOBJ(x)    constexpr NamedFloat ob_##x { #x, &x }
 ADD_FOBJ( hx_a  );
 ADD_FOBJ( hx_b  );
+ADD_FOBJ( gears_r );
 
 constexpr const NamedObj *const objs_info[] = {
   & ob_hx_a,
   & ob_hx_b,
+  & ob_gears_r,
   nullptr
 };
 
@@ -133,6 +137,7 @@ int main(void)
   UVAR('f') =  100; // base PWM frequency
   UVAR('g') =    0; // PWM frequency shift
   UVAR('s') = 12000; // PWM scale = max
+  UVAR('z') =    1; // zero force on first iteration
 
   UVAR('e') = MX_MODBUS_UART_Init();
 
@@ -170,8 +175,10 @@ int cmd_test0( int argc, const char * const * argv )
   uint32_t t_step = UVAR('t');
   std_out <<  "# Test0: n= " << n << " t= " << t_step
           << " v0= " << v0 << " dv= " << dv << " pwm0= " << pwm0 << " dpwm= " << dpwm << " pwm_max= " << UVAR('s') << NL;
-  std_out << "#     1            2          3       4     5     6         7      8        9    10  11 12" NL;
-  std_out << "#   V_set        V_out      I_out    pwm  freq    F        nF     rpx      dt    cnt cc e" NL;
+  std_out << "#   1        2        3        4      5      6      7        8       9       10    11 12 13" NL;
+  std_out << "# V_set    V_out    V_eff    I_out   pwm   freq     F        nF     rps      dt    cnt cc e" NL;
+
+  auto out_v = [](xfloat x) { return FltFmt(x, cvtff_fix,8,4); };
 
   uint32_t scale = rd.getScale();
   if( ! scale ) {
@@ -179,6 +186,7 @@ int cmd_test0( int argc, const char * const * argv )
     return 2;
   }
 
+  xfloat f_0 { 0 };
   break_flag = 0;
   auto freq = UVAR('f');
   auto pwm = pwm0;
@@ -212,6 +220,9 @@ int cmd_test0( int argc, const char * const * argv )
     uint32_t t0 = GET_OS_TICK();
     TIM_CNT->CNT = 0;
     measure_f( UVAR('m') );
+    if( i == 0 && UVAR('z') ) { // relative force measurement
+      f_0 = st_f.mean;
+    }
     uint32_t t1 = GET_OS_TICK() - t0;
     uint32_t cnt = TIM_CNT->CNT;
 
@@ -223,15 +234,18 @@ int cmd_test0( int argc, const char * const * argv )
     auto err = rd.get_Err();
     auto cc  = rd.get_CC();
     uint32_t V = rd.getV_mV();
-    xfloat V_f = V * 1e-3f;
+    xfloat V_f = V * RD6006_V_scale;
     uint32_t I = rd.getI_100uA();
-    xfloat I_f = I * 1e-4f;
+    xfloat I_f = I * RD6006_I_scale;
+    xfloat V_eff = V_f * pwm / UVAR('s');
 
-    std_out << (v_set*1e-3f) << ' ' << V_f  << ' ' << I_f << ' ' << FmtInt(pwm,4) << ' ' << FmtInt(freq,5)
-      << st_f.mean << ' '  << FmtInt(st_f.n,3) << ' ' << (xfloat)(cnt)/t1 << ' ' << t1 << ' ' << FmtInt(cnt,5)
-      << ' ' << cc << ' ' << err << NL;
+    std_out << out_v(v_set*RD6006_V_scale) << ' ' << out_v(V_f) << ' ' << out_v(V_eff) << ' ' << out_v(I_f) << ' '
+      << FmtInt(pwm,5) << ' ' << FmtInt(freq,5) << ' '
+      << (st_f.mean - f_0 ) << ' '  << FmtInt(st_f.n,3) << ' ' << (xfloat)(cnt)/(t1*gears_r) << ' '
+      << t1 << ' ' << FmtInt(cnt,5) << ' '
+      << cc << ' ' << err << NL;
 
-    if( err || ( cc && UVAR('l') && v_set > 80 ) ) { // 80 is mear minial v/o fake CC
+    if( err || ( cc && UVAR('l') && v_set > 80 ) ) { // 80 is near minial v/o fake CC
       break;
     }
 
@@ -243,6 +257,7 @@ int cmd_test0( int argc, const char * const * argv )
   std_out << "# prepare to OFF: " ;
   delay_ms( 200 );
   std_out << rd.off() << NL;
+  TIM_CNT->CNT = 0;
 
   return 0;
 }

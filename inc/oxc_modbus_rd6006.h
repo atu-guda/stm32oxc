@@ -60,6 +60,9 @@ class RD6006_Modbus {
 
 };
 
+// define as we do not need floats here
+#define RD6006_V_scale 1.0e-3f
+#define RD6006_I_scale 1.0e-4f
 
 #endif
 
