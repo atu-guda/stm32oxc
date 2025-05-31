@@ -1,5 +1,6 @@
 #include <cstring>
 #include <cerrno>
+#include <cmath>
 
 #include <oxc_auto.h>
 #include <oxc_main.h>
@@ -24,7 +25,7 @@ const char* common_help_string = "App to measure brushed motor params" NL;
 
 // --- local commands;
 int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, "n v0 dv - test "  };
+CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, "n v0 dv pwm0 dpwm - test "  };
 int cmd_init( int argc, const char * const * argv );
 CmdInfo CMDINFO_INIT { "init", '\0', cmd_init, " - init RD6006"  };
 int cmd_writeReg( int argc, const char * const * argv );
@@ -72,13 +73,17 @@ const CmdInfo* global_cmds[] = {
   nullptr
 };
 
-void set_pwm_freq( uint32_t f );
+void set_pwm_freq( xfloat f );
 void set_pwm_vs( uint32_t vs );
+uint32_t calc_TIM_arr_for_base_freq_xfloat( TIM_TypeDef *tim, xfloat base_freq ); // like oxc_tim, but xfloat
+
 
 extern UART_HandleTypeDef huart_modbus;
 MODBUS_RTU_server m_srv( &huart_modbus );
 RD6006_Modbus rd( m_srv );
 ReturnCode do_off();
+
+xfloat freq_min { 100.0f }, freq_max { 100.0f };
 
 HX711 hx711( HX711_SCK_GPIO, HX711_SCK_PIN, HX711_DAT_GPIO, HX711_DAT_PIN );
 // -0.032854652221894 5.06179479849053e-07
@@ -95,11 +100,15 @@ xfloat gears_r { 27.65f * 12 }; // gears*puls/turn ratio
 ADD_FOBJ( hx_a  );
 ADD_FOBJ( hx_b  );
 ADD_FOBJ( gears_r );
+ADD_FOBJ( freq_min );
+ADD_FOBJ( freq_max );
 
 constexpr const NamedObj *const objs_info[] = {
   & ob_hx_a,
   & ob_hx_b,
   & ob_gears_r,
+  & ob_freq_min,
+  & ob_freq_max,
   nullptr
 };
 
@@ -136,8 +145,6 @@ int main(void)
   UVAR('u') =    2; // default MODBUS unit addr
   UVAR('m') =   30; // default force measure count
   UVAR('n') =   20; // default main loop count
-  UVAR('f') =  100; // base PWM frequency
-  UVAR('g') =    0; // PWM frequency shift
   UVAR('s') = 12000; // PWM scale = max
   UVAR('z') =    1; // zero force on first iteration
 
@@ -148,7 +155,7 @@ int main(void)
   MX_TIM_CNT_Init();
   HAL_TIM_Base_Start( &htim_cnt );
   MX_TIM_PWM_Init();
-  set_pwm_freq( 100 );
+  set_pwm_freq( freq_min );
   set_pwm_vs( 0 );
   HAL_TIM_PWM_Start( &htim_pwm, TIM_PWM_CHANNEL );
 
@@ -177,8 +184,8 @@ int cmd_test0( int argc, const char * const * argv )
   uint32_t t_step = UVAR('t');
   std_out <<  "# Test0: n= " << n << " t= " << t_step
           << " v0= " << v0 << " dv= " << dv << " pwm0= " << pwm0 << " dpwm= " << dpwm << " pwm_max= " << UVAR('s') << NL;
-  std_out << "#   1        2        3        4      5      6      7        8       9       10    11 12 13" NL;
-  std_out << "# V_set    V_out    V_eff    I_out   pwm   freq     F        nF     rps      dt    cnt cc e" NL;
+  std_out << "#   1        2        3        4      5         6         7        8       9       10    11 12 13" NL;
+  std_out << "# V_set    V_out    V_eff    I_out   pwm      freq        F        nF     rps      dt    cnt cc e" NL;
 
   auto out_v = [](xfloat x) { return FltFmt(x, cvtff_fix,8,4); };
 
@@ -188,19 +195,38 @@ int cmd_test0( int argc, const char * const * argv )
     return 2;
   }
 
-  xfloat f_0 { 0 };
+  if( freq_min < 10 && freq_max < 10 ) {
+    std_out << "# Error: freq too low: " << freq_min << ' ' << freq_max << NL;
+    return 3;
+  }
+  xfloat k_freq { 0 };
+  bool do_change_freq { false };
+  if( n > 1 ) {
+    k_freq = logxf( freq_max / freq_min ) / ( n - 1 );
+  }
+  if( fabsxf( k_freq ) > 1e-5f ) {
+    do_change_freq = true;
+  }
+
+  hx711.read( HX711::HX711_mode::mode_A_x128 ); // to init for next measurement
+  xfloat f_0 { 0 }; // zero force level
+  if( UVAR('z') ) { // relative force measurement
+    measure_f( UVAR('m') );
+    f_0 = st_f.mean;
+  }
+
   break_flag = 0;
-  auto freq = UVAR('f');
+  auto freq = freq_min;
   auto pwm = pwm0;
   set_pwm_vs( pwm );
   auto v_set = v0;
   rd.setV( v_set );
   rd.on();
-  hx711.read( HX711::HX711_mode::mode_A_x128 ); // to init for next measurement
   delay_ms_brk( t_step );
 
   for( int i=0; i<n && !break_flag; ++i ) {
     ReturnCode rc;
+    leds[0] = 1;
     if( dv != 0 ) {
       rc = rd.setV( v_set );
       if( rc != rcOk ) {
@@ -208,25 +234,28 @@ int cmd_test0( int argc, const char * const * argv )
         break;
       }
     }
-    if( UVAR('g') != 0 ) {
+    if( do_change_freq ) {
+      freq = freq_min * expxf( i * k_freq );
       set_pwm_freq( freq );
     }
-    if( dpwm !=0 || UVAR('g') != 0 ) {
+    if( dpwm !=0 || do_change_freq ) {
       set_pwm_vs( pwm );
     }
+    leds[0] = 0;
 
+    leds[1] = 1;
     if( delay_ms_brk( t_step ) ) { // settle
       break;
     }
+    leds[1] = 0;
 
     uint32_t t0 = GET_OS_TICK();
     TIM_CNT->CNT = 0;
+    leds[2] = 1;
     measure_f( UVAR('m') );
-    if( i == 0 && UVAR('z') ) { // relative force measurement
-      f_0 = st_f.mean;
-    }
     uint32_t t1 = GET_OS_TICK() - t0;
     uint32_t cnt = TIM_CNT->CNT;
+    leds[2] = 0;
 
     rc = rd.readMain();
     if( rc != rcOk ) {
@@ -242,16 +271,17 @@ int cmd_test0( int argc, const char * const * argv )
     xfloat V_eff = V_f * pwm / UVAR('s');
 
     std_out << out_v(v_set*RD6006_V_scale) << ' ' << out_v(V_f) << ' ' << out_v(V_eff) << ' ' << out_v(I_f) << ' '
-      << FmtInt(pwm,5) << ' ' << FmtInt(freq,5) << ' '
+      << FmtInt(pwm,5) << ' ' << freq << ' '
       << (st_f.mean - f_0 ) << ' '  << FmtInt(st_f.n,3) << ' ' <<  (1e3f * cnt)/(t1*gears_r) << ' ' // 1e3f = systick/s
       << t1 << ' ' << FmtInt(cnt,5) << ' '
       << cc << ' ' << err << NL;
 
     if( err || ( cc && UVAR('l') && v_set > 80 ) ) { // 80 is near minial v/o fake CC
+      leds[0] = 1;
       break;
     }
 
-    v_set += dv; pwm += dpwm; freq += UVAR('g');
+    v_set += dv; pwm += dpwm;
   }
 
   break_flag = 0;
@@ -379,7 +409,7 @@ int cmd_pwm( int argc, const char * const * argv )
 
 int cmd_freq( int argc, const char * const * argv )
 {
-  uint32_t f = arg2long_d( 1, argc, argv, 1000, 1, 200000 );
+  uint32_t f = arg2xfloat_d( 1, argc, argv, 100, 10, 200000 );
   set_pwm_freq( f );
   std_out << "# freq: " << f << NL;
   return 0;
@@ -392,15 +422,22 @@ void set_pwm_vs( uint32_t vs )
   TIM_PWM->PWM_CCR = ccr;
 }
 
-void set_pwm_freq( uint32_t f )
+void set_pwm_freq( xfloat f )
 {
   auto old_arr = TIM_PWM->ARR;
   if( old_arr < 1 ) { old_arr = 1; }
   auto old_ccr = TIM_PWM->PWM_CCR;
-  auto arr = calc_TIM_arr_for_base_freq( TIM_PWM, f );
+  auto arr = calc_TIM_arr_for_base_freq_xfloat( TIM_PWM, f );
   TIM_PWM->ARR = arr;
-  TIM_PWM->PWM_CCR = uint32_t( (uint64_t)old_ccr * arr / old_arr );
+  TIM_PWM->PWM_CCR = uint32_t( (uint64_t)old_ccr * arr / old_arr ); // approx old PWM
   TIM_PWM->CNT = 0;
+}
+
+uint32_t calc_TIM_arr_for_base_freq_xfloat( TIM_TypeDef *tim, xfloat base_freq )
+{
+  uint32_t freq = get_TIM_cnt_freq( tim ); // cnf_freq
+  uint32_t arr = uint32_t( freq / base_freq - 1 );
+  return arr;
 }
 
 
