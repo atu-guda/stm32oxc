@@ -21,7 +21,8 @@ int MX_MODBUS_UART_Init(void);
 #define TIM_CNT TIM2
 #define TIM_CNT_EN    __HAL_RCC_TIM2_CLK_ENABLE();  __HAL_RCC_GPIOA_CLK_ENABLE();
 #define TIM_CNT_DIS   __HAL_RCC_TIM2_CLK_DISABLE();
-#define TIM_CNT_PIN   GPIO_PIN_0
+#define TIM_CNT_PINNUM 0
+#define TIM_CNT_PIN   ( 1 << TIM_CNT_PINNUM )
 #define TIM_CNT_AF    GPIO_AF1_TIM2
 #define TIM_CNT_GPIO  GpioA
 

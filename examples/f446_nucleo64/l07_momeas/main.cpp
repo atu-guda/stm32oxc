@@ -44,7 +44,7 @@ CmdInfo CMDINFO_SETV { "setV", 'V', cmd_setV, "mV [r] - set output voltage "  };
 int cmd_setI( int argc, const char * const * argv );
 CmdInfo CMDINFO_SETI { "setI", 'I', cmd_setI, "100uA  [r]- set output current "  };
 int cmd_measF( int argc, const char * const * argv );
-CmdInfo CMDINFO_MEASF { "seasF", 'F', cmd_measF, "- measure force "  };
+CmdInfo CMDINFO_MEASF { "measF", 'F', cmd_measF, "- measure force "  };
 int cmd_pwm( int argc, const char * const * argv );
 CmdInfo CMDINFO_PWM { "pwm", '\0', cmd_pwm, "v - set PWM 0-1000 "  };
 int cmd_freq( int argc, const char * const * argv );
@@ -78,6 +78,7 @@ void set_pwm_vs( uint32_t vs );
 extern UART_HandleTypeDef huart_modbus;
 MODBUS_RTU_server m_srv( &huart_modbus );
 RD6006_Modbus rd( m_srv );
+ReturnCode do_off();
 
 HX711 hx711( HX711_SCK_GPIO, HX711_SCK_PIN, HX711_DAT_GPIO, HX711_DAT_PIN );
 // -0.032854652221894 5.06179479849053e-07
@@ -86,7 +87,8 @@ xfloat hx_b =  -0.03399918f;
 StatChannel st_f;
 uint32_t measure_f( int n );
 
-xfloat gears_r { 18.8f }; // gears ratio
+xfloat gears_r { 27.65f * 12 }; // gears*puls/turn ratio
+//xfloat gears_r { 1.0f * 20 }; // for opto sensor
 
 #define ADD_IOBJ(x)    constexpr NamedInt   ob_##x { #x, &x }
 #define ADD_FOBJ(x)    constexpr NamedFloat ob_##x { #x, &x }
@@ -241,7 +243,7 @@ int cmd_test0( int argc, const char * const * argv )
 
     std_out << out_v(v_set*RD6006_V_scale) << ' ' << out_v(V_f) << ' ' << out_v(V_eff) << ' ' << out_v(I_f) << ' '
       << FmtInt(pwm,5) << ' ' << FmtInt(freq,5) << ' '
-      << (st_f.mean - f_0 ) << ' '  << FmtInt(st_f.n,3) << ' ' << (xfloat)(cnt)/(t1*gears_r) << ' '
+      << (st_f.mean - f_0 ) << ' '  << FmtInt(st_f.n,3) << ' ' <<  (1e3f * cnt)/(t1*gears_r) << ' ' // 1e3f = systick/s
       << t1 << ' ' << FmtInt(cnt,5) << ' '
       << cc << ' ' << err << NL;
 
@@ -253,13 +255,18 @@ int cmd_test0( int argc, const char * const * argv )
   }
 
   break_flag = 0;
-  set_pwm_vs( 0 );
   std_out << "# prepare to OFF: " ;
-  delay_ms( 200 );
-  std_out << rd.off() << NL;
+  std_out << do_off() << NL;
   TIM_CNT->CNT = 0;
 
   return 0;
+}
+
+ReturnCode do_off()
+{
+  set_pwm_vs( 0 );
+  delay_ms( 200 );
+  return rd.off();
 }
 
 int cmd_init( int argc, const char * const * argv )
@@ -329,19 +336,28 @@ int cmd_setI( int argc, const char * const * argv )
 int cmd_measF( int argc, const char * const * argv )
 {
   int n = arg2long_d( 1, argc, argv, UVAR('m'), 1, 10000 );
+  int off_after = arg2long_d( 2, argc, argv, 0, 0, 1 );
 
   TickType t0 = GET_OS_TICK();
+  TIM_CNT->CNT = 0;
   measure_f( n );
   TickType t1 = GET_OS_TICK();
+  uint32_t cnt = TIM_CNT->CNT;
 
-  std_out << "# force: " << st_f.mean << ' ' << st_f.n << ' ' << st_f.sd << ' ' << ( t1-t0 )<< NL;
+  if( off_after ) {
+    do_off();
+  }
+
+  std_out << "# force: " << st_f.mean << ' ' << st_f.n << ' ' << st_f.sd << ' '
+          << ( t1-t0 ) << ' ' << cnt << NL;
   return 0;
 }
 
 uint32_t measure_f( int n )
 {
   st_f.reset();
-  for( int i=0; i<n; ++i ) {
+  break_flag = 0;
+  for( int i=0; i<n && !break_flag; ++i ) {
     auto fo_ret = hx711.read( HX711::HX711_mode::mode_A_x128 );
     if( fo_ret.isOk() ) {
       auto fo_i = fo_ret.isOk() ? fo_ret.v : 0;

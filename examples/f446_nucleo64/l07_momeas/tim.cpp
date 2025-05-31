@@ -108,6 +108,7 @@ void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* tim_baseHandle )
   if( tim_baseHandle->Instance == TIM_CNT ) {
     TIM_CNT_EN;
     TIM_CNT_GPIO.cfgAF_N( TIM_CNT_PIN, TIM_CNT_AF );
+    TIM_CNT_GPIO.cfg_set_pull_down( TIM_CNT_PINNUM );
   }
   else if( tim_baseHandle->Instance == TIM_PWM ) {
     TIM_PWM_EN;
