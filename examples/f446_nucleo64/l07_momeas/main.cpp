@@ -38,18 +38,18 @@ int cmd_on( int argc, const char * const * argv );
 CmdInfo CMDINFO_ON { "on", '\0', cmd_on, "- set ON"  };
 int cmd_off( int argc, const char * const * argv );
 CmdInfo CMDINFO_OFF { "off", '\0', cmd_off, "- set OFF"  };
-int cmd_measure( int argc, const char * const * argv );
-CmdInfo CMDINFO_MEASURE { "measure", 'M', cmd_measure, "- measure V,I"  };
+int cmd_measure_VI( int argc, const char * const * argv );
+CmdInfo CMDINFO_MEASURE_VI { "measure_VI", 'M', cmd_measure_VI, "- measure V,I"  };
 int cmd_setV( int argc, const char * const * argv );
-CmdInfo CMDINFO_SETV { "setV", 'V', cmd_setV, "mV [r] - set output voltage "  };
+CmdInfo CMDINFO_SETV { "setV", 'V', cmd_setV, "mV [r] - set output voltage"  };
 int cmd_setI( int argc, const char * const * argv );
-CmdInfo CMDINFO_SETI { "setI", 'I', cmd_setI, "100uA  [r]- set output current "  };
+CmdInfo CMDINFO_SETI { "setI", 'I', cmd_setI, "100uA  [r]- set output current"  };
 int cmd_measF( int argc, const char * const * argv );
-CmdInfo CMDINFO_MEASF { "measF", 'F', cmd_measF, "- measure force "  };
+CmdInfo CMDINFO_MEASF { "measF", 'F', cmd_measF, "[set_0] [off] - measure force"  };
 int cmd_pwm( int argc, const char * const * argv );
-CmdInfo CMDINFO_PWM { "pwm", '\0', cmd_pwm, "v - set PWM 0-1000 "  };
+CmdInfo CMDINFO_PWM { "pwm", '\0', cmd_pwm, "v - set PWM 0-1000"  };
 int cmd_freq( int argc, const char * const * argv );
-CmdInfo CMDINFO_FREQ { "freq", '\0', cmd_freq, "f - set PWM freq "  };
+CmdInfo CMDINFO_FREQ { "freq", '\0', cmd_freq, "f - set PWM freq"  };
 int cmd_timinfo( int argc, const char * const * argv );
 CmdInfo CMDINFO_TIMINFO { "timinfo", '\0', cmd_timinfo, " - info about timers"  };
 
@@ -63,7 +63,7 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_READREG,
   &CMDINFO_ON,
   &CMDINFO_OFF,
-  &CMDINFO_MEASURE,
+  &CMDINFO_MEASURE_VI,
   &CMDINFO_SETV,
   &CMDINFO_SETI,
   &CMDINFO_MEASF,
@@ -87,8 +87,8 @@ xfloat freq_min { 100.0f }, freq_max { 100.0f };
 
 HX711 hx711( HX711_SCK_GPIO, HX711_SCK_PIN, HX711_DAT_GPIO, HX711_DAT_PIN );
 // -0.032854652221894 5.06179479849053e-07
-xfloat hx_a =  5.0617948e-07f;
-xfloat hx_b =  -0.03399918f;
+xfloat hx_a { 5.0617948e-07f };
+xfloat hx_b {  -0.03399918f };
 StatChannel st_f;
 uint32_t measure_f( int n );
 
@@ -140,13 +140,12 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 5000; // settle before measure
+  UVAR('t') = 4000; // settle before measure
   UVAR('l') =    1; // break measurement if CC mode
   UVAR('u') =    2; // default MODBUS unit addr
-  UVAR('m') =   30; // default force measure count
+  UVAR('m') =   40; // default force measure count
   UVAR('n') =   20; // default main loop count
   UVAR('s') = 12000; // PWM scale = max
-  UVAR('z') =    1; // zero force on first iteration
 
   UVAR('e') = MX_MODBUS_UART_Init();
 
@@ -159,6 +158,8 @@ int main(void)
   set_pwm_vs( 0 );
   HAL_TIM_PWM_Start( &htim_pwm, TIM_PWM_CHANNEL );
 
+  rd.setAddr( UVAR('u') ); // default
+  rd.init();
 
   print_var_hook = print_var_ex;
   set_var_hook   = set_var_ex;
@@ -209,11 +210,6 @@ int cmd_test0( int argc, const char * const * argv )
   }
 
   hx711.read( HX711::HX711_mode::mode_A_x128 ); // to init for next measurement
-  xfloat f_0 { 0 }; // zero force level
-  if( UVAR('z') ) { // relative force measurement
-    measure_f( UVAR('m') );
-    f_0 = st_f.mean;
-  }
 
   break_flag = 0;
   auto freq = freq_min;
@@ -272,7 +268,7 @@ int cmd_test0( int argc, const char * const * argv )
 
     std_out << out_v(v_set*RD6006_V_scale) << ' ' << out_v(V_f) << ' ' << out_v(V_eff) << ' ' << out_v(I_f) << ' '
       << FmtInt(pwm,5) << ' ' << freq << ' '
-      << (st_f.mean - f_0 ) << ' '  << FmtInt(st_f.n,3) << ' ' <<  (1e3f * cnt)/(t1*gears_r) << ' ' // 1e3f = systick/s
+      << st_f.mean << ' '  << FmtInt(st_f.n,3) << ' ' <<  (1e3f * cnt)/(t1*gears_r) << ' ' // 1e3f = systick/s
       << t1 << ' ' << FmtInt(cnt,5) << ' '
       << cc << ' ' << err << NL;
 
@@ -324,7 +320,7 @@ int cmd_off( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_measure( int argc, const char * const * argv )
+int cmd_measure_VI( int argc, const char * const * argv )
 {
   uint32_t scale = rd.getScale();
   if( ! scale ) {
@@ -366,7 +362,8 @@ int cmd_setI( int argc, const char * const * argv )
 int cmd_measF( int argc, const char * const * argv )
 {
   int n = arg2long_d( 1, argc, argv, UVAR('m'), 1, 10000 );
-  int off_after = arg2long_d( 2, argc, argv, 0, 0, 1 );
+  int set_zero  = arg2long_d( 2, argc, argv, 0, 0, 1 );
+  int off_after = arg2long_d( 3, argc, argv, 0, 0, 1 );
 
   TickType t0 = GET_OS_TICK();
   TIM_CNT->CNT = 0;
@@ -380,12 +377,16 @@ int cmd_measF( int argc, const char * const * argv )
 
   std_out << "# force: " << st_f.mean << ' ' << st_f.n << ' ' << st_f.sd << ' '
           << ( t1-t0 ) << ' ' << cnt << NL;
+  if( set_zero ) {
+    hx_b -= st_f.mean;
+  }
   return 0;
 }
 
 uint32_t measure_f( int n )
 {
   st_f.reset();
+  hx711.read( HX711::HX711_mode::mode_A_x128 );
   break_flag = 0;
   for( int i=0; i<n && !break_flag; ++i ) {
     auto fo_ret = hx711.read( HX711::HX711_mode::mode_A_x128 );
