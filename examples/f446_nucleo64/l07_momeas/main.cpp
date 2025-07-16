@@ -1,6 +1,7 @@
 #include <cstring>
 #include <cerrno>
 #include <cmath>
+#include <algorithm>
 
 #include <oxc_auto.h>
 #include <oxc_main.h>
@@ -85,6 +86,7 @@ ReturnCode do_off();
 
 xfloat freq_min { 100.0f }, freq_max { 100.0f };
 
+constexpr auto hx_mode = HX711::HX711_mode::mode_A_x128;
 HX711 hx711( HX711_SCK_GPIO, HX711_SCK_PIN, HX711_DAT_GPIO, HX711_DAT_PIN );
 // -0.032854652221894 5.06179479849053e-07
 xfloat hx_a { 5.0617948e-07f };
@@ -146,6 +148,7 @@ int main(void)
   UVAR('m') =   40; // default force measure count
   UVAR('n') =   20; // default main loop count
   UVAR('s') = 12000; // PWM scale = max
+  UVAR('z') =     1; // drop low subzero force
 
   UVAR('e') = MX_MODBUS_UART_Init();
 
@@ -185,8 +188,6 @@ int cmd_test0( int argc, const char * const * argv )
   uint32_t t_step = UVAR('t');
   std_out <<  "# Test0: n= " << n << " t= " << t_step
           << " v0= " << v0 << " dv= " << dv << " pwm0= " << pwm0 << " dpwm= " << dpwm << " pwm_max= " << UVAR('s') << NL;
-  std_out << "#   1        2        3        4      5         6         7        8       9       10    11 12 13" NL;
-  std_out << "# V_set    V_out    V_eff    I_out   pwm      freq        F        nF     rps      dt    cnt cc e" NL;
 
   auto out_v = [](xfloat x) { return FltFmt(x, cvtff_fix,8,4); };
 
@@ -196,7 +197,7 @@ int cmd_test0( int argc, const char * const * argv )
     return 2;
   }
 
-  if( freq_min < 10 && freq_max < 10 ) {
+  if( freq_min < 10 || freq_max < 10 ) {
     std_out << "# Error: freq too low: " << freq_min << ' ' << freq_max << NL;
     return 3;
   }
@@ -209,15 +210,19 @@ int cmd_test0( int argc, const char * const * argv )
     do_change_freq = true;
   }
 
-  hx711.read( HX711::HX711_mode::mode_A_x128 ); // to init for next measurement
+  hx711.read( hx_mode ); // to init for next measurement
 
   break_flag = 0;
   auto freq = freq_min;
+  set_pwm_freq( freq );
   auto pwm = pwm0;
   set_pwm_vs( pwm );
   auto v_set = v0;
   rd.setV( v_set );
   rd.on();
+  std_out << "# preheat: " << freq << ' ' << pwm << ' ' << v_set << NL;
+  std_out << "#   1        2        3        4      5         6         7        8       9       10    11 12 13 14" NL;
+  std_out << "# V_set    V_out    V_eff    I_out   pwm      freq        F        nF     rps      dt    cnt cc e i" NL;
   delay_ms_brk( t_step );
 
   for( int i=0; i<n && !break_flag; ++i ) {
@@ -230,6 +235,7 @@ int cmd_test0( int argc, const char * const * argv )
         break;
       }
     }
+
     if( do_change_freq ) {
       freq = freq_min * expxf( i * k_freq );
       set_pwm_freq( freq );
@@ -265,19 +271,25 @@ int cmd_test0( int argc, const char * const * argv )
     uint32_t I = rd.getI_100uA();
     xfloat I_f = I * RD6006_I_scale;
     xfloat V_eff = V_f * pwm / UVAR('s');
+    xfloat force = st_f.mean;
+    if( force < 0 && force > -1.0e-3f && UVAR('z') ) { // TODO: config
+      force = 0;
+    }
 
     std_out << out_v(v_set*RD6006_V_scale) << ' ' << out_v(V_f) << ' ' << out_v(V_eff) << ' ' << out_v(I_f) << ' '
       << FmtInt(pwm,5) << ' ' << freq << ' '
-      << st_f.mean << ' '  << FmtInt(st_f.n,3) << ' ' <<  (1e3f * cnt)/(t1*gears_r) << ' ' // 1e3f = systick/s
+      << force << ' '  << FmtInt(st_f.n,3) << ' ' <<  (1e3f * cnt)/(t1*gears_r) << ' ' // 1e3f = systick/s
       << t1 << ' ' << FmtInt(cnt,5) << ' '
-      << cc << ' ' << err << NL;
+      << cc << ' ' << err << ' ' << i << NL;
 
-    if( err || ( cc && UVAR('l') && v_set > 80 ) ) { // 80 is near minial v/o fake CC
+    if( err || ( cc && UVAR('l') && v_set > 80 ) ) { // 80 is near minimal v/o fake CC
       leds[0] = 1;
       break;
     }
 
-    v_set += dv; pwm += dpwm;
+    v_set += dv;
+    pwm += dpwm;
+    pwm = std::clamp( pwm, 0, UVAR('s') );
   }
 
   break_flag = 0;
@@ -386,10 +398,10 @@ int cmd_measF( int argc, const char * const * argv )
 uint32_t measure_f( int n )
 {
   st_f.reset();
-  hx711.read( HX711::HX711_mode::mode_A_x128 );
+  hx711.read( hx_mode );
   break_flag = 0;
   for( int i=0; i<n && !break_flag; ++i ) {
-    auto fo_ret = hx711.read( HX711::HX711_mode::mode_A_x128 );
+    auto fo_ret = hx711.read( hx_mode );
     if( fo_ret.isOk() ) {
       auto fo_i = fo_ret.isOk() ? fo_ret.v : 0;
       xfloat fo = fo_i * hx_a + hx_b;
