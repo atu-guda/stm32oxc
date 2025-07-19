@@ -1,0 +1,9 @@
+Examples for STM32F746 + SDRAM small board
+
+Onboard:
+W9825G7-6I SDRAM
+W25Q64 flash QSPI
+USB-C - A11,A12
+
+Clock HSE: 25Hz
+
