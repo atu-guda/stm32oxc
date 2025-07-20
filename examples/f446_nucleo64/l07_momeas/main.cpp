@@ -160,7 +160,9 @@ int main(void)
   hx711.initHW();
 
   MX_TIM_CNT_Init();
+  MX_TIM_CNT2_Init();
   HAL_TIM_Base_Start( &htim_cnt );
+  HAL_TIM_Base_Start( &htim_cnt2 );
   MX_TIM_PWM_Init();
   set_pwm_freq( freq_min );
   set_pwm_vs( 0 );
@@ -257,11 +259,12 @@ int cmd_test0( int argc, const char * const * argv )
     leds[1] = 0;
 
     uint32_t t0 = GET_OS_TICK();
-    TIM_CNT->CNT = 0;
+    TIM_CNT->CNT  = 0;
+    TIM_CNT2->CNT = 0;
     leds[2] = 1;
     measure_f( UVAR('m') );
-    uint32_t t1 = GET_OS_TICK() - t0;
-    uint32_t cnt = TIM_CNT->CNT;
+    const uint32_t t1 = GET_OS_TICK() - t0;
+    const uint32_t cnt = TIM_CNT->CNT; // TODO: CNT2 ?
     leds[2] = 0;
 
     rc = rd.readMain();
@@ -301,6 +304,7 @@ int cmd_test0( int argc, const char * const * argv )
   std_out << "# prepare to OFF: " ;
   std_out << do_off() << NL;
   TIM_CNT->CNT = 0;
+  TIM_CNT2->CNT = 0;
 
   return 0;
 }
@@ -383,10 +387,12 @@ int cmd_measF( int argc, const char * const * argv )
   int off_after = arg2long_d( 3, argc, argv, 0, 0, 1 );
 
   const TickType t0 = GET_OS_TICK();
-  TIM_CNT->CNT = 0;
+  TIM_CNT->CNT  = 0;
+  TIM_CNT2->CNT = 0;
   measure_f( n );
   const TickType t1 = GET_OS_TICK();
-  const uint32_t cnt = TIM_CNT->CNT;
+  const uint32_t cnt  = TIM_CNT->CNT;
+  const uint32_t cnt2 = TIM_CNT2->CNT;
 
   if( off_after ) {
     do_off();
@@ -396,7 +402,7 @@ int cmd_measF( int argc, const char * const * argv )
   const xfloat fr = ( dt != 0 ) ? ( 1.0e+3f * cnt / dt ) : 0;
 
   std_out << "# force: " << st_f.mean << ' ' << st_f.n << ' ' << st_f.sd << ' '
-          << dt << ' ' << cnt << ' ' << fr << NL;
+          << dt << ' ' << cnt << ' ' << cnt2 << ' ' << fr << NL;
   if( set_zero ) {
     hx_b -= st_f.mean;
   }
@@ -450,10 +456,12 @@ int cmd_vstep( int argc, const char * const * argv )
 
   // measure ticks
   const TickType t0 = GET_OS_TICK();
-  TIM_CNT->CNT = 0;
+  TIM_CNT ->CNT = 0;
+  TIM_CNT2->CNT = 0;
   delay_ms( UVAR('t') );
   const TickType t1 = GET_OS_TICK();
-  const uint32_t cnt = TIM_CNT->CNT;
+  const uint32_t cnt  = TIM_CNT->CNT;
+  const uint32_t cnt2 = TIM_CNT2->CNT;
 
   const auto dt = t1 - t0;
   const xfloat fr = ( dt != 0 ) ? ( 1.0e+3f * cnt / dt ) : 0;
@@ -465,7 +473,7 @@ int cmd_vstep( int argc, const char * const * argv )
   std_out << ( V    * RD6006_V_scale) << ' '
           << (V_set * RD6006_V_scale) << ' '
           << (I_c   * RD6006_I_scale) << ' ' << err << ' '
-          << dt << ' ' << cnt << ' ' << fr << NL;
+          << dt << ' ' << cnt << ' ' << cnt2 <<  ' ' << fr << NL;
 
   return 0;
 }
@@ -500,6 +508,7 @@ uint32_t calc_TIM_arr_for_base_freq_xfloat( TIM_TypeDef *tim, xfloat base_freq )
 int cmd_timinfo( int argc, const char * const * argv )
 {
   tim_print_cfg( TIM_CNT );
+  tim_print_cfg( TIM_CNT2 );
   tim_print_cfg( TIM_PWM );
   return 0;
 }

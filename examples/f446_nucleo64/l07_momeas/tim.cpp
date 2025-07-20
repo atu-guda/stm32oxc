@@ -4,6 +4,7 @@
 #include "momeas.h"
 
 TIM_HandleTypeDef htim_cnt;
+TIM_HandleTypeDef htim_cnt2;
 TIM_HandleTypeDef htim_pwm;
 
 void HAL_TIM_MspPostInit( TIM_HandleTypeDef* timHandle );
@@ -44,6 +45,44 @@ int MX_TIM_CNT_Init(void)
   }
   return 1;
 }
+
+// TIM3
+int MX_TIM_CNT2_Init(void)
+{
+  htim_cnt2.Instance               = TIM_CNT2;
+  htim_cnt2.Init.Prescaler         = 0;
+  htim_cnt2.Init.CounterMode       = TIM_COUNTERMODE_UP;
+  htim_cnt2.Init.Period            = 0xFFFFFFFF;
+  htim_cnt2.Init.ClockDivision     = TIM_CLOCKDIVISION_DIV1;
+  htim_cnt2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if( HAL_TIM_Base_Init( &htim_cnt2 ) != HAL_OK ) {
+    errno = 12011;
+    return 0;
+  }
+
+  static const TIM_ClockConfigTypeDef sClockSourceConfig = {
+    .ClockSource    = TIM_CLOCKSOURCE_ETRMODE2,
+    .ClockPolarity  = TIM_CLOCKPOLARITY_NONINVERTED,
+    .ClockPrescaler = TIM_CLOCKPRESCALER_DIV1,
+    .ClockFilter    = 3
+  };
+
+  if( HAL_TIM_ConfigClockSource( &htim_cnt2, &sClockSourceConfig ) != HAL_OK ) {
+    errno = 12012;
+    return 0;
+  }
+
+  static const TIM_MasterConfigTypeDef sMasterConfig = {
+    .MasterOutputTrigger = TIM_TRGO_RESET,
+    .MasterSlaveMode     = TIM_MASTERSLAVEMODE_DISABLE
+  };
+  if( HAL_TIMEx_MasterConfigSynchronization( &htim_cnt2, &sMasterConfig ) != HAL_OK ) {
+    errno = 12013;
+    return 0;
+  }
+  return 1;
+}
+
 
 
 int MX_TIM_PWM_Init(void)
@@ -110,6 +149,11 @@ void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* tim_baseHandle )
     TIM_CNT_GPIO.cfgAF_N( TIM_CNT_PIN, TIM_CNT_AF );
     TIM_CNT_GPIO.cfg_set_pull_down( TIM_CNT_PINNUM );
   }
+  else if( tim_baseHandle->Instance == TIM_CNT2 ) {
+    TIM_CNT2_EN;
+    TIM_CNT2_GPIO.cfgAF_N( TIM_CNT2_PIN, TIM_CNT2_AF );
+    TIM_CNT2_GPIO.cfg_set_pull_down( TIM_CNT2_PINNUM );
+  }
   else if( tim_baseHandle->Instance == TIM_PWM ) {
     TIM_PWM_EN;
     TIM_PWM_GPIO.cfgAF_N( TIM_PWM_PIN, TIM_PWM_AF );
@@ -125,6 +169,10 @@ void HAL_TIM_Base_MspDeInit( TIM_HandleTypeDef* tim_baseHandle )
   if( tim_baseHandle->Instance == TIM_CNT ) {
     TIM_CNT_DIS;
     TIM_CNT_GPIO.cfgIn_N( TIM_CNT_PIN );
+  }
+  else if( tim_baseHandle->Instance == TIM_CNT2 ) {
+    TIM_CNT2_DIS;
+    TIM_CNT2_GPIO.cfgIn_N( TIM_CNT2_PIN );
   }
   else if( tim_baseHandle->Instance == TIM_PWM ) {
     TIM_PWM_DIS;
