@@ -36,15 +36,15 @@ CmdInfo CMDINFO_READREGS { "read_regs", 'R', cmd_readRegs, "start n - read n reg
 int cmd_readReg( int argc, const char * const * argv );
 CmdInfo CMDINFO_READREG { "read_reg", '\0', cmd_readReg, "i - read 1 reg"  };
 int cmd_on( int argc, const char * const * argv );
-CmdInfo CMDINFO_ON { "on", '\0', cmd_on, "- set ON"  };
+CmdInfo CMDINFO_ON { "on", '\0', cmd_on, "- set power ON"  };
 int cmd_off( int argc, const char * const * argv );
-CmdInfo CMDINFO_OFF { "off", '\0', cmd_off, "- set OFF"  };
+CmdInfo CMDINFO_OFF { "off", '\0', cmd_off, "- set power OFF"  };
 int cmd_measure_VI( int argc, const char * const * argv );
 CmdInfo CMDINFO_MEASURE_VI { "measure_VI", 'M', cmd_measure_VI, "- measure V,I"  };
 int cmd_setV( int argc, const char * const * argv );
 CmdInfo CMDINFO_SETV { "setV", 'V', cmd_setV, "mV [r] - set output voltage"  };
 int cmd_setI( int argc, const char * const * argv );
-CmdInfo CMDINFO_SETI { "setI", 'I', cmd_setI, "100uA  [r]- set output current"  };
+CmdInfo CMDINFO_SETI { "setI", 'I', cmd_setI, "100uA  [r]- set output current limit"  };
 int cmd_measF( int argc, const char * const * argv );
 CmdInfo CMDINFO_MEASF { "measF", 'F', cmd_measF, "[set_0] [off] - measure force"  };
 int cmd_pwm( int argc, const char * const * argv );
@@ -53,6 +53,8 @@ int cmd_freq( int argc, const char * const * argv );
 CmdInfo CMDINFO_FREQ { "freq", '\0', cmd_freq, "f - set PWM freq"  };
 int cmd_timinfo( int argc, const char * const * argv );
 CmdInfo CMDINFO_TIMINFO { "timinfo", '\0', cmd_timinfo, " - info about timers"  };
+int cmd_vstep( int argc, const char * const * argv );
+CmdInfo CMDINFO_VSTEP { "vstep", 'Z', cmd_vstep, " - set set voltage and measure"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -71,6 +73,7 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_PWM,
   &CMDINFO_FREQ,
   &CMDINFO_TIMINFO,
+  &CMDINFO_VSTEP,
   nullptr
 };
 
@@ -148,6 +151,8 @@ int main(void)
   UVAR('m') =   40; // default force measure count
   UVAR('n') =   20; // default main loop count
   UVAR('s') = 12000; // PWM scale = max
+  UVAR('v') =  1000; // voltage step
+  UVAR('w') =  4000; // current voltage in steps - 'v'
   UVAR('z') =     1; // drop low subzero force
 
   UVAR('e') = MX_MODBUS_UART_Init();
@@ -340,8 +345,8 @@ int cmd_measure_VI( int argc, const char * const * argv )
     return 2;
   }
   auto err = rd.readErr();
-  auto [v,i] = rd.read_VI();
-  std_out << v << ' ' << i << ' ' << scale << ' ' << err << NL;
+  auto [V_m,I_m] = rd.read_VI();
+  std_out << (V_m * RD6006_V_scale) << ' ' << (I_m * RD6006_I_scale) << ' ' << scale << ' ' << err << NL;
   return 0;
 }
 
@@ -354,8 +359,8 @@ int cmd_setV( int argc, const char * const * argv )
   if( me ) {
     delay_ms( 1000 );
     auto err = rd.readErr();
-    auto [v,i] = rd.read_VI();
-    std_out << v << ' ' << i << ' ' << err << NL;
+    auto [V_m,I_m] = rd.read_VI();
+    std_out << (V_m * RD6006_V_scale) << ' ' << (I_m * RD6006_I_scale) << ' ' << err << NL;
   }
   return 0;
 }
@@ -377,18 +382,21 @@ int cmd_measF( int argc, const char * const * argv )
   int set_zero  = arg2long_d( 2, argc, argv, 0, 0, 1 );
   int off_after = arg2long_d( 3, argc, argv, 0, 0, 1 );
 
-  TickType t0 = GET_OS_TICK();
+  const TickType t0 = GET_OS_TICK();
   TIM_CNT->CNT = 0;
   measure_f( n );
-  TickType t1 = GET_OS_TICK();
-  uint32_t cnt = TIM_CNT->CNT;
+  const TickType t1 = GET_OS_TICK();
+  const uint32_t cnt = TIM_CNT->CNT;
 
   if( off_after ) {
     do_off();
   }
 
+  const auto dt = t1 - t0;
+  const xfloat fr = ( dt != 0 ) ? ( 1.0e+3f * cnt / dt ) : 0;
+
   std_out << "# force: " << st_f.mean << ' ' << st_f.n << ' ' << st_f.sd << ' '
-          << ( t1-t0 ) << ' ' << cnt << NL;
+          << dt << ' ' << cnt << ' ' << fr << NL;
   if( set_zero ) {
     hx_b -= st_f.mean;
   }
@@ -427,6 +435,41 @@ int cmd_freq( int argc, const char * const * argv )
   std_out << "# freq: " << f << NL;
   return 0;
 }
+
+int cmd_vstep( int argc, const char * const * argv )
+{
+  UVAR('w') += UVAR('v');
+  const auto V = UVAR('w');
+  if( V > 36000 ) {
+    UVAR('w') = 4000;
+    return 1;
+  }
+  rd.setV( V );
+  delay_ms( 1000 );
+
+
+  // measure ticks
+  const TickType t0 = GET_OS_TICK();
+  TIM_CNT->CNT = 0;
+  delay_ms( UVAR('t') );
+  const TickType t1 = GET_OS_TICK();
+  const uint32_t cnt = TIM_CNT->CNT;
+
+  const auto dt = t1 - t0;
+  const xfloat fr = ( dt != 0 ) ? ( 1.0e+3f * cnt / dt ) : 0;
+
+  // measure consumption
+  auto err = rd.readErr();
+  auto [V_set,I_c] = rd.read_VI();
+
+  std_out << ( V    * RD6006_V_scale) << ' '
+          << (V_set * RD6006_V_scale) << ' '
+          << (I_c   * RD6006_I_scale) << ' ' << err << ' '
+          << dt << ' ' << cnt << ' ' << fr << NL;
+
+  return 0;
+}
+
 
 void set_pwm_vs( uint32_t vs )
 {

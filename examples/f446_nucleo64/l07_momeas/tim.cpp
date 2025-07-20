@@ -26,7 +26,7 @@ int MX_TIM_CNT_Init(void)
     .ClockSource    = TIM_CLOCKSOURCE_ETRMODE2,
     .ClockPolarity  = TIM_CLOCKPOLARITY_NONINVERTED,
     .ClockPrescaler = TIM_CLOCKPRESCALER_DIV1,
-    .ClockFilter    = 0
+    .ClockFilter    = 3
   };
 
   if( HAL_TIM_ConfigClockSource( &htim_cnt, &sClockSourceConfig ) != HAL_OK ) {
