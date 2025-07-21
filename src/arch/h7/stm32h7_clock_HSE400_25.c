@@ -81,7 +81,7 @@ int SystemClockCfg(void)
     .PLL3.PLL3RGE          = RCC_PLL3VCIRANGE_2,
     .PLL3.PLL3VCOSEL       = RCC_PLL3VCOWIDE,
     .PLL3.PLL3FRACN        = 0,
-    .FmcClockSelection     = RCC_FMCCLKSOURCE_D1HCLK,
+    .FmcClockSelection     = RCC_FMCCLKSOURCE_PLL,
     .SdmmcClockSelection   = RCC_SDMMCCLKSOURCE_PLL,
     .Spi123ClockSelection  = RCC_SPI123CLKSOURCE_PLL3,
     .Usart16ClockSelection = RCC_USART16CLKSOURCE_D2PCLK2,

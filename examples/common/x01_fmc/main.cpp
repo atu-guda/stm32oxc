@@ -30,7 +30,7 @@ int main(void)
   UVAR('n') = 0x60;
 
   leds.write( 0x03 );  delay_bad_ms( 200 );
-  bsp_init_sdram();
+  UVAR('e') = bsp_init_sdram();
 
   BOARD_POST_INIT_BLINK;
 
