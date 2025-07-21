@@ -1,0 +1,6 @@
+use: 1-wire 18B20 (initial) on G:13
+Pull-up (4.7k) required!
+
+Pull-up (4.7K) Required!
+
+Pin used simultaneously for input and output.

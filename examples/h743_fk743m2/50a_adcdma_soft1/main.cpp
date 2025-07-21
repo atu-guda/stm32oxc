@@ -1,0 +1,1 @@
+../../common/50a_adcdma_soft1/main.cpp

@@ -160,7 +160,7 @@
 #define BOARD_ADC_DEFAULT_PIN3          1
 #define BOARD_ADC_DEFAULT_CH3           ADC_CHANNEL_5
 #define BOARD_ADC_MEM_MAX               (1024*412)
-#define BOARD_ADC_MEM_MAX_FMC           (1024*1024*8)
+#define BOARD_ADC_MEM_MAX_FMC           (1024*1024*32)
 #define BOARD_ADC_COEFF                 3385063
 #define BOARD_ADC_MALLOC                malloc
 #define BOARD_ADC_FREE                  free
@@ -203,8 +203,8 @@ void  free_fmc( void* ptr );
 #define BOARD_USB_DEFAULT_IRQHANDLER OTG_FS_IRQHandler
 #define BOARD_USB_DEFAULT_IRQ_PRTY   12
 
-//#define BOARD_CONSOLE_DEFINES         USBCDC_CONSOLE_DEFINES;
-#define BOARD_CONSOLE_DEFINES_UART    UART_CONSOLE_DEFINES( USART1 );
+
+#define BOARD_CONSOLE_DEFINES         UART_CONSOLE_DEFINES( USART1 );
 #define BOARD_CONSOLE_DEFINES_UART    UART_CONSOLE_DEFINES( USART1 );
 #define BOARD_PROLOG                  STD_PROLOG_UART;
 #define BOARD_CREATE_STD_TASKS        CREATE_STD_TASKS;
