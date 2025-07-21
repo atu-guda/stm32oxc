@@ -52,11 +52,11 @@ SUBDIRS = \
   51a_adcdma_n \
   53_adcdma_sd \
   80_math_stat \
+  x01_fmc \
+  x51_adcdma_fmc \
+  x53a_adcdma_n_fmc_sdcard \
 
-  # x01_fmc \
-  # x37a_ad7606_fmc_sdcard \
-  # x51_adcdma_fmc \
-  # x53a_adcdma_n_fmc_sdcard \
+# x37a_ad7606_fmc_sdcard \
 #  04x1_uart_usb \
 
 
