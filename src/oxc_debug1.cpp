@@ -91,7 +91,7 @@ void dump8( const void *addr, unsigned n, bool isAbs  )
   std_out << NL;
 
   unsigned nr = (n+15) >> 4; // non-full rows counting too
-  for( decltype(+nr) row = 0; row < nr; ++row, ad0 += 16 ) {
+  for( decltype(+nr) row = 0; row < nr && !break_flag; ++row, ad0 += 16 ) {
     std_out << HexInt( (void*)ad0 ) << ": ";
     unsigned bs = row << 4;
     for( unsigned i=0; i<16 && (i+bs)<n; ++i ) {
@@ -129,7 +129,7 @@ void dump32( const void *addr, unsigned n, bool isAbs  )
   std_out << NL;
 
   unsigned nr = (n+15) >> 4; // non-full rows counting too
-  for( decltype(+nr) row = 0; row < nr; ++row, ad0 += 4 ) {
+  for( decltype(+nr) row = 0; row < nr && !break_flag; ++row, ad0 += 4 ) {
     std_out << HexInt( (void*)ad0 ) << ": ";
     unsigned bs = row << 2;
     for( unsigned i=0; i<4; ++i ) {
@@ -549,6 +549,7 @@ int cmd_dump( int argc, const char * const * argv )
   int isAbs = arg2long_d( 3, argc, argv, 0, 0, 1 );
 
   std_out << NL "** dump: argc=" << argc << " addr=" << HexInt( (void*)addr ) << " n= " << n << NL;
+  break_flag = 0;
   dump8( addr, n, isAbs );
   return 0;
 }
@@ -570,6 +571,7 @@ int cmd_dump32( int argc, const char * const * argv )
   int isAbs = arg2long_d( 3, argc, argv, 0, 0, 1 );
 
   std_out << NL "** dump32: argc=" << argc << " addr=" << HexInt( (void*)addr ) << " n= " << n << NL;
+  break_flag = 0;
   dump32( addr, n, isAbs );
   return 0;
 }
