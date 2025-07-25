@@ -45,6 +45,7 @@ SUBDIRS = \
   37_ad7606_spi \
   38_mcp3204_adc_spi \
   40_i2c_ina228 \
+  42_spi_dac8563 \
   50_adc0 \
   50a_adcdma_soft1 \
   50xa_adc0_opamp \
