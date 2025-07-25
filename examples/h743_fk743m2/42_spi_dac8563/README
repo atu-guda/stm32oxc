@@ -1,0 +1,8 @@
+Test DAC9563 16-bit 2ch dac via SPI
+
+Used: SPI2:
+B13 = SCK
+B14 = MISO - unused
+B15 = MOSI
++B12 = Soft NSS
+
