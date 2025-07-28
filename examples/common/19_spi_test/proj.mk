@@ -21,4 +21,5 @@ USE_OXC_SPI = y
 
 
 SRCS  = main.cpp
+SRCS += oxc_spi_debug.cpp
 
