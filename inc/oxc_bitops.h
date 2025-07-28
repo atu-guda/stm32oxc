@@ -1,6 +1,7 @@
 #ifndef _OXC_BITOPS_H
 #define _OXC_BITOPS_H
 
+#include <cstdint>
 #include <concepts>
 
 inline constexpr uint32_t make_bit_mask( uint8_t start, uint8_t n )

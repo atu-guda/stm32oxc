@@ -5,6 +5,7 @@ F7  = SCK
 F8  = MISO
 F9  = MOSI
 +F6 = Soft NSS
++F0 = EXT1 - for debug
 
 To use with 595:
 SI   <- MOSI

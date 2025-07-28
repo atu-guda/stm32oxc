@@ -46,12 +46,12 @@ void DevSPI::nss_pre()
 void DevSPI::nss_post()
 {
   if( !nss_pin ) { return; };
+  delay_bad_100ns( tss_delay_100ns );
   if( inv_nss ) {
     nss_pin->reset();
   } else {
     nss_pin->set();
   }
-  delay_bad_100ns( tss_delay_100ns );
 }
 
 
