@@ -1,0 +1,1 @@
+../../common/43_ads1220_spi/main.cpp

@@ -59,6 +59,7 @@ SUBDIRS = \
   39_as5600_i2c \
   40_i2c_ina228 \
   42_spi_dac8563 \
+  43_ads1220_spi \
   41_hx711 \
   50_adc0 \
   50a_adcdma_soft1 \

@@ -44,6 +44,7 @@ SUBDIRS = \
   38_mcp3204_adc_spi \
   40_i2c_ina228 \
   42_spi_dac8563 \
+  43_ads1220_spi \
   80_math_stat \
   l10_windmash \
   l11_windmash1
