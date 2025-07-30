@@ -35,6 +35,10 @@ const CmdInfo* global_cmds[] = {
 };
 
 
+// to HW debug TODO: in_need_debug ?
+// PinOut dbg_pin( BOARD_SPI_DEFAULT_GPIO_EXT2, BOARD_SPI_DEFAULT_GPIO_PIN_EXT2 );
+// inline void dbg_on() {  dbg_pin.set(); delay_bad_100ns( 1 ); }
+// inline void dbg_of() {  dbg_pin.reset(); }
 
 PinOut nss_pin( BOARD_SPI_DEFAULT_GPIO_SNSS, BOARD_SPI_DEFAULT_GPIO_PIN_SNSS );
 SPI_HandleTypeDef spi_h;
@@ -48,7 +52,9 @@ int main(void)
   UVAR('t') = 1000;
   UVAR('n') = 1;
 
-  if( SPI_init_default( SPI_BAUDRATEPRESCALER_32 ) != HAL_OK ) {
+  // dbg_pin.initHW();
+
+  if( SPI_init_default( SPI_BAUDRATEPRESCALER_256, SPI_lmode::low_2e ) != HAL_OK ) { // low_2e ???
     die4led( 0x04 );
   }
   spi_d.initSPI();
@@ -128,7 +134,7 @@ int cmd_init( int argc, const char * const * argv )
 int cmd_dacout( int argc, const char * const * argv )
 {
   uint16_t v = arg2long_d( 1, argc, argv, 0, 0, 0xFFFF );
-  uint8_t ch = arg2long_d( 2, argc, argv, 0, 3, 3 );
+  uint8_t ch = arg2long_d( 2, argc, argv, 0, 0, 3 );
 
   std_out << NL "# out: v= " << HexInt16(v) << " ch= " << ch << NL;
 
