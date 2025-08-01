@@ -26,6 +26,7 @@ USE_OXC_MODBUS_RTU = y
 
 SRCS += main.cpp
 SRCS += oxc_namedobjs.cpp
+SRCS += oxc_namedints.cpp
 SRCS += oxc_namedfloats.cpp
 SRCS += oxc_statdata.cpp
 SRCS += oxc_hx711.cpp
