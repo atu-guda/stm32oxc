@@ -134,6 +134,8 @@ int    dlt_t    { 0 };   // ticks delta
 int    v_err     { 0 }; // error during v seaturement
 int    v_cc      { 0 }; // constant current state
 int    break_cc  { 1 }; // stop measurement in CC mode
+int    rd_addr   { 2 };  // RD6006 modbus addr
+int    n_me_f    { 40 }; // number of the force measurements
 
 #define ADD_IOBJ(x)    constexpr NamedInt   ob_##x { #x, &x }
 #define ADD_FOBJ(x)    constexpr NamedFloat ob_##x { #x, &x }
@@ -162,6 +164,8 @@ ADD_IOBJ( dlt_t );
 ADD_IOBJ( v_err );
 ADD_IOBJ( v_cc );
 ADD_IOBJ( break_cc );
+ADD_IOBJ( rd_addr );
+ADD_IOBJ( n_me_f );
 
 constexpr const NamedObj *const objs_info[] = {
   & ob_V_s,
@@ -190,6 +194,8 @@ constexpr const NamedObj *const objs_info[] = {
   & ob_v_err,
   & ob_v_cc,
   & ob_break_cc,
+  & ob_rd_addr,
+  & ob_n_me_f,
   nullptr
 };
 
@@ -222,8 +228,6 @@ int main(void)
   BOARD_PROLOG;
 
   UVAR('t') = 4000; // settle before measure
-  UVAR('u') =    2; // default MODBUS unit addr
-  UVAR('m') =   40; // default force measure count
   UVAR('n') =   20; // default main loop count
 
   UVAR('e') = MX_MODBUS_UART_Init();
@@ -238,7 +242,7 @@ int main(void)
   set_pwm_freq( freq_min, 0 );
   HAL_TIM_PWM_Start( &htim_pwm, TIM_PWM_CHANNEL );
 
-  rd.setAddr( UVAR('u') ); // default
+  rd.setAddr( rd_addr ); // default
   rd.init();
 
   print_var_hook = print_var_ex;
@@ -259,9 +263,9 @@ int cmd_test0( int argc, const char * const * argv )
 {
   int n        = arg2long_d(   1, argc, argv, UVAR('n'),  1, 10000 );
   xfloat v0    = arg2xfloat_d( 2, argc, argv,      0,     0, V_max );
-  xfloat dv    = arg2xfloat_d( 3, argc, argv, V_step,     0, 10.0f );
+  xfloat dv    = arg2xfloat_d( 3, argc, argv, V_step, -10.f, 10.0f );
   xfloat pwm0  = arg2xfloat_d( 4, argc, argv,      0,     0,  1.0f );
-  xfloat dpwm  = arg2xfloat_d( 5, argc, argv,      0,     0,  1.0f );
+  xfloat dpwm  = arg2xfloat_d( 5, argc, argv,      0, -1.0f,  1.0f );
   uint32_t t_step = UVAR('t');
 
   if( pwm0 + (n-1) * dpwm > 1.0f ) {
@@ -341,13 +345,13 @@ int cmd_test0( int argc, const char * const * argv )
 
     leds[2] = 1;
     start_measure_times();
-    measure_f( UVAR('m') );
+    measure_f( n_me_f );
     measure_VIx();
     stop_measure_times();
     leds[2] = 0;
 
     if( v_err != 0 ) {
-      std_out << "# V_set error: " << v_err << NL;
+      std_out << "# V error: " << v_err << NL;
       break;
     }
 
@@ -383,7 +387,7 @@ ReturnCode do_off()
 
 int cmd_init( int argc, const char * const * argv )
 {
-  uint8_t addr = arg2long_d( 1, argc, argv, UVAR('u'), 0, 0xFFFF );
+  uint8_t addr = arg2long_d( 1, argc, argv, rd_addr, 0, 0xFFFF );
   std_out <<  "#  init: addr=" << (int)addr  << NL;
   rd.setAddr( addr );
   auto rc = rd.init();
@@ -512,7 +516,7 @@ int cmd_setI( int argc, const char * const * argv )
 
 int cmd_measF( int argc, const char * const * argv )
 {
-  int n = arg2long_d( 1, argc, argv, UVAR('m'), 1, 10000 );
+  int n = arg2long_d( 1, argc, argv, n_me_f, 1, 10000 );
   int set_zero  = arg2long_d( 2, argc, argv, 0, 0, 1 );
   int off_after = arg2long_d( 3, argc, argv, 0, 0, 1 );
 
@@ -687,8 +691,8 @@ int cmd_writeReg( int argc, const char * const * argv )
   uint16_t reg = arg2long_d( 1, argc, argv, 0, 0, 0xFFFF );
   uint16_t val = arg2long_d( 2, argc, argv, 0, 0, 0xFFFF );
 
-  std_out <<  "# write1reg :  " << reg << ' ' << val << ' ' << UVAR('u') << NL;
-  auto rc = m_srv.writeReg( UVAR('u'), reg, val );
+  std_out <<  "# write1reg :  " << reg << ' ' << val << ' ' << rd_addr << NL;
+  auto rc = m_srv.writeReg( rd_addr, reg, val );
   std_out << "# rc " << rc << ' ' << m_srv.getError() << ' ' << m_srv.getReplError() << NL;
   return rc;
 }
@@ -698,8 +702,8 @@ int cmd_readRegs( int argc, const char * const * argv )
   uint16_t start = arg2long_d( 1, argc, argv, 0, 0, 0xFFFF );
   uint16_t n     = arg2long_d( 2, argc, argv, 1, 1, 125 );
 
-  std_out <<  "# readNRegs :  " << start << ' ' << n << ' ' << UVAR('u') << NL;
-  auto rc = m_srv.readRegs( UVAR('u'), start, n );
+  std_out <<  "# readNRegs :  " << start << ' ' << n << ' ' << rd_addr << NL;
+  auto rc = m_srv.readRegs( rd_addr, start, n );
 
   std_out << "# rc " << rc << ' ' << m_srv.getError() << ' ' << m_srv.getReplError() << NL;
 
@@ -717,11 +721,12 @@ int cmd_readReg( int argc, const char * const * argv )
 {
   uint16_t i = arg2long_d( 1, argc, argv, 0, 0, 0xFFFF );
 
-  std_out <<  "# readNReg :  " << i << UVAR('u') << NL;
-  auto v = m_srv.readGetReg( UVAR('u'), i );
+  std_out <<  "# readNReg :  " << i << rd_addr << NL;
+  auto v = m_srv.readGetReg( rd_addr, i );
 
   if( v ) {
-    std_out << "# v= "  << HexInt16(v.value()) << ' ' << v.value() << NL;
+    const auto vv = v.value();
+    std_out << "# v= "  << HexInt16(vv) << ' ' << vv << NL;
   } else {
     std_out << "# rc " << v.error() << ' ' << m_srv.getError() << ' ' << m_srv.getReplError() << NL;
   }
