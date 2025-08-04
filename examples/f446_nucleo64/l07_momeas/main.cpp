@@ -37,9 +37,9 @@ CmdInfo CMDINFO_READREGS { "read_regs", 'R', cmd_readRegs, "start n - read n reg
 int cmd_readReg( int argc, const char * const * argv );
 CmdInfo CMDINFO_READREG { "read_reg", '\0', cmd_readReg, "i - read 1 reg"  };
 int cmd_on( int argc, const char * const * argv );
-CmdInfo CMDINFO_ON { "on", '\0', cmd_on, "- set power ON"  };
+CmdInfo CMDINFO_ON { "on", '\0', cmd_on, "[meas] [off_delay] - set power ON"  };
 int cmd_off( int argc, const char * const * argv );
-CmdInfo CMDINFO_OFF { "off", '\0', cmd_off, "- set power OFF"  };
+CmdInfo CMDINFO_OFF { "off", 'X', cmd_off, "- set power OFF"  };
 int cmd_measure_VI( int argc, const char * const * argv );
 CmdInfo CMDINFO_MEASURE_VI { "measure_VI", 'M', cmd_measure_VI, "- measure V,I"  };
 int cmd_setV( int argc, const char * const * argv );
@@ -91,8 +91,8 @@ MODBUS_RTU_server m_srv( &huart_modbus );
 RD6006_Modbus rd( m_srv );
 ReturnCode do_off();
 
-xfloat freq_min { 100.0f }, freq_max { 100.0f };
 auto out_v_fmt = [](xfloat x) { return FltFmt(x, cvtff_fix,8,4); };
+auto out_x_fmt = [](xfloat x) { return FltFmt(x, cvtff_auto,12,7); };
 
 constexpr auto hx_mode = HX711::HX711_mode::mode_A_x128;
 HX711 hx711( HX711_SCK_GPIO, HX711_SCK_PIN, HX711_DAT_GPIO, HX711_DAT_PIN );
@@ -118,17 +118,22 @@ xfloat V_max { 12.0f };   // max voltage - for fail-safe
 xfloat V_step { 0.2f };   // default V step
 xfloat V_eff  { 0.0f };   // current effective voltage
 xfloat pwm_c { 0 };       // current pwm
+xfloat freq_min { 100.0f };//
+xfloat freq_max { 100.0f };
+xfloat freq { 0 };        // current freq
 xfloat t2p_1 { 11 }; // 11 (???) pulses/turn for Hall sensor
 xfloat t2p_2 { 20 }; // 20       pulses/turn for Opto sensor
 xfloat nu_1 { 0 };   // measured rps by Hall sensor
 xfloat nu_2 { 0 };   // measured rps by Opto sensor
+xfloat force_neg_tr { -1.0e-3f };   // nagative force theshold
+int    t_post { 1000 };  // time to wait after V set before measure
 int    cnt_1  { 0 };  // first counter
 int    cnt_2  { 0 };  // second counter
 int    tick_0 { 0 };  // start tick
 int    dlt_t    { 0 };   // ticks delta
 int    v_err     { 0 }; // error during v seaturement
 int    v_cc      { 0 }; // constant current state
-int    pos_force { 1 }; // zero small nagative force
+int    break_cc  { 1 }; // stop measurement in CC mode
 
 #define ADD_IOBJ(x)    constexpr NamedInt   ob_##x { #x, &x }
 #define ADD_FOBJ(x)    constexpr NamedFloat ob_##x { #x, &x }
@@ -145,15 +150,18 @@ ADD_FOBJ( t2p_1 );
 ADD_FOBJ( t2p_2 );
 ADD_FOBJ( nu_1 );
 ADD_FOBJ( nu_2 );
+ADD_FOBJ( freq );
 ADD_FOBJ( freq_min );
 ADD_FOBJ( freq_max );
+ADD_FOBJ( force_neg_tr );
+ADD_IOBJ( t_post );
 ADD_IOBJ( cnt_1 );
 ADD_IOBJ( cnt_2 );
 ADD_IOBJ( tick_0 );
 ADD_IOBJ( dlt_t );
 ADD_IOBJ( v_err );
 ADD_IOBJ( v_cc );
-ADD_IOBJ( pos_force );
+ADD_IOBJ( break_cc );
 
 constexpr const NamedObj *const objs_info[] = {
   & ob_V_s,
@@ -169,15 +177,19 @@ constexpr const NamedObj *const objs_info[] = {
   & ob_t2p_2,
   & ob_nu_1,
   & ob_nu_2,
+  & ob_freq,
   & ob_freq_min,
   & ob_freq_max,
+  & ob_force_neg_tr,
+
+  & ob_t_post,
   & ob_cnt_1,
   & ob_cnt_2,
   & ob_tick_0,
   & ob_dlt_t,
   & ob_v_err,
   & ob_v_cc,
-  & ob_pos_force,
+  & ob_break_cc,
   nullptr
 };
 
@@ -210,12 +222,9 @@ int main(void)
   BOARD_PROLOG;
 
   UVAR('t') = 4000; // settle before measure
-  UVAR('l') =    1; // break measurement if CC mode
   UVAR('u') =    2; // default MODBUS unit addr
   UVAR('m') =   40; // default force measure count
   UVAR('n') =   20; // default main loop count
-  UVAR('v') =  1000; // voltage step
-  UVAR('w') =  4000; // current voltage in steps - 'v'
 
   UVAR('e') = MX_MODBUS_UART_Init();
 
@@ -285,9 +294,9 @@ int cmd_test0( int argc, const char * const * argv )
   hx711.read( hx_mode ); // to init for next measurement
 
   break_flag = 0;
-  auto freq = freq_min;
+  auto freq_c = freq_min;
   auto pwm = pwm0;
-  set_pwm_freq( freq, pwm );
+  set_pwm_freq( freq_c, pwm );
   auto v_set = v0;
   if( set_V( v_set ) != rcOk ) {
     std_out << "# Error: fail to set V" << NL;
@@ -295,9 +304,9 @@ int cmd_test0( int argc, const char * const * argv )
   };
   rd.on();
   std_out << "# preheat: " << freq << ' ' << pwm << ' ' << v_set << NL;
-  // TODO: fix order!
-  std_out << "#   1        2        3        4      5         6         7        8       9       10    11 12 13 14" NL;
-  std_out << "# V_set    V_out    V_eff    I_out   pwm      freq        F        nF     rps      dt    cnt cc e i" NL;
+  std_out << "#   1        2        3        4      5      6     7         8           9          10     11    12      13           14"  NL;
+  std_out << "#  V_s      V_m      V_eff    I_m    vcc    ve    pwm        F          freq        dt  cnt_1 cnt_2      nu_1        nu_2" NL;
+  //         "  00.0000  00.0000  00.0000  00.0010   1     0  01.0000  000.0004070  000100.0000  3779     0     0  000.0000000  000.0000000"
   delay_ms_brk( t_step );
 
   bool need_v_change   = fabsxf( dv )   > 1e-4f;
@@ -317,8 +326,8 @@ int cmd_test0( int argc, const char * const * argv )
     }
 
     if( do_change_freq ) {
-      freq = freq_min * expxf( i * k_freq );
-      set_pwm_freq( freq, pwm );
+      freq_c = freq_min * expxf( i * k_freq );
+      set_pwm_freq( freq_c, pwm );
     } else if( need_pwm_change ) {
       set_pwm( pwm );
     }
@@ -338,21 +347,20 @@ int cmd_test0( int argc, const char * const * argv )
     leds[2] = 0;
 
     if( v_err != 0 ) {
-      std_out << "# MODBUS readMain error: " << v_err << NL;
+      std_out << "# V_set error: " << v_err << NL;
       break;
     }
 
     xfloat force = st_f.mean;
-    if( force < 0 && force > -1.0e-3f && pos_force ) { // TODO: more config
+    if( force < 0 && force > force_neg_tr ) {
       force = 0;
     }
 
     out_vi( 0 );
-    std_out << ' ' << out_v_fmt(V_eff) << ' ' << out_v_fmt(pwm) << ' ' << FmtInt(freq,6) << ' '
-      << force << ' '  << FmtInt(st_f.n,3);
+    std_out << ' ' << out_v_fmt(pwm) << ' ' << out_x_fmt(force);
     out_times( 2 );
 
-    if( v_err || ( v_cc && UVAR('l') && V_s > 0.08f ) ) { // 80 is near minimal v/o fake CC
+    if( v_err || ( v_cc && break_cc && V_s > 0.08f ) ) { // 80 mV is near minimal v/o fake CC
       leds[0] = 1;
       break;
     }
@@ -386,8 +394,24 @@ int cmd_init( int argc, const char * const * argv )
 
 int cmd_on( int argc, const char * const * argv )
 {
+  int meas  = arg2long_d( 1, argc, argv, 0, 0, 60000 ); // measure flag + time
+  int t_off = arg2long_d( 2, argc, argv, 0, 0, 60000 ); // time in ms to off, 0 - no off
   auto rc = rd.on();
   std_out << "# ON.  rc= " << rc << NL;
+
+  if( meas ) {
+    delay_ms_brk( t_post );
+    measure_Nu( meas );
+    measure_VIx();
+    out_vi( 1 );
+    out_times( 2 );
+  }
+
+  if( t_off > 0 ) {
+    delay_ms_brk( t_off );
+    rd.off();
+    std_out << "# OFF. " NL;
+  }
   return 0;
 }
 
@@ -400,11 +424,12 @@ int cmd_off( int argc, const char * const * argv )
 
 ReturnCode set_V( xfloat v )
 {
-  uint32_t Vi = v / RD6006_V_scale;
+  v = std::clamp( v, 0.0f, V_max );
+  uint32_t Vi = ( v + RD6006_V_scale/2 ) / RD6006_V_scale;
   auto rc = rd.setV( Vi );
   if( rc == rcOk ) {
     V_s = v;
-    V_eff = V_s * pwm_c;
+    V_eff = V_s * pwm_c; // fake! need to remeasure V_m, but not now
   }
   return rc;
 }
@@ -428,7 +453,7 @@ int measure_VIx()
   V_m = Vi * RD6006_V_scale;
   uint32_t Ii = rd.getI_100uA();
   I_m = Ii * RD6006_I_scale;
-  V_eff = V_s * pwm_c;
+  V_eff = V_m * pwm_c;
   return 1;
 }
 
@@ -452,7 +477,7 @@ void out_vi( int se )
           << ' ' << out_v_fmt(V_m)
           << ' ' << out_v_fmt(V_eff)
           << ' ' << out_v_fmt(I_m)
-          << ' ' << v_cc << ' ' << v_err;
+          << ' ' << FmtInt(v_cc,3) << "   " << FmtInt(v_err,3);
   if( se & 2 ) {
     std_out << NL;
   }
@@ -460,10 +485,9 @@ void out_vi( int se )
 
 int cmd_setV( int argc, const char * const * argv )
 {
-  xfloat V = arg2xfloat_d( 1, argc, argv, 0, 0, 60.0f );
+  xfloat V = arg2xfloat_d( 1, argc, argv, 0, 0, V_max );
   int     me = arg2long_d( 2, argc, argv, 0, 0, 1 );
-  auto Vi = V / RD6006_V_scale;
-  auto rc = rd.setV( Vi );
+  auto rc = set_V( V );
   std_out << "# setV " << V << ' ' << rc << NL;
   V_s = V;
   if( me ) {
@@ -530,9 +554,12 @@ int cmd_measure_Nu( int argc, const char * const * argv )
   int dly = arg2long_d( 1, argc, argv, 2000, 1, 100000 );
 
   measure_Nu( dly );
-  out_times( 3 );
+  measure_VIx();
+  out_vi( 1 );
+  out_times( 2 );
   return 0;
 }
+
 
 int start_measure_times()
 {
@@ -547,13 +574,13 @@ int stop_measure_times()
   cnt_1 = TIM_CNT->CNT;
   cnt_2 = TIM_CNT2->CNT;
 
-  const auto dt = t1 - tick_0;
-  const xfloat den1 = dt * t2p_1;
-  const xfloat den2 = dt * t2p_2;
+  dlt_t = t1 - tick_0;
+  const xfloat den1 = dlt_t * t2p_1;
+  const xfloat den2 = dlt_t * t2p_2;
   nu_1 = ( den1 != 0 ) ? ( 1.0e+3f * cnt_1 / den1 ) : 0;
   nu_2 = ( den2 != 0 ) ? ( 1.0e+3f * cnt_2 / den2 ) : 0;
 
-  return dt;
+  return dlt_t;
 }
 
 void out_times( int se )
@@ -561,8 +588,12 @@ void out_times( int se )
   if( se & 1 ) {
     std_out << "# times: ";
   };
-  std_out << ' ' << dlt_t << ' ' << cnt_1  << ' ' << cnt_2
-          << ' '  << nu_1 << ' '  << nu_2 << ' ';
+  std_out << ' ' << FltFmt(freq, cvtff_auto,12,4)
+          << ' ' << FmtInt( dlt_t, 5 )
+          << ' ' << FmtInt( cnt_1, 5 )
+          << ' ' << FmtInt( cnt_2, 5 )
+          << ' ' << out_x_fmt( nu_1 )
+          << ' ' << out_x_fmt( nu_2 ) << ' ';
   if( se & 2 ) {
     std_out << NL;
   };
@@ -589,7 +620,7 @@ int cmd_freq( int argc, const char * const * argv )
 {
   uint32_t f = arg2xfloat_d( 1, argc, argv, 100, 10, 200000 );
   set_pwm_freq( f, pwm_c );
-  std_out << "# freq: " << f << NL;
+  std_out << "# freq: " << freq << NL;
   return 0;
 }
 
@@ -626,14 +657,15 @@ void set_pwm_freq( xfloat f, xfloat p )
   if( old_arr < 1 ) { old_arr = 1; }
   auto arr = calc_TIM_arr_for_base_freq_xfloat( TIM_PWM, f );
   TIM_PWM->ARR = arr;
+  freq = f;
   set_pwm( p );
   TIM_PWM->CNT = 0;
 }
 
 uint32_t calc_TIM_arr_for_base_freq_xfloat( TIM_TypeDef *tim, xfloat base_freq )
 {
-  uint32_t freq = get_TIM_cnt_freq( tim ); // cnf_freq
-  uint32_t arr = uint32_t( freq / base_freq - 1 );
+  uint32_t cnt_freq = get_TIM_cnt_freq( tim );
+  uint32_t arr = uint32_t( cnt_freq / base_freq - 1 );
   return arr;
 }
 
