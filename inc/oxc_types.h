@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-// types and deines for both C and C++
+// types and defines for C-compatible part
 
 #define UNUSED_ARG __attribute__((unused))
 

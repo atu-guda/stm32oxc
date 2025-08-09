@@ -1,11 +1,21 @@
 H7 - more init MPU? = aux fun for all others?
+H7 - check delays
+namespace oxc
+Types for BitPos and BitField
+Returns std::expected / optional?
+Several CmdInfo Arrays + adjusted aliases
+Combine DevIn + DevOut? + add flags
+  { DevOut_FatFS : public DevOut, OutStr: public DevOut }
+Check strings in stack: std::inplace_vector<*> -- still not exsist
+  or std:array + span to send as params (SmallString replacement or data holder)
+DEVIO_MAX - define
+
 RD6006 - retry loop and params
 UsartIO - only one ptr hold
 Events in main loop
 Better split main loop/irq/idle
 07b - all arches (need keyboard) - rework with events?
 Modbus client
-Modbus server
 
 Check MMU init in H7
 test SDcard in blue H7
