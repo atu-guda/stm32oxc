@@ -8,7 +8,7 @@ Combine DevIn + DevOut? + add flags
   { DevOut_FatFS : public DevOut, OutStr: public DevOut }
 Check strings in stack: std::inplace_vector<*> -- still not exsist
   or std:array + span to send as params (SmallString replacement or data holder)
-DEVIO_MAX - define
+Lambda to disable/enable interrupts
 
 RD6006 - retry loop and params
 UsartIO - only one ptr hold

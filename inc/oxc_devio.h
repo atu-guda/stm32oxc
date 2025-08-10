@@ -4,7 +4,10 @@
 #include <oxc_ringbuf.h>
 #include <oxc_io.h>
 
-const int DEVIO_MAX = 16;      //* Maximum number of devios
+#ifndef DEVIO_MAX
+  //* Maximum number of devios
+  #define DEVIO_MAX 8
+#endif
 
 class DevIO : public DevOut, public DevIn {
   public:

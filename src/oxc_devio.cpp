@@ -68,7 +68,7 @@ int DevIO::write( const char *s, int l )
 
 Chst DevIO::tryGet_irqdis()
 {
-  bool was_irqs_enabled = ( __get_PRIMASK() == 0 );
+  bool was_irqs_enabled = ( __get_PRIMASK() == 0 ); // BUG: bad, but I dont know good solution
   oxc_disable_interrupts();
   auto rv = ibuf.get_nolock();
   if( was_irqs_enabled ) {
