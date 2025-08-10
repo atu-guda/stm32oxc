@@ -134,7 +134,7 @@ void wakeFromIRQ( long wake )
 
 uint32_t delay_calibrate_value = 200 * 16; // for initial 16 MHz
 
-// fallback values
+// fallback values, default - in board_cfg.h
 #ifndef DELAY_APPROX_COEFF
   #if   defined (STM32F0)
     #define DELAY_APPROX_COEFF 9060
@@ -146,6 +146,10 @@ uint32_t delay_calibrate_value = 200 * 16; // for initial 16 MHz
     #define DELAY_APPROX_COEFF 5010
   #elif defined (STM32F7)
     #define DELAY_APPROX_COEFF 2000
+  #elif defined (STM32H7)
+    #define DELAY_APPROX_COEFF 2004
+  #else
+    #warning "Undefined DELAY_APPROX_COEFF"
   #endif
 #endif
 

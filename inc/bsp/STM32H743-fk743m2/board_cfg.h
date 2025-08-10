@@ -8,7 +8,7 @@
 
 #define def_stksz 512
 
-#define DELAY_APPROX_COEFF  2000
+#define DELAY_APPROX_COEFF  2004
 
 
 // default LEDS is F6:F9

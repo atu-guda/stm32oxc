@@ -1,6 +1,7 @@
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
+#include <cstdlib>
+#include <cstring>
+#include <cerrno>
+#include <algorithm>
 
 #if defined(USE_FREERTOS)  &&  ( USE_FREERTOS != 0 )
 #include <FreeRTOS.h>
@@ -222,10 +223,27 @@ void print_user_var( int idx )
 
 void test_delays_misc( int n, uint32_t t_step, int tp )
 {
-  delay_ms( 20 );
+  static const char *const f_nm[] {
+      "delay_ms"             , // 0
+      "delay_ms_brk"         , // 1
+      "delay_ms_until_brk"   , // 2
+      "HAL_Delay"            , // 3
+      "delay_ms_until_brk_ex", // 4
+      "delay_bad_ms"         , // 5
+      "?6"                   , // 6
+      "?7"                   , // 7
+      "?8"                   , // 8
+      "delay_ms-noirq"       , // 9
+      "?a"                     // 10
+  };
+  delay_ms( 10 );
+  tp = std::clamp( tp, 0, int(std::size(f_nm)-1) );
+
   uint32_t tm0 = HAL_GetTick();
 
   TickType tc0 = GET_OS_TICK(), tc00 = tc0;
+
+  std_out << "#i t_os t_hal dt_os_hal dt_hal " << f_nm[tp] << NL;
 
   uint32_t tmc_prev = tc0;
   break_flag = 0;

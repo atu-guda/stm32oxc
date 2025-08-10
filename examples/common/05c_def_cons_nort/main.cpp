@@ -23,6 +23,8 @@ int cmd_test_val( int argc, const char * const * argv );
 const CmdInfo CMDINFO_TEST_VAL { "test_val", 'v', cmd_test_val, "[arg ] - test arg2long* converter"  };
 int cmd_test_mdelay( int argc, const char * const * argv );
 const CmdInfo CMDINFO_TEST_MDELAY { "test_mdelay", 'X', cmd_test_mdelay, "[v] - test main loop delay"  };
+int cmd_delay_calibrate( int argc, const char * const * argv );
+const CmdInfo CMDINFO_DELAY_CALIBRATE { "delay_calibrate", 'D', cmd_delay_calibrate, " - calibrate dumb delay"  };
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -31,6 +33,7 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_TEST_RATE,
   &CMDINFO_TEST_VAL,
   &CMDINFO_TEST_MDELAY,
+  &CMDINFO_DELAY_CALIBRATE,
   nullptr
 };
 
@@ -59,6 +62,11 @@ int main(void)
   return 0;
 }
 
+// used
+// void test_delays_misc( int n, uint32_t t_step, int tp );
+// void test_output_rate( int n, int sl, int do_flush );
+// from ../../../src/oxc_debug1.cpp
+
 int cmd_test_val( int argc, const char * const * argv )
 {
   int v0 = arg2long_d( 1, argc, argv,  UVAR('v'), INT_MIN, INT_MAX );
@@ -75,6 +83,13 @@ int cmd_test_mdelay( int argc, const char * const * argv )
   return 0;
 }
 
+int cmd_delay_calibrate( int argc, const char * const * argv )
+{
+  std_out << "# old delay_calibrate_value:" << delay_calibrate_value << NL;
+  do_delay_calibrate();
+  std_out << "# new delay_calibrate_value:" << delay_calibrate_value << NL;
+  return 0;
+}
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

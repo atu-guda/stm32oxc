@@ -50,13 +50,13 @@ inline int sign( int x ) { return (x>0) ? 1 : ( (x<0) ? -1: 0 ) ; }
 inline int imin( int a, int b  ) { return (a<b) ? a : b; }
 inline int imax( int a, int b  ) { return (a>b) ? a : b; }
 
-// converts given arg to int, with check and limits
+// converts given arg to int, with check and limits, =< => %proc
 bool arg2long( int narg, int argc, const char * const * argv, long *v,
                long vmin= INT32_MIN, long vmax = INT32_MAX );
 // the same with default value
 long arg2long_d( int narg, int argc, const char * const * argv, long def,
                  long vmin = INT32_MIN, long vmax = INT32_MAX );
-// TODO: callback for parameter parsing
+// TODO: callback for parameter parsing: default $a .. $z
 __weak int* int_val_ptr( const char *s  );
 
  // swap bytes in 16-bits
