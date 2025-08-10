@@ -33,6 +33,7 @@ extern uint32_t delay_calibrate_value;
 extern volatile int task_leds_step; // initial = 50
 
 
+
 #ifdef __cplusplus
  extern "C" {
 #endif
@@ -139,6 +140,24 @@ void oxc_call_aux_tick_funcs(void);
     #define OXC_DEFAULT_UART_PRTY 5
   #endif
 #endif
+
+template <typename F, typename... Args > auto at_disabled_irq( F fun, Args&&... args )
+{
+  bool was_irqs_enabled = ( __get_PRIMASK() == 0 );
+  oxc_disable_interrupts();
+  if constexpr( std::is_void_v<decltype( fun(std::forward<Args>(args)...) )>) {
+    fun( std::forward<Args>(args)... );
+    if( was_irqs_enabled ) {
+      oxc_enable_interrupts();
+    }
+  } else {
+    auto res = fun( std::forward<Args>(args)... );
+    if( was_irqs_enabled ) {
+      oxc_enable_interrupts();
+    }
+    return res;
+  }
+}
 
 #endif
 

@@ -267,7 +267,7 @@ void test_delays_misc( int n, uint32_t t_step, int tp )
       case 3:  HAL_Delay( t_step );                break;
       case 4:  delay_ms_until_brk_ex( nullptr, t_step, false ); break;
       case 5:  delay_bad_ms( t_step ); break;
-      case 9:  oxc_disable_interrupts(); delay_ms( t_step ); oxc_enable_interrupts();  break;
+      case 9:  at_disabled_irq( [t_step](){ delay_ms( t_step ); } );  break;
       default: break; // no delay ;-)
     }
 

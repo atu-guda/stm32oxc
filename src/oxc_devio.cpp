@@ -68,13 +68,7 @@ int DevIO::write( const char *s, int l )
 
 Chst DevIO::tryGet_irqdis()
 {
-  bool was_irqs_enabled = ( __get_PRIMASK() == 0 ); // BUG: bad, but I dont know good solution
-  oxc_disable_interrupts();
-  auto rv = ibuf.get_nolock();
-  if( was_irqs_enabled ) {
-    oxc_enable_interrupts();
-  }
-  return rv;
+  return at_disabled_irq( [this](){ return ibuf.get_nolock(); } );
 }
 
 
@@ -110,12 +104,7 @@ void DevIO::on_tick_action_rx() // really a fallback, may be called from IRQ!
   }
 
   // crude, but we may not know correct IRQ
-  bool was_irqs_enabled = ( __get_PRIMASK() == 0 );
-  oxc_disable_interrupts();
-  auto v = ibuf.get_nolock();
-  if( was_irqs_enabled ) {
-    oxc_enable_interrupts();
-  }
+  auto v = at_disabled_irq( [this](){ return ibuf.get_nolock(); } );
 
   if( v.good() ) {
     onRecv( &v.c, 1 );
