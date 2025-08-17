@@ -2,9 +2,12 @@ H7 - more init MPU? = aux fun for all others?
 H5 - check delays + DELAY_APPROX_COEFF
 namespace oxc
 Types for BitPos and BitField
+Pair port/pin for init
 Returns std::expected / optional?
-Several CmdInfo Arrays + adjusted aliases
-Combine DevIn + DevOut? + add flags
+More ReturnCode usage/expected
+CmdInfo macro
+Several CmdInfo Arrays + adjusted aliases + search: compile time hash?
+Combine DevIn + DevOut? + add flags ? optional buffers?
   { DevOut_FatFS : public DevOut, OutStr: public DevOut }
 Check strings in stack: std::inplace_vector<*> -- still not exsist
   or std:array + span to send as params (SmallString replacement or data holder)
@@ -14,6 +17,7 @@ UsartIO - only one ptr hold
 Events in main loop
 Better split main loop/irq/idle
 07b - all arches (need keyboard) - rework with events?
+Make common: 60, 61, 62 + config
 Modbus client
 
 Check MMU init in H7
@@ -22,7 +26,6 @@ type info and NamedObj rework
 file (DevIO flags)
 oxc_gpio.cpp : split f1/other
 gpio: init by list
-More ReturnCode usage
 Bug: adcdma_n: limit output to n
 ADC_Info: more common / split
 F7 DMA:
