@@ -1,0 +1,5 @@
+Try to decode LD20 lidar data
+USART6 in receive mode
+TX: U6 G14 UNUSED
+RX: U6 G9
+230400 bod - fast - DMA used
