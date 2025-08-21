@@ -37,7 +37,7 @@
 
 #define STD_PROLOG_UART \
   STD_PROLOG_UART_NOCON; \
-  global_smallrl = &srl; \
+  SMLRL::global_smallrl = &srl; \
   SET_UART_AS_STDIO( dev_console ); \
   std_out.setOut( devio_fds[1] );
 
@@ -48,7 +48,7 @@
     die4led( 1 ); \
   } \
   leds.write( BOARD_LEDS_ALL );  HAL_Delay( PROLOG_LED_TIME ); \
-  global_smallrl = &srl; \
+  SMLRL::global_smallrl = &srl; \
   SET_USBCDC_AS_STDIO( dev_console ); \
   std_out.setOut( devio_fds[1] );
 

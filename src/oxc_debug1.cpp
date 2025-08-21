@@ -103,11 +103,11 @@ void dump8( const void *addr, unsigned n, bool isAbs  )
     }
 
     std_out << "|  ";
-    char b;
     for( unsigned i=0; i<16 && (i+bs)<n; ++i ) {
-      b = '.';
-      if( ad[i+bs] >= ' ' ) {
-        b = ad[i+bs];
+      char b = '.';
+      char c = ad[i+bs];
+      if( c >= ' ' && c < '\x7F' ) {
+        b = c;
       }
       std_out.append( b );
       if( (i&3) == 3 ) {

@@ -84,7 +84,7 @@ class UsartIO : public DevIO {
   UART_HandleTypeDef uah_console; \
   UsartIO dev_console( &uah_console, dev ); \
   STD_ ## dev ## _IRQ( dev_console );  \
-  SmallRL srl( smallrl_exec ); \
+  SMLRL::SmallRL srl( smallrl_exec ); \
   STD_POST_EXEC;
 
 //    STD_ ## dev ## _SEND_TASK( dev_console ); // --

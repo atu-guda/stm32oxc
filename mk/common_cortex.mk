@@ -210,6 +210,15 @@ ifeq "$(USE_OXC_CONSOLE_UART)" "y"
   ALLFLAGS += -DUSE_OXC_CONSOLE_UART
 endif
 
+ifeq "$(USE_OXC_UART_EX)" "y"
+  UART_EXT_FILE = $(STM32_HAL_FW_DIR)/Drivers/STM32$(MCSUFF_U)xx_HAL_Driver/Src/stm32$(MCSUFF)xx_hal_uart_ex.c
+  ifeq "$(wildcard $(UART_EXT_FILE))" "$(UART_EXT_FILE)"
+    SRCS += stm32$(MCSUFF)xx_hal_uart_ex.c
+    USE_OXC_UART = y
+    ALLFLAGS += -DUSE_OXC_UART_EX
+  endif
+endif
+
 ifeq "$(USE_OXC_UART)" "y"
   # $(info "Used UART" $(NOUSE_DEFAULT_UART_INIT) z )
   SRCS += stm32$(MCSUFF)xx_hal_uart.c

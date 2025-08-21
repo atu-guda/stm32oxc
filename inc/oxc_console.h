@@ -96,10 +96,15 @@ struct CmdInfo
 };
 extern const CmdInfo* global_cmds[];
 
+#define DCL_CMD(basename, acro, helpstr ) \
+  int cmd_##basename( int argc, const char * const * argv ); \
+  CmdInfo CMDINFO_##basename { #basename, acro, cmd_##basename, helpstr };
+
 extern int console_verbose;
 volatile extern int on_cmd_handler;
 
 
+// TODO: replace with modern
 inline int pr_c( char c, int fd = 1 ) { return prl( &c, 1, fd ); }
 int pr_d( int d, int fd = 1 );
 int pr_h( uint32_t d, int fd = 1 );

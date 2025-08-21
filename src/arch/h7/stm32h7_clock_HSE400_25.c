@@ -61,33 +61,38 @@ int SystemClockCfg(void)
 
   static const RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {
     .PeriphClockSelection =
-        RCC_PERIPHCLK_USART1 | RCC_PERIPHCLK_RNG  | RCC_PERIPHCLK_SPI2
+        RCC_PERIPHCLK_USART1 | RCC_PERIPHCLK_USART2 | RCC_PERIPHCLK_UART4 | RCC_PERIPHCLK_USART6
+      | RCC_PERIPHCLK_HRTIM1
+      | RCC_PERIPHCLK_RNG    | RCC_PERIPHCLK_SPI2 | RCC_PERIPHCLK_QSPI
       | RCC_PERIPHCLK_SDMMC  | RCC_PERIPHCLK_ADC
       | RCC_PERIPHCLK_I2C1   | RCC_PERIPHCLK_I2C4 | RCC_PERIPHCLK_USB
       | RCC_PERIPHCLK_FMC,
-    .PLL2.PLL2M            = 5,
-    .PLL2.PLL2N            = 80,
-    .PLL2.PLL2P            = 8,
-    .PLL2.PLL2Q            = 2,
-    .PLL2.PLL2R            = 2,
-    .PLL2.PLL2RGE          = RCC_PLL2VCIRANGE_2,
-    .PLL2.PLL2VCOSEL       = RCC_PLL2VCOWIDE,
-    .PLL2.PLL2FRACN        = 0,
-    .PLL3.PLL3M            = 5,
-    .PLL3.PLL3N            = 96,
-    .PLL3.PLL3P            = 2,
-    .PLL3.PLL3Q            = 10,
-    .PLL3.PLL3R            = 5,
-    .PLL3.PLL3RGE          = RCC_PLL3VCIRANGE_2,
-    .PLL3.PLL3VCOSEL       = RCC_PLL3VCOWIDE,
-    .PLL3.PLL3FRACN        = 0,
-    .FmcClockSelection     = RCC_FMCCLKSOURCE_PLL,
-    .SdmmcClockSelection   = RCC_SDMMCCLKSOURCE_PLL,
-    .Spi123ClockSelection  = RCC_SPI123CLKSOURCE_PLL2,
-    .Usart16ClockSelection = RCC_USART16CLKSOURCE_D2PCLK2,
-    .I2c123ClockSelection  = RCC_I2C123CLKSOURCE_D2PCLK1,
-    .UsbClockSelection     = RCC_USBCLKSOURCE_PLL3,
-    .AdcClockSelection     = RCC_ADCCLKSOURCE_PLL3
+    .PLL2.PLL2M                = 5,
+    .PLL2.PLL2N                = 80,
+    .PLL2.PLL2P                = 8,
+    .PLL2.PLL2Q                = 2,
+    .PLL2.PLL2R                = 2,
+    .PLL2.PLL2RGE              = RCC_PLL2VCIRANGE_2,
+    .PLL2.PLL2VCOSEL           = RCC_PLL2VCOWIDE,
+    .PLL2.PLL2FRACN            = 0,
+    .PLL3.PLL3M                = 5,
+    .PLL3.PLL3N                = 96,
+    .PLL3.PLL3P                = 2,
+    .PLL3.PLL3Q                = 10,
+    .PLL3.PLL3R                = 5,
+    .PLL3.PLL3RGE              = RCC_PLL3VCIRANGE_2,
+    .PLL3.PLL3VCOSEL           = RCC_PLL3VCOWIDE,
+    .PLL3.PLL3FRACN            = 0,
+    .FmcClockSelection         = RCC_FMCCLKSOURCE_PLL,
+    .Hrtim1ClockSelection      = RCC_HRTIM1CLK_TIMCLK,
+    .SdmmcClockSelection       = RCC_SDMMCCLKSOURCE_PLL,
+    .Spi123ClockSelection      = RCC_SPI123CLKSOURCE_PLL2,
+    .QspiClockSelection        = RCC_QSPICLKSOURCE_D1HCLK,
+    .Usart16ClockSelection     = RCC_USART16CLKSOURCE_D2PCLK2,
+    .Usart234578ClockSelection = RCC_USART234578CLKSOURCE_D2PCLK1,
+    .I2c123ClockSelection      = RCC_I2C123CLKSOURCE_D2PCLK1,
+    .UsbClockSelection         = RCC_USBCLKSOURCE_PLL3,
+    .AdcClockSelection         = RCC_ADCCLKSOURCE_PLL3
   };
   if( HAL_RCCEx_PeriphCLKConfig( (RCC_PeriphCLKInitTypeDef*)(&PeriphClkInitStruct) ) != HAL_OK ) {
     errno = 1007;

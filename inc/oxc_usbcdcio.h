@@ -58,7 +58,7 @@ class UsbcdcIO : public DevIO {
 
 #define USBCDC_CONSOLE_DEFINES \
   UsbcdcIO dev_console; \
-  SmallRL srl( smallrl_exec ); \
+  SMLRL::SmallRL srl( smallrl_exec ); \
   STD_POST_EXEC;
 
 #define SET_USBCDC_AS_STDIO(dev_console) \

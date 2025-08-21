@@ -1,6 +1,11 @@
 #ifndef _OXC_BASE_H
 #define _OXC_BASE_H
 
+#ifdef __cplusplus
+  #include <type_traits>
+  #include <utility>
+#endif
+
 #include <oxc_archdef.h>
 
 #if REQ_MCBASE != MCBASE

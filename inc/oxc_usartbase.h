@@ -9,23 +9,34 @@
   #define USE_HAL_USART_REGISTER_CALLBACKS 0
 #endif
 
+// not all arches have _ex files
 #if defined (STM32F0)
+ #include <stm32f0xx_hal_uart.h>
  #include <stm32f0xx_hal_usart.h>
+ #ifdef USE_OXC_UART_EX
+   #include <stm32f0xx_hal_uart_ex.h>
+ #endif
  #define USART_TX_REG TDR
  #define USART_RX_REG RDR
  #define USART_SR_REG ISR
 #elif defined (STM32F1)
+ #include <stm32f1xx_hal_uart.h>
  #include <stm32f1xx_hal_usart.h>
  #define USART_TX_REG DR
  #define USART_RX_REG DR
  #define USART_SR_REG SR
 #elif defined (STM32F2)
+ #include <stm32f2xx_hal_uart.h>
  #include <stm32f2xx_hal_usart.h>
  #define USART_TX_REG DR
  #define USART_RX_REG DR
  #define USART_SR_REG SR
 #elif defined (STM32F3)
+ #include <stm32f3xx_hal_uart.h>
  #include <stm32f3xx_hal_usart.h>
+ #ifdef USE_OXC_UART_EX
+   #include <stm32f3xx_hal_uart_ex.h>
+ #endif
  #define USART_TX_REG TDR
  #define USART_RX_REG RDR
  #define USART_SR_REG ISR
@@ -36,22 +47,38 @@
  #define USART_RX_REG DR
  #define USART_SR_REG SR
 #elif defined(STM32F7)
+ #include <stm32f7xx_hal_uart.h>
  #include <stm32f7xx_hal_usart.h>
+ #ifdef USE_OXC_UART_EX
+   #include <stm32f7xx_hal_uart_ex.h>
+ #endif
  #define USART_TX_REG TDR
  #define USART_RX_REG RDR
  #define USART_SR_REG ISR
 #elif defined(STM32H5)
+ #include <stm32h5xx_hal_uart.h>
  #include <stm32h5xx_hal_usart.h>
+ #ifdef USE_OXC_UART_EX
+   #include <stm32h5xx_hal_uart_ex.h>
+ #endif
  #define USART_TX_REG TDR
  #define USART_RX_REG RDR
  #define USART_SR_REG ISR
 #elif defined(STM32H7)
+ #include <stm32h7xx_hal_uart.h>
  #include <stm32h7xx_hal_usart.h>
+ #ifdef USE_OXC_UART_EX
+   #include <stm32h7xx_hal_uart_ex.h>
+ #endif
  #define USART_TX_REG TDR
  #define USART_RX_REG RDR
  #define USART_SR_REG ISR
 #elif defined(STM32G4)
+ #include <stm32g4xx_hal_uart.h>
  #include <stm32g4xx_hal_usart.h>
+ #ifdef USE_OXC_UART_EX
+   #include <stm32g4xx_hal_uart_ex.h>
+ #endif
  #define USART_TX_REG TDR
  #define USART_RX_REG RDR
  #define USART_SR_REG ISR
