@@ -1,3 +1,4 @@
+#include <array>
 #include <cstring>
 #include <cmath>
 
@@ -17,11 +18,12 @@ const char* common_help_string = "Appication to decode LD20 lidar data via UART"
 
 
 // --- local commands;
-DCL_CMD( test0, 'T',   " - test data" );
-DCL_CMD( abort, 'A',   " - Abort tranfer" );
-DCL_CMD( udump, 'U',   " - UART dump" );
-DCL_CMD( uread, '\0',  " - try to read w/o DMA" );
-DCL_CMD( usend, 'Z',   " - try to send" );
+DCL_CMD( test0,  'T',   " - test data" );
+DCL_CMD( abort,  'A',   " - Abort tranfer" );
+DCL_CMD( udump,  'U',   " - UART dump" );
+DCL_CMD( uread,  '\0',  " - try to read w/o DMA" );
+DCL_CMD( usend,  'Z',   " - try to send (debug)" );
+DCL_CMD( pr_sz,  '\0',  " - print and reset sizes (debug)" );
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -31,6 +33,7 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_udump,
   &CMDINFO_uread,
   &CMDINFO_usend,
+  &CMDINFO_pr_sz,
   nullptr
 };
 
@@ -44,19 +47,30 @@ extern DMA_HandleTypeDef hdma_usart_lidar_rx;
 extern UART_HandleTypeDef huart_lidar;
 volatile uint32_t r_sz = 0;
 
-char ubuf[64]; // 47 + round
+const unsigned ubsz { 64 };
+char ubuf[ubsz]; // 47 + round
+char xbuf[ubsz]; // debug copy
+char ybuf[ubsz];
 Lidar_LD20_Data lidar_pkg;
 
+std::array<uint32_t,128> r_szs; // size of received
+std::array<uint32_t,128> r_val; // values of received
+unsigned n_szs {0};
 
 int main(void)
 {
   BOARD_PROLOG;
 
+  UVAR('d') =  1;
+  UVAR('n') =  4;
   UVAR('t') = 10;
-  UVAR('n') = 10;
+
+  // SCB_DisableICache();  SCB_DisableDCache();
 
   MX_LIDAR_LD20_DMA_Init();
   UVAR('z') = MX_LIDAR_LD20_UART_Init();
+  __HAL_USART_DISABLE( &huart_lidar );
+
 
   BOARD_POST_INIT_BLINK;
 
@@ -74,16 +88,42 @@ void HAL_UARTEx_RxEventCallback( UART_HandleTypeDef *huart, uint16_t sz )
     return;
   }
   ++UVAR('j');
+  const auto ev_type  = HAL_UARTEx_GetRxEventType( huart );
+  if( ev_type != HAL_UART_RXEVENT_TC ) {
+    return;
+  }
+  // HAL_UART_RXEVENT_TC    0   RxEvent linked to Transfer Complete event
+  // HAL_UART_RXEVENT_HT    1   RxEvent linked to Half Transfer event
+  // HAL_UART_RXEVENT_IDLE  2   RxEvent linked to IDLE event
+
+  auto u_isr = UART_LIDAR_LD20->USART_SR_REG;
+  __HAL_USART_CLEAR_IDLEFLAG( huart );
+
+  if( u_isr & USART_ISR_IDLE ) {
+    ++UVAR('l');
+  }
+  if( u_isr & USART_ISR_ORE ) {
+    ++UVAR('o');
+  }
+  if( n_szs < r_szs.size() ) {
+    r_val[n_szs  ] = ev_type;
+    r_szs[n_szs++] = sz;
+  }
+
   // if( sz != Lidar_LD20_Data::pkgSize ) {
   //   return;
   // }
   r_sz = sz;
 
-  // TODO: correct mutex
+  // TODO: correct mutex/flag
+  SCB_InvalidateDCache_by_Addr( ubuf, ubsz );
   uint8_t *dst = (uint8_t*)(&lidar_pkg);
-  std::memcpy( dst, ubuf, Lidar_LD20_Data::pkgSize );
+  memset( dst,  '\0', Lidar_LD20_Data::pkgSize );
+  memset( xbuf, '\0', ubsz );
+  std::memcpy( dst, ubuf, std::min(sz,(uint16_t)Lidar_LD20_Data::pkgSize) );
+  std::memcpy( xbuf, ubuf,std::min(sz,(uint16_t)ubsz) );
   ++UVAR('k');
-  // memset( ubuf,  0, sizeof( ubuf ) );
+  memset( ubuf,  '\0', sizeof( ubuf ) );
 
   leds.toggle( 4 );
 }
@@ -98,22 +138,20 @@ int cmd_test0( int argc, const char * const * argv )
   r_sz = 0;
   memset( ubuf,  0x00, sizeof( ubuf ) );
 
+  __HAL_USART_ENABLE( &huart_lidar );
   if( abrt ) {
     HAL_UART_Abort( &huart_lidar ); // test
   }
-  // auto h_rc = HAL_UARTEx_ReceiveToIdle_DMA( &huart_lidar, (uint8_t*)&ubuf, Lidar_LD20_Data::pkgSize );
+
+  // TODO: check ongouing
+  // TODO: try w/o ToIdle - idle state not detected (why?)
   auto h_rc = HAL_UARTEx_ReceiveToIdle_DMA( &huart_lidar, (uint8_t*)&ubuf, sizeof(ubuf) );
+  // auto h_rc = HAL_UART_Receive_DMA( &huart_lidar, (uint8_t*)&ubuf, sizeof(ubuf) );
   if( h_rc != HAL_OK ) {
     std_out << "# Error: fail to RectToIdle: " << h_rc << NL;
     // return 5;
   }
 
-  // for( unsigned i=0; i<1000; ++i ) { // try to wait for initial transfer
-  //   if( r_sz == Lidar_LD20_Data::pkgSize ) {
-  //     break;
-  //   }
-  //   delay_ms( 1 );
-  // }
 
   uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
 
@@ -122,8 +160,13 @@ int cmd_test0( int argc, const char * const * argv )
 
     uint32_t tc = HAL_GetTick();
 
+    // if( UVAR('d') > 0 ) {
+    //   dump8( &lidar_pkg, 0x30 );
+    // }
+
     if( UVAR('d') > 0 ) {
-      dump8( &lidar_pkg, 0x30 );
+      at_disabled_irq( []() {std::memcpy(ybuf,xbuf,ubsz);} );
+      dump8( ybuf, ubsz );
     }
 
     std_out << ( tc - tm00 ) << ' ' << UVAR('i') << ' '  << r_sz;
@@ -160,7 +203,7 @@ int cmd_uread( int argc, const char * const * argv )
   return 0;
 }
 
-// to check timings
+// to check timings - remove after debug
 int cmd_usend( int argc, const char * const * argv )
 {
   memset( ubuf, '\x5a', sizeof( ubuf ));
@@ -173,6 +216,14 @@ int cmd_usend( int argc, const char * const * argv )
   return 0;
 }
 
+int cmd_pr_sz( int argc, const char * const * argv )
+{
+  for( unsigned i=0; i< n_szs; ++i ) {
+    std_out << "# " << i << ' ' << r_szs[i] << ' ' << HexInt8( r_val[i] ) << NL;
+  }
+  n_szs = 0;
+  return 0;
+}
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
