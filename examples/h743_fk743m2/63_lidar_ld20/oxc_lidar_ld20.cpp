@@ -37,7 +37,7 @@ const uint8_t Lidar_LD20_Data::crc_tab[256] {
 
 uint8_t Lidar_LD20_Data::calc_crc() const
 {
-  const uint8_t *d { std::bit_cast<uint8_t*>(this) };
+  const uint8_t *d { cdata() };
   uint8_t crc { 0 };
 
   for ( unsigned i = 0; i < Lidar_LD20_Data::pkgSize-1; ++i ){
@@ -45,9 +45,42 @@ uint8_t Lidar_LD20_Data::calc_crc() const
   }
 
   return crc;
-
 }
 
 
+void Lidar_LD20_Handler::add_byte( uint8_t v )
+{
+  auto d = pd0->data();
+  if( n == 0 ) {
+    if( v != Lidar_LD20_Data::headByte ) {
+      return;
+    }
+    d[0] = v; ++n;
+    return;
+  }
+  if( n == 1 ) {
+    if( v != Lidar_LD20_Data::vlenByte ) {
+      return;
+    }
+    d[1] = v; ++n;
+    return;
+  }
+  if( n < Lidar_LD20_Data::pkgSize-1  ) {
+    d[n] = v; ++n;
+    return;
+  }
+  if( n == Lidar_LD20_Data::pkgSize-1  ) {
+    d[n] = v;
+    auto crc = pd0->calc_crc();
+    if( v == crc ) { // good
+      std::swap( pd0, pd1 );
+      ++nf;
+      // TODO: update lidar data
+    }
+    n = 0; // bad crc - reset
+    return;
+  }
+  n = 0; // unlikely failsafe
+}
 
 

@@ -45,13 +45,13 @@ void idle_main_task()
 
 extern DMA_HandleTypeDef hdma_usart_lidar_rx;
 extern UART_HandleTypeDef huart_lidar;
-volatile uint32_t r_sz = 0;
 
 const unsigned ubsz { 64 };
 char ubuf[ubsz]; // 47 + round
 char xbuf[ubsz]; // debug copy
 char ybuf[ubsz];
-Lidar_LD20_Data lidar_pkg;
+Lidar_LD20_Data    lidar_d;
+Lidar_LD20_Handler lidar_h;
 
 std::array<uint32_t,128> r_szs; // size of received
 std::array<uint32_t,128> r_val; // values of received
@@ -61,7 +61,7 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('d') =  1;
+  UVAR('d') =  0;
   UVAR('n') =  4;
   UVAR('t') = 10;
 
@@ -96,8 +96,9 @@ void HAL_UART_RxCpltCallback( UART_HandleTypeDef *huart )
   memset( xbuf, '\0', ubsz );
   // SCB_InvalidateDCache_by_Addr( ubuf, ubsz );
   // std::memcpy( dst, ubuf, std::min(sz,(uint16_t)Lidar_LD20_Data::pkgSize) );
+  lidar_h.add_bytes( (const uint8_t*)ubuf, sz );
   std::memcpy( xbuf, ubuf, sz );
-  memset( ubuf,  '\0', sizeof( ubuf ) );
+  memset( ubuf,  '\0', sizeof( ubuf ) ); // remove after debug
 
   leds.reset( 4 );
 }
@@ -115,9 +116,7 @@ int cmd_test0( int argc, const char * const * argv )
   // uint32_t abrt = arg2long_d( 2, argc, argv, 0, 0, 1 );
   std_out << "# T1: n= " << n << NL;
 
-  r_sz = 0;
   memset( ubuf,  0x00, sizeof( ubuf ) );
-
 
   std_out << "# gstate: " << huart_lidar.gState << " RxState: " << huart_lidar.RxState << NL;
   if( huart_lidar.RxState == HAL_UART_STATE_READY ) {
@@ -130,6 +129,7 @@ int cmd_test0( int argc, const char * const * argv )
   }
 
 
+  unsigned old_nf = 0;
   uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
 
   break_flag = 0;
@@ -137,21 +137,26 @@ int cmd_test0( int argc, const char * const * argv )
 
     uint32_t tc = HAL_GetTick();
 
-    // if( UVAR('d') > 0 ) {
-    //   dump8( &lidar_pkg, 0x30 );
-    // }
-
-    if( UVAR('d') > 0 ) {
-      at_disabled_irq( []() {std::memcpy(ybuf,xbuf,ubsz);} );
+    if( UVAR('d') > 1 ) {
+      at_disabled_irq( []() { std::memcpy(ybuf, xbuf, ubsz); } );
       dump8( ybuf, ubsz );
     }
+    auto nf = lidar_h.get_nf();
 
-    std_out << ( tc - tm00 ) << ' ' << UVAR('i') << ' '  << r_sz;
+    if( UVAR('d') > 0 ) {
+      std_out << "#  " << ( tc - tm00 ) << ' ' << UVAR('i') << ' '  << nf << NL;
+    }
 
+    if( nf != old_nf ) {
+      at_disabled_irq( []() { lidar_d = *lidar_h.getData(); } );
+      std_out << nf << ' ' << lidar_d.alp_st  << ' ' << lidar_d.alp_en
+              << ' ' << (lidar_d.alp_en - lidar_d.alp_st) << ' ' << lidar_d.ts << ' ' << ( tc - tm00 ) << NL;
+      if( UVAR('d') > 0 ) {
+        dump8( lidar_d.cdata(), ubsz );
+      }
+    }
+    old_nf = nf;
 
-    std_out << NL;
-
-    r_sz = 0;
     delay_ms_until_brk( &tm0, t_step );
   }
 
@@ -162,6 +167,7 @@ int cmd_abort( int argc, const char * const * argv )
 {
   HAL_UART_Abort( &huart_lidar );
   __HAL_USART_DISABLE( &huart_lidar );
+  lidar_h.reset();
   return 0;
 }
 
