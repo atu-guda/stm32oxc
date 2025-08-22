@@ -129,7 +129,8 @@ int cmd_test0( int argc, const char * const * argv )
   }
 
 
-  unsigned old_nf = 0;
+  unsigned old_nf { 0 };
+  int ts { 0 }, old_ts { -1 };
   uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
 
   break_flag = 0;
@@ -149,11 +150,39 @@ int cmd_test0( int argc, const char * const * argv )
 
     if( nf != old_nf ) {
       at_disabled_irq( []() { lidar_d = *lidar_h.getData(); } );
-      std_out << nf << ' ' << lidar_d.alp_st  << ' ' << lidar_d.alp_en
-              << ' ' << (lidar_d.alp_en - lidar_d.alp_st) << ' ' << lidar_d.ts << ' ' << ( tc - tm00 ) << NL;
-      if( UVAR('d') > 0 ) {
-        dump8( lidar_d.cdata(), ubsz );
-      }
+
+      do {
+        ts = lidar_d.ts; // find bad data. stage 1: bad d(ts)
+        if( old_ts < 0 ) { old_ts = ts-1; }
+        int d_ts = ts - old_ts;
+        if( d_ts < 0 ) {
+          d_ts += 30000;
+        }
+        if( d_ts > 300 ) { // TODO: param, TODO: drop only one
+          break;
+        }
+        int d_alp = lidar_d.alp_en - lidar_d.alp_st;
+        if( d_alp < 0 ) {
+          d_alp += 36000;
+        }
+        if( d_alp > 1000 ) {
+          break;
+        }
+        int step_alp = d_alp / Lidar_LD20_Data::n_samples;
+
+        std_out << "#a " << nf << ' ' << lidar_d.alp_st  << ' ' << lidar_d.alp_en
+          << ' ' << (lidar_d.alp_en - lidar_d.alp_st) << ' ' << d_ts << ' ' << ( tc - tm00 ) << NL;
+
+        for( int i=0; i < Lidar_LD20_Data::n_samples; ++i ) {
+          int alp = ( lidar_d.alp_st + i * step_alp ) % 36000;
+          std_out << alp << ' ' << lidar_d.d[i].l << ' ' << lidar_d.d[i].v << NL;
+        }
+
+        if( UVAR('d') > 0 ) {
+          dump8( lidar_d.cdata(), ubsz );
+        }
+      }  while( false );
+      old_ts = ts;
     }
     old_nf = nf;
 
