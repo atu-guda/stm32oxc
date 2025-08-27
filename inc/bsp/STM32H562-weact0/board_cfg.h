@@ -6,6 +6,9 @@
 // definition of resoures on STM32H562RGT WeAct board
 // headers must be included manualy in C/CPP file
 
+#define MC_FLASH_SIZE 1048576
+#define MC_RAM_SIZE   655360
+#define MC_RAM1_SIZE  655360
 #define def_stksz 512
 
 #define DELAY_APPROX_COEFF  2000

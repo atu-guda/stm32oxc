@@ -6,6 +6,9 @@
 // definition of resoures STM32F446R nucleo 64 board
 // headers must be included manualy in C/CPP file
 
+#define MC_FLASH_SIZE 524288
+#define MC_RAM_SIZE   131072
+#define MC_RAM1_SIZE  131072
 #define def_stksz 512
 
 #define DELAY_APPROX_COEFF  5010

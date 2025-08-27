@@ -8,6 +8,9 @@
 
 #define DELAY_APPROX_COEFF  7040
 
+#define MC_FLASH_SIZE 65536
+#define MC_RAM_SIZE   20480
+#define MC_RAM1_SIZE  20480
 #define def_stksz 256
 
 #ifndef NEED_LEDS_EXTRA

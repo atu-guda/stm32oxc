@@ -6,6 +6,9 @@
 // definition of resoures on STM32F429I discovery board.
 // headers must be included manualy in C/CPP file
 
+#define MC_FLASH_SIZE 2097152
+#define MC_RAM_SIZE   196608
+#define MC_RAM1_SIZE  196608
 #define def_stksz 512
 
 #define DELAY_APPROX_COEFF  5010

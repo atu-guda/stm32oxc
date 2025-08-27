@@ -6,6 +6,11 @@
 // definition of resoures on STM32H743VIT WeAct board
 // headers must be included manualy in C/CPP file
 
+#define MC_FLASH_SIZE 2097152
+#define MC_RAM_SIZE    524288
+#define MC_RAM1_SIZE   524288
+#define MC_RAM2_SIZE   294912
+#define MC_RAM3_SIZE    65536
 #define def_stksz 512
 
 #define DELAY_APPROX_COEFF  2004

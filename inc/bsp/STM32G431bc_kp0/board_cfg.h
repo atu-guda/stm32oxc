@@ -6,6 +6,9 @@
 // definition of resoures for STM32F431BC blacK pill board
 // headers must be included manualy in C/CPP file
 
+#define MC_FLASH_SIZE 114688
+#define MC_RAM_SIZE   32768
+#define MC_RAM1_SIZE  32768
 #define def_stksz 512
 
 // TODO: measure and fix

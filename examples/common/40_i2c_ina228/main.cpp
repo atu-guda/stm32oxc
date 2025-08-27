@@ -119,10 +119,10 @@ int cmd_test0( int argc, const char * const * argv )
       tm0 = tcc; tm00 = tm0;
     }
 
-    if( UVAR('l') ) {  leds.set( BIT2 ); }
+    // if( UVAR('l') ) {  leds.set( BIT2 ); }
     int wrc = ina228.waitEOC();
     auto[v_sh_raw,v_bus_raw]  = ina228.getVV();
-    if( UVAR('l') ) {  leds.reset( BIT2 ); }
+    // if( UVAR('l') ) {  leds.reset( BIT2 ); }
 
     xfloat v[n_ch];
     v[0] = ina228.get_last_Vsh_nVx16() * nx16_to_1;

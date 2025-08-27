@@ -1,5 +1,6 @@
 #include <cstring>
 #include <cerrno>
+#include <algorithm>
 
 #include <oxc_auto.h>
 #include <oxc_main.h>
@@ -127,8 +128,7 @@ int cmd_test0( int argc, const char * const * argv )
   pr_sdx( n_ADC_series_max );
   uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 0, n_ADC_series_max ); // number of series
 
-  uint32_t sampl_t_idx = UVAR('s');
-  if( sampl_t_idx >= adc_n_sampl_times ) { sampl_t_idx = adc_n_sampl_times-1; };
+  uint32_t sampl_t_idx = std::clamp( (uint32_t)UVAR('s'), uint32_t(0), (uint32_t)(adc_arch_sampletimes_n-1) );
 
   t_step =  (UVAR('a')+1) * (UVAR('p')+1); // in timer input ticks
   uint32_t tim_f = tim_freq_in / t_step; // timer update freq

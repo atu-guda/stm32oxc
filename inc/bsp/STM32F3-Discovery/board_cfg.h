@@ -8,6 +8,9 @@
 
 #define DELAY_APPROX_COEFF   9060
 
+#define MC_FLASH_SIZE 262144
+#define MC_RAM_SIZE   40960
+#define MC_RAM1_SIZE  40960
 #define def_stksz 256
 
 // default LEDS is E8:E15

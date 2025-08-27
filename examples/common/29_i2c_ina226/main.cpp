@@ -3,7 +3,11 @@
 #include <oxc_auto.h>
 #include <oxc_main.h>
 #include <oxc_floatfun.h>
-#include <oxc_statdata.h>
+
+#if MC_FLASH_SIZE > (1024*64)
+  #define USE_STATDATA 1
+  #include <oxc_statdata.h>
+#endif
 
 #include <oxc_ina226.h>
 using namespace std;
@@ -41,6 +45,7 @@ const uint32_t n_ADC_ch_max = 4; // current - in UVAR('c')
 xfloat v_coeffs[n_ADC_ch_max] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 bool isGoodINA226( INA226 &ina, bool print = true );
+
 
 
 int main(void)
@@ -103,7 +108,9 @@ int cmd_test0( int argc, const char * const * argv )
   x_cfg = ina226.getCfg();
   std_out <<  "# cfg= " << HexInt16( x_cfg ) <<  NL;
 
-  StatData sdat( 2 );
+  #ifdef USE_STATDATA
+    StatData sdat( 2 );
+  #endif
 
   leds.set(   BIT0 | BIT1 | BIT2 ); delay_ms( 100 );
   leds.reset( BIT0 | BIT1 | BIT2 );
@@ -134,7 +141,9 @@ int cmd_test0( int argc, const char * const * argv )
       std_out <<  FltFmt(   0.001f * dt, cvtff_auto, 12, 4 );
     }
 
-    sdat.add( v );
+    #ifdef USE_STATDATA
+      sdat.add( v );
+    #endif
 
     if( do_out ) {
       std_out  << ' '  <<  v[0] <<  ' ' <<  v[1] << NL;
@@ -143,12 +152,15 @@ int cmd_test0( int argc, const char * const * argv )
     delay_ms_until_brk( &tm0, t_step );
   }
 
-  sdat.calc();
-  std_out << sdat << NL;
+  #ifdef USE_STATDATA
+    sdat.calc();
+    std_out << sdat << NL;
+  #endif
 
   return rc;
 }
 
+#ifdef USE_STATDATA
 int cmd_getVIP( int argc, const char * const * argv )
 {
   uint32_t t_step = UVAR('t');
@@ -196,14 +208,14 @@ int cmd_getVIP( int argc, const char * const * argv )
     xfloat tc = 0.001f * ( tcc - tm00 );
     xfloat v[n_ch];
 
-    if( UVAR('l') ) {  leds.set( BIT2 ); }
+    // if( UVAR('l') ) {  leds.set( BIT2 ); }
 
     v[0] = ina226.getVbus_uV()  * (xfloat)1e-6f * v_coeffs[0];
     v[1] = ina226.getI_mA_reg() * (xfloat)1e-3f * v_coeffs[1];
     v[2] = ina226.getI_uA()     * (xfloat)1e-6f * v_coeffs[2];
     v[3] = ina226.getP()                        * v_coeffs[3];
 
-    if( UVAR('l') ) {  leds.reset( BIT2 ); }
+    // if( UVAR('l') ) {  leds.reset( BIT2 ); }
 
     if( do_out ) {
       std_out <<  FltFmt( tc, cvtff_auto, 12, 4 );
@@ -228,6 +240,12 @@ int cmd_getVIP( int argc, const char * const * argv )
 
   return rc;
 }
+#else
+int cmd_getVIP( int argc, const char * const * argv )
+{
+  return 1; // just not enough flash
+}
+#endif
 
 
 int cmd_setcalibr( int argc, const char * const * argv )

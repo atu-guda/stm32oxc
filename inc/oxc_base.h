@@ -146,6 +146,8 @@ void oxc_call_aux_tick_funcs(void);
   #endif
 #endif
 
+
+#ifdef __cplusplus
 template <typename F, typename... Args > auto at_disabled_irq( F fun, Args&&... args )
 {
   bool was_irqs_enabled = ( __get_PRIMASK() == 0 );
@@ -163,6 +165,7 @@ template <typename F, typename... Args > auto at_disabled_irq( F fun, Args&&... 
     return res;
   }
 }
+#endif
 
 #endif
 

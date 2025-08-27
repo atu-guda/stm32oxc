@@ -8,6 +8,9 @@
 
 #define DELAY_APPROX_COEFF  5010
 
+#define MC_FLASH_SIZE 524288
+#define MC_RAM_SIZE   131072
+#define MC_RAM1_SIZE  131072
 #define def_stksz 512
 
 

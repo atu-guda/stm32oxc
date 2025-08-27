@@ -341,7 +341,6 @@ int cmd_test0( int argc, const char * const * argv )
           << " kd_v= " << pwminfo.kd_v
           << NL;
 
-  float v[didx_n];
 
   leds.set(   BIT0 | BIT1 | BIT2 ); // delay_ms( 100 );
 
@@ -349,6 +348,7 @@ int cmd_test0( int argc, const char * const * argv )
     do_set_pwm( pwminfo.cal_min );
   }
   delay_ms( 500 );
+  float v[didx_n];
   measure_and_calc( v );
 
   if( !skip_pwm && pwmdat.check_lim( v ) != PWMData::check_result::ok ) {
@@ -398,7 +398,16 @@ int cmd_test0( int argc, const char * const * argv )
 
     measure_and_calc( v );
 
-    sdat.add( v );
+    #ifdef OXC_HAVE_DOUBLE
+      xfloat vv[std::size(v)];
+      for( unsigned i=0; i<std::size(v); ++i ) {
+        vv[i] = xfloat(v[i]);
+      }
+      sdat.add( vv );
+    #else
+      sdat.add( v );
+    #endif
+
 
     if( do_out ) {
       std_out <<  FltFmt( tc, cvtff_auto, 10, 3 );
