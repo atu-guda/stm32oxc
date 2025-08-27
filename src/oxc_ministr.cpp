@@ -8,6 +8,9 @@ using namespace std;
 
 void MiniStr::append( char rhs )
 {
+  if( !rhs ) {
+    return; // dont add zero bytes
+  }
   if( sz >= cap-1 ) {
     if( flush_fun ) {
       flush();
@@ -42,11 +45,8 @@ void MiniStr::add_bitnames( uint32_t b, const BitNames *bn )
         operator+=( bn->name );
       }
     } else {           // pack of bits
-      if( sep ) {
-        append( sep );
-      } else {
-        sep = ',';
-      }
+      append( sep );
+      sep = ',';
       operator+=( bn->name ); append( '_' );
       uint32_t v = (b>>bn->s) & ( ~0u>>(bpi-bn->n) );
       if( bn->n > 16 ) {
