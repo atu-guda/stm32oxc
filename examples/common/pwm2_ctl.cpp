@@ -49,25 +49,25 @@ float PWMInfo::pwm2V( float pwm ) const
 
 float PWMInfo::estimateV( float pwm, float R_h ) const
 {
-  const float eps = 5.0e-2;
-  const float gamma = 0.01f * pwm;
-  float blr = L / ( R_h * T_0 ); // betta_{LRh}
-  float V_p = V_cc;
-  float V_dn = -0.48f; // V_dn0;
+  const float eps { 5.0e-2f };
+  const float gamma { 0.01f * pwm };
+  float blr { L / ( R_h * T_0 ) }; // betta_{LRh}
+  float V_p { V_cc };
+  float V_dn { -0.48f }; // V_dn0;
   const float gamma_m1 = 1.0f - gamma, gamma2 = pow2( gamma ), gamma4 = pow2( gamma2 );
 
-  float dV_2 = 1000.0f;
-  float oV_2 = 1000.0f;
-  float V_2 = 0, I_h = 0, V_2_n0 = 0;
-  bool is_CCM = false;
+  float dV_2 { 1000.0f };
+  float oV_2 { 1000.0f };
+  float V_2 { 0 }, I_h { 0 }, V_2_n0 { 0 };
+  bool is_CCM { false };
 
   for( int i=0; i<20 && fabsf(dV_2) > eps; ++i ) {
 
     float V_x =
       sqrtf(
-          ( pow2(V_dn) - 2 * V_p * V_dn + pow2(V_p) ) * gamma4
-          + ( 4 * pow2(V_dn) - 12 * V_p * V_dn + 8 * pow2(V_p) ) * blr * gamma2
-          + 4 * pow2(V_dn) * pow2(blr)
+          ( pow2f(V_dn) - 2 * V_p * V_dn + pow2f(V_p) ) * gamma4
+          + ( 4 * pow2f(V_dn) - 12 * V_p * V_dn + 8 * pow2f(V_p) ) * blr * gamma2
+          + 4 * pow2f(V_dn) * pow2f(blr)
           )
       + ( V_dn - V_p ) * gamma2 + 2 * V_dn * blr;
 
@@ -278,7 +278,7 @@ bool PWMInfo::regreCalibration( float t_x0, float &a, float &b, float &r )
     std_out << "# # a = " << rr.a << " b= " << rr.b << " r= " << rr.r << NL;
   }
 
-  if( rr.r < 0.7f ) {
+  if( rr.r < xfloat(0.7f) ) {
     std_out << "# Warning: regre: r= " << r << NL;
     return false;
   }
