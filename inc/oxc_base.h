@@ -109,16 +109,16 @@ int  SystemClockCfg(void); // returns: 0: ok >0 + set errno: error
 #ifndef AUX_TICK_FUN_N
   #define AUX_TICK_FUN_N 4
 #endif
-extern AuxTickFun oxc_aux_tick_funcs[AUX_TICK_FUN_N];
-int  oxc_add_aux_tick_fun( AuxTickFun f );
-int  oxc_del_aux_tick_fun( AuxTickFun f );
-void oxc_clear_aux_tick_funs(void);
-void oxc_call_aux_tick_funcs(void);
 
 #ifdef __cplusplus
 }
 #endif
 
+extern AuxTickFun oxc_aux_tick_funcs[AUX_TICK_FUN_N];
+ReturnCode  oxc_add_aux_tick_fun( AuxTickFun f );
+ReturnCode  oxc_del_aux_tick_fun( AuxTickFun f );
+void oxc_clear_aux_tick_funs(void);
+void oxc_call_aux_tick_funcs(void);
 
 
 #define USE_DIE_ERROR_HANDLER void Error_Handler( int rc ) { die( rc ); };
