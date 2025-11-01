@@ -27,6 +27,7 @@ int tim_lwm_cfg();
 #define TIM_LWM_GPIO_AF GPIO_AF1_TIM2
 inline constexpr uint32_t tim_lwm_psc_freq   {  2000000 }; // 2 MHz
 inline constexpr uint32_t tim_lwm_freq       {       50 }; // 50 Hz
+inline constexpr uint32_t tim_lwm_t_us       { 1000000 / tim_lwm_freq };
 extern uint32_t tim_lwm_arr;
 int tim_lwm_cfg();
 void tim_lwm_start();

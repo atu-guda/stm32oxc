@@ -30,12 +30,12 @@ const char* common_help_string = "hand0 " __DATE__ " " __TIME__ NL;
 
 
 TIM_HandleTypeDef tim_lwm_h;
-uint32_t tim_lwm_arr { 19999 }; // near init value, will, be recalculated
+uint32_t tim_lwm_arr { 39999 }; // near init value, will be recalculated
 int lwm_t_min {  500 }; // min pulse width in us
-int lwm_t_max { 1500 }; // max pulse width in us
+int lwm_t_max { 2500 }; // max pulse width in us
 
 // --- local commands;
-DCL_CMD ( test0, 'T', " - test something timers" );
+DCL_CMD ( test0, 'T', " [val] [ch] - test timers" );
 DCL_CMD ( stop,  'P', " - stop pwm" );
 
 const CmdInfo* global_cmds[] = {
@@ -168,7 +168,7 @@ int cmd_test0( int argc, const char * const * argv )
 
   uint32_t vi = (uint32_t) lwm_t_min + (lwm_t_max-lwm_t_min) * v;
   vi = std::clamp( vi, (uint32_t)lwm_t_min, (uint32_t) lwm_t_max );
-  uint32_t ccr = (uint32_t) tim_lwm_arr * vi / 10000;
+  uint32_t ccr = (uint32_t) tim_lwm_arr * vi / tim_lwm_t_us;
 
   std_out
     <<  "# Test0: ch= " << ch << " v= " << v << " vi=" << vi
