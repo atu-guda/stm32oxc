@@ -1,0 +1,7 @@
+Control hand manipulator
+A0-A3: T2.{1-4}: servos, 1: free, 2-4: pos
+I2C1: B6:B7: magnetic encoder + ???
+A4-A6(7) ADC, DMA2S0
+B2: alarm exti
+
+
