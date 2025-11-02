@@ -108,6 +108,11 @@ void idle_main_task()
   // ostate_go = cstate_go;
 }
 
+void on_sigint( int /* c */ )
+{
+  tim_lwm_stop();
+  ledsx[1].set();
+}
 
 int main(void)
 {
@@ -145,6 +150,8 @@ int main(void)
 
   oxc_add_aux_tick_fun( led_task_nortos );
 
+  dev_console.setOnSigInt( on_sigint );
+
   std_main_loop_nortos( &srl, idle_main_task );
 
   return 0;
@@ -169,6 +176,8 @@ int cmd_test0( int argc, const char * const * argv )
   uint32_t vi = (uint32_t) lwm_t_min + (lwm_t_max-lwm_t_min) * v;
   vi = std::clamp( vi, (uint32_t)lwm_t_min, (uint32_t) lwm_t_max );
   uint32_t ccr = (uint32_t) tim_lwm_arr * vi / tim_lwm_t_us;
+
+  ledsx.reset ( 0xFF );
 
   std_out
     <<  "# Test0: ch= " << ch << " v= " << v << " vi=" << vi
