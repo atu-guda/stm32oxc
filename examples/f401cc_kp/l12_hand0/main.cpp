@@ -20,6 +20,29 @@ BOARD_DEFINE_LEDS;
 
 USBCDC_CONSOLE_DEFINES;
 
+// ------------------------------- Movers -----------------------------------
+
+enum class MoverType : uint8_t {
+  direct = 0, // x -> position
+  integr = 1, // x -> speed
+  step   = 2  // ??? 
+};
+
+struct MoverInfo {
+  MoverType type;
+  float v_min, v_max;
+  float v_cur;
+};
+
+MoverInfo movers[] {
+  { MoverType::integr, 0.1f, 0.9f, 0.5f }, // rotate
+  { MoverType::direct, 0.0f, 1.0f, 0.5f }, // arm1
+  { MoverType::direct, 0.0f, 1.0f, 0.5f }, // arm2
+  { MoverType::direct, 0.0f, 1.0f, 0.5f }, // grip
+};
+constexpr size_t n_movers = std::size(movers);
+
+// ------------------------   end movers
 int debug {0};
 
 PinsOut ledsx( LEDSX_GPIO, LEDSX_START, LEDSX_N );
@@ -119,7 +142,7 @@ int main(void)
   STD_PROLOG_USBCDC;
 
   UVAR('t') =   100;
-  UVAR('n') =     2;
+  UVAR('n') =    20;
   UVAR('c') = AS5600::CfgBits::cfg_pwr_mode_nom |  AS5600::CfgBits::cfg_hyst_off;
 
   ledsx.initHW();
@@ -168,26 +191,26 @@ void init_EXTI()
 
 int cmd_test0( int argc, const char * const * argv )
 {
-  float v = arg2float_d( 1, argc, argv, 0.5f, 0.0f, 1.0f );
-  int  ch = arg2long_d(  2, argc, argv, 1, 0, 3 );
-  int n = UVAR('n');
-  uint32_t t_step = UVAR('t');
+  const unsigned  ch = arg2long_d(  2, argc, argv, 1, 0, n_movers );
+  auto &mo = movers[ch];
+  const float v_e = arg2float_d( 1, argc, argv, 0.5f, mo.v_min, mo.v_max );
 
-  uint32_t vi = (uint32_t) lwm_t_min + (lwm_t_max-lwm_t_min) * v;
-  vi = std::clamp( vi, (uint32_t)lwm_t_min, (uint32_t) lwm_t_max );
-  uint32_t ccr = (uint32_t) tim_lwm_arr * vi / tim_lwm_t_us;
+  const int n = std::clamp( UVAR('n'), 1, 10000 );
+  const uint32_t t_step = UVAR('t');
 
   ledsx.reset ( 0xFF );
 
+  const float v0 = mo.v_cur;
+  const float dv = ( v_e - v0 ) / n;
+
   std_out
-    <<  "# Test0: ch= " << ch << " v= " << v << " vi=" << vi
-    << " ccr= " << ccr << " dt= " << t_step << NL;
+    <<  "# Test0: ch= " << ch << " v_e= " << v_e
+    << " v0= " << v0 << " dv= " << dv << " dt= " << t_step << NL;
 
   static const decltype( &TIM_LWM->CCR1 ) ccrs[] { &TIM_LWM->CCR1, &TIM_LWM->CCR2, &TIM_LWM->CCR3, &TIM_LWM->CCR4 };
 
-  tim_lwm_start();
 
-  *ccrs[ch] = ccr;
+  tim_lwm_start();
 
 
   uint32_t tm0 = HAL_GetTick();
@@ -198,14 +221,26 @@ int cmd_test0( int argc, const char * const * argv )
   for( int i=0; i<n && !break_flag; ++i ) {
     uint32_t  tcb = HAL_GetTick();
 
+    const float v = v0 + dv * (i+1);
+    const uint32_t vi = std::clamp(
+        (uint32_t) (lwm_t_min + (lwm_t_max-lwm_t_min) * v),
+        (uint32_t)lwm_t_min, (uint32_t) lwm_t_max
+    );
+    uint32_t ccr = (uint32_t) tim_lwm_arr * vi / tim_lwm_t_us;
+
+    *ccrs[ch] = ccr;
+    mo.v_cur = v;
+
     ledsx[0].set();
 
     uint32_t  tcc = HAL_GetTick();
-    std_out <<  "i= " << i << "  tick= " << ( tcc - tc00 ) << " dt = " << ( tcc - tcb ) << NL;
+    std_out <<  "i= " << i << "  tick= " << ( tcc - tc00 ) << " dt = " << ( tcc - tcb )
+      << " v= " << v << " ccr= " << ccr << NL;
 
     delay_ms_until_brk( &tc0, t_step );
     ledsx[0].reset();
   }
+
 
   tim_print_cfg( TIM_LWM );
 
