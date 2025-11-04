@@ -30,15 +30,16 @@ enum class MoverType : uint8_t {
 
 struct MoverInfo {
   MoverType type;
-  float v_min, v_max;
-  float v_cur;
+  float x_min, x_max;
+  float v_max;
+  float x_cur; // TODO: separate, other - const
 };
 
 MoverInfo movers[] {
-  { MoverType::integr, 0.1f, 0.9f, 0.5f }, // rotate
-  { MoverType::direct, 0.0f, 1.0f, 0.5f }, // arm1
-  { MoverType::direct, 0.0f, 1.0f, 0.5f }, // arm2
-  { MoverType::direct, 0.0f, 1.0f, 0.5f }, // grip
+  { MoverType::integr, 0.10f, 0.90f, 0.20f, 0.50f }, // rotate
+  { MoverType::direct, 0.45f, 0.80f, 0.50f, 0.50f }, // arm1
+  { MoverType::direct, 0.45f, 0.80f, 0.50f, 0.50f }, // arm2
+  { MoverType::direct, 0.00f, 0.70f, 0.30f, 0.30f }, // grip
 };
 constexpr size_t n_movers = std::size(movers);
 
@@ -51,7 +52,7 @@ PinsOut ledsx( LEDSX_GPIO, LEDSX_START, LEDSX_N );
 
 const char* common_help_string = "hand0 " __DATE__ " " __TIME__ NL;
 
-
+// TODO: to motor objects
 TIM_HandleTypeDef tim_lwm_h;
 uint32_t tim_lwm_arr { 39999 }; // near init value, will be recalculated
 int lwm_t_min {  500 }; // min pulse width in us
@@ -141,7 +142,7 @@ int main(void)
 {
   STD_PROLOG_USBCDC;
 
-  UVAR('t') =   100;
+  UVAR('t') =    50;
   UVAR('n') =    20;
   UVAR('c') = AS5600::CfgBits::cfg_pwr_mode_nom |  AS5600::CfgBits::cfg_hyst_off;
 
@@ -193,22 +194,23 @@ int cmd_test0( int argc, const char * const * argv )
 {
   const unsigned  ch = arg2long_d(  2, argc, argv, 1, 0, n_movers );
   auto &mo = movers[ch];
-  const float v_e = arg2float_d( 1, argc, argv, 0.5f, mo.v_min, mo.v_max );
+  const float x_e = arg2float_d( 1, argc, argv, 0.5f, mo.x_min, mo.x_max );
 
   const int n = std::clamp( UVAR('n'), 1, 10000 );
   const uint32_t t_step = UVAR('t');
 
   ledsx.reset ( 0xFF );
 
-  const float v0 = mo.v_cur;
-  const float dv = ( v_e - v0 ) / n;
+  const float x0 = mo.x_cur;
+  const float dx = ( x_e - x0 ) / n;
 
   std_out
-    <<  "# Test0: ch= " << ch << " v_e= " << v_e
-    << " v0= " << v0 << " dv= " << dv << " dt= " << t_step << NL;
+    <<  "# Test0: ch= " << ch << " x_e= " << x_e
+    << " x0= " << x0 << " dx= " << dx << " dt= " << t_step << NL;
 
   static const decltype( &TIM_LWM->CCR1 ) ccrs[] { &TIM_LWM->CCR1, &TIM_LWM->CCR2, &TIM_LWM->CCR3, &TIM_LWM->CCR4 };
 
+  std_out <<  "#  i   tick     dt      x    ccr" NL;
 
   tim_lwm_start();
 
@@ -221,21 +223,21 @@ int cmd_test0( int argc, const char * const * argv )
   for( int i=0; i<n && !break_flag; ++i ) {
     uint32_t  tcb = HAL_GetTick();
 
-    const float v = v0 + dv * (i+1);
+    const float x = ( i < (n-1) ) ? ( x0 + dx * (i+1) ) : x_e;
     const uint32_t vi = std::clamp(
-        (uint32_t) (lwm_t_min + (lwm_t_max-lwm_t_min) * v),
+        (uint32_t) (lwm_t_min + (lwm_t_max-lwm_t_min) * x),
         (uint32_t)lwm_t_min, (uint32_t) lwm_t_max
     );
     uint32_t ccr = (uint32_t) tim_lwm_arr * vi / tim_lwm_t_us;
 
     *ccrs[ch] = ccr;
-    mo.v_cur = v;
+    mo.x_cur = x;
 
     ledsx[0].set();
 
     uint32_t  tcc = HAL_GetTick();
-    std_out <<  "i= " << i << "  tick= " << ( tcc - tc00 ) << " dt = " << ( tcc - tcb )
-      << " v= " << v << " ccr= " << ccr << NL;
+    std_out << FmtInt(i,4) << ' ' << FmtInt( tcc - tc00, 6 ) << ' ' << FmtInt( tcc - tcb, 6 )
+      << ' ' << FltFmt(x, cvtff_auto, 8, 4)  << ' ' << ccr << NL;
 
     delay_ms_until_brk( &tc0, t_step );
     ledsx[0].reset();
