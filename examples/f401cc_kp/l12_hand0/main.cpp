@@ -60,8 +60,9 @@ int lwm_t_min {  500 }; // min pulse width in us
 int lwm_t_max { 2500 }; // max pulse width in us
 
 // --- local commands;
-DCL_CMD ( test0, 'T', " [val] [ch] - test timers" );
+DCL_CMD ( test0, 'T', " [val] [ch] [k_v] - test move 1 ch" );
 DCL_CMD ( stop,  'P', " - stop pwm" );
+DCL_CMD ( mtest, 'M', " - test AS5600" );
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -69,6 +70,7 @@ const CmdInfo* global_cmds[] = {
 
   &CMDINFO_test0,
   &CMDINFO_stop,
+  &CMDINFO_mtest,
   nullptr
 };
 
@@ -170,7 +172,7 @@ int main(void)
   init_EXTI();
 
   ang_sens.setCfg( UVAR('c') );
-  ang_sens.setStartPosCurr();
+  // ang_sens.setStartPosCurr();
 
 
   BOARD_POST_INIT_BLINK;
@@ -261,28 +263,32 @@ int cmd_test0( int argc, const char * const * argv )
   return 0;
 }
 
-//   auto alp_r = ang_sens.getAngleN();
-//     uint32_t tcc = HAL_GetTick();
-//     auto alp_mDeg = AS5600::to_mDeg( alp_r );
-//     auto sta = ang_sens.getStatus();
-//
-//     std_out <<  (tcc - tm00)
-//     << ' ' << alp_r << ' ' << FloatMult( alp_mDeg, 3 )
-//     << ' ' << HexInt8( sta )
-//     << ' ' << ang_sens.getN_turn() << ' ' << ang_sens.getOldVal() << NL;
-//
-//     std_out.flush();
-//     delay_ms_until_brk( &tm0, t_step );
-// }
-//
-// std_out << "=== " << ang_sens.getAGCSetting() << ' ' <<  ang_sens.getCORDICMagnitude()
-// << ' '    << ang_sens.isMagnetDetected() << ' ' << HexInt8( ang_sens.getStatus() ) << NL;
 
 int cmd_stop( int argc, const char * const * argv )
 {
   tim_lwm_stop();
   return 0;
 }
+
+int cmd_mtest( int argc, const char * const * argv )
+{
+  const int  set_pos = arg2long_d( 1, argc, argv, 0, 0, 1 );
+  auto alp_r = ang_sens.getAngleN();
+  auto alp_mDeg = AS5600::to_mDeg( alp_r );
+
+  std_out
+      << alp_r << ' ' << FloatMult( alp_mDeg, 3 )
+      << ' ' << ang_sens.getN_turn() << ' ' << ang_sens.getOldVal() << NL;
+
+  std_out << "=== AGC: " << ang_sens.getAGCSetting() << " cordic: " <<  ang_sens.getCORDICMagnitude()
+    << " detect: "  << ang_sens.isMagnetDetected() << " status: " << HexInt8( ang_sens.getStatus() ) << NL;
+  if( set_pos ) {
+    ang_sens.setStartPosCurr();
+  }
+  return 0;
+}
+
+// -------------------- Timers ----------------------------------------------------
 
 int tim_lwm_cfg()
 {
