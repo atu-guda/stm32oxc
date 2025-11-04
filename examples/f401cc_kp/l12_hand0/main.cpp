@@ -1,3 +1,4 @@
+#include <cerrno>
 #include <algorithm>
 #include <cmath>
 
@@ -77,6 +78,8 @@ const CmdInfo* global_cmds[] = {
 I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );
 AS5600 ang_sens( i2cd );
+
+uint16_t adc_buf[4]; // reaaly need 3, but for alignment
 
 // TaskData td;
 
@@ -158,7 +161,11 @@ int main(void)
   i2c_dbg = &i2cd;
   i2c_client_def = &ang_sens;
 
-  // pins_tower.initHW();
+  MX_DMA_Init();
+  if( ! MX_ADC1_Init() ) {
+    std_out << "Err: ADC init"  NL;
+    die4led( 3 );
+  }
 
   print_var_hook = print_var_ex;
   set_var_hook   = set_var_ex;
@@ -172,7 +179,7 @@ int main(void)
   init_EXTI();
 
   ang_sens.setCfg( UVAR('c') );
-  // ang_sens.setStartPosCurr();
+  // ang_sens.setStartPosCurr(); // TODO: set to given value, dep on machanic
 
 
   BOARD_POST_INIT_BLINK;
@@ -211,6 +218,10 @@ int cmd_test0( int argc, const char * const * argv )
   const int n = std::clamp( int( x_adlt/( v * t_step * 1e-3f ) ), 1, 10000 );
   const float dx = x_dlt / n;
 
+  if( HAL_ADC_Start_DMA( &hadc1, (uint32_t*)adc_buf, 3 ) != HAL_OK ) {
+    std_out << "ADC start err" << NL;
+  }
+
   ledsx.reset ( 0xFF );
 
 
@@ -233,6 +244,8 @@ int cmd_test0( int argc, const char * const * argv )
   for( int i=0; i<n && !break_flag; ++i ) {
     uint32_t  tcb = HAL_GetTick();
 
+    HAL_ADC_Start_DMA( &hadc1, (uint32_t*)adc_buf, 3 );
+
     const float x = ( i < (n-1) ) ? ( x_0 + dx * (i+1) ) : x_e; // TODO: fun
     const uint32_t vi = std::clamp(                            // TODO: motor
         (uint32_t) (lwm_t_min + (lwm_t_max-lwm_t_min) * x),
@@ -249,7 +262,8 @@ int cmd_test0( int argc, const char * const * argv )
 
     uint32_t  tcc = HAL_GetTick();
     std_out << FmtInt(i,4) << ' ' << FmtInt( tcc - tc00, 6 ) << ' ' << FmtInt( tcc - tcb, 6 )
-      << ' ' << FltFmt(x, cvtff_auto, 8, 4)  << ' ' << ccr << NL;
+      << ' ' << FltFmt(x, cvtff_auto, 8, 4)  << ' ' << ccr
+      << ' ' << adc_buf[0] << ' ' << adc_buf[1] << NL;
 
     delay_ms_until_brk( &tc0, t_step );
     ledsx[2].reset();
@@ -367,10 +381,7 @@ void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim )
 {
   if( htim->Instance == TIM_LWM ) {
     TIM_LWM_EN;
-    GpioA.cfgAF_N( TIM_LWM_GPIO_PIN_0, TIM_LWM_GPIO_AF );
-    GpioA.cfgAF_N( TIM_LWM_GPIO_PIN_1, TIM_LWM_GPIO_AF );
-    GpioA.cfgAF_N( TIM_LWM_GPIO_PIN_2, TIM_LWM_GPIO_AF );
-    GpioA.cfgAF_N( TIM_LWM_GPIO_PIN_3, TIM_LWM_GPIO_AF );
+    GpioA.cfgAF_N( TIM_LWM_GPIO_PINS, TIM_LWM_GPIO_AF );
     // HAL_NVIC_SetPriority( TIM_LWM_IRQn, 8, 0 );
     // HAL_NVIC_EnableIRQ( TIM_LWM_IRQn );
     return;
@@ -383,14 +394,10 @@ void HAL_TIM_PWM_MspDeInit( TIM_HandleTypeDef* htim )
 {
   if( htim->Instance == TIM_LWM ) {
     TIM_LWM_DIS;
-    GpioA.cfgIn_N( TIM_LWM_GPIO_PIN_0 );
-    GpioA.cfgIn_N( TIM_LWM_GPIO_PIN_1 );
-    GpioA.cfgIn_N( TIM_LWM_GPIO_PIN_2 );
-    GpioA.cfgIn_N( TIM_LWM_GPIO_PIN_3 );
+    GpioA.cfgIn_N( TIM_LWM_GPIO_PINS );
     // HAL_NVIC_DisableIRQ( TIM_LWM_IRQn );
     return;
   }
-
 }
 
 // void TIM_LWM_IRQ_HANDLER()
@@ -445,6 +452,114 @@ void EXTI2_IRQHandler()
   // HAL_GPIO_EXTI_IRQHandler( TOWER_BIT_UP );
 }
 
+// ------------------------------------ ADC ------------------------------------------------
+
+DMA_HandleTypeDef hdma_adc1;
+ADC_HandleTypeDef hadc1;
+
+void MX_DMA_Init(void)
+{
+  __HAL_RCC_DMA2_CLK_ENABLE();
+  HAL_NVIC_SetPriority( DMA2_Stream0_IRQn, 10, 0 );
+  HAL_NVIC_EnableIRQ(   DMA2_Stream0_IRQn );
+  UVAR('j') |= 4;
+}
+
+void DMA2_Stream0_IRQHandler(void)
+{
+  ledsx[1].set();
+  HAL_DMA_IRQHandler( &hdma_adc1 );
+  ledsx[1].reset();
+  UVAR('j') |= 8;
+}
+
+int MX_ADC1_Init(void)
+{
+  hadc1.Instance                   = ADC1;
+  hadc1.Init.ClockPrescaler        = ADC_CLOCK_SYNC_PCLK_DIV2;
+  hadc1.Init.Resolution            = ADC_RESOLUTION_12B;
+  hadc1.Init.ScanConvMode          = ENABLE;
+  hadc1.Init.ContinuousConvMode    = DISABLE;
+  hadc1.Init.DiscontinuousConvMode = DISABLE;
+  hadc1.Init.ExternalTrigConvEdge  = ADC_EXTERNALTRIGCONVEDGE_NONE;
+  hadc1.Init.ExternalTrigConv      = ADC_SOFTWARE_START;
+  hadc1.Init.DataAlign             = ADC_DATAALIGN_RIGHT;
+  hadc1.Init.NbrOfConversion       = 3;
+  hadc1.Init.DMAContinuousRequests = ENABLE;
+  hadc1.Init.EOCSelection          = ADC_EOC_SEQ_CONV;
+  if( HAL_ADC_Init( &hadc1 ) != HAL_OK ) {
+    errno = 5000; return 0;
+  }
+
+  ADC_ChannelConfTypeDef sConfig {
+    .Channel      = ADC_CHANNEL_4,
+    .Rank         = 1,
+    .SamplingTime = ADC_SAMPLETIME_144CYCLES,
+    .Offset       = 0
+  };
+  if( HAL_ADC_ConfigChannel( &hadc1, &sConfig ) != HAL_OK ) {
+    errno = 5001; return 0;
+  }
+
+  sConfig.Rank = 2;
+  sConfig.Channel = ADC_CHANNEL_5;
+  if( HAL_ADC_ConfigChannel( &hadc1, &sConfig ) != HAL_OK ) {
+    errno = 5002; return 0;
+  }
+
+  sConfig.Rank = 3;
+  sConfig.Channel = ADC_CHANNEL_6;
+  if( HAL_ADC_ConfigChannel( &hadc1, &sConfig ) != HAL_OK ) {
+    errno = 5003; return 0;
+  }
+  UVAR('j') |= 1;
+  return 1;
+}
+
+void HAL_ADC_MspInit( ADC_HandleTypeDef* adcHandle )
+{
+  if( adcHandle->Instance != ADC1 ) {
+    return;
+  }
+
+  ADC_CLK_EN;
+  ADC1_GPIO.cfgAnalog_N( ADC1_PINS );
+
+  hdma_adc1.Instance                 = DMA2_Stream0;
+  hdma_adc1.Init.Channel             = DMA_CHANNEL_0;
+  hdma_adc1.Init.Direction           = DMA_PERIPH_TO_MEMORY;
+  hdma_adc1.Init.PeriphInc           = DMA_PINC_DISABLE;
+  hdma_adc1.Init.MemInc              = DMA_MINC_ENABLE;
+  hdma_adc1.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
+  hdma_adc1.Init.MemDataAlignment    = DMA_MDATAALIGN_HALFWORD;
+  hdma_adc1.Init.Mode                = DMA_NORMAL;
+  hdma_adc1.Init.Priority            = DMA_PRIORITY_MEDIUM;
+  hdma_adc1.Init.FIFOMode            = DMA_FIFOMODE_DISABLE;
+  if( HAL_DMA_Init( &hdma_adc1 ) != HAL_OK ) {
+    errno = 5010; return;
+  }
+
+  __HAL_LINKDMA( adcHandle, DMA_Handle, hdma_adc1 );
+  UVAR('j') |= 2;
+
+}
+
+void HAL_ADC_MspDeInit( ADC_HandleTypeDef* adcHandle )
+{
+  if( adcHandle->Instance == ADC1 ) {
+    __HAL_RCC_ADC1_CLK_DISABLE();
+    ADC1_GPIO.cfgIn_N( ADC1_PINS );
+    HAL_DMA_DeInit( adcHandle->DMA_Handle );
+  }
+}
+
+void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef* hadc1 )
+{
+  ++UVAR('i');
+  ledsx[0].toggle();
+}
+
+// ------------------------------------  ------------------------------------------------
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 
