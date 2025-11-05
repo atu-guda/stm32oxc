@@ -79,7 +79,11 @@ I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );
 AS5600 ang_sens( i2cd );
 
-uint16_t adc_buf[4]; // reaaly need 3, but for alignment
+int adc_measure( int n );
+int adc_n {100};
+volatile int adc_dma_end {0};
+uint16_t adc_buf[4]; // really need 3, but for alignment
+uint32_t adc_data[4]; // collected and divided data (by adc_measure)
 
 // TaskData td;
 
@@ -93,6 +97,7 @@ uint16_t adc_buf[4]; // reaaly need 3, but for alignment
 // ADD_FOBJ_TD( d_wire  );
 ADD_IOBJ   ( debug   );
 ADD_IOBJ   ( dry_run   );
+ADD_IOBJ   ( adc_n   );
 ADD_IOBJ   ( lwm_t_min   );
 ADD_IOBJ   ( lwm_t_max   );
 
@@ -103,6 +108,7 @@ ADD_IOBJ   ( lwm_t_max   );
 constexpr const NamedObj *const objs_info[] = {
   & ob_debug,
   & ob_dry_run,
+  & ob_adc_n,
   & ob_lwm_t_min,
   & ob_lwm_t_max,
   nullptr
@@ -218,9 +224,7 @@ int cmd_test0( int argc, const char * const * argv )
   const int n = std::clamp( int( x_adlt/( v * t_step * 1e-3f ) ), 1, 10000 );
   const float dx = x_dlt / n;
 
-  if( HAL_ADC_Start_DMA( &hadc1, (uint32_t*)adc_buf, 3 ) != HAL_OK ) {
-    std_out << "ADC start err" << NL;
-  }
+  adc_measure( adc_n );
 
   ledsx.reset ( 0xFF );
 
@@ -244,7 +248,11 @@ int cmd_test0( int argc, const char * const * argv )
   for( int i=0; i<n && !break_flag; ++i ) {
     uint32_t  tcb = HAL_GetTick();
 
-    HAL_ADC_Start_DMA( &hadc1, (uint32_t*)adc_buf, 3 );
+    auto adc_nread = adc_measure( adc_n );
+    if( adc_nread != adc_n ) {
+      std_out << "# Err adc_n : " << adc_nread << " != " << adc_n << NL;
+      break;
+    }
 
     const float x = ( i < (n-1) ) ? ( x_0 + dx * (i+1) ) : x_e; // TODO: fun
     const uint32_t vi = std::clamp(                            // TODO: motor
@@ -263,7 +271,7 @@ int cmd_test0( int argc, const char * const * argv )
     uint32_t  tcc = HAL_GetTick();
     std_out << FmtInt(i,4) << ' ' << FmtInt( tcc - tc00, 6 ) << ' ' << FmtInt( tcc - tcb, 6 )
       << ' ' << FltFmt(x, cvtff_auto, 8, 4)  << ' ' << ccr
-      << ' ' << adc_buf[0] << ' ' << adc_buf[1] << NL;
+      << ' ' << adc_data[0] << ' ' << adc_data[1] << NL;
 
     delay_ms_until_brk( &tc0, t_step );
     ledsx[2].reset();
@@ -557,6 +565,41 @@ void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef* hadc1 )
 {
   ++UVAR('i');
   ledsx[0].toggle();
+  adc_dma_end = 1;
+}
+
+int adc_measure( int n )
+{
+  if( n < 1 ) {
+    n = 1;
+  }
+  std::ranges::fill( adc_data, 0 );
+
+  for( int i=0; i<n; ++i ) {
+    adc_dma_end = 0;
+    if( HAL_ADC_Start_DMA( &hadc1, (uint32_t*)adc_buf, 3 ) != HAL_OK ) {
+      errno = 4567;
+      return 0;
+    }
+    for( int i=0; i<100000; ++i ) {
+      if( adc_dma_end ) {
+        break;
+      }
+    }
+    if( ! adc_dma_end ) {
+      errno = 4568;
+      return 0;
+    }
+    for( int j=0; j<4; ++j ) {
+      adc_data[j] += adc_buf[j];
+    }
+  }
+
+  for( auto &x : adc_data ) {
+    x /= n;
+  }
+
+  return n;
 }
 
 // ------------------------------------  ------------------------------------------------
