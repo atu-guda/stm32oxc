@@ -78,12 +78,13 @@ const CmdInfo* global_cmds[] = {
 I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );
 AS5600 ang_sens( i2cd );
+SensorAS5600 sens_enc( ang_sens );
 
-int adc_measure( int n );
 int adc_n {100};
 volatile int adc_dma_end {0};
-uint16_t adc_buf[4]; // really need 3, but for alignment
-uint32_t adc_data[4]; // collected and divided data (by adc_measure)
+// uint16_t adc_buf[4]; // really need 3, but for alignment
+// uint32_t adc_data[4]; // collected and divided data (by adc.measure)
+SensorAdc sens_adc( 3 );
 
 // TaskData td;
 
@@ -158,7 +159,6 @@ int main(void)
 
   UVAR('t') =    50;
   UVAR('n') =    20;
-  UVAR('c') = AS5600::CfgBits::cfg_pwr_mode_nom |  AS5600::CfgBits::cfg_hyst_off;
 
   ledsx.initHW();
   ledsx.reset( 0xFF );
@@ -184,8 +184,9 @@ int main(void)
 
   init_EXTI();
 
-  ang_sens.setCfg( UVAR('c') );
-  // ang_sens.setStartPosCurr(); // TODO: set to given value, dep on machanic
+  sens_adc.init();
+  sens_enc.init();
+  sens_enc.set_zero_val( 2381 ); // mech param: init config?
 
 
   BOARD_POST_INIT_BLINK;
@@ -224,10 +225,7 @@ int cmd_test0( int argc, const char * const * argv )
   const int n = std::clamp( int( x_adlt/( v * t_step * 1e-3f ) ), 1, 10000 );
   const float dx = x_dlt / n;
 
-  adc_measure( adc_n );
-
   ledsx.reset ( 0xFF );
-
 
   std_out
     <<  "# Test0: ch= " << ch << " x_0= " << x_0 << " x_e= " << x_e << " v=" << v << " n= " << n
@@ -248,11 +246,12 @@ int cmd_test0( int argc, const char * const * argv )
   for( int i=0; i<n && !break_flag; ++i ) {
     uint32_t  tcb = HAL_GetTick();
 
-    auto adc_nread = adc_measure( adc_n );
+    auto adc_nread = sens_adc.measure( adc_n );
     if( adc_nread != adc_n ) {
       std_out << "# Err adc_n : " << adc_nread << " != " << adc_n << NL;
       break;
     }
+    sens_enc.measure( 1 );
 
     const float x = ( i < (n-1) ) ? ( x_0 + dx * (i+1) ) : x_e; // TODO: fun
     const uint32_t vi = std::clamp(                            // TODO: motor
@@ -271,7 +270,7 @@ int cmd_test0( int argc, const char * const * argv )
     uint32_t  tcc = HAL_GetTick();
     std_out << FmtInt(i,4) << ' ' << FmtInt( tcc - tc00, 6 ) << ' ' << FmtInt( tcc - tcb, 6 )
       << ' ' << FltFmt(x, cvtff_auto, 8, 4)  << ' ' << ccr
-      << ' ' << adc_data[0] << ' ' << adc_data[1] << NL;
+      << ' ' << sens_adc.getUint(0) << ' ' << sens_adc.getUint(1) << ' ' << sens_enc.get(0) << NL;
 
     delay_ms_until_brk( &tc0, t_step );
     ledsx[2].reset();
@@ -295,11 +294,12 @@ int cmd_stop( int argc, const char * const * argv )
 int cmd_mtest( int argc, const char * const * argv )
 {
   const int  set_pos = arg2long_d( 1, argc, argv, 0, 0, 1 );
-  auto alp_r = ang_sens.getAngleN();
-  auto alp_mDeg = AS5600::to_mDeg( alp_r );
+  sens_enc.measure( 1 );
+  auto alp_i = sens_enc.getUint(0);
+  auto alp_v = sens_enc.get( 0 );
 
   std_out
-      << alp_r << ' ' << FloatMult( alp_mDeg, 3 )
+      << alp_i << ' ' << alp_i << ' ' << alp_v
       << ' ' << ang_sens.getN_turn() << ' ' << ang_sens.getOldVal() << NL;
 
   std_out << "=== AGC: " << ang_sens.getAGCSetting() << " cordic: " <<  ang_sens.getCORDICMagnitude()
@@ -568,14 +568,22 @@ void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef* hadc1 )
   adc_dma_end = 1;
 }
 
-int adc_measure( int n )
+
+// ------------------------------------ Sensors classes ---------------------------------
+
+int SensorAdc::init()
 {
-  if( n < 1 ) {
-    n = 1;
+  return 1;
+}
+
+int SensorAdc::measure( int nx )
+{
+  if( nx < 1 ) {
+    nx = 1;
   }
   std::ranges::fill( adc_data, 0 );
 
-  for( int i=0; i<n; ++i ) {
+  for( int i=0; i<nx; ++i ) {
     adc_dma_end = 0;
     if( HAL_ADC_Start_DMA( &hadc1, (uint32_t*)adc_buf, 3 ) != HAL_OK ) {
       errno = 4567;
@@ -596,10 +604,25 @@ int adc_measure( int n )
   }
 
   for( auto &x : adc_data ) {
-    x /= n;
+    x /= nx;
   }
 
-  return n;
+  return nx;
+}
+
+
+
+int SensorAS5600::init()
+{
+  ang_sens.setCfg( AS5600::CfgBits::cfg_pwr_mode_nom |  AS5600::CfgBits::cfg_hyst_off );
+  return 1;
+}
+
+int SensorAS5600::measure( int /*nx*/ )
+{
+  iv = dev.getAngle();
+  v  = ( (float) iv  - zero_val ) * 1.1553e-1f; // TODO: what?
+  return 1;
 }
 
 // ------------------------------------  ------------------------------------------------

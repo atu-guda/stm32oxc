@@ -47,5 +47,52 @@ int  MX_ADC1_Init(void);
 void HAL_ADC_MspInit( ADC_HandleTypeDef* adcHandle );
 void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle);
 
+class Sensor {
+  public:
+   explicit Sensor( unsigned n_ch_ ) : n_ch( n_ch_ ) {};
+   virtual ~Sensor() = default;
+   unsigned getNch() const { return n_ch; }
+   virtual int measure( int nx ) = 0;
+   virtual int init() = 0;
+   virtual uint32_t getUint( unsigned ch ) = 0;
+   virtual float get( unsigned ch ) = 0;
+  protected:
+   unsigned n_ch;
+};
+
+class SensorAdc : public Sensor {
+  public:
+   explicit SensorAdc( unsigned n_ch_ ) : Sensor( std::min( n_ch_, max_n_ch ) ) {};
+   virtual ~SensorAdc() = default;
+   virtual int measure( int nx ) override;
+   virtual int init() override;
+   virtual uint32_t getUint( unsigned ch ) override { return ( ch < n_ch ) ? adc_data[ch] : 0; }
+   virtual float get( unsigned ch ) override { return getUint(ch) * k_a[ch] + k_b[ch]; }
+  protected:
+   static const unsigned max_n_ch { 4 };
+   uint32_t adc_data[max_n_ch];  // collected and divided data (by adc_measure)
+   uint16_t adc_buf[max_n_ch];   //
+   float k_a[max_n_ch] { 1.0f, 1.0f, 1.0f, 1.0f };
+   float k_b[max_n_ch] { 0.0f, 0.0f, 0.0f, 0.0f };
+};
+
+class SensorAS5600 : public Sensor {
+  public:
+   SensorAS5600( AS5600 &dev_) : Sensor( 1 ), dev( dev_ ) {};
+   virtual ~SensorAS5600() = default;
+   virtual int measure( int nx ) override;
+   virtual int init() override;
+   virtual uint32_t getUint( unsigned /* ch */ ) override { return iv; }
+   virtual float get( unsigned /* ch */ ) override { return v; };
+   void set_zero_val( int zv ) { zero_val = zv; }
+  protected:
+   AS5600 &dev;
+   float v;
+   int zero_val { 0 };
+   uint16_t iv;
+};
+
+
+
 #endif
 
