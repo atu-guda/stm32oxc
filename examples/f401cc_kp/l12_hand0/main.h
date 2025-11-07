@@ -81,9 +81,9 @@ class SensorAdc : public Sensor {
   protected:
    static const unsigned max_n_ch { 4 };
    uint32_t adc_data[max_n_ch];  // collected and divided data (by adc_measure)
-   uint16_t adc_buf[max_n_ch];   //
-   float k_a[max_n_ch] { 1.0f, 1.0f, 1.0f, 1.0f };
-   float k_b[max_n_ch] { 0.0f, 0.0f, 0.0f, 0.0f };
+   uint16_t adc_buf[max_n_ch];   // buffer for DMA
+   float k_a[max_n_ch] { -3.414382e-04f, -3.414382e-04f, 1.0f, 1.0f };
+   float k_b[max_n_ch] {       1.20215f,       1.23955f, 0.0f, 0.0f };
 };
 
 class SensorAS5600 : public Sensor {
@@ -100,6 +100,7 @@ class SensorAS5600 : public Sensor {
    float v;
    int zero_val { 0 };
    uint16_t iv;
+   static constexpr float k_a { 2.0f / 2048 };
 };
 
 

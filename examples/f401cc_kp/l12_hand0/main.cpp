@@ -26,11 +26,6 @@ USBCDC_CONSOLE_DEFINES;
 // ------------------------------- Coords -----------------------------------
 
 
-struct CoordInfo {
-  float x_min, x_max;
-  float v_max;
-  float x_cur; // TODO: separate, other - const
-};
 
 CoordInfo coords[] {
   {  0.10f, 0.90f, 0.20f, 0.50f }, // rotate
@@ -38,7 +33,6 @@ CoordInfo coords[] {
   {  0.45f, 0.80f, 0.50f, 0.50f }, // arm2
   {  0.00f, 0.70f, 0.30f, 0.30f }, // grip
 };
-constexpr size_t n_coords = std::size(coords);
 
 // ------------------------------- Movers -----------------------------------
 
@@ -203,10 +197,9 @@ int main(void)
   init_EXTI();
 
   ranges::for_each( sensors, [](auto ps) { ps->init(); } );
-  sens_adc.init();
-  sens_enc.init();
   sens_enc.set_zero_val( 2381 ); // mech param: init config?
 
+  measure_store_coords( adc_n );
 
   BOARD_POST_INIT_BLINK;
 
@@ -230,7 +223,7 @@ void init_EXTI()
 
 int cmd_test0( int argc, const char * const * argv )
 {
-  const unsigned  ch = arg2long_d(  2, argc, argv, 1, 0, n_coords );
+  const unsigned  ch = arg2long_d(  2, argc, argv, 1, 0, std::size(coords) );
   auto &mo = coords[ch];
   const float x_e = arg2float_d( 1, argc, argv, 0.5f, mo.x_min, mo.x_max );
   const float k_v = arg2float_d( 3, argc, argv, 0.5f,    0.01f, 2.0f );
@@ -263,14 +256,12 @@ int cmd_test0( int argc, const char * const * argv )
 
   break_flag = 0;
   for( int i=0; i<n && !break_flag; ++i ) {
-    uint32_t  tcb = HAL_GetTick();
+    // uint32_t  tcb = HAL_GetTick();
 
-    auto adc_nread = sens_adc.measure( adc_n );
-    if( !adc_nread ) {
-      std_out << "# Err adc_n : " << adc_nread << " != " << adc_n << NL;
+    if( !measure_store_coords( adc_n ) ) {
+      std_out << "# Err sens : " << NL;
       break;
     }
-    sens_enc.measure( 1 );
 
     const float x = ( i < (n-1) ) ? ( x_0 + dx * (i+1) ) : x_e; // TODO: fun
     const uint32_t vi = std::clamp(                            // TODO: motor
@@ -282,18 +273,22 @@ int cmd_test0( int argc, const char * const * argv )
     if( !dry_run ) {
       *ccrs[ch] = ccr;
     }
-    mo.x_cur = x;
+    // mo.x_cur = x;
 
     ledsx[2].set();
 
     uint32_t  tcc = HAL_GetTick();
-    std_out << FmtInt(i,4) << ' ' << FmtInt( tcc - tc00, 6 ) << ' ' << FmtInt( tcc - tcb, 6 )
+    std_out << FmtInt(i,4) << ' ' << FmtInt( tcc - tc00, 6 )
+      // << ' ' << FmtInt( tcc - tcb, 6 )
       << ' ' << FltFmt(x, cvtff_auto, 8, 4)  << ' ' << ccr
-      << ' ' << sens_adc.getUint(0) << ' ' << sens_adc.getUint(1) << ' ' << sens_enc.get(0) << NL;
+      << ' ' << sens_adc.getUint(0) << ' ' << sens_adc.getUint(1) << ' ' << sens_enc.get(0)
+      << ' ' << coords[0].x_cur << ' '<< coords[1].x_cur << ' ' << coords[2].x_cur << NL;
 
     delay_ms_until_brk( &tc0, t_step );
     ledsx[2].reset();
   }
+
+  measure_store_coords( adc_n );
 
 
   if( debug > 0 ) {
@@ -332,7 +327,12 @@ int cmd_mtest( int argc, const char * const * argv )
 int cmd_mcoord( int argc, const char * const * argv )
 {
   const int n_meas = arg2long_d(  1, argc, argv, adc_n, 1, 10000 );
-  return measure_store_coords( n_meas );
+  int rc  = measure_store_coords( n_meas );
+  for( auto c : coords ) {
+    std_out << c.x_cur << ' ';
+  }
+  std_out << NL;
+  return !rc;
 }
 
 int measure_store_coords( int nm )
@@ -343,6 +343,11 @@ int measure_store_coords( int nm )
       return 0;
     }
   }
+
+  // TODO: meta
+  coords[0].x_cur = sens_enc.get( 0 );
+  coords[1].x_cur = sens_adc.get( 0 );
+  coords[2].x_cur = sens_adc.get( 1 );
 
   return 1;
 }
@@ -635,7 +640,7 @@ int SensorAdc::measure( int nx )
       errno = 4568;
       return 0;
     }
-    for( int j=0; j<4; ++j ) {
+    for( unsigned j=0; j<std::size(adc_data); ++j ) {
       adc_data[j] += adc_buf[j];
     }
   }
@@ -658,7 +663,7 @@ int SensorAS5600::init()
 int SensorAS5600::measure( int /*nx*/ )
 {
   iv = dev.getAngle();
-  v  = ( (float) iv  - zero_val ) * 1.1553e-1f; // TODO: what?
+  v  = ( (float) iv  - zero_val ) * k_a; // TODO: what?
   return 1;
 }
 
