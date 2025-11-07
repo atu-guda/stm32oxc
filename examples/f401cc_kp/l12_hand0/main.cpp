@@ -1,6 +1,7 @@
 #include <cerrno>
 #include <algorithm>
 #include <cmath>
+#include <array>
 
 #include <oxc_auto.h>
 #include <oxc_main.h>
@@ -14,12 +15,30 @@
 #include "main.h"
 
 // using namespace std;
+namespace ranges = std::ranges;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
 BOARD_DEFINE_LEDS;
 
 USBCDC_CONSOLE_DEFINES;
+
+// ------------------------------- Coords -----------------------------------
+
+
+struct CoordInfo {
+  float x_min, x_max;
+  float v_max;
+  float x_cur; // TODO: separate, other - const
+};
+
+CoordInfo coords[] {
+  {  0.10f, 0.90f, 0.20f, 0.50f }, // rotate
+  {  0.45f, 0.80f, 0.50f, 0.50f }, // arm1
+  {  0.45f, 0.80f, 0.50f, 0.50f }, // arm2
+  {  0.00f, 0.70f, 0.30f, 0.30f }, // grip
+};
+constexpr size_t n_coords = std::size(coords);
 
 // ------------------------------- Movers -----------------------------------
 
@@ -29,22 +48,16 @@ enum class MoverType : uint8_t {
   step   = 2  // ??? 
 };
 
-struct MoverInfo {
-  MoverType type;
-  float x_min, x_max;
-  float v_max;
-  float x_cur; // TODO: separate, other - const
-};
 
-MoverInfo movers[] {
-  { MoverType::integr, 0.10f, 0.90f, 0.20f, 0.50f }, // rotate
-  { MoverType::direct, 0.45f, 0.80f, 0.50f, 0.50f }, // arm1
-  { MoverType::direct, 0.45f, 0.80f, 0.50f, 0.50f }, // arm2
-  { MoverType::direct, 0.00f, 0.70f, 0.30f, 0.30f }, // grip
-};
-constexpr size_t n_movers = std::size(movers);
+// MoverType::integr,
+// MoverType::direct,
+// MoverType::direct,
+// MoverType::direct,
 
-// ------------------------   end movers
+
+
+
+// ------------------------   end coords
 int debug {0};
 int dry_run {0};
 
@@ -61,9 +74,10 @@ int lwm_t_min {  500 }; // min pulse width in us
 int lwm_t_max { 2500 }; // max pulse width in us
 
 // --- local commands;
-DCL_CMD ( test0, 'T', " [val] [ch] [k_v] - test move 1 ch" );
-DCL_CMD ( stop,  'P', " - stop pwm" );
-DCL_CMD ( mtest, 'M', " - test AS5600" );
+DCL_CMD ( test0,  'T', " [val] [ch] [k_v] - test move 1 ch" );
+DCL_CMD ( stop,   'P', " - stop pwm" );
+DCL_CMD ( mtest,  'M', " - test AS5600" );
+DCL_CMD ( mcoord, 'C', " - measure and store coords" );
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -72,6 +86,7 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_test0,
   &CMDINFO_stop,
   &CMDINFO_mtest,
+  &CMDINFO_mcoord,
   nullptr
 };
 
@@ -85,6 +100,9 @@ volatile int adc_dma_end {0};
 // uint16_t adc_buf[4]; // really need 3, but for alignment
 // uint32_t adc_data[4]; // collected and divided data (by adc.measure)
 SensorAdc sens_adc( 3 );
+
+std::array<Sensor*,2> sensors { &sens_adc, &sens_enc };
+int measure_store_coords( int nm );
 
 // TaskData td;
 
@@ -184,6 +202,7 @@ int main(void)
 
   init_EXTI();
 
+  ranges::for_each( sensors, [](auto ps) { ps->init(); } );
   sens_adc.init();
   sens_enc.init();
   sens_enc.set_zero_val( 2381 ); // mech param: init config?
@@ -211,8 +230,8 @@ void init_EXTI()
 
 int cmd_test0( int argc, const char * const * argv )
 {
-  const unsigned  ch = arg2long_d(  2, argc, argv, 1, 0, n_movers );
-  auto &mo = movers[ch];
+  const unsigned  ch = arg2long_d(  2, argc, argv, 1, 0, n_coords );
+  auto &mo = coords[ch];
   const float x_e = arg2float_d( 1, argc, argv, 0.5f, mo.x_min, mo.x_max );
   const float k_v = arg2float_d( 3, argc, argv, 0.5f,    0.01f, 2.0f );
 
@@ -247,7 +266,7 @@ int cmd_test0( int argc, const char * const * argv )
     uint32_t  tcb = HAL_GetTick();
 
     auto adc_nread = sens_adc.measure( adc_n );
-    if( adc_nread != adc_n ) {
+    if( !adc_nread ) {
       std_out << "# Err adc_n : " << adc_nread << " != " << adc_n << NL;
       break;
     }
@@ -299,7 +318,7 @@ int cmd_mtest( int argc, const char * const * argv )
   auto alp_v = sens_enc.get( 0 );
 
   std_out
-      << alp_i << ' ' << alp_i << ' ' << alp_v
+      << alp_i << ' ' << alp_v
       << ' ' << ang_sens.getN_turn() << ' ' << ang_sens.getOldVal() << NL;
 
   std_out << "=== AGC: " << ang_sens.getAGCSetting() << " cordic: " <<  ang_sens.getCORDICMagnitude()
@@ -308,6 +327,24 @@ int cmd_mtest( int argc, const char * const * argv )
     ang_sens.setStartPosCurr();
   }
   return 0;
+}
+
+int cmd_mcoord( int argc, const char * const * argv )
+{
+  const int n_meas = arg2long_d(  1, argc, argv, adc_n, 1, 10000 );
+  return measure_store_coords( n_meas );
+}
+
+int measure_store_coords( int nm )
+{
+  for( auto ps : sensors ) {
+    auto rc = ps->measure( nm );
+    if( rc < 1 ) {
+      return 0;
+    }
+  }
+
+  return 1;
 }
 
 // -------------------- Timers ----------------------------------------------------
@@ -607,7 +644,7 @@ int SensorAdc::measure( int nx )
     x /= nx;
   }
 
-  return nx;
+  return 1;
 }
 
 

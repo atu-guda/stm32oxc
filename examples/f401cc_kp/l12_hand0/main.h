@@ -47,6 +47,16 @@ int  MX_ADC1_Init(void);
 void HAL_ADC_MspInit( ADC_HandleTypeDef* adcHandle );
 void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle);
 
+// ------------------------------- Coords -----------------------------------
+
+struct CoordInfo {
+  float x_min, x_max;
+  float v_max;
+  float x_cur; // TODO: separate, other - const
+};
+
+// ------------------------------- Sensors -----------------------------------
+
 class Sensor {
   public:
    explicit Sensor( unsigned n_ch_ ) : n_ch( n_ch_ ) {};
