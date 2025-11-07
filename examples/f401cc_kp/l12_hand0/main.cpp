@@ -667,6 +667,21 @@ int SensorAS5600::measure( int /*nx*/ )
   return 1;
 }
 
+// ------------------------------------- Movers ----------------------------------------------
+
+int MoverServo::move( float x, uint32_t t_cur )
+{
+  t_old = t_cur;
+  return 0;
+}
+
+
+int MoverServoCont::move( float x, uint32_t t_cur )
+{
+  t_old = t_cur;
+  return 0;
+}
+
 // ------------------------------------  ------------------------------------------------
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

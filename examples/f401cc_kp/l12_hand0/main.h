@@ -103,6 +103,38 @@ class SensorAS5600 : public Sensor {
    static constexpr float k_a { 2.0f / 2048 };
 };
 
+// ------------------------------------- Movers ----------------------------------------------
+
+class Mover {
+  public:
+   explicit Mover( CoordInfo &coord_ ) : coord( coord_), t_old( 0 ) {};
+   virtual int move( float x, uint32_t t_cur ) = 0;
+   void set_t_old( uint32_t t_old_ ) { t_old = t_old_ ; }
+  protected:
+   CoordInfo &coord;
+   uint32_t t_old;
+};
+
+class MoverServo : public Mover {
+  public:
+   MoverServo( CoordInfo &coord_, uint32_t &ccr_, uint32_t arr_ )
+     : Mover( coord_), ccr( ccr_), arr( arr_ ) {};
+   virtual int move( float x, uint32_t t_cur ) override;
+  protected:
+   uint32_t &ccr;
+   uint32_t arr;
+};
+
+
+class MoverServoCont : public Mover {
+  public:
+   MoverServoCont( CoordInfo &coord_, uint32_t &ccr_, uint32_t arr_ )
+     : Mover( coord_), ccr( ccr_), arr( arr_ ) {};
+   virtual int move( float x, uint32_t t_cur ) override;
+  protected:
+   uint32_t &ccr;
+   uint32_t arr;
+};
 
 
 #endif
