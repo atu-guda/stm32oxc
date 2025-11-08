@@ -29,7 +29,6 @@ int tim_lwm_cfg();
 inline constexpr uint32_t tim_lwm_psc_freq   {  2000000 }; // 2 MHz
 inline constexpr uint32_t tim_lwm_freq       {       50 }; // 50 Hz
 inline constexpr uint32_t tim_lwm_t_us       { 1000000 / tim_lwm_freq };
-extern uint32_t tim_lwm_arr;
 int tim_lwm_cfg();
 void tim_lwm_start();
 void tim_lwm_stop();
@@ -47,12 +46,68 @@ int  MX_ADC1_Init(void);
 void HAL_ADC_MspInit( ADC_HandleTypeDef* adcHandle );
 void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle);
 
+class Mover;
+class Sensor;
+
 // ------------------------------- Coords -----------------------------------
 
 struct CoordInfo {
   float x_min, x_max;
   float v_max;
   float x_cur; // TODO: separate, other - const
+};
+
+// ------------------------------------- Movers ----------------------------------------------
+
+class Mover {
+  public:
+   explicit Mover( CoordInfo &coord_ ) : coord( coord_), t_old( 0 ) {};
+   virtual int move( float x, uint32_t t_cur ) = 0;
+   virtual int stop() = 0;
+   virtual int init() = 0;
+   virtual uint32_t getCtlVal() const { return 0; };
+   void set_t_old( uint32_t t_old_ ) { t_old = t_old_; }
+   float get_x_last() const { return x_last; }
+  protected:
+   CoordInfo &coord;
+   uint32_t t_old;
+   float x_last;
+};
+
+class MoverServoBase : public Mover {
+  public:
+   MoverServoBase( CoordInfo &coord_, __IO uint32_t &ccr_, __IO uint32_t &arr_ )
+     : Mover( coord_ ), ccr( ccr_ ), arr( arr_ ) {};
+   virtual int move( float x, uint32_t t_cur ) override;
+   virtual int stop() override { ccr = 0; return 1; };
+   virtual int init() override { return 1; };
+   virtual uint32_t getCtlVal() const override { return ccr; };
+   void set_lwm_times( uint32_t t_min, uint32_t t_max ) { lwm_t_min = t_min; lwm_t_max = t_max; }
+  protected:
+   __IO uint32_t &ccr;
+   __IO uint32_t &arr;
+   uint32_t lwm_t_min { lwm_t_min_def };
+   uint32_t lwm_t_max { lwm_t_max_def };
+   static const uint32_t lwm_t_min_def {  500 }; // min pulse width in us
+   static const uint32_t lwm_t_max_def { 2500 }; // max pulse width in us
+};
+
+
+class MoverServo : public MoverServoBase {
+  public:
+   MoverServo( CoordInfo &coord_, __IO uint32_t &ccr_, __IO uint32_t &arr_ )
+     : MoverServoBase( coord_, ccr_, arr_ ) {};
+   virtual int move( float x, uint32_t t_cur ) override;
+  protected:
+};
+
+
+class MoverServoCont : public MoverServoBase {
+  public:
+   MoverServoCont( CoordInfo &coord_, __IO uint32_t &ccr_, __IO uint32_t &arr_ )
+     : MoverServoBase( coord_, ccr_, arr_ ) {};
+   virtual int move( float x, uint32_t t_cur ) override;
+  protected:
 };
 
 // ------------------------------- Sensors -----------------------------------
@@ -68,6 +123,19 @@ class Sensor {
    virtual float get( unsigned ch ) = 0;
   protected:
    unsigned n_ch;
+};
+
+class SensorFakeMover : public Sensor {
+  public:
+   explicit SensorFakeMover( Mover &mo_  ) : Sensor( 1 ), mo( mo_ ) {};
+   virtual ~SensorFakeMover() = default;
+   virtual int measure( int nx ) override { x = mo.get_x_last(); return 1; }
+   virtual int init() override { return 1; }
+   virtual uint32_t getUint( unsigned ch ) override { return ( uint32_t ) x * 10000000; }
+   virtual float get( unsigned ch ) override { return x; };
+  protected:
+   Mover &mo;
+   float x {0};
 };
 
 class SensorAdc : public Sensor {
@@ -103,38 +171,6 @@ class SensorAS5600 : public Sensor {
    static constexpr float k_a { 2.0f / 2048 };
 };
 
-// ------------------------------------- Movers ----------------------------------------------
-
-class Mover {
-  public:
-   explicit Mover( CoordInfo &coord_ ) : coord( coord_), t_old( 0 ) {};
-   virtual int move( float x, uint32_t t_cur ) = 0;
-   void set_t_old( uint32_t t_old_ ) { t_old = t_old_ ; }
-  protected:
-   CoordInfo &coord;
-   uint32_t t_old;
-};
-
-class MoverServo : public Mover {
-  public:
-   MoverServo( CoordInfo &coord_, uint32_t &ccr_, uint32_t arr_ )
-     : Mover( coord_), ccr( ccr_), arr( arr_ ) {};
-   virtual int move( float x, uint32_t t_cur ) override;
-  protected:
-   uint32_t &ccr;
-   uint32_t arr;
-};
-
-
-class MoverServoCont : public Mover {
-  public:
-   MoverServoCont( CoordInfo &coord_, uint32_t &ccr_, uint32_t arr_ )
-     : Mover( coord_), ccr( ccr_), arr( arr_ ) {};
-   virtual int move( float x, uint32_t t_cur ) override;
-  protected:
-   uint32_t &ccr;
-   uint32_t arr;
-};
 
 
 #endif

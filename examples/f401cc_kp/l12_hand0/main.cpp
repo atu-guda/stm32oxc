@@ -31,27 +31,21 @@ CoordInfo coords[] {
   {  0.10f, 0.90f, 0.20f, 0.50f }, // rotate
   {  0.45f, 0.80f, 0.50f, 0.50f }, // arm1
   {  0.45f, 0.80f, 0.50f, 0.50f }, // arm2
-  {  0.00f, 0.70f, 0.30f, 0.30f }, // grip
+  {  0.00f, 0.70f, 0.80f, 0.10f }, // grip
 };
 
 // ------------------------------- Movers -----------------------------------
 
-enum class MoverType : uint8_t {
-  direct = 0, // x -> position
-  integr = 1, // x -> speed
-  step   = 2  // ??? 
-};
+MoverServoCont mover_base( coords[0], TIM_LWM->CCR1, TIM_LWM->ARR );
+MoverServo     mover_p1(   coords[1], TIM_LWM->CCR2, TIM_LWM->ARR );
+MoverServo     mover_p2(   coords[2], TIM_LWM->CCR3, TIM_LWM->ARR );
+MoverServo     mover_grip( coords[3], TIM_LWM->CCR4, TIM_LWM->ARR );
 
+std::array<Mover*,4> movers { &mover_base, &mover_p1, &mover_p2, &mover_grip };
 
-// MoverType::integr,
-// MoverType::direct,
-// MoverType::direct,
-// MoverType::direct,
+static_assert( std::size(movers) <= std::size(coords) );
 
-
-
-
-// ------------------------   end coords
+// ------------------------   end Movers
 int debug {0};
 int dry_run {0};
 
@@ -61,11 +55,7 @@ PinsOut ledsx( LEDSX_GPIO, LEDSX_START, LEDSX_N );
 
 const char* common_help_string = "hand0 " __DATE__ " " __TIME__ NL;
 
-// TODO: to motor objects
 TIM_HandleTypeDef tim_lwm_h;
-uint32_t tim_lwm_arr { 39999 }; // near init value, will be recalculated
-int lwm_t_min {  500 }; // min pulse width in us
-int lwm_t_max { 2500 }; // max pulse width in us
 
 // --- local commands;
 DCL_CMD ( test0,  'T', " [val] [ch] [k_v] - test move 1 ch" );
@@ -91,14 +81,13 @@ SensorAS5600 sens_enc( ang_sens );
 
 int adc_n {100};
 volatile int adc_dma_end {0};
-// uint16_t adc_buf[4]; // really need 3, but for alignment
-// uint32_t adc_data[4]; // collected and divided data (by adc.measure)
 SensorAdc sens_adc( 3 );
 
-std::array<Sensor*,2> sensors { &sens_adc, &sens_enc };
-int measure_store_coords( int nm );
+SensorFakeMover sens_grip( mover_grip );
 
-// TaskData td;
+std::array<Sensor*,3> sensors { &sens_adc, &sens_enc, &sens_grip };
+int measure_store_coords( int nm );
+void out_coords( bool nl );
 
 
 #define ADD_IOBJ(x)    constexpr NamedInt   ob_##x { #x, &x }
@@ -111,8 +100,6 @@ int measure_store_coords( int nm );
 ADD_IOBJ   ( debug   );
 ADD_IOBJ   ( dry_run   );
 ADD_IOBJ   ( adc_n   );
-ADD_IOBJ   ( lwm_t_min   );
-ADD_IOBJ   ( lwm_t_max   );
 
 #undef ADD_IOBJ
 #undef ADD_IOBJ_TD
@@ -122,8 +109,6 @@ constexpr const NamedObj *const objs_info[] = {
   & ob_debug,
   & ob_dry_run,
   & ob_adc_n,
-  & ob_lwm_t_min,
-  & ob_lwm_t_max,
   nullptr
 };
 
@@ -146,17 +131,6 @@ bool set_var_ex( const char *nm, const char *s )
 
 void idle_main_task()
 {
-  // if( cstate_go == 0 && ostate_go != 0 ) {
-  //   uint32_t cur_start_tick = HAL_GetTick();
-  //   if( cur_start_tick - last_start_tick > 100 ) {
-  //     leds.toggle( 1 );
-  //     if( global_smallrl != nullptr && global_smallrl->get()[0] == '\0' ) {
-  //       ungets( 0, "G\n" );
-  //     }
-  //     last_start_tick = cur_start_tick;
-  //   }
-  // }
-  // ostate_go = cstate_go;
 }
 
 void on_sigint( int /* c */ )
@@ -196,6 +170,7 @@ int main(void)
 
   init_EXTI();
 
+  ranges::for_each( movers,  [](auto pm) { pm->init(); } );
   ranges::for_each( sensors, [](auto ps) { ps->init(); } );
   sens_enc.set_zero_val( 2381 ); // mech param: init config?
 
@@ -223,16 +198,17 @@ void init_EXTI()
 
 int cmd_test0( int argc, const char * const * argv )
 {
-  const unsigned  ch = arg2long_d(  2, argc, argv, 1, 0, std::size(coords) );
-  auto &mo = coords[ch];
-  const float x_e = arg2float_d( 1, argc, argv, 0.5f, mo.x_min, mo.x_max );
+  const unsigned  ch = arg2long_d(  2, argc, argv, 1, 0, std::size(movers) );
+  auto &mo = movers[ch];
+  auto &co = coords[ch];
+  const float x_e = arg2float_d( 1, argc, argv, 0.5f, co.x_min, co.x_max );
   const float k_v = arg2float_d( 3, argc, argv, 0.5f,    0.01f, 2.0f );
 
   const uint32_t t_step = UVAR('t');
-  const float   x_0  = mo.x_cur;
+  const float   x_0  = co.x_cur;
   const float  x_dlt = x_e - x_0;
   const float x_adlt = fabsf( x_dlt );
-  const float      v = k_v * mo.v_max;
+  const float      v = k_v * co.v_max;
 
   const int n = std::clamp( int( x_adlt/( v * t_step * 1e-3f ) ), 1, 10000 );
   const float dx = x_dlt / n;
@@ -243,9 +219,7 @@ int cmd_test0( int argc, const char * const * argv )
     <<  "# Test0: ch= " << ch << " x_0= " << x_0 << " x_e= " << x_e << " v=" << v << " n= " << n
     << " dx= " << dx << " dt= " << t_step << NL;
 
-  static const decltype( &TIM_LWM->CCR1 ) ccrs[] { &TIM_LWM->CCR1, &TIM_LWM->CCR2, &TIM_LWM->CCR3, &TIM_LWM->CCR4 };
-
-  std_out <<  "#  i   tick     dt      x    ccr" NL;
+  std_out <<  "#  i   tick      x    ccr coords" NL;
 
   tim_lwm_start();
 
@@ -256,36 +230,30 @@ int cmd_test0( int argc, const char * const * argv )
 
   break_flag = 0;
   for( int i=0; i<n && !break_flag; ++i ) {
-    // uint32_t  tcb = HAL_GetTick();
+
+    ledsx[2].set();
 
     if( !measure_store_coords( adc_n ) ) {
       std_out << "# Err sens : " << NL;
       break;
     }
 
+    uint32_t  tcc = HAL_GetTick();
+
     const float x = ( i < (n-1) ) ? ( x_0 + dx * (i+1) ) : x_e; // TODO: fun
-    const uint32_t vi = std::clamp(                            // TODO: motor
-        (uint32_t) (lwm_t_min + (lwm_t_max-lwm_t_min) * x),
-        (uint32_t)lwm_t_min, (uint32_t) lwm_t_max
-    );
-    uint32_t ccr = (uint32_t) tim_lwm_arr * vi / tim_lwm_t_us;
 
     if( !dry_run ) {
-      *ccrs[ch] = ccr;
+      mo->move( x, tcc );
     }
-    // mo.x_cur = x;
 
-    ledsx[2].set();
+    ledsx[2].reset();
 
-    uint32_t  tcc = HAL_GetTick();
     std_out << FmtInt(i,4) << ' ' << FmtInt( tcc - tc00, 6 )
       // << ' ' << FmtInt( tcc - tcb, 6 )
-      << ' ' << FltFmt(x, cvtff_auto, 8, 4)  << ' ' << ccr
-      << ' ' << sens_adc.getUint(0) << ' ' << sens_adc.getUint(1) << ' ' << sens_enc.get(0)
-      << ' ' << coords[0].x_cur << ' '<< coords[1].x_cur << ' ' << coords[2].x_cur << NL;
+      << ' ' << FltFmt(x, cvtff_auto, 8, 4)  << ' ' << mo->getCtlVal() << ' ';
+    out_coords( true );
 
     delay_ms_until_brk( &tc0, t_step );
-    ledsx[2].reset();
   }
 
   measure_store_coords( adc_n );
@@ -328,11 +296,18 @@ int cmd_mcoord( int argc, const char * const * argv )
 {
   const int n_meas = arg2long_d(  1, argc, argv, adc_n, 1, 10000 );
   int rc  = measure_store_coords( n_meas );
+  out_coords( true );
+  return !rc;
+}
+
+void out_coords( bool nl )
+{
   for( auto c : coords ) {
     std_out << c.x_cur << ' ';
   }
-  std_out << NL;
-  return !rc;
+  if( nl ) {
+    std_out << NL;
+  }
 }
 
 int measure_store_coords( int nm )
@@ -348,6 +323,7 @@ int measure_store_coords( int nm )
   coords[0].x_cur = sens_enc.get( 0 );
   coords[1].x_cur = sens_adc.get( 0 );
   coords[2].x_cur = sens_adc.get( 1 );
+  coords[3].x_cur = sens_grip.get( 0 );
 
   return 1;
 }
@@ -357,7 +333,7 @@ int measure_store_coords( int nm )
 int tim_lwm_cfg()
 {
   const uint32_t psc { calc_TIM_psc_for_cnt_freq( TIM_LWM, tim_lwm_psc_freq ) };
-  tim_lwm_arr = calc_TIM_arr_for_base_psc( TIM_LWM, psc, tim_lwm_freq );
+  const auto tim_lwm_arr = calc_TIM_arr_for_base_psc( TIM_LWM, psc, tim_lwm_freq );
   UVAR('a') = psc;
   UVAR('b') = tim_lwm_arr;
 
@@ -476,20 +452,20 @@ void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
 
 void HAL_GPIO_EXTI_Callback( uint16_t pin_bit )
 {
-  ++UVAR('i');
+  ++UVAR('g');
   // bool need_stop { false };
 
-  switch( pin_bit ) {
-    // case USER_STOP_BIT:
-    //   need_stop = true;
-    //   break_flag = (int)(BreakNum::cbreak);
-    //   break;
-
-    default:
-      ledsx.toggle( 1 );
-      ++UVAR('j');
-      break;
-  }
+  // switch( pin_bit ) {
+  //   // case USER_STOP_BIT:
+  //   //   need_stop = true;
+  //   //   break_flag = (int)(BreakNum::cbreak);
+  //   //   break;
+  //
+  //   default:
+  //     ledsx.toggle( 1 );
+  //     ++UVAR('j');
+  //     break;
+  // }
 
   // if( need_stop ) {
   //   tims_stop( TIM_BIT_ALL );
@@ -606,7 +582,6 @@ void HAL_ADC_MspDeInit( ADC_HandleTypeDef* adcHandle )
 void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef* hadc1 )
 {
   ++UVAR('i');
-  ledsx[0].toggle();
   adc_dma_end = 1;
 }
 
@@ -671,14 +646,19 @@ int SensorAS5600::measure( int /*nx*/ )
 
 int MoverServo::move( float x, uint32_t t_cur )
 {
-  t_old = t_cur;
-  return 0;
+  t_old = t_cur; x_last = x;
+  const uint32_t vi = std::clamp(
+      (uint32_t) (lwm_t_min + (lwm_t_max-lwm_t_min) * x),
+      lwm_t_min, lwm_t_max
+      );
+  ccr = (uint32_t) arr * vi / tim_lwm_t_us;
+  return 1;
 }
 
 
 int MoverServoCont::move( float x, uint32_t t_cur )
 {
-  t_old = t_cur;
+  t_old = t_cur; x_last = x;
   return 0;
 }
 
