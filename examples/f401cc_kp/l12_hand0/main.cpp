@@ -16,6 +16,7 @@
 
 // using namespace std;
 namespace ranges = std::ranges;
+using std::size_t;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
@@ -62,6 +63,7 @@ DCL_CMD ( test0,  'T', " [val] [ch] [k_v] - test move 1 ch" );
 DCL_CMD ( stop,   'P', " - stop pwm" );
 DCL_CMD ( mtest,  'M', " - test AS5600" );
 DCL_CMD ( mcoord, 'C', " - measure and store coords" );
+DCL_CMD ( go,     'G', " x1 x2  x3 x4 k_v - go " );
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -71,6 +73,7 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_stop,
   &CMDINFO_mtest,
   &CMDINFO_mcoord,
+  &CMDINFO_go,
   nullptr
 };
 
@@ -89,6 +92,7 @@ std::array<Sensor*,3> sensors { &sens_adc, &sens_enc, &sens_grip };
 int measure_store_coords( int nm );
 void out_coords( bool nl );
 
+int process_movepart( const MovePart &mp );
 
 #define ADD_IOBJ(x)    constexpr NamedInt   ob_##x { #x, &x }
 #define ADD_IOBJ_TD(x) constexpr NamedInt   ob_##x { #x, &td.x }
@@ -249,7 +253,6 @@ int cmd_test0( int argc, const char * const * argv )
     ledsx[2].reset();
 
     std_out << FmtInt(i,4) << ' ' << FmtInt( tcc - tc00, 6 )
-      // << ' ' << FmtInt( tcc - tcb, 6 )
       << ' ' << FltFmt(x, cvtff_auto, 8, 4)  << ' ' << mo->getCtlVal() << ' ';
     out_coords( true );
 
@@ -271,6 +274,21 @@ int cmd_stop( int argc, const char * const * argv )
 {
   tim_lwm_stop();
   return 0;
+}
+
+int cmd_go( int argc, const char * const * argv )
+{
+  MovePart mp;
+  mp.init();
+
+  static_assert( std::size(coords) <= MovePart::n_max );
+  for( unsigned i=0; i<std::size(coords); ++i ) {
+    mp.xs[i] = arg2float_d( i+1, argc, argv, coords[i].x_cur, coords[i].x_min, coords[i].x_max );
+  }
+
+  tim_lwm_start();
+  int rc = process_movepart( mp );
+  return rc;
 }
 
 int cmd_mtest( int argc, const char * const * argv )
@@ -326,6 +344,79 @@ int measure_store_coords( int nm )
   coords[3].x_cur = sens_grip.get( 0 );
 
   return 1;
+}
+
+int process_movepart( const MovePart &mp )
+{
+  constexpr size_t nco { std::size(coords) };
+  const uint32_t t_step = UVAR('t');
+  float xs_0[nco];
+  float xs_dlt[nco];
+  float dxs[nco];
+
+  int nn {0};
+  for( size_t i=0; i < nco; ++i ) {
+    auto &co = coords[i];
+    xs_0[i]    = co.x_cur;
+    xs_dlt[i]  = mp.xs[i] - xs_0[i];
+    const float x_adlt { fabsf( xs_dlt[i] ) };
+    const float v = mp.k_v * co.v_max;
+
+    const int n = std::clamp( int( x_adlt/( v * t_step * 1e-3f ) ), 1, 10000 );
+    if( nn < n ) {
+      nn = n;
+    }
+  }
+
+  for( size_t i=0; i < nco; ++i ) {
+    dxs[i] = xs_dlt[i] / nn;
+  }
+
+  ledsx.reset ( 0xFF );
+
+  // std_out
+  //   <<  "# Test0: ch= " << ch << " x_0= " << x_0 << " x_e= " << x_e << " v=" << v << " n= " << n
+  //   << " dx= " << dx << " dt= " << t_step << NL;
+
+  std_out <<  "#  i   tick      x    ccr coords" NL;
+
+  uint32_t tm0 = HAL_GetTick();
+  uint32_t tc0 = tm0, tc00 = tm0;
+
+
+  break_flag = 0;
+  for( int i=0; i<nn && !break_flag; ++i ) {
+
+    ledsx[2].set();
+
+    if( !measure_store_coords( adc_n ) ) {
+      std_out << "# Err sens : " << NL; // TODO: handle
+      break;
+    }
+
+    uint32_t  tcc = HAL_GetTick();
+    std_out << FmtInt(i,4) << ' ' << FmtInt( tcc - tc00, 6 ) << ' ';
+
+    for( size_t mi = 0; mi<nco; ++mi ) {
+
+      const float x = ( i < (nn-1) ) ? ( xs_0[mi] + dxs[mi] * (i+1) ) : mp.xs[mi]; // TODO: fun
+
+      if( !dry_run && movers[mi] ) {
+        movers[mi]->move( x, tcc );
+        std_out << FltFmt(x, cvtff_auto, 8, 4 ) << ' ';
+      }
+    }
+
+    ledsx[2].reset();
+
+    out_coords( true );
+
+    delay_ms_until_brk( &tc0, t_step );
+  }
+
+  measure_store_coords( adc_n );
+
+  return 0;
 }
 
 // -------------------- Timers ----------------------------------------------------
@@ -660,6 +751,15 @@ int MoverServoCont::move( float x, uint32_t t_cur )
 {
   t_old = t_cur; x_last = x;
   return 0;
+}
+
+// ------------------------------------  ------------------------------------------------
+
+void MovePart::init()
+{
+  ranges::fill( xs, 0.0f );
+  ranges::fill( tp, 0  );
+  k_v = 1.0f;
 }
 
 // ------------------------------------  ------------------------------------------------

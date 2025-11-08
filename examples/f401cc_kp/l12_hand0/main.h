@@ -57,6 +57,14 @@ struct CoordInfo {
   float x_cur; // TODO: separate, other - const
 };
 
+struct MovePart {
+  static const unsigned n_max { 6 }; // <-> n_movers ??
+  float    xs[n_max]; // end point
+  unsigned tp[n_max]; // type of move per coord: enum or bifield?
+  float k_v; // velocity coeff
+  void init();
+};
+
 // ------------------------------------- Movers ----------------------------------------------
 
 class Mover {
