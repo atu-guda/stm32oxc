@@ -69,7 +69,7 @@ struct MovePart {
 
 class Mover {
   public:
-   explicit Mover( CoordInfo &coord_ ) : coord( coord_), t_old( 0 ) {};
+   explicit Mover( float *fb_ = nullptr ) : fb( fb_ ) {};
    virtual int move( float x, uint32_t t_cur ) = 0;
    virtual int stop() = 0;
    virtual int init() = 0;
@@ -77,25 +77,31 @@ class Mover {
    void set_t_old( uint32_t t_old_ ) { t_old = t_old_; }
    float get_x_last() const { return x_last; }
   protected:
-   CoordInfo &coord;
-   uint32_t t_old;
-   float x_last;
+   float *fb;
+   uint32_t t_old { 0 };
+   float x_last  { 0 };
 };
 
 class MoverServoBase : public Mover {
   public:
-   MoverServoBase( CoordInfo &coord_, __IO uint32_t &ccr_, __IO uint32_t &arr_ )
-     : Mover( coord_ ), ccr( ccr_ ), arr( arr_ ) {};
+   MoverServoBase( __IO uint32_t &ccr_, __IO uint32_t &arr_, float *fb_ = nullptr ) // TODO: TIM/ch ot tim_ctrl/ch
+     : Mover( fb_ ), ccr( ccr_ ), arr( arr_ ) {};
    virtual int move( float x, uint32_t t_cur ) override;
    virtual int stop() override { ccr = 0; return 1; };
    virtual int init() override { return 1; };
    virtual uint32_t getCtlVal() const override { return ccr; };
-   void set_lwm_times( uint32_t t_min, uint32_t t_max ) { lwm_t_min = t_min; lwm_t_max = t_max; }
+   void set_lwm_times( uint32_t t_min, uint32_t t_max ) {
+     lwm_t_min = t_min; lwm_t_max = t_max;
+     lwm_t_cen = ( lwm_t_max_def + lwm_t_min_def ) / 2;
+     lwm_t_dlt =   lwm_t_max_def - lwm_t_min_def;
+   }
   protected:
    __IO uint32_t &ccr;
    __IO uint32_t &arr;
    uint32_t lwm_t_min { lwm_t_min_def };
    uint32_t lwm_t_max { lwm_t_max_def };
+   uint32_t lwm_t_cen { ( lwm_t_min_def + lwm_t_max_def)/2 };
+   uint32_t lwm_t_dlt {   lwm_t_max_def - lwm_t_min_def };
    static const uint32_t lwm_t_min_def {  500 }; // min pulse width in us
    static const uint32_t lwm_t_max_def { 2500 }; // max pulse width in us
 };
@@ -103,8 +109,8 @@ class MoverServoBase : public Mover {
 
 class MoverServo : public MoverServoBase {
   public:
-   MoverServo( CoordInfo &coord_, __IO uint32_t &ccr_, __IO uint32_t &arr_ )
-     : MoverServoBase( coord_, ccr_, arr_ ) {};
+   MoverServo( __IO uint32_t &ccr_, __IO uint32_t &arr_, float *fb_ = nullptr  )
+     : MoverServoBase(  ccr_, arr_, fb_ ) {};
    virtual int move( float x, uint32_t t_cur ) override;
   protected:
 };
@@ -112,8 +118,8 @@ class MoverServo : public MoverServoBase {
 
 class MoverServoCont : public MoverServoBase {
   public:
-   MoverServoCont( CoordInfo &coord_, __IO uint32_t &ccr_, __IO uint32_t &arr_ )
-     : MoverServoBase( coord_, ccr_, arr_ ) {};
+   MoverServoCont( __IO uint32_t &ccr_, __IO uint32_t &arr_, float *fb_ = nullptr  )
+     : MoverServoBase( ccr_, arr_, fb_ ) {};
    virtual int move( float x, uint32_t t_cur ) override;
   protected:
 };

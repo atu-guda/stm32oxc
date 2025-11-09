@@ -37,10 +37,10 @@ CoordInfo coords[] {
 
 // ------------------------------- Movers -----------------------------------
 
-MoverServoCont mover_base( coords[0], TIM_LWM->CCR1, TIM_LWM->ARR );
-MoverServo     mover_p1(   coords[1], TIM_LWM->CCR2, TIM_LWM->ARR );
-MoverServo     mover_p2(   coords[2], TIM_LWM->CCR3, TIM_LWM->ARR );
-MoverServo     mover_grip( coords[3], TIM_LWM->CCR4, TIM_LWM->ARR );
+MoverServoCont mover_base( TIM_LWM->CCR1, TIM_LWM->ARR, &coords[0].x_cur );
+MoverServo     mover_p1(   TIM_LWM->CCR2, TIM_LWM->ARR, &coords[1].x_cur );
+MoverServo     mover_p2(   TIM_LWM->CCR3, TIM_LWM->ARR, &coords[2].x_cur );
+MoverServo     mover_grip( TIM_LWM->CCR4, TIM_LWM->ARR, &coords[3].x_cur );
 
 std::array<Mover*,4> movers { &mover_base, &mover_p1, &mover_p2, &mover_grip };
 
@@ -64,6 +64,7 @@ DCL_CMD ( stop,   'P', " - stop pwm" );
 DCL_CMD ( mtest,  'M', " - test AS5600" );
 DCL_CMD ( mcoord, 'C', " - measure and store coords" );
 DCL_CMD ( go,     'G', " k_v x0 x1 x2 x3 tp0 tp1 tp2 tp3 - go " );
+DCL_CMD ( pulse,  'U', " ch t_lwm dt - test pulse " );
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -74,6 +75,7 @@ const CmdInfo* global_cmds[] = {
   &CMDINFO_mtest,
   &CMDINFO_mcoord,
   &CMDINFO_go,
+  &CMDINFO_pulse,
   nullptr
 };
 
@@ -298,6 +300,31 @@ int cmd_go( int argc, const char * const * argv )
   int rc = process_movepart( mp );
   return rc;
 }
+
+// just for debug, remove
+int cmd_pulse( int argc, const char * const * argv )
+{
+  uint8_t  ch  = arg2long_d(  1, argc, argv,    1,    0, std::size(movers)-1 );
+  uint32_t lwm = arg2long_d(  2, argc, argv, 2000,  400, 2600  );
+  uint32_t dt  = arg2long_d(  3, argc, argv,  500,   10, 5000  );
+  uint32_t keep= arg2long_d(  4, argc, argv,    0,    0,    1  );
+
+  static __IO uint32_t* ccrs[]  = { &TIM_LWM->CCR1, &TIM_LWM->CCR2, &TIM_LWM->CCR3, &TIM_LWM->CCR4 };
+
+  std_out << "# pulse: ch= " << ch << " lwm= " << lwm << " dt= " << dt << NL;
+
+  tim_lwm_start();
+
+  *ccrs[ch] = (uint32_t) (39999 * lwm / tim_lwm_t_us);
+  delay_ms_brk( dt );
+
+  if( ! keep ) {
+    *ccrs[ch] = 0;
+    tim_lwm_stop();
+  }
+  return 0;
+}
+
 
 int cmd_mtest( int argc, const char * const * argv )
 {
@@ -737,7 +764,7 @@ int SensorAS5600::init()
 int SensorAS5600::measure( int /*nx*/ )
 {
   iv = dev.getAngle();
-  v  = ( (float) iv  - zero_val ) * k_a; // TODO: what?
+  v  = 0.5f + ( (float) iv  - zero_val ) * k_a; // TODO: what?
   return 1;
 }
 
@@ -758,7 +785,16 @@ int MoverServo::move( float x, uint32_t t_cur )
 int MoverServoCont::move( float x, uint32_t t_cur )
 {
   t_old = t_cur; x_last = x;
-  return 0;
+  const float fbv = fb ? *fb : 0;
+  const float dx = x - fbv;
+
+  if( fabsf( dx ) < 0.05f ) { // dead zone, TODO: param
+    ccr = 0;
+    return 1;
+  }
+  uint32_t ccr_v = lwm_t_cen - (int) ( dx * lwm_t_dlt * 0.1f ); // TODO: param
+  ccr = ccr_v;
+  return 1;
 }
 
 // ------------------------------------  ------------------------------------------------
