@@ -63,7 +63,7 @@ DCL_CMD ( test0,  'T', " [val] [ch] [k_v] - test move 1 ch" );
 DCL_CMD ( stop,   'P', " - stop pwm" );
 DCL_CMD ( mtest,  'M', " - test AS5600" );
 DCL_CMD ( mcoord, 'C', " - measure and store coords" );
-DCL_CMD ( go,     'G', " x1 x2  x3 x4 k_v - go " );
+DCL_CMD ( go,     'G', " k_v x0 x1 x2 x3 tp0 tp1 tp2 tp3 - go " );
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -282,9 +282,17 @@ int cmd_go( int argc, const char * const * argv )
   mp.init();
 
   static_assert( std::size(coords) <= MovePart::n_max );
-  for( unsigned i=0; i<std::size(coords); ++i ) {
-    mp.xs[i] = arg2float_d( i+1, argc, argv, coords[i].x_cur, coords[i].x_min, coords[i].x_max );
+  char sep { ' ' };
+  mp.k_v = arg2float_d( 1, argc, argv, 0.5f, 0.01f, 2.0f );
+  std_out << " Go: k_v= " << mp.k_v << " ( ";
+  constexpr size_t nc { std::size(coords) };
+  for( size_t i=0; i<nc; ++i ) {
+    mp.xs[i] = arg2float_d( i+2,    argc, argv, coords[i].x_cur, coords[i].x_min, coords[i].x_max );
+    mp.tp[i] = arg2long_d(  i+2+nc, argc, argv, 0, 0, 10 ); // TODO: real types / enum
+    std_out << sep << ' ' << mp.xs[i] << " @ " << mp.tp[i] << ' ';
+    sep = ',';
   }
+  std_out << " ) " NL;
 
   tim_lwm_start();
   int rc = process_movepart( mp );
@@ -355,7 +363,7 @@ int process_movepart( const MovePart &mp )
   float dxs[nco];
 
   int nn {0};
-  for( size_t i=0; i < nco; ++i ) {
+  for( size_t i=0; i < nco; ++i ) { // calc max need time in steps
     auto &co = coords[i];
     xs_0[i]    = co.x_cur;
     xs_dlt[i]  = mp.xs[i] - xs_0[i];
