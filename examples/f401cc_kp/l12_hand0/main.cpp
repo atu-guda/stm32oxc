@@ -29,7 +29,7 @@ USBCDC_CONSOLE_DEFINES;
 
 
 CoordInfo coords[] {
-  {  0.10f, 0.90f, 0.20f, 0.50f }, // rotate
+  {  0.10f, 0.90f, 0.20f, 0.20f }, // rotate
   {  0.45f, 0.80f, 0.50f, 0.50f }, // arm1
   {  0.45f, 0.80f, 0.50f, 0.50f }, // arm2
   {  0.00f, 0.70f, 0.80f, 0.10f }, // grip
@@ -172,14 +172,15 @@ int main(void)
     std_out << "Err: timer LWM init"  NL;
     die4led( 2 );
   }
-  tim_lwm_start();
 
   init_EXTI();
 
   ranges::for_each( movers,  [](auto pm) { pm->init(); } );
   ranges::for_each( sensors, [](auto ps) { ps->init(); } );
   sens_enc.set_zero_val( 2381 ); // mech param: init config?
+  mover_base.set_lwm_times( 1300, 1700 );
 
+  tim_lwm_start();
   measure_store_coords( adc_n );
 
   BOARD_POST_INIT_BLINK;
@@ -313,14 +314,17 @@ int cmd_pulse( int argc, const char * const * argv )
 
   std_out << "# pulse: ch= " << ch << " lwm= " << lwm << " dt= " << dt << NL;
 
+  *ccrs[ch] = (uint32_t) (39999 * lwm / tim_lwm_t_us);
+  delay_ms( 50 );
   tim_lwm_start();
 
-  *ccrs[ch] = (uint32_t) (39999 * lwm / tim_lwm_t_us);
   delay_ms_brk( dt );
 
   if( ! keep ) {
     *ccrs[ch] = 0;
     tim_lwm_stop();
+    measure_store_coords( adc_n );
+    out_coords( true );
   }
   return 0;
 }
@@ -443,6 +447,8 @@ int process_movepart( const MovePart &mp )
     }
 
     ledsx[2].reset();
+
+    std_out << dbg_val0 << ' ';
 
     out_coords( true );
 
@@ -774,7 +780,7 @@ int MoverServo::move( float x, uint32_t t_cur )
 {
   t_old = t_cur; x_last = x;
   const uint32_t vi = std::clamp(
-      (uint32_t) (lwm_t_min + (lwm_t_max-lwm_t_min) * x),
+      (uint32_t) ( lwm_t_min + lwm_t_dlt * x ),
       lwm_t_min, lwm_t_max
       );
   ccr = (uint32_t) arr * vi / tim_lwm_t_us;
@@ -785,15 +791,17 @@ int MoverServo::move( float x, uint32_t t_cur )
 int MoverServoCont::move( float x, uint32_t t_cur )
 {
   t_old = t_cur; x_last = x;
-  const float fbv = fb ? *fb : 0;
+  const float fbv = fb ? *fb : 0.5f;
   const float dx = x - fbv;
 
-  if( fabsf( dx ) < 0.05f ) { // dead zone, TODO: param
+  if( fabsf( dx ) < 0.02f ) { // dead zone, TODO: param
     ccr = 0;
     return 1;
   }
-  uint32_t ccr_v = lwm_t_cen - (int) ( dx * lwm_t_dlt * 0.1f ); // TODO: param
-  ccr = ccr_v;
+  int32_t vi = lwm_t_cen + (int) ( dx * lwm_t_dlt * 1.25f ); // TODO: param
+  vi = std::clamp( vi, (int32_t)lwm_t_min, (int32_t)lwm_t_max );
+  dbg_val0 = (uint32_t) arr * vi / tim_lwm_t_us;
+  ccr = dbg_val0; // (uint32_t) arr * vi / tim_lwm_t_us;
   return 1;
 }
 
