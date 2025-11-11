@@ -69,17 +69,22 @@ struct MovePart {
 
 class Mover {
   public:
+   enum Flags { noFlags = 0, offAfter = 1 };
    explicit Mover( float *fb_ = nullptr ) : fb( fb_ ) {};
    virtual int move( float x, uint32_t t_cur ) = 0;
    virtual int stop() = 0;
    virtual int init() = 0;
+   virtual int pre_run()  { return 1; };
+   virtual int post_run() { return 1; };
    virtual uint32_t getCtlVal() const { return 0; };
    void set_t_old( uint32_t t_old_ ) { t_old = t_old_; }
    float get_x_last() const { return x_last; }
+   void setFlags( Flags fl ) { flags = fl; };
   protected:
-   float *fb;
+   float *fb; // feedback, not exsist = nullptr
    uint32_t t_old { 0 };
    float x_last  { 0 };
+   Flags flags { noFlags };
 };
 
 class MoverServoBase : public Mover {
@@ -89,6 +94,7 @@ class MoverServoBase : public Mover {
    virtual int move( float x, uint32_t t_cur ) override;
    virtual int stop() override { ccr = 0; return 1; };
    virtual int init() override { return 1; };
+   virtual int post_run() override { if( flags & Flags::offAfter ) { stop(); }; return 1; };
    virtual uint32_t getCtlVal() const override { return ccr; };
    void set_lwm_times( uint32_t t_min, uint32_t t_max ) {
      lwm_t_min = t_min; lwm_t_max = t_max;

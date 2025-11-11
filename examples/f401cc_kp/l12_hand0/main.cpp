@@ -179,6 +179,7 @@ int main(void)
   ranges::for_each( sensors, [](auto ps) { ps->init(); } );
   sens_enc.set_zero_val( 2381 ); // mech param: init config?
   mover_base.set_lwm_times( 1300, 1700 );
+  mover_base.setFlags( Mover::Flags::offAfter );
 
   tim_lwm_start();
   measure_store_coords( adc_n );
@@ -229,6 +230,10 @@ int cmd_test0( int argc, const char * const * argv )
   std_out <<  "#  i   tick      x    ccr coords" NL;
 
   tim_lwm_start();
+  if( ! mo->pre_run() ) {
+    std_out << "# Err: pre_run " NL;
+    return 2;
+  }
 
 
   uint32_t tm0 = HAL_GetTick();
@@ -262,6 +267,10 @@ int cmd_test0( int argc, const char * const * argv )
     delay_ms_until_brk( &tc0, t_step );
   }
 
+  if( ! mo->post_run() ) {
+    std_out << "# Err: post_run " NL;
+  };
+
   measure_store_coords( adc_n );
 
 
@@ -287,7 +296,7 @@ int cmd_go( int argc, const char * const * argv )
   static_assert( std::size(coords) <= MovePart::n_max );
   char sep { ' ' };
   mp.k_v = arg2float_d( 1, argc, argv, 0.5f, 0.01f, 2.0f );
-  std_out << " Go: k_v= " << mp.k_v << " ( ";
+  std_out << "# Go: k_v= " << mp.k_v << " ( ";
   constexpr size_t nc { std::size(coords) };
   for( size_t i=0; i<nc; ++i ) {
     mp.xs[i] = arg2float_d( i+2,    argc, argv, coords[i].x_cur, coords[i].x_min, coords[i].x_max );
@@ -413,6 +422,13 @@ int process_movepart( const MovePart &mp )
 
   ledsx.reset ( 0xFF );
 
+  for( auto mo : movers ) {
+    if( !mo || ! mo->pre_run() ) {
+      std_out << "# Err: pre_run" NL;
+      return 2;
+    }
+  }
+
   // std_out
   //   <<  "# Test0: ch= " << ch << " x_0= " << x_0 << " x_e= " << x_e << " v=" << v << " n= " << n
   //   << " dx= " << dx << " dt= " << t_step << NL;
@@ -453,6 +469,12 @@ int process_movepart( const MovePart &mp )
     out_coords( true );
 
     delay_ms_until_brk( &tc0, t_step );
+  }
+
+  for( auto mo : movers ) {
+    if( !mo || ! mo->post_run() ) {
+      std_out << "# Err: post_run" NL;
+    }
   }
 
   measure_store_coords( adc_n );
@@ -798,10 +820,11 @@ int MoverServoCont::move( float x, uint32_t t_cur )
     ccr = 0;
     return 1;
   }
-  int32_t vi = lwm_t_cen + (int) ( dx * lwm_t_dlt * 1.25f ); // TODO: param
+  int32_t vi = lwm_t_cen + (int) ( dx * lwm_t_dlt * 0.50f ); // TODO: param
   vi = std::clamp( vi, (int32_t)lwm_t_min, (int32_t)lwm_t_max );
-  dbg_val0 = (uint32_t) arr * vi / tim_lwm_t_us;
-  ccr = dbg_val0; // (uint32_t) arr * vi / tim_lwm_t_us;
+  dbg_val0 = vi;
+  const auto ccr_v = (uint32_t) arr * vi / tim_lwm_t_us;
+  ccr = ccr_v; // (uint32_t) arr * vi / tim_lwm_t_us;
   return 1;
 }
 
