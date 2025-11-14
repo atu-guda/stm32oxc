@@ -16,7 +16,7 @@ class OutStreamFmt {
 class HexInt : public OutStreamFmt {
   public:
    explicit HexInt( uint32_t a, bool prefix_0x = false ) : v(a), pr( prefix_0x ) {};
-   explicit HexInt( void *a,    bool prefix_0x = true )  : v( reinterpret_cast<uint32_t>(a) ), pr( prefix_0x )  {};
+   explicit HexInt( const void *a, bool prefix_0x = true )  : v( reinterpret_cast<uint32_t>(a) ), pr( prefix_0x )  {};
    operator uint32_t() const { return v; }
    virtual void out( OutStream &os ) const override;
    uint32_t v;

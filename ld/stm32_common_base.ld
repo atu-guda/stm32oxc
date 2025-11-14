@@ -30,6 +30,12 @@ SECTIONS
     KEEP (*(.init))
     KEEP (*(.fini))
 
+    /* auto-register commands */
+    . = ALIGN(4);
+    __start_cmds_list = . ;
+    KEEP(*(SORT(.cmds_list)))
+    __stop_cmds_list =  . ;
+
     . = ALIGN(4);
     _etext = . ;        /* end of code */
   } >FLASH

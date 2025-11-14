@@ -59,12 +59,14 @@ const char* common_help_string = "hand0 " __DATE__ " " __TIME__ NL;
 TIM_HandleTypeDef tim_lwm_h;
 
 // --- local commands;
-DCL_CMD ( test0,  'T', " [val] [ch] [k_v] - test move 1 ch" );
-DCL_CMD ( stop,   'P', " - stop pwm" );
-DCL_CMD ( mtest,  'M', " - test AS5600" );
-DCL_CMD ( mcoord, 'C', " - measure and store coords" );
-DCL_CMD ( go,     'G', " k_v x0 x1 x2 x3 tp0 tp1 tp2 tp3 - go " );
-DCL_CMD ( pulse,  'U', " ch t_lwm dt - test pulse " );
+DCL_CMD_REG( test0,  'T', " [val] [ch] [k_v] - test move 1 ch" );
+DCL_CMD_REG( stop,   'P', " - stop pwm" );
+DCL_CMD_REG( mtest,  'M', " - test AS5600" );
+DCL_CMD_REG( mcoord, 'C', " - measure and store coords" );
+DCL_CMD_REG( go,     'G', " k_v x0 x1 x2 x3 tp0 tp1 tp2 tp3 - go " );
+DCL_CMD_REG( pulse,  'U', " ch t_lwm dt - test pulse " );
+
+const size_t num_cmds = __stop_cmds_list - __start_cmds_list;
 
 const CmdInfo* global_cmds[] = {
   DEBUG_CMDS,
@@ -363,6 +365,17 @@ int cmd_mcoord( int argc, const char * const * argv )
   const int n_meas = arg2long_d(  1, argc, argv, adc_n, 1, 10000 );
   int rc  = measure_store_coords( n_meas );
   out_coords( true );
+
+  // test new cmd reg
+  std_out << "# " << HexInt(__start_cmds_list) << ' ' <<  HexInt(__stop_cmds_list)
+    << " [0]: " << HexInt(__start_cmds_list[0])
+    << " test: " << HexInt(&CMDINFO_test0) << " stop: " << HexInt(&CMDINFO_stop) << NL;
+
+  for( const CmdInfo** ppcmd = __start_cmds_list; ppcmd < __stop_cmds_list; ++ppcmd ) {
+    const CmdInfo* pcmd = *ppcmd;
+    std_out << "## \"" << pcmd->name <<  "\" '" << pcmd->acr << "' \""  << pcmd->hint << '"' << NL;
+  };
+
   return !rc;
 }
 
@@ -390,6 +403,7 @@ int measure_store_coords( int nm )
   coords[1].x_cur = sens_adc.get( 0 );
   coords[2].x_cur = sens_adc.get( 1 );
   coords[3].x_cur = sens_grip.get( 0 );
+
 
   return 1;
 }

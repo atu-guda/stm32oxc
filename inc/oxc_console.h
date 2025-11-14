@@ -89,16 +89,28 @@ typedef int (*CmdFun)( int argc, const char * const * argv );
 #define CMDS_NMAX 100
 struct CmdInfo
 {
-  const char *name; //* full command name
-  char acr;         //* acronym of command name, or 0
-  CmdFun fun;       //* ptr to command
-  const char *hint; //* help hint
+  const char * const name; //* full command name
+  const char acr;         //* acronym of command name, or 0
+  const CmdFun fun;       //* ptr to command
+  const char *const hint; //* help hint
 };
 extern const CmdInfo* global_cmds[];
 
+extern "C" {
+  extern const CmdInfo* __start_cmds_list[];
+  extern const CmdInfo* __stop_cmds_list[];
+}
+
 #define DCL_CMD(basename, acro, helpstr ) \
   int cmd_##basename( int argc, const char * const * argv ); \
-  CmdInfo CMDINFO_##basename { #basename, acro, cmd_##basename, helpstr };
+  const CmdInfo CMDINFO_##basename { #basename, acro, cmd_##basename, helpstr };
+
+#define REGISTER_CMD(pcmd) \
+  const CmdInfo* const pcmd##_reg_ __attribute__((section(".cmds_list"), used)) = (&pcmd)
+
+#define DCL_CMD_REG(basename, acro, helpstr ) \
+  DCL_CMD(basename, acro, helpstr ) \
+  REGISTER_CMD(CMDINFO_##basename);
 
 extern int console_verbose;
 volatile extern int on_cmd_handler;
