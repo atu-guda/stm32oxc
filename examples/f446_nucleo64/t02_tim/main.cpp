@@ -18,15 +18,8 @@ int MX_TIM2_Init(void);
 volatile int dt_irq = 0;
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
+DCL_CMD_REG( test0, 'T', " - "  );
 
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-
-  &CMDINFO_TEST0,
-  nullptr
-};
 
 
 int delay_led_step { 500 };

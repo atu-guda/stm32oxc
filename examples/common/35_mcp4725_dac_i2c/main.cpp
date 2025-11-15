@@ -13,29 +13,11 @@ BOARD_CONSOLE_DEFINES;
 const char* common_help_string = "App to use MCP4725 DAC" NL;
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " [v] - test DAC output (12bit)"  };
-int cmd_outV( int argc, const char * const * argv );
-CmdInfo CMDINFO_OUTV { "outV", 'V', cmd_outV, " [v] - output in mV"  };
-int cmd_outEEPROM( int argc, const char * const * argv );
-CmdInfo CMDINFO_EEPROM { "outEEPROM", 'E', cmd_outEEPROM, " [v] - output in mV and store to EEPROM"  };
-int cmd_rect( int argc, const char * const * argv );
-CmdInfo CMDINFO_RECT { "rect", 'R', cmd_rect, " [v0 [v1]] - alternate output"  };
-int cmd_sleep1( int argc, const char * const * argv );
-CmdInfo CMDINFO_SLEEP1 { "sleep1", 'S', cmd_sleep1, " - sleep with 1k gound"  };
+DCL_CMD_REG( test0, 'T', " [v] - test DAC output (12bit)"  );
+DCL_CMD_REG( outV, 'V', " [v] - output in mV"  );
+DCL_CMD_REG( outEEPROM, 'E', " [v] - output in mV and store to EEPROM"  );
+DCL_CMD_REG( sleep1, 'S', " - sleep with 1k gound"  );
 
-
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-  DEBUG_I2C_CMDS,
-
-  &CMDINFO_TEST0,
-  &CMDINFO_OUTV,
-  &CMDINFO_EEPROM,
-  &CMDINFO_RECT,
-  &CMDINFO_SLEEP1,
-  nullptr
-};
 
 
 I2C_HandleTypeDef i2ch;

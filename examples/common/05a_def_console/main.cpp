@@ -17,15 +17,6 @@ BOARD_CONSOLE_DEFINES;
   const char* common_help_string = "Appication to test common console with auto I/O selection: Unknown" NL;
 #endif
 
-// --- local commands;
-
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-
-  &CMDINFO_TEST_DELAYS,
-  &CMDINFO_TEST_RATE,
-  nullptr
-};
 
 
 int main(void)

@@ -186,22 +186,10 @@ void WS2812_info::callback_full()
 WS2812_info dsi( &tim_h, WS2812_TIM_CH );
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test LED output"  };
-int cmd_pix( int argc, const char * const * argv );
-CmdInfo CMDINFO_PIX { "pix", 'P', cmd_pix, " r g b pos - set pixel"  };
-int cmd_wave( int argc, const char * const * argv );
-CmdInfo CMDINFO_WAVE { "wave", 'W', cmd_wave, " type t_scale l_scale - test wave"  };
+DCL_CMD_REG( test0, 'T', " - test LED output"  );
+DCL_CMD_REG( pix, 'P', " r g b pos - set pixel"  );
+DCL_CMD_REG( wave, 'W', " type t_scale l_scale - test wave"  );
 
-
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-
-  &CMDINFO_TEST0,
-  &CMDINFO_PIX,
-  &CMDINFO_WAVE,
-  nullptr
-};
 
 
 int main(void)

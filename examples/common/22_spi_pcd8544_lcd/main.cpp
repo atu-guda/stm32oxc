@@ -18,31 +18,11 @@ BOARD_CONSOLE_DEFINES;
 const char* common_help_string = "App to test PCD8544 (nokia 3311) LCD screen" NL;
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
-
-int cmd_cls( int argc, const char * const * argv );
-CmdInfo CMDINFO_CLS { "cls", 'X', cmd_cls, " - clear screen"  };
-
-int cmd_vline( int argc, const char * const * argv );
-CmdInfo CMDINFO_VLINE { "vline", 0, cmd_vline, " [start [end]] - test vline"  };
-
-int cmd_line( int argc, const char * const * argv );
-CmdInfo CMDINFO_LINE { "line", 'L', cmd_line, " - test line"  };
-
-int cmd_contr( int argc, const char * const * argv );
-CmdInfo CMDINFO_CONTR { "contr",  0, cmd_contr, " [v] - test contrast"  };
-
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-
-  &CMDINFO_TEST0,
-  &CMDINFO_CLS,
-  &CMDINFO_VLINE,
-  &CMDINFO_LINE,
-  &CMDINFO_CONTR,
-  nullptr
-};
+DCL_CMD_REG( test0, 'T', " - test PCD8544 common"  );
+DCL_CMD_REG( cls, 'X', " - clear screen"  );
+DCL_CMD_REG( vline, 0, " [start [end]] - test vline"  );
+DCL_CMD_REG( line, 'L', " - test line"  );
+DCL_CMD_REG( contr,  0, " [v] - test contrast"  );
 
 
 

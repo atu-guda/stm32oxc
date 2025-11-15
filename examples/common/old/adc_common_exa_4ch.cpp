@@ -19,13 +19,13 @@ extern ADC_Info adc;
 
 void adc_show_stat( OutStream &os, uint32_t n = 0xFFFFFFFF, uint32_t st = 0 );
 void pr_ADCDMA_state();
+DCL_CMD_REG( out, 'O', " [N [start]]- output data "  );
 int cmd_out( int argc, const char * const * argv );
-CmdInfo CMDINFO_OUT { "out", 'O', cmd_out, " [N [start]]- output data "  };
+DCL_CMD_REG( show_stats, 'Y', " [N [start]]- show statistics"  );
 int cmd_show_stats( int argc, const char * const * argv );
-CmdInfo CMDINFO_SHOWSTATS { "show_stats", 'Y', cmd_show_stats, " [N [start]]- show statistics"  };
 #ifdef USE_OXC_SD
+DCL_CMD_REG( outsd, 'X', "filename [N [start]]- output data to SD"  );
 int cmd_outsd( int argc, const char * const * argv );
-CmdInfo CMDINFO_OUTSD { "outsd", 'X', cmd_outsd, "filename [N [start]]- output data to SD"  };
 #endif
 
 

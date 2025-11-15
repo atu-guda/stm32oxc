@@ -15,20 +15,8 @@ BOARD_CONSOLE_DEFINES;
 
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
-
-int cmd_test1( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST1 { "test1", 'X', cmd_test1, " - I2C actions"  };
-
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-  DEBUG_I2C_CMDS,
-
-  &CMDINFO_TEST0,
-  &CMDINFO_TEST1,
-  nullptr
-};
+DCL_CMD_REG( test0, 'T', " - test accel "  );
+DCL_CMD_REG( test1, 'X', " - I2C actions"  );
 
 
 I2C_HandleTypeDef i2ch;

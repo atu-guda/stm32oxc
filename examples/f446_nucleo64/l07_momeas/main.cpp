@@ -26,60 +26,23 @@ const char* common_help_string = "App to measure brushed motor params" NL;
 
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, "n v0 dv pwm0 dpwm - test "  };
-int cmd_init( int argc, const char * const * argv );
-CmdInfo CMDINFO_INIT { "init", '\0', cmd_init, " - init RD6006"  };
-int cmd_writeReg( int argc, const char * const * argv );
-CmdInfo CMDINFO_WRITEREG { "write_reg", 'W', cmd_writeReg, "reg val - write 1 reg"  };
-int cmd_readRegs( int argc, const char * const * argv );
-CmdInfo CMDINFO_READREGS { "read_regs", 'R', cmd_readRegs, "start n - read n regs"  };
-int cmd_readReg( int argc, const char * const * argv );
-CmdInfo CMDINFO_READREG { "read_reg", '\0', cmd_readReg, "i - read 1 reg"  };
-int cmd_on( int argc, const char * const * argv );
-CmdInfo CMDINFO_ON { "on", '\0', cmd_on, "[meas] [off_delay] - set power ON"  };
-int cmd_off( int argc, const char * const * argv );
-CmdInfo CMDINFO_OFF { "off", 'X', cmd_off, "- set power OFF"  };
-int cmd_measure_VI( int argc, const char * const * argv );
-CmdInfo CMDINFO_MEASURE_VI { "measure_VI", 'M', cmd_measure_VI, "- measure V,I"  };
-int cmd_setV( int argc, const char * const * argv );
-CmdInfo CMDINFO_SETV { "setV", 'V', cmd_setV, "mV [r] - set output voltage"  };
-int cmd_setI( int argc, const char * const * argv );
-CmdInfo CMDINFO_SETI { "setI", 'I', cmd_setI, "100uA  [r]- set output current limit"  };
-int cmd_measF( int argc, const char * const * argv );
-CmdInfo CMDINFO_MEASF { "measF", 'F', cmd_measF, "[set_0] [off] - measure force"  };
-int cmd_measure_Nu( int argc, const char * const * argv );
-CmdInfo CMDINFO_MEASNU { "measNu", 'U', cmd_measure_Nu, "[dt] - measure rotation speed"  };
-int cmd_pwm( int argc, const char * const * argv );
-CmdInfo CMDINFO_PWM { "pwm", 'Q', cmd_pwm, "v - set PWM 0-pwm_max"  };
-int cmd_freq( int argc, const char * const * argv );
-CmdInfo CMDINFO_FREQ { "freq", '\0', cmd_freq, "f - set PWM freq"  };
-int cmd_timinfo( int argc, const char * const * argv );
-CmdInfo CMDINFO_TIMINFO { "timinfo", '\0', cmd_timinfo, " - info about timers"  };
-int cmd_vstep( int argc, const char * const * argv );
-CmdInfo CMDINFO_VSTEP { "vstep", 'Z', cmd_vstep, " - set+ voltage and measure"  };
+DCL_CMD_REG( test0, 'T', "n v0 dv pwm0 dpwm - test "  );
+DCL_CMD_REG( init, '\0', " - init RD6006"  );
+DCL_CMD_REG( write_reg, 'W', "reg val - write 1 reg"  );
+DCL_CMD_REG( read_regs, 'R', "start n - read n regs"  );
+DCL_CMD_REG( read_reg, '\0', "i - read 1 reg"  );
+DCL_CMD_REG( on, '\0', "[meas] [off_delay] - set power ON"  );
+DCL_CMD_REG( off, 'X', "- set power OFF"  );
+DCL_CMD_REG( measure_VI, 'M', "- measure V,I"  );
+DCL_CMD_REG( setV, 'V', "mV [r] - set output voltage"  );
+DCL_CMD_REG( setI, 'I', "100uA  [r]- set output current limit"  );
+DCL_CMD_REG( measF, 'F', "[set_0] [off] - measure force"  );
+DCL_CMD_REG( measNu, 'U', "[dt] - measure rotation speed"  );
+DCL_CMD_REG( pwm, 'Q', "v - set PWM 0-pwm_max"  );
+DCL_CMD_REG( freq, '\0', "f - set PWM freq"  );
+DCL_CMD_REG( timinfo, '\0', " - info about timers"  );
+DCL_CMD_REG( vstep, 'Z', " - set+ voltage and measure"  );
 
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-
-  &CMDINFO_TEST0,
-  &CMDINFO_INIT,
-  &CMDINFO_WRITEREG,
-  &CMDINFO_READREGS,
-  &CMDINFO_READREG,
-  &CMDINFO_ON,
-  &CMDINFO_OFF,
-  &CMDINFO_MEASURE_VI,
-  &CMDINFO_SETV,
-  &CMDINFO_SETI,
-  &CMDINFO_MEASF,
-  &CMDINFO_MEASNU,
-  &CMDINFO_PWM,
-  &CMDINFO_FREQ,
-  &CMDINFO_TIMINFO,
-  &CMDINFO_VSTEP,
-  nullptr
-};
 
 void set_pwm_freq( xfloat f, xfloat p );
 void set_pwm( xfloat p );

@@ -23,15 +23,8 @@ void UART_handleIRQ();
 
 
 
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
+DCL_CMD_REG( test0, 'T', " - test UART"  );
 
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-
-  &CMDINFO_TEST0,
-  nullptr
-};
 
 const unsigned buf_sz = 128;
 

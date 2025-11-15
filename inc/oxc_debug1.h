@@ -56,54 +56,23 @@ extern const char* common_help_string __weak;
 
 // common commands:
 int cmd_info( int argc, const char * const * argv );
-extern const CmdInfo CMDINFO_INFO;
 int cmd_echo( int argc, const char * const * argv );
-extern const CmdInfo CMDINFO_ECHO;
 int cmd_help( int argc, const char * const * argv );
-extern const CmdInfo CMDINFO_HELP;
 int cmd_dump( int argc, const char * const * argv );
-extern const CmdInfo CMDINFO_DUMP;
-int cmd_dump32( int argc, const char * const * argv );
-extern const CmdInfo CMDINFO_DUMP32;
+int cmd_hd32( int argc, const char * const * argv );
 int cmd_fill( int argc, const char * const * argv );
-extern const CmdInfo CMDINFO_FILL;
-int cmd_pvar( int argc, const char * const * argv );
-extern const CmdInfo CMDINFO_PVAR;
-int cmd_svar( int argc, const char * const * argv );
-extern const CmdInfo CMDINFO_SVAR;
+int cmd_print( int argc, const char * const * argv );
+int cmd_set( int argc, const char * const * argv );
 [[ noreturn ]] int cmd_die( int argc, const char * const * argv );
-extern const CmdInfo CMDINFO_DIE;
 int cmd_reboot( int argc, const char * const * argv );
-extern const CmdInfo CMDINFO_REBOOT;
 int cmd_log_print( int argc, const char * const * argv );
-extern const CmdInfo CMDINFO_LOG_PRINT;
 int cmd_log_reset( int argc, const char * const * argv );
-extern const CmdInfo CMDINFO_LOG_RESET;
 int cmd_pin_info( int argc, const char * const * argv );
-extern const CmdInfo CMDINFO_PIN_INFO;
-int cmd_set_leds_step( int argc, const char * const * argv );
-extern const CmdInfo CMDINFO_LSTEP;
+int cmd_leds_step( int argc, const char * const * argv );
 // noauto usage
 int cmd_test_delays( int argc, const char * const * argv );
-extern const CmdInfo CMDINFO_TEST_DELAYS;
 int cmd_test_rate( int argc, const char * const * argv );
-extern const CmdInfo CMDINFO_TEST_RATE;
 
-#define DEBUG_CMDS \
-  &CMDINFO_HELP, \
-  &CMDINFO_INFO, \
-  &CMDINFO_DUMP, \
-  &CMDINFO_DUMP32, \
-  &CMDINFO_FILL, \
-  &CMDINFO_ECHO, \
-  &CMDINFO_REBOOT, \
-  &CMDINFO_DIE, \
-  &CMDINFO_LOG_PRINT, \
-  &CMDINFO_LOG_RESET, \
-  &CMDINFO_PVAR, \
-  &CMDINFO_SVAR, \
-  &CMDINFO_PIN_INFO, \
-  &CMDINFO_LSTEP \
 
 #ifdef __cplusplus
 }

@@ -183,36 +183,15 @@ bool set_var_ex( const char *nm, const char *s )
 
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " [n] [skip_pwm] - measure V,I + control PWM"  };
-int cmd_setcalibr( int argc, const char * const * argv );
-CmdInfo CMDINFO_SETCALIBR { "set_calibr", 'K', cmd_setcalibr, " I_lsb R_sh - calibrate INA226 for given shunt"  };
-int cmd_tinit( int argc, const char * const * argv );
-CmdInfo CMDINFO_TINIT { "tinit", 'I', cmd_tinit, " - reinit timer"  };
-int cmd_pwm( int argc, const char * const * argv );
-CmdInfo CMDINFO_PWM { "pwm", 0, cmd_pwm, " [val] - set PWM value"  };
-int cmd_calibrate( int argc, const char * const * argv );
-CmdInfo CMDINFO_CALIBRATE { "calibrate", 'C', cmd_calibrate, " [pwm_max] [dt] [fake] - calibrate PWM values"  };
-int cmd_print_pwm( int argc, const char * const * argv );
-CmdInfo CMDINFO_PRINTPWM { "print_pwm", 0, cmd_print_pwm, " [more]- print PWM data"  };
-int cmd_reset_cal( int argc, const char * const * argv );
-CmdInfo CMDINFO_RESETCAL { "reset_cal", 'X', cmd_reset_cal, " [R_0 V_00 k_gv1]- reset calibration data"  };
+DCL_CMD_REG( test0, 'T', " [n] [skip_pwm] - measure V,I + control PWM"  );
+DCL_CMD_REG( set_calibr, 'K', " I_lsb R_sh - calibrate INA226 for given shunt"  );
+DCL_CMD_REG( tinit, 'I', " - reinit timer"  );
+DCL_CMD_REG( pwm, 0, " [val] - set PWM value"  );
+DCL_CMD_REG( calibrate, 'C', " [pwm_max] [dt] [fake] - calibrate PWM values"  );
+DCL_CMD_REG( print_pwm, 0, " [more]- print PWM data"  );
+DCL_CMD_REG( reset_cal, 'X', " [R_0 V_00 k_gv1]- reset calibration data"  );
 
 
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-  // DEBUG_I2C_CMDS,
-
-  &CMDINFO_TEST0,
-  &CMDINFO_TINIT,
-  &CMDINFO_SETCALIBR,
-  &CMDINFO_PWM,
-  &CMDINFO_CALIBRATE,
-  &CMDINFO_PRINTPWM,
-  &CMDINFO_RESETCAL,
-  CMDINFOS_PWM,
-  nullptr
-};
 
 int main(void)
 {
@@ -441,7 +420,7 @@ int cmd_test0( int argc, const char * const * argv )
 }
 
 
-int cmd_setcalibr( int argc, const char * const * argv )
+int cmd_set_calibr( int argc, const char * const * argv )
 {
   const float calibr_I_lsb = arg2float_d( 1, argc, argv, ina226.get_I_lsb_mA()  * 1e-3f, 1e-20f, 1e10f );
   const float calibr_R     = arg2float_d( 2, argc, argv, ina226.get_R_sh_uOhm() * 1e-6f, 1e-20f, 1e10f );

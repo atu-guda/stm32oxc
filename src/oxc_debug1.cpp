@@ -10,6 +10,7 @@
 
 #include <oxc_gpio.h>
 #include <oxc_debug1.h>
+#include <oxc_console.h>
 #include <oxc_devio.h>
 #include <oxc_outstream.h>
 
@@ -308,8 +309,8 @@ void test_output_rate( int n, int sl, int do_flush )
 
 }
 
-const CmdInfo CMDINFO_TEST_RATE { "test_rate", 0, cmd_test_rate, "[ n [len [flush] ] ] - test output rate"  };
 
+DCL_CMD_REG( test_rate, 0, "[ n [len [flush] ] ] - test output rate"  );
 int cmd_test_rate( int argc, const char * const * argv )
 {
   const int max_len = 512;
@@ -321,6 +322,7 @@ int cmd_test_rate( int argc, const char * const * argv )
   return 0;
 }
 
+DCL_CMD_REG( test_delays, '\0', "[n] [step_ms] [type] - test delays [w=flush]"  );
 int cmd_test_delays( int argc, const char * const * argv )
 {
   int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
@@ -333,7 +335,6 @@ int cmd_test_delays( int argc, const char * const * argv )
   return 0;
 }
 
-const CmdInfo CMDINFO_TEST_DELAYS { "test_delays", '\0', cmd_test_delays, "[n] [step_ms] [type] - test delays [w=flush]"  };
 
 
 
@@ -429,6 +430,7 @@ void gpio_pin_info( GPIO_TypeDef *gi, uint16_t pin, char *s )
 //----------------------------------------------------------------------
 // common commands
 //
+DCL_CMD_REG(  info,  0, " - Output general info" );
 int cmd_info( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
 {
   std_out << NL "# **** " PROJ_NAME " **** " NL;
@@ -503,8 +505,8 @@ int cmd_info( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
   errno = 0;
   return 0;
 }
-const CmdInfo CMDINFO_INFO {  "info",  0, cmd_info,       " - Output general info" };
 
+DCL_CMD_REG( echo,  0, " [args] - output args" );
 int cmd_echo( int argc, const char * const * argv )
 {
   std_out << NL;
@@ -523,23 +525,22 @@ int cmd_echo( int argc, const char * const * argv )
   }
   return 0;
 }
-const CmdInfo CMDINFO_ECHO { "echo",  0, cmd_echo,       " [args] - output args" };
 
 const char* common_help_string = "Default help " NL;
 
+DCL_CMD_REG( help,  'h', " - List of commands and arguments" );
 int cmd_help( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
 {
   std_out << common_help_string;
   std_out << NL "commands:" NL;
-  char b1[2]; b1[0] = b1[1] = 0;
 
-  for( int i=0; global_cmds[i] && i<CMDS_NMAX; ++i ) {
-    if( global_cmds[i]->name == 0 ) {
+  for( auto cmd : cmds_global ) {
+    if( cmd->name == nullptr ) {
       break;
     }
-    std_out << global_cmds[i]->name << ' ' << global_cmds[i]->hint << ' ';
-    if( global_cmds[i]->acr != 0 ) {
-      std_out << " (" << global_cmds[i]->acr << ')';
+    std_out << cmd->name << ' ' << cmd->hint << ' ';
+    if( cmd->acr != '\0' ) {
+      std_out << " (" << cmd->acr << ')';
     }
     std_out << NL;
   }
@@ -549,8 +550,8 @@ int cmd_help( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
      <<  ".q - no verbose " NL;
   return 0;
 }
-const CmdInfo CMDINFO_HELP { "help",  'h', cmd_help, " - List of commands and arguments"  };
 
+DCL_CMD_REG( dump,  0, " {a|b|addr) [n] [abs:0:1]- HexDumps given area"  );
 int cmd_dump( int argc, const char * const * argv )
 {
   if( argc < 2 ) {
@@ -571,9 +572,9 @@ int cmd_dump( int argc, const char * const * argv )
   dump8( addr, n, isAbs );
   return 0;
 }
-const CmdInfo CMDINFO_DUMP { "hd",  0, cmd_dump, " {a|b|addr} [n] [abs:0:1]- HexDumps given area"  };
 
-int cmd_dump32( int argc, const char * const * argv )
+DCL_CMD_REG( hd32,  0, " {a|b|addr) [n] [abs:0:1]- HexDumps given area as 32bit"  );
+int cmd_hd32( int argc, const char * const * argv )
 {
   if( argc < 2 ) {
     return 1;
@@ -593,9 +594,9 @@ int cmd_dump32( int argc, const char * const * argv )
   dump32( addr, n, isAbs );
   return 0;
 }
-const CmdInfo CMDINFO_DUMP32 { "hd32",  0, cmd_dump32, " {a|b|addr} [n] [abs:0:1]- HexDumps given area as 32bit"  };
 
 
+DCL_CMD_REG( fill,  0, " {a|b|addr) val [n] [stp] - Fills memory by value"  );
 int cmd_fill( int argc, const char * const * argv )
 {
   if( argc < 2 ) {
@@ -629,10 +630,10 @@ int cmd_fill( int argc, const char * const * argv )
   std_out << NL "---------- done---------------" NL;
   return 0;
 }
-const CmdInfo CMDINFO_FILL { "fill",  0, cmd_fill, " {a|b|addr} val [n] [stp] - Fills memory by value"  };
 
 
-int cmd_pvar( int argc, const char * const * argv )
+DCL_CMD_REG( print, 'p', "name - print user var a-z"  );
+int cmd_print( int argc, const char * const * argv )
 {
   if( argc < 2 ) { // all
     for( unsigned i=0; i<N_USER_VARS; ++i ) {
@@ -664,10 +665,10 @@ int cmd_pvar( int argc, const char * const * argv )
   print_user_var( idx );
   return 0;
 }
-const CmdInfo CMDINFO_PVAR { "print", 'p', cmd_pvar, "name - print user var a-z"  };
 
 
-int cmd_svar( int argc, const char * const * argv )
+DCL_CMD_REG( set, 's', "name value - set var a-z"  );
+int cmd_set( int argc, const char * const * argv )
 {
   if( argc != 3 ) {
     std_out << "# Error: bad number of arguments: s var value" << NL;
@@ -692,38 +693,38 @@ int cmd_svar( int argc, const char * const * argv )
   }
   return 1;
 }
-const CmdInfo CMDINFO_SVAR { "set", 's', cmd_svar,  "name value - set var a-z"  };
 
 
+DCL_CMD_REG( die, 0,  " [val] - die with value"  );
 [[ noreturn ]] int cmd_die( int argc, const char * const * argv )
 {
   int v = arg2long_d( 1, argc, argv, 0, 0, 0xFF );
   die4led( v );
 }
-const CmdInfo CMDINFO_DIE { "die",    0,  cmd_die, " [val] - die with value"  };
 
+DCL_CMD_REG( reboot, 0, " reboot system"  );
 int cmd_reboot( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG)
 {
   NVIC_SystemReset();
   return 0; // never ;-)
 }
-const CmdInfo CMDINFO_REBOOT { "reboot", 0,  cmd_reboot,     " reboot system"  };
 
+DCL_CMD_REG( log_print, 0, "  - print log buffer"  );
 int cmd_log_print( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
 {
   log_print();
   return 0;
 }
-const CmdInfo CMDINFO_LOG_PRINT { "lp", 0,  cmd_log_print, "  - print log buffer"  };
 
+DCL_CMD_REG( log_reset, 0, "  - reset log buffer"  );
 int cmd_log_reset( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
 {
   log_reset();
   return 0;
 }
-const CmdInfo CMDINFO_LOG_RESET { "lr",     0,  cmd_log_reset,  "  - reset log buffer"  };
 
-int cmd_pin_info( int argc, const char * const * argv )
+DCL_CMD_REG( pinfo,  0, " [A-I] [0-15] - info about pin" );
+int cmd_pinfo( int argc, const char * const * argv )
 {
   char s[32];
   uint16_t pin = arg2long_d( 2, argc, argv, 0, 0, 15 );
@@ -764,15 +765,15 @@ int cmd_pin_info( int argc, const char * const * argv )
 
   return 0;
 }
-const CmdInfo CMDINFO_PIN_INFO { "pinfo",  0, cmd_pin_info,       " [A-I] [0-15] - info about pin" };
 
-int cmd_set_leds_step( int argc, const char * const * argv )
+DCL_CMD_REG( leds_step, 0, " [N] - set leds step in 10 ms "  );
+int cmd_leds_step( int argc, const char * const * argv )
 {
   uint32_t nstep = arg2long_d( 1, argc, argv, 50, 1, 100000 ); // number output series
   task_leds_step = nstep;
   std_out << "LEDS step is set to " << task_leds_step << " = "  << task_leds_step * TASK_LEDS_QUANT << " ms" NL;
   return 0;
 }
-const CmdInfo CMDINFO_LSTEP { "leds_step", 0, cmd_set_leds_step, " [N] - set leds step in 10 ms "  };
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
+

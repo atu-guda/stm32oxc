@@ -13,13 +13,6 @@ const char* common_help_string = "Appication to test common console via UART" NL
 
 // --- local commands;
 
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-
-  &CMDINFO_TEST_DELAYS,
-  &CMDINFO_TEST_RATE,
-  nullptr
-};
 
 void idle_main_task()
 {

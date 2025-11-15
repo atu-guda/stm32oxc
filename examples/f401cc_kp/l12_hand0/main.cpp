@@ -66,20 +66,6 @@ DCL_CMD_REG( mcoord, 'C', " - measure and store coords" );
 DCL_CMD_REG( go,     'G', " k_v x0 x1 x2 x3 tp0 tp1 tp2 tp3 - go " );
 DCL_CMD_REG( pulse,  'U', " ch t_lwm dt - test pulse " );
 
-const size_t num_cmds = __stop_cmds_list - __start_cmds_list;
-
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-  DEBUG_I2C_CMDS,
-
-  &CMDINFO_test0,
-  &CMDINFO_stop,
-  &CMDINFO_mtest,
-  &CMDINFO_mcoord,
-  &CMDINFO_go,
-  &CMDINFO_pulse,
-  nullptr
-};
 
 I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );
@@ -366,15 +352,6 @@ int cmd_mcoord( int argc, const char * const * argv )
   int rc  = measure_store_coords( n_meas );
   out_coords( true );
 
-  // test new cmd reg
-  std_out << "# " << HexInt(__start_cmds_list) << ' ' <<  HexInt(__stop_cmds_list)
-    << " [0]: " << HexInt(__start_cmds_list[0])
-    << " test: " << HexInt(&CMDINFO_test0) << " stop: " << HexInt(&CMDINFO_stop) << NL;
-
-  for( const CmdInfo** ppcmd = __start_cmds_list; ppcmd < __stop_cmds_list; ++ppcmd ) {
-    const CmdInfo* pcmd = *ppcmd;
-    std_out << "## \"" << pcmd->name <<  "\" '" << pcmd->acr << "' \""  << pcmd->hint << '"' << NL;
-  };
 
   return !rc;
 }

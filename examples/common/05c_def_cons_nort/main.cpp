@@ -19,23 +19,10 @@ BOARD_CONSOLE_DEFINES;
 #endif
 
 // --- local commands;
-int cmd_test_val( int argc, const char * const * argv );
-const CmdInfo CMDINFO_TEST_VAL { "test_val", 'v', cmd_test_val, "[arg ] - test arg2long* converter"  };
-int cmd_test_mdelay( int argc, const char * const * argv );
-const CmdInfo CMDINFO_TEST_MDELAY { "test_mdelay", 'X', cmd_test_mdelay, "[v] - test main loop delay"  };
-int cmd_delay_calibrate( int argc, const char * const * argv );
-const CmdInfo CMDINFO_DELAY_CALIBRATE { "delay_calibrate", 'D', cmd_delay_calibrate, " - calibrate dumb delay"  };
+DCL_CMD_REG( test_val, 'v', "[arg ] - test arg2long* converter"  );
+DCL_CMD_REG( test_mdelay, 'X', "[v] - test main loop delay"  );
+DCL_CMD_REG( delay_calibrate, 'D', " - calibrate dumb delay"  );
 
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-
-  &CMDINFO_TEST_DELAYS,
-  &CMDINFO_TEST_RATE,
-  &CMDINFO_TEST_VAL,
-  &CMDINFO_TEST_MDELAY,
-  &CMDINFO_DELAY_CALIBRATE,
-  nullptr
-};
 
 void idle_main_task()
 {

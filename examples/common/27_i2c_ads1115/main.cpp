@@ -17,23 +17,10 @@ BOARD_CONSOLE_DEFINES;
 const char* common_help_string = "App to test ADS155 ADC I2C device" NL;
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test one channel"  };
-int cmd_getNch( int argc, const char * const * argv );
-CmdInfo CMDINFO_GETNCH { "getNch", 'G', cmd_getNch, " - test n ('c') channel"  };
-int cmd_set_coeffs( int argc, const char * const * argv );
-CmdInfo CMDINFO_SET_COEFFS { "set_coeffs", 'F', cmd_set_coeffs, " k0 k1 k2 k3 - set ADC coeffs"  };
+DCL_CMD_REG( test0, 'T', " - test one channel"  );
+DCL_CMD_REG( getNch, 'G', " - test n ('c') channel"  );
+DCL_CMD_REG( set_coeffs, 'F', " k0 k1 k2 k3 - set ADC coeffs"  );
 
-
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-  DEBUG_I2C_CMDS,
-
-  &CMDINFO_TEST0,
-  &CMDINFO_GETNCH,
-  &CMDINFO_SET_COEFFS,
-  nullptr
-};
 
 I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );
@@ -202,7 +189,7 @@ int cmd_getNch( int argc, const char * const * argv )
     int no = adc.getOneShotNch( 0, e_ch, vi );
     if( UVAR('l') ) {  leds.reset( BIT2 ); }
 
-    for( decltype(no) j=0; j<no; ++j ) {
+    for( decltype(+no) j=0; j<no; ++j ) {
       v[j] = kv * vi[j] * v_coeffs[j];
     }
     sdat.add( v );
@@ -226,6 +213,7 @@ int cmd_getNch( int argc, const char * const * argv )
   return rc;
 }
 
+#if ( MC_FLASH_SIZE > 1024*65 )
 int cmd_set_coeffs( int argc, const char * const * argv )
 {
   if( argc > 1 ) {
@@ -238,6 +226,13 @@ int cmd_set_coeffs( int argc, const char * const * argv )
      << v_coeffs[0] << ' ' << v_coeffs[1] << ' ' << v_coeffs[2] << ' ' << v_coeffs[3] << NL;
   return 0;
 }
+
+#else
+int cmd_set_coeffs( int argc, const char * const * argv )
+{
+  return 0;
+}
+#endif
 
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

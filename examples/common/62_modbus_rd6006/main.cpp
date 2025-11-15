@@ -19,42 +19,17 @@ BOARD_CONSOLE_DEFINES;
 const char* common_help_string = "Appication to test RD6006 PSU via MODBUS RTU server" NL;
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
-int cmd_init( int argc, const char * const * argv );
-CmdInfo CMDINFO_INIT { "init", '\0', cmd_init, " - init RD6006"  };
-int cmd_writeReg( int argc, const char * const * argv );
-CmdInfo CMDINFO_WRITEREG { "write_reg", 'W', cmd_writeReg, "reg val - write 1 reg"  };
-int cmd_readRegs( int argc, const char * const * argv );
-CmdInfo CMDINFO_READREGS { "read_regs", 'R', cmd_readRegs, "start n - read n regs"  };
-int cmd_readReg( int argc, const char * const * argv );
-CmdInfo CMDINFO_READREG { "read_reg", '\0', cmd_readReg, "i - read 1 reg"  };
-int cmd_on( int argc, const char * const * argv );
-CmdInfo CMDINFO_ON { "on", '\0', cmd_on, "- set ON"  };
-int cmd_off( int argc, const char * const * argv );
-CmdInfo CMDINFO_OFF { "off", '\0', cmd_off, "- set OFF"  };
-int cmd_measure( int argc, const char * const * argv );
-CmdInfo CMDINFO_MEASURE { "measure", 'M', cmd_measure, "- measure "  };
-int cmd_setV( int argc, const char * const * argv );
-CmdInfo CMDINFO_SETV { "setV", 'V', cmd_setV, "mV [r] - set output voltage "  };
-int cmd_setI( int argc, const char * const * argv );
-CmdInfo CMDINFO_SETI { "setI", 'I', cmd_setI, "100uA  [r]- set output current "  };
+DCL_CMD_REG( test0, 'T', " - test something 0"  );
+DCL_CMD_REG( init, '\0', " - init RD6006"  );
+DCL_CMD_REG( write_reg, 'W', "reg val - write 1 reg"  );
+DCL_CMD_REG( read_regs, 'R', "start n - read n regs"  );
+DCL_CMD_REG( read_reg, '\0', "i - read 1 reg"  );
+DCL_CMD_REG( on, '\0', "- set ON"  );
+DCL_CMD_REG( off, '\0', "- set OFF"  );
+DCL_CMD_REG( measure, 'M', "- measure "  );
+DCL_CMD_REG( setV, 'V', "mV [r] - set output voltage "  );
+DCL_CMD_REG( setI, 'I', "100uA  [r]- set output current "  );
 
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-
-  &CMDINFO_TEST0,
-  &CMDINFO_INIT,
-  &CMDINFO_WRITEREG,
-  &CMDINFO_READREGS,
-  &CMDINFO_READREG,
-  &CMDINFO_ON,
-  &CMDINFO_OFF,
-  &CMDINFO_MEASURE,
-  &CMDINFO_SETV,
-  &CMDINFO_SETI,
-  nullptr
-};
 
 extern UART_HandleTypeDef huart_modbus;
 MODBUS_RTU_server m_srv( &huart_modbus );

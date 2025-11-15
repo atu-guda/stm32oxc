@@ -16,23 +16,9 @@ BOARD_CONSOLE_DEFINES;
 const char* common_help_string = "App to SPI based flash memory" NL;
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
-
-int cmd_spimem_erase( int argc, const char * const * argv );
-CmdInfo CMDINFO_ERASR { "erase",  0, cmd_spimem_erase, "- ERASE CHIP!"  };
-
-int cmd_spimem_sector0_erase( int argc, const char * const * argv );
-CmdInfo CMDINFO_ERAS0 { "era0",  0, cmd_spimem_sector0_erase, "- erase sector 0"  };
-
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-
-  &CMDINFO_TEST0,
-  &CMDINFO_ERASR,
-  &CMDINFO_ERAS0,
-  nullptr
-};
+DCL_CMD_REG( test0, 'T', " - test something 0"  );
+DCL_CMD_REG( spimem_erase,  0, "- ERASE CHIP!"  );
+DCL_CMD_REG( spimem_sector0_erase,  0, "- erase sector 0"  );
 
 
 

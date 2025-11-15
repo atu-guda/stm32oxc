@@ -1,6 +1,8 @@
 #ifndef _OXC_CONSOLE_H
 #define _OXC_CONSOLE_H
 
+#include <span>
+
 #include <oxc_base.h>
 #include <oxc_io.h>
 #include <oxc_miscfun.h>
@@ -86,7 +88,6 @@ extern CmdlineHandler cmdline_fallback_handler;
 
 typedef int (*CmdFun)( int argc, const char * const * argv );
 
-#define CMDS_NMAX 100
 struct CmdInfo
 {
   const char * const name; //* full command name
@@ -94,12 +95,12 @@ struct CmdInfo
   const CmdFun fun;       //* ptr to command
   const char *const hint; //* help hint
 };
-extern const CmdInfo* global_cmds[];
 
 extern "C" {
   extern const CmdInfo* __start_cmds_list[];
   extern const CmdInfo* __stop_cmds_list[];
 }
+extern std::span<const CmdInfo*> cmds_global;
 
 #define DCL_CMD(basename, acro, helpstr ) \
   int cmd_##basename( int argc, const char * const * argv ); \

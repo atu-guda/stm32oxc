@@ -33,56 +33,20 @@ const char* common_help_string = "App measure and control analog and digital sig
 int parse_floats( int argc, const char * const * argv, float *d );
 
 // --- local commands;
-int cmd_dac( int argc, const char * const * argv );
-CmdInfo CMDINFO_DAC { "dac", 'D', cmd_dac, " v0 v1 - output values to dac"  };
-int cmd_pwm( int argc, const char * const * argv );
-CmdInfo CMDINFO_PWM { "pwm", 'W', cmd_pwm, " v0 v1 v2 v3 - set pwm output"  };
+DCL_CMD_REG( dac, 'D', " v0 v1 - output values to dac"  );
+DCL_CMD_REG( pwm, 'W', " v0 v1 v2 v3 - set pwm output"  );
+DCL_CMD_REG( tim_info, 0, " - info about timers"  );
+DCL_CMD_REG( ld, 0, "[name] - list data"  );
+DCL_CMD_REG( sd, 0, "name value - set data value"  );
+DCL_CMD_REG( addCmd, 'A', "\"command [args]\" - append command to program"  );
+DCL_CMD_REG( clearPgm, 0, " - clear program"  );
+DCL_CMD_REG( execPgm, 0, " - exec program"  );
+DCL_CMD_REG( ec, 0, "\"command [args]\" - exec single command"  );
+DCL_CMD_REG( lpgm, 0, " - list current program"  );
+DCL_CMD_REG( tpgm, 0, " - load test program"  );
+DCL_CMD_REG( tloop, 'T', " - start loop"  );
+DCL_CMD_REG( exch, 'X', "[user_in_data] - one step"  );
 
-int cmd_tim_info( int argc, const char * const * argv );
-CmdInfo CMDINFO_TIMINFO { "tim_info", 0, cmd_tim_info, " - info about timers"  };
-
-int cmd_ld( int argc, const char * const * argv );
-CmdInfo CMDINFO_LD { "ld", 0, cmd_ld, "[name] - list data"  };
-int cmd_sd( int argc, const char * const * argv );
-CmdInfo CMDINFO_SD { "sd", 0, cmd_sd, "name value - set data value"  };
-
-int cmd_addCmd( int argc, const char * const * argv );
-CmdInfo CMDINFO_ADDCMD { "addCmd", 'A', cmd_addCmd, "\"command [args]\" - append command to program"  };
-int cmd_clearPgm( int argc, const char * const * argv );
-CmdInfo CMDINFO_CLEARPGM { "clearPgm", 0, cmd_clearPgm, " - clear program"  };
-int cmd_execPgm( int argc, const char * const * argv );
-CmdInfo CMDINFO_EXECPGM { "execPgm", 0, cmd_execPgm, " - exec program"  };
-int cmd_execCmd( int argc, const char * const * argv );
-CmdInfo CMDINFO_EXECCMD { "ec", 0, cmd_execCmd, "\"command [args]\" - exec single command"  };
-int cmd_listPgm( int argc, const char * const * argv );
-CmdInfo CMDINFO_LISTPGM { "lpgm", 0, cmd_listPgm, " - list current program"  };
-int cmd_testPgm( int argc, const char * const * argv );
-CmdInfo CMDINFO_TESTPGM { "tpgm", 0, cmd_testPgm, " - load test program"  };
-
-int cmd_tloop( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "tloop", 'T', cmd_tloop, " - start loop"  };
-int cmd_exch( int argc, const char * const * argv );
-CmdInfo CMDINFO_EXCH { "exch", 'X', cmd_exch, "[user_in_data] - one step"  };
-
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-  DEBUG_I2C_CMDS,
-
-  &CMDINFO_DAC,
-  &CMDINFO_PWM,
-  &CMDINFO_TIMINFO,
-  &CMDINFO_LD,
-  &CMDINFO_SD,
-  &CMDINFO_ADDCMD,
-  &CMDINFO_CLEARPGM,
-  &CMDINFO_EXECPGM,
-  &CMDINFO_EXECCMD,
-  &CMDINFO_LISTPGM,
-  &CMDINFO_TESTPGM,
-  &CMDINFO_TEST0,
-  &CMDINFO_EXCH,
-  nullptr
-};
 
 
 D_in_sources d_ins[n_din] = {

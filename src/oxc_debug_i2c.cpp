@@ -3,11 +3,13 @@
 
 #include <oxc_devio.h>
 #include <oxc_outstream.h>
+#include <oxc_console.h>
+#include <oxc_debug1.h>
 #include <oxc_debug_i2c.h>
 
 
-DevI2C *i2c_dbg = nullptr;
-I2CClient *i2c_client_def = nullptr;
+DevI2C *i2c_dbg { nullptr };
+I2CClient *i2c_client_def { nullptr };
 
 static const char i2c_nodev_msg[] = NL "I2C debug device (i2c_dbg) is not set!" NL;
 #define CHECK_I2C_DEV \
@@ -25,6 +27,7 @@ void I2C_print_status( int rc )
   std_out << NL "I2C N: " <<  rc << " state: " << i2c_dbg->getState() << " error: " << i2c_dbg->getErr() << NL;
 }
 
+DCL_CMD_REG( i2c_scan,  0,  "[start [end]] - scan I2C in range" );
 int cmd_i2c_scan( int argc, const char * const * argv )
 {
   uint8_t addr_start = (uint8_t)arg2long_d( 1, argc, argv,   2,            0, 127 );
@@ -48,11 +51,9 @@ int cmd_i2c_scan( int argc, const char * const * argv )
   std_out <<  NL "I2C scan end." NL ;
   return 0;
 }
-const CmdInfo CMDINFO_I2C_SCAN {
-  "i2c_scan",  0, cmd_i2c_scan, "[start [end]] - scan I2C in range"
-};
 
 
+DCL_CMD_REG( i2c_send,  0,  "val [addr] - send to I2C (def addr=var[p])" );
 int cmd_i2c_send( int argc, const char * const * argv )
 {
   CHECK_I2C_DEV;
@@ -72,9 +73,6 @@ int cmd_i2c_send( int argc, const char * const * argv )
 
   return 0;
 }
-const CmdInfo CMDINFO_I2C_SEND {
-  "i2c_send",  0, cmd_i2c_send,   "val [addr] - send to I2C (def addr=var[p])"
-};
 
 int subcmd_i2c_send_rx( int argc, const char * const * argv, bool is2byte )
 {
@@ -103,23 +101,20 @@ int subcmd_i2c_send_rx( int argc, const char * const * argv, bool is2byte )
   return 0;
 }
 
+DCL_CMD_REG( i2c_send_r1, 0, "reg val - send to I2C(reg), reg_sz=1 (addr=var[p])" );
 int cmd_i2c_send_r1( int argc, const char * const * argv )
 {
   return subcmd_i2c_send_rx( argc, argv, false );
 }
-const CmdInfo CMDINFO_I2C_SEND_R1 {
-  "i2c_send1", 0, cmd_i2c_send_r1, "reg val - send to I2C(reg), reg_sz=1 (addr=var[p])"
-};
 
+DCL_CMD_REG( i2c_send_r2,  0, "reg val - send to I2C(reg), reg_sz=2 (addr=var[p])" );
 int cmd_i2c_send_r2( int argc, const char * const * argv )
 {
   return subcmd_i2c_send_rx( argc, argv, true );
 }
-const CmdInfo CMDINFO_I2C_SEND_R2 {
-  "i2c_send2",  0,  cmd_i2c_send_r2, "reg val - send to I2C(reg), reg_sz=2 (addr=var[p])"
-};
 
 
+DCL_CMD_REG( i2c_recv,  0, "[addr [nr]] - recv from I2C (def addr=var[p])" );
 int cmd_i2c_recv( int argc, const char * const * argv )
 {
   CHECK_I2C_DEV;
@@ -142,9 +137,6 @@ int cmd_i2c_recv( int argc, const char * const * argv )
 
   return 0;
 }
-const CmdInfo CMDINFO_I2C_RECV {
-  "i2c_recv",  0, cmd_i2c_recv,    "[addr [nr]] - recv from I2C (def addr=var[p])"
-};
 
 int subcmd_i2c_recv_rx( int argc, const char * const * argv, bool is2byte )
 {
@@ -179,24 +171,21 @@ int subcmd_i2c_recv_rx( int argc, const char * const * argv, bool is2byte )
   return 0;
 }
 
+DCL_CMD_REG( i2c_recv_r1,  0,  "reg [n] - recv from I2C(reg), reg_sz=1 (addr=var[p])" );
 int cmd_i2c_recv_r1( int argc, const char * const * argv )
 {
   return subcmd_i2c_recv_rx( argc, argv, false );
 }
-const CmdInfo CMDINFO_I2C_RECV_R1 {
-  "i2c_recv1",  0,  cmd_i2c_recv_r1, "reg [n] - recv from I2C(reg), reg_sz=1 (addr=var[p])"
-};
 
 
 // TODO: combine with r1
+DCL_CMD_REG( i2c_recv_r2,  0,  "reg [n] - recv from I2C(reg), reg_sz=2 (addr=var[p])" );
 int cmd_i2c_recv_r2( int argc, const char * const * argv )
 {
   return subcmd_i2c_recv_rx( argc, argv, true );
 }
-const CmdInfo CMDINFO_I2C_RECV_R2 {
-  "i2c_recv2",  0,  cmd_i2c_recv_r2, "reg [n] - recv from I2C(reg), reg_sz=2 (addr=var[p])"
-};
 
+DCL_CMD_REG( i2c_setaddr,  0, " addr - set default device addr " );
 int cmd_i2c_setaddr( int argc, const char * const * argv )
 {
   if( argc < 2 ) {
@@ -211,9 +200,6 @@ int cmd_i2c_setaddr( int argc, const char * const * argv )
   i2c_client_def->setAddr( addr );
   return 0;
 }
-const CmdInfo CMDINFO_I2C_SETADDR {
-  "i2c_setaddr",  0,  cmd_i2c_setaddr, " addr - set default device addr "
-};
 
 #undef CHECK_I2C_DEV
 

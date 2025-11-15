@@ -12,32 +12,12 @@ BOARD_CONSOLE_DEFINES;
 
 const char* common_help_string = "App to test AD9833 - DSS generator (SPI device)" NL;
 
-// --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
-
-int cmd_sendr_spi( int argc, const char * const * argv );
-CmdInfo CMDINFO_SENDR { "sendr", 'S', cmd_sendr_spi, "[0xXX ...] - send bytes, recv UVAR('r')"  };
-
-int cmd_duplex_spi( int argc, const char * const * argv );
-CmdInfo CMDINFO_DUPLEX { "duplex", 'U', cmd_duplex_spi, "[0xXX ...] - send/recv bytes"  };
-
-int cmd_recv_spi( int argc, const char * const * argv );
-CmdInfo CMDINFO_RECV { "recv", 'R', cmd_recv_spi, "[N] recv bytes"  };
-
-int cmd_reset_spi( int argc, const char * const * argv );
-CmdInfo CMDINFO_RESETSPI { "reset_spi", 'Z', cmd_reset_spi, " - reset spi"  };
-
-  const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-
-  &CMDINFO_TEST0,
-  &CMDINFO_SENDR,
-  &CMDINFO_RECV,
-  &CMDINFO_DUPLEX,
-  &CMDINFO_RESETSPI,
-  nullptr
-};
+// --- local commands; // TODO: replace from spi_debug
+DCL_CMD_REG( test0, 'T', " - AD9833"  );
+DCL_CMD_REG( sendr_spi, 'S', "[0xXX ...] - send bytes, recv UVAR('r')"  );
+DCL_CMD_REG( duplex_spi, 'U', "[0xXX ...] - send/recv bytes"  );
+DCL_CMD_REG( recv_spi, 'R', "[N] recv bytes"  );
+DCL_CMD_REG( reset_spi, 'Z', " - reset spi"  );
 
 
 PinOut nss_pin( BOARD_SPI_DEFAULT_GPIO_SNSS, BOARD_SPI_DEFAULT_GPIO_PIN_SNSS );

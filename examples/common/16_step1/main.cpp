@@ -16,15 +16,8 @@ BOARD_CONSOLE_DEFINES;
 const char* common_help_string = "App to test stepmotor" NL;
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " [N]  - test step"  };
+DCL_CMD_REG( test0, 'T', "[N] - test step"  );
 
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-
-  &CMDINFO_TEST0,
-  nullptr
-};
 
 //PinsOut motor { BOARD_MOTOR_DEFAULT_GPIO, BOARD_MOTOR_DEFAULT_PIN0, 4 };
 //StepMotorDriverGPIO m_drv( motor );

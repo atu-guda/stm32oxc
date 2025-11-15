@@ -47,16 +47,8 @@ void oxc_picoc_misc_init(  Picoc *pc );
 void oxc_picoc_fatfs_init( Picoc *pc );
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
+DCL_CMD_REG( test0, 'T', " - test"  );
 
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-
-  &CMDINFO_TEST0,
-  FS_CMDS0,
-  nullptr
-};
 
 void idle_main_task()
 {

@@ -13,16 +13,7 @@ BOARD_CONSOLE_DEFINES;
 const char* common_help_string = "App to use BMP085 barometer" NL;
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
-
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-  DEBUG_I2C_CMDS,
-
-  &CMDINFO_TEST0,
-  nullptr
-};
+DCL_CMD_REG( test0, 'T', " - test BMP085"  );
 
 
 I2C_HandleTypeDef i2ch;

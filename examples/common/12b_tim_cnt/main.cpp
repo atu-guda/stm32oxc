@@ -19,19 +19,8 @@ TIM_HandleTypeDef tim_cnt_h;
 int MX_TIM_IN_Init();
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " [t] [n] - test counter"  };
-
-int cmd_tinit( int argc, const char * const * argv );
-CmdInfo CMDINFO_TINIT { "tinit", 'I', cmd_tinit, " - reinit timer. f = filter"  };
-
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-
-  &CMDINFO_TEST0,
-  &CMDINFO_TINIT,
-  nullptr
-};
+DCL_CMD_REG( test0, 'T', "[t] [n] - test counter "  );
+DCL_CMD_REG( tinit, 'I', " - reinit timer. f = filter"  );
 
 
 int main(void)

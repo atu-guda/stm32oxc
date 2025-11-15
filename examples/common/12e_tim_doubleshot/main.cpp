@@ -20,16 +20,7 @@ unsigned pulse1( uint16_t arr, uint16_t ccr );
 const unsigned MAX_TIM_WAIT = 100000000;
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test doubleshot"  };
-
-
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-
-  &CMDINFO_TEST0,
-  nullptr
-};
+DCL_CMD_REG( test0, 'T', " - test doubleshot"  );
 
 
 

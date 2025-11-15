@@ -1,17 +1,11 @@
 #include <oxc_auto.h>
+#include <oxc_console.h>
+#include <oxc_debug1.h>
 #include <oxc_spi_debug.h>
 
-CmdInfo CMDINFO_S1RN { "s1rn", '\0', cmd_send1recvN_spi, " send_byte n_recv - send 1 recv N"  };
-CmdInfo CMDINFO_SENDR { "sendr", '\0', cmd_sendr_spi, "[0xXX ...] - send bytes, recv UVAR('r')"  };
-CmdInfo CMDINFO_DUPLEX { "duplex", '\0', cmd_duplex_spi, "[0xXX ...] - send/recv bytes"  };
-CmdInfo CMDINFO_RECV { "recv", '\0', cmd_recv_spi, "[N] recv bytes"  };
-CmdInfo CMDINFO_RESETSPI { "reset_spi", '\0', cmd_reset_spi, " - reset spi"  };
-CmdInfo CMDINFO_SENDLOOPSPI { "sendloop_spi", '\0', cmd_sendloop_spi, " N [val0 [val1]] - send N vals via SPI"  };
 
-
-
-
-int cmd_send1recvN_spi( int argc, const char * const * argv )
+DCL_CMD_REG( spi_s1rn, '\0', " send_byte n_recv - send 1 recv N"  );
+int cmd_spi_s1rn( int argc, const char * const * argv )
 {
   uint8_t sv = arg2long_d( 1, argc, argv, 0x15, 0, 0xFF );
   int nd     = arg2long_d( 2, argc, argv,    2, 0, sizeof(gbuf_a) );
@@ -35,7 +29,8 @@ int cmd_send1recvN_spi( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_sendr_spi( int argc, const char * const * argv )
+DCL_CMD_REG( spi_sendr, '\0', "[0xXX ...] - send bytes, recv UVAR('r')"  );
+int cmd_spi_sendr( int argc, const char * const * argv )
 {
   uint8_t sbuf[MAX_ARGS+1];
   uint16_t ns = argc - 1;
@@ -67,7 +62,8 @@ int cmd_sendr_spi( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_recv_spi( int argc, const char * const * argv )
+DCL_CMD_REG( spi_recv, '\0', "[N] recv bytes"  );
+int cmd_spi_recv( int argc, const char * const * argv )
 {
   int nd = arg2long_d( 1, argc, argv, UVAR('r'), 1, sizeof(gbuf_a) );
 
@@ -90,7 +86,8 @@ int cmd_recv_spi( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_duplex_spi( int argc, const char * const * argv )
+DCL_CMD_REG( spi_duplex, '\0', "[0xXX ...] - send/recv bytes"  );
+int cmd_spi_duplex( int argc, const char * const * argv )
 {
   uint8_t sbuf[MAX_ARGS+1];
   uint16_t ns = argc - 1;
@@ -120,12 +117,13 @@ int cmd_duplex_spi( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_sendloop_spi( int argc, const char * const * argv )
+DCL_CMD_REG( spi_sendloop, '\0', " N [val0 [val1]] - send N vals via SPI"  );
+int cmd_spi_sendloop( int argc, const char * const * argv )
 {
   int n       = arg2long_d( 1, argc, argv,    1, 1, 10000000 );
   uint8_t sv0 = arg2long_d( 2, argc, argv, 0x55, 0, 0xFF );
   uint8_t sv1 = arg2long_d( 3, argc, argv,  sv0, 0, 0xFF );
-  std_out << NL "# sendloop_spi: sv0= "  << HexInt8( sv0 ) << " sv1= " << HexInt8( sv1 )
+  std_out << NL "# sendloop: sv0= "  << HexInt8( sv0 ) << " sv1= " << HexInt8( sv1 )
           << " n= "  <<  n  <<  NL;
 
   dbg_pin.set(); delay_bad_100ns( UVAR('q') );
@@ -138,7 +136,8 @@ int cmd_sendloop_spi( int argc, const char * const * argv )
 }
 
 
-int cmd_reset_spi( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
+DCL_CMD_REG( spi_reset, '\0', " - reset spi"  );
+int cmd_spi_reset( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
 {
   spi_d.resetDev();
 

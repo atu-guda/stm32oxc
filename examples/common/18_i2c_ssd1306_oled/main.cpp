@@ -17,48 +17,16 @@ BOARD_CONSOLE_DEFINES;
 const char* common_help_string = "App to test ssd1306 based OLED screen" NL;
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test basic actions"  };
+DCL_CMD_REG( test0, 'T', " - test basic actions"  );
+DCL_CMD_REG( send, 'S', "XX [XX] - send cmd [with arg]"  ); // debug ctrl
+DCL_CMD_REG( cls, 'X', " - clear screen"  );
+DCL_CMD_REG( vline, 0, " [start [end]] - test vline"  );
+DCL_CMD_REG( lines, 'L', " [n [d]] - test lines"  );
+DCL_CMD_REG( line, 'l', " [x0 y0 x1 y1] - test line"  );
+DCL_CMD_REG( puts, 's', " str [ x y szi] - test string"  );
+DCL_CMD_REG( pix, 'x', " x y col - test pixel"  );
+DCL_CMD_REG( contr,  0, " [v] - test contrast"  );
 
-int cmd_send( int argc, const char * const * argv );
-CmdInfo CMDINFO_SEND { "send", 'S', cmd_send, "XX [XX] - send cmd [with arg]"  }; // debug ctrl
-
-int cmd_cls( int argc, const char * const * argv );
-CmdInfo CMDINFO_CLS { "cls", 'X', cmd_cls, " - clear screen"  };
-
-int cmd_vline( int argc, const char * const * argv );
-CmdInfo CMDINFO_VLINE { "vline", 0, cmd_vline, " [start [end]] - test vline"  };
-
-int cmd_lines( int argc, const char * const * argv );
-CmdInfo CMDINFO_LINES { "lines", 'L', cmd_lines, " [n [d]] - test lines"  };
-
-int cmd_line( int argc, const char * const * argv );
-CmdInfo CMDINFO_LINE  { "line", 'l', cmd_line, " [x0 y0 x1 y1] - test line"  };
-
-int cmd_puts( int argc, const char * const * argv );
-CmdInfo CMDINFO_PUTS  { "puts", 's', cmd_puts, " str [ x y szi] - test string"  };
-
-int cmd_pix( int argc, const char * const * argv );
-CmdInfo CMDINFO_PIX  { "pix", 'x', cmd_pix, " x y col - test pixel"  };
-
-int cmd_contr( int argc, const char * const * argv );
-CmdInfo CMDINFO_CONTR { "contr",  0, cmd_contr, " [v] - test contrast"  };
-
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-  DEBUG_I2C_CMDS,
-
-  &CMDINFO_TEST0,
-  &CMDINFO_SEND,
-  &CMDINFO_CLS,
-  &CMDINFO_VLINE,
-  &CMDINFO_LINES,
-  &CMDINFO_LINE,
-  &CMDINFO_PUTS,
-  &CMDINFO_PIX,
-  &CMDINFO_CONTR,
-  nullptr
-};
 
 
 I2C_HandleTypeDef i2ch;

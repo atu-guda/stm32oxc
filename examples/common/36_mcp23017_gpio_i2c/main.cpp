@@ -14,17 +14,8 @@ BOARD_CONSOLE_DEFINES;
 const char* common_help_string = "App to test MCP2017 GPIO I2C device" NL;
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test GPIO output"  };
+DCL_CMD_REG( test0, 'T', " - test GPIO output"  );
 
-
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-  DEBUG_I2C_CMDS,
-
-  &CMDINFO_TEST0,
-  nullptr
-};
 
 I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );

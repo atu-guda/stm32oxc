@@ -1,4 +1,5 @@
 #include <string.h>
+
 #include <oxc_console.h>
 #include <oxc_devio.h>
 #include <oxc_outstream.h>
@@ -9,6 +10,10 @@ volatile int on_cmd_handler = 0;
 
 CmdlineHandler cmdline_handlers[CMDLINE_MAX_HANDLERS];
 CmdlineHandler cmdline_fallback_handler { nullptr };
+
+using std::size_t;
+
+std::span<const CmdInfo*> cmds_global {__start_cmds_list, __stop_cmds_list };
 
 void term_cmd1( int n, char c, int fd )
 {
@@ -239,24 +244,25 @@ int exec_direct( const char *s, int l )
 
   // TODO: and substs here
 
-  CmdFun f = 0;
-  const char *nm = "???";
+  CmdFun f { nullptr };
+  const char *nm { "???" };
 
-  for( int i=0; global_cmds[i] && i<CMDS_NMAX; ++i ) {
-    if( global_cmds[i]->name == 0 ) {
+  for( auto cmd : cmds_global ) {
+    if( cmd->name == nullptr ) {
       break;
     }
-    if( argv[0][1] == '\0'  &&  argv[0][0] == global_cmds[i]->acr ) { // 1-letter abbr
-      f = global_cmds[i]->fun;
-      nm = global_cmds[i]->name;
+    if( argv[0][1] == '\0'  &&  argv[0][0] == cmd->acr ) { // 1-letter abbr
+      f  = cmd->fun;
+      nm = cmd->name;
       break;
     }
-    if( strcmp( global_cmds[i]->name, argv[0])  == 0 ) {
-      f = global_cmds[i]->fun;
-      nm = global_cmds[i]->name;
+    if( strcmp( cmd->name, argv[0] )  == 0 ) {
+      f  = cmd->fun;
+      nm = cmd->name;
       break;
     }
   }
+
 
   if( f == nullptr ) {
     if( cmdline_fallback_handler != nullptr ) {

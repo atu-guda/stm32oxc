@@ -14,24 +14,9 @@ BOARD_CONSOLE_DEFINES;
 const char* common_help_string = "App to control DS3231 - RTC" NL;
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
-
-int cmd_set_time( int argc, const char * const * argv );
-CmdInfo CMDINFO_SET_TIME { "stime", 0, cmd_set_time, " hour min sec - set RTC time "  };
-
-int cmd_set_date( int argc, const char * const * argv );
-CmdInfo CMDINFO_SET_DATE { "sdate", 0, cmd_set_date, " year month day - set RTC date "  };
-
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-  DEBUG_I2C_CMDS,
-
-  &CMDINFO_SET_TIME,
-  &CMDINFO_SET_DATE,
-  &CMDINFO_TEST0,
-  nullptr
-};
+DCL_CMD_REG( test0, 'T', " - test DS3231"  );
+DCL_CMD_REG( set_time, 0, " hour min sec - set RTC time "  );
+DCL_CMD_REG( set_date, 0, " year month day - set RTC date "  );
 
 
 I2C_HandleTypeDef i2ch;

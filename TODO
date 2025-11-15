@@ -5,7 +5,6 @@ Types for BitPos and BitField
 Pair port/pin for init
 Returns std::expected / optional?
 More ReturnCode usage/expected
-CmdInfo macro
 Several CmdInfo Arrays + adjusted aliases + search: compile time hash?
 Combine DevIn + DevOut? + add flags ? optional buffers?
   { DevOut_FatFS : public DevOut, OutStr: public DevOut }

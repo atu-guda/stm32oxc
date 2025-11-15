@@ -88,58 +88,22 @@ int do_go( float nt );
 const char*  break_flag2str();
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
-int cmd_start( int argc, const char * const * argv );
-CmdInfo CMDINFO_START { "start", '\0', cmd_start, " - start motor"  };
-int cmd_stop( int argc, const char * const * argv );
-CmdInfo CMDINFO_STOP { "stop", '\0', cmd_stop, " - stop motor"  };
-int cmd_speed( int argc, const char * const * argv );
-CmdInfo CMDINFO_SPEED { "speed", '\0', cmd_speed, " speed [dev] - set speed for motor turn/s or mm/s"  };
-int cmd_readreg( int argc, const char * const * argv );
-CmdInfo CMDINFO_READREG { "readreg", '\0', cmd_readreg, " reg - read TMC2209 register"  };
-int cmd_writereg( int argc, const char * const * argv );
-CmdInfo CMDINFO_WRITEREG { "writereg", '\0', cmd_writereg, " reg val - write TMC2209 register"  };
-int cmd_rotate( int argc, const char * const * argv );
-CmdInfo CMDINFO_ROTATE { "rot", 'R', cmd_rotate, " turns [v] - rotate"  };
-int cmd_move( int argc, const char * const * argv );
-CmdInfo CMDINFO_MOVE { "move", 'M', cmd_move, " mm [no_opto] [v] - move"  };
-int cmd_prep( int argc, const char * const * argv );
-CmdInfo CMDINFO_PREP { "prep", '\0', cmd_prep, " - prepare drivers"  };
-int cmd_calc( int argc, const char * const * argv );
-CmdInfo CMDINFO_CALC { "calc", '\0', cmd_calc, "n_tot w_d(um) w_l(um) - calculate task"  };
-int cmd_repos( int argc, const char * const * argv );
-CmdInfo CMDINFO_REPOS { "repos", 'X', cmd_repos, " mm - reposition to "  };
-int cmd_meas_x( int argc, const char * const * argv );
-CmdInfo CMDINFO_MEAS_X { "meas_x", '\0', cmd_meas_x, " - measure workspace "  };
-int cmd_go( int argc, const char * const * argv );
-CmdInfo CMDINFO_GO { "go", 'G', cmd_go, " [n] - go/continue next layer "  };
-int cmd_off( int argc, const char * const * argv );
-CmdInfo CMDINFO_OFF { "off", '\0', cmd_off, " - OFF drivers "  };
-int cmd_fake( int argc, const char * const * argv );
-CmdInfo CMDINFO_FAKE { "fake", '\0', cmd_fake, " turns - imitate a 'go' "  };
+DCL_CMD_REG( test0, 'T', " - test something 0"  );
+DCL_CMD_REG( start, '\0', " - start motor"  );
+DCL_CMD_REG( stop, '\0', " - stop motor"  );
+DCL_CMD_REG( speed, '\0', " speed [dev] - set speed for motor turn/s or mm/s"  );
+DCL_CMD_REG( readreg, '\0', " reg - read TMC2209 register"  );
+DCL_CMD_REG( writereg, '\0', " reg val - write TMC2209 register"  );
+DCL_CMD_REG( rot, 'R', " turns [v] - rotate"  );
+DCL_CMD_REG( move, 'M', " mm [no_opto] [v] - move"  );
+DCL_CMD_REG( prep, '\0', " - prepare drivers"  );
+DCL_CMD_REG( calc, '\0', "n_tot w_d(um) w_l(um) - calculate task"  );
+DCL_CMD_REG( repos, 'X', " mm - reposition to "  );
+DCL_CMD_REG( meas_x, '\0', " - measure workspace "  );
+DCL_CMD_REG( go, 'G', " [n] - go/continue next layer "  );
+DCL_CMD_REG( off, '\0', " - OFF drivers "  );
+DCL_CMD_REG( fake, '\0', " turns - imitate a 'go' "  );
 
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-  DEBUG_I2C_CMDS,
-
-  &CMDINFO_TEST0,
-  &CMDINFO_START,
-  &CMDINFO_STOP,
-  &CMDINFO_SPEED,
-  &CMDINFO_READREG,
-  &CMDINFO_WRITEREG,
-  &CMDINFO_ROTATE,
-  &CMDINFO_MOVE,
-  &CMDINFO_PREP,
-  &CMDINFO_CALC,
-  &CMDINFO_REPOS,
-  &CMDINFO_MEAS_X,
-  &CMDINFO_GO,
-  &CMDINFO_OFF,
-  &CMDINFO_FAKE,
-  nullptr
-};
 
 I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );
@@ -732,7 +696,7 @@ int do_move( float mm, float vm, uint8_t dev )
   return break_flag;
 }
 
-int cmd_rotate( int argc, const char * const * argv )
+int cmd_rot( int argc, const char * const * argv )
 {
   float turns = arg2float_d( 1, argc, argv, 1.0f, -50000.0f, 50000.0f );
   float vm = arg2float_d( 2, argc, argv, td.v_rot * speed_scale, 0.0f, 20.0f );
@@ -1123,7 +1087,7 @@ int cmd_calc( int argc, const char * const * argv )
     return 1;
   }
 
-  cmd_pvar( 1, nullptr );
+  cmd_print( 1, nullptr );
 
   if( td.w_len > td.w_len_m ) {
     std_out << "# WARNING: w_len > w_len_m" << NL;

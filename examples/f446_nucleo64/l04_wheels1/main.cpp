@@ -54,40 +54,16 @@ RunStepData run_steps[max_run_steps];
 int run_single_step( const RunStepData &sd );
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
-int cmd_go( int argc, const char * const * argv );
-CmdInfo CMDINFO_GO { "go", 'g', cmd_go, " time [right=50] [left=right]"  };
-int cmd_us_dir( int argc, const char * const * argv );
-CmdInfo CMDINFO_US_DIR { "us_dir", 0, cmd_us_dir, " [dir=0] (-90:90)"  };
-int cmd_us_scan( int argc, const char * const * argv );
-CmdInfo CMDINFO_US_SCAN { "us_scan", 'U', cmd_us_scan, " - scan via US sensor"  };
-int cmd_set_step( int argc, const char * const * argv );
-CmdInfo CMDINFO_SET_STEP { "set_step", 'P', cmd_set_step, " n l_r l_l p_c t_max p_c0 t_c0 - set run step"  };
-int cmd_print_steps( int argc, const char * const * argv );
-CmdInfo CMDINFO_PRINT_STEPS { "print_steps", 'O', cmd_print_steps, " - print steps data"  };
-int cmd_run_steps( int argc, const char * const * argv );
-CmdInfo CMDINFO_RUN_STEPS { "run_steps", 'R', cmd_run_steps, " [n_s] [n_e] - run steps"  };
-int cmd_run_direct( int argc, const char * const * argv );
-CmdInfo CMDINFO_RUN_DIRECT { "run_direct", 'X', cmd_run_direct, " [params] - run step"  };
-int cmd_set_test( int argc, const char * const * argv );
-CmdInfo CMDINFO_SET_TEST { "set_test", 'Q', cmd_set_test, " [idx] - set test task"  };
+DCL_CMD_REG( test0, 'T', " - test something 0"  );
+DCL_CMD_REG( go, 'g', " time [right=50] [left=right]"  );
+DCL_CMD_REG( us_dir, 0, " [dir=0] (-90:90)"  );
+DCL_CMD_REG( us_scan, 'U', " - scan via US sensor"  );
+DCL_CMD_REG( set_step, 'P', " n l_r l_l p_c t_max p_c0 t_c0 - set run step"  );
+DCL_CMD_REG( print_steps, 'O', " - print steps data"  );
+DCL_CMD_REG( run_steps, 'R', " [n_s] [n_e] - run steps"  );
+DCL_CMD_REG( run_direct, 'X', " [params] - run step"  );
+DCL_CMD_REG( set_test, 'Q', " [idx] - set test task"  );
 
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-  DEBUG_I2C_CMDS,
-
-  &CMDINFO_TEST0,
-  &CMDINFO_GO,
-  &CMDINFO_US_DIR,
-  &CMDINFO_US_SCAN,
-  &CMDINFO_SET_STEP,
-  &CMDINFO_PRINT_STEPS,
-  &CMDINFO_RUN_STEPS,
-  &CMDINFO_RUN_DIRECT,
-  &CMDINFO_SET_TEST,
-  nullptr
-};
 
 
 I2C_HandleTypeDef i2ch;

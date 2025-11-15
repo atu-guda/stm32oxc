@@ -22,22 +22,9 @@ const int dacbuf_sz = 64;
 int16_t dacbuf[dacbuf_sz];
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
-int cmd_ofast( int argc, const char * const * argv );
-CmdInfo CMDINFO_OFAST { "ofast", 'F', cmd_ofast, " - fast meandre "  };
-int cmd_fun( int argc, const char * const * argv );
-CmdInfo CMDINFO_FUN { "fun", 'U', cmd_fun, " N type delay - funcs outout "  };
-
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-
-  &CMDINFO_TEST0,
-  &CMDINFO_OFAST,
-  &CMDINFO_FUN,
-  nullptr
-};
-
+DCL_CMD_REG( test0, 'T', " - test something 0"  );
+DCL_CMD_REG( ofast, 'F', " - fast meandre "  );
+DCL_CMD_REG( fun, 'U', " N type delay - funcs outout "  );
 
 
 

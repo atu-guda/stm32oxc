@@ -13,15 +13,6 @@ BOARD_CONSOLE_DEFINES;
 
 const char* common_help_string = "Appication to test console with buttons IRQ" NL;
 
-// --- local commands;
-
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-
-  &CMDINFO_TEST_DELAYS,
-  &CMDINFO_TEST_RATE,
-  nullptr
-};
 
 void idle_main_task()
 {

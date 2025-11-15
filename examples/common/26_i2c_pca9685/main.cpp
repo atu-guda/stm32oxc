@@ -16,31 +16,13 @@ BOARD_CONSOLE_DEFINES;
 const char* common_help_string = "App to control pca9685 I2C PWM" NL;
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
-int cmd_setFreq( int argc, const char * const * argv );
-CmdInfo CMDINFO_SETFREQ { "setFreq", 'Q', cmd_setFreq, " freq - set frequency"  };
-int cmd_setPulse( int argc, const char * const * argv );
-CmdInfo CMDINFO_SETPULSE { "setPulse", 'U', cmd_setPulse, "ch v  - set pulse value in us"  };
-int cmd_setServo( int argc, const char * const * argv );
-CmdInfo CMDINFO_SETSERVO { "setServo", 'E', cmd_setServo, "ch v  - set servo value -1000:1000"  };
-int cmd_off( int argc, const char * const * argv );
-CmdInfo CMDINFO_OFF { "off", 'x', cmd_off, "[ch] - off all/given channel"  };
-int cmd_run( int argc, const char * const * argv );
-CmdInfo CMDINFO_RUN { "run", 'r', cmd_run, "ch ve t_ms - run to given pos"  };
+DCL_CMD_REG( test0, 'T', " - test pca9685"  );
+DCL_CMD_REG( setFreq, 'Q', " freq - set frequency"  );
+DCL_CMD_REG( setPulse, 'U', "ch v  - set pulse value in us"  );
+DCL_CMD_REG( setServo, 'E', "ch v  - set servo value -1000:1000"  );
+DCL_CMD_REG( off, 'x', "[ch] - off all/given channel"  );
+DCL_CMD_REG( run, 'r', "ch ve t_ms - run to given pos"  );
 
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-  DEBUG_I2C_CMDS,
-
-  &CMDINFO_TEST0,
-  &CMDINFO_SETFREQ,
-  &CMDINFO_SETSERVO,
-  &CMDINFO_SETPULSE,
-  &CMDINFO_OFF,
-  &CMDINFO_RUN,
-  nullptr
-};
 
 
 I2C_HandleTypeDef i2ch;

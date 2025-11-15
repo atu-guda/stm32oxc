@@ -23,25 +23,11 @@ StepMotor motor( m_drv, 0 );
 const char* common_help_string = "App to control stepmotor and measure angle by AS5600" NL;
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
-int cmd_go( int argc, const char * const * argv );
-CmdInfo CMDINFO_GO { "go", 'G', cmd_go, " [n] - go n steps, mode = m;"  };
-int cmd_m( int argc, const char * const * argv );
-CmdInfo CMDINFO_M { "me", 'M', cmd_m, " measure;"  };
-int cmd_set_alp( int argc, const char * const * argv );
-CmdInfo CMDINFO_SET { "set_alp", 'S', cmd_set_alp, " [v=0] - set current value"  };
+DCL_CMD_REG( test0, 'T', " - test something 0"  );
+DCL_CMD_REG( go, 'G', " [n] - go n steps, mode = m;"  );
+DCL_CMD_REG( me, 'M', " measure;"  );
+DCL_CMD_REG( set_alp, 'S', " [v=0] - set current value"  );
 
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-  DEBUG_I2C_CMDS,
-
-  &CMDINFO_TEST0,
-  &CMDINFO_GO,
-  &CMDINFO_M,
-  &CMDINFO_SET,
-  nullptr
-};
 
 
 I2C_HandleTypeDef i2ch;
@@ -160,7 +146,7 @@ int cmd_test0( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_m( int argc, const char * const * argv )
+int cmd_me( int argc, const char * const * argv )
 {
   auto  alp_real = ang_sens.getAngleN();
   float alp_real_deg = 1.0e-3f * AS5600::to_mDeg( alp_real );

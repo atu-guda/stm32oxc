@@ -25,23 +25,9 @@ FATFS fs;
 
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
-int cmd_sdinit( int argc, const char * const * argv );
-CmdInfo CMDINFO_SDINIT { "sdinit", 0, cmd_sdinit, " - init SDIO"  };
-int cmd_sddeinit( int argc, const char * const * argv );
-CmdInfo CMDINFO_SDDEINIT { "sddeinit", 0, cmd_sddeinit, " - deinit SDIO"  };
-
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-
-  &CMDINFO_TEST0,
-  FS_CMDS0,
-  &CMDINFO_SDINIT,
-  &CMDINFO_SDDEINIT,
-  nullptr
-};
-
+DCL_CMD_REG( test0, 'T', " - test sdcard"  );
+DCL_CMD_REG( sdinit, 0, " - init SDIO"  );
+DCL_CMD_REG( sddeinit, 0, " - deinit SDIO"  );
 
 
 int main(void)

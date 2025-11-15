@@ -25,15 +25,7 @@ PinsOut ctlAB( GpioA, 9, 2 );
 uint32_t wait_with_cond( uint32_t ms, uint16_t n_hwticks, uint32_t *rc, uint32_t *dp, uint32_t ign_bits = 0 );
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
-
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-
-  &CMDINFO_TEST0,
-  nullptr
-};
+DCL_CMD_REG( test0, 'T', " - test motor fb "  );
 
 
 

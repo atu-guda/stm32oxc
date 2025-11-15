@@ -14,25 +14,11 @@ BOARD_CONSOLE_DEFINES;
 const char* common_help_string = "App to test DAC563: 16-bit SPI DAC" NL;
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, "v0 v1 dv0 dv1 - test out. Uses n, t, a"  };
-int cmd_send( int argc, const char * const * argv );
-CmdInfo CMDINFO_SEND { "send", 'S', cmd_send, "cmd val - send one cmd+val"  };
-int cmd_init( int argc, const char * const * argv );
-CmdInfo CMDINFO_INIT { "init", 'I', cmd_init, " - defailt init"  };
-int cmd_dacout( int argc, const char * const * argv );
-CmdInfo CMDINFO_DACOUT { "dacout", 'D', cmd_dacout, "v16 [ch] - output"  };
+DCL_CMD_REG( test0, 'T', "v0 v1 dv0 dv1 - test out. Uses n, t, a"  );
+DCL_CMD_REG( send, 'S', "cmd val - send one cmd+val"  );
+DCL_CMD_REG( init, 'I', " - defailt init"  );
+DCL_CMD_REG( dacout, 'D', "v16 [ch] - output"  );
 
-
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-
-  &CMDINFO_TEST0,
-  &CMDINFO_SEND,
-  &CMDINFO_INIT,
-  &CMDINFO_DACOUT,
-  nullptr
-};
 
 
 // to HW debug TODO: in_need_debug ?

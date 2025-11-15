@@ -28,16 +28,7 @@ int isUSBH_on = 0, isMSC_ready = 0;
 void USBH_HandleEvent( USBH_HandleTypeDef *phost, uint8_t id );
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
-
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-
-  &CMDINFO_TEST0,
-  FS_CMDS0,
-  nullptr
-};
+DCL_CMD_REG( test0, 'T', " - "  );
 
 void idle_main_task()
 {

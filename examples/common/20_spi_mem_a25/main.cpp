@@ -16,31 +16,12 @@ BOARD_CONSOLE_DEFINES;
 const char* common_help_string = "App to SPI based flash memory" NL;
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
+DCL_CMD_REG( test0, 'T', " - test common"  );
+DCL_CMD_REG( spimem_read, 'R', " [ n [ offset ]] - read from mem"  );
+DCL_CMD_REG( spimem_write, 'W', " [ n [ offset [c0 [dc]]]] - write"  );
+DCL_CMD_REG( spimem_erase,  0, "- ERASE CHIP!"  );
+DCL_CMD_REG( spimem_sector0_erase,  'Z', "- erase sector 0"  );
 
-int cmd_read( int argc, const char * const * argv );
-CmdInfo CMDINFO_READ { "read", 'R', cmd_read, " [ n [ offset ]] - read from mem"  };
-
-int cmd_write( int argc, const char * const * argv );
-CmdInfo CMDINFO_WRITE { "write", 'W', cmd_write, " [ n [ offset [c0 [dc]]]] - write"  };
-
-int cmd_spimem_erase( int argc, const char * const * argv );
-CmdInfo CMDINFO_ERASR { "erase",  0, cmd_spimem_erase, "- ERASE CHIP!"  };
-
-int cmd_spimem_sector0_erase( int argc, const char * const * argv );
-CmdInfo CMDINFO_ERAS0 { "era0",  0, cmd_spimem_sector0_erase, "- erase sector 0"  };
-
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-
-  &CMDINFO_TEST0,
-  &CMDINFO_READ,
-  &CMDINFO_WRITE,
-  &CMDINFO_ERASR,
-  &CMDINFO_ERAS0,
-  nullptr
-};
 
 
 
@@ -125,7 +106,7 @@ int cmd_test0( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_write( int argc, const char * const * argv )
+int cmd_spimem_write( int argc, const char * const * argv )
 {
   unsigned n       = arg2long_d( 1, argc, argv, 0x20, 1, sizeof(gbuf_b) );
   unsigned ofs     = arg2long_d( 2, argc, argv,    0, 0, 0x00FFFFFF  );
@@ -148,7 +129,7 @@ int cmd_write( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_read( int argc, const char * const * argv )
+int cmd_spimem_read( int argc, const char * const * argv )
 {
   unsigned n       = arg2long_d( 1, argc, argv, 0x20, 1, sizeof(gbuf_b) );
   unsigned ofs     = arg2long_d( 2, argc, argv,    0, 0, 0x00FFFFFF  );

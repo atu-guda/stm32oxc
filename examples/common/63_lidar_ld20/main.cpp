@@ -18,24 +18,13 @@ const char* common_help_string = "Appication to decode LD20 lidar data via UART"
 
 
 // --- local commands;
-DCL_CMD( test0,  'T',   " - test data" );
-DCL_CMD( abort,  'A',   " - Abort tranfer" );
-DCL_CMD( udump,  'U',   " - UART dump" );
-DCL_CMD( uread,  '\0',  " - try to read w/o DMA" );
-DCL_CMD( usend,  'Z',   " - try to send (debug)" );
-DCL_CMD( pr_sz,  '\0',  " - print and reset sizes (debug)" );
+DCL_CMD_REG( test0,  'T',   " - test data" );
+DCL_CMD_REG( abort,  'A',   " - Abort tranfer" );
+DCL_CMD_REG( udump,  'U',   " - UART dump" );
+DCL_CMD_REG( uread,  '\0',  " - try to read w/o DMA" );
+DCL_CMD_REG( usend,  'Z',   " - try to send (debug)" );
+DCL_CMD_REG( pr_sz,  '\0',  " - print and reset sizes (debug)" );
 
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-
-  &CMDINFO_test0,
-  &CMDINFO_abort,
-  &CMDINFO_udump,
-  &CMDINFO_uread,
-  &CMDINFO_usend,
-  &CMDINFO_pr_sz,
-  nullptr
-};
 
 void idle_main_task()
 {

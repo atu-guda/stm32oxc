@@ -21,22 +21,10 @@ BOARD_CONSOLE_DEFINES;
 const char* common_help_string = "App to test INA226 I2C device" NL;
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test V_sh, V_bus"  };
-int cmd_getVIP( int argc, const char * const * argv );
-CmdInfo CMDINFO_GETVIP { "getVIP", 'G', cmd_getVIP, " - get V_bus, I_sh, P"  };
-int cmd_setcalibr( int argc, const char * const * argv );
-CmdInfo CMDINFO_SETCALIBR { "set_calibr", 'K', cmd_setcalibr, " I_lsb R_sh - calibrate for given shunt"  };
+DCL_CMD_REG( test0, 'T', " - test V_sh, V_bus"  );
+DCL_CMD_REG( getVIP, 'G', " - get V_bus, I_sh, P"  );
+DCL_CMD_REG( set_calibr, 'K', " I_lsb R_sh - calibrate for given shunt"  );
 
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-  DEBUG_I2C_CMDS,
-
-  &CMDINFO_TEST0,
-  &CMDINFO_GETVIP,
-  &CMDINFO_SETCALIBR,
-  nullptr
-};
 
 I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );
@@ -248,7 +236,7 @@ int cmd_getVIP( int argc, const char * const * argv )
 #endif
 
 
-int cmd_setcalibr( int argc, const char * const * argv )
+int cmd_set_calibr( int argc, const char * const * argv )
 {
   float calibr_I_lsb = arg2float_d( 1, argc, argv, ina226.get_I_lsb_mA()  * 1e-3f, 1e-20f, 1e10f );
   float calibr_R     = arg2float_d( 2, argc, argv, ina226.get_R_sh_uOhm() * 1e-6f, 1e-20f, 1e10f );

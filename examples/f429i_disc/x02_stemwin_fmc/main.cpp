@@ -20,27 +20,12 @@ BOARD_CONSOLE_DEFINES;
 
 const char* common_help_string = "Appication to test STEMWin graph with SDRAM" NL;
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
-int cmd_cls( int argc, const char * const * argv );
-CmdInfo CMDINFO_CLS { "cls", 0, cmd_cls, " - clear screen"  };
-int cmd_puts( int argc, const char * const * argv );
-CmdInfo CMDINFO_PUTS { "puts", 0, cmd_puts, " str [x [y]] - put string at coord"  };
-int cmd_line( int argc, const char * const * argv );
-CmdInfo CMDINFO_LINE { "line", 0, cmd_line, " x1 y1 x2 y2 - draw a a line"  };
-int cmd_color( int argc, const char * const * argv );
-CmdInfo CMDINFO_COLOR { "color", 0, cmd_color, " color_val - set a default color value"  };
+DCL_CMD_REG( test0, 'T', " - test something 0"  );
+DCL_CMD_REG( cls, 0, " - clear screen"  );
+DCL_CMD_REG( puts, 0, " str [x [y]] - put string at coord"  );
+DCL_CMD_REG( line, 0, " x1 y1 x2 y2 - draw a a line"  );
+DCL_CMD_REG( color, 0, " color_val - set a default color value"  );
 
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-
-  &CMDINFO_TEST0,
-  &CMDINFO_CLS,
-  &CMDINFO_PUTS,
-  &CMDINFO_LINE,
-  &CMDINFO_COLOR,
-  nullptr
-};
 
 uint8_t GUI_Initialized = 0;
 void BSP_Pointer_Update();

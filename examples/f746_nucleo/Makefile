@@ -57,11 +57,11 @@ SUBDIRS = \
   51a_adcdma_n \
   53_adcdma_sd \
   80_math_stat \
-  82_picoc \
   83_usbh_msc \
-  84_usbh_msc_picoc \
   l39a_step_as5600 
 
+#  82_picoc \
+#  84_usbh_msc_picoc \
 
 ALL : examples_f746_nucleo
 

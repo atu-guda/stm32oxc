@@ -14,13 +14,6 @@ BOARD_CONSOLE_DEFINES;
 const char* common_help_string = "App to manual control SPI devices" NL;
 
 
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-  DEBUG_SPI_CMDS,
-  nullptr
-};
-
-
 
 PinOut dbg_pin( BOARD_SPI_DEFAULT_GPIO_EXT1, BOARD_SPI_DEFAULT_GPIO_PIN_EXT2 );
 PinOut nss_pin( BOARD_SPI_DEFAULT_GPIO_SNSS, BOARD_SPI_DEFAULT_GPIO_PIN_SNSS );

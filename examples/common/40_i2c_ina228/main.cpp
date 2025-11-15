@@ -18,19 +18,9 @@ BOARD_CONSOLE_DEFINES;
 const char* common_help_string = "App to test INA228 I2C device" NL;
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test V_sh, V_bus"  };
-int cmd_calc_acfg( int argc, const char * const * argv );
-CmdInfo CMDINFO_CALC_ACFG { "calc_acfg", 'A', cmd_calc_acfg, "ct_b ct_s ct_t avg - calc ADCconfig val ->'a' "  };
+DCL_CMD_REG( test0, 'T', " - test V_sh, V_bus"  );
+DCL_CMD_REG( calc_acfg, 'A', "ct_b ct_s ct_t avg - calc ADCconfig val ->'a' "  );
 
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-  DEBUG_I2C_CMDS,
-
-  &CMDINFO_TEST0,
-  &CMDINFO_CALC_ACFG,
-  nullptr
-};
 
 I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );

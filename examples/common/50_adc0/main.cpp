@@ -30,15 +30,7 @@ int v_adc_ref = BOARD_ADC_COEFF; // in uV, measured before test
 
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " [n] - test ADC "  };
-
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-
-  &CMDINFO_TEST0,
-  nullptr
-};
+DCL_CMD_REG( test0, 'T', " [n] - test ADC "  );
 
 
 

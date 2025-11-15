@@ -354,53 +354,20 @@ int file_loop();
 void tst_stdarg( const char *s, ... );
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - run task"  };
-int cmd_lcd_gotoxy( int argc, const char * const * argv );
-CmdInfo CMDINFO_LCD_GOTOXY{ "lcd_gotoxy", 0, cmd_lcd_gotoxy, " x y - move pos to LCD (x, y)"  };
-int cmd_lcd_xychar( int argc, const char * const * argv );
-CmdInfo CMDINFO_LCD_XYCHAR{ "lcd_xychar", 0, cmd_lcd_xychar, " x y code - put char at x y to LCD"  };
-int cmd_lcd_puts( int argc, const char * const * argv );
-CmdInfo CMDINFO_LCD_PUTS{ "lcd_puts", 0, cmd_lcd_puts, "string - put string at cur pos to LCD"  };
-int cmd_set_time( int argc, const char * const * argv );
-CmdInfo CMDINFO_SET_TIME { "stime", 0, cmd_set_time, " hour min sec - set RTC time "  };
-int cmd_set_date( int argc, const char * const * argv );
-CmdInfo CMDINFO_SET_DATE { "sdate", 0, cmd_set_date, " year month day - set RTC date "  };
-int cmd_menu( int argc, const char * const * argv );
-CmdInfo CMDINFO_MENU { "menu", 'M', cmd_menu, " N - menu action"  };
-int cmd_t1( int argc, const char * const * argv );
-CmdInfo CMDINFO_T1 { "t1", 0, cmd_t1, " - misc test"  };
-// int cmd_tst_stdarg( int argc, const char * const * argv );
-// CmdInfo CMDINFO_TST_STDARG { "tst_stdarg", '\0', cmd_tst_stdarg, " - test stdarg"  };
-int cmd_lstnames( int argc, const char * const * argv );
-CmdInfo CMDINFO_LSTNAMES { "lstnames", 'L', cmd_lstnames, " [part] - list picoc names"  };
-int cmd_adcall( int argc, const char * const * argv );
-CmdInfo CMDINFO_ADCALL { "adcall", 'A', cmd_adcall, " - measure and output all ADC"  };
-int cmd_dadc1( int argc, const char * const * argv );
-CmdInfo CMDINFO_DADC1 { "dadc1", 'D', cmd_dadc1, " v0 - set DAC0 and measure and output all ADC"  };
-int cmd_dadc2( int argc, const char * const * argv );
-CmdInfo CMDINFO_DADC2 { "dadc2", '\0', cmd_dadc2, " v0 v1 - set DAC0,1 and measure and output all ADC"  };
+DCL_CMD_REG( test0, 'T', " - run task"  );
+DCL_CMD_REG( lcd_gotoxy, 0, " x y - move pos to LCD (x, y)"  );
+DCL_CMD_REG( lcd_xychar, 0, " x y code - put char at x y to LCD"  );
+DCL_CMD_REG( lcd_puts, 0, "string - put string at cur pos to LCD"  );
+DCL_CMD_REG( stime, 0, " hour min sec - set RTC time "  );
+DCL_CMD_REG( sdate, 0, " year month day - set RTC date "  );
+DCL_CMD_REG( menu, 'M', " N - menu action"  );
+DCL_CMD_REG( t1, 0, " - misc test"  );
+DCL_CMD_REG( lstnames, 'L', " [part] - list picoc names"  );
+DCL_CMD_REG( adcall, 'A', " - measure and output all ADC"  );
+DCL_CMD_REG( dadc1, 'D', " v0 - set DAC0 and measure and output all ADC"  );
+DCL_CMD_REG( dadc2, '\0', " v0 v1 - set DAC0,1 and measure and output all ADC"  );
 
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-  DEBUG_I2C_CMDS,
 
-  &CMDINFO_TEST0,
-  &CMDINFO_LCD_XYCHAR,
-  &CMDINFO_LCD_GOTOXY,
-  &CMDINFO_LCD_PUTS,
-  &CMDINFO_SET_TIME,
-  &CMDINFO_SET_DATE,
-  &CMDINFO_T1,
-  // &CMDINFO_TST_STDARG,
-  &CMDINFO_LSTNAMES,
-  &CMDINFO_ADCALL,
-  &CMDINFO_DADC1,
-  &CMDINFO_DADC2,
-  &CMDINFO_MENU,
-  FS_CMDS0,
-  nullptr
-};
 
 int run_common( RUN_FUN pre_fun, RUN_FUN loop_fun )
 {

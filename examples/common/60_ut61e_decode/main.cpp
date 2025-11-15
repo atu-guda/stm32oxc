@@ -19,18 +19,9 @@ BOARD_CONSOLE_DEFINES;
 const char* common_help_string = "Appication to decode data from UT61e via UART" NL;
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test UT61E data"  };
-int cmd_si_test( int argc, const char * const * argv );
-CmdInfo CMDINFO_SI_TEST { "si_test", 'S', cmd_si_test, " - si units "  };
+DCL_CMD_REG( test0, 'T', " - test UT61E data"  );
+DCL_CMD_REG( si_test, 'S', " - si units "  );
 
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-
-  &CMDINFO_TEST0,
-  &CMDINFO_SI_TEST,
-  nullptr
-};
 
 void idle_main_task()
 {

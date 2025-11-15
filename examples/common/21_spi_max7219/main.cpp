@@ -14,19 +14,8 @@ BOARD_CONSOLE_DEFINES;
 const char* common_help_string = "App to test MAX7219 LED SPI screen controller" NL;
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
-
-int cmd_sendr_spi( int argc, const char * const * argv );
-CmdInfo CMDINFO_SENDR { "sendr", 'S', cmd_sendr_spi, "[0xXX ...] - send bytes, recv UVAR('r')"  };
-
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-
-  &CMDINFO_TEST0,
-  &CMDINFO_SENDR,
-  nullptr
-};
+DCL_CMD_REG( test0, 'T', " - test MAX7219"  );
+DCL_CMD_REG( sendr_spi, 'S', "[0xXX ...] - send bytes, recv UVAR('r')"  );
 
 
 

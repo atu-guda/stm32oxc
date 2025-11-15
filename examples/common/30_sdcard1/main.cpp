@@ -18,16 +18,7 @@ void MX_SDIO_SD_Init();
 uint8_t sd_buf[512]; // one sector
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
-
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-
-  &CMDINFO_TEST0,
-  nullptr
-};
-
+DCL_CMD_REG( test0, 'T', " - test SDCARD"  );
 
 
 

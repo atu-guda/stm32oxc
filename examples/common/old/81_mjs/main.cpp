@@ -26,18 +26,9 @@ int js_cmdline_handler( char *s );
 const char* common_help_string = "Appication to test mjs" NL;
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, "\"cmd ...\" - test exec"  };
-int cmd_resetjs( int argc, const char * const * argv );
-CmdInfo CMDINFO_RESETJS { "resetjs", 'Z', cmd_resetjs, " - reset js engine"  };
+DCL_CMD_REG( test0, 'T', "\"cmd ...\" - test exec"  );
+DCL_CMD_REG( resetjs, 'Z', " - reset js engine"  );
 
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-
-  &CMDINFO_TEST0,
-  &CMDINFO_RESETJS,
-  nullptr
-};
 
 struct Ffi_ptrs {
   const char *const name;

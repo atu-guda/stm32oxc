@@ -56,11 +56,12 @@ SUBDIRS = \
   53_adcdma_sd \
   55_dac0 \
   80_math_stat \
-  82_picoc \
   83_usbh_msc \
-  84_usbh_msc_picoc \
-  l01_cube0 \
   l02_coord 
+
+#  l01_cube0 \
+# 82_picoc \
+# 84_usbh_msc_picoc \
 
 ALL : examples_board
 

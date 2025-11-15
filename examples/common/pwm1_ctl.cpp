@@ -151,12 +151,14 @@ void PWMData::set_v_manual( float v )
 
 // --------------------------- Commands -------------------------------------
 
+DCL_CMD_REG( show_steps, 'S', " - show PWM steps"  );
 int cmd_show_steps( int /*argc*/, const char * const * /*argv*/ )
 {
   pwmdat.show_steps();
   return 0;
 }
 
+DCL_CMD_REG( set_minmax,   0, " pwm_min pwm_max - set PWM limits"  );
 int cmd_set_minmax( int argc, const char * const * argv )
 {
   float vmin = arg2float_d( 1, argc, argv, pwmdat.get_min(),  0.001, 98.00 );
@@ -167,6 +169,7 @@ int cmd_set_minmax( int argc, const char * const * argv )
   return 0;
 }
 
+DCL_CMD_REG( mk_rect,      0, " v t - make rectangle steps"  );
 int cmd_mk_rect( int argc, const char * const * argv )
 {
   float v  = arg2float_d( 1, argc, argv,    35, 1,       98 );
@@ -177,6 +180,7 @@ int cmd_mk_rect( int argc, const char * const * argv )
   return 0;
 }
 
+DCL_CMD_REG( mk_ladder,    0, " v t n_up - make ladder steps"  );
 int cmd_mk_ladder( int argc, const char * const * argv )
 {
   float    v  = arg2float_d( 1, argc, argv,     5, 1,       90 );
@@ -188,6 +192,7 @@ int cmd_mk_ladder( int argc, const char * const * argv )
   return 0;
 }
 
+DCL_CMD_REG( mk_trap,      0, " v t1  t2 t3 - make trapzoid steps"  );
 int cmd_mk_trap( int argc, const char * const * argv )
 {
   float  v = arg2float_d( 1, argc, argv,    50, 0,       99 );
@@ -200,6 +205,7 @@ int cmd_mk_trap( int argc, const char * const * argv )
   return 0;
 }
 
+DCL_CMD_REG( edit_step,  'E', " v t tp - edit given step"  );
 int cmd_edit_step( int argc, const char * const * argv )
 {
   if( argc < 3 ) {
@@ -214,10 +220,4 @@ int cmd_edit_step( int argc, const char * const * argv )
   return ok ? 0 : 1;
 }
 
-CmdInfo CMDINFO_SET_MINMAX { "set_minmax",   0, cmd_set_minmax, " pwm_min pwm_max - set PWM limits"  };
-CmdInfo CMDINFO_SHOW_STEPS { "show_steps", 'S', cmd_show_steps, " - show PWM steps"  };
-CmdInfo CMDINFO_MK_RECT    { "mk_rect",      0, cmd_mk_rect,    " v t - make rectangle steps"  };
-CmdInfo CMDINFO_MK_LADDER  { "mk_ladder",    0, cmd_mk_ladder,  " v t n_up - make ladder steps"  };
-CmdInfo CMDINFO_MK_TRAP    { "mk_trap",      0, cmd_mk_trap,    " v t1  t2 t3 - make trapzoid steps"  };
-CmdInfo CMDINFO_EDIT_STEP  { "edit_step",  'E', cmd_edit_step,  " v t tp - edit given step"  };
 

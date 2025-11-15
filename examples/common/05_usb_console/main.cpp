@@ -10,15 +10,6 @@ BOARD_DEFINE_LEDS;
 USBCDC_CONSOLE_DEFINES;
 
 
-// --- local commands;
-
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-
-  &CMDINFO_TEST_DELAYS,
-  &CMDINFO_TEST_RATE,
-  nullptr
-};
 
 
 int main(void)

@@ -28,27 +28,11 @@ void pwm_recalc();
 void pwm_update();
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
+DCL_CMD_REG( test0, 'T', " - test PWM vals"  );
+DCL_CMD_REG( tinit, 'I', " - reinit timer"  );
+DCL_CMD_REG( servo, 'S', " - prepare to servo control"  );
+DCL_CMD_REG( go_servo, 'G', " v0 v1 v2 v3 - set servo 0-1000"  );
 
-int cmd_tinit( int argc, const char * const * argv );
-CmdInfo CMDINFO_TINIT { "tinit", 'I', cmd_tinit, " - reinit timer"  };
-
-int cmd_servo( int argc, const char * const * argv );
-CmdInfo CMDINFO_SERVO { "servo", 'S', cmd_servo, " - prepare to servo control"  };
-
-int cmd_go_servo( int argc, const char * const * argv );
-CmdInfo CMDINFO_GO_SERVO { "go_servo", 'G', cmd_go_servo, " v0 v1 v2 v3 - set servo 0-1000"  };
-
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-
-  &CMDINFO_TEST0,
-  &CMDINFO_TINIT,
-  &CMDINFO_SERVO,
-  &CMDINFO_GO_SERVO,
-  nullptr
-};
 
 const uint32_t countmodes[] = {
   TIM_COUNTERMODE_UP,

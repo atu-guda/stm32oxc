@@ -13,20 +13,9 @@ BOARD_CONSOLE_DEFINES;
 const char* common_help_string = "App to use MPU6050 accel + gyro" NL;
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
+DCL_CMD_REG( test0, 'T', " - test MPU6050"  );
+DCL_CMD_REG( data0, 'D', " - data transmission 0"  );
 
-int cmd_data0( int argc, const char * const * argv );
-CmdInfo CMDINFO_DATA0 { "data0", 'D', cmd_data0, " - data transmission 0"  };
-
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-  DEBUG_I2C_CMDS,
-
-  &CMDINFO_TEST0,
-  &CMDINFO_DATA0,
-  nullptr
-};
 
 
 I2C_HandleTypeDef i2ch;

@@ -36,25 +36,11 @@ void handle_keys();
 
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " [n] [skip_pwm] - measure ADC + control PWM"  };
-int cmd_tinit( int argc, const char * const * argv );
-CmdInfo CMDINFO_TINIT { "tinit", 'I', cmd_tinit, " - reinit timer"  };
-int cmd_pwm( int argc, const char * const * argv );
-CmdInfo CMDINFO_PWM { "pwm", 'W', cmd_pwm, " [val] - set PWM value"  };
-int cmd_set_coeffs( int argc, const char * const * argv );
-CmdInfo CMDINFO_SET_COEFFS { "set_coeffs", 'F', cmd_set_coeffs, " k0 k1 k2 k3 - set ADC coeffs"  };
+DCL_CMD_REG( test0, 'T', " [n] [skip_pwm] - measure ADC + control PWM"  );
+DCL_CMD_REG( tinit, 'I', " - reinit timer"  );
+DCL_CMD_REG( pwm, 'W', " [val] - set PWM value"  );
+DCL_CMD_REG( set_coeffs, 'F', " k0 k1 k2 k3 - set ADC coeffs"  );
 
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-
-  &CMDINFO_TEST0,
-  &CMDINFO_TINIT,
-  &CMDINFO_PWM,
-  CMDINFOS_PWM,
-  &CMDINFO_SET_COEFFS,
-  nullptr
-};
 
 const uint32_t n_ADC_ch_max = 4; // current - in UVAR('c')
 float v_coeffs[n_ADC_ch_max] = { 1.0f, 1.0f, 1.0f, 1.0f };

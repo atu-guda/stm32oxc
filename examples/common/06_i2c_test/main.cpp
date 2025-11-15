@@ -12,16 +12,7 @@ BOARD_CONSOLE_DEFINES;
 const char* common_help_string = "App to find and manual control I2C devices" NL;
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - detect I2C [start [end]]"  };
-
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-  DEBUG_I2C_CMDS,
-
-  &CMDINFO_TEST0,
-  nullptr
-};
+DCL_CMD_REG( test0, 'T', " - detect I2C [start [end]]"  );
 
 
 I2C_HandleTypeDef i2ch;

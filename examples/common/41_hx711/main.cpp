@@ -17,15 +17,8 @@ BOARD_CONSOLE_DEFINES;
 const char* common_help_string = "App to test HX711 ADC" NL;
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, "[n] - test ADC"  };
+DCL_CMD_REG( test0, 'T', "[n] - test HX711 ADC"  );
 
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-
-  &CMDINFO_TEST0,
-  nullptr
-};
 
 HX711 hx711( HX711_SCK_GPIO, HX711_SCK_PIN, HX711_DAT_GPIO, HX711_DAT_PIN );
 // -0.032854652221894 5.06179479849053e-07

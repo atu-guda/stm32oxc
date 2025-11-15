@@ -51,27 +51,11 @@ int v_adc_ref = BOARD_ADC_COEFF; // in uV, measured before test
 
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " [n] - test ADC"  };
-int cmd_set_coeffs( int argc, const char * const * argv );
-CmdInfo CMDINFO_SET_COEFFS { "set_coeffs", 'F', cmd_set_coeffs, " k0 k1 k2 k3 - set ADC coeffs"  };
-int cmd_out( int argc, const char * const * argv );
-CmdInfo CMDINFO_OUT { "out", 'O', cmd_out, " [N [start]]- output data "  };
-int cmd_outhex( int argc, const char * const * argv );
-CmdInfo CMDINFO_OUTHEX { "outhex", 'H', cmd_outhex, " [N [start]]- output data in hex form"  };
-int cmd_show_stats( int argc, const char * const * argv );
-CmdInfo CMDINFO_SHOWSTATS { "show_stats", 'Y', cmd_show_stats, " [N [start]]- show statistics"  };
-
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-
-  &CMDINFO_TEST0,
-  &CMDINFO_SET_COEFFS,
-  &CMDINFO_OUT,
-  &CMDINFO_OUTHEX,
-  &CMDINFO_SHOWSTATS,
-  nullptr
-};
+DCL_CMD_REG( test0, 'T', " [n] - test ADC"  );
+DCL_CMD_REG( set_coeffs, 'F', " k0 k1 k2 k3 - set ADC coeffs"  );
+DCL_CMD_REG( out, 'O', " [N [start]]- output data "  );
+DCL_CMD_REG( outhex, 'H', " [N [start]]- output data in hex form"  );
+DCL_CMD_REG( show_stats, 'Y', " [N [start]]- show statistics"  );
 
 
 

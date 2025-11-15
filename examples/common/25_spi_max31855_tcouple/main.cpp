@@ -12,25 +12,8 @@ BOARD_CONSOLE_DEFINES;
 const char* common_help_string = "App to use MAX31855 thermocouple control device" NL;
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
-
-
-int cmd_reset_spi( int argc, const char * const * argv );
-CmdInfo CMDINFO_RESETSPI { "reset_spi", 'Z', cmd_reset_spi, " - reset spi"  };
-
-// int cmd_testx( int argc, const char * const * argv );
-// CmdInfo CMDINFO_TESTX { "testX", 'X', cmd_testx, " - test output conversion"  };
-
-  const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-
-  &CMDINFO_TEST0,
-  &CMDINFO_RESETSPI,
-//  &CMDINFO_TESTX,
-  nullptr
-};
-
+DCL_CMD_REG( test0, 'T', " - test MAX31855"  );
+DCL_CMD_REG( reset_spi, 'Z', " - reset spi"  );
 
 
 PinOut nss_pin( BOARD_SPI_DEFAULT_GPIO_SNSS, BOARD_SPI_DEFAULT_GPIO_PIN_SNSS );

@@ -30,18 +30,9 @@ char *p_char = a_char;
 void oxc_picoc_misc_init( Picoc *pc );
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
-int cmd_init_picoc( int argc, const char * const * argv );
-CmdInfo CMDINFO_INIT_PICOC { "init_picoc", 'I', cmd_init_picoc, " - init picoc interpretator"  };
+DCL_CMD_REG( test0, 'T', " - test something 0"  );
+DCL_CMD_REG( init_picoc, 'I', " - init picoc interpretator"  );
 
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-
-  &CMDINFO_TEST0,
-  &CMDINFO_INIT_PICOC,
-  nullptr
-};
 
 void idle_main_task()
 {

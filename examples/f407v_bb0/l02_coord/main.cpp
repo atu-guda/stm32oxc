@@ -108,39 +108,14 @@ Machine me_st( s_movers );
 
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " axis N [dt] - test"  };
-int cmd_set_debug( int argc, const char * const * argv );
-CmdInfo CMDINFO_SET_DEBUG { "debug", '\000', cmd_set_debug, " val - det debug value"  };
-int cmd_relmove( int argc, const char * const * argv );
-CmdInfo CMDINFO_RELMOVE { "rel", 'R', cmd_relmove, "dx dy dz [feed] - rel move"  };
-int cmd_absmove( int argc, const char * const * argv );
-CmdInfo CMDINFO_ABSMOVE { "abs", 'A', cmd_absmove, "x y z [feed] - abs move"  };
-int cmd_home( int argc, const char * const * argv );
-CmdInfo CMDINFO_HOME { "home", 'H', cmd_home, "axis - go home at give axis"  };
-int cmd_pwm( int argc, const char * const * argv );
-CmdInfo CMDINFO_PWM { "pwm", 'P', cmd_pwm, "ch pow_f  - test PWM power control"  };
-int cmd_gexec( int argc, const char * const * argv );
-CmdInfo CMDINFO_GEXEC { "gexec", 'X', cmd_gexec, " file  - execute gcode file"  };
-int cmd_fire( int argc, const char * const * argv );
-CmdInfo CMDINFO_FIRE { "FIRE", 'F', cmd_fire, " power% time_ms  - fire laser"  };
-
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-  // DEBUG_I2C_CMDS,
-
-  &CMDINFO_TEST0,
-  &CMDINFO_SET_DEBUG,
-  FS_CMDS0,
-  &CMDINFO_RELMOVE,
-  &CMDINFO_ABSMOVE,
-  &CMDINFO_HOME,
-  &CMDINFO_PWM,
-  &CMDINFO_GEXEC,
-  &CMDINFO_FIRE,
-  nullptr
-};
-
+DCL_CMD_REG( test0, 'T', " axis N [dt] - test"  );
+DCL_CMD_REG( set_debug, '\000', " val - set debug value"  );
+DCL_CMD_REG( rel, 'R', "dx dy dz [feed] - rel move"  );
+DCL_CMD_REG( abs, 'A', "x y z [feed] - abs move"  );
+DCL_CMD_REG( home, 'H', "axis - go home at give axis"  );
+DCL_CMD_REG( pwm, 'P', "ch pow_f  - test PWM power control"  );
+DCL_CMD_REG( gexec, 'X', " file  - execute gcode file"  );
+DCL_CMD_REG( fire, 'F', " power% time_ms  - fire laser"  );
 
 
 
@@ -290,7 +265,7 @@ int cmd_set_debug( int argc, const char * const * argv )
 }
 
 
-int cmd_relmove( int argc, const char * const * argv )
+int cmd_rel( int argc, const char * const * argv )
 {
   std_out << "# relmove: " << NL;
 
@@ -308,7 +283,7 @@ int cmd_relmove( int argc, const char * const * argv )
   return rc;
 }
 
-int cmd_absmove( int argc, const char * const * argv )
+int cmd_abs( int argc, const char * const * argv )
 {
   std_out << "# absmove: " << NL;
 

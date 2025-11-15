@@ -16,20 +16,9 @@ BOARD_CONSOLE_DEFINES;
 const char* common_help_string = "App to test menu with hd4480 LCD screen" NL;
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
+DCL_CMD_REG( test0, 'T', " - test hd4480 out"  );
+DCL_CMD_REG( menu, 'M', " N - menu action"  );
 
-int cmd_menu( int argc, const char * const * argv );
-CmdInfo CMDINFO_MENU { "menu", 'M', cmd_menu, " N - menu action"  };
-
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-  DEBUG_I2C_CMDS,
-
-  &CMDINFO_TEST0,
-  &CMDINFO_MENU,
-  nullptr
-};
 
 
 I2C_HandleTypeDef i2ch;

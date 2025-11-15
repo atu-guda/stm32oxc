@@ -39,18 +39,8 @@ void tim2_deinit();
 
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test ADC"  };
-int cmd_out( int argc, const char * const * argv );
-CmdInfo CMDINFO_OUT { "out", 'O', cmd_out, " [N [start]]- output data "  };
-
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-
-  &CMDINFO_TEST0,
-  &CMDINFO_OUT,
-  nullptr
-};
+DCL_CMD_REG( test0, 'T', " - test ADC"  );
+DCL_CMD_REG( out, 'O', " [N [start]]- output data "  );
 
 
 

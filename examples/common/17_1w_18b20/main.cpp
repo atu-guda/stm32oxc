@@ -16,19 +16,9 @@ BOARD_CONSOLE_DEFINES;
 const char* common_help_string = "App to test some oneWire device" NL;
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
+DCL_CMD_REG( test0, 'T', " - test oneWire"  );
+DCL_CMD_REG( wire0, 'w', " - test 1-wire"  );
 
-int cmd_1wire0( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG );
-CmdInfo CMDINFO_WIRE0 { "wire0", 'w', cmd_1wire0, " - test 1-wire"  };
-
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-
-  &CMDINFO_WIRE0,
-  &CMDINFO_TEST0,
-  nullptr
-};
 
 
 IoPin pin_wire1( BOARD_1W_DEFAULT_GPIO, BOARD_1W_DEFAULT_PIN );
@@ -111,7 +101,7 @@ int cmd_test0( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_1wire0( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
+int cmd_wire0( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
 {
   uint8_t buf[12], addr[12];
   std_out <<  NL "1wire test start." NL;

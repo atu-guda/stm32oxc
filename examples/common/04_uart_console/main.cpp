@@ -9,16 +9,6 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES_UART;
 
-// --- local commands;
-
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-
-  &CMDINFO_TEST_DELAYS,
-  &CMDINFO_TEST_RATE,
-  nullptr
-};
-
 
 
 

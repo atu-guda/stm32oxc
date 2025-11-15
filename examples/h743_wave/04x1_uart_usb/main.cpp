@@ -27,15 +27,8 @@ void default_USBFS_MspInit(void);
 const char* common_help_string = "Appication to test USBCDC via UART" NL;
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
+DCL_CMD_REG( test0, 'T', " - test something 0"  );
 
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-
-  &CMDINFO_TEST0,
-  nullptr
-};
 
 void idle_main_task()
 {

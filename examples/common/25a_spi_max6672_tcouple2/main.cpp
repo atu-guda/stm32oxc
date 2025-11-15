@@ -12,21 +12,8 @@ BOARD_CONSOLE_DEFINES;
 const char* common_help_string = "App to use pair of MAX6675 thermocouple control device" NL;
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test 2 thermocouples"  };
-
-
-int cmd_reset_spi( int argc, const char * const * argv );
-CmdInfo CMDINFO_RESETSPI { "reset_spi", 'Z', cmd_reset_spi, " - reset spi"  };
-
-  const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-
-  &CMDINFO_TEST0,
-  &CMDINFO_RESETSPI,
-  nullptr
-};
-
+DCL_CMD_REG( test0, 'T', " - test 2 thermocouples"  );
+DCL_CMD_REG( reset_spi, 'Z', " - reset spi"  );
 
 
 PinOut nss_pin1( BOARD_SPI_DEFAULT_GPIO_SNSS, BOARD_SPI_DEFAULT_GPIO_PIN_SNSS );

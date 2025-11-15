@@ -14,19 +14,8 @@ BOARD_CONSOLE_DEFINES;
 
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
-int cmd_setaddr( int argc, const char * const * argv );
-CmdInfo CMDINFO_SETADDR { "setaddr", 0, cmd_setaddr, " addr - set device addr (see 'C')"  };
-
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-  DEBUG_I2C_CMDS,
-
-  &CMDINFO_TEST0,
-  &CMDINFO_SETADDR,
-  nullptr
-};
+DCL_CMD_REG( test0, 'T', " - test magnitometr"  );
+DCL_CMD_REG( setaddr, 0, " addr - set device addr (see 'C')"  );
 
 
 I2C_HandleTypeDef i2ch;

@@ -25,21 +25,10 @@ int32_t hx711_read();
 int motor_pwr( int v );
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
-int cmd_test_fc( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST_FC { "test_fc", 'F', cmd_test_fc, " - test FC interaction"  };
-int cmd_run( int argc, const char * const * argv );
-CmdInfo CMDINFO_RUN { "run", 'R', cmd_run, " max_v - test FC interaction"  };
+DCL_CMD_REG( test0, 'T', " - test something 0"  );
+DCL_CMD_REG( test_fc, 'F', " - test FC interaction"  );
+DCL_CMD_REG( run, 'R', " max_v - test FC interaction"  );
 
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-
-  &CMDINFO_TEST0,
-  &CMDINFO_TEST_FC,
-  &CMDINFO_RUN,
-  nullptr
-};
 
 void idle_main_task()
 {

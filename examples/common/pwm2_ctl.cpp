@@ -638,6 +638,7 @@ void PWMData::set_pwm_manual( float v )
 
 // --------------------------- Commands -------------------------------------
 
+DCL_CMD_REG( show_steps, 'S', " - show PWM steps"  );
 int cmd_show_steps( int /*argc*/, const char * const * /*argv*/ )
 {
   pwmdat.show_steps();
@@ -645,6 +646,7 @@ int cmd_show_steps( int /*argc*/, const char * const * /*argv*/ )
 }
 
 
+DCL_CMD_REG( mk_rect,      0, " vmin vmax t tp - make rectangle steps"  );
 int cmd_mk_rect( int argc, const char * const * argv )
 {
   // TODO: limits(type), for all funcs
@@ -658,6 +660,7 @@ int cmd_mk_rect( int argc, const char * const * argv )
   return 0;
 }
 
+DCL_CMD_REG( mk_ladder,  'L', " vmin dv t n_up tp - make ladder steps"  );
 int cmd_mk_ladder( int argc, const char * const * argv )
 {
   float   v0   = arg2float_d( 1, argc, argv,     3, 0.1f,       90 );
@@ -671,6 +674,7 @@ int cmd_mk_ladder( int argc, const char * const * argv )
   return 0;
 }
 
+DCL_CMD_REG( mk_ramp,    'R', " vmin vmax t1  t2 t3  tp - make ramp steps"  );
 int cmd_mk_ramp( int argc, const char * const * argv )
 {
   float vmin  = arg2float_d( 1, argc, argv,     5, 0.1f,       98 );
@@ -686,6 +690,7 @@ int cmd_mk_ramp( int argc, const char * const * argv )
   return 0;
 }
 
+DCL_CMD_REG( edit_step,  'E', " vb ve t tp - edit given step"  );
 int cmd_edit_step( int argc, const char * const * argv )
 {
   if( argc < 4 ) {
@@ -702,9 +707,4 @@ int cmd_edit_step( int argc, const char * const * argv )
   return ok ? 0 : 1;
 }
 
-CmdInfo CMDINFO_SHOW_STEPS { "show_steps", 'S', cmd_show_steps, " - show PWM steps"  };
-CmdInfo CMDINFO_MK_RECT    { "mk_rect",      0, cmd_mk_rect,    " vmin vmax t tp - make rectangle steps"  };
-CmdInfo CMDINFO_MK_LADDER  { "mk_ladder",  'L', cmd_mk_ladder,  " vmin dv t n_up tp - make ladder steps"  };
-CmdInfo CMDINFO_MK_RAMP    { "mk_ramp",    'R', cmd_mk_ramp,    " vmin vmax t1  t2 t3  tp - make ramp steps"  };
-CmdInfo CMDINFO_EDIT_STEP  { "edit_step",  'E', cmd_edit_step,  " vb ve t tp - edit given step"  };
 

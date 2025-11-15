@@ -15,15 +15,8 @@ TIM_HandleTypeDef tim_h;
 void init_usonic();
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " [n] - test sensor"  };
+DCL_CMD_REG( test0, 'T', " - test usonic"  );
 
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-
-  &CMDINFO_TEST0,
-  nullptr
-};
 
 
 int main(void)

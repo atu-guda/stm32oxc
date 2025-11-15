@@ -2,7 +2,6 @@
 #include <iterator>
 #include <algorithm>
 
-// #include <optional>
 #include <expected>
 
 #include <oxc_auto.h>
@@ -22,24 +21,11 @@ BOARD_CONSOLE_DEFINES;
 const char* common_help_string = "Appication to test misc math" NL;
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test statistics"  };
-int cmd_testout( int argc, const char * const * argv );
-CmdInfo CMDINFO_TESTOUT { "testout", 'O', cmd_testout, " - test output"  };
-int cmd_testsplit( int argc, const char * const * argv );
-CmdInfo CMDINFO_TESTSPLIT { "testspit", 'X', cmd_testsplit, " expr - test var split"  };
-int cmd_testopt( int argc, const char * const * argv );
-CmdInfo CMDINFO_TESTOPT { "testopt", 'Y', cmd_testopt, " n - test optiona/expected"  };
+DCL_CMD_REG( test0, 'T', " - test statistics"  );
+DCL_CMD_REG( testout, 'O', " - test output"  );
+DCL_CMD_REG( testsplit, 'X', " expr - test var split"  );
+DCL_CMD_REG( testopt, 'Y', " n - test optiona/expected"  );
 
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-
-  &CMDINFO_TEST0,
-  &CMDINFO_TESTOUT,
-  &CMDINFO_TESTSPLIT,
-  &CMDINFO_TESTOPT,
-  nullptr
-};
 
 void idle_main_task()
 {

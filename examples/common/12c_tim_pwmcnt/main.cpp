@@ -21,23 +21,10 @@ int MX_TIM_PWM_Init();
 int MX_TIM_IN_Init();
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " [t] [n] - test counter"  };
+DCL_CMD_REG( test0, 'T', " [t] [n] - test counter? "  );
+DCL_CMD_REG( tinit, 'I', " - reinit timer"  );
+DCL_CMD_REG( set_pwm, 'W', " v - set PWM value in %"  );
 
-int cmd_tinit( int argc, const char * const * argv );
-CmdInfo CMDINFO_TINIT { "tinit", 'I', cmd_tinit, " - reinit timer"  };
-
-int cmd_set_pwm( int argc, const char * const * argv );
-CmdInfo CMDINFO_SET_PWM { "set_pwm", 'W', cmd_set_pwm, " v - set PWM value in %"  };
-
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-
-  &CMDINFO_TEST0,
-  &CMDINFO_TINIT,
-  &CMDINFO_SET_PWM,
-  nullptr
-};
 
 
 int main(void)

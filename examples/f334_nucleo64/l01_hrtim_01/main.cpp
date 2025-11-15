@@ -20,18 +20,9 @@ void HAL_HRTIM_MspPostInit( HRTIM_HandleTypeDef* hrtimHandle );
 const char* common_help_string = "Appication to HRTIM 01" NL;
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
-int cmd_cmp1( int argc, const char * const * argv );
-CmdInfo CMDINFO_CMP1 { "cmp1", 'C', cmd_cmp1, " A B C D E - set cmp1 values"  };
+DCL_CMD_REG( test0, 'T', " - test HRTIM"  );
+DCL_CMD_REG( cmp1, 'C', " A B C D E - set cmp1 values"  );
 
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-
-  &CMDINFO_TEST0,
-  &CMDINFO_CMP1,
-  nullptr
-};
 
 void idle_main_task()
 {

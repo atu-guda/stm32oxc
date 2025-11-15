@@ -13,28 +13,11 @@ BOARD_CONSOLE_DEFINES;
 const char* common_help_string = "App to test hd4480 LCD screen" NL;
 
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
-int cmd_gotoxy( int argc, const char * const * argv );
-CmdInfo CMDINFO_GOTOXY{ "gotoxy", 'G', cmd_gotoxy, " x y - move pos to (x, y)"  };
-int cmd_xychar( int argc, const char * const * argv );
-CmdInfo CMDINFO_XYCHAR{ "xychar", 'X', cmd_xychar, " x y code - put char at x y"  };
-int cmd_puts( int argc, const char * const * argv );
-CmdInfo CMDINFO_PUTS{ "puts", 'P', cmd_puts, "string - put string at cur pos"  };
-int cmd_lcd_rate( int argc, const char * const * argv );
-CmdInfo CMDINFO_LCD_RATE{ "lcd_rate", 0, cmd_lcd_rate, "[N] - measure output rate"  };
-
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-  DEBUG_I2C_CMDS,
-
-  &CMDINFO_TEST0,
-  &CMDINFO_XYCHAR,
-  &CMDINFO_GOTOXY,
-  &CMDINFO_PUTS,
-  &CMDINFO_LCD_RATE,
-  nullptr
-};
+DCL_CMD_REG( test0, 'T', " - test something 0"  );
+DCL_CMD_REG( gotoxy, 'G', " x y - move pos to (x, y)"  );
+DCL_CMD_REG( xychar, 'X', " x y code - put char at x y"  );
+DCL_CMD_REG( puts, 'P', "string - put string at cur pos"  );
+DCL_CMD_REG( lcd_rate, 0, "[N] - measure output rate"  );
 
 
 I2C_HandleTypeDef i2ch;

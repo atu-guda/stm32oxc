@@ -11,15 +11,7 @@ BOARD_CONSOLE_DEFINES;
 
 const char* common_help_string = "Appication to test SDRAM usage via FMC" NL;
 // --- local commands;
-int cmd_test0( int argc, const char * const * argv );
-CmdInfo CMDINFO_TEST0 { "test0", 'T', cmd_test0, " - test something 0"  };
-
-const CmdInfo* global_cmds[] = {
-  DEBUG_CMDS,
-
-  &CMDINFO_TEST0,
-  nullptr
-};
+DCL_CMD_REG( test0, 'T', " - SDRAM+FMC"  );
 
 
 int main(void)
