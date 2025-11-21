@@ -41,6 +41,8 @@ fl.txt
 # output data files
 examples/*/*/data/*
 *_x.txt
+g_*.txt
+d_*.txt
 
 # eclipse
 *.elf.launch

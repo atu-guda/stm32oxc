@@ -1,0 +1,13 @@
+Measure speed of feedback-less servo
+ref: ~/proj/stm32/cube/f446_lwm_enco
+
+Control : T3.4 = C9 AF2_TIM3
+In: 84 MHz, PSC: 41 -> cnt_freq = 2 MHz ( 0.5us );
+ARR: 39999 -> out freq: 50 Hz ( 20 us )
+LWM:
+0.5 ms -> 1000
+1.5 ms -> 3000
+2.5 ms -> 5000
+
+Measure: T2(1+2) in encoder mode (A0,A1) AF1_TIM2
+
