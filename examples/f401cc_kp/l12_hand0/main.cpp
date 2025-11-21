@@ -29,7 +29,7 @@ USBCDC_CONSOLE_DEFINES;
 
 
 CoordInfo coords[] {
-  {  0.10f, 0.90f, 0.20f, 0.20f }, // rotate
+  {  0.00f, 1.00f, 0.40f, 0.20f }, // rotate
   {  0.45f, 0.80f, 0.50f, 0.50f }, // arm1
   {  0.45f, 0.80f, 0.50f, 0.50f }, // arm2
   {  0.00f, 0.70f, 0.80f, 0.10f }, // grip
@@ -165,8 +165,8 @@ int main(void)
 
   ranges::for_each( movers,  [](auto pm) { pm->init(); } );
   ranges::for_each( sensors, [](auto ps) { ps->init(); } );
-  sens_enc.set_zero_val( 2381 ); // mech param: init config?
-  mover_base.set_lwm_times( 1300, 1700 );
+  sens_enc.set_zero_val( 3540 ); // mech param: init config?
+  mover_base.set_lwm_times( 1400, 1600 );
   mover_base.setFlags( Mover::Flags::offAfter );
 
   tim_lwm_start();
