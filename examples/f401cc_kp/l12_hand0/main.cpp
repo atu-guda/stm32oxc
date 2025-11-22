@@ -1,4 +1,5 @@
 #include <cerrno>
+#include <climits>
 #include <algorithm>
 #include <cmath>
 #include <array>
@@ -29,7 +30,7 @@ USBCDC_CONSOLE_DEFINES;
 
 
 CoordInfo coords[] {
-  {  0.00f, 1.00f, 0.40f, 0.20f }, // rotate
+  {  0.00f, 1.00f, 0.20f, 0.20f }, // rotate
   {  0.45f, 0.80f, 0.50f, 0.50f }, // arm1
   {  0.45f, 0.80f, 0.50f, 0.50f }, // arm2
   {  0.00f, 0.70f, 0.80f, 0.10f }, // grip
@@ -61,7 +62,7 @@ TIM_HandleTypeDef tim_lwm_h;
 // --- local commands;
 DCL_CMD_REG( test0,  'T', " [val] [ch] [k_v] - test move 1 ch" );
 DCL_CMD_REG( stop,   'P', " - stop pwm" );
-DCL_CMD_REG( mtest,  'M', " - test AS5600" );
+DCL_CMD_REG( mtest,  'M', " [set_zero] [aux] - test AS5600" );
 DCL_CMD_REG( mcoord, 'C', " - measure and store coords" );
 DCL_CMD_REG( go,     'G', " k_v x0 x1 x2 x3 tp0 tp1 tp2 tp3 - go " );
 DCL_CMD_REG( pulse,  'U', " ch t_lwm dt - test pulse " );
@@ -139,6 +140,7 @@ int main(void)
 
   UVAR('t') =    50;
   UVAR('n') =    20;
+  UVAR('k') =  1000; // axis 0 rotate test coeff * 1000
 
   ledsx.initHW();
   ledsx.reset( 0xFF );
@@ -165,7 +167,7 @@ int main(void)
 
   ranges::for_each( movers,  [](auto pm) { pm->init(); } );
   ranges::for_each( sensors, [](auto ps) { ps->init(); } );
-  sens_enc.set_zero_val( 3540 ); // mech param: init config?
+  sens_enc.set_zero_val( 2520 ); // mech param: init config?
   mover_base.set_lwm_times( 1400, 1600 );
   mover_base.setFlags( Mover::Flags::offAfter );
 
@@ -330,12 +332,13 @@ int cmd_pulse( int argc, const char * const * argv )
 int cmd_mtest( int argc, const char * const * argv )
 {
   const int  set_pos = arg2long_d( 1, argc, argv, 0, 0, 1 );
+  const int  aux     = arg2long_d( 2, argc, argv, 0, INT_MIN, INT_MAX );
   sens_enc.measure( 1 );
   auto alp_i = sens_enc.getUint(0);
   auto alp_v = sens_enc.get( 0 );
 
   std_out
-      << alp_i << ' ' << alp_v
+      << alp_i << ' ' << alp_v << ' ' << aux
       << ' ' << ang_sens.getN_turn() << ' ' << ang_sens.getOldVal() << NL;
 
   std_out << "=== AGC: " << ang_sens.getAGCSetting() << " cordic: " <<  ang_sens.getCORDICMagnitude()
@@ -782,8 +785,11 @@ int SensorAS5600::init()
 
 int SensorAS5600::measure( int /*nx*/ )
 {
-  iv = dev.getAngle();
-  v  = 0.5f + ( (float) iv  - zero_val ) * k_a; // TODO: what?
+  iv = dev.getAngle() - zero_val;
+  if( iv < -1024 ) {
+    iv += 4096;
+  }
+  v  = (float)iv * k_a;
   return 1;
 }
 
@@ -807,11 +813,11 @@ int MoverServoCont::move( float x, uint32_t t_cur )
   const float fbv = fb ? *fb : 0.5f;
   const float dx = x - fbv;
 
-  if( fabsf( dx ) < 0.02f ) { // dead zone, TODO: param
+  if( fabsf( dx ) < 0.01f ) { // dead zone, TODO: param
     ccr = 0;
     return 1;
   }
-  int32_t vi = lwm_t_cen + (int) ( dx * lwm_t_dlt * 0.50f ); // TODO: param
+  int32_t vi = lwm_t_cen + (int) ( dx * lwm_t_dlt * 0.50f * UVAR('k') / 1000 ); // TODO: param
   vi = std::clamp( vi, (int32_t)lwm_t_min, (int32_t)lwm_t_max );
   dbg_val0 = vi;
   const auto ccr_v = (uint32_t) arr * vi / tim_lwm_t_us;

@@ -187,8 +187,8 @@ class SensorAS5600 : public Sensor {
    AS5600 &dev;
    float v;
    int zero_val { 0 };
-   uint16_t iv;
-   static constexpr float k_a { 2.0f / 2048 };
+   int32_t iv { 0 };
+   static constexpr float k_a { 1.0f / 2048 };
 };
 
 

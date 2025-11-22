@@ -42,12 +42,14 @@ SUBDIRS = \
   36_mcp23017_gpio_i2c \
   37_ad7606_spi \
   38_mcp3204_adc_spi \
+  39_as5600_i2c \
   40_i2c_ina228 \
   42_spi_dac8563 \
   43_ads1220_spi \
   80_math_stat \
   l10_windmash \
-  l11_windmash1
+  l11_windmash1 \
+  l12_hand0
 
   # 16_step1 \
   # 17_1w_18b20 \
