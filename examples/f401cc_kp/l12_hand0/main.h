@@ -23,6 +23,7 @@ inline constexpr uint32_t LWM_PIN1 { 1 };
 inline constexpr uint32_t LWM_PIN2 { 2 };
 inline constexpr uint32_t LWM_PIN3 { 3 };
 
+extern TIM_HandleTypeDef tim_lwm_h;
 int tim_lwm_cfg();
 #define TIM_LWM TIM2
 #define TIM_LWM_EN  __GPIOA_CLK_ENABLE(); __TIM2_CLK_ENABLE();
@@ -63,6 +64,8 @@ struct CoordInfo {
   float v_max;
   float x_cur; // TODO: separate, other - const
 };
+
+extern CoordInfo coords[];
 
 struct MovePart {
   static const unsigned n_max { 6 }; // <-> n_movers ??
@@ -137,6 +140,11 @@ class MoverServoCont : public MoverServoBase {
   protected:
 };
 
+extern MoverServoCont mover_base;
+extern MoverServo     mover_p1;
+extern MoverServo     mover_p2;
+extern MoverServo     mover_grip;
+
 // ------------------------------- Sensors -----------------------------------
 
 class Sensor {
@@ -198,6 +206,13 @@ class SensorAS5600 : public Sensor {
    static constexpr float k_a { 1.0f / 2048 };
 };
 
+extern SensorAS5600 sens_enc;
+extern SensorAdc sens_adc;
+extern SensorFakeMover sens_grip;
+
+int process_movepart( const MovePart &mp );
+int measure_store_coords( int nm );
+void out_coords( bool nl );
 
 
 #endif

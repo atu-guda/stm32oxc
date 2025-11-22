@@ -6,6 +6,7 @@
 
 #include <oxc_auto.h>
 #include <oxc_main.h>
+#include <oxc_atleave.h>
 #include <oxc_floatfun.h>
 #include <oxc_namedints.h>
 #include <oxc_namedfloats.h>
@@ -25,16 +26,26 @@ BOARD_DEFINE_LEDS;
 
 USBCDC_CONSOLE_DEFINES;
 
-// ------------------------------- Coords -----------------------------------
+int debug {0};
+int dry_run {0};
+int dis_movers {0};
 
+PinsOut ledsx( LEDSX_GPIO, LEDSX_START, LEDSX_N );
 
+TIM_HandleTypeDef tim_lwm_h;
 
-CoordInfo coords[] {
-  {  0.00f, 1.00f, 0.20f, 0.20f }, // rotate
-  {  0.45f, 0.80f, 0.50f, 0.50f }, // arm1
-  {  0.45f, 0.80f, 0.50f, 0.50f }, // arm2
-  {  0.00f, 0.70f, 0.80f, 0.10f }, // grip
-};
+I2C_HandleTypeDef i2ch;
+DevI2C i2cd( &i2ch, 0 );
+AS5600 ang_sens( i2cd );
+
+int adc_n {100};
+volatile int adc_dma_end {0};
+
+SensorAS5600 sens_enc( ang_sens );
+SensorAdc sens_adc( 3 );
+SensorFakeMover sens_grip( mover_grip );
+
+std::array<Sensor*,3> sensors { &sens_adc, &sens_enc, &sens_grip };
 
 // ------------------------------- Movers -----------------------------------
 
@@ -45,20 +56,24 @@ MoverServo     mover_grip( TIM_LWM->CCR4, TIM_LWM->ARR, &coords[3].x_cur );
 
 std::array<Mover*,4> movers { &mover_base, &mover_p1, &mover_p2, &mover_grip };
 
-static_assert( std::size(movers) <= std::size(coords) );
 
 // ------------------------   end Movers
-int debug {0};
-int dry_run {0};
-int dis_movers {0};
 
-PinsOut ledsx( LEDSX_GPIO, LEDSX_START, LEDSX_N );
+// ------------------------------- Coords -----------------------------------
+
+
+
+CoordInfo coords[] {
+  {  0.00f, 1.00f, 0.20f, 0.20f }, // rotate
+  {  0.45f, 0.80f, 0.50f, 0.50f }, // arm1
+  {  0.45f, 0.80f, 0.50f, 0.50f }, // arm2
+  {  0.00f, 0.70f, 0.80f, 0.10f }, // grip
+};
+static_assert( std::size(movers) <= std::size(coords) );
 
 
 
 const char* common_help_string = "hand0 " __DATE__ " " __TIME__ NL;
-
-TIM_HandleTypeDef tim_lwm_h;
 
 // --- local commands;
 DCL_CMD_REG( test0,  'T', " [val] [ch] [k_v] - test move 1 ch" );
@@ -67,24 +82,12 @@ DCL_CMD_REG( mtest,  'M', " [set_zero] [aux] - test AS5600" );
 DCL_CMD_REG( mcoord, 'C', " - measure and store coords" );
 DCL_CMD_REG( go,     'G', " k_v x0 x1 x2 x3 tp0 tp1 tp2 tp3 - go " );
 DCL_CMD_REG( pulse,  'U', " ch t_lwm dt - test pulse " );
+DCL_CMD_REG( calibr, '\0', " ch - calibrate channel " );
 
 
-I2C_HandleTypeDef i2ch;
-DevI2C i2cd( &i2ch, 0 );
-AS5600 ang_sens( i2cd );
-SensorAS5600 sens_enc( ang_sens );
 
-int adc_n {100};
-volatile int adc_dma_end {0};
-SensorAdc sens_adc( 3 );
+// ---------------------- named data --------------------------------------
 
-SensorFakeMover sens_grip( mover_grip );
-
-std::array<Sensor*,3> sensors { &sens_adc, &sens_enc, &sens_grip };
-int measure_store_coords( int nm );
-void out_coords( bool nl );
-
-int process_movepart( const MovePart &mp );
 
 #define ADD_IOBJ(x)    constexpr NamedInt   ob_##x { #x, &x }
 #define ADD_IOBJ_TD(x) constexpr NamedInt   ob_##x { #x, &td.x }
@@ -351,7 +354,7 @@ int cmd_go( int argc, const char * const * argv )
 // just for debug, remove
 int cmd_pulse( int argc, const char * const * argv )
 {
-  uint8_t  ch  = arg2long_d(  1, argc, argv,    1,    0, std::size(movers)-1 );
+  int      ch  = arg2long_d(  1, argc, argv,    1,    0, std::size(movers)-1 );
   uint32_t lwm = arg2long_d(  2, argc, argv, 2000,  400, 2600  );
   uint32_t dt  = arg2long_d(  3, argc, argv,  500,   10, 5000  );
   uint32_t keep= arg2long_d(  4, argc, argv,    0,    0,    1  );
@@ -380,6 +383,57 @@ int cmd_pulse( int argc, const char * const * argv )
   return 0;
 }
 
+int cmd_calibr( int argc, const char * const * argv )
+{
+  int  ch  = arg2long_d(  1, argc, argv,    1,    0, std::size(movers)-1 );
+  std_out << "# calibr ch: "<< ch << NL;
+
+  if( ch < 1 || ch > 2 ) {
+    std_out << "# Warn: calibration is not available for channel for now: " << ch << NL;
+    return 1;
+  }
+
+  RestoreAtLeave keep_movers { dis_movers,  ~ (1<<ch) };// disable all except selected
+
+  auto &co  = coords[ch];
+  auto &mo  = movers[ch];
+  MovePart mp;
+  const auto x_min_given = co.x_min + 0.1f;
+  const auto x_max_given = co.x_max - 0.1f;
+  mp.init();
+  mp.xs[ch] = x_min_given;
+  mp.k_v = 0.2f;
+  int rc = process_movepart( mp );
+  if( rc != 0 ) {
+    std_out << "# Err: fail to find start. ch: " << ch << ' ' << x_min_given << NL;
+    return 2;
+  }
+
+  // TODO: structure
+  const auto x_min_get { co.x_cur };
+  const auto x_min_ctl  { mo->getCtlVal() };
+  const auto x_min_raw  { sens_adc.getUint( (ch == 1) ? 0 : 1 ) }; // TODO: better structure
+  std_out << "# min " NL;
+  std_out << "# given: " << x_min_given << " get: " << x_min_get
+          << " ctl: " << x_min_ctl <<  " raw: " << x_min_raw << NL;
+
+  delay_ms( 500 );
+  mp.xs[ch] = x_max_given;
+  rc = process_movepart( mp );
+  if( rc != 0 ) {
+    std_out << "# Err: fail to find end. ch: " << ch << ' ' << x_max_given << NL;
+    return 2;
+  }
+
+  const auto x_max_get { co.x_cur };
+  const auto x_max_ctl  { mo->getCtlVal() };
+  const auto x_max_raw  { sens_adc.getUint( (ch == 1) ? 0 : 1 ) }; // TODO: better structure
+  std_out << "# max " NL;
+  std_out << "# given: " << x_max_given << " get: " << x_max_get
+          << " ctl: " << x_max_ctl <<  " raw: " << x_max_raw << NL;
+
+  return 0;
+}
 
 int cmd_mtest( int argc, const char * const * argv )
 {
@@ -406,7 +460,6 @@ int cmd_mcoord( int argc, const char * const * argv )
   const int n_meas = arg2long_d(  1, argc, argv, adc_n, 1, 10000 );
   int rc  = measure_store_coords( n_meas );
   out_coords( true );
-
 
   return !rc;
 }
@@ -435,7 +488,6 @@ int measure_store_coords( int nm )
   coords[1].x_cur = sens_adc.get( 0 );
   coords[2].x_cur = sens_adc.get( 1 );
   coords[3].x_cur = sens_grip.get( 0 );
-
 
   return 1;
 }
@@ -534,7 +586,7 @@ int process_movepart( const MovePart &mp )
 
   measure_store_coords( adc_n );
 
-  return 0;
+  return break_flag;
 }
 
 // -------------------- Timers ----------------------------------------------------
@@ -697,15 +749,11 @@ void MX_DMA_Init(void)
   __HAL_RCC_DMA2_CLK_ENABLE();
   HAL_NVIC_SetPriority( DMA2_Stream0_IRQn, 10, 0 );
   HAL_NVIC_EnableIRQ(   DMA2_Stream0_IRQn );
-  UVAR('j') |= 4;
 }
 
 void DMA2_Stream0_IRQHandler(void)
 {
-  ledsx[1].set();
   HAL_DMA_IRQHandler( &hdma_adc1 );
-  ledsx[1].reset();
-  UVAR('j') |= 8;
 }
 
 int MX_ADC1_Init(void)
@@ -790,7 +838,6 @@ void HAL_ADC_MspDeInit( ADC_HandleTypeDef* adcHandle )
 
 void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef* hadc1 )
 {
-  ++UVAR('i');
   adc_dma_end = 1;
 }
 
