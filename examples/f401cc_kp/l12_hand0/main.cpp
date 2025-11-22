@@ -50,6 +50,7 @@ static_assert( std::size(movers) <= std::size(coords) );
 // ------------------------   end Movers
 int debug {0};
 int dry_run {0};
+int dis_movers {0};
 
 PinsOut ledsx( LEDSX_GPIO, LEDSX_START, LEDSX_N );
 
@@ -94,6 +95,7 @@ int process_movepart( const MovePart &mp );
 // ADD_FOBJ_TD( d_wire  );
 ADD_IOBJ   ( debug   );
 ADD_IOBJ   ( dry_run   );
+ADD_IOBJ   ( dis_movers   );
 ADD_IOBJ   ( adc_n   );
 
 #undef ADD_IOBJ
@@ -103,6 +105,7 @@ ADD_IOBJ   ( adc_n   );
 constexpr const NamedObj *const objs_info[] = {
   & ob_debug,
   & ob_dry_run,
+  & ob_dis_movers,
   & ob_adc_n,
   nullptr
 };
@@ -194,9 +197,54 @@ void init_EXTI()
   //   HAL_NVIC_EnableIRQ(   ei.exti_n );
 }
 
+int bad_coord_idx() // <- = Ok TODO: more
+{
+  const auto c0 = coords[0].x_cur;
+  if( c0 < -0.1f || c0 > 1.1f ) { // Rotate error
+    return 0;
+  }
+  return -1;
+}
+
+bool is_good_coords( bool do_stop, bool do_print, bool do_measure  )
+{
+  if( do_measure && !measure_store_coords( adc_n ) ) {
+    if( do_print ) {
+    std_out << "# Err sens : " << NL;
+    }
+    return false;
+  }
+  int bad_idx = bad_coord_idx();
+  if( bad_idx < 0 ) {
+    return true;
+  };
+  if( do_stop ) {
+    tim_lwm_stop();
+  }
+  if( do_print ) {
+    std_out << "# Err: bad coord " << bad_idx << ' ' << coords[bad_idx].x_cur << NL;
+  }
+  return false;
+}
+
+bool is_mover_disabled( unsigned ch, bool do_print )
+{
+  if( (1<<ch) & dis_movers ) {
+    if( do_print ) {
+      std_out << "# Warn: mover " << ch << " is disabled " << dis_movers << NL;
+    }
+    return true;
+  }
+  return false;
+}
+
 int cmd_test0( int argc, const char * const * argv )
 {
   const unsigned  ch = arg2long_d(  2, argc, argv, 1, 0, std::size(movers) );
+  if( is_mover_disabled( ch, true ) ) {
+    return 1;
+  }
+
   auto &mo = movers[ch];
   auto &co = coords[ch];
   const float x_e = arg2float_d( 1, argc, argv, 0.5f, co.x_min, co.x_max );
@@ -235,8 +283,7 @@ int cmd_test0( int argc, const char * const * argv )
 
     ledsx[2].set();
 
-    if( !measure_store_coords( adc_n ) ) {
-      std_out << "# Err sens : " << NL;
+    if( ! is_good_coords( true, true, true )  ) {
       break;
     }
 
@@ -313,6 +360,11 @@ int cmd_pulse( int argc, const char * const * argv )
 
   std_out << "# pulse: ch= " << ch << " lwm= " << lwm << " dt= " << dt << NL;
 
+  if( is_mover_disabled( ch, true ) ) {
+    return 1;
+  }
+
+  tim_lwm_stop();
   *ccrs[ch] = (uint32_t) (39999 * lwm / tim_lwm_t_us);
   delay_ms( 50 );
   tim_lwm_start();
@@ -416,7 +468,10 @@ int process_movepart( const MovePart &mp )
 
   ledsx.reset ( 0xFF );
 
-  for( auto mo : movers ) {
+  for( uint32_t ch=0; auto mo : movers ) {
+    if( is_mover_disabled( ch ) ) {
+      continue;
+    }
     if( !mo || ! mo->pre_run() ) {
       std_out << "# Err: pre_run" NL;
       return 2;
@@ -438,8 +493,7 @@ int process_movepart( const MovePart &mp )
 
     ledsx[2].set();
 
-    if( !measure_store_coords( adc_n ) ) {
-      std_out << "# Err sens : " << NL; // TODO: handle
+    if( ! is_good_coords( true, true, true )  ) {
       break;
     }
 
@@ -447,6 +501,10 @@ int process_movepart( const MovePart &mp )
     std_out << FmtInt(i,4) << ' ' << FmtInt( tcc - tc00, 6 ) << ' ';
 
     for( size_t mi = 0; mi<nco; ++mi ) {
+
+      if( is_mover_disabled( mi ) ) {
+        continue;
+      }
 
       const float x = ( i < (nn-1) ) ? ( xs_0[mi] + dxs[mi] * (i+1) ) : mp.xs[mi]; // TODO: fun
 
@@ -465,7 +523,10 @@ int process_movepart( const MovePart &mp )
     delay_ms_until_brk( &tc0, t_step );
   }
 
-  for( auto mo : movers ) {
+  for( uint32_t ch=0; auto mo : movers ) {
+    if( is_mover_disabled( ch ) ) {
+      continue;
+    }
     if( !mo || ! mo->post_run() ) {
       std_out << "# Err: post_run" NL;
     }

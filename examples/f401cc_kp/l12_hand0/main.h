@@ -2,6 +2,13 @@
 #define _MAIN_H
 
 extern int debug;
+extern int dry_run;
+extern int dis_movers;
+extern int adc_n;
+bool is_mover_disabled( unsigned ch, bool do_print = false );
+int bad_coord_idx(); // < 0 = ok
+bool is_good_coords( bool do_stop = true, bool do_print = false, bool do_measure = false );
+
 
 void init_EXTI();
 
