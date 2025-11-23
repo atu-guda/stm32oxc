@@ -385,7 +385,8 @@ int cmd_pulse( int argc, const char * const * argv )
 
 int cmd_calibr( int argc, const char * const * argv )
 {
-  int  ch  = arg2long_d(  1, argc, argv,    1,    0, std::size(movers)-1 );
+  int  ch     = arg2long_d(  1, argc, argv,    1,    0, std::size(movers)-1 );
+  int  store  = arg2long_d(  2, argc, argv,    0,    0, 1 );
   std_out << "# calibr ch: "<< ch << NL;
 
   if( ch < 1 || ch > 2 ) {
@@ -395,42 +396,66 @@ int cmd_calibr( int argc, const char * const * argv )
 
   RestoreAtLeave keep_movers { dis_movers,  ~ (1<<ch) };// disable all except selected
 
+  measure_store_coords( adc_n );
   auto &co  = coords[ch];
-  auto &mo  = movers[ch];
+
   MovePart mp;
-  const auto x_min_given = co.x_min + 0.1f;
-  const auto x_max_given = co.x_max - 0.1f;
+  const auto x_min_given = co.x_min + 0.05f;
+  const auto x_max_given = co.x_max - 0.05f;
   mp.init();
+  for( size_t i=0; i<std::size(coords); ++i ) { // prevent other axis move, among disabling movers
+    mp.xs[i] = coords[i].x_cur;
+  }
+
   mp.xs[ch] = x_min_given;
   mp.k_v = 0.2f;
   int rc = process_movepart( mp );
-  if( rc != 0 ) {
+  if( rc != 0 || break_flag ) {
     std_out << "# Err: fail to find start. ch: " << ch << ' ' << x_min_given << NL;
     return 2;
   }
-
+  // TODO: better structure
+  const unsigned adc_ch { (ch == 1) ? 0u : 1u };
   // TODO: structure
   const auto x_min_get { co.x_cur };
-  const auto x_min_ctl  { mo->getCtlVal() };
-  const auto x_min_raw  { sens_adc.getUint( (ch == 1) ? 0 : 1 ) }; // TODO: better structure
+  const auto x_min_raw  { sens_adc.getInt( adc_ch ) };
   std_out << "# min " NL;
   std_out << "# given: " << x_min_given << " get: " << x_min_get
-          << " ctl: " << x_min_ctl <<  " raw: " << x_min_raw << NL;
+          <<  " raw: " << x_min_raw << NL;
+  // TODO: check max delta given-get, but not too strict (or 'force' flag)
 
   delay_ms( 500 );
   mp.xs[ch] = x_max_given;
   rc = process_movepart( mp );
-  if( rc != 0 ) {
+  if( rc != 0  || break_flag ) {
     std_out << "# Err: fail to find end. ch: " << ch << ' ' << x_max_given << NL;
     return 2;
   }
 
   const auto x_max_get { co.x_cur };
-  const auto x_max_ctl  { mo->getCtlVal() };
-  const auto x_max_raw  { sens_adc.getUint( (ch == 1) ? 0 : 1 ) }; // TODO: better structure
+  const auto x_max_raw  { sens_adc.getInt( adc_ch ) }; // TODO: better structure
   std_out << "# max " NL;
   std_out << "# given: " << x_max_given << " get: " << x_max_get
-          << " ctl: " << x_max_ctl <<  " raw: " << x_max_raw << NL;
+          << " raw: " << x_max_raw << NL;
+
+  const auto    d_given  { x_max_given - x_min_given };
+  const int32_t d_raw    { x_max_raw   - x_min_raw };
+  std_out << "# delta given: " << d_given << " raw: " << d_raw << NL;
+  if( fabsf( d_given ) < 0.1f || abs( d_raw ) < 50 ) {
+    std_out << "# Error: low delta"  NL;
+    return 1;
+  }
+
+  const float k_a { d_given / d_raw };
+  const float k_b { x_min_given - k_a * x_min_raw };
+  std_out << "# k_a= " << k_a << " k_b= " << k_b << NL;
+
+  if( !store ) {
+    return 0;
+  }
+
+  const float k_x[2] { k_a,  k_b };
+  sens_adc.setCalibr( adc_ch, k_x );
 
   return 0;
 }
@@ -440,7 +465,7 @@ int cmd_mtest( int argc, const char * const * argv )
   const int  set_pos = arg2long_d( 1, argc, argv, 0, 0, 1 );
   const int  aux     = arg2long_d( 2, argc, argv, 0, INT_MIN, INT_MAX );
   sens_enc.measure( 1 );
-  auto alp_i = sens_enc.getUint(0);
+  auto alp_i = sens_enc.getInt(0);
   auto alp_v = sens_enc.get( 0 );
 
   std_out
@@ -854,11 +879,11 @@ int SensorAdc::measure( int nx )
   if( nx < 1 ) {
     nx = 1;
   }
-  std::ranges::fill( adc_data, 0 );
+  ranges::fill( adc_data, 0 );
 
   for( int i=0; i<nx; ++i ) {
     adc_dma_end = 0;
-    if( HAL_ADC_Start_DMA( &hadc1, (uint32_t*)adc_buf, 3 ) != HAL_OK ) {
+    if( HAL_ADC_Start_DMA( &hadc1, (uint32_t*)adc_buf, ADC1_NCH ) != HAL_OK ) {
       errno = 4567;
       return 0;
     }
@@ -883,6 +908,7 @@ int SensorAdc::measure( int nx )
   return 1;
 }
 
+// ----------------------------------- 
 
 
 int SensorAS5600::init()

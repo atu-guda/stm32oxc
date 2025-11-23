@@ -42,6 +42,7 @@ void tim_lwm_start();
 void tim_lwm_stop();
 
 inline auto& ADC1_GPIO { GpioA };
+#define ADC1_NCH   3
 #define ADC1_PIN0  GPIO_PIN_4
 #define ADC1_PIN1  GPIO_PIN_5
 #define ADC1_PIN2  GPIO_PIN_6
@@ -154,8 +155,9 @@ class Sensor {
    unsigned getNch() const { return n_ch; }
    virtual int measure( int nx ) = 0;
    virtual int init() = 0;
-   virtual uint32_t getUint( unsigned ch ) = 0;
+   virtual int32_t getInt( unsigned ch ) = 0;
    virtual float get( unsigned ch ) = 0;
+   virtual void setCalibr( unsigned ch, const float *v ) = 0;
   protected:
    unsigned n_ch;
 };
@@ -166,8 +168,9 @@ class SensorFakeMover : public Sensor {
    virtual ~SensorFakeMover() = default;
    virtual int measure( int nx ) override { x = mo.get_x_last(); return 1; }
    virtual int init() override { return 1; }
-   virtual uint32_t getUint( unsigned ch ) override { return ( uint32_t ) x * 10000000; }
+   virtual int32_t getInt( unsigned ch ) override { return ( uint32_t ) x * 10000000; }
    virtual float get( unsigned ch ) override { return x; };
+   virtual void setCalibr( unsigned ch, const float *v ) override {};
   protected:
    Mover &mo;
    float x {0};
@@ -179,11 +182,12 @@ class SensorAdc : public Sensor {
    virtual ~SensorAdc() = default;
    virtual int measure( int nx ) override;
    virtual int init() override;
-   virtual uint32_t getUint( unsigned ch ) override { return ( ch < n_ch ) ? adc_data[ch] : 0; }
-   virtual float get( unsigned ch ) override { return getUint(ch) * k_a[ch] + k_b[ch]; }
+   virtual int32_t getInt( unsigned ch ) override { return ( ch < n_ch ) ? adc_data[ch] : 0; }
+   virtual float get( unsigned ch ) override { return getInt(ch) * k_a[ch] + k_b[ch]; }
+   virtual void setCalibr( unsigned ch, const float *v ) override { k_a[ch] = v[0]; k_b[ch] = v[1]; }
   protected:
    static const unsigned max_n_ch { 4 };
-   uint32_t adc_data[max_n_ch];  // collected and divided data (by adc_measure)
+   int32_t  adc_data[max_n_ch];  // collected and divided data (by adc_measure)
    uint16_t adc_buf[max_n_ch];   // buffer for DMA
    float k_a[max_n_ch] { -3.414382e-04f, -3.414382e-04f, 1.0f, 1.0f };
    float k_b[max_n_ch] {       1.20215f,       1.23955f, 0.0f, 0.0f };
@@ -195,15 +199,16 @@ class SensorAS5600 : public Sensor {
    virtual ~SensorAS5600() = default;
    virtual int measure( int nx ) override;
    virtual int init() override;
-   virtual uint32_t getUint( unsigned /* ch */ ) override { return iv; }
+   virtual int32_t getInt( unsigned /* ch */ ) override { return iv; }
    virtual float get( unsigned /* ch */ ) override { return v; };
-   void set_zero_val( int zv ) { zero_val = zv; }
+   void set_zero_val( int zv ) { zero_val = zv; } // TODO: + calibr
+   virtual void setCalibr( unsigned ch, const float *v ) override { k_a = v[0]; };
   protected:
    AS5600 &dev;
    float v;
    int zero_val { 0 };
    int32_t iv { 0 };
-   static constexpr float k_a { 1.0f / 2048 };
+   float k_a { 1.0f / 2048 };
 };
 
 extern SensorAS5600 sens_enc;
