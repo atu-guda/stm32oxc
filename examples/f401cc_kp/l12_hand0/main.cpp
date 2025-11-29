@@ -49,10 +49,10 @@ std::array<Sensor*,3> sensors { &sens_adc, &sens_enc, &sens_grip };
 
 // ------------------------------- Movers -----------------------------------
 
-MoverServoCont mover_base( TIM_LWM->CCR1, TIM_LWM->ARR, &coords[0].x_cur );
-MoverServo     mover_p1(   TIM_LWM->CCR2, TIM_LWM->ARR, &coords[1].x_cur );
-MoverServo     mover_p2(   TIM_LWM->CCR3, TIM_LWM->ARR, &coords[2].x_cur );
-MoverServo     mover_grip( TIM_LWM->CCR4, TIM_LWM->ARR, &coords[3].x_cur );
+MoverServoCont mover_base( TIM_LWM->CCR1, TIM_LWM->ARR, &coords[0].th_cur );
+MoverServo     mover_p1(   TIM_LWM->CCR2, TIM_LWM->ARR, &coords[1].th_cur );
+MoverServo     mover_p2(   TIM_LWM->CCR3, TIM_LWM->ARR, &coords[2].th_cur );
+MoverServo     mover_grip( TIM_LWM->CCR4, TIM_LWM->ARR, &coords[3].th_cur );
 
 std::array<Mover*,4> movers { &mover_base, &mover_p1, &mover_p2, &mover_grip };
 
@@ -64,10 +64,11 @@ std::array<Mover*,4> movers { &mover_base, &mover_p1, &mover_p2, &mover_grip };
 
 
 CoordInfo coords[] {
-  {  0.00f, 1.00f, 0.20f, 0.20f }, // rotate
-  {  0.45f, 0.80f, 0.50f, 0.50f }, // arm1
-  {  0.45f, 0.80f, 0.50f, 0.50f }, // arm2
-  {  0.00f, 0.70f, 0.80f, 0.10f }, // grip
+//   th_min  th_max  vt_max  th_cur
+  { -90.0f,  90.0f,  40.0f,   0.0f }, // rotate
+  { -10.0f,  55.0f,  90.0f,  60.0f }, // arm1
+  { -10.0f,  55.0f,  90.0f,  60.0f }, // arm2
+  { -90.0f,  40.0f, 120.0f, -80.0f }, // grip
 };
 static_assert( std::size(movers) <= std::size(coords) );
 
@@ -80,8 +81,8 @@ DCL_CMD_REG( test0,  'T', " [val] [ch] [k_v] - test move 1 ch" );
 DCL_CMD_REG( stop,   'P', " - stop pwm" );
 DCL_CMD_REG( mtest,  'M', " [set_zero] [aux] - test AS5600" );
 DCL_CMD_REG( mcoord, 'C', " - measure and store coords" );
-DCL_CMD_REG( go,     'G', " k_v x0 x1 x2 x3 tp0 tp1 tp2 tp3 - go " );
-DCL_CMD_REG( pulse,  'U', " ch t_lwm dt - test pulse " );
+DCL_CMD_REG( go,     'G', " k_v th_0 th_1 th_2 th_3 tp_0 tp_1 tp_2 tp_3 - go " );
+DCL_CMD_REG( pulse,  'U', " ch t_on dt - test pulse " );
 DCL_CMD_REG( calibr, '\0', " ch - calibrate channel " );
 
 
@@ -202,8 +203,8 @@ void init_EXTI()
 
 int bad_coord_idx() // <- = Ok TODO: more
 {
-  const auto c0 = coords[0].x_cur;
-  if( c0 < -0.1f || c0 > 1.1f ) { // Rotate error
+  const auto c0 = coords[0].th_cur;
+  if( c0 < -100.0f || c0 > 100.0f ) { // Rotate error
     return 0;
   }
   return -1;
@@ -225,7 +226,7 @@ bool is_good_coords( bool do_stop, bool do_print, bool do_measure  )
     tim_lwm_stop();
   }
   if( do_print ) {
-    std_out << "# Err: bad coord " << bad_idx << ' ' << coords[bad_idx].x_cur << NL;
+    std_out << "# Err: bad coord " << bad_idx << ' ' << coords[bad_idx].th_cur << NL;
   }
   return false;
 }
@@ -250,14 +251,14 @@ int cmd_test0( int argc, const char * const * argv )
 
   auto &mo = movers[ch];
   auto &co = coords[ch];
-  const float x_e = arg2float_d( 1, argc, argv, 0.5f, co.x_min, co.x_max );
+  const float x_e = arg2float_d( 1, argc, argv, co.th_cur, co.th_min, co.th_max );
   const float k_v = arg2float_d( 3, argc, argv, 0.5f,    0.01f, 2.0f );
 
   const uint32_t t_step = UVAR('t');
-  const float   x_0  = co.x_cur;
+  const float   x_0  = co.th_cur;
   const float  x_dlt = x_e - x_0;
   const float x_adlt = fabsf( x_dlt );
-  const float      v = k_v * co.v_max;
+  const float      v = k_v * co.vt_max;
 
   const int n = std::clamp( int( x_adlt/( v * t_step * 1e-3f ) ), 1, 10000 );
   const float dx = x_dlt / n;
@@ -337,9 +338,10 @@ int cmd_go( int argc, const char * const * argv )
   char sep { ' ' };
   mp.k_v = arg2float_d( 1, argc, argv, 0.5f, 0.01f, 2.0f );
   std_out << "# Go: k_v= " << mp.k_v << " ( ";
+
   constexpr size_t nc { std::size(coords) };
   for( size_t i=0; i<nc; ++i ) {
-    mp.xs[i] = arg2float_d( i+2,    argc, argv, coords[i].x_cur, coords[i].x_min, coords[i].x_max );
+    mp.xs[i] = arg2float_d( i+2,    argc, argv, coords[i].th_cur, coords[i].th_min, coords[i].th_max );
     mp.tp[i] = arg2long_d(  i+2+nc, argc, argv, 0, 0, 10 ); // TODO: real types / enum
     std_out << sep << ' ' << mp.xs[i] << " @ " << mp.tp[i] << ' ';
     sep = ',';
@@ -354,21 +356,25 @@ int cmd_go( int argc, const char * const * argv )
 // just for debug, remove
 int cmd_pulse( int argc, const char * const * argv )
 {
-  int      ch  = arg2long_d(  1, argc, argv,    1,    0, std::size(movers)-1 );
-  uint32_t lwm = arg2long_d(  2, argc, argv, 2000,  400, 2600  );
-  uint32_t dt  = arg2long_d(  3, argc, argv,  500,   10, 5000  );
-  uint32_t keep= arg2long_d(  4, argc, argv,    0,    0,    1  );
+  int      ch   = arg2long_d(  1, argc, argv,    1,    0, std::size(movers)-1 );
+  uint32_t t_on = arg2long_d(  2, argc, argv, 1500,  400, 2600  );
+  uint32_t dt   = arg2long_d(  3, argc, argv,  500,   10, 5000  );
+  uint32_t keep = arg2long_d(  4, argc, argv,    0,    0,    1  );
 
   static __IO uint32_t* ccrs[]  = { &TIM_LWM->CCR1, &TIM_LWM->CCR2, &TIM_LWM->CCR3, &TIM_LWM->CCR4 };
 
-  std_out << "# pulse: ch= " << ch << " lwm= " << lwm << " dt= " << dt << NL;
+  std_out << "# pulse: ch= " << ch << " t_on= " << t_on << " dt= " << dt << NL;
 
   if( is_mover_disabled( ch, true ) ) {
     return 1;
   }
 
   tim_lwm_stop();
-  *ccrs[ch] = (uint32_t) (39999 * lwm / tim_lwm_t_us);
+  *ccrs[ch] = (uint32_t) (39999 * t_on / tim_lwm_t_us);
+
+  measure_store_coords( adc_n );
+  out_coords( true );
+
   delay_ms( 50 );
   tim_lwm_start();
 
@@ -377,9 +383,10 @@ int cmd_pulse( int argc, const char * const * argv )
   if( ! keep ) {
     *ccrs[ch] = 0;
     tim_lwm_stop();
-    measure_store_coords( adc_n );
-    out_coords( true );
   }
+  measure_store_coords( adc_n );
+  out_coords( true );
+  out_coords_int( true );
   return 0;
 }
 
@@ -400,46 +407,47 @@ int cmd_calibr( int argc, const char * const * argv )
   auto &co  = coords[ch];
 
   MovePart mp;
-  const auto x_min_given = co.x_min + 0.05f;
-  const auto x_max_given = co.x_max - 0.05f;
+  const auto th_min_given = co.th_min + 5.0f; // TODO: calibrate param
+  const auto th_max_given = co.th_max - 5.0f;
   mp.init();
   for( size_t i=0; i<std::size(coords); ++i ) { // prevent other axis move, among disabling movers
-    mp.xs[i] = coords[i].x_cur;
+    mp.xs[i] = coords[i].th_cur;
   }
 
-  mp.xs[ch] = x_min_given;
-  mp.k_v = 0.2f;
+  mp.xs[ch] = th_min_given;
+  mp.k_v = 0.2f;  // TODO: param
+
   int rc = process_movepart( mp );
   if( rc != 0 || break_flag ) {
-    std_out << "# Err: fail to find start. ch: " << ch << ' ' << x_min_given << NL;
+    std_out << "# Err: fail to find start. ch: " << ch << ' ' << th_min_given << NL;
     return 2;
   }
   // TODO: better structure
   const unsigned adc_ch { (ch == 1) ? 0u : 1u };
   // TODO: structure
-  const auto x_min_get { co.x_cur };
-  const auto x_min_raw  { sens_adc.getInt( adc_ch ) };
+  const auto th_min_get { co.th_cur };
+  const auto th_min_raw  { sens_adc.getInt( adc_ch ) };
   std_out << "# min " NL;
-  std_out << "# given: " << x_min_given << " get: " << x_min_get
-          <<  " raw: " << x_min_raw << NL;
+  std_out << "# given: " << th_min_given << " get: " << th_min_get
+          <<  " raw: " << th_min_raw << NL;
   // TODO: check max delta given-get, but not too strict (or 'force' flag)
 
   delay_ms( 500 );
-  mp.xs[ch] = x_max_given;
+  mp.xs[ch] = th_max_given;
   rc = process_movepart( mp );
   if( rc != 0  || break_flag ) {
-    std_out << "# Err: fail to find end. ch: " << ch << ' ' << x_max_given << NL;
+    std_out << "# Err: fail to find end. ch: " << ch << ' ' << th_max_given << NL;
     return 2;
   }
 
-  const auto x_max_get { co.x_cur };
-  const auto x_max_raw  { sens_adc.getInt( adc_ch ) }; // TODO: better structure
+  const auto th_max_get { co.th_cur };
+  const auto th_max_raw  { sens_adc.getInt( adc_ch ) }; // TODO: better structure
   std_out << "# max " NL;
-  std_out << "# given: " << x_max_given << " get: " << x_max_get
-          << " raw: " << x_max_raw << NL;
+  std_out << "# given: " << th_max_given << " get: " << th_max_get
+          << " raw: " << th_max_raw << NL;
 
-  const auto    d_given  { x_max_given - x_min_given };
-  const int32_t d_raw    { x_max_raw   - x_min_raw };
+  const auto    d_given  { th_max_given - th_min_given };
+  const int32_t d_raw    { th_max_raw   - th_min_raw };
   std_out << "# delta given: " << d_given << " raw: " << d_raw << NL;
   if( fabsf( d_given ) < 0.1f || abs( d_raw ) < 50 ) {
     std_out << "# Error: low delta"  NL;
@@ -447,7 +455,7 @@ int cmd_calibr( int argc, const char * const * argv )
   }
 
   const float k_a { d_given / d_raw };
-  const float k_b { x_min_given - k_a * x_min_raw };
+  const float k_b { th_min_given - k_a * th_min_raw };
   std_out << "# k_a= " << k_a << " k_b= " << k_b << NL;
 
   if( !store ) {
@@ -485,6 +493,7 @@ int cmd_mcoord( int argc, const char * const * argv )
   const int n_meas = arg2long_d(  1, argc, argv, adc_n, 1, 10000 );
   int rc  = measure_store_coords( n_meas );
   out_coords( true );
+  out_coords_int( true );
 
   return !rc;
 }
@@ -492,7 +501,20 @@ int cmd_mcoord( int argc, const char * const * argv )
 void out_coords( bool nl )
 {
   for( auto c : coords ) {
-    std_out << c.x_cur << ' ';
+    std_out << c.th_cur << ' ';
+  }
+  if( nl ) {
+    std_out << NL;
+  }
+}
+
+void out_coords_int( bool nl )
+{
+  for( auto s : sensors ) {
+    const auto n_ch = s->getNch();
+    for( decltype(+n_ch) ch=0; ch<n_ch; ++ch ) {
+      std_out << s->getInt( ch ) << ' ';
+    }
   }
   if( nl ) {
     std_out << NL;
@@ -509,10 +531,10 @@ int measure_store_coords( int nm )
   }
 
   // TODO: meta
-  coords[0].x_cur = sens_enc.get( 0 );
-  coords[1].x_cur = sens_adc.get( 0 );
-  coords[2].x_cur = sens_adc.get( 1 );
-  coords[3].x_cur = sens_grip.get( 0 );
+  coords[0].th_cur = sens_enc.get( 0 );
+  coords[1].th_cur = sens_adc.get( 0 );
+  coords[2].th_cur = sens_adc.get( 1 );
+  coords[3].th_cur = sens_grip.get( 0 );
 
   return 1;
 }
@@ -529,10 +551,10 @@ int process_movepart( const MovePart &mp )
   measure_store_coords( adc_n );
   for( size_t i=0; i < nco; ++i ) { // calc max need time in steps
     auto &co = coords[i];
-    xs_0[i]    = co.x_cur;
+    xs_0[i]    = co.th_cur;
     xs_dlt[i]  = mp.xs[i] - xs_0[i];
     const float x_adlt { fabsf( xs_dlt[i] ) };
-    const float v = mp.k_v * co.v_max;
+    const float v = mp.k_v * co.vt_max;
 
     const int n = std::clamp( int( x_adlt/( v * t_step * 1e-3f ) ), 1, 10000 );
     if( nn < n ) {
@@ -557,7 +579,7 @@ int process_movepart( const MovePart &mp )
   }
 
   std_out << "#  1      2      3       4        5       6      7      8            9           10          11" NL;
-  std_out << "#  i   tick     x_g0    x_g1     x_g2     x_g3  lwm    x_m0         x_m1        x_m2        x_m3" NL;
+  std_out << "#  i   tick theta_g0 theta_g1 theta_g2 theta_g3 t_on theta_m0   theta_m1     theta_m2     theta_m3" NL;
 
   uint32_t tm0 = HAL_GetTick();
   uint32_t tc0 = tm0, tc00 = tm0;
@@ -921,7 +943,7 @@ int SensorAS5600::measure( int /*nx*/ )
   if( iv < -1024 ) {
     iv += 4096;
   }
-  v  = (float)iv * k_a;
+  v  = (float)iv * k_a - 90.0f;
   return 1;
 }
 
@@ -929,11 +951,8 @@ int SensorAS5600::measure( int /*nx*/ )
 
 int MoverServo::move( float x, uint32_t t_cur )
 {
-  t_old = t_cur; x_last = x;
-  const uint32_t vi = std::clamp(
-      (uint32_t) ( lwm_t_min + lwm_t_dlt * x ),
-      lwm_t_min, lwm_t_max
-      );
+  t_old = t_cur; th_last = x;
+  const uint32_t vi = std::clamp(  (uint32_t) ( t_on_min + t_on_dlt * x ), t_on_min, t_on_max );
   ccr = (uint32_t) arr * vi / tim_lwm_t_us;
   return 1;
 }
@@ -941,16 +960,16 @@ int MoverServo::move( float x, uint32_t t_cur )
 
 int MoverServoCont::move( float x, uint32_t t_cur )
 {
-  t_old = t_cur; x_last = x;
-  const float fbv = fb ? *fb : 0.5f;
+  t_old = t_cur; th_last = x;
+  const float fbv = fb ? *fb : 0;
   const float dx = x - fbv;
 
-  if( fabsf( dx ) < 0.01f ) { // dead zone, TODO: param
+  if( fabsf( dx ) < 1.0f ) { // dead zone, TODO: param
     ccr = 0;
     return 1;
   }
-  int32_t vi = lwm_t_cen + (int) ( dx * lwm_t_dlt * 0.50f * UVAR('k') / 1000 ); // TODO: param
-  vi = std::clamp( vi, (int32_t)lwm_t_min, (int32_t)lwm_t_max );
+  int32_t vi = t_on_cen + (int) ( dx * t_on_dlt * 0.50f * UVAR('k') / 1000 ); // TODO: param
+  vi = std::clamp( vi, (int32_t)t_on_min, (int32_t)t_on_max );
   dbg_val0 = vi;
   const auto ccr_v = (uint32_t) arr * vi / tim_lwm_t_us;
   ccr = ccr_v; // (uint32_t) arr * vi / tim_lwm_t_us;

@@ -61,9 +61,9 @@ class Sensor;
 // ------------------------------- Coords -----------------------------------
 
 struct CoordInfo {
-  float x_min, x_max;
-  float v_max;
-  float x_cur; // TODO: separate, other - const
+  float th_min, th_max;
+  float vt_max;
+  float th_cur; // TODO: separate, other - const
 };
 
 extern CoordInfo coords[];
@@ -89,12 +89,12 @@ class Mover {
    virtual int post_run() { return 1; };
    virtual uint32_t getCtlVal() const { return 0; };
    void set_t_old( uint32_t t_old_ ) { t_old = t_old_; }
-   float get_x_last() const { return x_last; }
+   float get_th_last() const { return th_last; }
    void setFlags( Flags fl ) { flags = fl; };
   protected:
    float *fb; // feedback, not exsist = nullptr
    uint32_t t_old { 0 };
-   float x_last  { 0 };
+   float th_last  { 0 };
    Flags flags { noFlags };
 };
 
@@ -108,19 +108,19 @@ class MoverServoBase : public Mover {
    virtual int post_run() override { if( flags & Flags::offAfter ) { stop(); }; return 1; };
    virtual uint32_t getCtlVal() const override { return ccr; };
    void set_lwm_times( uint32_t t_min, uint32_t t_max ) {
-     lwm_t_min = t_min; lwm_t_max = t_max;
-     lwm_t_cen = ( lwm_t_max_def + lwm_t_min_def ) / 2;
-     lwm_t_dlt =   lwm_t_max_def - lwm_t_min_def;
+     t_on_min = t_min; t_on_max = t_max;
+     t_on_cen = ( t_on_max_def + t_on_min_def ) / 2;
+     t_on_dlt =   t_on_max_def - t_on_min_def;
    }
   protected:
    __IO uint32_t &ccr;
    __IO uint32_t &arr;
-   uint32_t lwm_t_min { lwm_t_min_def };
-   uint32_t lwm_t_max { lwm_t_max_def };
-   uint32_t lwm_t_cen { ( lwm_t_min_def + lwm_t_max_def)/2 };
-   uint32_t lwm_t_dlt {   lwm_t_max_def - lwm_t_min_def };
-   static const uint32_t lwm_t_min_def {  500 }; // min pulse width in us
-   static const uint32_t lwm_t_max_def { 2500 }; // max pulse width in us
+   uint32_t t_on_min { t_on_min_def };
+   uint32_t t_on_max { t_on_max_def };
+   uint32_t t_on_cen { ( t_on_min_def + t_on_max_def)/2 };
+   uint32_t t_on_dlt {   t_on_max_def - t_on_min_def };
+   static const uint32_t t_on_min_def {  500 }; // min pulse width in us
+   static const uint32_t t_on_max_def { 2500 }; // max pulse width in us
 };
 
 
@@ -166,7 +166,7 @@ class SensorFakeMover : public Sensor {
   public:
    explicit SensorFakeMover( Mover &mo_  ) : Sensor( 1 ), mo( mo_ ) {};
    virtual ~SensorFakeMover() = default;
-   virtual int measure( int nx ) override { x = mo.get_x_last(); return 1; }
+   virtual int measure( int nx ) override { x = mo.get_th_last(); return 1; }
    virtual int init() override { return 1; }
    virtual int32_t getInt( unsigned ch ) override { return ( uint32_t ) x * 10000000; }
    virtual float get( unsigned ch ) override { return x; };
@@ -189,8 +189,8 @@ class SensorAdc : public Sensor {
    static const unsigned max_n_ch { 4 };
    int32_t  adc_data[max_n_ch];  // collected and divided data (by adc_measure)
    uint16_t adc_buf[max_n_ch];   // buffer for DMA
-   float k_a[max_n_ch] { -3.414382e-04f, -3.414382e-04f, 1.0f, 1.0f };
-   float k_b[max_n_ch] {       1.20215f,       1.23955f, 0.0f, 0.0f };
+   float k_a[max_n_ch] { -5.5659e-02f,   -5.5654e-04f, 1.0f, 1.0f };
+   float k_b[max_n_ch] {       1.20215f,     1.23955f, 0.0f, 0.0f };
 };
 
 class SensorAS5600 : public Sensor {
@@ -208,7 +208,7 @@ class SensorAS5600 : public Sensor {
    float v;
    int zero_val { 0 };
    int32_t iv { 0 };
-   float k_a { 1.0f / 2048 };
+   float k_a { 180.0f / 2048 };
 };
 
 extern SensorAS5600 sens_enc;
@@ -218,6 +218,7 @@ extern SensorFakeMover sens_grip;
 int process_movepart( const MovePart &mp );
 int measure_store_coords( int nm );
 void out_coords( bool nl );
+void out_coords_int( bool nl );
 
 
 #endif
