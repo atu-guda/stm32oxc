@@ -526,6 +526,7 @@ int process_movepart( const MovePart &mp )
   float dxs[nco];
 
   int nn {0};
+  measure_store_coords( adc_n );
   for( size_t i=0; i < nco; ++i ) { // calc max need time in steps
     auto &co = coords[i];
     xs_0[i]    = co.x_cur;
@@ -555,11 +556,8 @@ int process_movepart( const MovePart &mp )
     }
   }
 
-  // std_out
-  //   <<  "# Test0: ch= " << ch << " x_0= " << x_0 << " x_e= " << x_e << " v=" << v << " n= " << n
-  //   << " dx= " << dx << " dt= " << t_step << NL;
-
-  std_out <<  "#  i   tick      x    ccr coords" NL;
+  std_out << "#  1      2      3       4        5       6      7      8            9           10          11" NL;
+  std_out << "#  i   tick     x_g0    x_g1     x_g2     x_g3  lwm    x_m0         x_m1        x_m2        x_m3" NL;
 
   uint32_t tm0 = HAL_GetTick();
   uint32_t tc0 = tm0, tc00 = tm0;
