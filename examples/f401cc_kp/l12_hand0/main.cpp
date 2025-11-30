@@ -64,13 +64,12 @@ std::array<Mover*,4> movers { &mover_base, &mover_p1, &mover_p2, &mover_grip };
 
 
 CoordInfo coords[] {
-//   th_min  th_max  vt_max  th_cur
-  { -90.0f,  90.0f,  40.0f,   0.0f }, // rotate
-  { -10.0f,  55.0f,  90.0f,  60.0f }, // arm1
-  { -10.0f,  55.0f,  90.0f,  60.0f }, // arm2
-  { -90.0f,  40.0f, 120.0f, -80.0f }, // grip
+//   th_min  th_max  vt_max   sens   sens_ch     mo       th_cur
+  { -90.0f,  90.0f,  40.0f,  &sens_enc,  0,  &mover_base,   0.0f }, // rotate
+  { -10.0f,  55.0f,  90.0f,  &sens_adc,  0,  &mover_p1,    60.0f }, // arm1
+  { -10.0f,  55.0f,  90.0f,  &sens_adc,  1,  &mover_p2,    60.0f }, // arm2
+  { -90.0f,  40.0f, 120.0f, &sens_grip,  0,  &mover_grip, -80.0f }, // grip
 };
-static_assert( std::size(movers) <= std::size(coords) );
 
 
 
@@ -244,13 +243,17 @@ bool is_mover_disabled( unsigned ch, bool do_print )
 
 int cmd_test0( int argc, const char * const * argv )
 {
-  const unsigned  ch = arg2long_d(  2, argc, argv, 1, 0, std::size(movers) );
+  const unsigned  ch = arg2long_d(  2, argc, argv, 1, 0, std::size(coords) );
   if( is_mover_disabled( ch, true ) ) {
     return 1;
   }
 
-  auto &mo = movers[ch];
   auto &co = coords[ch];
+  if( co.mo == nullptr ) {
+    return 10;
+  }
+  auto &mo = *co.mo;
+
   const float x_e = arg2float_d( 1, argc, argv, co.th_cur, co.th_min, co.th_max );
   const float k_v = arg2float_d( 3, argc, argv, 0.5f,    0.01f, 2.0f );
 
@@ -272,7 +275,7 @@ int cmd_test0( int argc, const char * const * argv )
   std_out <<  "#  i   tick      x    ccr coords" NL;
 
   tim_lwm_start();
-  if( ! mo->pre_run() ) {
+  if( ! mo.pre_run() ) {
     std_out << "# Err: pre_run " NL;
     return 2;
   }
@@ -280,7 +283,6 @@ int cmd_test0( int argc, const char * const * argv )
 
   uint32_t tm0 = HAL_GetTick();
   uint32_t tc0 = tm0, tc00 = tm0;
-
 
   break_flag = 0;
   for( int i=0; i<n && !break_flag; ++i ) {
@@ -296,24 +298,23 @@ int cmd_test0( int argc, const char * const * argv )
     const float x = ( i < (n-1) ) ? ( x_0 + dx * (i+1) ) : x_e; // TODO: fun
 
     if( !dry_run ) {
-      mo->move( x, tcc );
+      mo.move( x, tcc );
     }
 
     ledsx[2].reset();
 
     std_out << FmtInt(i,4) << ' ' << FmtInt( tcc - tc00, 6 )
-      << ' ' << FltFmt(x, cvtff_auto, 8, 4)  << ' ' << mo->getCtlVal() << ' ';
+      << ' ' << FltFmt(x, cvtff_auto, 8, 4)  << ' ' << mo.getCtlVal() << ' ';
     out_coords( true );
 
     delay_ms_until_brk( &tc0, t_step );
   }
 
-  if( ! mo->post_run() ) {
+  if( ! mo.post_run() ) {
     std_out << "# Err: post_run " NL;
   };
 
   measure_store_coords( adc_n );
-
 
   if( debug > 0 ) {
     tim_print_cfg( TIM_LWM );
@@ -356,12 +357,10 @@ int cmd_go( int argc, const char * const * argv )
 // just for debug, remove
 int cmd_pulse( int argc, const char * const * argv )
 {
-  int      ch   = arg2long_d(  1, argc, argv,    1,    0, std::size(movers)-1 );
+  int      ch   = arg2long_d(  1, argc, argv,    1,    0, std::size(coords)-1 );
   uint32_t t_on = arg2long_d(  2, argc, argv, 1500,  400, 2600  );
   uint32_t dt   = arg2long_d(  3, argc, argv,  500,   10, 5000  );
   uint32_t keep = arg2long_d(  4, argc, argv,    0,    0,    1  );
-
-  static __IO uint32_t* ccrs[]  = { &TIM_LWM->CCR1, &TIM_LWM->CCR2, &TIM_LWM->CCR3, &TIM_LWM->CCR4 };
 
   std_out << "# pulse: ch= " << ch << " t_on= " << t_on << " dt= " << dt << NL;
 
@@ -369,8 +368,14 @@ int cmd_pulse( int argc, const char * const * argv )
     return 1;
   }
 
+  auto& co = coords[ch];
+  if( co.mo == nullptr ) {
+    return 10;
+  }
+  auto &mo = *co.mo;
+
   tim_lwm_stop();
-  *ccrs[ch] = (uint32_t) (39999 * t_on / tim_lwm_t_us);
+  mo.set_t_on( t_on );
 
   measure_store_coords( adc_n );
   out_coords( true );
@@ -381,9 +386,10 @@ int cmd_pulse( int argc, const char * const * argv )
   delay_ms_brk( dt );
 
   if( ! keep ) {
-    *ccrs[ch] = 0;
+    mo.setRaw( 0 );
     tim_lwm_stop();
   }
+
   measure_store_coords( adc_n );
   out_coords( true );
   out_coords_int( true );
@@ -392,7 +398,7 @@ int cmd_pulse( int argc, const char * const * argv )
 
 int cmd_calibr( int argc, const char * const * argv )
 {
-  int  ch     = arg2long_d(  1, argc, argv,    1,    0, std::size(movers)-1 );
+  int  ch     = arg2long_d(  1, argc, argv,    1,    0, std::size(coords)-1 );
   int  store  = arg2long_d(  2, argc, argv,    0,    0, 1 );
   std_out << "# calibr ch: "<< ch << NL;
 
@@ -510,11 +516,8 @@ void out_coords( bool nl )
 
 void out_coords_int( bool nl )
 {
-  for( auto s : sensors ) {
-    const auto n_ch = s->getNch();
-    for( decltype(+n_ch) ch=0; ch<n_ch; ++ch ) {
-      std_out << s->getInt( ch ) << ' ';
-    }
+  for( auto &co : coords ) {
+    std_out << co.sens->getInt( co.sens_ch ) << ' ';
   }
   if( nl ) {
     std_out << NL;
@@ -530,11 +533,9 @@ int measure_store_coords( int nm )
     }
   }
 
-  // TODO: meta
-  coords[0].th_cur = sens_enc.get( 0 );
-  coords[1].th_cur = sens_adc.get( 0 );
-  coords[2].th_cur = sens_adc.get( 1 );
-  coords[3].th_cur = sens_grip.get( 0 );
+  for( auto &co : coords ) {
+    co.th_cur = co.sens->get( co.sens_ch );
+  }
 
   return 1;
 }
@@ -568,7 +569,7 @@ int process_movepart( const MovePart &mp )
 
   ledsx.reset ( 0xFF );
 
-  for( uint32_t ch=0; auto mo : movers ) {
+  for( uint32_t ch=0; auto mo : movers ) { // TODO: coords + per-mover disable
     if( is_mover_disabled( ch ) ) {
       continue;
     }
@@ -825,22 +826,17 @@ int MX_ADC1_Init(void)
     .SamplingTime = ADC_SAMPLETIME_144CYCLES,
     .Offset       = 0
   };
-  if( HAL_ADC_ConfigChannel( &hadc1, &sConfig ) != HAL_OK ) {
-    errno = 5001; return 0;
+  decltype( sConfig.Rank ) rank = 1;
+
+  for( auto adc_ch : { ADC_CHANNEL_4, ADC_CHANNEL_5, ADC_CHANNEL_6 } ) {
+    sConfig.Rank = rank;
+    sConfig.Channel = adc_ch;
+    if( HAL_ADC_ConfigChannel( &hadc1, &sConfig ) != HAL_OK ) {
+      errno = 5000 + rank; return 0;
+    }
+    ++rank;
   }
 
-  sConfig.Rank = 2;
-  sConfig.Channel = ADC_CHANNEL_5;
-  if( HAL_ADC_ConfigChannel( &hadc1, &sConfig ) != HAL_OK ) {
-    errno = 5002; return 0;
-  }
-
-  sConfig.Rank = 3;
-  sConfig.Channel = ADC_CHANNEL_6;
-  if( HAL_ADC_ConfigChannel( &hadc1, &sConfig ) != HAL_OK ) {
-    errno = 5003; return 0;
-  }
-  UVAR('j') |= 1;
   return 1;
 }
 

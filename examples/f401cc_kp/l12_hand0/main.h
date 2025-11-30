@@ -63,6 +63,9 @@ class Sensor;
 struct CoordInfo {
   float th_min, th_max;
   float vt_max;
+  Sensor *sens;
+  unsigned sens_ch;
+  Mover *mo;
   float th_cur; // TODO: separate, other - const
 };
 
@@ -88,6 +91,8 @@ class Mover {
    virtual int pre_run()  { return 1; };
    virtual int post_run() { return 1; };
    virtual uint32_t getCtlVal() const { return 0; };
+   virtual void setRaw( uint32_t rv ) {};
+   virtual void set_t_on( uint32_t t_on ) {};
    void set_t_old( uint32_t t_old_ ) { t_old = t_old_; }
    float get_th_last() const { return th_last; }
    void setFlags( Flags fl ) { flags = fl; };
@@ -107,6 +112,8 @@ class MoverServoBase : public Mover {
    virtual int init() override { return 1; };
    virtual int post_run() override { if( flags & Flags::offAfter ) { stop(); }; return 1; };
    virtual uint32_t getCtlVal() const override { return ccr; };
+   virtual void setRaw( uint32_t rv ) override { ccr = rv; };
+   virtual void set_t_on( uint32_t t_on ) override { ccr = arr * t_on / tim_lwm_t_us; };
    void set_lwm_times( uint32_t t_min, uint32_t t_max ) {
      t_on_min = t_min; t_on_max = t_max;
      t_on_cen = ( t_on_max_def + t_on_min_def ) / 2;
