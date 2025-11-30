@@ -378,20 +378,41 @@ int cmd_pulse( int argc, const char * const * argv )
   mo.set_t_on( t_on );
 
   measure_store_coords( adc_n );
+  std_out << "# start: ";
   out_coords( true );
 
   delay_ms( 50 );
+  ledsx[2].set();
   tim_lwm_start();
 
-  delay_ms_brk( dt );
+  const uint32_t t_step { uint32_t(UVAR('t')) };
+  uint32_t tm0 = HAL_GetTick();
+  uint32_t tc0 = tm0, tc00 = tm0;
 
-  if( ! keep ) {
+  break_flag = 0;
+  for( uint32_t i=0; i<dt && !break_flag; i += t_step ) {
+
+    if( ! is_good_coords( true, true, true )  ) {
+      break;
+    }
+
+    uint32_t  tcc = HAL_GetTick();
+    std_out << FmtInt(i,4) << ' ' << FmtInt( tcc - tc00, 6 ) << ' ';
+
+    out_coords( true );
+
+    delay_ms_until_brk( &tc0, t_step );
+  }
+  ledsx[2].reset();
+
+  if( ! keep || break_flag ) {
     mo.setRaw( 0 );
     tim_lwm_stop();
   }
 
   measure_store_coords( adc_n );
-  out_coords( true );
+  std_out << "# after: ";
+  out_coords( false );
   out_coords_int( true );
   return 0;
 }
@@ -558,10 +579,10 @@ int process_movepart( const MovePart &mp )
     const float v = mp.k_v * co.vt_max;
 
     const int n = std::clamp( int( x_adlt/( v * t_step * 1e-3f ) ), 1, 10000 );
-    if( nn < n ) {
-      nn = n;
-    }
+    nn = std::max( nn, n );
+    std_out << "# plan: n= " << n << " nn= " << nn << " dlt= " << xs_dlt[i] <<  NL;
   }
+  std_out << "# k_v= " << mp.k_v << " nn= " << nn << NL;
 
   for( size_t i=0; i < nco; ++i ) {
     dxs[i] = xs_dlt[i] / nn;
@@ -569,7 +590,7 @@ int process_movepart( const MovePart &mp )
 
   ledsx.reset ( 0xFF );
 
-  for( uint32_t ch=0; auto mo : movers ) { // TODO: coords + per-mover disable
+  for( uint32_t ch=0; auto mo : movers ) {
     if( is_mover_disabled( ch ) ) {
       continue;
     }
@@ -579,12 +600,11 @@ int process_movepart( const MovePart &mp )
     }
   }
 
-  std_out << "#  1      2      3       4        5       6      7      8            9           10          11" NL;
-  std_out << "#  i   tick theta_g0 theta_g1 theta_g2 theta_g3 t_on theta_m0   theta_m1     theta_m2     theta_m3" NL;
+  std_out << "#  1      2      3       4        5       6      7       8            9          10          11" NL;
+  std_out << "#  i   tick theta_g0 theta_g1 theta_g2 theta_g3 t_on  theta_m0    theta_m1    theta_m2     theta_m3" NL;
 
   uint32_t tm0 = HAL_GetTick();
   uint32_t tc0 = tm0, tc00 = tm0;
-
 
   break_flag = 0;
   for( int i=0; i<nn && !break_flag; ++i ) {
@@ -600,15 +620,15 @@ int process_movepart( const MovePart &mp )
 
     for( size_t mi = 0; mi<nco; ++mi ) {
 
+      const float x = ( i < (nn-1) ) ? ( xs_0[mi] + dxs[mi] * (i+1) ) : mp.xs[mi]; // TODO: fun
+      std_out << FltFmt( x, cvtff_auto, 8, 4 ) << ' ';
+
       if( is_mover_disabled( mi ) ) {
         continue;
       }
 
-      const float x = ( i < (nn-1) ) ? ( xs_0[mi] + dxs[mi] * (i+1) ) : mp.xs[mi]; // TODO: fun
-
       if( !dry_run && movers[mi] ) {
         movers[mi]->move( x, tcc );
-        std_out << FltFmt(x, cvtff_auto, 8, 4 ) << ' ';
       }
     }
 
@@ -964,11 +984,11 @@ int MoverServoCont::move( float x, uint32_t t_cur )
     ccr = 0;
     return 1;
   }
-  int32_t vi = t_on_cen + (int) ( dx * t_on_dlt * 0.50f * UVAR('k') / 1000 ); // TODO: param
+  int32_t vi = t_on_cen + (int) ( dx * t_on_dlt * 0.01f * UVAR('k') / 1000 ); // TODO: param
   vi = std::clamp( vi, (int32_t)t_on_min, (int32_t)t_on_max );
   dbg_val0 = vi;
   const auto ccr_v = (uint32_t) arr * vi / tim_lwm_t_us;
-  ccr = ccr_v; // (uint32_t) arr * vi / tim_lwm_t_us;
+  ccr = ccr_v;
   return 1;
 }
 
