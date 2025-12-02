@@ -71,12 +71,17 @@ struct CoordInfo {
 
 extern CoordInfo coords[];
 
+struct MovePartCoord {
+  float    th_e; // end point
+  unsigned tp; // type of move per coord: enum or bifield?
+  void init() { th_e = 0; tp = 0; };
+};
+
 struct MovePart {
   static const unsigned n_max { 6 }; // <-> n_movers ??
-  float    xs[n_max]; // end point
-  unsigned tp[n_max]; // type of move per coord: enum or bifield?
+  MovePartCoord mpc[n_max];
   float k_v; // velocity coeff
-  void init();
+  void init() { for( auto &mp : mpc ) { mp.init(); }; k_v = 1.0f;}
 };
 
 // ------------------------------------- Movers ----------------------------------------------
@@ -88,11 +93,11 @@ class Mover {
    virtual int move( float x, uint32_t t_cur ) = 0;
    virtual int stop() = 0;
    virtual int init() = 0;
-   virtual int pre_run()  { return 1; };
+   virtual int pre_run( float x_e, unsigned tp, uint32_t nn )  { return 1; };
    virtual int post_run() { return 1; };
    virtual uint32_t getCtlVal() const { return 0; };
    virtual void setRaw( uint32_t rv ) {};
-   virtual void set_t_on( uint32_t t_on ) {};
+   virtual void set_t_on( uint32_t t_on ) {}; // used only for Servo
    void set_t_old( uint32_t t_old_ ) { t_old = t_old_; }
    float get_th_last() const { return th_last; }
    void setFlags( Flags fl ) { flags = fl; };
@@ -113,15 +118,18 @@ class MoverServoBase : public Mover {
    virtual int post_run() override { if( flags & Flags::offAfter ) { stop(); }; return 1; };
    virtual uint32_t getCtlVal() const override { return ccr; };
    virtual void setRaw( uint32_t rv ) override { ccr = rv; };
-   virtual void set_t_on( uint32_t t_on ) override { ccr = arr * t_on / tim_lwm_t_us; };
+   virtual void set_t_on( uint32_t t_on ) override { t_on_last = t_on; ccr = t_on2ccr( t_on ); };
    void set_lwm_times( uint32_t t_min, uint32_t t_max ) {
      t_on_min = t_min; t_on_max = t_max;
      t_on_cen = ( t_on_max_def + t_on_min_def ) / 2;
      t_on_dlt =   t_on_max_def - t_on_min_def;
    }
+   uint32_t t_on2ccr( uint32_t t_on ) { return arr * t_on / tim_lwm_t_us; } // t_on in us
+   uint32_t get_t_on_last() const { return t_on_last; }
   protected:
    __IO uint32_t &ccr;
    __IO uint32_t &arr;
+   uint32_t t_on_last { 0 };
    uint32_t t_on_min { t_on_min_def };
    uint32_t t_on_max { t_on_max_def };
    uint32_t t_on_cen { ( t_on_min_def + t_on_max_def)/2 };
@@ -145,6 +153,8 @@ class MoverServoCont : public MoverServoBase {
    MoverServoCont( __IO uint32_t &ccr_, __IO uint32_t &arr_, float *fb_ = nullptr  )
      : MoverServoBase( ccr_, arr_, fb_ ) {};
    virtual int move( float x, uint32_t t_cur ) override;
+   virtual int pre_run( float x_e, unsigned tp, uint32_t nn ) override;
+   virtual int post_run() override;
   protected:
 };
 
