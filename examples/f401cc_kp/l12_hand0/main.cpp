@@ -66,8 +66,8 @@ std::array<Mover*,4> movers { &mover_base, &mover_p1, &mover_p2, &mover_grip };
 CoordInfo coords[] {
 //   th_min  th_max  vt_max   sens   sens_ch     mo       th_cur
   { -90.0f,  90.0f,  40.0f,  &sens_enc,  0,  &mover_base,   0.0f }, // rotate
-  { -10.0f,  55.0f,  90.0f,  &sens_adc,  0,  &mover_p1,    60.0f }, // arm1
-  { -10.0f,  55.0f,  90.0f,  &sens_adc,  1,  &mover_p2,    60.0f }, // arm2
+  {  45.0f,  95.0f,  90.0f,  &sens_adc,  0,  &mover_p1,    80.0f }, // arm1
+  {-135.0f, -90.0f,  90.0f,  &sens_adc,  1,  &mover_p2,   -70.0f }, // arm2
   { -90.0f,  40.0f, 120.0f, &sens_grip,  0,  &mover_grip, -80.0f }, // grip
 };
 
