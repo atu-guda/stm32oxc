@@ -236,7 +236,8 @@ extern SensorAS5600 sens_enc;
 extern SensorAdc sens_adc;
 extern SensorFakeMover sens_grip;
 
-int process_movepart( const MovePart &mp );
+int process_movepart( const MovePart &mp, float kkv = 1.0f  );
+int run_moveparts( std::span<const MovePart> mps, float kkv = 1.0f );
 int measure_store_coords( int nm );
 void out_coords( bool nl );
 void out_coords_int( bool nl );

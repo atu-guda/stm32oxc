@@ -71,7 +71,20 @@ CoordInfo coords[] {
   {   0.0f,  90.0f, 120.0f, &sens_grip,  0,  &mover_grip, -80.0f }, // grip
 };
 
+// ------------------------   default sequence
 
+const MovePart move_seq0[] {
+  { { {   0.0f, 0 }, {   60.0f, 0 }, {   -100.0f, 0 }, {   50.0f, 0 }, { 0,0 }, { 0,0 } },  0.5f },
+  { { { -90.0f, 0 }, {   90.0f, 0 }, {   -130.0f, 0 }, {   10.0f, 0 }, { 0,0 }, { 0,0 } },  0.5f },
+  { { { -20.0f, 0 }, {   50.0f, 0 }, {    -90.0f, 0 }, {   50.0f, 0 }, { 0,0 }, { 0,0 } },  0.5f },
+  { { { -20.0f, 0 }, {   50.0f, 0 }, {    -90.0f, 0 }, {    5.0f, 0 }, { 0,0 }, { 0,0 } },  0.5f },
+  { { {   0.0f, 0 }, {   90.0f, 0 }, {   -130.0f, 0 }, {    5.0f, 0 }, { 0,0 }, { 0,0 } },  0.5f },
+  { { {  90.0f, 0 }, {   50.0f, 0 }, {    -90.0f, 0 }, {    5.0f, 0 }, { 0,0 }, { 0,0 } },  0.5f },
+  { { {  90.0f, 0 }, {   50.0f, 0 }, {    -90.0f, 0 }, {   50.0f, 0 }, { 0,0 }, { 0,0 } },  0.5f },
+  { { {   0.0f, 0 }, {   90.0f, 0 }, {   -135.0f, 0 }, {   10.0f, 0 }, { 0,0 }, { 0,0 } },  0.5f }
+};
+
+// ------------------------   commands
 
 const char* common_help_string = "hand0 " __DATE__ " " __TIME__ NL;
 
@@ -81,6 +94,7 @@ DCL_CMD_REG( stop,   'P', " - stop pwm" );
 DCL_CMD_REG( mtest,  'M', " [set_zero] [aux] - test AS5600" );
 DCL_CMD_REG( mcoord, 'C', " - measure and store coords" );
 DCL_CMD_REG( go,     'G', " k_v q_0 q_1 q_2 q_3 tp_0 tp_1 tp_2 tp_3 - go " );
+DCL_CMD_REG( run,    'R', " [seq_num] - run sequence " );
 DCL_CMD_REG( pulse,  'U', " ch t_on dt off - test pulse " );
 DCL_CMD_REG( calibr, '\0', " ch - calibrate channel " );
 
@@ -350,7 +364,16 @@ int cmd_go( int argc, const char * const * argv )
   std_out << " ) " NL;
 
   tim_lwm_start();
-  int rc = process_movepart( mp );
+  int rc = process_movepart( mp, 1.0f );
+  return rc;
+}
+
+int cmd_run( int argc, const char * const * argv )
+{
+  int mps_idx   = arg2long_d(   1, argc, argv,    0,    0,    1 );
+  float kkv     = arg2float_d(  2, argc, argv, 1.0f, 0.0f, 5.0f );
+  std_out << "# run: " << mps_idx << NL;
+  int rc = run_moveparts( move_seq0, kkv );
   return rc;
 }
 
@@ -561,7 +584,7 @@ int measure_store_coords( int nm )
   return 1;
 }
 
-int process_movepart( const MovePart &mp )
+int process_movepart( const MovePart &mp, float kkv  )
 {
   constexpr size_t nco { std::size(coords) };
   const uint32_t t_step = UVAR('t');
@@ -576,7 +599,7 @@ int process_movepart( const MovePart &mp )
     qs_0[i]    = co.q_cur;
     qs_dlt[i]  = mp.mpc[i].q_e - qs_0[i];
     const float q_adlt { fabsf( qs_dlt[i] ) };
-    const float v = mp.k_v * co.vt_max;
+    const float v = kkv * mp.k_v * co.vt_max;
 
     const uint32_t n = std::clamp( unsigned( q_adlt/( v * t_step * 1e-3f ) ), 1u, 10000u );
     nn = std::max( nn, n );
@@ -651,10 +674,27 @@ int process_movepart( const MovePart &mp )
   }
 
   measure_store_coords( adc_n );
-  std_out << "# end: " << break_flag;
+  std_out << "# end: " << break_flag << ' ';
   out_coords( true );
 
   return break_flag;
+}
+
+int run_moveparts( std::span<const MovePart> mps, float kkv )
+{
+  unsigned pn { 0 };
+  uint32_t tm0 = HAL_GetTick();
+  for( auto &mp : mps ) {
+    uint32_t tc = HAL_GetTick();
+    std_out << "## part " << pn << " start, t= " << (tc - tm0) << NL;
+    auto rc = process_movepart( mp, kkv );
+    tc = HAL_GetTick();
+    std_out << "## part " << pn << " end, t= " << (tc - tm0) << NL;
+    if( rc != 0 ) {
+      return rc;
+    }
+  }
+  return 0;
 }
 
 // -------------------- Timers ----------------------------------------------------
