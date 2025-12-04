@@ -89,7 +89,7 @@ struct MovePart {
 class Mover {
   public:
    enum Flags { noFlags = 0, offAfter = 1 };
-   explicit Mover( float *fb_ = nullptr ) : fb( fb_ ) {};
+   explicit Mover( float k_a_, float k_b_, float *fb_ = nullptr ) : fb( fb_ ), k_a( k_a_ ), k_b( k_b_ ) {};
    int move( float q, uint32_t t_cur );
    virtual int move_do( float q, uint32_t t_cur ) = 0;
    virtual int stop() = 0;
@@ -107,13 +107,15 @@ class Mover {
    float *fb; // feedback, not exsist = nullptr
    uint32_t t_old { 0 };
    float q_last  { 0 };
+   float k_a, k_b;
    Flags flags { noFlags };
 };
 
 class MoverServoBase : public Mover {
   public:
-   MoverServoBase( __IO uint32_t &ccr_, __IO uint32_t &arr_, float *fb_ = nullptr ) // TODO: TIM/ch ot tim_ctrl/ch
-     : Mover( fb_ ), ccr( ccr_ ), arr( arr_ ) {};
+    // TODO: TIM/ch ot tim_ctrl/ch
+   MoverServoBase( float k_a_, float k_b_, __IO uint32_t &ccr_, __IO uint32_t &arr_, float *fb_ = nullptr )
+     : Mover( k_a_, k_b_, fb_ ), ccr( ccr_ ), arr( arr_ ) {};
    virtual int move_do( float q, uint32_t t_cur ) override;
    virtual int stop() override { ccr = 0; return 1; };
    virtual int init() override { return 1; };
@@ -143,8 +145,8 @@ class MoverServoBase : public Mover {
 
 class MoverServo : public MoverServoBase {
   public:
-   MoverServo( __IO uint32_t &ccr_, __IO uint32_t &arr_, float *fb_ = nullptr  )
-     : MoverServoBase(  ccr_, arr_, fb_ ) {};
+   MoverServo( float k_a_, float k_b_, __IO uint32_t &ccr_, __IO uint32_t &arr_, float *fb_ = nullptr  )
+     : MoverServoBase( k_a_, k_b_, ccr_, arr_, fb_ ) {};
    virtual int move_do( float q, uint32_t t_cur ) override;
   protected:
 };
@@ -152,8 +154,8 @@ class MoverServo : public MoverServoBase {
 
 class MoverServoCont : public MoverServoBase {
   public:
-   MoverServoCont( __IO uint32_t &ccr_, __IO uint32_t &arr_, float *fb_ = nullptr  )
-     : MoverServoBase( ccr_, arr_, fb_ ) {};
+   MoverServoCont( float k_a_, float k_b_, __IO uint32_t &ccr_, __IO uint32_t &arr_, float *fb_ = nullptr  )
+     : MoverServoBase( k_a_, k_b_, ccr_, arr_, fb_ ) {};
    virtual int move_do( float q, uint32_t t_cur ) override;
    virtual int pre_run( float q_e, unsigned tp, uint32_t nn ) override;
    virtual int post_run() override;

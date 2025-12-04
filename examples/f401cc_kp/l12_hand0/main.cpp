@@ -49,10 +49,10 @@ std::array<Sensor*,3> sensors { &sens_adc, &sens_enc, &sens_grip };
 
 // ------------------------------- Movers -----------------------------------
 
-MoverServoCont mover_base( TIM_LWM->CCR1, TIM_LWM->ARR, &coords[0].q_cur );
-MoverServo     mover_p1(   TIM_LWM->CCR2, TIM_LWM->ARR, &coords[1].q_cur );
-MoverServo     mover_p2(   TIM_LWM->CCR3, TIM_LWM->ARR, &coords[2].q_cur );
-MoverServo     mover_grip( TIM_LWM->CCR4, TIM_LWM->ARR, &coords[3].q_cur );
+MoverServoCont mover_base(   0.01f,     1.0f, TIM_LWM->CCR1, TIM_LWM->ARR, &coords[0].q_cur );
+MoverServo     mover_p1(   -10.0f,   2500.0f, TIM_LWM->CCR2, TIM_LWM->ARR, &coords[1].q_cur );
+MoverServo     mover_p2(    10.0f,   2850.0f, TIM_LWM->CCR3, TIM_LWM->ARR, &coords[2].q_cur );
+MoverServo     mover_grip(  10.0f,    500.0f, TIM_LWM->CCR4, TIM_LWM->ARR, &coords[3].q_cur );
 
 std::array<Mover*,4> movers { &mover_base, &mover_p1, &mover_p2, &mover_grip };
 
@@ -68,7 +68,7 @@ CoordInfo coords[] {
   { -90.0f,  90.0f,  40.0f,  &sens_enc,  0,  &mover_base,   0.0f }, // rotate
   {  45.0f,  95.0f,  90.0f,  &sens_adc,  0,  &mover_p1,    80.0f }, // arm1
   {-135.0f, -90.0f,  90.0f,  &sens_adc,  1,  &mover_p2,   -70.0f }, // arm2
-  { -90.0f,  40.0f, 120.0f, &sens_grip,  0,  &mover_grip, -80.0f }, // grip
+  {   0.0f,  90.0f, 120.0f, &sens_grip,  0,  &mover_grip, -80.0f }, // grip
 };
 
 
@@ -651,6 +651,8 @@ int process_movepart( const MovePart &mp )
   }
 
   measure_store_coords( adc_n );
+  std_out << "# end: " << break_flag;
+  out_coords( true );
 
   return break_flag;
 }
@@ -974,7 +976,7 @@ int Mover::move( float q, uint32_t t_cur )
 
 int MoverServo::move_do( float q, uint32_t t_cur )
 {
-  const uint32_t t_on = std::clamp(  (uint32_t) ( t_on_min + t_on_dlt * q ), t_on_min, t_on_max );
+  const uint32_t t_on = std::clamp(  (uint32_t) ( q * k_a + k_b ), t_on_min, t_on_max );
   setCtrlVal( t_on );
   return 1;
 }
@@ -989,7 +991,7 @@ int MoverServoCont::move_do( float q, uint32_t t_cur )
     setCtrlVal( t_on_cen );
     return 1;
   }
-  int32_t t_on = t_on_cen + (int) ( dq * t_on_dlt * 0.01f * UVAR('k') / 1000 ); // TODO: param
+  int32_t t_on = t_on_cen + (int) ( dq * t_on_dlt * k_a * UVAR('k') / 1000 ); // TODO: param
   t_on = std::clamp( t_on, (int32_t)t_on_min, (int32_t)t_on_max );
   dbg_val0 = t_on;
   setCtrlVal( t_on );
