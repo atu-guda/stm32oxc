@@ -49,10 +49,10 @@ std::array<Sensor*,3> sensors { &sens_adc, &sens_enc, &sens_grip };
 
 // ------------------------------- Movers -----------------------------------
 
-MoverServoCont mover_base( TIM_LWM->CCR1, TIM_LWM->ARR, &coords[0].th_cur );
-MoverServo     mover_p1(   TIM_LWM->CCR2, TIM_LWM->ARR, &coords[1].th_cur );
-MoverServo     mover_p2(   TIM_LWM->CCR3, TIM_LWM->ARR, &coords[2].th_cur );
-MoverServo     mover_grip( TIM_LWM->CCR4, TIM_LWM->ARR, &coords[3].th_cur );
+MoverServoCont mover_base( TIM_LWM->CCR1, TIM_LWM->ARR, &coords[0].q_cur );
+MoverServo     mover_p1(   TIM_LWM->CCR2, TIM_LWM->ARR, &coords[1].q_cur );
+MoverServo     mover_p2(   TIM_LWM->CCR3, TIM_LWM->ARR, &coords[2].q_cur );
+MoverServo     mover_grip( TIM_LWM->CCR4, TIM_LWM->ARR, &coords[3].q_cur );
 
 std::array<Mover*,4> movers { &mover_base, &mover_p1, &mover_p2, &mover_grip };
 
@@ -64,7 +64,7 @@ std::array<Mover*,4> movers { &mover_base, &mover_p1, &mover_p2, &mover_grip };
 
 
 CoordInfo coords[] {
-//   th_min  th_max  vt_max   sens   sens_ch     mo       th_cur
+//   q_min   q_max  vt_max   sens   sens_ch     mo         q_cur
   { -90.0f,  90.0f,  40.0f,  &sens_enc,  0,  &mover_base,   0.0f }, // rotate
   {  45.0f,  95.0f,  90.0f,  &sens_adc,  0,  &mover_p1,    80.0f }, // arm1
   {-135.0f, -90.0f,  90.0f,  &sens_adc,  1,  &mover_p2,   -70.0f }, // arm2
@@ -80,7 +80,7 @@ DCL_CMD_REG( test0,  'T', " [val] [ch] [k_v] - test move 1 ch" );
 DCL_CMD_REG( stop,   'P', " - stop pwm" );
 DCL_CMD_REG( mtest,  'M', " [set_zero] [aux] - test AS5600" );
 DCL_CMD_REG( mcoord, 'C', " - measure and store coords" );
-DCL_CMD_REG( go,     'G', " k_v th_0 th_1 th_2 th_3 tp_0 tp_1 tp_2 tp_3 - go " );
+DCL_CMD_REG( go,     'G', " k_v q_0 q_1 q_2 q_3 tp_0 tp_1 tp_2 tp_3 - go " );
 DCL_CMD_REG( pulse,  'U', " ch t_on dt - test pulse " );
 DCL_CMD_REG( calibr, '\0', " ch - calibrate channel " );
 
@@ -201,7 +201,7 @@ void init_EXTI()
 
 int bad_coord_idx() // <- = Ok TODO: more
 {
-  const auto c0 = coords[0].th_cur;
+  const auto c0 = coords[0].q_cur;
   if( c0 < -100.0f || c0 > 100.0f ) { // Rotate error
     return 0;
   }
@@ -224,7 +224,7 @@ bool is_good_coords( bool do_stop, bool do_print, bool do_measure  )
     tim_lwm_stop();
   }
   if( do_print ) {
-    std_out << "# Err: bad coord " << bad_idx << ' ' << coords[bad_idx].th_cur << NL;
+    std_out << "# Err: bad coord " << bad_idx << ' ' << coords[bad_idx].q_cur << NL;
   }
   return false;
 }
@@ -253,11 +253,11 @@ int cmd_test0( int argc, const char * const * argv )
   }
   auto &mo = *co.mo;
 
-  const float x_e = arg2float_d( 1, argc, argv, co.th_cur, co.th_min, co.th_max );
+  const float x_e = arg2float_d( 1, argc, argv, co.q_cur, co.q_min, co.q_max );
   const float k_v = arg2float_d( 3, argc, argv, 0.5f,    0.01f, 2.0f );
 
   const uint32_t t_step = UVAR('t');
-  const float   x_0  = co.th_cur;
+  const float   x_0  = co.q_cur;
   const float  x_dlt = x_e - x_0;
   const float x_adlt = fabsf( x_dlt );
   const float      v = k_v * co.vt_max;
@@ -303,7 +303,7 @@ int cmd_test0( int argc, const char * const * argv )
     ledsx[2].reset();
 
     std_out << FmtInt(i,4) << ' ' << FmtInt( tcc - tc00, 6 )
-      << ' ' << FltFmt(x, cvtff_auto, 8, 4)  << ' ' << mo.getCtlVal() << ' ' << mo.get_th_last();
+      << ' ' << FltFmt(x, cvtff_auto, 8, 4)  << ' ' << mo.getCtlVal() << ' ' << mo.get_q_last();
     out_coords( true );
 
     delay_ms_until_brk( &tc0, t_step );
@@ -342,9 +342,9 @@ int cmd_go( int argc, const char * const * argv )
   constexpr size_t nc { std::size(coords) };
   for( size_t i=0; i<nc; ++i ) {
     auto &mpc = mp.mpc[i];
-    mpc.th_e = arg2float_d( i+2,    argc, argv, coords[i].th_cur, coords[i].th_min, coords[i].th_max );
+    mpc.q_e = arg2float_d( i+2,    argc, argv, coords[i].q_cur, coords[i].q_min, coords[i].q_max );
     mpc.tp   = arg2long_d(  i+2+nc, argc, argv, 0, 0, 10 ); // TODO: real types / enum
-    std_out << sep << ' ' << mpc.th_e << " @ " << mpc.tp << ' ';
+    std_out << sep << ' ' << mpc.q_e << " @ " << mpc.tp << ' ';
     sep = ',';
   }
   std_out << " ) " NL;
@@ -378,7 +378,7 @@ int cmd_pulse( int argc, const char * const * argv )
   }
   auto &mo = *co.mo;
 
-  mo.pre_run( co.th_cur, 0, 1000 ); // fake values here
+  mo.pre_run( co.q_cur, 0, 1000 ); // fake values here
   delay_ms( 50 );
   mo.set_t_on( t_on );
   tim_lwm_start();
@@ -434,47 +434,47 @@ int cmd_calibr( int argc, const char * const * argv )
   auto &co  = coords[ch];
 
   MovePart mp;
-  const auto th_min_given = co.th_min + 5.0f; // TODO: calibrate param
-  const auto th_max_given = co.th_max - 5.0f;
+  const auto q_min_given = co.q_min + 5.0f; // TODO: calibrate param
+  const auto q_max_given = co.q_max - 5.0f;
   mp.init();
   for( size_t i=0; i<std::size(coords); ++i ) { // prevent other axis move, among disabling movers
-    mp.mpc[i].th_e = coords[i].th_cur;
+    mp.mpc[i].q_e = coords[i].q_cur;
   }
 
-  mp.mpc[ch].th_e = th_min_given;
+  mp.mpc[ch].q_e = q_min_given;
   mp.k_v = 0.2f;  // TODO: param
 
   int rc = process_movepart( mp );
   if( rc != 0 || break_flag ) {
-    std_out << "# Err: fail to find start. ch: " << ch << ' ' << th_min_given << NL;
+    std_out << "# Err: fail to find start. ch: " << ch << ' ' << q_min_given << NL;
     return 2;
   }
   // TODO: better structure
   const unsigned adc_ch { (ch == 1) ? 0u : 1u };
   // TODO: structure
-  const auto th_min_get { co.th_cur };
-  const auto th_min_raw  { sens_adc.getInt( adc_ch ) };
+  const auto q_min_get { co.q_cur };
+  const auto q_min_raw  { sens_adc.getInt( adc_ch ) };
   std_out << "# min " NL;
-  std_out << "# given: " << th_min_given << " get: " << th_min_get
-          <<  " raw: " << th_min_raw << NL;
+  std_out << "# given: " << q_min_given << " get: " << q_min_get
+          <<  " raw: " << q_min_raw << NL;
   // TODO: check max delta given-get, but not too strict (or 'force' flag)
 
   delay_ms( 500 );
-  mp.mpc[ch].th_e = th_max_given;
+  mp.mpc[ch].q_e = q_max_given;
   rc = process_movepart( mp );
   if( rc != 0  || break_flag ) {
-    std_out << "# Err: fail to find end. ch: " << ch << ' ' << th_max_given << NL;
+    std_out << "# Err: fail to find end. ch: " << ch << ' ' << q_max_given << NL;
     return 2;
   }
 
-  const auto th_max_get { co.th_cur };
-  const auto th_max_raw  { sens_adc.getInt( adc_ch ) }; // TODO: better structure
+  const auto q_max_get { co.q_cur };
+  const auto q_max_raw  { sens_adc.getInt( adc_ch ) }; // TODO: better structure
   std_out << "# max " NL;
-  std_out << "# given: " << th_max_given << " get: " << th_max_get
-          << " raw: " << th_max_raw << NL;
+  std_out << "# given: " << q_max_given << " get: " << q_max_get
+          << " raw: " << q_max_raw << NL;
 
-  const auto    d_given  { th_max_given - th_min_given };
-  const int32_t d_raw    { th_max_raw   - th_min_raw };
+  const auto    d_given  { q_max_given - q_min_given };
+  const int32_t d_raw    { q_max_raw   - q_min_raw };
   std_out << "# delta given: " << d_given << " raw: " << d_raw << NL;
   if( fabsf( d_given ) < 0.1f || abs( d_raw ) < 50 ) {
     std_out << "# Error: low delta"  NL;
@@ -482,7 +482,7 @@ int cmd_calibr( int argc, const char * const * argv )
   }
 
   const float k_a { d_given / d_raw };
-  const float k_b { th_min_given - k_a * th_min_raw };
+  const float k_b { q_min_given - k_a * q_min_raw };
   std_out << "# k_a= " << k_a << " k_b= " << k_b << NL;
 
   if( !store ) {
@@ -528,7 +528,7 @@ int cmd_mcoord( int argc, const char * const * argv )
 void out_coords( bool nl )
 {
   for( auto c : coords ) {
-    std_out << c.th_cur << ' ';
+    std_out << c.q_cur << ' ';
   }
   if( nl ) {
     std_out << NL;
@@ -555,7 +555,7 @@ int measure_store_coords( int nm )
   }
 
   for( auto &co : coords ) {
-    co.th_cur = co.sens->get( co.sens_ch );
+    co.q_cur = co.sens->get( co.sens_ch );
   }
 
   return 1;
@@ -573,8 +573,8 @@ int process_movepart( const MovePart &mp )
   measure_store_coords( adc_n );
   for( size_t i=0; i < nco; ++i ) { // calc max need time in steps
     auto &co = coords[i];
-    xs_0[i]    = co.th_cur;
-    xs_dlt[i]  = mp.mpc[i].th_e - xs_0[i];
+    xs_0[i]    = co.q_cur;
+    xs_dlt[i]  = mp.mpc[i].q_e - xs_0[i];
     const float x_adlt { fabsf( xs_dlt[i] ) };
     const float v = mp.k_v * co.vt_max;
 
@@ -594,14 +594,14 @@ int process_movepart( const MovePart &mp )
     if( is_mover_disabled( ch ) ) {
       continue;
     }
-    if( !mo || ! mo->pre_run( mp.mpc[ch].th_e, mp.mpc[ch].tp, nn ) ) {
+    if( !mo || ! mo->pre_run( mp.mpc[ch].q_e, mp.mpc[ch].tp, nn ) ) {
       std_out << "# Err: pre_run" NL;
       return 2;
     }
   }
 
   std_out << "#  1      2      3       4        5       6      7       8            9          10          11" NL;
-  std_out << "#  i   tick theta_g0 theta_g1 theta_g2 theta_g3 t_on  theta_m0    theta_m1    theta_m2     theta_m3" NL;
+  std_out << "#  i   tick     q_g0     q_g1     q_g2     q_g3 t_on      q_m0        q_m1        q_m2         q_m3" NL;
 
   uint32_t tm0 = HAL_GetTick();
   uint32_t tc0 = tm0, tc00 = tm0;
@@ -620,7 +620,7 @@ int process_movepart( const MovePart &mp )
 
     for( size_t mi = 0; mi<nco; ++mi ) {
 
-      const float x = ( i < (nn-1) ) ? ( xs_0[mi] + dxs[mi] * (i+1) ) : mp.mpc[mi].th_e; // TODO: fun
+      const float x = ( i < (nn-1) ) ? ( xs_0[mi] + dxs[mi] * (i+1) ) : mp.mpc[mi].q_e; // TODO: fun
       std_out << FltFmt( x, cvtff_auto, 8, 4 ) << ' ';
 
       if( is_mover_disabled( mi ) ) {
@@ -967,7 +967,7 @@ int SensorAS5600::measure( int /*nx*/ )
 
 int MoverServo::move( float x, uint32_t t_cur )
 {
-  t_old = t_cur; th_last = x;
+  t_old = t_cur; q_last = x;
   const uint32_t t_on = std::clamp(  (uint32_t) ( t_on_min + t_on_dlt * x ), t_on_min, t_on_max );
   set_t_on( t_on );
   return 1;
@@ -976,7 +976,7 @@ int MoverServo::move( float x, uint32_t t_cur )
 
 int MoverServoCont::move( float x, uint32_t t_cur )
 {
-  t_old = t_cur; th_last = x;
+  t_old = t_cur; q_last = x;
   const float fbv = fb ? *fb : 0;
   const float dx = x - fbv;
 

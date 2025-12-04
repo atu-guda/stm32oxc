@@ -61,20 +61,20 @@ class Sensor;
 // ------------------------------- Coords -----------------------------------
 
 struct CoordInfo {
-  float th_min, th_max;
+  float q_min, q_max;
   float vt_max;
   Sensor *sens;
   unsigned sens_ch;
   Mover *mo;
-  float th_cur; // TODO: separate, other - const
+  float q_cur; // TODO: separate, other - const
 };
 
 extern CoordInfo coords[];
 
 struct MovePartCoord {
-  float    th_e; // end point
+  float    q_e; // end point
   unsigned tp; // type of move per coord: enum or bifield?
-  void init() { th_e = 0; tp = 0; };
+  void init() { q_e = 0; tp = 0; };
 };
 
 struct MovePart {
@@ -99,12 +99,12 @@ class Mover {
    virtual void setRaw( uint32_t rv ) {};
    virtual void set_t_on( uint32_t t_on ) {}; // used only for Servo
    void set_t_old( uint32_t t_old_ ) { t_old = t_old_; }
-   float get_th_last() const { return th_last; }
+   float get_q_last() const { return q_last; }
    void setFlags( Flags fl ) { flags = fl; };
   protected:
    float *fb; // feedback, not exsist = nullptr
    uint32_t t_old { 0 };
-   float th_last  { 0 };
+   float q_last  { 0 };
    Flags flags { noFlags };
 };
 
@@ -183,7 +183,7 @@ class SensorFakeMover : public Sensor {
   public:
    explicit SensorFakeMover( Mover &mo_  ) : Sensor( 1 ), mo( mo_ ) {};
    virtual ~SensorFakeMover() = default;
-   virtual int measure( int nx ) override { x = mo.get_th_last(); return 1; }
+   virtual int measure( int nx ) override { x = mo.get_q_last(); return 1; }
    virtual int init() override { return 1; }
    virtual int32_t getInt( unsigned ch ) override { return ( uint32_t ) x * 10000000; }
    virtual float get( unsigned ch ) override { return x; };
