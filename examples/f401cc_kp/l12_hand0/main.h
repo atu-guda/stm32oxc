@@ -90,10 +90,10 @@ class Mover {
   public:
    enum Flags { noFlags = 0, offAfter = 1 };
    explicit Mover( float *fb_ = nullptr ) : fb( fb_ ) {};
-   virtual int move( float x, uint32_t t_cur ) = 0;
+   virtual int move( float q, uint32_t t_cur ) = 0;
    virtual int stop() = 0;
    virtual int init() = 0;
-   virtual int pre_run( float x_e, unsigned tp, uint32_t nn )  { return 1; };
+   virtual int pre_run( float q_e, unsigned tp, uint32_t nn )  { return 1; };
    virtual int post_run() { return 1; };
    virtual uint32_t getCtlVal() const { return 0; };
    virtual void setRaw( uint32_t rv ) {};
@@ -112,7 +112,7 @@ class MoverServoBase : public Mover {
   public:
    MoverServoBase( __IO uint32_t &ccr_, __IO uint32_t &arr_, float *fb_ = nullptr ) // TODO: TIM/ch ot tim_ctrl/ch
      : Mover( fb_ ), ccr( ccr_ ), arr( arr_ ) {};
-   virtual int move( float x, uint32_t t_cur ) override;
+   virtual int move( float q, uint32_t t_cur ) override;
    virtual int stop() override { ccr = 0; return 1; };
    virtual int init() override { return 1; };
    virtual int post_run() override { if( flags & Flags::offAfter ) { stop(); }; return 1; };
@@ -143,7 +143,7 @@ class MoverServo : public MoverServoBase {
   public:
    MoverServo( __IO uint32_t &ccr_, __IO uint32_t &arr_, float *fb_ = nullptr  )
      : MoverServoBase(  ccr_, arr_, fb_ ) {};
-   virtual int move( float x, uint32_t t_cur ) override;
+   virtual int move( float q, uint32_t t_cur ) override;
   protected:
 };
 
@@ -152,8 +152,8 @@ class MoverServoCont : public MoverServoBase {
   public:
    MoverServoCont( __IO uint32_t &ccr_, __IO uint32_t &arr_, float *fb_ = nullptr  )
      : MoverServoBase( ccr_, arr_, fb_ ) {};
-   virtual int move( float x, uint32_t t_cur ) override;
-   virtual int pre_run( float x_e, unsigned tp, uint32_t nn ) override;
+   virtual int move( float q, uint32_t t_cur ) override;
+   virtual int pre_run( float q_e, unsigned tp, uint32_t nn ) override;
    virtual int post_run() override;
   protected:
 };

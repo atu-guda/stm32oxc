@@ -253,28 +253,28 @@ int cmd_test0( int argc, const char * const * argv )
   }
   auto &mo = *co.mo;
 
-  const float x_e = arg2float_d( 1, argc, argv, co.q_cur, co.q_min, co.q_max );
+  const float q_e = arg2float_d( 1, argc, argv, co.q_cur, co.q_min, co.q_max );
   const float k_v = arg2float_d( 3, argc, argv, 0.5f,    0.01f, 2.0f );
 
   const uint32_t t_step = UVAR('t');
-  const float   x_0  = co.q_cur;
-  const float  x_dlt = x_e - x_0;
-  const float x_adlt = fabsf( x_dlt );
+  const float   q_0  = co.q_cur;
+  const float  q_dlt = q_e - q_0;
+  const float q_adlt = fabsf( q_dlt );
   const float      v = k_v * co.vt_max;
 
-  const uint32_t n = std::clamp( unsigned( x_adlt/( v * t_step * 1e-3f ) ), 1u, 10000u );
-  const float dx = x_dlt / n;
+  const uint32_t n = std::clamp( unsigned( q_adlt/( v * t_step * 1e-3f ) ), 1u, 10000u );
+  const float dx = q_dlt / n;
 
   ledsx.reset ( 0xFF );
 
   std_out
-    <<  "# Test0: ch= " << ch << " x_0= " << x_0 << " x_e= " << x_e << " v=" << v << " n= " << n
+    <<  "# Test0: ch= " << ch << " q_0= " << q_0 << " q_e= " << q_e << " v=" << v << " n= " << n
     << " dx= " << dx << " dt= " << t_step << NL;
 
-  std_out <<  "#  i   tick      x    ccr coords" NL;
+  std_out <<  "#  i   tick      q    ccr coords" NL;
 
   tim_lwm_start();
-  if( ! mo.pre_run( x_e, 0, n ) ) {
+  if( ! mo.pre_run( q_e, 0, n ) ) {
     std_out << "# Err: pre_run " NL;
     return 2;
   }
@@ -294,16 +294,16 @@ int cmd_test0( int argc, const char * const * argv )
 
     uint32_t  tcc = HAL_GetTick();
 
-    const float x = ( i < (n-1) ) ? ( x_0 + dx * (i+1) ) : x_e; // TODO: fun
+    const float q = ( i < (n-1) ) ? ( q_0 + dx * (i+1) ) : q_e; // TODO: fun
 
     if( !dry_run ) {
-      mo.move( x, tcc );
+      mo.move( q, tcc );
     }
 
     ledsx[2].reset();
 
     std_out << FmtInt(i,4) << ' ' << FmtInt( tcc - tc00, 6 )
-      << ' ' << FltFmt(x, cvtff_auto, 8, 4)  << ' ' << mo.getCtlVal() << ' ' << mo.get_q_last();
+      << ' ' << FltFmt(q, cvtff_auto, 8, 4)  << ' ' << mo.getCtlVal() << ' ' << mo.get_q_last();
     out_coords( true );
 
     delay_ms_until_brk( &tc0, t_step );
@@ -565,27 +565,27 @@ int process_movepart( const MovePart &mp )
 {
   constexpr size_t nco { std::size(coords) };
   const uint32_t t_step = UVAR('t');
-  float xs_0[nco];
-  float xs_dlt[nco];
-  float dxs[nco];
+  float qs_0[nco];
+  float qs_dlt[nco];
+  float dqs[nco];
 
   uint32_t nn {0};
   measure_store_coords( adc_n );
   for( size_t i=0; i < nco; ++i ) { // calc max need time in steps
     auto &co = coords[i];
-    xs_0[i]    = co.q_cur;
-    xs_dlt[i]  = mp.mpc[i].q_e - xs_0[i];
-    const float x_adlt { fabsf( xs_dlt[i] ) };
+    qs_0[i]    = co.q_cur;
+    qs_dlt[i]  = mp.mpc[i].q_e - qs_0[i];
+    const float q_adlt { fabsf( qs_dlt[i] ) };
     const float v = mp.k_v * co.vt_max;
 
-    const uint32_t n = std::clamp( unsigned( x_adlt/( v * t_step * 1e-3f ) ), 1u, 10000u );
+    const uint32_t n = std::clamp( unsigned( q_adlt/( v * t_step * 1e-3f ) ), 1u, 10000u );
     nn = std::max( nn, n );
-    std_out << "# plan: n= " << n << " nn= " << nn << " dlt= " << xs_dlt[i] <<  NL;
+    std_out << "# plan: n= " << n << " nn= " << nn << " dlt= " << qs_dlt[i] <<  NL;
   }
   std_out << "# k_v= " << mp.k_v << " nn= " << nn << NL;
 
   for( size_t i=0; i < nco; ++i ) {
-    dxs[i] = xs_dlt[i] / nn;
+    dqs[i] = qs_dlt[i] / nn;
   }
 
   ledsx.reset ( 0xFF );
@@ -620,15 +620,15 @@ int process_movepart( const MovePart &mp )
 
     for( size_t mi = 0; mi<nco; ++mi ) {
 
-      const float x = ( i < (nn-1) ) ? ( xs_0[mi] + dxs[mi] * (i+1) ) : mp.mpc[mi].q_e; // TODO: fun
-      std_out << FltFmt( x, cvtff_auto, 8, 4 ) << ' ';
+      const float q = ( i < (nn-1) ) ? ( qs_0[mi] + dqs[mi] * (i+1) ) : mp.mpc[mi].q_e; // TODO: fun
+      std_out << FltFmt( q, cvtff_auto, 8, 4 ) << ' ';
 
       if( is_mover_disabled( mi ) ) {
         continue;
       }
 
       if( !dry_run && movers[mi] ) {
-        movers[mi]->move( x, tcc );
+        movers[mi]->move( q, tcc );
       }
     }
 
@@ -965,36 +965,36 @@ int SensorAS5600::measure( int /*nx*/ )
 
 // ------------------------------------- Movers ----------------------------------------------
 
-int MoverServo::move( float x, uint32_t t_cur )
+int MoverServo::move( float q, uint32_t t_cur )
 {
-  t_old = t_cur; q_last = x;
-  const uint32_t t_on = std::clamp(  (uint32_t) ( t_on_min + t_on_dlt * x ), t_on_min, t_on_max );
+  t_old = t_cur; q_last = q;
+  const uint32_t t_on = std::clamp(  (uint32_t) ( t_on_min + t_on_dlt * q ), t_on_min, t_on_max );
   set_t_on( t_on );
   return 1;
 }
 
 
-int MoverServoCont::move( float x, uint32_t t_cur )
+int MoverServoCont::move( float q, uint32_t t_cur )
 {
-  t_old = t_cur; q_last = x;
+  t_old = t_cur; q_last = q;
   const float fbv = fb ? *fb : 0;
-  const float dx = x - fbv;
+  const float dq = q - fbv;
 
-  if( fabsf( dx ) < 1.0f ) { // dead zone, TODO: param
+  if( fabsf( dq ) < 1.0f ) { // dead zone, TODO: param
     set_t_on( t_on_cen );
     return 1;
   }
-  int32_t t_on = t_on_cen + (int) ( dx * t_on_dlt * 0.01f * UVAR('k') / 1000 ); // TODO: param
+  int32_t t_on = t_on_cen + (int) ( dq * t_on_dlt * 0.01f * UVAR('k') / 1000 ); // TODO: param
   t_on = std::clamp( t_on, (int32_t)t_on_min, (int32_t)t_on_max );
   dbg_val0 = t_on;
   set_t_on( t_on );
   return 1;
 }
 
-int MoverServoCont::pre_run( float x_e, unsigned tp, uint32_t nn )
+int MoverServoCont::pre_run( float q_e, unsigned tp, uint32_t nn )
 {
   set_t_on( t_on_cen );
-  return MoverServoBase::pre_run( x_e, tp, nn );
+  return MoverServoBase::pre_run( q_e, tp, nn );
 }
 
 int MoverServoCont::post_run()
