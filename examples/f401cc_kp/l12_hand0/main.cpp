@@ -81,7 +81,7 @@ DCL_CMD_REG( stop,   'P', " - stop pwm" );
 DCL_CMD_REG( mtest,  'M', " [set_zero] [aux] - test AS5600" );
 DCL_CMD_REG( mcoord, 'C', " - measure and store coords" );
 DCL_CMD_REG( go,     'G', " k_v q_0 q_1 q_2 q_3 tp_0 tp_1 tp_2 tp_3 - go " );
-DCL_CMD_REG( pulse,  'U', " ch t_on dt - test pulse " );
+DCL_CMD_REG( pulse,  'U', " ch t_on dt off - test pulse " );
 DCL_CMD_REG( calibr, '\0', " ch - calibrate channel " );
 
 
@@ -303,7 +303,7 @@ int cmd_test0( int argc, const char * const * argv )
     ledsx[2].reset();
 
     std_out << FmtInt(i,4) << ' ' << FmtInt( tcc - tc00, 6 )
-      << ' ' << FltFmt(q, cvtff_auto, 8, 4)  << ' ' << mo.getCtlVal() << ' ' << mo.get_q_last();
+      << ' ' << FltFmt(q, cvtff_auto, 8, 4)  << ' ' << mo.getRaw() << ' ' << mo.get_q_last();
     out_coords( true );
 
     delay_ms_until_brk( &tc0, t_step );
@@ -380,7 +380,7 @@ int cmd_pulse( int argc, const char * const * argv )
 
   mo.pre_run( co.q_cur, 0, 1000 ); // fake values here
   delay_ms( 50 );
-  mo.set_t_on( t_on );
+  mo.setCtrlVal( t_on );
   tim_lwm_start();
 
   ledsx[2].set();
@@ -965,41 +965,46 @@ int SensorAS5600::measure( int /*nx*/ )
 
 // ------------------------------------- Movers ----------------------------------------------
 
-int MoverServo::move( float q, uint32_t t_cur )
+int Mover::move( float q, uint32_t t_cur )
 {
+  auto rc = move_do( q, t_cur );
   t_old = t_cur; q_last = q;
+  return rc;
+}
+
+int MoverServo::move_do( float q, uint32_t t_cur )
+{
   const uint32_t t_on = std::clamp(  (uint32_t) ( t_on_min + t_on_dlt * q ), t_on_min, t_on_max );
-  set_t_on( t_on );
+  setCtrlVal( t_on );
   return 1;
 }
 
 
-int MoverServoCont::move( float q, uint32_t t_cur )
+int MoverServoCont::move_do( float q, uint32_t t_cur )
 {
-  t_old = t_cur; q_last = q;
   const float fbv = fb ? *fb : 0;
   const float dq = q - fbv;
 
   if( fabsf( dq ) < 1.0f ) { // dead zone, TODO: param
-    set_t_on( t_on_cen );
+    setCtrlVal( t_on_cen );
     return 1;
   }
   int32_t t_on = t_on_cen + (int) ( dq * t_on_dlt * 0.01f * UVAR('k') / 1000 ); // TODO: param
   t_on = std::clamp( t_on, (int32_t)t_on_min, (int32_t)t_on_max );
   dbg_val0 = t_on;
-  set_t_on( t_on );
+  setCtrlVal( t_on );
   return 1;
 }
 
 int MoverServoCont::pre_run( float q_e, unsigned tp, uint32_t nn )
 {
-  set_t_on( t_on_cen );
+  setCtrlVal( t_on_cen );
   return MoverServoBase::pre_run( q_e, tp, nn );
 }
 
 int MoverServoCont::post_run()
 {
-  set_t_on( t_on_cen );
+  setCtrlVal( t_on_cen );
   return MoverServoBase::post_run();
 }
 

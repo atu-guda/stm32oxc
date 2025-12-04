@@ -90,14 +90,16 @@ class Mover {
   public:
    enum Flags { noFlags = 0, offAfter = 1 };
    explicit Mover( float *fb_ = nullptr ) : fb( fb_ ) {};
-   virtual int move( float q, uint32_t t_cur ) = 0;
+   int move( float q, uint32_t t_cur );
+   virtual int move_do( float q, uint32_t t_cur ) = 0;
    virtual int stop() = 0;
    virtual int init() = 0;
    virtual int pre_run( float q_e, unsigned tp, uint32_t nn )  { return 1; };
    virtual int post_run() { return 1; };
-   virtual uint32_t getCtlVal() const { return 0; };
+   virtual uint32_t getRaw() const { return 0; };
    virtual void setRaw( uint32_t rv ) {};
-   virtual void set_t_on( uint32_t t_on ) {}; // used only for Servo
+   virtual void setCtrlVal( uint32_t cv ) {}; // t_on for Servo
+   virtual uint32_t getCtrlVal() const { return 0; };
    void set_t_old( uint32_t t_old_ ) { t_old = t_old_; }
    float get_q_last() const { return q_last; }
    void setFlags( Flags fl ) { flags = fl; };
@@ -112,20 +114,20 @@ class MoverServoBase : public Mover {
   public:
    MoverServoBase( __IO uint32_t &ccr_, __IO uint32_t &arr_, float *fb_ = nullptr ) // TODO: TIM/ch ot tim_ctrl/ch
      : Mover( fb_ ), ccr( ccr_ ), arr( arr_ ) {};
-   virtual int move( float q, uint32_t t_cur ) override;
+   virtual int move_do( float q, uint32_t t_cur ) override;
    virtual int stop() override { ccr = 0; return 1; };
    virtual int init() override { return 1; };
    virtual int post_run() override { if( flags & Flags::offAfter ) { stop(); }; return 1; };
-   virtual uint32_t getCtlVal() const override { return ccr; };
+   virtual uint32_t getRaw() const override { return ccr; };
    virtual void setRaw( uint32_t rv ) override { ccr = rv; };
-   virtual void set_t_on( uint32_t t_on ) override { t_on_last = t_on; ccr = t_on2ccr( t_on ); };
+   virtual void setCtrlVal( uint32_t cv ) override { t_on_last = cv; ccr = t_on2ccr( cv ); };
+   virtual uint32_t getCtrlVal() const override { return t_on_last; };
    void set_lwm_times( uint32_t t_min, uint32_t t_max ) {
      t_on_min = t_min; t_on_max = t_max;
      t_on_cen = ( t_on_max_def + t_on_min_def ) / 2;
      t_on_dlt =   t_on_max_def - t_on_min_def;
    }
    uint32_t t_on2ccr( uint32_t t_on ) { return arr * t_on / tim_lwm_t_us; } // t_on in us
-   uint32_t get_t_on_last() const { return t_on_last; }
   protected:
    __IO uint32_t &ccr;
    __IO uint32_t &arr;
@@ -143,7 +145,7 @@ class MoverServo : public MoverServoBase {
   public:
    MoverServo( __IO uint32_t &ccr_, __IO uint32_t &arr_, float *fb_ = nullptr  )
      : MoverServoBase(  ccr_, arr_, fb_ ) {};
-   virtual int move( float q, uint32_t t_cur ) override;
+   virtual int move_do( float q, uint32_t t_cur ) override;
   protected:
 };
 
@@ -152,7 +154,7 @@ class MoverServoCont : public MoverServoBase {
   public:
    MoverServoCont( __IO uint32_t &ccr_, __IO uint32_t &arr_, float *fb_ = nullptr  )
      : MoverServoBase( ccr_, arr_, fb_ ) {};
-   virtual int move( float q, uint32_t t_cur ) override;
+   virtual int move_do( float q, uint32_t t_cur ) override;
    virtual int pre_run( float q_e, unsigned tp, uint32_t nn ) override;
    virtual int post_run() override;
   protected:
