@@ -60,6 +60,22 @@ class Sensor;
 
 // ------------------------------- Coords -----------------------------------
 
+using PartFun = float (*)(float); // [0..1] -> [0..1]
+struct PartFunInfo {
+  PartFun f;
+  float kv;  // max speed koeff, <=1
+};
+inline float pafun_lim( float x ) { return std::clamp( x, 0.0f, 1.0f ); };
+float pafun_one( float x );
+float pafun_poly2_ss( float x ); // ss - slow start, se - low end, sb - slow both
+float pafun_poly2_se( float x );
+float pafun_poly3_sb( float x );
+float pafun_trig_ss(  float x );
+float pafun_trig_se(  float x );
+float pafun_trig_sb(  float x );
+
+extern const PartFunInfo part_fun_info[];
+
 struct CoordInfo {
   float q_min, q_max;
   float vt_max;

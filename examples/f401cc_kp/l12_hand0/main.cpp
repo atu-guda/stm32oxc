@@ -1,6 +1,7 @@
 #include <cerrno>
 #include <climits>
 #include <algorithm>
+#include <numbers>
 #include <cmath>
 #include <array>
 
@@ -41,6 +42,68 @@ AS5600 ang_sens( i2cd );
 int adc_n {100};
 volatile int adc_dma_end {0};
 
+// part funcs
+static constexpr float pi_f = std::numbers::pi_v<float>;
+static constexpr float pi_half_f = pi_f / 2;
+
+float pafun_one( float x )
+{
+  return pafun_lim( x );
+}
+
+float pafun_poly2_ss( float x )
+{
+  x = pafun_lim( x );
+  return x*x;
+}
+
+float pafun_poly2_se( float x )
+{
+  x = pafun_lim( x );
+  return x * ( 2 - x );
+}
+
+float pafun_poly3_sb( float x )
+{
+  x = pafun_lim( x );
+  return -2 * x*x*x + 3*x*x;
+}
+
+float pafun_trig_ss(  float x )
+{
+  x = pafun_lim( x );
+  return 1 - cosf( x * pi_half_f );
+}
+
+float pafun_trig_se(  float x )
+{
+  x = pafun_lim( x );
+  return sinf( x * pi_half_f );
+}
+
+float pafun_trig_sb(  float x )
+{
+  x = pafun_lim( x );
+  return 0.5f * ( 1 - cosf( pi_f * x ) );
+}
+
+
+const PartFunInfo part_fun_info[] = {
+  { pafun_one,      1.0f },           // 0
+  { pafun_poly2_ss, 0.5f },           // 1
+  { pafun_poly2_se, 0.5f },           // 2
+  { pafun_poly3_sb, 0.6f },           // 3
+  { pafun_trig_ss,  1/pi_half_f },    // 4
+  { pafun_trig_se,  1/pi_half_f },    // 5
+  { pafun_trig_sb,  1/pi_half_f },    // 6
+  { pafun_one,      1.0f } // protect // 7
+};
+constexpr auto part_fun_n { std::size( part_fun_info) };
+
+
+
+// ----------- senors ----------------
+
 SensorAS5600 sens_enc( ang_sens );
 SensorAdc sens_adc( 3 );
 SensorFakeMover sens_grip( mover_grip );
@@ -75,12 +138,12 @@ CoordInfo coords[] {
 
 const MovePart move_seq0[] {
   { { {   0.0f, 0 }, {   60.0f, 0 }, {   -100.0f, 0 }, {   50.0f, 0 }, { 0,0 }, { 0,0 } },  0.5f },
-  { { { -90.0f, 0 }, {   90.0f, 0 }, {   -130.0f, 0 }, {   10.0f, 0 }, { 0,0 }, { 0,0 } },  0.5f },
-  { { { -20.0f, 0 }, {   50.0f, 0 }, {    -90.0f, 0 }, {   50.0f, 0 }, { 0,0 }, { 0,0 } },  0.5f },
-  { { { -20.0f, 0 }, {   50.0f, 0 }, {    -90.0f, 0 }, {    5.0f, 0 }, { 0,0 }, { 0,0 } },  0.5f },
-  { { {   0.0f, 0 }, {   90.0f, 0 }, {   -130.0f, 0 }, {    5.0f, 0 }, { 0,0 }, { 0,0 } },  0.5f },
-  { { {  90.0f, 0 }, {   50.0f, 0 }, {    -90.0f, 0 }, {    5.0f, 0 }, { 0,0 }, { 0,0 } },  0.5f },
-  { { {  90.0f, 0 }, {   50.0f, 0 }, {    -90.0f, 0 }, {   50.0f, 0 }, { 0,0 }, { 0,0 } },  0.5f },
+  { { { -90.0f, 3 }, {   90.0f, 6 }, {   -130.0f, 3 }, {   10.0f, 2 }, { 0,0 }, { 0,0 } },  0.5f },
+  { { { -20.0f, 3 }, {   50.0f, 6 }, {    -90.0f, 3 }, {   50.0f, 2 }, { 0,0 }, { 0,0 } },  0.5f },
+  { { { -20.0f, 3 }, {   50.0f, 6 }, {    -90.0f, 3 }, {    5.0f, 0 }, { 0,0 }, { 0,0 } },  0.5f },
+  { { {   0.0f, 3 }, {   90.0f, 6 }, {   -130.0f, 3 }, {    5.0f, 0 }, { 0,0 }, { 0,0 } },  0.5f },
+  { { {  90.0f, 3 }, {   50.0f, 6 }, {    -90.0f, 3 }, {    5.0f, 0 }, { 0,0 }, { 0,0 } },  0.5f },
+  { { {  90.0f, 3 }, {   50.0f, 6 }, {    -90.0f, 3 }, {   50.0f, 2 }, { 0,0 }, { 0,0 } },  0.5f },
   { { {   0.0f, 0 }, {   90.0f, 0 }, {   -135.0f, 0 }, {   10.0f, 0 }, { 0,0 }, { 0,0 } },  0.5f }
 };
 
@@ -309,6 +372,9 @@ int cmd_test0( int argc, const char * const * argv )
     uint32_t  tcc = HAL_GetTick();
 
     const float q = ( i < (n-1) ) ? ( q_0 + dx * (i+1) ) : q_e; // TODO: fun
+      // const float q01 = float(i+1)/nn;
+      // const float q01f = part_fun_info[ mp.mpc[mi].tp ].f( q01 );
+      // const float q = qs_0[mi] + dqs[mi] * q01f;
 
     if( !dry_run ) {
       mo.move( q, tcc );
@@ -357,7 +423,7 @@ int cmd_go( int argc, const char * const * argv )
   for( size_t i=0; i<nc; ++i ) {
     auto &mpc = mp.mpc[i];
     mpc.q_e = arg2float_d( i+2,    argc, argv, coords[i].q_cur, coords[i].q_min, coords[i].q_max );
-    mpc.tp   = arg2long_d(  i+2+nc, argc, argv, 0, 0, 10 ); // TODO: real types / enum
+    mpc.tp   = arg2long_d(  i+2+nc, argc, argv, 0, 0, part_fun_n-1 );
     std_out << sep << ' ' << mpc.q_e << " @ " << mpc.tp << ' ';
     sep = ',';
   }
@@ -472,7 +538,7 @@ int cmd_calibr( int argc, const char * const * argv )
     std_out << "# Err: fail to find start. ch: " << ch << ' ' << q_min_given << NL;
     return 2;
   }
-  // TODO: better structure
+  // TODO: use structure
   const unsigned adc_ch { (ch == 1) ? 0u : 1u };
   // TODO: structure
   const auto q_min_get { co.q_cur };
@@ -590,7 +656,6 @@ int process_movepart( const MovePart &mp, float kkv  )
   const uint32_t t_step = UVAR('t');
   float qs_0[nco];
   float qs_dlt[nco];
-  float dqs[nco];
 
   uint32_t nn {0};
   measure_store_coords( adc_n );
@@ -599,17 +664,14 @@ int process_movepart( const MovePart &mp, float kkv  )
     qs_0[i]    = co.q_cur;
     qs_dlt[i]  = mp.mpc[i].q_e - qs_0[i];
     const float q_adlt { fabsf( qs_dlt[i] ) };
-    const float v = kkv * mp.k_v * co.vt_max;
+    const float v = kkv * mp.k_v * co.vt_max * part_fun_info[ mp.mpc[i].tp ].kv;
 
     const uint32_t n = std::clamp( unsigned( q_adlt/( v * t_step * 1e-3f ) ), 1u, 10000u );
     nn = std::max( nn, n );
-    std_out << "# plan: n= " << n << " nn= " << nn << " dlt= " << qs_dlt[i] <<  NL;
+    std_out << "# plan: n= " << n << " nn= " << nn << " qs_0= " << qs_0[i] << " dlt= " << qs_dlt[i] <<  NL;
   }
   std_out << "# k_v= " << mp.k_v << " nn= " << nn << NL;
 
-  for( size_t i=0; i < nco; ++i ) {
-    dqs[i] = qs_dlt[i] / nn;
-  }
 
   ledsx.reset ( 0xFF );
 
@@ -643,8 +705,13 @@ int process_movepart( const MovePart &mp, float kkv  )
 
     for( size_t mi = 0; mi<nco; ++mi ) {
 
-      const float q = ( i < (nn-1) ) ? ( qs_0[mi] + dqs[mi] * (i+1) ) : mp.mpc[mi].q_e; // TODO: fun
+      const float q01 = float(i+1)/nn;
+      const float q01f = part_fun_info[ mp.mpc[mi].tp ].f( q01 );
+      const float q = qs_0[mi] + qs_dlt[mi] * q01f;
       std_out << FltFmt( q, cvtff_auto, 8, 4 ) << ' ';
+      if( mi == 0 ) {
+        std_out << q01 << ' ' << q01f << ' ';
+      };
 
       if( is_mover_disabled( mi ) ) {
         continue;
