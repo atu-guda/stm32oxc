@@ -85,20 +85,33 @@ struct CoordInfo {
   float q_cur; // TODO: separate, other - const
 };
 
-extern CoordInfo coords[];
+constexpr size_t coords_n { 4 };
+extern CoordInfo coords[coords_n];
 
 struct MovePartCoord {
   float    q_e; // end point
   unsigned tp; // type of move per coord: enum or bifield?
   void init() { q_e = 0; tp = 0; };
 };
+OutStream& operator<<( OutStream &os, const MovePartCoord &rhs );
 
 struct MovePart {
-  static const unsigned n_max { 6 }; // <-> n_movers ??
+  static const unsigned n_max { 4 }; // <-> n_movers ??
   MovePartCoord mpc[n_max];
   float k_v; // velocity coeff
   void init() { for( auto &mp : mpc ) { mp.init(); }; k_v = 1.0f;}
+  void from_coords( std::span<const CoordInfo> coos, unsigned tp = 3 );
 };
+OutStream& operator<<( OutStream &os, const MovePart &rhs );
+
+extern const MovePart mp_seq0[];
+extern MovePart mp_stored;
+extern MovePart mp_last;
+inline const size_t mp_seq1_n { 20 };
+extern       MovePart mp_seq1[mp_seq1_n];
+extern size_t mp_seq1_sz;
+
+int cmd2MovePart( int argc, const char * const * argv, int start_idx, MovePart &mp );
 
 // ------------------------------------- Movers ----------------------------------------------
 
@@ -182,6 +195,8 @@ extern MoverServoCont mover_base;
 extern MoverServo     mover_p1;
 extern MoverServo     mover_p2;
 extern MoverServo     mover_grip;
+constexpr size_t movers_n { 4 };
+extern std::array<Mover*,movers_n> movers;
 
 // ------------------------------- Sensors -----------------------------------
 

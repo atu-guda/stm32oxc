@@ -4,6 +4,7 @@
 #include <numbers>
 #include <cmath>
 #include <array>
+#include <ranges>
 
 #include <oxc_auto.h>
 #include <oxc_main.h>
@@ -100,9 +101,30 @@ const PartFunInfo part_fun_info[] = {
 };
 constexpr auto part_fun_n { std::size( part_fun_info) };
 
+OutStream& operator<<( OutStream &os, const MovePartCoord &rhs )
+{
+  os << "{ " << rhs.q_e << " , " << rhs.tp << " }";
+  return os;
+}
 
+OutStream& operator<<( OutStream &os, const MovePart &rhs )
+{
+  os << rhs.k_v << ' ';
+  for( const auto& m : rhs.mpc ) {
+    os << m << ' ';
+  }
+  return os;
+}
 
-// ----------- senors ----------------
+void MovePart::from_coords( std::span<const CoordInfo> coos, unsigned tp )
+{
+  for( std::tuple<const CoordInfo &, MovePartCoord &> i : ranges::views::zip( coos, mpc ) ) {
+    std::get<1>(i).q_e = std::get<0>(i).q_cur;
+    std::get<1>(i).tp = tp;
+  }
+}
+
+// ----------- sensors ----------------
 
 SensorAS5600 sens_enc( ang_sens );
 SensorAdc sens_adc( 3 );
@@ -117,7 +139,7 @@ MoverServo     mover_p1(   -10.0f,   2500.0f, TIM_LWM->CCR2, TIM_LWM->ARR, &coor
 MoverServo     mover_p2(    10.0f,   2850.0f, TIM_LWM->CCR3, TIM_LWM->ARR, &coords[2].q_cur );
 MoverServo     mover_grip(  10.0f,    500.0f, TIM_LWM->CCR4, TIM_LWM->ARR, &coords[3].q_cur );
 
-std::array<Mover*,4> movers { &mover_base, &mover_p1, &mover_p2, &mover_grip };
+std::array<Mover*,movers_n> movers { &mover_base, &mover_p1, &mover_p2, &mover_grip };
 
 
 // ------------------------   end Movers
@@ -126,7 +148,7 @@ std::array<Mover*,4> movers { &mover_base, &mover_p1, &mover_p2, &mover_grip };
 
 
 
-CoordInfo coords[] {
+CoordInfo coords[coords_n] {
 //   q_min   q_max  vt_max   sens   sens_ch     mo         q_cur
   { -90.0f,  90.0f,  40.0f,  &sens_enc,  0,  &mover_base,   0.0f }, // rotate
   {  45.0f,  95.0f,  90.0f,  &sens_adc,  0,  &mover_p1,    80.0f }, // arm1
@@ -136,16 +158,21 @@ CoordInfo coords[] {
 
 // ------------------------   default sequence
 
-const MovePart move_seq0[] {
-  { { {   0.0f, 0 }, {   60.0f, 0 }, {   -100.0f, 0 }, {   50.0f, 0 }, { 0,0 }, { 0,0 } },  0.5f },
-  { { { -90.0f, 3 }, {   90.0f, 6 }, {   -130.0f, 3 }, {   10.0f, 2 }, { 0,0 }, { 0,0 } },  0.5f },
-  { { { -20.0f, 3 }, {   50.0f, 6 }, {    -90.0f, 3 }, {   50.0f, 2 }, { 0,0 }, { 0,0 } },  0.5f },
-  { { { -20.0f, 3 }, {   50.0f, 6 }, {    -90.0f, 3 }, {    5.0f, 0 }, { 0,0 }, { 0,0 } },  0.5f },
-  { { {   0.0f, 3 }, {   90.0f, 6 }, {   -130.0f, 3 }, {    5.0f, 0 }, { 0,0 }, { 0,0 } },  0.5f },
-  { { {  90.0f, 3 }, {   50.0f, 6 }, {    -90.0f, 3 }, {    5.0f, 0 }, { 0,0 }, { 0,0 } },  0.5f },
-  { { {  90.0f, 3 }, {   50.0f, 6 }, {    -90.0f, 3 }, {   50.0f, 2 }, { 0,0 }, { 0,0 } },  0.5f },
-  { { {   0.0f, 0 }, {   90.0f, 0 }, {   -135.0f, 0 }, {   10.0f, 0 }, { 0,0 }, { 0,0 } },  0.5f }
+const MovePart mp_seq0[] {
+  { { {   0.0f, 0 }, {   60.0f, 0 }, {   -100.0f, 0 }, {   50.0f, 0 }  },  0.5f },
+  { { { -90.0f, 3 }, {   90.0f, 6 }, {   -130.0f, 3 }, {   10.0f, 2 }  },  0.5f },
+  { { { -20.0f, 3 }, {   50.0f, 6 }, {    -90.0f, 3 }, {   50.0f, 2 }  },  0.5f },
+  { { { -20.0f, 3 }, {   50.0f, 6 }, {    -90.0f, 3 }, {    5.0f, 0 }  },  0.5f },
+  { { {   0.0f, 3 }, {   90.0f, 6 }, {   -130.0f, 3 }, {    5.0f, 0 }  },  0.5f },
+  { { {  90.0f, 3 }, {   50.0f, 6 }, {    -90.0f, 3 }, {    5.0f, 0 }  },  0.5f },
+  { { {  90.0f, 3 }, {   50.0f, 6 }, {    -90.0f, 3 }, {   50.0f, 2 }  },  0.5f },
+  { { {   0.0f, 0 }, {   90.0f, 0 }, {   -135.0f, 0 }, {   10.0f, 0 }  },  0.5f }
 };
+
+MovePart mp_stored;
+MovePart mp_last;
+MovePart mp_seq1[mp_seq1_n];
+size_t mp_seq1_sz { 0 };
 
 // ------------------------   commands
 
@@ -155,10 +182,13 @@ const char* common_help_string = "hand0 " __DATE__ " " __TIME__ NL;
 DCL_CMD_REG( test0,  'T', " [val] [ch] [k_v] - test move 1 ch" );
 DCL_CMD_REG( stop,   'P', " - stop pwm" );
 DCL_CMD_REG( mtest,  'M', " [set_zero] [aux] - test AS5600" );
-DCL_CMD_REG( mcoord, 'C', " - measure and store coords" );
+DCL_CMD_REG( mcoord, 'C', " [store] [n] - measure and store coords" );
 DCL_CMD_REG( go,     'G', " k_v q_0 q_1 q_2 q_3 tp_0 tp_1 tp_2 tp_3 - go " );
+DCL_CMD_REG( add_mp, 'A', " k_v q_0 q_1 q_2 q_3 tp_0 tp_1 tp_2 tp_3 - add MovePoint " );
+DCL_CMD_REG( clear_mp, '\0', " - delete all MovePoints " );
 DCL_CMD_REG( run,    'R', " [seq_num] - run sequence " );
 DCL_CMD_REG( pulse,  'U', " ch t_on dt off - test pulse " );
+DCL_CMD_REG( out_moves, 'O', " [seq_num]  - output moves sequence " );
 DCL_CMD_REG( calibr, '\0', " ch - calibrate channel " );
 
 
@@ -411,27 +441,56 @@ int cmd_stop( int argc, const char * const * argv )
 
 int cmd_go( int argc, const char * const * argv )
 {
+  static_assert( coords_n <= MovePart::n_max );
   MovePart mp;
-  mp.init();
+  cmd2MovePart( argc, argv, 1, mp );
+  mp_last = mp;
 
-  static_assert( std::size(coords) <= MovePart::n_max );
-  char sep { ' ' };
-  mp.k_v = arg2float_d( 1, argc, argv, 0.5f, 0.01f, 2.0f );
-  std_out << "# Go: k_v= " << mp.k_v << " ( ";
-
-  constexpr size_t nc { std::size(coords) };
-  for( size_t i=0; i<nc; ++i ) {
-    auto &mpc = mp.mpc[i];
-    mpc.q_e = arg2float_d( i+2,    argc, argv, coords[i].q_cur, coords[i].q_min, coords[i].q_max );
-    mpc.tp   = arg2long_d(  i+2+nc, argc, argv, 0, 0, part_fun_n-1 );
-    std_out << sep << ' ' << mpc.q_e << " @ " << mpc.tp << ' ';
-    sep = ',';
-  }
-  std_out << " ) " NL;
+  std_out << "# Go:  " << mp << NL;
 
   tim_lwm_start();
   int rc = process_movepart( mp, 1.0f );
   return rc;
+}
+
+int cmd_add_mp( int argc, const char * const * argv )
+{
+  if( mp_seq1_sz >= mp_seq1_n ) {
+    std_out << "# Error: overflow  " << mp_seq1_sz << ' ' << mp_seq1_n << NL;
+    return 1;
+  }
+
+  MovePart &mp { mp_seq1[mp_seq1_sz] };
+  cmd2MovePart( argc, argv, 1, mp );
+
+  std_out << "# Added:  " << mp << NL;
+  ++mp_seq1_sz;
+  return 0;
+}
+
+int cmd_clear_mp( int argc, const char * const * argv )
+{
+  mp_seq1_sz = 0;
+  return 0;
+}
+
+int cmd2MovePart( int argc, const char * const * argv, int start_idx, MovePart &mp )
+{
+  mp.init();
+
+  mp.k_v = arg2float_d( start_idx, argc, argv, 0.5f, 0.01f, 2.0f );
+
+  int i { start_idx + 1 };
+  unsigned j { 0 };
+  for( auto &m: mp.mpc ) {
+    m.q_e = arg2float_d( i, argc, argv, coords[j].q_cur, coords[j].q_min, coords[j].q_max );
+    ++i;
+    m.tp  = arg2long_d(  i, argc, argv, 0, 0, part_fun_n-1 );
+    ++i;
+    ++j;
+  }
+
+  return 0;
 }
 
 int cmd_run( int argc, const char * const * argv )
@@ -439,7 +498,10 @@ int cmd_run( int argc, const char * const * argv )
   int mps_idx   = arg2long_d(   1, argc, argv,    0,    0,    1 );
   float kkv     = arg2float_d(  2, argc, argv, 1.0f, 0.0f, 5.0f );
   std_out << "# run: " << mps_idx << NL;
-  int rc = run_moveparts( move_seq0, kkv );
+  auto seq = ( mps_idx != 0 ) ?
+    ( std::span<const MovePart> (mp_seq0) ) :
+    ( std::span<const MovePart> (mp_seq1, mp_seq1_sz) );
+  int rc = run_moveparts( seq, kkv );
   return rc;
 }
 
@@ -505,6 +567,20 @@ int cmd_pulse( int argc, const char * const * argv )
   out_coords_int( true );
   return 0;
 }
+
+int cmd_out_moves( int argc, const char * const * argv )
+{
+  int mps_idx   = arg2long_d(   1, argc, argv,    0,    0,    1 );
+  std_out << "# Moves " << mps_idx << NL;
+  auto seq = ( mps_idx != 0 ) ?
+    ( std::span<const MovePart> (mp_seq0) ) :
+    ( std::span<const MovePart> (mp_seq1, mp_seq1_sz) );
+  for( const auto &m: seq ) {
+    std_out << m << NL;
+  }
+  return 0;
+}
+
 
 int cmd_calibr( int argc, const char * const * argv )
 {
@@ -606,10 +682,14 @@ int cmd_mtest( int argc, const char * const * argv )
 
 int cmd_mcoord( int argc, const char * const * argv )
 {
-  const int n_meas = arg2long_d(  1, argc, argv, adc_n, 1, 10000 );
+  const int store  = arg2long_d(  1, argc, argv, 0,     1, 1 );
+  const int n_meas = arg2long_d(  2, argc, argv, adc_n, 1, 10000 );
   int rc  = measure_store_coords( n_meas );
   out_coords( true );
   out_coords_int( true );
+  if( store && rc ) {
+    mp_stored.from_coords( coords, 3 );
+  }
 
   return !rc;
 }
