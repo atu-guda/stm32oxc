@@ -96,13 +96,17 @@ struct MovePartCoord {
 OutStream& operator<<( OutStream &os, const MovePartCoord &rhs );
 
 struct MovePart {
-  static const unsigned n_max { 4 }; // <-> n_movers ??
+  static const constexpr unsigned n_max { 4 }; // <-> n_movers ??
+  static const constexpr float kv_min { 0.01f };
+  static const constexpr float kv_max { 2.00f };
+  static const constexpr float kv_def { 0.50f };
   MovePartCoord mpc[n_max];
   float k_v; // velocity coeff
-  void init() { for( auto &mp : mpc ) { mp.init(); }; k_v = 1.0f;}
+  void init() { for( auto &mp : mpc ) { mp.init(); }; k_v = kv_def; }
   void from_coords( std::span<const CoordInfo> coos, unsigned tp = 3 );
 };
 OutStream& operator<<( OutStream &os, const MovePart &rhs );
+
 
 extern const MovePart mp_seq0[];
 extern MovePart mp_stored;
@@ -111,6 +115,7 @@ inline const size_t mp_seq1_n { 20 };
 extern       MovePart mp_seq1[mp_seq1_n];
 extern size_t mp_seq1_sz;
 
+bool is_overflow_seq();
 int cmd2MovePart( int argc, const char * const * argv, int start_idx, MovePart &mp );
 
 // ------------------------------------- Movers ----------------------------------------------

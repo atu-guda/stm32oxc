@@ -32,6 +32,8 @@ int debug {0};
 int dry_run {0};
 int dis_movers {0};
 
+auto out_q_fmt = [](xfloat x) { return FltFmt(x, cvtff_fix,8,4); };
+
 PinsOut ledsx( LEDSX_GPIO, LEDSX_START, LEDSX_N );
 
 TIM_HandleTypeDef tim_lwm_h;
@@ -103,13 +105,13 @@ constexpr auto part_fun_n { std::size( part_fun_info) };
 
 OutStream& operator<<( OutStream &os, const MovePartCoord &rhs )
 {
-  os << "{ " << rhs.q_e << " , " << rhs.tp << " }";
+  os << "{ " << out_q_fmt(rhs.q_e) << " , " << rhs.tp << " }";
   return os;
 }
 
 OutStream& operator<<( OutStream &os, const MovePart &rhs )
 {
-  os << rhs.k_v << ' ';
+  os << out_q_fmt(rhs.k_v) << ' ';
   for( const auto& m : rhs.mpc ) {
     os << m << ' ';
   }
@@ -179,17 +181,21 @@ size_t mp_seq1_sz { 0 };
 const char* common_help_string = "hand0 " __DATE__ " " __TIME__ NL;
 
 // --- local commands;
-DCL_CMD_REG( test0,  'T', " [val] [ch] [k_v] - test move 1 ch" );
-DCL_CMD_REG( stop,   'P', " - stop pwm" );
-DCL_CMD_REG( mtest,  'M', " [set_zero] [aux] - test AS5600" );
-DCL_CMD_REG( mcoord, 'C', " [store] [n] - measure and store coords" );
-DCL_CMD_REG( go,     'G', " k_v q_0 q_1 q_2 q_3 tp_0 tp_1 tp_2 tp_3 - go " );
-DCL_CMD_REG( add_mp, 'A', " k_v q_0 q_1 q_2 q_3 tp_0 tp_1 tp_2 tp_3 - add MovePoint " );
-DCL_CMD_REG( clear_mp, '\0', " - delete all MovePoints " );
-DCL_CMD_REG( run,    'R', " [seq_num] - run sequence " );
-DCL_CMD_REG( pulse,  'U', " ch t_on dt off - test pulse " );
-DCL_CMD_REG( out_moves, 'O', " [seq_num]  - output moves sequence " );
-DCL_CMD_REG( calibr, '\0', " ch - calibrate channel " );
+DCL_CMD_REG( test0,       'T', " [val] [ch] [k_v] - test move 1 ch" );
+DCL_CMD_REG( stop,        'P', " - stop pwm" );
+DCL_CMD_REG( mtest,       'M', " [set_zero] [aux] - test AS5600" );
+DCL_CMD_REG( mcoord,      'C', " [store] [n] - measure and store coords" );
+DCL_CMD_REG( go,          'G', " k_v q_0 q_1 q_2 q_3 tp_0 tp_1 tp_2 tp_3 - go " );
+DCL_CMD_REG( add_mp,      'A', " k_v q_0 q_1 q_2 q_3 tp_0 tp_1 tp_2 tp_3 - add MovePoint " );
+DCL_CMD_REG( edit_mp,     'E', " n k_v q_0 q_1 q_2 q_3 tp_0 tp_1 tp_2 tp_3 - edit MovePoint " );
+DCL_CMD_REG( add_stored,  'S', " [kv] - add stored MovePoint " );
+DCL_CMD_REG( add_last,    'L', " [kv] - add last MovePoint " );
+DCL_CMD_REG( del_last,   '\0', " - delete last MovePoint " );
+DCL_CMD_REG( clear_mp,   '\0', " - delete all MovePoints " );
+DCL_CMD_REG( run,         'R', " [seq_num] - run sequence " );
+DCL_CMD_REG( pulse,       'U', " ch t_on dt off - test pulse " );
+DCL_CMD_REG( out_moves,   'O', " [seq_num]  - output moves sequence " );
+DCL_CMD_REG( calibr,     '\0', " ch(1-2) - calibrate channel sensor " );
 
 
 
@@ -361,7 +367,7 @@ int cmd_test0( int argc, const char * const * argv )
   auto &mo = *co.mo;
 
   const float q_e = arg2float_d( 1, argc, argv, co.q_cur, co.q_min, co.q_max );
-  const float k_v = arg2float_d( 3, argc, argv, 0.5f,    0.01f, 2.0f );
+  const float k_v = arg2float_d( 3, argc, argv, MovePart::kv_def, MovePart::kv_min, MovePart::kv_max );
 
   const uint32_t t_step = UVAR('t');
   const float   q_0  = co.q_cur;
@@ -455,8 +461,7 @@ int cmd_go( int argc, const char * const * argv )
 
 int cmd_add_mp( int argc, const char * const * argv )
 {
-  if( mp_seq1_sz >= mp_seq1_n ) {
-    std_out << "# Error: overflow  " << mp_seq1_sz << ' ' << mp_seq1_n << NL;
+  if( is_overflow_seq() ) {
     return 1;
   }
 
@@ -465,6 +470,17 @@ int cmd_add_mp( int argc, const char * const * argv )
 
   std_out << "# Added:  " << mp << NL;
   ++mp_seq1_sz;
+  return 0;
+}
+
+int cmd_edit_mp( int argc, const char * const * argv )
+{
+  const unsigned  n = arg2long_d(  1, argc, argv, 1, 0, mp_seq1_sz-1 );
+
+  MovePart &mp { mp_seq1[n] };
+  cmd2MovePart( argc, argv, 2, mp );
+
+  std_out << "# Edited:  " << mp << NL;
   return 0;
 }
 
@@ -478,15 +494,13 @@ int cmd2MovePart( int argc, const char * const * argv, int start_idx, MovePart &
 {
   mp.init();
 
-  mp.k_v = arg2float_d( start_idx, argc, argv, 0.5f, 0.01f, 2.0f );
+  mp.k_v = arg2float_d( start_idx, argc, argv, MovePart::kv_def, MovePart::kv_min, MovePart::kv_max );
 
   int i { start_idx + 1 };
   unsigned j { 0 };
   for( auto &m: mp.mpc ) {
-    m.q_e = arg2float_d( i, argc, argv, coords[j].q_cur, coords[j].q_min, coords[j].q_max );
-    ++i;
-    m.tp  = arg2long_d(  i, argc, argv, 0, 0, part_fun_n-1 );
-    ++i;
+    m.q_e = arg2float_d( i++, argc, argv, coords[j].q_cur, coords[j].q_min, coords[j].q_max );
+    m.tp  = arg2long_d(  i++, argc, argv, 0, 0, part_fun_n-1 );
     ++j;
   }
 
@@ -578,6 +592,58 @@ int cmd_out_moves( int argc, const char * const * argv )
   for( const auto &m: seq ) {
     std_out << m << NL;
   }
+  return 0;
+}
+
+int cmd_del_last( int argc, const char * const * argv )
+{
+  if( mp_seq1_sz > 0 ) {
+    --mp_seq1_sz;
+  }
+  return 0;
+}
+
+bool is_overflow_seq()
+{
+  if( mp_seq1_sz >= mp_seq1_n ) {
+    std_out << "# Error: overflow  " << mp_seq1_sz << ' ' << mp_seq1_n << NL;
+    return true;
+  }
+  return false;
+}
+
+
+int cmd_add_stored( int argc, const char * const * argv )
+{
+  if( is_overflow_seq() ) {
+    return 1;
+  }
+  float k_v = arg2float_d( 1, argc, argv, MovePart::kv_def, MovePart::kv_min, MovePart::kv_max );
+  float q3  = arg2float_d( 2, argc, argv, mp_stored.mpc[3].q_e, 0.0f, 90.0f );
+
+  MovePart &mp { mp_seq1[mp_seq1_sz] };
+  mp     = mp_stored;
+  mp.k_v = k_v;
+  mp.mpc[3].q_e = q3;
+
+  std_out << "# Added:  " << mp << NL;
+  ++mp_seq1_sz;
+  return 0;
+}
+
+int cmd_add_last( int argc, const char * const * argv )
+{
+  if( is_overflow_seq() ) {
+    return 1;
+  }
+  float k_v = arg2float_d( 1, argc, argv, MovePart::kv_def, MovePart::kv_min, MovePart::kv_max );
+
+  MovePart &mp { mp_seq1[mp_seq1_sz] };
+  mp     = mp_last;
+  mp.k_v = k_v;
+
+  std_out << "# Added:  " << mp << NL;
+  ++mp_seq1_sz;
   return 0;
 }
 
@@ -682,7 +748,7 @@ int cmd_mtest( int argc, const char * const * argv )
 
 int cmd_mcoord( int argc, const char * const * argv )
 {
-  const int store  = arg2long_d(  1, argc, argv, 0,     1, 1 );
+  const int store  = arg2long_d(  1, argc, argv, 1,     0, 1 );
   const int n_meas = arg2long_d(  2, argc, argv, adc_n, 1, 10000 );
   int rc  = measure_store_coords( n_meas );
   out_coords( true );
