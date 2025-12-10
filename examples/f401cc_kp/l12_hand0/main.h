@@ -273,7 +273,7 @@ extern SensorAdc sens_adc;
 extern SensorFakeMover sens_grip;
 
 int process_movepart( const MovePart &mp, float kkv = 1.0f  );
-int run_moveparts( std::span<const MovePart> mps, float kkv = 1.0f );
+int run_moveparts( std::span<const MovePart> mps, float kkv = 1.0f, int i_start = 0, int i_end = 10000 );
 int measure_store_coords( int nm );
 void out_coords( bool nl );
 void out_coords_int( bool nl );

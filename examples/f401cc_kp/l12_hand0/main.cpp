@@ -33,6 +33,7 @@ USBCDC_CONSOLE_DEFINES;
 int debug {0};
 int dry_run {0};
 int dis_movers {0};
+int def_tp {3};
 
 auto out_q_fmt = [](xfloat x) { return FltFmt(x, cvtff_fix,8,4); };
 
@@ -214,6 +215,7 @@ DCL_CMD_REG( calibr,     '\0', " ch(1-2) - calibrate channel sensor " );
 ADD_IOBJ   ( debug   );
 ADD_IOBJ   ( dry_run   );
 ADD_IOBJ   ( dis_movers   );
+ADD_IOBJ   ( def_tp   );
 ADD_IOBJ   ( adc_n   );
 
 #undef ADD_IOBJ
@@ -224,6 +226,7 @@ constexpr const NamedObj *const objs_info[] = {
   & ob_debug,
   & ob_dry_run,
   & ob_dis_movers,
+  & ob_def_tp,
   & ob_adc_n,
   nullptr
 };
@@ -318,7 +321,7 @@ int bad_coord_idx() // -1 = Ok
 {
   for( const auto [ i, co ] : views::enumerate(coords) ) {
     const auto c0 = co.q_cur;
-    if( c0 < co.q_min-5 || c0 > co.q_max+5 ) {
+    if( c0 < co.q_min-10 || c0 > co.q_max+10 ) { // TODO: param?
       return (int)i;
     }
   }
@@ -426,7 +429,7 @@ int cmd2MovePart( int argc, const char * const * argv, int start_idx, MovePart &
 
   for( auto [i,m]: views::enumerate(mp.mpc) ) {
     m.q_e = arg2float_d( i+start_idx+1,          argc, argv, coords[i].q_cur, coords[i].q_min, coords[i].q_max );
-    m.tp  = arg2long_d(  i+start_idx+1+coords_n, argc, argv, 0, 0, part_fun_n-1 );
+    m.tp  = arg2long_d(  i+start_idx+1+coords_n, argc, argv, def_tp, 0, part_fun_n-1 );
   }
 
   return 0;
@@ -436,11 +439,14 @@ int cmd_run( int argc, const char * const * argv )
 {
   int mps_idx   = arg2long_d(   1, argc, argv,    0,    0,    1 );
   float kkv     = arg2float_d(  2, argc, argv, 1.0f, 0.0f, 5.0f );
+  int i_start   = arg2long_d(   3, argc, argv,    0,    0, 10000 );
+  int i_end     = arg2long_d(   4, argc, argv, 10000,   0, 10000 );
   std_out << "# run: " << mps_idx << NL;
   auto seq = ( mps_idx != 0 ) ?
     ( std::span<const MovePart> (mp_seq0) ) :
     ( std::span<const MovePart> (mp_seq1, mp_seq1_sz) );
-  int rc = run_moveparts( seq, kkv );
+  tim_lwm_start();
+  int rc = run_moveparts( seq, kkv, i_start, i_end );
   return rc;
 }
 
@@ -514,8 +520,8 @@ int cmd_out_moves( int argc, const char * const * argv )
   auto seq = ( mps_idx != 0 ) ?
     ( std::span<const MovePart> (mp_seq0) ) :
     ( std::span<const MovePart> (mp_seq1, mp_seq1_sz) );
-  for( const auto &m: seq ) {
-    std_out << m << NL;
+  for( const auto[ i,m ]: views::enumerate(seq) ) {
+    std_out << i << ' ' << m << NL;
   }
   return 0;
 }
@@ -814,13 +820,16 @@ int process_movepart( const MovePart &mp, float kkv  )
   return break_flag;
 }
 
-int run_moveparts( std::span<const MovePart> mps, float kkv )
+int run_moveparts( std::span<const MovePart> mps, float kkv, int i_start, int i_end )
 {
   uint32_t tm0 = HAL_GetTick();
   for( const auto [pn, mp] : views::enumerate(mps) ) {
     // _ShowType< decltype(mp) > xType; // -> <const MovePart&>
     uint32_t tc = HAL_GetTick();
     std_out << "## part " << pn << " start, t= " << (tc - tm0) << NL;
+    if( pn < i_start || pn > i_end ) {
+      continue;
+    }
     auto rc = process_movepart( mp, kkv );
     tc = HAL_GetTick();
     std_out << "## part " << pn << " end, t= " << (tc - tm0) << NL;
