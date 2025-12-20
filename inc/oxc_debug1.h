@@ -50,6 +50,8 @@ void log_add_hex( uint32_t v );
 void log_add_bin( const char *s, uint16_t len );
 void log_reset(void);
 void log_print(void);
+void print_all_vars();
+bool print_given_var( const char *nm, int fmt = 0 );
 
 struct Name2Addr {
   const char *const name;
@@ -62,7 +64,7 @@ char* str2addr( const char *str );
 void dump8(  const void *addr, unsigned n, bool isAbs = false );
 void dump32( const void *addr, unsigned n, bool isAbs = false ); // n in bytes too
 
-void print_user_var( int idx );
+bool print_user_var( int idx );
 
 extern bool (*print_var_hook)( const char *nm, int fmt );
 extern bool (*set_var_hook)( const char *nm, const char *s );
@@ -76,33 +78,6 @@ void test_output_rate( int n, int sl, int do_flush );
 
 extern const char* common_help_string __weak;
 
-#ifdef __cplusplus
- extern "C" {
-#endif
-
-// common commands:
-int cmd_info( int argc, const char * const * argv );
-int cmd_echo( int argc, const char * const * argv );
-int cmd_help( int argc, const char * const * argv );
-int cmd_dump( int argc, const char * const * argv );
-int cmd_hd32( int argc, const char * const * argv );
-int cmd_fill( int argc, const char * const * argv );
-int cmd_print( int argc, const char * const * argv );
-int cmd_set( int argc, const char * const * argv );
-[[ noreturn ]] int cmd_die( int argc, const char * const * argv );
-int cmd_reboot( int argc, const char * const * argv );
-int cmd_log_print( int argc, const char * const * argv );
-int cmd_log_reset( int argc, const char * const * argv );
-int cmd_pin_info( int argc, const char * const * argv );
-int cmd_leds_step( int argc, const char * const * argv );
-// noauto usage
-int cmd_test_delays( int argc, const char * const * argv );
-int cmd_test_rate( int argc, const char * const * argv );
-
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif
 

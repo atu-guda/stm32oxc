@@ -21,6 +21,8 @@ BOARD_DEFINE_LEDS;
 
 USBCDC_CONSOLE_DEFINES;
 
+int cmd_print( int argc, const char * const * argv );
+
 int debug {0};
 const unsigned buf_sz_lcdt { 22 }; // now 16 (16x2), may be 20 (20x4) + 2
 char state_ch { '?' };
@@ -1221,7 +1223,7 @@ int cmd_calc( int argc, const char * const * argv )
     return 1;
   }
 
-  cmd_print( 1, nullptr );
+  print_all_vars();
 
   if( td.w_len > td.w_len_m ) {
     std_out << "# WARNING: w_len > w_len_m" << NL;

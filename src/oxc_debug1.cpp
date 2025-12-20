@@ -213,13 +213,13 @@ void log_print()
   }
 }
 
-void print_user_var( int idx )
+bool print_user_var( int idx )
 {
   if( idx < 0  ||  idx >= (int)N_USER_VARS ) {
-    std_out << NL "err: bad var index: " << idx;
-    return;
+    return false;
   }
   std_out << "#> " << (char)( 'a' + idx ) << " = "  << HexInt( user_vars[idx], true ) << " = "  << ( user_vars[idx] ) << NL;
+  return true;
 }
 
 void test_delays_misc( int n, uint32_t t_step, int tp )
@@ -471,7 +471,7 @@ int cmd_info( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
     IRQn_Type IRQn;
     const char* const nm;
   };
-  const OutIrqName irqs[] = {
+  static const OutIrqName irqs[] = {
     { EXTI0_IRQn,   "EXTI0  " },
     { SysTick_IRQn, "SysTick" },
     #if defined( BOARD_UART_DEFAULT_IRQ )
@@ -636,12 +636,7 @@ DCL_CMD_REG( print, 'p', "name - print user var a-z"  );
 int cmd_print( int argc, const char * const * argv )
 {
   if( argc < 2 ) { // all
-    for( unsigned i=0; i<N_USER_VARS; ++i ) {
-      print_user_var( i );
-    }
-    if( print_var_hook != nullptr ) {
-      print_var_hook( "", 0 );
-    }
+    print_all_vars();
     return 0;
   }
 
@@ -649,21 +644,38 @@ int cmd_print( int argc, const char * const * argv )
   if( argc > 2 ) {
     fmt = strtol( argv[2], 0, 0 );
   }
+  return print_given_var( argv[1], fmt ) ? 0 : 2;
 
-  if( argv[1][1] != '\0' &&  print_var_hook != nullptr ) {
-    return print_var_hook( argv[1], fmt ) ? 0: 2;
+}
+
+void print_all_vars()
+{
+  for( unsigned i=0; i<N_USER_VARS; ++i ) {
+    print_user_var( i );
+  }
+  if( print_var_hook != nullptr ) {
+    print_var_hook( "", 0 );
+  }
+}
+
+bool print_given_var( const char *nm, int fmt )
+{
+  if( !nm || !nm[0] ) {
+    return false;
   }
 
+  if( print_var_hook != nullptr ) {
+    if( print_var_hook( nm, fmt ) ) {
+      return true;
+    }
+  }
 
-  // build-in int vars with one-char name
-  char c = argv[1][0];
-  if( argv[1][1] != '\0' || c < 'a' || c > 'z' ) {
-    std_out << "# Error: problem with name \"" << argv[1] << '"' << NL;
-    return 2;
+  const char c = nm[0];
+  if( nm[1] != '\0' || c < 'a' || c > 'z' ) {
+    return false;
   }
   int idx = c - 'a';
-  print_user_var( idx );
-  return 0;
+  return print_user_var( idx );
 }
 
 
@@ -696,7 +708,7 @@ int cmd_set( int argc, const char * const * argv )
 
 
 DCL_CMD_REG( die, 0,  " [val] - die with value"  );
-[[ noreturn ]] int cmd_die( int argc, const char * const * argv )
+int cmd_die( int argc, const char * const * argv )
 {
   int v = arg2long_d( 1, argc, argv, 0, 0, 0xFF );
   die4led( v );
