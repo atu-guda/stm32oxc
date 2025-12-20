@@ -645,7 +645,6 @@ int cmd_print( int argc, const char * const * argv )
     fmt = strtol( argv[2], 0, 0 );
   }
   return print_given_var( argv[1], fmt ) ? 0 : 2;
-
 }
 
 void print_all_vars()
