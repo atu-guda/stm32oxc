@@ -19,7 +19,7 @@
 
 #include "main.h"
 
-// using namespace std;
+
 namespace ranges = std::ranges;
 namespace views = std::views;
 using std::size_t;
@@ -155,10 +155,10 @@ std::array<Mover*,movers_n> movers { &mover_base, &mover_p1, &mover_p2, &mover_g
 
 CoordInfo coords[coords_n] {
 //   q_min   q_max  vt_max   sens   sens_ch     mo         q_cur
-  { -90.0f,  90.0f,  40.0f,  &sens_enc,  0,  &mover_base,   0.0f }, // rotate
+  { -90.0f,  90.0f,  80.0f,  &sens_enc,  0,  &mover_base,   0.0f }, // rotate
   {  45.0f,  95.0f,  90.0f,  &sens_adc,  0,  &mover_p1,    80.0f }, // arm1
   {-135.0f, -90.0f,  90.0f,  &sens_adc,  1,  &mover_p2,   -70.0f }, // arm2
-  {   0.0f,  90.0f, 120.0f, &sens_grip,  0,  &mover_grip, -80.0f }, // grip
+  {   0.0f,  90.0f, 120.0f, &sens_grip,  0,  &mover_grip,  30.0f }, // grip
 };
 
 // ------------------------   default sequence
@@ -193,7 +193,7 @@ DCL_CMD_REG( add_mp,      'A', " k_v q_0 q_1 q_2 q_3 tp_0 tp_1 tp_2 tp_3 - add M
 DCL_CMD_REG( edit_mp,     'E', " n k_v q_0 q_1 q_2 q_3 tp_0 tp_1 tp_2 tp_3 - edit MovePoint " );
 DCL_CMD_REG( add_stored,  'S', " [kv] - add stored MovePoint " );
 DCL_CMD_REG( add_last,    'L', " [kv] - add last MovePoint " );
-DCL_CMD_REG( del_mp,      '\0', " [n] - delete def=last MovePoint " );
+DCL_CMD_REG( del_mp,     '\0', " [n] - delete def=last MovePoint " );
 DCL_CMD_REG( clear_mp,   '\0', " - delete all MovePoints " );
 DCL_CMD_REG( run,         'R', " [seq_num] - run sequence " );
 DCL_CMD_REG( pulse,       'U', " ch t_on dt off - test pulse " );
@@ -764,8 +764,8 @@ int process_movepart( const MovePart &mp, float kkv  )
     }
   }
 
-  std_out << "#  1      2      3       4        5         6    7        8           9          10            11" NL;
-  std_out << "#  i   tick     q_g0     q_g1     q_g2     q_g3 t_on      q_m0        q_m1        q_m2         q_m3" NL;
+  std_out << "#  1      2      3       4        5         6    7        8           9          10          11" NL;
+  std_out << "#  i   tick     q_g0     q_g1     q_g2     q_g3 t_on    q_m0        q_m1        q_m2         q_m3" NL;
 
   uint32_t tm0 = HAL_GetTick();
   uint32_t tc0 = tm0, tc00 = tm0;
@@ -1172,6 +1172,7 @@ int MoverServoCont::move_do( float q, uint32_t t_cur )
 
   if( fabsf( dq ) < 1.0f ) { // dead zone, TODO: param
     setCtrlVal( t_on_cen );
+    dbg_val0 = t_on_cen;
     return 1;
   }
   int32_t t_on = t_on_cen + (int) ( dq * t_on_dlt * k_a * UVAR('k') / 1000 ); // TODO: param
@@ -1184,12 +1185,14 @@ int MoverServoCont::move_do( float q, uint32_t t_cur )
 int MoverServoCont::pre_run( float q_e, unsigned tp, uint32_t nn )
 {
   setCtrlVal( t_on_cen );
+  dbg_val0 = t_on_cen;
   return MoverServoBase::pre_run( q_e, tp, nn );
 }
 
 int MoverServoCont::post_run()
 {
   setCtrlVal( t_on_cen );
+  dbg_val0 = t_on_cen;
   return MoverServoBase::post_run();
 }
 
