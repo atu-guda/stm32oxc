@@ -264,15 +264,15 @@ int main(void)
 {
   STD_PROLOG_USBCDC;
 
-  UVAR('t') =    50;
-  UVAR('n') =    20;
-  UVAR('k') =  1000; // axis 0 rotate test coeff * 1000
+  UVAR_t =    50;
+  UVAR_n =    20;
+  UVAR_k =  1000; // axis 0 rotate test coeff * 1000
 
   ledsx.initHW();
   ledsx.reset( 0xFF );
   pin_stop.initHW();
 
-  UVAR('v') = i2c_default_init( i2ch /*, 400000 */ );
+  UVAR_v = i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
   i2c_client_def = &ang_sens;
 
@@ -484,7 +484,7 @@ int cmd_pulse( int argc, const char * const * argv )
 
   ledsx[2].set();
 
-  const uint32_t t_step { uint32_t(UVAR('t')) };
+  const uint32_t t_step { uint32_t(UVAR_t) };
   uint32_t tm0 = HAL_GetTick();
   uint32_t tc0 = tm0, tc00 = tm0;
 
@@ -735,7 +735,7 @@ int measure_store_coords( int nm )
 
 int process_movepart( const MovePart &mp, float kkv  )
 {
-  const uint32_t t_step = UVAR('t');
+  const uint32_t t_step = UVAR_t;
   float qs_0[coords_n];
   float qs_dlt[coords_n];
 
@@ -849,8 +849,8 @@ int tim_lwm_cfg()
 {
   const uint32_t psc { calc_TIM_psc_for_cnt_freq( TIM_LWM, tim_lwm_psc_freq ) };
   const auto tim_lwm_arr = calc_TIM_arr_for_base_psc( TIM_LWM, psc, tim_lwm_freq );
-  UVAR('a') = psc;
-  UVAR('b') = tim_lwm_arr;
+  UVAR_a = psc;
+  UVAR_b = tim_lwm_arr;
 
   auto &t_h { tim_lwm_h };
   t_h.Instance               = TIM_LWM;
@@ -860,7 +860,7 @@ int tim_lwm_cfg()
   t_h.Init.CounterMode       = TIM_COUNTERMODE_UP;
   t_h.Init.RepetitionCounter = 0;
   if( HAL_TIM_PWM_Init( &t_h ) != HAL_OK ) {
-    UVAR('e') = 1; // like error
+    UVAR_e = 1; // like error
     return 0;
   }
 
@@ -872,7 +872,7 @@ int tim_lwm_cfg()
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
   sMasterConfig.MasterSlaveMode     = TIM_MASTERSLAVEMODE_DISABLE;
   if( HAL_TIMEx_MasterConfigSynchronization( &t_h, &sMasterConfig ) != HAL_OK ) {
-    UVAR('e') = 2;
+    UVAR_e = 2;
     return 0;
   }
 
@@ -888,7 +888,7 @@ int tim_lwm_cfg()
   for( auto ch : { TIM_CHANNEL_1, TIM_CHANNEL_2,TIM_CHANNEL_3, TIM_CHANNEL_4 } ) {
     HAL_TIM_PWM_Stop( &t_h, ch );
     if( HAL_TIM_PWM_ConfigChannel( &t_h, &tim_oc_cfg, ch ) != HAL_OK ) {
-      UVAR('e') = 3000 + ch;
+      UVAR_e = 3000 + ch;
       return 0;
     }
   }
@@ -955,7 +955,7 @@ void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
 
 void HAL_GPIO_EXTI_Callback( uint16_t pin_bit )
 {
-  ++UVAR('g');
+  ++UVAR_g;
   ledsx.set( 0 );
   ledsx.toggle( 1 );
   bool need_stop { false };
@@ -967,7 +967,7 @@ void HAL_GPIO_EXTI_Callback( uint16_t pin_bit )
       break;
 
     default:
-      ++UVAR('j');
+      ++UVAR_j;
       break;
   }
 
@@ -1061,7 +1061,7 @@ void HAL_ADC_MspInit( ADC_HandleTypeDef* adcHandle )
   }
 
   __HAL_LINKDMA( adcHandle, DMA_Handle, hdma_adc1 );
-  UVAR('j') |= 2;
+  UVAR_j |= 2;
 
 }
 
@@ -1167,7 +1167,7 @@ int MoverServoCont::move_do( float q, uint32_t t_cur )
     dbg_val0 = t_on_cen;
     return 1;
   }
-  int32_t t_on = t_on_cen + (int) ( dq * t_on_dlt * k_a * UVAR('k') / 1000 ); // TODO: param
+  int32_t t_on = t_on_cen + (int) ( dq * t_on_dlt * k_a * UVAR_k / 1000 ); // TODO: param
   t_on = std::clamp( t_on, (int32_t)t_on_min, (int32_t)t_on_max );
   dbg_val0 = t_on;
   setCtrlVal( t_on );
