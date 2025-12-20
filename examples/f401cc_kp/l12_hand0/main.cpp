@@ -38,6 +38,8 @@ int def_tp {3};
 auto out_q_fmt = [](xfloat x) { return FltFmt(x, cvtff_fix,8,4); };
 
 PinsOut ledsx( LEDSX_GPIO, LEDSX_START, LEDSX_N );
+PinsIn  pin_stop( BTN_STOP_GPIO, BTN_STOP_PIN, 1, GpioRegs::Pull::up );
+
 
 TIM_HandleTypeDef tim_lwm_h;
 
@@ -268,6 +270,7 @@ int main(void)
 
   ledsx.initHW();
   ledsx.reset( 0xFF );
+  pin_stop.initHW();
 
   UVAR('v') = i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
@@ -312,9 +315,9 @@ int main(void)
 
 void init_EXTI()
 {
-  //   ei.gpio.setEXTI( ei.pin, ei.dir );
-  //   HAL_NVIC_SetPriority( ei.exti_n, EXTI_IRQ_PRTY, 0 );
-  //   HAL_NVIC_EnableIRQ(   ei.exti_n );
+  BTN_STOP_GPIO.setEXTI( BTN_STOP_PIN, BTN_STOP_EXTI_DIR );
+  HAL_NVIC_SetPriority( BTN_STOP_IRQ_N, BTN_STOP_IRQ_PRTY, 0 );
+  HAL_NVIC_EnableIRQ(   BTN_STOP_IRQ_N );
 }
 
 int bad_coord_idx() // -1 = Ok
@@ -946,18 +949,6 @@ void HAL_TIM_PWM_MspDeInit( TIM_HandleTypeDef* htim )
 
 void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
 {
-  // read_sensors();
-  // uint32_t pa = porta_sensors_bits & sensor_flags;
-  //
-  // if( htim->Instance == TIM_LWM ) {
-  //   ++UVAR('y');
-  //   // ledsx.toggle( 2 );
-  //   ++tim_lwm_pulses;
-  //   if( tim_lwm_need > 0 && tim_lwm_pulses >= tim_lwm_need ) {
-  //     tim_lwm_stop();
-  //   }
-  //   return;
-  // }
 
 }
 
@@ -965,29 +956,30 @@ void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
 void HAL_GPIO_EXTI_Callback( uint16_t pin_bit )
 {
   ++UVAR('g');
-  // bool need_stop { false };
+  ledsx.set( 0 );
+  ledsx.toggle( 1 );
+  bool need_stop { false };
 
-  // switch( pin_bit ) {
-  //   // case USER_STOP_BIT:
-  //   //   need_stop = true;
-  //   //   break_flag = (int)(BreakNum::cbreak);
-  //   //   break;
-  //
-  //   default:
-  //     ledsx.toggle( 1 );
-  //     ++UVAR('j');
-  //     break;
-  // }
+  switch( pin_bit ) {
+    case BTN_STOP_PIN:
+      need_stop = true;
+      break_flag = 7;
+      break;
 
-  // if( need_stop ) {
-  //   tims_stop( TIM_BIT_ALL );
-  // }
+    default:
+      ++UVAR('j');
+      break;
+  }
+
+  if( need_stop ) {
+    tim_lwm_stop();
+  }
 }
 
 
 void EXTI2_IRQHandler()
 {
-  // HAL_GPIO_EXTI_IRQHandler( TOWER_BIT_UP );
+  HAL_GPIO_EXTI_IRQHandler( BTN_STOP_PIN );
 }
 
 // ------------------------------------ ADC ------------------------------------------------

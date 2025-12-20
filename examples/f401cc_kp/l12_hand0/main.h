@@ -10,12 +10,17 @@ int bad_coord_idx(); // < 0 = ok
 bool is_good_coords( bool do_stop = true, bool do_print = false, bool do_measure = false );
 
 
-void init_EXTI();
-
 
 inline auto& LEDSX_GPIO { GpioB };
 inline constexpr uint32_t LEDSX_START { 12 };
 inline constexpr uint32_t LEDSX_N { 4 };
+
+inline auto& BTN_STOP_GPIO                  { GpioB };
+inline constexpr uint32_t BTN_STOP_PIN      { 12 };
+inline constexpr uint16_t BTN_STOP_IRQ_PRTY {  3 };
+inline constexpr auto     BTN_STOP_IRQ_N    { EXTI2_IRQn };
+inline constexpr auto     BTN_STOP_EXTI_DIR { GpioRegs::ExtiEv::updown };
+void init_EXTI();
 
 inline auto& LWM_GPIO { GpioA };
 inline constexpr uint32_t LWM_PIN0 { 0 };
