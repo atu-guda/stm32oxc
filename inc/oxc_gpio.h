@@ -6,6 +6,37 @@
 #include <oxc_base.h>
 #include <oxc_bitops.h>
 
+inline constexpr  GPIO_TypeDef* GPIOs[] {
+  GPIOA, GPIOB, GPIOC, GPIOD,
+  #ifdef GPIOE
+         GPIOE,
+  #endif
+  #ifdef GPIOF
+         GPIOF,
+  #endif
+  #ifdef GPIOG
+         GPIOG,
+  #endif
+  #ifdef GPIOH
+         GPIOH,
+  #endif
+  #ifdef GPIOI
+         GPIOI,
+  #endif
+  #ifdef GPIOJ
+         GPIOJ,
+  #endif
+  #ifdef GPIOK
+         GPIOK,
+  #endif
+  #ifdef GPIOL
+         GPIOL,
+  #endif
+  #ifdef GPIOM
+         GPIOM,
+  #endif
+};
+inline constexpr std::size_t GPIOs_n { std::size( GPIOs ) };
 
 class GpioRegs {
   public:

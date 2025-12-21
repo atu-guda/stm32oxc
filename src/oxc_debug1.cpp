@@ -1,3 +1,4 @@
+#include <cctype>
 #include <cstdlib>
 #include <cstring>
 #include <cerrno>
@@ -218,7 +219,9 @@ bool print_user_var( int idx )
   if( idx < 0  ||  idx >= (int)N_USER_VARS ) {
     return false;
   }
-  std_out << "#> " << (char)( 'a' + idx ) << " = "  << HexInt( user_vars[idx], true ) << " = "  << ( user_vars[idx] ) << NL;
+  std_out << "#> " << (char)( 'a' + idx )
+    << " = "  << HexInt( user_vars[idx], true )
+    << " = "  << ( user_vars[idx] ) << NL;
   return true;
 }
 
@@ -262,7 +265,7 @@ void test_delays_misc( int n, uint32_t t_step, int tp )
     tmc_prev = tcc;
 
     switch( tp ) {
-      case 0:  delay_ms( t_step );                break;
+      case 0:  delay_ms( t_step );                 break;
       case 1:  delay_ms_brk( t_step );             break;
       case 2:  delay_ms_until_brk( &tc0, t_step ); break;
       case 3:  HAL_Delay( t_step );                break;
@@ -352,9 +355,9 @@ void gpio_pin_info( GPIO_TypeDef *gi, uint16_t pin, char *s )
 
 #elif defined (STM32F2) || defined (STM32F3) || defined (STM32F4) || defined (STM32F7)  || defined (STM32H5) || defined (STM32H7) || defined (STM32G4)
 
-static const char *pin_moder_name[] = { "Inp", "Out", "AFn", "Ana", "?m?" };
-static const char *pin_speed_name[] = { "Low", "Lo1", "Med", "Hig", "?s?" };
-static const char *pin_pupdr_name[] = { "No", "Up", "Dn", "Xx", "?p" };
+static const char *const pin_moder_name[] = { "Inp", "Out", "AFn", "Ana", "?m?" };
+static const char *const pin_speed_name[] = { "Low", "Lo1", "Med", "Hig", "?s?" };
+static const char *const pin_pupdr_name[] = { "No", "Up", "Dn", "Xx", "?p" };
 
 void gpio_pin_info( GPIO_TypeDef *gi, uint16_t pin, char *s )
 {
@@ -405,14 +408,10 @@ void gpio_pin_info( GPIO_TypeDef *gi, uint16_t pin, char *s )
 //----------------------------------------------------------------------
 // common commands
 //
-DCL_CMD_REG(  info,  0, " - Output general info" );
+DCL_CMD_REG(  info,  0, "- Output general info" );
 int cmd_info( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
 {
   std_out << NL "# **** " PROJ_NAME " **** " NL;
-
-  std_out << "# HalVersion= " << HexInt( HAL_GetHalVersion() )
-          << " REVID= "       << HexInt( HAL_GetREVID() )
-          << " DEVID= "       << HexInt( HAL_GetDEVID() ) << NL;
 
   std_out << "# SYSCLK: " << HAL_RCC_GetSysClockFreq()
      << " HCLK: "  << HAL_RCC_GetHCLKFreq()
@@ -481,7 +480,7 @@ int cmd_info( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
   return 0;
 }
 
-DCL_CMD_REG( echo,  0, " [args] - output args" );
+DCL_CMD_REG( echo,  0, "[args] - output args" );
 int cmd_echo( int argc, const char * const * argv )
 {
   std_out << NL;
@@ -503,7 +502,7 @@ int cmd_echo( int argc, const char * const * argv )
 
 const char* common_help_string = "Default help " NL;
 
-DCL_CMD_REG( help,  'h', " - List of commands and arguments" );
+DCL_CMD_REG( help,  'h', "- List of commands and arguments" );
 int cmd_help( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
 {
   std_out << common_help_string;
@@ -526,7 +525,7 @@ int cmd_help( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
   return 0;
 }
 
-DCL_CMD_REG( dump,  0, " {a|b|addr) [n] [abs:0:1]- HexDumps given area"  );
+DCL_CMD_REG( dump,  0, "{a|b|addr} [n] [abs:0:1]- HexDumps given area"  );
 int cmd_dump( int argc, const char * const * argv )
 {
   if( argc < 2 ) {
@@ -535,7 +534,6 @@ int cmd_dump( int argc, const char * const * argv )
 
   const char* addr = str2addr( argv[1] );
   if( addr == BAD_ADDR ) {
-    std_out << "** error: dump: bad address \""  <<  argv[1] << "\"" NL;
     return 2;
   }
 
@@ -548,7 +546,7 @@ int cmd_dump( int argc, const char * const * argv )
   return 0;
 }
 
-DCL_CMD_REG( hd32,  0, " {a|b|addr) [n] [abs:0:1]- HexDumps given area as 32bit"  );
+DCL_CMD_REG( hd32,  0, "{a|b|addr} [n] [abs:0:1]- HexDumps given area as 32bit"  );
 int cmd_hd32( int argc, const char * const * argv )
 {
   if( argc < 2 ) {
@@ -557,7 +555,6 @@ int cmd_hd32( int argc, const char * const * argv )
 
   const char* addr = str2addr( argv[1] );
   if( addr == BAD_ADDR ) {
-    std_out << "** error: dump: bad address \""  <<  argv[1] << "\"" NL;
     return 2;
   }
 
@@ -571,7 +568,7 @@ int cmd_hd32( int argc, const char * const * argv )
 }
 
 
-DCL_CMD_REG( fill,  0, " {a|b|addr) val [n] [stp] - Fills memory by value"  );
+DCL_CMD_REG( fill,  0, "{a|b|addr} val [n] [stp] - Fills memory by value"  );
 int cmd_fill( int argc, const char * const * argv )
 {
   if( argc < 2 ) {
@@ -580,7 +577,6 @@ int cmd_fill( int argc, const char * const * argv )
 
   char* addr = str2addr( argv[1] );
   if( addr == BAD_ADDR ) {
-    std_out << "** error: fill: bad address \"" << argv[1] << "\"" NL;
     return 2;
   }
 
@@ -681,68 +677,51 @@ int cmd_set( int argc, const char * const * argv )
 }
 
 
-DCL_CMD_REG( die, 0,  " [val] - die with value"  );
+DCL_CMD_REG( die, 0,  "[val] - die with value"  );
 int cmd_die( int argc, const char * const * argv )
 {
   int v = arg2long_d( 1, argc, argv, 0, 0, 0xFF );
   die4led( v );
 }
 
-DCL_CMD_REG( reboot, 0, " reboot system"  );
+DCL_CMD_REG( reboot, 0, "- reboot system"  );
 int cmd_reboot( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG)
 {
   NVIC_SystemReset();
   return 0; // never ;-)
 }
 
-DCL_CMD_REG( log_print, 0, "  - print log buffer"  );
+DCL_CMD_REG( log_print, 0, "- print log buffer"  );
 int cmd_log_print( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
 {
   log_print();
   return 0;
 }
 
-DCL_CMD_REG( log_reset, 0, "  - reset log buffer"  );
+DCL_CMD_REG( log_reset, 0, "- reset log buffer"  );
 int cmd_log_reset( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
 {
   log_reset();
   return 0;
 }
 
-DCL_CMD_REG( pinfo,  0, " [A-I] [0-15] - info about pin" );
+DCL_CMD_REG( pinfo,  0, "[A-?] [0-15] [n] - info about pin" );
 int cmd_pinfo( int argc, const char * const * argv )
 {
-  char s[32];
   uint16_t pin = arg2long_d( 2, argc, argv, 0, 0, 15 );
   uint16_t n   = arg2long_d( 3, argc, argv, 1, 1, 16 );
-  char pstr[2] = "A";
-  GPIO_TypeDef *gi = GPIOA;
-  if( argc > 1 ) {
-    switch( argv[1][0] ) {
-      case 'B': case 'b':  gi = GPIOB; pstr[0] = 'B'; break;
-      case 'C': case 'c':  gi = GPIOC; pstr[0] = 'C'; break;
-      case 'D': case 'd':  gi = GPIOD; pstr[0] = 'D'; break;
-      #ifdef GPIOE
-      case 'E': case 'e':  gi = GPIOE; pstr[0] = 'E'; break;
-      #endif
-      #ifdef GPIOF
-      case 'F': case 'f':  gi = GPIOF; pstr[0] = 'F'; break;
-      #endif
-      #ifdef GPIOG
-      case 'G': case 'g':  gi = GPIOG; pstr[0] = 'G'; break;
-      #endif
-      #ifdef GPIOI
-      case 'I': case 'i':  gi = GPIOI; pstr[0] = 'I'; break;
-      #endif
-      #ifdef GPIOH
-      case 'H': case 'h':  gi = GPIOH; pstr[0] = 'H'; break;
-      #endif
-    }
-  }
+  const char port_char = ( argc > 1 ) ? std::toupper( argv[1][0] ) : 'A';
+  const size_t port_idx = size_t( port_char - 'A' );
+  std_out << NL "Port " << port_char << " addr: ";
 
-  std_out << NL "Port " << pstr << " addr: " << HexInt( (void*)gi ) << NL;
+  if( port_idx >= GPIOs_n ) {
+    return 1;
+  }
+  GPIO_TypeDef *gi { GPIOs[port_idx] };
+  std_out << HexInt( (void*)gi ) << NL;
 
   for( uint16_t p = pin, i=0; p<16 && i<n; ++p, ++i ) {
+    char s[32];
     gpio_pin_info( gi, p, s );
     std_out << " pin: " <<  p << ": " << s << NL;
   }
@@ -752,7 +731,7 @@ int cmd_pinfo( int argc, const char * const * argv )
   return 0;
 }
 
-DCL_CMD_REG( leds_step, 0, " [N] - set leds step in 10 ms "  );
+DCL_CMD_REG( leds_step, 0, "[N] - set leds step in 10 ms "  );
 int cmd_leds_step( int argc, const char * const * argv )
 {
   uint32_t nstep = arg2long_d( 1, argc, argv, 50, 1, 100000 ); // number output series
