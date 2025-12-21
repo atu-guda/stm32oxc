@@ -1,5 +1,8 @@
 #include <oxc_i2c.h>
 
+DevI2C *i2c_dbg { nullptr };
+I2CClient *i2c_client_def { nullptr };
+
 void DevI2C::initI2C( uint32_t speed, uint8_t own_addr )
 {
   resetDev();

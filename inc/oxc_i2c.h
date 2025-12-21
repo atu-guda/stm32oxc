@@ -97,4 +97,8 @@ class I2CClient {
    uint8_t addr;
 };
 
+// for simple debug on/off - cost of 2 pointers
+extern DevI2C *i2c_dbg;
+extern I2CClient *i2c_client_def;
+
 #endif

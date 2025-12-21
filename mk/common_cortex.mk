@@ -336,7 +336,7 @@ ifeq "$(USE_OXC_I2C)" "y"
   ifneq "$(NOUSE_DEFAULT_I2C_INIT)" "y"
     SRCS  += oxc_i2c_default_init.cpp
   endif
-  ifeq "$(USE_OXC_DEBUG)" "y"
+  ifeq "$(USE_OXC_I2C_DEBUG)" "y"
     SRCS += oxc_debug_i2c.cpp
   endif
   ALLFLAGS += -DUSE_OXC_I2C
@@ -349,7 +349,7 @@ ifeq "$(USE_OXC_SPI)" "y"
   ifneq "$(NOUSE_DEFAULT_SPI_INIT)" "y"
     SRCS  += oxc_spi_init_default.cpp
   endif
-  # ifeq "$(USE_OXC_DEBUG)" "y"
+  # ifeq "$(USE_OXC_SPI_DEBUG)" "y"
   #   SRCS += oxc_debug_spi.cpp
   # endif
   ALLFLAGS += -DUSE_OXC_SPI

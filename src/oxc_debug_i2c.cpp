@@ -8,9 +8,6 @@
 #include <oxc_debug_i2c.h>
 
 
-DevI2C *i2c_dbg { nullptr };
-I2CClient *i2c_client_def { nullptr };
-
 static const char i2c_nodev_msg[] = NL "I2C debug device (i2c_dbg) is not set!" NL;
 #define CHECK_I2C_DEV \
   if( !i2c_dbg ) { \
