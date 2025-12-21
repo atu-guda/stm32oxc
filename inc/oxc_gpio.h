@@ -233,6 +233,13 @@ inline GpioRegs_ref GpioJ = *reinterpret_cast<GpioRegs_ptr_c>(GPIOJ_BASE);
 #ifdef GPIOK_BASE
 inline GpioRegs_ref GpioK = *reinterpret_cast<GpioRegs_ptr_c>(GPIOK_BASE);
 #endif
+#ifdef GPIOL_BASE
+inline GpioRegs_ref GpioL = *reinterpret_cast<GpioRegs_ptr_c>(GPIOL_BASE);
+#endif
+#ifdef GPIOM_BASE
+inline GpioRegs_ref GpioM = *reinterpret_cast<GpioRegs_ptr_c>(GPIOM_BASE);
+#endif
+
 
 #pragma GCC diagnostic pop
 
