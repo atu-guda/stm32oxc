@@ -16,10 +16,11 @@ inline constexpr uint32_t LEDSX_START { 12 };
 inline constexpr uint32_t LEDSX_N { 4 };
 
 inline auto& BTN_STOP_GPIO                  { GpioB };
-inline constexpr uint32_t BTN_STOP_PIN      { 12 };
-inline constexpr uint16_t BTN_STOP_IRQ_PRTY {  3 };
-inline constexpr auto     BTN_STOP_IRQ_N    { EXTI2_IRQn };
-inline constexpr auto     BTN_STOP_EXTI_DIR { GpioRegs::ExtiEv::updown };
+inline constexpr uint32_t BTN_STOP_PIN      {  0 };
+inline constexpr uint32_t BTN_STOP_BIT      { 1 << BTN_STOP_PIN };
+inline constexpr uint16_t BTN_STOP_IRQ_PRTY { 14 };
+inline constexpr auto     BTN_STOP_IRQ_N    { EXTI0_IRQn };
+inline constexpr auto     BTN_STOP_EXTI_DIR { GpioRegs::ExtiEv::down };
 void init_EXTI();
 
 inline auto& LWM_GPIO { GpioA };

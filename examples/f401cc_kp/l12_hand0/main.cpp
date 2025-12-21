@@ -257,6 +257,7 @@ void idle_main_task()
 void on_sigint( int /* c */ )
 {
   tim_lwm_stop();
+  break_flag = 1;
   ledsx[1].set();
 }
 
@@ -482,7 +483,7 @@ int cmd_pulse( int argc, const char * const * argv )
   mo.setCtrlVal( t_on );
   tim_lwm_start();
 
-  ledsx[2].set();
+  ledsx[3].set();
 
   const uint32_t t_step { uint32_t(UVAR_t) };
   uint32_t tm0 = HAL_GetTick();
@@ -502,7 +503,7 @@ int cmd_pulse( int argc, const char * const * argv )
 
     delay_ms_until_brk( &tc0, t_step );
   }
-  ledsx[2].reset();
+  ledsx[3].reset();
 
   mo.post_run();
   if( ! keep || break_flag ) {
@@ -755,7 +756,7 @@ int process_movepart( const MovePart &mp, float kkv  )
   std_out << "# k_v= " << mp.k_v << " nn= " << nn << NL;
 
 
-  ledsx.reset ( 0xFF );
+  ledsx.reset ( 0x03 );
 
   for( uint32_t ch=0; auto mo : movers ) {
     if( is_mover_disabled( ch ) ) {
@@ -776,7 +777,7 @@ int process_movepart( const MovePart &mp, float kkv  )
   break_flag = 0;
   for( decltype(+nn) i=0; i<nn && !break_flag; ++i ) {
 
-    ledsx[2].set();
+    ledsx[3].set();
 
     if( ! is_good_coords( true, true, true )  ) {
       break;
@@ -798,7 +799,7 @@ int process_movepart( const MovePart &mp, float kkv  )
       movers[mi]->move( q, tcc );
     }
 
-    ledsx[2].reset();
+    ledsx[3].reset();
 
     std_out << dbg_val0 << ' ';
 
@@ -901,6 +902,7 @@ void tim_lwm_start()
   for( auto ch : { TIM_CHANNEL_1, TIM_CHANNEL_2,TIM_CHANNEL_3, TIM_CHANNEL_4 } ) {
     HAL_TIM_PWM_Start( &tim_lwm_h, ch );
   }
+  ledsx[2].set();
 }
 
 void tim_lwm_stop()
@@ -908,6 +910,7 @@ void tim_lwm_stop()
   for( auto ch : { TIM_CHANNEL_1, TIM_CHANNEL_2,TIM_CHANNEL_3, TIM_CHANNEL_4 } ) {
     HAL_TIM_PWM_Stop( &tim_lwm_h, ch );
   }
+  ledsx[2].reset();
 }
 
 
@@ -955,13 +958,11 @@ void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
 
 void HAL_GPIO_EXTI_Callback( uint16_t pin_bit )
 {
-  ++UVAR_g;
-  ledsx.set( 0 );
-  ledsx.toggle( 1 );
+  ledsx[0].set();
   bool need_stop { false };
 
   switch( pin_bit ) {
-    case BTN_STOP_PIN:
+    case BTN_STOP_BIT:
       need_stop = true;
       break_flag = 7;
       break;
@@ -977,9 +978,9 @@ void HAL_GPIO_EXTI_Callback( uint16_t pin_bit )
 }
 
 
-void EXTI2_IRQHandler()
+void EXTI0_IRQHandler()
 {
-  HAL_GPIO_EXTI_IRQHandler( BTN_STOP_PIN );
+  HAL_GPIO_EXTI_IRQHandler( BTN_STOP_BIT );
 }
 
 // ------------------------------------ ADC ------------------------------------------------

@@ -1087,7 +1087,7 @@ int cmd_calc( int argc, const char * const * argv )
     return 1;
   }
 
-  cmd_print( 1, nullptr );
+  print_all_vars();
 
   if( td.w_len > td.w_len_m ) {
     std_out << "# WARNING: w_len > w_len_m" << NL;
