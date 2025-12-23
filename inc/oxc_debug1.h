@@ -1,6 +1,7 @@
 #ifndef _OXC_DEBUG1_H
 #define _OXC_DEBUG1_H
 
+#include <oxc_gpio.h>
 #include <oxc_console.h>
 // #include <oxc_common1.h>
 
@@ -71,7 +72,7 @@ extern bool (*set_var_hook)( const char *nm, const char *s );
 
 // arch-dependent function
 // fill string s with information about pin config
-void gpio_pin_info( GPIO_TypeDef *gi, uint16_t pin, char *s );
+void gpio_pin_info( GpioRegs *const gi, uint16_t pin, char *s );
 
 void test_delays_misc( int n, uint32_t t_step, int tp );
 void test_output_rate( int n, int sl, int do_flush );

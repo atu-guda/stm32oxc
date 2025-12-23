@@ -6,38 +6,6 @@
 #include <oxc_base.h>
 #include <oxc_bitops.h>
 
-// TODO: replace with GpioRegs
-inline constexpr  GPIO_TypeDef* GPIOs[] {
-  GPIOA, GPIOB, GPIOC, GPIOD,
-  #ifdef GPIOE
-         GPIOE,
-  #endif
-  #ifdef GPIOF
-         GPIOF,
-  #endif
-  #ifdef GPIOG
-         GPIOG,
-  #endif
-  #ifdef GPIOH
-         GPIOH,
-  #endif
-  #ifdef GPIOI
-         GPIOI,
-  #endif
-  #ifdef GPIOJ
-         GPIOJ,
-  #endif
-  #ifdef GPIOK
-         GPIOK,
-  #endif
-  #ifdef GPIOL
-         GPIOL,
-  #endif
-  #ifdef GPIOM
-         GPIOM,
-  #endif
-};
-inline constexpr std::size_t GPIOs_n { std::size( GPIOs ) };
 
 // ---------- special mini-classes to strong parameters types
 
@@ -69,12 +37,14 @@ constexpr PinNum operator""_pin( unsigned long long v ) {
 }
 
 class GpioRegs;
+extern inline GpioRegs *const GPIOs[];
+
 class PortPin {
   public:
    constexpr PortPin( uint8_t port_num_, PinNum pin_num ) : port_num( port_num_ ), num( pin_num ) {};
    explicit constexpr PortPin( const char *s ); // "A1"
    inline constexpr uint8_t portNum() const { return port_num; };
-   inline constexpr GpioRegs& port() const; // { return port_num; };
+   inline constexpr GpioRegs& port() const { return *GPIOs[port_num]; };
    inline constexpr PinNum pinNum() const { return num; };
    inline constexpr bool valid() const { return (port_num < 16) && num.valid(); } // TODO: number of ports
    inline static constexpr PortPin Bad()  { return PortPin( 0xFF, PinNum(0xFF) ); }
@@ -85,6 +55,11 @@ class PortPin {
 static_assert( sizeof(PortPin) == sizeof( uint16_t ) );
 
 // ----------------- GPIO registers representation ------------------------------
+
+constexpr inline uint8_t GpioIdx( const GpioRegs &gp )
+{
+  return (uint8_t)( ( reinterpret_cast<unsigned>(&gp) - GPIOA_BASE ) / ( GPIOB_BASE - GPIOA_BASE ) );
+}
 
 class GpioRegs {
   public:
@@ -97,6 +72,7 @@ class GpioRegs {
 
    GpioRegs()  = delete; // init only as ptr/ref to real GPIO area
    ~GpioRegs() = delete;
+   constexpr inline uint8_t getIdx() const { return GpioIdx(*this); } // TODO: return PortPin
    void enableClk() const;
    inline void set( uint16_t v ) // get given to '1' (OR)
    {
@@ -289,12 +265,44 @@ inline GpioRegs_ref GpioM = *reinterpret_cast<GpioRegs_ptr_c>(GPIOM_BASE);
 #endif
 
 
+inline GpioRegs *const  GPIOs[] {
+  reinterpret_cast<GpioRegs_ptr_c>(GPIOA_BASE),
+  reinterpret_cast<GpioRegs_ptr_c>(GPIOB_BASE),
+  reinterpret_cast<GpioRegs_ptr_c>(GPIOC_BASE),
+  reinterpret_cast<GpioRegs_ptr_c>(GPIOD_BASE),
+  #ifdef GPIOE
+     reinterpret_cast<GpioRegs_ptr_c>(GPIOE),
+  #endif
+  #ifdef GPIOF
+     reinterpret_cast<GpioRegs_ptr_c>(GPIOF),
+  #endif
+  #ifdef GPIOG
+     reinterpret_cast<GpioRegs_ptr_c>(GPIOG),
+  #endif
+  #ifdef GPIOH
+     reinterpret_cast<GpioRegs_ptr_c>(GPIOH),
+  #endif
+  #ifdef GPIOI
+     reinterpret_cast<GpioRegs_ptr_c>(GPIOI),
+  #endif
+  #ifdef GPIOJ
+     reinterpret_cast<GpioRegs_ptr_c>(GPIOJ),
+  #endif
+  #ifdef GPIOK
+     reinterpret_cast<GpioRegs_ptr_c>(GPIOK,
+  #endif
+  #ifdef GPIOL
+     reinterpret_cast<GpioRegs_ptr_c>(GPIOL),
+  #endif
+  #ifdef GPIOM
+     reinterpret_cast<GpioRegs_ptr_c>(GPIOM),
+  #endif
+};
+inline constexpr std::size_t GPIOs_n { std::size( GPIOs ) };
+
+
 #pragma GCC diagnostic pop
 
-constexpr inline uint8_t GpioIdx( const GpioRegs &gp )
-{
-  return (uint8_t)( ( reinterpret_cast<unsigned>(&gp) - GPIOA_BASE ) / ( GPIOB_BASE - GPIOA_BASE ) );
-}
 
 
 // --------------- Pins ----------------------------------------

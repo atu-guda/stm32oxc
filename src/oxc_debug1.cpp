@@ -1,4 +1,3 @@
-#include <cctype>
 #include <cstdlib>
 #include <cstring>
 #include <cerrno>
@@ -325,7 +324,7 @@ static const char *pin_moder_name[] = { "Inp", "O10", "O02", "O50", "?m?" };
 static const char *pin_cr_i_name[]  = { "Ana", "Flt", "Pud", "xxx", "?c?" };
 static const char *pin_cr_o_name[]  = { "OPP", "ODD", "APP", "AOD", "?c?" };
 
-void gpio_pin_info( GPIO_TypeDef *gi, uint16_t pin, char *s )
+void gpio_pin_info( GpioRegs *const gi, uint16_t pin, char *s )
 {
   if( !gi || !s || pin >= PORT_BITS ) { return; }
   int j = 0;
@@ -359,7 +358,7 @@ static const char *const pin_moder_name[] = { "Inp", "Out", "AFn", "Ana", "?m?" 
 static const char *const pin_speed_name[] = { "Low", "Lo1", "Med", "Hig", "?s?" };
 static const char *const pin_pupdr_name[] = { "No", "Up", "Dn", "Xx", "?p" };
 
-void gpio_pin_info( GPIO_TypeDef *gi, uint16_t pin, char *s )
+void gpio_pin_info( GpioRegs *const gi, uint16_t pin, char *s )
 {
   if( !gi || !s || pin >= PORT_BITS ) { return; }
   int j = 0;
@@ -710,14 +709,15 @@ int cmd_pinfo( int argc, const char * const * argv )
 {
   uint16_t pin = arg2long_d( 2, argc, argv, 0, 0, 15 );
   uint16_t n   = arg2long_d( 3, argc, argv, 1, 1, 16 );
-  const char port_char = ( argc > 1 ) ? std::toupper( argv[1][0] ) : 'A';
+  const char port_char = ( argc > 1 ) ? ( argv[1][0] & 0x5F ) : 'A'; // simplfied tolower
   const size_t port_idx = size_t( port_char - 'A' );
   std_out << NL "Port " << port_char << " addr: ";
 
   if( port_idx >= GPIOs_n ) {
     return 1;
   }
-  GPIO_TypeDef *gi { GPIOs[port_idx] };
+
+  GpioRegs *const gi { GPIOs[port_idx] };
   std_out << HexInt( (void*)gi ) << NL;
 
   for( uint16_t p = pin, i=0; p<16 && i<n; ++p, ++i ) {

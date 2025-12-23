@@ -91,7 +91,7 @@ void GpioRegs::cfgAnalog( uint8_t pin_num )
 
 void GpioRegs::enableClk() const
 {
-  RCC->GPIO_EN_REG |= GPIO_EN_BIT0 << GpioIdx( *this );
+  RCC->GPIO_EN_REG |= GPIO_EN_BIT0 << getIdx();
 }
 
 void GpioRegs::setEXTI( uint8_t pin, ExtiEv ev )
@@ -99,8 +99,8 @@ void GpioRegs::setEXTI( uint8_t pin, ExtiEv ev )
   const unsigned reg_idx = pin >> 2;
   constexpr uint32_t exti_mask = (1<<EXTI_CFG_BITS) - 1;
   uint32_t tmp = EXTICFG_PLACE->EXTICR[ reg_idx ];
-  tmp &= ~( exti_mask        << ( EXTI_CFG_BITS * ( pin & 0x03 ) ) ); // reset for this pin
-  tmp |=  ( GpioIdx( *this ) << ( EXTI_CFG_BITS * ( pin & 0x03 ) ) ); // and set given
+  tmp &= ~( exti_mask  << ( EXTI_CFG_BITS * ( pin & 0x03 ) ) ); // reset for this pin
+  tmp |=  ( getIdx()   << ( EXTI_CFG_BITS * ( pin & 0x03 ) ) ); // and set given
   EXTICFG_PLACE->EXTICR[ reg_idx ] = tmp;
 
   uint32_t mask_pos = 1 << pin;
