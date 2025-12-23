@@ -59,6 +59,7 @@ int cmd_test_val( int argc, const char * const * argv )
   int v0 = arg2long_d( 1, argc, argv,  UVAR_v, INT_MIN, INT_MAX );
   int v1 = arg2long_d( 2, argc, argv,  UVAR_u,    -500,    1500 );
   std_out << "# " << v0 << ' ' << v1 << NL;
+  // std_out << Gpios[2].IDR << NL;
   return 0;
 }
 

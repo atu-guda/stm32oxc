@@ -5,6 +5,7 @@
 
 #include <oxc_base.h>
 #include <oxc_bitops.h>
+#include <oxc_refptr.h>
 
 
 // ---------- special mini-classes to strong parameters types
@@ -299,6 +300,8 @@ inline GpioRegs *const  GPIOs[] {
   #endif
 };
 inline constexpr std::size_t GPIOs_n { std::size( GPIOs ) };
+
+constexpr auto Gpios { RefPtr(GPIOs) };
 
 
 #pragma GCC diagnostic pop
