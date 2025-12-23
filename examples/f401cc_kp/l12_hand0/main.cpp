@@ -34,6 +34,7 @@ int debug {0};
 int dry_run {0};
 int dis_movers {0};
 int def_tp {3};
+int angle_over { 20 };
 
 auto out_q_fmt = [](xfloat x) { return FltFmt(x, cvtff_fix,8,4); };
 
@@ -166,19 +167,23 @@ CoordInfo coords[coords_n] {
 // ------------------------   default sequence
 
 const MovePart mp_seq0[] {
-  { { {   0.0f, 0 }, {   60.0f, 0 }, {   -100.0f, 0 }, {   50.0f, 0 }  },  0.5f },
-  { { { -90.0f, 3 }, {   90.0f, 6 }, {   -130.0f, 3 }, {   10.0f, 2 }  },  0.5f },
-  { { { -20.0f, 3 }, {   50.0f, 6 }, {    -90.0f, 3 }, {   50.0f, 2 }  },  0.5f },
-  { { { -20.0f, 3 }, {   50.0f, 6 }, {    -90.0f, 3 }, {    5.0f, 0 }  },  0.5f },
-  { { {   0.0f, 3 }, {   90.0f, 6 }, {   -130.0f, 3 }, {    5.0f, 0 }  },  0.5f },
-  { { {  90.0f, 3 }, {   50.0f, 6 }, {    -90.0f, 3 }, {    5.0f, 0 }  },  0.5f },
-  { { {  90.0f, 3 }, {   50.0f, 6 }, {    -90.0f, 3 }, {   50.0f, 2 }  },  0.5f },
-  { { {   0.0f, 0 }, {   90.0f, 0 }, {   -135.0f, 0 }, {   10.0f, 0 }  },  0.5f }
+  { { {   0.0f, 3 }, {   90.0f, 3 }, {   -130.0f, 3 }, {   50.0f, 3 }  },  0.5f },
+  { { { -20.0f, 3 }, {   50.0f, 3 }, {   -130.0f, 3 }, {   50.0f, 3 }  },  0.5f },
+  { { { -20.0f, 3 }, {   50.0f, 3 }, {   -130.0f, 3 }, {    5.0f, 3 }  },  0.5f },
+  { { { -80.0f, 3 }, {   60.0f, 3 }, {   -110.0f, 3 }, {    5.0f, 3 }  },  0.5f },
+  { { { -80.0f, 3 }, {   60.0f, 3 }, {   -110.0f, 3 }, {   50.0f, 3 }  },  0.5f },
+  { { {   0.0f, 3 }, {   90.0f, 3 }, {   -130.0f, 3 }, {   50.0f, 3 }  },  0.5f },
+  { { {  20.0f, 3 }, {   50.0f, 3 }, {   -130.0f, 3 }, {   50.0f, 3 }  },  0.5f },
+  { { {  20.0f, 3 }, {   50.0f, 3 }, {   -130.0f, 3 }, {    5.0f, 3 }  },  0.5f },
+  { { {  80.0f, 3 }, {   60.0f, 3 }, {   -110.0f, 3 }, {    5.0f, 3 }  },  0.5f },
+  { { {  80.0f, 3 }, {   60.0f, 3 }, {   -110.0f, 3 }, {   50.0f, 3 }  },  0.5f },
+  { { {   0.0f, 3 }, {   90.0f, 3 }, {   -135.0f, 3 }, {   10.0f, 3 }  },  0.5f }
 };
 
-MovePart mp_stored;
+std::array<MovePart,mp_stored_n> mp_stored;
 MovePart mp_last;
-MovePart mp_seq1[mp_seq1_n];
+MovePart mp_old;
+std::array<MovePart,mp_seq1_n> mp_seq1;
 size_t mp_seq1_sz { 0 };
 
 // ------------------------   commands
@@ -189,11 +194,11 @@ const char* common_help_string = "hand0 " __DATE__ " " __TIME__ NL;
 DCL_CMD_REG( test0,       'T', " [val] [ch] [k_v] - test move 1 ch" );
 DCL_CMD_REG( stop,        'P', " - stop pwm" );
 DCL_CMD_REG( mtest,       'M', " [set_zero] [aux] - test AS5600" );
-DCL_CMD_REG( mcoord,      'C', " [store] [n] - measure and store coords" );
+DCL_CMD_REG( mcoord,      'C', " [store_idx] [n_adc] - measure and store coords" );
 DCL_CMD_REG( go,          'G', " k_v q_0 q_1 q_2 q_3 tp_0 tp_1 tp_2 tp_3 - go " );
 DCL_CMD_REG( add_mp,      'A', " k_v q_0 q_1 q_2 q_3 tp_0 tp_1 tp_2 tp_3 - add MovePoint " );
 DCL_CMD_REG( edit_mp,     'E', " n k_v q_0 q_1 q_2 q_3 tp_0 tp_1 tp_2 tp_3 - edit MovePoint " );
-DCL_CMD_REG( add_stored,  'S', " [kv] - add stored MovePoint " );
+DCL_CMD_REG( add_stored,  'S', " [store_idx] [kv] [q3] - add stored MovePoint " );
 DCL_CMD_REG( add_last,    'L', " [kv] - add last MovePoint " );
 DCL_CMD_REG( del_mp,     '\0', " [n] - delete def=last MovePoint " );
 DCL_CMD_REG( clear_mp,   '\0', " - delete all MovePoints " );
@@ -218,6 +223,7 @@ ADD_IOBJ   ( debug   );
 ADD_IOBJ   ( dry_run   );
 ADD_IOBJ   ( dis_movers   );
 ADD_IOBJ   ( def_tp   );
+ADD_IOBJ   ( angle_over   );
 ADD_IOBJ   ( adc_n   );
 
 #undef ADD_IOBJ
@@ -229,6 +235,7 @@ constexpr const NamedObj *const objs_info[] = {
   & ob_dry_run,
   & ob_dis_movers,
   & ob_def_tp,
+  & ob_angle_over,
   & ob_adc_n,
   nullptr
 };
@@ -325,7 +332,7 @@ int bad_coord_idx() // -1 = Ok
 {
   for( const auto [ i, co ] : views::enumerate(coords) ) {
     const auto c0 = co.q_cur;
-    if( c0 < co.q_min-10 || c0 > co.q_max+10 ) { // TODO: param?
+    if( c0 < co.q_min - angle_over || c0 > co.q_max + angle_over ) { // TODO: param?
       return (int)i;
     }
   }
@@ -336,7 +343,7 @@ bool is_good_coords( bool do_stop, bool do_print, bool do_measure  )
 {
   if( do_measure && !measure_store_coords( adc_n ) ) {
     if( do_print ) {
-    std_out << "# Err sens : " << NL;
+      std_out << "# Err sens : " << NL;
     }
     return false;
   }
@@ -448,7 +455,7 @@ int cmd_run( int argc, const char * const * argv )
   std_out << "# run: " << mps_idx << NL;
   auto seq = ( mps_idx != 0 ) ?
     ( std::span<const MovePart> (mp_seq0) ) :
-    ( std::span<const MovePart> (mp_seq1, mp_seq1_sz) );
+    ( std::span<const MovePart> (mp_seq1.begin(), mp_seq1_sz) );
   tim_lwm_start();
   int rc = run_moveparts( seq, kkv, i_start, i_end );
   return rc;
@@ -523,7 +530,7 @@ int cmd_out_moves( int argc, const char * const * argv )
   std_out << "# Moves " << mps_idx << NL;
   auto seq = ( mps_idx != 0 ) ?
     ( std::span<const MovePart> (mp_seq0) ) :
-    ( std::span<const MovePart> (mp_seq1, mp_seq1_sz) );
+    ( std::span<const MovePart> (mp_seq1.begin(), mp_seq1_sz) );
   for( const auto[ i,m ]: views::enumerate(seq) ) {
     std_out << i << ' ' << m << NL;
   }
@@ -536,7 +543,7 @@ int cmd_del_mp( int argc, const char * const * argv )
     return 1;
   }
   size_t mp_idx   = arg2long_d(   1, argc, argv,    mp_seq1_sz-1,  0,  mp_seq1_sz-1 );
-  std::shift_left( mp_seq1+mp_idx, mp_seq1+mp_seq1_sz, 1 );
+  std::shift_left( mp_seq1.begin()+mp_idx, mp_seq1.begin()+mp_seq1_sz, 1 );
   --mp_seq1_sz;
   return 0;
 }
@@ -556,11 +563,12 @@ int cmd_add_stored( int argc, const char * const * argv )
   if( is_overflow_seq() ) {
     return 1;
   }
-  float k_v = arg2float_d( 1, argc, argv, MovePart::kv_def, MovePart::kv_min, MovePart::kv_max );
-  float q3  = arg2float_d( 2, argc, argv, mp_stored.mpc[3].q_e, 0.0f, 90.0f );
+  size_t mp_idx = arg2long_d( 1, argc, argv, 0, 0, mp_stored.size() - 1 );
+  float k_v = arg2float_d( 2, argc, argv, MovePart::kv_def, MovePart::kv_min, MovePart::kv_max );
+  float q3  = arg2float_d( 3, argc, argv, mp_stored[mp_idx].mpc[3].q_e, 0.0f, 90.0f );
 
   MovePart &mp { mp_seq1[mp_seq1_sz] };
-  mp     = mp_stored;
+  mp     = mp_stored[mp_idx];
   mp.k_v = k_v;
   mp.mpc[3].q_e = q3;
 
@@ -686,13 +694,16 @@ int cmd_mtest( int argc, const char * const * argv )
 
 int cmd_mcoord( int argc, const char * const * argv )
 {
-  const int store  = arg2long_d(  1, argc, argv, 1,     0, 1 );
-  const int n_meas = arg2long_d(  2, argc, argv, adc_n, 1, 10000 );
+  const size_t store_idx = arg2long_d(  1, argc, argv, 0,     0, mp_stored.size()-1 );
+  const int n_meas       = arg2long_d(  2, argc, argv, adc_n, 1, 10000 );
   int rc  = measure_store_coords( n_meas );
   out_coords( true );
-  out_coords_int( true );
-  if( store && rc ) {
-    mp_stored.from_coords( coords, 3 );
+  if( debug > 0 ) {
+    out_coords_int( true );
+  }
+
+  if( rc ) {
+    mp_stored[store_idx].from_coords( coords, 3 );
   }
 
   return !rc;
@@ -780,6 +791,7 @@ int process_movepart( const MovePart &mp, float kkv  )
     ledsx[3].set();
 
     if( ! is_good_coords( true, true, true )  ) {
+      break_flag = 1;
       break;
     }
 

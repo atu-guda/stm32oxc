@@ -6,6 +6,7 @@
 #include <oxc_base.h>
 #include <oxc_bitops.h>
 
+// TODO: replace with GpioRegs
 inline constexpr  GPIO_TypeDef* GPIOs[] {
   GPIOA, GPIOB, GPIOC, GPIOD,
   #ifdef GPIOE
@@ -37,6 +38,53 @@ inline constexpr  GPIO_TypeDef* GPIOs[] {
   #endif
 };
 inline constexpr std::size_t GPIOs_n { std::size( GPIOs ) };
+
+// ---------- special mini-classes to strong parameters types
+
+class PinMask {
+  public:
+   explicit constexpr PinMask( uint16_t mask_ ) : mask ( mask_ ) {};
+   inline constexpr uint16_t  Mask() const { return mask; }
+   // TODO: iterator
+  private:
+   uint16_t mask;
+};
+static_assert( sizeof(PinMask) == sizeof( uint16_t ) );
+constexpr PinMask operator""_mask( unsigned long long v ) {
+  return PinMask( v );
+}
+
+class PinNum {
+  public:
+   explicit constexpr PinNum( uint8_t num_ ) : num ( num_ ) {};
+   inline constexpr uint8_t  Num() const { return num; }
+   inline constexpr PinMask Mask() const { return PinMask( 1 << num ); }
+   inline constexpr bool valid() const { return (num < 16); }
+  private:
+   uint8_t num;
+};
+static_assert( sizeof(PinNum) == sizeof( uint8_t ) );
+constexpr PinNum operator""_pin( unsigned long long v ) {
+  return PinNum( v );
+}
+
+class GpioRegs;
+class PortPin {
+  public:
+   constexpr PortPin( uint8_t port_num_, PinNum pin_num ) : port_num( port_num_ ), num( pin_num ) {};
+   explicit constexpr PortPin( const char *s ); // "A1"
+   inline constexpr uint8_t portNum() const { return port_num; };
+   inline constexpr GpioRegs& port() const; // { return port_num; };
+   inline constexpr PinNum pinNum() const { return num; };
+   inline constexpr bool valid() const { return (port_num < 16) && num.valid(); } // TODO: number of ports
+   inline static constexpr PortPin Bad()  { return PortPin( 0xFF, PinNum(0xFF) ); }
+  private:
+   uint8_t port_num;
+   PinNum  num;
+};
+static_assert( sizeof(PortPin) == sizeof( uint16_t ) );
+
+// ----------------- GPIO registers representation ------------------------------
 
 class GpioRegs {
   public:
