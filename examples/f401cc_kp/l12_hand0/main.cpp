@@ -182,7 +182,6 @@ const MovePart mp_seq0[] {
 
 std::array<MovePart,mp_stored_n> mp_stored;
 MovePart mp_last;
-MovePart mp_old;
 std::array<MovePart,mp_seq1_n> mp_seq1;
 size_t mp_seq1_sz { 0 };
 
@@ -202,7 +201,7 @@ DCL_CMD_REG( add_stored,  'S', " [store_idx] [kv] [q3] - add stored MovePoint " 
 DCL_CMD_REG( add_last,    'L', " [kv] - add last MovePoint " );
 DCL_CMD_REG( del_mp,     '\0', " [n] - delete def=last MovePoint " );
 DCL_CMD_REG( clear_mp,   '\0', " - delete all MovePoints " );
-DCL_CMD_REG( run,         'R', " [seq_num] - run sequence " );
+DCL_CMD_REG( run,         'R', " [seq_num] [start_idx] [end_idx] - run sequence " );
 DCL_CMD_REG( back,        'B', " [kv] - go to last point " );
 DCL_CMD_REG( go_stored,   'Q', " [n] [kv] - go to stored  point " );
 DCL_CMD_REG( pulse,       'U', " ch t_on dt off - test pulse " );
@@ -774,7 +773,7 @@ int process_movepart( const MovePart &mp, float kkv  )
 
   uint32_t nn {0};
   measure_store_coords( adc_n );
-  mp_old.from_coords( coords, 3 );
+  mp_stored[mp_stored_n-1].from_coords( coords, 3 );
   for( size_t i=0; i < coords_n; ++i ) { // calc max need time in steps
     auto &co = coords[i];
     qs_0[i]    = co.q_cur;
