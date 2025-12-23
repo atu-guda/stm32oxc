@@ -118,7 +118,6 @@ inline const size_t mp_stored_n { 10 };
 extern std::array<MovePart,mp_stored_n> mp_stored;
 extern const MovePart mp_seq0[];
 extern MovePart mp_last;
-extern MovePart mp_old;
 inline const size_t mp_seq1_n { 20 };
 extern std::array<MovePart,mp_seq1_n> mp_seq1;
 extern size_t mp_seq1_sz;

@@ -203,6 +203,8 @@ DCL_CMD_REG( add_last,    'L', " [kv] - add last MovePoint " );
 DCL_CMD_REG( del_mp,     '\0', " [n] - delete def=last MovePoint " );
 DCL_CMD_REG( clear_mp,   '\0', " - delete all MovePoints " );
 DCL_CMD_REG( run,         'R', " [seq_num] - run sequence " );
+DCL_CMD_REG( back,        'B', " [kv] - go to last point " );
+DCL_CMD_REG( go_stored,   'Q', " [n] [kv] - go to stored  point " );
 DCL_CMD_REG( pulse,       'U', " ch t_on dt off - test pulse " );
 DCL_CMD_REG( out_moves,   'O', " [seq_num]  - output moves sequence " );
 DCL_CMD_REG( calibr,     '\0', " ch(1-2) - calibrate channel sensor " );
@@ -449,7 +451,7 @@ int cmd2MovePart( int argc, const char * const * argv, int start_idx, MovePart &
 int cmd_run( int argc, const char * const * argv )
 {
   int mps_idx   = arg2long_d(   1, argc, argv,    0,    0,    1 );
-  float kkv     = arg2float_d(  2, argc, argv, 1.0f, 0.0f, 5.0f );
+  float kkv     = arg2float_d(  2, argc, argv, 1.0f, 0.01f, 5.0f );
   int i_start   = arg2long_d(   3, argc, argv,    0,    0, 10000 );
   int i_end     = arg2long_d(   4, argc, argv, 10000,   0, 10000 );
   std_out << "# run: " << mps_idx << NL;
@@ -458,6 +460,25 @@ int cmd_run( int argc, const char * const * argv )
     ( std::span<const MovePart> (mp_seq1.begin(), mp_seq1_sz) );
   tim_lwm_start();
   int rc = run_moveparts( seq, kkv, i_start, i_end );
+  return rc;
+}
+
+int cmd_back( int argc, const char * const * argv )
+{
+  float kkv     = arg2float_d(  1, argc, argv, 1.0f, 0.01f, 5.0f );
+  std_out << "# back: " << mp_stored[mp_stored_n-1] << NL;
+  tim_lwm_start();
+  int rc = process_movepart( mp_stored[mp_stored_n-1], kkv );
+  return rc;
+}
+
+int cmd_go_stored( int argc, const char * const * argv )
+{
+  int stored_idx = arg2float_d(  1, argc, argv,    0,     0, mp_stored_n-1 );
+  float kkv      = arg2float_d(  2, argc, argv, 1.0f, 0.01f,          5.0f );
+  std_out << "# go stored: " << mp_stored[stored_idx] << NL;
+  tim_lwm_start();
+  int rc = process_movepart( mp_stored[stored_idx], kkv );
   return rc;
 }
 
@@ -753,6 +774,7 @@ int process_movepart( const MovePart &mp, float kkv  )
 
   uint32_t nn {0};
   measure_store_coords( adc_n );
+  mp_old.from_coords( coords, 3 );
   for( size_t i=0; i < coords_n; ++i ) { // calc max need time in steps
     auto &co = coords[i];
     qs_0[i]    = co.q_cur;
@@ -779,7 +801,7 @@ int process_movepart( const MovePart &mp, float kkv  )
     }
   }
 
-  std_out << "#  1      2      3       4        5         6    7        8           9          10          11" NL;
+  std_out << "#  1      2      3       4        5         6    7        8           9          10          11"   NL;
   std_out << "#  i   tick     q_g0     q_g1     q_g2     q_g3 t_on    q_m0        q_m1        q_m2         q_m3" NL;
 
   uint32_t tm0 = HAL_GetTick();
