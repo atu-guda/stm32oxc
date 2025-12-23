@@ -35,10 +35,10 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 100;
-  UVAR('n') =  20;
-  UVAR('u') = -23;
-  UVAR('v') =  42;
+  UVAR_t = 100;
+  UVAR_n =  20;
+  UVAR_u = -23;
+  UVAR_v =  42;
 
   BOARD_POST_INIT_BLINK;
 
@@ -56,8 +56,8 @@ int main(void)
 
 int cmd_test_val( int argc, const char * const * argv )
 {
-  int v0 = arg2long_d( 1, argc, argv,  UVAR('v'), INT_MIN, INT_MAX );
-  int v1 = arg2long_d( 2, argc, argv,  UVAR('u'),    -500,    1500 );
+  int v0 = arg2long_d( 1, argc, argv,  UVAR_v, INT_MIN, INT_MAX );
+  int v1 = arg2long_d( 2, argc, argv,  UVAR_u,    -500,    1500 );
   std_out << "# " << v0 << ' ' << v1 << NL;
   return 0;
 }
