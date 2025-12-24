@@ -8,7 +8,7 @@
 #include <oxc_gpio.h>
 
 
-void GpioRegs::cfgOut_common( uint8_t pin_num )
+void GpioRegs::cfgOut_common( PinNum pin_num )
 {
   #if defined (STM32F1)
     // unused
@@ -20,7 +20,7 @@ void GpioRegs::cfgOut_common( uint8_t pin_num )
   #endif
 }
 
-void GpioRegs::cfgOut( uint8_t pin_num, bool od )
+void GpioRegs::cfgOut( PinNum pin_num, bool od )
 {
   #if defined (STM32F1)
     replace_bits( CR[pin_num >> 3], ( pin_num & 7 ) << 2, 4, od ? (uint8_t)(ModeF1::OutOD) : (uint8_t)(ModeF1::OutPP) );
@@ -32,7 +32,7 @@ void GpioRegs::cfgOut( uint8_t pin_num, bool od )
 
 
 
-void GpioRegs::cfgAF( uint8_t pin_num, uint8_t af, bool od )
+void GpioRegs::cfgAF( PinNum pin_num, uint8_t af, bool od )
 {
   #if defined (STM32F1)
     replace_bits( CR[pin_num >> 3], ( pin_num & 7 ) << 2, 4,
@@ -48,7 +48,7 @@ void GpioRegs::cfgAF( uint8_t pin_num, uint8_t af, bool od )
 }
 
 
-void GpioRegs::cfgIn( uint8_t pin_num, Pull p )
+void GpioRegs::cfgIn( PinNum pin_num, Pull p )
 {
   #if defined (STM32F1)
     uint8_t idx = pin_num >> 3;
@@ -74,7 +74,7 @@ void GpioRegs::cfgIn( uint8_t pin_num, Pull p )
 }
 
 
-void GpioRegs::cfgAnalog( uint8_t pin_num )
+void GpioRegs::cfgAnalog( PinNum pin_num )
 {
   #if defined (STM32F1)
     reset_bits( CR[pin_num >> 3], ( pin_num & 7 ) << 2, 4 );
@@ -94,16 +94,16 @@ void GpioRegs::enableClk() const
   RCC->GPIO_EN_REG |= GPIO_EN_BIT0 << getIdx();
 }
 
-void GpioRegs::setEXTI( uint8_t pin, ExtiEv ev )
+void GpioRegs::setEXTI( PinNum pin, ExtiEv ev )
 {
-  const unsigned reg_idx = pin >> 2;
+  const unsigned reg_idx = pin.Num() >> 2;
   constexpr uint32_t exti_mask = (1<<EXTI_CFG_BITS) - 1;
   uint32_t tmp = EXTICFG_PLACE->EXTICR[ reg_idx ];
-  tmp &= ~( exti_mask  << ( EXTI_CFG_BITS * ( pin & 0x03 ) ) ); // reset for this pin
-  tmp |=  ( getIdx()   << ( EXTI_CFG_BITS * ( pin & 0x03 ) ) ); // and set given
+  tmp &= ~( exti_mask  << ( EXTI_CFG_BITS * ( pin.Num() & 0x03 ) ) ); // reset for this pin
+  tmp |=  ( getIdx()   << ( EXTI_CFG_BITS * ( pin.Num() & 0x03 ) ) ); // and set given
   EXTICFG_PLACE->EXTICR[ reg_idx ] = tmp;
 
-  uint32_t mask_pos = 1 << pin;
+  uint32_t mask_pos = 1 << pin.Num();
   uint32_t mask_neg = ~mask_pos;
   if( (uint8_t)(ev) & (uint8_t)(ExtiEv::up) ) {
     EXTI->EXTIREG_RTSR |=  mask_pos;
@@ -137,7 +137,7 @@ void PinsOut::initHW()
   gpio.cfgOut_N( mask );
 };
 
-[[ noreturn ]] void die4led( uint16_t n )
+[[ noreturn ]] void die4led( PinMask n )
 {
   #ifdef USE_FREERTOS
   taskDISABLE_INTERRUPTS();
@@ -198,7 +198,7 @@ void IoPin::initHW()
 unsigned EXTI_inits( const EXTI_init_info *exti_info, bool initIRQ )
 {
   unsigned n = 0;
-  for( auto ei = exti_info; ei->pinnum < 16; ++ei ) {
+  for( auto ei = exti_info; ei->pinnum.Num() < 16; ++ei ) {
     ei->gpio.setEXTI( ei->pinnum, ei->dir );
     if( initIRQ && ei->exti_n >= EXTI0_IRQn ) {
       HAL_NVIC_SetPriority( ei->exti_n, ei->prty, ei->subprty );

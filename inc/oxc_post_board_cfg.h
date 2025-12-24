@@ -12,11 +12,11 @@
 
 // ----------------------------- leds ---------------------------
 #ifdef BOARD_N_LEDS
-#define BOARD_LEDS_ALL  ( (1 << BOARD_N_LEDS) - 1 )
+#define BOARD_LEDS_ALL  PinMask( (1 << BOARD_N_LEDS) - 1 )
 #define BOARD_LEDS_MASK ( BOARD_LEDS_ALL << BOARD_LEDS_OFS )
 #define BOARD_LEDS_GPIO  EVAL2(Gpio,BOARD_LEDS_GPIOX)
 
-#define BOARD_DEFINE_LEDS PinsOut leds( BOARD_LEDS_GPIO, BOARD_LEDS_OFS, BOARD_N_LEDS );
+#define BOARD_DEFINE_LEDS PinsOut leds( BOARD_LEDS_GPIO, PinNum(BOARD_LEDS_OFS), BOARD_N_LEDS );
 #endif // BOARD_N_LEDS
 
 

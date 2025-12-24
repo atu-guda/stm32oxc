@@ -260,7 +260,7 @@ void test_delays_misc( int n, uint32_t t_step, int tp )
       std_out.flush();
     }
 
-    leds.toggle( 1 );
+    leds.toggle( 1_mask );
     tmc_prev = tcc;
 
     switch( tp ) {
@@ -680,7 +680,7 @@ DCL_CMD_REG( die, 0,  "[val] - die with value"  );
 int cmd_die( int argc, const char * const * argv )
 {
   int v = arg2long_d( 1, argc, argv, 0, 0, 0xFF );
-  die4led( v );
+  die4led( PinMask( v ) );
 }
 
 DCL_CMD_REG( reboot, 0, "- reboot system"  );

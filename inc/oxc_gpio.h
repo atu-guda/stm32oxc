@@ -9,6 +9,12 @@
 
 
 // ---------- special mini-classes to strong parameters types
+class GpioRegs;
+extern inline GpioRegs *const GPIOs[];
+class PinMask;
+class PinNum;
+class PortPin;
+
 
 class PinMask {
   public:
@@ -37,8 +43,8 @@ constexpr PinNum operator""_pin( unsigned long long v ) {
   return PinNum( v );
 }
 
-class GpioRegs;
-extern inline GpioRegs *const GPIOs[];
+constexpr inline PinMask make_pinMask( PinNum pin_num, uint8_t n ) { return PinMask( make_bit_mask( pin_num.Num(), n ) ) ; }
+
 
 class PortPin {
   public:
@@ -75,15 +81,15 @@ class GpioRegs {
    ~GpioRegs() = delete;
    constexpr inline uint8_t getIdx() const { return GpioIdx(*this); } // TODO: return PortPin
    void enableClk() const;
-   inline void set( uint16_t v ) // get given to '1' (OR)
+   inline void set( PinMask v ) // get given to '1' (OR)
    {
-     BSSR = v;
+     BSSR = v.Mask();
    }
-   inline void reset( uint16_t v ) // AND~
+   inline void reset( PinMask v ) // AND~
    {
-     BSSR = v << 16;
+     BSSR = (uint32_t)v.Mask() << 16;
    }
-   inline void sr( uint16_t bits, bool doSet )
+   inline void sr( PinMask bits, bool doSet )
    {
      if( doSet ) {
        set( bits );
@@ -91,38 +97,38 @@ class GpioRegs {
        reset( bits );
      }
    }
-   inline void toggle( uint16_t v ) // XOR
+   inline void toggle( PinMask v ) // XOR
    {
-     ODR ^= v;
+     ODR ^= v.Mask();
    }
 
-   template <typename F> void for_selected_pins( uint16_t pins, F f )
+   template <typename F> void for_selected_pins( PinMask pins, F f )
    {
      for( uint16_t pb = 1, pin_num = 0; pb != 0; pb <<= 1, ++pin_num ) {
-       if( pins & pb ) {
-         f( pin_num );
+       if( pins.Mask() & pb ) {
+         f( PinNum(pin_num) );
        }
      }
    }
 
    #if ! defined (STM32F1)
-   inline void cfg_set_MODER( uint8_t pin_num, Moder val )
+   inline void cfg_set_MODER( PinNum pin_num, Moder val )
    {
      uint32_t t = MODER;
-     t &= ~( 3u  << ( pin_num * 2 ) );
-     t |=  ( (uint8_t)(val) << ( pin_num * 2 ) );
+     t &= ~( 3u  << ( pin_num.Num() * 2 ) );
+     t |=  ( (uint8_t)(val) << ( pin_num.Num() * 2 ) );
      MODER = t;
    }
-   inline void cfg_set_pp( uint8_t pin_num )
+   inline void cfg_set_pp( PinNum pin_num )
    {
-     OTYPER  &= ~( 1u << pin_num );
+     OTYPER  &= ~( 1u << pin_num.Num() );
    }
 
-   inline void cfg_set_od( uint8_t pin_num )
+   inline void cfg_set_od( PinNum pin_num )
    {
-     OTYPER  |= ( 1u << pin_num );
+     OTYPER  |= ( 1u << pin_num.Num() );
    }
-   inline void cfg_set_ppod( uint8_t pin_num, bool od )
+   inline void cfg_set_ppod( PinNum pin_num, bool od )
    {
      if( od ) {
        cfg_set_od( pin_num );
@@ -130,75 +136,75 @@ class GpioRegs {
        cfg_set_pp( pin_num );
      }
    }
-   inline void cfg_set_speed_max( uint8_t pin_num )
+   inline void cfg_set_speed_max( PinNum pin_num )
    {
-     OSPEEDR |=  ( 3u << ( pin_num * 2 ) );
+     OSPEEDR |=  ( 3u << ( pin_num.Num() * 2 ) );
    }
-   inline void cfg_set_speed_min( uint8_t pin_num )
+   inline void cfg_set_speed_min( PinNum pin_num )
    {
-     OSPEEDR &= ~( 3u << ( pin_num * 2 ) );
+     OSPEEDR &= ~( 3u << ( pin_num.Num() * 2 ) );
    }
-   inline void cfg_set_pull( uint8_t pin_num, Pull p )
+   inline void cfg_set_pull( PinNum pin_num, Pull p )
    {
-     PUPDR   &= ~( 3u << ( pin_num * 2 ) );
-     PUPDR   |=  ( (uint8_t)p << ( pin_num * 2 ) );
+     PUPDR   &= ~( 3u << ( pin_num.Num() * 2 ) );
+     PUPDR   |=  ( (uint8_t)p << ( pin_num.Num() * 2 ) );
    }
-   inline void cfg_set_pull_no( uint8_t pin_num )
+   inline void cfg_set_pull_no( PinNum pin_num )
    {
-     PUPDR   &= ~( 3u << ( pin_num * 2 ) );
+     PUPDR   &= ~( 3u << ( pin_num.Num() * 2 ) );
    }
-   inline void cfg_set_pull_up( uint8_t pin_num )
+   inline void cfg_set_pull_up( PinNum pin_num )
    {
-     PUPDR   &= ~( 3u << ( pin_num * 2 ) );
-     PUPDR   |=  ( 1u << ( pin_num * 2 ) );
+     PUPDR   &= ~( 3u << ( pin_num.Num() * 2 ) );
+     PUPDR   |=  ( 1u << ( pin_num.Num() * 2 ) );
    }
-   inline void cfg_set_pull_down( uint8_t pin_num )
+   inline void cfg_set_pull_down( PinNum pin_num )
    {
-     PUPDR   &= ~( 3u << ( pin_num * 2 ) );
-     PUPDR   |=  ( 2u << ( pin_num * 2 ) );
+     PUPDR   &= ~( 3u << ( pin_num.Num() * 2 ) );
+     PUPDR   |=  ( 2u << ( pin_num.Num() * 2 ) );
    }
-   inline void cfg_set_af0( uint8_t pin_num )
+   inline void cfg_set_af0( PinNum pin_num )
    {
-     uint8_t idx = pin_num >> 3;
-     pin_num  &= 0x07;
-     AFR[idx] &= ~( 0x0F << ( pin_num * 4 ) );
+     const uint8_t idx = pin_num.Num() >> 3;
+     const uint8_t nn  = ( pin_num.Num() & 0x07 ) * 4;
+     AFR[idx] &= ~( 0x0F << nn );
    }
-   inline void cfg_set_af( uint8_t pin_num, uint8_t af )
+   inline void cfg_set_af( PinNum pin_num, uint8_t af )
    {
-     uint8_t idx = pin_num >> 3;
-     pin_num  &= 0x07;
-     AFR[idx] &= ~( 0x0F << ( pin_num * 4 ) );
-     AFR[idx] |=  (   af << ( pin_num * 4 ) );
+     const uint8_t idx = pin_num.Num() >> 3;
+     const uint8_t nn  = ( pin_num.Num() & 0x07 ) * 4;
+     AFR[idx] &= ~( 0x0F << nn );
+     AFR[idx] |=  (   af << nn );
    }
    #endif
 
-   void cfgOut_common( uint8_t pin_num );
-   void cfgOut( uint8_t pin_num, bool od = false );
-   void cfgOut_N( uint16_t pins, bool od = false )
+   void cfgOut_common( PinNum pin_num );
+   void cfgOut( PinNum pin_num, bool od = false );
+   void cfgOut_N( PinMask pins, bool od = false )
    {
      for_selected_pins( pins, std::bind( &GpioRegs::cfgOut, this, std::placeholders::_1, od ) );
    }
 
-   void cfgAF( uint8_t pin_num, uint8_t af, bool od = false );
-   void cfgAF_N( uint16_t pins, uint8_t af, bool od = false )
+   void cfgAF( PinNum pin_num, uint8_t af, bool od = false );
+   void cfgAF_N( PinMask pins, uint8_t af, bool od = false )
    {
      for_selected_pins( pins, std::bind( &GpioRegs::cfgAF, this, std::placeholders::_1, af, od ) );
    }
 
-   void cfgIn( uint8_t pin_num, Pull p = Pull::no );
-   void cfgIn_N( uint16_t pins, Pull p = Pull::no )
+   void cfgIn( PinNum pin_num, Pull p = Pull::no );
+   void cfgIn_N( PinMask pins, Pull p = Pull::no )
    {
      for_selected_pins( pins, std::bind( &GpioRegs::cfgIn, this, std::placeholders::_1, p ) );
    }
 
-   void cfgAnalog( uint8_t pin_num );
-   void cfgAnalog_N( uint16_t pins )
+   void cfgAnalog( PinNum pin_num );
+   void cfgAnalog_N( PinMask pins )
    {
      for_selected_pins( pins, std::bind( &GpioRegs::cfgAnalog, this, std::placeholders::_1 ) );
    }
 
 
-   void setEXTI( uint8_t pin, ExtiEv ev );
+   void setEXTI( PinNum pin, ExtiEv ev );
 
 
 
@@ -316,27 +322,28 @@ void board_def_btn_init( bool needIRQ );
 class Pins
 {
   public:
-   constexpr Pins( GpioRegs &gi, uint8_t a_start, uint8_t a_n )
+   constexpr Pins( GpioRegs &gi, PinNum a_start, uint8_t a_n )
      : gpio( gi ),
        start( a_start ), n( a_n ),
-       mask( make_gpio_mask( start, n ) ),
-       maskR( mask << 16 )
+       mask( make_pinMask( a_start, n ) ),
+       maskR( mask.Mask() << 16 )
      {};
-   uint16_t getMask() const { return mask; }
+   PinMask getMask() const { return mask; }
    void initHW() { gpio.enableClk(); }
    GpioRegs& dev() { return gpio; }
-   constexpr inline uint16_t mv( uint16_t v ) const
+   constexpr inline uint16_t mv( PinMask v ) const
    {
-     return ( (v << start) & mask );
+     return ( ( v.Mask() << start.Num() ) & mask.Mask() );
    }
-   inline uint16_t read() const
+   inline PinMask read() const
    {
-     return ( gpio.IDR & mask ) >> start;
+     return PinMask( ( gpio.IDR & mask.Mask() ) >> start.Num() );
    }
   protected:
    GpioRegs &gpio;
-   const uint8_t start, n;
-   const uint16_t mask;
+   const PinNum start;
+   const uint8_t n;
+   const PinMask mask;
    const uint32_t maskR;
 };
 
@@ -352,65 +359,65 @@ class Pins
 class PinsOut : public Pins
 {
   public:
-   constexpr PinsOut( GpioRegs &gi, uint8_t a_start, uint8_t a_n )
+   constexpr PinsOut( GpioRegs &gi, PinNum a_start, uint8_t a_n )
      : Pins( gi, a_start, a_n )
      {};
    void initHW();
-   inline void write( uint16_t v )  // set all bits to given, drop old
+   inline void write( PinMask v )  // set all bits to given, drop old
    {
      gpio.BSSR = mv( v ) | maskR;
    }
-   inline void operator=( uint16_t v ) { write( v ); }
-   inline void set( uint16_t v )   // set given bits to '1' (OR)
+   inline void operator=( PinMask v ) { write( v ); }
+   inline void set( PinMask v )   // set given bits to '1' (OR)
    {
      gpio.BSSR = mv( v );
    }
-   inline void operator|=( uint16_t v ) { set( v ); }
-   inline void reset( uint16_t v ) // reset given bits to '0' AND~
+   inline void operator|=( PinMask v ) { set( v ); }
+   inline void reset( PinMask v ) // reset given bits to '0' AND~
    {
      gpio.BSSR = mv( v ) << 16;
    }
-   inline void operator%=( uint16_t v ) { reset( v ); }
-   inline void setbit( uint8_t i )   // set given (by pos) 1 bit to '1' (OR)
+   inline void operator%=( PinMask v ) { reset( v ); }
+   inline void setbit( PinNum i )   // set given (by pos) 1 bit to '1' (OR)
    {
-     set( 1 << i );
+     set( make_pinMask( i, 1 ) );
    }
-   inline void resetbit( uint8_t i )   // reset given (by pos) 1 bit to '0' (AND~)
+   inline void resetbit( PinNum i )   // reset given (by pos) 1 bit to '0' (AND~)
    {
-     reset( 1 << i );
+     reset( make_pinMask( i, 1 ) );
    }
-   inline void sr( uint16_t bits, bool doSet ) {
+   inline void sr( PinMask bits, bool doSet ) {
      if( doSet ) {
        set( bits );
      } else {
        reset( bits );
      }
    }
-   inline void srbit( uint8_t i, bool doSet ) {
+   inline void srbit( PinNum i, bool doSet ) {
      if( doSet ) {
        setbit( i );
      } else {
        resetbit( i );
      }
    }
-   inline void toggle( uint16_t v ) // XOR
+   inline void toggle( PinMask v ) // XOR
    {
      gpio.ODR ^= mv( v );
    }
-   inline void operator^=( uint16_t v ) { toggle( v ); }
-   inline void togglebit( uint8_t i ) // XOR 1 bit
+   inline void operator^=( PinMask v ) { toggle( v ); }
+   inline void togglebit( PinNum i ) // XOR 1 bit
    {
-     gpio.ODR ^= mv( 1 << i );
+     gpio.ODR ^= mv( make_pinMask( i, 1 ) );
    }
    struct bitpos {
      PinsOut &pins;
-     uint8_t i;
+     PinNum i;
      inline void operator=( bool b ) { pins.srbit( i, b ); };
      inline void set() { pins.setbit( i ); }
      inline void reset() { pins.resetbit( i ); }
      inline void toggle() { pins.togglebit( i ); }
    };
-   bitpos operator[]( uint8_t i ) { return { *this, i }; }
+   bitpos operator[]( PinNum i ) { return { *this, i }; }
 
   protected:
    // none for now
@@ -425,13 +432,13 @@ extern PinsOut leds;
 class PinOut
 {
   public:
-   constexpr PinOut( GpioRegs &gi, uint8_t a_start )
+   constexpr PinOut( GpioRegs &gi, PinNum a_start )
      : gpio( gi ),
        start( a_start ),
-       mask( make_gpio_mask( start, 1 ) ),
-       maskR( mask << 16 )
+       mask( make_gpio_mask( start.Num(), 1 ) ),
+       maskR( mask.Mask() << 16 )
      {};
-   uint16_t getMask() const { return mask; }
+   PinMask getMask() const { return mask; }
    void initHW() { gpio.enableClk(); gpio.cfgOut_N( mask );}
    GpioRegs& dev() { return gpio; }
    inline void write( bool doSet )
@@ -440,7 +447,7 @@ class PinOut
    }
    inline void set()
    {
-     gpio.BSSR = mask;
+     gpio.BSSR = mask.Mask();
    }
    inline void reset()
    {
@@ -455,23 +462,23 @@ class PinOut
    }
    inline void toggle()
    {
-     gpio.ODR ^= mask;
+     gpio.ODR ^= mask.Mask();
    }
    inline bool operator=( bool b ) { sr( b ); return b; }
    inline uint8_t read_in() {
-     return ( gpio.IDR & mask ) ? 1 : 0;
+     return ( gpio.IDR & mask.Mask() ) ? 1 : 0;
    };
    inline uint8_t read_out() {
-     return ( gpio.ODR & mask ) ? 1 : 0;
+     return ( gpio.ODR & mask.Mask() ) ? 1 : 0;
    };
   protected:
    GpioRegs &gpio;
-   const uint8_t start;
-   const uint16_t mask;
+   const PinNum start;
+   const PinMask mask;
    const uint32_t maskR;
 };
 
-[[ noreturn ]] void die4led( uint16_t n );
+[[ noreturn ]] void die4led( PinMask n );
 
 
 // --------------- PinsIn ----------------------------------------
@@ -479,7 +486,7 @@ class PinOut
 class PinsIn : public Pins
 {
   public:
-   constexpr PinsIn( GpioRegs &gi, uint8_t a_start, uint8_t a_n, GpioRegs::Pull a_pull = GpioRegs::Pull::no )
+   constexpr PinsIn( GpioRegs &gi, PinNum a_start, uint8_t a_n, GpioRegs::Pull a_pull = GpioRegs::Pull::no )
      : Pins( gi, a_start, a_n ),
        pull( a_pull )
      {};
@@ -495,12 +502,12 @@ class PinsIn : public Pins
 // io.sw1(); io.sw0(); io.set_sw0( true ); x = io.rw(); y = io.rw_raw();
 class IoPin {
   public:
-   constexpr IoPin( GpioRegs &gi, uint16_t a_pin )
+   constexpr IoPin( GpioRegs &gi, PinMask a_pin )
      : gpio( gi ), pin( a_pin ) {};
    void initHW();
-   inline void sw1() { gpio.BSSR = pin; };
+   inline void sw1() { gpio.BSSR = pin.Mask(); };
    inline void sw0() {
-     gpio.BSSR = pin << 16;
+     gpio.BSSR = pin.Mask() << 16;
    };
    void set_sw0( bool s ) { if( s ) sw1(); else sw0(); }
    uint8_t rw() {
@@ -508,19 +515,19 @@ class IoPin {
      return rw_raw();
    };
    inline uint8_t rw_raw() {
-     return ( gpio.IDR & pin ) ? 1 : 0;
+     return ( gpio.IDR & pin.Mask() ) ? 1 : 0;
    };
 
   protected:
    GpioRegs &gpio;
-   const uint16_t pin;
+   const PinMask pin;
 };
 
 // ------------------ mass EXTI init
 
 struct EXTI_init_info {
   decltype(GpioA) gpio;
-  uint8_t pinnum; // number, not bit. if > 15 - end;
+  PinNum pinnum; // number, not bit. if > 15 - end;
   decltype(GpioRegs::ExtiEv::updown) dir;
   decltype(EXTI0_IRQn) exti_n;
   uint8_t prty, subprty;

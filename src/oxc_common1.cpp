@@ -106,7 +106,7 @@ void led_task_nortos()
 void std_main_loop_nortos( SmallRL *sm, AuxTickFun f_idle )
 {
   if( !sm ) {
-    die4led( 0 );
+    die4led( 0_mask );
   }
 
   std_out <<  "###  " PROJ_NAME  " #### " NL;

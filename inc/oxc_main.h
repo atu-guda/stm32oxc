@@ -29,9 +29,9 @@
 
 #define STD_PROLOG_UART_NOCON \
   STD_PROLOG_START; \
-  delay_ms( PROLOG_LED_TIME ); leds.write( 0x00 ); delay_ms( PROLOG_LED_TIME ); \
+  delay_ms( PROLOG_LED_TIME ); leds.write( 0_mask ); delay_ms( PROLOG_LED_TIME ); \
   if( ! init_uart( &uah_console ) ) { \
-    die4led( 1 ); \
+    die4led( 1_mask ); \
   } \
   leds.write( BOARD_LEDS_ALL );  HAL_Delay( PROLOG_LED_TIME );
 
@@ -43,7 +43,7 @@
 
 #define STD_PROLOG_USBCDC \
   STD_PROLOG_START; \
-  delay_ms( PROLOG_LED_TIME ); leds.write( 0x00 ); delay_ms( PROLOG_LED_TIME ); \
+  delay_ms( PROLOG_LED_TIME ); leds.write( 0_mask ) ); delay_ms( PROLOG_LED_TIME ); \
   if( ! dev_console.init() ) { \
     die4led( 1 ); \
   } \
@@ -57,10 +57,10 @@
 
   //
   #define SCHEDULER_START \
-    leds.write( 0x00 ); \
+    leds.write( 0_mask ); \
     ready_to_start_scheduler = 1; \
     vTaskStartScheduler(); \
-    die4led( 0xFF );
+    die4led( 0xFF_mask );
   //
   #define CREATE_STD_TASKS \
     xTaskCreate( task_leds,        "leds", 1*def_stksz, nullptr,   1, nullptr ); \

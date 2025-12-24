@@ -122,7 +122,7 @@ void oxc_call_aux_tick_funcs(void);
 
 
 #define USE_DIE_ERROR_HANDLER void Error_Handler( int rc ) { die( rc ); };
-#define USE_DIE4LED_ERROR_HANDLER void Error_Handler( int rc ) { die4led( rc ); };
+#define USE_DIE4LED_ERROR_HANDLER void Error_Handler( PinMask rc ) { die4led( rc ); };
 #define USE_DIE_EXIT void exit( int rc ) { die( rc ); };
 #define USE_DIE4LED_EXIT void exit( int rc ) { die4led( rc ); };
 

@@ -26,7 +26,7 @@ DCL_CMD_REG( delay_calibrate, 'D', " - calibrate dumb delay"  );
 
 void idle_main_task()
 {
-  leds.toggle( 1 );
+  leds.toggle( PinMask( 1 ) );
 }
 
 

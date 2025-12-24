@@ -31,14 +31,14 @@
 
 #define LED_BSP_YELLOW_MINI 1
 
-#define LED_BSP_RED       1
-#define LED_BSP_RED_0     1
-#define LED_BSP_YELLOW    2
-#define LED_BSP_YELLOW_0  2
-#define LED_BSP_GREEN     4
-#define LED_BSP_GREEN_0   4
-#define LED_BSP_BLUE      8
-#define LED_BSP_BLUE_0    8
+#define LED_BSP_RED       1_mask
+#define LED_BSP_RED_0     1_mask
+#define LED_BSP_YELLOW    2_mask
+#define LED_BSP_YELLOW_0  2_mask
+#define LED_BSP_GREEN     4_mask
+#define LED_BSP_GREEN_0   4_mask
+#define LED_BSP_BLUE      8_mask
+#define LED_BSP_BLUE_0    8_mask
 
 #define LED_BSP_IDLE      LED_BSP_BLUE
 #define LED_BSP_TX        LED_BSP_RED
@@ -47,7 +47,7 @@
 
 #define BOARD_BTN0_EXIST   1
 #define BOARD_BTN0_GPIOX   C
-#define BOARD_BTN0_N       13
+#define BOARD_BTN0_N       PinNum(13)
 #define BOARD_BTN0_ACTIVE_DOWN 0
 #define BOARD_BTN0_IRQNAME  EXTI15_10
 
@@ -78,7 +78,7 @@
 
 #define BOARD_UART_DEFAULT            USART2
 #define BOARD_UART_DEFAULT_GPIO       GpioA
-#define BOARD_UART_DEFAULT_GPIO_PINS  ( GPIO_PIN_2 | GPIO_PIN_3 )
+#define BOARD_UART_DEFAULT_GPIO_PINS  PinMask( GPIO_PIN_2 | GPIO_PIN_3 )
 #define BOARD_UART_DEFAULT_GPIO_AF    GPIO_AF7_USART2
 #define BOARD_UART_DEFAULT_ENABLE     __USART2_CLK_ENABLE(); __GPIOA_CLK_ENABLE();
 #define BOARD_UART_DEFAULT_DISABLE    __USART2_CLK_DISABLE();
@@ -201,6 +201,6 @@
 #define BOARD_CONSOLE_DEFINES_UART    UART_CONSOLE_DEFINES( USART2 );
 #define BOARD_PROLOG                  STD_PROLOG_UART;
 #define BOARD_CREATE_STD_TASKS        CREATE_STD_TASKS;
-#define BOARD_POST_INIT_BLINK         delay_ms( PROLOG_LED_TIME ); leds.write( 0x00 ); delay_ms( PROLOG_LED_TIME );
+#define BOARD_POST_INIT_BLINK         delay_ms( PROLOG_LED_TIME ); leds.write( 0_mask ); delay_ms( PROLOG_LED_TIME );
 
 #endif
