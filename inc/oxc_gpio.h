@@ -7,6 +7,12 @@
 #include <oxc_bitops.h>
 #include <oxc_refptr.h>
 
+enum class GpioModer { in = 0, out = 1, af = 2, analog = 3 };
+enum class GpioPull {  no = 0,  up = 1, down = 2 };
+enum class ExtiEv { no = 0, up = 1, down = 2, updown = 3 };
+enum class GpioModeF1 { Analog = 0b0000, InFloat = 0b0100, InPull = 0b1000,
+                    OutPP = 0b0011, OutOD   = 0b0111,
+                     AFPP = 0b1011,  AFOD   = 0b1111  };
 
 // ---------- special mini-classes to strong parameters types
 class GpioRegs;
@@ -47,6 +53,8 @@ constexpr PinNum operator""_pin( unsigned long long v ) {
 constexpr inline PinMask make_pinMask( PinNum pin_num, uint8_t n ) { return PinMask( make_bit_mask( pin_num.Num(), n ) ) ; }
 
 
+// --------------------------------- PortPin --------------------------------------
+
 class PortPin {
   public:
    constexpr PortPin( uint8_t port_num_, PinNum pin_num ) : port_num( port_num_ ), num( pin_num ) {};
@@ -58,6 +66,25 @@ class PortPin {
    inline constexpr uint16_t bitmask() const { return num.Mask().bitmask(); }
    inline constexpr bool valid() const { return (port_num < 16) && num.valid(); } // TODO: number of ports
    inline static constexpr PortPin Bad()  { return PortPin( 0xFF, PinNum(0xFF) ); }
+   #if ! defined (STM32F1)
+   inline void cfg_set_MODER( GpioModer val ) const;
+   inline void cfg_set_pp() const;
+   inline void cfg_set_od() const;
+   inline void cfg_set_speed_max() const;
+   inline void cfg_set_speed_min() const;
+   inline void cfg_set_pull( GpioPull p ) const;
+   inline void cfg_set_pull_no() const;
+   inline void cfg_set_pull_up() const;
+   inline void cfg_set_pull_down() const;
+   inline void cfg_set_af0() const;
+   inline void cfg_set_af( uint8_t af ) const;
+   #endif
+   inline void cfgOut( bool od = false ) const;
+   inline void cfgAF( uint8_t af, bool od = false ) const;
+   inline void cfgIn( GpioPull p = GpioPull::no ) const;
+   inline void cfgAnalog() const;
+   inline void setEXTI( ExtiEv ev ) const;
+   inline void enableClk() const;
   private:
    uint8_t port_num;
    PinNum  num;
@@ -78,12 +105,6 @@ constexpr inline uint8_t GpioIdx( const GpioRegs &gp )
 
 class GpioRegs {
   public:
-   enum class Moder { in = 0, out = 1, af = 2, analog = 3 };
-   enum class Pull {  no = 0,  up = 1, down = 2 };
-   enum class ExtiEv { no = 0, up = 1, down = 2, updown = 3 };
-   enum class ModeF1 { Analog = 0b0000, InFloat = 0b0100, InPull = 0b1000,
-                        OutPP = 0b0011, OutOD   = 0b0111,
-                         AFPP = 0b1011,  AFOD   = 0b1111  };
 
    GpioRegs()  = delete; // init only as ptr/ref to real GPIO area
    ~GpioRegs() = delete;
@@ -120,7 +141,7 @@ class GpioRegs {
    }
 
    #if ! defined (STM32F1)
-   inline void cfg_set_MODER( PinNum pin_num, Moder val )
+   inline void cfg_set_MODER( PinNum pin_num, GpioModer val )
    {
      uint32_t t = MODER;
      t &= ~( 3u  << ( pin_num.Num() * 2 ) ); // TODO: use bitopts
@@ -152,7 +173,7 @@ class GpioRegs {
    {
      OSPEEDR &= ~( 3u << ( pin_num.Num() * 2 ) );
    }
-   inline void cfg_set_pull( PinNum pin_num, Pull p )
+   inline void cfg_set_pull( PinNum pin_num, GpioPull p )
    {
      PUPDR   &= ~( 3u << ( pin_num.Num() * 2 ) );
      PUPDR   |=  ( (uint8_t)p << ( pin_num.Num() * 2 ) );
@@ -199,8 +220,8 @@ class GpioRegs {
      for_selected_pins( pins, std::bind( &GpioRegs::cfgAF, this, std::placeholders::_1, af, od ) );
    }
 
-   void cfgIn( PinNum pin_num, Pull p = Pull::no );
-   void cfgIn_N( PinMask pins, Pull p = Pull::no )
+   void cfgIn( PinNum pin_num, GpioPull p = GpioPull::no );
+   void cfgIn_N( PinMask pins, GpioPull p = GpioPull::no )
    {
      for_selected_pins( pins, std::bind( &GpioRegs::cfgIn, this, std::placeholders::_1, p ) );
    }
@@ -211,9 +232,7 @@ class GpioRegs {
      for_selected_pins( pins, std::bind( &GpioRegs::cfgAnalog, this, std::placeholders::_1 ) );
    }
 
-
    void setEXTI( PinNum pin, ExtiEv ev );
-
 
 
    #if defined (STM32F1)
@@ -431,7 +450,7 @@ class PinsOut : public Pins
      inline void reset() { pins.resetbit( i ); }
      inline void toggle() { pins.togglebit( i ); }
    };
-   bitpos operator[]( PinNum i ) { return { *this, i }; }
+   bitpos operator[]( uint8_t i ) { return { *this, PinNum(i) }; }
 
   protected:
    // none for now
@@ -502,16 +521,16 @@ class PinOut
 class PinsIn : public Pins
 {
   public:
-   constexpr PinsIn( GpioRegs &gi, PinNum a_start, uint8_t a_n, GpioRegs::Pull a_pull = GpioRegs::Pull::no )
+   constexpr PinsIn( GpioRegs &gi, PinNum a_start, uint8_t a_n, GpioPull a_pull = GpioPull::no )
      : Pins( gi, a_start, a_n ),
        pull( a_pull )
      {};
-   constexpr PinsIn( PortPin pp, uint8_t a_n, GpioRegs::Pull a_pull = GpioRegs::Pull::no )
+   constexpr PinsIn( PortPin pp, uint8_t a_n, GpioPull a_pull = GpioPull::no )
      : PinsIn( pp.port(),  pp.pinNum(), a_n, a_pull )
      {};
    void initHW();
   protected:
-   const GpioRegs::Pull pull;
+   const GpioPull pull;
 };
 
 // --------------- IoPin ?? really pin, not pins? --------------------------------
@@ -548,12 +567,104 @@ class IoPin {
 struct EXTI_init_info {
   decltype(GpioA) gpio;
   PinNum pinnum; // number, not bit. if > 15 - end;
-  decltype(GpioRegs::ExtiEv::updown) dir;
+  decltype(ExtiEv::updown) dir;
   decltype(EXTI0_IRQn) exti_n;
   uint8_t prty, subprty;
 };
 
 unsigned EXTI_inits( const EXTI_init_info *exti_info, bool initIRQ = true );
+
+// -- post-def funcs
+
+#if ! defined (STM32F1)
+
+inline void PortPin::cfg_set_MODER( GpioModer val ) const
+{
+  port().cfg_set_MODER( num, val );
+}
+
+inline void PortPin::cfg_set_pp() const
+{
+  port().cfg_set_pp( num );
+}
+
+inline void PortPin::cfg_set_od() const
+{
+  port().cfg_set_od( num );
+}
+
+inline void PortPin::cfg_set_speed_max() const
+{
+  port().cfg_set_speed_max( num );
+}
+
+inline void PortPin::cfg_set_speed_min() const
+{
+  port().cfg_set_speed_min( num );
+}
+
+inline void PortPin::cfg_set_pull( GpioPull p ) const
+{
+  port().cfg_set_pull( num, p );
+}
+
+inline void PortPin::cfg_set_pull_no() const
+{
+  port().cfg_set_pull_no( num );
+}
+
+inline void PortPin::cfg_set_pull_up() const
+{
+  port().cfg_set_pull_up( num );
+}
+
+inline void PortPin::cfg_set_pull_down() const
+{
+  port().cfg_set_pull_down( num );
+}
+
+inline void PortPin::cfg_set_af0() const
+{
+  port().cfg_set_af0( num );
+}
+
+inline void PortPin::cfg_set_af( uint8_t af ) const
+{
+  port().cfg_set_af( num, af );
+}
+
+#endif
+
+inline void PortPin::cfgOut( bool od ) const
+{
+  port().cfgOut( num, od );
+}
+
+inline void PortPin::cfgAF( uint8_t af, bool od ) const
+{
+  port().cfgAF( num, af, od );
+}
+
+inline void PortPin::cfgIn( GpioPull p ) const
+{
+  port().cfgIn( num, p );
+}
+
+inline void PortPin::cfgAnalog() const
+{
+  port().cfgAnalog( num );
+}
+
+inline void PortPin::setEXTI( ExtiEv ev ) const
+{
+  port().setEXTI( num, ev );
+}
+
+inline void PortPin::enableClk() const
+{
+  port().enableClk();
+}
+
 
 #endif
 

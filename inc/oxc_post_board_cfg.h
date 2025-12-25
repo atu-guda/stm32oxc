@@ -25,11 +25,11 @@
 
 #ifdef BOARD_BTN0
 #if BOARD_BTN0_ACTIVE_DOWN == 1
-  #define BOARD_BTN0_PULL    GpioRegs::Pull::up
-  #define BOARD_BTN0_MODE    GpioRegs::ExtiEv::down
+  #define BOARD_BTN0_PULL    GpioPull::up
+  #define BOARD_BTN0_MODE    ExtiEv::down
 #else
-  #define BOARD_BTN0_PULL    GpioRegs::Pull::down
-  #define BOARD_BTN0_MODE    GpioRegs::ExtiEv::up
+  #define BOARD_BTN0_PULL    GpioPull::down
+  #define BOARD_BTN0_MODE    ExtiEv::up
 #endif
 
 #define BOARD_BTN0_IRQ        MK_EXTI_IRQ(BOARD_BTN0_IRQNAME)
@@ -42,11 +42,11 @@
 
 #ifdef BOARD_BTN1
 #if BOARD_BTN1_ACTIVE_DOWN == 1
-  #define BOARD_BTN1_PULL    GpioRegs::Pull::up
-  #define BOARD_BTN1_MODE    GpioRegs::ExtiEv::down
+  #define BOARD_BTN1_PULL    GpioPull::up
+  #define BOARD_BTN1_MODE    ExtiEv::down
 #else
-  #define BOARD_BTN1_PULL    GpioRegs::Pull::down
-  #define BOARD_BTN1_MODE    GpioRegs::ExtiEv::up
+  #define BOARD_BTN1_PULL    GpioPull::down
+  #define BOARD_BTN1_MODE    ExtiEv::up
 #endif
 
 #define BOARD_BTN1_IRQ        MK_EXTI_IRQ(BOARD_BTN1_IRQNAME)

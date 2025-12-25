@@ -36,7 +36,7 @@ int main(void)
   BOARD_POST_INIT_BLINK;
 
   while(1) {
-    leds.toggle( BIT0 );
+    leds[0].toggle();
     delay_mcs( led_delay );
   }
 
@@ -53,7 +53,7 @@ void MX_GPIO_Init(void)
 #if defined(BOARD_BTN0)
 void BOARD_BTN0_IRQHANDLER(void)
 {
-  leds.toggle( BIT3 );
+  leds[3].toggle();
   HAL_GPIO_EXTI_IRQHandler( BOARD_BTN0.bitmask() );
   #ifdef BOARD_BTN0_1_SAME_IRQ
     HAL_GPIO_EXTI_IRQHandler( BOARD_BTN1.bitmask() );
@@ -79,7 +79,7 @@ void EXTI_CALLBACK_FUN( uint16_t mask )
   }
 
   if( mask == BOARD_BTN0.bitmask() )  {
-    leds.toggle( BIT1 );
+    leds[1].toggle();
     led_delay >>= 1;
     if( led_delay < 1 ) {
       led_delay = led_delay_init;
@@ -88,7 +88,7 @@ void EXTI_CALLBACK_FUN( uint16_t mask )
 
   #ifdef BOARD_BTN1
   if( mask == BOARD_BTN1.bitmask() )  {
-    leds.toggle( BIT2 );
+    leds[2].toggle();
     led_delay = led_delay_init;
   }
   #endif

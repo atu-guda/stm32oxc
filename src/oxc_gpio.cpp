@@ -13,7 +13,7 @@ void GpioRegs::cfgOut_common( PinNum pin_num )
   #if defined (STM32F1)
     // unused
   #else
-  cfg_set_MODER( pin_num, Moder::out );
+  cfg_set_MODER( pin_num, GpioModer::out );
   cfg_set_speed_max( pin_num );
   cfg_set_pull_no( pin_num );
   cfg_set_af0( pin_num );
@@ -38,7 +38,7 @@ void GpioRegs::cfgAF( PinNum pin_num, uint8_t af, bool od )
     replace_bits( CR[pin_num >> 3], ( pin_num & 7 ) << 2, 4,
                   od ? (uint8_t)(ModeF1::AFOD) : (uint8_t)(ModeF1::AFPP) );
   #else
-  cfg_set_MODER( pin_num, Moder::af );
+  cfg_set_MODER( pin_num, GpioModer::af );
   cfg_set_speed_max( pin_num );
   cfg_set_ppod( pin_num, od );
   cfg_set_pull_no( pin_num );
@@ -48,16 +48,16 @@ void GpioRegs::cfgAF( PinNum pin_num, uint8_t af, bool od )
 }
 
 
-void GpioRegs::cfgIn( PinNum pin_num, Pull p )
+void GpioRegs::cfgIn( PinNum pin_num, GpioPull p )
 {
   #if defined (STM32F1)
     uint8_t idx = pin_num >> 3;
     pin_num &= 0x07;
     CR[idx] &= ~( 0x0F << ( pin_num << 2 ) );
     if( p == Pull::no ) {
-      CR[idx] |=  ( (uint8_t)(ModeF1::InFloat)  << ( pin_num << 2 ) );
+      CR[idx] |=  ( (uint8_t)(GpioModeF1::InFloat)  << ( pin_num << 2 ) );
     } else {
-      CR[idx] |=  ( (uint8_t)(ModeF1::InPull)   << ( pin_num << 2 ) );
+      CR[idx] |=  ( (uint8_t)(GpioModeF1::InPull)   << ( pin_num << 2 ) );
       if( p == Pull::up ) {
         set_bit( ODR, pin_num );
       } else {
@@ -65,7 +65,7 @@ void GpioRegs::cfgIn( PinNum pin_num, Pull p )
       }
     }
   #else
-  cfg_set_MODER( pin_num, Moder::in );
+  cfg_set_MODER( pin_num, GpioModer::in );
   cfg_set_speed_min( pin_num );
   cfg_set_pp( pin_num );
   cfg_set_pull( pin_num, p );
@@ -79,7 +79,7 @@ void GpioRegs::cfgAnalog( PinNum pin_num )
   #if defined (STM32F1)
     reset_bits( CR[pin_num >> 3], ( pin_num & 7 ) << 2, 4 );
   #else
-  cfg_set_MODER( pin_num, Moder::analog );
+  cfg_set_MODER( pin_num, GpioModer::analog );
   cfg_set_speed_min( pin_num );
   cfg_set_pp( pin_num );
   cfg_set_pull_no( pin_num );
@@ -156,10 +156,9 @@ void board_def_btn_init( bool needIRQ )
 {
 
 #if defined(BOARD_BTN0)
-  auto &gpio0 = BOARD_BTN0.port(); // TODO: separate func in PortPin
-  gpio0.enableClk(); // TODO: config
-  gpio0.cfgIn( BOARD_BTN0.pinNum(), BOARD_BTN0_PULL );
-  gpio0.setEXTI( BOARD_BTN0.pinNum(), BOARD_BTN0_MODE );
+  BOARD_BTN0.enableClk(); // TODO: config
+  BOARD_BTN0.cfgIn( BOARD_BTN0_PULL );
+  BOARD_BTN0.setEXTI( BOARD_BTN0_MODE );
   if( needIRQ ) {
     HAL_NVIC_SetPriority( BOARD_BTN0_IRQ, BOARD_BTN0_IRQPRTY, 0 );
     HAL_NVIC_EnableIRQ( BOARD_BTN0_IRQ );
@@ -168,9 +167,9 @@ void board_def_btn_init( bool needIRQ )
 
 #if defined(BOARD_BTN1)
   auto &gpio1 = BOARD_BTN0.port();
-  gpio1.enableClk();
-  gpio1.cfgIn( BOARD_BTN1.pinNum(), BOARD_BTN1_PULL );
-  gpio1.setEXTI( BOARD_BTN1.pinNum(), BOARD_BTN1_MODE );
+  BOARD_BTN1.enableClk();
+  BOARD_BTN1.cfgIn( BOARD_BTN1_PULL );
+  BOARD_BTN1.setEXTI( BOARD_BTN1_MODE );
   if( needIRQ ) {
     HAL_NVIC_SetPriority( BOARD_BTN1_IRQ, BOARD_BTN1_IRQPRTY, 0 );
     HAL_NVIC_EnableIRQ( BOARD_BTN1_IRQ );
