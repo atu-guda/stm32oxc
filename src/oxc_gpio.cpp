@@ -156,7 +156,7 @@ void board_def_btn_init( bool needIRQ )
 {
 
 #if defined(BOARD_BTN0)
-  BOARD_BTN0.enableClk(); // TODO: config
+  BOARD_BTN0.enableClk();
   BOARD_BTN0.cfgIn( BOARD_BTN0_PULL );
   BOARD_BTN0.setEXTI( BOARD_BTN0_MODE );
   if( needIRQ ) {
@@ -166,7 +166,6 @@ void board_def_btn_init( bool needIRQ )
 #endif
 
 #if defined(BOARD_BTN1)
-  auto &gpio1 = BOARD_BTN0.port();
   BOARD_BTN1.enableClk();
   BOARD_BTN1.cfgIn( BOARD_BTN1_PULL );
   BOARD_BTN1.setEXTI( BOARD_BTN1_MODE );
