@@ -6,7 +6,9 @@
 #endif
 
 #define PASTER2(x,y) x ## y
-#define EVAL2(x,y)  PASTER2(x,y)
+#define PASTER3(x,y,z) x ## y ## z
+#define EVAL2(x,y)    PASTER2(x,y)
+#define EVAL3(x,y,z)  PASTER3(x,y,z)
 
 
 
@@ -23,39 +25,44 @@
 #define MK_EXTI_IRQ(q)  EVAL2(q,_IRQn)
 #define MK_EXTI_IRQH(q) EVAL2(q,_IRQHandler)
 
-#ifdef BOARD_BTN0
-#if BOARD_BTN0_ACTIVE_DOWN == 1
-  #define BOARD_BTN0_PULL    GpioPull::up
-  #define BOARD_BTN0_MODE    ExtiEv::down
-#else
-  #define BOARD_BTN0_PULL    GpioPull::down
-  #define BOARD_BTN0_MODE    ExtiEv::up
-#endif
+#ifdef BOARD_BTN0_GPIOX
+  #define BOARD_BTN0 EVAL3( P, C, BOARD_BTN0_N )
+  // #define BOARD_BTN0_GPIO  EVAL2(Gpio,BOARD_BTN0_GPIOX)
+  #if BOARD_BTN0_ACTIVE_DOWN == 1
+    #define BOARD_BTN0_PULL    GpioPull::up
+    #define BOARD_BTN0_MODE    ExtiEv::down
+  #else
+    #define BOARD_BTN0_PULL    GpioPull::down
+    #define BOARD_BTN0_MODE    ExtiEv::up
+  #endif
 
-#define BOARD_BTN0_IRQ        MK_EXTI_IRQ(BOARD_BTN0_IRQNAME)
-#define BOARD_BTN0_IRQHANDLER MK_EXTI_IRQH(BOARD_BTN0_IRQNAME)
-#ifndef BOARD_BTN0_IRQPRTY
-  #define BOARD_BTN0_IRQPRTY 14
-#endif
+  #define BOARD_BTN0_IRQ        MK_EXTI_IRQ(BOARD_BTN0_IRQNAME)
+  #define BOARD_BTN0_IRQHANDLER MK_EXTI_IRQH(BOARD_BTN0_IRQNAME)
+  #ifndef BOARD_BTN0_IRQPRTY
+    #define BOARD_BTN0_IRQPRTY 14
+  #endif
 
-#endif // BOARD_BTN0
+#endif // BOARD_BTN0_GPIOX
 
-#ifdef BOARD_BTN1
-#if BOARD_BTN1_ACTIVE_DOWN == 1
-  #define BOARD_BTN1_PULL    GpioPull::up
-  #define BOARD_BTN1_MODE    ExtiEv::down
-#else
-  #define BOARD_BTN1_PULL    GpioPull::down
-  #define BOARD_BTN1_MODE    ExtiEv::up
-#endif
+#ifdef BOARD_BTN1_GPIOX
+  #define BOARD_BTN1 EVAL3( P, C, BOARD_BTN1_N )
+  // #define BOARD_BTN1_GPIO  EVAL2(Gpio,BOARD_BTN1_GPIOX)
+  #if BOARD_BTN1_ACTIVE_DOWN == 1
+    #define BOARD_BTN1_PULL    GpioPull::up
+    #define BOARD_BTN1_MODE    ExtiEv::down
+  #else
+    #define BOARD_BTN1_PULL    GpioPull::down
+    #define BOARD_BTN1_MODE    ExtiEv::up
+  #endif
 
-#define BOARD_BTN1_IRQ        MK_EXTI_IRQ(BOARD_BTN1_IRQNAME)
-#define BOARD_BTN1_IRQHANDLER MK_EXTI_IRQH(BOARD_BTN1_IRQNAME)
-#ifndef BOARD_BTN1_IRQPRTY
-  #define BOARD_BTN1_IRQPRTY 14
-#endif
+  #define BOARD_BTN1_IRQ        MK_EXTI_IRQ(BOARD_BTN1_IRQNAME)
+  #define BOARD_BTN1_IRQHANDLER MK_EXTI_IRQH(BOARD_BTN1_IRQNAME)
+  #ifndef BOARD_BTN1_IRQPRTY
+    #define BOARD_BTN1_IRQPRTY 14
+  #endif
 
-#endif // BOARD_BTN1
+
+#endif // BOARD_BTN1_GPIOX
 
 
 #ifdef __cplusplus

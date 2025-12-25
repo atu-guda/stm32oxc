@@ -47,7 +47,8 @@
 #define LED_BSP_RX        LED_BSP_GREEN
 #define LED_BSP_ERR       LED_BSP_YELLOW
 
-#define BOARD_BTN0         PC13
+#define BOARD_BTN0_GPIOX   C
+#define BOARD_BTN0_N       13
 #define BOARD_BTN0_ACTIVE_DOWN 0
 #define BOARD_BTN0_IRQNAME  EXTI15_10
 
