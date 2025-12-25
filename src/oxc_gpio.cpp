@@ -155,20 +155,22 @@ void PinsOut::initHW()
 void board_def_btn_init( bool needIRQ )
 {
 
-#if defined(BOARD_BTN0_EXIST) && BOARD_BTN0_EXIST != 0
-  BOARD_BTN0_GPIO.enableClk(); // TODO: config
-  BOARD_BTN0_GPIO.cfgIn( BOARD_BTN0_N, BOARD_BTN0_PULL );
-  BOARD_BTN0_GPIO.setEXTI( BOARD_BTN0_N, BOARD_BTN0_MODE );
+#if defined(BOARD_BTN0)
+  auto &gpio0 = BOARD_BTN0.port(); // TODO: separate func in PortPin
+  gpio0.enableClk(); // TODO: config
+  gpio0.cfgIn( BOARD_BTN0.pinNum(), BOARD_BTN0_PULL );
+  gpio0.setEXTI( BOARD_BTN0.pinNum(), BOARD_BTN0_MODE );
   if( needIRQ ) {
     HAL_NVIC_SetPriority( BOARD_BTN0_IRQ, BOARD_BTN0_IRQPRTY, 0 );
     HAL_NVIC_EnableIRQ( BOARD_BTN0_IRQ );
   }
 #endif
 
-#if defined(BOARD_BTN1_EXIST) && BOARD_BTN1_EXIST != 0
-  BOARD_BTN1_GPIO.enableClk();
-  BOARD_BTN1_GPIO.cfgIn( BOARD_BTN1_N, BOARD_BTN1_PULL );
-  BOARD_BTN1_GPIO.setEXTI( BOARD_BTN1_N, BOARD_BTN1_MODE );
+#if defined(BOARD_BTN1)
+  auto &gpio1 = BOARD_BTN0.port();
+  gpio1.enableClk();
+  gpio1.cfgIn( BOARD_BTN1.pinNum(), BOARD_BTN1_PULL );
+  gpio1.setEXTI( BOARD_BTN1.pinNum(), BOARD_BTN1_MODE );
   if( needIRQ ) {
     HAL_NVIC_SetPriority( BOARD_BTN1_IRQ, BOARD_BTN1_IRQPRTY, 0 );
     HAL_NVIC_EnableIRQ( BOARD_BTN1_IRQ );
@@ -190,7 +192,7 @@ void PinsIn::initHW()
 void IoPin::initHW()
 {
   gpio.enableClk();
-  gpio.cfgOut_N( pin, true );
+  gpio.cfgOut_N( mask, true );
 }
 
 // --------------- EXTI mass init ------------------

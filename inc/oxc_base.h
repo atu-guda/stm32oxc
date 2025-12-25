@@ -75,7 +75,6 @@ inline uint32_t oxc_strex( uint32_t val, volatile uint32_t *addr )
 }
 
 
-// void die4led( uint16_t n );
 void taskYieldFun(void);
 void wakeFromIRQ( long wake );
 void vApplicationIdleHook(void);

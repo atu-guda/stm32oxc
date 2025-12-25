@@ -19,7 +19,7 @@ class PortPin;
 class PinMask {
   public:
    explicit constexpr PinMask( uint16_t mask_ ) : mask ( mask_ ) {};
-   inline constexpr uint16_t  Mask() const { return mask; }
+   inline constexpr uint16_t  bitmask() const { return mask; }
    // TODO: iterator
   private:
    uint16_t mask;
@@ -34,6 +34,7 @@ class PinNum {
    explicit constexpr PinNum( uint8_t num_ ) : num ( num_ ) {};
    inline constexpr uint8_t  Num() const { return num; }
    inline constexpr PinMask Mask() const { return PinMask( 1 << num ); }
+   inline constexpr uint16_t bitmask() const { return ( 1 << num ); }
    inline constexpr bool valid() const { return (num < 16); }
   private:
    uint8_t num;
@@ -49,10 +50,12 @@ constexpr inline PinMask make_pinMask( PinNum pin_num, uint8_t n ) { return PinM
 class PortPin {
   public:
    constexpr PortPin( uint8_t port_num_, PinNum pin_num ) : port_num( port_num_ ), num( pin_num ) {};
-   explicit constexpr PortPin( const char *s ); // "A1"
+   explicit constexpr PortPin( const char *s ); // TODO: "A1" "F15" "HF"?
    inline constexpr uint8_t portNum() const { return port_num; };
    inline constexpr GpioRegs& port() const { return *GPIOs[port_num]; };
    inline constexpr PinNum pinNum() const { return num; };
+   inline constexpr PinMask Mask() const { return num.Mask(); }
+   inline constexpr uint16_t bitmask() const { return num.Mask().bitmask(); }
    inline constexpr bool valid() const { return (port_num < 16) && num.valid(); } // TODO: number of ports
    inline static constexpr PortPin Bad()  { return PortPin( 0xFF, PinNum(0xFF) ); }
   private:
@@ -60,6 +63,11 @@ class PortPin {
    PinNum  num;
 };
 static_assert( sizeof(PortPin) == sizeof( uint16_t ) );
+
+// here PA0, PA1 ... PM15 are defined
+#define _OXC_PORTPINS_READY_INCLUDE
+#include <oxc_portpins.h>
+#undef _OXC_PORTPINS_READY_INCLUDE
 
 // ----------------- GPIO registers representation ------------------------------
 
@@ -83,11 +91,11 @@ class GpioRegs {
    void enableClk() const;
    inline void set( PinMask v ) // get given to '1' (OR)
    {
-     BSSR = v.Mask();
+     BSSR = v.bitmask();
    }
    inline void reset( PinMask v ) // AND~
    {
-     BSSR = (uint32_t)v.Mask() << 16;
+     BSSR = (uint32_t)v.bitmask() << 16;
    }
    inline void sr( PinMask bits, bool doSet )
    {
@@ -99,13 +107,13 @@ class GpioRegs {
    }
    inline void toggle( PinMask v ) // XOR
    {
-     ODR ^= v.Mask();
+     ODR ^= v.bitmask();
    }
 
    template <typename F> void for_selected_pins( PinMask pins, F f )
    {
      for( uint16_t pb = 1, pin_num = 0; pb != 0; pb <<= 1, ++pin_num ) {
-       if( pins.Mask() & pb ) {
+       if( pins.bitmask() & pb ) {
          f( PinNum(pin_num) );
        }
      }
@@ -115,7 +123,7 @@ class GpioRegs {
    inline void cfg_set_MODER( PinNum pin_num, Moder val )
    {
      uint32_t t = MODER;
-     t &= ~( 3u  << ( pin_num.Num() * 2 ) );
+     t &= ~( 3u  << ( pin_num.Num() * 2 ) ); // TODO: use bitopts
      t |=  ( (uint8_t)(val) << ( pin_num.Num() * 2 ) );
      MODER = t;
    }
@@ -326,18 +334,21 @@ class Pins
      : gpio( gi ),
        start( a_start ), n( a_n ),
        mask( make_pinMask( a_start, n ) ),
-       maskR( mask.Mask() << 16 )
+       maskR( mask.bitmask() << 16 )
+     {};
+   constexpr Pins( PortPin pp, uint8_t a_n )
+     : Pins( pp.port(),  pp.pinNum(), a_n )
      {};
    PinMask getMask() const { return mask; }
    void initHW() { gpio.enableClk(); }
    GpioRegs& dev() { return gpio; }
    constexpr inline uint16_t mv( PinMask v ) const
    {
-     return ( ( v.Mask() << start.Num() ) & mask.Mask() );
+     return ( ( v.bitmask() << start.Num() ) & mask.bitmask() );
    }
    inline PinMask read() const
    {
-     return PinMask( ( gpio.IDR & mask.Mask() ) >> start.Num() );
+     return PinMask( ( gpio.IDR & mask.bitmask() ) >> start.Num() );
    }
   protected:
    GpioRegs &gpio;
@@ -361,6 +372,9 @@ class PinsOut : public Pins
   public:
    constexpr PinsOut( GpioRegs &gi, PinNum a_start, uint8_t a_n )
      : Pins( gi, a_start, a_n )
+     {};
+   constexpr PinsOut( PortPin pp, uint8_t a_n )
+     : PinsOut( pp.port(),  pp.pinNum(), a_n )
      {};
    void initHW();
    inline void write( PinMask v )  // set all bits to given, drop old
@@ -436,9 +450,11 @@ class PinOut
      : gpio( gi ),
        start( a_start ),
        mask( make_gpio_mask( start.Num(), 1 ) ),
-       maskR( mask.Mask() << 16 )
+       maskR( mask.bitmask() << 16 )
      {};
-   PinMask getMask() const { return mask; }
+   constexpr PinOut( PortPin pp )
+     : PinOut( pp.port(),  pp.pinNum() )
+     {};
    void initHW() { gpio.enableClk(); gpio.cfgOut_N( mask );}
    GpioRegs& dev() { return gpio; }
    inline void write( bool doSet )
@@ -447,7 +463,7 @@ class PinOut
    }
    inline void set()
    {
-     gpio.BSSR = mask.Mask();
+     gpio.BSSR = mask.bitmask();
    }
    inline void reset()
    {
@@ -462,14 +478,14 @@ class PinOut
    }
    inline void toggle()
    {
-     gpio.ODR ^= mask.Mask();
+     gpio.ODR ^= mask.bitmask();
    }
    inline bool operator=( bool b ) { sr( b ); return b; }
    inline uint8_t read_in() {
-     return ( gpio.IDR & mask.Mask() ) ? 1 : 0;
+     return ( gpio.IDR & mask.bitmask() ) ? 1 : 0;
    };
    inline uint8_t read_out() {
-     return ( gpio.ODR & mask.Mask() ) ? 1 : 0;
+     return ( gpio.ODR & mask.bitmask() ) ? 1 : 0;
    };
   protected:
    GpioRegs &gpio;
@@ -490,9 +506,10 @@ class PinsIn : public Pins
      : Pins( gi, a_start, a_n ),
        pull( a_pull )
      {};
+   constexpr PinsIn( PortPin pp, uint8_t a_n, GpioRegs::Pull a_pull = GpioRegs::Pull::no )
+     : PinsIn( pp.port(),  pp.pinNum(), a_n, a_pull )
+     {};
    void initHW();
-   // read() moved to parent
-   // inline uint16_t operator (uint16_t)() { return read(); } // ? explicit?
   protected:
    const GpioRegs::Pull pull;
 };
@@ -502,12 +519,15 @@ class PinsIn : public Pins
 // io.sw1(); io.sw0(); io.set_sw0( true ); x = io.rw(); y = io.rw_raw();
 class IoPin {
   public:
-   constexpr IoPin( GpioRegs &gi, PinMask a_pin )
-     : gpio( gi ), pin( a_pin ) {};
+   constexpr IoPin( GpioRegs &gi, PinMask a_mask )
+     : gpio( gi ), mask( a_mask ) {};
+   constexpr IoPin( PortPin pp, uint8_t a_n = 1 )
+     : IoPin( pp.port(), make_pinMask( pp.pinNum(), a_n ) )
+     {};
    void initHW();
-   inline void sw1() { gpio.BSSR = pin.Mask(); };
+   inline void sw1() { gpio.BSSR = mask.bitmask(); };
    inline void sw0() {
-     gpio.BSSR = pin.Mask() << 16;
+     gpio.BSSR = mask.bitmask() << 16;
    };
    void set_sw0( bool s ) { if( s ) sw1(); else sw0(); }
    uint8_t rw() {
@@ -515,12 +535,12 @@ class IoPin {
      return rw_raw();
    };
    inline uint8_t rw_raw() {
-     return ( gpio.IDR & pin.Mask() ) ? 1 : 0;
+     return ( gpio.IDR & mask.bitmask() ) ? 1 : 0;
    };
 
   protected:
    GpioRegs &gpio;
-   const PinMask pin;
+   const PinMask mask;
 };
 
 // ------------------ mass EXTI init

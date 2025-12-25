@@ -12,11 +12,10 @@
 
 // ----------------------------- leds ---------------------------
 #ifdef BOARD_N_LEDS
-#define BOARD_LEDS_ALL  PinMask( (1 << BOARD_N_LEDS) - 1 )
-#define BOARD_LEDS_MASK ( BOARD_LEDS_ALL << BOARD_LEDS_OFS )
-#define BOARD_LEDS_GPIO  EVAL2(Gpio,BOARD_LEDS_GPIOX)
+// #define BOARD_LEDS_ALL  PinMask( (1 << BOARD_N_LEDS) - 1 )
+//  #define BOARD_LEDS_MASK ( BOARD_LEDS_ALL << BOARD_LEDS_OFS )
 
-#define BOARD_DEFINE_LEDS PinsOut leds( BOARD_LEDS_GPIO, PinNum(BOARD_LEDS_OFS), BOARD_N_LEDS );
+#define BOARD_DEFINE_LEDS PinsOut leds( BOARD_LEDS_START, BOARD_N_LEDS );
 #endif // BOARD_N_LEDS
 
 
@@ -24,9 +23,7 @@
 #define MK_EXTI_IRQ(q)  EVAL2(q,_IRQn)
 #define MK_EXTI_IRQH(q) EVAL2(q,_IRQHandler)
 
-#ifdef BOARD_BTN0_EXIST
-#define BOARD_BTN0_BIT     ( 1 << BOARD_BTN0_N )
-#define BOARD_BTN0_GPIO  EVAL2(Gpio,BOARD_BTN0_GPIOX)
+#ifdef BOARD_BTN0
 #if BOARD_BTN0_ACTIVE_DOWN == 1
   #define BOARD_BTN0_PULL    GpioRegs::Pull::up
   #define BOARD_BTN0_MODE    GpioRegs::ExtiEv::down
@@ -41,11 +38,9 @@
   #define BOARD_BTN0_IRQPRTY 14
 #endif
 
-#endif // BOARD_BTN0_EXIST
+#endif // BOARD_BTN0
 
-#ifdef BOARD_BTN1_EXIST
-#define BOARD_BTN1_BIT     ( 1 << BOARD_BTN1_N )
-#define BOARD_BTN1_GPIO  EVAL2(Gpio,BOARD_BTN1_GPIOX)
+#ifdef BOARD_BTN1
 #if BOARD_BTN1_ACTIVE_DOWN == 1
   #define BOARD_BTN1_PULL    GpioRegs::Pull::up
   #define BOARD_BTN1_MODE    GpioRegs::ExtiEv::down
@@ -60,9 +55,7 @@
   #define BOARD_BTN1_IRQPRTY 14
 #endif
 
-#else
-#define BOARD_BTN1_BIT     0
-#endif // BOARD_BTN1_EXIST
+#endif // BOARD_BTN1
 
 
 #ifdef __cplusplus

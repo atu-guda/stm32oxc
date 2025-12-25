@@ -15,6 +15,7 @@
 
 
 // default: single LED on A5
+#define BOARD_LEDS_START_MINI PA5
 #define BOARD_N_LEDS_MINI 1
 #define BOARD_LEDS_GPIO_MINI GpioA
 #define BOARD_LEDS_OFS_MINI  5
@@ -23,6 +24,7 @@
 #define BOARD_LEDS_ALL_MINI  0x01
 
 // not so-extra LEDS is C0:C3
+#define BOARD_LEDS_START PC0
 #define BOARD_N_LEDS 4
 #define BOARD_LEDS_GPIOX C
 #define BOARD_LEDS_OFS  0
@@ -45,9 +47,7 @@
 #define LED_BSP_RX        LED_BSP_GREEN
 #define LED_BSP_ERR       LED_BSP_YELLOW
 
-#define BOARD_BTN0_EXIST   1
-#define BOARD_BTN0_GPIOX   C
-#define BOARD_BTN0_N       PinNum(13)
+#define BOARD_BTN0         PC13
 #define BOARD_BTN0_ACTIVE_DOWN 0
 #define BOARD_BTN0_IRQNAME  EXTI15_10
 

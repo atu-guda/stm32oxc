@@ -129,7 +129,7 @@ int main(void)
 {
   STD_PROLOG_UART_NOCON;
 
-  leds.write( 0 );
+  leds.write( 0_mask );
 
   int n = 0;
   char ou[12];

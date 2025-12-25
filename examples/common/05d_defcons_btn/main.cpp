@@ -25,8 +25,8 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 500;
-  UVAR('n') =  20;
+  UVAR_t = 500;
+  UVAR_n =  20;
 
   init_btns();
 

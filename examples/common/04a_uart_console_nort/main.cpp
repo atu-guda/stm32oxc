@@ -25,8 +25,8 @@ int main(void)
 {
   STD_PROLOG_UART;
 
-  UVAR('t') = 100;
-  UVAR('n') =  20;
+  UVAR_t = 100;
+  UVAR_n =  20;
 
   BOARD_POST_INIT_BLINK;
 

@@ -169,10 +169,10 @@ int main(void)
 {
   STD_PROLOG_UART_NOCON;
 
-  UVAR('t') = 100;
-  UVAR('n') =  20;
+  UVAR_t = 100;
+  UVAR_n =  20;
 
-  leds.write( 0 );
+  leds.write( 0_mask );
 
   int n = 0;
 
@@ -213,8 +213,8 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
-  uint32_t t_step = UVAR('t');
+  int n = arg2long_d( 1, argc, argv, UVAR_n, 0 );
+  uint32_t t_step = UVAR_t;
   pr( NL "Test0: n= " ); pr_d( n ); pr( " t= " ); pr_d( t_step );
   pr( NL );
 
@@ -226,7 +226,7 @@ int cmd_test0( int argc, const char * const * argv )
     pr( " Fake Action i= " ); pr_d( i );
     pr( "  ms_tick: "); pr_d( tmc - tm00 );
     pr( NL );
-    if( UVAR('w') ) {
+    if( UVAR_w ) {
       wait_eot();
     }
     // delay_ms( 3 );

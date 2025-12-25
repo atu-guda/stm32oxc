@@ -23,7 +23,7 @@ int main(void)
   STD_PROLOG_UART_NOCON;
 
   char cn = '0';
-  leds.write( 0 );
+  leds.write( 0_mask );
 
   uint32_t c_msp = __get_MSP();
   std_out << " MSP-__heap_top = " << ((unsigned)c_msp - (unsigned)(__heap_top) ) << "\r\n";

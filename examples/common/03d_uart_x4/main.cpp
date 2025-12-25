@@ -23,7 +23,7 @@ DCL_CMD_REG( test0, 'T', " - test UART"  );
 
 void idle_main_task()
 {
-  leds.toggle( 1 );
+  leds.toggle( BIT0 );
 }
 
 
@@ -34,10 +34,10 @@ int main(void)
 
   // dev_console.puts( NL "0123456789ABCDEF" NL  );
 
-  UVAR('t') = 100;
-  UVAR('n') =  20;
+  UVAR_t = 100;
+  UVAR_n =  20;
 
-  leds.write( 0 );
+  leds.write( 0_mask );
 
   pr( NL "##################### " PROJ_NAME NL );
 
@@ -53,17 +53,17 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
-  uint32_t t_step = UVAR('t');
+  int n = arg2long_d( 1, argc, argv, UVAR_n, 0 );
+  uint32_t t_step = UVAR_t;
   std_out << NL "Test0: n= " <<  n <<  " t= " << t_step << NL;
   std_out.flush();
 
   uint32_t bits  {0};
   // float    fbits {0.0f};
-  RestoreAtLeave xx( UVAR('x') );
-  UVAR('x') = 17;
-  DoAtLeave fxx( []() { ++UVAR('y'); } );
-  std_out << "# x= " << UVAR('x') << " y= " << UVAR('y') << NL;
+  RestoreAtLeave xx( UVAR_x );
+  UVAR_x = 17;
+  DoAtLeave fxx( []() { ++UVAR_y; } );
+  std_out << "# x= " << UVAR_x << " y= " << UVAR_y << NL;
 
   uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
 
@@ -75,7 +75,7 @@ int cmd_test0( int argc, const char * const * argv )
     // set_bit( fbits, i+1 ); // concepts: std::integral required
     std_out << " Fake Action i= "  << i <<  " tick: " << ( tmc - tm00 ) << ' ' << HexInt(bits) << NL;
     std_out.flush();
-    if( UVAR('w') ) {
+    if( UVAR_w ) {
        dev_console.wait_eot();
     }
     // delay_ms( 3 );

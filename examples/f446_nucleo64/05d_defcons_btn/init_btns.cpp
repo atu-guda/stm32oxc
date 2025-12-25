@@ -43,8 +43,8 @@ void HAL_GPIO_EXTI_Callback( uint16_t pin )
   }
 
   leds.toggle( BIT0 );
-  UVAR('c') = cmd;
-  ++UVAR('i');
+  UVAR_c = cmd;
+  ++UVAR_i;
 
   // if( ! on_cmd_handler ) {
   //   menu4b_ev_global = cmd;
@@ -58,7 +58,7 @@ void HAL_GPIO_EXTI_Callback( uint16_t pin )
 
 void EXTI9_5_IRQHandler(void)
 {
-  ++UVAR('j');
+  ++UVAR_j;
   HAL_GPIO_EXTI_IRQHandler( GPIO_PIN_5 );
   HAL_GPIO_EXTI_IRQHandler( GPIO_PIN_6 );
   HAL_GPIO_EXTI_IRQHandler( GPIO_PIN_8 );

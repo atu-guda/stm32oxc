@@ -19,10 +19,10 @@
 #define STD_PROLOG_START \
   HAL_Init(); \
   leds.initHW(); \
-  leds.write( BOARD_LEDS_ALL ); \
+  leds.write( 0xFF_mask ); \
   int rc = SystemClockCfg(); \
   if( rc ) { \
-    die4led( BOARD_LEDS_ALL ); \
+    die4led( 0xFF_mask ); \
     return 1; \
   } \
   ADD_DEVIO_TICKFUN;
@@ -33,7 +33,7 @@
   if( ! init_uart( &uah_console ) ) { \
     die4led( 1_mask ); \
   } \
-  leds.write( BOARD_LEDS_ALL );  HAL_Delay( PROLOG_LED_TIME );
+  leds.write( 0xFF_mask );  HAL_Delay( PROLOG_LED_TIME );
 
 #define STD_PROLOG_UART \
   STD_PROLOG_UART_NOCON; \
@@ -43,11 +43,11 @@
 
 #define STD_PROLOG_USBCDC \
   STD_PROLOG_START; \
-  delay_ms( PROLOG_LED_TIME ); leds.write( 0_mask ) ); delay_ms( PROLOG_LED_TIME ); \
+  delay_ms( PROLOG_LED_TIME ); leds.write( 0_mask ); delay_ms( PROLOG_LED_TIME ); \
   if( ! dev_console.init() ) { \
-    die4led( 1 ); \
+    die4led( 1_mask ); \
   } \
-  leds.write( BOARD_LEDS_ALL );  HAL_Delay( PROLOG_LED_TIME ); \
+  leds.write( 0xFF_mask );  HAL_Delay( PROLOG_LED_TIME ); \
   SMLRL::global_smallrl = &srl; \
   SET_USBCDC_AS_STDIO( dev_console ); \
   std_out.setOut( devio_fds[1] );

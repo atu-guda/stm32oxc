@@ -20,7 +20,7 @@ int main(void)
 {
   STD_PROLOG_START;
 
-  leds.write( 0 );
+  leds.write( 0_mask );
   MX_TIM2_Init();
   HAL_TIM_Base_Start_IT( &htim2 );
 
@@ -81,18 +81,18 @@ void MX_TIM2_Init()
     htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   #endif
   if( HAL_TIM_Base_Init( &htim2 ) != HAL_OK ) {
-    die4led( 0 );
+    die4led( 0_mask );
   }
 
   sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
   if( HAL_TIM_ConfigClockSource( &htim2, &sClockSourceConfig ) != HAL_OK ) {
-    die4led( 1 );
+    die4led( 1_mask );
   }
 
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   if( HAL_TIMEx_MasterConfigSynchronization( &htim2, &sMasterConfig) != HAL_OK )   {
-    die4led( 2 );
+    die4led( 2_mask );
   }
 
 }

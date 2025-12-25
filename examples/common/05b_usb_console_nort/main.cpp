@@ -14,7 +14,7 @@ const char* common_help_string = "Appication to test USB console w/o FreeRTOS" N
 
 void idle_main_task()
 {
-  leds.toggle( 1 );
+  leds.toggle( 1_mask );
 }
 
 
@@ -23,8 +23,8 @@ int main(void)
 {
   STD_PROLOG_USBCDC;
 
-  UVAR('t') = 100;
-  UVAR('n') =  20;
+  UVAR_t = 100;
+  UVAR_n =  20;
 
   BOARD_POST_INIT_BLINK;
 

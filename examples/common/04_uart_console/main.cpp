@@ -19,8 +19,8 @@ int main(void)
   // HAL_UART_Transmit( &uah, (uint8_t*)"START\r\n", 7, 100 );
   // usartio.puts_s( "0123456789---main()---ABCDEF" NL );
 
-  UVAR('t') = 100;
-  UVAR('n') = 10;
+  UVAR_t = 100;
+  UVAR_n = 10;
 
   BOARD_POST_INIT_BLINK;
 
