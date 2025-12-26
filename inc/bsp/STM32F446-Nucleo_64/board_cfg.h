@@ -3,35 +3,27 @@
 
 #define _BOARD_CFG_DEFINED
 
-// definition of resoures STM32F446R nucleo 64 board
-// headers must be included manualy in C/CPP file
+// definition of resoures for STM32F446R nucleo 64 board
+// included from oxc_base.h, postactions - oxc_post_board_cfg.h
 
 #define MC_FLASH_SIZE 524288
 #define MC_RAM_SIZE   131072
 #define MC_RAM1_SIZE  131072
-#define def_stksz 512
+#define def_stksz        512
 
 #define DELAY_APPROX_COEFF  5010
 
 
-// default: single LED on A5
-#define BOARD_LEDS_START_MINI PA5
-#define BOARD_N_LEDS_MINI 1
-#define BOARD_LEDS_GPIO_MINI GpioA
-#define BOARD_LEDS_OFS_MINI  5
-#define BOARD_LEDS_MASK_MINI 0x0020
-// unshifted
-#define BOARD_LEDS_ALL_MINI  0x01
+// default: single LED on A5 - ignore for now
 
-// not so-extra LEDS is C0:C3
-#define BOARD_LEDS_START PC0
-#define BOARD_N_LEDS 4
-#define BOARD_LEDS_GPIOX C
-#define BOARD_LEDS_OFS  0
+#ifdef NEED_LEDS_MINI
+  #define BOARD_LEDS_START PA5
+  #define BOARD_N_LEDS 1
+#else
+  #define BOARD_LEDS_START PC0
+  #define BOARD_N_LEDS 4
+#endif
 
-#define BOARD_DEFINE_LEDS_MINI PinsOut leds( BOARD_LEDS_GPIO_MINI, BOARD_LEDS_OFS_MINI, BOARD_N_LEDS_MINI );
-
-#define LED_BSP_YELLOW_MINI 1
 
 #define LED_BSP_RED       1_mask
 #define LED_BSP_RED_0     1_mask
@@ -43,18 +35,22 @@
 #define LED_BSP_BLUE_0    8_mask
 
 #define LED_BSP_IDLE      LED_BSP_BLUE
-#define LED_BSP_TX        LED_BSP_RED
+#define LED_BSP_TX        LED_BSP_YELLOW
 #define LED_BSP_RX        LED_BSP_GREEN
-#define LED_BSP_ERR       LED_BSP_YELLOW
+#define LED_BSP_ERR       LED_BSP_RED
 
-#define BOARD_BTN0_GPIOX   C
-#define BOARD_BTN0_N       13
+// on-board blue button
+#define BOARD_BTN0_GPIOX       C
+#define BOARD_BTN0_N          13
 #define BOARD_BTN0_ACTIVE_DOWN 0
-#define BOARD_BTN0_IRQNAME  EXTI15_10
+
+// extra button
+#define BOARD_BTN1_GPIOX       B
+#define BOARD_BTN1_N           0
+#define BOARD_BTN1_ACTIVE_DOWN 0
 
 
 #define TIM_EXA        TIM1
-#define TIM_EXA_STR    "TIM1"
 #define TIM_EXA_GPIO   GpioA
 #define TIM_EXA_PIN1   GPIO_PIN_8
 #define TIM_EXA_PIN2   GPIO_PIN_9
@@ -87,7 +83,6 @@
 #define BOARD_UART_DEFAULT_IRQHANDLER USART2_IRQHandler
 
 #define BOARD_I2C_DEFAULT               I2C1
-#define BOARD_I2C_DEFAULT_NAME          "I2C1"
 #define BOARD_I2C_DEFAULT_SPEED         100000
 #define BOARD_I2C_DEFAULT_GPIO_SCL      GpioB
 #define BOARD_I2C_DEFAULT_GPIO_SDA      GpioB
@@ -109,7 +104,6 @@
 
 #ifndef BOARD_SPI_DEFAULT
 #define BOARD_SPI_DEFAULT               SPI2
-#define BOARD_SPI_DEFAULT_NAME          "SPI2"
 #define BOARD_SPI_DEFAULT_GPIO_ALL      GpioB
 //#define BOARD_SPI_DEFAULT_GPIO_SCK      GpioB
 #define BOARD_SPI_DEFAULT_GPIO_PIN_SCK  GPIO_PIN_13

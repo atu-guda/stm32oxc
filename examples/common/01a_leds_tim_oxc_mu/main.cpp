@@ -25,13 +25,13 @@ int main(void)
   HAL_TIM_Base_Start_IT( &htim2 );
 
   while(1) {
-    leds.toggle( BIT1 );
+    leds.toggle( BIT1M );
     if( xxn > 1 ) {
-      // leds.toggle( BIT0 );
-      leds.set( BIT0 );
+      // leds.toggle( BIT0M );
+      leds.set( BIT0M );
     }
 
-    leds.set( BIT2 );
+    leds.set( BIT2M );
     mu_lock( &mu0 );
     if( xxn == 0 ) {
       delay_ms( 1 );
@@ -41,7 +41,7 @@ int main(void)
       --xxn;
     }
     mu_unlock( &mu0 );
-    leds.reset( BIT2 );
+    leds.reset( BIT2M );
 
     delay_ms( 100 );
   }
@@ -50,7 +50,7 @@ int main(void)
 
 void TIM2_IRQHandler(void)
 {
-  leds.toggle( BIT3 );
+  leds.toggle( BIT3M );
 
   //  mu_lock( &mu0 ) - bad in IRQ!
   if( mu_trylock( &mu0 ) == 0 ) {
@@ -63,7 +63,7 @@ void TIM2_IRQHandler(void)
   }
 
   HAL_TIM_IRQHandler( &htim2 );
-  leds.reset( BIT3 );
+  leds.reset( BIT3M );
 }
 
 void MX_TIM2_Init()

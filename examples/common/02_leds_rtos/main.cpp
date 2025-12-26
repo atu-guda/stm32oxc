@@ -48,7 +48,7 @@ void task_leds( void *prm UNUSED_ARG )
 {
   // int i=1;
   while(1) {
-    leds.toggle( BIT0 );
+    leds.toggle( BIT0M );
     // leds.write( i );
     // ++i;
     // i &= BOARD_LEDS_ALL;
@@ -67,7 +67,7 @@ void MX_GPIO_Init(void)
 #define EXTI_BIT0 BOARD_BTN0_BIT
 void BOARD_BTN0_IRQHANDLER(void)
 {
-  leds.toggle( BIT3 );
+  leds.toggle( BIT3M );
   HAL_GPIO_EXTI_IRQHandler( BOARD_BTN0_BIT );
   #ifdef BOARD_BTN0_1_SAME_IRQ
     HAL_GPIO_EXTI_IRQHandler( BOARD_BTN1_BIT );
@@ -92,13 +92,13 @@ void BOARD_BTN1_IRQHANDLER(void)
 void EXTI_CALLBACK_FUN( uint16_t pin )
 {
   uint32_t curr_tick = HAL_GetTick();
-  // leds.toggle( BIT3 );
+  // leds.toggle( BIT3M );
   if( curr_tick - last_exti_tick < btn_deadtime ) {
     return; // ignore too fast events
   }
 
   if( pin == BOARD_BTN0_BIT )  {
-    leds.toggle( BIT1 );
+    leds.toggle( BIT1M );
     led_delay >>= 1;
     if( led_delay < 1 ) {
       led_delay = led_delay_init;
@@ -106,11 +106,10 @@ void EXTI_CALLBACK_FUN( uint16_t pin )
   }
 
   if( pin == BOARD_BTN1_BIT )  {
-    leds.toggle( BIT2 );
-    // leds.set( 0xAA );
+    leds.toggle( BIT2M );
     led_delay = led_delay_init;
   }
-  // leds.toggle( BIT0 );
+  // leds.toggle( BIT0M );
   last_exti_tick = curr_tick;
 }
 

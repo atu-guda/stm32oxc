@@ -35,8 +35,11 @@ int main(void)
 
   BOARD_POST_INIT_BLINK;
 
+  leds[0].set();
+
   while(1) {
     leds[0].toggle();
+    // leds.toggle( BIT2M );
     delay_mcs( led_delay );
   }
 

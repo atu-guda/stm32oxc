@@ -16,10 +16,9 @@ int main(void)
 
   // write/set test
   leds.write( 0xFF_mask );
-  // delay_ms(  200 );
-  HAL_Delay(  500 );
+  delay_ms( 1000 );
   leds.write( 0x00_mask );
-  delay_ms(  100 );
+  delay_ms(  200 );
   leds.set( 0x0A_mask );
   delay_ms( 1000 );
   leds.set( 0x01_mask );
@@ -40,7 +39,7 @@ int main(void)
   delay_ms(  200 );
   leds.toggle( 0x0A_mask );
   delay_ms( 1000 );
-  leds.toggle( 0x08_mask );
+  leds[3].toggle();
   delay_ms( 1000 );
 
 
@@ -50,7 +49,15 @@ int main(void)
     delay_ms( 200 );
   }
 
-  // PinOut pin( BOARD_LEDS_GPIO, BOARD_LEDS_OFS );
+  leds.write( 0xFF_mask );
+  for( unsigned i=0; i<64; ++i ) {
+    leds[0].toggle();
+    if( i & 1 ) {
+      leds.toggle( BIT1M );
+    }
+    delay_ms( 200 );
+  }
+
 
   for(;;) { // speed measure
     leds.write( 0xFF_mask );

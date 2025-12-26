@@ -6,6 +6,12 @@
   #include <utility>
 #endif
 
+#define OXC_PASTER2(x,y) x ## y
+#define OXC_PASTER3(x,y,z) x ## y ## z
+#define OXC_EVAL2(x,y)    OXC_PASTER2(x,y)
+#define OXC_EVAL3(x,y,z)  OXC_PASTER3(x,y,z)
+
+// includes <stm32xxxx_hal.h> and its configs, defines reg names, exti....
 #include <oxc_archdef.h>
 
 #if REQ_MCBASE != MCBASE

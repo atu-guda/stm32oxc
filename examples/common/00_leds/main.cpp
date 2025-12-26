@@ -1,8 +1,8 @@
 #include <oxc_auto.h>
 
 // now local?
-constexpr PinMask BOARD_LEDS_ALL { PinMask( (1 << BOARD_N_LEDS) - 1 ) };
-constexpr PinMask BOARD_LEDS_MASK { BOARD_LEDS_ALL.bitmask() << BOARD_LEDS_START.pinNum().Num() };
+constexpr uint16_t BOARD_LEDS_OFS { BOARD_LEDS_START.pinNum().Num() };
+constexpr PinMask BOARD_LEDS_MASK { BOARD_LEDS_ALL << BOARD_LEDS_OFS };
 
 auto& BOARD_LEDS_GPIO = BOARD_LEDS_START.port();
 
@@ -24,16 +24,16 @@ int main(void)
   }
 
   MX_GPIO_Init();
+  GPIO_TypeDef* gp = reinterpret_cast<GPIO_TypeDef*>(&BOARD_LEDS_GPIO);
 
-
-  int i=0x04;
+  uint16_t i { 0x04 };
   BOARD_LEDS_GPIO.ODR = BOARD_LEDS_MASK.bitmask();
   HAL_Delay( 1500 );
-  GPIO_TypeDef* gp = reinterpret_cast<GPIO_TypeDef*>(&BOARD_LEDS_GPIO);
+
   while( 1 ) {
     GPIO_WriteBits( gp, i<<BOARD_LEDS_OFS, BOARD_LEDS_MASK.bitmask() );
     ++i;
-    i &= BOARD_LEDS_ALL.bitmask();
+    i &= BOARD_LEDS_ALL;
     HAL_Delay( 200 );
     // delay_bad();
   }
