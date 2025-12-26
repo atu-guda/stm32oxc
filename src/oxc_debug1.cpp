@@ -328,7 +328,7 @@ void gpio_pin_info( GpioRegs *const gi, uint16_t pin, char *s )
 {
   if( !gi || !s || pin >= PORT_BITS ) { return; }
   int j = 0;
-  uint32_t cr = ( pin > 7 ) ? gi->CRH : gi->CRL;
+  uint32_t cr = ( pin > 7 ) ? gi->CR[1] : gi->CR[0];
   uint16_t p4 = ( pin & 7 ) << 2;
 
   uint16_t mod = ( cr >> p4 ) & 0x03;
@@ -453,7 +453,7 @@ int cmd_info( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
     { USART2_IRQn,  "USART2 " },
     #endif
     #ifdef TIM_EXA_IRQ
-    { TIM_EXA_IRQ, TIM_EXA_STR },
+    { TIM_EXA_IRQ, TIM_EXA_NAME },
     #endif
     // { OTG_FS_IRQn,  "OTG_FS " }, TODO: depend in MCU type
     #ifdef BOARD_SPI_DEFAULT_IRQ

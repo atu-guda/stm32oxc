@@ -12,7 +12,6 @@ BOARD_DEFINE_LEDS;
     #define EXTI_CALLBACK_FUN HAL_GPIO_EXTI_Rising_Callback
   #else
     #define EXTI_CALLBACK_FUN HAL_GPIO_EXTI_Falling_Callback
-    #warning Falling!
   #endif
 #else
   #define EXTI_CALLBACK_FUN HAL_GPIO_EXTI_Callback

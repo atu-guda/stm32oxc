@@ -51,13 +51,13 @@ void task_send( void *prm UNUSED_ARG )
       __HAL_USART_CLEAR_OREFLAG( &uah_console );
       was_action = true;
       tx_buf[ovr_pos] = 'O';
-      leds.toggle( BIT1 );
+      leds[1].toggle();
     }
 
     if( __HAL_USART_GET_FLAG( &uah_console, UART_FLAG_RXNE ) ) {
       c = uah_console.Instance->USART_RX_REG;
       was_action = true;
-      leds.toggle( BIT2 );
+      leds[2].toggle();
     }
 
     if( was_action ) {
@@ -67,9 +67,9 @@ void task_send( void *prm UNUSED_ARG )
       }
       tx_buf[read_pos] = 'R';
       if( HAL_UART_Transmit( &uah_console, (uint8_t*)tx_buf, sz_oszr, 10 ) != HAL_OK ) {
-        leds.toggle( BIT0 );
+        leds[0].toggle();
       } else {
-        leds.toggle( BIT3 );
+        leds[3].toggle();
       }
     } else if( n % ( 20*delay_calibrate_value) == 0 ) {
       HAL_UART_Transmit( &uah_console, (uint8_t*)("-\r\n"), 3, 10 );

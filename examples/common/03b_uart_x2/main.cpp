@@ -25,7 +25,7 @@ char ring_rx_buf[buf_sz];
 RingBuf rx_ring( ring_rx_buf, sizeof( ring_rx_buf ) );
 
 void BOARD_UART_DEFAULT_IRQHANDLER(void) {
-  // leds.toggle( BIT3 ); // DEBUG
+  // leds[3].toggle(); // DEBUG
   UART_handleIRQ();
 }
 
@@ -38,10 +38,10 @@ void UART_handleIRQ()
 {
   uint16_t status = BOARD_UART_DEFAULT->USART_SR_REG;
 
-  // leds.set( BIT3 ); // DEBUG
+  // leds[3].set(); // DEBUG
 
   if( status & UART_FLAG_RXNE ) { // char recived
-    // leds.toggle( BIT2 );
+    // leds.toggle( BIT2M );
     // ++n_work;
     // char cr = recvRaw();
     char in_char = BOARD_UART_DEFAULT->USART_RX_REG; // TODO: link to given object
@@ -49,15 +49,15 @@ void UART_handleIRQ()
       // err = status;
     } else {
       if( ! rx_ring.tryPut( in_char ) ) {
-         // leds.toggle( BIT0 );
+         // leds[0].toggle();
       } // TODO: else
     }
-    // leds.reset( BIT2 );
+    // leds.reset( BIT2M );
   }
 
   if( on_transmit  && ( status & UART_FLAG_TXE ) ) {
     // ++n_work;
-    leds.set( BIT1 );
+    leds.set( BIT1M );
     // auto toOut = tx_ring.getFromISR();
     auto toOut = tx_ring.tryGet();
     if( toOut.good() ) { // TODO: all cases
@@ -67,17 +67,17 @@ void UART_handleIRQ()
       BOARD_UART_DEFAULT->CR1 &= ~USART_CR1_TXEIE;
       // itDisable( UART_IT_TXE );
       on_transmit = false;
-      leds.reset( BIT0 );
+      leds.reset( BIT0M );
     }
-    leds.reset( BIT1 );
+    leds.reset( BIT1M );
   }
 
   // if( n_work == 0 ) { // unhandled
-  //   // leds_toggle( BIT1 );
+  //   // leds_toggle( BIT1M );
   // }
 
   //portEND_SWITCHING_ISR( wake );
-  // leds.reset( BIT3 ); // DEBUG
+  // leds.reset( BIT3M ); // DEBUG
 
 }
 
@@ -93,11 +93,11 @@ void out( const char *s )
     return;
   }
 
-  leds.set( BIT2 );
+  leds.set( BIT2M );
   tx_ring.tryPut( *s++ );
   start_transmit();
   tx_ring.puts( s );
-  leds.reset( BIT2 );
+  leds.reset( BIT2M );
 }
 
 void start_transmit()
@@ -111,7 +111,7 @@ void start_transmit()
     BOARD_UART_DEFAULT->USART_TX_REG = v.c;
     on_transmit = true;
     BOARD_UART_DEFAULT->CR1 |= USART_CR1_TXEIE;
-    leds.set( BIT0 );
+    leds.set( BIT0M );
   }
 }
 
@@ -146,7 +146,7 @@ int main(void)
 
   while( 1 ) {
 
-    // leds.toggle( BIT3 );
+    // leds.toggle( BIT3M );
 
     auto rec = rx_ring.get();
 

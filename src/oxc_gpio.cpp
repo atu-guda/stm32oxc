@@ -23,7 +23,8 @@ void GpioRegs::cfgOut_common( PinNum pin_num )
 void GpioRegs::cfgOut( PinNum pin_num, bool od )
 {
   #if defined (STM32F1)
-    replace_bits( CR[pin_num >> 3], ( pin_num & 7 ) << 2, 4, od ? (uint8_t)(ModeF1::OutOD) : (uint8_t)(ModeF1::OutPP) );
+    replace_bits( CR[pin_num.Num() >> 3], ( pin_num.Num() & 7 ) << 2, 4,
+        od ? (uint8_t)(GpioModeF1::OutOD) : (uint8_t)(GpioModeF1::OutPP) );
   #else
   cfgOut_common( pin_num );
   cfg_set_ppod( pin_num, od );
@@ -35,8 +36,8 @@ void GpioRegs::cfgOut( PinNum pin_num, bool od )
 void GpioRegs::cfgAF( PinNum pin_num, uint8_t af, bool od )
 {
   #if defined (STM32F1)
-    replace_bits( CR[pin_num >> 3], ( pin_num & 7 ) << 2, 4,
-                  od ? (uint8_t)(ModeF1::AFOD) : (uint8_t)(ModeF1::AFPP) );
+    replace_bits( CR[pin_num.Num() >> 3], ( pin_num.Num() & 7 ) << 2, 4,
+                  od ? (uint8_t)(GpioModeF1::AFOD) : (uint8_t)(GpioModeF1::AFPP) );
   #else
   cfg_set_MODER( pin_num, GpioModer::af );
   cfg_set_speed_max( pin_num );
@@ -51,17 +52,18 @@ void GpioRegs::cfgAF( PinNum pin_num, uint8_t af, bool od )
 void GpioRegs::cfgIn( PinNum pin_num, GpioPull p )
 {
   #if defined (STM32F1)
-    uint8_t idx = pin_num >> 3;
-    pin_num &= 0x07;
-    CR[idx] &= ~( 0x0F << ( pin_num << 2 ) );
-    if( p == Pull::no ) {
-      CR[idx] |=  ( (uint8_t)(GpioModeF1::InFloat)  << ( pin_num << 2 ) );
+    uint8_t pn = pin_num.Num();
+    uint8_t idx = pn >> 3;
+    pn &= 0x07;
+    CR[idx] &= ~( 0x0F << ( pn << 2 ) );
+    if( p == GpioPull::no ) {
+      CR[idx] |=  ( (uint8_t)(GpioModeF1::InFloat)  << ( pn << 2 ) );
     } else {
-      CR[idx] |=  ( (uint8_t)(GpioModeF1::InPull)   << ( pin_num << 2 ) );
-      if( p == Pull::up ) {
-        set_bit( ODR, pin_num );
+      CR[idx] |=  ( (uint8_t)(GpioModeF1::InPull)   << ( pn << 2 ) );
+      if( p == GpioPull::up ) {
+        set_bit( ODR, pn );
       } else {
-        reset_bit( ODR, pin_num );
+        reset_bit( ODR, pn );
       }
     }
   #else
@@ -77,7 +79,7 @@ void GpioRegs::cfgIn( PinNum pin_num, GpioPull p )
 void GpioRegs::cfgAnalog( PinNum pin_num )
 {
   #if defined (STM32F1)
-    reset_bits( CR[pin_num >> 3], ( pin_num & 7 ) << 2, 4 );
+    reset_bits( CR[pin_num.Num() >> 3], ( pin_num.Num() & 7 ) << 2, 4 );
   #else
   cfg_set_MODER( pin_num, GpioModer::analog );
   cfg_set_speed_min( pin_num );

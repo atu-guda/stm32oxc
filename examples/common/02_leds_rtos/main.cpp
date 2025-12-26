@@ -12,7 +12,6 @@ BOARD_DEFINE_LEDS;
     #define EXTI_CALLBACK_FUN HAL_GPIO_EXTI_Rising_Callback
   #else
     #define EXTI_CALLBACK_FUN HAL_GPIO_EXTI_Falling_Callback
-    #warning Falling!
   #endif
 #else
   #define EXTI_CALLBACK_FUN HAL_GPIO_EXTI_Callback
@@ -48,7 +47,7 @@ void task_leds( void *prm UNUSED_ARG )
 {
   // int i=1;
   while(1) {
-    leds.toggle( BIT0M );
+    leds[0].toggle();
     // leds.write( i );
     // ++i;
     // i &= BOARD_LEDS_ALL;
@@ -63,33 +62,27 @@ void MX_GPIO_Init(void)
 }
 
 
-#if defined(BOARD_BTN0_EXIST) && BOARD_BTN0_EXIST != 0
-#define EXTI_BIT0 BOARD_BTN0_BIT
+#if defined(BOARD_BTN0)
 void BOARD_BTN0_IRQHANDLER(void)
 {
-  leds.toggle( BIT3M );
-  HAL_GPIO_EXTI_IRQHandler( BOARD_BTN0_BIT );
+  leds[3].toggle();
+  HAL_GPIO_EXTI_IRQHandler( BOARD_BTN0.bitmask() );
   #ifdef BOARD_BTN0_1_SAME_IRQ
-    HAL_GPIO_EXTI_IRQHandler( BOARD_BTN1_BIT );
+    HAL_GPIO_EXTI_IRQHandler( BOARD_BTN1.bitmask() );
   #endif
 }
-#else
-#define EXTI_BIT0 0
 #endif
 
-#if defined(BOARD_BTN1_EXIST) && BOARD_BTN1_EXIST != 0
-#define EXTI_BIT1 BOARD_BTN1_BIT
+#if defined(BOARD_BTN1)
 #ifndef BOARD_BTN0_1_SAME_IRQ
 void BOARD_BTN1_IRQHANDLER(void)
 {
-  HAL_GPIO_EXTI_IRQHandler( BOARD_BTN1_BIT );
+  HAL_GPIO_EXTI_IRQHandler( BOARD_BTN1.bitmask() );
 }
 #endif
-#else
-#define EXTI_BIT1 0
 #endif
 
-void EXTI_CALLBACK_FUN( uint16_t pin )
+void EXTI_CALLBACK_FUN( uint16_t mask )
 {
   uint32_t curr_tick = HAL_GetTick();
   // leds.toggle( BIT3M );
@@ -97,16 +90,16 @@ void EXTI_CALLBACK_FUN( uint16_t pin )
     return; // ignore too fast events
   }
 
-  if( pin == BOARD_BTN0_BIT )  {
-    leds.toggle( BIT1M );
+  if( mask == BOARD_BTN0.bitmask() )  {
+    leds[1].toggle();
     led_delay >>= 1;
     if( led_delay < 1 ) {
       led_delay = led_delay_init;
     }
   }
 
-  if( pin == BOARD_BTN1_BIT )  {
-    leds.toggle( BIT2M );
+  if( mask == BOARD_BTN1.bitmask() )  {
+    leds[3].toggle();
     led_delay = led_delay_init;
   }
   // leds.toggle( BIT0M );

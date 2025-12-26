@@ -40,23 +40,23 @@ int main(void)
       __HAL_USART_CLEAR_OREFLAG( &uah_console );
       was_action = true;
       c_err = 'O';
-      leds.toggle( BIT0 );
+      leds[0].toggle();
     }
 
     if( __HAL_USART_GET_FLAG( &uah_console, UART_FLAG_RXNE ) ) {
       c = uah_console.Instance->USART_RX_REG;
       was_action = true;
-      leds.toggle( BIT2 );
+      leds[2].toggle();
     }
 
     if( was_action ) {
-      leds.toggle( BIT1 );
+      leds[1].toggle();
       std_out << "A:Z <";
       std_out << ( int8_t(c) >= ' '  ?  c : ' ' );
       std_out << "> [" << HexInt8( c ) << "] R" << c_err << cn << "-\r\n";
       std_out.flush();
     } else if( n % ( 50*delay_calibrate_value ) == 0 ) {
-      leds.toggle( BIT1 );
+      leds[1].toggle();
       std_out << '-' << cn << "-\r\n";
       std_out.flush();
     } else {
