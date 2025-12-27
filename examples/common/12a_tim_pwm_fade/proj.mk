@@ -22,6 +22,6 @@ USE_OXC_TIM = y
 
 SRCS  = main.cpp
 
-SRCS += tim18_pwm4_exa_init.cpp
+SRCS += tim_pwm4_exa_init.cpp
 SRCS += oxc_sin_8x8.cpp
 

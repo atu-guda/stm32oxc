@@ -44,7 +44,7 @@ void HAL_GPIO_EXTI_Callback( uint16_t pin )
     default: break;
   }
 
-  leds.toggle( BIT0 );
+  leds[0].toggle();
   if( ! on_cmd_handler ) {
     menu4b_ev_global = cmd;
   } else {
@@ -54,24 +54,22 @@ void HAL_GPIO_EXTI_Callback( uint16_t pin )
   last_exti_tick = curr_tick;
 }
 
-int init_menu4b_buttons() // board dependent function
+int init_menu4b_buttons() // board dependent function TODO: config
 {
   __HAL_RCC_GPIOA_CLK_ENABLE();
+  const PinNum pins[] { 0_pin, 1_pin, 2_pin, 3_pin };
 
-  GpioA.cfgIn_N( GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3, GpioRegs::Pull::up );
-  GpioA.setEXTI( 0, GpioRegs::ExtiEv::down );
-  GpioA.setEXTI( 1, GpioRegs::ExtiEv::down );
-  GpioA.setEXTI( 2, GpioRegs::ExtiEv::down );
-  GpioA.setEXTI( 3, GpioRegs::ExtiEv::down );
+  for( auto p : pins ) {
+    GpioA.cfgIn( p, GpioPull::up );
+    GpioA.setEXTI( p, ExtiEv::down );
+  }
 
-  HAL_NVIC_SetPriority( EXTI0_IRQn, 14, 0 );
-  HAL_NVIC_EnableIRQ(   EXTI0_IRQn );
-  HAL_NVIC_SetPriority( EXTI1_IRQn, 14, 0 );
-  HAL_NVIC_EnableIRQ(   EXTI1_IRQn );
-  HAL_NVIC_SetPriority( EXTI2_IRQn, 14, 0 );
-  HAL_NVIC_EnableIRQ(   EXTI2_IRQn );
-  HAL_NVIC_SetPriority( EXTI3_IRQn, 14, 0 );
-  HAL_NVIC_EnableIRQ(   EXTI3_IRQn );
+  // TODO: macro/ const fun
+  const decltype(EXTI0_IRQn) irqs[] { EXTI0_IRQn, EXTI1_IRQn, EXTI2_IRQn, EXTI3_IRQn };
+  for( auto irq : irqs ) {
+    HAL_NVIC_SetPriority( irq, 14, 0 );
+    HAL_NVIC_EnableIRQ(   irq );
+  }
 
   return 1;
 }

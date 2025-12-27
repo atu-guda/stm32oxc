@@ -50,7 +50,6 @@
 
 
 #define TIM_EXA        TIM1
-#define TIM_EXA_STR    "TIM1"
 #define TIM_EXA_GPIO   GpioA
 #define TIM_EXA_GPIOAF GPIO_AF6_TIM1
 #define TIM_EXA_PIN1   GPIO_PIN_8
@@ -76,7 +75,6 @@
 #define BOARD_UART_DEFAULT_IRQHANDLER USART2_IRQHandler
 
 #define BOARD_I2C_DEFAULT               I2C1
-#define BOARD_I2C_DEFAULT_NAME          "I2C1"
 #define BOARD_I2C_DEFAULT_SPEED         100000
 // 100 kHz over  72 MHz
 #define BOARD_I2C_DEFAULT_TIMING_100    0x10808DD3
@@ -104,7 +102,6 @@
 
 #ifndef BOARD_SPI_DEFAULT
 #define BOARD_SPI_DEFAULT               SPI1
-#define BOARD_SPI_DEFAULT_NAME          "SPI1"
 #define BOARD_SPI_DEFAULT_GPIO_ALL      GpioA
 //#define BOARD_SPI_DEFAULT_GPIO_SCK      GpioA
 #define BOARD_SPI_DEFAULT_GPIO_PIN_SCK  GPIO_PIN_5

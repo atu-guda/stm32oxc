@@ -131,7 +131,7 @@ int menu4b_output( const char *s1, const char *s2 )
 
 void on_btn_while_run( int cmd )
 {
-  leds.toggle( BIT1 );
+  leds[1].toggle();
   switch( cmd ) {
     case  MenuCmd::Esc:
       break_flag = 1; errno = 10000;

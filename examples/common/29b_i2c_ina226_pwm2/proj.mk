@@ -28,7 +28,7 @@ SRCS += oxc_namedints.cpp
 SRCS += oxc_namedfloats.cpp
 SRCS += oxc_statdata.cpp
 
-SRCS += tim18_pwm4_exa_init.cpp
+SRCS += tim_pwm4_exa_init.cpp
 SRCS += pwm2_ctl.cpp
 
 

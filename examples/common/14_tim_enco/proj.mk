@@ -22,5 +22,5 @@ USE_OXC_TIM = y
 
 SRCS  = main.cpp
 
-SRCS += tim18_enco_exa_init.cpp
+SRCS += tim_enco_exa_init.cpp
 
