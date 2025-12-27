@@ -5,11 +5,11 @@
 void init_btns()
 {
   GpioC.enableClk();
-  const uint8_t in_pins[] = { 5, 6, 8, 9 };
+  const PinNum in_pins[] = { 5_pin, 6_pin, 8_pin, 9_pin };
 
   for( auto pin : in_pins ) {
-    GpioC.cfgIn(   pin, GpioRegs::Pull::down );
-    GpioC.setEXTI( pin, GpioRegs::ExtiEv::up );
+    GpioC.cfgIn(   pin, GpioPull::down );
+    GpioC.setEXTI( pin, ExtiEv::up );
   }
 
   HAL_NVIC_SetPriority( EXTI9_5_IRQn, 15, 0 );
@@ -42,7 +42,7 @@ void HAL_GPIO_EXTI_Callback( uint16_t pin )
     default: break;
   }
 
-  leds.toggle( BIT0 );
+  leds[0].toggle();
   UVAR_c = cmd;
   ++UVAR_i;
 

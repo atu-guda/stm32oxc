@@ -23,7 +23,7 @@ DCL_CMD_REG( test0, 'T', " - test UART"  );
 
 void idle_main_task()
 {
-  leds.toggle( BIT0 );
+  leds[0].toggle();
 }
 
 
