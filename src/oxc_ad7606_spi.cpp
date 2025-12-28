@@ -19,7 +19,7 @@ uint32_t AD7606_SPI::wait_nobusy()
   // while( ( busy_pin.read() == 0 ) && busy_waited < 10000 ) {
   //   ++busy_waited;
   // }
-  while( busy_pin.read() && busy_waited < 10000 ) {
+  while( busy_pin.read().bitmask() && busy_waited < 10000 ) {
     ++busy_waited;
   }
   return busy_waited;

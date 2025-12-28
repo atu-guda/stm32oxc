@@ -31,12 +31,12 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 5000;
-  UVAR('n') = 20;
-  UVAR('p') = calc_TIM_psc_for_cnt_freq( TIM_EXA, 10000  ); // ->10kHz
-  UVAR('a') = 99; // ARR, 10kHz->100Hz
+  UVAR_t = 5000;
+  UVAR_n = 20;
+  UVAR_p = calc_TIM_psc_for_cnt_freq( TIM_EXA, 10000  ); // ->10kHz
+  UVAR_a = 99; // ARR, 10kHz->100Hz
 
-  UVAR('s') = 5;  // step in pwm
+  UVAR_s = 5;  // step in pwm
 
   BOARD_POST_INIT_BLINK;
 
@@ -59,15 +59,15 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  int t = arg2long_d( 1, argc, argv, UVAR('t'), 10, 100000 );
-  int n = arg2long_d( 1, argc, argv, UVAR('n'),  1,  10000 );
+  int t = arg2long_d( 1, argc, argv, UVAR_t, 10, 100000 );
+  int n = arg2long_d( 1, argc, argv, UVAR_n,  1,  10000 );
 
   int pbase = TIM_EXA->ARR;
   tim_print_cfg( TIM_EXA );
   std_out << "# T = " << t << NL;
 
   for( int i=0; i<n && !break_flag; ++i ) {
-    int v = (i+1) * UVAR('s');
+    int v = (i+1) * UVAR_s;
     uint32_t pv = v * ( pbase + 1 ) / 100;
     TIM_EXA->CCR1 = pv;
     delay_ms( 100 ); // wait for steady state
@@ -88,8 +88,8 @@ int cmd_test0( int argc, const char * const * argv )
 int cmd_tinit( int argc, const char * const * argv )
 {
   // tim_cfg();
-  TIM_EXA->PSC = UVAR('p');
-  TIM_EXA->ARR = UVAR('a');
+  TIM_EXA->PSC = UVAR_p;
+  TIM_EXA->ARR = UVAR_a;
   TIM_EXA->CCR1 = 0;
   delay_ms( 10 );
   tim_print_cfg( TIM_EXA );
@@ -110,8 +110,8 @@ int cmd_set_pwm( int argc, const char * const * argv )
 int MX_TIM_PWM_Init()
 {
   tim_pwm_h.Instance               = TIM_EXA;
-  tim_pwm_h.Init.Prescaler         = UVAR('p');
-  tim_pwm_h.Init.Period            = UVAR('a');
+  tim_pwm_h.Init.Prescaler         = UVAR_p;
+  tim_pwm_h.Init.Period            = UVAR_a;
   tim_pwm_h.Init.ClockDivision     = 0;
   tim_pwm_h.Init.CounterMode       = TIM_COUNTERMODE_UP;
   tim_pwm_h.Init.RepetitionCounter = 0;
@@ -180,7 +180,7 @@ void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* htim )
 {
   if( htim->Instance == TIM_IN ) {
     TIM_IN_EN;
-    TIM_IN_GPIO.cfgAF_N( TIM_IN_PIN, TIM_IN_AF );
+    TIM_IN_PIN.cfgAF( TIM_IN_AF );
   }
 }
 
@@ -190,7 +190,7 @@ void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim )
     __HAL_RCC_TIM1_CLK_ENABLE();
     TIM_EXA_CLKEN;
 
-    TIM_EXA_GPIO.cfgAF_N( TIM_EXA_PIN1, TIM_EXA_GPIOAF );
+    TIM_EXA_PIN1.cfgAF( TIM_EXA_GPIOAF );
     return;
   }
 }

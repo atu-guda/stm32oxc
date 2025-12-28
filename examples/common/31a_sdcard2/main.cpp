@@ -35,16 +35,16 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 1000;
-  UVAR('n') = 20;
+  UVAR_t = 1000;
+  UVAR_n = 20;
 
   MX_SDIO_SD_Init();
 
-  UVAR('e') = HAL_SD_Init( &hsd );
+  UVAR_e = HAL_SD_Init( &hsd );
   delay_ms( 10 );
   MX_FATFS_SD_Init();
-  UVAR('s') = HAL_SD_GetState( &hsd );
-  UVAR('z') = HAL_SD_GetCardInfo( &hsd, &cardInfo );
+  UVAR_s = HAL_SD_GetState( &hsd );
+  UVAR_z = HAL_SD_GetCardInfo( &hsd, &cardInfo );
   fs.fs_type = 0; // none
   fspath[0] = '\0';
 
@@ -67,7 +67,7 @@ int main(void)
 int cmd_test0( int argc, const char * const * argv )
 {
   int start = arg2long_d( 1, argc, argv, 0, 0 );
-  // uint32_t t_step = UVAR('t');
+  // uint32_t t_step = UVAR_t;
   pr( NL "Test0: start= " ); pr_d( start ); // pr( " t= " ); pr_d( t_step );
   pr( NL );
 
@@ -100,11 +100,11 @@ int cmd_sdinit( int /*argc*/, const char * const * /*argv*/ )
   MX_SDIO_SD_Init();
 
   int rc_i =  HAL_SD_Init( &hsd );
-  UVAR('e') = rc_i;
+  UVAR_e = rc_i;
   delay_ms( 10 );
   MX_FATFS_SD_Init();
-  UVAR('s') = HAL_SD_GetState( &hsd );
-  UVAR('z') = HAL_SD_GetCardInfo( &hsd, &cardInfo );
+  UVAR_s = HAL_SD_GetState( &hsd );
+  UVAR_z = HAL_SD_GetCardInfo( &hsd, &cardInfo );
   fs.fs_type = 0; // none
   fspath[0] = '\0';
   return rc_i;
@@ -114,7 +114,7 @@ int cmd_sdinit( int /*argc*/, const char * const * /*argv*/ )
 int cmd_sddeinit( int /*argc*/, const char * const * /*argv*/ )
 {
   int rc_d =  HAL_SD_DeInit( &hsd );
-  UVAR('e') = rc_d;
+  UVAR_e = rc_d;
   delay_ms( 10 );
   return rc_d;
 }

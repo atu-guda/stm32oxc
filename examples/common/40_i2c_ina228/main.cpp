@@ -25,7 +25,7 @@ DCL_CMD_REG( calc_acfg, 'A', "ct_b ct_s ct_t avg - calc ADCconfig val ->'a' "  )
 I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );
 INA228 ina228( i2cd );
-const uint32_t n_ADC_ch_max = 4; // current - in UVAR('c')
+const uint32_t n_ADC_ch_max = 4; // current - in UVAR_c
 xfloat v_coeffs[n_ADC_ch_max] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 // TODO: move as inline to oxc_floatfun.h ( + namespace? )
@@ -38,18 +38,18 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 100; // 100 ms
-  UVAR('n') = 20;
-  UVAR('l') = 1; // LED indication for waitOEC
-  UVAR('c') = 4;
-  UVAR('g') = INA228::cfg_default; // 0x10 = highRes
-  UVAR('a') = INA228::acfg_mode_def; // 0xFB68;
-  UVAR('p') = 0x40; // default addr for debug
-  UVAR('s') = 0;    // scale 0-1
-  UVAR('r') = 100;  // R_sh in mOhm
-  UVAR('i') = 100;  // I_max in mA
+  UVAR_t = 100; // 100 ms
+  UVAR_n = 20;
+  UVAR_l = 1; // LED indication for waitOEC
+  UVAR_c = 4;
+  UVAR_g = INA228::cfg_default; // 0x10 = highRes
+  UVAR_a = INA228::acfg_mode_def; // 0xFB68;
+  UVAR_p = 0x40; // default addr for debug
+  UVAR_s = 0;    // scale 0-1
+  UVAR_r = 100;  // R_sh in mOhm
+  UVAR_i = 100;  // I_max in mA
 
-  UVAR('e') = i2c_default_init( i2ch /*, 400000 */ );
+  UVAR_e = i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
   i2c_client_def = &ina228;
 
@@ -70,8 +70,8 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  uint32_t t_step = UVAR('t');
-  uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 1000000 ); // number of series
+  uint32_t t_step = UVAR_t;
+  uint32_t n = arg2long_d( 1, argc, argv, UVAR_n, 1, 1000000 ); // number of series
 
   ina228.setCfg( INA228::cfg_rst );
   uint16_t x_cfg = ina228.getCfg();
@@ -82,23 +82,22 @@ int cmd_test0( int argc, const char * const * argv )
     return 3;
   }
 
-  uint16_t cfg = UVAR('s') ? INA228::cfg_adcrange : INA228::cfg_default;
-  UVAR('e') = ina228.setCfg( cfg );
-  ina228.setAdcCfg( UVAR('a') );
+  uint16_t cfg = UVAR_s ? INA228::cfg_adcrange : INA228::cfg_default;
+  UVAR_e = ina228.setCfg( cfg );
+  ina228.setAdcCfg( UVAR_a );
   x_cfg = ina228.getCfg();
   std_out <<  "# cfg= " << HexInt16( x_cfg ) << ' ' << HexInt16( ina228.getAdcCfg() ) << NL;
-  ina228.set_calibr_val( UVAR('r'), UVAR('i') );
+  ina228.set_calibr_val( UVAR_r, UVAR_i );
   ina228.calibrate();
 
   const unsigned n_ch { 4 };
   StatData sdat( n_ch );
 
-  leds.set(   BIT0 | BIT1 | BIT2 ); delay_ms( 100 );
-  leds.reset( BIT0 | BIT1 | BIT2 );
+  leds.set(   0x07_mask ); delay_ms( 100 );  leds.reset( 0x07_mask  );
 
   uint32_t tm0, tm00;
   int rc = 0;
-  bool do_out = ! UVAR('b');
+  bool do_out = ! UVAR_b;
   delay_ms( t_step );
 
   break_flag = 0;
@@ -109,10 +108,10 @@ int cmd_test0( int argc, const char * const * argv )
       tm0 = tcc; tm00 = tm0;
     }
 
-    // if( UVAR('l') ) {  leds.set( BIT2 ); }
+    // if( UVAR_l ) {  leds[2].set(); }
     int wrc = ina228.waitEOC();
     auto[v_sh_raw,v_bus_raw]  = ina228.getVV();
-    // if( UVAR('l') ) {  leds.reset( BIT2 ); }
+    // if( UVAR_l ) {  leds[2].reset(); }
 
     xfloat v[n_ch];
     v[0] = ina228.get_last_Vsh_nVx16() * nx16_to_1;
@@ -159,8 +158,8 @@ int cmd_calc_acfg( int argc, const char * const * argv )
   auto ct_s = (uint8_t)arg2long_d( 3, argc, argv,    5, 0, 7 );
   auto ct_t = (uint8_t)arg2long_d( 4, argc, argv,    5, 0, 7 );
   auto avg  = (uint8_t)arg2long_d( 5, argc, argv,    0, 0, 7 );
-  UVAR('a') =  INA228::calc_acfg( md, ct_b, ct_s, ct_t, avg );
-  std_out << "# acfg= " << HexInt16( UVAR('a') ) << NL;
+  UVAR_a =  INA228::calc_acfg( md, ct_b, ct_s, ct_t, avg );
+  std_out << "# acfg= " << HexInt16( UVAR_a ) << NL;
   return 0;
 }
 

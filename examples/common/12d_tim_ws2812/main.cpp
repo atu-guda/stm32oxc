@@ -120,7 +120,7 @@ void WS2812_info::rgb2tim( uint8_t r, uint8_t g, uint8_t b, uint16_t *d )
 int WS2812_info::send( const uint8_t *d, int sz ) // size in leds: 3*sz bytes in d[] required
 {
   sz &= 0xFFFE; // limit size and oddness
-  UVAR('y') = sz;
+  UVAR_y = sz;
   if( busy || !d || sz < 2 ) {
     return 0;
   }
@@ -131,7 +131,7 @@ int WS2812_info::send( const uint8_t *d, int sz ) // size in leds: 3*sz bytes in
   busy = true;
 
   unsigned tw_ms = 2 + ( 1250 * sz + 120000 ) / 1000000;
-  UVAR('f') = tw_ms;
+  UVAR_f = tw_ms;
 
   int rc_s = HAL_TIM_PWM_Start_DMA( tim_h_p, tim_ch, (uint32_t*)buf, 2 * size_1led );
   if( rc_s != HAL_OK ) {
@@ -196,8 +196,8 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 20;
-  UVAR('n') = 8;
+  UVAR_t = 20;
+  UVAR_n = 8;
 
   BOARD_POST_INIT_BLINK;
 
@@ -221,8 +221,8 @@ int main(void)
 int cmd_test0( int argc, const char * const * argv )
 {
   unsigned v = arg2long_d( 1, argc, argv, 32, 0, 255 );
-  unsigned n = UVAR('n');
-  uint8_t v0 = UVAR('b'); //background
+  unsigned n = UVAR_n;
+  uint8_t v0 = UVAR_b; //background
 
 
   std_out << "# Test: v= " << v <<  NL;
@@ -235,7 +235,7 @@ int cmd_test0( int argc, const char * const * argv )
   pbuf.set( v, v, v, 3 );
 
 
-  UVAR('r') = dsi.send( pbuf.cdata(), n );
+  UVAR_r = dsi.send( pbuf.cdata(), n );
 
   return 0;
 }
@@ -249,7 +249,7 @@ int cmd_pix( int argc, const char * const * argv )
 
   std_out << "# pix: (" << r << ',' << g << ',' << b << ") " << p << NL;
   pbuf.set( r, g, b, p );
-  UVAR('r') = dsi.send( pbuf.cdata(), UVAR('n') );
+  UVAR_r = dsi.send( pbuf.cdata(), UVAR_n );
   return 0;
 }
 
@@ -258,7 +258,7 @@ int cmd_wave( int argc, const char * const * argv )
   unsigned tp      = arg2long_d( 1, argc, argv,   0, 0,      0 ); // just synglee type for now
   unsigned t_scale = arg2long_d( 2, argc, argv, 100, 1, 100000 ); // time step scale, def = 100
   unsigned l_scale = arg2long_d( 3, argc, argv, 100, 1, 100000 ); // length step scale, def = 100
-  unsigned n = UVAR('n');
+  unsigned n = UVAR_n;
   uint32_t ph[3];    // phases for first LED (R,G,B) // 32 bit, used for output only 8 MSB
   // openssl prime -generate -bits 24 -hex // 23, 22
   uint32_t d_ph[3] = { 0xEB7FB9, 0x671A9D, 0x33F443 } ;  // phases deltas
@@ -276,7 +276,7 @@ int cmd_wave( int argc, const char * const * argv )
     for( unsigned i=0; i<3; ++i ) {
       ph[i] += d_ph[i] * t_scale / 10;
     }
-    if( UVAR('d') > 0 ) {
+    if( UVAR_d > 0 ) {
       std_out << "# " << i << NL;
     }
 
@@ -304,7 +304,7 @@ int cmd_wave( int argc, const char * const * argv )
 int tim_cfg()
 {
   auto pbase = calc_TIM_arr_for_base_psc( TIM_EXA, 0, 800000 );
-  UVAR('a') = pbase;
+  UVAR_a = pbase;
   WS2812_info::calc_minmax( pbase );
 
   tim_h.Instance               = TIM_EXA;
@@ -314,7 +314,7 @@ int tim_cfg()
   tim_h.Init.CounterMode       = TIM_COUNTERMODE_UP;
   tim_h.Init.RepetitionCounter = 0;
   if( HAL_TIM_PWM_Init( &tim_h ) != HAL_OK ) {
-    UVAR('e') = 1; // like error
+    UVAR_e = 1; // like error
     return 0;
   }
 
@@ -333,7 +333,7 @@ int tim_cfg()
   HAL_TIM_PWM_Stop( &tim_h, WS2812_TIM_CH );
   tim_oc_cfg.Pulse = 0; // pbase / 2;
   if( HAL_TIM_PWM_ConfigChannel( &tim_h, &tim_oc_cfg, WS2812_TIM_CH ) != HAL_OK ) {
-    UVAR('e') = 11;
+    UVAR_e = 11;
     return 0;
   }
   return 1;
@@ -346,7 +346,7 @@ void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim )
   }
   TIM_EXA_CLKEN;
 
-  TIM_EXA_GPIO.cfgAF_N( WS2812_TIM_PIN, TIM_EXA_GPIOAF );
+  WS2812_TIM_PIN.cfgAF( TIM_EXA_GPIOAF );
 
   hdma_tim_chx.Instance                 = WS2812_DMA_INSTANCE;
   hdma_tim_chx.Init.Channel             = WS2812_DMA_CHANNEL;
@@ -359,7 +359,7 @@ void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim )
   hdma_tim_chx.Init.Priority            = DMA_PRIORITY_MEDIUM;
   hdma_tim_chx.Init.FIFOMode            = DMA_FIFOMODE_DISABLE;
   if( HAL_DMA_Init( &hdma_tim_chx ) != HAL_OK ) {
-    UVAR('e') = 14;
+    UVAR_e = 14;
     return;
   }
 
@@ -373,7 +373,7 @@ void HAL_TIM_PWM_MspDeInit( TIM_HandleTypeDef* htim )
     return;
   }
   TIM_EXA_CLKDIS;
-  TIM_EXA_GPIO.cfgIn_N( WS2812_TIM_PIN );
+  WS2812_TIM_PIN.cfgIn();
 }
 
 void MX_DMA_Init()

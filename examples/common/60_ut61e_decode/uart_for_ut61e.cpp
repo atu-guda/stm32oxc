@@ -39,11 +39,11 @@ void HAL_UART_UserInit( UART_HandleTypeDef* uartHandle )
 
   UART_UT61E_CLK_ENABLE();
 
+  UART_UT61E_PIN_TX.cfgAF( UART_UT61E_GPIO_AF );
   #if ! defined (STM32F1)
-    UART_UT61E_GPIO.cfgAF_N( UART_UT61E_GPIO_PINS, UART_UT61E_GPIO_AF );
+    UART_UT61E_PIN_RX.cfgAF( UART_UT61E_GPIO_AF );
   #else
-    UART_UT61E_GPIO.cfgAF_N( UART_UT61E_GPIO_TX, 1 );
-    UART_UT61E_GPIO.cfgIn_N( UART_UT61E_GPIO_RX );
+    UART_UT61E_PIN_RX.cfgIn();
   #endif
 
 

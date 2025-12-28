@@ -19,8 +19,8 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* tim_baseHandle );
 
 volatile uint16_t sensors_state;
 void init_exti_pins();
-PinsOut ctlEn( GpioA, 8, 1 );
-PinsOut ctlAB( GpioA, 9, 2 );
+PinsOut ctlEn( PA8, 1 );
+PinsOut ctlAB( PA9, 2 );
 
 uint32_t wait_with_cond( uint32_t ms, uint16_t n_hwticks, uint32_t *rc, uint32_t *dp, uint32_t ign_bits = 0 );
 
@@ -33,17 +33,17 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 10;
-  UVAR('g') = 10;
-  UVAR('n') = 1;
-  UVAR('s') = 10;
+  UVAR_t = 10;
+  UVAR_g = 10;
+  UVAR_n = 1;
+  UVAR_s = 10;
 
-  ctlEn.initHW();  ctlEn.write( 0 );
-  ctlAB.initHW();  ctlAB.write( 0 );
+  ctlEn.initHW();  ctlEn.write( 0_mask );
+  ctlAB.initHW();  ctlAB.write( 0_mask );
   sensors_state = 0;
   init_exti_pins();
   if( MX_TIM8_Init() != 0 ) {
-    die4led( 0x0F );
+    die4led( 0x0F_mask );
   }
 
   BOARD_POST_INIT_BLINK;
@@ -64,9 +64,10 @@ int main(void)
 void init_exti_pins()
 {
   GpioB.enableClk();
-  GpioB.cfgIn_N( GPIO_PIN_1 | GPIO_PIN_2, GpioRegs::Pull::down );
-  GpioB.setEXTI( 1, GpioRegs::ExtiEv::updown );
-  GpioB.setEXTI( 2, GpioRegs::ExtiEv::updown );
+  PB1.cfgIn( GpioPull::down );
+  PB2.cfgIn( GpioPull::down );
+  PB1.setEXTI( ExtiEv::updown );
+  PB2.setEXTI( ExtiEv::updown );
 
   HAL_NVIC_SetPriority( EXTI1_IRQn, 12, 0 );
   HAL_NVIC_EnableIRQ( EXTI1_IRQn );
@@ -77,10 +78,10 @@ void init_exti_pins()
 void EXTI1_IRQHandler()
 {
   if( GpioB.IDR & GPIO_PIN_1 ) {
-    leds.set( 2 );
+    leds[2].set();
     sensors_state |= 1;
   } else {
-    leds.reset( 2 );
+    leds[2].reset();
     sensors_state &= ~1;
   }
 
@@ -90,10 +91,10 @@ void EXTI1_IRQHandler()
 void EXTI2_IRQHandler()
 {
   if( GpioB.IDR & GPIO_PIN_2 ) {
-    leds.set( 4 );
+    leds[4].set();
     sensors_state |= 2;
   } else {
-    leds.reset( 4 );
+    leds[4].reset();
     sensors_state &= ~2;
   }
   HAL_GPIO_EXTI_IRQHandler( GPIO_PIN_2 );
@@ -138,32 +139,32 @@ uint32_t wait_with_cond( uint32_t ms, uint16_t n_hwticks, uint32_t *rc, uint32_t
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  int ts     = arg2long_d( 1, argc, argv, UVAR('s'), 0 );
-  int tg     = arg2long_d( 2, argc, argv, UVAR('g'), 0 );
+  int ts     = arg2long_d( 1, argc, argv, UVAR_s, 0 );
+  int tg     = arg2long_d( 2, argc, argv, UVAR_g, 0 );
   int dir    = arg2long_d( 3, argc, argv, 0, 0, 1 );
-  int n_step = arg2long_d( 4, argc, argv, UVAR('n'), 1, 10000 );
-  uint32_t t_step = UVAR('t');
+  int n_step = arg2long_d( 4, argc, argv, UVAR_n, 1, 10000 );
+  uint32_t t_step = UVAR_t;
   std_out <<  NL "Test0: ts= " <<  ts << " tg= " <<  tg << " t= " <<  t_step
      <<  " n_step= " << n_step << NL;
 
-  leds.reset( 1 );
-  ctlEn.write( 0 );
-  ctlAB.write( dir ? 1 : 2 );
+  leds[0].reset();
+  ctlEn.write( 0_mask );
+  ctlAB.write( dir ? 1_mask : 2_mask );
 
   break_flag = 0;
   uint32_t src = 0, w = 0, dp = 0;
   for( int i=0; i<n_step && !break_flag; ++i ) {
-    leds.set( 1 ); ctlEn.set( 1 );
+    leds[1].set(); ctlEn.set( 1_mask );
     w = wait_with_cond( tg, ts, &src, &dp, dir ? 2 : 1 );
-    leds.reset( 1 ); ctlEn.reset( 1 );
+    leds[1].reset(); ctlEn.reset( 1_mask );
     if( src ) {
       break;
     }
     delay_ms( t_step );
   }
 
-  ctlEn.write( 0 );  ctlAB.write( 0 );
-  leds.reset( 1 );
+  ctlEn.write( 0_mask );  ctlAB.write( 0_mask );
+  leds[1].reset();
   pr_sdx( sensors_state );  pr_sdx( w );  pr_sdx( dp ); pr_sdx( src );
 
   return 0;
@@ -208,7 +209,7 @@ void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* tim_baseHandle )
   if( tim_baseHandle->Instance == TIM8 )  {
     __HAL_RCC_TIM8_CLK_ENABLE();
     /** TIM8 GPIO Configuration  A0     ------> TIM8_ETR     */
-    GpioA.cfgAF( 0, GPIO_AF3_TIM8 );
+    PA0.cfgAF( GPIO_AF3_TIM8 );
 
     /* TIM8 interrupt Init */
     // HAL_NVIC_SetPriority(TIM8_UP_TIM13_IRQn, 3, 0 );
@@ -220,8 +221,7 @@ void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* tim_baseHandle )
 
 void HAL_TIM_Base_MspDeInit( TIM_HandleTypeDef* tim_baseHandle )
 {
-  if( tim_baseHandle->Instance==TIM8 )
-  {
+  if( tim_baseHandle->Instance == TIM8 ) {
     __HAL_RCC_TIM8_CLK_DISABLE();
 
     /* TIM8 interrupt Deinit */

@@ -27,10 +27,10 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 500;
-  UVAR('n') = 50;
+  UVAR_t = 500;
+  UVAR_n =  50;
 
-  UVAR('e') = i2c_default_init( i2ch /*, 400000 */ );
+  UVAR_e = i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
   i2c_client_def = &mag;
 
@@ -52,9 +52,9 @@ int main(void)
 int cmd_test0( int argc, const char * const * argv )
 {
   constexpr auto n_scales = HMC5983::getNScales();
-  int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
+  int n = arg2long_d( 1, argc, argv, UVAR_n, 0 );
   int scale = arg2long_d( 2, argc, argv, 1, 0, n_scales-1 );
-  uint32_t t_step = UVAR('t');
+  uint32_t t_step = UVAR_t;
 
   std_out <<  NL "Test0: n= "  <<  n  <<  " t= "  <<  t_step
      <<  " scale= "  <<  scale   <<  NL;

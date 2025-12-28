@@ -15,11 +15,11 @@ const char* common_help_string = "App to test MAX7219 LED SPI screen controller"
 
 // --- local commands;
 DCL_CMD_REG( test0, 'T', " - test MAX7219"  );
-DCL_CMD_REG( sendr_spi, 'S', "[0xXX ...] - send bytes, recv UVAR('r')"  );
+DCL_CMD_REG( sendr_spi, 'S', "[0xXX ...] - send bytes, recv UVAR_r"  );
 
 
 
-PinOut nss_pin( BOARD_SPI_DEFAULT_GPIO_SNSS, BOARD_SPI_DEFAULT_GPIO_PIN_SNSS );
+PinOut nss_pin( BOARD_SPI_DEFAULT_PIN_SNSS );
 SPI_HandleTypeDef spi_h;
 DevSPI spi_d( &spi_h, &nss_pin );
 DevSPI_MAX7219 max7219( spi_d );
@@ -28,13 +28,13 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 1000;
-  UVAR('n') = 20;
-  UVAR('r') = 0; // default bytes to read
+  UVAR_t = 1000;
+  UVAR_n = 20;
+  UVAR_r = 0; // default bytes to read
 
   if( SPI_init_default( SPI_BAUDRATEPRESCALER_256 ) != HAL_OK ) {
   // if( SPI_init_default( SPI_BAUDRATEPRESCALER_32 ) != HAL_OK ) {
-    die4led( 0x04 );
+    die4led( 0x04_mask );
   }
   // nss_pin.initHW();
   //nss_pin.set(1);
@@ -67,7 +67,7 @@ int cmd_test0( int argc, const char * const * argv )
 
   std_out << NL "Test0: v= " << v  <<  " = " << HexInt( v ) << " pos= " << pos << NL;
 
-  if( UVAR('d') > 0 ) { // debug: for logic analizer start
+  if( UVAR_d > 0 ) { // debug: for logic analizer start
     nss_pin.write( 0 );
     DLY_T;
     nss_pin.write( 1 );
@@ -161,7 +161,7 @@ int cmd_sendr_spi( int argc, const char * const * argv )
     sbuf[i] = t;
   }
 
-  int nd = imin( UVAR('r'), sizeof(gbuf_a) );
+  int nd = imin( UVAR_r, sizeof(gbuf_a) );
   std_out <<  NL "Send/recv: ns= "  <<  ns  <<  " nd= "  <<  nd   <<  NL;
   dump8( sbuf, ns );
 

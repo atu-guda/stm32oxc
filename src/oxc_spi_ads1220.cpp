@@ -47,7 +47,7 @@ std::optional<int32_t> ADS1220::read_wait()
   bool good = false;
   if( ndrdy ) {
     for( int i=0; i<max_wait; ++i ) {
-      if( ndrdy->read() == 0 ) {
+      if( ndrdy->read().bitmask() == 0 ) {
         good = true;
         break;
       }

@@ -27,8 +27,8 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 1000;
-  UVAR('n') = 20;
+  UVAR_t = 1000;
+  UVAR_n = 20;
 
   BOARD_POST_INIT_BLINK;
 
@@ -50,8 +50,8 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  int t = arg2long_d( 1, argc, argv, UVAR('t'), 10, 100000 );
-  int n = arg2long_d( 1, argc, argv, UVAR('n'),  1,  10000 );
+  int t = arg2long_d( 1, argc, argv, UVAR_t, 10, 100000 );
+  int n = arg2long_d( 1, argc, argv, UVAR_n,  1,  10000 );
 
   for( int i=0; i<n && !break_flag; ++i ) {
 
@@ -95,7 +95,7 @@ int MX_TIM_IN_Init()
   sSlaveConfig.SlaveMode       = TIM_SLAVEMODE_EXTERNAL1;
   sSlaveConfig.InputTrigger    = TIM_TS_TI1FP1;
   sSlaveConfig.TriggerPolarity = TIM_TRIGGERPOLARITY_RISING;
-  sSlaveConfig.TriggerFilter   = UVAR('f'); // 7
+  sSlaveConfig.TriggerFilter   = UVAR_f; // 7
   if( HAL_TIM_SlaveConfigSynchro( &tim_cnt_h, &sSlaveConfig ) != HAL_OK ) {
     errno = 1001;
     return 0;
@@ -116,7 +116,7 @@ void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* htim )
 {
   if( htim->Instance == TIM_IN ) {
     TIM_IN_EN;
-    TIM_IN_GPIO.cfgAF_N( TIM_IN_PIN, TIM_IN_AF );
+    TIM_IN_PIN.cfgAF( TIM_IN_AF );
   }
 }
 

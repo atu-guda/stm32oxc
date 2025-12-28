@@ -26,12 +26,12 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 500;
-  UVAR('n') = 50;
+  UVAR_t = 500;
+  UVAR_n = 50;
   // config
-  UVAR('c') = AS5600::CfgBits::cfg_pwr_mode_nom |  AS5600::CfgBits::cfg_hyst_off;
+  UVAR_c = AS5600::CfgBits::cfg_pwr_mode_nom |  AS5600::CfgBits::cfg_hyst_off;
 
-  UVAR('e') = i2c_default_init( i2ch /*, 400000 */ );
+  UVAR_e = i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
   i2c_client_def = &ang_sens;
 
@@ -52,13 +52,13 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
-  uint32_t t_step = UVAR('t');
+  int n = arg2long_d( 1, argc, argv, UVAR_n, 0 );
+  uint32_t t_step = UVAR_t;
 
   std_out <<  NL "Test0: n= "  <<  n  <<  " t= "  <<  t_step
-          << " cfg= " << HexInt16( UVAR('c') ) <<  NL;
+          << " cfg= " << HexInt16( UVAR_c ) <<  NL;
 
-  ang_sens.setCfg( UVAR('c') );
+  ang_sens.setCfg( UVAR_c );
 
   ang_sens.setStartPosCurr();
 

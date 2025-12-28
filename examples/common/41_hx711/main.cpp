@@ -56,10 +56,10 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 100; // 100 ms
-  UVAR('n') = 20;
-  UVAR('l') = 1; // indicate by LED
-  UVAR('m') = 0; // mode 0-2
+  UVAR_t = 100; // 100 ms
+  UVAR_n = 20;
+  UVAR_l = 1; // indicate by LED
+  UVAR_m = 0; // mode 0-2
 
   hx711.initHW();
 
@@ -83,20 +83,19 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  uint32_t t_step = UVAR('t');
-  uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 1000000 ); // number of series
+  uint32_t t_step = UVAR_t;
+  uint32_t n = arg2long_d( 1, argc, argv, UVAR_n, 1, 1000000 ); // number of series
 
   std_out <<  NL "# Test0: n= " <<  n <<  " t= " <<  t_step <<  NL;
 
   xfloat vf;
   StatData sdat( 1 );
 
-  leds.set(   BIT0 | BIT1 | BIT2 ); delay_ms( 100 );
-  leds.reset( BIT0 | BIT1 | BIT2 );
+  leds.set(   0x07_mask ); delay_ms( 100 );  leds.reset( 0x07_mask  );
 
   uint32_t tm0, tm00;
   int rc = 0;
-  bool do_out = ! UVAR('b');
+  bool do_out = ! UVAR_b;
   delay_ms( t_step );
 
   break_flag = 0;
@@ -107,9 +106,9 @@ int cmd_test0( int argc, const char * const * argv )
       tm0 = tcc; tm00 = tm0;
     }
 
-    if( UVAR('l') ) {  leds.set( BIT1 ); }
-    auto v = hx711.read( HX711::HX711_mode( UVAR('m') & 3 ) );
-    if( UVAR('l') ) {  leds.reset( BIT1 ); }
+    if( UVAR_l ) {  leds[1].set(); }
+    auto v = hx711.read( HX711::HX711_mode( UVAR_m & 3 ) );
+    if( UVAR_l ) {  leds[1].reset(); }
 
 
     int dt = tcc - tm00; // ms

@@ -31,7 +31,8 @@ void HAL_DAC_MspInit( DAC_HandleTypeDef* dacHandle )
   }
 
   __HAL_RCC_DAC_CLK_ENABLE();
-  GpioA.cfgAnalog_N( GPIO_PIN_4 | GPIO_PIN_5 );
+  PA4.cfgAnalog();
+  PA5.cfgAnalog();
 }
 
 void HAL_DAC_MspDeInit( DAC_HandleTypeDef* dacHandle )

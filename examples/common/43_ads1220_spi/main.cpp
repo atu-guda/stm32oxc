@@ -37,11 +37,11 @@ DCL_CMD_REG( reset, 'Z', " - reset only"  );
 
 
 
-PinOut nss_pin(   BOARD_SPI_DEFAULT_GPIO_SNSS, BOARD_SPI_DEFAULT_GPIO_PIN_SNSS );
-PinsIn ndrdy_pin( BOARD_SPI_DEFAULT_GPIO_EXT1, BOARD_SPI_DEFAULT_GPIO_PIN_EXT1, 1 );
+PinOut nss_pin(   BOARD_SPI_DEFAULT_PIN_SNSS );
+PinsIn ndrdy_pin( BOARD_SPI_DEFAULT_PIN_EXT1, 1 );
 
 // to HW debug
-PinOut dbg_pin( BOARD_SPI_DEFAULT_GPIO_EXT2, BOARD_SPI_DEFAULT_GPIO_PIN_EXT2 );
+PinOut dbg_pin(   BOARD_SPI_DEFAULT_PIN_EXT2 );
 
 SPI_HandleTypeDef spi_h;
 DevSPI spi_d( &spi_h, &nss_pin );
@@ -51,15 +51,15 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 1000; // 160 min here
-  UVAR('n') = 10;
-  UVAR('v') = (int)ADS1220::Params::vref; // internal REF in uV * 2
-  UVAR('c') = 4;
+  UVAR_t = 1000; // 160 min here
+  UVAR_n = 10;
+  UVAR_v = (int)ADS1220::Params::vref; // internal REF in uV * 2
+  UVAR_c = 4;
 
   dbg_pin.initHW();
   ndrdy_pin.initHW();
   if( SPI_init_default( SPI_BAUDRATEPRESCALER_256, SPI_lmode::low_2e ) != HAL_OK ) { // low_2e is a must!
-    die4led( 0x04 );
+    die4led( 0x04_mask );
   }
   spi_d.setTssDelay_100ns( 10 );
   spi_d.initSPI();
@@ -83,17 +83,16 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  int t_step = UVAR('t');
-  unsigned n_ch = clamp( (unsigned)UVAR('c'), 1u, n_ADC_ch_max );
+  int t_step = UVAR_t;
+  unsigned n_ch = clamp( (unsigned)UVAR_c, 1u, n_ADC_ch_max );
 
   const uint32_t n_ADC_series_max  = n_ADC_mem / ( ADS1220::Params::bits_out * n_ch / 8 );
-  uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, n_ADC_series_max ); // number of series
+  uint32_t n = arg2long_d( 1, argc, argv, UVAR_n, 1, n_ADC_series_max ); // number of series
 
   std_out << "# n = " << n << " n_ch= " << n_ch << " t_step= " << t_step << " us " NL;
 
   adc.reset();
-  leds.set(   BIT0 | BIT1 | BIT2 ); delay_ms( 100 );
-  leds.reset( BIT0 | BIT1 | BIT2 );
+  leds.set(   0x07_mask ); delay_ms( 100 );  leds.reset( 0x07_mask  );
 
   adcd.free();
   if( ! adcd.alloc( n_ch, n ) ) {
@@ -101,7 +100,7 @@ int cmd_test0( int argc, const char * const * argv )
     return 2;
   }
   adcd.set_d_t( t_step * 1e-3f );
-  adcd.set_v_ref_uV( UVAR('v') );
+  adcd.set_v_ref_uV( UVAR_v );
 
   adc.set_mode_1shot();
   adc.set_data_rate( ADS1220::Cfg1Bits::CFG1_DR_20 );
@@ -109,7 +108,7 @@ int cmd_test0( int argc, const char * const * argv )
   adc.PGA_dis();
   adc.set_pga_gain( ADS1220::CFG0_PGA_GAIN_1 );
 
-  leds.set( BIT1 );
+  leds[1].set();
 
   break_flag = 0;
   uint32_t tm0 = 0, tm00 = 0;
@@ -121,7 +120,7 @@ int cmd_test0( int argc, const char * const * argv )
       tm0 = tcc; tm00 = tm0;
     }
 
-    if( UVAR('l') ) {  leds.set( BIT2 ); }
+    if( UVAR_l ) {  leds[2].set(); }
     auto row = adcd.row( i );
 
     for( unsigned ch=0; ch<n_ch; ++ch ) {
@@ -129,7 +128,7 @@ int cmd_test0( int argc, const char * const * argv )
       auto v = adc.read_single();
       if( v ) {
         auto vv = v.value();
-        xfloat vf = (xfloat) vv * UVAR('v') * xfloat(1.0e-6f) / (int)ADS1220::Params::scale;
+        xfloat vf = (xfloat) vv * UVAR_v * xfloat(1.0e-6f) / (int)ADS1220::Params::scale;
         std_out << ' ' << vv << ' ' << vf;
         row[ch] = vv;
       } else {
@@ -144,7 +143,7 @@ int cmd_test0( int argc, const char * const * argv )
     std_out << NL;
     // adc.read( adcd.row( i ), n_ch );
 
-    if( UVAR('l') ) {  leds.reset( BIT2 ); }
+    if( UVAR_l ) {  leds[2].reset(); }
 
     if( t_step > 0 ) {
       delay_ms_until_brk( &tm0, t_step );
@@ -152,7 +151,7 @@ int cmd_test0( int argc, const char * const * argv )
   }
 
 
-  leds.reset( BIT1 );
+  leds[1].reset();
 
   std_out << "# n_lines= " << adcd.get_n_row() << " dt_appr= " <<  ( 1e-3f * ( HAL_GetTick() - tm00 ) / n ) << NL;
 
@@ -210,7 +209,7 @@ int cmd_t0( int argc, const char * const * argv )
 
   if( v ) {
     auto vv = v.value();
-    xfloat vf = (xfloat) vv * UVAR('v') * xfloat(1.0e-6f) / (int)ADS1220::Params::scale;
+    xfloat vf = (xfloat) vv * UVAR_v * xfloat(1.0e-6f) / (int)ADS1220::Params::scale;
     std_out << "# v= " << vv << ' ' << HexInt(vv) << ' ' << vf << NL;
   } else {
     std_out << "# Fail! " << NL;

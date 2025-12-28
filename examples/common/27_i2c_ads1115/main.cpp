@@ -25,7 +25,7 @@ DCL_CMD_REG( set_coeffs, 'F', " k0 k1 k2 k3 - set ADC coeffs"  );
 I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );
 ADS1115 adc( i2cd );
-const uint32_t n_ADC_ch_max = 4; // current - in UVAR('c')
+const uint32_t n_ADC_ch_max = 4; // current - in UVAR_c
 xfloat v_coeffs[n_ADC_ch_max] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 
@@ -33,11 +33,11 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 100; // 100 ms
-  UVAR('n') = 20;
-  UVAR('c') = 4;
+  UVAR_t = 100; // 100 ms
+  UVAR_n = 20;
+  UVAR_c = 4;
 
-  UVAR('e') = i2c_default_init( i2ch /*, 400000 */ );
+  UVAR_e = i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
   i2c_client_def = &adc;
 
@@ -58,20 +58,20 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  uint32_t t_step = UVAR('t');
-  uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 1000000 ); // number of series
+  uint32_t t_step = UVAR_t;
+  uint32_t n = arg2long_d( 1, argc, argv, UVAR_n, 1, 1000000 ); // number of series
 
   uint16_t x_cfg = adc.getDeviceCfg();
   std_out <<  NL "# Test0: n= " <<  n <<  " t= " <<  t_step <<  "  cfg= " <<  HexInt16( x_cfg ) << NL;
   std_out << "# sizeof(xfloat)= " << sizeof(xfloat) << NL;
-  bool is_cont = UVAR('o');
+  bool is_cont = UVAR_o;
 
   adc.setDefault();
 
   uint16_t cfg;
   cfg = ADS1115::cfg_in_0 | ADS1115::cfg_pga_4096 | ADS1115::cfg_rate_860 | ADS1115::cfg_oneShot;
   // oneShot may be removed by startCont()
-  UVAR('e') = adc.setCfg( cfg );
+  UVAR_e = adc.setCfg( cfg );
   x_cfg = adc.getDeviceCfg();
   std_out <<  "# cfg= " << HexInt16( x_cfg ) <<  NL;
 
@@ -79,8 +79,7 @@ int cmd_test0( int argc, const char * const * argv )
 
   std_out << "# Coeffs: " << v_coeffs[0] << NL;
 
-  leds.set(   BIT0 | BIT1 | BIT2 ); delay_ms( 100 );
-  leds.reset( BIT0 | BIT1 | BIT2 );
+  leds.set(   0x07_mask ); delay_ms( 100 );  leds.reset( 0x07_mask  );
 
   if( is_cont ) {
     adc.startCont();
@@ -93,7 +92,7 @@ int cmd_test0( int argc, const char * const * argv )
 
   uint32_t tm0, tm00;
   int rc = 0;
-  bool do_out = ! UVAR('b');
+  bool do_out = ! UVAR_b;
 
   break_flag = 0;
   for( decltype(n) i=0; i<n && !break_flag; ++i ) {
@@ -103,13 +102,13 @@ int cmd_test0( int argc, const char * const * argv )
       tm0 = tcc; tm00 = tm0;
     }
 
-    if( UVAR('l') ) {  leds.set( BIT2 ); }
+    if( UVAR_l ) {  leds[2].set(); }
     if( is_cont ) {
       v0 = adc.getContValue();
     } else {
       v0 = adc.getOneShot();
     }
-    if( UVAR('l') ) {  leds.reset( BIT2 ); }
+    if( UVAR_l ) {  leds[2].reset(); }
     int dt = tcc - tm00; // ms
     if( do_out ) {
       std_out <<  FltFmt( 0.001f * dt, cvtff_auto, 12, 4 );
@@ -143,9 +142,9 @@ int cmd_test0( int argc, const char * const * argv )
 
 int cmd_getNch( int argc, const char * const * argv )
 {
-  uint32_t t_step = UVAR('t');
-  uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 1000000 ); // number of series
-  unsigned n_ch = (uint8_t)clamp( ( UVAR('c') ), 1, 4 );
+  uint32_t t_step = UVAR_t;
+  uint32_t n = arg2long_d( 1, argc, argv, UVAR_n, 1, 1000000 ); // number of series
+  unsigned n_ch = (uint8_t)clamp( ( UVAR_c ), 1, 4 );
   uint8_t e_ch = (uint8_t)(n_ch-1);
   uint16_t x_cfg = adc.getDeviceCfg();
   std_out <<  NL "# getNch: n= " <<  n << " n_ch= " << n_ch << " t= " <<  t_step <<  "  cfg= " <<  HexInt16( x_cfg ) << NL;
@@ -160,7 +159,7 @@ int cmd_getNch( int argc, const char * const * argv )
   adc.setDefault();
 
   uint16_t cfg =  ADS1115::cfg_pga_4096 | ADS1115::cfg_rate_860 | ADS1115::cfg_oneShot;
-  UVAR('e') = adc.setCfg( cfg );
+  UVAR_e = adc.setCfg( cfg );
   x_cfg = adc.getDeviceCfg();
   int scale_mv = adc.getScale_mV();
   std_out <<  "# cfg= " << HexInt16( x_cfg ) << " scale_mv = " << scale_mv << NL;
@@ -168,12 +167,11 @@ int cmd_getNch( int argc, const char * const * argv )
   int16_t vi[4];
   xfloat kv = 0.001f * scale_mv / 0x7FFF;
 
-  leds.set(   BIT0 | BIT1 | BIT2 ); delay_ms( 100 );
-  leds.reset( BIT0 | BIT1 | BIT2 );
+  leds.set(   0x07_mask ); delay_ms( 100 );  leds.reset( 0x07_mask  );
 
   uint32_t tm0, tm00;
   int rc = 0;
-  bool do_out = ! UVAR('b');
+  bool do_out = ! UVAR_b;
 
   break_flag = 0;
   for( decltype(n) i=0; i<n && !break_flag; ++i ) {
@@ -185,9 +183,9 @@ int cmd_getNch( int argc, const char * const * argv )
     float tc = 0.001f * ( tcc - tm00 );
     xfloat v[n_ch];
 
-    if( UVAR('l') ) {  leds.set( BIT2 ); }
+    if( UVAR_l ) {  leds[2].set(); }
     int no = adc.getOneShotNch( 0, e_ch, vi );
-    if( UVAR('l') ) {  leds.reset( BIT2 ); }
+    if( UVAR_l ) {  leds[2].reset(); }
 
     for( decltype(+no) j=0; j<no; ++j ) {
       v[j] = kv * vi[j] * v_coeffs[j];

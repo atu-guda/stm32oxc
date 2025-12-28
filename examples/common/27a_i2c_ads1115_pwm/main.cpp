@@ -40,7 +40,7 @@ DCL_CMD_REG( set_coeffs, 'F', " k0 k1 k2 k3 - set ADC coeffs"  );
 I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );
 ADS1115 adc( i2cd );
-const uint32_t n_ADC_ch_max = 4; // current - in UVAR('c')
+const uint32_t n_ADC_ch_max = 4; // current - in UVAR_c
 xfloat v_coeffs[n_ADC_ch_max] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 
@@ -48,16 +48,16 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 10; // 10 ms
-  UVAR('n') = 1000000; // number of series (10ms 't' each): limited by steps
-  UVAR('c') = 2; // n_ADC_ch_max;
+  UVAR_t = 10; // 10 ms
+  UVAR_n = 1000000; // number of series (10ms 't' each): limited by steps
+  UVAR_c = 2; // n_ADC_ch_max;
 
-  UVAR('p') = 0;     // PSC,  - max output freq
-  UVAR('a') = 1439;  // ARR, to get 100 kHz with PSC = 0
+  UVAR_p = 0;     // PSC,  - max output freq
+  UVAR_a = 1439;  // ARR, to get 100 kHz with PSC = 0
 
   tim_cfg();
 
-  UVAR('e') = i2c_default_init( i2ch /*, 400000 */ );
+  UVAR_e = i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
   i2c_client_def = &adc;
 
@@ -78,12 +78,12 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  uint32_t t_step = UVAR('t');
-  uint32_t n_ch = clamp( UVAR('c'), 1, (int)n_ADC_ch_max );
+  uint32_t t_step = UVAR_t;
+  uint32_t n_ch = clamp( UVAR_c, 1, (int)n_ADC_ch_max );
 
   uint8_t e_ch = (uint8_t)(n_ch-1);
 
-  uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 1000000 ); // number of series
+  uint32_t n = arg2long_d( 1, argc, argv, UVAR_n, 1, 1000000 ); // number of series
 
   bool skip_pwm = arg2long_d( 2, argc, argv, 0, 1, 1 ); // dont touch PWM
 
@@ -92,7 +92,7 @@ int cmd_test0( int argc, const char * const * argv )
   adc.setDefault();
 
   uint16_t cfg =  ADS1115::cfg_pga_4096 | ADS1115::cfg_rate_860 | ADS1115::cfg_oneShot;
-  UVAR('e') = adc.setCfg( cfg );
+  UVAR_e = adc.setCfg( cfg );
   uint16_t x_cfg = adc.getDeviceCfg();
   int scale_mv = adc.getScale_mV();
   std_out <<  "# cfg= " << HexInt16( x_cfg ) << " scale_mv = " << scale_mv << NL;
@@ -107,14 +107,13 @@ int cmd_test0( int argc, const char * const * argv )
   }
   std_out << NL;
 
-  leds.set(   BIT0 | BIT1 | BIT2 ); delay_ms( 100 );
-  leds.reset( BIT0 | BIT1 | BIT2 );
+  leds.set(   0x07_mask ); delay_ms( 100 );  leds.reset( 0x07_mask  );
 
   pwmdat.prep( t_step, skip_pwm );
 
   uint32_t tm0, tm00;
   int rc = 0;
-  bool do_out = ! UVAR('b');
+  bool do_out = ! UVAR_b;
 
   break_flag = 0;
   for( decltype(n) i=0; i<n && !break_flag; ++i ) {
@@ -133,9 +132,9 @@ int cmd_test0( int argc, const char * const * argv )
     float tc = 0.001f * ( tcc - tm00 );
     xfloat v[n_ch+1]; // +1 for PWM
 
-    if( UVAR('l') ) {  leds.set( BIT2 ); }
+    if( UVAR_l ) {  leds[2].set(); }
     unsigned no = adc.getOneShotNch( 0, e_ch, ADC_buf );
-    if( UVAR('l') ) {  leds.reset( BIT2 ); }
+    if( UVAR_l ) {  leds[2].reset(); }
     if( no != n_ch ) {
       std_out << "# Error: read only " << no << " channels" << NL;
       break;
@@ -179,13 +178,13 @@ int cmd_test0( int argc, const char * const * argv )
 void tim_cfg()
 {
   tim_h.Instance               = TIM_EXA;
-  tim_h.Init.Prescaler         = UVAR('p');
-  tim_h.Init.Period            = UVAR('a');
+  tim_h.Init.Prescaler         = UVAR_p;
+  tim_h.Init.Period            = UVAR_a;
   tim_h.Init.ClockDivision     = 0;
   tim_h.Init.CounterMode       = TIM_COUNTERMODE_UP;
   tim_h.Init.RepetitionCounter = 0;
   if( HAL_TIM_PWM_Init( &tim_h ) != HAL_OK ) {
-    UVAR('e') = 1; // like error
+    UVAR_e = 1; // like error
     return;
   }
 
@@ -193,7 +192,7 @@ void tim_cfg()
   sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
   HAL_TIM_ConfigClockSource( &tim_h, &sClockSourceConfig );
 
-  int pbase = UVAR('a');
+  int pbase = UVAR_a;
   TIM_OC_InitTypeDef tim_oc_cfg;
   tim_oc_cfg.OCMode       = TIM_OCMODE_PWM1;
   tim_oc_cfg.OCPolarity   = TIM_OCPOLARITY_HIGH;
@@ -206,7 +205,7 @@ void tim_cfg()
   HAL_TIM_PWM_Stop( &tim_h, TIM_CHANNEL_1 );
   tim_oc_cfg.Pulse = pwmdat.get_v_def() * pbase / 100;
   if( HAL_TIM_PWM_ConfigChannel( &tim_h, &tim_oc_cfg, TIM_CHANNEL_1 ) != HAL_OK ) {
-    UVAR('e') = 11;
+    UVAR_e = 11;
     return;
   }
   HAL_TIM_PWM_Start( &tim_h, TIM_CHANNEL_1 );

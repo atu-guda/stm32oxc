@@ -26,11 +26,11 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 1000;
-  UVAR('n') = 20;
+  UVAR_t = 1000;
+  UVAR_n =   20;
 
   MX_SDIO_SD_Init();
-  // UVAR('e') = HAL_SD_Init( &hsd );
+  // UVAR_e = HAL_SD_Init( &hsd );
 
   BOARD_POST_INIT_BLINK;
 
@@ -51,7 +51,7 @@ int main(void)
 int cmd_test0( int argc, const char * const * argv )
 {
   int start = arg2long_d( 1, argc, argv, 0, 0 );
-  // uint32_t t_step = UVAR('t');
+  // uint32_t t_step = UVAR_t;
 
   std_out <<  NL "Test0: start= "  <<  start <<  NL;
 
@@ -59,11 +59,11 @@ int cmd_test0( int argc, const char * const * argv )
   // __HAL_SD_ENABLE( &hsd );
 
   memset( sd_buf, 0, sizeof( sd_buf ) );
-  UVAR('e') = HAL_SD_Init( &hsd );
+  UVAR_e = HAL_SD_Init( &hsd );
   delay_ms( 100 );
   auto sd_state = HAL_SD_GetState( &hsd );
   HAL_SD_CardInfoTypeDef cardInfo;
-  UVAR('z') = HAL_SD_GetCardInfo( &hsd, &cardInfo );
+  UVAR_z = HAL_SD_GetCardInfo( &hsd, &cardInfo );
   auto card_state = HAL_SD_GetCardState( &hsd );
   auto sd_err = HAL_SD_GetError( &hsd );
   rc = HAL_SD_ReadBlocks( &hsd, sd_buf, start, 1, 1000 );

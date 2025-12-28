@@ -26,7 +26,9 @@ class PinMask {
   public:
    explicit constexpr PinMask( uint16_t mask_ ) : mask ( mask_ ) {};
    inline constexpr uint16_t  bitmask() const { return mask; }
-   // TODO: iterator
+   friend inline constexpr const PinMask operator|( PinMask lhs, PinMask rhs ) { return PinMask( lhs.mask | rhs.mask ) ; }
+   inline constexpr bool isPinSet( PinNum pin ) const;
+   // TODO: iterator, more functions/operators
   private:
    uint16_t mask;
 };
@@ -50,6 +52,7 @@ constexpr PinNum operator""_pin( unsigned long long v ) {
   return PinNum( v );
 }
 
+inline constexpr bool PinMask::isPinSet( PinNum pin ) const { return bool ( mask & pin.bitmask() ); }
 constexpr inline PinMask make_pinMask( PinNum pin_num, uint8_t n ) { return PinMask( make_bit_mask( pin_num.Num(), n ) ) ; }
 
 

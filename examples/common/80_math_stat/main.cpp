@@ -29,7 +29,7 @@ DCL_CMD_REG( testopt, 'Y', " n - test optiona/expected"  );
 
 void idle_main_task()
 {
-  leds.toggle( 1 );
+  leds[1].toggle();
 }
 
 // ---------------------- ints + floats iface ---------------------------
@@ -134,10 +134,10 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('a') =   2;
-  UVAR('b') =  10;
-  UVAR('t') = 100;
-  UVAR('n') = 1000000;
+  UVAR_a =   2;
+  UVAR_b =  10;
+  UVAR_t = 100;
+  UVAR_n = 1000000;
 
   print_var_hook    = print_var_fl;
   set_var_hook      = set_var_fl;
@@ -159,7 +159,7 @@ int main(void)
 
   oxc_add_aux_tick_fun( led_task_nortos );
 
-  leds.reset( 0xFF );
+  leds.reset( 0xFF_mask );
 
   std_main_loop_nortos( &srl, idle_main_task );
 
@@ -169,7 +169,7 @@ int main(void)
 int cmd_test0( int argc, const char * const * argv )
 {
   unsigned n_ch = 2;
-  uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 100000000 ); // number of series
+  uint32_t n = arg2long_d( 1, argc, argv, UVAR_n, 1, 100000000 ); // number of series
 
   std_out << "# Test: sizeof(float)= " << sizeof(float)
           << "  sizeof(xfloat)= "      << sizeof(xfloat)
@@ -186,8 +186,8 @@ int cmd_test0( int argc, const char * const * argv )
     // }
 
     xfloat v[n_ch];
-    v[0] = 1.0f * UVAR('a') +         ( ( i & 1 ) ? UVAR('b') : (-UVAR('b') ) );
-    v[1] = 5.1f * UVAR('a') - 12.3f * ( ( i & 1 ) ? UVAR('b') : (-UVAR('b') ) );
+    v[0] = 1.0f * UVAR_a +         ( ( i & 1 ) ? UVAR_b : (-UVAR_b ) );
+    v[1] = 5.1f * UVAR_a - 12.3f * ( ( i & 1 ) ? UVAR_b : (-UVAR_b ) );
 
     sdat.add( v );
 

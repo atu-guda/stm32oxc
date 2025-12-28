@@ -26,7 +26,7 @@ DCL_CMD_REG( dacout, 'D', "v16 [ch] - output"  );
 // inline void dbg_on() {  dbg_pin.set(); delay_bad_100ns( 1 ); }
 // inline void dbg_of() {  dbg_pin.reset(); }
 
-PinOut nss_pin( BOARD_SPI_DEFAULT_GPIO_SNSS, BOARD_SPI_DEFAULT_GPIO_PIN_SNSS );
+PinOut nss_pin( BOARD_SPI_DEFAULT_PIN_SNSS );
 SPI_HandleTypeDef spi_h;
 DevSPI spi_d( &spi_h, &nss_pin );
 DevSPI_DAC8563 dac( spi_d );
@@ -35,13 +35,13 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 1000;
-  UVAR('n') = 1;
+  UVAR_t = 1000;
+  UVAR_n = 1;
 
   // dbg_pin.initHW();
 
   if( SPI_init_default( SPI_BAUDRATEPRESCALER_256, SPI_lmode::low_2e ) != HAL_OK ) { // low_2e ???
-    die4led( 0x04 );
+    die4led( 0x04_mask );
   }
   spi_d.initSPI();
 
@@ -66,8 +66,8 @@ int cmd_test0( int argc, const char * const * argv )
   uint16_t v1 = arg2long_d( 2, argc, argv, 0x7FFF, 0, 0xFFFF );
   int16_t dv0 = arg2long_d( 3, argc, argv, 0, -(0x7FFF), 0xFFFF );
   int16_t dv1 = arg2long_d( 4, argc, argv, 0, -(0x7FFF), 0xFFFF );
-  uint32_t n  = UVAR('n');
-  uint32_t t_step = UVAR('t');
+  uint32_t n  = UVAR_n;
+  uint32_t t_step = UVAR_t;
 
   std_out << NL "# Test0: v0= " << v0  <<  " v1= " << v1 << " n= " << n
           << " dv0= " << dv0 << " dv1= " << dv1 << NL;
@@ -76,7 +76,7 @@ int cmd_test0( int argc, const char * const * argv )
   uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
 
   for( uint32_t i=0; i<n && !break_flag; ++i ) {
-    int ie = UVAR('a') ? (i&1) : i;
+    int ie = UVAR_a ? (i&1) : i;
     uint16_t  v0c = v0 + ie * dv0;
     uint16_t  v1c = v1 + ie * dv1;
     dac.setu_a( v0c ); dac.setu_b( v1c );

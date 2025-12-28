@@ -19,8 +19,8 @@ void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim )
   }
 
   // if one timer uses different AF/GPIO, like F334:T1
-  #ifdef TIM_EXA_PINS_EXT
-    TIM_EXA_GPIO_EXT.cfgAF_N( TIM_EXA_PINS_EXT, TIM_EXA_GPIOAF );
+  #ifdef TIM_EXA_PIN_EXT
+    TIM_EXA_PIN_EXT.cfgAF( TIM_EXA_GPIOAF_EXT );
   #endif
 }
 

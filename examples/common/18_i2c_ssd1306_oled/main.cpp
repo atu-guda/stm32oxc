@@ -43,11 +43,11 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 1000;
-  UVAR('n') = 20;
-  UVAR('y') =  0; // 1= y = 32, 0 - 64
+  UVAR_t = 1000;
+  UVAR_n = 20;
+  UVAR_y =  0; // 1= y = 32, 0 - 64
 
-  UVAR('e') = i2c_default_init( i2ch, 400000 );
+  UVAR_e = i2c_default_init( i2ch, 400000 );
   i2c_dbg = &i2cd;
   i2c_client_def = &screen;
 
@@ -68,8 +68,8 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  int dly = UVAR('t');
-  screen.init( UVAR('y') );
+  int dly = UVAR_t;
+  screen.init( UVAR_y );
   ycen = screen.getYsz() / 2; ystp = ycen / 5;
 
   delay_ms( dly );

@@ -28,10 +28,10 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 1000;
-  UVAR('n') = 10;
-  UVAR('p') = calc_TIM_psc_for_cnt_freq( TIM_EXA, 10000  ); // ->1kHz
-  UVAR('a') = 2000; // tmp: will be recalced
+  UVAR_t = 1000;
+  UVAR_n = 10;
+  UVAR_p = calc_TIM_psc_for_cnt_freq( TIM_EXA, 10000  ); // ->1kHz
+  UVAR_a = 2000; // tmp: will be recalced
 
   BOARD_POST_INIT_BLINK;
 
@@ -86,9 +86,9 @@ int cmd_test0( int argc, const char * const * argv )
   std_out << NL "# Test0: t_1= " << t_1 << "  t_d= " << t_d << "  t_2= " << t_2 << NL;
   std_out << "# arr1= " << arr1 << " ccr1= " << ccr1 << "  arr2= " << arr2 << "  ccr2= " << ccr2 << NL;
 
-  leds.set( 1 );
+  leds[1].set();
   unsigned n1 = pulse1( arr1, ccr1 );
-  leds.reset( 1 );
+  leds[1].reset();
 
   if( n1 >= MAX_TIM_WAIT ) {
     std_out << "# Error: long wait after pulse 1" NL;
@@ -115,13 +115,13 @@ int cmd_test0( int argc, const char * const * argv )
 void tim_cfg()
 {
   tim_h.Instance               = TIM_EXA;
-  tim_h.Init.Prescaler         = UVAR('p');
-  tim_h.Init.Period            = UVAR('a');
+  tim_h.Init.Prescaler         = UVAR_p;
+  tim_h.Init.Period            = UVAR_a;
   tim_h.Init.ClockDivision     = 0;
   tim_h.Init.CounterMode       = TIM_COUNTERMODE_UP;
   tim_h.Init.RepetitionCounter = 0;
   if( HAL_TIM_OnePulse_Init( &tim_h, TIM_OPMODE_SINGLE ) != HAL_OK ) {
-    UVAR('e') = 1; // like error
+    UVAR_e = 1; // like error
     return;
   }
 
@@ -129,7 +129,7 @@ void tim_cfg()
   sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
   HAL_TIM_ConfigClockSource( &tim_h, &sClockSourceConfig );
 
-  int pbase = UVAR('a');
+  int pbase = UVAR_a;
   TIM_OC_InitTypeDef tim_oc_cfg;
   tim_oc_cfg.OCMode       = TIM_OCMODE_PWM2; // why 2? works only with it!
   tim_oc_cfg.OCPolarity   = TIM_OCPOLARITY_HIGH;
@@ -140,16 +140,17 @@ void tim_cfg()
   tim_oc_cfg.Pulse = 50 * pbase / 100; /// TMP: 50
 
   if( HAL_TIM_PWM_ConfigChannel( &tim_h, &tim_oc_cfg, TIM_CHANNEL_1 ) != HAL_OK ) {
-    UVAR('e') = 11;
+    UVAR_e = 11;
     return;
   }
   // if( HAL_TIM_OnePulse_ConfigChannel( &tim_h, &tim_oc_cfg, TIM_CHANNEL_1, 999 ) != HAL_OK ) {
-  //   UVAR('e') = 13;
+  //   UVAR_e = 13;
   //   return;
   // }
 
 }
 
+// TODO: make common
 void HAL_TIM_OnePulse_MspInit( TIM_HandleTypeDef* htim )
 {
   if( htim->Instance != TIM_EXA ) {
@@ -157,11 +158,11 @@ void HAL_TIM_OnePulse_MspInit( TIM_HandleTypeDef* htim )
   }
   TIM_EXA_CLKEN;
 
-  TIM_EXA_GPIO.cfgAF_N( TIM_EXA_PIN1, TIM_EXA_GPIOAF );
+  TIM_EXA_PIN1.cfgAF( TIM_EXA_GPIOAF );
 
   // if one timer uses different AF/GPIO, like F334:T1
   #ifdef TIM_EXA_PINS_EXT
-    TIM_EXA_GPIO_EXT.cfgAF_N( TIM_EXA_PIN1_EXT, TIM_EXA_GPIOAF );
+    TIM_EXA_PIN1_EXT.cfgAF( TIM_EXA_GPIOAF_EXT );
   #endif
 }
 
@@ -171,7 +172,7 @@ void HAL_TIM_OnePulse_MspDeInit( TIM_HandleTypeDef* htim )
     return;
   }
   TIM_EXA_CLKDIS;
-  TIM_EXA_GPIO.cfgIn_N( TIM_EXA_PIN1 );
+  TIM_EXA_PIN1.cfgIn();
   // HAL_NVIC_DisableIRQ( TIM_EXA_IRQ );
 }
 

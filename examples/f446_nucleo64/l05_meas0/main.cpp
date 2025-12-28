@@ -126,9 +126,9 @@ int main(void)
   BOARD_PROLOG;
   // ldbg.initHW();
 
-  UVAR('t') = 100;
-  UVAR('n') = 20;
-  UVAR('m') = 0;
+  UVAR_t = 100;
+  UVAR_n = 20;
+  UVAR_m = 0;
   pwm_f = 10.0;
 
   i2c_default_init( i2ch /*, 400000 */ );
@@ -223,7 +223,7 @@ int one_step()
 
 
   // process data
-  switch( UVAR('m') ) {
+  switch( UVAR_m ) {
     case 0: // ADC/DAC mode:
       proc_rc = process_mode0();
       break;
@@ -248,13 +248,13 @@ int one_step()
     lcd_output();
   }
 
-  leds.toggle( BIT0 );
+  leds[0].toggle();
   return 1;
 }
 
 int init_meas()
 {
-  switch( UVAR('m') ) {
+  switch( UVAR_m ) {
     case 0: // ADC/DAC mode
       nu_uout = 4; nu_uout_i = 4; nu_uin = 6; nu_uin_i = 0; // 6 = 2 DAC + 2 PWM
       break;
@@ -370,8 +370,8 @@ int measure_din_tim()
     din_dc[1] = 0;
   }
   // old_t3_i = t3_i;
-  UVAR('i') = t3ccr1;
-  UVAR('j') = t3ccr2;
+  UVAR_i = t3ccr1;
+  UVAR_j = t3ccr2;
 
   din_c[0] = TIM4->CNT;
   din_c[1] = TIM1->CNT;
@@ -487,8 +487,8 @@ int lcd_output()
 
 int cmd_tloop( int argc, const char * const * argv )
 {
-  int n  = arg2long_d( 1, argc, argv, UVAR('n'), 1,   100000000 );
-  uint32_t t_step = UVAR('t');
+  int n  = arg2long_d( 1, argc, argv, UVAR_n, 1,   100000000 );
+  uint32_t t_step = UVAR_t;
 
   std_out << "# n= " << n << " t= " << t_step << NL; std_out.flush();
 
@@ -715,9 +715,9 @@ int parse_floats( int argc, const char * const * argv, float *d )
 
 int MX_BTN_Init()
 {
-  GpioC.enableClk();
-  GpioC.cfgIn( 13, GpioRegs::Pull::up );
-  GpioC.setEXTI( 13, GpioRegs::ExtiEv::down );
+  PC13.enableClk();
+  PC13.cfgIn( GpioPull::up );
+  PC13.setEXTI( ExtiEv::down );
 
   HAL_NVIC_SetPriority( EXTI15_10_IRQn, 10, 0 );
   HAL_NVIC_EnableIRQ(   EXTI15_10_IRQn );
@@ -739,7 +739,7 @@ void HAL_GPIO_EXTI_Callback( uint16_t pin )
   }
 
   if( pin == BIT13 )  {
-    leds.toggle( BIT0 );
+    leds[0].toggle();
     if( ! on_cmd_handler ) {
       if( devio_fds[0] ) {
         for( const char *s = go_cmd; *s; ++s ) {
@@ -799,17 +799,17 @@ void HAL_TIM_IC_CaptureCallback( TIM_HandleTypeDef *htim )
   if( tim == TIM3 ) {
     if( htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1 ) {
       sr = TIM3->SR;
-      UVAR('a') = sr;
+      UVAR_a = sr;
       if( ! ( sr & ( TIM_SR_CC2OF | TIM_SR_CC2OF ) ) ) {
         t3ccr1 = TIM3->CCR1;
         t3ccr2 = TIM3->CCR2;
-        UVAR('b') = 1;
+        UVAR_b = 1;
       } else {
         t3ccr1 = 0;
         t3ccr2 = 0;
-        UVAR('b') = 0;
-        UVAR('k') = sr;
-        ++UVAR('g');
+        UVAR_b = 0;
+        UVAR_k = sr;
+        ++UVAR_g;
       }
       ++t3_i;
       TIM3->SR = 0;
@@ -821,16 +821,16 @@ void HAL_TIM_IC_CaptureCallback( TIM_HandleTypeDef *htim )
   if( tim == TIM5 ) {
     if( htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1 ) {
       sr = TIM5->SR;
-      UVAR('c') = sr;
+      UVAR_c = sr;
       if(  sr & ( TIM_SR_CC2OF | TIM_SR_CC2OF ) ) {
         t5ccr1 = 0;
         t5ccr2 = 0;
-        UVAR('d') = 0;
-        UVAR('l') = sr;
+        UVAR_d = 0;
+        UVAR_l = sr;
       } else {
         t5ccr1 = TIM5->CCR1;
         t5ccr2 = TIM5->CCR2;
-        UVAR('d') = 1;
+        UVAR_d = 1;
       }
       TIM5->SR = 0;
       ++t5_i;
@@ -839,7 +839,7 @@ void HAL_TIM_IC_CaptureCallback( TIM_HandleTypeDef *htim )
     return;
   }
   // ldbg.reset( BIT2 );
-  ++UVAR('e');
+  ++UVAR_e;
 }
 
   // test code size consumption for STL parts

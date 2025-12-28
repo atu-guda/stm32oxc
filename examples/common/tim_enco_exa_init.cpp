@@ -11,7 +11,8 @@ void HAL_TIM_Encoder_MspInit( TIM_HandleTypeDef* htim )
   }
   TIM_EXA_CLKEN;
 
-  TIM_EXA_GPIO.cfgAF_N( TIM_EXA_PIN1 | TIM_EXA_PIN2, TIM_EXA_GPIOAF );
+  TIM_EXA_PIN1.cfgAF( TIM_EXA_GPIOAF );
+  TIM_EXA_PIN2.cfgAF( TIM_EXA_GPIOAF );
 }
 
 void HAL_TIM_PWM_MspDeInit( TIM_HandleTypeDef* htim )
@@ -20,7 +21,8 @@ void HAL_TIM_PWM_MspDeInit( TIM_HandleTypeDef* htim )
     return;
   }
   TIM_EXA_CLKDIS;
-  TIM_EXA_GPIO.cfgIn_N( TIM_EXA_PIN1 | TIM_EXA_PIN2 );
+  TIM_EXA_PIN1.cfgIn();
+  TIM_EXA_PIN2.cfgIn();
   // HAL_NVIC_DisableIRQ( TIM_EXA_IRQ );
 }
 

@@ -21,7 +21,7 @@ DCL_CMD_REG( wire0, 'w', " - test 1-wire"  );
 
 
 
-IoPin pin_wire1( BOARD_1W_DEFAULT_GPIO, BOARD_1W_DEFAULT_PIN );
+IoPin pin_wire1( BOARD_1W_DEFAULT_PIN );
 OneWire wire1( pin_wire1 );
 
 
@@ -29,14 +29,14 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 1000;
-  UVAR('n') = 20;
+  UVAR_t = 1000;
+  UVAR_n = 20;
 
-  // UVAR('a') = delay_calibrate_value;
+  // UVAR_a = delay_calibrate_value;
   // approx_delay_calibrate();
-  // UVAR('b') = delay_calibrate_value;
+  // UVAR_b = delay_calibrate_value;
   // do_delay_calibrate();
-  UVAR('d') = delay_calibrate_value;
+  UVAR_d = delay_calibrate_value;
 
   pin_wire1.initHW();
   wire1.initHW();
@@ -58,8 +58,8 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
-  uint32_t t_step = UVAR('t');
+  int n = arg2long_d( 1, argc, argv, UVAR_n, 0 );
+  uint32_t t_step = UVAR_t;
   std_out <<  NL "Test0: n= "  <<  n  <<  " t= "  <<  t_step  <<  NL;
   uint8_t buf[12];
 
@@ -67,7 +67,7 @@ int cmd_test0( int argc, const char * const * argv )
   uint32_t tm0 = HAL_GetTick();
 
   break_flag = 0;
-  // bool out_flag = UVAR('o');
+  // bool out_flag = UVAR_o;
   bool ok = false;
   for( int i=0; i<n && !break_flag; ++i ) {
     // pin_wire1.set_sw0( i & 1 );
@@ -114,7 +114,7 @@ int cmd_wire0( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
 
   // wire1.initHW();
   // delay_ms( 100 );
-  UVAR('i') = pin_wire1.rw_raw();
+  UVAR_i = pin_wire1.rw_raw();
 
   bool have_dev = wire1.reset();
   if( !have_dev ) {

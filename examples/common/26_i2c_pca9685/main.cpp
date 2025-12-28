@@ -35,11 +35,11 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 10;
-  UVAR('n') = 50;
-  UVAR('d') =  1;
+  UVAR_t = 10;
+  UVAR_n = 50;
+  UVAR_d =  1;
 
-  UVAR('e') = i2c_default_init( i2ch /*, 400000 */ );
+  UVAR_e = i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
   i2c_client_def = &pwmc;
 
@@ -134,7 +134,7 @@ int cmd_run( int argc, const char * const * argv )
   int ch = arg2long_d( 1, argc, argv, 0, 0,  PCA9685::n_ch-1 );
   int ve = arg2long_d( 2, argc, argv, 0, -PCA9685::servo_in_max, PCA9685::servo_in_max );
   int ta = arg2long_d( 3, argc, argv, 1000, 1,  100000 );
-  int t_step = UVAR('t');
+  int t_step = UVAR_t;
   int n_t = ( ta + t_step - 1 ) / t_step;
   int v_o = pwm_v[ch], v0 = v_o;
   int dv = ve - v0;
@@ -146,7 +146,7 @@ int cmd_run( int argc, const char * const * argv )
   for( int i=0; i<n_t && !break_flag; ++i ) {
     int v = v0 + dv * i / n_t;
     // int v = lerp( v0, ve, (float)i / n_t );
-    if( UVAR('d') > 0 ) {
+    if( UVAR_d > 0 ) {
       std_out <<  "# " << i << ' '  << (i*t_step) << ' ' << v << NL;
     }
     if( v != v_o ) {

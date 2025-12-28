@@ -21,7 +21,7 @@ DCL_CMD_REG( test0, 'T', "[N] - test step"  );
 
 //PinsOut motor { BOARD_MOTOR_DEFAULT_GPIO, BOARD_MOTOR_DEFAULT_PIN0, 4 };
 //StepMotorDriverGPIO m_drv( motor );
-StepMotorDriverGPIO_e m_drv( BOARD_MOTOR_DEFAULT_GPIO, BOARD_MOTOR_DEFAULT_PIN0, 4 );
+StepMotorDriverGPIO_e m_drv( BOARD_MOTOR_DEFAULT_PIN0, 4 );
 StepMotor mot( m_drv, 0 );
 
 
@@ -30,9 +30,9 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 1000;
-  UVAR('n') = 20;
-  UVAR('a') = 1; // autoOff
+  UVAR_t = 1000;
+  UVAR_n = 20;
+  UVAR_a = 1; // autoOff
 
 
   mot.init();
@@ -54,12 +54,12 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  int n = arg2long_d( 1, argc, argv, UVAR('n')  );
-  uint32_t t_step = UVAR('t');
+  int n = arg2long_d( 1, argc, argv, UVAR_n  );
+  uint32_t t_step = UVAR_t;
 
   auto m = mot.getMode();
-  if( (int)m != UVAR('m') ) {
-    mot.setMode( UVAR('m') );
+  if( (int)m != UVAR_m ) {
+    mot.setMode( UVAR_m );
   }
   m = mot.getMode();
   int d  = ( n >= 0 ) ? 1 : -1;
@@ -83,7 +83,7 @@ int cmd_test0( int argc, const char * const * argv )
     delay_ms_until_brk( &tm0, t_step );
   }
 
-  if( UVAR('o') ) {
+  if( UVAR_o ) {
     mot.off();
   }
 

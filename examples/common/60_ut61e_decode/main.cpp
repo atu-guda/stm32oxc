@@ -41,11 +41,11 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 1000;
-  UVAR('n') = 10;
+  UVAR_t = 1000;
+  UVAR_n = 10;
 
   MX_UT61E_DMA_Init();
-  UVAR('z') =  MX_UT61E_UART_Init();
+  UVAR_z =  MX_UT61E_UART_Init();
 
   BOARD_POST_INIT_BLINK;
 
@@ -75,8 +75,8 @@ void HAL_UARTEx_RxEventCallback( UART_HandleTypeDef *huart, uint16_t sz )
 
 int cmd_test0( int argc, const char * const * argv )
 {
-  uint32_t t_step = UVAR('t');
-  uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
+  uint32_t t_step = UVAR_t;
+  uint32_t n = arg2long_d( 1, argc, argv, UVAR_n, 0 );
   std_out << "# T1: n= " << n << NL;
 
   r_sz = 0;
@@ -106,7 +106,7 @@ int cmd_test0( int argc, const char * const * argv )
       continue;
     }
 
-    if( UVAR('d') > 0 ) {
+    if( UVAR_d > 0 ) {
       dump8( &ut61e_pkg, 16 );
     }
 

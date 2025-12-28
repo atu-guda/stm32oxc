@@ -54,7 +54,7 @@ uint32_t ADC_Info::init_gpio_channels()
       continue;
     }
     ch_info[i].gpio.enableClk();
-    ch_info[i].gpio.cfgAnalog( ch_info[i].pin_num );
+    ch_info[i].gpio.cfgAnalog( PinNum( ch_info[i].pin_num ) );
     ++n;
   }
   return n;

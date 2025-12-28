@@ -57,7 +57,7 @@ void HAL_ADC_MspInit( ADC_HandleTypeDef* adcHandle )
   if( adcHandle->Instance == ADC1 ) {
     __HAL_RCC_ADC1_CLK_ENABLE();
     /** PC0 --> ADC1_IN10 PC1 --> ADC1_IN11 PC2 --> ADC1_IN12 PC3 --> ADC1_IN13 */
-    GpioC.cfgAnalog_N( GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3 );
+    GpioC.cfgAnalog_N( PinMask( GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3 ) );
 
     if( ! dma_subinit() ) {
       return;

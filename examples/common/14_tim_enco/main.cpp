@@ -23,8 +23,8 @@ int main(void)
   BOARD_PROLOG;
 
 
-  UVAR('t') = 10;
-  UVAR('n') = 2000;
+  UVAR_t = 10;
+  UVAR_n = 2000;
 
 
   BOARD_POST_INIT_BLINK;
@@ -46,8 +46,8 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
-  uint32_t t_step = UVAR('t');
+  int n = arg2long_d( 1, argc, argv, UVAR_n, 0 );
+  uint32_t t_step = UVAR_t;
   std_out <<  NL "Test0: n= "  <<  n  <<  " t= "  <<  t_step <<  NL;
 
   delay_ms( 10 );
@@ -95,7 +95,7 @@ void init_enco()
   enco_cfg.IC2Filter      = 0x0F; /// 0-F
 
   if( HAL_TIM_Encoder_Init( &tim_h, &enco_cfg ) != HAL_OK ) {
-    UVAR('e') = 1;
+    UVAR_e = 1;
     return;
   }
   HAL_TIM_Encoder_Start( &tim_h, TIM_CHANNEL_ALL );

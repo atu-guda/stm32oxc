@@ -26,10 +26,10 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 100; // 100 ms
-  UVAR('n') = 1024;
+  UVAR_t = 100; // 100 ms
+  UVAR_n = 1024;
 
-  UVAR('e') = i2c_default_init( i2ch /*, 400000 */ );
+  UVAR_e = i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
   i2c_client_def = &mcp_gpio;
 
@@ -50,8 +50,8 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  uint32_t t_step = UVAR('t');
-  uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 1000000 ); // number of series
+  uint32_t t_step = UVAR_t;
+  uint32_t n = arg2long_d( 1, argc, argv, UVAR_n, 1, 1000000 ); // number of series
 
   std_out <<  NL "# Test0: n= " <<  n <<  " t= " <<  t_step << NL;
 
@@ -72,7 +72,7 @@ int cmd_test0( int argc, const char * const * argv )
 
     mcp_gpio.set_a( (uint8_t)( i & 0xFF ) );
     uint8_t in = mcp_gpio.get_b();
-    leds.sr( BIT1, in & 1 );
+    leds[1] = in & 1;
 
     std_out <<  dt << ' ' << (i & 0xFF) << ' ' << in << NL;
 

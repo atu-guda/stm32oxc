@@ -23,8 +23,8 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 1000;
-  UVAR('n') = 20;
+  UVAR_t = 1000;
+  UVAR_n = 20;
 
 
   BOARD_POST_INIT_BLINK;
@@ -48,8 +48,8 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
-  uint32_t t_step = UVAR('t');
+  int n = arg2long_d( 1, argc, argv, UVAR_n, 0 );
+  uint32_t t_step = UVAR_t;
   std_out <<  NL "Test0: n= "  <<  n  <<  " t= "  <<  t_step  <<  NL;
   tim_print_cfg( TIM_EXA );
 
@@ -60,7 +60,7 @@ int cmd_test0( int argc, const char * const * argv )
   break_flag = 0;
   for( int i=0; i<n && !break_flag; ++i ) {
 
-    std_out <<  i  <<  ' '  << UVAR('l') << ' ' << UVAR('o') << ' ' << UVAR('m') <<  NL;
+    std_out <<  i  <<  ' '  << UVAR_l << ' ' << UVAR_o << ' ' << UVAR_m <<  NL;
     std_out.flush();
     delay_ms_until_brk( &tm0, t_step );
   }
@@ -81,7 +81,7 @@ void init_usonic()
   tim_h.Init.CounterMode       = TIM_COUNTERMODE_UP;
   tim_h.Init.RepetitionCounter = 0;
   if( HAL_TIM_PWM_Init( &tim_h ) != HAL_OK ) {
-    UVAR('e') = 1; // like error
+    UVAR_e = 1; // like error
     return;
   }
 
@@ -98,11 +98,11 @@ void init_usonic()
   tim_oc_cfg.OCNIdleState = TIM_OCNIDLESTATE_RESET;
   tim_oc_cfg.Pulse        = 3; // 3 = approx 16 us
   if( HAL_TIM_PWM_ConfigChannel( &tim_h, &tim_oc_cfg, TIM_CHANNEL_1 ) != HAL_OK ) {
-    UVAR('e') = 11;
+    UVAR_e = 11;
     return;
   }
   if( HAL_TIM_PWM_Start( &tim_h, TIM_CHANNEL_1 ) != HAL_OK ) {
-    UVAR('e') = 12;
+    UVAR_e = 12;
     return;
   }
 
@@ -113,7 +113,7 @@ void init_usonic()
   tim_ic_cfg.ICFilter    = 0; // 0 - 0x0F
 
   if( HAL_TIM_IC_ConfigChannel( &tim_h, &tim_ic_cfg, TIM_CHANNEL_2 ) != HAL_OK ) {
-    UVAR('e') = 21;
+    UVAR_e = 21;
     return;
   }
 
@@ -121,39 +121,39 @@ void init_usonic()
   HAL_NVIC_EnableIRQ( TIM_EXA_IRQ );
 
   if( HAL_TIM_IC_Start_IT( &tim_h, TIM_CHANNEL_2 ) != HAL_OK ) {
-    UVAR('e') = 23;
+    UVAR_e = 23;
   }
 }
 
 void TIM_EXA_IRQHANDLER(void)
 {
-  // leds.toggle( BIT0 );
+  // leds[0].toggle();
   HAL_TIM_IRQHandler( &tim_h );
 }
 
 void HAL_TIM_IC_CaptureCallback( TIM_HandleTypeDef *htim )
 {
   static uint32_t c_old = 0xFFFFFFFF;
-  // leds.toggle( BIT0 );
-  ++UVAR('i');
+  // leds[0].toggle();
+  ++UVAR_i;
   if( htim->Channel != HAL_TIM_ACTIVE_CHANNEL_2 )  {
     return;
   }
-  ++UVAR('j');
+  ++UVAR_j;
 
   uint32_t cap2 = HAL_TIM_ReadCapturedValue( htim, TIM_CHANNEL_2 );
   if( cap2 > c_old ) {
-    UVAR('l') = cap2 - c_old ;
-    leds.reset( BIT2 );
+    UVAR_l = cap2 - c_old ;
+    leds[2].reset();
   } else {
-    leds.set( BIT2 );
+    leds[2].set();
   }
-  UVAR('o') = c_old;
+  UVAR_o = c_old;
   c_old = cap2;
 
-  UVAR('m') = cap2;
-  UVAR('y') = htim->Instance->CCR2;
-  UVAR('z') = htim->Instance->CNT;
+  UVAR_m = cap2;
+  UVAR_y = htim->Instance->CCR2;
+  UVAR_z = htim->Instance->CNT;
 }
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc

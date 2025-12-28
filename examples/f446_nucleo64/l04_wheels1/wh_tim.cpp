@@ -180,22 +180,22 @@ void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* tim_baseHandle )
   if( tim_baseHandle->Instance == TIM1 ) {
     __HAL_RCC_TIM1_CLK_ENABLE();
     /** TIM1:  A8 ---> TIM1_CH1,  A9  ---> TIM1_CH2,  A10  ---> TIM1_CH3,  PA11 ---> TIM1_CH4   */
-    T1_ALL_GPIO_Port.cfgAF_N( T1_1_M_Right_Pin | T1_2_M_Left_Pin | T1_3_US_Pulse_Pin | T1_4_US_Echo_Pin, GPIO_AF1_TIM1 );
+    T1_ALL_GPIO_Port.cfgAF_N( PinMask( T1_1_M_Right_Pin | T1_2_M_Left_Pin | T1_3_US_Pulse_Pin | T1_4_US_Echo_Pin), GPIO_AF1_TIM1 );
   }
   else if( tim_baseHandle->Instance == TIM_N_R ) {
     __HAL_RCC_TIM3_CLK_ENABLE();
     /** TIM_N_L:  A6     ------> TIM3_CH1  */
-    GpioA.cfgAF_N( T3_1_M_count_R_Pin, GPIO_AF2_TIM3 );
+    GpioA.cfgAF_N( PinMask( T3_1_M_count_R_Pin ), GPIO_AF2_TIM3 );
   }
   else if( tim_baseHandle->Instance == TIM_N_L ) {
     __HAL_RCC_TIM4_CLK_ENABLE();
     /** TIM4:  B6     ------> TIM4_CH1  */
-    T4_1_M_count_l_GPIO_Port.cfgAF_N( T4_1_M_count_l_Pin, GPIO_AF2_TIM4 );
+    T4_1_M_count_l_GPIO_Port.cfgAF_N( PinMask( T4_1_M_count_l_Pin ), GPIO_AF2_TIM4 );
   }
   else if( tim_baseHandle->Instance == TIM_SERVO ) {
     __HAL_RCC_TIM14_CLK_ENABLE();
     /** TIM14 GPIO Configuration   A7     ------> TIM14_CH1     */
-    T14_1_servo_GPIO_Port.cfgAF_N( T14_1_servo_Pin, GPIO_AF9_TIM14 );
+    T14_1_servo_GPIO_Port.cfgAF_N( PinMask( T14_1_servo_Pin ), GPIO_AF9_TIM14 );
   }
 }
 

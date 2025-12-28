@@ -20,24 +20,24 @@ DCL_CMD_REG( test0, 'T', "[n] - test ADC"  );
 
 
 
-PinOut nss_pin( BOARD_SPI_DEFAULT_GPIO_SNSS, BOARD_SPI_DEFAULT_GPIO_PIN_SNSS );
+PinOut nss_pin( BOARD_SPI_DEFAULT_PIN_SNSS );
 SPI_HandleTypeDef spi_h;
 DevSPI spi_d( &spi_h, &nss_pin );
 
-const uint32_t n_ADC_ch_max = 4; // current - in UVAR('c')
+const uint32_t n_ADC_ch_max = 4; // current - in UVAR_c
 xfloat v_coeffs[n_ADC_ch_max] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 100;
-  UVAR('n') = 10;
-  UVAR('v') = 5090000; // external power supply = Vref in uV
-  UVAR('c') = n_ADC_ch_max;
+  UVAR_t = 100;
+  UVAR_n = 10;
+  UVAR_v = 5090000; // external power supply = Vref in uV
+  UVAR_c = n_ADC_ch_max;
 
   if( SPI_init_default( SPI_BAUDRATEPRESCALER_64 ) != HAL_OK ) { // 1.xx MBit/s < 2
-    die4led( 0x04 );
+    die4led( 0x04_mask );
   }
   // nss_pin.initHW();
   //nss_pin.set(1);
@@ -69,12 +69,12 @@ int cmd_test0( int argc, const char * const * argv )
     { 0x06, 0xC0 },
   };
 
-  int t_step = UVAR('t');
-  uint8_t n_ch = clamp( UVAR('c'), 1, (int)n_ADC_ch_max );
+  int t_step = UVAR_t;
+  uint8_t n_ch = clamp( UVAR_c, 1, (int)n_ADC_ch_max );
 
-  uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 1000000 ); // number of series
+  uint32_t n = arg2long_d( 1, argc, argv, UVAR_n, 1, 1000000 ); // number of series
 
-  xfloat kv = 1e-6f * UVAR('v') / 4095;
+  xfloat kv = 1e-6f * UVAR_v / 4095;
 
   StatIntData sdat( n_ch, kv );
 
@@ -86,12 +86,11 @@ int cmd_test0( int argc, const char * const * argv )
   }
   std_out << NL;
 
-  leds.set(   BIT0 | BIT1 | BIT2 ); delay_ms( 100 );
-  leds.reset( BIT0 | BIT1 | BIT2 );
+  leds.set(   0x07_mask ); delay_ms( 100 );  leds.reset( 0x07_mask  );
 
   uint32_t tm0 = 0, tm00 = 0;
   int rc = 0;
-  bool do_out = ! UVAR('b');
+  bool do_out = ! UVAR_b;
 
   uint16_t ADC_buf[n_ADC_ch_max];
 
@@ -107,7 +106,7 @@ int cmd_test0( int argc, const char * const * argv )
     xfloat v[n_ch];
     int   vi[n_ch];
 
-    if( UVAR('l') ) {  leds.set( BIT2 ); }
+    if( UVAR_l ) {  leds.set( BIT2M ); }
 
     uint8_t buf[4]; // first - fake, last - align
     for( decltype(+n_ch) j=0; j < n_ch; ++j ) {
@@ -116,7 +115,7 @@ int cmd_test0( int argc, const char * const * argv )
       // delay_bad_mcs( 1 );
     }
 
-    if( UVAR('l') ) {  leds.reset( BIT2 ); }
+    if( UVAR_l ) {  leds.reset( BIT2M ); }
 
     for( decltype(n_ch) j=0; j<n_ch; ++j ) {
       xfloat cv = kv * ADC_buf[j] * v_coeffs[j];

@@ -41,7 +41,7 @@ int main(void)
   BOARD_POST_INIT_BLINK;
 
   if( ! MX_HRTIM1_Init() ) {
-    die4led( BIT2 );
+    die4led( BIT2M );
   }
 
   oxc_add_aux_tick_fun( led_task_nortos );
@@ -405,8 +405,8 @@ void HAL_HRTIM_MspInit( HRTIM_HandleTypeDef* hrtimHandle )
   //* HRTIM1 GPIO Configuration (first part)
   //  PC6     ------> HRTIM1_EEV10
   //  PA12     ------> HRTIM1_FLT1
-  GpioC.cfgAF( 6, GPIO_AF3_HRTIM1 );
-  GpioA.cfgAF( 12, GPIO_AF13_HRTIM1 );
+  PC6.cfgAF(  GPIO_AF3_HRTIM1 );
+  PA12.cfgAF( GPIO_AF13_HRTIM1 );
 }
 
 void HAL_HRTIM_MspPostInit( HRTIM_HandleTypeDef* hrtimHandle )
@@ -429,9 +429,9 @@ void HAL_HRTIM_MspPostInit( HRTIM_HandleTypeDef* hrtimHandle )
     A10    ------> HRTIM1_CHB1
     A11    ------> HRTIM1_CHB2
     */
-  GpioB.cfgAF_N( GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15, GPIO_AF13_HRTIM1 );
-  GpioC.cfgAF_N( GPIO_PIN_8 | GPIO_PIN_9, GPIO_AF3_HRTIM1 );
-  GpioA.cfgAF_N( GPIO_PIN_8 | GPIO_PIN_9 | GPIO_PIN_10 | GPIO_PIN_11, GPIO_AF13_HRTIM1 );
+  GpioB.cfgAF_N( 12_mask | 13_mask | 14_mask | 15_mask, GPIO_AF13_HRTIM1 );
+  GpioC.cfgAF_N( 8_mask | 9_mask, GPIO_AF3_HRTIM1 );
+  GpioA.cfgAF_N( 8_mask | 9_mask | 10_mask | 11_mask, GPIO_AF13_HRTIM1 );
 }
 
 void HAL_HRTIM_MspDeInit( HRTIM_HandleTypeDef* hrtimHandle )

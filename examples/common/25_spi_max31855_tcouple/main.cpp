@@ -16,7 +16,7 @@ DCL_CMD_REG( test0, 'T', " - test MAX31855"  );
 DCL_CMD_REG( reset_spi, 'Z', " - reset spi"  );
 
 
-PinOut nss_pin( BOARD_SPI_DEFAULT_GPIO_SNSS, BOARD_SPI_DEFAULT_GPIO_PIN_SNSS );
+PinOut nss_pin( BOARD_SPI_DEFAULT_PIN_SNSS );
 SPI_HandleTypeDef spi_h;
 DevSPI spi_d( &spi_h, &nss_pin );
 
@@ -31,11 +31,11 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 1000;
-  UVAR('n') = 10;
+  UVAR_t = 1000;
+  UVAR_n =   10;
 
   if( SPI_init_default( SPI_BAUDRATEPRESCALER_256 ) != HAL_OK ) {
-    die4led( 0x04 );
+    die4led( 0x04_mask );
   }
   // nss_pin.initHW();
   //nss_pin.set(1);
@@ -59,8 +59,8 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  int n      = arg2long_d( 1, argc, argv,    UVAR('n'), 1, 0xFFFFFF );
-  int t_step = UVAR('t');
+  int n      = arg2long_d( 1, argc, argv,    UVAR_n, 1, 0xFFFFFF );
+  int t_step = UVAR_t;
 
   std_out <<  NL "# Test0: n= "  <<  n <<  " t_step= "  <<  t_step <<  NL;
 
@@ -106,7 +106,7 @@ int cmd_test0( int argc, const char * const * argv )
       std_out <<  'V';
     }
 
-    if( UVAR('d') > 0 ) {
+    if( UVAR_d > 0 ) {
       std_out <<  " vl= " << HexInt( vl ) << " tif= "  << HexInt( tif ) <<  " tof= "  << HexInt( tof ) << " rc= " << rc;
     }
 
@@ -114,7 +114,7 @@ int cmd_test0( int argc, const char * const * argv )
     delay_ms_until_brk( &tm0, t_step );
   }
 
-  if( UVAR('d') > 0 ) {
+  if( UVAR_d > 0 ) {
     spi_d.pr_info();
   }
 

@@ -14,13 +14,13 @@ const char* common_help_string = "App to test AD9833 - DSS generator (SPI device
 
 // --- local commands; // TODO: replace from spi_debug
 DCL_CMD_REG( test0, 'T', " - AD9833"  );
-DCL_CMD_REG( sendr_spi, 'S', "[0xXX ...] - send bytes, recv UVAR('r')"  );
+DCL_CMD_REG( sendr_spi, 'S', "[0xXX ...] - send bytes, recv UVAR_r"  );
 DCL_CMD_REG( duplex_spi, 'U', "[0xXX ...] - send/recv bytes"  );
 DCL_CMD_REG( recv_spi, 'R', "[N] recv bytes"  );
 DCL_CMD_REG( reset_spi, 'Z', " - reset spi"  );
 
 
-PinOut nss_pin( BOARD_SPI_DEFAULT_GPIO_SNSS, BOARD_SPI_DEFAULT_GPIO_PIN_SNSS );
+PinOut nss_pin( BOARD_SPI_DEFAULT_PIN_SNSS );
 SPI_HandleTypeDef spi_h;
 DevSPI spi_d( &spi_h, &nss_pin );
 
@@ -31,12 +31,12 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 1000;
-  UVAR('n') = 10;
-  UVAR('r') = 0x0; // default bytes to read
+  UVAR_t = 1000;
+  UVAR_n =   10;
+  UVAR_r =  0x0; // default bytes to read
 
   if( SPI_init_default( SPI_BAUDRATEPRESCALER_256, SPI_lmode::high_1e ) != HAL_OK ) {
-    die4led( 0x04 );
+    die4led( 0x04_mask );
   }
   // nss_pin.initHW();
   //nss_pin.set(1);
@@ -99,7 +99,7 @@ int cmd_sendr_spi( int argc, const char * const * argv )
     sbuf[i] = t;
   }
 
-  int nd = imin( UVAR('r'), sizeof(gbuf_a) );
+  int nd = imin( UVAR_r, sizeof(gbuf_a) );
   std_out <<  NL "Send/recv: ns= " <<  ns <<  " nd= " <<  nd <<  "* to send: " NL;
   dump8( sbuf, ns );
 
@@ -121,7 +121,7 @@ int cmd_sendr_spi( int argc, const char * const * argv )
 
 int cmd_recv_spi( int argc, const char * const * argv )
 {
-  int nd = arg2long_d( 1, argc, argv, UVAR('r'), 1, sizeof(gbuf_a) );
+  int nd = arg2long_d( 1, argc, argv, UVAR_r, 1, sizeof(gbuf_a) );
 
   std_out <<  NL "Recv: nd= " <<  nd <<  NL;
 

@@ -14,9 +14,9 @@
 
 #include <../examples/common/inc/pwm2_ctl.h>
 
-#define debug (UVAR('d'))
+auto &debug { UVAR_d };
 
-#define WAIT_BIT BIT2
+#define WAIT_BIT BIT2M
 
 using namespace std;
 using namespace SMLRL;
@@ -37,7 +37,7 @@ bool measure_and_calc( float *v );
 I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );
 INA226 ina226( i2cd );
-const uint32_t n_ADC_ch_max = 2; // current - in UVAR('c'). not ADC: INA226
+const uint32_t n_ADC_ch_max = 2; // current - in UVAR_c. not ADC: INA226
 float v_coeffs[n_ADC_ch_max] = { 1.0f, 1.0f }; // xfloat requires NamedDouble adn/or NamedXfloat
 
 bool isGoodINA226( INA226 &ina, bool print = true );
@@ -197,12 +197,12 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('l') = 1;  // ON led debug
-  UVAR('t') = 10; // 10 ms
-  UVAR('n') = 1000000; // number of series (10ms 't' each): limited by steps
+  UVAR_l = 1;  // ON led debug
+  UVAR_t = 10; // 10 ms
+  UVAR_n = 1000000; // number of series (10ms 't' each): limited by steps
 
-  UVAR('p') = 0;     // PSC,  - max output freq
-  UVAR('f') = freq_init;// PWM freq: to calculate ARR
+  UVAR_p = 0;     // PSC,  - max output freq
+  UVAR_f = freq_init;// PWM freq: to calculate ARR
 
   pwminfo.R_max = 200.0f;
   pwminfo.V_max =  10.0f;
@@ -214,7 +214,7 @@ int main(void)
 
   tim_cfg();
 
-  UVAR('e') = i2c_default_init( i2ch /*, 400000 */ );
+  UVAR_e = i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
   i2c_client_def = &ina226;
 
@@ -261,7 +261,7 @@ bool init_INA()
 
 
   uint16_t cfg = INA226::cfg_default;
-  UVAR('e') = ina226.setCfg( cfg );
+  UVAR_e = ina226.setCfg( cfg );
   x_cfg = ina226.getCfg();
   ina226.calibrate();
   std_out << "# cfg= " << HexInt16( x_cfg ) <<  " I_lsb_mA= " << ina226.get_I_lsb_mA()
@@ -287,7 +287,7 @@ bool measure_and_calc( float *v )
   v[didx_w]   = W_g;
   v[didx_val] = pwmdat.get_v();
 
-  UVAR('z') = ina226.get_last_Vsh();
+  UVAR_z = ina226.get_last_Vsh();
   return true;
 }
 
@@ -295,10 +295,10 @@ bool measure_and_calc( float *v )
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  const uint32_t t_step = UVAR('t');
+  const uint32_t t_step = UVAR_t;
   const unsigned n_ch = 2;
   key_val = 0;
-  const uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 1000000 ); // number of series
+  const uint32_t n = arg2long_d( 1, argc, argv, UVAR_n, 1, 1000000 ); // number of series
 
   const bool skip_pwm = arg2long_d( 2, argc, argv, 0, 1, 1 ); // dont touch PWM
 
@@ -321,7 +321,7 @@ int cmd_test0( int argc, const char * const * argv )
           << NL;
 
 
-  leds.set(   BIT0 | BIT1 | BIT2 ); // delay_ms( 100 );
+  leds.set(   0x07_mask ); // delay_ms( 100 );
 
   if( !skip_pwm ) {
     do_set_pwm( pwminfo.cal_min );
@@ -360,11 +360,11 @@ int cmd_test0( int argc, const char * const * argv )
   pwmdat.prep( t_step, skip_pwm, v );
 
   std_out << NL "#        t          V          I        pwm          R          W        val"  NL;
-  leds.reset( BIT0 | BIT1 | BIT2 );
+  leds.reset( 0x07_mask  );
 
   uint32_t tm0, tm00;
   int rc = 0;
-  const bool do_out = ! UVAR('b');
+  const bool do_out = ! UVAR_b;
 
   break_flag = 0;
   for( decltype(+n) i=0; i<n && !break_flag; ++i ) {
@@ -404,9 +404,9 @@ int cmd_test0( int argc, const char * const * argv )
       break;
     }
 
-    if( UVAR('l') ) {  leds.set( WAIT_BIT ); }
+    if( UVAR_l ) {  leds.set( WAIT_BIT ); }
     delay_ms_until_brk( &tm0, t_step );
-    if( UVAR('l') ) {  leds.reset( WAIT_BIT ); }
+    if( UVAR_l ) {  leds.reset( WAIT_BIT ); }
   }
 
   pwmdat.end_run();
@@ -439,9 +439,9 @@ void tim_cfg()
 {
   // not use all functions from oxc_tim: time may be not initialized here
   const uint32_t in_freq = get_TIM_in_freq( TIM_EXA );
-  const uint32_t psc = UVAR('p');
+  const uint32_t psc = UVAR_p;
   const uint32_t cnt_freq = in_freq / ( psc + 1 );
-  const uint32_t arr = cnt_freq / UVAR('f') - 1;
+  const uint32_t arr = cnt_freq / UVAR_f - 1;
 
   tim_h.Instance               = TIM_EXA;
   tim_h.Init.Prescaler         = psc;
@@ -450,7 +450,7 @@ void tim_cfg()
   tim_h.Init.CounterMode       = TIM_COUNTERMODE_UP;
   tim_h.Init.RepetitionCounter = 0;
   if( HAL_TIM_PWM_Init( &tim_h ) != HAL_OK ) {
-    UVAR('e') = 111; // like error
+    UVAR_e = 111; // like error
     return;
   }
 
@@ -471,7 +471,7 @@ void tim_cfg()
   // tim_oc_cfg.Pulse = ( pwmdat.get_pwm_min() * arr / 100 );
 
   if( HAL_TIM_PWM_ConfigChannel( &tim_h, &tim_oc_cfg, TIM_CHANNEL_1 ) != HAL_OK ) {
-    UVAR('e') = 112;
+    UVAR_e = 112;
     return;
   }
   HAL_TIM_PWM_Start( &tim_h, TIM_CHANNEL_1 );

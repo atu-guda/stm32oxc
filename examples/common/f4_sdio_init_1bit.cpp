@@ -36,9 +36,9 @@ void HAL_SD_MspInit( SD_HandleTypeDef* /* sdHandle */ )
   // no check: the only SDIO
   SD_EXA_CLKEN;
 
-  SD_EXA_CK_GPIO.cfgAF(  SD_EXA_CK_PIN,  SD_EXA_GPIOAF );
-  SD_EXA_D0_GPIO.cfgAF(  SD_EXA_D0_PIN,  SD_EXA_GPIOAF );
-  SD_EXA_CMD_GPIO.cfgAF( SD_EXA_CMD_PIN, SD_EXA_GPIOAF );
+  SD_EXA_CK.cfgAF(  SD_EXA_GPIOAF );
+  SD_EXA_D0.cfgAF(  SD_EXA_GPIOAF );
+  SD_EXA_CMD.cfgAF( SD_EXA_GPIOAF );
 }
 
 void HAL_SD_MspDeInit( SD_HandleTypeDef* /* sdHandle */ )

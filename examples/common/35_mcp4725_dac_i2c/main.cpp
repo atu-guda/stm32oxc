@@ -29,11 +29,11 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 100;
-  UVAR('n') = 100;
-  UVAR('v') = 3300; // mV
+  UVAR_t =  100;
+  UVAR_n =  100;
+  UVAR_v = 3300; // mV
 
-  UVAR('e') = i2c_default_init( i2ch /*, 400000 */ );
+  UVAR_e = i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
   i2c_client_def = &dac;
 
@@ -69,7 +69,7 @@ int cmd_test0( int argc, const char * const * argv )
 int cmd_outV( int argc, const char * const * argv )
 {
   int v = arg2long_d( 1, argc, argv, 1000, 0  );
-  int va = v * 0xFFF / UVAR('v');
+  int va = v * 0xFFF / UVAR_v;
 
   std_out << NL "# Out: v= " << v << " va= " << va << NL;
   std_out.flush();
@@ -82,7 +82,7 @@ int cmd_outV( int argc, const char * const * argv )
 int cmd_outEEPROM( int argc, const char * const * argv )
 {
   int v = arg2long_d( 1, argc, argv, 1000, 0  );
-  int va = v * 0xFFF / UVAR('v');
+  int va = v * 0xFFF / UVAR_v;
 
   std_out << NL "# Out: v= " << v << " va= " << va << NL;
   std_out.flush();
@@ -107,11 +107,11 @@ int cmd_rect( int argc, const char * const * argv )
 {
   int v0 = arg2long_d( 1, argc, argv,  500, 0  );
   int v1 = arg2long_d( 2, argc, argv, 2500, 0  );
-  int va0 = v0 * 0xFFF / UVAR('v');
-  int va1 = v1 * 0xFFF / UVAR('v');
+  int va0 = v0 * 0xFFF / UVAR_v;
+  int va1 = v1 * 0xFFF / UVAR_v;
 
-  int n = UVAR('n');
-  int t_step = UVAR('t');
+  int n = UVAR_n;
+  int t_step = UVAR_t;
 
   std_out << NL "# Rect: v0= " << v0 << " v1= " << v1 << NL;
 

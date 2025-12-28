@@ -19,10 +19,10 @@ const char* common_help_string = "Test model car: motors, sensors...." NL;
 RunState rs;
 
 
-PinsOut motor_dir( GpioC, 5, 5 );
+PinsOut motor_dir( PC5, 5 );
 uint8_t calc_dir_bits( int r_w, int l_w ); // from enum motor_bits
 
-PinsIn proxy_sens( GpioB, 12, 4 );
+PinsIn proxy_sens( PB12, 4 );
 int is_proxy_obstacle();
 
 TIM_HandleTypeDef tim1_h, tim3_h, tim4_h, tim14_h;
@@ -99,18 +99,18 @@ int main(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
-  UVAR('t') = 1000; // default 'go' time
-  UVAR('g') =  100; // 'go' tick
-  UVAR('w') =   40; // default 'go' PWM
-  UVAR('n') =   10; // unused
-  UVAR('o') =    1; // ignore proxymity sensors
-  UVAR('u') =  150; // us_forward_min
+  UVAR_t = 1000; // default 'go' time
+  UVAR_g =  100; // 'go' tick
+  UVAR_w =   40; // default 'go' PWM
+  UVAR_n =   10; // unused
+  UVAR_o =    1; // ignore proxymity sensors
+  UVAR_u =  150; // us_forward_min
 
   motor_dir.initHW();
-  motor_dir.reset( 0x1F );
+  motor_dir.reset( 0x1F_mask );
   proxy_sens.initHW();
 
-  // UVAR('e') = i2c_default_init( i2ch );
+  // UVAR_e = i2c_default_init( i2ch );
   // i2c_dbg = &i2cd;
   // i2c_client_def = &XXXXX;
 
@@ -163,7 +163,7 @@ void set_motor_pwm( int r, int l )
 
 void set_motor_pwm_dir( int r, int l )
 {
-  motor_dir.write( calc_dir_bits( r, l ) );
+  motor_dir.write( PinMask( calc_dir_bits( r, l ) ) );
   set_motor_pwm( r, l );
 }
 
@@ -200,9 +200,9 @@ int read_new_us_l()
 // returns 0 if clear or all bits if obstavle for given move
 int is_proxy_obstacle()
 {
-  uint16_t prox = (~proxy_sens.read()) & PROXY_ALL; // inverse sensors
+  uint16_t prox = ( ~proxy_sens.read().bitmask() ) & PROXY_ALL; // inverse sensors
   rs.prox = prox;
-  if( UVAR('o') ) {
+  if( UVAR_o ) {
     return 0;
   }
   if( prox == 0 ) { // optimization: all clear
@@ -213,7 +213,7 @@ int is_proxy_obstacle()
       ( rs.r_w < 0 && ( prox & PROXY_BR ) ) ||
       ( rs.l_w > 0 && ( prox & PROXY_FL ) ) ||
       ( rs.l_w < 0 && ( prox & PROXY_BL ) )    ) {
-    leds.set( 8 );
+    leds.set( 8_mask );
     std_out <<  "Prox: "  << HexInt( prox )  <<  NL;
     return prox;
   }
@@ -224,12 +224,12 @@ int is_proxy_obstacle()
 
 int cmd_go( int argc, const char * const * argv )
 {
-  int t    = arg2long_d( 1, argc, argv, UVAR('t'),  -1, 100000 );
-  int r_w  = arg2long_d( 2, argc, argv, UVAR('w'), -100,  100 );
+  int t    = arg2long_d( 1, argc, argv, UVAR_t,  -1, 100000 );
+  int r_w  = arg2long_d( 2, argc, argv, UVAR_w, -100,  100 );
   int l_w  = arg2long_d( 3, argc, argv,       r_w, -100,  100 );
-  int go_tick = UVAR('g');
+  int go_tick = UVAR_g;
   if( t < 0 ) { // -1 = default time flag
-    t = UVAR('t');
+    t = UVAR_t;
   }
 
   std_out <<  NL "go: t= "  <<  t  <<  " r= "  <<  r_w  <<  " l= "  <<  l_w  << NL;
@@ -239,17 +239,17 @@ int cmd_go( int argc, const char * const * argv )
     delay_ms( 500 );
   }
 
-  leds.reset( 9 );
+  leds.reset( 9_mask );
   set_motor_pwm_dir( r_w, l_w );
 
-  int us_forward_min = UVAR('u');
+  int us_forward_min = UVAR_u;
   bool proxy_flag = false;
   TIM_N_L->CNT = 0; TIM_N_R->CNT = 0; // reset wheel tick counters
 
   for( ; t > 0 && !break_flag && !proxy_flag; t -= go_tick ) {
 
     if( ( r_w + l_w ) > 5 && us_l0 < us_forward_min ) {
-      leds.set( 1 );
+      leds.set( 1_mask );
       std_out <<  "# warn: US= "  << us_l0 <<  NL;
       break;
     }
@@ -284,7 +284,7 @@ void set_us_dir( int dir )
   TIM_SERVO->CNT  = 0;
   delay_ms( 10 );
 
-  UVAR('d') = d;
+  UVAR_d = d;
   us_dir = dir;
 }
 
@@ -479,13 +479,13 @@ void HAL_TIM_IC_CaptureCallback( TIM_HandleTypeDef *htim )
     return;
   }
 
-  leds.toggle( BIT1 );
+  leds[1].toggle();
   uint32_t cap2 = HAL_TIM_ReadCapturedValue( htim, TIM_CHANNEL_4 );
   if( cap2 > c_old ) {
     uint32_t l = cap2 - c_old;
-    us_l = UVAR('c') = l;
+    us_l = UVAR_c = l;
     if( us_dir == 0 ) {
-      us_l0 = UVAR('l') = l;
+      us_l0 = UVAR_l = l;
     }
     ++us_i;
     // leds.toggle( BIT2 );
@@ -522,7 +522,7 @@ int run_single_step( const RunStepData &sd )
   l_w = l_w * k_wheels[k_idx] / 1000;
   int t = sd.t_max;
   std_out << "# ticks,w r: " << tick_r << ' ' << r_w  << " l: " << tick_l << ' ' << l_w << ' ' << k_idx << NL;
-  int go_tick = UVAR('g');
+  int go_tick = UVAR_g;
 
   if( us_dir != 0 ) {
     set_us_dir( 0 );
@@ -530,10 +530,10 @@ int run_single_step( const RunStepData &sd )
   }
 
   int rc = 0;
-  leds.reset( 9 );
+  leds.reset( 9_mask );
   set_motor_pwm_dir( r_w, l_w );
 
-  int us_forward_min = UVAR('u');
+  int us_forward_min = UVAR_u;
   bool proxy_flag = false;
   TIM_N_L->CNT = 0; TIM_N_R->CNT = 0; // reset wheel tick counters
   // run
@@ -541,7 +541,7 @@ int run_single_step( const RunStepData &sd )
     rc = 8; // run out of time
 
     if( ( r_w + l_w ) > 5 && us_l0 < us_forward_min ) { // TODO: function(v)
-      leds.set( 1 );
+      leds[1].set();
       std_out <<  "# warn: US= "  << us_l0 <<  NL;
       rc = 2;
       break;

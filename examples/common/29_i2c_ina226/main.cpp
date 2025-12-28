@@ -29,7 +29,7 @@ DCL_CMD_REG( set_calibr, 'K', " I_lsb R_sh - calibrate for given shunt"  );
 I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );
 INA226 ina226( i2cd );
-const uint32_t n_ADC_ch_max = 4; // current - in UVAR('c')
+const uint32_t n_ADC_ch_max = 4; // current - in UVAR_c
 xfloat v_coeffs[n_ADC_ch_max] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 bool isGoodINA226( INA226 &ina, bool print = true );
@@ -40,11 +40,11 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 10; // 10 ms
-  UVAR('n') = 20;
-  UVAR('c') = 4;
+  UVAR_t = 10; // 10 ms
+  UVAR_n = 20;
+  UVAR_c =  4;
 
-  UVAR('e') = i2c_default_init( i2ch /*, 400000 */ );
+  UVAR_e = i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
   i2c_client_def = &ina226;
 
@@ -80,8 +80,8 @@ bool isGoodINA226( INA226 &ina, bool print )
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  uint32_t t_step = UVAR('t');
-  uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 1000000 ); // number of series
+  uint32_t t_step = UVAR_t;
+  uint32_t n = arg2long_d( 1, argc, argv, UVAR_n, 1, 1000000 ); // number of series
 
   ina226.setCfg( INA226::cfg_rst );
   uint16_t x_cfg = ina226.getCfg();
@@ -92,7 +92,7 @@ int cmd_test0( int argc, const char * const * argv )
   }
 
   uint16_t cfg = INA226::cfg_default;
-  UVAR('e') = ina226.setCfg( cfg );
+  UVAR_e = ina226.setCfg( cfg );
   x_cfg = ina226.getCfg();
   std_out <<  "# cfg= " << HexInt16( x_cfg ) <<  NL;
 
@@ -100,12 +100,11 @@ int cmd_test0( int argc, const char * const * argv )
     StatData sdat( 2 );
   #endif
 
-  leds.set(   BIT0 | BIT1 | BIT2 ); delay_ms( 100 );
-  leds.reset( BIT0 | BIT1 | BIT2 );
+  leds.set(   0x07_mask ); delay_ms( 100 );  leds.reset( 0x07_mask  );
 
   uint32_t tm0, tm00;
   int rc = 0;
-  bool do_out = ! UVAR('b');
+  bool do_out = ! UVAR_b;
 
   break_flag = 0;
   for( decltype(n) i=0; i<n && !break_flag; ++i ) {
@@ -115,10 +114,10 @@ int cmd_test0( int argc, const char * const * argv )
       tm0 = tcc; tm00 = tm0;
     }
 
-    if( UVAR('l') ) {  leds.set( BIT2 ); }
+    if( UVAR_l ) {  leds[2].set(); }
     int16_t v_sh_raw  = ina226.getVsh();
     int16_t v_bus_raw = ina226.getVbus();
-    if( UVAR('l') ) {  leds.reset( BIT2 ); }
+    if( UVAR_l ) {  leds[2].reset(); }
 
     xfloat v[2];
     v[0] = INA226::lsb_V_sh_nv  * v_sh_raw  * 1e-9f;
@@ -151,8 +150,8 @@ int cmd_test0( int argc, const char * const * argv )
 #ifdef USE_STATDATA
 int cmd_getVIP( int argc, const char * const * argv )
 {
-  uint32_t t_step = UVAR('t');
-  uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 1000000 ); // number of series
+  uint32_t t_step = UVAR_t;
+  uint32_t n = arg2long_d( 1, argc, argv, UVAR_n, 1, 1000000 ); // number of series
   unsigned n_ch = 4;
 
   StatData sdat( n_ch );
@@ -166,7 +165,7 @@ int cmd_getVIP( int argc, const char * const * argv )
   }
 
   uint16_t cfg = INA226::cfg_default;
-  UVAR('e') = ina226.setCfg( cfg );
+  UVAR_e = ina226.setCfg( cfg );
   x_cfg = ina226.getCfg();
   ina226.calibrate();
   std_out <<  "# cfg= " << HexInt16( x_cfg ) <<  " I_lsb_mA= " << ina226.get_I_lsb_mA()
@@ -178,12 +177,11 @@ int cmd_getVIP( int argc, const char * const * argv )
   }
   std_out << NL;
 
-  leds.set(   BIT0 | BIT1 | BIT2 ); delay_ms( 100 );
-  leds.reset( BIT0 | BIT1 | BIT2 );
+  leds.set(   0x07_mask ); delay_ms( 100 );  leds.reset( 0x07_mask  );
 
   uint32_t tm0, tm00;
   int rc = 0;
-  bool do_out = ! UVAR('b');
+  bool do_out = ! UVAR_b;
 
   break_flag = 0;
   for( decltype(n) i=0; i<n && !break_flag; ++i ) {
@@ -196,14 +194,14 @@ int cmd_getVIP( int argc, const char * const * argv )
     xfloat tc = 0.001f * ( tcc - tm00 );
     xfloat v[n_ch];
 
-    // if( UVAR('l') ) {  leds.set( BIT2 ); }
+    // if( UVAR_l ) {  leds[2].set(); }
 
     v[0] = ina226.getVbus_uV()  * (xfloat)1e-6f * v_coeffs[0];
     v[1] = ina226.getI_mA_reg() * (xfloat)1e-3f * v_coeffs[1];
     v[2] = ina226.getI_uA()     * (xfloat)1e-6f * v_coeffs[2];
     v[3] = ina226.getP()                        * v_coeffs[3];
 
-    // if( UVAR('l') ) {  leds.reset( BIT2 ); }
+    // if( UVAR_l ) {  leds[2].reset(); }
 
     if( do_out ) {
       std_out <<  FltFmt( tc, cvtff_auto, 12, 4 );

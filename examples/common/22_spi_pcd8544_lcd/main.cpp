@@ -26,9 +26,9 @@ DCL_CMD_REG( contr,  0, " [v] - test contrast"  );
 
 
 
-PinOut nss_pin( BOARD_SPI_DEFAULT_GPIO_SNSS, BOARD_SPI_DEFAULT_GPIO_PIN_SNSS );
-PinOut rst_pin( BOARD_SPI_DEFAULT_GPIO_EXT1, BOARD_SPI_DEFAULT_GPIO_PIN_EXT1 );
-PinOut dc_pin(  BOARD_SPI_DEFAULT_GPIO_EXT2, BOARD_SPI_DEFAULT_GPIO_PIN_EXT2 );
+PinOut nss_pin( BOARD_SPI_DEFAULT_PIN_SNSS );
+PinOut rst_pin( BOARD_SPI_DEFAULT_PIN_EXT1 );
+PinOut dc_pin(  BOARD_SPI_DEFAULT_PIN_EXT2 );
 SPI_HandleTypeDef spi_h;
 DevSPI spi_d( &spi_h, &nss_pin );
 
@@ -42,11 +42,11 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 1000;
-  UVAR('n') = 10;
+  UVAR_t = 1000;
+  UVAR_n =   10;
 
   if( SPI_init_default( SPI_BAUDRATEPRESCALER_16 ) != HAL_OK ) {
-    die4led( 0x04 );
+    die4led( 0x04_mask );
   }
   screen.init();
 

@@ -10,7 +10,7 @@
 class StepMotorDriverGPIO : public StepMotorDriverBase {
   public:
    explicit StepMotorDriverGPIO( PinsOut &a_pins ) noexcept : pins( a_pins ) {}
-   virtual void set( uint16_t outs ) noexcept override { pins.write( outs ); };
+   virtual void set( uint16_t outs ) noexcept override { pins.write( PinMask(outs) ); };
    virtual void init() noexcept override { pins.initHW(); };
   protected:
    PinsOut &pins;
@@ -18,8 +18,8 @@ class StepMotorDriverGPIO : public StepMotorDriverBase {
 
 class StepMotorDriverGPIO_e : public StepMotorDriverBase {
   public:
-   explicit StepMotorDriverGPIO_e( GpioRegs &gi, uint8_t a_start, uint8_t a_n ) noexcept : pins( gi, a_start, a_n ) {}
-   virtual void set( uint16_t outs ) noexcept override { pins.write( outs ); };
+   explicit StepMotorDriverGPIO_e( PortPin a_start, uint8_t a_n ) noexcept : pins( a_start, a_n ) {}
+   virtual void set( uint16_t outs ) noexcept override { pins.write( PinMask(outs) ); };
    virtual void init() noexcept override { pins.initHW(); };
   protected:
    PinsOut pins;

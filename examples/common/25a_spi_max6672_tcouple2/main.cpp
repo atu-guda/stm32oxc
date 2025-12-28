@@ -16,8 +16,8 @@ DCL_CMD_REG( test0, 'T', " - test 2 thermocouples"  );
 DCL_CMD_REG( reset_spi, 'Z', " - reset spi"  );
 
 
-PinOut nss_pin1( BOARD_SPI_DEFAULT_GPIO_SNSS, BOARD_SPI_DEFAULT_GPIO_PIN_SNSS );
-PinOut nss_pin2( BOARD_SPI_DEFAULT_GPIO_EXT1, BOARD_SPI_DEFAULT_GPIO_PIN_EXT1 );
+PinOut nss_pin1( BOARD_SPI_DEFAULT_PIN_SNSS );
+PinOut nss_pin2( BOARD_SPI_DEFAULT_PIN_EXT1 );
 SPI_HandleTypeDef spi_h;
 DevSPI spi_d1( &spi_h, &nss_pin1 );
 DevSPI spi_d2( &spi_h, &nss_pin2 );
@@ -28,11 +28,11 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 1000;
-  UVAR('n') = 10;
+  UVAR_t = 1000;
+  UVAR_n =   10;
 
   if( SPI_init_default( SPI_BAUDRATEPRESCALER_256 ) != HAL_OK ) {
-    die4led( 0x04 );
+    die4led( 0x04_mask );
   }
   // nss_pin1.initHW();
   //nss_pin1.set(1);
@@ -57,8 +57,8 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  int n      = arg2long_d( 1, argc, argv,    UVAR('n'), 1, 0xFFFFFF );
-  int t_step = UVAR('t');
+  int n      = arg2long_d( 1, argc, argv,    UVAR_n, 1, 0xFFFFFF );
+  int t_step = UVAR_t;
 
   std_out <<  NL "Test0: n= " << n << " t_step= " <<  t_step << NL;
   std_out.flush();
@@ -93,7 +93,7 @@ int cmd_test0( int argc, const char * const * argv )
       std_out << " B2 ";
     }
 
-    if( UVAR('d') > 0 ) {
+    if( UVAR_d > 0 ) {
       std_out << NL << HexInt( v1 ) << ' ' << HexInt( v2 ) << ' '
          << rc1 << ' ' << rc2 << ' ';
     }

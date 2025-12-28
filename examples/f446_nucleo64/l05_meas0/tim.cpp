@@ -247,10 +247,10 @@ void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* tim_baseHandle )
 {
   if( tim_baseHandle->Instance == TIM1 )  { // A8: Ch1 : ETR1
     __HAL_RCC_TIM1_CLK_ENABLE();
-    GpioA.cfgAF( 8, GPIO_AF1_TIM1 );
+    PA8.cfgAF( GPIO_AF1_TIM1 );
   } else if( tim_baseHandle->Instance == TIM4 ) { // A6: Ch1: ETR1
     __HAL_RCC_TIM4_CLK_ENABLE();
-    GpioB.cfgAF( 6, GPIO_AF2_TIM4 );
+    PB6.cfgAF( GPIO_AF2_TIM4 );
   } else if( tim_baseHandle->Instance == TIM8 ) {
     __HAL_RCC_TIM8_CLK_ENABLE();
   }
@@ -261,8 +261,10 @@ void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* tim_baseHandle )
   if( tim_baseHandle->Instance == TIM2 )  { // PWM output
     __HAL_RCC_TIM2_CLK_ENABLE();
     //* A15 --> TIM2_CH1, A1 --> TIM2_CH2, B2 --> TIM2_CH4, B10 --> TIM2_CH3
-    GpioA.cfgAF_N( GPIO_PIN_1 | GPIO_PIN_15, GPIO_AF1_TIM2 );
-    GpioB.cfgAF_N( GPIO_PIN_2 | GPIO_PIN_10, GPIO_AF1_TIM2 );
+    PA1.cfgAF(   GPIO_AF1_TIM2 );
+    PA15.cfgAF(  GPIO_AF1_TIM2 );
+    PB2.cfgAF(   GPIO_AF1_TIM2 );
+    PB10.cfgAF(  GPIO_AF1_TIM2 );
   }
 }
 
@@ -272,14 +274,14 @@ void HAL_TIM_IC_MspInit( TIM_HandleTypeDef* tim_baseHandle )
   if( tim_baseHandle->Instance == TIM3 ) {
     __HAL_RCC_TIM3_CLK_ENABLE();
     //* A6 --> TIM3_CH1,CH2 pwm
-    GpioA.cfgAF( 6, GPIO_AF2_TIM3 );
+    PA6.cfgAF( GPIO_AF2_TIM3 );
 
     HAL_NVIC_SetPriority( TIM3_IRQn, 2, 0 );
     HAL_NVIC_EnableIRQ( TIM3_IRQn );
 
   } else if( tim_baseHandle->Instance == TIM5 ) {
     __HAL_RCC_TIM5_CLK_ENABLE();
-    GpioA.cfgAF( 0, GPIO_AF2_TIM5 );
+    PA0.cfgAF( GPIO_AF2_TIM5 );
     HAL_NVIC_SetPriority( TIM5_IRQn, 2, 0 );
     HAL_NVIC_EnableIRQ( TIM5_IRQn );
   }
