@@ -29,8 +29,8 @@ int main(void)
   BOARD_PROLOG;
 
   UVAR_t = 1000;
-  UVAR_n = 20;
-  UVAR_r = 0; // default bytes to read
+  UVAR_n =   20;
+  UVAR_r =    0; // default bytes to read
 
   if( SPI_init_default( SPI_BAUDRATEPRESCALER_256 ) != HAL_OK ) {
   // if( SPI_init_default( SPI_BAUDRATEPRESCALER_32 ) != HAL_OK ) {
