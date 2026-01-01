@@ -585,20 +585,20 @@ int cmd_execPgm( int argc, const char * const * argv )
   return !rc;
 }
 
-int cmd_execCmd( int argc, const char * const * argv )
+int cmd_ec( int argc, const char * const * argv )
 {
   int rc = eng.execCmdStr( argv[1] );
   eng.dumpState();
   return !rc;
 }
 
-int cmd_listPgm( int argc, const char * const * argv )
+int cmd_lpgm( int argc, const char * const * argv )
 {
   eng.listPgm();
   return 0;
 }
 
-int cmd_testPgm( int argc, const char * const * argv )
+int cmd_tpgm( int argc, const char * const * argv )
 {
   eng.clear();
   static const char *t[] = {

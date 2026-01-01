@@ -33,7 +33,7 @@ DCL_CMD_REG( angle,   'A', " [set_val] - measure and ?set angle in ticks"  );
 
 void idle_main_task()
 {
-  // leds.toggle( 1 );
+  // leds[1].toggle();
 }
 
 
@@ -46,12 +46,12 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 4000; // measure time
-  UVAR('w') = 2000; // settle before measure
-  UVAR('n') =  100; // default main loop count
-  UVAR('s') =  500; // default start LWM us value
-  UVAR('p') = 2500; // default stop  LWM us value
-  UVAR('s') = 1000; // stop and wait after
+  UVAR_t = 4000; // measure time
+  UVAR_w = 2000; // settle before measure
+  UVAR_n =  100; // default main loop count
+  UVAR_s =  500; // default start LWM us value
+  UVAR_p = 2500; // default stop  LWM us value
+  UVAR_s = 1000; // stop and wait after
 
   MX_TIM_CNT_Init();
   HAL_TIM_Base_Start( &htim_cnt );
@@ -71,13 +71,13 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  int n        = arg2long_d(   1, argc, argv, UVAR('n'),  2, 10000 );
-  int t_s      = arg2long_d(   2, argc, argv, UVAR('s'),  1, 10000 );
-  int t_e      = arg2long_d(   3, argc, argv, UVAR('p'),  2, 10000 );
+  int n        = arg2long_d(   1, argc, argv, UVAR_n,  2, 10000 );
+  int t_s      = arg2long_d(   2, argc, argv, UVAR_s,  1, 10000 );
+  int t_e      = arg2long_d(   3, argc, argv, UVAR_p,  2, 10000 );
 
-  int32_t t_meas = UVAR('t');
-  int32_t t_pre    = UVAR('w');
-  int32_t t_post = UVAR('s');
+  int32_t t_meas = UVAR_t;
+  int32_t t_pre    = UVAR_w;
+  int32_t t_post = UVAR_s;
 
   int t_dlt = ( t_e - t_s ) / (n-1);
 
@@ -102,9 +102,9 @@ int cmd_test0( int argc, const char * const * argv )
 int cmd_meas1( int argc, const char * const * argv )
 {
   int32_t lwm     = arg2long_d(   1, argc, argv,      1500,   0, 10000 );
-  int32_t t_pre   = arg2long_d(   2, argc, argv, UVAR('w'),   0, 10000 );
-  int32_t t_meas  = arg2long_d(   3, argc, argv, UVAR('t'),   0, 10000 );
-  int32_t t_post  = arg2long_d(   4, argc, argv, UVAR('s'),  -1, 10000 );
+  int32_t t_pre   = arg2long_d(   2, argc, argv, UVAR_w,   0, 10000 );
+  int32_t t_meas  = arg2long_d(   3, argc, argv, UVAR_t,   0, 10000 );
+  int32_t t_post  = arg2long_d(   4, argc, argv, UVAR_s,  -1, 10000 );
 
 
   std_out <<  "# meas1: t_meas= " << t_meas << " t_pre= " << t_pre << " t_post " << t_post << NL;

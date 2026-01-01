@@ -22,11 +22,11 @@ const char* common_help_string = "App to test ADC in T2 shot N channels one chun
  " var v - reference voltage in uV " NL;
 
 const AdcChannelInfo adc_channels[] = {
-  { BOARD_ADC_DEFAULT_CH0, BOARD_ADC_DEFAULT_GPIO0, BOARD_ADC_DEFAULT_PIN0 },
-  { BOARD_ADC_DEFAULT_CH1, BOARD_ADC_DEFAULT_GPIO1, BOARD_ADC_DEFAULT_PIN1 },
-  { BOARD_ADC_DEFAULT_CH2, BOARD_ADC_DEFAULT_GPIO2, BOARD_ADC_DEFAULT_PIN2 },
-  { BOARD_ADC_DEFAULT_CH3, BOARD_ADC_DEFAULT_GPIO3, BOARD_ADC_DEFAULT_PIN3 },
-  {                     0,                   GpioA, AdcChannelInfo::pin_num_end } // END
+  { BOARD_ADC_DEFAULT_CH0,  BOARD_ADC_DEFAULT_PIN0 },
+  { BOARD_ADC_DEFAULT_CH1,  BOARD_ADC_DEFAULT_PIN1 },
+  { BOARD_ADC_DEFAULT_CH2,  BOARD_ADC_DEFAULT_PIN2 },
+  { BOARD_ADC_DEFAULT_CH3,  BOARD_ADC_DEFAULT_PIN3 },
+  {                     0,  PBAD } // END
 };
 
 //
@@ -57,11 +57,11 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 1000; // 1 ms
-  UVAR('n') = 20;
-  UVAR('c') = adc.n_ch_max; // number of channels
-  UVAR('s') = adc_arch_sampletimes_n - 1;
-  UVAR('v') = v_adc_ref;
+  UVAR_t = 1000; // 1 ms
+  UVAR_n = 20;
+  UVAR_c = adc.n_ch_max; // number of channels
+  UVAR_s = adc_arch_sampletimes_n - 1;
+  UVAR_v = v_adc_ref;
 
   // TODO: check
   #ifdef PWR_CR1_ADCDC1
@@ -86,12 +86,12 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  const uint32_t n_ch = clamp<uint32_t>( UVAR('c'), 1, adc.n_ch_max );
+  const uint32_t n_ch = clamp<uint32_t>( UVAR_c, 1, adc.n_ch_max );
   const uint32_t n_ADC_series_max  = n_ADC_mem / ( 2 * n_ch ); // 2 is 16bit/sample
-  uint32_t unsigned stime_idx = ( (uint32_t)UVAR('s') < adc_arch_sampletimes_n ) ? UVAR('s') : (adc_arch_sampletimes_n - 1);
-  const uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, n_ADC_series_max ); // number of series
+  uint32_t unsigned stime_idx = ( (uint32_t)UVAR_s < adc_arch_sampletimes_n ) ? UVAR_s : (adc_arch_sampletimes_n - 1);
+  const uint32_t n = arg2long_d( 1, argc, argv, UVAR_n, 1, n_ADC_series_max ); // number of series
 
-  const uint32_t t_step_us = UVAR('t');
+  const uint32_t t_step_us = UVAR_t;
   adc.t_step_f = (decltype(adc.t_step_f))(1e-6f) * t_step_us;
   const xfloat freq_sampl = (xfloat)1e6f / t_step_us;
 
@@ -132,7 +132,7 @@ int cmd_test0( int argc, const char * const * argv )
           << " t_wait0= " << t_wait0 << " ms" NL;
 
   uint32_t psc = calc_TIM_psc_for_cnt_freq( tim2h.Instance, tim_base_freq ); // 1 us each
-  UVAR('p') = psc;
+  UVAR_p = psc;
   delay_ms( 1 );
 
   adc.prepare_multi_ev( n_ch, div_bits, adc_arch_sampletimes[stime_idx].code, BOARD_ADC_DEFAULT_TRIG, BOARD_ADC_DEFAULT_RESOLUTION );
@@ -141,10 +141,10 @@ int cmd_test0( int argc, const char * const * argv )
     std_out << "# error: fail to init ADC: errno= " << errno << NL;
   }
 
-  if( UVAR('d') > 0 ) {
+  if( UVAR_d > 0 ) {
     adc.pr_state();
   }
-  if( UVAR('d') > 1 ) {
+  if( UVAR_d > 1 ) {
     dump32( BOARD_ADC_DEFAULT_DEV, 0x100 );
   }
   // log_reset();
@@ -166,20 +166,20 @@ int cmd_test0( int argc, const char * const * argv )
   adc.data = adcd.data();
   adc.reset_cnt();
   adcd.set_d_t( t_step_us * 1e-6f );
-  adcd.set_v_ref_uV( UVAR('v') );
+  adcd.set_v_ref_uV( UVAR_v );
   adcd.fill( 0 ); // debug?
   std_out << "# n_col= " << adcd.get_n_col() << " n_row= " << adcd.get_n_row() << " data: " << HexInt(adcd.data()) << " size_all= " << adcd.size_all() << NL;
 
-  leds.reset( BIT0 | BIT1 | BIT2 );
+  leds.reset( BIT0M | BIT1M | BIT2M );
   int rc = 0;
   break_flag = 0;
   uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
 
-  if( UVAR('l') ) {  leds.set( BIT2 ); }
+  if( UVAR_l ) {  leds[2].set(); }
   tim2_init( psc, t_step_us - 1 );
   uint32_t r = adc.start_DMA_wait( n_ch, n, t_wait0 );
   tim2_deinit();
-  if( UVAR('l') ) {  leds.reset( BIT2 ); }
+  if( UVAR_l ) {  leds[2].reset(); }
 
   uint32_t tcc = HAL_GetTick();
   delay_ms( 10 ); // to settle all
@@ -191,10 +191,10 @@ int cmd_test0( int argc, const char * const * argv )
 
   std_out <<  "#  tick: " <<  ( tcc - tm00 )  << NL;
 
-  if( UVAR('d') > 0 ) {
+  if( UVAR_d > 0 ) {
     adc.pr_state();
   }
-  if( UVAR('d') > 1 ) {
+  if( UVAR_d > 1 ) {
     dump32( BOARD_ADC_DEFAULT_DEV, 0x200 );
   }
   HAL_ADC_Stop_DMA( &adc.hadc ); // ????? not?

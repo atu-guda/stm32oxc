@@ -126,17 +126,13 @@
 #define BOARD_ADC_DEFAULT_DEV           ADC1
 #define BOARD_ADC_DEFAULT_EN            __HAL_RCC_ADC1_CLK_ENABLE();
 #define BOARD_ADC_DEFAULT_DIS           __HAL_RCC_ADC1_CLK_DISABLE();
-#define BOARD_ADC_DEFAULT_GPIO0         GpioA
-#define BOARD_ADC_DEFAULT_PIN0          0
+#define BOARD_ADC_DEFAULT_PIN0          PA0
 #define BOARD_ADC_DEFAULT_CH0           ADC_CHANNEL_0
-#define BOARD_ADC_DEFAULT_GPIO1         GpioA
-#define BOARD_ADC_DEFAULT_PIN1          1
+#define BOARD_ADC_DEFAULT_PIN1          PA1
 #define BOARD_ADC_DEFAULT_CH1           ADC_CHANNEL_1
-#define BOARD_ADC_DEFAULT_GPIO2         GpioA
-#define BOARD_ADC_DEFAULT_PIN2          6
+#define BOARD_ADC_DEFAULT_PIN2          PA6
 #define BOARD_ADC_DEFAULT_CH2           ADC_CHANNEL_6
-#define BOARD_ADC_DEFAULT_GPIO3         GpioA
-#define BOARD_ADC_DEFAULT_PIN3          7
+#define BOARD_ADC_DEFAULT_PIN3          PA7
 #define BOARD_ADC_DEFAULT_CH3           ADC_CHANNEL_7
 #define BOARD_ADC_MEM_MAX               (1024*96)
 // #define BOARD_ADC_MEM_MAX_FMC           (1024*1024*8)
@@ -165,6 +161,9 @@
 
 //void* malloc_fmc( size_t sz ); // only all FMC memory for now
 //void  free_fmc( void* ptr );
+
+#define HX711_EXA_SCK_PIN  PC10
+#define HX711_EXA_DAT_PIN  PC11
 
 // 0 = DEVICE_FS, 1 = DEVICE_HS
 #define BOARD_USB_DEFAULT_TYPE       0

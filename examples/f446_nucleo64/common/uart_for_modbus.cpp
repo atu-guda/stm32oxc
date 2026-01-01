@@ -39,12 +39,15 @@ void HAL_UART_UserInit( UART_HandleTypeDef* uartHandle )
   }
 
   UART_MODBUS_CLK_ENABLE();
+  UART_MODBUS_PIN_TX.enableClk();
+  UART_MODBUS_PIN_RX.enableClk();
 
   #if ! defined (STM32F1)
-    UART_MODBUS_GPIO.cfgAF_N( UART_MODBUS_GPIO_PINS, UART_MODBUS_GPIO_AF );
+    UART_MODBUS_PIN_TX.cfgAF( UART_MODBUS_GPIO_AF );
+    UART_MODBUS_PIN_RX.cfgAF( UART_MODBUS_GPIO_AF );
   #else
-    UART_MODBUS_GPIO.cfgAF_N( UART_MODBUS_GPIO_TX, 1 );
-    UART_MODBUS_GPIO.cfgIn_N( UART_MODBUS_GPIO_RX );
+    UART_MODBUS_PIN_TX.cfgAF( 1 );
+    UART_MODBUS_PIN_RX.cfgIn();
   #endif
 
   // HAL_NVIC_SetPriority( UART_MODBUS_IRQ, 3, 0 );

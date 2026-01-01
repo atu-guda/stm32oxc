@@ -15,8 +15,8 @@ BOARD_CONSOLE_DEFINES;
 
 const char* common_help_string = "App to measure drone motor params" NL;
 
-PinOut hx711_sck( GpioC, 10 );
-PinsIn hx711_dat( GpioC, 11, 1 );
+PinOut hx711_sck( HX711_EXA_SCK_PIN );
+PinsIn hx711_dat( HX711_EXA_DAT_PIN, 1 );
 inline void delay_hx711() { delay_bad_mcs( 2 ); }; // TODO: try 1
 int32_t hx711_read();
 
@@ -32,7 +32,7 @@ DCL_CMD_REG( run, 'R', " max_v - test FC interaction"  );
 
 void idle_main_task()
 {
-  // leds.toggle( 1 );
+  // leds[1].toggle();
 }
 
 
@@ -41,13 +41,13 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('a') =  200; // max
-  UVAR('b') =    5; // step
-  UVAR('c') =   20; // min_v
-  UVAR('t') = 2000;
-  UVAR('n') =  20;
-  UVAR('s') = 5194; // scale, * 1e-10
-  UVAR('o') = 0; // offset, g
+  UVAR_a =  200; // max
+  UVAR_b =    5; // step
+  UVAR_c =   20; // min_v
+  UVAR_t = 2000;
+  UVAR_n =  20;
+  UVAR_s = 5194; // scale, * 1e-10
+  UVAR_o = 0; // offset, g
 
   hx711_sck.initHW();
   hx711_dat.initHW();
@@ -66,14 +66,14 @@ int main(void)
 
 int cmd_test0( int argc, const char * const * argv )
 {
-  int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
-  uint32_t t_step = UVAR('t');
+  int n = arg2long_d( 1, argc, argv, UVAR_n, 0 );
+  uint32_t t_step = UVAR_t;
   std_out <<  "# Test0: n= " << n << " t= " << t_step << NL;
 
   HAL_UART_Transmit( &huart1, (const uint8_t*)"#\n", 2, 1000 );
 
-  float scale = - UVAR('s') * 1e-10f;
-  float shift = UVAR('o') * 1e-3f;
+  float scale = - UVAR_s * 1e-10f;
+  float shift = UVAR_o * 1e-3f;
   int32_t sum_i { 0 };
 
   uint32_t tm0 = HAL_GetTick();
@@ -102,18 +102,18 @@ int cmd_test0( int argc, const char * const * argv )
 
 int cmd_run( int argc, const char * const * argv )
 {
-  int max_v = arg2long_d( 1, argc, argv, UVAR('a'), 0, 500 );
-  int dlt_v = arg2long_d( 2, argc, argv, UVAR('b'), 1, 100 );
-  uint32_t t_step = UVAR('t');
+  int max_v = arg2long_d( 1, argc, argv, UVAR_a, 0, 500 );
+  int dlt_v = arg2long_d( 2, argc, argv, UVAR_b, 1, 100 );
+  uint32_t t_step = UVAR_t;
   std_out <<  "# : max_v= " << max_v << " dlt_v" << dlt_v << " t= " << t_step << NL;
 
   HAL_UART_Transmit( &huart1, (const uint8_t*)"#\n", 2, 1000 );
 
-  float scale = - UVAR('s') * 1e-10f;
-  float shift = UVAR('o') * 1e-3f;
+  float scale = - UVAR_s * 1e-10f;
+  float shift = UVAR_o * 1e-3f;
 
   break_flag = 0;
-  int last_v = UVAR('c');
+  int last_v = UVAR_c;
   for( int v=last_v; v<=max_v && !break_flag; v += dlt_v ) {
     last_v = v;
 
@@ -146,7 +146,7 @@ int32_t hx711_read()
   hx711_sck.reset();
 
   for( unsigned i=0; i<100000; ++i ) {
-    uint16_t t = hx711_dat.read();
+    uint16_t t = hx711_dat.read().bitmask();
     if( !t ) {
       good = true;
       break;
@@ -157,7 +157,7 @@ int32_t hx711_read()
   for( uint8_t i=0; i<24; ++i ) {
     hx711_sck.set();
     delay_hx711();
-    uint16_t v = hx711_dat.read();
+    uint16_t v = hx711_dat.read().bitmask();
     cnt <<= 1;
     if( v ) {
       cnt |= 1;

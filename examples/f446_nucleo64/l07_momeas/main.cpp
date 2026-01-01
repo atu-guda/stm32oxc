@@ -26,22 +26,22 @@ const char* common_help_string = "App to measure brushed motor params" NL;
 
 
 // --- local commands;
-DCL_CMD_REG( test0, 'T', "n v0 dv pwm0 dpwm - test "  );
-DCL_CMD_REG( init, '\0', " - init RD6006"  );
-DCL_CMD_REG( write_reg, 'W', "reg val - write 1 reg"  );
-DCL_CMD_REG( read_regs, 'R', "start n - read n regs"  );
-DCL_CMD_REG( read_reg, '\0', "i - read 1 reg"  );
-DCL_CMD_REG( on, '\0', "[meas] [off_delay] - set power ON"  );
-DCL_CMD_REG( off, 'X', "- set power OFF"  );
-DCL_CMD_REG( measure_VI, 'M', "- measure V,I"  );
-DCL_CMD_REG( setV, 'V', "mV [r] - set output voltage"  );
-DCL_CMD_REG( setI, 'I', "100uA  [r]- set output current limit"  );
-DCL_CMD_REG( measF, 'F', "[set_0] [off] - measure force"  );
-DCL_CMD_REG( measNu, 'U', "[dt] - measure rotation speed"  );
-DCL_CMD_REG( pwm, 'Q', "v - set PWM 0-pwm_max"  );
-DCL_CMD_REG( freq, '\0', "f - set PWM freq"  );
-DCL_CMD_REG( timinfo, '\0', " - info about timers"  );
-DCL_CMD_REG( vstep, 'Z', " - set+ voltage and measure"  );
+DCL_CMD_REG( test0      , 'T'  , "n v0 dv pwm0 dpwm - test "  );
+DCL_CMD_REG( init       , '\0' , " - init RD6006"  );
+DCL_CMD_REG( write_reg  , 'W'  , "reg val - write 1 reg"  );
+DCL_CMD_REG( read_regs  , 'R'  , "start n - read n regs"  );
+DCL_CMD_REG( read_reg   , '\0' , "i - read 1 reg"  );
+DCL_CMD_REG( on         , '\0' , "[meas] [off_delay] - set power ON"  );
+DCL_CMD_REG( off        , 'X'  , "- set power OFF"  );
+DCL_CMD_REG( measure_VI , 'M'  , "- measure V                               , I"  );
+DCL_CMD_REG( setV       , 'V'  , "mV [r] - set output voltage"  );
+DCL_CMD_REG( setI       , 'I'  , "100uA  [r]- set output current limit"  );
+DCL_CMD_REG( measF      , 'F'  , "[set_0] [off] - measure force"  );
+DCL_CMD_REG( measNu     , 'U'  , "[dt] - measure rotation speed"  );
+DCL_CMD_REG( pwm        , 'Q'  , "v - set PWM 0-pwm_max"  );
+DCL_CMD_REG( freq       , '\0' , "f - set PWM freq"  );
+DCL_CMD_REG( timinfo    , '\0' , " - info about timers"  );
+DCL_CMD_REG( vstep      , 'Z'  , " - set+ voltage and measure"  );
 
 
 void set_pwm_freq( xfloat f, xfloat p );
@@ -58,8 +58,7 @@ auto out_v_fmt = [](xfloat x) { return FltFmt(x, cvtff_fix,8,4); };
 auto out_x_fmt = [](xfloat x) { return FltFmt(x, cvtff_auto,12,7); };
 
 constexpr auto hx_mode = HX711::HX711_mode::mode_A_x128;
-HX711 hx711( HX711_SCK_GPIO, HX711_SCK_PIN, HX711_DAT_GPIO, HX711_DAT_PIN );
-// -0.032854652221894 5.06179479849053e-07
+HX711 hx711( HX711_EXA_SCK_PIN, HX711_EXA_DAT_PIN );
 xfloat hx_a { 5.0617948e-07f };
 xfloat hx_b {  -0.03399918f };
 StatChannel st_f;
@@ -180,7 +179,7 @@ bool set_var_ex( const char *nm, const char *s )
 
 void idle_main_task()
 {
-  // leds.toggle( 1 );
+  // leds[1].toggle();
 }
 
 
@@ -190,10 +189,10 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 4000; // settle before measure
-  UVAR('n') =   20; // default main loop count
+  UVAR_t = 4000; // settle before measure
+  UVAR_n =   20; // default main loop count
 
-  UVAR('e') = MX_MODBUS_UART_Init();
+  UVAR_e = MX_MODBUS_UART_Init();
 
   hx711.initHW();
 
@@ -224,12 +223,12 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  int n        = arg2long_d(   1, argc, argv, UVAR('n'),  1, 10000 );
+  int n        = arg2long_d(   1, argc, argv, UVAR_n,  1, 10000 );
   xfloat v0    = arg2xfloat_d( 2, argc, argv,      0,     0, V_max );
   xfloat dv    = arg2xfloat_d( 3, argc, argv, V_step, -10.f, 10.0f );
   xfloat pwm0  = arg2xfloat_d( 4, argc, argv,      0,     0,  1.0f );
   xfloat dpwm  = arg2xfloat_d( 5, argc, argv,      0, -1.0f,  1.0f );
-  uint32_t t_step = UVAR('t');
+  uint32_t t_step = UVAR_t;
 
   if( pwm0 + (n-1) * dpwm > 1.0f ) {
     dpwm = ( 1.0f - pwm0 ) / (n-1);
@@ -516,7 +515,7 @@ uint32_t measure_f( int n )
   return st_f.n;
 }
 
-int cmd_measure_Nu( int argc, const char * const * argv )
+int cmd_measNu( int argc, const char * const * argv )
 {
   int dly = arg2long_d( 1, argc, argv, 2000, 1, 100000 );
 
@@ -600,7 +599,7 @@ int cmd_vstep( int argc, const char * const * argv )
   set_V( v_s );
   delay_ms( 1000 );
 
-  measure_Nu( UVAR('t') );
+  measure_Nu( UVAR_t );
   measure_VIx();
 
   out_vi( 1 );
@@ -649,7 +648,7 @@ int cmd_timinfo( int argc, const char * const * argv )
 
 // keep for debug. TODO: move to lib
 
-int cmd_writeReg( int argc, const char * const * argv )
+int cmd_write_reg( int argc, const char * const * argv )
 {
   uint16_t reg = arg2long_d( 1, argc, argv, 0, 0, 0xFFFF );
   uint16_t val = arg2long_d( 2, argc, argv, 0, 0, 0xFFFF );
@@ -660,7 +659,7 @@ int cmd_writeReg( int argc, const char * const * argv )
   return rc;
 }
 
-int cmd_readRegs( int argc, const char * const * argv )
+int cmd_read_regs( int argc, const char * const * argv )
 {
   uint16_t start = arg2long_d( 1, argc, argv, 0, 0, 0xFFFF );
   uint16_t n     = arg2long_d( 2, argc, argv, 1, 1, 125 );
@@ -680,7 +679,7 @@ int cmd_readRegs( int argc, const char * const * argv )
 }
 
 
-int cmd_readReg( int argc, const char * const * argv )
+int cmd_read_reg( int argc, const char * const * argv )
 {
   uint16_t i = arg2long_d( 1, argc, argv, 0, 0, 0xFFFF );
 

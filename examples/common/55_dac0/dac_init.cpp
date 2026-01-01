@@ -34,7 +34,8 @@ int MX_DAC_Init()
 void HAL_DAC_MspInit( DAC_HandleTypeDef* /*dacHandle*/ )
 {
   __HAL_RCC_DAC_CLK_ENABLE();
-  GpioA.cfgAnalog_N( GPIO_PIN_4 | GPIO_PIN_5 );
+  PA4.cfgAnalog(); // TODO: config
+  PA5.cfgAnalog();
 
   // HAL_NVIC_SetPriority( TIM6_DAC_IRQn, 5, 0 );
   // HAL_NVIC_EnableIRQ( TIM6_DAC_IRQn );

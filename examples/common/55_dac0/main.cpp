@@ -32,8 +32,8 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 1000;
-  UVAR('n') = 20;
+  UVAR_t = 1000;
+  UVAR_n = 20;
 
   MX_DAC_Init();
 
@@ -54,9 +54,9 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  uint32_t v1 = arg2long_d( 1, argc, argv, UVAR('v'), 0 );
+  uint32_t v1 = arg2long_d( 1, argc, argv, UVAR_v, 0 );
   uint32_t v2 = v1;
-  int n = arg2long_d( 2, argc, argv, UVAR('n'), 0 );
+  int n = arg2long_d( 2, argc, argv, UVAR_n, 0 );
   std_out << NL "Test0: n= " <<  n <<  " v1= " <<  v1 <<  " v2= " <<  v2 <<  NL;
 
   auto r1 = HAL_DAC_SetValue( &hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, v1 );
@@ -73,7 +73,7 @@ int cmd_test0( int argc, const char * const * argv )
 
 int cmd_ofast( int argc, const char * const * argv )
 {
-  int n   = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
+  int n   = arg2long_d( 1, argc, argv, UVAR_n, 0 );
   int dly = arg2long_d( 2, argc, argv, 0, 0, 1000 );
   std_out <<  "ofast: n= " <<  n <<  " dly= " <<  dly <<  NL;
 
@@ -88,11 +88,11 @@ int cmd_ofast( int argc, const char * const * argv )
   return 0;
 }
 
-constexpr float M_PI_F = 3.141592653f;
+constexpr float M_PI_F = 3.141592653f; // TODO: new
 
 int cmd_fun( int argc, const char * const * argv )
 {
-  int n   = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
+  int n   = arg2long_d( 1, argc, argv, UVAR_n, 0 );
   int tp  = arg2long_d( 2, argc, argv, 0, 0, 5 );
   int dly = arg2long_d( 3, argc, argv, 0, 0, 1000 );
   std_out <<  "funcs: n= " <<  n <<  " tp= " <<  tp <<  " dly= " <<  dly <<  NL;

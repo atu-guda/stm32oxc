@@ -70,14 +70,14 @@ int subcmd_outsd_any( int argc, const char * const * argv, AD &ad, bool isHex )
     return 2;
   }
 
-  leds.set( BIT2 );
+  leds[2].set();
   OutStream os_f( &file );
   ad.out_any( os_f, isHex, st, n );
   StatIntData sdat( ad );
   sdat.slurp( ad );
   sdat.calc();
   os_f << sdat;
-  leds.reset( BIT2 );
+  leds[2].reset();
 
   return 0;
 }

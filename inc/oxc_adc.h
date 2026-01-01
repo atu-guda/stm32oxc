@@ -64,9 +64,8 @@
 
 struct AdcChannelInfo {
   uint32_t channel; // like ADC_CHANNEL_17
-  GpioRegs &gpio;   // like GpioA
-  uint8_t  pin_num; // like 0..15 - not bit, >127 - END, not 15, as special
-  enum { pin_num_spec = 16, pin_num_end = 128 };
+  PortPin  pin;     // like PA0
+  enum { pin_num_spec = 16 };
 };
 
 struct AdcSampleTimeInfo {

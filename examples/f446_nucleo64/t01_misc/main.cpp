@@ -29,7 +29,7 @@ int on_delay_actions()
 {
   static OxcTicker delay_tick( &delay_led_step, 1 );
   if( delay_tick.isTick() ) {
-    leds.toggle( BIT2 );
+    leds[2].toggle();
   }
   return 0;
 }
@@ -38,10 +38,10 @@ int on_delay_actions()
 void xxx_main_loop_nortos( SmallRL *sm, AuxTickFun f_idle )
 {
   if( !sm ) {
-    die4led( 0 );
+    die4led( 0_mask );
   }
 
-  UVAR('i') = 0;
+  UVAR_i = 0;
 
   // eat pre-input
   reset_in( 0 );
@@ -50,15 +50,15 @@ void xxx_main_loop_nortos( SmallRL *sm, AuxTickFun f_idle )
     if( v.empty() ) {
       break;
     }
-    ++UVAR('i');
+    ++UVAR_i;
   }
 
   srl.re_ps(); srl.reset();
 
   while( true ) {
-    leds.set( 2 );
+    leds[2].set();
     auto v = tryGet_irqdis( 0 );
-    leds.reset( 2 );
+    leds[2].reset();
 
     if( v.good() ) {
       sm->addChar( v.c );
@@ -67,8 +67,8 @@ void xxx_main_loop_nortos( SmallRL *sm, AuxTickFun f_idle )
         f_idle();
       }
 
-      if( UVAR('q') > 0 ) {
-        delay_ms( UVAR('q') );
+      if( UVAR_q > 0 ) {
+        delay_ms( UVAR_q );
       } else {
         on_delay_actions();
       }
@@ -81,10 +81,10 @@ int main(void)
 {
   STD_PROLOG_UART;
 
-  UVAR('t') = 100;
-  UVAR('n') =  10;
-  UVAR('q') =   0;
-  UVAR('l') =   0; // delay type
+  UVAR_t = 100;
+  UVAR_n =  10;
+  UVAR_q =   0;
+  UVAR_l =   0; // delay type
 
   BOARD_POST_INIT_BLINK;
 
@@ -103,9 +103,9 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
-  uint32_t t_step = arg2long_d( 2, argc, argv, UVAR('t'), 0, 100000 );
-  int tp = arg2long_d( 3, argc, argv, UVAR('v'), 0, 10 );
+  int n = arg2long_d( 1, argc, argv, UVAR_n, 0 );
+  uint32_t t_step = arg2long_d( 2, argc, argv, UVAR_t, 0, 100000 );
+  int tp = arg2long_d( 3, argc, argv, UVAR_v, 0, 10 );
   std_out <<  "# test_delays : n= " << n << " t= " << t_step << " tp= " << tp << NL;
 
   std_out

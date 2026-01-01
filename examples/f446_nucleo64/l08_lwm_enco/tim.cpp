@@ -121,13 +121,17 @@ void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* tim_baseHandle )
 {
   if( tim_baseHandle->Instance == TIM_CNT ) {
     TIM_CNT_EN;
-    TIM_CNT_GPIO.cfgAF_N( TIM_CNT_PINS, TIM_CNT_AF );
-    TIM_CNT_GPIO.cfg_set_pull_down( TIM_CNT_PIN0NUM );
-    TIM_CNT_GPIO.cfg_set_pull_down( TIM_CNT_PIN1NUM );
+    TIM_CNT_PIN0.enableClk();
+    TIM_CNT_PIN1.enableClk();
+    TIM_CNT_PIN0.cfgAF( TIM_CNT_AF );
+    TIM_CNT_PIN1.cfgAF( TIM_CNT_AF );
+    TIM_CNT_PIN0.cfg_set_pull_down();
+    TIM_CNT_PIN1.cfg_set_pull_down();
   }
   else if( tim_baseHandle->Instance == TIM_LWM ) {
     TIM_LWM_EN;
-    TIM_LWM_GPIO.cfgAF_N( TIM_LWM_PIN, TIM_LWM_AF );
+    TIM_LWM_PIN.enableClk();
+    TIM_LWM_PIN.cfgAF( TIM_LWM_AF );
   }
 }
 
@@ -139,11 +143,12 @@ void HAL_TIM_Base_MspDeInit( TIM_HandleTypeDef* tim_baseHandle )
 {
   if( tim_baseHandle->Instance == TIM_CNT ) {
     TIM_CNT_DIS;
-    TIM_CNT_GPIO.cfgIn_N( TIM_CNT_PINS );
+    TIM_CNT_PIN0.cfgIn();
+    TIM_CNT_PIN1.cfgIn();
   }
   else if( tim_baseHandle->Instance == TIM_LWM ) {
     TIM_LWM_DIS;
-    TIM_LWM_GPIO.cfgIn_N( TIM_LWM_PIN );
+    TIM_LWM_PIN.cfgIn();
   }
 }
 

@@ -60,6 +60,8 @@ constexpr inline PinMask make_pinMask( PinNum pin_num, uint8_t n ) { return PinM
 
 class PortPin {
   public:
+   enum PortNum { PortA = 0, PortB, PortC, PortD, PortE, PortF, PortG, PortH, PortI, PortJ, PortK, PortL, PortM,
+          PortSpec0 = 0x80, PortSpec1 = 0x80, PortBad = 0xFF, PortSpecMask = 0x80 };
    constexpr PortPin( uint8_t port_num_, PinNum pin_num ) : port_num( port_num_ ), num( pin_num ) {};
    explicit constexpr PortPin( const char *s ); // TODO: "A1" "F15" "HF"?
    inline constexpr uint8_t portNum() const { return port_num; };
@@ -67,7 +69,7 @@ class PortPin {
    inline constexpr PinNum pinNum() const { return num; };
    inline constexpr PinMask Mask() const { return num.Mask(); }
    inline constexpr uint16_t bitmask() const { return num.Mask().bitmask(); }
-   inline constexpr bool valid() const { return (port_num < 16) && num.valid(); } // TODO: number of ports
+   inline constexpr bool valid() const { return (!(port_num & PortSpecMask)) && num.valid(); }
    inline static constexpr PortPin Bad()  { return PortPin( 0xFF, PinNum(0xFF) ); }
    #if ! defined (STM32F1)
    inline void cfg_set_MODER( GpioModer val ) const;

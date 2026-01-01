@@ -13,7 +13,7 @@ void tim1_cfg()
   tim1_h.Init.CounterMode       = TIM_COUNTERMODE_UP;
   tim1_h.Init.RepetitionCounter = 0;
   if( HAL_TIM_Base_Init( &tim1_h ) != HAL_OK ) {
-    UVAR('e') = 111; // like error
+    UVAR_e = 111; // like error
     return;
   }
 
@@ -57,13 +57,13 @@ void tim1_cfg()
   tim_ic_cfg.ICPrescaler = TIM_ICPSC_DIV1;
   tim_ic_cfg.ICFilter    = 0; // 0 - 0x0F
   if( HAL_TIM_IC_ConfigChannel( &tim1_h, &tim_ic_cfg, TIM_CHANNEL_4 ) != HAL_OK ) {
-    UVAR('e') = 21;
+    UVAR_e = 21;
     return;
   }
   HAL_NVIC_SetPriority( TIM1_CC_IRQn, 5, 0 );
   HAL_NVIC_EnableIRQ( TIM1_CC_IRQn );
   if( HAL_TIM_IC_Start_IT( &tim1_h, TIM_CHANNEL_4 ) != HAL_OK ) {
-    UVAR('e') = 23;
+    UVAR_e = 23;
   }
 
   HAL_TIM_PWM_Start( &tim1_h, TIM_CHANNEL_3 );
@@ -83,7 +83,7 @@ void tim3_cfg()
   tim3_h.Init.CounterMode       = TIM_COUNTERMODE_UP;
   tim3_h.Init.RepetitionCounter = 0;
   if( HAL_TIM_Base_Init( &tim3_h ) != HAL_OK ) {
-    UVAR('e') = 113; // like error
+    UVAR_e = 113; // like error
     return;
   }
 
@@ -93,14 +93,14 @@ void tim3_cfg()
   sSlaveConfig.TriggerPolarity = TIM_TRIGGERPOLARITY_RISING;
   sSlaveConfig.TriggerFilter = 0;
   if( HAL_TIM_SlaveConfigSynchronization( &tim3_h, &sSlaveConfig ) != HAL_OK ) {
-    UVAR('e') = 1113;
+    UVAR_e = 1113;
   }
 
   TIM_MasterConfigTypeDef sMasterConfig;
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   if( HAL_TIMEx_MasterConfigSynchronization( &tim3_h, &sMasterConfig ) != HAL_OK )  {
-    UVAR('e') = 1123;
+    UVAR_e = 1123;
   }
 
   TIM_IC_InitTypeDef sConfigIC;
@@ -123,7 +123,7 @@ void tim4_cfg()
   tim4_h.Init.CounterMode       = TIM_COUNTERMODE_UP;
   tim4_h.Init.RepetitionCounter = 0;
   if( HAL_TIM_Base_Init( &tim4_h ) != HAL_OK ) {
-    UVAR('e') = 114; // like error
+    UVAR_e = 114; // like error
     return;
   }
 
@@ -133,14 +133,14 @@ void tim4_cfg()
   sSlaveConfig.TriggerPolarity = TIM_TRIGGERPOLARITY_RISING;
   sSlaveConfig.TriggerFilter = 0;
   if( HAL_TIM_SlaveConfigSynchronization( &tim4_h, &sSlaveConfig ) != HAL_OK ) {
-    UVAR('e') = 1114;
+    UVAR_e = 1114;
   }
 
   TIM_MasterConfigTypeDef sMasterConfig;
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   if( HAL_TIMEx_MasterConfigSynchronization( &tim4_h, &sMasterConfig ) != HAL_OK )  {
-    UVAR('e') = 1123;
+    UVAR_e = 1123;
   }
 
   TIM_N_L->CR1 |= 1; // test
@@ -157,7 +157,7 @@ void tim14_cfg()
   tim14_h.Init.CounterMode       = TIM_COUNTERMODE_UP;
   tim14_h.Init.RepetitionCounter = 0;
   if( HAL_TIM_Base_Init( &tim14_h ) != HAL_OK ) {
-    UVAR('e') = 119; // like error
+    UVAR_e = 119; // like error
     return;
   }
 

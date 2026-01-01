@@ -25,11 +25,11 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 1000;
-  UVAR('n') = 10;
-  // UVAR('x') = 10000000; // for calibrate
+  UVAR_t = 1000;
+  UVAR_n = 10;
+  // UVAR_x = 10000000; // for calibrate
   uint32_t c_v0 = delay_calibrate_value;
-  UVAR('x') = c_v0 * 500; // for calibrate 500 ms
+  UVAR_x = c_v0 * 500; // for calibrate 500 ms
 
 
   pr( NL "##################### " PROJ_NAME NL );
@@ -48,8 +48,8 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
-  uint32_t t_step = UVAR('t');
+  int n = arg2long_d( 1, argc, argv, UVAR_n, 0 );
+  uint32_t t_step = UVAR_t;
 
   std_out <<  NL "Test0: n= "  <<  n  <<  " t= "  <<  t_step   <<  NL;
 
@@ -57,7 +57,7 @@ int cmd_test0( int argc, const char * const * argv )
   do_delay_calibrate();
   std_out <<  "New delay_calibrate_value= "  <<  delay_calibrate_value  <<  NL;
 
-  UVAR('z') = _write( 1, "ABCDEFGH", 6 );
+  UVAR_z = _write( 1, "ABCDEFGH", 6 );
   putchar( 'X' );
   puts( "012345" );
   _write( 1, "ZZZ\r\n", 5 );
@@ -76,13 +76,13 @@ int cmd_test0( int argc, const char * const * argv )
     delay_bad_ms( t_step );
   }
 
-  // delay_bad_n( UVAR('x') );
+  // delay_bad_n( UVAR_x );
   // // delay_bad_n( 335730317 ); // for 168 Mhz 10 s
   // // delay_bad_n( 33539491 );     // for 168 Mhz 1 s
   // // delay_bad_n( 33539 );     // for 168 Mhz 1 ms
   // uint32_t tm1 = HAL_GetTick(), dlt = tm1 - tm0;
-  // uint32_t c_v = UVAR('x') / dlt;
-  // <<  "n= " pr_d( UVAR('x') ); <<  "  delta= "  <<  dlt  <<  "  c_v= "  <<  c_v  <<  NL 
+  // uint32_t c_v = UVAR_x / dlt;
+  // <<  "n= " pr_d( UVAR_x ); <<  "  delta= "  <<  dlt  <<  "  c_v= "  <<  c_v  <<  NL 
 
   return 0;
 }

@@ -40,12 +40,12 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 100;
-  UVAR('n') =   4;
-  UVAR('u') =   2; // default unit addr
-  UVAR('a') =  '@';
+  UVAR_t = 100;
+  UVAR_n =   4;
+  UVAR_u =   2; // default unit addr
+  UVAR_a =  '@';
 
-  UVAR('e') = MX_MODBUS_UART_Init();
+  UVAR_e = MX_MODBUS_UART_Init();
 
   BOARD_POST_INIT_BLINK;
 
@@ -59,8 +59,8 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
-  uint32_t t_step = UVAR('t');
+  int n = arg2long_d( 1, argc, argv, UVAR_n, 0 );
+  uint32_t t_step = UVAR_t;
   std_out <<  "# Test0: n= " << n << " t= " << t_step << NL;
 
   uint32_t tm0 = HAL_GetTick();
@@ -85,7 +85,7 @@ int cmd_test0( int argc, const char * const * argv )
     tmc_prev = tcc;
     txx0 = txx1;
 
-    UART_MODBUS->USART_TX_REG = (uint8_t)UVAR('a');
+    UART_MODBUS->USART_TX_REG = (uint8_t)UVAR_a;
 
     delay_ms_until_brk( &tc0, t_step );
   }
@@ -103,24 +103,24 @@ int cmd_out( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_writeReg( int argc, const char * const * argv )
+int cmd_write_reg( int argc, const char * const * argv )
 {
   uint16_t reg = arg2long_d( 1, argc, argv, 0, 0, 0xFFFF );
   uint16_t val = arg2long_d( 2, argc, argv, 0, 0, 0xFFFF );
 
-  std_out <<  "# write1reg :  " << reg << ' ' << val << ' ' << UVAR('u') << NL;
-  auto rc = m_srv.writeReg( UVAR('u'), reg, val );
+  std_out <<  "# write1reg :  " << reg << ' ' << val << ' ' << UVAR_u << NL;
+  auto rc = m_srv.writeReg( UVAR_u, reg, val );
   std_out << "# rc " << rc << ' ' << m_srv.getError() << ' ' << m_srv.getReplError() << NL;
   return rc;
 }
 
-int cmd_readRegs( int argc, const char * const * argv )
+int cmd_read_regs( int argc, const char * const * argv )
 {
   uint16_t start = arg2long_d( 1, argc, argv, 0, 0, 0xFFFF );
   uint16_t n     = arg2long_d( 2, argc, argv, 1, 1, 125 );
 
-  std_out <<  "# readNRegs :  " << start << ' ' << n << ' ' << UVAR('u') << NL;
-  auto rc = m_srv.readRegs( UVAR('u'), start, n );
+  std_out <<  "# readNRegs :  " << start << ' ' << n << ' ' << UVAR_u << NL;
+  auto rc = m_srv.readRegs( UVAR_u, start, n );
 
   std_out << "# rc " << rc << ' ' << m_srv.getError() << ' ' << m_srv.getReplError() << NL;
 
@@ -134,12 +134,12 @@ int cmd_readRegs( int argc, const char * const * argv )
 }
 
 
-int cmd_readReg( int argc, const char * const * argv )
+int cmd_read_reg( int argc, const char * const * argv )
 {
   uint16_t i = arg2long_d( 1, argc, argv, 0, 0, 0xFFFF );
 
-  std_out <<  "# readNReg :  " << i << UVAR('u') << NL;
-  auto v = m_srv.readGetReg( UVAR('u'), i );
+  std_out <<  "# readNReg :  " << i << UVAR_u << NL;
+  auto v = m_srv.readGetReg( UVAR_u, i );
 
   if( v ) {
     std_out << "# v= "  << HexInt16(v.value()) << ' ' << v.value() << NL;

@@ -36,14 +36,14 @@ int tim_base_config( TIM_HandleTypeDef *th )
   if( HAL_TIMEx_MasterConfigSynchronization( th, &sMasterConfig_def ) != HAL_OK ) {
     return 0;
   }
-  // UVAR('x') |= 2;
+  // UVAR_x |= 2;
   return 1;
 }
 
 
 int MX_TIM2_Init()
 {
-  // UVAR('x') |= 1;
+  // UVAR_x |= 1;
   htim2.Instance           = TIM2;
   htim2.Init.Prescaler         = calc_TIM_psc_for_cnt_freq( TIM2, 1000000 );
   htim2.Init.CounterMode   = TIM_COUNTERMODE_UP;
@@ -70,7 +70,7 @@ int MX_TIM2_Init()
   if( HAL_TIM_IC_Start_IT( &htim2, TIM_CHANNEL_1 ) != HAL_OK ) {
     return 0;
   }
-  // UVAR('x') |= 4;
+  // UVAR_x |= 4;
   return 1;
 }
 
@@ -80,10 +80,10 @@ void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* tim_baseHandle )
   if( tim_baseHandle->Instance == TIM2 )  { // PWM input
     __HAL_RCC_TIM2_CLK_ENABLE();
     //* A0 --> TIM2_CH1
-    GpioA.cfgAF_N( GPIO_PIN_0, GPIO_AF1_TIM2 );
+    PA0.cfgAF( GPIO_AF1_TIM2 );
     HAL_NVIC_SetPriority( TIM2_IRQn, 2, 0 );
     HAL_NVIC_EnableIRQ( TIM2_IRQn );
-    // UVAR('x') |= 8;
+    // UVAR_x |= 8;
   }
 }
 

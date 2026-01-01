@@ -24,8 +24,8 @@ int main(void)
   // HAL_UART_Transmit( &uah, (uint8_t*)"START\r\n", 7, 100 );
   // dev_console.puts( "0123456789---main()---ABCDEF" NL );
 
-  UVAR('t') = 1000;
-  UVAR('n') = 10;
+  UVAR_t = 1000;
+  UVAR_n = 10;
 
   BOARD_POST_INIT_BLINK;
 
@@ -44,8 +44,8 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
-  uint32_t t_step = UVAR('t');
+  int n = arg2long_d( 1, argc, argv, UVAR_n, 0 );
+  uint32_t t_step = UVAR_t;
   iprintf( NL "Test0: n= %u t= %lu", n, t_step );
 
   iprintf( "iprintf test: '%c' %d %ld %u " NL, 'z', 123, 1000000000L, -1 );

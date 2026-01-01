@@ -20,8 +20,7 @@ const char* common_help_string = "App to test HX711 ADC" NL;
 DCL_CMD_REG( test0, 'T', "[n] - test HX711 ADC"  );
 
 
-HX711 hx711( HX711_SCK_GPIO, HX711_SCK_PIN, HX711_DAT_GPIO, HX711_DAT_PIN );
-// -0.032854652221894 5.06179479849053e-07
+HX711 hx711( HX711_EXA_SCK_PIN, HX711_EXA_DAT_PIN );
 xfloat hx_a =  5.0617948e-07f;
 xfloat hx_b =  -0.032854f;
 

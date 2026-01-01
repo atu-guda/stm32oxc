@@ -26,7 +26,7 @@ void tim2_init( uint16_t presc, uint32_t arr )
   //TIM2->CR2 = 0x20;  // UPDATE->TRGO
 
   if( HAL_TIM_Base_Init( &tim2h ) != HAL_OK ) {
-    Error_Handler( 4 );
+    // TODO: error
     return;
   }
 
@@ -34,7 +34,8 @@ void tim2_init( uint16_t presc, uint32_t arr )
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   if( HAL_TIMEx_MasterConfigSynchronization( &tim2h, &sMasterConfig ) != HAL_OK )  {
-    Error_Handler( 11 );
+    // TODO: error
+    return;
   }
 
   // if( HAL_TIM_Base_Start_IT( &tim2h ) != HAL_OK ) {
@@ -42,7 +43,7 @@ void tim2_init( uint16_t presc, uint32_t arr )
   //   return;
   // }
   if( HAL_TIM_Base_Start( &tim2h ) != HAL_OK ) {
-    Error_Handler( 4 );
+    // TODO: error
     return;
   }
 

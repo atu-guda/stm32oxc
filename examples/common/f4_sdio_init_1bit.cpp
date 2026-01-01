@@ -36,8 +36,12 @@ void HAL_SD_MspInit( SD_HandleTypeDef* /* sdHandle */ )
   // no check: the only SDIO
   SD_EXA_CLKEN;
 
-  SD_EXA_CK.cfgAF(  SD_EXA_GPIOAF );
-  SD_EXA_D0.cfgAF(  SD_EXA_GPIOAF );
+  SD_EXA_CK. enableClk();
+  SD_EXA_D0. enableClk();
+  SD_EXA_CMD.enableClk();
+
+  SD_EXA_CK. cfgAF( SD_EXA_GPIOAF );
+  SD_EXA_D0. cfgAF( SD_EXA_GPIOAF );
   SD_EXA_CMD.cfgAF( SD_EXA_GPIOAF );
 }
 

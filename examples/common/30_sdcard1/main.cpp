@@ -30,7 +30,7 @@ int main(void)
   UVAR_n =   20;
 
   MX_SDIO_SD_Init();
-  // UVAR_e = HAL_SD_Init( &hsd );
+  UVAR_e = HAL_SD_Init( &hsd );
 
   BOARD_POST_INIT_BLINK;
 

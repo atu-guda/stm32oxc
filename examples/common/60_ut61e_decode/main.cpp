@@ -25,7 +25,7 @@ DCL_CMD_REG( si_test, 'S', " - si units "  );
 
 void idle_main_task()
 {
-  // leds.toggle( 1 );
+  // leds[1].toggle();
 }
 
 
@@ -70,7 +70,7 @@ void HAL_UARTEx_RxEventCallback( UART_HandleTypeDef *huart, uint16_t sz )
     memset( ubuf,  0, sizeof( ubuf ) );
   }
 
-  // leds.toggle( 1 );
+  // leds[1].toggle();
 }
 
 int cmd_test0( int argc, const char * const * argv )

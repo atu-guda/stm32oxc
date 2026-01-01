@@ -19,7 +19,7 @@ int  MX_FC_UART_Init()
     return 0;
   }
 
-  UVAR('x') |= 1;
+  UVAR_x |= 1;
   return 1;
 }
 
@@ -30,10 +30,13 @@ void HAL_UART_UserInit( UART_HandleTypeDef* uartHandle )
   }
 
   UART_FC_CLK_ENABLE();
-  UART_FC_GPIO.cfgAF_N( UART_FC_GPIO_PINS, UART_FC_GPIO_AF );
+  UART_FC_PIN_TX.enableClk();
+  UART_FC_PIN_RX.enableClk();
+  UART_FC_PIN_TX.cfgAF( UART_FC_GPIO_AF );
+  UART_FC_PIN_RX.cfgAF( UART_FC_GPIO_AF );
 
   // HAL_NVIC_SetPriority(USART1_IRQn, 4, 0);
   // HAL_NVIC_EnableIRQ(USART1_IRQn);
-  UVAR('x') |= 2;
+  UVAR_x |= 2;
 }
 
