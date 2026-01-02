@@ -26,7 +26,7 @@ DCL_CMD_REG( cmp1, 'C', " A B C D E - set cmp1 values"  );
 
 void idle_main_task()
 {
-  // leds.toggle( 1 );
+  // leds[1].toggle();
 }
 
 
@@ -35,8 +35,8 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 100;
-  UVAR('n') =  20;
+  UVAR_t = 100;
+  UVAR_n =  20;
 
   BOARD_POST_INIT_BLINK;
 
@@ -85,8 +85,8 @@ int cmd_test0( int argc, const char * const * argv )
   //
   // dump8(  HRTIM1, 0x48, false ); // 0x40017400
   // dump32( HRTIM1, 0x48, false ); // 0x40017400
-  // int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
-  // uint32_t t_step = UVAR('t');
+  // int n = arg2long_d( 1, argc, argv, UVAR_n, 0 );
+  // uint32_t t_step = UVAR_t;
   // std_out <<  "# Test0: n= " << n << " t= " << t_step << NL;
   //
   // uint32_t tm0 = HAL_GetTick();

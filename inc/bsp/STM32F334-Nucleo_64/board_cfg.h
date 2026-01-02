@@ -61,6 +61,7 @@
 #define   TIM_EXA_IRQ          TIM1_CC_IRQn
 #define   TIM_EXA_IRQHANDLER   TIM1_CC_IRQHandler
 
+// SDIO
 // #define SD_EXA_CK        PB2
 // #define SD_EXA_D0        PC8
 // #define SD_EXA_CMD       PD2
@@ -104,12 +105,12 @@
 
 #ifndef BOARD_SPI_DEFAULT
 #define BOARD_SPI_DEFAULT               SPI1
-#define BOARD_SPI_DEFAULT_GPIO_SCK      PA5
-#define BOARD_SPI_DEFAULT_GPIO_MISO     PA6
-#define BOARD_SPI_DEFAULT_GPIO_MOSI     PA7
-#define BOARD_SPI_DEFAULT_GPIO_SNSS     PA8
-#define BOARD_SPI_DEFAULT_EXT1          PA9
-#define BOARD_SPI_DEFAULT_EXT2          PA10
+#define BOARD_SPI_DEFAULT_PIN_SCK       PA5
+#define BOARD_SPI_DEFAULT_PIN_MISO      PA6
+#define BOARD_SPI_DEFAULT_PIN_MOSI      PA7
+#define BOARD_SPI_DEFAULT_PIN_SNSS      PA8
+#define BOARD_SPI_DEFAULT_PIN_EXT1      PA9
+#define BOARD_SPI_DEFAULT_PIN_EXT2      PA10
 #define BOARD_SPI_DEFAULT_GPIO_AF       GPIO_AF5_SPI1
 #define BOARD_SPI_DEFAULT_ENABLE        __SPI1_CLK_ENABLE();
 #define BOARD_SPI_DEFAULT_DISABLE       __SPI1_CLK_DISABLE();
@@ -123,23 +124,19 @@
 #define BOARD_MOTOR_DEFAULT             PA8
 #define BOARD_MOTOR_DEFAULT_N           4
 
-#define BOARD_1W_DEFAULT                PC4
+#define BOARD_1W_DEFAULT_PIN            PC4
 
 // A0, A1, A6, A7 (0,1,5,7)
 #define BOARD_ADC_DEFAULT_DEV           ADC1
 #define BOARD_ADC_DEFAULT_EN            __HAL_RCC_ADC1_CLK_ENABLE();
 #define BOARD_ADC_DEFAULT_DIS           __HAL_RCC_ADC1_CLK_DISABLE();
-#define BOARD_ADC_DEFAULT_GPIO0         GpioA
-#define BOARD_ADC_DEFAULT_PIN0          0
+#define BOARD_ADC_DEFAULT_PIN0          PA0
 #define BOARD_ADC_DEFAULT_CH0           ADC_CHANNEL_0
-#define BOARD_ADC_DEFAULT_GPIO1         GpioA
-#define BOARD_ADC_DEFAULT_PIN1          1
+#define BOARD_ADC_DEFAULT_PIN1          PA1
 #define BOARD_ADC_DEFAULT_CH1           ADC_CHANNEL_1
-#define BOARD_ADC_DEFAULT_GPIO2         GpioA
-#define BOARD_ADC_DEFAULT_PIN2          6
+#define BOARD_ADC_DEFAULT_PIN2          PA6
 #define BOARD_ADC_DEFAULT_CH2           ADC_CHANNEL_6
-#define BOARD_ADC_DEFAULT_GPIO3         GpioA
-#define BOARD_ADC_DEFAULT_PIN3          7
+#define BOARD_ADC_DEFAULT_PIN3          PA7
 #define BOARD_ADC_DEFAULT_CH3           ADC_CHANNEL_7
 #define BOARD_ADC_MEM_MAX               (1024*4)
 // #define BOARD_ADC_MEM_MAX_FMC           (1024*1024*8)
@@ -149,6 +146,9 @@
 // #define BOARD_ADC_MALLOC_EXT            malloc_fmc
 // #define BOARD_ADC_FREE_EXT              free_fmc
 
+
+#define HX711_EXA_SCK_PIN  PC10
+#define HX711_EXA_DAT_PIN  PC11
 
 #define BOARD_CONSOLE_DEFINES         UART_CONSOLE_DEFINES( USART2 );
 #define BOARD_CONSOLE_DEFINES_UART    UART_CONSOLE_DEFINES( USART2 );
