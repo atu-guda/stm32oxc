@@ -63,10 +63,10 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 1000;
-  UVAR('n') = 10;
+  UVAR_t = 1000;
+  UVAR_n = 10;
 
-  UVAR('e') = i2c_default_init( i2ch /*, 400000 */ );
+  UVAR_e = i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
 
   BOARD_POST_INIT_BLINK;
@@ -88,10 +88,10 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
 int cmd_test0( int argc, const char * const * argv )
 {
   int16_t buf[3];
-  int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
-  int t = UVAR('t');
+  int n = arg2long_d( 1, argc, argv, UVAR_n, 0 );
+  int t = UVAR_t;
 
-  leds.set( BIT0 );
+  leds[0].set();
   delay_bad_mcs( 10 );
 
   // LSM303DLHC_AccInit( 0 );
@@ -106,7 +106,7 @@ int cmd_test0( int argc, const char * const * argv )
     delay_ms( t );
   }
 
-  leds.reset( BIT0 );
+  leds[0].reset();
 
   return 0;
 }
@@ -116,14 +116,14 @@ int cmd_test1( int argc, const char * const * argv )
   uint8_t buf[4];
   buf[0] = buf[1] = buf[2] = buf[3] = 0;
 
-  leds.set( BIT0 );
+  leds[0].set();
   delay_bad_mcs( 10 );
 
   int rc = i2cd.recv_reg1( 0x0F, buf, 1 );
   pr_sdx( rc );
   dump8( buf, 4 );
 
-  leds.reset( BIT0 );
+  leds[0].reset();
   return 0;
 }
 //  ----------------------------- devices ----------------

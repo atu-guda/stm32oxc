@@ -27,10 +27,10 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 500;
-  UVAR('n') = 50;
+  UVAR_t = 500;
+  UVAR_n = 50;
 
-  UVAR('e') = i2c_default_init( i2ch /*, 400000 */ );
+  UVAR_e = i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
 
   BOARD_POST_INIT_BLINK;
@@ -51,9 +51,9 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
+  int n = arg2long_d( 1, argc, argv, UVAR_n, 0 );
   int scale = arg2long_d( 2, argc, argv, 0, 0, 6 );
-  uint32_t t_step = UVAR('t');
+  uint32_t t_step = UVAR_t;
   const uint8_t mag_scales[] = {
     LSM303DHLC_Mag::crb_sens_1_3,
     LSM303DHLC_Mag::crb_sens_1_9,

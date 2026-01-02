@@ -14,7 +14,8 @@ void default_USBFS_MspInit(void)
   __GPIOA_CLK_ENABLE();
   // __HAL_RCC_GPIOA_CLK_ENABLE();
 
-  GpioA.cfgAF_N( GPIO_PIN_11 | GPIO_PIN_12, GPIO_AF14_USB );
+  PA11.cfgAF( GPIO_AF14_USB );
+  PA12.cfgAF( GPIO_AF14_USB );
 
   __USB_CLK_ENABLE();
   __SYSCFG_CLK_ENABLE();
