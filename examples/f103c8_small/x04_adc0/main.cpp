@@ -3,11 +3,10 @@
 #include <oxc_auto.h>
 #include <oxc_main.h>
 
-#define Din_GPIO_Port GPIOB
-#define Din_0_Pin GPIO_PIN_3
-#define Din_1_Pin GPIO_PIN_4
-#define Din_2_Pin GPIO_PIN_8
-#define Din_3_Pin GPIO_PIN_9
+#define Din_0_Pin PB3
+#define Din_1_Pin PB4
+#define Din_2_Pin PB8
+#define Din_3_Pin PB9
 
 void MX_DigitalIn_Init();
 void MX_DMA_Init();
@@ -29,7 +28,7 @@ const char* common_help_string = "Appication to test ADC on F1" NL;
 
 void idle_main_task()
 {
-  leds.toggle( 1 );
+  leds[0].toggle();
 }
 
 
@@ -40,7 +39,7 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  leds.write( 0 );
+  leds.write( 0_mask );
 
   MX_DigitalIn_Init();
   MX_DMA_Init();
@@ -52,7 +51,7 @@ int main(void)
 
   if( HAL_ADCEx_Calibration_Start( &hadc1 ) != HAL_OK )  {
     std_out << "HAL_ADCEx_Calibration_Start failed" NL; std_out.flush();
-    die4led( 0 );
+    die4led( 0_mask );
   }
 
   delay_ms( 10 );
@@ -63,7 +62,7 @@ int main(void)
   uint32_t tm0 = HAL_GetTick(), tmc = tm0;
 
   for( int n=0; ; ++n ) {
-    leds.toggle( BIT0 );
+    leds[0].toggle();
 
     adc_state = 0; stat_str[0] = ' '; stat_str[1] = ' '; stat_str[2] = ' '; stat_str[3] = '\0';
     // int jj = 0;
@@ -108,7 +107,7 @@ int main(void)
 void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *AdcHandle )
 {
   adc_state = 1;
-  // leds.toggle( BIT3 );
+  // leds[3].toggle();
 }
 
 void HAL_ADC_ConvHalfCpltCallback( ADC_HandleTypeDef *hadc )
@@ -119,7 +118,7 @@ void HAL_ADC_ConvHalfCpltCallback( ADC_HandleTypeDef *hadc )
 void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc )
 {
   adc_state = 2;
-  // leds.toggle( BIT0 );
+  // leds[0].toggle();
 }
 
 void MX_DigitalIn_Init()
@@ -127,7 +126,11 @@ void MX_DigitalIn_Init()
   __HAL_AFIO_REMAP_SWJ_NOJTAG(); // to use B3
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
-  GpioB.cfgIn_N(  Din_0_Pin | Din_1_Pin | Din_2_Pin | Din_3_Pin );
+  GpioB.enableClk();
+  Din_0_Pin.cfgIn();
+  Din_1_Pin.cfgIn();
+  Din_2_Pin.cfgIn();
+  Din_3_Pin.cfgIn();
 }
 
 

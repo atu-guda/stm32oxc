@@ -17,13 +17,13 @@ void MX_ADC1_Init(void)
   hadc1.Init.DataAlign             = ADC_DATAALIGN_RIGHT;
   hadc1.Init.NbrOfConversion       = 4;
   if( HAL_ADC_Init( &hadc1 ) != HAL_OK )   {
-    die4led( 1 );
+    die4led( 1_mask );
   }
 
   sConfig.Channel = ADC_CHANNEL_0;  sConfig.Rank = 1;
   sConfig.SamplingTime = adc_cycles;
   if( HAL_ADC_ConfigChannel( &hadc1, &sConfig ) != HAL_OK )   {
-    die4led( 2 );
+    die4led( 2_mask );
   }
   sConfig.Channel = ADC_CHANNEL_1;  sConfig.Rank = 2;
   HAL_ADC_ConfigChannel( &hadc1, &sConfig );
@@ -35,11 +35,14 @@ void MX_ADC1_Init(void)
 
 void HAL_ADC_MspInit( ADC_HandleTypeDef* adcHandle )
 {
-  GPIO_InitTypeDef gio;
   if( adcHandle->Instance == ADC1 ) {
     __HAL_RCC_ADC1_CLK_ENABLE();
     // A0:A3 : ADC1_IN0:IN3
-    GpioA.cfgAnalog_N( GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3 );
+    GpioA.enableClk();
+    PA0.cfgAnalog();
+    PA1.cfgAnalog();
+    PA2.cfgAnalog();
+    PA3.cfgAnalog();
 
     hdma_adc1.Instance                 = DMA1_Channel1;
     hdma_adc1.Init.Direction           = DMA_PERIPH_TO_MEMORY;
@@ -50,7 +53,7 @@ void HAL_ADC_MspInit( ADC_HandleTypeDef* adcHandle )
     hdma_adc1.Init.Mode                = DMA_NORMAL;
     hdma_adc1.Init.Priority            = DMA_PRIORITY_HIGH;
     if( HAL_DMA_Init( &hdma_adc1 ) != HAL_OK ) {
-      die4led( 0x04 );
+      die4led( 0x04_mask );
     }
 
     __HAL_LINKDMA( adcHandle, DMA_Handle, hdma_adc1 );

@@ -13,7 +13,7 @@ void MX_inp_Init();
 int MX_USART1_UART_Init(void);
 
 
-PinsOut led0( GpioC, 13, 1 );
+PinsOut led0( PC13, 1 );
 
 extern "C" {
 void task_leds( void *prm UNUSED_ARG );
@@ -45,20 +45,20 @@ int main(void)
 
   leds.initHW();
   led0.initHW();
-  leds.write( BOARD_LEDS_ALL );
+  leds.write( 0x0F_mask );
 
   int rc = SystemClockCfg();
   if( rc ) {
-    die4led( BOARD_LEDS_ALL );
+    die4led( 0x0F_mask );
     return 0;
   }
 
-  leds.write( 0x00 );  delay_bad_ms( 200 );
-  leds.write( 0x0A );  delay_bad_ms( 200 );
+  leds.write( 0x00_mask );  delay_bad_ms( 200 );
+  leds.write( 0x0A_mask );  delay_bad_ms( 200 );
 
   MX_inp_Init();
   if( ! MX_USART1_UART_Init() ) {
-      die4led( 1 );
+      die4led( 1_mask );
   }
   MX_SPI1_Init();
 
@@ -67,11 +67,11 @@ int main(void)
   // xTaskCreate( task_leds, "leds", 1*def_stksz, 0, 1, 0 );
   xTaskCreate( task_send, "send", 2*def_stksz, 0, 1, 0 );
 
-  leds.write( 0x00 );
+  leds.write( 0x00_mask );
   ready_to_start_scheduler = 1;
   vTaskStartScheduler();
 
-  die4led( 0xFF );
+  die4led( 0xFF_mask );
   return 0;
 }
 
@@ -83,7 +83,7 @@ int prs( const char *s )
   int l = strlen( s );
   int rc;
   if( ( rc = HAL_UART_Transmit( &uah_console, (uint8_t*)(s), l, tx_wait )) != HAL_OK ) {
-    // leds.toggle( BIT3 );
+    // leds[3].toggle();
     return 0;
   }
   return l;
@@ -164,9 +164,9 @@ void task_send( void *prm UNUSED_ARG )
 
     strncat( tx_buf, "\r\n", 3 );
     prs( tx_buf );
-    // leds.toggle( BIT3 );
-    leds.write( lbits );
-    led0.toggle( BIT0 );
+    // leds[3].toggle();
+    leds.write( PinMask( lbits ) );
+    led0[0].toggle();
     vTaskDelayUntil( &tc0, loop_delay );
     ++n;
   }

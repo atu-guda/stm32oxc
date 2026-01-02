@@ -17,12 +17,12 @@ using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
 // BOARD_DEFINE_LEDS;
-PinsOut leds( GpioB, 12, 4 ); // 12: tick/menu 13: ?? 14: heather 15: Err
-PinOut leds0( GpioC, 13 ); // single C13
+PinsOut leds( PB12, 4 ); // 12: tick/menu 13: ?? 14: heather 15: Err
+PinOut leds0( PC13 ); // single C13
 
 // TODO: to local include
-#define HEATHER_BIT BIT2
-#define ERR_BIT     BIT3
+#define HEATHER_BIT BIT2M
+#define ERR_BIT     BIT3M
 
 BOARD_CONSOLE_DEFINES;
 
@@ -41,16 +41,16 @@ HD44780_i2c lcdt( i2cd, 0x27 );
 void on_btn_while_run( int cmd );
 
 
-PinOut nss_pin( BOARD_SPI_DEFAULT_GPIO_SNSS, BOARD_SPI_DEFAULT_GPIO_PIN_SNSS );
+PinOut nss_pin( BOARD_SPI_DEFAULT_PIN_SNSS );
 SPI_HandleTypeDef spi_h;
 DevSPI spi_d( &spi_h, &nss_pin );
 
-const unsigned MAX31855_SIZE = 4; // 32 bit per packet
+const unsigned MAX31855_SIZE { 4 }; // 32 bit per packet
 
-const uint32_t MAX31855_FAIL = 0x00010000;
-const uint32_t MAX31855_BRK  = 0x00000001;
-const uint32_t MAX31855_GND  = 0x00000002;
-const uint32_t MAX31855_VCC  = 0x00000004;
+const uint32_t MAX31855_FAIL { 0x00010000 };
+const uint32_t MAX31855_BRK  { 0x00000001 };
+const uint32_t MAX31855_GND  { 0x00000002 };
+const uint32_t MAX31855_VCC  { 0x00000004 };
 
 // common vars: access by menu, named vars and program
 
@@ -163,7 +163,7 @@ int main(void)
   i2c_client_def = &lcdt;
 
   if( SPI_init_default( SPI_BAUDRATEPRESCALER_256 ) != HAL_OK ) {
-    die4led( 0x04 );
+    die4led( 0x04_mask );
   }
   // nss_pin.initHW();
   //nss_pin.set(1);
@@ -171,9 +171,9 @@ int main(void)
   spi_d.initSPI();
 
   // BOARD_POST_INIT_BLINK; // NO - do not touch heather!
-  leds.set( 0x03 ); leds0.set();
+  leds.set( 0x03_mask ); leds0.set();
   delay_ms( 200 );
-  leds.reset( 0x0F ); leds0.reset();
+  leds.reset( 0x0F_mask ); leds0.reset();
 
   pr( NL "##################### " PROJ_NAME NL );
 
@@ -225,7 +225,7 @@ int cmd_test0( int argc, const char * const * argv )
     time_c = tcc - tm00;
     std_out <<  FloatMult( time_c, 3, 5 )  <<  ' ';
 
-    leds.toggle( BIT0 );  leds0.toggle();
+    leds[0].toggle();  leds0.toggle();
     char ctick = ( i & 1 ) ? ':' : '.';
 
     int32_t tif = ( vl >> 4 ) & 0x0FFF;
@@ -316,7 +316,7 @@ int cmd_test0( int argc, const char * const * argv )
 int cmd_menu( int argc, const char * const * argv )
 {
   int cmd_i = arg2long_d( 1, argc, argv, 0 );
-  leds.toggle( BIT1 );
+  leds[1].toggle();
   return menu4b_cmd( cmd_i );
 }
 
@@ -334,7 +334,7 @@ int menu4b_output( const char *s1, const char *s2 )
 
 void on_btn_while_run( int cmd )
 {
-  leds.toggle( BIT1 );
+  leds[1].toggle();
   switch( cmd ) {
     case  MenuCmd::Esc:
       break_flag = 1; errno = 10000;

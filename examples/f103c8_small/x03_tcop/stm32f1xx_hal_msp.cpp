@@ -4,7 +4,9 @@ void MX_inp_Init()
 {
   // __HAL_RCC_GPIOA_CLK_ENABLE(); // copy from UART
   // __HAL_RCC_AFIO_CLK_ENABLE();
-  GpioA.cfgIn_N( GPIO_PIN_1 | GPIO_PIN_2, GpioRegs::Pull::down );
+  PA1.enableClk();
+  PA1.cfgIn( GpioPull::down );
+  PA2.cfgIn( GpioPull::down );
 }
 
 extern UART_HandleTypeDef uah_console;
@@ -35,9 +37,9 @@ void HAL_UART_MspInit( UART_HandleTypeDef* uartHandle )
 
   //  PA9  ---> USART1_TX
   //  PA10 ---> USART1_RX
-  GpioA.cfgAF( 9, 1 );
-  GpioA.cfgIn( 10 );
-  // leds.toggle( BIT2 );
+  PA9.cfgAF( 1 );
+  PA10.cfgIn();
+  // leds[2].toggle( BIT2 );
 }
 
 void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
@@ -68,7 +70,7 @@ void MX_SPI1_Init()
   hspi1.Init.CRCCalculation    = SPI_CRCCALCULATION_DISABLE;
   hspi1.Init.CRCPolynomial     = 10;
   if( HAL_SPI_Init( &hspi1 ) != HAL_OK ) {
-    Error_Handler( 2 );
+    die4led( 2_mask );
   }
 }
 
@@ -88,9 +90,11 @@ void HAL_SPI_MspInit( SPI_HandleTypeDef* spiHandle )
   // PA6   --> SPI1_MISO
   // PA7   --> SPI1_MOSI
 
-  GpioA.cfgAF_N( GPIO_PIN_5 | GPIO_PIN_7, 1 );
-  GpioA.cfgIn( 6 );
-  GpioA.cfgOut( 4 );
+  GpioA.enableClk();
+  PA5.cfgAF( 1 );
+  PA7.cfgAF( 1 );
+  PA6.cfgIn();
+  PA4.cfgOut();
 }
 
 void HAL_SPI_MspDeInit( SPI_HandleTypeDef* spiHandle )

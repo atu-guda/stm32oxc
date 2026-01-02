@@ -57,13 +57,14 @@
 #define   TIM_EXA_PIN4         PA11
 #define   TIM_EXA_GPIOAF       GPIO_AF1_TIM1
 #define   TIM_EXA_PINS         { TIM_EXA_PIN1, TIM_EXA_PIN2, TIM_EXA_PIN3, TIM_EXA_PIN4 }
-//#define TIM_EXA_PIN_EXT PA11
-//#define TIM_EXA_GPIOAF_EXT GPIO_AF11_TIM1
+//#define TIM_EXA_PIN_EXT        PA11
+//#define TIM_EXA_GPIOAF_EXT     GPIO_AF11_TIM1
 #define   TIM_EXA_CLKEN        __TIM1_CLK_ENABLE();
 #define   TIM_EXA_CLKDIS       __TIM1_CLK_DISABLE();
 #define   TIM_EXA_IRQ          TIM1_CC_IRQn
 #define   TIM_EXA_IRQHANDLER   TIM1_CC_IRQHandler
 
+// SDIO
 #define SD_EXA_CK        PB2
 #define SD_EXA_D0        PC8
 #define SD_EXA_CMD       PD2
@@ -116,7 +117,7 @@
 #endif
 
 
-// A8-A11
+// Motor: A8-A11
 #define BOARD_MOTOR_DEFAULT_PIN0        PA8
 #define BOARD_MOTOR_DEFAULT_N           4
 
