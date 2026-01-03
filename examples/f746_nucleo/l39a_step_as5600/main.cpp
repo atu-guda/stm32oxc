@@ -16,7 +16,7 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
-StepMotorDriverGPIO_e m_drv( BOARD_MOTOR_DEFAULT_GPIO, BOARD_MOTOR_DEFAULT_PIN0, 4 );
+StepMotorDriverGPIO_e m_drv( BOARD_MOTOR_DEFAULT_PIN0, 4 );
 StepMotor motor( m_drv, 0 );
 
 
@@ -39,14 +39,14 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 5;
-  UVAR('n') = 360;
-  UVAR('x') = 2048; // 147443; // 147312
-  UVAR('z') = 200;
+  UVAR_t = 5;
+  UVAR_n = 360;
+  UVAR_x = 2048; // 147443; // 147312
+  UVAR_z = 200;
   // config
-  UVAR('c') = AS5600::CfgBits::cfg_pwr_mode_nom |  AS5600::CfgBits::cfg_hyst_off;
+  UVAR_c = AS5600::CfgBits::cfg_pwr_mode_nom |  AS5600::CfgBits::cfg_hyst_off;
 
-  UVAR('e') = i2c_default_init( i2ch /*, 400000 */ );
+  UVAR_e = i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
   i2c_client_def = &ang_sens;
 
@@ -72,17 +72,17 @@ int cmd_test0( int argc, const char * const * argv )
 {
   float da   = arg2float_d( 1, argc, argv,   5.0f,   -360.0f,   360.0f );
   float amax = arg2float_d( 2, argc, argv, 360.0f, -36000.0f, 36000.0f );
-  uint32_t t_step = UVAR('t');
+  uint32_t t_step = UVAR_t;
 
-  float k1 = (float)(UVAR('x')) / 360;
+  float k1 = (float)(UVAR_x) / 360;
 
   StatChannel sta;
 
-  int m = UVAR('m');
+  int m = UVAR_m;
   motor.setMode( m );
 
   std_out <<  NL "# Test0: da= "  <<  da << " amax= " << amax  <<  " t= "  <<  t_step
-          << " cfg= " << HexInt16( UVAR('c') ) << " k1= " << k1 << ' ' << m << NL;
+          << " cfg= " << HexInt16( UVAR_c ) << " k1= " << k1 << ' ' << m << NL;
 
   if( da * amax <= 0.0f ) {
     std_out << "## error: bad input params" << NL;
@@ -94,7 +94,7 @@ int cmd_test0( int argc, const char * const * argv )
     d = -1;
   }
 
-  ang_sens.setCfg( UVAR('c') );
+  ang_sens.setCfg( UVAR_c );
 
   ang_sens.setStartPosCurr();
   delay_ms( 10 );
@@ -117,8 +117,8 @@ int cmd_test0( int argc, const char * const * argv )
     }
     a_ctic = a_i;
 
-    leds.set( 2 );
-    delay_ms_brk( UVAR('z') );
+    leds[1].set();
+    delay_ms_brk( UVAR_z );
 
     auto alp_real = ang_sens.getAngleN();
     float alp_real_deg = 1.0e-3f * AS5600::to_mDeg( alp_real );
@@ -132,7 +132,7 @@ int cmd_test0( int argc, const char * const * argv )
 
     std_out.flush();
     sta.add( a_e );
-    leds.reset( 2 );
+    leds[1].reset();
   }
   motor.off();
 
@@ -186,11 +186,11 @@ int cmd_set_alp( int argc, const char * const * argv )
 
 int cmd_go( int argc, const char * const * argv )
 {
-  float nf = arg2float_d( 1, argc, argv, UVAR('n'), -1000000, 10000000 );
+  float nf = arg2float_d( 1, argc, argv, UVAR_n, -1000000, 10000000 );
   bool is_deg = ( argc > 2 ) && ( argv[2][0] == 'd' );
-  uint32_t t_step = UVAR('t');
+  uint32_t t_step = UVAR_t;
 
-  float k1 = (float)(UVAR('x')) / 360;
+  float k1 = (float)(UVAR_x) / 360;
   int n = 0;
   if( is_deg ) {
     n = (int)( nf * k1 + 0.5f );
@@ -198,7 +198,7 @@ int cmd_go( int argc, const char * const * argv )
     n = (int)( nf );
   }
 
-  int m = UVAR('m');
+  int m = UVAR_m;
   motor.setMode( m );
 
 

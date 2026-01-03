@@ -54,8 +54,8 @@
 /* Private variables ---------------------------------------------------------*/
 HCD_HandleTypeDef hhcd;
 
-#ifdef BOARD_USB_DEFAULT_PWR_GPIO
-  PinOut usb_pwr_pin( BOARD_USB_DEFAULT_PWR_GPIO, BOARD_USB_DEFAULT_PWR_PINNUM );
+#ifdef BOARD_USB_DEFAULT_PWR_PIN
+  PinOut usb_pwr_pin( BOARD_USB_DEFAULT_PWR_PIN );
 #endif
 
 /*******************************************************************************
@@ -74,14 +74,14 @@ void HAL_HCD_MspInit( HCD_HandleTypeDef *hhcd )
   BOARD_USB_DEFAULT_GPIO.cfgAF_N( BOARD_USB_DEFAULT_DPDM_PINS, BOARD_USB_DEFAULT_GPIO_AF );
 
   #ifdef BOARD_USB_DEFAULT_VBUS_PIN
-    BOARD_USB_DEFAULT_GPIO.cfgIn_N( BOARD_USB_DEFAULT_VBUS_PIN );
+    BOARD_USB_DEFAULT_VBUS_PIN.cfgIn();
   #endif
 
   #ifdef BOARD_USB_DEFAULT_ID_PIN
-    BOARD_USB_DEFAULT_GPIO.cfgAF_N( BOARD_USB_DEFAULT_ID_PIN, BOARD_USB_DEFAULT_GPIO_AF, true );
+    BOARD_USB_DEFAULT_ID_PIN.cfgAF( BOARD_USB_DEFAULT_GPIO_AF, true );
   #endif
 
-  #ifdef BOARD_USB_DEFAULT_PWR_GPIO
+  #ifdef BOARD_USB_DEFAULT_PWR_PIN
     usb_pwr_pin.initHW();
     usb_pwr_pin.reset();
   #endif
