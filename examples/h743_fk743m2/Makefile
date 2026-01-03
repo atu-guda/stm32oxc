@@ -53,6 +53,7 @@ SUBDIRS = \
   51_adcdma \
   51a_adcdma_n \
   53_adcdma_sd \
+  63_lidar_ld20 \
   80_math_stat \
   x01_fmc \
   x51_adcdma_fmc \

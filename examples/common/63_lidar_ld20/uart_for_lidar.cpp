@@ -76,7 +76,7 @@ void HAL_UART_UserInit( UART_HandleTypeDef* uartHandle )
 
 void LIDAR_LD20_DMA_IRQHandler(void)
 {
-  leds.toggle( 2 );
+  leds[1].toggle();
   ++UVAR('i');
   HAL_DMA_IRQHandler( &hdma_usart_lidar_rx );
 }

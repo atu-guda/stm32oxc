@@ -50,14 +50,14 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('d') =  0;
-  UVAR('n') =  4;
-  UVAR('t') = 10;
+  UVAR_d =  0;
+  UVAR_n =  4;
+  UVAR_t = 10;
 
   // SCB_DisableICache();  SCB_DisableDCache();
 
   MX_LIDAR_LD20_DMA_Init();
-  UVAR('z') = MX_LIDAR_LD20_UART_Init();
+  UVAR_z = MX_LIDAR_LD20_UART_Init();
   __HAL_USART_DISABLE( &huart_lidar );
 
 
@@ -72,11 +72,11 @@ int main(void)
 
 void HAL_UART_RxCpltCallback( UART_HandleTypeDef *huart )
 {
-  leds.set( 4 );
+  leds[2].set();
   if( !huart || huart->Instance != UART_LIDAR_LD20 ) {
     return;
   }
-  ++UVAR('j');
+  ++UVAR_j;
   unsigned sz = huart->RxXferSize;
   if( sz > ubsz ) {
     sz = ubsz;
@@ -89,19 +89,19 @@ void HAL_UART_RxCpltCallback( UART_HandleTypeDef *huart )
   std::memcpy( xbuf, ubuf, sz );
   memset( ubuf,  '\0', sizeof( ubuf ) ); // remove after debug
 
-  leds.reset( 4 );
+  leds[2].reset();
 }
 
 void HAL_UART_ErrorCallback( UART_HandleTypeDef *huart )
 {
-  ++UVAR('e');
+  ++UVAR_e;
 }
 
 
 int cmd_test0( int argc, const char * const * argv )
 {
-  uint32_t t_step = UVAR('t');
-  uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
+  uint32_t t_step = UVAR_t;
+  uint32_t n = arg2long_d( 1, argc, argv, UVAR_n, 0 );
   // uint32_t abrt = arg2long_d( 2, argc, argv, 0, 0, 1 );
   std_out << "# T1: n= " << n << NL;
 
@@ -127,14 +127,14 @@ int cmd_test0( int argc, const char * const * argv )
 
     uint32_t tc = HAL_GetTick();
 
-    if( UVAR('d') > 1 ) {
+    if( UVAR_d > 1 ) {
       at_disabled_irq( []() { std::memcpy(ybuf, xbuf, ubsz); } );
       dump8( ybuf, ubsz );
     }
     auto nf = lidar_h.get_nf();
 
-    if( UVAR('d') > 0 ) {
-      std_out << "#  " << ( tc - tm00 ) << ' ' << UVAR('i') << ' '  << nf << NL;
+    if( UVAR_d > 0 ) {
+      std_out << "#  " << ( tc - tm00 ) << ' ' << UVAR_i << ' '  << nf << NL;
     }
 
     if( nf != old_nf ) {
@@ -167,7 +167,7 @@ int cmd_test0( int argc, const char * const * argv )
           std_out << alp << ' ' << lidar_d.d[i].l << ' ' << lidar_d.d[i].v << NL;
         }
 
-        if( UVAR('d') > 0 ) {
+        if( UVAR_d > 0 ) {
           dump8( lidar_d.cdata(), ubsz );
         }
       }  while( false );
