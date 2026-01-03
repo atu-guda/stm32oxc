@@ -26,6 +26,7 @@ uint32_t ADC_getFreqIn( ADC_HandleTypeDef* /* hadc */ )
   return HAL_RCC_GetPCLK2Freq();
 }
 
+
 uint32_t ADC_calc_div( ADC_HandleTypeDef* hadc, uint32_t freq_max, uint32_t *div_val )
 {
   if( !hadc ) {
@@ -142,7 +143,7 @@ uint32_t ADC_Info::init_adc_channels()
   uint32_t n = 0;
 
   for( decltype(+n_ch_max) i=0; i<n_ch_max; ++i ) {
-    if( ch_info[i].pin_num >= AdcChannelInfo::pin_num_end ) {
+    if( ! ch_info[i].pin.valid() ) {
       break;
     }
 
@@ -194,8 +195,6 @@ uint32_t ADC_Info::prepare_single_manual( uint32_t presc, uint32_t sampl_cycl, u
   hadc.Init.NbrOfConversion          = 1;
   hadc.Init.ExternalTrigConv         = ADC_SOFTWARE_START;
   hadc.Init.ExternalTrigConvEdge     = ADC_EXTERNALTRIGCONVEDGE_NONE;
-
-
   prepared = 1;
   return 1;
 }

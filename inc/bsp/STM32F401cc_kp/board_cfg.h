@@ -55,7 +55,7 @@
 #define   TIM_EXA_PIN2         PA1
 #define   TIM_EXA_PIN3         PA2
 #define   TIM_EXA_PIN4         PA3
-#define   TIM_EXA_GPIOAF         1
+#define   TIM_EXA_GPIOAF       GPIO_AF1_TIM2
 #define   TIM_EXA_PINS         { TIM_EXA_PIN1, TIM_EXA_PIN2, TIM_EXA_PIN3, TIM_EXA_PIN4 }
 //#define TIM_EXA_PIN_EXT        PA11
 //#define TIM_EXA_GPIOAF_EXT     GPIO_AF11_TIM1

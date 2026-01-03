@@ -36,8 +36,8 @@ int MX_OPAMP_Init( int pga_idx );
 
 // TODO: param
 const AdcChannelInfo adc_channels[] = {
-  { ADC_CHANNEL_VOPAMP1, BOARD_ADC_DEFAULT_GPIO0, 7 },
-  {                   0,                   GpioA, 255 } // END
+  { ADC_CHANNEL_VOPAMP1, PA0   },
+  {                   0, PBAD  } // END
 };
 
 ADC_Info adc( BOARD_ADC_DEFAULT_DEV, adc_channels );
