@@ -10,10 +10,11 @@
 //  A1,A2,A3,A8,A15, B0,B1,B2,B4,B5,B7,B8,B11-B15, C1,C2,C4-C6,C8,C9, C11, C13-C15?
 //  D0-D3, D6-D11, E3-E15,
 
-#define MC_FLASH_SIZE 65536
-#define MC_RAM_SIZE   12288
-#define MC_RAM1_SIZE  12288
-#define def_stksz       512
+
+#define MC_FLASH_SIZE 1048576
+#define MC_RAM_SIZE   131072
+#define MC_RAM1_SIZE  131072
+#define def_stksz        512
 
 #define DELAY_APPROX_COEFF  5010
 
