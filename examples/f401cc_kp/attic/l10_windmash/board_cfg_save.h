@@ -5,9 +5,8 @@
 
 #define _BOARD_CFG_DEFINED
 
-
 // definition of resoures for STM32F401CC blacK pill board
-// headers must be included manualy in C/CPP file
+// included from oxc_base.h, postactions - oxc_post_board_cfg.h
 
 #define def_stksz 512
 

@@ -39,8 +39,8 @@ int angle_over { 20 };
 
 auto out_q_fmt = [](xfloat x) { return FltFmt(x, cvtff_fix,8,4); };
 
-PinsOut ledsx( LEDSX_GPIO, LEDSX_START, LEDSX_N );
-PinsIn  pin_stop( BTN_STOP_GPIO, BTN_STOP_PIN, 1, GpioRegs::Pull::up );
+PinsOut ledsx( LEDSX_START, LEDSX_N );
+PinsIn  pin_stop( BTN_STOP_PIN, 1, GpioPull::up );
 
 
 TIM_HandleTypeDef tim_lwm_h;
@@ -295,7 +295,7 @@ int main(void)
   UVAR_k =  1000; // axis 0 rotate test coeff * 1000
 
   ledsx.initHW();
-  ledsx.reset( 0xFF );
+  ledsx.reset( 0xFF_mask );
   pin_stop.initHW();
 
   UVAR_v = i2c_default_init( i2ch /*, 400000 */ );
@@ -305,7 +305,7 @@ int main(void)
   MX_DMA_Init();
   if( ! MX_ADC1_Init() ) {
     std_out << "Err: ADC init"  NL;
-    die4led( 3 );
+    die4led( 3_mask );
   }
 
   print_var_hook = print_var_ex;
@@ -313,7 +313,7 @@ int main(void)
 
   if( ! tim_lwm_cfg() ) {
     std_out << "Err: timer LWM init"  NL;
-    die4led( 2 );
+    die4led( 2_mask );
   }
 
   init_EXTI();
@@ -341,7 +341,7 @@ int main(void)
 
 void init_EXTI()
 {
-  BTN_STOP_GPIO.setEXTI( BTN_STOP_PIN, BTN_STOP_EXTI_DIR );
+  BTN_STOP_PIN.setEXTI( BTN_STOP_EXTI_DIR );
   HAL_NVIC_SetPriority( BTN_STOP_IRQ_N, BTN_STOP_IRQ_PRTY, 0 );
   HAL_NVIC_EnableIRQ(   BTN_STOP_IRQ_N );
 }
@@ -805,7 +805,7 @@ int process_movepart( const MovePart &mp, float kkv  )
   std_out << "# k_v= " << mp.k_v << " nn= " << nn << NL;
 
 
-  ledsx.reset ( 0x03 );
+  ledsx.reset ( 0x03_mask );
 
   for( uint32_t ch=0; auto mo : movers ) {
     if( is_mover_disabled( ch ) ) {
@@ -1095,7 +1095,9 @@ void HAL_ADC_MspInit( ADC_HandleTypeDef* adcHandle )
   }
 
   ADC_CLK_EN;
-  ADC1_GPIO.cfgAnalog_N( ADC1_PINS );
+  ADC1_PIN0.cfgAnalog();
+  ADC1_PIN1.cfgAnalog();
+  ADC1_PIN2.cfgAnalog();
 
   hdma_adc1.Instance                 = DMA2_Stream0;
   hdma_adc1.Init.Channel             = DMA_CHANNEL_0;
@@ -1120,7 +1122,9 @@ void HAL_ADC_MspDeInit( ADC_HandleTypeDef* adcHandle )
 {
   if( adcHandle->Instance == ADC1 ) {
     __HAL_RCC_ADC1_CLK_DISABLE();
-    ADC1_GPIO.cfgIn_N( ADC1_PINS );
+    ADC1_PIN0.cfgIn();
+    ADC1_PIN1.cfgIn();
+    ADC1_PIN2.cfgIn();
     HAL_DMA_DeInit( adcHandle->DMA_Handle );
   }
 }

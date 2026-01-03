@@ -4,20 +4,16 @@
 
 void init_btns()
 {
+  GpioA.enableClk();
   GpioB.enableClk();
-  const uint8_t in_pins_a[] = { 4, 5, 6, 7 };
-  const uint8_t in_pins_b[] = { 0, 1, 2 };
+  static const PortPin in_pins[] = { PA4, PA5, PA6, PA7, PB0, PB1, PB2 };
 
-  for( auto pin : in_pins_a ) {
-    GpioA.cfgIn(   pin, GpioRegs::Pull::down );
-    GpioA.setEXTI( pin, GpioRegs::ExtiEv::up );
+  for( auto pin : in_pins ) {
+    pin.cfgIn( GpioPull::down );
+    pin.setEXTI(  ExtiEv::up );
   }
 
-  for( auto pin : in_pins_b ) {
-    GpioB.cfgIn(   pin, GpioRegs::Pull::down );
-    GpioB.setEXTI( pin, GpioRegs::ExtiEv::up );
-  }
-
+  // TODO: func?
   decltype( EXTI9_5_IRQn ) irqs[] = {
     EXTI0_IRQn, EXTI1_IRQn, EXTI2_IRQn,
     EXTI4_IRQn, EXTI9_5_IRQn
@@ -40,9 +36,9 @@ void HAL_GPIO_EXTI_Callback( uint16_t pin )
 
   uint32_t cmd = pin;
 
-  leds.toggle( BIT0 );
-  UVAR('c') = cmd;
-  ++UVAR('i');
+  leds[0].toggle();
+  UVAR_c = cmd;
+  ++UVAR_i;
 
   // if( ! on_cmd_handler ) {
   //   menu4b_ev_global = cmd;
@@ -55,31 +51,31 @@ void HAL_GPIO_EXTI_Callback( uint16_t pin )
 
 void EXTI0_IRQHandler(void)
 {
-  ++UVAR('j');
+  ++UVAR_j;
   HAL_GPIO_EXTI_IRQHandler( GPIO_PIN_0 );
 }
 
 void EXTI1_IRQHandler(void)
 {
-  ++UVAR('j');
+  ++UVAR_j;
   HAL_GPIO_EXTI_IRQHandler( GPIO_PIN_1 );
 }
 
 void EXTI2_IRQHandler(void)
 {
-  ++UVAR('j');
+  ++UVAR_j;
   HAL_GPIO_EXTI_IRQHandler( GPIO_PIN_2 );
 }
 
 void EXTI4_IRQHandler(void)
 {
-  ++UVAR('j');
+  ++UVAR_j;
   HAL_GPIO_EXTI_IRQHandler( GPIO_PIN_4 );
 }
 
 void EXTI9_5_IRQHandler(void)
 {
-  ++UVAR('k');
+  ++UVAR_k;
 
   HAL_GPIO_EXTI_IRQHandler( GPIO_PIN_4 );
   HAL_GPIO_EXTI_IRQHandler( GPIO_PIN_5 );

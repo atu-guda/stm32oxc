@@ -29,15 +29,16 @@ char state_ch { '?' };
 void make_state_str( char *s );
 
 
-PinsOut ledsx( GpioB, 12, 4 );
+PinsOut ledsx( PB12, 4 );
 
 
-PinsIn pins_tower( TOWER_GPIO, TOWER_PIN0, TOWER_N );
-PinsIn pins_swlim( SWLIM_GPIO, SWLIM_PIN0, SWLIM_N );
-PinsIn pins_diag (  DIAG_GPIO,  DIAG_PIN0,  DIAG_N );
-PinsIn pins_user_start( USER_START_GPIO,  USER_START_PIN0,  USER_START_N );
-PinsIn pins_user_stop(   USER_STOP_GPIO,   USER_STOP_PIN0,   USER_STOP_N );
-PinOut pin_nen( NEN_GPIO, NEN_PIN );
+PinsIn pins_tower( TOWER_PIN_UP, TOWER_N );
+PinsIn pins_swlim( SWLIM_PIN0,   SWLIM_N );
+PinsIn pins_diag ( DIAG_PIN0,    DIAG_N );
+PinsIn pins_user_start( USER_START_PIN0, 1 );
+PinsIn pins_user_stop(  USER_STOP_PIN0,  1 );
+PinOut pin_nen( NEN_PIN );
+
 void init_EXTI();
 
 volatile uint32_t porta_sensors_bits {0};
@@ -248,11 +249,11 @@ void idle_main_task()
   // handle "go" key
   static uint32_t last_start_tick = HAL_GetTick();
   static uint16_t ostate_go = 1;
-  uint16_t cstate_go = pins_user_start.read();
+  uint16_t cstate_go = pins_user_start.read().bitmask();
   if( cstate_go == 0 && ostate_go != 0 ) {
     uint32_t cur_start_tick = HAL_GetTick();
     if( cur_start_tick - last_start_tick > 100 ) {
-      leds.toggle( 1 );
+      leds[0].toggle();
       if( global_smallrl != nullptr && global_smallrl->get()[0] == '\0' ) {
         ungets( 0, "G\n" );
       }
@@ -267,20 +268,20 @@ int main(void)
 {
   STD_PROLOG_USBCDC;
 
-  UVAR('t') =   100;
-  UVAR('n') =     2;
-  UVAR('d') =     0; // TMC2209 device addr for manual
-  UVAR('o') =     0; // more measure and output during move/go
+  UVAR_t =   100;
+  UVAR_n =     2;
+  UVAR_d =     0; // TMC2209 device addr for manual
+  UVAR_o =     0; // more measure and output during move/go
 
   ledsx.initHW();
-  ledsx.reset( 0xFF );
+  ledsx.reset( 0xFF_mask );
 
-  UVAR('v') = i2c_default_init( i2ch /*, 400000 */ );
+  UVAR_v = i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
   i2c_client_def = &lcdt;
 
   lcdt.init_4b();
-  UVAR('s') = lcdt.getState();
+  UVAR_s = lcdt.getState();
   lcdt.cls();
   lcdt.puts_xy( 0, 1, "putin-huilo!" );
 
@@ -297,15 +298,15 @@ int main(void)
 
   if( ! init_uart( &uah_motordrv ) ) {
     lcdt.puts( "Err: UART" );
-    die4led( 1 );
+    die4led( 1_mask );
   }
   if( ! tim_r_cfg() ) {
     lcdt.puts( "Err: timer R" );
-    die4led( 2 );
+    die4led( 2_mask );
   }
   if( ! tim_m_cfg() ) {
     lcdt.puts( "Err: timer M" );
-    die4led( 3 );
+    die4led( 3_mask );
   }
 
   motordrv.setHandleCbreak( false );
@@ -342,15 +343,15 @@ void make_state_str( char *s )
   s[0] = state_ch;
 
   static const char sx1l[] = "{[<|?!.";
-  unsigned idx = ( ( porta_sensors_bits >> (SWLIM_PIN_SL-1) ) & 2 ) |
-                 ( ( porta_sensors_bits >> (SWLIM_PIN_OL  ) ) & 1 );
+  unsigned idx = ( ( porta_sensors_bits >> (SWLIM_PIN_SL.pinNum().Num()-1) ) & 2 ) |
+                 ( ( porta_sensors_bits >> (SWLIM_PIN_OL.pinNum().Num()  ) ) & 1 );
   s[1] = sx1l[idx];
   // s[1] = idx + '0';
 
 
   static const char sx1r[] = "}]>|?!.";
-  idx = ( ( porta_sensors_bits >> (SWLIM_PIN_SR-1) ) & 2 ) |
-        ( ( porta_sensors_bits >> (SWLIM_PIN_OR  ) ) & 1 );
+  idx = ( ( porta_sensors_bits >> (SWLIM_PIN_SR.pinNum().Num()-1) ) & 2 ) |
+        ( ( porta_sensors_bits >> (SWLIM_PIN_OR.pinNum().Num()  ) ) & 1 );
   s[3] = sx1r[idx];
   //s[3] = idx + '0';
 
@@ -359,7 +360,7 @@ void make_state_str( char *s )
   s[2] = sx2[idx];
 
   static const char sdr[] = ".rmx*RMX?!.";
-  idx = ( portb_sensors_bits >> DIAG_PIN0 ) & 3;
+  idx = ( portb_sensors_bits >> DIAG_PIN0.pinNum().Num() ) & 3;
   if( pin_nen.read_in() == 0 ) {
     idx |= 0x04;
   }
@@ -369,26 +370,26 @@ void make_state_str( char *s )
 }
 
 const EXTI_Info exti_info[] = {
-  { TOWER_GPIO, TOWER_PIN_UP, GpioRegs::ExtiEv::updown, EXTI0_IRQn },
-  { TOWER_GPIO, TOWER_PIN_CE, GpioRegs::ExtiEv::updown, EXTI1_IRQn },
-  { TOWER_GPIO, TOWER_PIN_DW, GpioRegs::ExtiEv::updown, EXTI2_IRQn },
+  { TOWER_PIN_UP.port(), TOWER_PIN_UP.pinNum().Num(),  ExtiEv::updown, EXTI0_IRQn },
+  { TOWER_PIN_CE.port(), TOWER_PIN_CE.pinNum().Num(),  ExtiEv::updown, EXTI1_IRQn },
+  { TOWER_PIN_DW.port(), TOWER_PIN_DW.pinNum().Num(),  ExtiEv::updown, EXTI2_IRQn },
 
-  { SWLIM_GPIO, SWLIM_PIN_SR, GpioRegs::ExtiEv::up,   EXTI4_IRQn },
-  { SWLIM_GPIO, SWLIM_PIN_SL, GpioRegs::ExtiEv::up,   EXTI9_5_IRQn },
-  { SWLIM_GPIO, SWLIM_PIN_OR, GpioRegs::ExtiEv::up,   EXTI9_5_IRQn },
-  { SWLIM_GPIO, SWLIM_PIN_OL, GpioRegs::ExtiEv::up,   EXTI9_5_IRQn },
+  { SWLIM_PIN_SR.port(), SWLIM_PIN_SR.pinNum().Num(), ExtiEv::up,   EXTI4_IRQn },
+  { SWLIM_PIN_SL.port(), SWLIM_PIN_SL.pinNum().Num(), ExtiEv::up,   EXTI9_5_IRQn },
+  { SWLIM_PIN_OR.port(), SWLIM_PIN_OR.pinNum().Num(), ExtiEv::up,   EXTI9_5_IRQn },
+  { SWLIM_PIN_OL.port(), SWLIM_PIN_OL.pinNum().Num(), ExtiEv::up,   EXTI9_5_IRQn },
 
-  {  DIAG_GPIO, DIAG_PIN_ROT, GpioRegs::ExtiEv::up,     EXTI9_5_IRQn },
-  {  DIAG_GPIO, DIAG_PIN_MOV, GpioRegs::ExtiEv::up,     EXTI9_5_IRQn },
+  {  DIAG_PIN_ROT.port(), DIAG_PIN_ROT.pinNum().Num(), ExtiEv::up,     EXTI9_5_IRQn },
+  {  DIAG_PIN_MOV.port(), DIAG_PIN_MOV.pinNum().Num(), ExtiEv::up,     EXTI9_5_IRQn },
 
-  {  USER_STOP_GPIO, USER_STOP_PIN0, GpioRegs::ExtiEv::down,     EXTI3_IRQn },
+  {  USER_STOP_PIN0.port(), USER_STOP_PIN0.pinNum().Num(), ExtiEv::down,     EXTI3_IRQn },
 };
 
 void init_EXTI()
 {
   int old_irq = -1;
   for( auto &ei : exti_info ) {
-    ei.gpio.setEXTI( ei.pin, ei.dir );
+    ei.gpio.setEXTI( PinNum(ei.pin), ei.dir );
     if( old_irq != ei.exti_n ) { // bitmask is better, but high cost and data grouping
       HAL_NVIC_SetPriority( ei.exti_n, EXTI_IRQ_PRTY, 0 );
       HAL_NVIC_EnableIRQ(   ei.exti_n );
@@ -399,8 +400,8 @@ void init_EXTI()
 
 int cmd_test0( int argc, const char * const * argv )
 {
-  int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
-  uint32_t t_step = UVAR('t');
+  int n = arg2long_d( 1, argc, argv, UVAR_n, 0 );
+  uint32_t t_step = UVAR_t;
   std_out <<  "# Test0: n= " << n << " t= " << t_step << NL;
   lcdt.puts_xy( 0, 0, "Test0" );
 
@@ -416,20 +417,20 @@ int cmd_test0( int argc, const char * const * argv )
   for( int i=0; i<n && !break_flag; ++i ) {
     motordrv.reset();
     uint32_t  tcb = HAL_GetTick();
-    rqd.fill( UVAR('d'), i );
+    rqd.fill( UVAR_d, i );
     // rqd.crc = (uint8_t)i;
 
-    ledsx.set( 1 );
+    ledsx[0].set();
     std_out << "## Write: " NL;
     dump8( (const char*)rqd.rawCData(), sizeof(rqd) );
     auto w_n = motordrv.write_s( (const char*)rqd.rawCData(), sizeof(rqd) );
     auto wr_ok = motordrv.wait_eot( 100 );
-    // ledsx.reset( 1 );
+    // ledsx[0].reset();
     // auto wr_ok = 1;
 
     delay_ms( 1 );
     memset( in_buf, '\x00', sizeof(in_buf) );
-    ledsx.reset( 1 );
+    ledsx[0].reset();
     auto r_n = motordrv.read( in_buf, 16, 200 );
 
     uint32_t  tcc = HAL_GetTick();
@@ -458,7 +459,7 @@ int cmd_readreg( int argc, const char * const * argv )
 {
   uint8_t reg0 = (uint8_t) arg2long_d( 1, argc, argv,  0, 0, 127 );
   int        n = (uint8_t) arg2long_d( 2, argc, argv, 64, 0, 256 );
-  uint8_t  dev = (uint8_t) arg2long_d( 3, argc, argv, UVAR('d'), 0, 1 );
+  uint8_t  dev = (uint8_t) arg2long_d( 3, argc, argv, UVAR_d, 0, 1 );
 
   for( int i=0; i<n; ++i ) {
     uint8_t reg = (uint8_t)( reg0 + i );
@@ -477,7 +478,7 @@ int cmd_writereg( int argc, const char * const * argv )
     std_out << "Error: need 2 correct arguments " << NL;
     return 1;
   }
-  int rc = tmc.write_reg( UVAR('d'), reg, v );
+  int rc = tmc.write_reg( UVAR_d, reg, v );
   std_out << "# rc= " << rc << NL;
   return 0;
 }
@@ -492,7 +493,7 @@ int tim_n_cfg( TIM_HandleTypeDef &t_h, TIM_TypeDef *tim, uint32_t ch )
   t_h.Init.CounterMode       = TIM_COUNTERMODE_UP;
   t_h.Init.RepetitionCounter = 0;
   if( HAL_TIM_PWM_Init( &t_h ) != HAL_OK ) {
-    UVAR('e') = 1; // like error
+    UVAR_e = 1; // like error
     return 0;
   }
 
@@ -504,7 +505,7 @@ int tim_n_cfg( TIM_HandleTypeDef &t_h, TIM_TypeDef *tim, uint32_t ch )
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
   sMasterConfig.MasterSlaveMode     = TIM_MASTERSLAVEMODE_DISABLE;
   if( HAL_TIMEx_MasterConfigSynchronization( &t_h, &sMasterConfig ) != HAL_OK ) {
-    UVAR('e') = 2;
+    UVAR_e = 2;
     return 0;
   }
 
@@ -519,7 +520,7 @@ int tim_n_cfg( TIM_HandleTypeDef &t_h, TIM_TypeDef *tim, uint32_t ch )
   HAL_TIM_PWM_Stop_IT( &t_h, ch );
   tim_oc_cfg.Pulse = pbase / 2;
   if( HAL_TIM_PWM_ConfigChannel( &t_h, &tim_oc_cfg, ch ) != HAL_OK ) {
-    UVAR('e') = 3;
+    UVAR_e = 3;
     return 0;
   }
   return 1;
@@ -605,8 +606,8 @@ bool read_sensors()
 {
   porta_sensors_bits = (~GPIOA->IDR) & porta_sensor_mask;
   portb_sensors_bits = GPIOB->IDR & portb_sensor_mask;
-  UVAR('a') = porta_sensors_bits;
-  UVAR('b') = portb_sensors_bits;
+  UVAR_a = porta_sensors_bits;
+  UVAR_b = portb_sensors_bits;
   return porta_sensors_bits != porta_sensor_mask; //
 }
 
@@ -708,7 +709,7 @@ int do_move( float mm, float vm, uint8_t dev )
   std_out << "# move: dev= " << (int)dev << " x= " << mm << " rev= " << rev
           << " pulses= " << pulses << " v= " << vm << " s_max= " <<  s_max << NL;
 
-  ledsx.reset( 0x0F );
+  ledsx.reset( 0x0F_mask );
   TMC_stat st_dev {0,0};
   pin_nen.reset();
 
@@ -740,7 +741,7 @@ int do_move( float mm, float vm, uint8_t dev )
     uint32_t tc = HAL_GetTick();
 
     std_out << FmtInt( tc - tm0, 10 ) << ' ';
-    if( UVAR('o') ) {
+    if( UVAR_o ) {
       std_out << FmtInt( st_dev.sg_val, 6 ) << ' ';
     }
 
@@ -759,7 +760,7 @@ int do_move( float mm, float vm, uint8_t dev )
   }
 
   if( break_flag ) {
-    ledsx.set( 1 );
+    ledsx[0].set();
   }
 
   timn_stop( dev );
@@ -941,7 +942,7 @@ int do_go( float nt )
   pin_nen.set();
 
   uint32_t err_bits { 0 };
-  ledsx.reset( 0x0F );
+  ledsx.reset( 0x0F_mask );
 
   int pulses = td.p_ltask - td.p_ldone;
   int max_pulses = turn2puls( nt );
@@ -1057,7 +1058,7 @@ int do_go( float nt )
     make_state_str( s );
 
     std_out << FmtInt( tc - tm0, 10 ) << ' ';
-    if( UVAR('o') ) {
+    if( UVAR_o ) {
       std_out << FmtInt( tc - t_sl, 5 ) << ' '
               << FmtInt( st_rot.sg_val, 6 ) << ' ' << FmtInt( st_mov.sg_val, 6 ) << ' ';
     }
@@ -1083,12 +1084,12 @@ int do_go( float nt )
   read_TMC_stat( 1, st_mov );
 
   if( break_flag ) {
-    ledsx.set( 1 );
+    ledsx[0].set();
   }
   std_out << "# " << HexInt( st_rot.status ) << ' ' << HexInt( st_mov.status )
           << ' ' << FmtInt( st_rot.sg_val, 6 ) << ' ' << FmtInt( st_mov.sg_val, 6 ) << NL;
 
-  UVAR('c') = tim_m_pulses;
+  UVAR_c = tim_m_pulses;
 
   auto d_pulses = tim_r_pulses;
   td.p_ldone += d_pulses;
@@ -1279,7 +1280,7 @@ void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim )
 {
   if( htim->Instance == TIM_ROT ) {
     TIM_ROT_EN;
-    GpioA.cfgAF_N( TIM_ROT_GPIO_PIN, TIM_ROT_GPIO_AF );
+    TIM_ROT_GPIO_PIN.cfgAF( TIM_ROT_GPIO_AF );
     HAL_NVIC_SetPriority( TIM_ROT_IRQn, 8, 0 );
     HAL_NVIC_EnableIRQ( TIM_ROT_IRQn );
     return;
@@ -1287,7 +1288,7 @@ void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim )
 
   if( htim->Instance == TIM_MOV ) {
     TIM_MOV_EN;
-    GpioA.cfgAF_N( TIM_MOV_GPIO_PIN, TIM_MOV_GPIO_AF );
+    TIM_MOV_GPIO_PIN.cfgAF( TIM_MOV_GPIO_AF );
     HAL_NVIC_SetPriority( TIM_MOV_IRQn, 9, 0 );
     HAL_NVIC_EnableIRQ( TIM_MOV_IRQn );
     return;
@@ -1299,14 +1300,14 @@ void HAL_TIM_PWM_MspDeInit( TIM_HandleTypeDef* htim )
 {
   if( htim->Instance == TIM_ROT ) {
     TIM_ROT_DIS;
-    GpioA.cfgIn_N( TIM_ROT_GPIO_PIN );
+    TIM_ROT_GPIO_PIN.cfgIn();
     HAL_NVIC_DisableIRQ( TIM_ROT_IRQn );
     return;
   }
 
   if( htim->Instance == TIM_MOV ) {
     TIM_MOV_DIS;
-    GpioA.cfgIn_N( TIM_MOV_GPIO_PIN );
+    TIM_MOV_GPIO_PIN.cfgIn();
     HAL_NVIC_DisableIRQ( TIM_MOV_IRQn );
     return;
   }
@@ -1328,8 +1329,8 @@ void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
   uint32_t pa = porta_sensors_bits & sensor_flags;
 
   if( htim->Instance == TIM_ROT ) {
-    ++UVAR('y');
-    // ledsx.toggle( 2 );
+    ++UVAR_y;
+    // ledsx[1].toggle();
     ++tim_r_pulses;
     if( tim_r_need > 0 && tim_r_pulses >= tim_r_need ) {
       tim_r_stop();
@@ -1338,10 +1339,10 @@ void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
   }
 
   if( htim->Instance == TIM_MOV ) {
-    ++UVAR('x');
+    ++UVAR_x;
     ++tim_m_pulses;
     ++td.p_move;
-    // ledsx.toggle( 4 );
+    // ledsx[2].toggle();
     if( pa != sensor_flags ) {
       tims_stop( TIM_BIT_ALL );
       break_flag = sensor_flags_2_BreakNum( pa );
@@ -1350,13 +1351,13 @@ void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
     if( check_top && ( portb_sensors_bits & TOWER_BIT_UP ) ) { // set = bad
       tims_stop( TIM_BIT_ALL );
       break_flag = (int)(BreakNum::tower_top);
-      UVAR('z') = 200;
+      UVAR_z = 200;
     }
 
     if( check_bot && ( ( portb_sensors_bits & TOWER_BIT_DW ) == 0 ) ) { // reset = bad
       tims_stop( TIM_BIT_ALL );
       break_flag = (int)(BreakNum::tower_bot);
-      UVAR('z') = 201;
+      UVAR_z = 201;
     }
 
     if( tim_m_need > 0 && tim_m_pulses >= tim_m_need ) {
@@ -1370,63 +1371,63 @@ void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
 
 void HAL_GPIO_EXTI_Callback( uint16_t pin_bit )
 {
-  ++UVAR('i');
+  ++UVAR_i;
   read_sensors();
   bool need_stop { false };
 
   switch( pin_bit ) {
     case TOWER_BIT_UP:
-      // ledsx.toggle( 2 );
+      // ledsx[1].toggle();
       if( check_top && ( portb_sensors_bits & TOWER_BIT_UP ) ) { // set = bad
         need_stop = true;
         break_flag = (int)(BreakNum::tower_top);
-        UVAR('z') = 100;
+        UVAR_z = 100;
       }
       break;
     case TOWER_BIT_CE:
-      // ledsx.toggle( 4 ); // NOP for now
+      // ledsx[2].toggle(); // NOP for now
       break;
     case TOWER_BIT_DW:
       // ledsx.toggle( 8 );
       if( check_bot && ( ( portb_sensors_bits & TOWER_BIT_DW ) == 0 ) ) { // reset = bad
         need_stop = true;
         break_flag = (int)(BreakNum::tower_bot);
-        UVAR('z') = 102;
+        UVAR_z = 102;
       }
       break;
 
     case SWLIM_BIT_SR:
       need_stop = true;
-      // ledsx.toggle( 2 );
+      // ledsx[1].toggle();
       break_flag = (int)(BreakNum::swr);
       break;
     case SWLIM_BIT_SL:
       need_stop = true;
-      // ledsx.toggle( 4 );
+      // ledsx[2].toggle();
       break_flag = (int)(BreakNum::swl);
       break;
     case SWLIM_BIT_OR:
       need_stop = true;
       break_flag = (int)(BreakNum::opr);
-      // ledsx.toggle( 8 );
+      // ledsx[3].toggle();
       break;
     case SWLIM_BIT_OL:
       need_stop = true;
       break_flag = (int)(BreakNum::opl);
-      // ledsx.toggle( 8 );
+      // ledsx[3].toggle();
       break;
 
     case DIAG_BIT_ROT:
-      // ledsx.toggle( 2 );
+      // ledsx[1].toggle();
       need_stop = true;
       break_flag = (int)(BreakNum::drv_diag_rot);
-      UVAR('z') = 103;
+      UVAR_z = 103;
       break;
     case DIAG_BIT_MOV:
-      // ledsx.toggle( 4 );
+      // ledsx[2].toggle();
       need_stop = true;
       break_flag = (int)(BreakNum::drv_diag_mov);
-      UVAR('z') = 104;
+      UVAR_z = 104;
       break;
 
     case USER_STOP_BIT:
@@ -1435,8 +1436,8 @@ void HAL_GPIO_EXTI_Callback( uint16_t pin_bit )
       break;
 
     default:
-      ledsx.toggle( 1 );
-      ++UVAR('j');
+      ledsx[0].toggle();
+      ++UVAR_j;
       break;
   }
 

@@ -7,32 +7,29 @@ extern int debug;
 
 // TOWER: B0:B2
 inline auto& TOWER_GPIO { GpioB };
-inline constexpr uint32_t TOWER_PIN0 { 0 };
-inline constexpr uint32_t TOWER_PIN_UP { TOWER_PIN0 };
-inline constexpr uint32_t TOWER_PIN1 { TOWER_PIN0 + 1 };
-inline constexpr uint32_t TOWER_PIN_CE { TOWER_PIN1 };
-inline constexpr uint32_t TOWER_PIN2 { TOWER_PIN0 + 2 };
-inline constexpr uint32_t TOWER_PIN_DW { TOWER_PIN2 };
-inline constexpr uint32_t TOWER_N    { 3 };
-inline constexpr uint32_t TOWER_BIT_DW { 1 << TOWER_PIN0 };
-inline constexpr uint32_t TOWER_BIT_CE { TOWER_BIT_DW << 1 };
-inline constexpr uint32_t TOWER_BIT_UP { TOWER_BIT_CE << 1 };
+inline constexpr uint32_t TOWER_N     { 3 };
+inline constexpr PortPin TOWER_PIN_UP { PB0 };
+inline constexpr PortPin TOWER_PIN_CE { PB1 };
+inline constexpr PortPin TOWER_PIN_DW { PB2 };
+inline constexpr uint32_t TOWER_BIT_DW { TOWER_PIN_UP.pinNum().bitmask() };
+inline constexpr uint32_t TOWER_BIT_CE { TOWER_PIN_DW.pinNum().bitmask() };
+inline constexpr uint32_t TOWER_BIT_UP { TOWER_PIN_CE.pinNum().bitmask() };
 inline constexpr uint32_t TOWER_BITS_ALL { TOWER_BIT_UP | TOWER_BIT_CE | TOWER_BIT_DW  };
 
 
 // LIMITS: A4:A7 (inverted)
 inline auto&  SWLIM_GPIO { GpioA };
-inline constexpr uint32_t  SWLIM_PIN0 { 4 };
 inline constexpr uint32_t  SWLIM_N    { 4 };
-inline constexpr uint32_t  SWLIM_PIN_SR { SWLIM_PIN0 };
-inline constexpr uint32_t  SWLIM_PIN_SL { SWLIM_PIN_SR+1 };
-inline constexpr uint32_t  SWLIM_PIN_OR { SWLIM_PIN_SR+2 };
-inline constexpr uint32_t  SWLIM_PIN_OL { SWLIM_PIN_SR+3 };
+inline constexpr PortPin  SWLIM_PIN0   { PA4 };
+inline constexpr PortPin  SWLIM_PIN_SR { PA4 };
+inline constexpr PortPin  SWLIM_PIN_SL { PA5 };
+inline constexpr PortPin  SWLIM_PIN_OR { PA6 };
+inline constexpr PortPin  SWLIM_PIN_OL { PA7 };
 // last 2 chars: first S - switch, O - opto, L/R - left/right
-inline constexpr uint32_t SWLIM_BIT_SR { 1 << SWLIM_PIN0 };
-inline constexpr uint32_t SWLIM_BIT_SL { SWLIM_BIT_SR << 1 };
-inline constexpr uint32_t SWLIM_BIT_OR { SWLIM_BIT_SL << 1 };
-inline constexpr uint32_t SWLIM_BIT_OL { SWLIM_BIT_OR << 1 };
+inline constexpr uint32_t SWLIM_BIT_SR { SWLIM_PIN_SR.pinNum().bitmask() };
+inline constexpr uint32_t SWLIM_BIT_SL { SWLIM_PIN_SL.pinNum().bitmask() };
+inline constexpr uint32_t SWLIM_BIT_OR { SWLIM_PIN_OR.pinNum().bitmask() };
+inline constexpr uint32_t SWLIM_BIT_OL { SWLIM_PIN_OL.pinNum().bitmask() };
 inline constexpr uint32_t SWLIM_BITS_ALL { SWLIM_BIT_SR | SWLIM_BIT_SL | SWLIM_BIT_OR | SWLIM_BIT_OL };
 inline constexpr uint32_t SWLIM_BITS_SW  { SWLIM_BIT_SR | SWLIM_BIT_SL };
 inline constexpr uint32_t SWLIM_BITS_OP  { SWLIM_BIT_OR | SWLIM_BIT_OL };
@@ -40,35 +37,32 @@ inline constexpr uint32_t SWLIM_BITS_OP  { SWLIM_BIT_OR | SWLIM_BIT_OL };
 
 // DIAG: B8,B9
 inline auto&  DIAG_GPIO { GpioB };
-inline constexpr uint32_t  DIAG_PIN0     { 8 };
-inline constexpr uint32_t  DIAG_N        { 2 };
-inline constexpr uint32_t  DIAG_PIN_ROT  { DIAG_PIN0  };
-inline constexpr uint32_t  DIAG_PIN_MOV  { DIAG_PIN_ROT+1 };
-inline constexpr uint32_t  DIAG_BIT_ROT  { 1 << DIAG_PIN0 };
-inline constexpr uint32_t  DIAG_BIT_MOV  { DIAG_BIT_ROT << 1 };
+inline constexpr uint32_t  DIAG_N       { 2 };
+inline constexpr PortPin  DIAG_PIN0     { PB8 };
+inline constexpr PortPin  DIAG_PIN_ROT  { PB8 };
+inline constexpr PortPin  DIAG_PIN_MOV  { PB9 };
+inline constexpr uint32_t  DIAG_BIT_ROT  { DIAG_PIN_ROT.pinNum().bitmask() };
+inline constexpr uint32_t  DIAG_BIT_MOV  { DIAG_PIN_MOV.pinNum().bitmask() };
 inline constexpr uint32_t  DIAG_BITS_ALL { DIAG_BIT_ROT | DIAG_BIT_MOV };
 
 // USER_START: B10
 inline auto&  USER_START_GPIO { GpioB };
-inline constexpr uint32_t  USER_START_PIN0 { 10 };
-inline constexpr uint32_t  USER_START_N    {  1 };
-inline constexpr uint32_t  USER_START_BIT  {  1 << USER_START_PIN0 };
+inline constexpr PortPin   USER_START_PIN0 { PB10 };
+inline constexpr uint32_t  USER_START_BIT  { USER_START_PIN0.pinNum().bitmask() };
 
 // USER_STOP: A3
 inline auto&  USER_STOP_GPIO { GpioA };
-inline constexpr uint32_t  USER_STOP_PIN0  { 3 };
-inline constexpr uint32_t  USER_STOP_N     { 1 };
-inline constexpr uint32_t  USER_STOP_BIT   { 1 << USER_STOP_PIN0 };
+inline constexpr PortPin   USER_STOP_PIN0  { PA3 };
+inline constexpr uint32_t  USER_STOP_BIT   { USER_STOP_PIN0.pinNum().bitmask() };
 
 // NEN: A8 Lo = work, High = disable
-inline auto&  NEN_GPIO { GpioA };
-inline constexpr uint32_t  NEN_PIN   { 8 };
+inline constexpr PortPin  NEN_PIN   { PA8 };
 
 inline constexpr uint32_t  EXTI_IRQ_PRTY   { 15 };
-struct EXTI_Info {
+struct EXTI_Info { // TODO: use common EXTI_init_info, EXTI_inits
   decltype(SWLIM_GPIO) gpio;
   uint8_t pin; // number, not bit
-  decltype(GpioRegs::ExtiEv::updown) dir;
+  decltype(ExtiEv::updown) dir;
   decltype(EXTI0_IRQn) exti_n;
 };
 
@@ -89,8 +83,8 @@ struct EXTI_Info {
 #define TIM_MOV_IRQn TIM5_IRQn
 #define TIM_ROT_IRQ_HANDLER TIM2_IRQHandler
 #define TIM_MOV_IRQ_HANDLER TIM5_IRQHandler
-#define TIM_ROT_GPIO_PIN GPIO_PIN_1
-#define TIM_MOV_GPIO_PIN GPIO_PIN_2
+#define TIM_ROT_GPIO_PIN PA1
+#define TIM_MOV_GPIO_PIN PA2
 #define TIM_ROT_GPIO_AF GPIO_AF1_TIM2
 #define TIM_MOV_GPIO_AF GPIO_AF2_TIM5
 

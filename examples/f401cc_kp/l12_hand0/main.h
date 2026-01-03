@@ -11,23 +11,22 @@ bool is_good_coords( bool do_stop = true, bool do_print = false, bool do_measure
 
 
 
-inline auto& LEDSX_GPIO { GpioB };
-inline constexpr uint32_t LEDSX_START { 12 };
+inline constexpr PortPin LEDSX_START { PB12 };
 inline constexpr uint32_t LEDSX_N { 4 };
 
 inline auto& BTN_STOP_GPIO                  { GpioB };
-inline constexpr uint32_t BTN_STOP_PIN      {  0 };
-inline constexpr uint32_t BTN_STOP_BIT      { 1 << BTN_STOP_PIN };
+inline constexpr PortPin  BTN_STOP_PIN      {  PB0 };
+inline constexpr uint32_t BTN_STOP_BIT      { BTN_STOP_PIN.pinNum().bitmask() };
 inline constexpr uint16_t BTN_STOP_IRQ_PRTY { 14 };
 inline constexpr auto     BTN_STOP_IRQ_N    { EXTI0_IRQn };
-inline constexpr auto     BTN_STOP_EXTI_DIR { GpioRegs::ExtiEv::down };
+inline constexpr auto     BTN_STOP_EXTI_DIR { ExtiEv::down };
 void init_EXTI();
 
 inline auto& LWM_GPIO { GpioA };
-inline constexpr uint32_t LWM_PIN0 { 0 };
-inline constexpr uint32_t LWM_PIN1 { 1 };
-inline constexpr uint32_t LWM_PIN2 { 2 };
-inline constexpr uint32_t LWM_PIN3 { 3 };
+inline constexpr PortPin LWM_PIN0 { PA0 };
+inline constexpr PortPin LWM_PIN1 { PA1 };
+inline constexpr PortPin LWM_PIN2 { PA2 };
+inline constexpr PortPin LWM_PIN3 { PA3 };
 
 extern TIM_HandleTypeDef tim_lwm_h;
 int tim_lwm_cfg();
@@ -38,7 +37,7 @@ int tim_lwm_cfg();
 #define TIM_LWM_GPIO_PIN_1 GPIO_PIN_1
 #define TIM_LWM_GPIO_PIN_2 GPIO_PIN_2
 #define TIM_LWM_GPIO_PIN_3 GPIO_PIN_3
-#define TIM_LWM_GPIO_PINS ( TIM_LWM_GPIO_PIN_0 | TIM_LWM_GPIO_PIN_1 | TIM_LWM_GPIO_PIN_2 |  TIM_LWM_GPIO_PIN_3 )
+#define TIM_LWM_GPIO_PINS PinMask( TIM_LWM_GPIO_PIN_0 | TIM_LWM_GPIO_PIN_1 | TIM_LWM_GPIO_PIN_2 |  TIM_LWM_GPIO_PIN_3 )
 #define TIM_LWM_GPIO_AF GPIO_AF1_TIM2
 inline constexpr uint32_t tim_lwm_psc_freq   {  2000000 }; // 2 MHz
 inline constexpr uint32_t tim_lwm_freq       {       50 }; // 50 Hz
@@ -49,11 +48,10 @@ void tim_lwm_stop();
 
 inline auto& ADC1_GPIO { GpioA };
 #define ADC1_NCH   3
-#define ADC1_PIN0  GPIO_PIN_4
-#define ADC1_PIN1  GPIO_PIN_5
-#define ADC1_PIN2  GPIO_PIN_6
-#define ADC1_PINS  ( ADC1_PIN0 | ADC1_PIN1 | ADC1_PIN2 )
-#define ADC_CLK_EN __HAL_RCC_ADC1_CLK_ENABLE();  __HAL_RCC_GPIOA_CLK_ENABLE();
+#define ADC1_PIN0  PA4
+#define ADC1_PIN1  PA5
+#define ADC1_PIN2  PA6
+#define ADC_CLK_EN __HAL_RCC_ADC1_CLK_ENABLE();
 extern ADC_HandleTypeDef hadc1;
 extern DMA_HandleTypeDef hdma_adc1;
 void MX_DMA_Init(void);

@@ -1,3 +1,5 @@
+05d - func for EXTI->IRQ, not macro only
+12b, 12c - common config
 H7 - more init MPU? = aux fun for all others?
 H5 - check delays + DELAY_APPROX_COEFF
 namespace oxc

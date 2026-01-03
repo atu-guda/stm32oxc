@@ -20,7 +20,7 @@ USBCDC_CONSOLE_DEFINES;
 int debug {0};
 const unsigned buf_sz_lcdt { 22 }; // now 16 (16x2), may be 20 (20x4) + 2
 
-PinsOut ledsx( GpioB, 12, 4 );
+PinsOut ledsx( PB12, 4 );
 
 
 PinsIn pins_tower( TOWER_GPIO, TOWER_PIN0, TOWER_N );

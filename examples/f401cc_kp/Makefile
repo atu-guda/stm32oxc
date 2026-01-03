@@ -47,7 +47,6 @@ SUBDIRS = \
   42_spi_dac8563 \
   43_ads1220_spi \
   80_math_stat \
-  l10_windmash \
   l11_windmash1 \
   l12_hand0
 

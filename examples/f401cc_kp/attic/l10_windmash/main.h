@@ -64,7 +64,7 @@ inline constexpr uint32_t  EXTI_IRQ   { 15 };
 struct EXTI_Info {
   decltype(SWLIM_GPIO) gpio;
   uint8_t pin; // number, not bit
-  decltype(GpioRegs::ExtiEv::updown) dir;
+  decltype(ExtiEv::updown) dir;
   decltype(EXTI0_IRQn) exti_n;
 };
 
