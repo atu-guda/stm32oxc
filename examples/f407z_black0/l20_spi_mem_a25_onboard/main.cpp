@@ -22,7 +22,7 @@ DCL_CMD_REG( spimem_sector0_erase,  0, "- erase sector 0"  );
 
 
 
-PinOut nss_pin( GpioB, 14 );
+PinOut nss_pin( PB14 );
 SPI_HandleTypeDef spi_h;
 DevSPI spi_d( &spi_h, &nss_pin );
 DevSPIMem_AT memspi( spi_d );
@@ -31,12 +31,12 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 1000;
-  UVAR('n') = 20;
-  UVAR('r') = 0x20; // default bytes to read
+  UVAR_t = 1000;
+  UVAR_n = 20;
+  UVAR_r = 0x20; // default bytes to read
 
   if( SPI_init_default( SPI_BAUDRATEPRESCALER_4 ) != HAL_OK ) {
-    die4led( 0x04 );
+    die4led( 0x04_mask );
   }
 
   spi_d.initSPI();
@@ -60,10 +60,10 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  int nd     = imin( UVAR('r'), sizeof(gbuf_b) );
+  int nd     = imin( UVAR_r, sizeof(gbuf_b) );
   std_out <<  NL "Test0: nd= "  <<  nd  <<  NL;
 
-  if( UVAR('d') > 0 ) { // debug: for logic analizer start
+  if( UVAR_d > 0 ) { // debug: for logic analizer start
     nss_pin.write( 0 );
     DLY_T;
     nss_pin.write( 1 );
