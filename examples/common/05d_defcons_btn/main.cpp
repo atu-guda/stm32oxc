@@ -16,7 +16,7 @@ const char* common_help_string = "Appication to test console with buttons IRQ" N
 
 void idle_main_task()
 {
-  // leds.toggle( 1 );
+  // leds[0].toggle();
 }
 
 

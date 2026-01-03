@@ -4,7 +4,7 @@
 #define _BOARD_CFG_DEFINED
 
 // definition of resoures for STM32F407GE discovery board
-// headers must be included manualy in C/CPP file
+// included from oxc_base.h, postactions - oxc_post_board_cfg.h
 //
 // Free pins:
 //  A1,A2,A3,A8,A15, B0,B1,B2,B4,B5,B7,B8,B11-B15, C1,C2,C4-C6,C8,C9, C11, C13-C15?
@@ -13,111 +13,107 @@
 #define MC_FLASH_SIZE 65536
 #define MC_RAM_SIZE   12288
 #define MC_RAM1_SIZE  12288
-#define def_stksz 512
+#define def_stksz       512
 
 #define DELAY_APPROX_COEFF  5010
 
 
 // default LEDS is D12:D15
-#define BOARD_N_LEDS 4
-#define BOARD_LEDS_GPIOX D
-#define BOARD_LEDS_OFS  12
+
+#ifdef NEED_LEDS_MINI
+  #define BOARD_LEDS_START PD12
+  #define BOARD_N_LEDS 1
+#else
+  #define BOARD_LEDS_START PD12
+  #define BOARD_N_LEDS 4
+#endif
 
 
-#define LED_BSP_GREEN     1
-#define LED_BSP_GREEN_0   1
-#define LED_BSP_ORANGE    2
-#define LED_BSP_ORANGE_0  2
-#define LED_BSP_RED       4
-#define LED_BSP_RED_0     4
-#define LED_BSP_BLUE      8
-#define LED_BSP_BLUE_0    8
+#define LED_BSP_GREEN     1_mask
+#define LED_BSP_GREEN_0   1_mask
+#define LED_BSP_ORANGE    2_mask
+#define LED_BSP_ORANGE_0  2_mask
+#define LED_BSP_RED       4_mask
+#define LED_BSP_RED_0     4_mask
+#define LED_BSP_BLUE      8_mask
+#define LED_BSP_BLUE_0    8_mask
 
 #define LED_BSP_IDLE      LED_BSP_BLUE
-#define LED_BSP_TX        LED_BSP_RED
+#define LED_BSP_TX        LED_BSP_ORANGE
 #define LED_BSP_RX        LED_BSP_GREEN
-#define LED_BSP_ERR       LED_BSP_ORANGE
+#define LED_BSP_ERR       LED_BSP_RED
 
-#define BOARD_BTN0_EXIST   1
-#define BOARD_BTN0_GPIOX   A
-#define BOARD_BTN0_N       0
+// on-board blue button
+#define BOARD_BTN0_GPIOX       A
+#define BOARD_BTN0_N           0
 #define BOARD_BTN0_ACTIVE_DOWN 0
-#define BOARD_BTN0_IRQNAME    EXTI0
+
+// extra button
+#define BOARD_BTN1_GPIOX       B
+#define BOARD_BTN1_N           1
+#define BOARD_BTN1_ACTIVE_DOWN 0
 
 
-#define TIM_EXA        TIM1
-#define TIM_EXA_STR    "TIM1"
-#define TIM_EXA_GPIO   GpioE
-#define TIM_EXA_PIN1   GPIO_PIN_9
-#define TIM_EXA_PIN2   GPIO_PIN_11
-#define TIM_EXA_PIN3   GPIO_PIN_13
-#define TIM_EXA_PIN4   GPIO_PIN_14
-#define TIM_EXA_PINS   ( TIM_EXA_PIN1 | TIM_EXA_PIN2 | TIM_EXA_PIN3 | TIM_EXA_PIN4 )
-#define TIM_EXA_CLKEN  __GPIOE_CLK_ENABLE(); __TIM1_CLK_ENABLE();
-#define TIM_EXA_CLKDIS __TIM1_CLK_DISABLE();
-#define TIM_EXA_GPIOAF GPIO_AF1_TIM1
-#define TIM_EXA_IRQ    TIM1_CC_IRQn
-#define TIM_EXA_IRQHANDLER    TIM1_CC_IRQHandler
+#define   TIM_EXA              TIM1
+#define   TIM_EXA_PIN1         PE9
+#define   TIM_EXA_PIN2         PE11
+#define   TIM_EXA_PIN3         PE13
+#define   TIM_EXA_PIN4         PE14
+#define   TIM_EXA_GPIOAF       GPIO_AF1_TIM1
+#define   TIM_EXA_PINS         { TIM_EXA_PIN1, TIM_EXA_PIN2, TIM_EXA_PIN3, TIM_EXA_PIN4 }
+//#define TIM_EXA_PIN_EXT        PA11
+//#define TIM_EXA_GPIOAF_EXT     GPIO_AF11_TIM1
+#define   TIM_EXA_CLKEN        __TIM1_CLK_ENABLE();
+#define   TIM_EXA_CLKDIS       __TIM1_CLK_DISABLE();
+#define   TIM_EXA_IRQ          TIM1_CC_IRQn
+#define   TIM_EXA_IRQHANDLER   TIM1_CC_IRQHandler
 
-#define SD_EXA_CK_GPIO   GpioC
-#define SD_EXA_CK_PIN    12
-#define SD_EXA_D0_GPIO   GpioC
-#define SD_EXA_D0_PIN    8
-#define SD_EXA_CMD_GPIO  GpioD
-#define SD_EXA_CMD_PIN   2
-#define SD_EXA_CLKEN     __HAL_RCC_SDIO_CLK_ENABLE();  __HAL_RCC_GPIOC_CLK_ENABLE();  __HAL_RCC_GPIOD_CLK_ENABLE();
-#define SD_EXA_CLKDIS    __HAL_RCC_SDIO_CLK_DISABLE();
+// SDIO
+#define SD_EXA_CK        PC12
+#define SD_EXA_D0        PC8
+#define SD_EXA_CMD       PD2
 #define SD_EXA_GPIOAF    GPIO_AF12_SDIO
+#define SD_EXA_CLKEN     __HAL_RCC_SDIO_CLK_ENABLE();
+#define SD_EXA_CLKDIS    __HAL_RCC_SDIO_CLK_DISABLE();
 
+#ifndef BOARD_UART_DEFAULT
 #define BOARD_UART_DEFAULT            USART2
-#define BOARD_UART_DEFAULT_GPIO       GpioA
-#define BOARD_UART_DEFAULT_GPIO_PINS  ( GPIO_PIN_2 | GPIO_PIN_3 )
+#define BOARD_UART_DEFAULT_TX         PA2
+#define BOARD_UART_DEFAULT_RX         PA3
 #define BOARD_UART_DEFAULT_GPIO_AF    GPIO_AF7_USART2
-#define BOARD_UART_DEFAULT_ENABLE     __USART2_CLK_ENABLE(); __GPIOA_CLK_ENABLE();
+#define BOARD_UART_DEFAULT_ENABLE     __USART2_CLK_ENABLE();
 #define BOARD_UART_DEFAULT_DISABLE    __USART2_CLK_DISABLE();
 #define BOARD_UART_DEFAULT_IRQ        USART2_IRQn
 #define BOARD_UART_DEFAULT_IRQHANDLER USART2_IRQHandler
+#endif
 
+#ifndef BOARD_I2C_DEFAULT
 #define BOARD_I2C_DEFAULT               I2C1
-#define BOARD_I2C_DEFAULT_NAME          "I2C1"
 #define BOARD_I2C_DEFAULT_SPEED         100000
-#define BOARD_I2C_DEFAULT_GPIO_SCL      GpioB
-#define BOARD_I2C_DEFAULT_GPIO_SDA      GpioB
-#define BOARD_I2C_DEFAULT_GPIO_PIN_SCL  6
-#define BOARD_I2C_DEFAULT_GPIO_PIN_SDA  9
+#define BOARD_I2C_DEFAULT_SCL           PB6
+#define BOARD_I2C_DEFAULT_SDA           PB9
 #define BOARD_I2C_DEFAULT_GPIO_AF       GPIO_AF4_I2C1
-#define BOARD_I2C_DEFAULT_ENABLE        __I2C1_CLK_ENABLE(); __GPIOB_CLK_ENABLE();
+#define BOARD_I2C_DEFAULT_ENABLE        __I2C1_CLK_ENABLE();
 #define BOARD_I2C_DEFAULT_DISABLE       __I2C1_CLK_DISABLE();
 #define BOARD_I2C_DEFAULT_IRQ           I2C1_EV_IRQn
 #define BOARD_I2C_DEFAULT_IRQHANDLER    I2C1_EV_IRQHandler
+#endif
 
-#define BOARD_IN0_GPIO                  GpioB
-#define BOARD_IN0_PINNUM                0
-#define BOARD_IN1_GPIO                  GpioB
-#define BOARD_IN1_PINNUM                1
-#define BOARD_IN2_GPIO                  GpioB
-#define BOARD_IN2_PINNUM                2
+#define BOARD_IN0                       PB0
+#define BOARD_IN1                       PB1
+#define BOARD_IN2                       PB2
 
 
 #ifndef BOARD_SPI_DEFAULT
 #define BOARD_SPI_DEFAULT               SPI1
-#define BOARD_SPI_DEFAULT_NAME          "SPI1"
-#define BOARD_SPI_DEFAULT_GPIO_ALL      GpioA
-//#define BOARD_SPI_DEFAULT_GPIO_SCK      GpioA
-#define BOARD_SPI_DEFAULT_GPIO_PIN_SCK  GPIO_PIN_5
-//#define BOARD_SPI_DEFAULT_GPIO_MISO     GpioA
-#define BOARD_SPI_DEFAULT_GPIO_PIN_MISO GPIO_PIN_6
-//#define BOARD_SPI_DEFAULT_GPIO_MOSI     GpioA
-#define BOARD_SPI_DEFAULT_GPIO_PIN_MOSI GPIO_PIN_7
-#define BOARD_SPI_DEFAULT_GPIO_SNSS     GpioA
-// here number, as input to PinsOut
-#define BOARD_SPI_DEFAULT_GPIO_PIN_SNSS 4
-#define BOARD_SPI_DEFAULT_GPIO_EXT1     GpioC
-#define BOARD_SPI_DEFAULT_GPIO_PIN_EXT1 4
-#define BOARD_SPI_DEFAULT_GPIO_EXT2     GpioC
-#define BOARD_SPI_DEFAULT_GPIO_PIN_EXT2 5
+#define BOARD_SPI_DEFAULT_PIN_SCK       PA5
+#define BOARD_SPI_DEFAULT_PIN_MISO      PA6
+#define BOARD_SPI_DEFAULT_PIN_MOSI      PA7
+#define BOARD_SPI_DEFAULT_PIN_SNSS      PA4
+#define BOARD_SPI_DEFAULT_PIN_EXT1      PC4
+#define BOARD_SPI_DEFAULT_PIN_EXT2      PC5
 #define BOARD_SPI_DEFAULT_GPIO_AF       GPIO_AF5_SPI1
-#define BOARD_SPI_DEFAULT_ENABLE        __SPI1_CLK_ENABLE(); __GPIOA_CLK_ENABLE(); __GPIOC_CLK_ENABLE();
+#define BOARD_SPI_DEFAULT_ENABLE        __SPI1_CLK_ENABLE();
 #define BOARD_SPI_DEFAULT_DISABLE       __SPI1_CLK_DISABLE();
 #define BOARD_SPI_DEFAULT_IRQ           SPI1_IRQn
 #define BOARD_SPI_DEFAULT_IRQHANDLER    SPI1_IRQHandler
@@ -125,27 +121,23 @@
 #endif
 
 
-#define BOARD_MOTOR_DEFAULT_GPIO        GpioD
-#define BOARD_MOTOR_DEFAULT_PIN0        0
+// Motor: D8-D11
+#define BOARD_MOTOR_DEFAULT_PIN0        PD8
+#define BOARD_MOTOR_DEFAULT_N           4
 
-#define BOARD_1W_DEFAULT_GPIO           GpioD
-#define BOARD_1W_DEFAULT_PIN            GPIO_PIN_0
+#define BOARD_1W_DEFAULT_PIN            PD0
 
 // ADC: B0, B1, C4, C5 (8,9,14,15)
 #define BOARD_ADC_DEFAULT_DEV           ADC1
 #define BOARD_ADC_DEFAULT_EN            __HAL_RCC_ADC1_CLK_ENABLE();
 #define BOARD_ADC_DEFAULT_DIS           __HAL_RCC_ADC1_CLK_DISABLE();
-#define BOARD_ADC_DEFAULT_GPIO0         GpioB
-#define BOARD_ADC_DEFAULT_PIN0          0
+#define BOARD_ADC_DEFAULT_PIN0          PB0
 #define BOARD_ADC_DEFAULT_CH0           ADC_CHANNEL_8
-#define BOARD_ADC_DEFAULT_GPIO1         GpioB
-#define BOARD_ADC_DEFAULT_PIN1          1
+#define BOARD_ADC_DEFAULT_PIN1          PB1
 #define BOARD_ADC_DEFAULT_CH1           ADC_CHANNEL_9
-#define BOARD_ADC_DEFAULT_GPIO2         GpioC
-#define BOARD_ADC_DEFAULT_PIN2          4
+#define BOARD_ADC_DEFAULT_PIN2          PC4
 #define BOARD_ADC_DEFAULT_CH2           ADC_CHANNEL_14
-#define BOARD_ADC_DEFAULT_GPIO3         GpioC
-#define BOARD_ADC_DEFAULT_PIN3          5
+#define BOARD_ADC_DEFAULT_PIN3          PC5
 #define BOARD_ADC_DEFAULT_CH3           ADC_CHANNEL_15
 #define BOARD_ADC_MEM_MAX               (1024*64)
 // #define BOARD_ADC_MEM_MAX_FMC           (1024*1024*8)
@@ -175,13 +167,16 @@
 //void* malloc_fmc( size_t sz ); // only all FMC memory for now
 //void  free_fmc( void* ptr );
 
+#define HX711_EXA_SCK_PIN  PC4
+#define HX711_EXA_DAT_PIN  PC5
+
 // 0 = DEVICE_FS, 1 = DEVICE_HS
 #define BOARD_USB_DEFAULT_TYPE       0
 #define BOARD_USB_DEFAULT_INSTANCE   USB_OTG_FS
 #define BOARD_USB_DEFAULT_GPIO       GpioA
-#define BOARD_USB_DEFAULT_DPDM_PINS  ( GPIO_PIN_11 | GPIO_PIN_12 )
-#define BOARD_USB_DEFAULT_VBUS_PIN   GPIO_PIN_9
-#define BOARD_USB_DEFAULT_ID_PIN     GPIO_PIN_10
+#define BOARD_USB_DEFAULT_DPDM_PINS  PinMask( GPIO_PIN_11 | GPIO_PIN_12 )
+#define BOARD_USB_DEFAULT_VBUS_PIN   9_mask
+#define BOARD_USB_DEFAULT_ID_PIN     10_mask
 #define BOARD_USB_DEFAULT_GPIO_AF    GPIO_AF10_OTG_FS
 #define BOARD_USB_DEFAULT_ENABLE     __GPIOA_CLK_ENABLE(); __HAL_RCC_USB_OTG_FS_CLK_ENABLE(); __HAL_RCC_SYSCFG_CLK_ENABLE();
 #define BOARD_USB_DEFAULT_DISABLE    __HAL_RCC_USB_OTG_FS_CLK_DISABLE();
@@ -193,6 +188,6 @@
 #define BOARD_CONSOLE_DEFINES_UART    UART_CONSOLE_DEFINES( USART2 );
 #define BOARD_PROLOG                  STD_PROLOG_USBCDC;
 #define BOARD_CREATE_STD_TASKS        CREATE_STD_TASKS;
-#define BOARD_POST_INIT_BLINK         delay_ms( PROLOG_LED_TIME ); leds.write( 0x00 ); delay_ms( PROLOG_LED_TIME );
+#define BOARD_POST_INIT_BLINK         delay_ms( PROLOG_LED_TIME ); leds.write( 0_mask ); delay_ms( PROLOG_LED_TIME );
 
 #endif

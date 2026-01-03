@@ -14,8 +14,6 @@
 #define DELAY_APPROX_COEFF  5010
 
 
-// default: single LED on A5 - ignore for now
-
 #ifdef NEED_LEDS_MINI
   #define BOARD_LEDS_START PA5
   #define BOARD_N_LEDS 1

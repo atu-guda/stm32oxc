@@ -4,16 +4,16 @@
 
 void init_btns()
 {
-  GpioC.enableClk();
-  const uint8_t in_pins[] = { 5, 6, 8, 9 };
+  const PortPin in_pins[] = { PC5, PC6, PC8, PC9 }; // TODO: config
 
   for( auto pin : in_pins ) {
-    GpioC.cfgIn(   pin, GpioRegs::Pull::down );
-    GpioC.setEXTI( pin, GpioRegs::ExtiEv::up );
+    pin.enableClk();
+    pin.cfgIn(   GpioPull::down );
+    pin.setEXTI( ExtiEv::up );
   }
 
-  HAL_NVIC_SetPriority( EXTI9_5_IRQn, 15, 0 );
-  HAL_NVIC_EnableIRQ( EXTI9_5_IRQn );
+  HAL_NVIC_SetPriority( EXTI9_5_IRQn, 15, 0 ); // TODO: use auto assign or func?
+  HAL_NVIC_EnableIRQ(   EXTI9_5_IRQn );
 }
 
 void HAL_GPIO_EXTI_Callback( uint16_t pin )
@@ -42,9 +42,9 @@ void HAL_GPIO_EXTI_Callback( uint16_t pin )
     default: break;
   }
 
-  leds.toggle( BIT0 );
-  UVAR('c') = cmd;
-  ++UVAR('i');
+  leds[0].toggle();
+  UVAR_c = cmd;
+  ++UVAR_i;
 
   // if( ! on_cmd_handler ) {
   //   menu4b_ev_global = cmd;
@@ -58,7 +58,7 @@ void HAL_GPIO_EXTI_Callback( uint16_t pin )
 
 void EXTI9_5_IRQHandler(void)
 {
-  ++UVAR('j');
+  ++UVAR_j;
   HAL_GPIO_EXTI_IRQHandler( GPIO_PIN_5 );
   HAL_GPIO_EXTI_IRQHandler( GPIO_PIN_6 );
   HAL_GPIO_EXTI_IRQHandler( GPIO_PIN_8 );
