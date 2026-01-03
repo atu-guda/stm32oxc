@@ -33,7 +33,7 @@ DCL_CMD_REG( test0, 'T', " - "  );
 void idle_main_task()
 {
   if( isUSBH_on ) {
-    // leds.toggle( 1 );
+    // leds[1].toggle();
     USBH_Process( &hUSB_Host );
   };
 }
@@ -44,13 +44,13 @@ int main(void)
 {
   STD_PROLOG_UART;
 
-  UVAR('t') = 100;
-  UVAR('n') =  20;
+  UVAR_t = 100;
+  UVAR_n =  20;
   fs.fs_type = 0; // none
   fspath[0] = '\0';
 
   BOARD_POST_INIT_BLINK;
-  leds.reset( 0xFF );
+  leds.reset( 0xFF_mask );
 
   pr( NL "##################### " PROJ_NAME NL );
 
@@ -65,7 +65,7 @@ int main(void)
 
 int cmd_test0( int argc, const char * const * argv )
 {
-  // uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 100000000 ); // number of series
+  // uint32_t n = arg2long_d( 1, argc, argv, UVAR_n, 1, 100000000 ); // number of series
 
   std_out << "# Test: " << NL;
 
@@ -95,7 +95,7 @@ int cmd_test0( int argc, const char * const * argv )
 // on: 4,3,2 off: 5
 void USBH_HandleEvent( USBH_HandleTypeDef *phost, uint8_t id )
 {
-  // leds.toggle( BIT1 );
+  // leds[1].toggle();
   // std_out << "### UP " << (int)id << NL;
 
   switch( id ) {
@@ -104,7 +104,7 @@ void USBH_HandleEvent( USBH_HandleTypeDef *phost, uint8_t id )
 
     case HOST_USER_CLASS_ACTIVE:         // 2
       isMSC_ready = 1;
-      // leds.set( BIT2 );
+      // leds[2].set();
       break;
 
     case HOST_USER_CLASS_SELECTED:       // 3
@@ -114,13 +114,13 @@ void USBH_HandleEvent( USBH_HandleTypeDef *phost, uint8_t id )
       break;
 
     case HOST_USER_DISCONNECTION:        // 5
-      // leds.reset( BIT2 );
+      // leds[2].reset();
       f_mount( nullptr, (TCHAR const*)"", 0 );
       isMSC_ready = 0;
       break;
 
     case HOST_USER_UNRECOVERED_ERROR:    // 6
-      // leds.set( BIT0 );
+      // leds[0].set();
       errno = 7555;
       break;
 

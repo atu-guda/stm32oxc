@@ -6,9 +6,9 @@ void StepMotorGpio2::step()
     return;
   }
 
-  pins.set( pinStep );
+  pins.set(   PinMask( pinStep ) );
   delay_mcs( pulse_us );
-  pins.reset( pinStep );
+  pins.reset( PinMask( pinStep ) );
 }
 
 void StepMotorGpio2::set_dir( int d )
@@ -19,9 +19,9 @@ void StepMotorGpio2::set_dir( int d )
   dir = d;
 
   if( dir >= 0 ) {
-    pins.reset( pinDir );
+    pins.reset( PinMask( pinDir ) );
   } else {
-    pins.set(   pinDir );
+    pins.set(   PinMask( pinDir ) );
   }
   delay_mcs( pulse_us );
 }

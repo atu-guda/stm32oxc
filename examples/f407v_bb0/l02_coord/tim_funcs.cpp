@@ -140,9 +140,9 @@ void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* tim_baseHandle )
   }
   else if( tim_baseHandle->Instance == TIM4 ) {
     __HAL_RCC_TIM4_CLK_ENABLE();
-    GpioD.cfgAF( 13, GPIO_AF2_TIM4 );  // TIM4.2 D13 se3
-    GpioD.cfgAF( 14, GPIO_AF2_TIM4 );  // TIM4.3 D13 se2
-    GpioD.cfgAF( 15, GPIO_AF2_TIM4 );  // TIM4.4 D13 se1
+    PD13.cfgAF( GPIO_AF2_TIM4 );  // TIM4.2 D13 se3
+    PD14.cfgAF( GPIO_AF2_TIM4 );  // TIM4.3 D13 se2
+    PD15.cfgAF( GPIO_AF2_TIM4 );  // TIM4.4 D13 se1
     // HAL_NVIC_SetPriority( TIM4_IRQn, 5, 0 );
     // HAL_NVIC_EnableIRQ( TIM4_IRQn );
   }
@@ -162,17 +162,17 @@ void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* tim_baseHandle )
 void HAL_TIM_MspPostInit( TIM_HandleTypeDef* timHandle )
 {
   if(      timHandle->Instance == TIM2 ) {
-    GpioB.cfgAF( 10, GPIO_AF1_TIM2 );  // TIM2.3: B10 PWM3? aux1.6
-    GpioB.cfgAF( 11, GPIO_AF1_TIM2 );  // TIM2.4: B11 PWM4? aux1.8
+    PB10.cfgAF( GPIO_AF1_TIM2 );  // TIM2.3: B10 PWM3? aux1.6
+    PB11.cfgAF( GPIO_AF1_TIM2 );  // TIM2.4: B11 PWM4? aux1.8
   }
   else if( timHandle->Instance == TIM3 ) {
-    GpioC.cfgAF( 6, GPIO_AF2_TIM3 );  // TIM3.1:  C6 PWM0
+    PC6.cfgAF( GPIO_AF2_TIM3 );  // TIM3.1:  C6 PWM0
   }
   else if( timHandle->Instance == TIM10 ) {
-    GpioB.cfgAF( 8, GPIO_AF3_TIM10 ); // TIM10.1: B8 PWM1
+    PB8.cfgAF( GPIO_AF3_TIM10 ); // TIM10.1: B8 PWM1
   }
   else if( timHandle->Instance == TIM11 ) {
-    GpioB.cfgAF( 9, GPIO_AF3_TIM11 ); // TIM11.1: B9 PWM2
+    PB9.cfgAF( GPIO_AF3_TIM11 ); // TIM11.1: B9 PWM2
   }
 }
 

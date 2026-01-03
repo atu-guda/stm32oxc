@@ -29,9 +29,9 @@ class StepMotorFake : public StepMotor{
 class StepMotorGpio2 : public StepMotor {
   public:
    enum { pinStep = 0x01, pinDir = 0x02 };
-   StepMotorGpio2( GpioRegs &a_gpio, uint8_t start )
-     : pins( a_gpio, start, 2 ) {}
-   virtual ReturnCode initHW() override { pins.initHW(); pins.write(0); return rcOk; }
+   StepMotorGpio2( PortPin start )
+     : pins( start, 2 ) {}
+   virtual ReturnCode initHW() override { pins.initHW(); pins.write( 0_mask ); return rcOk; }
    virtual void step() override;
    virtual void set_dir( int d ) override;
   protected:

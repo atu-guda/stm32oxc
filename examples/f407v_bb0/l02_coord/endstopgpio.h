@@ -7,10 +7,10 @@
 // 2+ pins with positive clear status
 class EndStopGpioPos : public EndStop {
   public:
-   EndStopGpioPos( GpioRegs &a_gi, uint8_t a_start, uint8_t a_n = 2 )
-     : pins( a_gi, a_start, a_n, GpioRegs::Pull::down ) {}
+   EndStopGpioPos( PortPin a_start, uint8_t a_n = 2 )
+     : pins( a_start, a_n, GpioPull::down ) {}
    virtual ReturnCode initHW() override { pins.initHW(); return rcOk; };
-   virtual uint16_t read() override { v = pins.read(); return v; }
+   virtual uint16_t read() override { v = pins.read().bitmask(); return v; }
    virtual bool is_minus_stop() const override { return ( ( v & minusBit ) == 0 ) ; }
    virtual bool is_minus_go()   const override { return ( ( v & minusBit ) != 0 ) ; }
    virtual bool is_plus_stop()  const override { return ( ( v & plusBit  ) == 0 ) ; }

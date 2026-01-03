@@ -42,14 +42,14 @@ uint8_t sd_buf[512]; // one sector
 HAL_SD_CardInfoTypeDef cardInfo;
 FATFS fs;
 
-StepMotorGpio2 stepdir_v( STEPDIR_V_GPIO, STEPDIR_V_STARTPIN );
-StepMotorGpio2 stepdir_e( STEPDIR_E_GPIO, STEPDIR_E_STARTPIN );
-StepMotorGpio2 stepdir_x( STEPDIR_X_GPIO, STEPDIR_X_STARTPIN );
-StepMotorGpio2 stepdir_y( STEPDIR_Y_GPIO, STEPDIR_Y_STARTPIN );
-StepMotorGpio2 stepdir_z( STEPDIR_Z_GPIO, STEPDIR_Z_STARTPIN );
+StepMotorGpio2 stepdir_v( STEPDIR_V_STARTPIN );
+StepMotorGpio2 stepdir_e( STEPDIR_E_STARTPIN );
+StepMotorGpio2 stepdir_x( STEPDIR_X_STARTPIN );
+StepMotorGpio2 stepdir_y( STEPDIR_Y_STARTPIN );
+StepMotorGpio2 stepdir_z( STEPDIR_Z_STARTPIN );
 
 
-PinOut en_motors( GpioC, 11 );
+PinOut en_motors( PC11 );
 
 void motors_off() {
   en_motors = 1;
@@ -59,24 +59,24 @@ void motors_on()  {
   en_motors = 0;
 }
 
-PinsOut aux3(  GpioD, 7, 4 );
+PinsOut aux3(  PD7, 4 );
 
-EndStopGpioPos estp_x(  GpioD, 0, 2 );
-EndStopGpioPos estp_y(  GpioD, 3, 2 );
-EndStopGpioPos estp_z(  GpioD, 5, 2 );
+EndStopGpioPos estp_x(  PD0, 2 );
+EndStopGpioPos estp_y(  PD3, 2 );
+EndStopGpioPos estp_z(  PD5, 2 );
 
 
 
 //                                   TODO: auto IRQ N
 const EXTI_init_info extis[] = {
-  { GpioD,  0, GpioRegs::ExtiEv::down,   EXTI0_IRQn,    1,  0 }, // D0: Xe-
-  { GpioD,  1, GpioRegs::ExtiEv::down,   EXTI1_IRQn,    1,  0 }, // D1: Xe+
-  { GpioE,  2, GpioRegs::ExtiEv::updown, (IRQn_Type)0 /*EXTI2_IRQn*/, 1,  0 }, // E2: touch: dis now
-  { GpioD,  3, GpioRegs::ExtiEv::down,   EXTI3_IRQn,    1,  0 }, // D3: Ye-
-  { GpioD,  4, GpioRegs::ExtiEv::down,   EXTI4_IRQn,    1,  0 }, // D4: Ye+
-  { GpioD,  5, GpioRegs::ExtiEv::down,   EXTI9_5_IRQn,  1,  0 }, // D5: Ze-
-  { GpioD,  6, GpioRegs::ExtiEv::down,   EXTI9_5_IRQn,  1,  0 }, // D6: Ze+
-  { GpioA, 99, GpioRegs::ExtiEv::down,   EXTI0_IRQn,   15,  0 }  // 99>15: END
+  { GpioD,  0_pin, ExtiEv::down,   EXTI0_IRQn,    1,  0 }, // D0: Xe-
+  { GpioD,  1_pin, ExtiEv::down,   EXTI1_IRQn,    1,  0 }, // D1: Xe+
+  { GpioE,  2_pin, ExtiEv::updown, (IRQn_Type)0 , 1,  0 }, // E2: touch: dis now
+  { GpioD,  3_pin, ExtiEv::down,   EXTI3_IRQn,    1,  0 }, // D3: Ye-
+  { GpioD,  4_pin, ExtiEv::down,   EXTI4_IRQn,    1,  0 }, // D4: Ye+
+  { GpioD,  5_pin, ExtiEv::down,   EXTI9_5_IRQn,  1,  0 }, // D5: Ze-
+  { GpioD,  6_pin, ExtiEv::down,   EXTI9_5_IRQn,  1,  0 }, // D6: Ze+
+  { GpioA, 99_pin, ExtiEv::down,   EXTI0_IRQn,   15,  0 }  // 99>15: END
 };
 
 
@@ -180,16 +180,16 @@ int main()
 {
   STD_PROLOG_UART;
 
-  UVAR('a') =         1; // Y axis
-  UVAR('f') =       240; // mm/min = 4mm/s default speed
-  UVAR('t') =         1;
-  UVAR('n') =      1000;
-  UVAR('s') =         6;
-  UVAR('u') =       100;
+  UVAR_a =         1; // Y axis
+  UVAR_f =       240; // mm/min = 4mm/s default speed
+  UVAR_t =         1;
+  UVAR_n =      1000;
+  UVAR_s =         6;
+  UVAR_u =       100;
 
   GpioA.enableClk(); GpioB.enableClk(); GpioC.enableClk(); GpioD.enableClk(); GpioE.enableClk();
 
-  aux3.initHW(); aux3 = 0;
+  aux3.initHW(); aux3 = 0_mask;
   en_motors.initHW(); // TODO: to machine
   motors_off();
 
@@ -202,7 +202,7 @@ int main()
 
   me_st.initHW();
 
-  // UVAR('e') = i2c_default_init( i2ch );
+  // UVAR_e = i2c_default_init( i2ch );
   // i2c_dbg = &i2cd;
   // i2c_client_def = &lcdt;
   // lcdt.init_4b();
@@ -210,10 +210,10 @@ int main()
   // lcdt.puts("I ");
 
   MX_SDIO_SD_Init();
-  UVAR('u') = HAL_SD_Init( &hsd );
+  UVAR_u = HAL_SD_Init( &hsd );
   delay_ms( 10 );
-  UVAR('s') = HAL_SD_GetState( &hsd );
-  UVAR('z') = HAL_SD_GetCardInfo( &hsd, &cardInfo );
+  UVAR_s = HAL_SD_GetState( &hsd );
+  UVAR_z = HAL_SD_GetCardInfo( &hsd, &cardInfo );
   MX_FATFS_SD_Init();
   fs.fs_type = 0; // none
   fspath[0] = '\0';
@@ -230,7 +230,7 @@ int main()
 
   BOARD_POST_INIT_BLINK;
 
-  leds.reset( 0xFF );
+  leds.reset( 0xFF_mask );
 
 
   pr( NL "##################### " PROJ_NAME NL );
@@ -246,8 +246,8 @@ int main()
 int cmd_test0( int argc, const char * const * argv )
 {
   int mo_idx = arg2long_d( 1, argc, argv, 1, 0, 100000000 ); // motor index
-  // int n = arg2long_d( 2, argc, argv, UVAR('n'), -10000000, 100000000 ); // number of pulses with sign
-  // uint32_t dt = arg2long_d( 3, argc, argv, UVAR('t'), 0, 1000 ); // ticks in ms
+  // int n = arg2long_d( 2, argc, argv, UVAR_n, -10000000, 100000000 ); // number of pulses with sign
+  // uint32_t dt = arg2long_d( 3, argc, argv, UVAR_t, 0, 1000 ); // ticks in ms
 
   // auto rc = me_st.go_from_es( mo_idx );
   OUT << "# debug: mo_idx= " << mo_idx << NL;
@@ -274,7 +274,7 @@ int cmd_rel( int argc, const char * const * argv )
   for( unsigned i=0; i<n_motors; ++i ) {
     d_mm[i] = arg2xfloat_d( i+1, argc, argv, 0 );
   }
-  xfloat fe_mmm = arg2xfloat_d( 4, argc, argv, UVAR('f'), 0.0f, 900.0f );
+  xfloat fe_mmm = arg2xfloat_d( 4, argc, argv, UVAR_f, 0.0f, 900.0f );
 
   DoAtLeave do_off_motors( []() { motors_off(); } );
   motors_on();
@@ -292,7 +292,7 @@ int cmd_abs( int argc, const char * const * argv )
   for( unsigned i=0; i<n_motors; ++i ) {
     d_mm[i] = arg2xfloat_d( i+1, argc, argv, 0 ) - me_st.get_xn( i );
   }
-  xfloat fe_mmm = arg2xfloat_d( 4, argc, argv, UVAR('f'), 0.0f, 9000.0f ); // large to test limiting
+  xfloat fe_mmm = arg2xfloat_d( 4, argc, argv, UVAR_f, 0.0f, 9000.0f ); // large to test limiting
 
   DoAtLeave do_off_motors( []() { motors_off(); } );
   motors_on();
@@ -1438,7 +1438,7 @@ int cmd_pwm( int argc, const char * const * argv )
 
 void HAL_GPIO_EXTI_Callback( uint16_t pin_bit )
 {
-  ++UVAR('i'); UVAR('b') = pin_bit;
+  ++UVAR_i; UVAR_b = pin_bit;
   leds[1].toggle();
   // break_flag = 0x000F0000 + pin_bit;
   pwm_off_all();

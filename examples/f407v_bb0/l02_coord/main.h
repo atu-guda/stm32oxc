@@ -11,16 +11,11 @@
 #include "stepmover.h"
 #include "moveinfo.h"
 
-#define STEPDIR_X_GPIO     GpioE
-#define STEPDIR_X_STARTPIN 8
-#define STEPDIR_Y_GPIO     GpioE
-#define STEPDIR_Y_STARTPIN 10
-#define STEPDIR_Z_GPIO     GpioE
-#define STEPDIR_Z_STARTPIN 12
-#define STEPDIR_E_GPIO     GpioE
-#define STEPDIR_E_STARTPIN 14
-#define STEPDIR_V_GPIO     GpioE
-#define STEPDIR_V_STARTPIN 0
+#define STEPDIR_X_STARTPIN PE8
+#define STEPDIR_Y_STARTPIN PE10
+#define STEPDIR_Z_STARTPIN PE12
+#define STEPDIR_E_STARTPIN PE14
+#define STEPDIR_V_STARTPIN PE0
 
 
 const inline constinit xfloat M_r2g { 180 / M_PI };
