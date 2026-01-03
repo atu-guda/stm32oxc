@@ -33,7 +33,8 @@ void MX_ADC1_Init( uint8_t n_ch, uint32_t sampl_time )
   // hadc1.Init.EOCSelection          = ADC_EOC_SEQ_CONV; // ADC_EOC_SINGLE_CONV; // seems dont metter if DMA
   hadc1.Init.EOCSelection          = ADC_EOC_SINGLE_CONV; // test
   if( HAL_ADC_Init( &hadc1 ) != HAL_OK )  {
-    Error_Handler( 2 );
+    //TODO: Error_Handler( 2 );
+    return;
   }
 
   /**Configure for the selected ADC regular channels its corresponding rank in the sequencer and its sample time.  */
@@ -45,7 +46,8 @@ void MX_ADC1_Init( uint8_t n_ch, uint32_t sampl_time )
     sConfig.Channel = ch;
     sConfig.Rank = rank++;
     if( HAL_ADC_ConfigChannel( &hadc1 , &sConfig ) != HAL_OK )  {
-      Error_Handler( 3 );
+      // TODO: Error_Handler( 3 );
+      return;
     }
   }
 
@@ -58,7 +60,11 @@ void HAL_ADC_MspInit( ADC_HandleTypeDef* adcHandle )
     __GPIOA_CLK_ENABLE();
 
     //* ADC1 GPIO Configuration        A0-A3   ------> ADC1: IN0-IN2, IN4 // A4: tmp
-    GpioA.cfgAnalog_N(  GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3 |  GPIO_PIN_4 );
+    BOARD_ADC_DEFAULT_PIN0.cfgAnalog();
+    BOARD_ADC_DEFAULT_PIN1.cfgAnalog();
+    BOARD_ADC_DEFAULT_PIN2.cfgAnalog();
+    BOARD_ADC_DEFAULT_PIN3.cfgAnalog();
+
 
     HAL_NVIC_SetPriority( ADC_IRQn, 2, 0 );
     HAL_NVIC_EnableIRQ( ADC_IRQn );

@@ -20,8 +20,8 @@ void pr_ADC_state();
 ADC_HandleTypeDef hadc1;
 const uint32_t tim_freq_in = 100000000; // depend in MCU, freq TODO: calculate
 uint32_t t_step = 100000; // in us, recalculated before measurement
-int v_adc_ref = 3250; // in mV, measured before test, adjust as UVAR('v')
-const uint32_t n_ADC_ch_max = 4; // current - in UVAR('c')
+int v_adc_ref = 3250; // in mV, measured before test, adjust as UVAR_v
+const uint32_t n_ADC_ch_max = 4; // current - in UVAR_c
 const uint32_t n_ADC_mem  = 1024*4096; // SDRAM: 4MB
 const uint32_t n_ADC_mem_guard  = n_ADC_mem + 2 * n_ADC_ch_max; // 2 lines for guard
 // uint16_t adc_v0[ n_ADC_mem_guard ];
@@ -49,22 +49,22 @@ int main(void)
   BOARD_PROLOG;
 
 
-  UVAR('t') = 1000; // 1 s extra wait
-  UVAR('v') = v_adc_ref;
-  UVAR('p') = 99; // timer PSC, for 1MHz
-  UVAR('a') = 99999; // timer ARR, for 10Hz
-  UVAR('c') = n_ADC_ch_max;
-  UVAR('n') = 8; // number of series
-  UVAR('s') = 1; // sampling time index
+  UVAR_t = 1000; // 1 s extra wait
+  UVAR_v = v_adc_ref;
+  UVAR_p = 99; // timer PSC, for 1MHz
+  UVAR_a = 99999; // timer ARR, for 10Hz
+  UVAR_c = n_ADC_ch_max;
+  UVAR_n = 8; // number of series
+  UVAR_s = 1; // sampling time index
 
-  leds.write( 0x01 );  delay_bad_ms( 200 );
+  leds.write( 0x01_mask );  delay_bad_ms( 200 );
   bsp_init_sdram();
 
 
   // MX_ADC1_Init( 4, ADC_SAMPLETIME_28CYCLES );
   delay_bad_ms( 10 );
-  // tim2_init( UVAR('p'), UVAR('a') );
-  leds.write( 0x0A );  delay_bad_ms( 200 );
+  // tim2_init( UVAR_p, UVAR_a );
+  leds.write( 0x0A_mask );  delay_bad_ms( 200 );
 
   BOARD_POST_INIT_BLINK;
 
@@ -82,7 +82,7 @@ void task_main( void *prm UNUSED_ARG ) // TMAIN
 
 void pr_ADC_state()
 {
-  if( UVAR('d') > 0 ) {
+  if( UVAR_d > 0 ) {
     pr_shx( ADC1->SR );
     pr_shx( ADC1->CR1 );
     pr_shx( ADC1->CR2 );
@@ -94,7 +94,7 @@ void pr_ADC_state()
 
 void pr_TIM_state( TIM_TypeDef *htim )
 {
-  if( UVAR('d') > 1 ) {
+  if( UVAR_d > 1 ) {
     pr_sdx( htim->CNT  );
     pr_sdx( htim->ARR  );
     pr_sdx( htim->PSC  );
@@ -110,17 +110,17 @@ void pr_TIM_state( TIM_TypeDef *htim )
 int cmd_test0( int argc, const char * const * argv )
 {
   char buf[32];
-  uint8_t n_ch = UVAR('c');
+  uint8_t n_ch = UVAR_c;
   if( n_ch > n_ADC_ch_max ) { n_ch = n_ADC_ch_max; };
   if( n_ch < 1 ) { n_ch = 1; };
 
   const uint32_t n_ADC_series_max  = n_ADC_mem / ( 2 * n_ch ); // 2 is 16bit/sample
   pr_sdx( n_ADC_series_max );
-  uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 0, n_ADC_series_max ); // number of series
+  uint32_t n = arg2long_d( 1, argc, argv, UVAR_n, 0, n_ADC_series_max ); // number of series
 
-  uint32_t sampl_t_idx = std::clamp( (uint32_t)UVAR('s'), uint32_t(0), (uint32_t)(adc_arch_sampletimes_n-1) );
+  uint32_t sampl_t_idx = std::clamp( (uint32_t)UVAR_s, uint32_t(0), (uint32_t)(adc_arch_sampletimes_n-1) );
 
-  t_step =  (UVAR('a')+1) * (UVAR('p')+1); // in timer input ticks
+  t_step =  (UVAR_a+1) * (UVAR_p+1); // in timer input ticks
   uint32_t tim_f = tim_freq_in / t_step; // timer update freq
   t_step /= 100; // * 1e6 / 1e8
   uint32_t t_wait0 = n  * t_step / 1000;
@@ -159,11 +159,11 @@ int cmd_test0( int argc, const char * const * argv )
     pr( "ADC_Start_IT error" NL );
   }
   delay_ms( 1 ); // TODO: check
-  tim2_init( UVAR('p'), UVAR('a') );
+  tim2_init( UVAR_p, UVAR_a );
 
   idle_flag = 1;
   delay_ms( t_wait0 ); // main wait
-  for( uint32_t ti=0;  n_cvt < n_cvt_todo && ti<(uint32_t)UVAR('t'); ++ti ) { // additiona wait
+  for( uint32_t ti=0;  n_cvt < n_cvt_todo && ti<(uint32_t)UVAR_t; ++ti ) { // additiona wait
     delay_ms(10);
   }
   TickType_t tcc = xTaskGetTickCount();
@@ -187,7 +187,7 @@ int cmd_test0( int argc, const char * const * argv )
     }
     for( int j=0; j< n_ch; ++j ) {
       // pr_d( adc_v0[i*n_ch+j] ) ; pr( "\t" );
-      int vv = adc_v0[i*n_ch+j] * 10 * UVAR('v') / 4096;
+      int vv = adc_v0[i*n_ch+j] * 10 * UVAR_v / 4096;
       ifcvt( vv, 10000, buf, 4 );
       pr( buf ); pr( "\t" );
     }
@@ -207,7 +207,7 @@ int cmd_test0( int argc, const char * const * argv )
 int cmd_out( int argc, const char * const * argv )
 {
   char buf[32];
-  uint8_t n_ch = UVAR('c');
+  uint8_t n_ch = UVAR_c;
   if( n_ch > n_ADC_ch_max ) { n_ch = n_ADC_ch_max; };
   if( n_ch < 1 ) { n_ch = 1; };
   uint32_t n = arg2long_d( 1, argc, argv, n_series_todo, 0, n_series_todo+1 ); // number output series
@@ -223,7 +223,7 @@ int cmd_out( int argc, const char * const * argv )
     ifcvt( t, 1000000, buf, 6 );
     pr( buf ); pr( "   " );
     for( int j=0; j< n_ch; ++j ) {
-      int vv = adc_v0[ii*n_ch+j] * 10 * UVAR('v') / 4096;
+      int vv = adc_v0[ii*n_ch+j] * 10 * UVAR_v / 4096;
       ifcvt( vv, 10000, buf, 4 );
       pr( buf ); pr( "  " );
     }
@@ -244,20 +244,20 @@ void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc )
   adc_v0[n_cvt++] = v;
   // ++n_cvt;
   if( n_cvt >= n_cvt_todo ) {
-    HAL_ADC_Stop_IT( hadc ); n_series = n_cvt / UVAR('c');
-    ++UVAR('g'); // 'g' means good
-    leds.toggle( BIT2 );
+    HAL_ADC_Stop_IT( hadc ); n_series = n_cvt / UVAR_c;
+    ++UVAR_g; // 'g' means good
+    leds[2].toggle();
   }
 }
 
 void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc )
 {
   // tim2_deinit();
-  UVAR('z') = HAL_ADC_GetError( hadc );
-  UVAR('y') = hadc1.Instance->SR;
+  UVAR_z = HAL_ADC_GetError( hadc );
+  UVAR_y = hadc1.Instance->SR;
   hadc1.Instance->SR = 0;
-  // leds.toggle( BIT0 );
-  ++UVAR('e');
+  // leds[0].toggle();
+  ++UVAR_e;
 }
 
 
@@ -269,8 +269,8 @@ void TIM2_IRQHandler(void)
 // not used for now: only TRGO
 void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
 {
-  ++UVAR('i');
-  UVAR('j') = htim->Instance->CNT;
+  ++UVAR_i;
+  UVAR_j = htim->Instance->CNT;
   ++n_series;
   if( n_series < n_series_todo ) {
     // ADC1->CR2 |= 0x40000000; // SWSTART???
@@ -278,7 +278,7 @@ void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
     htim->Instance->CR1 &= ~1u;
     // STOP?
   }
-  leds.toggle( BIT1 );
+  leds[1].toggle();
 }
 
 
