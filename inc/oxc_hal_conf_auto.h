@@ -24,6 +24,10 @@
 // to prevent warnings
 // if another value is needed, use local_hal_conf.h
 
+#ifndef USE_SDIO_TRANSCEIVER
+  #define USE_SDIO_TRANSCEIVER 0
+#endif
+
 #ifndef USE_HAL_ADC_REGISTER_CALLBACKS
   #define USE_HAL_ADC_REGISTER_CALLBACKS 0
 #endif

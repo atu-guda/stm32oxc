@@ -34,6 +34,7 @@ uint32_t ADC_getFreqIn( ADC_HandleTypeDef* hadc )
   return HAL_RCCEx_GetPeriphCLKFreq( RCC_PERIPHCLK_ADC );
 }
 
+
 uint32_t ADC_calc_div( ADC_HandleTypeDef* hadc, uint32_t freq_max, uint32_t *div_val )
 {
   if( !hadc ) {
@@ -241,7 +242,7 @@ uint32_t ADC_Info::init_adc_channels()
   uint32_t n = 0;
 
   for( decltype(+n_ch_max) i=0; i<n_ch_max; ++i ) {
-    if( ch_info[i].pin_num >= AdcChannelInfo::pin_num_end ) {
+    if( ! ch_info[i].pin.valid() ) {
       break;
     }
 

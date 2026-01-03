@@ -62,7 +62,7 @@ SUBDIRS = \
 
 ALL : examples_h743_weact0
 
-examples_h743_wave : $(SUBDIRS)
+examples_h743_weact0 : $(SUBDIRS)
 
 $(SUBDIRS) :
 	$(MAKE) -C $@
