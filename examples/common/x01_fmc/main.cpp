@@ -18,11 +18,11 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 1000;
-  UVAR('n') = 0x60;
+  UVAR_t = 1000;
+  UVAR_n = 0x60;
 
-  leds.write( 0x03 );  delay_bad_ms( 200 );
-  UVAR('e') = bsp_init_sdram();
+  leds.write( 0x03_mask );  delay_bad_ms( 200 );
+  UVAR_e = bsp_init_sdram();
 
   BOARD_POST_INIT_BLINK;
 
@@ -41,7 +41,7 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  unsigned n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
+  unsigned n = arg2long_d( 1, argc, argv, UVAR_n, 0 );
   std_out << "# Test0: n= " << n << NL;
   delay_ms( 100 );
   for( decltype(+n) i=0; i<n; ++i ) {

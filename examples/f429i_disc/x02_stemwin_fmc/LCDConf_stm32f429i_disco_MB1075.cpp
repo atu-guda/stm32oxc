@@ -270,27 +270,26 @@ void HAL_LTDC_MspInit(LTDC_HandleTypeDef *hltdc)
              -----------------------------------------------------
   */
 
-  GpioA.cfgAF_N( GPIO_PIN_3 | GPIO_PIN_4 | GPIO_PIN_6
-               | GPIO_PIN_11 | GPIO_PIN_12, GPIO_AF14_LTDC );
+  GpioA.cfgAF_N( PinMask( GPIO_PIN_3 | GPIO_PIN_4 | GPIO_PIN_6
+               | GPIO_PIN_11 | GPIO_PIN_12 ), GPIO_AF14_LTDC );
 
-  GpioB.cfgAF_N( GPIO_PIN_8 | GPIO_PIN_9 | GPIO_PIN_10 | GPIO_PIN_11, GPIO_AF14_LTDC );
+  GpioB.cfgAF_N( PinMask( GPIO_PIN_8 | GPIO_PIN_9 | GPIO_PIN_10 | GPIO_PIN_11 ), GPIO_AF14_LTDC );
 
-  GpioC.cfgAF_N(  GPIO_PIN_6 | GPIO_PIN_7 | GPIO_PIN_10, GPIO_AF14_LTDC );
+  GpioC.cfgAF_N( PinMask( GPIO_PIN_6 | GPIO_PIN_7 | GPIO_PIN_10 ), GPIO_AF14_LTDC );
 
-  GpioD.cfgAF_N( GPIO_PIN_3 | GPIO_PIN_6, GPIO_AF14_LTDC );
+  GpioD.cfgAF_N( PinMask( GPIO_PIN_3 | GPIO_PIN_6 ), GPIO_AF14_LTDC );
 
-  GpioF.cfgAF_N( GPIO_PIN_10, GPIO_AF14_LTDC );
+  GpioF.cfgAF_N( PinMask( GPIO_PIN_10 ), GPIO_AF14_LTDC );
 
-  GpioG.cfgAF_N( GPIO_PIN_6 | GPIO_PIN_7 | GPIO_PIN_11 , GPIO_AF14_LTDC );
+  GpioG.cfgAF_N( PinMask( GPIO_PIN_6 | GPIO_PIN_7 | GPIO_PIN_11 ), GPIO_AF14_LTDC );
 
   // part2
-  GpioB.cfgAF_N(  GPIO_PIN_0 | GPIO_PIN_1, GPIO_AF9_LTDC );
+  GpioB.cfgAF_N(  PinMask( GPIO_PIN_0 | GPIO_PIN_1 ), GPIO_AF9_LTDC );
 
-  GpioG.cfgAF_N(  GPIO_PIN_10 | GPIO_PIN_12, GPIO_AF9_LTDC );
+  GpioG.cfgAF_N(  PinMask( GPIO_PIN_10 | GPIO_PIN_12 ), GPIO_AF9_LTDC );
 
   /* Set LTDC Interrupt to the lowest priority */
   HAL_NVIC_SetPriority(LTDC_IRQn, 0xF, 0);
-  /// HAL_NVIC_SetPriority( LTDC_IRQn, 0x5, 0 ); // atu: try
 
   HAL_NVIC_EnableIRQ( LTDC_IRQn );
 }

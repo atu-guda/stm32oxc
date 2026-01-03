@@ -62,8 +62,8 @@ int main(void)
   GUI_DispStringAt( "XXX!", (LCD_GetXSize()-100)/2, (LCD_GetYSize()-20)/2 );
 
 
-  UVAR('t') = 1000;
-  UVAR('n') = 10;
+  UVAR_t = 1000;
+  UVAR_n = 10;
 
   BOARD_POST_INIT_BLINK;
 
@@ -111,7 +111,7 @@ void BSP_Pointer_Update()
   yDiff = (prev_state.Y > ts.Y) ? (prev_state.Y - ts.Y) : (ts.Y - prev_state.Y);
 
   if( ts.TouchDetected ) {
-    leds.toggle( 0x02 );
+    leds[1].toggle();
     pr( "ts.X= " ); pr_d( ts.X );  pr( " ts.Y= " ); pr_d( ts.Y ); pr( NL );
     GUI_DispCharAt( '*', ts.X, ts.Y );
     if( (prev_state.TouchDetected != ts.TouchDetected ) ||  (xDiff > 3 ) || (yDiff > 3))  {
@@ -128,7 +128,7 @@ void BSP_Pointer_Update()
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
+  int n = arg2long_d( 1, argc, argv, UVAR_n, 0 );
   pr( NL "Test0: n= " ); pr_d( n ); pr( " argc= " ); pr_d( argc );
   pr( NL );
 

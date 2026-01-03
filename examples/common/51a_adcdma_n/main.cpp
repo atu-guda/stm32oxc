@@ -249,7 +249,7 @@ void HAL_ADC_MspDeInit( ADC_HandleTypeDef* adcHandle )
 
 void HAL_ADC_ConvHalfCpltCallback( ADC_HandleTypeDef *hadc )
 {
-  // leds.set( BIT1 );
+  // leds[1].set();
   // log_add( "C.H " );
   // ++dbg_val0;
   adc.convHalfCpltCallback( hadc );
@@ -258,7 +258,7 @@ void HAL_ADC_ConvHalfCpltCallback( ADC_HandleTypeDef *hadc )
 
 void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc )
 {
-  // leds.set( BIT1 );
+  // leds[1].set();
   // log_add( "C.C " );
   // ++dbg_val1;
   adc.convCpltCallback( hadc );
@@ -266,7 +266,7 @@ void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc )
 
 void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc )
 {
-  // leds.set( BIT0 );
+  // leds[0].set();
   // log_add( "C.E " );
   // ++dbg_val2;
   adc.errorCallback( hadc );
@@ -274,7 +274,7 @@ void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc )
 
 void BOARD_ADC_DMA_IRQHANDLER(void)
 {
-  // leds.set( BIT1 );
+  // leds[1].set();
 
   // uint32_t tc = HAL_GetTick();
 

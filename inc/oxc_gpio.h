@@ -328,7 +328,7 @@ inline GpioRegs *const  GPIOs[] {
      reinterpret_cast<GpioRegs_ptr_c>(GPIOJ),
   #endif
   #ifdef GPIOK
-     reinterpret_cast<GpioRegs_ptr_c>(GPIOK,
+     reinterpret_cast<GpioRegs_ptr_c>(GPIOK),
   #endif
   #ifdef GPIOL
      reinterpret_cast<GpioRegs_ptr_c>(GPIOL),
