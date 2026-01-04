@@ -1,10 +1,9 @@
-05d - func for EXTI->IRQ, not macro only
+05d - func for EXTI->IRQ, not macro only : func exsist fot f407v:l02_coord
+check VBUS_PIN, ID_PIN for usb init + enable it macros?
 12b, 12c - common config
 H7 - more init MPU? = aux fun for all others?
 H5 - check delays + DELAY_APPROX_COEFF
 namespace oxc
-Types for BitPos and BitField
-Pair port/pin for init
 Returns std::expected / optional?
 More ReturnCode usage/expected
 Several CmdInfo Arrays + adjusted aliases + search: compile time hash?
@@ -46,7 +45,6 @@ SmallRl, console: set output funcs to unbind
 Move SPI common funcs from 28 to oxc lib
 Move ADC common fuctions (some to bsp)
 
-pkgconfig for OXC?
 Check MiniStr::operator+=( const char *rhs ) bug with whole string - now masked
 
 

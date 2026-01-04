@@ -68,10 +68,14 @@ SUBDIRS = \
   53_adcdma_sd \
   55_dac0 \
   60_ut61e_decode \
+  61_modbus_rtu_server \
+  62_modbus_rd6006 \
   80_math_stat \
   l03_motor_fb \
   l04_wheels1 \
   l06_dro02 \
+  l07_momeas \
+  l08_lwm_enco \
   t01_iprintf \
   t01_misc \
   t02_tim \

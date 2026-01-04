@@ -31,6 +31,10 @@
     #define BOARD_BTN0_IRQPRTY 14
   #endif
 
+  // use defines for inc/<arch>/oxc_archdef.h
+  #define BOARD_BTN0_IRQHANDLER OXC_EVAL2(EXTI_HANDLER_, BOARD_BTN0_N)
+  #define BOARD_BTN0_IRQ        OXC_EVAL2(EXTI_IRQ_,     BOARD_BTN0_N)
+
 #endif // BOARD_BTN0_N
 
 #ifdef BOARD_BTN1_N
@@ -47,15 +51,12 @@
     #define BOARD_BTN1_IRQPRTY 14
   #endif
 
+  #define BOARD_BTN1_IRQHANDLER OXC_EVAL2(EXTI_HANDLER_, BOARD_BTN1_N)
+  #define BOARD_BTN1_IRQ        OXC_EVAL2(EXTI_IRQ_,     BOARD_BTN1_N)
+
 #endif // BOARD_BTN1_N
 
-// use defines for inc/<arch>/oxc_archdef.h
-#define BOARD_BTN0_IRQHANDLER OXC_EVAL2(EXTI_HANDLER_, BOARD_BTN0_N)
-#define BOARD_BTN0_IRQ        OXC_EVAL2(EXTI_IRQ_,     BOARD_BTN0_N)
-#define BOARD_BTN1_IRQHANDLER OXC_EVAL2(EXTI_HANDLER_, BOARD_BTN1_N)
-#define BOARD_BTN1_IRQ        OXC_EVAL2(EXTI_IRQ_,     BOARD_BTN1_N)
 
-#define TO_MACRO_STR(x) #x
 
 // names
 #ifdef TIM_EXA

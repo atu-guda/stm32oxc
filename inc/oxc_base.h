@@ -6,6 +6,7 @@
   #include <utility>
 #endif
 
+#define TO_MACRO_STR(x) #x
 #define OXC_PASTER2(x,y) x ## y
 #define OXC_PASTER3(x,y,z) x ## y ## z
 #define OXC_EVAL2(x,y)    OXC_PASTER2(x,y)

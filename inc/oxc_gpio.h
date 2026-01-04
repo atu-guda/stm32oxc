@@ -1,6 +1,7 @@
 #ifndef _OXC_GPIO_H
 #define _OXC_GPIO_H
 
+#include <span>
 #include <functional>
 
 #include <oxc_base.h>
@@ -67,6 +68,7 @@ class PortPin {
    inline constexpr uint8_t portNum() const { return port_num; };
    inline constexpr GpioRegs& port() const { return *GPIOs[port_num]; };
    inline constexpr PinNum pinNum() const { return num; };
+   inline constexpr uint8_t pinNumInt() const { return num.Num(); };
    inline constexpr PinMask Mask() const { return num.Mask(); }
    inline constexpr uint16_t bitmask() const { return num.Mask().bitmask(); }
    inline constexpr bool valid() const { return (!(port_num & PortSpecMask)) && num.valid(); }
@@ -570,14 +572,35 @@ class IoPin {
 // ------------------ mass EXTI init
 
 struct EXTI_init_info {
-  decltype(GpioA) gpio;
-  PinNum pinnum; // number, not bit. if > 15 - end;
+  PortPin ppin;
   decltype(ExtiEv::updown) dir;
-  decltype(EXTI0_IRQn) exti_n;
-  uint8_t prty, subprty;
+  uint8_t prty, subprty; // prty == 255 - not set
 };
 
-unsigned EXTI_inits( const EXTI_init_info *exti_info, bool initIRQ = true );
+constexpr IRQn_Type pin2extiirq( PortPin pp )
+{
+  switch ( pp.pinNumInt() ) {
+    case  0: return EXTI_IRQ_0;
+    case  1: return EXTI_IRQ_1;
+    case  2: return EXTI_IRQ_2;
+    case  3: return EXTI_IRQ_3;
+    case  4: return EXTI_IRQ_4;
+    case  5: return EXTI_IRQ_5;
+    case  6: return EXTI_IRQ_6;
+    case  7: return EXTI_IRQ_7;
+    case  8: return EXTI_IRQ_8;
+    case  9: return EXTI_IRQ_9;
+    case 10: return EXTI_IRQ_10;
+    case 11: return EXTI_IRQ_11;
+    case 12: return EXTI_IRQ_12;
+    case 13: return EXTI_IRQ_13;
+    case 14: return EXTI_IRQ_14;
+    case 15: return EXTI_IRQ_15;
+  };
+  return IRQn_Type(0);
+}
+
+unsigned EXTI_inits( std::span<const EXTI_init_info> exti_info, bool initIRQ = true );
 
 // -- post-def funcs
 

@@ -67,16 +67,14 @@ EndStopGpioPos estp_z(  PD5, 2 );
 
 
 
-//                                   TODO: auto IRQ N
 const EXTI_init_info extis[] = {
-  { GpioD,  0_pin, ExtiEv::down,   EXTI0_IRQn,    1,  0 }, // D0: Xe-
-  { GpioD,  1_pin, ExtiEv::down,   EXTI1_IRQn,    1,  0 }, // D1: Xe+
-  { GpioE,  2_pin, ExtiEv::updown, (IRQn_Type)0 , 1,  0 }, // E2: touch: dis now
-  { GpioD,  3_pin, ExtiEv::down,   EXTI3_IRQn,    1,  0 }, // D3: Ye-
-  { GpioD,  4_pin, ExtiEv::down,   EXTI4_IRQn,    1,  0 }, // D4: Ye+
-  { GpioD,  5_pin, ExtiEv::down,   EXTI9_5_IRQn,  1,  0 }, // D5: Ze-
-  { GpioD,  6_pin, ExtiEv::down,   EXTI9_5_IRQn,  1,  0 }, // D6: Ze+
-  { GpioA, 99_pin, ExtiEv::down,   EXTI0_IRQn,   15,  0 }  // 99>15: END
+  { PD0, ExtiEv::down,      1,  0 }, // D0: Xe-
+  { PD1, ExtiEv::down,      1,  0 }, // D1: Xe+
+  { PE2, ExtiEv::updown,  255,  0 }, // E2: touch: dis now
+  { PD3, ExtiEv::down,      1,  0 }, // D3: Ye-
+  { PD4, ExtiEv::down,      1,  0 }, // D4: Ye+
+  { PD5, ExtiEv::down,      1,  0 }, // D5: Ze-
+  { PD6, ExtiEv::down,      1,  0 }, // D6: Ze+
 };
 
 

@@ -1,6 +1,6 @@
 /*
  *       Filename:  tim_cnt.h
- *    Description:  local definitions for 12b_tim_cnt example
+ *    Description:  local definitions for 12c_tim_cnt example
  */
 #ifndef _TIM_CNT_H
 #define _TIM_CNT_H
