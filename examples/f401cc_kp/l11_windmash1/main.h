@@ -59,12 +59,6 @@ inline constexpr uint32_t  USER_STOP_BIT   { USER_STOP_PIN0.pinNum().bitmask() }
 inline constexpr PortPin  NEN_PIN   { PA8 };
 
 inline constexpr uint32_t  EXTI_IRQ_PRTY   { 15 };
-struct EXTI_Info { // TODO: use common EXTI_init_info, EXTI_inits
-  decltype(SWLIM_GPIO) gpio;
-  uint8_t pin; // number, not bit
-  decltype(ExtiEv::updown) dir;
-  decltype(EXTI0_IRQn) exti_n;
-};
 
 #define MOTORS_UART USART1
 

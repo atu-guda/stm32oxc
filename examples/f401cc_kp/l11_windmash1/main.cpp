@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cmath>
+#include <span>
 
 #include <oxc_auto.h>
 #include <oxc_main.h>
@@ -39,7 +40,22 @@ PinsIn pins_user_start( USER_START_PIN0, 1 );
 PinsIn pins_user_stop(  USER_STOP_PIN0,  1 );
 PinOut pin_nen( NEN_PIN );
 
-void init_EXTI();
+const EXTI_init_info extis[] = {
+  { TOWER_PIN_UP,    ExtiEv::updown, EXTI_IRQ_PRTY, 0 },
+  { TOWER_PIN_CE,    ExtiEv::updown, EXTI_IRQ_PRTY, 0 },
+  { TOWER_PIN_DW,    ExtiEv::updown, EXTI_IRQ_PRTY, 0 },
+
+  { SWLIM_PIN_SR,    ExtiEv::up,     EXTI_IRQ_PRTY, 0 },
+  { SWLIM_PIN_SL,    ExtiEv::up,     EXTI_IRQ_PRTY, 0 },
+  { SWLIM_PIN_OR,    ExtiEv::up,     EXTI_IRQ_PRTY, 0 },
+  { SWLIM_PIN_OL,    ExtiEv::up,     EXTI_IRQ_PRTY, 0 },
+
+  { DIAG_PIN_ROT,    ExtiEv::up,     EXTI_IRQ_PRTY, 0 },
+  { DIAG_PIN_MOV,    ExtiEv::up,     EXTI_IRQ_PRTY, 0 },
+
+  { USER_STOP_PIN0,  ExtiEv::down,   EXTI_IRQ_PRTY, 0 },
+};
+
 
 volatile uint32_t porta_sensors_bits {0};
 volatile uint32_t portb_sensors_bits {0};
@@ -314,7 +330,7 @@ int main(void)
   devio_fds[6] = &motordrv;
   motordrv.itEnable( UART_IT_RXNE );
 
-  init_EXTI();
+  EXTI_inits( extis );
 
   auto prep = ensure_drv_prepared();
   if( ! prep ) {
@@ -369,34 +385,9 @@ void make_state_str( char *s )
   s[5] = '\0';
 }
 
-const EXTI_Info exti_info[] = {
-  { TOWER_PIN_UP.port(), TOWER_PIN_UP.pinNum().Num(),  ExtiEv::updown, EXTI0_IRQn },
-  { TOWER_PIN_CE.port(), TOWER_PIN_CE.pinNum().Num(),  ExtiEv::updown, EXTI1_IRQn },
-  { TOWER_PIN_DW.port(), TOWER_PIN_DW.pinNum().Num(),  ExtiEv::updown, EXTI2_IRQn },
 
-  { SWLIM_PIN_SR.port(), SWLIM_PIN_SR.pinNum().Num(), ExtiEv::up,   EXTI4_IRQn },
-  { SWLIM_PIN_SL.port(), SWLIM_PIN_SL.pinNum().Num(), ExtiEv::up,   EXTI9_5_IRQn },
-  { SWLIM_PIN_OR.port(), SWLIM_PIN_OR.pinNum().Num(), ExtiEv::up,   EXTI9_5_IRQn },
-  { SWLIM_PIN_OL.port(), SWLIM_PIN_OL.pinNum().Num(), ExtiEv::up,   EXTI9_5_IRQn },
 
-  {  DIAG_PIN_ROT.port(), DIAG_PIN_ROT.pinNum().Num(), ExtiEv::up,     EXTI9_5_IRQn },
-  {  DIAG_PIN_MOV.port(), DIAG_PIN_MOV.pinNum().Num(), ExtiEv::up,     EXTI9_5_IRQn },
 
-  {  USER_STOP_PIN0.port(), USER_STOP_PIN0.pinNum().Num(), ExtiEv::down,     EXTI3_IRQn },
-};
-
-void init_EXTI()
-{
-  int old_irq = -1;
-  for( auto &ei : exti_info ) {
-    ei.gpio.setEXTI( PinNum(ei.pin), ei.dir );
-    if( old_irq != ei.exti_n ) { // bitmask is better, but high cost and data grouping
-      HAL_NVIC_SetPriority( ei.exti_n, EXTI_IRQ_PRTY, 0 );
-      HAL_NVIC_EnableIRQ(   ei.exti_n );
-      old_irq = ei.exti_n;
-    }
-  }
-}
 
 int cmd_test0( int argc, const char * const * argv )
 {
