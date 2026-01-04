@@ -3,16 +3,18 @@
 
 #define _BOARD_CFG_DEFINED
 
-// definition of resoures for STM32F446R nucleo 64 board
+// definition of resoures on STM32F446R nucleo 64 board
 // included from oxc_base.h, postactions - oxc_post_board_cfg.h
 
-#define MC_FLASH_SIZE 524288
-#define MC_RAM_SIZE   131072
-#define MC_RAM1_SIZE  131072
-#define def_stksz        512
+#define MC_FLASH_SIZE  524288
+#define MC_RAM_SIZE    131072
+#define MC_RAM1_SIZE   131072
+#define def_stksz         512
 
 #define DELAY_APPROX_COEFF  5010
 
+
+// default LEDS is C0:C3 (extra board)
 
 #ifdef NEED_LEDS_MINI
   #define BOARD_LEDS_START PA5
@@ -22,6 +24,10 @@
   #define BOARD_N_LEDS 4
 #endif
 
+// extra is ???
+// #define BOARD_N_LEDS_EXTRA 8
+
+// #define BOARD_DEFINE_LEDS_EXTRA PinsOut leds( BOARD_LEDS_GPIO, BOARD_LEDS_OFS, BOARD_N_LEDS_EXTRA );
 
 #define LED_BSP_RED       1_mask
 #define LED_BSP_RED_0     1_mask
@@ -46,6 +52,7 @@
 #define BOARD_BTN1_GPIOX       B
 #define BOARD_BTN1_N           0
 #define BOARD_BTN1_ACTIVE_DOWN 0
+
 
 
 #define   TIM_EXA              TIM1

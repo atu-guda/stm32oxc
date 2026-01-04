@@ -3,17 +3,18 @@
 
 #define _BOARD_CFG_DEFINED
 
-// definition of resoures for STM32F303 discovery board
+// definition of resoures on STM32F303 discovery board
 // included from oxc_base.h, postactions - oxc_post_board_cfg.h
 
-#define MC_FLASH_SIZE 262144
-#define MC_RAM_SIZE   40960
-#define MC_RAM1_SIZE  40960
-#define def_stksz 256
+#define MC_FLASH_SIZE  262144
+#define MC_RAM_SIZE     40960
+#define MC_RAM1_SIZE    40960
+#define def_stksz         256
 
 #define DELAY_APPROX_COEFF   9060
 
 
+// default LEDS is E8:E15 (ring)
 
 #ifdef NEED_LEDS_MINI
   #define BOARD_LEDS_START PE12
@@ -23,15 +24,17 @@
   #define BOARD_N_LEDS 8
 #endif
 
+// extra is ???
+// #define BOARD_N_LEDS_EXTRA 8
 
-#define LED_BSP_BLUE         1
-#define LED_BSP_BLUE_0       1
-#define LED_BSP_RED          2
-#define LED_BSP_RED_0        2
-#define LED_BSP_ORANGE       4
-#define LED_BSP_ORANGE_0     4
-#define LED_BSP_GREEN        8
-#define LED_BSP_GREEN_0      8
+#define LED_BSP_BLUE         1_mask
+#define LED_BSP_BLUE_0       1_mask
+#define LED_BSP_RED          2_mask
+#define LED_BSP_RED_0        2_mask
+#define LED_BSP_ORANGE       4_mask
+#define LED_BSP_ORANGE_0     4_mask
+#define LED_BSP_GREEN        8_mask
+#define LED_BSP_GREEN_0      8_mask
 
 #define LED_BSP_BLUE_1    0x10_mask
 #define LED_BSP_RED_1     0x20_mask
@@ -58,6 +61,7 @@
 #define BOARD_BTN1_GPIOX       B
 #define BOARD_BTN1_N           1
 #define BOARD_BTN1_ACTIVE_DOWN 0
+
 
 
 #define TIM_EXA              TIM8
@@ -98,13 +102,13 @@
 #define BOARD_I2C_DEFAULT_SPEED         100000
 #define BOARD_I2C_DEFAULT_SCL           PB6
 #define BOARD_I2C_DEFAULT_SDA           PB7
+#define BOARD_I2C_DEFAULT_GPIO_AF       GPIO_AF4_I2C1
 // 100 kHz over  72 MHz
 #define BOARD_I2C_DEFAULT_TIMING_100    0x10808DD3
  // 400 kHz over  72 MHz
 #define BOARD_I2C_DEFAULT_TIMING_400    0x00702681
  // 1   MHz over  72 MHz
 #define BOARD_I2C_DEFAULT_TIMING_1M     0x00300D2E
-#define BOARD_I2C_DEFAULT_GPIO_AF       GPIO_AF4_I2C1
 #define BOARD_I2C_DEFAULT_ENABLE        __I2C1_CLK_ENABLE();
 #define BOARD_I2C_DEFAULT_DISABLE       __I2C1_CLK_DISABLE();
 #define BOARD_I2C_DEFAULT_IRQ           I2C1_EV_IRQn
@@ -121,7 +125,7 @@
 #define BOARD_SPI_DEFAULT_PIN_SCK       PB13
 #define BOARD_SPI_DEFAULT_PIN_MISO      PB14
 #define BOARD_SPI_DEFAULT_PIN_MOSI      PB15
-#define BOARD_SPI_DEFAULT_PIN_SNSS      PB1
+#define BOARD_SPI_DEFAULT_PIN_SNSS      PB12
 #define BOARD_SPI_DEFAULT_PIN_EXT1      PB4
 #define BOARD_SPI_DEFAULT_PIN_EXT2      PB5
 #define BOARD_SPI_DEFAULT_GPIO_AF       GPIO_AF5_SPI2

@@ -46,13 +46,13 @@
 #define LED_BSP_ERR       LED_BSP_RED
 
 // K1
-#define BOARD_BTN0_GPIOX   I
-#define BOARD_BTN0_N       0
+#define BOARD_BTN0_GPIOX       I
+#define BOARD_BTN0_N           0
 #define BOARD_BTN0_ACTIVE_DOWN 0
 
 // more
-#define BOARD_BTN1_GPIOX   I
-#define BOARD_BTN1_N       1
+#define BOARD_BTN1_GPIOX       I
+#define BOARD_BTN1_N           1
 #define BOARD_BTN1_ACTIVE_DOWN 0
 
 
@@ -62,7 +62,7 @@
 #define   TIM_EXA_PIN2         PA1
 #define   TIM_EXA_PIN3         PA2
 #define   TIM_EXA_PIN4         PA3
-#define   TIM_EXA_GPIOAF GPIO_AF1_TIM2
+#define   TIM_EXA_GPIOAF       GPIO_AF1_TIM2
 #define   TIM_EXA_PINS         { TIM_EXA_PIN1, TIM_EXA_PIN2, TIM_EXA_PIN3, TIM_EXA_PIN4 }
 //#define TIM_EXA_PIN_EXT        PA11
 //#define TIM_EXA_GPIOAF_EXT     GPIO_AF11_TIM1
@@ -95,13 +95,13 @@
 #define BOARD_I2C_DEFAULT_SPEED         100000
 #define BOARD_I2C_DEFAULT_SCL           PB8
 #define BOARD_I2C_DEFAULT_SDA           PB9
+#define BOARD_I2C_DEFAULT_GPIO_AF       GPIO_AF4_I2C1
 // 100 kHz over 400 MHz
 #define BOARD_I2C_DEFAULT_TIMING_100    0x10C0ECFF
 // 400 kHz over 200 MHz
 #define BOARD_I2C_DEFAULT_TIMING_400    0x109035B7
 // 1   MHz over 200 MHz
 #define BOARD_I2C_DEFAULT_TIMING_1M     0x00902787
-#define BOARD_I2C_DEFAULT_GPIO_AF       GPIO_AF4_I2C1
 #define BOARD_I2C_DEFAULT_ENABLE        __I2C1_CLK_ENABLE();
 #define BOARD_I2C_DEFAULT_DISABLE       __I2C1_CLK_DISABLE();
 #define BOARD_I2C_DEFAULT_IRQ           I2C1_EV_IRQn
@@ -129,7 +129,6 @@
 #define BOARD_SPI_BAUDRATEPRESCALER_FAST SPI_BAUDRATEPRESCALER_4
 #endif
 
-// C0-C3
 
 // Motor: C0-C3
 #define BOARD_MOTOR_DEFAULT_PIN0        PC0

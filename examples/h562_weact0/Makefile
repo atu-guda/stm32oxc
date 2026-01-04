@@ -38,6 +38,7 @@ SUBDIRS = \
   35_mcp4725_dac_i2c \
   36_mcp23017_gpio_i2c \
   40_i2c_ina228 \
+  41_hx711 \
   42_spi_dac8563 \
   43_ads1220_spi \
   80_math_stat \

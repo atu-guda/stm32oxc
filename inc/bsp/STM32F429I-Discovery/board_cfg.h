@@ -6,11 +6,10 @@
 // definition of resoures on STM32F429I discovery board.
 // included from oxc_base.h, postactions - oxc_post_board_cfg.h
 
-
 #define MC_FLASH_SIZE 2097152
-#define MC_RAM_SIZE   196608
-#define MC_RAM1_SIZE  196608
-#define def_stksz        512
+#define MC_RAM_SIZE    196608
+#define MC_RAM1_SIZE   196608
+#define def_stksz         512
 
 #define DELAY_APPROX_COEFF  5010
 
@@ -59,6 +58,7 @@
 #define BOARD_BTN1_GPIOX       A
 #define BOARD_BTN1_N           1
 #define BOARD_BTN1_ACTIVE_DOWN 0
+
 
 
 #define   TIM_EXA              TIM9

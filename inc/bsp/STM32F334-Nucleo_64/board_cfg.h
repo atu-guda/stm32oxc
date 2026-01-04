@@ -6,9 +6,14 @@
 // definition of resoures STM32F334R nucleo 64 board
 // included from oxc_base.h, postactions - oxc_post_board_cfg.h
 
+#define MC_FLASH_SIZE   65536
+#define MC_RAM_SIZE     12288
+#define MC_RAM1_SIZE    12288
+#define MC_RAM2_SIZE     4096
+#define def_stksz         256
+
 #define DELAY_APPROX_COEFF  7040
 
-#define def_stksz 512
 
 
 // default: single LED on A5 - ignore for now
@@ -21,6 +26,10 @@
   #define BOARD_N_LEDS 4
 #endif
 
+// extra is ???
+// #define BOARD_N_LEDS_EXTRA 8
+
+// #define BOARD_DEFINE_LEDS_EXTRA PinsOut leds( BOARD_LEDS_GPIO, BOARD_LEDS_OFS, BOARD_N_LEDS_EXTRA );
 
 #define LED_BSP_RED       1_mask
 #define LED_BSP_RED_0     1_mask
@@ -45,6 +54,7 @@
 #define BOARD_BTN1_GPIOX       B
 #define BOARD_BTN1_N           0
 #define BOARD_BTN1_ACTIVE_DOWN 0
+
 
 
 #define   TIM_EXA              TIM1
@@ -85,13 +95,13 @@
 #define BOARD_I2C_DEFAULT_SPEED         100000
 #define BOARD_I2C_DEFAULT_SCL           PB8
 #define BOARD_I2C_DEFAULT_SDA           PB9
+#define BOARD_I2C_DEFAULT_GPIO_AF       GPIO_AF4_I2C1
 // 100 kHz over  72 MHz
 #define BOARD_I2C_DEFAULT_TIMING_100    0x10808DD3
  // 400 kHz over  72 MHz
 #define BOARD_I2C_DEFAULT_TIMING_400    0x00702681
  // 1   MHz over  72 MHz
 #define BOARD_I2C_DEFAULT_TIMING_1M     0x00300D2E
-#define BOARD_I2C_DEFAULT_GPIO_AF       GPIO_AF4_I2C1
 #define BOARD_I2C_DEFAULT_ENABLE        __I2C1_CLK_ENABLE();
 #define BOARD_I2C_DEFAULT_DISABLE       __I2C1_CLK_DISABLE();
 #define BOARD_I2C_DEFAULT_IRQ           I2C1_EV_IRQn

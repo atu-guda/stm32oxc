@@ -6,7 +6,6 @@
 // definition of resoures on STM32F746IGT WaveShare board
 // included from oxc_base.h, postactions - oxc_post_board_cfg.h
 
-
 #define MC_FLASH_SIZE 1048576
 #define MC_RAM_SIZE    327680
 #define MC_RAM1_SIZE   327680
@@ -56,6 +55,7 @@
 #define BOARD_BTN1_ACTIVE_DOWN 0
 
 
+
 #define   TIM_EXA              TIM8
 #define   TIM_EXA_PIN1         PI5
 #define   TIM_EXA_PIN2         PI6
@@ -94,13 +94,13 @@
 #define BOARD_I2C_DEFAULT_SPEED         100000
 #define BOARD_I2C_DEFAULT_SCL           PB8
 #define BOARD_I2C_DEFAULT_SDA           PB9
+#define BOARD_I2C_DEFAULT_GPIO_AF       GPIO_AF4_I2C1
 // 100 kHz over 200 MHz
 #define BOARD_I2C_DEFAULT_TIMING_100    0x30C0EDFF
 // 400 kHz over 200 MHz
 #define BOARD_I2C_DEFAULT_TIMING_400    0x109035B7
 // 1   MHz over 200 MHz
 #define BOARD_I2C_DEFAULT_TIMING_1M     0x00902787
-#define BOARD_I2C_DEFAULT_GPIO_AF       GPIO_AF4_I2C1
 #define BOARD_I2C_DEFAULT_ENABLE        __I2C1_CLK_ENABLE();
 #define BOARD_I2C_DEFAULT_DISABLE       __I2C1_CLK_DISABLE();
 #define BOARD_I2C_DEFAULT_IRQ           I2C1_EV_IRQn

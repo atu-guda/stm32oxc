@@ -3,14 +3,14 @@
 
 #define _BOARD_CFG_DEFINED
 
-// definition of resoures for STM32F401CC blacK pill board
+// definition of resoures on STM32F401CC blacK pill board
 // included from oxc_base.h, postactions - oxc_post_board_cfg.h
 
 
-#define MC_FLASH_SIZE 262144
-#define MC_RAM_SIZE    65536
-#define MC_RAM1_SIZE   65536
-#define def_stksz        512
+#define MC_FLASH_SIZE  262144
+#define MC_RAM_SIZE     65536
+#define MC_RAM1_SIZE    65536
+#define def_stksz         512
 
 #define DELAY_APPROX_COEFF  5010
 
@@ -24,6 +24,10 @@
   #define BOARD_N_LEDS 1
 #endif
 
+// extra is ???
+// #define BOARD_N_LEDS_EXTRA 8
+
+// #define BOARD_DEFINE_LEDS_EXTRA PinsOut leds( BOARD_LEDS_GPIO, BOARD_LEDS_OFS, BOARD_N_LEDS_EXTRA );
 
 #define LED_BSP_RED       1_mask
 #define LED_BSP_RED_0     1_mask
@@ -48,6 +52,7 @@
 #define BOARD_BTN1_GPIOX       A
 #define BOARD_BTN1_N           1
 #define BOARD_BTN1_ACTIVE_DOWN 0
+
 
 
 #define   TIM_EXA              TIM2
@@ -171,8 +176,8 @@
 #define BOARD_USB_DEFAULT_INSTANCE   USB_OTG_FS
 #define BOARD_USB_DEFAULT_GPIO       GpioA
 #define BOARD_USB_DEFAULT_DPDM_PINS  PinMask( GPIO_PIN_11 | GPIO_PIN_12 )
-//#define BOARD_USB_DEFAULT_VBUS_PIN   9_mask
-//#define BOARD_USB_DEFAULT_ID_PIN     10_mask
+// #define BOARD_USB_DEFAULT_VBUS_PIN   PA9
+// #define BOARD_USB_DEFAULT_ID_PIN     PA10
 #define BOARD_USB_DEFAULT_GPIO_AF    GPIO_AF10_OTG_FS
 #define BOARD_USB_DEFAULT_ENABLE     __GPIOA_CLK_ENABLE(); __HAL_RCC_USB_OTG_FS_CLK_ENABLE(); __HAL_RCC_SYSCFG_CLK_ENABLE();
 #define BOARD_USB_DEFAULT_DISABLE    __HAL_RCC_USB_OTG_FS_CLK_DISABLE();

@@ -3,13 +3,13 @@
 
 #define _BOARD_CFG_DEFINED
 
-// definition of resoures for STM32F103 small board: BluePill
+// definition of resoures on STM32F103 small board: BluePill
 // included from oxc_base.h, postactions - oxc_post_board_cfg.h
 
-#define MC_FLASH_SIZE 65536
-#define MC_RAM_SIZE   20480
-#define MC_RAM1_SIZE  20480
-#define def_stksz       256
+#define MC_FLASH_SIZE  65536
+#define MC_RAM_SIZE    20480
+#define MC_RAM1_SIZE   20480
+#define def_stksz        256
 
 #define DELAY_APPROX_COEFF  7040
 
@@ -48,13 +48,14 @@
 #define BOARD_BTN1_ACTIVE_DOWN 0
 
 
-#define TIM_EXA              TIM2
-#define TIM_EXA_PIN1         PA0
-#define TIM_EXA_PIN2         PA1
-#define TIM_EXA_PIN3         PA2
-#define TIM_EXA_PIN4         PA3
-#define TIM_EXA_GPIOAF         1
-#define TIM_EXA_PINS         { TIM_EXA_PIN1, TIM_EXA_PIN2, TIM_EXA_PIN3, TIM_EXA_PIN4 }
+
+#define   TIM_EXA              TIM2
+#define   TIM_EXA_PIN1         PA0
+#define   TIM_EXA_PIN2         PA1
+#define   TIM_EXA_PIN3         PA2
+#define   TIM_EXA_PIN4         PA3
+#define   TIM_EXA_GPIOAF         1
+#define   TIM_EXA_PINS         { TIM_EXA_PIN1, TIM_EXA_PIN2, TIM_EXA_PIN3, TIM_EXA_PIN4 }
 //#define TIM_EXA_PIN_EXT        PA11
 //#define TIM_EXA_GPIOAF_EXT     GPIO_AF11_TIM1
 #define TIM_EXA_CLKEN        __TIM2_CLK_ENABLE();
@@ -87,7 +88,6 @@
 #define BOARD_I2C_DEFAULT_SCL           PB6
 #define BOARD_I2C_DEFAULT_SDA           PB7
 #define BOARD_I2C_DEFAULT_GPIO_AF       1
-#define BOARD_I2C_DEFAULT_ENABLE        __I2C1_CLK_ENABLE();
 // 100 kHz over  72 MHz
 #define BOARD_I2C_DEFAULT_TIMING_100    0x10808DD3
  // 400 kHz over  72 MHz
@@ -127,6 +127,8 @@
 #define BOARD_MOTOR_DEFAULT_N           4
 
 #define BOARD_1W_DEFAULT_PIN            PB5
+
+// ADC: ??
 
 #define BOARD_ADC_MEM_MAX               (1024*4)
 // #define BOARD_ADC_MEM_MAX_FMC           (1024*1024*8)

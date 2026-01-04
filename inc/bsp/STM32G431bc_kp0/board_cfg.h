@@ -3,14 +3,14 @@
 
 #define _BOARD_CFG_DEFINED
 
-// definition of resoures for STM32F431BC blacK pill board
+// definition of resoures on STM32F431BC blacK pill board
 // included from oxc_base.h, postactions - oxc_post_board_cfg.h
 
 
-#define MC_FLASH_SIZE 114688
-#define MC_RAM_SIZE    32768
-#define MC_RAM1_SIZE   32768
-#define def_stksz        512
+#define MC_FLASH_SIZE  114688
+#define MC_RAM_SIZE     32768
+#define MC_RAM1_SIZE    32768
+#define def_stksz         512
 
 // TODO: measure and fix
 #define DELAY_APPROX_COEFF  5010
@@ -25,6 +25,10 @@
   #define BOARD_N_LEDS 1
 #endif
 
+// extra is ???
+// #define BOARD_N_LEDS_EXTRA 8
+
+// #define BOARD_DEFINE_LEDS_EXTRA PinsOut leds( BOARD_LEDS_GPIO, BOARD_LEDS_OFS, BOARD_N_LEDS_EXTRA );
 
 #define LED_BSP_RED       1_mask
 #define LED_BSP_RED_0     1_mask
@@ -49,6 +53,7 @@
 #define BOARD_BTN1_GPIOX       A
 #define BOARD_BTN1_N           1
 #define BOARD_BTN1_ACTIVE_DOWN 0
+
 
 
 #define   TIM_EXA              TIM2
@@ -89,11 +94,11 @@
 #define BOARD_I2C_DEFAULT_SPEED         100000
 #define BOARD_I2C_DEFAULT_SCL           PA15
 #define BOARD_I2C_DEFAULT_SDA           PB7
+#define BOARD_I2C_DEFAULT_GPIO_AF       GPIO_AF4_I2C1
 // 100 kHz over 140 MHz
 #define BOARD_I2C_DEFAULT_TIMING_100    0x60715075
 #define BOARD_I2C_DEFAULT_TIMING_400    0x10E37624
 #define BOARD_I2C_DEFAULT_TIMING_1M     0x10A30E20
-#define BOARD_I2C_DEFAULT_GPIO_AF       GPIO_AF4_I2C1
 #define BOARD_I2C_DEFAULT_ENABLE        __I2C1_CLK_ENABLE();
 #define BOARD_I2C_DEFAULT_DISABLE       __I2C1_CLK_DISABLE();
 #define BOARD_I2C_DEFAULT_IRQ           I2C1_EV_IRQn
@@ -183,8 +188,8 @@
 #define BOARD_USB_DEFAULT_INSTANCE   USB
 //#define BOARD_USB_DEFAULT_GPIO       GpioA
 // #define BOARD_USB_DEFAULT_DPDM_PINS  ( GPIO_PIN_11 | GPIO_PIN_12 )
-//define BOARD_USB_DEFAULT_VBUS_PIN   GPIO_PIN_9
-//define BOARD_USB_DEFAULT_ID_PIN     GPIO_PIN_10
+// #define BOARD_USB_DEFAULT_VBUS_PIN   PA9
+// #define BOARD_USB_DEFAULT_ID_PIN     PA10
 //#define BOARD_USB_DEFAULT_GPIO_AF    GPIO_AF10_OTG_FS
 #define BOARD_USB_DEFAULT_ENABLE     __GPIOA_CLK_ENABLE(); __HAL_RCC_USB_CLK_ENABLE(); __HAL_RCC_SYSCFG_CLK_ENABLE();
 #define BOARD_USB_DEFAULT_DISABLE    __HAL_RCC_USB_CLK_DISABLE();

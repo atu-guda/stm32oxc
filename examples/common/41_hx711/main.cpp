@@ -21,8 +21,8 @@ DCL_CMD_REG( test0, 'T', "[n] - test HX711 ADC"  );
 
 
 HX711 hx711( HX711_EXA_SCK_PIN, HX711_EXA_DAT_PIN );
-xfloat hx_a =  5.0617948e-07f;
-xfloat hx_b =  -0.032854f;
+float hx_a =  5.0617948e-07f;
+float hx_b =  -0.032854f;
 
 #define ADD_IOBJ(x)    constexpr NamedInt   ob_##x { #x, &x }
 #define ADD_FOBJ(x)    constexpr NamedFloat ob_##x { #x, &x }
@@ -128,7 +128,7 @@ int cmd_test0( int argc, const char * const * argv )
 
   sdat.calc();
   std_out << sdat << NL;
-  std_out << "m = " << ( sdat.d[0].mean * hx_a + hx_b ) << NL;
+  std_out << "m = " << ( sdat.d[0].mean * (xfloat)hx_a + (xfloat)hx_b ) << NL;
 
   return rc;
 }
