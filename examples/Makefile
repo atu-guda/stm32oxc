@@ -14,6 +14,7 @@ SUBDIRS = \
   f746_wave \
   g431_kp0 \
   h562_weact0 \
+  h743_fk743m2 \
   h743_wave \
   h743_weact0
 
