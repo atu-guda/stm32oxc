@@ -3,7 +3,6 @@
 #include <oxc_auto.h>
 #include <oxc_main.h>
 
-#include "tim_cnt.h"
 
 using namespace std;
 using namespace SMLRL;
@@ -13,7 +12,7 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
-const char* common_help_string = "App to test timer as ???" NL;
+const char* common_help_string = "App to test timer as PWM + counter" NL;
 
 TIM_HandleTypeDef tim_pwm_h;
 TIM_HandleTypeDef tim_cnt_h;
@@ -72,9 +71,9 @@ int cmd_test0( int argc, const char * const * argv )
     TIM_EXA->CCR1 = pv;
     delay_ms( 100 ); // wait for steady state
 
-    TIM_IN->CNT = 0;
+    TIM_IN_EXA->CNT = 0;
     delay_ms_brk( t );
-    uint32_t cnt = TIM_IN->CNT;
+    uint32_t cnt = TIM_IN_EXA->CNT;
     std_out << i << ' ' << v << ' ' << cnt << NL;
   }
   TIM_EXA->CCR1 = 0;
@@ -93,7 +92,7 @@ int cmd_tinit( int argc, const char * const * argv )
   TIM_EXA->CCR1 = 0;
   delay_ms( 10 );
   tim_print_cfg( TIM_EXA );
-  tim_print_cfg( TIM_IN );
+  tim_print_cfg( TIM_IN_EXA );
 
   return 0;
 }
@@ -145,7 +144,7 @@ int MX_TIM_PWM_Init()
 
 int MX_TIM_IN_Init()
 {
-  tim_cnt_h.Instance           = TIM_IN;
+  tim_cnt_h.Instance           = TIM_IN_EXA;
   tim_cnt_h.Init.Prescaler     = 0;
   tim_cnt_h.Init.CounterMode   = TIM_COUNTERMODE_UP;
   tim_cnt_h.Init.Period        = 0xFFFFFFFF;
@@ -172,22 +171,21 @@ int MX_TIM_IN_Init()
     errno = 1002;
     return 0;
   }
-  TIM_IN->CR1 |= TIM_CR1_CEN;
+  TIM_IN_EXA->CR1 |= TIM_CR1_CEN;
   return 1;
 }
 
 void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* htim )
 {
-  if( htim->Instance == TIM_IN ) {
-    TIM_IN_EN;
-    TIM_IN_PIN.cfgAF( TIM_IN_AF );
+  if( htim->Instance == TIM_IN_EXA ) {
+    TIM_IN_EXA_CLKEN;
+    TIM_IN_EXA_PIN1.cfgAF( TIM_IN_EXA_GPIOAF );
   }
 }
 
 void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim )
 {
   if( htim->Instance == TIM_EXA ) {
-    __HAL_RCC_TIM1_CLK_ENABLE();
     TIM_EXA_CLKEN;
 
     TIM_EXA_PIN1.cfgAF( TIM_EXA_GPIOAF );
@@ -201,8 +199,8 @@ void HAL_TIM_Base_MspDeInit( TIM_HandleTypeDef* tim_baseHandle )
     TIM_EXA_CLKDIS;
     return;
   }
-  if( tim_baseHandle->Instance == TIM_IN ) {
-    TIM_IN_DIS;
+  if( tim_baseHandle->Instance == TIM_IN_EXA ) {
+    TIM_IN_EXA_CLKDIS;
   }
 }
 

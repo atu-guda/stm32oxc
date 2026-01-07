@@ -3,7 +3,6 @@
 #include <oxc_auto.h>
 #include <oxc_main.h>
 
-#include "tim_cnt.h"
 
 using namespace std;
 using namespace SMLRL;
@@ -34,7 +33,6 @@ int main(void)
 
   std_out << NL "##################### " PROJ_NAME NL;
 
-  // tim_cfg();
   MX_TIM_IN_Init();
 
   srl.re_ps();
@@ -57,9 +55,9 @@ int cmd_test0( int argc, const char * const * argv )
 
     delay_ms( 10 ); // a-la actions
 
-    TIM_IN->CNT = 0;
+    TIM_IN_EXA->CNT = 0;
     delay_ms_brk( t );
-    uint32_t cnt = TIM_IN->CNT;
+    uint32_t cnt = TIM_IN_EXA->CNT;
     std_out << i << ' ' << cnt << NL;
   }
 
@@ -74,14 +72,14 @@ int cmd_tinit( int argc, const char * const * argv )
   // tim_cfg();
   // tim_print_cfg( TIM_EXA );
   MX_TIM_IN_Init();
-  tim_print_cfg( TIM_IN );
+  tim_print_cfg( TIM_IN_EXA );
 
   return 0;
 }
 
 int MX_TIM_IN_Init()
 {
-  tim_cnt_h.Instance           = TIM_IN;
+  tim_cnt_h.Instance           = TIM_IN_EXA;
   tim_cnt_h.Init.Prescaler     = 0;
   tim_cnt_h.Init.CounterMode   = TIM_COUNTERMODE_UP;
   tim_cnt_h.Init.Period        = 0xFFFFFFFF;
@@ -108,22 +106,22 @@ int MX_TIM_IN_Init()
     errno = 1002;
     return 0;
   }
-  TIM_IN->CR1 |= TIM_CR1_CEN;
+  TIM_IN_EXA->CR1 |= TIM_CR1_CEN;
   return 1;
 }
 
 void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* htim )
 {
-  if( htim->Instance == TIM_IN ) {
-    TIM_IN_EN;
-    TIM_IN_PIN.cfgAF( TIM_IN_AF );
+  if( htim->Instance == TIM_IN_EXA ) {
+    TIM_IN_EXA_CLKEN;
+    TIM_IN_EXA_PIN1.cfgAF( TIM_IN_EXA_GPIOAF );
   }
 }
 
 void HAL_TIM_Base_MspDeInit( TIM_HandleTypeDef* tim_baseHandle )
 {
-  if( tim_baseHandle->Instance == TIM_IN ) {
-    TIM_IN_DIS;
+  if( tim_baseHandle->Instance == TIM_IN_EXA ) {
+    TIM_IN_EXA_CLKDIS;
   }
 }
 

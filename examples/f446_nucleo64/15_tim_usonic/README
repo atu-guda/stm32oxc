@@ -1,4 +1,6 @@
-Test TIM1 as usonic sensor HC-SR04 driver
+Test TIM_EXA as usonic sensor HC-SR04 driver
+
+Here
 out: A8: CH1
 In:  A9: CH2
 
@@ -8,10 +10,4 @@ c \approx 340 m/s + echo: 170 m/s
 TIM1.CH1: pulser
 TIM1.CH2: both edge receiver: IRQ
 Vcc for sensor: 5v required: with 3.3: no good return pulse
-
-
-
-Used USART2 with ST_Link VCP
-A2  = USART2_TX
-A3  = USART2_RX
 

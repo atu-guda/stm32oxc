@@ -17,6 +17,9 @@ SUBDIRS = \
   10_i2c_pcf8591 \
   11_i2c_ds3231 \
   12_tim_pwm \
+  12a_tim_pwm_fade \
+  12b_tim_cnt \
+  12c_tim_pwmcnt \
   14_tim_enco \
   15_tim_usonic \
   16_step1 \

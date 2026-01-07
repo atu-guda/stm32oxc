@@ -67,7 +67,7 @@ int cmd_test0( int argc, const char * const * argv )
     delay_ms_until_brk( &tm0, t_step );
   }
 
-  tim_print_cfg( TIM_EXA );
+  tim_print_cfg( TIM_IN_EXA );
 
   return 0;
 }
@@ -76,7 +76,7 @@ int cmd_test0( int argc, const char * const * argv )
 
 void init_enco()
 {
-  tim_h.Instance               = TIM_EXA;
+  tim_h.Instance               = TIM_IN_EXA;
   tim_h.Init.Period            = 0xFFFFFFFF;
   tim_h.Init.Prescaler         = 0; // 0?
   tim_h.Init.ClockDivision     = 0;

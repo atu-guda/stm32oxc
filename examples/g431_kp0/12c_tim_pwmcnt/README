@@ -1,4 +1,5 @@
-Not for now at this arch: no second 32-bit timer
+Test TIM_IN_EXA.1 as counter and TIM_EXA.1 as PWM
+Its better to add reistor between in/out pins
 
 
 

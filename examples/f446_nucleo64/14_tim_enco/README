@@ -1,11 +1,8 @@
-Test TIM1 as encoder input
-in: A8,A9
+Test TIM_IN_EXA as encoder input
+
+F446:
+in: A0,A1
+
 Not so stable work.
 Dont forget about capacitors.
-
-
-
-Used USART2 with ST_Link VCP
-A2  = USART2_TX
-A3  = USART2_RX
 

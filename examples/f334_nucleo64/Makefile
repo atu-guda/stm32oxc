@@ -12,6 +12,9 @@ SUBDIRS = \
   05c_def_cons_nort \
   06_i2c_test \
   12_tim_pwm \
+  12a_tim_pwm_fade \
+  12b_tim_cnt \
+  12c_tim_pwmcnt \
   17_1w_18b20 \
   35_mcp4725_dac_i2c \
   36_mcp23017_gpio_i2c \
