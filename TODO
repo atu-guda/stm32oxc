@@ -1,3 +1,4 @@
+BUG: FmtInt( -1, 10 ) - spaces between '-' and digits
 05d - func for EXTI->IRQ, not macro only : func exsist fot f407v:l02_coord
 check VBUS_PIN, ID_PIN for usb init + enable it macros?
 12b, 12c - common config

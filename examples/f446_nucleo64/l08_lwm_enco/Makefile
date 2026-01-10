@@ -8,7 +8,7 @@ USE_OXC_DEBUG = y
 # USE_OXC_CONSOLE_UART = y
 # USE_OXC_CONSOLE_USB_CDC = y
 USE_OXC_CONSOLE_DEFAULT = y
-USE_OXC_I2C = y
+# USE_OXC_I2C = y
 # USE_OXC_SPI = y
 USE_OXC_TIM = y
 # USE_OXC_ADC = y
@@ -27,6 +27,11 @@ USE_OXC_DMA = y
 SRCS += main.cpp
 SRCS += tim.cpp
 SRCS += oxc_floatfun.cpp
+SRCS += oxc_namedobjs.cpp
+SRCS += oxc_namedints.cpp
+SRCS += oxc_namedfloats.cpp
+SRCS += oxc_statdata.cpp
+SRCS += oxc_hx711.cpp
 
 
 

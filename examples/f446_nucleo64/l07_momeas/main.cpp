@@ -87,7 +87,7 @@ xfloat t2p_1 { 11 }; // 11 (???) pulses/turn for Hall sensor
 xfloat t2p_2 { 20 }; // 20       pulses/turn for Opto sensor
 xfloat nu_1 { 0 };   // measured rps by Hall sensor
 xfloat nu_2 { 0 };   // measured rps by Opto sensor
-xfloat force_neg_tr { -1.0e-3f };   // nagative force theshold
+xfloat force_neg_tr { -1.0e-3f };   // negative force theshold
 int    t_post { 1000 };  // time to wait after V set before measure
 int    cnt_1  { 0 };  // first counter
 int    cnt_2  { 0 };  // second counter
