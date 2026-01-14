@@ -27,10 +27,11 @@ const char* common_help_string = "App to measure fb-less serwo speed" NL;
 // --- local commands;
 DCL_CMD_REG( test0,    'T', "n t_s t_e - test "  );
 DCL_CMD_REG( timinfo,  'I', "- timers info"  );
-DCL_CMD_REG( set_t_on, 'L', "us - set t_on"  );
+DCL_CMD_REG( set_t_on, 'L', "us [reset_cnt] - set t_on"  );
 DCL_CMD_REG( meas1,    'M', "t_on_us - one measure"  );
 DCL_CMD_REG( angle,    'A', "[set_val] - measure and ?set angle in ticks"  );
 DCL_CMD_REG( measF,    'F', "[n] [set_0] [off] - measure force"  );
+DCL_CMD_REG( dyn,      'D', "n t_s t_e - dynamic reaction, dt = UVAR_t "  );
 
 
 auto out_nu_fmt = [](xfloat x) { return FltFmt(x, cvtff_auto,9,5); };
@@ -66,7 +67,7 @@ int     t_s_def {  500 };  // default start LWM us value
 int     t_e_def { 2500 };  // default stop  LWM us value
 int     n_me_f  {   40 };  // number of the force measurements
 int     cnt_1   {    0 };  // first counter
-int     enco1_n {  600 };  // pulses per turn for encoder
+int     enco1_n { 1200 };  // pulses per turn for encoder // WHY? was 600, but measured.
 int     tick_0  {    0 };  // start tick
 int     dlt_t   {    0 };  // ticks delta
 
@@ -118,11 +119,14 @@ bool set_var_ex( const char *nm, const char *s )
   return ok;
 }
 
+inline float cnt2alp( int cnt ) { return - (float) cnt * 360 / enco1_n; }
+
 int main(void)
 {
   BOARD_PROLOG;
 
   UVAR_n =  100; // default main loop count
+  UVAR_t =   10; // time step  on cmd_dyn
 
   hx711.initHW();
   MX_TIM_CNT_Init();
@@ -150,11 +154,11 @@ int cmd_test0( int argc, const char * const * argv )
   int t_s      = arg2long_d(   2, argc, argv, t_s_def, 1, 10000 );
   int t_e      = arg2long_d(   3, argc, argv, t_e_def, 2, 10000 );
 
-  int t_dlt = ( t_e - t_s ) / (n-1);
+  int t_on_dlt = ( t_e - t_s ) / (n-1);
 
 
   std_out <<  "# Test0: n= " << n << " n_me_f= " << n_me_f << " t_pre= " << t_pre
-          << " t_s= " << t_s << " t_e= " << t_e << " t_dlt " << t_dlt << NL;
+          << " t_s= " << t_s << " t_e= " << t_e << " t_on_dlt " << t_on_dlt << NL;
             // 500 3827   3600   908  000.42037 0.02557362
   std_out << "#t_on dnf   dlt_t cnt_1  nu_1       F" NL;
 
@@ -162,7 +166,7 @@ int cmd_test0( int argc, const char * const * argv )
 
 
   for( int i=0; i<n && !break_flag; ++i ) {
-    uint32_t t_on = t_s + i * t_dlt;
+    uint32_t t_on = t_s + i * t_on_dlt;
     int32_t dnf = go_measure( t_on, t_pre, n_me_f, t_post );
     std_out << FmtInt( t_on, 5 ) << ' ' << FmtInt( dnf, 3 ) <<  ' ';
     out_times( 0 );
@@ -176,6 +180,51 @@ int cmd_test0( int argc, const char * const * argv )
 
   return 0;
 }
+
+
+int cmd_dyn( int argc, const char * const * argv )
+{
+  int n        = arg2long_d(   1, argc, argv, UVAR_n,  2, 10000 );
+  int t_s      = arg2long_d(   2, argc, argv, t_s_def, 1, 10000 );
+  int t_e      = arg2long_d(   3, argc, argv, t_e_def, 2, 10000 );
+  int t_step   = UVAR_t;
+
+  int t_on_dlt = ( t_e - t_s ) / (n-1);
+
+
+  std_out <<  "# dyn: n= " << n << " t_step= " << t_step << " t_pre= " << t_pre
+          << " t_s= " << t_s << " t_e= " << t_e << " t_on_dlt " << t_on_dlt << NL;
+  //           130  526 -90.9000000 303
+  std_out << "#t   t_on     q_1     ctn_1" NL;
+
+  leds[0] = 1;
+  set_t_on_from_us( t_s );
+  if( delay_ms_brk( t_pre ) ) { // settle
+    return 1;
+  }
+  leds[0] = 0;
+
+  uint32_t tm0 { HAL_GetTick() };
+  const uint32_t tm00 { tm0 };
+  break_flag = 0;
+
+  for( int i=0; i<=n && !break_flag; ++i ) { // SIC: <=
+    uint32_t t_on = t_s + i * t_on_dlt; // TODO: functions
+    leds[1] = 1;
+    set_t_on_from_us( t_on );
+    const uint32_t tc { HAL_GetTick() };
+    cnt_1 = TIM_CNT->CNT;
+    const float alp = cnt2alp( cnt_1 );
+    leds[1] = 0;
+    std_out << FmtInt( (tc - tm00), 6 ) << ' ' << FmtInt( t_on, 5 ) << ' ' << alp << ' ' << cnt_1 << NL;
+    delay_ms_until_brk( &tm0, t_step );
+  }
+
+  set_t_on_from_us( 0 );
+
+  return break_flag;
+}
+
 
 int cmd_meas1( int argc, const char * const * argv )
 {
@@ -237,9 +286,17 @@ void set_t_on_from_us( uint32_t t_on_us )
 int cmd_set_t_on( int argc, const char * const * argv )
 {
   uint32_t t_on_us = arg2long_d(   1, argc, argv, 1500,  0, 3000 );
-  set_t_on_from_us( t_on_us );
+  bool   reset_cnt = arg2long_d(   2, argc, argv,    0,  0,    1 );
 
-  std_out << "# LWM: " << t_on_us << " us, ccr= " << TIM_LWM->LWM_CCR << NL;
+  set_t_on_from_us( t_on_us );
+  delay_ms( t_pre );
+  if( reset_cnt ) {
+    TIM_CNT->CNT = 0;
+  }
+  cnt_1 = TIM_CNT->CNT;
+
+  std_out << "# LWM: " << t_on_us << " us, ccr= " << TIM_LWM->LWM_CCR
+          << " cnt_1= " << cnt_1 << " alp= " << cnt2alp( cnt_1 ) << NL;
 
   return 0;
 }
@@ -296,10 +353,10 @@ int stop_measure_times()
 {
   const TickType t1 = GET_OS_TICK();
   cnt_1 = TIM_CNT->CNT;
+  const float alp = cnt2alp( cnt_1 );
 
   dlt_t = t1 - tick_0;
-  const xfloat den1 = dlt_t * enco1_n;
-  nu_1 = ( den1 != 0 ) ? ( -1.0e+3f * cnt_1 / den1 ) : 0; // '-' - direction
+  nu_1 = ( dlt_t != 0 ) ? ( 1.0e+3f * alp ) : 0;
 
   return dlt_t;
 }
