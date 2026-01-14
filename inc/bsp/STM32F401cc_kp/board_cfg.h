@@ -16,7 +16,7 @@
 
 // default LEDS is C13
 
-#ifndef NEED_LEDS_EXTRA
+#ifdef NEED_LEDS_EXTRA
   #define BOARD_LEDS_START PB12
   #define BOARD_N_LEDS 4
 #else
