@@ -23,6 +23,30 @@ BOARD_CONSOLE_DEFINES;
 
 const char* common_help_string = "App to measure fb-less serwo speed" NL;
 
+using PartFun = float (*)(float); // [0..1] -> [0..1]
+static constexpr float pi_f = std::numbers::pi_v<float>;
+static constexpr float pi_half_f = pi_f / 2;
+inline float pafun_lim( float x ) { return std::clamp( x, 0.0f, 1.0f ); };
+float pafun_one(      float x );
+float pafun_poly2_ss( float x ); // ss - slow start, se - low end, sb - slow both
+float pafun_poly2_se( float x );
+float pafun_poly3_sb( float x );
+float pafun_trig_ss(  float x );
+float pafun_trig_se(  float x );
+float pafun_trig_sb(  float x );
+float pafun_step_xx(  float x );
+const PartFun part_funcs[] {
+  pafun_one,         // 0
+  pafun_poly2_ss,    // 1
+  pafun_poly2_se,    // 2
+  pafun_poly3_sb,    // 3
+  pafun_trig_ss,     // 4
+  pafun_trig_se,     // 5
+  pafun_trig_sb,     // 6
+  pafun_step_xx,     // 7
+  pafun_one,         // protect // 8
+};
+constexpr auto part_funcs_n { std::size( part_funcs) };
 
 // --- local commands;
 DCL_CMD_REG( test0,    'T', "n t_s t_e - test "  );
@@ -70,6 +94,7 @@ int     cnt_1   {    0 };  // first counter
 int     enco1_n { 1200 };  // pulses per turn for encoder // WHY? was 600, but measured.
 int     tick_0  {    0 };  // start tick
 int     dlt_t   {    0 };  // ticks delta
+int     fun_idx {    0 };  // part_funcs idx
 
 #define ADD_IOBJ(x)    constexpr NamedInt   ob_##x { #x, &x }
 #define ADD_FOBJ(x)    constexpr NamedFloat ob_##x { #x, &x }
@@ -86,6 +111,7 @@ ADD_IOBJ( cnt_1    );
 ADD_IOBJ( enco1_n  );
 ADD_IOBJ( tick_0   );
 ADD_IOBJ( dlt_t    );
+ADD_IOBJ( fun_idx  );
 
 constexpr const NamedObj *const objs_info[] = {
   & ob_hx_a     ,
@@ -100,6 +126,7 @@ constexpr const NamedObj *const objs_info[] = {
   & ob_enco1_n  ,
   & ob_tick_0   ,
   & ob_dlt_t    ,
+  & ob_fun_idx  ,
   nullptr
 };
 
@@ -126,7 +153,7 @@ int main(void)
   BOARD_PROLOG;
 
   UVAR_n =  100; // default main loop count
-  UVAR_t =   10; // time step  on cmd_dyn
+  UVAR_t =    5; // time step  on cmd_dyn
 
   hx711.initHW();
   MX_TIM_CNT_Init();
@@ -184,18 +211,18 @@ int cmd_test0( int argc, const char * const * argv )
 
 int cmd_dyn( int argc, const char * const * argv )
 {
-  int n        = arg2long_d(   1, argc, argv, UVAR_n,  2, 10000 );
-  int t_s      = arg2long_d(   2, argc, argv, t_s_def, 1, 10000 );
-  int t_e      = arg2long_d(   3, argc, argv, t_e_def, 2, 10000 );
-  int t_step   = UVAR_t;
-
-  int t_on_dlt = ( t_e - t_s ) / (n-1);
+  const int n        = arg2long_d(   1, argc, argv, UVAR_n,  2, 10000 );
+  const int t_s      = arg2long_d(   2, argc, argv, t_s_def, 1, 10000 );
+  const int t_e      = arg2long_d(   3, argc, argv, t_e_def, 2, 10000 );
+  const int t_step   = UVAR_t;
+  const int fidx     = std::clamp( fun_idx, 0, (int)part_funcs_n-1 );
+  const int d_t_on   = t_e - t_s;
 
 
   std_out <<  "# dyn: n= " << n << " t_step= " << t_step << " t_pre= " << t_pre
-          << " t_s= " << t_s << " t_e= " << t_e << " t_on_dlt " << t_on_dlt << NL;
+          << " t_s= " << t_s << " t_e= " << t_e << " fidx " << fidx << NL;
   //           130  526 -90.9000000 303
-  std_out << "#t   t_on     q_1     ctn_1" NL;
+  std_out << "#t   t_on    q_r     q_1     cnt_1" NL;
 
   leds[0] = 1;
   set_t_on_from_us( t_s );
@@ -209,14 +236,16 @@ int cmd_dyn( int argc, const char * const * argv )
   break_flag = 0;
 
   for( int i=0; i<=n && !break_flag; ++i ) { // SIC: <=
-    uint32_t t_on = t_s + i * t_on_dlt; // TODO: functions
+    const float qr = part_funcs[fidx]( (float)i / n );
+    uint32_t t_on = (uint32_t)( t_s + qr * d_t_on );
     leds[1] = 1;
     set_t_on_from_us( t_on );
     const uint32_t tc { HAL_GetTick() };
     cnt_1 = TIM_CNT->CNT;
     const float alp = cnt2alp( cnt_1 );
     leds[1] = 0;
-    std_out << FmtInt( (tc - tm00), 6 ) << ' ' << FmtInt( t_on, 5 ) << ' ' << alp << ' ' << cnt_1 << NL;
+    std_out << FmtInt( (tc - tm00), 6 ) << ' ' << FmtInt( t_on, 5 ) << ' '
+            << qr << ' ' << alp << ' ' << cnt_1 << NL;
     delay_ms_until_brk( &tm0, t_step );
   }
 
@@ -389,6 +418,66 @@ int cmd_timinfo( int argc, const char * const * argv )
   tim_print_cfg( TIM_LWM );
   return 0;
 }
+
+// step-alike functions
+
+float pafun_one( float x )
+{
+  return pafun_lim( x );
+}
+
+float pafun_poly2_ss( float x )
+{
+  x = pafun_lim( x );
+  return x*x;
+}
+
+float pafun_poly2_se( float x )
+{
+  x = pafun_lim( x );
+  return x * ( 2 - x );
+}
+
+float pafun_poly3_sb( float x )
+{
+  x = pafun_lim( x );
+  return -2 * x*x*x + 3*x*x;
+}
+
+float pafun_trig_ss(  float x )
+{
+  x = pafun_lim( x );
+  return 1 - cosf( x * pi_half_f );
+}
+
+float pafun_trig_se(  float x )
+{
+  x = pafun_lim( x );
+  return sinf( x * pi_half_f );
+}
+
+float pafun_trig_sb(  float x )
+{
+  x = pafun_lim( x );
+  return 0.5f * ( 1 - cosf( pi_f * x ) );
+}
+
+float pafun_step_xx(  float x )
+{
+  x = pafun_lim( x );
+  return ( x > 0.1f ) ? 1.0f : 0.0f;
+}
+
+
+
+float pafun_one(      float x );
+float pafun_poly2_ss( float x ); // ss - slow start, se - low end, sb - slow both
+float pafun_poly2_se( float x );
+float pafun_poly3_sb( float x );
+float pafun_trig_ss(  float x );
+float pafun_trig_se(  float x );
+float pafun_trig_sb(  float x );
+float pafun_step_xx(  float x ); // jump on 0.1
 
 // ------------------------------------------------------------ 
 
