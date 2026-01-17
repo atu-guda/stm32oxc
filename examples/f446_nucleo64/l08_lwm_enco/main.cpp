@@ -95,6 +95,9 @@ int     enco1_n { 1200 };  // pulses per turn for encoder // WHY? was 600, but m
 int     tick_0  {    0 };  // start tick
 int     dlt_t   {    0 };  // ticks delta
 int     fun_idx {    0 };  // part_funcs idx
+int     n_dyn   { 1000 };  // main time steps in cmd_dyn
+int     np_tail {   10 };  // procent of tail steps
+int     dyn_ret {    1 };  // return to start in cmd_dyn
 
 #define ADD_IOBJ(x)    constexpr NamedInt   ob_##x { #x, &x }
 #define ADD_FOBJ(x)    constexpr NamedFloat ob_##x { #x, &x }
@@ -112,6 +115,9 @@ ADD_IOBJ( enco1_n  );
 ADD_IOBJ( tick_0   );
 ADD_IOBJ( dlt_t    );
 ADD_IOBJ( fun_idx  );
+ADD_IOBJ( n_dyn    );
+ADD_IOBJ( np_tail  );
+ADD_IOBJ( dyn_ret  );
 
 constexpr const NamedObj *const objs_info[] = {
   & ob_hx_a     ,
@@ -127,6 +133,9 @@ constexpr const NamedObj *const objs_info[] = {
   & ob_tick_0   ,
   & ob_dlt_t    ,
   & ob_fun_idx  ,
+  & ob_n_dyn    ,
+  & ob_np_tail  ,
+  & ob_dyn_ret  ,
   nullptr
 };
 
@@ -211,33 +220,38 @@ int cmd_test0( int argc, const char * const * argv )
 
 int cmd_dyn( int argc, const char * const * argv )
 {
-  const int n        = arg2long_d(   1, argc, argv, UVAR_n,  2, 10000 );
+  const int n        = arg2long_d(   1, argc, argv,   n_dyn, 2, 10000 );
   const int t_s      = arg2long_d(   2, argc, argv, t_s_def, 1, 10000 );
   const int t_e      = arg2long_d(   3, argc, argv, t_e_def, 2, 10000 );
   const int t_step   = UVAR_t;
   const int fidx     = std::clamp( fun_idx, 0, (int)part_funcs_n-1 );
   const int d_t_on   = t_e - t_s;
+  const int n_tail   = n * np_tail / 100;
 
 
   std_out <<  "# dyn: n= " << n << " t_step= " << t_step << " t_pre= " << t_pre
           << " t_s= " << t_s << " t_e= " << t_e << " fidx " << fidx << NL;
-  //           130  526 -90.9000000 303
-  std_out << "#t   t_on    q_r     q_1     cnt_1" NL;
+
+  std_out << "#    t   t_on    q_r          q_1    cnt_1" NL;
 
   leds[0] = 1;
   set_t_on_from_us( t_s );
   if( delay_ms_brk( t_pre ) ) { // settle
     return 1;
   }
+  cnt_1 = TIM_CNT->CNT;
   leds[0] = 0;
 
   uint32_t tm0 { HAL_GetTick() };
   const uint32_t tm00 { tm0 };
+  uint32_t t_on = t_s;
   break_flag = 0;
 
-  for( int i=0; i<=n && !break_flag; ++i ) { // SIC: <=
+  int n_all = n + n_tail;
+
+  for( int i=0; i<=n_all && !break_flag; ++i ) { // SIC: <=
     const float qr = part_funcs[fidx]( (float)i / n );
-    uint32_t t_on = (uint32_t)( t_s + qr * d_t_on );
+    t_on = (uint32_t)( t_s + qr * d_t_on );
     leds[1] = 1;
     set_t_on_from_us( t_on );
     const uint32_t tc { HAL_GetTick() };
@@ -247,6 +261,16 @@ int cmd_dyn( int argc, const char * const * argv )
     std_out << FmtInt( (tc - tm00), 6 ) << ' ' << FmtInt( t_on, 5 ) << ' '
             << qr << ' ' << alp << ' ' << cnt_1 << NL;
     delay_ms_until_brk( &tm0, t_step );
+  }
+
+
+  delay_ms_brk( 1000 );
+  if( dyn_ret ) {
+    set_t_on_from_us( t_s );
+    delay_ms_brk( 1000 );
+    cnt_1 = TIM_CNT->CNT;
+    const float alp = cnt2alp( cnt_1 );
+    std_out << "# return: " << FmtInt( t_s, 5 ) << ' ' << alp << ' ' << cnt_1 << NL;
   }
 
   set_t_on_from_us( 0 );
