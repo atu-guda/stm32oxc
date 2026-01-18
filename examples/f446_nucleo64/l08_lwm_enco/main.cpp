@@ -83,6 +83,7 @@ xfloat hx_b {  -0.03399918f };
 StatChannel st_f;
 uint32_t measure_f( int n );
 
+xfloat  alp     {   0  };
 xfloat  nu_1    {   0  };
 
 int     t_pre   { 2000 };  // settle before measure
@@ -94,6 +95,7 @@ int     cnt_1   {    0 };  // first counter
 int     enco1_n { 1200 };  // pulses per turn for encoder // WHY? was 600, but measured.
 int     tick_0  {    0 };  // start tick
 int     dlt_t   {    0 };  // ticks delta
+int     tn      {    0 };  // torque index
 int     fun_idx {    0 };  // part_funcs idx
 int     n_dyn   { 1000 };  // main time steps in cmd_dyn
 int     np_tail {   10 };  // procent of tail steps
@@ -105,6 +107,7 @@ int     dyn_ret {    1 };  // return to start in cmd_dyn
 ADD_FOBJ( hx_a     );
 ADD_FOBJ( hx_b     );
 ADD_FOBJ( nu_1     );
+ADD_FOBJ( alp      );
 ADD_IOBJ( t_pre    );
 ADD_IOBJ( t_post   );
 ADD_IOBJ( t_s_def  );
@@ -114,6 +117,7 @@ ADD_IOBJ( cnt_1    );
 ADD_IOBJ( enco1_n  );
 ADD_IOBJ( tick_0   );
 ADD_IOBJ( dlt_t    );
+ADD_IOBJ( tn       );
 ADD_IOBJ( fun_idx  );
 ADD_IOBJ( n_dyn    );
 ADD_IOBJ( np_tail  );
@@ -122,6 +126,7 @@ ADD_IOBJ( dyn_ret  );
 constexpr const NamedObj *const objs_info[] = {
   & ob_hx_a     ,
   & ob_hx_b     ,
+  & ob_alp      ,
   & ob_nu_1     ,
   & ob_t_pre    ,
   & ob_t_post   ,
@@ -132,6 +137,7 @@ constexpr const NamedObj *const objs_info[] = {
   & ob_enco1_n  ,
   & ob_tick_0   ,
   & ob_dlt_t    ,
+  & ob_tn       ,
   & ob_fun_idx  ,
   & ob_n_dyn    ,
   & ob_np_tail  ,
@@ -155,7 +161,7 @@ bool set_var_ex( const char *nm, const char *s )
   return ok;
 }
 
-inline float cnt2alp( int cnt ) { return - (float) cnt * 360 / enco1_n; }
+inline float cnt2alp( int cnt ) { return (float)(-cnt) * 360 / enco1_n; }
 
 int main(void)
 {
@@ -196,7 +202,7 @@ int cmd_test0( int argc, const char * const * argv )
   std_out <<  "# Test0: n= " << n << " n_me_f= " << n_me_f << " t_pre= " << t_pre
           << " t_s= " << t_s << " t_e= " << t_e << " t_on_dlt " << t_on_dlt << NL;
             // 500 3827   3600   908  000.42037 0.02557362
-  std_out << "#t_on dnf   dlt_t cnt_1  nu_1       F" NL;
+  std_out << "#t_on dnf  tn  dlt_t cnt_1  nu_1       F" NL;
 
   break_flag = 0;
 
@@ -204,17 +210,18 @@ int cmd_test0( int argc, const char * const * argv )
   for( int i=0; i<n && !break_flag; ++i ) {
     uint32_t t_on = t_s + i * t_on_dlt;
     int32_t dnf = go_measure( t_on, t_pre, n_me_f, t_post );
-    std_out << FmtInt( t_on, 5 ) << ' ' << FmtInt( dnf, 3 ) <<  ' ';
+    std_out << FmtInt( t_on, 5 ) << ' ' << FmtInt( dnf, 3 ) <<  ' ' << FmtInt( tn, 3 ) << ' ';
     out_times( 0 );
     std_out << ' ' << st_f.mean << NL;
     if( dnf < 1 ) {
+      break_flag = 2;
       break;
     }
   }
 
   set_t_on_from_us( 0 );
 
-  return 0;
+  return break_flag;
 }
 
 
@@ -256,7 +263,7 @@ int cmd_dyn( int argc, const char * const * argv )
     set_t_on_from_us( t_on );
     const uint32_t tc { HAL_GetTick() };
     cnt_1 = TIM_CNT->CNT;
-    const float alp = cnt2alp( cnt_1 );
+    alp = cnt2alp( cnt_1 );
     leds[1] = 0;
     std_out << FmtInt( (tc - tm00), 6 ) << ' ' << FmtInt( t_on, 5 ) << ' '
             << qr << ' ' << alp << ' ' << cnt_1 << NL;
@@ -269,7 +276,7 @@ int cmd_dyn( int argc, const char * const * argv )
     set_t_on_from_us( t_s );
     delay_ms_brk( 1000 );
     cnt_1 = TIM_CNT->CNT;
-    const float alp = cnt2alp( cnt_1 );
+    alp = cnt2alp( cnt_1 );
     std_out << "# return: " << FmtInt( t_s, 5 ) << ' ' << alp << ' ' << cnt_1 << NL;
   }
 
@@ -347,9 +354,10 @@ int cmd_set_t_on( int argc, const char * const * argv )
     TIM_CNT->CNT = 0;
   }
   cnt_1 = TIM_CNT->CNT;
+  alp = cnt2alp( cnt_1 );
 
   std_out << "# LWM: " << t_on_us << " us, ccr= " << TIM_LWM->LWM_CCR
-          << " cnt_1= " << cnt_1 << " alp= " << cnt2alp( cnt_1 ) << NL;
+          << " cnt_1= " << cnt_1 << " alp= " << alp << NL;
 
   return 0;
 }
@@ -368,7 +376,7 @@ int cmd_measF( int argc, const char * const * argv )
     do_off();
   }
 
-  std_out << "# force: " << st_f.mean << ' ' << st_f.n << ' ' << st_f.sd;
+  std_out << "# force: " << st_f.mean << ' ' << st_f.n << ' ' << st_f.sd << " alp= " << alp;
   out_times( 2 );
   if( set_zero ) {
     hx_b -= st_f.mean;
@@ -399,6 +407,7 @@ int start_measure_times()
 {
   tick_0 = GET_OS_TICK();
   TIM_CNT->CNT  = 0;
+  cnt_1 = 0; alp = 0;
   return tick_0;
 }
 
@@ -406,10 +415,10 @@ int stop_measure_times()
 {
   const TickType t1 = GET_OS_TICK();
   cnt_1 = TIM_CNT->CNT;
-  const float alp = cnt2alp( cnt_1 );
+  alp = cnt2alp( cnt_1 );
 
   dlt_t = t1 - tick_0;
-  nu_1 = ( dlt_t != 0 ) ? ( 1.0e+3f * alp ) : 0;
+  nu_1 = ( dlt_t != 0 ) ? ( 1.0e+3f * alp / dlt_t ) : 0;
 
   return dlt_t;
 }
