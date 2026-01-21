@@ -85,13 +85,15 @@ unsigned i2dec_n( int n, char *s, unsigned min_sz, char fill_ch )
   if( min_sz < 1 ) { min_sz = 1; }
   if( min_sz > INT_STR_SZ_DEC-2 ) { min_sz = INT_STR_SZ_DEC-2; }
 
-  char *bufptr = s, *tmpptr = tbuf + 1;
+  char *bufptr = s;
+  char *tmpptr = tbuf + 1;
   *tbuf = '\0';
   unsigned u, nc = 0;
 
+  bool neg { false };
   if( n < 0 ){ //  sign
     u = ( (unsigned)(-(1+n)) ) + 1; // INT_MIN handling
-    *bufptr++ = '-'; ++nc;
+    neg = true;
   } else {
     u=n;
   }
@@ -99,6 +101,9 @@ unsigned i2dec_n( int n, char *s, unsigned min_sz, char fill_ch )
   do {
     *tmpptr++ = dec_digits[ u % 10 ]; ++nc;
   } while( u /= 10 );
+  if( neg ) {
+    *tmpptr++ = '-'; ++nc;
+  }
 
   while( nc < min_sz ) {
     *tmpptr++ = fill_ch; ++nc;
