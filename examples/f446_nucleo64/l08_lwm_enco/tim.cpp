@@ -24,15 +24,15 @@ int MX_TIM_CNT_Init(void)
   }
 
   static const TIM_Encoder_InitTypeDef sConfig {
-    .EncoderMode  = TIM_ENCODERMODE_TI1,
+    .EncoderMode  = TIM_ENCODERMODE_TI12, // TIM_ENCODERMODE_TI1,
     .IC1Polarity  = TIM_ICPOLARITY_RISING,
     .IC1Selection = TIM_ICSELECTION_DIRECTTI,
     .IC1Prescaler = TIM_ICPSC_DIV1,
-    .IC1Filter    = 3,
+    .IC1Filter    = 1,
     .IC2Polarity  = TIM_ICPOLARITY_RISING,
     .IC2Selection = TIM_ICSELECTION_DIRECTTI,
     .IC2Prescaler = TIM_ICPSC_DIV1,
-    .IC2Filter    = 3
+    .IC2Filter    = 1
   };
   if( HAL_TIM_Encoder_Init( &htim_cnt, &sConfig ) != HAL_OK ) {
     errno = 12002;

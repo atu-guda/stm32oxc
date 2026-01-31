@@ -21,7 +21,7 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
-const char* common_help_string = "App to measure fb-less serwo speed" NL;
+const char* common_help_string = "App to measure servo speed" NL;
 
 using PartFun = float (*)(float); // [0..1] -> [0..1]
 static constexpr float pi_f = std::numbers::pi_v<float>;
@@ -92,7 +92,7 @@ int     t_s_def {  500 };  // default start LWM us value
 int     t_e_def { 2500 };  // default stop  LWM us value
 int     n_me_f  {   40 };  // number of the force measurements
 int     cnt_1   {    0 };  // first counter
-int     enco1_n { 1200 };  // pulses per turn for encoder // WHY? was 600, but measured.
+int     enco1_n { 2400 };  // pulses per turn for encoder // WHY? was 600/1200, but measured.
 int     tick_0  {    0 };  // start tick
 int     dlt_t   {    0 };  // ticks delta
 int     tn      {    0 };  // torque index
@@ -302,9 +302,13 @@ int cmd_meas1( int argc, const char * const * argv )
 int cmd_angle( int argc, const char * const * argv )
 {
   int x    = arg2long_d(   1, argc, argv, -1 );
-  int n    = arg2long_d(   2, argc, argv,  4, 1, 20 );
+  int clr  = arg2long_d(   2, argc, argv,  0, 0, 1 );
+  if( clr ) {
+    start_measure_times();
+  }
+  stop_measure_times();
 
-  std_out <<  "# x= " <<  x << " n= " << n << " xf= |" << FmtInt( x, n ) << NL;
+  std_out <<  "# cnt= " <<  cnt_1 << " alp= " << alp << " xf= |" << FmtInt( x, 5 ) << NL;
 
   return 0;
 }
@@ -430,7 +434,7 @@ void out_times( int se )
   };
   std_out
           << ' ' << FmtInt( dlt_t, 5 )
-          << ' ' << cnt_1 // FmtInt( cnt_1, 5 )
+          << ' ' << FmtInt( cnt_1, 5 )
           << ' ' << out_nu_fmt( nu_1 );
   if( se & 2 ) {
     std_out << NL;
