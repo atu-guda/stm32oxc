@@ -56,7 +56,8 @@ DCL_CMD_REG( meas1,    'M', "t_on_us - one measure"  );
 DCL_CMD_REG( angle,    'A', "[set_val] - measure and ?set angle in ticks"  );
 DCL_CMD_REG( measF,    'F', "[n] [set_0] [off] - measure force"  );
 DCL_CMD_REG( dyn,      'D', "n t_s t_e - dynamic reaction, dt = UVAR_t "  );
-DCL_CMD_REG( dyn_r,    'R', "n t_s t_es t_ee d_t_e - range dynamic reaction, dt = UVAR_t "  );
+DCL_CMD_REG( dyn_r,    'R', "n t_s t_es t_ee d_t_e - range dynamic reaction"  );
+DCL_CMD_REG( dyn_fun,  'Y', "n t_s t_e - dynamic reaction -  all functions"  );
 
 
 auto out_nu_fmt = [](xfloat x) { return FltFmt(x, cvtff_auto,9,5); };
@@ -252,6 +253,23 @@ int cmd_dyn_r( int argc, const char * const * argv )
   }
   return break_flag;
 }
+
+int cmd_dyn_fun( int argc, const char * const * argv )
+{
+  const int n_t      = arg2long_d(   1, argc, argv,   n_dyn,   2, 10000 );
+  const int t_s      = arg2long_d(   2, argc, argv, t_s_def,   1, 10000 );
+  const int t_e      = arg2long_d(   3, argc, argv, t_e_def,   2, 10000 );
+
+  const int fun_idx_saved = fun_idx;
+
+  for( fun_idx = 0; (size_t)fun_idx < (part_funcs_n-1) && !break_flag; ++fun_idx ) { // -1 for guard fun
+    do_dyn( n_t, t_s, t_e );
+  }
+
+  fun_idx = fun_idx_saved;
+  return break_flag;
+}
+
 
 
 int cmd_meas1( int argc, const char * const * argv )
