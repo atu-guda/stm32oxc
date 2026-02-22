@@ -168,10 +168,54 @@ bool arg2long( int narg, int argc, const char * const * argv, long *v,
 
   const char *s = argv[narg];
 
-  if( int *vx = int_val_ptr( s ) ) {
-    *v = *vx;
+  // special strings: < > %n
+  if( s[0] == '=' &&  s[1] == '<' && s[2] == '\0' ) {
+    *v = vmin;
     return true;
   }
+  if( s[0] == '=' &&  s[1] == '>' && s[2] == '\0' ) {
+    *v = vmax;
+    return true;
+  }
+
+  if( s[0] == '%' && isdigit(s[1]) ) {
+    const int percent = std::clamp( atoi(s+1), 0, 100 );
+    *v = vmin + ( vmax - vmin ) * percent / 100;
+    return true;
+  }
+
+  long l { vmin };
+  if( int *vx = int_val_ptr( s ) ) {
+    l = static_cast<long>(*vx);
+  } else {
+    char *eptr;
+    l = strtol( argv[narg], &eptr, 0 );
+    // any non-digital string (like 'def') will get it
+    if( *eptr != 0 ) {
+      return false;
+    }
+  }
+  *v = clamp( l, vmin, vmax );
+  return true;
+}
+
+long arg2long_d( int narg, int argc, const char * const * argv, long def,
+                 long vmin, long vmax )
+{
+  long v = def;
+  arg2long( narg, argc, argv, &v, vmin, vmax );
+  return v;
+}
+
+// TODO: make common code
+bool arg2ulong( int narg, int argc, const char * const * argv, unsigned long *v,
+               unsigned long vmin, unsigned long vmax )
+{
+  if( narg >= argc || !argv || !v || narg >= argc ) {
+    return false;
+  }
+
+  const char *s = argv[narg];
 
   // special strings: < > %n
   if( s[0] == '=' &&  s[1] == '<' && s[2] == '\0' ) {
@@ -189,24 +233,30 @@ bool arg2long( int narg, int argc, const char * const * argv, long *v,
     return true;
   }
 
-  //
-  char *eptr;
-  const long l = strtol( argv[narg], &eptr, 0 );
-  // any non-digital string (like 'def') will get it
-  if( *eptr != 0 ) {
-    return false;
+
+  unsigned long l { vmin };
+  if( int *vx = int_val_ptr( s ) ) {
+    l = static_cast<unsigned long>(*vx);
+  } else {
+    char *eptr;
+    l = strtoul( argv[narg], &eptr, 0 );
+    // any non-digital string (like 'def') will get it
+    if( *eptr != 0 ) {
+      return false;
+    }
   }
   *v = clamp( l, vmin, vmax );
   return true;
 }
 
-long arg2long_d( int narg, int argc, const char * const * argv, long def,
-                 long vmin, long vmax )
+unsigned long arg2ulong_d( int narg, int argc, const char * const * argv, unsigned long def,
+                  unsigned long vmin, unsigned long vmax )
 {
-  long v = def;
-  arg2long( narg, argc, argv, &v, vmin, vmax );
+  unsigned long v = def;
+  arg2ulong( narg, argc, argv, &v, vmin, vmax );
   return v;
 }
+
 
 void rev16( uint16_t *v, int n )
 {

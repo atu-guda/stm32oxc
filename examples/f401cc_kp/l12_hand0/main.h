@@ -1,6 +1,12 @@
 #ifndef _MAIN_H
 #define _MAIN_H
 
+namespace ranges = std::ranges;
+namespace views = std::views;
+using std::size_t;
+using std::array;
+using std::vector;
+
 extern int debug;
 extern int dry_run;
 extern int dis_movers;
@@ -112,16 +118,9 @@ struct MovePart {
 OutStream& operator<<( OutStream &os, const MovePart &rhs );
 
 
-inline const size_t mp_stored_n { 10 };
-extern std::array<MovePart,mp_stored_n> mp_stored;
-extern const MovePart mp_seq0[];
-extern MovePart mp_last;
-inline const size_t mp_seq1_n { 20 };
-extern std::array<MovePart,mp_seq1_n> mp_seq1;
-extern size_t mp_seq1_sz;
 
-bool is_overflow_seq();
 int cmd2MovePart( int argc, const char * const * argv, int start_idx, MovePart &mp );
+std::span<const MovePart> get_moves_seq(  size_t seq_idx );
 
 // ------------------------------------- Movers ----------------------------------------------
 
@@ -278,7 +277,7 @@ extern SensorAdc sens_adc;
 extern SensorFakeMover sens_grip;
 
 int process_movepart( const MovePart &mp, float kkv = 1.0f  );
-int run_moveparts( std::span<const MovePart> mps, float kkv = 1.0f, int i_start = 0, int i_end = 10000 );
+int run_moveparts( std::span<const MovePart> mps, float kkv = 1.0f, size_t i_start = 0, size_t i_end = 10000 );
 int measure_store_coords( int nm );
 void out_coords( bool nl );
 void out_coords_int( bool nl );

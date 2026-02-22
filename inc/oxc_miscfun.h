@@ -56,6 +56,15 @@ bool arg2long( int narg, int argc, const char * const * argv, long *v,
 // the same with default value
 long arg2long_d( int narg, int argc, const char * const * argv, long def,
                  long vmin = INT32_MIN, long vmax = INT32_MAX );
+// the same but unsigned
+bool arg2ulong( int narg, int argc, const char * const * argv, unsigned long *v,
+               unsigned long vmin= 0, unsigned long vmax = UINT32_MAX );
+// the same with default value
+unsigned long arg2ulong_d( int narg, int argc, const char * const * argv, unsigned long def,
+                 unsigned long vmin= 0, unsigned long vmax = UINT32_MAX );
+inline bool arg2bool_d( int narg, int argc, const char * const * argv, bool def = false )
+  { return (bool)(arg2long_d(narg,argc,argv,def,0,1)); };
+
 // TODO: callback for parameter parsing: default $a .. $z
 __weak int* int_val_ptr( const char *s  );
 
