@@ -33,8 +33,8 @@ class NamedObj {
 
 class NamedSubObj : public NamedObj {
   public:
-   constexpr NamedSubObj( const char *nm, const NamedObjs *a_no, unsigned flg = Flags::no )
-     : NamedObj( nm, 1, flg ), no( a_no ) {};
+   constexpr NamedSubObj( const char *nm, const NamedObjs *a_par_obj, unsigned flg = Flags::no )
+     : NamedObj( nm, 1, flg ), par_obj( a_par_obj ) {};
    virtual void* getAddr() const override { return nullptr; };
    virtual bool  get(    int &v, int idx = 0 ) const override;
    virtual bool  get(  float &v, int idx = 0 ) const override;
@@ -45,7 +45,7 @@ class NamedSubObj : public NamedObj {
    virtual bool  set( const char *v, int idx = 0 ) const override;
    virtual const NamedObjs*  getSubObjs() const override;
   protected:
-   const NamedObjs *no;
+   const NamedObjs *par_obj;
 };
 
 

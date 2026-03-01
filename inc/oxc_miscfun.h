@@ -13,8 +13,8 @@ extern const char hex_digits[];
 extern const char dec_digits[];
 
 // 64/log_2[10] \approx 20
-#define INT_STR_SZ_DEC 24
-#define INT_STR_SZ_HEX 20
+inline const std::size_t INT_STR_SZ_DEC { 24 };
+inline const std::size_t INT_STR_SZ_HEX { 20 };
 
 // converts char to hex represenration (2 digits+EOL, store to s)
 char* char2hex( char c, char *s );
@@ -22,13 +22,11 @@ char* char2hex( char c, char *s );
 char* word2hex(  uint32_t d, char *s );
 char* u64_2hex(  uint64_t d, char *s );
 char* short2hex( uint16_t d, char *s );
-// 64/log_2[10] \approx 20
-#define INT_STR_SZ 24
 // return number of the appended chars
 unsigned i2dec_n( int n, char *s, unsigned min_sz = 1, char fill_ch = ' ' );
 // if s == 0 returns ptr to inner static buffer
 char* i2dec( int n, char *s, unsigned min_sz = 1, char fill_ch = ' ' );
-// fixed point intr preresentation to string
+// fixed point int repreresentation to string
 char* ifcvt( int v, int mult, char *s, unsigned min_sz_frac = 1,  unsigned min_sz_int = 1, char plus_ch = ' ' );
 
 struct BitNames {
@@ -96,7 +94,7 @@ inline const unsigned maxExprNameLength   = 64; // with spaces, [nnn], dots
 bool isNameChar1( char c ); // first char in name only
 bool isNameChar( char c );  // and digits too
 
-//* try to split string in form "  name0.name1.name1[ idx ] "
+//* try to split string in form "  name0.name1[ idx ] "
 //  spaces ignored, index optional (-1)
 //  special index values: -1 = no, -2 = '*', -3 = '@'
 //  eptr points to first unconverted char

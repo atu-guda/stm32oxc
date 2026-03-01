@@ -37,7 +37,7 @@ bool NamedSubObj::get( CStr & /*v*/, int /*idx*/ ) const
 bool NamedSubObj::out( OutStream &os, int idx, int fmt ) const
 {
   os << "{" NL;
-  bool ok = no->out( os, "", fmt );
+  bool ok = par_obj->out( os, "", fmt );
   os << "#> }";
   return ok;
 }
@@ -60,7 +60,7 @@ bool NamedSubObj::set( const char * /*v*/, int /*idx*/ ) const
 
 const NamedObjs*  NamedSubObj::getSubObjs() const
 {
-  return no;
+  return par_obj;
 }
 
 // -------------------------------------------------------------------
@@ -189,7 +189,6 @@ bool NamedObjs::out( OutStream &os, const char *nm, int fmt ) const
   if( nm && *nm && ! ( nm[0] == '*' && nm[1] == '\0' ) ) { // name is given
     auto f = find( nm, idx );
     if( !f ) {
-      os << "# Error: name not found \"" << nm << "\"" NL;
       return false;
     }
     os << "#> " << nm << " = ";

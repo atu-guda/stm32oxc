@@ -1,4 +1,8 @@
 05d - func for EXTI->IRQ, not macro only : func exsist fot f407v:l02_coord
+NamedObj : find: return structure { ptr, idx } + special idx num/bits/handling
+miscfun: splitNameWithIdx - use ranges/string_view+struct for return
+*2hex: template
+miscfun: CStr -> string_view ?
 check VBUS_PIN, ID_PIN for usb init + enable it macros?
 12b, 12c - common config
 H7 - more init MPU? = aux fun for all others?
