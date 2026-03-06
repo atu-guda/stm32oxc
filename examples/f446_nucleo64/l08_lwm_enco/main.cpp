@@ -58,6 +58,7 @@ DCL_CMD_REG( measF,    'F', "[n] [set_0] [off] - measure force"  );
 DCL_CMD_REG( dyn,      'D', "n t_s t_e - dynamic reaction, dt = UVAR_t "  );
 DCL_CMD_REG( dyn_r,    'R', "n t_s t_es t_ee d_t_e - range dynamic reaction"  );
 DCL_CMD_REG( dyn_fun,  'Y', "n t_s t_e - dynamic reaction -  all functions"  );
+DCL_CMD_REG( tcnv,     'Z', "a b - test float conversions"  );
 
 
 auto out_nu_fmt = [](xfloat x) { return FltFmt(x, cvtff_auto,9,5); };
@@ -268,6 +269,16 @@ int cmd_dyn_fun( int argc, const char * const * argv )
 
   fun_idx = fun_idx_saved;
   return break_flag;
+}
+
+// jus cnv test
+int cmd_tcnv( int argc, const char * const * argv )
+{
+  const float a      = arg2float_d(   1, argc, argv,    -1.0f, -4.0f,  8.0f );
+  const float b      = arg2float_d(   2, argc, argv,    -4.0f, -10.0, -5.0f );
+
+  std_out << "a= " << a << " b= " << b << NL;
+  return 0;
 }
 
 

@@ -1,6 +1,7 @@
 #define _GNU_SOURCE
 #include <cstring>
 #include <cmath>
+#include <algorithm>
 
 #include <oxc_floatfun.h>
 
@@ -230,18 +231,16 @@ float str2float_d( const char *s, float def, float vmin, float vmax )
       v = t;
     }
   }
-  if( v < vmin ) { v = vmin; };
-  if( v > vmax ) { v = vmax; };
-  return v;
+  return std::clamp( v, vmin, vmax );
 }
 
 float arg2float_d( int narg, int argc, const char * const * argv, float def, float vmin, float vmax )
 {
-  float v = def;
+  const char *s { nullptr };
   if(  narg < argc && argv != nullptr ) {
-    v = str2float_d( argv[narg], def, vmin, vmax );
+    s = argv[narg];
   }
-  return v;
+  return str2float_d( s, def, vmin, vmax );
 }
 
 #ifdef OXC_NEED_DOUBLE_OUT
@@ -400,18 +399,16 @@ double str2double_d( const char *s, double def, double vmin, double vmax )
       v = t;
     }
   }
-  if( v < vmin ) { v = vmin; };
-  if( v > vmax ) { v = vmax; };
-  return v;
+  return std::clamp( v, vmin, vmax );
 }
 
 double arg2double_d( int narg, int argc, const char * const * argv, double def, double vmin, double vmax )
 {
-  double v = def;
+  const char *s { nullptr };
   if(  narg < argc && argv != nullptr ) {
-    v = str2double_d( argv[narg], def, vmin, vmax );
+    s = argv[narg];
   }
-  return v;
+  return str2double_d( s, def, vmin, vmax );
 }
 
 #endif
