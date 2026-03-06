@@ -1,7 +1,9 @@
 #ifndef _OXC_MISCFUN_H
 #define _OXC_MISCFUN_H
 
-#include <stdint.h>
+#include <cstdint>
+#include <cctype>
+#include <algorithm>
 
 #include <oxc_base.h>
 
@@ -47,6 +49,26 @@ inline int sign( int x ) { return (x>0) ? 1 : ( (x<0) ? -1: 0 ) ; }
 
 inline int imin( int a, int b  ) { return (a<b) ? a : b; }
 inline int imax( int a, int b  ) { return (a>b) ? a : b; }
+
+template<typename T>
+bool specstr2v( const char *s, T &v, T vmin, T vmax )
+{
+  if( s[0] == '=' &&  s[1] == '<' && s[2] == '\0' ) {
+    v = vmin;
+    return true;
+  }
+  if( s[0] == '=' &&  s[1] == '>' && s[2] == '\0' ) {
+    v = vmax;
+    return true;
+  }
+
+  if( s[0] == '%' && isdigit(s[1]) ) {
+    const int percent = std::clamp( atoi(s+1), 0, 100 );
+    v = vmin + ( vmax - vmin ) * percent / 100;
+    return true;
+  }
+  return false;
+}
 
 // converts given arg to int, with check and limits, =< => %proc
 bool arg2long( int narg, int argc, const char * const * argv, long *v,

@@ -1,7 +1,6 @@
 #define _GNU_SOURCE
 #include <cstring>
 #include <cmath>
-#include <algorithm>
 
 #include <oxc_floatfun.h>
 
@@ -225,6 +224,9 @@ float str2float_d( const char *s, float def, float vmin, float vmax )
   float v = def;
   char *eptr;
   if( s && *s ) {
+    if( specstr2v( s, v, vmin, vmax ) ) {
+      return v;
+    }
     // TODO: callback
     float t = strtof( s, &eptr );
     if( *eptr == '\0' ) {

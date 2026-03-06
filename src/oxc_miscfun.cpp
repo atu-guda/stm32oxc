@@ -1,5 +1,4 @@
 #include <cstdlib>
-#include <cctype>
 #include <cstring>
 #include <algorithm>
 
@@ -167,20 +166,7 @@ bool arg2long( int narg, int argc, const char * const * argv, long *v,
   }
 
   const char *s = argv[narg];
-
-  // special strings: < > %n
-  if( s[0] == '=' &&  s[1] == '<' && s[2] == '\0' ) {
-    *v = vmin;
-    return true;
-  }
-  if( s[0] == '=' &&  s[1] == '>' && s[2] == '\0' ) {
-    *v = vmax;
-    return true;
-  }
-
-  if( s[0] == '%' && isdigit(s[1]) ) {
-    const int percent = std::clamp( atoi(s+1), 0, 100 );
-    *v = vmin + ( vmax - vmin ) * percent / 100;
+  if( specstr2v( s, *v, vmin, vmax ) ) {
     return true;
   }
 
@@ -216,23 +202,9 @@ bool arg2ulong( int narg, int argc, const char * const * argv, unsigned long *v,
   }
 
   const char *s = argv[narg];
-
-  // special strings: < > %n
-  if( s[0] == '=' &&  s[1] == '<' && s[2] == '\0' ) {
-    *v = vmin;
+  if( specstr2v( s, *v, vmin, vmax ) ) {
     return true;
   }
-  if( s[0] == '=' &&  s[1] == '>' && s[2] == '\0' ) {
-    *v = vmax;
-    return true;
-  }
-
-  if( s[0] == '%' && isdigit(s[1]) ) {
-    const int percent = std::clamp( atoi(s+1), 0, 100 );
-    *v = vmin + ( vmax - vmin ) * percent / 100;
-    return true;
-  }
-
 
   unsigned long l { vmin };
   if( int *vx = int_val_ptr( s ) ) {
