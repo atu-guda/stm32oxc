@@ -20,7 +20,6 @@ bool is_good_coords( bool do_stop = true, bool do_print = false, bool do_measure
 inline constexpr PortPin LEDSX_START { PB12 };
 inline constexpr uint32_t LEDSX_N { 4 };
 
-inline auto& BTN_STOP_GPIO                  { GpioB };
 inline constexpr PortPin  BTN_STOP_PIN      {  PB0 };
 inline constexpr uint32_t BTN_STOP_BIT      { BTN_STOP_PIN.pinNum().bitmask() };
 inline constexpr uint16_t BTN_STOP_IRQ_PRTY { 14 };
@@ -28,7 +27,6 @@ inline constexpr auto     BTN_STOP_IRQ_N    { EXTI0_IRQn };
 inline constexpr auto     BTN_STOP_EXTI_DIR { ExtiEv::down };
 void init_EXTI();
 
-inline auto& LWM_GPIO { GpioA };
 inline constexpr PortPin LWM_PIN0 { PA0 };
 inline constexpr PortPin LWM_PIN1 { PA1 };
 inline constexpr PortPin LWM_PIN2 { PA2 };
@@ -52,11 +50,10 @@ int tim_lwm_cfg();
 void tim_lwm_start();
 void tim_lwm_stop();
 
-inline auto& ADC1_GPIO { GpioA };
 #define ADC1_NCH   3
-#define ADC1_PIN0  PA4
-#define ADC1_PIN1  PA5
-#define ADC1_PIN2  PA6
+inline constexpr PortPin ADC1_PIN0 { PA4 };
+inline constexpr PortPin ADC1_PIN1 { PA5 };
+inline constexpr PortPin ADC1_PIN2 { PA6 };
 #define ADC_CLK_EN __HAL_RCC_ADC1_CLK_ENABLE();
 extern ADC_HandleTypeDef hadc1;
 extern DMA_HandleTypeDef hdma_adc1;
@@ -70,21 +67,12 @@ class Sensor;
 
 // ------------------------------- Coords -----------------------------------
 
-using PartFun = float (*)(float); // [0..1] -> [0..1]
-struct PartFunInfo {
-  PartFun f;
+struct EasingFunInfo {
+  EasingFun f;
   float kv;  // max speed koeff, <=1
 };
-inline float pafun_lim( float x ) { return std::clamp( x, 0.0f, 1.0f ); };
-float pafun_one( float x );
-float pafun_poly2_ss( float x ); // ss - slow start, se - low end, sb - slow both
-float pafun_poly2_se( float x );
-float pafun_poly3_sb( float x );
-float pafun_trig_ss(  float x );
-float pafun_trig_se(  float x );
-float pafun_trig_sb(  float x );
 
-extern const PartFunInfo part_fun_info[];
+extern const EasingFunInfo part_fun_info[];
 
 struct CoordInfo {
   float q_min, q_max;

@@ -10,6 +10,7 @@
 #include <oxc_floatfun.h>
 #include <oxc_namedints.h>
 #include <oxc_namedfloats.h>
+#include <oxc_easing.h>
 
 #include "main.h"
 
@@ -23,30 +24,18 @@ BOARD_CONSOLE_DEFINES;
 
 const char* common_help_string = "App to measure servo speed" NL;
 
-using PartFun = float (*)(float); // [0..1] -> [0..1]
-static constexpr float pi_f = std::numbers::pi_v<float>;
-static constexpr float pi_half_f = pi_f / 2;
-inline float pafun_lim( float x ) { return std::clamp( x, 0.0f, 1.0f ); };
-float pafun_one(      float x );
-float pafun_poly2_ss( float x ); // ss - slow start, se - low end, sb - slow both
-float pafun_poly2_se( float x );
-float pafun_poly3_sb( float x );
-float pafun_trig_ss(  float x );
-float pafun_trig_se(  float x );
-float pafun_trig_sb(  float x );
-float pafun_step_xx(  float x );
-const PartFun part_funcs[] {
-  pafun_one,         // 0
-  pafun_poly2_ss,    // 1
-  pafun_poly2_se,    // 2
-  pafun_poly3_sb,    // 3
-  pafun_trig_ss,     // 4
-  pafun_trig_se,     // 5
-  pafun_trig_sb,     // 6
-  pafun_step_xx,     // 7
-  pafun_one,         // protect // 8
+const EasingFun easing_funcs[] {
+  easing_one,         // 0
+  easing_poly2_in,    // 1
+  easing_poly2_out,   // 2
+  easing_poly3_io,    // 3
+  easing_trig_in,     // 4
+  easing_trig_out,    // 5
+  easing_trig_io,     // 6
+  easing_step_01,     // 7
+  easing_one,         // protect // 8
 };
-constexpr auto part_funcs_n { std::size( part_funcs) };
+constexpr auto easing_funcs_n { std::size( easing_funcs) };
 
 // --- local commands;
 DCL_CMD_REG( test0,    'T', "n t_s t_e - test "  );
@@ -101,7 +90,7 @@ int     enco1_n { 2400 };  // pulses per turn for encoder // WHY? was 600/1200, 
 int     tick_0  {    0 };  // start tick
 int     dlt_t   {    0 };  // ticks delta
 int     tn      {    0 };  // torque index
-int     fun_idx {    0 };  // part_funcs idx
+int     fun_idx {    0 };  // easing_funcs idx
 int     n_dyn   { 1000 };  // main time steps in cmd_dyn
 int     np_tail {   10 };  // procent of tail steps
 int     dyn_ret {    2 };  // return to start in cmd_dyn / or with 0
@@ -263,7 +252,7 @@ int cmd_dyn_fun( int argc, const char * const * argv )
 
   const int fun_idx_saved = fun_idx;
 
-  for( fun_idx = 0; (size_t)fun_idx < (part_funcs_n-1) && !break_flag; ++fun_idx ) { // -1 for guard fun
+  for( fun_idx = 0; (size_t)fun_idx < (easing_funcs_n-1) && !break_flag; ++fun_idx ) { // -1 for guard fun
     do_dyn( n_t, t_s, t_e );
   }
 
@@ -298,7 +287,7 @@ int cmd_meas1( int argc, const char * const * argv )
 int do_dyn( int n_t, int t_s, int t_e )
 {
   const int t_step   = UVAR_t;
-  const int fidx     = std::clamp( fun_idx, 0, (int)part_funcs_n-1 );
+  const int fidx     = std::clamp( fun_idx, 0, (int)easing_funcs_n-1 );
   const int d_t_on   = t_e - t_s;
   const int n_tail   = n_t * np_tail / 100;
 
@@ -323,7 +312,7 @@ int do_dyn( int n_t, int t_s, int t_e )
   int n_all = n_t + n_tail;
 
   for( int i=0; i<=n_all && !break_flag; ++i ) { // SIC: <=
-    const float qr = part_funcs[fidx]( (float)i / n_t );
+    const float qr = easing_funcs[fidx]( (float)i / n_t );
     t_on = (uint32_t)( t_s + qr * d_t_on );
     leds[1] = 1;
     set_t_on_from_us( t_on );
@@ -512,66 +501,6 @@ int cmd_timinfo( int argc, const char * const * argv )
   tim_print_cfg( TIM_LWM );
   return 0;
 }
-
-// step-alike functions
-
-float pafun_one( float x )
-{
-  return pafun_lim( x );
-}
-
-float pafun_poly2_ss( float x )
-{
-  x = pafun_lim( x );
-  return x*x;
-}
-
-float pafun_poly2_se( float x )
-{
-  x = pafun_lim( x );
-  return x * ( 2 - x );
-}
-
-float pafun_poly3_sb( float x )
-{
-  x = pafun_lim( x );
-  return -2 * x*x*x + 3*x*x;
-}
-
-float pafun_trig_ss(  float x )
-{
-  x = pafun_lim( x );
-  return 1 - cosf( x * pi_half_f );
-}
-
-float pafun_trig_se(  float x )
-{
-  x = pafun_lim( x );
-  return sinf( x * pi_half_f );
-}
-
-float pafun_trig_sb(  float x )
-{
-  x = pafun_lim( x );
-  return 0.5f * ( 1 - cosf( pi_f * x ) );
-}
-
-float pafun_step_xx(  float x )
-{
-  x = pafun_lim( x );
-  return ( x > 0.1f ) ? 1.0f : 0.0f;
-}
-
-
-
-float pafun_one(      float x );
-float pafun_poly2_ss( float x ); // ss - slow start, se - low end, sb - slow both
-float pafun_poly2_se( float x );
-float pafun_poly3_sb( float x );
-float pafun_trig_ss(  float x );
-float pafun_trig_se(  float x );
-float pafun_trig_sb(  float x );
-float pafun_step_xx(  float x ); // jump on 0.1
 
 // ------------------------------------------------------------ 
 

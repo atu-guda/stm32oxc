@@ -18,6 +18,7 @@
 #include <oxc_atleave.h>
 #include <oxc_outstr.h>
 #include <oxc_as5600.h>
+#include <oxc_easing.h>
 
 #include "main.h"
 
@@ -51,64 +52,19 @@ AS5600 ang_sens( i2cd );
 int adc_n {100};
 volatile int adc_dma_end {0};
 
-// part funcs
-static constexpr float pi_f = std::numbers::pi_v<float>;
-static constexpr float pi_half_f = pi_f / 2;
-// _ss = slow start, _se - slow end, _sb - slow both
 
-float pafun_one( float x )
-{
-  return pafun_lim( x );
-}
-
-float pafun_poly2_ss( float x )
-{
-  x = pafun_lim( x );
-  return x*x;
-}
-
-float pafun_poly2_se( float x )
-{
-  x = pafun_lim( x );
-  return x * ( 2 - x );
-}
-
-float pafun_poly3_sb( float x )
-{
-  x = pafun_lim( x );
-  return -2 * x*x*x + 3*x*x;
-}
-
-float pafun_trig_ss(  float x )
-{
-  x = pafun_lim( x );
-  return 1 - cosf( x * pi_half_f );
-}
-
-float pafun_trig_se(  float x )
-{
-  x = pafun_lim( x );
-  return sinf( x * pi_half_f );
-}
-
-float pafun_trig_sb(  float x )
-{
-  x = pafun_lim( x );
-  return 0.5f * ( 1 - cosf( pi_f * x ) );
-}
-
-
-const PartFunInfo part_fun_info[] = {
-  { pafun_one,      1.0f },           // 0
-  { pafun_poly2_ss, 0.5f },           // 1
-  { pafun_poly2_se, 0.5f },           // 2
-  { pafun_poly3_sb, 0.6f },           // 3
-  { pafun_trig_ss,  1/pi_half_f },    // 4
-  { pafun_trig_se,  1/pi_half_f },    // 5
-  { pafun_trig_sb,  1/pi_half_f },    // 6
-  { pafun_one,      1.0f } // protect // 7
+const EasingFunInfo easing_fun_info[] = {
+  { easing_one,       1.0f },    // 0
+  { easing_poly2_in,  0.5f },    // 1
+  { easing_poly2_out, 0.5f },    // 2
+  { easing_poly3_io,  0.6f },    // 3
+  { easing_trig_in,   0.6f },    // 4 0.6 approx 1/pi_half_f
+  { easing_trig_out,  0.6f },    // 5
+  { easing_trig_io,   0.6f },    // 6
+  { easing_step_01,   1.0f },    // 7
+  { easing_one,       1.0f }     // protect // 8
 };
-constexpr auto part_fun_n { std::size( part_fun_info) };
+constexpr auto easing_fun_n { std::size( easing_fun_info) };
 
 OutStream& operator<<( OutStream &os, const MovePartCoord &rhs )
 {
@@ -458,7 +414,7 @@ int cmd2MovePart( int argc, const char * const * argv, int start_idx, MovePart &
 
   for( auto [i,m]: views::enumerate(mp.mpc) ) {
     m.q_e = arg2float_d( i+start_idx+1,          argc, argv, coords[i].q_cur, coords[i].q_min, coords[i].q_max );
-    m.tp  = arg2long_d(  i+start_idx+1+coords_n, argc, argv, def_tp, 0, part_fun_n-1 );
+    m.tp  = arg2long_d(  i+start_idx+1+coords_n, argc, argv, def_tp, 0, easing_fun_n-1 );
   }
 
   return 0;
@@ -779,7 +735,7 @@ int process_movepart( const MovePart &mp, float kkv  )
     qs_0[i]    = co.q_cur;
     qs_dlt[i]  = mp.mpc[i].q_e - qs_0[i];
     const float q_adlt { fabsf( qs_dlt[i] ) };
-    const float v = kkv * mp.k_v * co.vt_max * part_fun_info[ mp.mpc[i].tp ].kv;
+    const float v = kkv * mp.k_v * co.vt_max * easing_fun_info[ mp.mpc[i].tp ].kv;
 
     const uint32_t n = std::clamp( unsigned( q_adlt/( v * t_step * 1e-3f ) ), 1u, 10000u );
     nn = std::max( nn, n );
@@ -821,7 +777,7 @@ int process_movepart( const MovePart &mp, float kkv  )
 
     for( size_t mi = 0; mi<coords_n; ++mi ) {
 
-      const float q01f = part_fun_info[ mp.mpc[mi].tp ].f( float(i+1)/nn );
+      const float q01f = easing_fun_info[ mp.mpc[mi].tp ].f( float(i+1)/nn );
       const float q = qs_0[mi] + qs_dlt[mi] * q01f;
       std_out << out_q_fmt( q ) << ' ';
 
