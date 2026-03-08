@@ -218,31 +218,21 @@ xfloat to_SI_prefix( xfloat v, char *c )
 
 // -------------------------------------------------------------- 
 
-
-float str2float_d( const char *s, float def, float vmin, float vmax )
+template<>
+std::optional<float> strtoT( const char *s )
 {
-  float v = def;
   char *eptr;
-  if( s && *s ) {
-    if( specstr2v( s, v, vmin, vmax ) ) {
-      return v;
-    }
-    // TODO: callback
-    float t = strtof( s, &eptr );
-    if( *eptr == '\0' ) {
-      v = t;
-    }
+  float  v = strtof( s, &eptr );
+  if( *eptr != '\0' ) {
+    return {};
   }
-  return std::clamp( v, vmin, vmax );
+  return v;
 }
+
 
 float arg2float_d( int narg, int argc, const char * const * argv, float def, float vmin, float vmax )
 {
-  const char *s { nullptr };
-  if(  narg < argc && argv != nullptr ) {
-    s = argv[narg];
-  }
-  return str2float_d( s, def, vmin, vmax );
+  return arg2T_d( narg, argc, argv, def, vmin, vmax );
 }
 
 #ifdef OXC_NEED_DOUBLE_OUT
@@ -390,27 +380,21 @@ OutStream& operator<<( OutStream &os, double rhs ) {
    return os;
 };
 
-double str2double_d( const char *s, double def, double vmin, double vmax )
+template<>
+std::optional<double> strtoT( const char *s )
 {
-  double v = def;
   char *eptr;
-  if( s && *s ) {
-    // TODO: callback
-    double t = strtod( s, &eptr );
-    if( *eptr == '\0' ) {
-      v = t;
-    }
+  double  v = strtod( s, &eptr );
+  if( *eptr != '\0' ) {
+    return {};
   }
-  return std::clamp( v, vmin, vmax );
+  return v;
 }
+
 
 double arg2double_d( int narg, int argc, const char * const * argv, double def, double vmin, double vmax )
 {
-  const char *s { nullptr };
-  if(  narg < argc && argv != nullptr ) {
-    s = argv[narg];
-  }
-  return str2double_d( s, def, vmin, vmax );
+  return arg2T_d( narg, argc, argv, def, vmin, vmax );
 }
 
 #endif

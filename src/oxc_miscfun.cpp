@@ -157,76 +157,48 @@ __weak int* int_val_ptr( const char *s  )
   return &( user_vars[ s[1] - 'a'] );
 }
 
-
-bool arg2long( int narg, int argc, const char * const * argv, long *v,
-               long vmin, long vmax )
+template<>
+std::optional<long> strtoT( const char *s )
 {
-  if( narg >= argc || !argv || !v || narg >= argc ) {
-    return false;
+  char *eptr;
+  long  v = strtol( s, &eptr, 0 );
+  if( *eptr != '\0' ) {
+    return {};
   }
-
-  const char *s = argv[narg];
-  if( specstr2v( s, *v, vmin, vmax ) ) {
-    return true;
-  }
-
-  long l { vmin };
-  if( int *vx = int_val_ptr( s ) ) {
-    l = static_cast<long>(*vx);
-  } else {
-    char *eptr;
-    l = strtol( argv[narg], &eptr, 0 );
-    // any non-digital string (like 'def') will get it
-    if( *eptr != 0 ) {
-      return false;
-    }
-  }
-  *v = clamp( l, vmin, vmax );
-  return true;
+  return v;
 }
+
+template<>
+std::optional<int> strtoT( const char *s )
+{
+  static_assert( sizeof(int) == sizeof(long) );
+  return strtoT<long>( s );
+}
+
+template<>
+std::optional<unsigned long> strtoT( const char *s )
+{
+  char *eptr;
+  unsigned long  v = strtoul( s, &eptr, 0 );
+  if( *eptr != '\0' ) {
+    return {};
+  }
+  return v;
+}
+
+
 
 long arg2long_d( int narg, int argc, const char * const * argv, long def,
                  long vmin, long vmax )
 {
-  long v = def;
-  arg2long( narg, argc, argv, &v, vmin, vmax );
-  return v;
+  return arg2T_d( narg, argc, argv, def, vmin, vmax );
 }
 
-// TODO: make common code
-bool arg2ulong( int narg, int argc, const char * const * argv, unsigned long *v,
-               unsigned long vmin, unsigned long vmax )
-{
-  if( narg >= argc || !argv || !v || narg >= argc ) {
-    return false;
-  }
-
-  const char *s = argv[narg];
-  if( specstr2v( s, *v, vmin, vmax ) ) {
-    return true;
-  }
-
-  unsigned long l { vmin };
-  if( int *vx = int_val_ptr( s ) ) {
-    l = static_cast<unsigned long>(*vx);
-  } else {
-    char *eptr;
-    l = strtoul( argv[narg], &eptr, 0 );
-    // any non-digital string (like 'def') will get it
-    if( *eptr != 0 ) {
-      return false;
-    }
-  }
-  *v = clamp( l, vmin, vmax );
-  return true;
-}
 
 unsigned long arg2ulong_d( int narg, int argc, const char * const * argv, unsigned long def,
                   unsigned long vmin, unsigned long vmax )
 {
-  unsigned long v = def;
-  arg2ulong( narg, argc, argv, &v, vmin, vmax );
-  return v;
+  return arg2T_d( narg, argc, argv, def, vmin, vmax );
 }
 
 

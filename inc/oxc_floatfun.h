@@ -38,7 +38,6 @@ constexpr inline  int float_default_width { 11 };
 
 int cvtff( float f, char *buf, unsigned bufsz, uint32_t flg = cvtff_auto, int w = float_default_width, int prec = 99 );
 
-float str2float_d( const char *s, float def, float vmin = -__FLT_MAX__, float vmax = __FLT_MAX__ );
 float arg2float_d( int narg, int argc, const char * const * argv, float def,
                  float vmin = -__FLT_MAX__, float vmax = __FLT_MAX__ );
 // TODO: callback for parameter parsing
@@ -75,7 +74,6 @@ constexpr inline  int double_default_width { 15 };
 
 int cvtfd( double f, char *buf, unsigned bufsz, uint32_t flg = cvtff_auto, int w = double_default_width, int prec = 99 );
 
-double str2double_d( const char *s, double def, double vmin = -__DBL_MAX__, double vmax = __DBL_MAX__ );
 double arg2double_d( int narg, int argc, const char * const * argv, double def,
                  double vmin = -__DBL_MAX__, double vmax = __DBL_MAX__ );
 // TODO: callback for parameter parsing

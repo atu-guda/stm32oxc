@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <cctype>
+#include <limits>
 #include <algorithm>
 
 #include <oxc_base.h>
@@ -50,8 +51,30 @@ inline int sign( int x ) { return (x>0) ? 1 : ( (x<0) ? -1: 0 ) ; }
 inline int imin( int a, int b  ) { return (a<b) ? a : b; }
 inline int imax( int a, int b  ) { return (a>b) ? a : b; }
 
+// TODO: callback for parameter parsing: default $a .. $z
+__weak int* int_val_ptr( const char *s  );
+
 template<typename T>
-bool specstr2v( const char *s, T &v, T vmin, T vmax )
+std::optional<T> strtoT( const char *s );
+
+template<>
+std::optional<long> strtoT( const char *s );
+
+template<>
+std::optional<int> strtoT( const char *s );
+
+template<>
+std::optional<unsigned long> strtoT( const char *s );
+
+template<>
+std::optional<float> strtoT( const char *s );
+
+template<>
+std::optional<double> strtoT( const char *s );
+
+
+template<typename T>
+bool specstr2v( const char *s, T &v, T vmin = std::numeric_limits<T>::lowest(), T vmax  = std::numeric_limits<T>::max() )
 {
   if( s[0] == '=' &&  s[1] == '<' && s[2] == '\0' ) {
     v = vmin;
@@ -70,23 +93,54 @@ bool specstr2v( const char *s, T &v, T vmin, T vmax )
   return false;
 }
 
-// converts given arg to int, with check and limits, =< => %proc
-bool arg2long( int narg, int argc, const char * const * argv, long *v,
-               long vmin= INT32_MIN, long vmax = INT32_MAX );
-// the same with default value
-long arg2long_d( int narg, int argc, const char * const * argv, long def,
-                 long vmin = INT32_MIN, long vmax = INT32_MAX );
-// the same but unsigned
-bool arg2ulong( int narg, int argc, const char * const * argv, unsigned long *v,
-               unsigned long vmin= 0, unsigned long vmax = UINT32_MAX );
-// the same with default value
-unsigned long arg2ulong_d( int narg, int argc, const char * const * argv, unsigned long def,
-                 unsigned long vmin= 0, unsigned long vmax = UINT32_MAX );
-inline bool arg2bool_d( int narg, int argc, const char * const * argv, bool def = false )
-  { return (bool)(arg2long_d(narg,argc,argv,def,0,1)); };
+template<typename T>
+bool arg2T( int narg, int argc, const char * const * argv, T *v, T vmin, T vmax )
+{
+  if( narg >= argc || !argv || !v || narg >= argc ) {
+    return false;
+  }
 
-// TODO: callback for parameter parsing: default $a .. $z
-__weak int* int_val_ptr( const char *s  );
+  const char *s = argv[narg];
+  if( specstr2v( s, *v, vmin, vmax ) ) {
+    return true;
+  }
+
+  T l { vmin };
+  if( int *vx = int_val_ptr( s ) ) {
+    l = static_cast<T>(*vx);
+  } else {
+    auto l0 = strtoT<T>( argv[narg] );
+    // any non-digital string (like 'def') will get it
+    if( !l0 ) {
+      return false;
+    }
+    l = l0.value_or( vmin );
+  }
+  *v = std::clamp( l, vmin, vmax );
+  return true;
+}
+
+template<typename T>
+T arg2T_d( int narg, int argc, const char * const * argv, T def,
+    T vmin = std::numeric_limits<T>::lowest(), T vmax  = std::numeric_limits<T>::max() )
+{
+  T v { def };
+  arg2T( narg, argc, argv, &v, vmin, vmax );
+  return v;
+}
+
+// converts given arg to int, with check and limits, =< => %proc
+//  with default value
+// #define arg2long_d arg2T_d
+// #define arg2ulong_d arg2T_d
+// sepatate functions gives us shoter code.
+long arg2long_d( int narg, int argc, const char * const * argv, long def,
+                 long vmin = std::numeric_limits<long>::lowest(), long vmax = std::numeric_limits<long>::max() );
+unsigned long arg2ulong_d( int narg, int argc, const char * const * argv, unsigned long def,
+                 unsigned long vmin= std::numeric_limits<unsigned long>::lowest(), unsigned long vmax = std::numeric_limits<unsigned long>::max() );
+inline bool arg2bool_d( int narg, int argc, const char * const * argv, bool def = false )
+  { return (bool)(arg2long_d(narg,argc,argv,def,false,true)); };
+
 
  // swap bytes in 16-bits
 inline uint16_t rev16( uint16_t v ) { return (uint16_t)__REV16( v );}
