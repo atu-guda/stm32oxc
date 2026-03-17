@@ -52,7 +52,8 @@ SUBDIRS = \
   43_ads1220_spi \
   80_math_stat \
   l11_windmash1 \
-  l12_hand0
+  l12_hand0 \
+  l14_vamini
 
   # 16_step1 \
   # 17_1w_18b20 \

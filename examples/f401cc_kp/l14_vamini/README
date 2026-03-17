@@ -1,0 +1,4 @@
+Minimal 2-ch voltmeter with LCD (+UART?) output.
+
+ADC: A4, A5;
+
