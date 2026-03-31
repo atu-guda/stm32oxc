@@ -18,6 +18,7 @@ SUBDIRS = \
   07_i2c_lcdt \
   08_i2c_mpu6050 \
   09_i2c_bmp085 \
+  09a_i2c_bmp280 \
   10_i2c_pcf8591 \
   11_i2c_ds3231 \
   12_tim_pwm \

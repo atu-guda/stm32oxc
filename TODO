@@ -1,3 +1,4 @@
+H5 - BUG _sstack ?
 05d - func for EXTI->IRQ, not macro only : func exsist fot f407v:l02_coord
 get/set commamd: replace get_int_ptr by something better (NamedObj?)
 NamedObj : find: return structure { ptr, idx } + special idx num/bits/handling

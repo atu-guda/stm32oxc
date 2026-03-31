@@ -24,10 +24,13 @@ void DevI2C::resetDev()
 
 void DevI2C::softReset()
 {
+  // no soft reset on H7...
+  #ifdef I2C_CR1_SWRST
   SET_BIT(   i2ch->Instance->CR1, I2C_CR1_SWRST );
   delay_ms( 4 );
   CLEAR_BIT( i2ch->Instance->CR1, I2C_CR1_SWRST);
   delay_ms( 4 );
+  #endif
 }
 
 bool DevI2C::ping( uint8_t addr )
