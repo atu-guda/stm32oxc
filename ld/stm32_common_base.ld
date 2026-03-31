@@ -3,6 +3,7 @@ ENTRY(Reset_Handler)
 /* defined in oxc_base.h: extern  const int _sdata, _edata, _sbss, _ebss, _end, _estack */
 
 _estack = ORIGIN(RAM) + _RAM_SIZE;  /* stack starts at over_end of RAM */
+_sstack = _estack - _Min_Stack_Size;
 /* to check segment sizes */
 _Min_Heap_Size = 0x400;
 _Min_Stack_Size = 0x500;
