@@ -22,10 +22,18 @@ void DevI2C::resetDev()
   delay_ms( 10 );
 }
 
+void DevI2C::softReset()
+{
+  SET_BIT(   i2ch->Instance->CR1, I2C_CR1_SWRST );
+  delay_ms( 4 );
+  CLEAR_BIT( i2ch->Instance->CR1, I2C_CR1_SWRST);
+  delay_ms( 4 );
+}
+
 bool DevI2C::ping( uint8_t addr )
 {
   addr = effAddr( addr );
-  HAL_StatusTypeDef rc = HAL_I2C_IsDeviceReady( i2ch, addr, 3, maxWait );
+  HAL_StatusTypeDef rc = HAL_I2C_IsDeviceReady( i2ch, addr, 4, maxWait ); // 4 = trials
   return ( rc == HAL_OK );
 }
 

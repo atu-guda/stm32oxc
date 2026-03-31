@@ -33,21 +33,68 @@ int cmd_i2c_scan( int argc, const char * const * argv )
   std_out << NL "I2C Scan in range [ " << addr_start << " ; "  << addr_end << " ] " NL;
   CHECK_I2C_DEV;
 
-  i2c_dbg->resetDev();
+  // i2c_dbg->resetDev();
+  // i2c_dbg->softReset();
 
   for( uint8_t addr=addr_start; addr < addr_end; ++addr ) {
     bool rc = i2c_dbg->ping( addr );
     int i_err = i2c_dbg->getErr();
-    delay_ms( 10 );
+    delay_ms( 2 );
     if( !rc ) {
       continue;
     }
     std_out << addr << " (0x" <<  HexInt8( addr ) <<  ")  : "  <<  i_err << NL;
   }
 
-  std_out <<  NL "I2C scan end." NL ;
+  std_out << NL "# err= " << HexInt16( i2c_dbg->getErr() )
+          << " state= "   << HexInt16( i2c_dbg->getState() ) << NL;
+  if( UVAR_d > 0 ) {
+    dump32( (void*)(BOARD_I2C_DEFAULT), 0x30 );
+  }
   return 0;
 }
+
+DCL_CMD_REG( i2c_reset,  0,  "reset (dis/en) I2C" );
+int cmd_i2c_reset( int argc, const char * const * argv )
+{
+  CHECK_I2C_DEV;
+
+  i2c_dbg->resetDev();
+
+  if( UVAR_d > 0 ) {
+    dump32( (void*)(BOARD_I2C_DEFAULT), 0x30 );
+  }
+  return 0;
+}
+
+DCL_CMD_REG( i2c_swreset,  0,  "soft  reset I2C" );
+int cmd_i2c_swreset( int argc, const char * const * argv )
+{
+  CHECK_I2C_DEV;
+
+  i2c_dbg->softReset();
+
+  if( UVAR_d > 0 ) {
+    dump32( (void*)(BOARD_I2C_DEFAULT), 0x30 );
+  }
+  return 0;
+}
+
+DCL_CMD_REG( i2c_init,  0,  "default init I2C" );
+int cmd_i2c_init( int argc, const char * const * argv )
+{
+  CHECK_I2C_DEV;
+
+  UVAR_e = i2c_default_init( *i2c_dbg->dev() /*, 400000 */ );
+
+  if( UVAR_d > 0 ) {
+    dump32( (void*)(BOARD_I2C_DEFAULT), 0x30 );
+  }
+  return 0;
+}
+
+
+
 
 
 DCL_CMD_REG( i2c_send,  0,  "val [addr] - send to I2C (def addr=var[p])" );
@@ -175,7 +222,6 @@ int cmd_i2c_recv_r1( int argc, const char * const * argv )
 }
 
 
-// TODO: combine with r1
 DCL_CMD_REG( i2c_recv_r2,  0,  "reg [n] - recv from I2C(reg), reg_sz=2 (addr=var[p])" );
 int cmd_i2c_recv_r2( int argc, const char * const * argv )
 {
@@ -185,16 +231,13 @@ int cmd_i2c_recv_r2( int argc, const char * const * argv )
 DCL_CMD_REG( i2c_setaddr,  0, " addr - set default device addr " );
 int cmd_i2c_setaddr( int argc, const char * const * argv )
 {
-  if( argc < 2 ) {
-    std_out <<  "Need addr [1-127]" NL;
-    return 1;
-  }
   if( !i2c_client_def ) {
     std_out << "# Error: I2C default client is not set!" << NL;
     return 2;
   }
-  uint8_t addr  = (uint8_t)arg2long_d( 1, argc, argv, 0x0, 0,   127 );
+  uint8_t addr  = (uint8_t)arg2long_d( 1, argc, argv, 0x1, 0,   127 );
   i2c_client_def->setAddr( addr );
+  std_out << "# new addr: " << i2c_client_def->getAddr() << NL;
   return 0;
 }
 

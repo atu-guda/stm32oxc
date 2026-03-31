@@ -58,7 +58,9 @@ void HAL_I2C_MspInit( I2C_HandleTypeDef *i2c )
     }
 
     BOARD_I2C_DEFAULT_SCL.cfgAF( BOARD_I2C_DEFAULT_GPIO_AF, true );
+    BOARD_I2C_DEFAULT_SCL.cfg_set_pull_up();
     BOARD_I2C_DEFAULT_SDA.cfgAF( BOARD_I2C_DEFAULT_GPIO_AF, true );
+    BOARD_I2C_DEFAULT_SDA.cfg_set_pull_up();
   }
 }
 

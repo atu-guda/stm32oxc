@@ -55,6 +55,7 @@ env.vim
 tags
 files.list
 session.vim
+.proj_session.vim
 
 # extra
 /extra/unhex_adc/unhex_adc

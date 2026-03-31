@@ -1,4 +1,5 @@
 05d - func for EXTI->IRQ, not macro only : func exsist fot f407v:l02_coord
+get/set commamd: replace get_int_ptr by something better (NamedObj?)
 NamedObj : find: return structure { ptr, idx } + special idx num/bits/handling
 miscfun: splitNameWithIdx - use ranges/string_view+struct for return
 *2hex: template

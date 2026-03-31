@@ -24,7 +24,7 @@ class BMP085 : public I2CClient {
      int16_t   ac1, ac2, ac3;
      uint16_t  ac4, ac5, ac6;
      int16_t   b1, b2, mb, mc, md;
-   } __attribute__((packed));
+   } __attribute__((packed,aligned(__alignof__(uint16_t))));
    static_assert( sizeof(CalibrData) == n_calibr_data*sizeof(uint16_t), "Bad CalibrData size" );
    BMP085( DevI2C &a_dev, uint8_t d_addr = def_i2c_addr )
      : I2CClient( a_dev,  d_addr ) {};

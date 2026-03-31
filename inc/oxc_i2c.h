@@ -18,6 +18,7 @@ class DevI2C  {
    void initI2C( uint32_t speed = default_i2c_speed, uint8_t own_addr = 0 );
    void deInit();
    void resetDev();
+   void softReset();
    void setAddr( uint8_t addr ) { addr2 = addr << 1; }
    uint8_t getAddr() const { return addr2>>1; }
    uint8_t effAddr( uint8_t addr ) const  { return (addr!=0) ? (addr<<1) : addr2; };
