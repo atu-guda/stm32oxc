@@ -23,7 +23,7 @@ int debug {0};
 
 I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );
-HD44780_i2c lcdt( i2cd, 0x3F );
+HD44780_i2c lcdt( i2cd, 0x27 );
 
 const int k_v { 8375 };
 // const int k_v { 84 };
@@ -111,6 +111,7 @@ int main(void)
     lcdt.puts_xy( 0,1, buf1 );
     delay_ms( 200 );
     ++i;
+    leds[0].toggle();
   }
 
   return 0;

@@ -376,6 +376,10 @@ class Pins
    {
      return PinMask( ( gpio.IDR & mask.bitmask() ) >> start.Num() );
    }
+   inline uint16_t readUint() const
+   {
+     return read().bitmask();
+   }
   protected:
    GpioRegs &gpio;
    const PinNum start;
@@ -524,7 +528,7 @@ class PinOut
 
 
 // --------------- PinsIn ----------------------------------------
-// PinsIn pi( GpioB, 12, 4 [, GPIO_{NOPULL,} ] );
+// PinsIn pi( GpioB, 12, 4 [, GpioPull::{no,down,up} ] );
 class PinsIn : public Pins
 {
   public:

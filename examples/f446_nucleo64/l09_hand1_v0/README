@@ -1,0 +1,13 @@
+Initial control for hand1 v0
+
+Level0:
+  ctrl: TB6612FNG (B): C4 = BIn1, C5 = BIn2, C6 = PWM = T3.1
+  measure: AS5600 in I2C(B8,B9)
+  stopswitch: Hall active=down on C12
+
+  TB6612FNG board pinout (top view)
+  Gnd  B1   B2   A2   A1  Gnd  Vcc  Vm
+  Gnd BPwm BIn2 BIn1 Sby AIn1  AIn2 APwm
+   _   ~    +-   +-   +
+
+
