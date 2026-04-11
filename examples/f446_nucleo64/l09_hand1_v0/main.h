@@ -23,8 +23,10 @@ void set_l0_freq( uint32_t freq );
 void set_l0_pwm( float pwm );
 void set_l0_mode( bool i1, bool i2 );
 void set_l0_v( float v ); // +-1
+float get_l0_v();
 
 bool measure_all();
+bool measure_speed( float v );
 
 
 #endif
