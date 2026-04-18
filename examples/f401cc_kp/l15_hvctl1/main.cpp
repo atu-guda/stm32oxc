@@ -36,6 +36,7 @@ int32_t  adc_data[adc_n_ch];
 uint16_t adc_buf[adc_n_ch];
 
 uint32_t f_in  { 20000 };
+uint32_t pressure { 100002 };
 
 
 // ------------------------   commands
@@ -107,6 +108,7 @@ bool default_loop( bool can_stop )
   break_flag = 0;
   for( uint32_t i=0; !can_stop || ( break_flag == 0 ); ++i ) {
     measure_adc( adc_n );
+    measure_press();
     default_out( i );
 
     delay_ms( 200 );
@@ -151,6 +153,12 @@ void default_out( int i )
   strcat( buf_i2c_3, " W" );
   chx[0] = (i&1) ? ':' : '.';
   strcat( buf_i2c_3, chx );
+  strcat( buf0, buf );
+
+  i2dec_n( pressure, buf, 6, ' ' );
+  strcat( buf_i2c_0, buf );
+  strcat( buf_i2c_0, " Pa" );
+  strcat( buf0, " " );
   strcat( buf0, buf );
 
   for( size_t ln=0; ln < buf_n_i2c; ++ln ) {
@@ -322,6 +330,14 @@ void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef* hadc1 )
   ++UVAR_i;
 }
 
+
+// ------------------------------------  ------------------------------------------------
+
+int measure_press()
+{
+  pressure = 100123;
+  return 1;
+}
 
 // ------------------------------------  ------------------------------------------------
 

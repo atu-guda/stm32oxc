@@ -1,7 +1,6 @@
 #ifndef _MAIN_H
 #define _MAIN_H
 
-int measure_adc( int nx );
 
 inline constexpr std::size_t adc_n_ch { 2 };
 extern int32_t  adc_data[adc_n_ch];  // collected and divided data (by adc_measure)
@@ -16,6 +15,8 @@ int  MX_ADC1_Init(void);
 void HAL_ADC_MspInit( ADC_HandleTypeDef* adcHandle );
 void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle);
 
+int measure_adc( int nx );
+int measure_press();
 bool default_loop( bool can_stop = false );
 void default_out( int i );
 
@@ -28,6 +29,7 @@ inline auto& buf_i2c_2 { buf_i2c[2] };
 inline auto& buf_i2c_3 { buf_i2c[3] };
 
 extern uint32_t f_in;
+extern uint32_t pressure;
 
 #endif
 
