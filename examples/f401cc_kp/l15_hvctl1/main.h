@@ -30,6 +30,9 @@ inline auto& buf_i2c_3 { buf_i2c[3] };
 
 extern uint32_t f_in;
 extern uint32_t pressure;
+extern uint32_t t_00;
+extern uint32_t t_c;
+extern uint32_t t_step;
 
 #endif
 

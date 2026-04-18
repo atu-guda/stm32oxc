@@ -35,8 +35,11 @@ volatile int adc_dma_end {0};
 int32_t  adc_data[adc_n_ch];
 uint16_t adc_buf[adc_n_ch];
 
-uint32_t f_in  { 20000 };
+uint32_t f_in     {  20000 };
 uint32_t pressure { 100002 };
+uint32_t t_00     {      0 };
+uint32_t t_c      {      0 };
+uint32_t t_step   {    200 };
 
 
 // ------------------------   commands
@@ -106,13 +109,17 @@ bool default_loop( bool can_stop )
   std_out << "# START" NL;
 
   break_flag = 0;
+  t_00 = HAL_GetTick();
+  uint32_t t_0 { t_00 };
+  t_c = 0;
   for( uint32_t i=0; !can_stop || ( break_flag == 0 ); ++i ) {
     measure_adc( adc_n );
     measure_press();
+    t_c = HAL_GetTick() - t_00;
     default_out( i );
 
-    delay_ms( 200 );
     leds[0].toggle();
+    delay_ms_until_brk( &t_0, t_step );
   }
 
   std_out << "# END" NL;
@@ -165,7 +172,7 @@ void default_out( int i )
     lcdt.puts_xy( 0, ln, buf_i2c[ln] );
   }
 
-  std_out << FmtInt( i, 6 ) << ' ' << buf0 << NL;
+  std_out << FmtInt( t_c, 6 ) << ' ' << buf0 << NL;
 }
 
 
