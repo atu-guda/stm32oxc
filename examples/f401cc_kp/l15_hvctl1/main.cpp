@@ -21,6 +21,8 @@ int debug {0};
 
 // auto out_q_fmt = [](xfloat x) { return FltFmt(x, cvtff_fix,8,4); };
 
+PinsOut ledsx( LEDSX_START, LEDSX_N );
+PinsIn  pin_user( BTN_USER_PIN, 1, GpioPull::up );
 
 I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );
@@ -72,8 +74,9 @@ int main(void)
   UVAR_t =    50;
   UVAR_n =    20;
 
-  leds.initHW();
-  leds.reset( 0xFF_mask );
+  leds.initHW();   leds.reset( 0xFF_mask );
+  ledsx.initHW();  ledsx.reset( 0xFF_mask );
+  pin_user.initHW();
 
   UVAR_v = i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
@@ -102,6 +105,34 @@ int main(void)
 
 
   return 0;
+}
+
+void init_EXTI()
+{
+  BTN_USER_PIN.setEXTI( BTN_USER_EXTI_DIR );
+  HAL_NVIC_SetPriority( BTN_USER_IRQ_N, BTN_USER_IRQ_PRTY, 0 );
+  HAL_NVIC_EnableIRQ(   BTN_USER_IRQ_N );
+}
+
+void HAL_GPIO_EXTI_Callback( uint16_t pin_bit )
+{
+  ledsx[3].set();
+
+  switch( pin_bit ) {
+    case BTN_USER_BIT:
+      break;
+
+    default:
+      ++UVAR_j;
+      break;
+  }
+
+}
+
+
+void EXTI9_5_IRQHandler()
+{
+  HAL_GPIO_EXTI_IRQHandler( BTN_USER_BIT );
 }
 
 bool default_loop( bool can_stop )
