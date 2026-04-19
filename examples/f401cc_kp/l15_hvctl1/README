@@ -2,9 +2,9 @@ Controller for HV source + misc measurement
 
 I2C1: B8 (SCL) B9 (SDA) -> HD44780_i2c LCD, BMP280 barometr, more...
 UART1: A9 (TX), A10 (RX) -> WiFi trasnmitter (wemos?) or blackbox_sdcard
-A0 = aux1? ?res? conn2.6
+A0 = T2.TRT freq metter - gray+- conn2.6
 A1 = T5.2 = motor_pwm - conn1.3
-A2 = T2.3 = freq metter - conn 2.4 - gray+
+A2 = AUX1 conn2.4
 A3 = standby? - white/x - conn 2.3
 A4,A5: ADC (V=red+, I=blue+) conn2.{1,2}
 

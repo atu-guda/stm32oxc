@@ -27,6 +27,12 @@ SRCS += main.cpp
 SRCS += tim.cpp
 
 SRCS += oxc_hd44780_i2c.cpp
+SRCS += oxc_floatfun.cpp
+SRCS += oxc_namedints.cpp
+SRCS += oxc_namedfloats.cpp
+SRCS += oxc_namedobjs.cpp
+SRCS += oxc_outstr.cpp
+SRCS += oxc_bmp280.cpp
 
 
 

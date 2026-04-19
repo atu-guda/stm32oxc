@@ -4,15 +4,16 @@
 // first pins block: conn1
 inline constexpr PortPin AUX2_PIN       { PB10 };
 inline constexpr PortPin DIR_PIN        { PB2  };
-inline constexpr PortPin PWM_FLOW_PIN   { PA1  }; // T5.2 !!! realy here
+inline constexpr PortPin FLOW_PWM_PIN   { PA1  }; // T5.2 !!! realy here
 inline constexpr PortPin STEP_PIN       { PB0  }; // T3.3
 
 // second pin block: conn2
 inline constexpr PortPin ADC1_PIN1      { PA5 };
 inline constexpr PortPin ADC1_PIN0      { PA4 };
 inline constexpr PortPin STANDBY_PIN    { PA3 };
-inline constexpr PortPin MEAS_FREQ_PIN  { PA2 }; // T2.3 TIM_FREQ_MEAS
-inline constexpr PortPin AUX1_PIN       { PA0 };
+inline constexpr PortPin AUX1_PIN       { PA2 };
+// A1 - in first block
+inline constexpr PortPin MEAS_FREQ_PIN  { PA0 }; // T2.ETR TIM_FREQ_MEAS
 
 
 // aux pin block: conn7
@@ -44,15 +45,13 @@ extern TIM_HandleTypeDef tim_freq_meas_h;
 #define TIM_FREQ_MEAS_EN  __GPIOA_CLK_ENABLE(); __TIM2_CLK_ENABLE();
 #define TIM_FREQ_MEAS_DIS __TIM2_CLK_DISABLE();
 #define TIM_FREQ_MEAS_GPIO_AF GPIO_AF1_TIM2
-#define TIM_FREQ_MEAS_CHANNEL TIM_CHANNEL_3
 int tim_freq_meas_cfg();
-inline constexpr uint32_t tim_freq_meas_psc   { 0 }; // 72 MHz = max
 //
 extern TIM_HandleTypeDef tim_step_h;
 #define TIM_STEP TIM3
 #define TIM_STEP_EN  __GPIOB_CLK_ENABLE(); __TIM3_CLK_ENABLE();
 #define TIM_STEP_DIS __TIM3_CLK_DISABLE();
-#define TIM_STEP_GPIO_AF GPIO_AF1_TIM3
+#define TIM_STEP_GPIO_AF GPIO_AF2_TIM3
 #define TIM_STEP_CHANNEL TIM_CHANNEL_3
 int tim_step_cfg();
 inline constexpr uint32_t tim_step_psc   {     0 };
@@ -62,7 +61,7 @@ extern TIM_HandleTypeDef tim_flow_pwm_h;
 #define TIM_FLOW_PWM TIM5
 #define TIM_FLOW_PWM_EN  __GPIOA_CLK_ENABLE(); __TIM5_CLK_ENABLE();
 #define TIM_FLOW_PWM_DIS __TIM5_CLK_DISABLE();
-#define TIM_FLOW_PWM_GPIO_AF GPIO_AF1_TIM5
+#define TIM_FLOW_PWM_GPIO_AF GPIO_AF2_TIM5
 #define TIM_FLOW_PWM_CHANNEL TIM_CHANNEL_2
 int tim_flow_cfg();
 inline constexpr uint32_t tim_flow_psc   {     0 };
@@ -73,7 +72,8 @@ inline constexpr uint32_t tim_flow_arr   {  3600 }; // to 20 kHz
 void init_EXTI();
 int measure_adc( int nx );
 int measure_press();
-bool default_loop( bool can_stop = false );
+int measure_freq();
+bool default_loop( uint32_t nn = 0xFFFFFFFF );
 void default_out( int i );
 
 inline const std::size_t buf_sz_i2c { 32 }; // 20 char + reserve
@@ -88,6 +88,7 @@ extern uint32_t f_in;
 extern uint32_t pressure;
 extern uint32_t t_00;
 extern uint32_t t_c;
+extern uint32_t t_old;
 extern uint32_t t_step;
 
 #endif

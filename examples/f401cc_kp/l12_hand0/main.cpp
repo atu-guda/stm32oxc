@@ -15,7 +15,6 @@
 #include <oxc_floatfun.h>
 #include <oxc_namedints.h>
 #include <oxc_namedfloats.h>
-#include <oxc_atleave.h>
 #include <oxc_outstr.h>
 #include <oxc_as5600.h>
 #include <oxc_easing.h>
@@ -188,9 +187,9 @@ DCL_CMD_REG( calibr,     '\0', " ch(1-2) - calibrate channel sensor " );
 
 
 #define ADD_IOBJ(x)    constexpr NamedInt   ob_##x { #x, &x }
-#define ADD_IOBJ_TD(x) constexpr NamedInt   ob_##x { #x, &td.x }
+//#define ADD_IOBJ_TD(x) constexpr NamedInt   ob_##x { #x, &td.x }
 #define ADD_FOBJ(x)    constexpr NamedFloat ob_##x { #x, &x }
-#define ADD_FOBJ_TD(x) constexpr NamedFloat ob_##x { #x, &td.x }
+//#define ADD_FOBJ_TD(x) constexpr NamedFloat ob_##x { #x, &td.x }
 
 ADD_IOBJ   ( debug   );
 ADD_IOBJ   ( dry_run   );

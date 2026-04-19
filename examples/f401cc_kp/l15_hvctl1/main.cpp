@@ -3,7 +3,14 @@
 
 #include <oxc_auto.h>
 #include <oxc_main.h>
+#include <oxc_cpptypes.h>
+#include <oxc_atleave.h>
+#include <oxc_floatfun.h>
+#include <oxc_namedints.h>
+#include <oxc_namedfloats.h>
+#include <oxc_outstr.h>
 #include <oxc_hd44780_i2c.h>
+#include <oxc_bmp280.h>
 
 #include "main.h"
 
@@ -17,7 +24,8 @@ BOARD_DEFINE_LEDS;
 // USBCDC_CONSOLE_DEFINES;
 BOARD_CONSOLE_DEFINES_UART;
 
-int debug {0};
+int debug   {   0 };
+int out_lcd {   1 };
 
 // auto out_q_fmt = [](xfloat x) { return FltFmt(x, cvtff_fix,8,4); };
 
@@ -27,11 +35,11 @@ PinsIn  pin_user( BTN_USER_PIN, 1, GpioPull::up );
 I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );
 HD44780_i2c lcdt( i2cd, 0x27 );
+BMP280 baro( i2cd );
 
 char buf_i2c[buf_n_i2c][buf_sz_i2c];
 
 const int k_v { 8375 };
-// const int k_v { 84 };
 const int adc_n { 10 };
 volatile int adc_dma_end {0};
 int32_t  adc_data[adc_n_ch];
@@ -41,6 +49,7 @@ uint32_t f_in     {  20000 };
 uint32_t pressure { 100002 };
 uint32_t t_00     {      0 };
 uint32_t t_c      {      0 };
+uint32_t t_old    {      0 };
 uint32_t t_step   {    200 };
 
 
@@ -51,11 +60,42 @@ const char* common_help_string = "hvctl1 " __DATE__ " " __TIME__ NL;
 // --- local commands;
 DCL_CMD_REG( test0,       'T', " - test " );
 
+#define ADD_IOBJ(x)    constexpr NamedInt   ob_##x { #x, &x }
+#define ADD_FOBJ(x)    constexpr NamedFloat ob_##x { #x, &x }
+
+ADD_IOBJ   ( debug   );
+// ADD_IOBJ   ( t_step  );
+
+#undef ADD_IOBJ
+#undef ADD_IOBJ_TD
+
+
+constexpr const NamedObj *const objs_info[] = {
+  & ob_debug,
+  nullptr
+};
+
+NamedObjs objs( objs_info );
+
+// print/set hook functions
+
+bool print_var_ex( const char *nm, int fmt )
+{
+  return objs.print( nm, fmt );
+}
+
+bool set_var_ex( const char *nm, const char *s )
+{
+  auto ok =  objs.set( nm, s );
+  print_var_ex( nm, 0 );
+  return ok;
+}
 
 
 void idle_main_task()
 {
   leds[0].toggle();
+  ledsx[3].toggle();
 }
 
 // void on_sigint( int #<{(| c |)}># )
@@ -67,12 +107,10 @@ void idle_main_task()
 
 int main(void)
 {
-  // STD_PROLOG_START;
-  // STD_PROLOG_USBCDC;
   STD_PROLOG_UART;
 
-  UVAR_t =    50;
-  UVAR_n =    20;
+  // UVAR_t =    50;
+  UVAR_n =    1000;
 
   leds.initHW();   leds.reset( 0xFF_mask );
   ledsx.initHW();  ledsx.reset( 0xFF_mask );
@@ -93,16 +131,35 @@ int main(void)
     die4led( 3_mask );
   }
 
+  __TIM2_CLK_ENABLE();
+  if( !tim_freq_meas_cfg() ) {
+    die4led( 2_mask );
+  }
+  HAL_TIM_Base_Start( &tim_freq_meas_h );
+  t_old = HAL_GetTick();
+  delay_ms( 100 );
+  measure_freq();
+
+
+  ledsx.set( 0xFF_mask );
+  delay_ms( 2000 );
+  auto mode_auto = pin_user.readUint() != 0;
+  ledsx.reset( 0xFF_mask );
+
+  init_EXTI();
+
   BOARD_POST_INIT_BLINK;
 
-  // oxc_add_aux_tick_fun( led_task_nortos );
+  if( mode_auto ) {
+    t_step = 500;
+    default_loop();
+  }
 
+  lcdt.cls();
+  lcdt.puts( "Console mode" );
+  oxc_add_aux_tick_fun( led_task_nortos );
   // dev_console.setOnSigInt( on_sigint );
-
-  // std_main_loop_nortos( &srl, idle_main_task );
-
-  default_loop( false );
-
+  std_main_loop_nortos( &srl, idle_main_task );
 
   return 0;
 }
@@ -116,10 +173,10 @@ void init_EXTI()
 
 void HAL_GPIO_EXTI_Callback( uint16_t pin_bit )
 {
-  ledsx[3].set();
 
   switch( pin_bit ) {
     case BTN_USER_BIT:
+      ledsx[1].toggle();
       break;
 
     default:
@@ -135,21 +192,25 @@ void EXTI9_5_IRQHandler()
   HAL_GPIO_EXTI_IRQHandler( BTN_USER_BIT );
 }
 
-bool default_loop( bool can_stop )
+bool default_loop( uint32_t nn )
 {
+  // tim_print_cfg( TIM_FREQ_MEAS );
   std_out << "# START" NL;
 
   break_flag = 0;
   t_00 = HAL_GetTick();
   uint32_t t_0 { t_00 };
   t_c = 0;
-  for( uint32_t i=0; !can_stop || ( break_flag == 0 ); ++i ) {
+  for( uint32_t i=0; i < nn && ! break_flag; ++i ) {
     measure_adc( adc_n );
     measure_press();
-    t_c = HAL_GetTick() - t_00;
+    measure_freq();
+    uint32_t t_cc = HAL_GetTick();
+    t_c = t_cc - t_00;
     default_out( i );
 
     leds[0].toggle();
+    ledsx[3].toggle();
     delay_ms_until_brk( &t_0, t_step );
   }
 
@@ -180,7 +241,7 @@ void default_out( int i )
   strcat( buf0, buf );
 
   buf_i2c_2[0] = '\0';
-  i2dec_n( f_in, buf, 6, ' ' );
+  i2dec_n( f_in, buf, 7, ' ' );
   strcat( buf_i2c_2, buf );
   strcat( buf_i2c_2, " Hz" );
   strcat( buf0, buf );
@@ -199,8 +260,10 @@ void default_out( int i )
   strcat( buf0, " " );
   strcat( buf0, buf );
 
-  for( size_t ln=0; ln < buf_n_i2c; ++ln ) {
-    lcdt.puts_xy( 0, ln, buf_i2c[ln] );
+  if( out_lcd ) {
+    for( size_t ln=0; ln < buf_n_i2c; ++ln ) {
+      lcdt.puts_xy( 0, ln, buf_i2c[ln] );
+    }
   }
 
   std_out << FmtInt( t_c, 6 ) << ' ' << buf0 << NL;
@@ -245,25 +308,23 @@ int measure_adc( int nx )
   return 1;
 }
 
+int measure_freq()
+{
+  const uint32_t t_cc = HAL_GetTick();
+  const uint32_t t_d = t_cc - t_old;
+  t_old = t_cc;
+  f_in  = TIM_FREQ_MEAS->CNT * 1000 / t_d;
+  TIM_FREQ_MEAS->CNT = 0;
+  return 1;
+}
+
 
 
 int cmd_test0( int argc, const char * const * argv )
 {
-  // char buf_i2c_0[32];
-  // char buf_i2c_1[32];
-  //
-  // char chx = 'x';
-  // for( int i=0; i<UVAR_n; ++i ) {
-  //   measure_adc( adc_n );
-  //   i2dec( adc_buf[0], buf_i2c_0, 8 );
-  //   i2dec( adc_data[0], buf_i2c_1, 8 );
-  //   // i2dec( UVAR_i, buf_i2c_1, 8 );
-  //   chx = (i&1) ? 'X' : '.';
-  //   buf_i2c_1[8] = chx;  buf_i2c_1[9] = '\0';
-  //   lcdt.puts_xy( 0,0, buf_i2c_0 );
-  //   lcdt.puts_xy( 0,1, buf_i2c_1 );
-  //   delay_ms( 500 );
-  // }
+  uint32_t nn = arg2ulong_d( 1, argc, argv, UVAR_n,   1 );
+  t_step      = arg2ulong_d( 2, argc, argv, t_step,   2 );
+  default_loop( nn );
   return 0;
 }
 
