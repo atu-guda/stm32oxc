@@ -11,6 +11,8 @@ extern int debug;
 extern int dry_run;
 extern int dis_movers;
 extern int adc_n;
+extern float k_v_cal;
+extern float k_v_def;
 bool is_mover_disabled( unsigned ch, bool do_print = false );
 int bad_coord_idx(); // < 0 = ok
 bool is_good_coords( bool do_stop = true, bool do_print = false, bool do_measure = false );
@@ -97,10 +99,9 @@ struct MovePart {
   static const constexpr unsigned n_max { 4 }; // <-> n_movers ??
   static const constexpr float kv_min { 0.01f };
   static const constexpr float kv_max { 2.00f };
-  static const constexpr float kv_def { 0.50f };
   MovePartCoord mpc[n_max];
   float k_v; // velocity coeff
-  void init() { for( auto &mp : mpc ) { mp.init(); }; k_v = kv_def; }
+  void init() { for( auto &mp : mpc ) { mp.init(); }; k_v = k_v_def; }
   void from_coords( std::span<const CoordInfo> coos, unsigned tp = 3 );
 };
 OutStream& operator<<( OutStream &os, const MovePart &rhs );
@@ -238,8 +239,8 @@ class SensorAdc : public Sensor {
    static const unsigned max_n_ch { 4 };
    int32_t  adc_data[max_n_ch];  // collected and divided data (by adc_measure)
    uint16_t adc_buf[max_n_ch];   // buffer for DMA
-   float k_a[max_n_ch] {  7.0266e-02f,   -6.7271e-02f, 1.0f, 1.0f };
-   float k_b[max_n_ch] {       -43.9f,           4.6f, 0.0f, 0.0f };
+   float k_a[max_n_ch] {  7.0266e-02f,     -7.40e-02f, 1.0f, 1.0f };
+   float k_b[max_n_ch] {       -47.1f,         16.36f, 0.0f, 0.0f };
 };
 
 class SensorAS5600 : public Sensor {
@@ -257,7 +258,7 @@ class SensorAS5600 : public Sensor {
    float v;
    int zero_val { 0 };
    int32_t iv { 0 };
-   float k_a { 180.0f / 2048 };
+   float k_a { 180.0f / 2048 }; // TODO: need '-'
 };
 
 extern SensorAS5600 sens_enc;

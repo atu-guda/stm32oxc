@@ -36,6 +36,9 @@ int def_tp {3};
 int angle_over { 20 };
 int t_post { 500 };
 
+float k_v_cal { 0.2f };
+float k_v_def { 0.5f };
+
 auto out_q_fmt = [](xfloat x) { return FltFmt(x, cvtff_fix,8,4); };
 
 PinsOut ledsx( LEDSX_START, LEDSX_N );
@@ -98,6 +101,7 @@ std::array<Sensor*,3> sensors { &sens_adc, &sens_enc, &sens_grip };
 
 // ------------------------------- Movers -----------------------------------
 
+//                           k_a       k_b       r_ccr          r_arr          p_fb
 MoverServoCont mover_base(   0.01f,     1.0f, TIM_LWM->CCR1, TIM_LWM->ARR, &coords[0].q_cur );
 MoverServo     mover_p1(   -10.0f,   2500.0f, TIM_LWM->CCR2, TIM_LWM->ARR, &coords[1].q_cur );
 MoverServo     mover_p2(    10.0f,   2850.0f, TIM_LWM->CCR3, TIM_LWM->ARR, &coords[2].q_cur );
@@ -167,9 +171,9 @@ DCL_CMD_REG( test0,       'T', " [val] [ch] [k_v] - test move 1 ch" );
 DCL_CMD_REG( stop,        'P', " - stop pwm" );
 DCL_CMD_REG( mtest,       'M', " [set_zero] [aux] - test AS5600" );
 DCL_CMD_REG( mcoord,      'C', " [store_idx] [n_adc] - measure and store coords" );
-DCL_CMD_REG( go,          'G', " k_v q_0 q_1 q_2 q_3 tp_0 tp_1 tp_2 tp_3 - go " );
-DCL_CMD_REG( add_mp,      'A', " k_v q_0 q_1 q_2 q_3 tp_0 tp_1 tp_2 tp_3 - add MovePoint " );
-DCL_CMD_REG( edit_mp,     'E', " n k_v q_0 q_1 q_2 q_3 tp_0 tp_1 tp_2 tp_3 - edit MovePoint " );
+DCL_CMD_REG( go,          'G', " q_0 q_1 q_2 q_3  k_v  tp_0 tp_1 tp_2 tp_3 - go " );
+DCL_CMD_REG( add_mp,      'A', " q_0 q_1 q_2 q_3  k_v  tp_0 tp_1 tp_2 tp_3 - add MovePoint " );
+DCL_CMD_REG( edit_mp,     'E', " i  q_0 q_1 q_2 q_3  k_v  tp_0 tp_1 tp_2 tp_3 - edit MovePoint " );
 DCL_CMD_REG( add_stored,  'S', " [store_idx] [kv] [q3] - add stored MovePoint " );
 DCL_CMD_REG( add_last,    'L', " [kv] - add last MovePoint " );
 DCL_CMD_REG( del_mp,      'D', " [n] - delete def=last MovePoint " );
@@ -191,13 +195,15 @@ DCL_CMD_REG( calibr,     '\0', " ch(1-2) - calibrate channel sensor " );
 #define ADD_FOBJ(x)    constexpr NamedFloat ob_##x { #x, &x }
 //#define ADD_FOBJ_TD(x) constexpr NamedFloat ob_##x { #x, &td.x }
 
-ADD_IOBJ   ( debug   );
-ADD_IOBJ   ( dry_run   );
+ADD_IOBJ   ( debug        );
+ADD_IOBJ   ( dry_run      );
 ADD_IOBJ   ( dis_movers   );
-ADD_IOBJ   ( def_tp   );
+ADD_IOBJ   ( def_tp       );
 ADD_IOBJ   ( angle_over   );
-ADD_IOBJ   ( adc_n   );
-ADD_IOBJ   ( t_post   );
+ADD_IOBJ   ( adc_n        );
+ADD_IOBJ   ( t_post       );
+ADD_FOBJ   ( k_v_cal      );
+ADD_FOBJ   ( k_v_def      );
 
 #undef ADD_IOBJ
 #undef ADD_IOBJ_TD
@@ -211,6 +217,8 @@ constexpr const NamedObj *const objs_info[] = {
   & ob_angle_over,
   & ob_adc_n,
   & ob_t_post,
+  & ob_k_v_cal,
+  & ob_k_v_def,
   nullptr
 };
 
@@ -359,13 +367,13 @@ int cmd_test0( int argc, const char * const * argv )
 }
 
 
-int cmd_stop( int argc, const char * const * argv )
+int cmd_stop( int argc, const char * const * argv ) // P
 {
   tim_lwm_stop();
   return 0;
 }
 
-int cmd_go( int argc, const char * const * argv )
+int cmd_go( int argc, const char * const * argv ) // G
 {
   static_assert( coords_n <= MovePart::n_max );
   MovePart mp;
@@ -378,7 +386,7 @@ int cmd_go( int argc, const char * const * argv )
   return rc;
 }
 
-int cmd_add_mp( int argc, const char * const * argv )
+int cmd_add_mp( int argc, const char * const * argv ) // A
 {
   MovePart mp;
   cmd2MovePart( argc, argv, 1, mp );
@@ -388,7 +396,7 @@ int cmd_add_mp( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_edit_mp( int argc, const char * const * argv )
+int cmd_edit_mp( int argc, const char * const * argv ) // E
 {
   const auto n = arg2ulong_d(  1, argc, argv, 1, 0, mp_main.size()-1 );
 
@@ -405,21 +413,23 @@ int cmd_clear_mp( int argc, const char * const * argv )
   return 0;
 }
 
+// common parts: q_0 q_1 q_2 q_3 k_v tp_0 tp_1 tp_2 tp_3
+//       +        0   1   2   3   4    5    6    7    8 // if coords_n == 4
 int cmd2MovePart( int argc, const char * const * argv, int start_idx, MovePart &mp )
 {
   mp.init();
 
-  mp.k_v = arg2float_d( start_idx, argc, argv, MovePart::kv_def, MovePart::kv_min, MovePart::kv_max );
+  mp.k_v = arg2float_d( start_idx+coords_n, argc, argv, k_v_def, MovePart::kv_min, MovePart::kv_max );
 
   for( auto [i,m]: views::enumerate(mp.mpc) ) {
-    m.q_e = arg2float_d( i+start_idx+1,          argc, argv, coords[i].q_cur, coords[i].q_min, coords[i].q_max );
+    m.q_e = arg2float_d( i+start_idx,            argc, argv, coords[i].q_cur, coords[i].q_min, coords[i].q_max );
     m.tp  = arg2long_d(  i+start_idx+1+coords_n, argc, argv, def_tp, 0, easing_fun_n-1 );
   }
 
   return 0;
 }
 
-int cmd_run( int argc, const char * const * argv )
+int cmd_run( int argc, const char * const * argv ) // R
 {
   auto mps_idx   = arg2ulong_d(   1, argc, argv,     0,     0, SEQ_N-1 );
   auto kkv       = arg2float_d(   2, argc, argv,  1.0f, 0.01f, 5.0f );
@@ -433,7 +443,7 @@ int cmd_run( int argc, const char * const * argv )
   return rc;
 }
 
-int cmd_back( int argc, const char * const * argv )
+int cmd_back( int argc, const char * const * argv ) // B
 {
   auto kkv     = arg2float_d(  1, argc, argv, 1.0f, 0.01f, 5.0f );
   std_out << "# back: " << mp_stored[mp_stored_n-1] << NL;
@@ -442,7 +452,7 @@ int cmd_back( int argc, const char * const * argv )
   return rc;
 }
 
-int cmd_go_stored( int argc, const char * const * argv )
+int cmd_go_stored( int argc, const char * const * argv ) // Q
 {
   auto stored_idx = arg2ulong_d(  1, argc, argv,    0,     0, mp_stored_n-1 );
   auto kkv        = arg2float_d(  2, argc, argv, 1.0f, 0.01f,          5.0f );
@@ -453,7 +463,7 @@ int cmd_go_stored( int argc, const char * const * argv )
 }
 
 // just for debug, remove
-int cmd_pulse( int argc, const char * const * argv )
+int cmd_pulse( int argc, const char * const * argv ) // U
 {
   auto ch   = arg2ulong_d(  1, argc, argv,    1,    0, std::size(coords)-1 );
   auto t_on = arg2ulong_d(  2, argc, argv, 1500,  400, 2600  );
@@ -515,7 +525,7 @@ int cmd_pulse( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_out_moves( int argc, const char * const * argv )
+int cmd_out_moves( int argc, const char * const * argv ) // O
 {
   auto mps_idx   = arg2ulong_d(   1, argc, argv,    0,    0,    SEQ_N-1 );
   std_out << "# Moves " << mps_idx << NL;
@@ -526,7 +536,7 @@ int cmd_out_moves( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_del_mp( int argc, const char * const * argv )
+int cmd_del_mp( int argc, const char * const * argv ) // D
 {
   if( mp_main.empty() ) {
     return 1;
@@ -542,10 +552,10 @@ int cmd_del_mp( int argc, const char * const * argv )
 
 
 
-int cmd_add_stored( int argc, const char * const * argv )
+int cmd_add_stored( int argc, const char * const * argv ) // S
 {
   auto mp_idx = arg2ulong_d( 1, argc, argv, 0, 0, mp_stored.size() - 1 );
-  auto k_v    = arg2float_d( 2, argc, argv, MovePart::kv_def, MovePart::kv_min, MovePart::kv_max );
+  auto k_v    = arg2float_d( 2, argc, argv, k_v_def, MovePart::kv_min, MovePart::kv_max );
   auto q3     = arg2float_d( 3, argc, argv, mp_stored[mp_idx].mpc[3].q_e, 0.0f, 90.0f );
 
   MovePart mp { mp_stored[mp_idx] };
@@ -557,9 +567,9 @@ int cmd_add_stored( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_add_last( int argc, const char * const * argv )
+int cmd_add_last( int argc, const char * const * argv ) // L
 {
-  auto k_v = arg2float_d( 1, argc, argv, MovePart::kv_def, MovePart::kv_min, MovePart::kv_max );
+  auto k_v = arg2float_d( 1, argc, argv, k_v_def, MovePart::kv_min, MovePart::kv_max );
 
   MovePart mp { mp_stored[stored_idx_end] };
   mp.k_v = k_v;
@@ -587,15 +597,15 @@ int cmd_calibr( int argc, const char * const * argv )
   auto &co  = coords[ch];
 
   MovePart mp;
-  const auto q_min_given = co.q_min + 5.0f; // TODO: calibrate param
-  const auto q_max_given = co.q_max - 5.0f;
+  const auto q_min_given = co.q_min + 2.0f; // TODO: calibrate param
+  const auto q_max_given = co.q_max - 2.0f;
   mp.init();
   for( size_t i=0; i<std::size(coords); ++i ) { // prevent other axis move, among disabling movers
     mp.mpc[i].q_e = coords[i].q_cur;
   }
 
   mp.mpc[ch].q_e = q_min_given;
-  mp.k_v = 0.2f;  // TODO: param
+  mp.k_v = k_v_cal;  // TODO: param
 
   int rc = process_movepart( mp );
   if( rc != 0 || break_flag ) {
@@ -648,7 +658,7 @@ int cmd_calibr( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_mtest( int argc, const char * const * argv )
+int cmd_mtest( int argc, const char * const * argv ) // M
 {
   const auto set_pos = arg2bool_d( 1, argc, argv, false );
 
@@ -667,7 +677,7 @@ int cmd_mtest( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_mcoord( int argc, const char * const * argv )
+int cmd_mcoord( int argc, const char * const * argv ) // C
 {
   const auto store_idx = arg2ulong_d(  1, argc, argv, 0,     0, mp_stored.size()-1 );
   const auto n_meas    = arg2ulong_d(  2, argc, argv, adc_n, 1, 10000 );
