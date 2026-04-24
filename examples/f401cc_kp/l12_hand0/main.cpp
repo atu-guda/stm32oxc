@@ -107,7 +107,7 @@ std::array<Sensor*,3> sensors { &sens_adc, &sens_enc, &sens_grip };
 // ------------------------------- Movers -----------------------------------
 
 //                           k_a       k_b       r_ccr          r_arr          p_fb
-MoverServoCont mover_base(   0.01f,     1.0f, TIM_LWM->CCR1, TIM_LWM->ARR, &coords[0].q_cur );
+MoverServoCont mover_base(  -0.01f,     1.0f, TIM_LWM->CCR1, TIM_LWM->ARR, &coords[0].q_cur );
 MoverServo     mover_p1(   -10.0f,   2500.0f, TIM_LWM->CCR2, TIM_LWM->ARR, &coords[1].q_cur );
 MoverServo     mover_p2(    10.0f,   2850.0f, TIM_LWM->CCR3, TIM_LWM->ARR, &coords[2].q_cur );
 MoverServo     mover_grip(  10.0f,    500.0f, TIM_LWM->CCR4, TIM_LWM->ARR, &coords[3].q_cur );
@@ -189,6 +189,7 @@ DCL_CMD_REG( go_stored,   'Q', " [n] [kv] - go to stored  point " );
 DCL_CMD_REG( pulse,       'U', " ch t_on dt off - test pulse " );
 DCL_CMD_REG( out_moves,   'O', " [seq_num]  - output moves sequence " );
 DCL_CMD_REG( calibr,     '\0', " ch(1-2) - calibrate channel sensor " );
+DCL_CMD_REG( set_q00,    '\0', " q00 - set q_0 zero point " );
 
 
 
@@ -307,7 +308,7 @@ int main(void)
 
   ranges::for_each( movers,  [](auto pm) { pm->init(); } );
   ranges::for_each( sensors, [](auto ps) { ps->init(); } );
-  sens_enc.set_zero_val( 2520 ); // mech param: init config?
+  sens_enc.set_zero_val( 3614 );
   mover_base.set_lwm_times( 1300, 1700 );
 
   tim_lwm_start();
@@ -675,6 +676,13 @@ int cmd_calibr( int argc, const char * const * argv )
   const float k_x[2] { k_a,  k_b };
   sens_adc.setCalibr( adc_ch, k_x );
 
+  return 0;
+}
+
+int cmd_set_q00( int argc, const char * const * argv )
+{
+  auto q00     = arg2ulong_d(  1, argc, argv, 0 );
+  sens_enc.set_zero_val( q00 );
   return 0;
 }
 
@@ -1175,11 +1183,12 @@ int SensorAS5600::init()
 
 int SensorAS5600::measure( int /*nx*/ )
 {
-  iv = dev.getAngle() - zero_val;
-  if( iv < -1024 ) {
-    iv += 4096;
+  const auto a = dev.getAngle();
+  iv = a - zero_val;
+  v  = (float)iv * k_a;
+  if( v > 180 ) {
+    v -= 360;
   }
-  v  = (float)iv * k_a - 90.0f;
   return 1;
 }
 

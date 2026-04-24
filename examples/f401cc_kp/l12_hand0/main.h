@@ -262,7 +262,7 @@ class SensorAS5600 : public Sensor {
    float v;
    int zero_val { 0 };
    int32_t iv { 0 };
-   float k_a { 180.0f / 2048 }; // TODO: need '-'
+   float k_a { -180.0f / 2048 }; // TODO: need '-'
 };
 
 extern SensorAS5600 sens_enc;
