@@ -29,12 +29,18 @@ BOARD_DEFINE_LEDS;
 
 USBCDC_CONSOLE_DEFINES;
 
-int debug {0};
-int dry_run {0};
-int dis_movers {0};
-int def_tp {3};
-int angle_over { 20 };
-int t_post { 500 };
+int debug        {    0 };
+int dry_run      {    0 };
+int dis_movers   {    0 };
+int def_tp       {    3 };
+int angle_over   {   20 };
+int t_post       {  500 };
+int adc_n        {  100 };
+
+uint32_t last_cmd_end_tick     {     0 };
+uint32_t off_motor_idle_ticks  { 60000 };
+uint32_t last_measure_tick     {     0 };
+uint32_t measure_idle_ticks    {   100 };
 
 float k_v_cal { 0.2f };
 float k_v_def { 0.5f };
@@ -51,7 +57,6 @@ I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );
 AS5600 ang_sens( i2cd );
 
-int adc_n {100};
 volatile int adc_dma_end {0};
 
 
@@ -241,6 +246,14 @@ bool set_var_ex( const char *nm, const char *s )
 
 void idle_main_task()
 {
+  const uint32_t t = HAL_GetTick();
+  if( t - last_cmd_end_tick > off_motor_idle_ticks ) {
+    tim_lwm_stop();
+    last_cmd_end_tick = t;
+  }
+  if( t - measure_idle_ticks > measure_idle_ticks ) {
+    measure_store_coords( adc_n );
+  }
 }
 
 void on_sigint( int /* c */ )
@@ -248,6 +261,12 @@ void on_sigint( int /* c */ )
   tim_lwm_stop();
   break_flag = 1;
   ledsx[1].set();
+}
+
+int post_exec( int rc )
+{
+  last_cmd_end_tick = HAL_GetTick();
+  return rc;
 }
 
 int main(void)
@@ -297,6 +316,7 @@ int main(void)
   BOARD_POST_INIT_BLINK;
 
   oxc_add_aux_tick_fun( led_task_nortos );
+  srl.setPostExecFun( post_exec );
 
   dev_console.setOnSigInt( on_sigint );
 
@@ -716,9 +736,13 @@ void out_coords_int( bool nl )
 
 int measure_store_coords( int nm )
 {
+  last_measure_tick = HAL_GetTick();
+  ledsx[3].set();
   for( auto ps : sensors ) {
     auto rc = ps->measure( nm );
     if( rc < 1 ) {
+      ledsx[3].reset();
+      ledsx[0].set();
       return 0;
     }
   }
@@ -726,6 +750,7 @@ int measure_store_coords( int nm )
   for( auto &co : coords ) {
     co.q_cur = co.sens->get( co.sens_ch );
   }
+  ledsx[3].reset();
 
   return 1;
 }
