@@ -26,6 +26,8 @@ USE_OXC_DMA = y
 
 SRCS += main.cpp
 SRCS += tim.cpp
+SRCS += lab.cpp
+
 SRCS += oxc_floatfun.cpp
 SRCS += oxc_namedobjs.cpp
 SRCS += oxc_namedints.cpp

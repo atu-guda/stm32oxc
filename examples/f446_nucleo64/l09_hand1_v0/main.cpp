@@ -5,6 +5,7 @@
 
 #include <oxc_auto.h>
 #include <oxc_main.h>
+#include <oxc_atleave.h>
 #include <oxc_statdata.h>
 #include <oxc_floatfun.h>
 #include <oxc_namedints.h>
@@ -52,13 +53,9 @@ DCL_CMD_REG( measure,  'M', "- measure all"  );
 DCL_CMD_REG( lab,      'L', "- do lab"  );
 
 
-auto out_v_fmt = [](xfloat x) { return FltFmt(x, cvtff_auto,6,3); };
+auto out_v_fmt = [](xfloat x) { return FltFmt(x, cvtff_auto,7,3); };
+auto out_q_fmt = [](xfloat x) { return FltFmt(x, cvtff_auto,7,3); };
 
-
-void idle_main_task()
-{
-  // leds[1].toggle();
-}
 
 
 uint32_t  tim_pwm_arr;
@@ -68,6 +65,9 @@ I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );
 AS5600 ang_sens( i2cd );
 
+
+uint32_t measure_tick      {   0 };
+uint32_t measure_idle_step { 100 };
 
 int     t_pre       {  500 };  // settle before measure
 int     t_post      {  100 };  // settle after measure
@@ -80,25 +80,28 @@ int     l0_freq_min {     10 };
 int     l0_freq_max { 100000 };
 int     l0_freq_n   {     10 };
 int     l0_v_n      {     51 };
-float   q0          {    0 };  // measured base coord
-float   q0_0        {117.9f};  // zero point for q0
-float   nu0         {    0 };  // measured base speed
+int     q0_i        {      0 };  // measured base coord in ints
+float   q0          {      0 };  // measured base coord
+float   q0_g        {      0 };  // given base coord
+float   q0_0        {   0.0f };  // zero point for q0
+float   nu0         {   0.0f };  // measured base speed
 
 #define ADD_IOBJ(x)    constexpr NamedInt   ob_##x { #x, &x }
 #define ADD_FOBJ(x)    constexpr NamedFloat ob_##x { #x, &x }
 
-// ADD_FOBJ( hx_a     );
-ADD_IOBJ( t_pre    );
-ADD_IOBJ( have_magn  );
-ADD_IOBJ( stopsw  );
-ADD_IOBJ( l0_freq  );
+ADD_IOBJ( t_pre        );
+ADD_IOBJ( have_magn    );
+ADD_IOBJ( stopsw       );
+ADD_IOBJ( l0_freq      );
 ADD_IOBJ( l0_freq_min  );
 ADD_IOBJ( l0_freq_max  );
-ADD_IOBJ( l0_freq_n  );
-ADD_IOBJ( l0_v_n  );
-ADD_FOBJ( q0     );
-ADD_FOBJ( q0_0   );
-ADD_FOBJ( nu0    );
+ADD_IOBJ( l0_freq_n    );
+ADD_IOBJ( l0_v_n       );
+ADD_IOBJ( q0_i         );
+ADD_FOBJ( q0           );
+ADD_FOBJ( q0_g         );
+ADD_FOBJ( q0_0         );
+ADD_FOBJ( nu0          );
 
 constexpr const NamedObj *const objs_info[] = {
   & ob_t_pre        ,
@@ -109,7 +112,9 @@ constexpr const NamedObj *const objs_info[] = {
   & ob_l0_freq_max  ,
   & ob_l0_freq_n    ,
   & ob_l0_v_n       ,
+  & ob_q0_i         ,
   & ob_q0           ,
+  & ob_q0_g         ,
   & ob_q0_0         ,
   & ob_nu0          ,
   nullptr
@@ -131,6 +136,14 @@ bool set_var_ex( const char *nm, const char *s )
   return ok;
 }
 
+void idle_main_task()
+{
+  if( HAL_GetTick() - measure_tick > measure_idle_step ) {
+    measure_all();
+  }
+}
+
+
 
 int main(void)
 {
@@ -150,6 +163,9 @@ int main(void)
     have_magn = 1;
   }
 
+  ang_sens.setStartPos( 2749 ); // TODO: ????????
+  measure_all(); // to have correct values at start
+
   MX_TIM_PWM_Init();
 
   print_var_hook = print_var_ex;
@@ -158,6 +174,7 @@ int main(void)
   BOARD_POST_INIT_BLINK;
 
   oxc_add_aux_tick_fun( led_task_nortos );
+
 
   std_main_loop_nortos( &srl, idle_main_task );
 
@@ -171,6 +188,7 @@ CMD_FUNCTION(test0)
   const uint32_t n      = arg2ulong_d(   1, argc, argv, UVAR_n,    2, 10000 );
   const float   v0      = arg2xfloat_d(  2, argc, argv, 0.0f,  -1.0f,  1.0f );
 
+  ang_sens.setN_turn( 0 );
   HAL_TIM_PWM_Start( &htim_pwm, TIM_PWM_CHANNEL );
 
   uint32_t tm0 { HAL_GetTick() };
@@ -267,9 +285,69 @@ CMD_FUNCTION( l0_scan )
 CMD_FUNCTION( measure )
 {
   auto ok = measure_all();
-  std_out << stopsw << ' ' << q0 << ' ' << ok << NL;
+  std_out << stopsw << ' ' << q0 << ' ' << ok  << ' ' << q0_i << ' ' << ang_sens.getN_turn() << NL;
   return 0;
 }
+
+CMD_FUNCTION( lab )
+{
+  const int x_lab = arg2long_d(   1, argc, argv, 0 );
+  // ang_sens.setN_turn( 0 );
+  q0_g = 0;
+  leds[0].reset();
+  set_l0_v( 0 );
+  DoAtLeave _( []() { set_l0_v( 0 ); } );
+  HAL_TIM_PWM_Start( &htim_pwm, TIM_PWM_CHANNEL );
+
+  auto rc  = lab_init( x_lab );
+  if( rc > 1 ) {
+    std_out << "# EMERG:"  NL;
+    leds[0].set();
+    set_l0_v( 0 );
+  }
+  if( rc > 0 ) {
+    std_out << "# Error:" << rc  << NL;
+    return rc;
+  }
+
+  uint32_t tm0 { HAL_GetTick() };
+  const uint32_t tm00 { tm0 };
+
+  break_flag = 0;
+  uint32_t n = 1 + t_lab_max / t_step;
+
+  for( uint32_t i=0; i<n && !break_flag; ++i ) {
+    const uint32_t tc { HAL_GetTick() - tm00 };
+    measure_all();
+
+    leds[1].set();
+    rc = lab_step( tc );
+    leds[1].reset();
+
+    std_out << FmtInt( tc, 9 ) << ' ' << out_q_fmt(q0_g) << ' '  << out_q_fmt(q0)
+      << ' ' << q0_i << ' ' << ang_sens.getN_turn()
+      << ' ' << stopsw << ' ' << rc << NL;
+
+    if( stopsw != 1 ) {
+      leds[0].set();
+      std_out << "# STOP!:" << rc  << ' ' << stopsw << NL;
+      break_flag = 100;
+      break;
+    }
+
+    if( rc > 0 ) {
+      std_out << "# End:" << rc  << NL;
+      break_flag = rc;
+      break;
+    }
+    delay_ms_until_brk( &tm0, t_step );
+  }
+
+  set_l0_v( 0 );
+
+  return break_flag;
+}
+
 
 // ------------------------------------------------------------ 
 
@@ -337,11 +415,16 @@ float get_l0_v()
 
 bool measure_all()
 {
+  leds[2].set();
+  DoAtLeave _( []() { leds[2].reset(); } );
+  measure_tick = HAL_GetTick();
+
   stopsw = pins_l0_stop.readUint();
   if( ! have_magn ) {
+    leds[0].set();
     return false;
   }
-  auto q0_i = - ang_sens.getAngleN_mDeg();
+  q0_i = - ang_sens.getAngleN_mDeg();
   q0  = q0_i / 1000.0f - q0_0;
   // TODO: read from other coords: ADC
   return true;
@@ -387,6 +470,17 @@ bool measure_speed( float v )
   return true;
 }
 
+// ------------------------------------------------------------ 
+
+__weak int lab_init( int x )
+{
+  return 2;
+}
+
+__weak int lab_step( uint32_t tc )
+{
+  return 2;
+}
 
 // ------------------------------------------------------------ 
 
