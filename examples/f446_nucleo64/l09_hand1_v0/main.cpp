@@ -49,6 +49,7 @@ DCL_CMD_REG( l0_pwm,   '\0', "[pwm] - set pwm on l0"  );
 DCL_CMD_REG( l0_mode,  'D', "i1 i2 - l0 mode"  );
 DCL_CMD_REG( l0_scan,  'S', "scan l0 coord"  );
 DCL_CMD_REG( measure,  'M', "- measure all"  );
+DCL_CMD_REG( lab,      'L', "- do lab"  );
 
 
 auto out_v_fmt = [](xfloat x) { return FltFmt(x, cvtff_auto,6,3); };
@@ -165,7 +166,7 @@ int main(void)
 
 
 // TEST0
-int cmd_test0( int argc, const char * const * argv )
+CMD_FUNCTION(test0)
 {
   const uint32_t n      = arg2ulong_d(   1, argc, argv, UVAR_n,    2, 10000 );
   const float   v0      = arg2xfloat_d(  2, argc, argv, 0.0f,  -1.0f,  1.0f );
@@ -194,13 +195,13 @@ int cmd_test0( int argc, const char * const * argv )
 
 
 
-int cmd_timinfo( int argc, const char * const * argv )
+CMD_FUNCTION( timinfo )
 {
   tim_print_cfg( TIM_PWM );
   return 0;
 }
 
-int cmd_l0_freq( int argc, const char * const * argv )
+CMD_FUNCTION( l0_freq )
 {
   const uint32_t freq = arg2ulong_d(   1, argc, argv, 10000,  1, 1000000 );
   set_l0_freq( freq );
@@ -208,14 +209,14 @@ int cmd_l0_freq( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_l0_pwm( int argc, const char * const * argv )
+CMD_FUNCTION( l0_pwm )
 {
   const float pwm = arg2xfloat_d(   1, argc, argv, 0.0f,  0.0f, 1.0f );
   set_l0_pwm( pwm );
   return 0;
 }
 
-int cmd_l0_mode( int argc, const char * const * argv )
+CMD_FUNCTION( l0_mode )
 {
   const bool i1 = arg2bool_d(   1, argc, argv, false );
   const bool i2 = arg2bool_d(   2, argc, argv, false );
@@ -223,14 +224,14 @@ int cmd_l0_mode( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_l0_v( int argc, const char * const * argv )
+CMD_FUNCTION( l0_v )
 {
   const float v = arg2xfloat_d(   1, argc, argv, 0.0f,  -1.0f, 1.0f );
   set_l0_v( v );
   return 0;
 }
 
-int cmd_l0_scan( int argc, const char * const * argv )
+CMD_FUNCTION( l0_scan )
 {
   const xfloat k_freq {( l0_freq_n > 1 ) ? (logxf( l0_freq_max / l0_freq_min ) / ( l0_freq_n - 1 ) ) : 0 };
   const xfloat k_v { ( l0_v_n >0 ) ?(2.0f / (l0_v_n-1)) : 0 };
@@ -263,7 +264,7 @@ int cmd_l0_scan( int argc, const char * const * argv )
 }
 
 
-int cmd_measure( int argc, const char * const * argv )
+CMD_FUNCTION( measure )
 {
   auto ok = measure_all();
   std_out << stopsw << ' ' << q0 << ' ' << ok << NL;

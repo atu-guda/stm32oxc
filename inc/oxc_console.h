@@ -113,6 +113,10 @@ extern std::span<const CmdInfo*> cmds_global;
   DCL_CMD(basename, acro, helpstr ) \
   REGISTER_CMD(CMDINFO_##basename);
 
+#ifndef   CMD_FUNCTION
+  #define CMD_FUNCTION(basename) int cmd_##basename( int argc, const char * const * argv )
+#endif
+
 extern int console_verbose;
 volatile extern int on_cmd_handler;
 
