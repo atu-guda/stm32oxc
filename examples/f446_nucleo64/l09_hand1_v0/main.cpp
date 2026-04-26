@@ -23,7 +23,7 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
-const char* common_help_string = "App to measure servo speed" NL;
+const char* common_help_string = "App to control hand1 (lab1)" NL;
 
 const EasingFun easing_funcs[] {
   easing_one,         // 0
@@ -51,6 +51,7 @@ DCL_CMD_REG( l0_mode,  'D', "i1 i2 - l0 mode"  );
 DCL_CMD_REG( l0_scan,  'S', "scan l0 coord"  );
 DCL_CMD_REG( measure,  'M', "- measure all"  );
 DCL_CMD_REG( lab,      'L', "- do lab"  );
+DCL_CMD_REG( go_0,     'Z', "q0 [v0] - to position"  );
 
 
 auto out_v_fmt = [](xfloat x) { return FltFmt(x, cvtff_auto,7,3); };
@@ -69,22 +70,26 @@ AS5600 ang_sens( i2cd );
 uint32_t measure_tick      {   0 };
 uint32_t measure_idle_step { 100 };
 
-int     t_pre       {  500 };  // settle before measure
-int     t_post      {  100 };  // settle after measure
-int     t_meas      { 2000 };  // measure time
-int     t_step      {   10 };  // time step
-int     have_magn   {    0 };  // have magnetic encoder
-int     stopsw      {    0 };  // data from stopswitches
+int     t_lab_max   { 100'000 };  // max lab time (ms)
+int     t_pre       {     500 };  // settle before measure
+int     t_post      {     100 };  // settle after measure
+int     t_meas      {    2000 };  // measure time
+int     t_step      {      10 };  // time step
+int     have_magn   {       0 };  // have magnetic encoder
+int     stopsw      {       0 };  // data from stopswitches
 int     l0_freq     { tim_pwm_freq };  // data from s
-int     l0_freq_min {     10 };
-int     l0_freq_max { 100000 };
-int     l0_freq_n   {     10 };
-int     l0_v_n      {     51 };
-int     q0_i        {      0 };  // measured base coord in ints
-float   q0          {      0 };  // measured base coord
-float   q0_g        {      0 };  // given base coord
-float   q0_0        {   0.0f };  // zero point for q0
-float   nu0         {   0.0f };  // measured base speed
+int     l0_freq_min {      10 };
+int     l0_freq_max {  100000 };
+int     l0_freq_n   {      10 };
+int     l0_v_n      {      51 };
+int     q0_i        {       0 };  // measured base coord in ints
+float   q0          {       0 };  // measured base coord
+float   q0_g        {       0 };  // given base coord
+float   q0_0        {    0.0f  };  // zero point for q0
+float   q0_emax     {    1.0f  };  // good error
+float   v0_def      {    0.5f  };  // default l0 speed in 0:1
+float   v0_min      {    0.07f };  // minimal l0 speed
+float   nu0         {    0.0f  };  // measured base speed
 
 #define ADD_IOBJ(x)    constexpr NamedInt   ob_##x { #x, &x }
 #define ADD_FOBJ(x)    constexpr NamedFloat ob_##x { #x, &x }
@@ -101,6 +106,9 @@ ADD_IOBJ( q0_i         );
 ADD_FOBJ( q0           );
 ADD_FOBJ( q0_g         );
 ADD_FOBJ( q0_0         );
+ADD_FOBJ( q0_emax      );
+ADD_FOBJ( v0_def       );
+ADD_FOBJ( v0_min       );
 ADD_FOBJ( nu0          );
 
 constexpr const NamedObj *const objs_info[] = {
@@ -116,6 +124,9 @@ constexpr const NamedObj *const objs_info[] = {
   & ob_q0           ,
   & ob_q0_g         ,
   & ob_q0_0         ,
+  & ob_q0_emax      ,
+  & ob_v0_def       ,
+  & ob_v0_min       ,
   & ob_nu0          ,
   nullptr
 };
@@ -314,7 +325,7 @@ CMD_FUNCTION( lab )
   const uint32_t tm00 { tm0 };
 
   break_flag = 0;
-  uint32_t n = 1 + t_lab_max / t_step;
+  uint32_t n = 1 + (uint32_t)t_lab_max / t_step;
 
   for( uint32_t i=0; i<n && !break_flag; ++i ) {
     const uint32_t tc { HAL_GetTick() - tm00 };
@@ -343,11 +354,59 @@ CMD_FUNCTION( lab )
     delay_ms_until_brk( &tm0, t_step );
   }
 
-  set_l0_v( 0 );
-
   return break_flag;
 }
 
+CMD_FUNCTION( go_0 )
+{
+  const float q0_e = arg2float_d(   1, argc, argv,   0.0f,  -90.00f,  90.0f  );
+  const float k_v0 = arg2float_d(   2, argc, argv,   1.0f,    0.01f,  50.0f  );
+  leds[0].reset();
+  set_l0_v( 0 );
+  DoAtLeave _( []() { set_l0_v( 0 ); } );
+  HAL_TIM_PWM_Start( &htim_pwm, TIM_PWM_CHANNEL );
+
+  uint32_t tm0 { HAL_GetTick() };
+  const uint32_t tm00 { tm0 };
+
+  int rc = 1;
+  break_flag = 0;
+  uint32_t n = 1 + (uint32_t)t_lab_max / t_step;
+
+  for( uint32_t i=0; i<n && !break_flag; ++i ) {
+    const uint32_t tc { HAL_GetTick() - tm00 };
+    measure_all();
+
+    leds[1].set();
+    const float d_q0 = q0_e - q0;
+
+    float v0 = std::clamp( d_q0 * k_v0 * 0.05f, -1.0f, 1.0f );
+    if( fabsf( v0 ) < v0_min ) {
+      v0 = v0_min * signf( v0 );
+    }
+    set_l0_v( v0 );
+    leds[1].reset();
+
+    std_out << FmtInt( tc, 9 ) << ' ' << out_q_fmt(q0_e) << ' '  << out_q_fmt(q0)
+      << ' '  << out_q_fmt( d_q0 )
+      << ' '  << out_q_fmt( v0 )
+      << ' ' << stopsw << NL;
+
+    if( stopsw != 1 ) {
+      leds[0].set();
+      std_out << "# STOP!: " << stopsw << NL;
+      break_flag = 100;
+      break;
+    }
+    if( fabsf( d_q0 ) < q0_emax ) {
+      break;
+    }
+
+    delay_ms_until_brk( &tm0, t_step );
+  }
+
+  return rc * 1000 + break_flag;
+}
 
 // ------------------------------------------------------------ 
 

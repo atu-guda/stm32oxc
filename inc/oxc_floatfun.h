@@ -33,6 +33,8 @@ extern float exp10if( int x );
 
 inline constexpr xfloat pow2( xfloat x ) { return x * x; }
 inline constexpr float pow2f( float x ) { return x * x; }
+inline constexpr xfloat signxf( xfloat x ) { return (x>0) ? 1 : ((x<0) ? -1 : 0 ); }
+inline constexpr  float  signf(  float x ) { return (x>0) ? 1 : ((x<0) ? -1 : 0 ); }
 
 constexpr inline  int float_default_width { 11 };
 

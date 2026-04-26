@@ -14,8 +14,8 @@ int lab_init( int x )
 
 int lab_step( uint32_t tc )
 {
-  if( tc < t_lab_max ) {
-    set_l0_v( 0.1 );
+  if( tc < (uint32_t)t_lab_max ) {
+    set_l0_v( 0.2 );
     return 0;
   }
   return 1;
