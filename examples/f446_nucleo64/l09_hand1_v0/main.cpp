@@ -5,12 +5,12 @@
 
 #include <oxc_auto.h>
 #include <oxc_main.h>
+#include <oxc_easing.h>
 #include <oxc_atleave.h>
 #include <oxc_statdata.h>
 #include <oxc_floatfun.h>
 #include <oxc_namedints.h>
 #include <oxc_namedfloats.h>
-#include <oxc_easing.h>
 #include <oxc_as5600.h>
 
 #include "main.h"
@@ -36,7 +36,8 @@ const EasingFun easing_funcs[] {
   easing_step_01,     // 7
   easing_one,         // protect // 8
 };
-constexpr auto easing_funcs_n { std::size( easing_funcs) };
+constexpr size_t easing_funcs_n { std::size( easing_funcs) };
+static_assert( easing_funcs_n >= easing_max );
 
 PinsOut pins_l0_ctrl( L0_Ctrl_Pin, 2 );
 PinsIn  pins_l0_stop( L0_Stop_Pin, 1, GpioPull::down );
@@ -303,7 +304,6 @@ CMD_FUNCTION( measure )
 CMD_FUNCTION( lab )
 {
   const int x_lab = arg2long_d(   1, argc, argv, 0 );
-  // ang_sens.setN_turn( 0 );
   q0_g = 0;
   leds[0].reset();
   set_l0_v( 0 );
