@@ -336,8 +336,7 @@ CMD_FUNCTION( lab )
     leds[1].reset();
 
     std_out << FmtInt( tc, 9 ) << ' ' << out_q_fmt(q0_g) << ' '  << out_q_fmt(q0)
-      << ' ' << q0_i << ' ' << ang_sens.getN_turn()
-      << ' ' << stopsw << ' ' << rc << NL;
+      << ' ' << get_l0_v() << ' ' << stopsw << ' ' << rc << NL;
 
     if( stopsw != 1 ) {
       leds[0].set();
