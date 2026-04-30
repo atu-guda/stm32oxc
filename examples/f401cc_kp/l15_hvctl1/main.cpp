@@ -24,8 +24,6 @@ BOARD_DEFINE_LEDS;
 // USBCDC_CONSOLE_DEFINES;
 BOARD_CONSOLE_DEFINES_UART;
 
-int debug   {   0 };
-int out_lcd {   1 };
 
 // auto out_q_fmt = [](xfloat x) { return FltFmt(x, cvtff_fix,8,4); };
 
@@ -37,20 +35,27 @@ DevI2C i2cd( &i2ch, 0 );
 HD44780_i2c lcdt( i2cd, 0x27 );
 BMP280 baro( i2cd );
 
-char buf_i2c[buf_n_i2c][buf_sz_i2c];
+char buf_i2c[buf_n_i2c][buf_sz_i2c]; // TODO: replace with OSTR
 
-const int k_v { 8375 };
-const int adc_n { 10 };
+int debug        {     0 };
+int out_lcd      {     1 };
+int k_v          {  8375 };
+int adc_n        {    20 };
+int have_bmp280  {     0 };
+
 volatile int adc_dma_end {0};
 int32_t  adc_data[adc_n_ch];
 uint16_t adc_buf[adc_n_ch];
 
-uint32_t f_in     {  20000 };
-uint32_t pressure { 100002 };
-uint32_t t_00     {      0 };
-uint32_t t_c      {      0 };
-uint32_t t_old    {      0 };
-uint32_t t_step   {    200 };
+uint32_t f_in         {  20000 };
+int      pressure     {      0 };
+int      pressure_old {      0 };
+uint32_t t_00         {      0 };
+uint32_t t_c          {      0 };
+uint32_t t_old        {      0 };
+uint32_t t_step       {    200 };
+float    pressure_f   {      0 };
+float    pressure_d   {      0 };
 
 
 // ------------------------   commands
@@ -63,7 +68,14 @@ DCL_CMD_REG( test0,       'T', " - test " );
 #define ADD_IOBJ(x)    constexpr NamedInt   ob_##x { #x, &x }
 #define ADD_FOBJ(x)    constexpr NamedFloat ob_##x { #x, &x }
 
-ADD_IOBJ   ( debug   );
+ADD_IOBJ   ( debug        );
+ADD_IOBJ   ( k_v          );
+ADD_IOBJ   ( adc_n        );
+ADD_IOBJ   ( pressure     );
+ADD_IOBJ   ( pressure_old );
+ADD_IOBJ   ( have_bmp280  );
+ADD_FOBJ   ( pressure_f   );
+ADD_FOBJ   ( pressure_d   );
 // ADD_IOBJ   ( t_step  );
 
 #undef ADD_IOBJ
@@ -72,6 +84,13 @@ ADD_IOBJ   ( debug   );
 
 constexpr const NamedObj *const objs_info[] = {
   & ob_debug,
+  & ob_k_v,
+  & ob_adc_n,
+  & ob_have_bmp280,
+  & ob_pressure,
+  & ob_pressure_old,
+  & ob_pressure_f,
+  & ob_pressure_d,
   nullptr
 };
 
@@ -131,6 +150,15 @@ int main(void)
     die4led( 3_mask );
   }
 
+  if( baro.check_id() ) {
+    have_bmp280 = 1;
+    if( baro.config( BMP280::cfg_filter_16 | BMP280::cfg_sb_1, BMP280::ctrl_mode_normal | BMP280::ctrl_osrs_t_x2 | BMP280::ctrl_osrs_p_x16) ) {
+      UVAR_c = baro.readCalibrData();
+    }
+  }
+  UVAR_b = baro.getId();
+
+
   __TIM2_CLK_ENABLE();
   if( !tim_freq_meas_cfg() ) {
     die4led( 2_mask );
@@ -147,6 +175,9 @@ int main(void)
   ledsx.reset( 0xFF_mask );
 
   init_EXTI();
+
+  print_var_hook = print_var_ex;
+  set_var_hook   = set_var_ex;
 
   BOARD_POST_INIT_BLINK;
 
@@ -196,6 +227,7 @@ bool default_loop( uint32_t nn )
 {
   // tim_print_cfg( TIM_FREQ_MEAS );
   std_out << "# START" NL;
+  pressure_old = 0;
 
   break_flag = 0;
   t_00 = HAL_GetTick();
@@ -237,7 +269,7 @@ void default_out( int i )
   buf_i2c_1[0] = '\0';
   ifcvt( adc_data[1], 10000, buf, 3, 2 );
   strcat( buf_i2c_1, buf );
-  strcat( buf_i2c_1, " mA" );
+  strcat( buf_i2c_1, " mA " );
   strcat( buf0, buf );
 
   buf_i2c_2[0] = '\0';
@@ -253,10 +285,16 @@ void default_out( int i )
   chx[0] = (i&1) ? ':' : '.';
   strcat( buf_i2c_3, chx );
   strcat( buf0, buf );
+  // lcd_buf_3 << FltFmt( w, 3, 2 ) << " W" << chx;
 
-  i2dec_n( pressure, buf, 6, ' ' );
+  cvtff( pressure_f, buf, buf_sz_i2c, cvtff_fix, 9, 2 );
   strcat( buf_i2c_0, buf );
-  strcat( buf_i2c_0, " Pa" );
+  // strcat( buf_i2c_0, " Pa" );
+  strcat( buf0, " " );
+  strcat( buf0, buf );
+
+  cvtff( pressure_d, buf, buf_sz_i2c, cvtff_auto, 8, 3 );
+  strcat( buf_i2c_1, buf );
   strcat( buf0, " " );
   strcat( buf0, buf );
 
@@ -434,11 +472,28 @@ void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef* hadc1 )
 
 int measure_press()
 {
-  pressure = 100123;
+  if( ! have_bmp280 ) {
+    pressure = 0;
+    return 0;
+  }
+  if( ! baro.readData() ) {
+    pressure = 1;
+    return 0;
+  }
+  baro.calc();
+
+  pressure     = baro.get_P();
+
+  if( pressure_old == 0 ) {        // not diff, just to start point
+    pressure_old = pressure;
+  }
+
+  pressure_f   = pressure / 256.0f;
+  pressure_d   = ( pressure - pressure_old ) / 256.0f;
   return 1;
 }
 
 // ------------------------------------  ------------------------------------------------
 
-// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
+// vim: set path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

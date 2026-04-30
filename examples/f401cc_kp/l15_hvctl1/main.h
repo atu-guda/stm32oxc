@@ -85,11 +85,15 @@ inline auto& buf_i2c_2 { buf_i2c[2] };
 inline auto& buf_i2c_3 { buf_i2c[3] };
 
 extern uint32_t f_in;
-extern uint32_t pressure;
+extern int      pressure;
+extern int      pressure_old;
 extern uint32_t t_00;
 extern uint32_t t_c;
 extern uint32_t t_old;
 extern uint32_t t_step;
+extern int      have_bmp280;
+extern float    pressure_f;
+extern float    pressure_d;
 
 #endif
 
