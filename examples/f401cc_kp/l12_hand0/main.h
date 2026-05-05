@@ -11,6 +11,7 @@ extern int debug;
 extern int dry_run;
 extern int dis_movers;
 extern int adc_n;
+extern int d_out_idx;
 extern uint32_t last_cmd_end_tick;
 extern uint32_t off_motor_idle_ticks;
 extern uint32_t last_measure_tick;
@@ -87,6 +88,7 @@ struct CoordInfo {
   unsigned sens_ch;
   Mover *mo;
   float q_cur; // TODO: separate, other - const
+  float nu_cur;
 };
 
 constexpr size_t coords_n { 4 };
@@ -271,7 +273,7 @@ extern SensorFakeMover sens_grip;
 
 int process_movepart( const MovePart &mp, float kkv = 1.0f  );
 int run_moveparts( std::span<const MovePart> mps, float kkv = 1.0f, size_t i_start = 0, size_t i_end = 10000 );
-int measure_store_coords( int nm );
+int measure_store_coords();
 void out_coords( bool nl );
 void out_coords_int( bool nl );
 
