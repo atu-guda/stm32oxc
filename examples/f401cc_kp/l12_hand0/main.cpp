@@ -494,6 +494,7 @@ CMD_FUNCTION( pulse ) // U
   auto t_on = arg2ulong_d(  2, argc, argv, 1500,  400, 2600  );
   auto dt   = arg2ulong_d(  3, argc, argv,  500,   10, 5000  );
   auto keep = arg2bool_d(   4, argc, argv,  true );
+  d_out_idx = std::clamp( d_out_idx, 0, (int)(movers.size() ) );
 
   std_out << "# pulse: ch= " << ch << " t_on= " << t_on << " dt= " << dt << NL;
 
@@ -516,7 +517,7 @@ CMD_FUNCTION( pulse ) // U
   mo.setCtrlVal( t_on );
   tim_lwm_start();
 
-  ledsx[3].set();
+  ledsx[1].set();
 
   const uint32_t t_step { uint32_t(UVAR_t) };
   uint32_t tm0 = HAL_GetTick();
@@ -536,7 +537,7 @@ CMD_FUNCTION( pulse ) // U
 
     delay_ms_until_brk( &tc0, t_step );
   }
-  ledsx[3].reset();
+  ledsx[1].reset();
 
   mo.post_run();
   if( ! keep || break_flag ) {
@@ -780,6 +781,8 @@ int process_movepart( const MovePart &mp, float kkv  )
   float qs_0[coords_n];
   float qs_dlt[coords_n];
 
+  d_out_idx = std::clamp( d_out_idx, 0, (int)(movers.size() ) );
+  auto mover_dbg = movers[d_out_idx];
   uint32_t nn { 2 }; // min steps
   measure_store_coords();
   mp_stored[stored_idx_last].from_coords( coords, 3 );
@@ -795,7 +798,8 @@ int process_movepart( const MovePart &mp, float kkv  )
     nn = std::max( nn, n );
     std_out << "# plan: n= " << n << " nn= " << nn << " qs_0= " << qs_0[i] << " dlt= " << qs_dlt[i] <<  NL;
   }
-  std_out << "# k_v= " << mp.k_v << " nn= " << nn << NL;
+  const uint32_t nn_a = nn + t_post / t_step;
+  std_out << "# k_v= " << mp.k_v << " nn= " << nn << " nn_a= " << nn_a << NL;
 
 
   ledsx.reset ( 0x03_mask );
@@ -810,49 +814,47 @@ int process_movepart( const MovePart &mp, float kkv  )
     }
   }
 
-  std_out << "#  1      2      3       4        5         6    7        8           9          10          11"   NL;
-  std_out << "#  i   tick     q_g0     q_g1     q_g2     q_g3 t_on    q_m0        q_m1        q_m2         q_m3" NL;
+  std_out << "#  1      2      3       4        5         6    7        8           9          10          11        12"   NL
+             "#  i   tick     q_g0     q_g1     q_g2     q_g3 t_on    q_m0        q_m1        q_m2         q_m3      nu"   NL;
 
   uint32_t tm0 = HAL_GetTick();
   uint32_t tc0 = tm0, tc00 = tm0;
 
   break_flag = 0;
-  for( decltype(+nn) i=0; i<nn && !break_flag; ++i ) {
+  for( decltype(+nn_a) i=0; i<nn_a && !break_flag; ++i ) {
 
-    ledsx[3].set();
+    ledsx[1].set();
 
     if( ! is_good_coords( true, true, true )  ) {
       break_flag = 1;
       break;
     }
 
-    uint32_t  tcc = HAL_GetTick();
-    std_out << FmtInt(i,4) << ' ' << FmtInt( tcc - tc00, 6 ) << ' ';
+    const uint32_t  tcc  { HAL_GetTick() };
+    const uint32_t  dtcc { tcc - tc00 } ;
+    std_out << FmtInt(i,4) << ' ' << FmtInt( dtcc, 6 ) << ' ';
 
-    for( size_t mi = 0; mi<coords_n; ++mi ) {
+    const float q0l =  float(i+1) / nn;
 
-      const float q01f = easing_fun_info[ mp.mpc[mi].tp ].f( float(i+1)/nn );
+    for( auto [ mi, mo ] : views::enumerate(movers) ) {
+
+      const float q01f = easing_fun_info[ mp.mpc[mi].tp ].f( q0l );
       const float q = qs_0[mi] + qs_dlt[mi] * q01f;
       std_out << out_q_fmt( q ) << ' ';
 
-      if( dry_run || is_mover_disabled( mi ) || movers[mi] == nullptr ) {
+      if( dry_run || is_mover_disabled( mi ) || mo == nullptr ) {
         continue;
       }
 
-      movers[mi]->move( q, tcc );
+      mo->move( q, dtcc );
     }
 
-    ledsx[3].reset();
-
-    const auto t_on_dbg = ( d_out_idx >=0 && std::cmp_less( d_out_idx, movers.size() ) && movers[d_out_idx] ) ? movers[d_out_idx]->getCtrlVal() : 0;
-    std_out << t_on_dbg << ' ';
-
+    ledsx[1].reset();
+    std_out << mover_dbg->getCtrlVal() << ' ';
     out_coords( true );
 
     delay_ms_until_brk( &tc0, t_step );
   }
-
-  delay_ms_brk( t_post );
 
   for( auto [ ch, mo ] : views::enumerate(movers) ) {
     if( is_mover_disabled( ch ) ) {
