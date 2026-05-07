@@ -44,6 +44,9 @@ extern uint32_t delay_calibrate_value;
 // delay is TASK_LEDS_QUANT * task_leds_step,
 extern volatile int task_leds_step; // initial = 50
 
+#ifndef AUX_TICK_FUN_N
+  #define AUX_TICK_FUN_N 4
+#endif
 
 
 #ifdef __cplusplus
@@ -87,10 +90,19 @@ void wakeFromIRQ( long wake );
 void vApplicationIdleHook(void);
 void vApplicationTickHook(void);
 // misc functions
-void die( uint16_t n ) __attribute__((noreturn));
 void Error_Handler( int rc ); // defined at user program
 
+
+void SystemClock_Config(void);
+int  SystemClockCfg(void); // returns: 0: ok >0 + set errno: error
 void approx_delay_calibrate(void);
+
+
+#ifdef __cplusplus
+}
+#endif
+
+void die( uint16_t n ) __attribute__((noreturn));
 void do_delay_calibrate(void);
 void delay_ms( uint32_t ms ); // base on vTaskDelay - switch to scheduler (if avail), or to HAL
 int  delay_ms_brk( uint32_t ms ); // exit with 1 if break_flag is set;
@@ -107,18 +119,6 @@ void default_wait1(void);
 int on_delay_actions(void); // called from non-FreeRTOS delay_*,
                         // returns: 0: continue delay, 1+ - break
                         // must be fast
-
-void SystemClock_Config(void);
-int  SystemClockCfg(void); // returns: 0: ok >0 + set errno: error
-
-
-#ifndef AUX_TICK_FUN_N
-  #define AUX_TICK_FUN_N 4
-#endif
-
-#ifdef __cplusplus
-}
-#endif
 
 extern AuxTickFun oxc_aux_tick_funcs[AUX_TICK_FUN_N];
 ReturnCode  oxc_add_aux_tick_fun( AuxTickFun f );
