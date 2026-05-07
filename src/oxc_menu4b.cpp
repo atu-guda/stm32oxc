@@ -7,7 +7,7 @@
 #include <oxc_menu4b.h>
 #include <oxc_outstr.h>
 
-using namespace std;
+// using namespace std;
 using namespace SMLRL;
 
 const char *const MenuState::menuLevelName[] = {

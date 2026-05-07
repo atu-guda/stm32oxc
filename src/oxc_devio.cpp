@@ -2,7 +2,7 @@
 #include <cstring>
 #include <oxc_devio.h>
 
-using namespace std;
+// using namespace std;
 
 DevIO* devio_fds[DEVIO_MAX];     // for fd-based access, may be dupes or empty at all
 DevIO* DevIO::devios[DEVIO_MAX]; // for inner array action

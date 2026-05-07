@@ -1,7 +1,7 @@
 #include <cstring>
 #include <algorithm>
 
-using namespace std;
+// using namespace std;
 
 #include <oxc_miscfun.h>
 #include <oxc_pixbuf.h>
@@ -66,7 +66,7 @@ void PixBuf::line(  uint16_t x1,  uint16_t y1, uint16_t x2, uint16_t y2, uint32_
   if( dx > dy ) { // -------------- step by x
 
     if( x2 < x1 ) {
-      swap( x1, x2 ); swap( y1, y2 );
+      std::swap( x1, x2 ); std::swap( y1, y2 );
     };
     int dlt = sign( (int)(y2) - (int)(y1) );
     int dlterr = 2 * dy;
@@ -83,7 +83,7 @@ void PixBuf::line(  uint16_t x1,  uint16_t y1, uint16_t x2, uint16_t y2, uint32_
   } else {        // -------------- step by x
 
     if( y2 < y1 ) {
-      swap( x1, x2 ); swap( y1, y2 );
+      std::swap( x1, x2 ); std::swap( y1, y2 );
     };
     int dlt = sign( (int)(x2) - (int)(x1) );
     int dlterr = 2 * dx;

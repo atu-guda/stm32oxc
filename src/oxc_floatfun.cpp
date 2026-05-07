@@ -4,7 +4,7 @@
 
 #include <oxc_floatfun.h>
 
-using namespace std;
+// using namespace std;
 
 float exp10if( int x )
 {
@@ -30,7 +30,7 @@ int cvtff( float f, char *buf, unsigned bufsz, uint32_t flg, int w, int prec )
     return 0;
   }
 
-  int sign = signbit( f );
+  int sign = std::signbit( f );
   if( sign ) {
     f = -f; sign = -1;  buf[0] = '-';
   } else {

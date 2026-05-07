@@ -4,7 +4,7 @@
 
 #include <oxc_ut61e_decode.h>
 
-using namespace std;
+// using namespace std;
 
 
 const UT61E_package::FuncInfo UT61E_package::fi[18] = {
@@ -62,7 +62,7 @@ int UT61E_package::func_idx() const
     fn = 16;
   }
 
-  if( fn >= size(fi) ) {
+  if( fn >= std::size(fi) ) {
     return -2;
   }
   return fn;
@@ -102,7 +102,7 @@ int32_t UT61E_package::ival() const
   }
 
   int32_t v = 0;
-  for( unsigned i=0; i<size(digit); ++i ) {
+  for( unsigned i=0; i<std::size(digit); ++i ) {
     v *= 10;
     v += digit[i] & 0x0F;
   }

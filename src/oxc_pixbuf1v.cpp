@@ -3,7 +3,7 @@
 
 #include <oxc_pixbuf1v.h>
 
-using namespace std;
+// using namespace std;
 
 
 void PixBuf1V::fillAll( uint32_t col )
@@ -27,7 +27,7 @@ void PixBuf1V::pixx( uint16_t x, uint16_t y, uint32_t col )
 void PixBuf1V::hline( uint16_t x1, uint16_t y,  uint16_t x2, uint32_t col )
 {
   if( x2 < x1 ) {
-    swap( x1, x2 );
+    std::swap( x1, x2 );
   };
   if( x1 >= width || y >= height ) {
     return;
@@ -55,7 +55,7 @@ void PixBuf1V::hline( uint16_t x1, uint16_t y,  uint16_t x2, uint32_t col )
 void PixBuf1V::vline( uint16_t x,  uint16_t y1, uint16_t y2, uint32_t col )
 {
   if( y2 < y1 ) {
-    swap( y1, y2 );
+    std::swap( y1, y2 );
   };
   if( x >= width || y1 >= height ) {
     return;
@@ -112,10 +112,10 @@ void PixBuf1V::vline1( const OfsData &od )
 void PixBuf1V::box(  uint16_t x1,  uint16_t y1, uint16_t x2, uint16_t y2, uint32_t col )
 {
   if( x2 < x1 ) {
-    swap( x1, x2 );
+    std::swap( x1, x2 );
   };
   if( y2 < y1 ) {
-    swap( y1, y2 );
+    std::swap( y1, y2 );
   };
   if( x1 >= width || y1 >= height ) {
     return;

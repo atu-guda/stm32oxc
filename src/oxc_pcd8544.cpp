@@ -1,6 +1,6 @@
 #include <oxc_pcd8544.h>
 
-using namespace std;
+// using namespace std;
 
 
 int  PCD8544::cmd( const uint8_t *cmds, uint16_t n )

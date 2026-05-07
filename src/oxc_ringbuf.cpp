@@ -2,7 +2,7 @@
 
 #include <oxc_ringbuf.h>
 
-using namespace std;
+// using namespace std;
 
 void (*RingBuf::wait_fun)(void) = default_wait1;
 

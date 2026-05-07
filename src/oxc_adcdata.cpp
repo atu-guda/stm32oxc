@@ -15,7 +15,7 @@
 
 #include <oxc_adcdata.h>
 
-using namespace std;
+// using namespace std;
 
 void StatIntChannel::add( int v )
 {

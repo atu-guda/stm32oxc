@@ -5,7 +5,7 @@
 
 #include <task.h>
 
-using namespace std;
+// using namespace std;
 using namespace SMLRL;
 
 void task_smallrl_cmd( void * /*prm*/ )

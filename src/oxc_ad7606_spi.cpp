@@ -1,6 +1,6 @@
 #include <oxc_ad7606_spi.h>
 
-using namespace std;
+// using namespace std;
 
 void AD7606_SPI::init()
 {

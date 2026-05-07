@@ -2,7 +2,7 @@
 
 #include <oxc_statdata.h>
 
-using namespace std;
+// using namespace std;
 
 // ------------------------ StatChannel ---------------------------------------------
 
@@ -79,7 +79,7 @@ bool regre( const StatChannelXY &x, const StatChannel &y, RegreResults &r )
 // ------------------------ StatData --------------------------------------
 
 StatData::StatData( unsigned nch )
-  : n_ch( min( nch, max_n_ch ) )
+  : n_ch( std::min( nch, max_n_ch ) )
 {
   reset();
 }
