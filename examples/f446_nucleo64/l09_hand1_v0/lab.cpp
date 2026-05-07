@@ -1,1 +1,1 @@
-lab_00_vishch.cpp
+lab_00.cpp

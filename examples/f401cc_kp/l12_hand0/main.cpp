@@ -34,7 +34,9 @@ int dry_run      {    0 };
 int dis_movers   {    0 };
 int def_tp       {    3 };
 int angle_over   {   20 };
+int t_pre        {  100 };
 int t_post       { 1000 };
+int t_step       {   50 };
 int adc_n        {  100 };
 int d_out_idx    {    0 }; // index for debug out
 
@@ -188,7 +190,7 @@ DCL_CMD_REG( clear_mp,   '\0', " - delete all MovePoints " );
 DCL_CMD_REG( run,         'R', " [seq_num] [start_idx] [end_idx] - run sequence " );
 DCL_CMD_REG( back,        'B', " [kv] - go to last point " );
 DCL_CMD_REG( go_stored,   'Q', " [n] [kv] - go to stored  point " );
-DCL_CMD_REG( pulse,       'U', " ch t_on dt off - test pulse " );
+DCL_CMD_REG( pulse,       'U', " ch t_on dt keep - test pulse " );
 DCL_CMD_REG( out_moves,   'O', " [seq_num]  - output moves sequence " );
 DCL_CMD_REG( calibr,     '\0', " ch(1-2) - calibrate channel sensor " );
 DCL_CMD_REG( set_q00,    '\0', " q00 - set q_0 zero point " );
@@ -209,7 +211,10 @@ ADD_IOBJ   ( dis_movers   );
 ADD_IOBJ   ( def_tp       );
 ADD_IOBJ   ( angle_over   );
 ADD_IOBJ   ( adc_n        );
+ADD_IOBJ   ( d_out_idx    );
+ADD_IOBJ   ( t_pre        );
 ADD_IOBJ   ( t_post       );
+ADD_IOBJ   ( t_step       );
 ADD_FOBJ   ( k_v_cal      );
 ADD_FOBJ   ( k_v_def      );
 
@@ -224,7 +229,10 @@ constexpr const NamedObj *const objs_info[] = {
   & ob_def_tp,
   & ob_angle_over,
   & ob_adc_n,
+  & ob_d_out_idx,
+  & ob_t_pre,
   & ob_t_post,
+  & ob_t_step,
   & ob_k_v_cal,
   & ob_k_v_def,
   nullptr
@@ -493,7 +501,7 @@ CMD_FUNCTION( pulse ) // U
   auto ch   = arg2ulong_d(  1, argc, argv,    1,    0, std::size(coords)-1 );
   auto t_on = arg2ulong_d(  2, argc, argv, 1500,  400, 2600  );
   auto dt   = arg2ulong_d(  3, argc, argv,  500,   10, 5000  );
-  auto keep = arg2bool_d(   4, argc, argv,  true );
+  auto keep = arg2bool_d(   4, argc, argv,  false );
   d_out_idx = std::clamp( d_out_idx, 0, (int)(movers.size() ) );
 
   std_out << "# pulse: ch= " << ch << " t_on= " << t_on << " dt= " << dt << NL;
@@ -501,6 +509,8 @@ CMD_FUNCTION( pulse ) // U
   if( is_mover_disabled( ch, true ) ) {
     return 1;
   }
+
+  auto dt_all   = t_pre + dt + t_post;
 
   measure_store_coords();
   std_out << "# start: ";
@@ -512,26 +522,46 @@ CMD_FUNCTION( pulse ) // U
   }
   auto &mo = *co.mo;
 
+  std_out << "#  i     t    t_on     q_m0        q_m1       q_m2         q_m3          nu" NL;
+  //           200    202   1500  3.07617184  90.1206144 -108.799640  5.00000000  0.02812500
+
   mo.pre_run( co.q_cur, 0, 1000 ); // fake values here
-  delay_ms( 50 );
-  mo.setCtrlVal( t_on );
+  delay_ms( 100 );
+
+  decltype( t_on ) c_t_on { 1500 };
+  mo.setCtrlVal( c_t_on ); // TODO: param?
   tim_lwm_start();
 
   ledsx[1].set();
 
-  const uint32_t t_step { uint32_t(UVAR_t) };
   uint32_t tm0 = HAL_GetTick();
   uint32_t tc0 = tm0, tc00 = tm0;
 
+  int stage { 0 };
+  const auto t_e = t_pre + dt;
+
   break_flag = 0;
-  for( uint32_t i=0; i<dt && !break_flag; i += t_step ) {
+  for( uint32_t i=0; i<dt_all && !break_flag; i += t_step ) {
 
     if( ! is_good_coords( true, true, true )  ) {
       break;
     }
 
-    uint32_t  tcc = HAL_GetTick();
-    std_out << FmtInt(i,4) << ' ' << FmtInt( tcc - tc00, 6 ) << ' ';
+    const uint32_t  tcc = HAL_GetTick();
+    const auto dtc = tcc - tc00;
+    if( stage == 0 && dtc >= (uint32_t)t_pre ) {
+      c_t_on = t_on;    mo.setCtrlVal( c_t_on );
+      stage = 1;
+    }
+
+    if( stage == 1 && dtc >= t_e ) {
+      if( !keep ) {
+        c_t_on = 1500;  mo.setCtrlVal( c_t_on );
+      }
+      stage = 2;
+    }
+
+    std_out << FmtInt(i,4) << ' ' << FmtInt( dtc, 6 ) << ' ' << FmtInt( c_t_on, 6 ) << ' ';
 
     out_coords( true );
 
@@ -741,6 +771,7 @@ void out_coords( bool nl )
 
 void out_coords_int( bool nl )
 {
+  std_out << ' ';
   for( auto &co : coords ) {
     std_out << co.sens->getInt( co.sens_ch ) << ' ';
   }
@@ -769,7 +800,7 @@ int measure_store_coords()
   for( auto &co : coords ) {
     auto q_o = co.q_cur;
     co.q_cur = co.sens->get( co.sens_ch );
-    co.nu_cur = ( co.q_cur - q_o ) / dt;
+    co.nu_cur = 1000 * ( co.q_cur - q_o ) / dt; // 1000 is ms/s
   }
 
   return 1;
@@ -777,7 +808,6 @@ int measure_store_coords()
 
 int process_movepart( const MovePart &mp, float kkv  )
 {
-  const uint32_t t_step = UVAR_t;
   float qs_0[coords_n];
   float qs_dlt[coords_n];
 

@@ -40,6 +40,7 @@ fl.txt
 
 # output data files
 examples/*/*/data/*
+examples/*/*/labs/*
 *_x.txt
 g_*.txt
 d_*.txt
