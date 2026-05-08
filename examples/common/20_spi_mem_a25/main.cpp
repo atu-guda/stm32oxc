@@ -61,7 +61,7 @@ int main(void)
 #define DLY_T delay_mcs( 2 );
 
 // TEST0
-int cmd_test0( int argc, const char * const * argv )
+CMD_FUNCTION( test0 )
 {
   int nd     = imin( UVAR_r, sizeof(gbuf_b) );
   std_out <<  NL "# Test0: nd= "  <<  nd  <<  NL;
@@ -106,7 +106,7 @@ int cmd_test0( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_spimem_write( int argc, const char * const * argv )
+CMD_FUNCTION( spimem_write )
 {
   unsigned n       = arg2long_d( 1, argc, argv, 0x20, 1, sizeof(gbuf_b) );
   unsigned ofs     = arg2long_d( 2, argc, argv,    0, 0, 0x00FFFFFF  );
@@ -129,7 +129,7 @@ int cmd_spimem_write( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_spimem_read( int argc, const char * const * argv )
+CMD_FUNCTION( spimem_read )
 {
   unsigned n       = arg2long_d( 1, argc, argv, 0x20, 1, sizeof(gbuf_b) );
   unsigned ofs     = arg2long_d( 2, argc, argv,    0, 0, 0x00FFFFFF  );
@@ -145,14 +145,14 @@ int cmd_spimem_read( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_spimem_erase( int argc, const char * const * argv )
+CMD_FUNCTION( spimem_erase )
 {
   int rc = memspi.erase_chip();
 
   return rc;
 }
 
-int cmd_spimem_sector0_erase( int argc, const char * const * argv )
+CMD_FUNCTION( spimem_sector0_erase )
 {
   int rc = memspi.erase_sector( 0x000000 );
 

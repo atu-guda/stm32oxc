@@ -68,7 +68,7 @@ int main(void)
 
 
 // TEST0
-int cmd_test0( int argc, const char * const * argv )
+CMD_FUNCTION( test0 )
 {
   screen.init();
 
@@ -127,7 +127,7 @@ int cmd_test0( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_cls( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
+CMD_FUNCTION( cls )
 {
   pb0.fillAll( 0 );
   screen.out( pb0 );
@@ -136,7 +136,7 @@ int cmd_cls( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
 }
 
 
-int cmd_vline( int argc, const char * const * argv )
+CMD_FUNCTION( vline )
 {
   uint16_t y0 = arg2long_d( 1, argc, argv,    0,  0, ymax );
   uint16_t y1 = arg2long_d( 2, argc, argv, ymax, y0, ymax );
@@ -151,7 +151,7 @@ int cmd_vline( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_line( int argc, const char * const * argv )
+CMD_FUNCTION( line )
 {
   uint16_t nl = arg2long_d( 1, argc, argv,  36, 0, 1024 );
   uint16_t dn = arg2long_d( 2, argc, argv,  360/nl, 1, 512 );
@@ -172,7 +172,7 @@ int cmd_line( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_contr( int argc, const char * const * argv )
+CMD_FUNCTION( contr )
 {
   uint8_t co = arg2long_d( 1, argc, argv,  0x48, 0, 0x7F );
   std_out <<  NL "contrast: co="  <<  co << NL;

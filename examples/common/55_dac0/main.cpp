@@ -52,7 +52,7 @@ int main(void)
 
 
 // TEST0
-int cmd_test0( int argc, const char * const * argv )
+CMD_FUNCTION( test0 )
 {
   uint32_t v1 = arg2long_d( 1, argc, argv, UVAR_v, 0 );
   uint32_t v2 = v1;
@@ -71,7 +71,7 @@ int cmd_test0( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_ofast( int argc, const char * const * argv )
+CMD_FUNCTION( ofast )
 {
   int n   = arg2long_d( 1, argc, argv, UVAR_n, 0 );
   int dly = arg2long_d( 2, argc, argv, 0, 0, 1000 );
@@ -90,7 +90,7 @@ int cmd_ofast( int argc, const char * const * argv )
 
 constexpr float M_PI_F = 3.141592653f; // TODO: new
 
-int cmd_fun( int argc, const char * const * argv )
+CMD_FUNCTION( fun )
 {
   int n   = arg2long_d( 1, argc, argv, UVAR_n, 0 );
   int tp  = arg2long_d( 2, argc, argv, 0, 0, 5 );

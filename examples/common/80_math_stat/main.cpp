@@ -166,7 +166,7 @@ int main(void)
   return 0;
 }
 
-int cmd_test0( int argc, const char * const * argv )
+CMD_FUNCTION( test0 )
 {
   unsigned n_ch = 2;
   uint32_t n = arg2long_d( 1, argc, argv, UVAR_n, 1, 100000000 ); // number of series
@@ -201,7 +201,7 @@ int cmd_test0( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_testout( int argc, const char * const * argv )
+CMD_FUNCTION( testout )
 {
   if( argc > 1 ) {
     float f = arg2float_d( 1, argc, argv, 1.234f, -FLT_MAX, FLT_MAX  );
@@ -242,7 +242,7 @@ int cmd_testout( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_testsplit( int argc, const char * const * argv )
+CMD_FUNCTION( testsplit )
 {
   if( argc < 2 ) {
     std_out << "# Error: expresssion required! " NL;
@@ -260,7 +260,7 @@ int cmd_testsplit( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_testopt( int argc, const char * const * argv )
+CMD_FUNCTION( testopt )
 {
   int n = arg2long_d( 1, argc, argv, 0  );
   auto ov = op_fun( n );

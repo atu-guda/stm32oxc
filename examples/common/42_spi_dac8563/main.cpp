@@ -60,7 +60,7 @@ int main(void)
 
 
 // TEST0
-int cmd_test0( int argc, const char * const * argv )
+CMD_FUNCTION( test0 )
 {
   uint16_t v0 = arg2long_d( 1, argc, argv, 0x7FFF, 0, 0xFFFF );
   uint16_t v1 = arg2long_d( 2, argc, argv, 0x7FFF, 0, 0xFFFF );
@@ -96,7 +96,7 @@ int cmd_test0( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_send( int argc, const char * const * argv )
+CMD_FUNCTION( send )
 {
   uint8_t cmd = arg2long_d( 1, argc, argv, 0, 0, 0xFF );
   uint16_t  v = arg2long_d( 2, argc, argv, 0, 0, 0xFFFF );
@@ -110,14 +110,14 @@ int cmd_send( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_init( int argc, const char * const * argv )
+CMD_FUNCTION( init )
 {
   dac.init();
   return 0;
 }
 
 
-int cmd_dacout( int argc, const char * const * argv )
+CMD_FUNCTION( dacout )
 {
   uint16_t v = arg2long_d( 1, argc, argv, 0, 0, 0xFFFF );
   uint8_t ch = arg2long_d( 2, argc, argv, 0, 0, 3 );

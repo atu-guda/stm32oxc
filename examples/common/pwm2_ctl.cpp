@@ -639,7 +639,7 @@ void PWMData::set_pwm_manual( float v )
 // --------------------------- Commands -------------------------------------
 
 DCL_CMD_REG( show_steps, 'S', " - show PWM steps"  );
-int cmd_show_steps( int /*argc*/, const char * const * /*argv*/ )
+CMD_FUNCTION( show_steps )
 {
   pwmdat.show_steps();
   return 0;
@@ -647,7 +647,7 @@ int cmd_show_steps( int /*argc*/, const char * const * /*argv*/ )
 
 
 DCL_CMD_REG( mk_rect,      0, " vmin vmax t tp - make rectangle steps"  );
-int cmd_mk_rect( int argc, const char * const * argv )
+CMD_FUNCTION( mk_rect )
 {
   // TODO: limits(type), for all funcs
   float vmin  = arg2float_d( 1, argc, argv,     5, 0.1f,       98 );
@@ -661,7 +661,7 @@ int cmd_mk_rect( int argc, const char * const * argv )
 }
 
 DCL_CMD_REG( mk_ladder,  'L', " vmin dv t n_up tp - make ladder steps"  );
-int cmd_mk_ladder( int argc, const char * const * argv )
+CMD_FUNCTION( mk_ladder )
 {
   float   v0   = arg2float_d( 1, argc, argv,     3, 0.1f,       90 );
   float   dv   = arg2float_d( 2, argc, argv,     5, 0.0f,       90 );
@@ -675,7 +675,7 @@ int cmd_mk_ladder( int argc, const char * const * argv )
 }
 
 DCL_CMD_REG( mk_ramp,    'R', " vmin vmax t1  t2 t3  tp - make ramp steps"  );
-int cmd_mk_ramp( int argc, const char * const * argv )
+CMD_FUNCTION( mk_ramp )
 {
   float vmin  = arg2float_d( 1, argc, argv,     5, 0.1f,       98 );
   float vmax  = arg2float_d( 2, argc, argv,    35, 0.2f,       98 );
@@ -691,7 +691,7 @@ int cmd_mk_ramp( int argc, const char * const * argv )
 }
 
 DCL_CMD_REG( edit_step,  'E', " vb ve t tp - edit given step"  );
-int cmd_edit_step( int argc, const char * const * argv )
+CMD_FUNCTION( edit_step )
 {
   if( argc < 4 ) {
     std_out << "# Error: need more argumets" << NL;

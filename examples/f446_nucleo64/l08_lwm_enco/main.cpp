@@ -225,7 +225,7 @@ int main(void)
 
 
 // TEST0
-int cmd_test0( int argc, const char * const * argv )
+CMD_FUNCTION( test0 )
 {
   int n        = arg2long_d(   1, argc, argv, UVAR_n,  2, 10000 );
   int t_s      = arg2long_d(   2, argc, argv, t_s_def, 1, 10000 );
@@ -260,7 +260,7 @@ int cmd_test0( int argc, const char * const * argv )
 }
 
 
-int cmd_dyn( int argc, const char * const * argv )
+CMD_FUNCTION( dyn )
 {
   const int n_t      = arg2long_d(   1, argc, argv,   n_dyn, 2, 10000 );
   const int t_s      = arg2long_d(   2, argc, argv, t_s_def, 1, 10000 );
@@ -269,7 +269,7 @@ int cmd_dyn( int argc, const char * const * argv )
   return do_dyn( n_t, t_s, t_e );
 }
 
-int cmd_dyn_r( int argc, const char * const * argv )
+CMD_FUNCTION( dyn_r )
 {
   const int n_t      = arg2long_d(   1, argc, argv,   n_dyn,   2, 10000 );
   const int t_s      = arg2long_d(   2, argc, argv, t_s_def,   1, 10000 );
@@ -283,7 +283,7 @@ int cmd_dyn_r( int argc, const char * const * argv )
   return break_flag;
 }
 
-int cmd_dyn_fun( int argc, const char * const * argv )
+CMD_FUNCTION( dyn_fun )
 {
   const int n_t      = arg2long_d(   1, argc, argv,   n_dyn,   2, 10000 );
   const int t_s      = arg2long_d(   2, argc, argv, t_s_def,   1, 10000 );
@@ -301,7 +301,7 @@ int cmd_dyn_fun( int argc, const char * const * argv )
 
 
 
-int cmd_meas1( int argc, const char * const * argv )
+CMD_FUNCTION( meas1 )
 {
   int32_t t_on     = arg2long_d(   1, argc, argv,      1500,   0, 10000 );
 
@@ -386,7 +386,7 @@ int do_dyn( int n_t, int t_s, int t_e )
 
 
 // TMP: report only for now
-int cmd_angle( int argc, const char * const * argv )
+CMD_FUNCTION( angle )
 {
   int clr  = arg2long_d(   1, argc, argv,  0, 0, 1 );
   if( clr ) {
@@ -437,7 +437,7 @@ void set_t_on_from_us( uint32_t t_on_us )
   TIM_LWM->LWM_CCR = ccr;
 }
 
-int cmd_set_t_on( int argc, const char * const * argv )
+CMD_FUNCTION( set_t_on )
 {
   uint32_t t_on_us = arg2long_d(   1, argc, argv, 1500,  0, 3000 );
   bool   reset_cnt = arg2long_d(   2, argc, argv,    0,  0,    1 );
@@ -455,7 +455,7 @@ int cmd_set_t_on( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_measF( int argc, const char * const * argv )
+CMD_FUNCTION( measF )
 {
   int n         = arg2long_d( 1, argc, argv, n_me_f, 1, 10000 );
   int set_zero  = arg2long_d( 2, argc, argv,      0, 0,     1 );
@@ -541,7 +541,7 @@ ReturnCode do_off()
 }
 
 
-int cmd_timinfo( int argc, const char * const * argv )
+CMD_FUNCTION( timinfo )
 {
   tim_print_cfg( TIM_CNT );
   tim_print_cfg( TIM_LWM );

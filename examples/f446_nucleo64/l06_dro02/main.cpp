@@ -64,7 +64,7 @@ int main(void)
   return 0;
 }
 
-int cmd_test0( int argc, const char * const * argv )
+CMD_FUNCTION( test0 )
 {
   int n = arg2long_d( 1, argc, argv, UVAR_n, 0 );
   uint32_t t_step = UVAR_t;
@@ -100,7 +100,7 @@ int cmd_test0( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_run( int argc, const char * const * argv )
+CMD_FUNCTION( run )
 {
   int max_v = arg2long_d( 1, argc, argv, UVAR_a, 0, 500 );
   int dlt_v = arg2long_d( 2, argc, argv, UVAR_b, 1, 100 );
@@ -193,7 +193,7 @@ int motor_pwr( int v )
   return 0;
 }
 
-int cmd_test_fc( int argc, const char * const * argv )
+CMD_FUNCTION( test_fc )
 {
   int v = arg2long_d( 1, argc, argv, 10, 0, 1000 );
 

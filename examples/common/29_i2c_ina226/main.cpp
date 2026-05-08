@@ -78,7 +78,7 @@ bool isGoodINA226( INA226 &ina, bool print )
 }
 
 // TEST0
-int cmd_test0( int argc, const char * const * argv )
+CMD_FUNCTION( test0 )
 {
   uint32_t t_step = UVAR_t;
   uint32_t n = arg2long_d( 1, argc, argv, UVAR_n, 1, 1000000 ); // number of series
@@ -148,7 +148,7 @@ int cmd_test0( int argc, const char * const * argv )
 }
 
 #ifdef USE_STATDATA
-int cmd_getVIP( int argc, const char * const * argv )
+CMD_FUNCTION( getVIP )
 {
   uint32_t t_step = UVAR_t;
   uint32_t n = arg2long_d( 1, argc, argv, UVAR_n, 1, 1000000 ); // number of series
@@ -227,14 +227,14 @@ int cmd_getVIP( int argc, const char * const * argv )
   return rc;
 }
 #else
-int cmd_getVIP( int argc, const char * const * argv )
+CMD_FUNCTION( getVIP )
 {
   return 1; // just not enough flash
 }
 #endif
 
 
-int cmd_set_calibr( int argc, const char * const * argv )
+CMD_FUNCTION( set_calibr )
 {
   float calibr_I_lsb = arg2float_d( 1, argc, argv, ina226.get_I_lsb_mA()  * 1e-3f, 1e-20f, 1e10f );
   float calibr_R     = arg2float_d( 2, argc, argv, ina226.get_R_sh_uOhm() * 1e-6f, 1e-20f, 1e10f );

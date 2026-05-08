@@ -55,7 +55,7 @@ int main(void)
 
 
 // TEST0
-int cmd_test0( int argc, const char * const * argv )
+CMD_FUNCTION( test0 )
 {
   int n      = arg2long_d( 1, argc, argv,    UVAR_n, 1, 0xFFFFFF );
   int t_step = UVAR_t;
@@ -109,7 +109,7 @@ int cmd_test0( int argc, const char * const * argv )
 
 
 
-int cmd_reset_spi( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
+CMD_FUNCTION( reset_spi )
 {
   spi_d1.resetDev();
 

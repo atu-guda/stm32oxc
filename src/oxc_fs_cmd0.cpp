@@ -13,7 +13,7 @@ extern FATFS fs; // from main?
 extern uint8_t sd_buf[512];
 
 DCL_CMD_REG( mount, 0, " [path] - mount FAT filesystem"  );
-int cmd_mount( int argc, const char * const * argv )
+CMD_FUNCTION( mount )
 {
   if( argc > 1 ) {
     strncpy( fspath, argv[1], sizeof( fspath ) - 1 );
@@ -25,7 +25,7 @@ int cmd_mount( int argc, const char * const * argv )
 }
 
 DCL_CMD_REG( umount, 0, " - umount FAT filesystem"  );
-int cmd_umount( int argc, const char * const * argv )
+CMD_FUNCTION( umount )
 {
   pr( "Try to umount \"" ); pr( fspath ); pr( "\""  NL);
   FRESULT fr = f_mount( nullptr, fspath, 1 );
@@ -34,7 +34,7 @@ int cmd_umount( int argc, const char * const * argv )
 }
 
 DCL_CMD_REG( ls, 0, " [path] - list directory contents"  );
-int cmd_ls( int argc, const char * const * argv )
+CMD_FUNCTION( ls )
 {
   const char *dname = "/";
   if( argc > 1 ) {
@@ -66,7 +66,7 @@ int cmd_ls( int argc, const char * const * argv )
 }
 
 DCL_CMD_REG( fsinfo, 0, " info about FAT filesystem"  );
-int cmd_fsinfo( int argc, const char * const * argv )
+CMD_FUNCTION( fsinfo )
 {
   const char *fsn = "";
   if( argc > 1 ) {
@@ -93,7 +93,7 @@ int cmd_fsinfo( int argc, const char * const * argv )
 }
 
 DCL_CMD_REG( cat, 0, " path [max [noout]] - output file contents to stdout"  );
-int cmd_cat( int argc, const char * const * argv )
+CMD_FUNCTION( cat )
 {
   const char *fn = "";
   if( argc > 1 ) {
@@ -136,7 +136,7 @@ int cmd_cat( int argc, const char * const * argv )
 }
 
 DCL_CMD_REG( appstr, 0, " file string  - append string to file"  );
-int cmd_appstr( int argc, const char * const * argv )
+CMD_FUNCTION( appstr )
 {
   if( argc < 3 ) {
     pr( "Error: need filename and string" NL );
@@ -163,7 +163,7 @@ int cmd_appstr( int argc, const char * const * argv )
 
 
 DCL_CMD_REG( wblocks, 0, " file [n_blocks]  - write blocks to file"  );
-int cmd_wblocks( int argc, const char * const * argv )
+CMD_FUNCTION( wblocks )
 {
   if( argc < 2 ) {
     pr( "Error: need filename [n_sect]" NL );
@@ -197,7 +197,7 @@ int cmd_wblocks( int argc, const char * const * argv )
 }
 
 DCL_CMD_REG( rm, 0, " file - remove file"  );
-int cmd_rm( int argc, const char * const * argv )
+CMD_FUNCTION( rm )
 {
   if( argc < 2 ) {
     pr( "Error: need filename to delete" NL );

@@ -142,7 +142,7 @@ void print_tim_info( TIM_TypeDef *tim, const char *tname )
 
 
 // TEST0
-int cmd_test0( int argc, const char * const * argv )
+CMD_FUNCTION( test0 )
 {
   std_out <<  NL "Test0: " NL;
   print_tim_info( TIM1, "TIM1=(PWM,US)" );
@@ -222,7 +222,7 @@ int is_proxy_obstacle()
 
 // --------------------------- commands ---------------------------------------
 
-int cmd_go( int argc, const char * const * argv )
+CMD_FUNCTION( go )
 {
   int t    = arg2long_d( 1, argc, argv, UVAR_t,  -1, 100000 );
   int r_w  = arg2long_d( 2, argc, argv, UVAR_w, -100,  100 );
@@ -289,7 +289,7 @@ void set_us_dir( int dir )
 }
 
 
-int cmd_us_dir( int argc, const char * const * argv )
+CMD_FUNCTION( us_dir )
 {
   int dir  = arg2long_d( 1, argc, argv,  0,  -100, 100 );
 
@@ -318,7 +318,7 @@ int do_us_scan()
 }
 
 
-int cmd_us_scan( int argc, const char * const * argv )
+CMD_FUNCTION( us_scan )
 {
   std_out <<  NL "us_scan: "  <<  us_dir << NL;
   return do_us_scan();
@@ -335,7 +335,7 @@ void RunStepData::parse_args( int argc, const char * const * argv, int base )
 }
 
 
-int cmd_set_step( int argc, const char * const * argv )
+CMD_FUNCTION( set_step )
 {
   int n  = arg2long_d( 1, argc, argv,  -1, -1,  n_run_steps );
   if( n < 0 ) {
@@ -356,7 +356,7 @@ int cmd_set_step( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_print_steps( int argc, const char * const * argv )
+CMD_FUNCTION( print_steps )
 {
   for( int i=0; i< n_run_steps; ++i ) {
     std_out << "# " << i << ' ' <<  run_steps[i] << NL;
@@ -364,7 +364,7 @@ int cmd_print_steps( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_run_steps( int argc, const char * const * argv )
+CMD_FUNCTION( run_steps )
 {
   int n_s = arg2long_d( 1, argc, argv,              0,  0, n_run_steps-1 );
   int n_e = arg2long_d( 2, argc, argv,  n_run_steps-1,  0, n_run_steps-1 );
@@ -380,7 +380,7 @@ int cmd_run_steps( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_run_direct( int argc, const char * const * argv )
+CMD_FUNCTION( run_direct )
 {
   RunStepData sd;
   sd.parse_args( argc, argv, 1 );
@@ -459,7 +459,7 @@ RunTestElem run_tests[] {
   { run_test_4, size(run_test_4) },
 };
 
-int cmd_set_test( int argc, const char * const * argv )
+CMD_FUNCTION( set_test )
 {
   int n_t = arg2long_d( 1, argc, argv, 0, 0, size(run_tests)-1 );
   const RunTestElem &te = run_tests[n_t];

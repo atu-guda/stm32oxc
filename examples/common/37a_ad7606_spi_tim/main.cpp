@@ -77,7 +77,7 @@ int main(void)
 
 
 // TEST0
-int cmd_test0( int argc, const char * const * argv )
+CMD_FUNCTION( test0 )
 {
   int t_step = UVAR_t;
   unsigned n_ch = clamp( (unsigned)UVAR_c, 1u, n_ADC_ch_max );
@@ -146,7 +146,7 @@ int cmd_test0( int argc, const char * const * argv )
 }
 
 
-int cmd_set_coeffs( int argc, const char * const * argv )
+CMD_FUNCTION( set_coeffs )
 {
   return subcmd_set_coeffs( argc, argv, adcd );
 }
@@ -186,18 +186,18 @@ void TIM2_IRQHandler(void)
   leds[1].toggle();
 }
 
-int cmd_out( int argc, const char * const * argv )
+CMD_FUNCTION( out )
 {
   return subcmd_out_any( argc, argv, adcd, false );
 }
 
-int cmd_outhex( int argc, const char * const * argv )
+CMD_FUNCTION( outhex )
 {
   return subcmd_out_any( argc, argv, adcd, true );
 }
 
 
-int cmd_show_stats( int argc, const char * const * argv )
+CMD_FUNCTION( show_stats )
 {
   // auto ns = adcd.get_n_row();
   // uint32_t n = arg2long_d( 1, argc, argv, ns, 0, ns+1 ); // number output series

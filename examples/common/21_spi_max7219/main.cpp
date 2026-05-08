@@ -57,7 +57,7 @@ int main(void)
 #define DLY_T delay_mcs( 2 );
 
 // TEST0
-int cmd_test0( int argc, const char * const * argv )
+CMD_FUNCTION( test0 )
 {
   const int def_delay = 500;
   int v = arg2long_d( 1, argc, argv, 987 );
@@ -151,7 +151,7 @@ int cmd_test0( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_sendr_spi( int argc, const char * const * argv )
+CMD_FUNCTION( sendr_spi )
 {
   uint8_t sbuf[16]; // really used not more then 9 - max args
   uint16_t ns = argc - 1;

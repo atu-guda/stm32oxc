@@ -64,7 +64,7 @@ int main(void)
 }
 
 // TEST0
-int cmd_test0( int argc, const char * const * argv )
+CMD_FUNCTION( test0 )
 {
   int n  = arg2long_d( 1, argc, argv,  UVAR_n, 0 );
   int v0 = arg2long_d( 2, argc, argv,  0, 0, 50000 );
@@ -119,7 +119,7 @@ int cmd_test0( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_init( int argc, const char * const * argv )
+CMD_FUNCTION( init )
 {
   uint8_t addr = arg2long_d( 1, argc, argv, UVAR_u, 0, 0xFFFF );
   std_out <<  "#  init: addr=" << (int)addr  << NL;
@@ -130,21 +130,21 @@ int cmd_init( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_on( int argc, const char * const * argv )
+CMD_FUNCTION( on )
 {
   auto rc = rd.on();
   std_out << "# ON.  rc= " << rc << NL;
   return 0;
 }
 
-int cmd_off( int argc, const char * const * argv )
+CMD_FUNCTION( off )
 {
   auto rc = rd.off();
   std_out << "# OFF. rc= " << rc << NL;
   return 0;
 }
 
-int cmd_measure( int argc, const char * const * argv )
+CMD_FUNCTION( measure )
 {
   uint32_t scale = rd.getScale();
   if( ! scale ) {
@@ -157,7 +157,7 @@ int cmd_measure( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_setV( int argc, const char * const * argv )
+CMD_FUNCTION( setV )
 {
   uint32_t V = arg2long_d( 1, argc, argv, 0, 0, 60000 );
   int     me = arg2long_d( 2, argc, argv, 0, 0, 1 );
@@ -172,7 +172,7 @@ int cmd_setV( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_setI( int argc, const char * const * argv )
+CMD_FUNCTION( setI )
 {
   uint32_t I = arg2long_d( 1, argc, argv, 0, 0, 50000 );
   auto rc = rd.setI( I );
@@ -183,7 +183,7 @@ int cmd_setI( int argc, const char * const * argv )
 
 // keep for debug
 
-int cmd_write_reg( int argc, const char * const * argv )
+CMD_FUNCTION( write_reg )
 {
   uint16_t reg = arg2long_d( 1, argc, argv, 0, 0, 0xFFFF );
   uint16_t val = arg2long_d( 2, argc, argv, 0, 0, 0xFFFF );
@@ -194,7 +194,7 @@ int cmd_write_reg( int argc, const char * const * argv )
   return rc;
 }
 
-int cmd_read_regs( int argc, const char * const * argv )
+CMD_FUNCTION( read_regs )
 {
   uint16_t start = arg2long_d( 1, argc, argv, 0, 0, 0xFFFF );
   uint16_t n     = arg2long_d( 2, argc, argv, 1, 1, 125 );
@@ -214,7 +214,7 @@ int cmd_read_regs( int argc, const char * const * argv )
 }
 
 
-int cmd_read_reg( int argc, const char * const * argv )
+CMD_FUNCTION( read_reg )
 {
   uint16_t i = arg2long_d( 1, argc, argv, 0, 0, 0xFFFF );
 

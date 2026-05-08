@@ -56,7 +56,7 @@ int main(void)
 
 
 // TEST0
-int cmd_test0( int argc, const char * const * argv )
+CMD_FUNCTION( test0 )
 {
   int t = arg2long_d( 1, argc, argv, UVAR_t, 10, 100000 );
   int n = arg2long_d( 1, argc, argv, UVAR_n,  1,  10000 );
@@ -84,7 +84,7 @@ int cmd_test0( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_tinit( int argc, const char * const * argv )
+CMD_FUNCTION( tinit )
 {
   // tim_cfg();
   TIM_EXA->PSC = UVAR_p;
@@ -97,7 +97,7 @@ int cmd_tinit( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_set_pwm( int argc, const char * const * argv )
+CMD_FUNCTION( set_pwm )
 {
   int v = arg2long_d( 1, argc, argv, 10, 0, 100 );
   int pbase = TIM_EXA->ARR;

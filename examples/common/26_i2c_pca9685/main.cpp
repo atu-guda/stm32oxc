@@ -58,7 +58,7 @@ int main(void)
 
 
 // TEST0
-int cmd_test0( int argc, const char * const * argv )
+CMD_FUNCTION( test0 )
 {
   if( ! pwmc.init() ) {
     std_out <<  "Fail to init PCA9685, Error= " << pwmc.getErr() <<  NL;
@@ -84,7 +84,7 @@ int cmd_test0( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_setFreq( int argc, const char * const * argv )
+CMD_FUNCTION( setFreq )
 {
   int freq  = arg2long_d( 1, argc, argv,   50, 1 );
   pwmc.setFreq( freq );
@@ -95,7 +95,7 @@ int cmd_setFreq( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_setPulse( int argc, const char * const * argv )
+CMD_FUNCTION( setPulse )
 {
   int ch = arg2long_d( 1, argc, argv, 0, 0, PCA9685::n_ch-1 );
   int v  = arg2long_d( 2, argc, argv, 0, 0 );
@@ -105,7 +105,7 @@ int cmd_setPulse( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_setServo( int argc, const char * const * argv )
+CMD_FUNCTION( setServo )
 {
   int ch = arg2long_d( 1, argc, argv, 0, 0,  PCA9685::n_ch-1 );
   int v  = arg2long_d( 2, argc, argv, 0, -PCA9685::servo_in_max, PCA9685::servo_in_max );
@@ -117,7 +117,7 @@ int cmd_setServo( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_off( int argc, const char * const * argv )
+CMD_FUNCTION( off )
 {
   int ch = arg2long_d( 1, argc, argv, -1, -1,  PCA9685::n_ch-1 );
   if( ch < 0 ) {
@@ -129,7 +129,7 @@ int cmd_off( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_run( int argc, const char * const * argv )
+CMD_FUNCTION( run )
 {
   int ch = arg2long_d( 1, argc, argv, 0, 0,  PCA9685::n_ch-1 );
   int ve = arg2long_d( 2, argc, argv, 0, -PCA9685::servo_in_max, PCA9685::servo_in_max );

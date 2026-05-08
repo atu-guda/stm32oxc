@@ -56,7 +56,7 @@ int main(void)
 
 
 // TEST0
-int cmd_test0( int argc, const char * const * argv )
+CMD_FUNCTION( test0 )
 {
   uint32_t t_step = UVAR_t;
   uint32_t n = arg2long_d( 1, argc, argv, UVAR_n, 1, 1000000 ); // number of series
@@ -140,7 +140,7 @@ int cmd_test0( int argc, const char * const * argv )
   return rc;
 }
 
-int cmd_getNch( int argc, const char * const * argv )
+CMD_FUNCTION( getNch )
 {
   uint32_t t_step = UVAR_t;
   uint32_t n = arg2long_d( 1, argc, argv, UVAR_n, 1, 1000000 ); // number of series
@@ -212,7 +212,7 @@ int cmd_getNch( int argc, const char * const * argv )
 }
 
 #if ( MC_FLASH_SIZE > 1024*65 )
-int cmd_set_coeffs( int argc, const char * const * argv )
+CMD_FUNCTION( set_coeffs )
 {
   if( argc > 1 ) {
     v_coeffs[0] = arg2float_d( 1, argc, argv, 1, -1e10f, 1e10f );
@@ -226,7 +226,7 @@ int cmd_set_coeffs( int argc, const char * const * argv )
 }
 
 #else
-int cmd_set_coeffs( int argc, const char * const * argv )
+CMD_FUNCTION( set_coeffs )
 {
   return 0;
 }

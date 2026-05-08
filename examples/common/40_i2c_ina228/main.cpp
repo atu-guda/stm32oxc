@@ -68,7 +68,7 @@ int main(void)
 
 
 // TEST0
-int cmd_test0( int argc, const char * const * argv )
+CMD_FUNCTION( test0 )
 {
   uint32_t t_step = UVAR_t;
   uint32_t n = arg2long_d( 1, argc, argv, UVAR_n, 1, 1000000 ); // number of series
@@ -151,7 +151,7 @@ int cmd_test0( int argc, const char * const * argv )
 
 
 
-int cmd_calc_acfg( int argc, const char * const * argv )
+CMD_FUNCTION( calc_acfg )
 {
   auto md   = (uint8_t)arg2long_d( 1, argc, argv, 0x0B, 0, 0x0F );
   auto ct_b = (uint8_t)arg2long_d( 2, argc, argv,    5, 0, 7 );

@@ -62,7 +62,7 @@ int main(void)
 
 
 // TEST0
-int cmd_test0( int argc, const char * const * argv )
+CMD_FUNCTION( test0 )
 {
   uint32_t freq = arg2long_d( 1, argc, argv, 1000, 0, 12500000 );
   uint8_t  cmd2 = arg2long_d( 2, argc, argv, 0x00, 0, 255 );
@@ -89,7 +89,7 @@ int cmd_test0( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_sendr_spi( int argc, const char * const * argv )
+CMD_FUNCTION( sendr_spi )
 {
   uint8_t sbuf[16]; // really used not more then 9 - max args
   uint16_t ns = argc - 1;
@@ -119,7 +119,7 @@ int cmd_sendr_spi( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_recv_spi( int argc, const char * const * argv )
+CMD_FUNCTION( recv_spi )
 {
   int nd = arg2long_d( 1, argc, argv, UVAR_r, 1, sizeof(gbuf_a) );
 
@@ -140,7 +140,7 @@ int cmd_recv_spi( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_duplex_spi( int argc, const char * const * argv )
+CMD_FUNCTION( duplex_spi )
 {
   uint8_t sbuf[16]; // really used not more then 9 - max args
   uint16_t ns = argc - 1;
@@ -169,7 +169,7 @@ int cmd_duplex_spi( int argc, const char * const * argv )
 }
 
 
-int cmd_reset_spi( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
+CMD_FUNCTION( reset_spi )
 {
   spi_d.resetDev();
 

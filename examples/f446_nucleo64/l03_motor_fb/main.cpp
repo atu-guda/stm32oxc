@@ -137,7 +137,7 @@ uint32_t wait_with_cond( uint32_t ms, uint16_t n_hwticks, uint32_t *rc, uint32_t
 }
 
 // TEST0
-int cmd_test0( int argc, const char * const * argv )
+CMD_FUNCTION( test0 )
 {
   int ts     = arg2long_d( 1, argc, argv, UVAR_s, 0 );
   int tg     = arg2long_d( 2, argc, argv, UVAR_g, 0 );

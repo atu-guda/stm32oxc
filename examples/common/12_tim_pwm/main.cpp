@@ -77,7 +77,7 @@ int main(void)
 
 
 // TEST0
-int cmd_test0( int argc, const char * const * argv )
+CMD_FUNCTION( test0 )
 {
   for( auto &ch : pwmc ) {
     if( argc <= (int)(ch.idx+1) ) {
@@ -99,7 +99,7 @@ int cmd_test0( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_go_servo( int argc, const char * const * argv )
+CMD_FUNCTION( go_servo )
 {
   if( !on_servo ) {
     cmd_servo( argc, argv );
@@ -122,7 +122,7 @@ int cmd_go_servo( int argc, const char * const * argv )
 }
 
 
-int cmd_tinit( int argc, const char * const * argv )
+CMD_FUNCTION( tinit )
 {
   tim_cfg();
   tim_print_cfg( TIM_EXA );
@@ -130,7 +130,7 @@ int cmd_tinit( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_servo( int argc, const char * const * argv )
+CMD_FUNCTION( servo )
 {
   uint32_t psc = calc_TIM_psc_for_cnt_freq( TIM_EXA, 1000000 );
   uint32_t arr = calc_TIM_arr_for_base_psc( TIM_EXA, psc, 100 );

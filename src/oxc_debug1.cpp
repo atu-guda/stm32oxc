@@ -408,7 +408,7 @@ void gpio_pin_info( GpioRegs *const gi, uint16_t pin, char *s )
 // common commands
 //
 DCL_CMD_REG(  info,  0, "- Output general info" );
-int cmd_info( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
+CMD_FUNCTION( info )
 {
   std_out << NL "# **** " PROJ_NAME " **** " NL;
 
@@ -480,7 +480,7 @@ int cmd_info( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
 }
 
 DCL_CMD_REG( echo,  0, "[args] - output args" );
-int cmd_echo( int argc, const char * const * argv )
+CMD_FUNCTION( echo )
 {
   std_out << NL;
   for( int i=1; i<argc; ++i ) {
@@ -502,7 +502,7 @@ int cmd_echo( int argc, const char * const * argv )
 const char* common_help_string = "Default help " NL;
 
 DCL_CMD_REG( help,  'h', "- List of commands and arguments" );
-int cmd_help( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
+CMD_FUNCTION( help )
 {
   std_out << common_help_string;
   std_out << NL "commands:" NL;
@@ -525,7 +525,7 @@ int cmd_help( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
 }
 
 DCL_CMD_REG( dump,  0, "{a|b|addr} [n] [abs:0:1]- HexDumps given area"  );
-int cmd_dump( int argc, const char * const * argv )
+CMD_FUNCTION( dump )
 {
   if( argc < 2 ) {
     return 1;
@@ -546,7 +546,7 @@ int cmd_dump( int argc, const char * const * argv )
 }
 
 DCL_CMD_REG( hd32,  0, "{a|b|addr} [n] [abs:0:1]- HexDumps given area as 32bit"  );
-int cmd_hd32( int argc, const char * const * argv )
+CMD_FUNCTION( hd32 )
 {
   if( argc < 2 ) {
     return 1;
@@ -568,7 +568,7 @@ int cmd_hd32( int argc, const char * const * argv )
 
 
 DCL_CMD_REG( fill,  0, "{a|b|addr} val [n] [stp] - Fills memory by value"  );
-int cmd_fill( int argc, const char * const * argv )
+CMD_FUNCTION( fill )
 {
   if( argc < 2 ) {
     return 1;
@@ -603,7 +603,7 @@ int cmd_fill( int argc, const char * const * argv )
 
 
 DCL_CMD_REG( print, 'p', "name - print user var a-z"  );
-int cmd_print( int argc, const char * const * argv )
+CMD_FUNCTION( print )
 {
   if( argc < 2 ) { // all
     print_all_vars();
@@ -649,7 +649,7 @@ bool print_given_var( const char *nm, int fmt )
 
 
 DCL_CMD_REG( set, 's', "name value - set var a-z"  );
-int cmd_set( int argc, const char * const * argv )
+CMD_FUNCTION( set )
 {
   if( argc != 3 ) {
     std_out << "# Error: bad number of arguments: s var value" << NL;
@@ -677,35 +677,35 @@ int cmd_set( int argc, const char * const * argv )
 
 
 DCL_CMD_REG( die, 0,  "[val] - die with value"  );
-int cmd_die( int argc, const char * const * argv )
+CMD_FUNCTION( die )
 {
   int v = arg2long_d( 1, argc, argv, 0, 0, 0xFF );
   die4led( PinMask( v ) );
 }
 
 DCL_CMD_REG( reboot, 0, "- reboot system"  );
-int cmd_reboot( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG)
+CMD_FUNCTION( reboot )
 {
   NVIC_SystemReset();
   return 0; // never ;-)
 }
 
 DCL_CMD_REG( log_print, 0, "- print log buffer"  );
-int cmd_log_print( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
+CMD_FUNCTION( log_print )
 {
   log_print();
   return 0;
 }
 
 DCL_CMD_REG( log_reset, 0, "- reset log buffer"  );
-int cmd_log_reset( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
+CMD_FUNCTION( log_reset )
 {
   log_reset();
   return 0;
 }
 
 DCL_CMD_REG( pinfo,  0, "[A-?] [0-15] [n] - info about pin" );
-int cmd_pinfo( int argc, const char * const * argv )
+CMD_FUNCTION( pinfo )
 {
   uint16_t pin = arg2long_d( 2, argc, argv, 0, 0, 15 );
   uint16_t n   = arg2long_d( 3, argc, argv, 1, 1, 16 );
@@ -732,7 +732,7 @@ int cmd_pinfo( int argc, const char * const * argv )
 }
 
 DCL_CMD_REG( leds_step, 0, "[N] - set leds step in 10 ms "  );
-int cmd_leds_step( int argc, const char * const * argv )
+CMD_FUNCTION( leds_step )
 {
   uint32_t nstep = arg2long_d( 1, argc, argv, 50, 1, 100000 ); // number output series
   task_leds_step = nstep;

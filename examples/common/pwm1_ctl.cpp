@@ -152,14 +152,14 @@ void PWMData::set_v_manual( float v )
 // --------------------------- Commands -------------------------------------
 
 DCL_CMD_REG( show_steps, 'S', " - show PWM steps"  );
-int cmd_show_steps( int /*argc*/, const char * const * /*argv*/ )
+CMD_FUNCTION( show_steps )
 {
   pwmdat.show_steps();
   return 0;
 }
 
 DCL_CMD_REG( set_minmax,   0, " pwm_min pwm_max - set PWM limits"  );
-int cmd_set_minmax( int argc, const char * const * argv )
+CMD_FUNCTION( set_minmax )
 {
   float vmin = arg2float_d( 1, argc, argv, pwmdat.get_min(),  0.001, 98.00 );
   float vmax = arg2float_d( 2, argc, argv, pwmdat.get_max(), vmin+1, 99.99 );
@@ -170,7 +170,7 @@ int cmd_set_minmax( int argc, const char * const * argv )
 }
 
 DCL_CMD_REG( mk_rect,      0, " v t - make rectangle steps"  );
-int cmd_mk_rect( int argc, const char * const * argv )
+CMD_FUNCTION( mk_rect )
 {
   float v  = arg2float_d( 1, argc, argv,    35, 1,       98 );
   int   t  = arg2long_d(  2, argc, argv, 30000, 1, 10000000 );
@@ -181,7 +181,7 @@ int cmd_mk_rect( int argc, const char * const * argv )
 }
 
 DCL_CMD_REG( mk_ladder,    0, " v t n_up - make ladder steps"  );
-int cmd_mk_ladder( int argc, const char * const * argv )
+CMD_FUNCTION( mk_ladder )
 {
   float    v  = arg2float_d( 1, argc, argv,     5, 1,       90 );
   unsigned t  = arg2long_d(  2, argc, argv, 30000, 1, 10000000 );
@@ -193,7 +193,7 @@ int cmd_mk_ladder( int argc, const char * const * argv )
 }
 
 DCL_CMD_REG( mk_trap,      0, " v t1  t2 t3 - make trapzoid steps"  );
-int cmd_mk_trap( int argc, const char * const * argv )
+CMD_FUNCTION( mk_trap )
 {
   float  v = arg2float_d( 1, argc, argv,    50, 0,       99 );
   int   t1 = arg2long_d(  2, argc, argv, 30000, 1, 10000000 );
@@ -206,7 +206,7 @@ int cmd_mk_trap( int argc, const char * const * argv )
 }
 
 DCL_CMD_REG( edit_step,  'E', " v t tp - edit given step"  );
-int cmd_edit_step( int argc, const char * const * argv )
+CMD_FUNCTION( edit_step )
 {
   if( argc < 3 ) {
     return 1;

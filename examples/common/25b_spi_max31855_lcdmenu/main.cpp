@@ -194,7 +194,7 @@ int main(void)
 
 
 // TEST0
-int cmd_test0( int argc, const char * const * argv )
+CMD_FUNCTION( test0 )
 {
   int n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 0xFFFFFF );
   uint32_t t_step = t_dt;
@@ -313,11 +313,11 @@ int cmd_test0( int argc, const char * const * argv )
 }
 
 
-int cmd_menu( int argc, const char * const * argv )
+CMD_FUNCTION( menu )
 {
-  int cmd_i = arg2long_d( 1, argc, argv, 0 );
+  int mi = arg2long_d( 1, argc, argv, 0 );
   leds[1].toggle();
-  return menu4b_cmd( cmd_i );
+  return menu4b_cmd( mi );
 }
 
 int menu4b_output( const char *s1, const char *s2 )

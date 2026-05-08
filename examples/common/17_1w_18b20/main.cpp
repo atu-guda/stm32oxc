@@ -56,7 +56,7 @@ int main(void)
 
 
 // TEST0
-int cmd_test0( int argc, const char * const * argv )
+CMD_FUNCTION( test0 )
 {
   int n = arg2long_d( 1, argc, argv, UVAR_n, 0 );
   uint32_t t_step = UVAR_t;
@@ -101,7 +101,7 @@ int cmd_test0( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_wire0( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
+CMD_FUNCTION( wire0 )
 {
   uint8_t buf[12], addr[12];
   std_out <<  NL "1wire test start." NL;

@@ -94,7 +94,7 @@ bool isGoodINA226( INA226 &ina, bool print )
 }
 
 // TEST0
-int cmd_test0( int argc, const char * const * argv )
+CMD_FUNCTION( test0 )
 {
   uint32_t t_step = UVAR_t;
   unsigned n_ch = 2;
@@ -185,7 +185,7 @@ int cmd_test0( int argc, const char * const * argv )
 }
 
 
-int cmd_set_calibr( int argc, const char * const * argv )
+CMD_FUNCTION( set_calibr )
 {
   float calibr_I_lsb = arg2float_d( 1, argc, argv, ina226.get_I_lsb_mA()  * 1e-3f, 1e-20f, 1e10f );
   float calibr_R     = arg2float_d( 2, argc, argv, ina226.get_R_sh_uOhm() * 1e-6f, 1e-20f, 1e10f );
@@ -237,7 +237,7 @@ void tim_cfg()
 
 }
 
-int cmd_pwm( int argc, const char * const * argv )
+CMD_FUNCTION( pwm )
 {
   float v = arg2float_d( 1, argc, argv, 10, 0, 100 );
   pwmdat.set_v_manual( v );
@@ -248,7 +248,7 @@ int cmd_pwm( int argc, const char * const * argv )
 
 
 
-int cmd_tinit( int argc, const char * const * argv )
+CMD_FUNCTION( tinit )
 {
   tim_cfg();
   tim_print_cfg( TIM_EXA );
@@ -256,7 +256,7 @@ int cmd_tinit( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_set_coeffs( int argc, const char * const * argv )
+CMD_FUNCTION( set_coeffs )
 {
   if( argc > 1 ) {
     v_coeffs[0] = arg2float_d( 1, argc, argv, 1, -1e10f, 1e10f );

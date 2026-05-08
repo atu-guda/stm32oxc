@@ -67,7 +67,7 @@ int main(void)
 }
 
 // TEST0
-int cmd_test0( int argc, const char * const * argv )
+CMD_FUNCTION( test0 )
 {
   int a = arg2long_d( 1, argc, argv,   2,    0, 127 );
   std_out << "# Test0: a= " << a << " sz:va_list= " << sizeof(va_list) << NL;
@@ -135,7 +135,7 @@ int init_picoc( Picoc *ppc )
   return 0;
 }
 
-int cmd_init_picoc( int argc, const char * const * argv )
+CMD_FUNCTION( init_picoc )
 {
   init_picoc( &pc );
   return 0;

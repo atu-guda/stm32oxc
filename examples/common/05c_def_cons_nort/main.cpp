@@ -54,7 +54,7 @@ int main(void)
 // void test_output_rate( int n, int sl, int do_flush );
 // from ../../../src/oxc_debug1.cpp
 
-int cmd_test_val( int argc, const char * const * argv )
+CMD_FUNCTION( test_val )
 {
   int v0 = arg2long_d( 1, argc, argv,  UVAR_v, INT_MIN, INT_MAX );
   int v1 = arg2long_d( 2, argc, argv,  UVAR_u,    -500,    1500 );
@@ -63,7 +63,7 @@ int cmd_test_val( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_test_mdelay( int argc, const char * const * argv )
+CMD_FUNCTION( test_mdelay )
 {
   int v = arg2long_d( 1, argc, argv,  10, 0, 5000 );
   main_loop_delay_nortos = v;
@@ -71,7 +71,7 @@ int cmd_test_mdelay( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_delay_calibrate( int argc, const char * const * argv )
+CMD_FUNCTION( delay_calibrate )
 {
   std_out << "# old delay_calibrate_value:" << delay_calibrate_value << NL;
   do_delay_calibrate();

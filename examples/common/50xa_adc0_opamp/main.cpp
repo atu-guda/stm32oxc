@@ -77,7 +77,7 @@ int main(void)
 
 
 // TEST0
-int cmd_test0( int argc, const char * const * argv )
+CMD_FUNCTION( test0 )
 {
   const uint32_t n_ch = clamp<uint32_t>( UVAR('c'), 1, adc.n_ch_max );
   //

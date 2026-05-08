@@ -54,7 +54,7 @@ int main(void)
 
 
 // TEST0
-int cmd_test0( int argc, const char * const * argv )
+CMD_FUNCTION( test0 )
 {
   int v = arg2long_d( 1, argc, argv, 0x0800, 0, 0x0FFF );
 
@@ -66,7 +66,7 @@ int cmd_test0( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_outV( int argc, const char * const * argv )
+CMD_FUNCTION( outV )
 {
   int v = arg2long_d( 1, argc, argv, 1000, 0  );
   int va = v * 0xFFF / UVAR_v;
@@ -79,7 +79,7 @@ int cmd_outV( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_outEEPROM( int argc, const char * const * argv )
+CMD_FUNCTION( outEEPROM )
 {
   int v = arg2long_d( 1, argc, argv, 1000, 0  );
   int va = v * 0xFFF / UVAR_v;
@@ -93,7 +93,7 @@ int cmd_outEEPROM( int argc, const char * const * argv )
 }
 
 
-int cmd_sleep1( int argc, const char * const * argv )
+CMD_FUNCTION( sleep1 )
 {
   std_out << NL "# sleep1: " << NL;
   std_out.flush();
@@ -103,7 +103,7 @@ int cmd_sleep1( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_rect( int argc, const char * const * argv )
+CMD_FUNCTION( rect )
 {
   int v0 = arg2long_d( 1, argc, argv,  500, 0  );
   int v1 = arg2long_d( 2, argc, argv, 2500, 0  );

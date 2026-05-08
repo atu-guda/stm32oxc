@@ -51,7 +51,7 @@ int main(void)
 
 
 // TEST0
-int cmd_test0( int argc, const char * const * argv )
+CMD_FUNCTION( test0 )
 {
   // int n = UVAR('n');
   uint32_t t_step = UVAR('t');
@@ -85,7 +85,7 @@ int cmd_test0( int argc, const char * const * argv )
 }
 
 
-int cmd_xychar( int argc, const char * const * argv )
+CMD_FUNCTION( xychar )
 {
   uint8_t x  = (uint8_t)arg2long_d( 1, argc, argv, 0x0, 0,   64 );
   uint8_t y  = (uint8_t)arg2long_d( 2, argc, argv, 0x0, 0,    3 );
@@ -97,7 +97,7 @@ int cmd_xychar( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_gotoxy( int argc, const char * const * argv )
+CMD_FUNCTION( gotoxy )
 {
   uint8_t x  = (uint8_t)arg2long_d( 1, argc, argv, 0x0, 0,   64 );
   uint8_t y  = (uint8_t)arg2long_d( 2, argc, argv, 0x0, 0,    3 );
@@ -106,7 +106,7 @@ int cmd_gotoxy( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_puts( int argc, const char * const * argv )
+CMD_FUNCTION( puts )
 {
   const char *s = "Z";
   if( argc > 1 ) {
@@ -122,7 +122,7 @@ int cmd_puts( int argc, const char * const * argv )
 // puts (16) = 12.915 ms/line
 // gotoxy costs 0.81 ms
 
-int cmd_lcd_rate( int argc, const char * const * argv )
+CMD_FUNCTION( lcd_rate )
 {
   int n  = arg2long_d( 1, argc, argv, 100, 1,  10000 );
   int nl = arg2long_d( 2, argc, argv,   2, 1,      4 );

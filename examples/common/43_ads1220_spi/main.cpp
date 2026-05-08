@@ -81,7 +81,7 @@ int main(void)
 
 
 // TEST0
-int cmd_test0( int argc, const char * const * argv )
+CMD_FUNCTION( test0 )
 {
   int t_step = UVAR_t;
   unsigned n_ch = clamp( (unsigned)UVAR_c, 1u, n_ADC_ch_max );
@@ -161,7 +161,7 @@ int cmd_test0( int argc, const char * const * argv )
 }
 
 
-int cmd_set_coeffs( int argc, const char * const * argv )
+CMD_FUNCTION( set_coeffs )
 {
   return subcmd_set_coeffs( argc, argv, adcd );
 }
@@ -169,18 +169,18 @@ int cmd_set_coeffs( int argc, const char * const * argv )
 
 
 
-int cmd_out( int argc, const char * const * argv )
+CMD_FUNCTION( out )
 {
   return subcmd_out_any( argc, argv, adcd, false );
 }
 
-int cmd_outhex( int argc, const char * const * argv )
+CMD_FUNCTION( outhex )
 {
   return subcmd_out_any( argc, argv, adcd, true );
 }
 
 
-int cmd_show_stats( int argc, const char * const * argv )
+CMD_FUNCTION( show_stats )
 {
   // auto ns = adcd.get_n_row();
   // uint32_t n = arg2long_d( 1, argc, argv, ns, 0, ns+1 ); // number output series
@@ -195,7 +195,7 @@ int cmd_show_stats( int argc, const char * const * argv )
 }
 
 
-int cmd_t0( int argc, const char * const * argv )
+CMD_FUNCTION( t0 )
 {
   uint8_t ch = arg2long_d( 1, argc, argv, 0, 0, std::size(ADS1220::muxs_se)-1 );
 
@@ -219,7 +219,7 @@ int cmd_t0( int argc, const char * const * argv )
 }
 
 
-int cmd_init( int argc, const char * const * argv )
+CMD_FUNCTION( init )
 {
   dump8( adc.getCfgs(), 4 );
   adc.read_config();
@@ -233,7 +233,7 @@ int cmd_init( int argc, const char * const * argv )
 }
 
 
-int cmd_rreg( int argc, const char * const * argv )
+CMD_FUNCTION( rreg )
 {
   constexpr uint8_t n_cfgs { ADS1220::n_cfgs };
   uint8_t c_st = arg2long_d( 1, argc, argv, 1, 0, n_cfgs-1  );
@@ -255,7 +255,7 @@ int cmd_rreg( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_rregn( int argc, const char * const * argv )
+CMD_FUNCTION( rregn )
 {
   dump8( adc.getCfgs(), 4 );
 
@@ -272,7 +272,7 @@ int cmd_rregn( int argc, const char * const * argv )
 }
 
 
-int cmd_reset( int argc, const char * const * argv )
+CMD_FUNCTION( reset )
 {
   dbg_pin.set(); delay_bad_100ns( 1 );
   auto rc = adc.reset();

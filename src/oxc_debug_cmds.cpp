@@ -4,7 +4,7 @@
 #include <oxc_debug1.h>
 
 DCL_CMD_REG( test_rate, 0, "[ n [len [flush] ] ] - test output rate"  );
-int cmd_test_rate( int argc, const char * const * argv )
+CMD_FUNCTION( test_rate )
 {
   const int max_len = 512;
   int n  = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
@@ -16,7 +16,7 @@ int cmd_test_rate( int argc, const char * const * argv )
 }
 
 DCL_CMD_REG( test_delays, '\0', "[n] [step_ms] [type] - test delays [w=flush]"  );
-int cmd_test_delays( int argc, const char * const * argv )
+CMD_FUNCTION( test_delays )
 {
   int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
   uint32_t t_step = arg2long_d( 2, argc, argv, UVAR('t'), 0, 100000 );

@@ -218,7 +218,7 @@ int main(void)
 
 
 // TEST0
-int cmd_test0( int argc, const char * const * argv )
+CMD_FUNCTION( test0 )
 {
   unsigned v = arg2long_d( 1, argc, argv, 32, 0, 255 );
   unsigned n = UVAR_n;
@@ -240,7 +240,7 @@ int cmd_test0( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_pix( int argc, const char * const * argv )
+CMD_FUNCTION( pix )
 {
   uint8_t r = (uint8_t)(arg2long_d( 1, argc, argv, 1, 0, 255 ));
   uint8_t g = (uint8_t)(arg2long_d( 2, argc, argv, 1, 0, 255 ));
@@ -253,7 +253,7 @@ int cmd_pix( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_wave( int argc, const char * const * argv )
+CMD_FUNCTION( wave )
 {
   unsigned tp      = arg2long_d( 1, argc, argv,   0, 0,      0 ); // just synglee type for now
   unsigned t_scale = arg2long_d( 2, argc, argv, 100, 1, 100000 ); // time step scale, def = 100

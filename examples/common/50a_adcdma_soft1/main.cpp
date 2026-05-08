@@ -73,7 +73,7 @@ int main(void)
 
 
 // TEST0
-int cmd_test0( int argc, const char * const * argv )
+CMD_FUNCTION( test0 )
 {
   const uint32_t n_ch = clamp<uint32_t>( UVAR_c, 1, adc.n_ch_max );
   //
@@ -276,7 +276,7 @@ void BOARD_ADC_DMA_IRQHANDLER(void)
 //   leds[0].toggle();
 // }
 
-int cmd_set_coeffs( int argc, const char * const * argv )
+CMD_FUNCTION( set_coeffs )
 {
   return subcmd_set_coeffs( argc, argv, adcd );
 }

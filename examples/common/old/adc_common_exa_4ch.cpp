@@ -20,12 +20,9 @@ extern ADC_Info adc;
 void adc_show_stat( OutStream &os, uint32_t n = 0xFFFFFFFF, uint32_t st = 0 );
 void pr_ADCDMA_state();
 DCL_CMD_REG( out, 'O', " [N [start]]- output data "  );
-int cmd_out( int argc, const char * const * argv );
 DCL_CMD_REG( show_stats, 'Y', " [N [start]]- show statistics"  );
-int cmd_show_stats( int argc, const char * const * argv );
 #ifdef USE_OXC_SD
 DCL_CMD_REG( outsd, 'X', "filename [N [start]]- output data to SD"  );
-int cmd_outsd( int argc, const char * const * argv );
 #endif
 
 
@@ -68,7 +65,7 @@ void pr_ADCDMA_state()
   }
 }
 
-int cmd_out( int argc, const char * const * argv )
+CMD_FUNCTION( out )
 {
   auto ns = adc.n_series;
   uint32_t n = arg2long_d( 1, argc, argv, ns, 0, ns+1 ); // number output series
@@ -81,7 +78,7 @@ int cmd_out( int argc, const char * const * argv )
 
 
 #ifdef USE_OXC_SD
-int cmd_outsd( int argc, const char * const * argv )
+CMD_FUNCTION( outsd )
 {
   if( argc < 2 ) {
     std_out << "# Error: need filename [n [start]]" NL;
@@ -106,7 +103,7 @@ int cmd_outsd( int argc, const char * const * argv )
 #endif
 
 
-int cmd_show_stats( int argc, const char * const * argv )
+CMD_FUNCTION( show_stats )
 {
   auto ns = adc.n_series;
   uint32_t n = arg2long_d( 1, argc, argv, ns, 0, ns+1 ); // number output series

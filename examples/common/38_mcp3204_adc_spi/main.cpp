@@ -60,7 +60,7 @@ int main(void)
 
 
 // TEST0
-int cmd_test0( int argc, const char * const * argv )
+CMD_FUNCTION( test0 )
 {
   static const uint8_t mcp3204_cmds1ch[4][2] = {
     { 0x06, 0x00 },

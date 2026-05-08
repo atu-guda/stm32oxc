@@ -64,7 +64,7 @@ int main(void)
 
 
 // TEST0
-int cmd_test0( int argc, const char * const * argv )
+CMD_FUNCTION( test0 )
 {
   int start = arg2long_d( 1, argc, argv, 0, 0 );
   // uint32_t t_step = UVAR_t;
@@ -95,7 +95,7 @@ int cmd_test0( int argc, const char * const * argv )
 }
 
 
-int cmd_sdinit( int /*argc*/, const char * const * /*argv*/ )
+CMD_FUNCTION( sdinit )
 {
   MX_SDIO_SD_Init();
 
@@ -111,7 +111,7 @@ int cmd_sdinit( int /*argc*/, const char * const * /*argv*/ )
 }
 
 
-int cmd_sddeinit( int /*argc*/, const char * const * /*argv*/ )
+CMD_FUNCTION( sddeinit )
 {
   int rc_d =  HAL_SD_DeInit( &hsd );
   UVAR_e = rc_d;

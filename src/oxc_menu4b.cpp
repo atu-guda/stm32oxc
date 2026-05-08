@@ -104,7 +104,7 @@ int menu4b_cmd( int cmd_i )
           break;
         case MenuCmd::Enter:
           if( menu4b_state.menu[menu4b_state.index].pv ) {
-            *menu4b_state.menu[menu4b_state.index].pv = clamp( menu4b_state.v, menu4b_state.menu[menu4b_state.index].vmin, menu4b_state.menu[menu4b_state.index].vmax );
+            *menu4b_state.menu[menu4b_state.index].pv = std::clamp( menu4b_state.v, menu4b_state.menu[menu4b_state.index].vmin, menu4b_state.menu[menu4b_state.index].vmax );
           }
           if( menu4b_state.menu[menu4b_state.index].fun ) {
             menu4b_state.menu[menu4b_state.index].fun( menu4b_state.v );
@@ -113,14 +113,14 @@ int menu4b_cmd( int cmd_i )
           break;
         default: break;
       };
-      menu4b_state.v = clamp( menu4b_state.v, menu4b_state.menu[menu4b_state.index].vmin, menu4b_state.menu[menu4b_state.index].vmax );
+      menu4b_state.v = std::clamp( menu4b_state.v, menu4b_state.menu[menu4b_state.index].vmin, menu4b_state.menu[menu4b_state.index].vmax );
       break;
 
     default: // ???
       break;
   }
 
-  menu4b_state.index = clamp( menu4b_state.index, 0, (int)(menu4b_state.menu_size-1) );
+  menu4b_state.index = std::clamp( menu4b_state.index, 0, (int)(menu4b_state.menu_size-1) );
   item_name = menu4b_state.menu[menu4b_state.index].name;
 
   int show_v = 0;

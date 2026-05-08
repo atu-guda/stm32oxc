@@ -57,7 +57,7 @@ int main(void)
 }
 
 // TEST0
-int cmd_test0( int argc, const char * const * argv )
+CMD_FUNCTION( test0 )
 {
   int n = arg2long_d( 1, argc, argv, UVAR_n, 0 );
   uint32_t t_step = UVAR_t;
@@ -93,7 +93,7 @@ int cmd_test0( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_out( int argc, const char * const * argv )
+CMD_FUNCTION( out )
 {
   std_out <<  "#  " << NL;
 
@@ -103,7 +103,7 @@ int cmd_out( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_write_reg( int argc, const char * const * argv )
+CMD_FUNCTION( write_reg )
 {
   uint16_t reg = arg2long_d( 1, argc, argv, 0, 0, 0xFFFF );
   uint16_t val = arg2long_d( 2, argc, argv, 0, 0, 0xFFFF );
@@ -114,7 +114,7 @@ int cmd_write_reg( int argc, const char * const * argv )
   return rc;
 }
 
-int cmd_read_regs( int argc, const char * const * argv )
+CMD_FUNCTION( read_regs )
 {
   uint16_t start = arg2long_d( 1, argc, argv, 0, 0, 0xFFFF );
   uint16_t n     = arg2long_d( 2, argc, argv, 1, 1, 125 );
@@ -134,7 +134,7 @@ int cmd_read_regs( int argc, const char * const * argv )
 }
 
 
-int cmd_read_reg( int argc, const char * const * argv )
+CMD_FUNCTION( read_reg )
 {
   uint16_t i = arg2long_d( 1, argc, argv, 0, 0, 0xFFFF );
 

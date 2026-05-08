@@ -54,7 +54,7 @@ int main(void)
 
 
 // TEST0
-int cmd_test0( int argc, const char * const * argv )
+CMD_FUNCTION( test0 )
 {
   int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
   uint32_t t_step = UVAR('t');
@@ -89,7 +89,7 @@ int cmd_test0( int argc, const char * const * argv )
 
 
 
-int cmd_data0( int argc UNUSED_ARG , const char * const * argv  UNUSED_ARG )
+CMD_FUNCTION( data0 )
 {
   int16_t adata[MPU6050::mpu6050_alldata_sz];
   int tick_c = HAL_GetTick();

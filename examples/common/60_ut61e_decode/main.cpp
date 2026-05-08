@@ -73,7 +73,7 @@ void HAL_UARTEx_RxEventCallback( UART_HandleTypeDef *huart, uint16_t sz )
   // leds[1].toggle();
 }
 
-int cmd_test0( int argc, const char * const * argv )
+CMD_FUNCTION( test0 )
 {
   uint32_t t_step = UVAR_t;
   uint32_t n = arg2long_d( 1, argc, argv, UVAR_n, 0 );
@@ -137,7 +137,7 @@ int cmd_test0( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_si_test( int argc, const char * const * argv )
+CMD_FUNCTION( si_test )
 {
   xfloat v = 2.1345e-30;
 

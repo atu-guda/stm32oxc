@@ -25,7 +25,7 @@ void I2C_print_status( int rc )
 }
 
 DCL_CMD_REG( i2c_scan,  0,  "[start [end]] - scan I2C in range" );
-int cmd_i2c_scan( int argc, const char * const * argv )
+CMD_FUNCTION( i2c_scan )
 {
   uint8_t addr_start = (uint8_t)arg2long_d( 1, argc, argv,   2,            0, 127 );
   uint8_t addr_end   = (uint8_t)arg2long_d( 2, argc, argv, 127, addr_start+1, 127 );
@@ -55,7 +55,7 @@ int cmd_i2c_scan( int argc, const char * const * argv )
 }
 
 DCL_CMD_REG( i2c_reset,  0,  "reset (dis/en) I2C" );
-int cmd_i2c_reset( int argc, const char * const * argv )
+CMD_FUNCTION( i2c_reset )
 {
   CHECK_I2C_DEV;
 
@@ -68,7 +68,7 @@ int cmd_i2c_reset( int argc, const char * const * argv )
 }
 
 DCL_CMD_REG( i2c_swreset,  0,  "soft  reset I2C" );
-int cmd_i2c_swreset( int argc, const char * const * argv )
+CMD_FUNCTION( i2c_swreset )
 {
   CHECK_I2C_DEV;
 
@@ -81,7 +81,7 @@ int cmd_i2c_swreset( int argc, const char * const * argv )
 }
 
 DCL_CMD_REG( i2c_init,  0,  "default init I2C" );
-int cmd_i2c_init( int argc, const char * const * argv )
+CMD_FUNCTION( i2c_init )
 {
   CHECK_I2C_DEV;
 
@@ -98,7 +98,7 @@ int cmd_i2c_init( int argc, const char * const * argv )
 
 
 DCL_CMD_REG( i2c_send,  0,  "val [addr] - send to I2C (def addr=var[p])" );
-int cmd_i2c_send( int argc, const char * const * argv )
+CMD_FUNCTION( i2c_send )
 {
   CHECK_I2C_DEV;
 
@@ -146,20 +146,20 @@ int subcmd_i2c_send_rx( int argc, const char * const * argv, bool is2byte )
 }
 
 DCL_CMD_REG( i2c_send_r1, 0, "reg val - send to I2C(reg), reg_sz=1 (addr=var[p])" );
-int cmd_i2c_send_r1( int argc, const char * const * argv )
+CMD_FUNCTION( i2c_send_r1 )
 {
   return subcmd_i2c_send_rx( argc, argv, false );
 }
 
 DCL_CMD_REG( i2c_send_r2,  0, "reg val - send to I2C(reg), reg_sz=2 (addr=var[p])" );
-int cmd_i2c_send_r2( int argc, const char * const * argv )
+CMD_FUNCTION( i2c_send_r2 )
 {
   return subcmd_i2c_send_rx( argc, argv, true );
 }
 
 
 DCL_CMD_REG( i2c_recv,  0, "[addr [nr]] - recv from I2C (def addr=var[p])" );
-int cmd_i2c_recv( int argc, const char * const * argv )
+CMD_FUNCTION( i2c_recv )
 {
   CHECK_I2C_DEV;
 
@@ -216,20 +216,20 @@ int subcmd_i2c_recv_rx( int argc, const char * const * argv, bool is2byte )
 }
 
 DCL_CMD_REG( i2c_recv_r1,  0,  "reg [n] - recv from I2C(reg), reg_sz=1 (addr=var[p])" );
-int cmd_i2c_recv_r1( int argc, const char * const * argv )
+CMD_FUNCTION( i2c_recv_r1 )
 {
   return subcmd_i2c_recv_rx( argc, argv, false );
 }
 
 
 DCL_CMD_REG( i2c_recv_r2,  0,  "reg [n] - recv from I2C(reg), reg_sz=2 (addr=var[p])" );
-int cmd_i2c_recv_r2( int argc, const char * const * argv )
+CMD_FUNCTION( i2c_recv_r2 )
 {
   return subcmd_i2c_recv_rx( argc, argv, true );
 }
 
 DCL_CMD_REG( i2c_setaddr,  0, " addr - set default device addr " );
-int cmd_i2c_setaddr( int argc, const char * const * argv )
+CMD_FUNCTION( i2c_setaddr )
 {
   if( !i2c_client_def ) {
     std_out << "# Error: I2C default client is not set!" << NL;

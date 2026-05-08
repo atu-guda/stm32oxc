@@ -76,7 +76,7 @@ int main(void)
 
 
 // TEST0
-int cmd_test0( int argc, const char * const * argv )
+CMD_FUNCTION( test0 )
 {
   uint32_t t_step = UVAR_t;
   uint32_t n_ch = clamp( UVAR_c, 1, (int)n_ADC_ch_max );
@@ -212,7 +212,7 @@ void tim_cfg()
 
 }
 
-int cmd_pwm( int argc, const char * const * argv )
+CMD_FUNCTION( pwm )
 {
   float v = arg2float_d( 1, argc, argv, 10.0f, 0.0f, 100.0f );
   pwmdat.set_v_manual( v );
@@ -223,7 +223,7 @@ int cmd_pwm( int argc, const char * const * argv )
 
 
 
-int cmd_tinit( int argc, const char * const * argv )
+CMD_FUNCTION( tinit )
 {
   tim_cfg();
   tim_print_cfg( TIM_EXA );
@@ -231,7 +231,7 @@ int cmd_tinit( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_set_coeffs( int argc, const char * const * argv )
+CMD_FUNCTION( set_coeffs )
 {
   if( argc > 1 ) {
     v_coeffs[0] = arg2float_d( 1, argc, argv, 1, -1e10f, 1e10f );

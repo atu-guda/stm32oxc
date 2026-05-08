@@ -221,7 +221,7 @@ int main(void)
 
 
 // TEST0
-int cmd_test0( int argc, const char * const * argv )
+CMD_FUNCTION( test0 )
 {
   int n        = arg2long_d(   1, argc, argv, UVAR_n,  1, 10000 );
   xfloat v0    = arg2xfloat_d( 2, argc, argv,      0,     0, V_max );
@@ -347,7 +347,7 @@ ReturnCode do_off()
   return rd.off();
 }
 
-int cmd_init( int argc, const char * const * argv )
+CMD_FUNCTION( init )
 {
   uint8_t addr = arg2long_d( 1, argc, argv, rd_addr, 0, 0xFFFF );
   std_out <<  "#  init: addr=" << (int)addr  << NL;
@@ -358,7 +358,7 @@ int cmd_init( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_on( int argc, const char * const * argv )
+CMD_FUNCTION( on )
 {
   int meas  = arg2long_d( 1, argc, argv, 0, 0, 60000 ); // measure flag + time
   int t_off = arg2long_d( 2, argc, argv, 0, 0, 60000 ); // time in ms to off, 0 - no off
@@ -381,7 +381,7 @@ int cmd_on( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_off( int argc, const char * const * argv )
+CMD_FUNCTION( off )
 {
   auto rc = rd.off();
   std_out << "# OFF. rc= " << rc << NL;
@@ -423,7 +423,7 @@ int measure_VIx()
   return 1;
 }
 
-int cmd_measure_VI( int argc, const char * const * argv )
+CMD_FUNCTION( measure_VI )
 {
   auto rc = measure_VIx();
   if( ! rc ) {
@@ -449,7 +449,7 @@ void out_vi( int se )
   }
 }
 
-int cmd_setV( int argc, const char * const * argv )
+CMD_FUNCTION( setV )
 {
   xfloat V = arg2xfloat_d( 1, argc, argv, 0, 0, V_max );
   int     me = arg2long_d( 2, argc, argv, 0, 0, 1 );
@@ -464,7 +464,7 @@ int cmd_setV( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_setI( int argc, const char * const * argv )
+CMD_FUNCTION( setI )
 {
   xfloat I = arg2xfloat_d( 1, argc, argv, 0, 0, 5.0f );
   auto Ii = I / RD6006_I_scale;
@@ -476,7 +476,7 @@ int cmd_setI( int argc, const char * const * argv )
 
 // ------------------------------------------------------------ 
 
-int cmd_measF( int argc, const char * const * argv )
+CMD_FUNCTION( measF )
 {
   int n = arg2long_d( 1, argc, argv, n_me_f, 1, 10000 );
   int set_zero  = arg2long_d( 2, argc, argv, 0, 0, 1 );
@@ -515,7 +515,7 @@ uint32_t measure_f( int n )
   return st_f.n;
 }
 
-int cmd_measNu( int argc, const char * const * argv )
+CMD_FUNCTION( measNu )
 {
   int dly = arg2long_d( 1, argc, argv, 2000, 1, 100000 );
 
@@ -574,7 +574,7 @@ int measure_Nu( int dly )
 
 
 
-int cmd_pwm( int argc, const char * const * argv )
+CMD_FUNCTION( pwm )
 {
   xfloat pwm = arg2xfloat_d( 1, argc, argv, 0.0f, 0.0f, 1.0f );
   set_pwm( pwm );
@@ -582,7 +582,7 @@ int cmd_pwm( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_freq( int argc, const char * const * argv )
+CMD_FUNCTION( freq )
 {
   uint32_t f = arg2xfloat_d( 1, argc, argv, 100, 10, 200000 );
   set_pwm_freq( f, pwm_c );
@@ -590,7 +590,7 @@ int cmd_freq( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_vstep( int argc, const char * const * argv )
+CMD_FUNCTION( vstep )
 {
   auto v_s = V_s + V_step;
   if( v_s >= V_max ) {
@@ -636,7 +636,7 @@ uint32_t calc_TIM_arr_for_base_freq_xfloat( TIM_TypeDef *tim, xfloat base_freq )
 }
 
 
-int cmd_timinfo( int argc, const char * const * argv )
+CMD_FUNCTION( timinfo )
 {
   tim_print_cfg( TIM_CNT );
   tim_print_cfg( TIM_CNT2 );
@@ -648,7 +648,7 @@ int cmd_timinfo( int argc, const char * const * argv )
 
 // keep for debug. TODO: move to lib
 
-int cmd_write_reg( int argc, const char * const * argv )
+CMD_FUNCTION( write_reg )
 {
   uint16_t reg = arg2long_d( 1, argc, argv, 0, 0, 0xFFFF );
   uint16_t val = arg2long_d( 2, argc, argv, 0, 0, 0xFFFF );
@@ -659,7 +659,7 @@ int cmd_write_reg( int argc, const char * const * argv )
   return rc;
 }
 
-int cmd_read_regs( int argc, const char * const * argv )
+CMD_FUNCTION( read_regs )
 {
   uint16_t start = arg2long_d( 1, argc, argv, 0, 0, 0xFFFF );
   uint16_t n     = arg2long_d( 2, argc, argv, 1, 1, 125 );
@@ -679,7 +679,7 @@ int cmd_read_regs( int argc, const char * const * argv )
 }
 
 
-int cmd_read_reg( int argc, const char * const * argv )
+CMD_FUNCTION( read_reg )
 {
   uint16_t i = arg2long_d( 1, argc, argv, 0, 0, 0xFFFF );
 

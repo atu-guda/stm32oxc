@@ -5,7 +5,7 @@
 
 
 DCL_CMD_REG( spi_s1rn, '\0', " send_byte n_recv - send 1 recv N"  );
-int cmd_spi_s1rn( int argc, const char * const * argv )
+CMD_FUNCTION( spi_s1rn )
 {
   uint8_t sv = arg2long_d( 1, argc, argv, 0x15, 0, 0xFF );
   int nd     = arg2long_d( 2, argc, argv,    2, 0, sizeof(gbuf_a) );
@@ -30,7 +30,7 @@ int cmd_spi_s1rn( int argc, const char * const * argv )
 }
 
 DCL_CMD_REG( spi_sendr, '\0', "[0xXX ...] - send bytes, recv UVAR('r')"  );
-int cmd_spi_sendr( int argc, const char * const * argv )
+CMD_FUNCTION( spi_sendr )
 {
   uint8_t sbuf[MAX_ARGS+1];
   uint16_t ns = argc - 1;
@@ -63,7 +63,7 @@ int cmd_spi_sendr( int argc, const char * const * argv )
 }
 
 DCL_CMD_REG( spi_recv, '\0', "[N] recv bytes"  );
-int cmd_spi_recv( int argc, const char * const * argv )
+CMD_FUNCTION( spi_recv )
 {
   int nd = arg2long_d( 1, argc, argv, UVAR('r'), 1, sizeof(gbuf_a) );
 
@@ -87,7 +87,7 @@ int cmd_spi_recv( int argc, const char * const * argv )
 }
 
 DCL_CMD_REG( spi_duplex, '\0', "[0xXX ...] - send/recv bytes"  );
-int cmd_spi_duplex( int argc, const char * const * argv )
+CMD_FUNCTION( spi_duplex )
 {
   uint8_t sbuf[MAX_ARGS+1];
   uint16_t ns = argc - 1;
@@ -118,7 +118,7 @@ int cmd_spi_duplex( int argc, const char * const * argv )
 }
 
 DCL_CMD_REG( spi_sendloop, '\0', " N [val0 [val1]] - send N vals via SPI"  );
-int cmd_spi_sendloop( int argc, const char * const * argv )
+CMD_FUNCTION( spi_sendloop )
 {
   int n       = arg2long_d( 1, argc, argv,    1, 1, 10000000 );
   uint8_t sv0 = arg2long_d( 2, argc, argv, 0x55, 0, 0xFF );
@@ -137,7 +137,7 @@ int cmd_spi_sendloop( int argc, const char * const * argv )
 
 
 DCL_CMD_REG( spi_reset, '\0', " - reset spi"  );
-int cmd_spi_reset( int argc UNUSED_ARG, const char * const * argv UNUSED_ARG )
+CMD_FUNCTION( spi_reset )
 {
   spi_d.resetDev();
 

@@ -98,7 +98,7 @@ void HAL_UART_ErrorCallback( UART_HandleTypeDef *huart )
 }
 
 
-int cmd_test0( int argc, const char * const * argv )
+CMD_FUNCTION( test0 )
 {
   uint32_t t_step = UVAR_t;
   uint32_t n = arg2long_d( 1, argc, argv, UVAR_n, 0 );
@@ -181,7 +181,7 @@ int cmd_test0( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_abort( int argc, const char * const * argv )
+CMD_FUNCTION( abort )
 {
   HAL_UART_Abort( &huart_lidar );
   __HAL_USART_DISABLE( &huart_lidar );
@@ -189,13 +189,13 @@ int cmd_abort( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_udump( int argc, const char * const * argv )
+CMD_FUNCTION( udump )
 {
   dump32( UART_LIDAR_LD20, 0x30 );
   return 0;
 }
 
-int cmd_uread( int argc, const char * const * argv )
+CMD_FUNCTION( uread )
 {
   memset( ubuf, '\0', sizeof( ubuf ));
   auto rc = HAL_UART_Receive( &huart_lidar, (uint8_t*)ubuf, Lidar_LD20_Data::pkgSize, 1000 );
@@ -206,7 +206,7 @@ int cmd_uread( int argc, const char * const * argv )
 }
 
 // to check timings - remove after debug
-int cmd_usend( int argc, const char * const * argv )
+CMD_FUNCTION( usend )
 {
   memset( ubuf, '\x5a', sizeof( ubuf ));
   const uint8_t b1 { '\xA5' };
@@ -218,7 +218,7 @@ int cmd_usend( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_pr_sz( int argc, const char * const * argv )
+CMD_FUNCTION( pr_sz )
 {
   for( unsigned i=0; i< n_szs; ++i ) {
     std_out << "# " << i << ' ' << r_szs[i] << ' ' << HexInt8( r_val[i] ) << NL;

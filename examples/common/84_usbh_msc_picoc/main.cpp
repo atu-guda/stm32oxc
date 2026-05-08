@@ -111,7 +111,7 @@ int init_usbh_msc()
 }
 
 
-int cmd_test0( int argc, const char * const * argv )
+CMD_FUNCTION( test0 )
 {
   // uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 100000000 ); // number of series
 

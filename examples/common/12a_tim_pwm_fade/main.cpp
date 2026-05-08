@@ -62,7 +62,7 @@ int main(void)
 
 
 // TEST0
-int cmd_test0( int argc, const char * const * argv )
+CMD_FUNCTION( test0 )
 {
   unsigned n = arg2long_d( 1, argc, argv, UVAR_n, 0 );
   unsigned t_step = UVAR_t;

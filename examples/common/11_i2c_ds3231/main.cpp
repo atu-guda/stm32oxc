@@ -50,7 +50,7 @@ int main(void)
 
 
 // TEST0
-int cmd_test0( int argc, const char * const * argv )
+CMD_FUNCTION( test0 )
 {
   int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
   uint32_t t_step = UVAR('t');
@@ -82,7 +82,7 @@ int cmd_test0( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_set_time( int argc, const char * const * argv )
+CMD_FUNCTION( set_time )
 {
   uint8_t t_hour, t_min, t_sec;
   if( argc < 4 ) {
@@ -96,7 +96,7 @@ int cmd_set_time( int argc, const char * const * argv )
 }
 
 
-int cmd_set_date( int argc, const char * const * argv )
+CMD_FUNCTION( set_date )
 {
   uint16_t year;
   uint8_t mon, day;

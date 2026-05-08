@@ -293,7 +293,7 @@ bool measure_and_calc( float *v )
 
 
 // TEST0
-int cmd_test0( int argc, const char * const * argv )
+CMD_FUNCTION( test0 )
 {
   const uint32_t t_step = UVAR_t;
   const unsigned n_ch = 2;
@@ -420,7 +420,7 @@ int cmd_test0( int argc, const char * const * argv )
 }
 
 
-int cmd_set_calibr( int argc, const char * const * argv )
+CMD_FUNCTION( set_calibr )
 {
   const float calibr_I_lsb = arg2float_d( 1, argc, argv, ina226.get_I_lsb_mA()  * 1e-3f, 1e-20f, 1e10f );
   const float calibr_R     = arg2float_d( 2, argc, argv, ina226.get_R_sh_uOhm() * 1e-6f, 1e-20f, 1e10f );
@@ -487,7 +487,7 @@ void do_set_pwm( float v )
   }
 }
 
-int cmd_pwm( int argc, const char * const * argv )
+CMD_FUNCTION( pwm )
 {
   const float gamma = arg2float_d( 1, argc, argv, pwmdat.get_pwm_def(), 0.0f, pwmdat.get_pwm_max() );
   // pwmdat.set_pwm_manual( gamma );
@@ -506,7 +506,7 @@ int cmd_pwm( int argc, const char * const * argv )
 }
 
 // TODO: to PWMData
-int cmd_calibrate( int argc, const char * const * argv )
+CMD_FUNCTION( calibrate )
 {
   const float vmin = pwminfo.cal_min;
   const float vmax_def = pwmdat.get_pwm_max();
@@ -609,7 +609,7 @@ int cmd_calibrate( int argc, const char * const * argv )
 
 
 
-int cmd_tinit( int argc, const char * const * argv )
+CMD_FUNCTION( tinit )
 {
   tim_cfg();
   tim_print_cfg( TIM_EXA );
@@ -617,14 +617,14 @@ int cmd_tinit( int argc, const char * const * argv )
   return 0;
 }
 
-int cmd_print_pwm( int argc, const char * const * argv )
+CMD_FUNCTION( print_pwm )
 {
   const int more = arg2long_d( 1, argc, argv, 0, 0, 1 );
   pwminfo.printData( (bool)more );
   return 0;
 }
 
-int cmd_reset_cal( int argc, const char * const * argv )
+CMD_FUNCTION( reset_cal )
 {
   const float R_0   = arg2float_d( 1, argc, argv, R_0_init,   0.01f, pwminfo.R_max );
   const float V_00  = arg2float_d( 2, argc, argv, V_00_init, -10.0f,  10.0f );

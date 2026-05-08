@@ -48,7 +48,7 @@ int main(void)
 
 // better to use cmd_i2c_scan
 // TEST0
-int cmd_test0( int argc, const char * const * argv )
+CMD_FUNCTION( test0 )
 {
   int st_a = arg2long_d( 1, argc, argv,   2,    0, 126 );
   int en_a = arg2long_d( 2, argc, argv, 126, st_a, 126 );
