@@ -77,6 +77,7 @@ SUBDIRS = \
   l06_dro02 \
   l07_momeas \
   l08_lwm_enco \
+  l09_hand1_v0 \
   t01_iprintf \
   t01_misc \
   t02_tim \

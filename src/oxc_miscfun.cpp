@@ -8,7 +8,7 @@
 
 // using namespace std;
 
-uint8_t numFirstBit( uint32_t a )
+constexpr uint8_t numFirstBit( uint32_t a )
 {
   for( uint8_t n = 0; n<sizeof(a)*8; ++n ) {
     if( a & 1 ) {

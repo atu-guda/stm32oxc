@@ -10,7 +10,7 @@
 
 
 /** return position of first setted bit LSB=0, or FF if 0 */
-uint8_t numFirstBit( uint32_t a );
+constexpr uint8_t numFirstBit( uint32_t a );
 
 extern const char hex_digits[];
 extern const char dec_digits[];
@@ -29,7 +29,7 @@ char* short2hex( uint16_t d, char *s );
 unsigned i2dec_n( int n, char *s, unsigned min_sz = 1, char fill_ch = ' ' );
 // if s == 0 returns ptr to inner static buffer
 char* i2dec( int n, char *s, unsigned min_sz = 1, char fill_ch = ' ' );
-// fixed point int repreresentation to string
+// fixed point int representation to string
 char* ifcvt( int v, int mult, char *s, unsigned min_sz_frac = 1,  unsigned min_sz_int = 1, char plus_ch = ' ' );
 
 struct BitNames {
@@ -45,11 +45,20 @@ struct CStr {
 };
 
 
-inline int sign( int x );
-inline int sign( int x ) { return (x>0) ? 1 : ( (x<0) ? -1: 0 ) ; }
+inline constexpr int sign( int x ) { return (x>0) ? 1 : ( (x<0) ? -1: 0 ) ; }
 
-inline int imin( int a, int b  ) { return (a<b) ? a : b; }
-inline int imax( int a, int b  ) { return (a>b) ? a : b; }
+inline constexpr int imin( int a, int b ) { return (a<b) ? a : b; }
+inline constexpr int imax( int a, int b ) { return (a>b) ? a : b; }
+
+//* returns 10^p, p >= 0
+inline constexpr int exp10i( int p )
+{
+  int r = 1;
+  for( int i=0; i<p; ++i ) {
+    r *= 10;
+  }
+  return r;
+}
 
 // TODO: callback for parameter parsing: default $a .. $z
 __weak int* int_val_ptr( const char *s  );

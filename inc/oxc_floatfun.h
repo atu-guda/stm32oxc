@@ -1,7 +1,7 @@
 #ifndef _OXC_FLOATFUN_H
 #define _OXC_FLOATFUN_H
 
-#include <float.h>
+#include <cfloat>
 
 #include <oxc_miscfun.h>
 #include <oxc_outstream.h>
@@ -32,9 +32,9 @@ enum cvtff_flags {
 extern float exp10if( int x );
 
 inline constexpr xfloat pow2( xfloat x ) { return x * x; }
-inline constexpr float pow2f( float x ) { return x * x; }
+inline constexpr  float pow2f( float x ) { return x * x; }
 inline constexpr xfloat signxf( xfloat x ) { return (x>0) ? 1 : ((x<0) ? -1 : 0 ); }
-inline constexpr  float  signf(  float x ) { return (x>0) ? 1 : ((x<0) ? -1 : 0 ); }
+inline constexpr  float signf(   float x ) { return (x>0) ? 1 : ((x<0) ? -1 : 0 ); }
 
 constexpr inline  int float_default_width { 11 };
 
@@ -53,17 +53,18 @@ const unsigned buf_len_double = 72;
 
 class FltFmt : public OutStreamFmt {
   public:
-   explicit FltFmt( float a, uint32_t a_flg = cvtff_auto, int a_w = 0, int a_prec = 99 ) :
+   constexpr explicit FltFmt( float a, uint32_t a_flg = cvtff_auto, int a_w = 0, int a_prec = 99 ) :
      v( a ), flg( a_flg ),
      w( ( a_w > 1 ) ? a_w : auto_width ),
      prec( a_prec ) {};
-   operator float() const { return v; }
+   constexpr operator float() const { return v; }
    const float v;
    virtual void out( OutStream &os ) const override;
    static int set_auto_width( int aw ) { auto t = auto_width; auto_width = aw; return t; }
   protected:
-   uint32_t flg;
-   int w, prec;
+   const uint32_t flg;
+   const int w;
+   const int prec;
    static int auto_width;
 };
 
@@ -83,17 +84,18 @@ double arg2double_d( int narg, int argc, const char * const * argv, double def,
 
 class DblFmt : public OutStreamFmt {
   public:
-   explicit DblFmt( double a, uint32_t a_flg = cvtff_auto, int a_w = 0, int a_prec = 99 ) :
+   constexpr explicit DblFmt( double a, uint32_t a_flg = cvtff_auto, int a_w = 0, int a_prec = 99 ) :
      v( a ), flg( a_flg ),
      w( ( a_w > 1 ) ? a_w : auto_width ),
      prec( a_prec ) {};
-   operator double() const { return v; }
+   constexpr operator double() const { return v; }
    const double v;
    virtual void out( OutStream &os ) const override;
    static int set_auto_width( int aw ) { auto t = auto_width; auto_width = aw; return t; }
   protected:
-   uint32_t flg;
-   int w, prec;
+   const uint32_t flg;
+   const int w;
+   const int prec;
    static int auto_width;
 };
 
