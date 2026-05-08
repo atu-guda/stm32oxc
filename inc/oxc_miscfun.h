@@ -153,7 +153,7 @@ inline bool arg2bool_d( int narg, int argc, const char * const * argv, bool def 
 
  // swap bytes in 16-bits
 inline uint16_t rev16( uint16_t v ) { return (uint16_t)__REV16( v );}
-void rev16( uint16_t *v, int n );
+void rev16( uint16_t *v, std::size_t n );
  // swap bytes in 32-bits
 inline uint32_t rev32( uint32_t v ) { return (uint32_t)__REV( v );}
 

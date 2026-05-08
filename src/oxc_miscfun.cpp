@@ -202,9 +202,10 @@ unsigned long arg2ulong_d( int narg, int argc, const char * const * argv, unsign
 }
 
 
-void rev16( uint16_t *v, int n )
+void rev16( uint16_t *v, std::size_t n )
 {
-  for( int i=0; i<n; ++i ) {
+  if( !v ) { return; }
+  for( std::size_t i=0; i<n; ++i ) {
     uint16_t t = v[i];
     t = __REV16( t );
     v[i] = t;

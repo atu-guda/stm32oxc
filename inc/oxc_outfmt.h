@@ -16,6 +16,7 @@ class OutStreamFmt {
 class HexInt : public OutStreamFmt {
   public:
    explicit constexpr HexInt( uint32_t a, bool prefix_0x = false ) : v(a), pr( prefix_0x ) {};
+   static_assert( sizeof(void*) == sizeof(uint32_t), "Only for 32-bit pointers" );
    explicit constexpr HexInt( const void *a, bool prefix_0x = true )  : v( reinterpret_cast<uint32_t>(a) ), pr( prefix_0x )  {};
    constexpr operator uint32_t() const { return v; }
    virtual void out( OutStream &os ) const override;
