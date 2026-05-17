@@ -63,8 +63,6 @@ void set_t_on_from_us( uint32_t t_on_us );
 uint32_t  go_measure( uint32_t t_on_us, int32_t t_pre, int32_t t_meas, int32_t t_post );
 uint32_t  tim_lwm_arr;
 
-int start_measure_times();
-int stop_measure_times();
 
 void out_times( int se ); // bits: 1: start label, 2: NL
 ReturnCode do_off();
@@ -81,27 +79,31 @@ I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );
 AS5600 ang_sens( i2cd );
 
+uint32_t   tick_last    {    0 };  // last tick on angle maesurement
+
 xfloat  alp     {   0  };
 xfloat  nu_1    {   0  };
 xfloat  alp_m   {   0  };
 xfloat  nu_m    {   0  };
 
-int     t_pre   { 2000 };  // settle before measure
-int     t_post  { 1000 };
-int     t_s_def {  500 };  // default start LWM us value
-int     t_e_def { 2500 };  // default stop  LWM us value
-int     n_me_f  {   40 };  // number of the force measurements
-int     cnt_1   {    0 };  // first counter
-int     enco1_n { 2400 };  // pulses per turn for encoder // WHY? was 600/1200, but measured.
-int     tick_0  {    0 };  // start tick
-int     dlt_t   {    0 };  // ticks delta
-int     tn      {    0 };  // torque index
-int     fun_idx {    0 };  // easing_funcs idx
-int     n_dyn   { 1000 };  // main time steps in cmd_dyn
-int     np_tail {   10 };  // procent of tail steps
-int     dyn_ret {    2 };  // return to start in cmd_dyn / or with 0
-int     use_magn{    0 };  // use AS5600 magnetic encoder
-int     alp_mi  {    0 };  // integer AS5600 alpha
+xfloat  alp_last   {   0  };
+xfloat  alp_m_last {   0  };
+
+int     t_pre        { 2000 };  // settle before measure
+int     t_post       { 1000 };
+int     t_s_def      {  500 };  // default start LWM us value
+int     t_e_def      { 2500 };  // default stop  LWM us value
+int     n_me_f       {   40 };  // number of the force measurements
+int     cnt_1        {    0 };  // first counter
+int     enco1_n      { 2400 };  // pulses per turn for encoder // WHY? was 600/1200, but measured.
+int     dlt_t        {    0 };  // ticks delta
+int     tn           {    0 };  // torque index
+int     fun_idx      {    0 };  // easing_funcs idx
+int     n_dyn        {  500 };  // main time steps in cmd_dyn
+int     np_tail      {   10 };  // procent of tail steps
+int     dyn_ret      {    2 };  // return to start in cmd_dyn / or with 0
+int     use_magn     {    0 };  // use AS5600 magnetic encoder
+int     alp_mi       {    0 };  // integer AS5600 alpha
 
 #define ADD_IOBJ(x)    constexpr NamedInt   ob_##x { #x, &x }
 #define ADD_FOBJ(x)    constexpr NamedFloat ob_##x { #x, &x }
@@ -119,7 +121,6 @@ ADD_IOBJ( t_e_def  );
 ADD_IOBJ( n_me_f   );
 ADD_IOBJ( cnt_1    );
 ADD_IOBJ( enco1_n  );
-ADD_IOBJ( tick_0   );
 ADD_IOBJ( dlt_t    );
 ADD_IOBJ( tn       );
 ADD_IOBJ( fun_idx  );
@@ -142,7 +143,6 @@ constexpr const NamedObj *const objs_info[] = {
   & ob_n_me_f   ,
   & ob_cnt_1    ,
   & ob_enco1_n  ,
-  & ob_tick_0   ,
   & ob_dlt_t    ,
   & ob_tn       ,
   & ob_fun_idx  ,
@@ -173,17 +173,29 @@ inline float cnt2alp( int cnt ) { return (float)(-cnt) * 360 / enco1_n; }
 
 void get_alp()
 {
-  cnt_1 = TIM_CNT->CNT;  alp = cnt2alp( cnt_1 );
+  cnt_1 = TIM_CNT->CNT;
+  const uint32_t tick_c = GET_OS_TICK();
+  alp = cnt2alp( cnt_1 );
+  UVAR_y = tick_c;
+  UVAR_z = tick_last;
+
   if( use_magn ) {
     alp_mi = - ang_sens.getAngleN_mDeg(); // minus is if AS5600.dir = 0
     alp_m  = alp_mi / 1000.0f;
   }
+
+  dlt_t = tick_c - tick_last;
+  nu_1 = ( dlt_t != 0 ) ? ( 1.0e+3f * ( alp - alp_last )    / dlt_t ) : 0;
+  nu_m = ( dlt_t != 0 ) ? ( 1.0e+3f * ( alp_m - alp_m_last) / dlt_t ) : 0;
+
+  tick_last = tick_c; alp_last = alp; alp_m_last = alp_m;
 }
 
 void zero_alp()
 {
   TIM_CNT->CNT = 0; cnt_1 = 0;
-  alp_mi = 0; alp = nu_1 = alp_m = nu_m = 0;
+  tick_last = GET_OS_TICK();
+  alp_mi = 0; alp = alp_last = alp_m_last = nu_1 = alp_m = nu_m = 0;
   if( use_magn ) {
     ang_sens.setStartPosCurr();
   }
@@ -194,7 +206,7 @@ int main(void)
   BOARD_PROLOG;
 
   UVAR_n =  100; // default main loop count
-  UVAR_t =    5; // time step  on cmd_dyn
+  UVAR_t =   10; // time step  on cmd_dyn
 
   UVAR_v = i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
@@ -236,8 +248,8 @@ CMD_FUNCTION( test0 )
 
   std_out <<  "# Test0: n= " << n << " n_me_f= " << n_me_f << " t_pre= " << t_pre
           << " t_s= " << t_s << " t_e= " << t_e << " t_on_dlt " << t_on_dlt << NL;
-            // 500 3827   3600   908  000.42037 0.02557362
-  std_out << "#t_on dnf  tn  dlt_t cnt_1  nu_1       F" NL;
+            // 500  40   0      0  7357 -1103.55008  00.00000  0.01949211
+  std_out << "#t_on dnf  tn  dlt_t cnt_1    alp         nu_1       F" NL;
 
   break_flag = 0;
 
@@ -308,7 +320,7 @@ CMD_FUNCTION( meas1 )
   std_out <<  "# meas1: n_me_f= " << n_me_f << " t_pre= " << t_pre << " t_post " << t_post << NL;
 
   int32_t dn = go_measure( t_on, t_pre, n_me_f, t_post );
-  std_out << t_on << ' ' << dn << NL;
+  std_out << t_on << ' ' << dn << ' ' << cnt_1 << ' ' << alp << NL;
 
   return 0;
 }
@@ -323,9 +335,11 @@ int do_dyn( int n_t, int t_s, int t_e )
   std_out <<  "# dyn: n_t= " << n_t << " t_step= " << t_step << " t_pre= " << t_pre
           << " t_s= " << t_s << " t_e= " << t_e << " fidx " << fidx << NL;
 
-  std_out << "#    t   t_on    q_r          q_1    cnt_1    t_e  fidx" NL;
+  //              570  1557  0.11400000  1.50000000    -10 2000 0    45.0000064
+  std_out << "#    t   t_on    q_r          alp     cnt_1   t_e fidx    nu_1" NL;
 
   leds[0] = 1;
+  zero_alp();
   set_t_on_from_us( t_s );
   if( delay_ms_brk( t_pre ) ) { // settle
     return 1;
@@ -333,7 +347,7 @@ int do_dyn( int n_t, int t_s, int t_e )
   cnt_1 = TIM_CNT->CNT;
   leds[0] = 0;
 
-  uint32_t tm0 { HAL_GetTick() };
+  uint32_t tm0 { GET_OS_TICK() };
   const uint32_t tm00 { tm0 };
   uint32_t t_on = t_s;
   break_flag = 0;
@@ -345,11 +359,12 @@ int do_dyn( int n_t, int t_s, int t_e )
     t_on = (uint32_t)( t_s + qr * d_t_on );
     leds[1] = 1;
     set_t_on_from_us( t_on );
-    const uint32_t tc { HAL_GetTick() };
+    const uint32_t tc { GET_OS_TICK() };
     get_alp();
     leds[1] = 0;
     std_out << FmtInt( (tc - tm00), 6 ) << ' ' << FmtInt( t_on, 5 ) << ' '
-            << qr << ' ' << alp << ' ' << FmtInt( cnt_1, 6 ) << ' ' << t_e << ' ' << fidx;
+            << qr << ' ' << alp << ' ' << FmtInt( cnt_1, 6 ) << ' ' << t_e << ' ' << fidx
+            << ' ' << nu_1;
     if( use_magn ) {
       std_out << ' ' << alp_m;
     }
@@ -386,7 +401,7 @@ int do_dyn( int n_t, int t_s, int t_e )
 
 
 // TMP: report only for now
-CMD_FUNCTION( angle )
+CMD_FUNCTION( angle ) // A [zero]
 {
   int clr  = arg2long_d(   1, argc, argv,  0, 0, 1 );
   if( clr ) {
@@ -414,12 +429,13 @@ uint32_t go_measure( uint32_t t_on_us, int32_t t_pre, int32_t n_me_f, int32_t t_
   leds[0] = 0;
 
   leds[1] = 1;
-  start_measure_times();
+  zero_alp();
   uint32_t nmf = measure_f( n_me_f );
+  get_alp();
   if( nmf < 1 ) {
+    leds[2] = 1;
     return 0;
   }
-  stop_measure_times();
   leds[1] = 0;
 
   if( t_post >= 0 ) {
@@ -437,7 +453,8 @@ void set_t_on_from_us( uint32_t t_on_us )
   TIM_LWM->LWM_CCR = ccr;
 }
 
-CMD_FUNCTION( set_t_on )
+
+CMD_FUNCTION( set_t_on ) // 'L', "us [reset_cnt] - set t_on"
 {
   uint32_t t_on_us = arg2long_d(   1, argc, argv, 1500,  0, 3000 );
   bool   reset_cnt = arg2long_d(   2, argc, argv,    0,  0,    1 );
@@ -461,9 +478,9 @@ CMD_FUNCTION( measF )
   int set_zero  = arg2long_d( 2, argc, argv,      0, 0,     1 );
   int off_after = arg2long_d( 3, argc, argv,      0, 0,     1 );
 
-  start_measure_times();
+  zero_alp();
   measure_f( n );
-  stop_measure_times();
+  get_alp();
 
   if( off_after ) {
     do_off();
@@ -485,7 +502,10 @@ uint32_t measure_f( int n )
   break_flag = 0;
   for( int i=0; i<n && !break_flag; ++i ) {
     auto fo_ret = hx711.read( hx_mode );
-    get_alp(); // for magnetic encoder: to count overturn
+    if( use_magn ) { // for magnetic encoder: to count overturn
+      alp_mi = - ang_sens.getAngleN_mDeg(); // minus is if AS5600.dir = 0
+      // alp_m  = alp_mi / 1000.0f; // but this
+    }
     if( fo_ret.isOk() ) {
       const auto fo_i = fo_ret.v;
       xfloat fo = fo_i * hx_a + hx_b;
@@ -497,24 +517,7 @@ uint32_t measure_f( int n )
 }
 
 
-int start_measure_times()
-{
-  tick_0 = GET_OS_TICK();
-  zero_alp();
-  return tick_0;
-}
 
-int stop_measure_times()
-{
-  const TickType t1 = GET_OS_TICK();
-  get_alp();
-
-  dlt_t = t1 - tick_0;
-  nu_1 = ( dlt_t != 0 ) ? ( 1.0e+3f * alp   / dlt_t ) : 0;
-  nu_m = ( dlt_t != 0 ) ? ( 1.0e+3f * alp_m / dlt_t ) : 0;
-
-  return dlt_t;
-}
 
 void out_times( int se )
 {
@@ -524,6 +527,7 @@ void out_times( int se )
   std_out
           << ' ' << FmtInt( dlt_t, 5 )
           << ' ' << FmtInt( cnt_1, 5 )
+          << ' ' << alp
           << ' ' << out_nu_fmt( nu_1 );
   if( use_magn ) {
     std_out << ' ' << alp_m << ' ' << nu_m;

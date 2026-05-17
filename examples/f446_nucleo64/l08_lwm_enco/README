@@ -11,3 +11,5 @@ LWM:
 
 Measure: T2(1+2) in encoder mode (A0,A1) AF1_TIM2
 
+C10:C11 CLK:DAT for HX711 (required if not used - timings)
+

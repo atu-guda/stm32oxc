@@ -1,4 +1,5 @@
 Initial control for hand1 v0
++ Lab1 base for Robo
 
 Level0:
   ctrl: TB6612FNG (B): C4 = BIn1, C5 = BIn2, C6 = PWM = T3.1

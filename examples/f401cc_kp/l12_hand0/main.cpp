@@ -54,8 +54,12 @@ auto out_q_fmt = [](xfloat x) { return FltFmt(x, cvtff_fix,8,4); };
 PinsOut ledsx( LEDSX_START, LEDSX_N );
 PinsIn  pin_stop( BTN_STOP_PIN, 1, GpioPull::up );
 
+// TODO: hide in motor class
+PinOut mq0_pin_l { MQ0_PIN_L };
+PinOut mq0_pin_r { MQ0_PIN_R };
 
 TIM_HandleTypeDef tim_lwm_h;
+TIM_HandleTypeDef tim_mq0_h;
 
 I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );
@@ -292,6 +296,9 @@ int main(void)
   ledsx.reset( 0xFF_mask );
   pin_stop.initHW();
 
+  mq0_pin_l.initHW(); // TODO: to class
+  mq0_pin_r.initHW();
+
   UVAR_v = i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
   i2c_client_def = &ang_sens;
@@ -310,6 +317,11 @@ int main(void)
     die4led( 2_mask );
   }
 
+  if( ! tim_mq0_cfg() ) {
+    std_out << "Err: timer MQ0 init"  NL;
+    die4led( 2_mask );
+  }
+
   init_EXTI();
 
   mp_main.reserve( 20 );
@@ -322,6 +334,7 @@ int main(void)
   mover_base.set_lwm_times( 1300, 1700 );
 
   tim_lwm_start();
+  tim_mq0_start();
   measure_store_coords();
 
   BOARD_POST_INIT_BLINK;
@@ -394,6 +407,7 @@ CMD_FUNCTION( test0 )
 {
   if( debug > 0 ) {
     tim_print_cfg( TIM_LWM );
+    tim_print_cfg( TIM_MQ0 );
   }
 
   return 0;
@@ -938,17 +952,39 @@ std::span<const MovePart> get_moves_seq(  size_t seq_idx )
 
 // -------------------- Timers ----------------------------------------------------
 
-int tim_lwm_cfg()
-{
-  const uint32_t psc { calc_TIM_psc_for_cnt_freq( TIM_LWM, tim_lwm_psc_freq ) };
-  const auto tim_lwm_arr = calc_TIM_arr_for_base_psc( TIM_LWM, psc, tim_lwm_freq );
-  UVAR_a = psc;
-  UVAR_b = tim_lwm_arr;
+static const constexpr TIM_OC_InitTypeDef tim_oc_cfg_default {
+  .OCMode       = TIM_OCMODE_PWM1,
+  .Pulse        = 0,
+  .OCPolarity   = TIM_OCPOLARITY_HIGH,
+  .OCNPolarity  = TIM_OCNPOLARITY_HIGH,
+  .OCFastMode   = TIM_OCFAST_DISABLE,
+  .OCIdleState  = TIM_OCIDLESTATE_RESET,
+  .OCNIdleState = TIM_OCNIDLESTATE_RESET,
+};
+static const constexpr TIM_ClockConfigTypeDef sClockSourceConfig_def {
+  .ClockSource    = TIM_CLOCKSOURCE_INTERNAL,
+  .ClockPolarity  = 0, // ignored
+  .ClockPrescaler = 0,
+  .ClockFilter    = 0
+};
+static const constexpr TIM_MasterConfigTypeDef sMasterConfig_def {
+  .MasterOutputTrigger = TIM_TRGO_UPDATE,
+  .MasterSlaveMode     = TIM_MASTERSLAVEMODE_DISABLE,
+};
 
-  auto &t_h { tim_lwm_h };
-  t_h.Instance               = TIM_LWM;
+
+int tim_pwm_cfg_common( uint32_t cnt_freq, uint32_t freq, TIM_HandleTypeDef &t_h, TIM_TypeDef  *instance,
+                         std::span<const tim_ch_type> channels )
+{
+  const uint32_t psc { calc_TIM_psc_for_cnt_freq( TIM_LWM, cnt_freq ) };
+  const auto tim_arr = calc_TIM_arr_for_base_psc( TIM_LWM, psc, freq );
+
+  UVAR_a = psc;
+  UVAR_b = tim_arr;
+
+  t_h.Instance               = instance;
   t_h.Init.Prescaler         = psc;
-  t_h.Init.Period            = tim_lwm_arr;
+  t_h.Init.Period            = tim_arr;
   t_h.Init.ClockDivision     = 0;
   t_h.Init.CounterMode       = TIM_COUNTERMODE_UP;
   t_h.Init.RepetitionCounter = 0;
@@ -957,30 +993,15 @@ int tim_lwm_cfg()
     return 0;
   }
 
-  TIM_ClockConfigTypeDef sClockSourceConfig;
-  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  HAL_TIM_ConfigClockSource( &t_h, &sClockSourceConfig );
+  HAL_TIM_ConfigClockSource( &t_h, &sClockSourceConfig_def );
 
-  TIM_MasterConfigTypeDef sMasterConfig;
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
-  sMasterConfig.MasterSlaveMode     = TIM_MASTERSLAVEMODE_DISABLE;
-  if( HAL_TIMEx_MasterConfigSynchronization( &t_h, &sMasterConfig ) != HAL_OK ) {
+  if( HAL_TIMEx_MasterConfigSynchronization( &t_h, &sMasterConfig_def ) != HAL_OK ) {
     UVAR_e = 2;
     return 0;
   }
 
-  TIM_OC_InitTypeDef tim_oc_cfg;
-  tim_oc_cfg.Pulse        = 0; // tim_lwm_arr / 2; // TMP to test, need 0;
-  tim_oc_cfg.OCMode       = TIM_OCMODE_PWM1;
-  tim_oc_cfg.OCPolarity   = TIM_OCPOLARITY_HIGH;
-  tim_oc_cfg.OCNPolarity  = TIM_OCNPOLARITY_HIGH;
-  tim_oc_cfg.OCFastMode   = TIM_OCFAST_DISABLE;
-  tim_oc_cfg.OCIdleState  = TIM_OCIDLESTATE_RESET;
-  tim_oc_cfg.OCNIdleState = TIM_OCNIDLESTATE_RESET;
-
-  for( auto ch : { TIM_CHANNEL_1, TIM_CHANNEL_2,TIM_CHANNEL_3, TIM_CHANNEL_4 } ) {
-    HAL_TIM_PWM_Stop( &t_h, ch );
-    if( HAL_TIM_PWM_ConfigChannel( &t_h, &tim_oc_cfg, ch ) != HAL_OK ) {
+  for( auto ch : channels ) {
+    if( HAL_TIM_PWM_ConfigChannel( &t_h, &tim_oc_cfg_default, ch ) != HAL_OK ) {
       UVAR_e = 3000 + ch;
       return 0;
     }
@@ -988,10 +1009,17 @@ int tim_lwm_cfg()
   return 1;
 }
 
+const std::array tim_lwm_channels TIM_LWM_CHANNELS;
+
+int tim_lwm_cfg()
+{
+  return tim_pwm_cfg_common( tim_lwm_psc_freq, tim_lwm_freq, tim_lwm_h, TIM_LWM, tim_lwm_channels );
+}
+
 
 void tim_lwm_start()
 {
-  for( auto ch : { TIM_CHANNEL_1, TIM_CHANNEL_2,TIM_CHANNEL_3, TIM_CHANNEL_4 } ) {
+  for( auto ch : tim_lwm_channels ) {
     HAL_TIM_PWM_Start( &tim_lwm_h, ch );
   }
   ledsx[2].set();
@@ -999,18 +1027,12 @@ void tim_lwm_start()
 
 void tim_lwm_stop()
 {
-  for( auto ch : { TIM_CHANNEL_1, TIM_CHANNEL_2,TIM_CHANNEL_3, TIM_CHANNEL_4 } ) {
+  for( auto ch : tim_lwm_channels ) {
     HAL_TIM_PWM_Stop( &tim_lwm_h, ch );
   }
   ledsx[2].reset();
 }
 
-
-
-bool read_sensors()
-{
-  return true;
-}
 
 
 void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim )
@@ -1023,17 +1045,45 @@ void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim )
     return;
   }
 
+  if( htim->Instance == TIM_MQ0 ) {
+    TIM_MQ0_EN;
+    MQ0_PIN_PWM.cfgAF( TIM_MQ0_GPIO_AF );
+    return;
+  }
+
 
 }
+
+const std::array tim_mq0_channels { TIM_MQ0_CHANNEL };
+
+// TODO: combine to common PWM config + return code type
+int tim_mq0_cfg()
+{
+  return tim_pwm_cfg_common( tim_mq0_psc_freq, tim_mq0_freq, tim_mq0_h, TIM_MQ0, tim_mq0_channels );
+}
+
+
+void tim_mq0_start()
+{
+  HAL_TIM_PWM_Start( &tim_mq0_h, TIM_MQ0_CHANNEL );
+}
+
 
 void HAL_TIM_PWM_MspDeInit( TIM_HandleTypeDef* htim )
 {
   if( htim->Instance == TIM_LWM ) {
     TIM_LWM_DIS;
-    GpioA.cfgIn_N( TIM_LWM_GPIO_PINS );
-    // HAL_NVIC_DisableIRQ( TIM_LWM_IRQn );
+    GpioA.cfgIn_N( TIM_LWM_GPIO_PINS ); // TODO: new
     return;
+  } else if( htim->Instance == TIM_MQ0 ) {
+    TIM_MQ0_DIS;
+    MQ0_PIN_PWM.cfgIn();
   }
+}
+
+void tim_mq0_stop()
+{
+  HAL_TIM_PWM_Stop( &tim_mq0_h, TIM_MQ0_CHANNEL );
 }
 
 // void TIM_LWM_IRQ_HANDLER()
@@ -1065,15 +1115,19 @@ void HAL_GPIO_EXTI_Callback( uint16_t pin_bit )
   }
 
   if( need_stop ) {
-    tim_lwm_stop();
+    tim_lwm_stop(); // TODO: not such stop
+    tim_mq0_stop(); // TODO: same
   }
 }
 
 
-void EXTI0_IRQHandler()
+
+void EXTI9_5_IRQHandler(void)
 {
+  // TODO: check
   HAL_GPIO_EXTI_IRQHandler( BTN_STOP_BIT );
 }
+
 
 // ------------------------------------ ADC ------------------------------------------------
 
@@ -1103,7 +1157,7 @@ int MX_ADC1_Init(void)
   hadc1.Init.ExternalTrigConvEdge  = ADC_EXTERNALTRIGCONVEDGE_NONE;
   hadc1.Init.ExternalTrigConv      = ADC_SOFTWARE_START;
   hadc1.Init.DataAlign             = ADC_DATAALIGN_RIGHT;
-  hadc1.Init.NbrOfConversion       = 3;
+  hadc1.Init.NbrOfConversion       = ADC1_NCH;
   hadc1.Init.DMAContinuousRequests = ENABLE;
   hadc1.Init.EOCSelection          = ADC_EOC_SEQ_CONV;
   if( HAL_ADC_Init( &hadc1 ) != HAL_OK ) {

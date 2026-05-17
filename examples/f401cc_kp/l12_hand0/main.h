@@ -18,6 +18,7 @@ extern uint32_t last_measure_tick;
 extern uint32_t measure_idle_ticks;
 extern float k_v_cal;
 extern float k_v_def;
+
 bool is_mover_disabled( unsigned ch, bool do_print = false );
 int bad_coord_idx(); // < 0 = ok
 bool is_good_coords( bool do_stop = true, bool do_print = false, bool do_measure = false );
@@ -27,10 +28,10 @@ bool is_good_coords( bool do_stop = true, bool do_print = false, bool do_measure
 inline constexpr PortPin LEDSX_START { PB12 };
 inline constexpr uint32_t LEDSX_N { 4 };
 
-inline constexpr PortPin  BTN_STOP_PIN      {  PB0 };
-inline constexpr uint32_t BTN_STOP_BIT      { BTN_STOP_PIN.pinNum().bitmask() };
-inline constexpr uint16_t BTN_STOP_IRQ_PRTY { 14 };
-inline constexpr auto     BTN_STOP_IRQ_N    { EXTI0_IRQn };
+inline constexpr PortPin  BTN_STOP_PIN      {  PA8 };
+inline constexpr uint32_t BTN_STOP_BIT      { BTN_STOP_PIN.bitmask() };
+inline constexpr uint16_t BTN_STOP_IRQ_PRTY { 5 };
+inline constexpr auto     BTN_STOP_IRQ_N    { EXTI9_5_IRQn };
 inline constexpr auto     BTN_STOP_EXTI_DIR { ExtiEv::down };
 void init_EXTI();
 
@@ -39,8 +40,12 @@ inline constexpr PortPin LWM_PIN1 { PA1 };
 inline constexpr PortPin LWM_PIN2 { PA2 };
 inline constexpr PortPin LWM_PIN3 { PA3 };
 
+using tim_ch_type = decltype( TIM_CHANNEL_1 );
+int tim_pwm_cfg_common( uint32_t cnt_freq, uint32_t freq, TIM_HandleTypeDef &t_h, TIM_TypeDef  *instance,
+                         std::span<const tim_ch_type> channels );
+
+// Q1-Q3 motor(servo) control. CH1: unused, from old Q0
 extern TIM_HandleTypeDef tim_lwm_h;
-int tim_lwm_cfg();
 #define TIM_LWM TIM2
 #define TIM_LWM_EN  __GPIOA_CLK_ENABLE(); __TIM2_CLK_ENABLE();
 #define TIM_LWM_DIS __TIM2_CLK_DISABLE();
@@ -49,14 +54,37 @@ int tim_lwm_cfg();
 #define TIM_LWM_GPIO_PIN_2 GPIO_PIN_2
 #define TIM_LWM_GPIO_PIN_3 GPIO_PIN_3
 #define TIM_LWM_GPIO_PINS PinMask( TIM_LWM_GPIO_PIN_0 | TIM_LWM_GPIO_PIN_1 | TIM_LWM_GPIO_PIN_2 |  TIM_LWM_GPIO_PIN_3 )
+#define TIM_LWM_CHANNEL_0 TIM_CHANNEL_1
+#define TIM_LWM_CHANNEL_1 TIM_CHANNEL_2
+#define TIM_LWM_CHANNEL_2 TIM_CHANNEL_3
+#define TIM_LWM_CHANNEL_3 TIM_CHANNEL_4
+#define TIM_LWM_CHANNELS  { TIM_LWM_CHANNEL_0, TIM_LWM_CHANNEL_1, TIM_LWM_CHANNEL_2, TIM_LWM_CHANNEL_3 }
 #define TIM_LWM_GPIO_AF GPIO_AF1_TIM2
 inline constexpr uint32_t tim_lwm_psc_freq   {  2000000 }; // 2 MHz
 inline constexpr uint32_t tim_lwm_freq       {       50 }; // 50 Hz
 inline constexpr uint32_t tim_lwm_t_us       { 1000000 / tim_lwm_freq };
-int tim_lwm_cfg();
+int  tim_lwm_cfg();
 void tim_lwm_start();
 void tim_lwm_stop();
 
+// Q0 motor control: timer + 2 GPIO
+extern TIM_HandleTypeDef tim_mq0_h;
+inline constexpr PortPin MQ0_PIN_PWM { PB0 };
+inline constexpr PortPin MQ0_PIN_L   { PB1 };
+inline constexpr PortPin MQ0_PIN_R   { PB2 };
+#define TIM_MQ0 TIM3
+#define TIM_MQ0_EN  __GPIOB_CLK_ENABLE(); __TIM3_CLK_ENABLE();
+#define TIM_MQ0_DIS __TIM3_CLK_DISABLE();
+#define TIM_MQ0_CHANNEL TIM_CHANNEL_1
+#define TIM_MQ0_GPIO_AF GPIO_AF2_TIM3
+inline constexpr uint32_t tim_mq0_psc_freq   {  72000000 }; // 72 MHz -> 72MHz
+inline constexpr uint32_t tim_mq0_freq       {     20000 }; // 20 kHz , ARR = 3599
+int  tim_mq0_cfg();
+void tim_mq0_start();
+void tim_mo0_stop();
+
+
+// sensors from servo Q1-Q2, PA6 (Q3) is unused for now
 #define ADC1_NCH   3
 inline constexpr PortPin ADC1_PIN0 { PA4 };
 inline constexpr PortPin ADC1_PIN1 { PA5 };

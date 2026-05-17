@@ -1,1 +1,1 @@
-lab_00.cpp
+labs/lab_00_stenko.cpp
