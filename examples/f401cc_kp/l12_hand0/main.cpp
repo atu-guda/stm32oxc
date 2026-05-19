@@ -46,8 +46,9 @@ uint32_t off_motor_idle_ticks  { 60000 };
 uint32_t last_measure_tick     {     0 };
 uint32_t measure_idle_ticks    {   100 };
 
-float k_v_cal { 0.2f };
-float k_v_def { 0.5f };
+float k_v_cal  { 0.2f   };
+float k_v_def  { 0.5f   };
+float q0_v_min { 0.001f };
 
 auto out_q_fmt = [](xfloat x) { return FltFmt(x, cvtff_fix,8,4); };
 
@@ -221,6 +222,7 @@ ADD_IOBJ   ( t_post       );
 ADD_IOBJ   ( t_step       );
 ADD_FOBJ   ( k_v_cal      );
 ADD_FOBJ   ( k_v_def      );
+ADD_FOBJ   ( q0_v_min     );
 
 #undef ADD_IOBJ
 #undef ADD_IOBJ_TD
@@ -239,6 +241,7 @@ constexpr const NamedObj *const objs_info[] = {
   & ob_t_step,
   & ob_k_v_cal,
   & ob_k_v_def,
+  & ob_q0_v_min,
   nullptr
 };
 
@@ -390,21 +393,58 @@ bool is_good_coords( bool do_stop, bool do_print, bool do_measure  )
   return false;
 }
 
-bool is_mover_disabled( unsigned ch, bool do_print )
+bool is_mover_disabled( unsigned ch )
 {
-  if( (1<<ch) & dis_movers ) {
-    if( do_print ) {
-      std_out << "# Warn: mover " << ch << " is disabled " << dis_movers << NL;
-    }
-    return true;
-  }
-  return false;
+  return( (1<<ch) & dis_movers );
 }
 
 
 
 CMD_FUNCTION( test0 )
 {
+  auto v = arg2float_d( 1, argc, argv, 0.0f, -1.0f, 1.0f );
+  auto t_move = arg2ulong_d( 2, argc, argv, 1000, 0, 100000 );
+
+  // TODO: hide in class
+  TIM_MQ0->TIM_MQ0_CCR = 0;
+  if( v > q0_v_min ) {
+    mq0_pin_l = 1; mq0_pin_r = 0;
+  } else if ( v < -q0_v_min ) {
+    v = -v;
+    mq0_pin_l = 0; mq0_pin_r = 1;
+  } else {
+    v = 0;
+    mq0_pin_l = 0; mq0_pin_r = 0;
+  }
+  const uint32_t ccr = (uint32_t)( v * TIM_MQ0->ARR );
+
+  int stage { 0 };
+  const auto t_e { t_move + t_post };
+
+  break_flag = 0;
+  ledsx[1].set();
+  uint32_t tm0 = HAL_GetTick();
+  uint32_t tc0 = tm0, tc00 = tm0;
+  TIM_MQ0->TIM_MQ0_CCR = ccr;
+  tim_mq0_start();
+
+  for( uint32_t i=0; i<t_e && !break_flag; i += t_step ) {
+
+    const uint32_t  tcc = HAL_GetTick();
+    const auto dtc = tcc - tc00;
+    if( stage == 0 && dtc >= (uint32_t)t_move ) {
+      TIM_MQ0->TIM_MQ0_CCR = 0;
+      stage = 1;
+    }
+    sens_enc.measure( 0 );
+    auto alp_q0 = sens_enc.get( 0 );
+
+    std_out << FmtInt(i,6) << ' ' << FmtInt( dtc, 6 ) << ' ' << FmtInt( stage, 1 ) << ' ' << alp_q0 << NL;
+
+    delay_ms_until_brk( &tc0, t_step );
+  }
+  ledsx[1].reset();
+
   if( debug > 0 ) {
     tim_print_cfg( TIM_LWM );
     tim_print_cfg( TIM_MQ0 );
@@ -520,7 +560,7 @@ CMD_FUNCTION( pulse ) // U
 
   std_out << "# pulse: ch= " << ch << " t_on= " << t_on << " dt= " << dt << NL;
 
-  if( is_mover_disabled( ch, true ) ) {
+  if( is_mover_disabled( ch ) ) {
     return 1;
   }
 

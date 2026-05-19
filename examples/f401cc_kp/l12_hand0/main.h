@@ -19,7 +19,7 @@ extern uint32_t measure_idle_ticks;
 extern float k_v_cal;
 extern float k_v_def;
 
-bool is_mover_disabled( unsigned ch, bool do_print = false );
+bool is_mover_disabled( unsigned ch );
 int bad_coord_idx(); // < 0 = ok
 bool is_good_coords( bool do_stop = true, bool do_print = false, bool do_measure = false );
 
@@ -75,7 +75,8 @@ inline constexpr PortPin MQ0_PIN_R   { PB2 };
 #define TIM_MQ0 TIM3
 #define TIM_MQ0_EN  __GPIOB_CLK_ENABLE(); __TIM3_CLK_ENABLE();
 #define TIM_MQ0_DIS __TIM3_CLK_DISABLE();
-#define TIM_MQ0_CHANNEL TIM_CHANNEL_1
+#define TIM_MQ0_CHANNEL TIM_CHANNEL_3
+#define TIM_MQ0_CCR CCR3
 #define TIM_MQ0_GPIO_AF GPIO_AF2_TIM3
 inline constexpr uint32_t tim_mq0_psc_freq   {  72000000 }; // 72 MHz -> 72MHz
 inline constexpr uint32_t tim_mq0_freq       {     20000 }; // 20 kHz , ARR = 3599
