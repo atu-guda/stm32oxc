@@ -295,15 +295,15 @@ int post_exec( int rc )
 // constexpr TimCh test_tim_chs[] {TimCh4,TimCh3,TimCh1};
 // constexpr std::array test_tim_chs2 {TimCh4,TimCh3,TimCh1};
 
-void fun_timch( TimCh tcn )
+void fun_timch( [[maybe_unused]] TimCh tcn )
 {
-  __attribute__((unused)) size_t  n = tcn.n;
+  [[maybe_unused]] size_t  n = tcn.n;
 }
 
 void fun_t2( std::span<const TimCh> channels )
 {
-  __attribute__((unused)) size_t nn {0};
-  __attribute__((unused)) const auto sz { channels.size() };
+  [[maybe_unused]] size_t nn {0};
+  [[maybe_unused]] const auto sz { channels.size() };
 }
 
 
@@ -312,12 +312,15 @@ void fun_t2( std::span<const TimCh> channels )
 int main(void)
 {
   STD_PROLOG_USBCDC;
+
   // more test start
   fun_timch( TimCh1 );
   fun_t2( {{TimCh4,TimCh3,TimCh1}} );
   fun_t2( test_tim_chs );
   fun_t2( test_tim_chs2 );
-  static auto constinit p_ccr = TimCh::getCCR( TIM1, TimCh2 );
+  // static auto constinit p_ccr1 = TimCh::getCCR_c<TimCh::TimChN2, tim1_r>();
+  [[maybe_unused]] auto  p_ccr2 = TimCh::getCCR( TIM1, TimCh2 );
+  oxc::PwmCtlTim pwm1( TIM_LWM, test_tim_chs2 );
   // more test end
 
   UVAR_t =    50;

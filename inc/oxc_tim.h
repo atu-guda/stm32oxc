@@ -6,11 +6,13 @@
 #include <oxc_base.h>
 
 namespace oxc {
+
+
 struct TimCh {
   enum TimChNum : uint8_t {
      TimChN1 = 0, TimChN2, TimChN3, TimChN4, TimChN5, TimChN6, TimChN7, TimChN8 // 7,8- unused for now
   };
-  static constexpr reg32* getCCR( TIM_TypeDef *tim, TimCh ch )
+  static constexpr reg32* getCCR( TIM_TypeDef *tim, TimCh ch ) // really not constexpt as int->ptr is reinterpret_cast
   {
     switch( ch.n ) {
       case TimChN1: return &(tim->CCR1);
@@ -32,6 +34,7 @@ struct TimCh {
   static reg32 fake_ccr;
   TimChNum n;
 };
+
 constexpr inline TimCh TimCh1 { TimCh::TimChN1 };
 constexpr inline TimCh TimCh2 { TimCh::TimChN2 };
 constexpr inline TimCh TimCh3 { TimCh::TimChN3 };
