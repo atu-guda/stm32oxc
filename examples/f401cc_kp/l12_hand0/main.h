@@ -7,6 +7,10 @@ using std::size_t;
 using std::array;
 using std::vector;
 
+// test:
+inline constexpr oxc::TimCh test_tim_chs[] {oxc::TimCh4,oxc::TimCh3,oxc::TimCh1};
+inline constexpr std::array test_tim_chs2  {oxc::TimCh4,oxc::TimCh3,oxc::TimCh1};
+
 extern int debug;
 extern int dry_run;
 extern int dis_movers;
@@ -91,8 +95,11 @@ inline constexpr PortPin ADC1_PIN0 { PA4 };
 inline constexpr PortPin ADC1_PIN1 { PA5 };
 inline constexpr PortPin ADC1_PIN2 { PA6 };
 #define ADC_CLK_EN __HAL_RCC_ADC1_CLK_ENABLE();
+inline constexpr IRQn_Type ADC_DMA_IRQ { DMA2_Stream0_IRQn };
+inline constexpr uint32_t  ADC_DMA_IRQ_PRTY  { 10 };
 extern ADC_HandleTypeDef hadc1;
 extern DMA_HandleTypeDef hdma_adc1;
+
 void MX_DMA_Init(void);
 int  MX_ADC1_Init(void);
 void HAL_ADC_MspInit( ADC_HandleTypeDef* adcHandle );
@@ -235,16 +242,16 @@ extern std::array<Mover*,movers_n> movers;
 
 class Sensor {
   public:
-   explicit Sensor( unsigned n_ch_ ) : n_ch( n_ch_ ) {};
+   explicit Sensor( size_t n_ch_ ) : n_ch( n_ch_ ) {};
    virtual ~Sensor() = default;
-   unsigned getNch() const { return n_ch; }
+   size_t getNch() const { return n_ch; }
    virtual int measure( int nx ) = 0;
    virtual int init() = 0;
-   virtual int32_t getInt( unsigned ch ) = 0;
-   virtual float get( unsigned ch ) = 0;
-   virtual void setCalibr( unsigned ch, const float *v ) = 0;
+   virtual int32_t getInt( size_t ch ) = 0;
+   virtual float get( size_t ch ) = 0;
+   virtual void setCalibr( size_t ch, const float *v ) = 0;
   protected:
-   unsigned n_ch;
+   size_t n_ch;
 };
 
 class SensorFakeMover : public Sensor {
@@ -253,9 +260,9 @@ class SensorFakeMover : public Sensor {
    virtual ~SensorFakeMover() = default;
    virtual int measure( int nx ) override { x = mo.get_q_last(); return 1; }
    virtual int init() override { return 1; }
-   virtual int32_t getInt( unsigned ch ) override { return ( uint32_t ) x * 10000000; }
-   virtual float get( unsigned ch ) override { return x; };
-   virtual void setCalibr( unsigned ch, const float *v ) override {};
+   virtual int32_t getInt( size_t ch ) override { return ( uint32_t ) x * 10000000; }
+   virtual float get( size_t ch ) override { return x; };
+   virtual void setCalibr( size_t ch, const float *v ) override {};
   protected:
    Mover &mo;
    float x {0};
@@ -263,15 +270,15 @@ class SensorFakeMover : public Sensor {
 
 class SensorAdc : public Sensor {
   public:
-   explicit SensorAdc( unsigned n_ch_ ) : Sensor( std::min( n_ch_, max_n_ch ) ) {};
+   explicit SensorAdc( size_t n_ch_ ) : Sensor( std::min( n_ch_, max_n_ch ) ) {};
    virtual ~SensorAdc() = default;
    virtual int measure( int nx ) override;
    virtual int init() override;
-   virtual int32_t getInt( unsigned ch ) override { return ( ch < n_ch ) ? adc_data[ch] : 0; }
-   virtual float get( unsigned ch ) override { return getInt(ch) * k_a[ch] + k_b[ch]; }
-   virtual void setCalibr( unsigned ch, const float *v ) override { k_a[ch] = v[0]; k_b[ch] = v[1]; }
+   virtual int32_t getInt( size_t ch ) override { return ( ch < n_ch ) ? adc_data[ch] : 0; }
+   virtual float get( size_t ch ) override { return getInt(ch) * k_a[ch] + k_b[ch]; }
+   virtual void setCalibr( size_t ch, const float *v ) override { k_a[ch] = v[0]; k_b[ch] = v[1]; }
   protected:
-   static const unsigned max_n_ch { 4 };
+   static const size_t max_n_ch { 4 };
    int32_t  adc_data[max_n_ch];  // collected and divided data (by adc_measure)
    uint16_t adc_buf[max_n_ch];   // buffer for DMA
    float k_a[max_n_ch] {  7.0266e-02f,     -7.40e-02f, 1.0f, 1.0f };
@@ -284,10 +291,10 @@ class SensorAS5600 : public Sensor {
    virtual ~SensorAS5600() = default;
    virtual int measure( int nx ) override;
    virtual int init() override;
-   virtual int32_t getInt( unsigned /* ch */ ) override { return iv; }
-   virtual float get( unsigned /* ch */ ) override { return v; };
+   virtual int32_t getInt( size_t /* ch */ ) override { return iv; }
+   virtual float get( size_t /* ch */ ) override { return v; };
    void set_zero_val( int zv ) { zero_val = zv; } // TODO: + calibr
-   virtual void setCalibr( unsigned ch, const float *v ) override { k_a = v[0]; };
+   virtual void setCalibr( size_t ch, const float *v ) override { k_a = v[0]; };
   protected:
    AS5600 &dev;
    float v;

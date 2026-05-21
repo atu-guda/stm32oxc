@@ -4,6 +4,8 @@
   #include <oxc_outstream.h>
 #endif
 
+reg32 oxc::TimCh::fake_ccr {0};
+
 
 uint32_t get_TIM_in_freq( TIM_TypeDef *tim )
 {

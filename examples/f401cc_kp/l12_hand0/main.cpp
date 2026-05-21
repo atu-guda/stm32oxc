@@ -19,9 +19,12 @@
 #include <oxc_as5600.h>
 #include <oxc_easing.h>
 
+#include <oxc_pwmctltim.h>
+
 #include "main.h"
 
 
+using namespace oxc;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
@@ -287,9 +290,35 @@ int post_exec( int rc )
   return rc;
 }
 
+// ------ for test start
+
+// constexpr TimCh test_tim_chs[] {TimCh4,TimCh3,TimCh1};
+// constexpr std::array test_tim_chs2 {TimCh4,TimCh3,TimCh1};
+
+void fun_timch( TimCh tcn )
+{
+  __attribute__((unused)) size_t  n = tcn.n;
+}
+
+void fun_t2( std::span<const TimCh> channels )
+{
+  __attribute__((unused)) size_t nn {0};
+  __attribute__((unused)) const auto sz { channels.size() };
+}
+
+
+// ------ for test end
+
 int main(void)
 {
   STD_PROLOG_USBCDC;
+  // more test start
+  fun_timch( TimCh1 );
+  fun_t2( {{TimCh4,TimCh3,TimCh1}} );
+  fun_t2( test_tim_chs );
+  fun_t2( test_tim_chs2 );
+  static auto constinit p_ccr = TimCh::getCCR( TIM1, TimCh2 );
+  // more test end
 
   UVAR_t =    50;
   UVAR_n =    20;
@@ -1176,9 +1205,9 @@ ADC_HandleTypeDef hadc1;
 
 void MX_DMA_Init(void)
 {
-  __HAL_RCC_DMA2_CLK_ENABLE();
-  HAL_NVIC_SetPriority( DMA2_Stream0_IRQn, 10, 0 );
-  HAL_NVIC_EnableIRQ(   DMA2_Stream0_IRQn );
+  ADC_CLK_EN;
+  HAL_NVIC_SetPriority( ADC_DMA_IRQ, ADC_DMA_IRQ_PRTY, 0 );
+  HAL_NVIC_EnableIRQ(   ADC_DMA_IRQ );
 }
 
 void DMA2_Stream0_IRQHandler(void)
@@ -1300,7 +1329,7 @@ int SensorAdc::measure( int nx )
       errno = 4568;
       return 0;
     }
-    for( unsigned j=0; j<std::size(adc_data); ++j ) {
+    for( size_t j=0; j<std::size(adc_data); ++j ) {
       adc_data[j] += adc_buf[j];
     }
   }
@@ -1381,5 +1410,4 @@ int MoverServoCont::post_run()
 
 // ------------------------------------  ------------------------------------------------
 
-// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 
