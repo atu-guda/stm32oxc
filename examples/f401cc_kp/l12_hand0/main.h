@@ -7,9 +7,16 @@ using std::size_t;
 using std::array;
 using std::vector;
 
+using namespace oxc; // accaptable for main.h
+
 // test:
 inline constexpr oxc::TimCh test_tim_chs[] {oxc::TimCh4,oxc::TimCh3,oxc::TimCh1};
-inline constexpr std::array test_tim_chs2  {oxc::TimCh4,oxc::TimCh3,oxc::TimCh1};
+// inline constexpr std::array test_tim_chs2  {oxc::TimCh4,oxc::TimCh3,oxc::TimCh1};
+inline constexpr std::array test_tim_chs2 {
+  TimChPin {  TimCh3, TIM_EXA_GPIOAF, TIM_EXA_PIN3 },
+  TimChPin {  TimCh2, TIM_EXA_GPIOAF, TIM_EXA_PIN2 },
+  TimChPin {  TimCh1, TIM_EXA_GPIOAF, TIM_EXA_PIN1 },
+};
 
 extern int debug;
 extern int dry_run;

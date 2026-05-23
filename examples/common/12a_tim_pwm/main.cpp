@@ -1,19 +1,25 @@
 #include <iterator>
+#include <array>
 
 #include <oxc_auto.h>
+#include <oxc_atleave.h>
+#include <oxc_pwmctltim.h>
 #include <oxc_main.h>
+
 
 using std::size;
 using std::size_t;
 using namespace oxc;
 using namespace SMLRL;
 
+#include "main.h"
+
 USE_DIE4LED_ERROR_HANDLER;
 BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
-const char* common_help_string = "App to test timer as PWM source" NL;
+const char* common_help_string = "App to test timer as PWM source v2" NL;
 
 TIM_HandleTypeDef tim_h;
 
@@ -30,10 +36,13 @@ void pwm_recalc();
 void pwm_update();
 
 // --- local commands;
-DCL_CMD_REG( test0, 'T', " - test PWM vals"  );
-DCL_CMD_REG( tinit, 'I', " - reinit timer"  );
-DCL_CMD_REG( servo, 'S', " - prepare to servo control"  );
-DCL_CMD_REG( go_servo, 'G', " v0 v1 v2 v3 - set servo 0-1000"  );
+DCL_CMD_REG( test0,      'T', " - test PWM vals"  );
+DCL_CMD_REG( tinit,      'I', " - reinit timer"  );
+DCL_CMD_REG( servo,      'S', " - prepare to servo control"  );
+DCL_CMD_REG( go_servo,   'G', " v0 v1 v2 v3 - set servo 0-1000"  );
+DCL_CMD_REG( tinfo,      'P', " print info"  );
+DCL_CMD_REG( setfreq,    'F', " Hz - set freq"  );
+DCL_CMD_REG( xtest,      'X', " unknown test"  );
 
 
 const uint32_t countmodes[] = {
@@ -46,6 +55,8 @@ const uint32_t countmodes[] = {
 const auto n_countmodes = size(countmodes);
 
 bool on_servo { false };
+
+PwmCtlTim pwm1( TIM_EXA, tim_exa_chspins );
 
 
 int main(void)
@@ -67,6 +78,8 @@ int main(void)
   pr( NL "##################### " PROJ_NAME NL );
 
   tim_cfg();
+  pwm1.setAllowPSKadj( true );
+  pwm1.initPins();
 
   srl.re_ps();
 
@@ -101,7 +114,70 @@ CMD_FUNCTION( test0 )
   return 0;
 }
 
-CMD_FUNCTION( go_servo )
+CMD_FUNCTION( tinfo ) // P
+{
+  tim_print_cfg( TIM_EXA );
+
+  for( size_t i=0; i<PwmCtlTim::max_ch; ++i ) {
+    std_out << i << ' ' << HexInt((const void*)pwm1.getCCR(i)) << NL;
+  }
+
+  std_out << "# freq:  "  << pwm1.getFreq() << NL;
+
+  // pwm1.disable();
+  // delay_ms( 5000 );
+  // pwm1.enable();
+
+
+  return 0;
+}
+
+CMD_FUNCTION( setfreq ) // F
+{
+  auto freq = arg2ulong_d( 1, argc, argv, 1, 1 );
+
+  pwm1.setFreq( freq );
+
+  std_out << "# freq: " << freq << " => " << pwm1.getFreq() << NL;
+
+  return 0;
+}
+
+CMD_FUNCTION( xtest ) // X
+{
+  if constexpr ( __cpp_constexpr >= 202306L ) {
+    std_out << "# __cpp_constexpr= " << __cpp_constexpr << NL;
+  }
+  std_out << "# __cpp_constexpr= " << __cpp_constexpr << NL;
+  std::array tims { TIM1, TIM2, TIM3, TIM4, TIM5, TIM6, TIM7, TIM8, TIM9, TIM10, TIM11, TIM12, TIM13, TIM14 };
+  __TIM2_CLK_ENABLE();
+  __TIM3_CLK_ENABLE();
+  __TIM4_CLK_ENABLE();
+  __TIM5_CLK_ENABLE();
+  __TIM6_CLK_ENABLE();
+  __TIM7_CLK_ENABLE();
+  __TIM8_CLK_ENABLE();
+  __TIM9_CLK_ENABLE();
+  __TIM10_CLK_ENABLE();
+  __TIM11_CLK_ENABLE();
+  __TIM12_CLK_ENABLE();
+  __TIM13_CLK_ENABLE();
+  __TIM14_CLK_ENABLE();
+
+  for( auto [i,tim] : std::views::enumerate(tims) ) {
+    RestoreAtLeave _cr1( tim->CR1 );
+    RestoreAtLeave _arr( tim->ARR );
+    tim->CR1 = 0x00000001;
+    tim->ARR = 0xFFFFFFFF;
+    std_out << (i+1) << ' ' << HexInt(tim->CR1) << ' ' << HexInt( tim->ARR ) << NL;
+  }
+
+  return 0;
+}
+
+
+
+CMD_FUNCTION( go_servo ) // G
 {
   if( !on_servo ) {
     cmd_servo( argc, argv );
@@ -124,7 +200,7 @@ CMD_FUNCTION( go_servo )
 }
 
 
-CMD_FUNCTION( tinit )
+CMD_FUNCTION( tinit ) // I
 {
   tim_cfg();
   tim_print_cfg( TIM_EXA );
@@ -132,7 +208,7 @@ CMD_FUNCTION( tinit )
   return 0;
 }
 
-CMD_FUNCTION( servo )
+CMD_FUNCTION( servo ) // S
 {
   uint32_t psc = calc_TIM_psc_for_cnt_freq( TIM_EXA, 1000000 );
   uint32_t arr = calc_TIM_arr_for_base_psc( TIM_EXA, psc, 100 );
@@ -214,6 +290,38 @@ void pwm_update()
     ch.ccr = UVAR('r') ? ch.v : ( ch.v * pbase / 100 );
   }
 }
+
+
+void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim )
+{
+  if( htim->Instance != TIM_EXA ) {
+    return;
+  }
+  TIM_EXA_CLKEN;
+
+  // for( auto pin : pins ) {
+  //   pin.enableClk();
+  //   pin.cfgAF( TIM_EXA_GPIOAF );
+  // }
+  //
+  // // if one timer uses different AF/GPIO, like F334:T1
+  // #ifdef TIM_EXA_PIN_EXT
+  //   TIM_EXA_PIN_EXT.cfgAF( TIM_EXA_GPIOAF_EXT );
+  // #endif
+}
+
+void HAL_TIM_PWM_MspDeInit( TIM_HandleTypeDef* htim )
+{
+  if( htim->Instance != TIM_EXA ) {
+    return;
+  }
+  TIM_EXA_CLKDIS;
+  // for( auto pin : pins ) {
+  //   pin.cfgIn();
+  // }
+  // HAL_NVIC_DisableIRQ( TIM_EXA_IRQ );
+}
+
 
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

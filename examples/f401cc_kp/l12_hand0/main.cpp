@@ -317,7 +317,7 @@ int main(void)
   fun_timch( TimCh1 );
   fun_t2( {{TimCh4,TimCh3,TimCh1}} );
   fun_t2( test_tim_chs );
-  fun_t2( test_tim_chs2 );
+  // fun_t2( test_tim_chs2 );
   // static auto constinit p_ccr1 = TimCh::getCCR_c<TimCh::TimChN2, tim1_r>();
   [[maybe_unused]] auto  p_ccr2 = TimCh::getCCR( TIM1, TimCh2 );
   oxc::PwmCtlTim pwm1( TIM_LWM, test_tim_chs2 );

@@ -35,40 +35,26 @@ uint32_t get_TIM_in_freq( TIM_TypeDef *tim )
   return pclk1;
 }
 
-uint32_t get_TIM_cnt_freq( TIM_TypeDef *tim )
-{
-  uint32_t freq = get_TIM_in_freq( tim ); // in_freq
-  uint32_t psc = 1 + tim->PSC;
-  return freq / psc;
-}
 
 uint32_t get_TIM_base_freq( TIM_TypeDef *tim )
 {
-  uint32_t freq = get_TIM_cnt_freq( tim );
-  uint32_t arr = 1 + tim->ARR;
-  return freq / arr;
+  return get_TIM_cnt_freq( tim ) / ( 1 + tim->ARR );
 }
 
 uint32_t calc_TIM_psc_for_cnt_freq( TIM_TypeDef *tim, uint32_t cnt_freq )
 {
-  uint32_t freq = get_TIM_in_freq( tim ); // in_freq
-  uint32_t psc = freq / cnt_freq - 1;
-  return psc;
+  return  get_TIM_in_freq( tim ) / cnt_freq - 1;
 }
 
 uint32_t calc_TIM_arr_for_base_freq( TIM_TypeDef *tim, uint32_t base_freq )
 {
-  uint32_t freq = get_TIM_cnt_freq( tim ); // cnf_freq
-  uint32_t arr = freq / base_freq - 1;
-  return arr;
+  return get_TIM_cnt_freq( tim ) / base_freq - 1;
 }
 
 uint32_t calc_TIM_arr_for_base_psc( TIM_TypeDef *tim, uint32_t psc, uint32_t base_freq )
 {
-  uint32_t freq = get_TIM_in_freq( tim ); // in_freq
-  freq /= 1 + psc;
-  uint32_t arr = freq / base_freq - 1;
-  return arr;
+  uint32_t freq = get_TIM_in_freq( tim ) / ( 1 + psc );
+  return freq / base_freq - 1;
 }
 
 #ifdef USE_OXC_DEBUG
@@ -82,14 +68,14 @@ void tim_print_cfg( TIM_TypeDef *tim )
   uint32_t psc = tim->PSC;
   uint32_t freq_in = get_TIM_in_freq( tim );
 
-  int freq1 = freq_in  / ( psc + 1 );
-  int freq2 = freq1    / ( arr + 1 );
+  auto freq1 = get_TIM_cnt_freq( tim );
+  auto freq2 = get_TIM_base_freq( tim );
   std_out <<  "# timer " << HexInt( tim )
      <<  " PSC: "   <<  psc
      <<  " ARR: "   <<  arr
      <<  " f_in: "  <<  freq_in
-     <<  " freq1: " <<  freq1
-     <<  " freq2: " <<  freq2
+     <<  " cnt: " <<  freq1
+     <<  " base: " <<  freq2
      <<  NL "# CR1: "   <<  HexInt( tim->CR1, true )
      <<  " CR2: "   <<  HexInt( tim->CR2, true )
      <<  " SMCR: "  <<  HexInt( tim->SMCR, true )

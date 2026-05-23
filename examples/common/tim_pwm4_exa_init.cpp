@@ -1,7 +1,7 @@
 #include <oxc_base.h>
 #include <oxc_gpio.h>
 
-// initialize exmple timer (from board defines) to
+// initialize example timer (from board defines) to
 // 4-channel PWM
 
 static constexpr PortPin pins[] TIM_EXA_PINS;
