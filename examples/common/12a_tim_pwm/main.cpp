@@ -1,5 +1,6 @@
 #include <iterator>
 #include <array>
+#include <memory>
 
 #include <oxc_auto.h>
 #include <oxc_atleave.h>
@@ -145,10 +146,6 @@ CMD_FUNCTION( setfreq ) // F
 
 CMD_FUNCTION( xtest ) // X
 {
-  if constexpr ( __cpp_constexpr >= 202306L ) {
-    std_out << "# __cpp_constexpr= " << __cpp_constexpr << NL;
-  }
-  std_out << "# __cpp_constexpr= " << __cpp_constexpr << NL;
   std::array tims { TIM1, TIM2, TIM3, TIM4, TIM5, TIM6, TIM7, TIM8, TIM9, TIM10, TIM11, TIM12, TIM13, TIM14 };
   __TIM2_CLK_ENABLE();
   __TIM3_CLK_ENABLE();

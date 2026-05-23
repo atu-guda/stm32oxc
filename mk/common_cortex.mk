@@ -561,7 +561,7 @@ OBJS   = $(OBJS0:.s=.o)
 OBJS1  = $(addprefix $(OBJDIR)/,$(OBJS))
 
 C_STD   ?= c11
-CXX_STD ?= gnu++23
+CXX_STD ?= gnu++26
 
 CFLAGS   = $(ALLFLAGS)  -std=$(C_STD)   $(CWARNFLAGS)
 CXXFLAGS = $(ALLFLAGS)  -std=$(CXX_STD) $(CXXWARNFLAGS) -fno-rtti -fno-exceptions -fno-threadsafe-statics -fno-use-cxa-atexit
