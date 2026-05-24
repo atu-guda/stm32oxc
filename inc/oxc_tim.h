@@ -67,12 +67,14 @@ inline uint32_t get_TIM_cnt_freq( TIM_TypeDef *tim )  // after precaler
   return get_TIM_in_freq( tim ) / (1 + tim->PSC);
 }
 uint32_t get_TIM_base_freq( TIM_TypeDef *tim ); // after ARR
+float get_TIM_base_freq_f( TIM_TypeDef *tim ); // after ARR
 uint32_t calc_TIM_psc_for_cnt_freq( TIM_TypeDef *tim, uint32_t cnt_freq );
 uint32_t calc_TIM_arr_for_base_freq( TIM_TypeDef *tim, uint32_t base_freq );
 uint32_t calc_TIM_arr_for_base_psc( TIM_TypeDef *tim, uint32_t psc, uint32_t base_freq ); // given PSC, not from timer
 
-#ifdef USE_OXC_DEBUG
-void tim_print_cfg( TIM_TypeDef *tim );
-#endif
+// returns { psc, arr}, { 0xFFFFFFFF, 0 } - if bad
+std::pair<uint32_t,uint32_t> calc_tim_psc_arr( float f_in, float f_out, uint32_t arr_min = 100, uint32_t arr_max = 0xFFFF );
+
+void tim_print_cfg( TIM_TypeDef *tim ); // real if USE_OXC_DEBUG
 
 #endif

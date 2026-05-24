@@ -4,6 +4,7 @@
 
 #include <oxc_auto.h>
 #include <oxc_atleave.h>
+#include <oxc_floatfun.h>
 #include <oxc_pwmctltim.h>
 #include <oxc_main.h>
 
@@ -25,25 +26,19 @@ const char* common_help_string = "App to test timer as PWM source v2" NL;
 TIM_HandleTypeDef tim_h;
 
 
-PwmCh pwmc[] = {
-  { 0, TIM_CHANNEL_1, (TIM_EXA->CCR1), 25 },
-  { 1, TIM_CHANNEL_2, (TIM_EXA->CCR2), 50 },
-  { 2, TIM_CHANNEL_3, (TIM_EXA->CCR3), 75 },
-  { 3, TIM_CHANNEL_4, (TIM_EXA->CCR4), 90 }
-};
-// const auto n_pwm_ch = size(pwmc);
 void tim_cfg();
 void pwm_recalc();
-void pwm_update();
 
 // --- local commands;
-DCL_CMD_REG( test0,      'T', " - test PWM vals"  );
-DCL_CMD_REG( tinit,      'I', " - reinit timer"  );
-DCL_CMD_REG( servo,      'S', " - prepare to servo control"  );
-DCL_CMD_REG( go_servo,   'G', " v0 v1 v2 v3 - set servo 0-1000"  );
-DCL_CMD_REG( tinfo,      'P', " print info"  );
-DCL_CMD_REG( setfreq,    'F', " Hz - set freq"  );
-DCL_CMD_REG( xtest,      'X', " unknown test"  );
+DCL_CMD_REG( test0,      'T',  " - test PWM vals"  );
+DCL_CMD_REG( test_u16,   '\0', " - test PWM u16 vals"  );
+DCL_CMD_REG( tinit,      'I',  " - reinit timer"  );
+DCL_CMD_REG( servo,      'S',  " - prepare to servo control"  );
+DCL_CMD_REG( go_servo,   'G',  " v0 v1 v2 v3 - set servo 0-1000"  );
+DCL_CMD_REG( pulse,      'U',  " []- test pulse in us"  );
+DCL_CMD_REG( tinfo,      'P',  " print info"  );
+DCL_CMD_REG( setfreq,    'F',  " Hz - set freq"  );
+DCL_CMD_REG( xtest,      'X',  " unknown test"  );
 
 
 const uint32_t countmodes[] = {
@@ -57,6 +52,7 @@ const auto n_countmodes = size(countmodes);
 
 bool on_servo { false };
 
+std::array<float,size(tim_exa_chspins) > pwm_f;
 PwmCtlTim pwm1( TIM_EXA, tim_exa_chspins );
 
 
@@ -64,22 +60,24 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 1000;
-  UVAR('n') = 10;
-  UVAR('p') = calc_TIM_psc_for_cnt_freq( TIM_EXA, 10000  ); // ->10kHz
-  UVAR('a') = 9999; // ARR, 10kHz->1Hz
-  UVAR('r') = 0;    // flag: raw values
-  UVAR('m') = 0;    // mode: 0: up, 1: down, 2: updown
-  UVAR('o') = 0;    // pOlarity 0: high 1: low
-  UVAR('x') =  500;    // servo start value (us)
-  UVAR('y') = 2500;    // servo end value (us)
+  UVAR_t = 1000;
+  UVAR_n = 10;
+  auto [ psc_i, arr_i ] = calc_tim_psc_arr( get_TIM_in_freq(TIM_EXA), 1 );
+  UVAR_p = psc_i;
+  UVAR_a = arr_i;
+  UVAR_m = 0;    // mode: 0: up, 1: down, 2: updown
+  UVAR_o = 0;    // pOlarity 0: high 1: low
+  UVAR_x =  500;    // servo start value (us)
+  UVAR_y = 2500;    // servo end value (us)
 
   BOARD_POST_INIT_BLINK;
 
   pr( NL "##################### " PROJ_NAME NL );
 
+  std::ranges::generate( pwm_f, [i = 0] () mutable { return (++i) * 0.2f; });
+
   tim_cfg();
-  pwm1.setAllowPSKadj( true );
+  pwm1.setAllowPSCadj( true );
   pwm1.initPins();
 
   srl.re_ps();
@@ -92,38 +90,54 @@ int main(void)
 }
 
 
-// TEST0
-CMD_FUNCTION( test0 )
+CMD_FUNCTION( test0 ) // T
 {
-  for( auto &ch : pwmc ) {
-    if( argc <= (int)(ch.idx+1) ) {
-      break;
-    }
-    ch.v = strtol( argv[ch.idx+1], 0, 0 );
+  for( size_t i=0; i<pwm_f.size(); ++i ) {
+    pwm_f[i] = arg2float_d( i+1, argc, argv, pwm_f[i], 0.0f, 1.0f );
+    pwm1.setPwm( i, pwm_f[i] );
+    std_out << i << ' ' << pwm_f[i] << NL;
   }
 
-  std_out << NL "# Test0: pwm_vals[]= ";
-  for( auto ch : pwmc ) {
-    std_out << ch.v <<  ' ';
-  }
-  std_out <<  NL ;
-
-  // pwm_recalc();
-  pwm_update();
   tim_print_cfg( TIM_EXA );
 
   return 0;
 }
 
+CMD_FUNCTION( test_u16 ) //
+{
+  for( size_t i=0; i<pwm_f.size(); ++i ) {
+    uint16_t v = ( i + 1 ) * 0x2000;
+    pwm1.setPwmU16( i, v );
+    std_out << i << ' ' << pwm1.getPwmRaw( i ) << NL;
+  }
+
+  tim_print_cfg( TIM_EXA );
+
+  return 0;
+}
+
+CMD_FUNCTION( pulse ) // U
+{
+  for( size_t i=0; i<pwm_f.size(); ++i ) {
+    uint32_t pu = arg2ulong_d( i+1, argc, argv, 0 );
+    pwm1.setPulse( i, pu );
+    std_out << i << ' ' << pu << ' ' << pwm1.getPwmRaw( i ) << NL;
+  }
+
+  tim_print_cfg( TIM_EXA );
+
+  return 0;
+}
+
+
+
 CMD_FUNCTION( tinfo ) // P
 {
   tim_print_cfg( TIM_EXA );
 
-  for( size_t i=0; i<PwmCtlTim::max_ch; ++i ) {
-    std_out << i << ' ' << HexInt((const void*)pwm1.getCCR(i)) << NL;
-  }
-
   std_out << "# freq:  "  << pwm1.getFreq() << NL;
+
+  dump32( TIM_EXA, 0x60 );
 
   // pwm1.disable();
   // delay_ms( 5000 );
@@ -135,7 +149,7 @@ CMD_FUNCTION( tinfo ) // P
 
 CMD_FUNCTION( setfreq ) // F
 {
-  auto freq = arg2ulong_d( 1, argc, argv, 1, 1 );
+  auto freq = arg2float_d( 1, argc, argv, 1, 0.01f );
 
   pwm1.setFreq( freq );
 
@@ -161,12 +175,13 @@ CMD_FUNCTION( xtest ) // X
   __TIM13_CLK_ENABLE();
   __TIM14_CLK_ENABLE();
 
+  // test: is32bit - better to use traits
   for( auto [i,tim] : std::views::enumerate(tims) ) {
-    RestoreAtLeave _cr1( tim->CR1 );
-    RestoreAtLeave _arr( tim->ARR );
+    RestoreAtLeave _( tim->CR1 );
+    RestoreAtLeave _( tim->ARR );
     tim->CR1 = 0x00000001;
     tim->ARR = 0xFFFFFFFF;
-    std_out << (i+1) << ' ' << HexInt(tim->CR1) << ' ' << HexInt( tim->ARR ) << NL;
+    std_out << FmtInt(i+1,2) << ' ' << HexInt(tim) << ' ' <<  HexInt(tim->CR1) << ' ' << HexInt( tim->ARR ) << NL;
   }
 
   return 0;
@@ -177,21 +192,19 @@ CMD_FUNCTION( xtest ) // X
 CMD_FUNCTION( go_servo ) // G
 {
   if( !on_servo ) {
-    cmd_servo( argc, argv );
+    cmd_servo( argc, argv ); // fake args - unused
   }
   if( !on_servo ) {
     return 1;
   }
 
-  uint32_t scale = UVAR('y') - UVAR('x');
-  for( auto &ch : pwmc ) {
-    if( argc <= (int)(ch.idx+1) ) {
-      break;
-    }
-    ch.v = UVAR('x')  + scale * strtol( argv[ch.idx+1], 0, 0 ) / 1000;
+  uint32_t scale = UVAR_y - UVAR_x;
+  for( size_t ch = 0; ch < pwm1.size(); ++ch ) {
+    float q = arg2float_d( ch+1, argc, argv, 0.5f, 0.0f, 1.0f );
+    uint32_t pu = UVAR_x + (uint32_t)( scale * q );
+    pwm1.setPulse( ch, pu );
+    std_out << ch << ' ' << pu << NL;
   }
-  pwm_update();
-  tim_print_cfg( TIM_EXA );
 
   return 0;
 }
@@ -207,19 +220,13 @@ CMD_FUNCTION( tinit ) // I
 
 CMD_FUNCTION( servo ) // S
 {
-  uint32_t psc = calc_TIM_psc_for_cnt_freq( TIM_EXA, 1000000 );
-  uint32_t arr = calc_TIM_arr_for_base_psc( TIM_EXA, psc, 100 );
-  UVAR('p') = psc;
-  UVAR('a') = arr;
-  UVAR('m') = 0;
-  UVAR('o') = 0;
-  UVAR('r') = 1;
-  uint32_t v0 = ( UVAR('x') + UVAR('y') ) / 2;
-  for( auto &ch : pwmc ) {
-    ch.ccr = v0;
-    ch.v   = v0;
+  pwm1.setFreq( 50 );
+
+  uint32_t v0 = ( UVAR_x + UVAR_y ) / 2;
+  for( size_t ch=0; ch<pwm1.size(); ++ch ) {
+    pwm1.setPulse( ch, v0 );
   }
-  tim_cfg();
+
   tim_print_cfg( TIM_EXA );
   on_servo = true;
 
@@ -233,17 +240,17 @@ CMD_FUNCTION( servo ) // S
 void tim_cfg()
 {
   tim_h.Instance               = TIM_EXA;
-  tim_h.Init.Prescaler         = UVAR('p');
-  tim_h.Init.Period            = UVAR('a');
+  tim_h.Init.Prescaler         = UVAR_p;
+  tim_h.Init.Period            = UVAR_a;
   tim_h.Init.ClockDivision     = 0;
-  unsigned cmode = UVAR('m');
+  unsigned cmode = UVAR_m;
   if( cmode > n_countmodes ) {
     cmode = 0;
   }
   tim_h.Init.CounterMode       = countmodes[cmode];
   tim_h.Init.RepetitionCounter = 0;
   if( HAL_TIM_PWM_Init( &tim_h ) != HAL_OK ) {
-    UVAR('e') = 1; // like error
+    UVAR_e = 1; // like error
     return;
   }
 
@@ -256,37 +263,27 @@ void tim_cfg()
 
 void pwm_recalc()
 {
-  int pbase = UVAR('a');
   TIM_OC_InitTypeDef tim_oc_cfg;
   tim_oc_cfg.OCMode       = TIM_OCMODE_PWM1;
-  tim_oc_cfg.OCPolarity   = UVAR('o') ? TIM_OCPOLARITY_LOW : TIM_OCPOLARITY_HIGH;
+  tim_oc_cfg.OCPolarity   = UVAR_o ? TIM_OCPOLARITY_LOW : TIM_OCPOLARITY_HIGH;
   tim_oc_cfg.OCNPolarity  = TIM_OCNPOLARITY_HIGH;
   tim_oc_cfg.OCFastMode   = TIM_OCFAST_DISABLE;
   tim_oc_cfg.OCIdleState  = TIM_OCIDLESTATE_RESET;
   tim_oc_cfg.OCNIdleState = TIM_OCNIDLESTATE_RESET;
 
-  for( auto ch : pwmc ) {
-    HAL_TIM_PWM_Stop( &tim_h, ch.ch );
-    tim_oc_cfg.Pulse = UVAR('r') ? ( ch.v ) : ( ch.v * pbase / 100 ) ;
-    if( HAL_TIM_PWM_ConfigChannel( &tim_h, &tim_oc_cfg, ch.ch ) != HAL_OK ) {
-      UVAR('e') = 11 + ch.idx;
+  int pbase = TIM_EXA->ARR / 20;
+  for( auto ch : { TIM_CHANNEL_1, TIM_CHANNEL_2, TIM_CHANNEL_3, TIM_CHANNEL_4 } ) { // TODO: tmp
+    HAL_TIM_PWM_Stop( &tim_h, ch );
+    tim_oc_cfg.Pulse = pbase * ( ch + 1 ) ; // TMP
+    if( HAL_TIM_PWM_ConfigChannel( &tim_h, &tim_oc_cfg, ch ) != HAL_OK ) {
+      UVAR_e = 11 + ch;
       return;
     }
-    HAL_TIM_PWM_Start( &tim_h, ch.ch );
+    HAL_TIM_PWM_Start( &tim_h, ch );
   }
 
 }
 
-void pwm_update()
-{
-  tim_h.Instance->PSC  = UVAR('p');
-  int pbase = UVAR('a');
-  tim_h.Instance->ARR  = pbase;
-
-  for( auto ch : pwmc ) {
-    ch.ccr = UVAR('r') ? ch.v : ( ch.v * pbase / 100 );
-  }
-}
 
 
 void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim )
@@ -295,16 +292,6 @@ void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim )
     return;
   }
   TIM_EXA_CLKEN;
-
-  // for( auto pin : pins ) {
-  //   pin.enableClk();
-  //   pin.cfgAF( TIM_EXA_GPIOAF );
-  // }
-  //
-  // // if one timer uses different AF/GPIO, like F334:T1
-  // #ifdef TIM_EXA_PIN_EXT
-  //   TIM_EXA_PIN_EXT.cfgAF( TIM_EXA_GPIOAF_EXT );
-  // #endif
 }
 
 void HAL_TIM_PWM_MspDeInit( TIM_HandleTypeDef* htim )
@@ -313,10 +300,6 @@ void HAL_TIM_PWM_MspDeInit( TIM_HandleTypeDef* htim )
     return;
   }
   TIM_EXA_CLKDIS;
-  // for( auto pin : pins ) {
-  //   pin.cfgIn();
-  // }
-  // HAL_NVIC_DisableIRQ( TIM_EXA_IRQ );
 }
 
 

@@ -22,6 +22,7 @@ USE_OXC_TIM = y
 
 SRCS  = main.cpp
 
+SRCS += oxc_floatfun.cpp
 SRCS += oxc_pwmctltim.cpp
 
 # SRCS += tim_pwm4_exa_init.cpp
