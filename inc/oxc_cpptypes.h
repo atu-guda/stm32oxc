@@ -65,5 +65,21 @@ using exprc_uint32_t = std::expected<uint32_t,  ReturnCode>;
 using exprc_int64_t  = std::expected<int64_t,   ReturnCode>;
 using exprc_uint64_t = std::expected<uint64_t,  ReturnCode>;
 
+namespace oxc {
+
+template< typename DevType, std::uintptr_t addr_ >
+struct DevPtr
+{
+  static constexpr auto addr { addr_ };
+  static volatile DevType& pdev() noexcept {
+    return *reinterpret_cast<volatile DevType*>( addr );
+  }
+};
+
+// usage like
+// using Tim1 = DevPtr<TIM_TypeDef, TIM1_BASE>;
+
+}; // namespace oxc
+
 #endif
 

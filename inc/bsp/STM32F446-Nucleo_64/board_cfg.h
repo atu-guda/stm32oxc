@@ -57,6 +57,7 @@
 
 #ifndef   TIM_EXA
 #define   TIM_EXA               TIM1
+#define   TIM_EXA_BASE          TIM1_BASE
 #define   TIM_EXA_PIN1          PA8
 #define   TIM_EXA_PIN2          PA9
 #define   TIM_EXA_PIN3          PA10

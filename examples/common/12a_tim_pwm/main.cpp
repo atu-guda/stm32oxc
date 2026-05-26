@@ -53,7 +53,7 @@ const auto n_countmodes = size(countmodes);
 bool on_servo { false };
 
 std::array<float,size(tim_exa_chspins) > pwm_f;
-PwmCtlTim pwm1( TIM_EXA, tim_exa_chspins );
+constinit PwmCtlTim pwm1( TIM_EXA_BASE, tim_exa_chspins );
 
 
 int main(void)
@@ -143,6 +143,7 @@ CMD_FUNCTION( tinfo ) // P
   // delay_ms( 5000 );
   // pwm1.enable();
 
+  // std_out << "#p1: " << HexInt( pwm1.getCCR( 0 ) ) << NL;
 
   return 0;
 }

@@ -76,6 +76,7 @@
 #define BOARD_DEFINE_GO3_CS   PinsOut spi_cs_go3( GPIOD, 2, 1 );
 
 // #define TIM_EXA        TIM1
+// #define_BASEEXA        TIM1_BASE
 // #define TIM_EXA_STR    "TIM1"
 // #define TIM_EXA_GPIO   GPIOE
 // #define TIM_EXA_PIN1   GPIO_PIN_9

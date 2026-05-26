@@ -14,13 +14,13 @@ namespace oxc {
 class PwmCtlTim : public PwmCtl {
   public:
    static constexpr std::size_t max_ch { 8 }; // really 6, but what if?
-   constexpr PwmCtlTim( TIM_TypeDef *tim_, std::span<const TimChPin> channels_ ) // not constexpr ;-(
+   constexpr PwmCtlTim( std::uintptr_t tim_addr_, std::span<const TimChPin> channels_ )
      : PwmCtl( channels_.size() ),
-       tim( tim_ ),
+       tim_addr( tim_addr_ ),
        channels( channels_ )
        {
-         for( auto [chp,pccr] : std::views::zip( channels, ccrs ) ) {
-            pccr = TimCh::getCCR( tim, chp.ch );
+         for( auto [i,ch] : std::views::enumerate( channels ) ) {
+           ccrs_a[i] = TimCh::getCCR_a( tim_addr, ch.ch );
          }
        };
    virtual bool setFreq( float freq ) override;
@@ -29,24 +29,27 @@ class PwmCtlTim : public PwmCtl {
    virtual bool setPwm(    std::size_t ch, float pwm )    override;
    virtual bool setPulse(  std::size_t ch, uint32_t us )  override;
 
-   bool isBadCh( std::size_t ch ) const { return ( tim == nullptr ) || ( ch >= n_ch ) || ( ccrs[ch] == nullptr ); }
+   TIM_TypeDef* tim_p() const { return reinterpret_cast<TIM_TypeDef*>( tim_addr ); };
+   bool isBadCh( std::size_t ch ) const { return ( ch >= n_ch ) || ( ccrs_a[ch] == 0 )|| ( ccrs_a[ch] == tim_addr ); }
    bool setPwmRaw( std::size_t ch, uint32_t v );
    uint32_t getPwmRaw(  std::size_t ch ) const;
 
    std::size_t initPins();
-   void enable()  { tim->CR1 |=  1u; };
-   void disable() { tim->CR1 &= ~1u; };
-   bool isEnabled() const { return (bool)(tim->CR1 & 1u); };
+   inline reg32* pccr( std::size_t ch ) const { return reinterpret_cast<reg32*>(ccrs_a[ch]); };
+   void enable()  { tim_p()->CR1 |=  1u; };
+   void disable() { tim_p()->CR1 &= ~1u; };
+   bool isEnabled() const { return (bool)(tim_p()->CR1 & 1u); };
    void setAllowPSCadj( bool allow ) { allowPSCadj = allow; };
    void setArrMax( uint32_t arr_m ) { arr_max = arr_m; };
 
    // debug:
-   // reg32* getCCR( std::size_t ch ) const { return ( ch < n_ch ) ? ccrs[ch] : nullptr ; };
+   // auto getCCR( std::size_t ch ) const { return ( ch < n_ch ) ? ccrs_a[ch] : 0 ; };
   protected:
-   TIM_TypeDef *tim;
-   uint32_t arr_max { 10 };
+   std::uintptr_t tim_addr;
    std::span<const TimChPin> channels;
-   std::array<reg32*,max_ch> ccrs { nullptr };
+   std::array<std::uintptr_t, max_ch> ccrs_a { 0 };
+   uint32_t arr_max { 10 };
+   uint32_t fake_ccr { 0 };
    bool allowPSCadj { false };
 
 };

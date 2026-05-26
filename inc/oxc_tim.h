@@ -7,31 +7,36 @@
 
 namespace oxc {
 
+// TODO: autogenerate
+#if defined(STM32F0) || defined(STM32F1) || defined(STM32F2) || defined(STM32F4) || defined(STM32L0) || defined(STM32L1)
+  inline constexpr std::uintptr_t tim_ccr_offsets[8]  {
+    0x34, 0x38, 0x3C, 0x40,      0,    0,   0, 0
+  };
+
+#elif defined(STM32F3) || defined(STM32F7) || defined(STM32L4) || defined(STM32WB) || defined(STM32H7)
+  inline constexpr std::uintptr_t tim_ccr_offsets[8]  {
+    0x34, 0x38, 0x3C, 0x40,   0x58, 0x5C,   0, 0
+  };
+
+#elif defined(STM32H5) || defined(STM32G4)
+  inline constexpr std::uintptr_t tim_ccr_offsets[8]  {
+    0x34, 0x38, 0x3C, 0x40,   0x48, 0x4C,   0, 0
+  };
+
+#else
+  #error "Unknown MCU for timers definitions"
+#endif
+
 using tim_ch_type = decltype( TIM_CHANNEL_1 );
 
 struct TimCh {
   enum TimChNum : uint8_t {
      TimChN1 = 0, TimChN2, TimChN3, TimChN4, TimChN5, TimChN6, TimChN7, TimChN8 // 7,8- unused for now
   };
-  static constexpr reg32* getCCR( TIM_TypeDef *tim, TimCh ch ) // really not constexpr as int->ptr is reinterpret_cast
+  static constexpr std::uintptr_t getCCR_a( std::uintptr_t  tim_addr, TimCh ch )
   {
-    switch( ch.n ) {
-      case TimChN1: return &(tim->CCR1);
-      case TimChN2: return &(tim->CCR2);
-      case TimChN3: return &(tim->CCR3);
-      case TimChN4: return &(tim->CCR4);
-      #ifdef TIM_CCMR3_OC5FE_Pos
-      case TimChN5: return &(tim->CCR5);
-      case TimChN6: return &(tim->CCR6);
-      #endif
-      #ifdef TIM_CCMR4_OC7FE_Pos
-      case TimChN7: return &(tim->CCR7);
-      case TimChN8: return &(tim->CCR8);
-      #endif
-      default: return &fake_ccr;
-    }
+    return tim_addr + tim_ccr_offsets[ ch.n ];
   }
-  static bool isFakeCCR( const reg32 *ccr ) { return ( ccr == &fake_ccr ) || ( ccr == nullptr ); }
   static reg32 fake_ccr;
   TimChNum n;
 };

@@ -1,10 +1,13 @@
 #include <cmath>
 
+#include <oxc_cpptypes.h>
 #include <oxc_tim.h>
 
 #ifdef USE_OXC_DEBUG
   #include <oxc_outstream.h>
 #endif
+
+using namespace oxc;
 
 reg32 oxc::TimCh::fake_ccr {0};
 
