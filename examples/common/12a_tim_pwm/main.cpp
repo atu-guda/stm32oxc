@@ -76,8 +76,10 @@ int main(void)
 
   std::ranges::generate( pwm_f, [i = 0] () mutable { return (++i) * 0.2f; });
 
-  tim_cfg();
+  TIM_EXA_CLKEN;
+  // tim_cfg();
   pwm1.setAllowPSCadj( true );
+  pwm1.initHW( psc_i, arr_i );
   pwm1.initPins();
 
   srl.re_ps();
@@ -213,7 +215,7 @@ CMD_FUNCTION( go_servo ) // G
 
 CMD_FUNCTION( tinit ) // I
 {
-  tim_cfg();
+  // tim_cfg();
   tim_print_cfg( TIM_EXA );
 
   return 0;
