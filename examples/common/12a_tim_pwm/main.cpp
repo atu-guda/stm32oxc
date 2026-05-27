@@ -26,7 +26,7 @@ const char* common_help_string = "App to test timer as PWM source v2" NL;
 TIM_HandleTypeDef tim_h;
 
 
-void tim_cfg();
+void tim_cfg( uint32_t psc, uint32_t arr, uint32_t cmode );
 void pwm_recalc();
 
 // --- local commands;
@@ -77,9 +77,9 @@ int main(void)
   std::ranges::generate( pwm_f, [i = 0] () mutable { return (++i) * 0.2f; });
 
   TIM_EXA_CLKEN;
-  // tim_cfg();
+  tim_cfg( UVAR_p, UVAR_a, UVAR_m );
   pwm1.setAllowPSCadj( true );
-  pwm1.initHW( psc_i, arr_i );
+  // pwm1.initHW( psc_i, arr_i ); // do not really good
   pwm1.initPins();
 
   srl.re_ps();
@@ -215,7 +215,7 @@ CMD_FUNCTION( go_servo ) // G
 
 CMD_FUNCTION( tinit ) // I
 {
-  // tim_cfg();
+  tim_cfg( UVAR_p, UVAR_a, UVAR_m );
   tim_print_cfg( TIM_EXA );
 
   return 0;
@@ -240,13 +240,12 @@ CMD_FUNCTION( servo ) // S
 
 //  ----------------------------- configs ----------------
 
-void tim_cfg()
+void tim_cfg( uint32_t psc, uint32_t arr, uint32_t cmode )
 {
   tim_h.Instance               = TIM_EXA;
-  tim_h.Init.Prescaler         = UVAR_p;
-  tim_h.Init.Period            = UVAR_a;
+  tim_h.Init.Prescaler         = psc;
+  tim_h.Init.Period            = arr;
   tim_h.Init.ClockDivision     = 0;
-  unsigned cmode = UVAR_m;
   if( cmode > n_countmodes ) {
     cmode = 0;
   }

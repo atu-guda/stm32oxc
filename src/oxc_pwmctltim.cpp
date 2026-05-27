@@ -114,7 +114,7 @@ size_t oxc::PwmCtlTim::initPins()
   return n;
 }
 
-// like fake for now: need arch-dependent traits
+// like fake for now: need arch-dependent traits // do not really good
 bool oxc::PwmCtlTim::initHW( uint32_t psc, uint32_t arr )
 {
   auto tim = tim_p();
