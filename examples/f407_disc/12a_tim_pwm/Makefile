@@ -1,0 +1,1 @@
+../../common/examples_common_makefile.mk
