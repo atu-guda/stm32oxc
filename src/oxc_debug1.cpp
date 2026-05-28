@@ -13,6 +13,7 @@
 #include <oxc_console.h>
 #include <oxc_devio.h>
 #include <oxc_outstream.h>
+#include <oxc_at_dis_irq.h>
 
 // general buffers
 char gbuf_a[GBUF_SZ];

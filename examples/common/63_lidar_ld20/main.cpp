@@ -4,6 +4,7 @@
 
 #include <oxc_auto.h>
 #include <oxc_main.h>
+#include <oxc_at_dis_irq.h>
 #include <oxc_floatfun.h>
 
 #include <oxc_lidar_ld20.h>

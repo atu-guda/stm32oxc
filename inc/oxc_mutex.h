@@ -2,6 +2,7 @@
 #define _OXC_MUTEX_H
 
 #include <oxc_base.h>
+#include <oxc_asm.h>
 
 
 void mu_lock( mu_t *m );
@@ -49,5 +50,3 @@ class MuTryLock {
 
 #endif
 
-
-// vim: path=.,/usr/share/stm32cube/inc

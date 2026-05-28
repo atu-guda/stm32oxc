@@ -6,6 +6,7 @@
 #endif
 
 #include <oxc_gpio.h>
+#include <oxc_asm.h>
 
 
 void GpioRegs::cfgOut_common( PinNum pin_num )

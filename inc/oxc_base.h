@@ -1,16 +1,16 @@
 #ifndef _OXC_BASE_H
 #define _OXC_BASE_H
 
-#ifdef __cplusplus
-  #include <type_traits>
-  #include <utility>
-#endif
-
 #define TO_MACRO_STR(x) #x
 #define OXC_PASTER2(x,y) x ## y
 #define OXC_PASTER3(x,y,z) x ## y ## z
 #define OXC_EVAL2(x,y)    OXC_PASTER2(x,y)
 #define OXC_EVAL3(x,y,z)  OXC_PASTER3(x,y,z)
+
+#ifdef __cplusplus
+  #include <type_traits>
+  #include <utility>
+#endif
 
 // includes <stm32xxxx_hal.h> and its configs, defines reg names, exti....
 #include <oxc_archdef.h>
@@ -50,39 +50,12 @@ extern volatile int task_leds_step; // initial = 50
 
 
 #ifdef __cplusplus
- extern "C" {
+  namespace oxc {};
 #endif
 
-inline void oxc_enable_interrupts(void)
-{
-  __asm__ volatile ( "CPSIE I" : : : "memory");
-}
-
-inline void oxc_disable_interrupts(void)
-{
-  __asm__ volatile ( "CPSID I" : : : "memory" );
-}
-
-
-inline void oxc_dmb(void)
-{
-  __asm__ volatile ( "DMB 0xF" : : : "memory" );
-}
-
-inline uint32_t oxc_ldrex( volatile uint32_t *addr )
-{
-  uint32_t rv;
-  __asm__ volatile ( "ldrex %0, [%1]" : "=r" (rv) : "r" (addr) );
-  return rv;
-}
-
-inline uint32_t oxc_strex( uint32_t val, volatile uint32_t *addr )
-{
-  uint32_t rv;
-  __asm__ volatile ( "strex %0, %2, [%1]"
-      : "=&r" (rv) : "r" (addr), "r" (val) );
-  return rv;
-}
+#ifdef __cplusplus
+ extern "C" {
+#endif
 
 
 void taskYieldFun(void);
@@ -94,8 +67,9 @@ void Error_Handler( int rc ); // defined at user program
 
 
 void SystemClock_Config(void);
-int  SystemClockCfg(void); // returns: 0: ok >0 + set errno: error
-void approx_delay_calibrate(void);
+int  SystemClockCfg(void); // returns: 0: ok >0 + set errno: error TODO: not C, C++
+void approx_delay_calibrate(void); // same
+
 
 
 #ifdef __cplusplus
@@ -152,26 +126,6 @@ void oxc_call_aux_tick_funcs(void);
   #endif
 #endif
 
-
-#ifdef __cplusplus
-template <typename F, typename... Args > auto at_disabled_irq( F fun, Args&&... args )
-{
-  bool was_irqs_enabled = ( __get_PRIMASK() == 0 );
-  oxc_disable_interrupts();
-  if constexpr( std::is_void_v<decltype( fun(std::forward<Args>(args)...) )>) {
-    fun( std::forward<Args>(args)... );
-    if( was_irqs_enabled ) {
-      oxc_enable_interrupts();
-    }
-  } else {
-    auto res = fun( std::forward<Args>(args)... );
-    if( was_irqs_enabled ) {
-      oxc_enable_interrupts();
-    }
-    return res;
-  }
-}
-#endif
 
 #endif
 

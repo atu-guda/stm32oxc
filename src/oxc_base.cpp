@@ -6,6 +6,7 @@
 #endif
 
 #include <oxc_base.h>
+#include <oxc_at_dis_irq.h>
 
 char* __heap_top = (char*)(&_end);
 
