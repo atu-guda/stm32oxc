@@ -9,14 +9,6 @@ using std::vector;
 
 using namespace oxc; // accaptable for main.h
 
-// test:
-inline constexpr oxc::TimCh test_tim_chs[] {oxc::TimCh4,oxc::TimCh3,oxc::TimCh1};
-// inline constexpr std::array test_tim_chs2  {oxc::TimCh4,oxc::TimCh3,oxc::TimCh1};
-inline constexpr std::array test_tim_chs2 {
-  TimChPin {  TimCh3, TIM_EXA_GPIOAF, TIM_EXA_PIN3 },
-  TimChPin {  TimCh2, TIM_EXA_GPIOAF, TIM_EXA_PIN2 },
-  TimChPin {  TimCh1, TIM_EXA_GPIOAF, TIM_EXA_PIN1 },
-};
 
 extern int debug;
 extern int dry_run;
@@ -58,6 +50,7 @@ int tim_pwm_cfg_common( uint32_t cnt_freq, uint32_t freq, TIM_HandleTypeDef &t_h
 // Q1-Q3 motor(servo) control. CH1: unused, from old Q0
 extern TIM_HandleTypeDef tim_lwm_h;
 #define TIM_LWM TIM2
+#define TIM_LWM_BASE TIM2_BASE
 #define TIM_LWM_EN  __GPIOA_CLK_ENABLE(); __TIM2_CLK_ENABLE();
 #define TIM_LWM_DIS __TIM2_CLK_DISABLE();
 #define TIM_LWM_GPIO_PIN_0 GPIO_PIN_0
@@ -84,11 +77,15 @@ inline constexpr PortPin MQ0_PIN_PWM { PB0 };
 inline constexpr PortPin MQ0_PIN_L   { PB1 };
 inline constexpr PortPin MQ0_PIN_R   { PB2 };
 #define TIM_MQ0 TIM3
+#define TIM_MQ0_BASE TIM3_BASE
 #define TIM_MQ0_EN  __GPIOB_CLK_ENABLE(); __TIM3_CLK_ENABLE();
 #define TIM_MQ0_DIS __TIM3_CLK_DISABLE();
 #define TIM_MQ0_CHANNEL TIM_CHANNEL_3
 #define TIM_MQ0_CCR CCR3
 #define TIM_MQ0_GPIO_AF GPIO_AF2_TIM3
+inline constexpr std::array mq0_chs {
+  TimChPin {  TimCh3, TIM_MQ0_GPIO_AF, MQ0_PIN_PWM },
+};
 inline constexpr uint32_t tim_mq0_psc_freq   {  72000000 }; // 72 MHz -> 72MHz
 inline constexpr uint32_t tim_mq0_freq       {     20000 }; // 20 kHz , ARR = 3599
 int  tim_mq0_cfg();
@@ -165,7 +162,7 @@ std::span<const MovePart> get_moves_seq(  size_t seq_idx );
 class Mover {
   public:
    enum Flags { noFlags = 0, offAfter = 1 };
-   explicit Mover( float k_a_, float k_b_, float *fb_ = nullptr ) : fb( fb_ ), k_a( k_a_ ), k_b( k_b_ ) {};
+   Mover( float k_a_, float k_b_, float *fb_ = nullptr ) : fb( fb_ ), k_a( k_a_ ), k_b( k_b_ ) {};
    int move( float q, uint32_t t_cur );
    virtual int move_do( float q, uint32_t t_cur ) = 0;
    virtual int stop() = 0;
@@ -174,6 +171,7 @@ class Mover {
    virtual int post_run() { return 1; };
    virtual uint32_t getRaw() const { return 0; };
    virtual void setRaw( uint32_t rv ) {};
+   virtual void setVRel( float vr ) {};
    virtual void setCtrlVal( uint32_t cv ) {}; // t_on for Servo
    virtual uint32_t getCtrlVal() const { return 0; };
    void set_t_old( uint32_t t_old_ ) { t_old = t_old_; }
@@ -237,6 +235,26 @@ class MoverServoCont : public MoverServoBase {
    virtual int post_run() override;
   protected:
 };
+
+class MoverPwm : public Mover {
+  public:
+   MoverPwm( PwmCtlTim &pwm_, float k_a_, float k_b_, float *fb_ = nullptr )
+     : Mover( k_a_, k_b_, fb_ ), pwm( pwm_ ) {};
+   int move( float q, uint32_t t_cur );
+   virtual int move_do( float q, uint32_t t_cur );
+   virtual int stop() override;
+   virtual int init() override;
+   virtual int pre_run( float q_e, unsigned tp, uint32_t nn )  { return 1; };
+   virtual int post_run() { return 1; };
+   virtual uint32_t getRaw() const { return 0; };
+   virtual void setRaw( uint32_t rv ) {};
+   virtual void setVRel( float vr ) {};
+   virtual void setCtrlVal( uint32_t cv ) {}; // t_on for Servo
+   virtual uint32_t getCtrlVal() const { return 0; };
+  protected:
+   PwmCtlTim &pwm;
+};
+
 
 extern MoverServoCont mover_base;
 extern MoverServo     mover_p1;

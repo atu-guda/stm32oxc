@@ -32,9 +32,9 @@ SRCS += oxc_namedfloats.cpp
 SRCS += oxc_namedobjs.cpp
 SRCS += oxc_outstr.cpp
 SRCS += oxc_easing.cpp
+SRCS += oxc_pwmctltim.cpp
 #SRCS += oxc_statdata.cpp
 
-SRCS += oxc_pwmctltim.cpp
 
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )

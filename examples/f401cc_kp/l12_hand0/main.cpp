@@ -58,6 +58,8 @@ auto out_q_fmt = [](xfloat x) { return FltFmt(x, cvtff_fix,8,4); };
 PinsOut ledsx( LEDSX_START, LEDSX_N );
 PinsIn  pin_stop( BTN_STOP_PIN, 1, GpioPull::up );
 
+PwmCtlTim mq0_pwm( TIM_MQ0_BASE, mq0_chs );
+
 // TODO: hide in motor class
 PinOut mq0_pin_l { MQ0_PIN_L };
 PinOut mq0_pin_r { MQ0_PIN_R };
@@ -295,16 +297,6 @@ int post_exec( int rc )
 // constexpr TimCh test_tim_chs[] {TimCh4,TimCh3,TimCh1};
 // constexpr std::array test_tim_chs2 {TimCh4,TimCh3,TimCh1};
 
-void fun_timch( [[maybe_unused]] TimCh tcn )
-{
-  [[maybe_unused]] size_t  n = tcn.n;
-}
-
-void fun_t2( std::span<const TimCh> channels )
-{
-  [[maybe_unused]] size_t nn {0};
-  [[maybe_unused]] const auto sz { channels.size() };
-}
 
 
 // ------ for test end
@@ -313,15 +305,6 @@ int main(void)
 {
   STD_PROLOG_USBCDC;
 
-  // more test start
-  fun_timch( TimCh1 );
-  fun_t2( {{TimCh4,TimCh3,TimCh1}} );
-  fun_t2( test_tim_chs );
-  // fun_t2( test_tim_chs2 );
-  // static auto constinit p_ccr1 = TimCh::getCCR_c<TimCh::TimChN2, tim1_r>();
-  [[maybe_unused]] auto  p_ccr2 = TimCh::getCCR( TIM1, TimCh2 );
-  oxc::PwmCtlTim pwm1( TIM_LWM, test_tim_chs2 );
-  // more test end
 
   UVAR_t =    50;
   UVAR_n =    20;
@@ -331,8 +314,6 @@ int main(void)
   ledsx.reset( 0xFF_mask );
   pin_stop.initHW();
 
-  mq0_pin_l.initHW(); // TODO: to class
-  mq0_pin_r.initHW();
 
   UVAR_v = i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
@@ -356,6 +337,10 @@ int main(void)
     std_out << "Err: timer MQ0 init"  NL;
     die4led( 2_mask );
   }
+
+  mq0_pwm.initPins();
+  mq0_pin_l.initHW(); // TODO: to class
+  mq0_pin_r.initHW();
 
   init_EXTI();
 
@@ -438,7 +423,6 @@ CMD_FUNCTION( test0 )
   auto t_move = arg2ulong_d( 2, argc, argv, 1000, 0, 100000 );
 
   // TODO: hide in class
-  TIM_MQ0->TIM_MQ0_CCR = 0;
   if( v > q0_v_min ) {
     mq0_pin_l = 1; mq0_pin_r = 0;
   } else if ( v < -q0_v_min ) {
@@ -448,24 +432,24 @@ CMD_FUNCTION( test0 )
     v = 0;
     mq0_pin_l = 0; mq0_pin_r = 0;
   }
-  const uint32_t ccr = (uint32_t)( v * TIM_MQ0->ARR );
 
   int stage { 0 };
   const auto t_e { t_move + t_post };
 
   break_flag = 0;
   ledsx[1].set();
-  uint32_t tm0 = HAL_GetTick();
-  uint32_t tc0 = tm0, tc00 = tm0;
-  TIM_MQ0->TIM_MQ0_CCR = ccr;
-  tim_mq0_start();
+  const uint32_t tc00 { HAL_GetTick() };
+  uint32_t tc0 { tc00 };
+
+  mq0_pwm.setPwm( 0, v ); // 0 = ch
+  mq0_pwm.enable();
 
   for( uint32_t i=0; i<t_e && !break_flag; i += t_step ) {
 
     const uint32_t  tcc = HAL_GetTick();
     const auto dtc = tcc - tc00;
     if( stage == 0 && dtc >= (uint32_t)t_move ) {
-      TIM_MQ0->TIM_MQ0_CCR = 0;
+      mq0_pwm.setPwm( 0, 0 );
       stage = 1;
     }
     sens_enc.measure( 0 );
