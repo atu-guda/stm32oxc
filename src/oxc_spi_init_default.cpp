@@ -1,6 +1,8 @@
 #include <cstring>
 #include <oxc_auto.h>
 
+using namespace oxc;
+
 // --------------------------- SPI --------------------------------------
 
 extern SPI_HandleTypeDef spi_h; // in main.c

@@ -10,7 +10,7 @@
 #endif
 
 #include <oxc_ina226.h>
-using namespace std;
+using namespace oxc;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
@@ -248,5 +248,4 @@ CMD_FUNCTION( set_calibr )
 
 
 
-// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

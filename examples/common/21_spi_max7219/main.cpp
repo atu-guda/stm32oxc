@@ -3,7 +3,7 @@
 
 #include <oxc_spi_max7219.h>
 
-using namespace std;
+using namespace oxc;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
@@ -176,5 +176,4 @@ CMD_FUNCTION( sendr_spi )
 }
 
 
-// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

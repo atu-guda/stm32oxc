@@ -4,6 +4,8 @@
 #include <cstring>
 
 
+using namespace oxc;
+
 void ADS1220::init()
 {
   // spi_d.initSPI();

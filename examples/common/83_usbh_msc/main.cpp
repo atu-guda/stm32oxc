@@ -9,7 +9,7 @@
 
 #include <oxc_fs_cmd0.h>
 
-using namespace std;
+using namespace oxc;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
@@ -129,5 +129,4 @@ void USBH_HandleEvent( USBH_HandleTypeDef *phost, uint8_t id )
   }
 }
 
-// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

@@ -5,7 +5,7 @@
 
 #include <utility>
 
-using namespace std;
+using namespace oxc;
 
 USE_DIE4LED_ERROR_HANDLER;
 BOARD_DEFINE_LEDS;
@@ -176,5 +176,4 @@ int main(void)
 }
 
 
-// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

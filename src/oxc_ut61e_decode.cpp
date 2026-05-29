@@ -4,7 +4,7 @@
 
 #include <oxc_ut61e_decode.h>
 
-// using namespace std;
+using namespace oxc;
 
 
 const UT61E_package::FuncInfo UT61E_package::fi[18] = {

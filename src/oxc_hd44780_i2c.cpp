@@ -1,5 +1,7 @@
 #include <oxc_hd44780_i2c.h>
 
+using namespace oxc;
+
 const uint8_t HD44780_i2c::line_addr[n_lines]  { 0x00, 0x40, 0x14, 0x54 };
 
 void HD44780_i2c::init_4b( bool is_2row )

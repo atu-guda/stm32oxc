@@ -2,7 +2,7 @@
 #include <oxc_main.h>
 #include <oxc_hd44780_i2c.h>
 
-using namespace std;
+using namespace oxc;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
@@ -29,10 +29,10 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 1000;
-  UVAR('n') = 10;
+  UVAR_t = 1000;
+  UVAR_n = 10;
 
-  UVAR('e') = i2c_default_init( i2ch /*, 400000 */ );
+  UVAR_e = i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
   i2c_client_def = &lcdt;
 
@@ -53,8 +53,8 @@ int main(void)
 // TEST0
 CMD_FUNCTION( test0 )
 {
-  // int n = UVAR('n');
-  uint32_t t_step = UVAR('t');
+  // int n = UVAR_n;
+  uint32_t t_step = UVAR_t;
   uint16_t ch_st = (uint8_t)arg2long_d( 1, argc, argv, 0x30, 0, 256-16 );
   uint16_t ch_en = ch_st + 0x10;
 
@@ -139,7 +139,7 @@ CMD_FUNCTION( lcd_rate )
       buf[j] = (char)( '@' + ( ( j + i ) & 0x3F ) );
     }
     for( int l=0; l<nl; ++l ) {
-      if( UVAR('a') < 1 ) {
+      if( UVAR_a < 1 ) {
         lcdt.gotoxy( 0, l );
       }
       lcdt.puts( buf );
@@ -158,5 +158,4 @@ CMD_FUNCTION( lcd_rate )
 }
 
 
-// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

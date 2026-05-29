@@ -1,7 +1,7 @@
 #include <oxc_auto.h>
 #include <oxc_main.h>
 
-using namespace std;
+using namespace oxc;
 
 USE_DIE4LED_ERROR_HANDLER;
 
@@ -115,6 +115,4 @@ void HAL_TIM_Base_MspDeInit( TIM_HandleTypeDef* tim_baseHandle )
   }
 }
 
-
-// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

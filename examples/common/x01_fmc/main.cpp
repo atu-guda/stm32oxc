@@ -1,7 +1,7 @@
 #include <oxc_auto.h>
 #include <oxc_main.h>
 
-using namespace std;
+using namespace oxc;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
@@ -56,5 +56,4 @@ CMD_FUNCTION( test0 )
 
 
 
-// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

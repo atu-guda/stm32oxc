@@ -2,7 +2,7 @@
 #include <oxc_main.h>
 #include <oxc_pcf8591.h>
 
-using namespace std;
+using namespace oxc;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
@@ -25,10 +25,10 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 1000;
-  UVAR('n') = 20;
+  UVAR_t = 1000;
+  UVAR_n = 20;
 
-  UVAR('e') = i2c_default_init( i2ch /*, 400000 */ );
+  UVAR_e = i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
   i2c_client_def = &adc;
 
@@ -49,11 +49,11 @@ int main(void)
 // TEST0
 CMD_FUNCTION( test0 )
 {
-  int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
-  uint32_t t_step = UVAR('t');
+  int n = arg2long_d( 1, argc, argv, UVAR_n, 0 );
+  uint32_t t_step = UVAR_t;
   std_out << NL "Test0: n= " << n << " t= " << t_step << NL; std_out.flush();
 
-  int v_end = UVAR('e');
+  int v_end = UVAR_e;
 
   adc.setMode( PCF8591::autoinc | PCF8591::mode_4in | PCF8591::out_en );
 
@@ -81,5 +81,4 @@ CMD_FUNCTION( test0 )
 }
 
 
-// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

@@ -5,6 +5,8 @@
 #include <oxc_outstream.h>
 #include <oxc_atleave.h>
 
+using namespace oxc;
+
 int console_verbose = 1;
 volatile int on_cmd_handler = 0;
 

@@ -13,7 +13,7 @@
 #include <oxc_io_fatfs.h>
 #endif
 
-using namespace std;
+using namespace oxc;
 
 extern ADC_Info adc;
 

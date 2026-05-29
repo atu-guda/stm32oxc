@@ -52,15 +52,15 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('t') = 1000;
-  UVAR('n') = 10;
-  UVAR('p') = calc_TIM_psc_for_cnt_freq( TIM_EXA, 10000  ); // ->10kHz
-  UVAR('a') = 9999; // ARR, 10kHz->1Hz
-  UVAR('r') = 0;    // flag: raw values
-  UVAR('m') = 0;    // mode: 0: up, 1: down, 2: updown
-  UVAR('o') = 0;    // pOlarity 0: high 1: low
-  UVAR('x') =  500;    // servo start value (us)
-  UVAR('y') = 2500;    // servo end value (us)
+  UVAR_t = 1000;
+  UVAR_n = 10;
+  UVAR_p = calc_TIM_psc_for_cnt_freq( TIM_EXA, 10000  ); // ->10kHz
+  UVAR_a = 9999; // ARR, 10kHz->1Hz
+  UVAR_r = 0;    // flag: raw values
+  UVAR_m = 0;    // mode: 0: up, 1: down, 2: updown
+  UVAR_o = 0;    // pOlarity 0: high 1: low
+  UVAR_x =  500;    // servo start value (us)
+  UVAR_y = 2500;    // servo end value (us)
 
   BOARD_POST_INIT_BLINK;
 
@@ -110,12 +110,12 @@ CMD_FUNCTION( go_servo )
     return 1;
   }
 
-  uint32_t scale = UVAR('y') - UVAR('x');
+  uint32_t scale = UVAR_y - UVAR_x;
   for( auto &ch : pwmc ) {
     if( argc <= (int)(ch.idx+1) ) {
       break;
     }
-    ch.v = UVAR('x')  + scale * strtol( argv[ch.idx+1], 0, 0 ) / 1000;
+    ch.v = UVAR_x  + scale * strtol( argv[ch.idx+1], 0, 0 ) / 1000;
   }
   pwm_update();
   tim_print_cfg( TIM_EXA );
@@ -136,12 +136,12 @@ CMD_FUNCTION( servo )
 {
   uint32_t psc = calc_TIM_psc_for_cnt_freq( TIM_EXA, 1000000 );
   uint32_t arr = calc_TIM_arr_for_base_psc( TIM_EXA, psc, 100 );
-  UVAR('p') = psc;
-  UVAR('a') = arr;
-  UVAR('m') = 0;
-  UVAR('o') = 0;
-  UVAR('r') = 1;
-  uint32_t v0 = ( UVAR('x') + UVAR('y') ) / 2;
+  UVAR_p = psc;
+  UVAR_a = arr;
+  UVAR_m = 0;
+  UVAR_o = 0;
+  UVAR_r = 1;
+  uint32_t v0 = ( UVAR_x + UVAR_y ) / 2;
   for( auto &ch : pwmc ) {
     ch.ccr = v0;
     ch.v   = v0;
@@ -160,17 +160,17 @@ CMD_FUNCTION( servo )
 void tim_cfg()
 {
   tim_h.Instance               = TIM_EXA;
-  tim_h.Init.Prescaler         = UVAR('p');
-  tim_h.Init.Period            = UVAR('a');
+  tim_h.Init.Prescaler         = UVAR_p;
+  tim_h.Init.Period            = UVAR_a;
   tim_h.Init.ClockDivision     = 0;
-  unsigned cmode = UVAR('m');
+  unsigned cmode = UVAR_m;
   if( cmode > n_countmodes ) {
     cmode = 0;
   }
   tim_h.Init.CounterMode       = countmodes[cmode];
   tim_h.Init.RepetitionCounter = 0;
   if( HAL_TIM_PWM_Init( &tim_h ) != HAL_OK ) {
-    UVAR('e') = 1; // like error
+    UVAR_e = 1; // like error
     return;
   }
 
@@ -183,10 +183,10 @@ void tim_cfg()
 
 void pwm_recalc()
 {
-  int pbase = UVAR('a');
+  int pbase = UVAR_a;
   TIM_OC_InitTypeDef tim_oc_cfg;
   tim_oc_cfg.OCMode       = TIM_OCMODE_PWM1;
-  tim_oc_cfg.OCPolarity   = UVAR('o') ? TIM_OCPOLARITY_LOW : TIM_OCPOLARITY_HIGH;
+  tim_oc_cfg.OCPolarity   = UVAR_o ? TIM_OCPOLARITY_LOW : TIM_OCPOLARITY_HIGH;
   tim_oc_cfg.OCNPolarity  = TIM_OCNPOLARITY_HIGH;
   tim_oc_cfg.OCFastMode   = TIM_OCFAST_DISABLE;
   tim_oc_cfg.OCIdleState  = TIM_OCIDLESTATE_RESET;
@@ -194,9 +194,9 @@ void pwm_recalc()
 
   for( auto ch : pwmc ) {
     HAL_TIM_PWM_Stop( &tim_h, ch.ch );
-    tim_oc_cfg.Pulse = UVAR('r') ? ( ch.v ) : ( ch.v * pbase / 100 ) ;
+    tim_oc_cfg.Pulse = UVAR_r ? ( ch.v ) : ( ch.v * pbase / 100 ) ;
     if( HAL_TIM_PWM_ConfigChannel( &tim_h, &tim_oc_cfg, ch.ch ) != HAL_OK ) {
-      UVAR('e') = 11 + ch.idx;
+      UVAR_e = 11 + ch.idx;
       return;
     }
     HAL_TIM_PWM_Start( &tim_h, ch.ch );
@@ -206,12 +206,12 @@ void pwm_recalc()
 
 void pwm_update()
 {
-  tim_h.Instance->PSC  = UVAR('p');
-  int pbase = UVAR('a');
+  tim_h.Instance->PSC  = UVAR_p;
+  int pbase = UVAR_a;
   tim_h.Instance->ARR  = pbase;
 
   for( auto ch : pwmc ) {
-    ch.ccr = UVAR('r') ? ch.v : ( ch.v * pbase / 100 );
+    ch.ccr = UVAR_r ? ch.v : ( ch.v * pbase / 100 );
   }
 }
 

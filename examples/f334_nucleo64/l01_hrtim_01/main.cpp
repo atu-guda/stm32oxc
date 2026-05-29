@@ -4,7 +4,7 @@
 #include <oxc_main.h>
 #include <stm32f3xx_hal_hrtim.h>
 
-using namespace std;
+using namespace oxc;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
@@ -440,5 +440,4 @@ void HAL_HRTIM_MspDeInit( HRTIM_HandleTypeDef* hrtimHandle )
 }
 
 
-// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

@@ -1,6 +1,8 @@
 #include <oxc_base.h>
 #include <oxc_ticker.h>
 
+using namespace oxc;
+
 void OxcTicker::start()
 {
   next = HAL_GetTick() + *pw * q;

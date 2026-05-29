@@ -1,5 +1,6 @@
 #include <oxc_mcp4725.h>
 
+using namespace oxc;
 
 
 void MCP4725::send3b( uint16_t v, Cmd cmd )

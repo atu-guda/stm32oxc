@@ -4,6 +4,8 @@
 
 #include <oxc_ssd1306.h>
 
+using namespace oxc;
+
 
 int  SSD1306::cmd1( uint8_t cmd )
 {

@@ -2,7 +2,7 @@
 
 #include <oxc_auto.h>
 
-using namespace std;
+using namespace oxc;
 
 TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim2;

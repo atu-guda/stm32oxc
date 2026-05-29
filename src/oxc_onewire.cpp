@@ -1,5 +1,7 @@
 #include <oxc_onewire.h>
 
+using namespace oxc;
+
 void OneWire::write_buf( const uint8_t *b, uint16_t l )
 {
   if( !b || !l ) { return; }

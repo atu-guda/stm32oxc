@@ -1,6 +1,8 @@
 #include <oxc_ds3231.h>
 
 
+using namespace oxc;
+
 uint8_t DS3231::getStatus()
 {
   uint8_t v = 0;

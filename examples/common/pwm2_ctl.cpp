@@ -14,9 +14,10 @@
 
 #include <../examples/common/inc/pwm2_ctl.h>
 
-using namespace std;
+using std::size;
+using std::clamp;
 
-#define debug (UVAR('d'))
+#define debug UVAR_d
 
 
 PWMInfo::PWMInfo( float a_R0, float a_V_00, float a_k_gv1, float freq )
@@ -512,7 +513,7 @@ bool PWMData::tick( const float *d )
                             c_ki = last_R;
                             break;
       case pwm_type::pwr:   err = d[didx_w] - val;
-                            c_ki = 1.0f /  max( d[didx_i], 0.1f );
+                            c_ki = 1.0f /  std::max( d[didx_i], 0.1f );
                             break;
       default:              reason = 11;
                             return false;

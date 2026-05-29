@@ -7,7 +7,7 @@
 #include <oxc_menu4b.h>
 #include <oxc_outstr.h>
 
-// using namespace std;
+using namespace oxc;
 using namespace SMLRL;
 
 const char *const MenuState::menuLevelName[] = {
@@ -163,5 +163,4 @@ int menu4b_cmd( int cmd_i )
   return 0;
 }
 
-// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

@@ -6,7 +6,7 @@
 
 #include <oxc_ssd1306.h>
 
-using namespace std;
+using namespace oxc;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
@@ -222,7 +222,7 @@ CMD_FUNCTION( puts )
   const char *s = argv[1] ? argv[1] : "W";
   uint16_t x0  = arg2long_d( 2, argc, argv,  0,  0, 512 );
   uint16_t y0  = arg2long_d( 3, argc, argv,  0,  0, 512 );
-  uint16_t sid = arg2long_d( 4, argc, argv,  0,  0, size(fonts)-1 );
+  uint16_t sid = arg2long_d( 4, argc, argv,  0,  0, std::size(fonts)-1 );
 
   pb0.outStr( x0, y0, s, fonts[sid], 1 );
 
@@ -257,5 +257,4 @@ CMD_FUNCTION( contr )
 }
 
 
-// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

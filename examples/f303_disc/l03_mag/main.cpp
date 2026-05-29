@@ -4,7 +4,7 @@
 #include <oxc_bartext.h>
 #include <oxc_lsm303dlhc_mag.h>
 
-using namespace std;
+using namespace oxc;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
@@ -123,5 +123,4 @@ int cmd_setaddr( int argc, const char * const * argv )
 
 
 
-// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

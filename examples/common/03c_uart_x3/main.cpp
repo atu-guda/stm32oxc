@@ -8,7 +8,7 @@
 #include <oxc_main.h>
 
 
-using namespace std;
+using namespace oxc;
 using namespace SMLRL;
 
 
@@ -237,5 +237,4 @@ CMD_FUNCTION( test0 )
   return 0;
 }
 
-// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

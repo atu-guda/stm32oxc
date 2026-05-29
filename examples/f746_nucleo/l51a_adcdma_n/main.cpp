@@ -3,7 +3,7 @@
 #include <oxc_adcdata.h>
 #include <oxc_adcdata_cmds.h>
 
-using namespace std;
+using namespace oxc;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
@@ -61,12 +61,12 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('d') = 0;      // TMP: debug
-  UVAR('t') = 1000; // TMP: 0.01 for debug, real: 1000; // 1 ms
-  UVAR('n') = 20;    // must be rounded to 24 in small chunks (64B)
-  UVAR('c') = adc.n_ch_max; // number of channels
-  UVAR('s') = adc_arch_sampletimes_n - 1;
-  UVAR('v') = v_adc_ref;
+  UVAR_d = 0;      // TMP: debug
+  UVAR_t = 1000; // TMP: 0.01 for debug, real: 1000; // 1 ms
+  UVAR_n = 20;    // must be rounded to 24 in small chunks (64B)
+  UVAR_c = adc.n_ch_max; // number of channels
+  UVAR_s = adc_arch_sampletimes_n - 1;
+  UVAR_v = v_adc_ref;
 
   set_log_buf( tmp_log_buff, size(tmp_log_buff) );
 
@@ -93,16 +93,16 @@ int main(void)
 // TEST0
 int cmd_test0( int argc, const char * const * argv )
 {
-  const uint32_t n_ch = clamp<uint32_t>( UVAR('c'), 1, adc.n_ch_max );
+  const uint32_t n_ch = clamp<uint32_t>( UVAR_c, 1, adc.n_ch_max );
   const uint32_t n_ADC_series_max  = n_ADC_mem / ( 2 * n_ch ); // 2 is 16bit/sample
-  uint32_t unsigned stime_idx = ( (uint32_t)UVAR('s') < adc_arch_sampletimes_n ) ? UVAR('s') : (adc_arch_sampletimes_n - 1);
-  uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, n_ADC_series_max ); // number of series
+  uint32_t unsigned stime_idx = ( (uint32_t)UVAR_s < adc_arch_sampletimes_n ) ? UVAR_s : (adc_arch_sampletimes_n - 1);
+  uint32_t n = arg2long_d( 1, argc, argv, UVAR_n, 1, n_ADC_series_max ); // number of series
 
   // make n a multiple of ADCDMA_chunk_size
   uint32_t lines_per_chunk = ADCDMA_chunk_size / ( n_ch  * 2 ); // /2 - 16 bit
   n = ( ( n  + lines_per_chunk - 1 ) / lines_per_chunk ) * lines_per_chunk;
 
-  const uint32_t t_step_us = UVAR('t');
+  const uint32_t t_step_us = UVAR_t;
   adc.t_step_f = (decltype(adc.t_step_f))(1e-6f) * t_step_us;
   const xfloat freq_sampl = (xfloat)1e6f / t_step_us;
 
@@ -143,7 +143,7 @@ int cmd_test0( int argc, const char * const * argv )
           << " t_wait0= " << t_wait0 << " ms" NL;
 
   uint32_t psc = calc_TIM_psc_for_cnt_freq( tim2h.Instance, 1000000 ); // 1 us each
-  UVAR('p') = psc;
+  UVAR_p = psc;
   delay_ms( 1 );
 
   adc.prepare_multi_ev_n( n_ch, div_bits, adc_arch_sampletimes[stime_idx].code, BOARD_ADC_DEFAULT_TRIG, BOARD_ADC_DEFAULT_RESOLUTION );
@@ -152,10 +152,10 @@ int cmd_test0( int argc, const char * const * argv )
     std_out << "# error: fail to init ADC: errno= " << errno << NL;
   }
 
-  if( UVAR('d') > 0 ) {
+  if( UVAR_d > 0 ) {
     adc.pr_state();
   }
-  if( UVAR('d') > 1 ) {
+  if( UVAR_d > 1 ) {
     dump32( BOARD_ADC_DEFAULT_DEV, 0x100 );
   }
   // log_reset();
@@ -177,7 +177,7 @@ int cmd_test0( int argc, const char * const * argv )
   adc.data = adcd.data();
   adc.reset_cnt();
   adcd.set_d_t( t_step_us * 1e-6f );
-  adcd.set_v_ref_uV( UVAR('v') );
+  adcd.set_v_ref_uV( UVAR_v );
   adcd.fill( 0 ); // debug?
   std_out << "# n_col= " << adcd.get_n_col() << " n_row= " << adcd.get_n_row() << " data: " << HexInt(adcd.data()) << " size_all= " << adcd.size_all() << NL;
 
@@ -186,11 +186,11 @@ int cmd_test0( int argc, const char * const * argv )
   break_flag = 0;
   uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
 
-  if( UVAR('l') ) {  leds.set( BIT2 ); }
+  if( UVAR_l ) {  leds.set( BIT2 ); }
   tim2_init( psc, t_step_us - 1 );
   uint32_t r = adc.start_DMA_wait_n( n_ch, n, t_wait0, ADCDMA_chunk_size );
   tim2_deinit();
-  if( UVAR('l') ) {  leds.reset( BIT2 ); }
+  if( UVAR_l ) {  leds.reset( BIT2 ); }
 
   uint32_t tcc = HAL_GetTick();
   delay_ms( 10 ); // to settle all
@@ -202,10 +202,10 @@ int cmd_test0( int argc, const char * const * argv )
 
   std_out <<  "#  tick: " <<  ( tcc - tm00 )  << NL;
 
-  if( UVAR('d') > 0 ) {
+  if( UVAR_d > 0 ) {
     adc.pr_state();
   }
-  if( UVAR('d') > 1 ) {
+  if( UVAR_d > 1 ) {
     dump32( BOARD_ADC_DEFAULT_DEV, 0x200 );
   }
   HAL_ADC_Stop_DMA( &adc.hadc ); // ????? not?
@@ -343,5 +343,4 @@ int cmd_show_stats( int argc, const char * const * argv )
 
 
 
-// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

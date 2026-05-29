@@ -1,6 +1,6 @@
 #include <oxc_auto.h>
 
-using namespace std;
+using namespace oxc;
 
 DMA_HandleTypeDef hdma_usart_ut61e_rx;
 UART_HandleTypeDef huart_ut61e;

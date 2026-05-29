@@ -11,7 +11,8 @@
 #include <fatfs_sd_st.h>
 #include <oxc_io_fatfs.h>
 
-using namespace std;
+using std::clamp;
+using namespace oxc;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
@@ -248,5 +249,4 @@ CMD_FUNCTION( outsdhex )
   return subcmd_outsd_any( argc, argv, adcd, true );
 }
 
-// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

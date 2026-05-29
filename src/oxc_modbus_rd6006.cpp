@@ -1,5 +1,7 @@
 #include <oxc_modbus_rd6006.h>
 
+using namespace oxc;
+
 ReturnCode RD6006_Modbus::init()
 {
   scale = 0;

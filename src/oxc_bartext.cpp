@@ -2,6 +2,8 @@
 #include <oxc_console.h>
 #include <oxc_bartext.h>
 
+using namespace oxc;
+
 
 BarHText::BarHText( int x, int y, int w, int v_min, int v_max, int a_fd  )
   : x0( x ), y0( y ), w0( w-2 ), vmin( v_min ), vmax( v_max ), fd( a_fd ),

@@ -6,7 +6,7 @@
 #include <oxc_floatfun.h>
 #include <oxc_namedints.h>
 
-// using namespace std;
+using namespace oxc;
 
 bool NamedInt::do_set( int v, int idx ) const
 {

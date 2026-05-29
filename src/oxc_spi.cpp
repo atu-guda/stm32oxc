@@ -5,6 +5,8 @@
 #include <oxc_outstream.h>
 #endif
 
+using namespace oxc;
+
 void DevSPI::initSPI()
 {
   __HAL_SPI_ENABLE( spi );

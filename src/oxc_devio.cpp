@@ -4,7 +4,7 @@
 #include <oxc_devio.h>
 #include <oxc_at_dis_irq.h>
 
-// using namespace std;
+using namespace oxc;
 
 DevIO* devio_fds[DEVIO_MAX];     // for fd-based access, may be dupes or empty at all
 DevIO* DevIO::devios[DEVIO_MAX]; // for inner array action

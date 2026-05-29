@@ -2,6 +2,7 @@
 #include <oxc_devio.h>
 #include <oxc_outstream.h>
 
+using namespace oxc;
 
 AdcDma_n_status adcdma_n_status;
 
@@ -141,4 +142,3 @@ uint32_t ADC_Info::start_DMA_wait_n( uint32_t n_ch, uint32_t n, uint32_t t_wait,
 }
 
 
-// vim: path=.,/usr/share/stm32cube/inc

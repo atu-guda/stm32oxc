@@ -1,5 +1,7 @@
 #include <oxc_hmc5983.h>
 
+using namespace oxc;
+
 const int32_t HMC5983::mcGa_LSbs[n_scales] {
  730, 920, 1220, 1520, 2270, 2560, 3030, 4350 // mcGa/LSb
 };

@@ -4,6 +4,8 @@
 #undef BMP_DEBUG
 
 
+using namespace oxc;
+
 bool BMP085::readCalibrData()
 {
 #ifndef BMP_DEBUG

@@ -1,5 +1,7 @@
 #include <oxc_hx711.h>
 
+using namespace oxc;
+
 HX711::Ret HX711::read( HX711_mode mode )
 {
   bool good { false };

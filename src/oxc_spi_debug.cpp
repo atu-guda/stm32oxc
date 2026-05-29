@@ -4,6 +4,8 @@
 #include <oxc_spi_debug.h>
 
 
+using namespace oxc;
+
 DCL_CMD_REG( spi_s1rn, '\0', " send_byte n_recv - send 1 recv N"  );
 CMD_FUNCTION( spi_s1rn )
 {
@@ -146,6 +148,4 @@ CMD_FUNCTION( spi_reset )
   return 0;
 }
 
-
-// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

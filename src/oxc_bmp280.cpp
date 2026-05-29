@@ -1,6 +1,7 @@
 #include <oxc_bmp280.h>
 
 
+using namespace oxc;
 
 bool BMP280::readCalibrData()
 {

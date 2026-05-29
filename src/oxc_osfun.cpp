@@ -9,6 +9,8 @@
 #endif
 
 
+using namespace oxc;
+
 
 extern "C" {
 

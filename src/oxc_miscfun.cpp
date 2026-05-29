@@ -6,7 +6,7 @@
 // for user_vars
 #include <oxc_debug1.h>
 
-// using namespace std;
+using namespace oxc;
 
 constexpr uint8_t numFirstBit( uint32_t a )
 {

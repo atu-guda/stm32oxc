@@ -1,11 +1,11 @@
 #include <oxc_auto.h>
 #include <oxc_main.h>
 
-#include <stdarg.h>
+#include <oxc.h>
 
 #include <oxc_picoc.h>
 
-using namespace std;
+using namespace oxc;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
@@ -45,11 +45,11 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR('a') =  42;
-  UVAR('b') =  17;
-  UVAR('t') = 100;
-  UVAR('n') =  20;
-  UVAR('z') = 123;
+  UVAR_a =  42;
+  UVAR_b =  17;
+  UVAR_t = 100;
+  UVAR_n =  20;
+  UVAR_z = 123;
 
   cmdline_handlers[0] = picoc_cmdline_handler;
   cmdline_handlers[1] = nullptr;
@@ -127,7 +127,7 @@ int init_picoc( Picoc *ppc )
   oxc_picoc_math_init( ppc );
   oxc_picoc_misc_init( ppc );
   PicocIncludeAllSystemHeaders( ppc );
-  VariableDefinePlatformVar( ppc, nullptr, "__a",         &(ppc->IntType), (union AnyValue *)&(UVAR('a')), TRUE );
+  VariableDefinePlatformVar( ppc, nullptr, "__a",         &(ppc->IntType), (union AnyValue *)&(UVAR_a), TRUE );
   VariableDefinePlatformVar( ppc, nullptr, "d_arr",      ppc->FPArrayType, (union AnyValue *)d_arr,        TRUE );
   VariableDefinePlatformVar( ppc, nullptr, "d_ptr",        ppc->FPPtrType, (union AnyValue *)&d_ptr,       TRUE );
   VariableDefinePlatformVar( ppc, nullptr, "a_char",   ppc->CharArrayType, (union AnyValue *)a_char,       TRUE );
@@ -142,5 +142,4 @@ CMD_FUNCTION( init_picoc )
 }
 
 
-// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

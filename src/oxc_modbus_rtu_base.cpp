@@ -6,6 +6,8 @@
 
 #include <oxc_modbus_rtu_base.h>
 
+using namespace oxc;
+
 
 // ================================== common ModbusRtu ========================
 // TODO: separate file, may be used with client

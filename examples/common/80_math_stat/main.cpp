@@ -10,7 +10,8 @@
 #include <oxc_namedints.h>
 #include <oxc_namedfloats.h>
 
-using namespace std;
+using std::size;
+using namespace oxc;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
@@ -48,7 +49,7 @@ float get_pmin( int /*idx*/ )
 
 bool set_pmin( float v, int /* idx */ )
 {
-  pmin = clamp( v, 2.0f, 90.0f );
+  pmin = std::clamp( v, 2.0f, 90.0f );
   return true;
 }
 
@@ -63,7 +64,7 @@ int get_ivf( int /*idx*/ )
 
 bool set_ivf( int v, int /* idx */ )
 {
-  ivf = clamp( v, -20, 20 ) & (~1u);
+  ivf = std::clamp( v, -20, 20 ) & (~1u);
   return true;
 }
 
@@ -281,5 +282,4 @@ CMD_FUNCTION( testopt )
   return 0;
 }
 
-// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

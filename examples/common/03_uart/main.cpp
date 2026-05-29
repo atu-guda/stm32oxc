@@ -3,7 +3,7 @@
 #include <oxc_auto.h>
 #include <oxc_main.h>
 
-using namespace std;
+using namespace oxc;
 
 USE_DIE4LED_ERROR_HANDLER;
 BOARD_DEFINE_LEDS;
@@ -81,7 +81,4 @@ void task_send( void *prm UNUSED_ARG )
   }
 }
 
-
-
-// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

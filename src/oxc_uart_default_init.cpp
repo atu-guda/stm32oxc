@@ -5,6 +5,8 @@
 // if You need more then one UART,  of require special actions, do not use
 // this file.
 
+using namespace oxc;
+
 
 int init_uart( UART_HandleTypeDef *uah, int baud )
 {

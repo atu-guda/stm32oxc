@@ -5,7 +5,7 @@
 #include <oxc_floatfun.h>
 #include <oxc_adcdata.h>
 
-using namespace std;
+using namespace oxc;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
@@ -70,7 +70,7 @@ CMD_FUNCTION( test0 )
   };
 
   int t_step = UVAR_t;
-  uint8_t n_ch = clamp( UVAR_c, 1, (int)n_ADC_ch_max );
+  uint8_t n_ch = std::clamp( UVAR_c, 1, (int)n_ADC_ch_max );
 
   uint32_t n = arg2long_d( 1, argc, argv, UVAR_n, 1, 1000000 ); // number of series
 
@@ -149,5 +149,4 @@ CMD_FUNCTION( test0 )
 
 
 
-// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

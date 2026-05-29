@@ -11,7 +11,7 @@
 
 #include <oxc_picoc.h>
 
-using namespace std;
+using namespace oxc;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
@@ -64,8 +64,8 @@ int main(void)
 {
   STD_PROLOG_UART;
 
-  UVAR('t') = 100;
-  UVAR('n') =  20;
+  UVAR_t = 100;
+  UVAR_n =  20;
   fs.fs_type = 0; // none
   fspath[0] = '\0';
 
@@ -84,7 +84,7 @@ int main(void)
 
   oxc_add_aux_tick_fun( led_task_nortos );
 
-  UVAR('e') = init_usbh_msc();
+  UVAR_e = init_usbh_msc();
 
   std_main_loop_nortos( &srl, idle_main_task );
 
@@ -113,7 +113,7 @@ int init_usbh_msc()
 
 CMD_FUNCTION( test0 )
 {
-  // uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1, 100000000 ); // number of series
+  // uint32_t n = arg2long_d( 1, argc, argv, UVAR_n, 1, 100000000 ); // number of series
 
   std_out << "# Test: " << NL;
   // int fh = _open( "/STM32.txt", 0 #<{(| O_RDONLY|)}># );
@@ -200,7 +200,7 @@ int init_picoc( Picoc *ppc )
   oxc_picoc_misc_init( ppc );
   oxc_picoc_fatfs_init( ppc );
   PicocIncludeAllSystemHeaders( ppc );
-  VariableDefinePlatformVar( ppc, nullptr, "__a",         &(ppc->IntType), (union AnyValue *)&(UVAR('a')), TRUE );
+  VariableDefinePlatformVar( ppc, nullptr, "__a",         &(ppc->IntType), (union AnyValue *)&(UVAR_a), TRUE );
   VariableDefinePlatformVar( ppc, nullptr, "d_arr",      ppc->FPArrayType, (union AnyValue *)d_arr,        TRUE );
   VariableDefinePlatformVar( ppc, nullptr, "d_ptr",        ppc->FPPtrType, (union AnyValue *)&d_ptr,       TRUE );
   VariableDefinePlatformVar( ppc, nullptr, "a_char",   ppc->CharArrayType, (union AnyValue *)a_char,       TRUE );
@@ -208,5 +208,4 @@ int init_picoc( Picoc *ppc )
   return 0;
 }
 
-// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

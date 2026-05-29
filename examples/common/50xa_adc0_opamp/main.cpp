@@ -4,7 +4,7 @@
 #include <oxc_main.h>
 #include <oxc_adcdata.h>
 
-using namespace std;
+using namespace oxc;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
@@ -79,7 +79,7 @@ int main(void)
 // TEST0
 CMD_FUNCTION( test0 )
 {
-  const uint32_t n_ch = clamp<uint32_t>( UVAR('c'), 1, adc.n_ch_max );
+  const uint32_t n_ch = std::clamp<uint32_t>( UVAR('c'), 1, adc.n_ch_max );
   //
   uint32_t unsigned stime_idx = ( (uint32_t)UVAR('s') < adc_arch_sampletimes_n ) ? UVAR('s') : (adc_arch_sampletimes_n - 1);
   const uint32_t n = arg2long_d( 1, argc, argv, UVAR('n'), 1 );
@@ -252,5 +252,4 @@ void HAL_OPAMP_MspDeInit(OPAMP_HandleTypeDef* opampHandle)
 }
 
 
-// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

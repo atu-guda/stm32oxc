@@ -1,6 +1,9 @@
 #include <stdint.h>
+#include <oxc_base.h>
 
-// range: -1 = =127, 0 = 0, 1 = 127
+using namespace oxc;
+
+// range: -1 = -127, 0 = 0, 1 = 127
 extern const int8_t sin_table_8x8[256];
 
 const int8_t sin_table_8x8[256] = {

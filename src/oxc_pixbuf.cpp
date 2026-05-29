@@ -1,10 +1,10 @@
 #include <cstring>
 #include <algorithm>
 
-// using namespace std;
-
 #include <oxc_miscfun.h>
 #include <oxc_pixbuf.h>
+
+using namespace oxc;
 
 PixBuf::PixBuf( uint16_t a_width, uint16_t a_height, uint16_t a_bpp )
   : width( a_width ), height( a_height ), bpp( a_bpp ),

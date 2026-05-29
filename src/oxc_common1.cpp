@@ -5,6 +5,7 @@
 
 #include "board_cfg.h"
 
+using namespace oxc;
 using namespace SMLRL;
 
 #ifndef MAIN_LOOP_WAIT

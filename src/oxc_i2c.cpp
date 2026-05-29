@@ -1,5 +1,7 @@
 #include <oxc_i2c.h>
 
+using namespace oxc;
+
 DevI2C *i2c_dbg { nullptr };
 I2CClient *i2c_client_def { nullptr };
 

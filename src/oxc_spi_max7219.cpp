@@ -1,5 +1,7 @@
 #include <oxc_spi_max7219.h>
 
+using namespace oxc;
+
 void DevSPI_MAX7219::setDigits( const uint8_t *vs, uint8_t dpos, uint8_t st, uint8_t en )
 {
   if( !vs || st > 7 || st > en ) { return; }

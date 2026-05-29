@@ -1,7 +1,6 @@
 #include <oxc_auto.h>
 
 
-// using namespace std;
 
 // TMP
 extern const unsigned ibuf_sz;

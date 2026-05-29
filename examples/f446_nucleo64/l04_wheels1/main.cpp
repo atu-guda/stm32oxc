@@ -6,7 +6,9 @@
 
 #include "main.h"
 
-using namespace std;
+using std::size;
+using std::clamp;
+using namespace oxc;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
@@ -570,7 +572,5 @@ int run_single_step( const RunStepData &sd )
 
   return rc;
 }
-
-// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 
 

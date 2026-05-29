@@ -1,5 +1,7 @@
 #include <oxc_spimem_at.h>
 
+using namespace oxc;
+
 uint8_t DevSPIMem_AT::status()
 {
   uint8_t r = 0;

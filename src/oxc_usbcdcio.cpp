@@ -3,6 +3,8 @@
 
 #include <oxc_gpio.h> // debug
 
+using namespace oxc;
+
 USBD_HandleTypeDef* UsbcdcIO::pusb_dev = nullptr;
 UsbcdcIO* UsbcdcIO::static_usbcdcio = nullptr;
 
@@ -210,3 +212,4 @@ int8_t UsbcdcIO::CDC_Itf_TransmitCplt( uint8_t * /*pbuf*/, uint32_t * /*Len*/, u
   }
   return USBD_OK;
 }
+

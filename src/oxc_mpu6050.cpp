@@ -1,6 +1,8 @@
 #include <oxc_mpu6050.h>
 
 
+using namespace oxc;
+
 
 void MPU6050::init()
 {

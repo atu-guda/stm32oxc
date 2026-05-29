@@ -4,7 +4,7 @@
 
 #include "moveinfo.h"
 
-using namespace std;
+using namespace oxc;
 
 extern int debug; // remove after globalization
 #define OUT std_out
@@ -18,7 +18,7 @@ MoveInfo::MoveInfo( unsigned a_n_coo, Act_Pfun pfun  )
 
 void MoveInfo::zero_arr()
 {
-  ranges::fill( k_x, 0 );
+  std::ranges::fill( k_x, 0 );
 }
 
 ReturnCode MoveInfo::prep_move_line( const xfloat *prm )
@@ -67,12 +67,12 @@ ReturnCode MoveInfo::prep_move_circ( const xfloat *prm )
   // const xfloat &r_1   { prm[12] };
 
   xfloat l_appr { 0.5f * ( r_s + r_s ) * fabsxf( alp_e - alp_s ) };
-  len = hypot( l_appr, r_e - r_s, z_e ); // e_e ?
+  len = std::hypot( l_appr, r_e - r_s, z_e ); // e_e ?
 
   k_x[0] = alp_e - alp_s;
   k_x[1] = r_e   - r_s;
-  k_x[2] = - ( r_s * cos( alp_s ) ); // initial point shift
-  k_x[3] = - ( r_s * sin( alp_s ) );
+  k_x[2] = - ( r_s * cosxf( alp_s ) ); // initial point shift
+  k_x[3] = - ( r_s * sinxf( alp_s ) );
 
   if( debug ) {
     OUT << "# debug: prep_move_circ: len= " << len;
@@ -119,10 +119,11 @@ ReturnCode step_circ_fun( MoveInfo &mi, xfloat a, xfloat *coo )
   const xfloat alp =  alp_s + a * k_alp;
   const xfloat r   =  r_s   + a * k_r;
 
-  coo[0]  = x_0 + r * cos( alp );
-  coo[1]  = y_0 + r * sin( alp );
+  coo[0]  = x_0 + r * cosxf( alp );
+  coo[1]  = y_0 + r * sinxf( alp );
   coo[2]  = a * z_e;
   coo[3]  = a * e_e;
 
   return ReturnCode::rcOk;
 }
+

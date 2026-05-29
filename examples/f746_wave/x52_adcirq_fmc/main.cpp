@@ -5,7 +5,7 @@
 #include <oxc_auto.h>
 #include <oxc_main.h>
 
-using namespace std;
+using namespace oxc;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
@@ -281,6 +281,4 @@ void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
   leds[1].toggle();
 }
 
-
-// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

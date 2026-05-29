@@ -15,6 +15,8 @@
 #include <oxc_outstream.h>
 #include <oxc_at_dis_irq.h>
 
+using namespace oxc;
+
 // general buffers
 char gbuf_a[GBUF_SZ];
 char gbuf_b[GBUF_SZ]; // and log too
@@ -741,5 +743,4 @@ CMD_FUNCTION( leds_step )
   return 0;
 }
 
-// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

@@ -2,7 +2,7 @@
 
 #include <oxc_statdata.h>
 
-// using namespace std;
+using namespace oxc;
 
 // ------------------------ StatChannel ---------------------------------------------
 

@@ -8,7 +8,7 @@
 #include <oxc_as5600.h>
 #include <oxc_stepmotor_gpio.h>
 
-using namespace std;
+using namespace oxc;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
@@ -140,7 +140,7 @@ int cmd_test0( int argc, const char * const * argv )
           << ' '    << ang_sens.isMagnetDetected() << ' ' << HexInt8( ang_sens.getStatus() ) << NL;
 
   sta.calc();
-  std_out << "#==a "  << sta.sd   << ' ' << max( fabsf(sta.min), fabsf(sta.max) )
+  std_out << "#==a "  << sta.sd   << ' ' << std::max( fabsf(sta.min), fabsf(sta.max) )
           <<' '<<  sta.min << ' ' << sta.max << ' ' << sta.mean << ' ' << sta.n << NL;
 
   return 0;
@@ -164,7 +164,7 @@ int cmd_set_alp( int argc, const char * const * argv )
   float v = arg2float_d( 1, argc, argv, 0, -1000000, 10000000 );
   std_out <<  NL "# set_alp: v= " << v << NL;
 
-  if( fabs(v) < 1e-5f ) {
+  if( fabsf(v) < 1e-5f ) {
     ang_sens.setStartPosCurr();
   } else {
     auto old_a = ang_sens.getAngleRaw();
@@ -225,5 +225,4 @@ int cmd_go( int argc, const char * const * argv )
 
 
 
-// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

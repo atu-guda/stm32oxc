@@ -1,5 +1,7 @@
 #include <oxc_pcf8591.h>
 
+using namespace oxc;
+
 
 int PCF8591::setMode( uint8_t mode )
 {

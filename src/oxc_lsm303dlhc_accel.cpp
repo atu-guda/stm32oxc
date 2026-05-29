@@ -1,5 +1,7 @@
 #include <oxc_lsm303dlhc_accel.h>
 
+using namespace oxc;
+
 bool LSM303DHLC_Accel::check_id()
 {
   uint8_t v;
@@ -53,6 +55,5 @@ void LSM303DHLC_Accel::getRegs( uint8_t reg1, uint8_t n, int16_t *data )
 {
   recv_reg1_16bit_n( reg1 | 0x80 , (uint16_t*)(data), n );
 }
-
 
 

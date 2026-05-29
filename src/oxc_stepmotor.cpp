@@ -1,5 +1,7 @@
 #include <oxc_stepmotor.h>
 
+using namespace oxc;
+
 void StepMotor::setMode( size_t a_mode ) noexcept
 {
   mode    = (mode<n_modes)? a_mode : 0;

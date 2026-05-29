@@ -7,6 +7,8 @@
 #include <oxc_fs_cmd0.h>
 
 
+using namespace oxc;
+
 
 char fspath[fspath_sz];
 extern FATFS fs; // from main?
@@ -214,5 +216,4 @@ CMD_FUNCTION( rm )
 }
 
 
-// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

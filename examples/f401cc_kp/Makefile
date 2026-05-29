@@ -55,7 +55,8 @@ SUBDIRS = \
   80_math_stat \
   l11_windmash1 \
   l12_hand0 \
-  l14_vamini
+  l14_vamini \
+  l15_hvctl1 
 
   # 16_step1 \
   # 17_1w_18b20 \

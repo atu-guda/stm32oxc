@@ -14,7 +14,7 @@
 
 #include <oxc_outstr.h>
 
-// using namespace std;
+using namespace oxc;
 
 void OutStr::reset_out()
 {

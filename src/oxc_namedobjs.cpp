@@ -5,7 +5,7 @@
 #include <oxc_auto.h>
 #include <oxc_namedobjs.h>
 
-// using namespace std;
+using namespace oxc;
 
 // -------------------------------------------------------------------
 

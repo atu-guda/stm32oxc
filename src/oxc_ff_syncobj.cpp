@@ -1,19 +1,21 @@
 #include <ff.h>
 #include <stdlib.h>
 
+// using namespace oxc;
+
 // Use dynamic memory allocation is used
 #if FF_USE_LFN == 3
 
 
 void* ff_memalloc ( UINT msize )
 {
-  return malloc( (size_t)msize );
+  return std::malloc( (size_t)msize );
 }
 
 
 void ff_memfree ( void* mblock )
 {
-  free( mblock );
+  std::free( mblock );
 }
 
 #endif
@@ -53,5 +55,5 @@ void ff_mutex_give( int vol )
   xSemaphoreGive( Mutex[vol] );
 }
 
-#endif	/* FF_FS_REENTRANT */
+#endif /* FF_FS_REENTRANT */
 

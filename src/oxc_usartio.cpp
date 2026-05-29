@@ -1,5 +1,7 @@
 #include <oxc_usartio.h>
 
+using namespace oxc;
+
 int UsartIO::write_s( const char *s, int l )
 {
   if( !s  ||  l < 1 ) {

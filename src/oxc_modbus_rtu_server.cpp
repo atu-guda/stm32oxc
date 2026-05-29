@@ -7,6 +7,8 @@
 #include <oxc_modbus_rtu_server.h>
 
 
+using namespace oxc;
+
 
 MODBUS_RTU_server::MODBUS_RTU_server( UART_HandleTypeDef *a_uart )
   : uart( a_uart )

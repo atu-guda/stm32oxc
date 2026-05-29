@@ -5,7 +5,8 @@
 #include <oxc_hd44780_i2c.h>
 #include <oxc_menu4b.h>
 
-using namespace std;
+using std::size;
+using namespace oxc;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
@@ -147,5 +148,4 @@ void on_btn_while_run( int cmd )
   }
 }
 
-// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

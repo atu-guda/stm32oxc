@@ -8,7 +8,7 @@
 #include "usbd_conf.h"
 #include "usbd_desc.h"
 
-using namespace std;
+using namespace oxc;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
@@ -41,8 +41,8 @@ int main(void)
 {
   STD_PROLOG_UART;
 
-  UVAR('t') = 100;
-  UVAR('n') = 100;
+  UVAR_t = 100;
+  UVAR_n = 100;
 
   BOARD_POST_INIT_BLINK;
 
@@ -56,8 +56,8 @@ int main(void)
 
 int cmd_test0( int argc, const char * const * argv )
 {
-  int n = arg2long_d( 1, argc, argv, UVAR('n'), 0 );
-  uint32_t t_step = UVAR('t');
+  int n = arg2long_d( 1, argc, argv, UVAR_n, 0 );
+  uint32_t t_step = UVAR_t;
   std_out <<  "# Test0: n= " << n << " t= " << t_step << NL;
 
   // MX_USB_DEVICE_Init();
@@ -116,6 +116,4 @@ void HAL_PCD_MspInit( PCD_HandleTypeDef * /*hpcd*/ )
 {
   default_USBFS_MspInit();
 }
-
-// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

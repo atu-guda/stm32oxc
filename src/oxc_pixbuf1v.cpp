@@ -3,8 +3,8 @@
 
 #include <oxc_pixbuf1v.h>
 
-// using namespace std;
 
+using namespace oxc;
 
 void PixBuf1V::fillAll( uint32_t col )
 {

@@ -8,6 +8,8 @@
 #include <oxc_base.h>
 #include <oxc_at_dis_irq.h>
 
+using namespace oxc;
+
 char* __heap_top = (char*)(&_end);
 
 int ready_to_start_scheduler = 0;
@@ -311,8 +313,5 @@ void delay_mcs( uint32_t mcs )
     delay_bad_mcs( mcs_r );
   }
 }
-
-
-
 
 

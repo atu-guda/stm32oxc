@@ -18,7 +18,9 @@ auto &debug { UVAR_d };
 
 #define WAIT_BIT BIT2M
 
-using namespace std;
+using std::size;
+using std::size_t;
+using namespace oxc;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
@@ -670,5 +672,4 @@ void handle_keys()
 
 
 
-// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

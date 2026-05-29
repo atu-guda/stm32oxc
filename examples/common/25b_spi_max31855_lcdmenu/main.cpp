@@ -1,5 +1,4 @@
 #include <cstring>
-#include <cstdlib>
 #include <iterator>
 
 #include <memory>
@@ -12,7 +11,8 @@
 // #include <oxc_floatfun.h>
 #include <oxc_namedints.h>
 
-using namespace std;
+using std::size;
+using namespace oxc;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
@@ -355,5 +355,4 @@ void on_btn_while_run( int cmd )
 }
 
 
-// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

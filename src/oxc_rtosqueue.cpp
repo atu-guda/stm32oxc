@@ -1,5 +1,7 @@
 #include <oxc_rtosqueue.h>
 
+using namespace oxc;
+
 RtosQueue::RtosQueue( unsigned len, unsigned elmsz )
   : h( xQueueCreate( len, elmsz ) )
 {

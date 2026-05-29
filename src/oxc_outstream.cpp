@@ -2,7 +2,7 @@
 
 #include <oxc_outstream.h>
 
-// using namespace std;
+using namespace oxc;
 
 OutStream std_out( nullptr );
 

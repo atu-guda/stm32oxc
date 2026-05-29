@@ -1,5 +1,7 @@
 #include <oxc_io_fatfs.h>
 
+using namespace oxc;
+
 DevOut_FatFS::DevOut_FatFS( const char *fn, BYTE fmode )
   : own( true )
 {

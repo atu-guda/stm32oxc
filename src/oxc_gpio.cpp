@@ -8,6 +8,8 @@
 #include <oxc_gpio.h>
 #include <oxc_asm.h>
 
+using namespace oxc;
+
 
 void GpioRegs::cfgOut_common( PinNum pin_num )
 {
@@ -214,4 +216,4 @@ unsigned EXTI_inits( std::span<const EXTI_init_info> exti_info, bool initIRQ )
   return n;
 }
 
-// vim: path=.,/usr/share/stm32cube/inc
+

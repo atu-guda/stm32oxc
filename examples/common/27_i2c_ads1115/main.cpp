@@ -6,7 +6,7 @@
 #include <oxc_statdata.h>
 
 #include <oxc_ads1115.h>
-using namespace std;
+using namespace oxc;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
@@ -144,7 +144,7 @@ CMD_FUNCTION( getNch )
 {
   uint32_t t_step = UVAR_t;
   uint32_t n = arg2long_d( 1, argc, argv, UVAR_n, 1, 1000000 ); // number of series
-  unsigned n_ch = (uint8_t)clamp( ( UVAR_c ), 1, 4 );
+  unsigned n_ch = (uint8_t)std::clamp( ( UVAR_c ), 1, 4 );
   uint8_t e_ch = (uint8_t)(n_ch-1);
   uint16_t x_cfg = adc.getDeviceCfg();
   std_out <<  NL "# getNch: n= " <<  n << " n_ch= " << n_ch << " t= " <<  t_step <<  "  cfg= " <<  HexInt16( x_cfg ) << NL;
@@ -233,5 +233,4 @@ CMD_FUNCTION( set_coeffs )
 #endif
 
 
-// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

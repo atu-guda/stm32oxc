@@ -9,7 +9,7 @@
 
 #include <../examples/common/inc/pwm1_ctl.h>
 
-using namespace std;
+using namespace oxc;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
@@ -79,7 +79,7 @@ int main(void)
 CMD_FUNCTION( test0 )
 {
   uint32_t t_step = UVAR_t;
-  uint32_t n_ch = clamp( UVAR_c, 1, (int)n_ADC_ch_max );
+  uint32_t n_ch = std::clamp( UVAR_c, 1, (int)n_ADC_ch_max );
 
   uint8_t e_ch = (uint8_t)(n_ch-1);
 
@@ -273,5 +273,4 @@ void handle_keys()
 }
 
 
-// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

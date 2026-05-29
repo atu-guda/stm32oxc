@@ -1,5 +1,7 @@
 #include <oxc_spi_ad9833.h>
 
+using namespace oxc;
+
 bool DevAD9833::setMode( uint8_t cmd_msb, uint8_t cmd_lsb )
 {
   cmd_mode[0] = cmd_msb; cmd_mode[1] = cmd_lsb;
@@ -62,3 +64,4 @@ bool DevAD9833::switchToPhase( bool isPhase2 )
   }
   return subFromMode0( pselect );
 }
+

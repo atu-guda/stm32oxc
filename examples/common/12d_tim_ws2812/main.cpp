@@ -8,7 +8,7 @@
 #error "Defines for WS2812 are required, may be in local_hal_conf.h"
 #endif
 
-using namespace std;
+using namespace oxc;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
@@ -409,5 +409,4 @@ void  HAL_TIM_ErrorCallback(  TIM_HandleTypeDef *htim )
 }
 
 
-// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

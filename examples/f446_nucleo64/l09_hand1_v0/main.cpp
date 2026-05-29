@@ -15,7 +15,6 @@
 
 #include "main.h"
 
-// using namespace std;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
@@ -541,6 +540,4 @@ __weak int lab_step( uint32_t tc )
 }
 
 // ------------------------------------------------------------ 
-
-// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

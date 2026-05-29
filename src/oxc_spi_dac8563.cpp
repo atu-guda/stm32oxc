@@ -1,5 +1,7 @@
 #include <oxc_spi_dac8563.h>
 
+using namespace oxc;
+
 void DevSPI_DAC8563::init()
 {
   reset();

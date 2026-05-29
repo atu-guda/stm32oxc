@@ -1,5 +1,7 @@
 #include <oxc_ina228.h>
 
+using namespace oxc;
+
 // returns 0 if good and VID:PID if bad
 uint32_t INA228::isBad()
 {

@@ -5,7 +5,7 @@
 
 #include <oxc_spimem_at.h>
 
-using namespace std;
+using namespace oxc;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
@@ -121,6 +121,4 @@ int cmd_spimem_sector0_erase( int argc, const char * const * argv )
   return rc;
 }
 
-
-// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

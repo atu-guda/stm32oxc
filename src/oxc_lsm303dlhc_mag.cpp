@@ -1,5 +1,7 @@
 #include <oxc_lsm303dlhc_mag.h>
 
+using namespace oxc;
+
 
 bool LSM303DHLC_Mag::init( uint8_t odr, uint8_t sens )
 {

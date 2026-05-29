@@ -1,7 +1,7 @@
 #include <oxc_auto.h>
 #include <oxc_main.h>
 
-using namespace std;
+using namespace oxc;
 
 USE_DIE4LED_ERROR_HANDLER;
 BOARD_DEFINE_LEDS;
@@ -106,6 +106,4 @@ void EXTI_CALLBACK_FUN( uint16_t mask )
   last_exti_tick = curr_tick;
 }
 
-
-// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

@@ -2,6 +2,8 @@
 
 #include <board_sdram.h>
 
+using namespace oxc;
+
 
 SDRAM_HandleTypeDef hsdram_main;
 
@@ -60,3 +62,4 @@ int bsp_init_sdram()
 
   return SDRAM_Initialization_Sequence( &hsdram_main );
 }
+

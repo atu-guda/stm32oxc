@@ -3,7 +3,7 @@
 // #include <oxc_debug1.h>
 #include <cstring>
 
-// using namespace std;
+using namespace oxc;
 
 SMLRL::SmallRL *SMLRL::global_smallrl = nullptr;
 

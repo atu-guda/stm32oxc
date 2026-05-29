@@ -8,7 +8,7 @@
 
 #include <oxc_spi_debug.h>
 
-using namespace std;
+using namespace oxc;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
@@ -84,7 +84,7 @@ int main(void)
 CMD_FUNCTION( test0 )
 {
   int t_step = UVAR_t;
-  unsigned n_ch = clamp( (unsigned)UVAR_c, 1u, n_ADC_ch_max );
+  unsigned n_ch = std::clamp( (unsigned)UVAR_c, 1u, n_ADC_ch_max );
 
   const uint32_t n_ADC_series_max  = n_ADC_mem / ( ADS1220::Params::bits_out * n_ch / 8 );
   uint32_t n = arg2long_d( 1, argc, argv, UVAR_n, 1, n_ADC_series_max ); // number of series
@@ -288,5 +288,4 @@ CMD_FUNCTION( reset )
 
 
 
-// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

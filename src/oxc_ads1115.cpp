@@ -1,6 +1,8 @@
 #include <oxc_ads1115.h>
 
 
+using namespace oxc;
+
 //                                  [0]   [1]   [2]   [3]  [4]   [6]   [6]  [7]
 const int ADS1115::scale_mv[8] = { 6114, 4096, 2048, 1024, 512,  256,  256, 256 };
 

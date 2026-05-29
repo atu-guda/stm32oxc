@@ -1,6 +1,8 @@
 #include <errno.h>
 #include <oxc_gpio.h>
 
+using namespace oxc;
+
 int i2c_default_init( I2C_HandleTypeDef &i2c, int speed )
 {
   i2c.Instance              = BOARD_I2C_DEFAULT;

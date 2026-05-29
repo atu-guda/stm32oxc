@@ -1,11 +1,11 @@
 #include <cstring>
 #include <iterator>
-#include <cstdlib>
 
 #include <oxc_auto.h>
 #include <oxc_main.h>
 
-using namespace std;
+using std::size;
+using namespace oxc;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
@@ -160,5 +160,4 @@ void pwm_update_ccr()
   }
 }
 
-// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

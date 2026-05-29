@@ -3,6 +3,8 @@
 
 #include <oxc_easing.h>
 
+using namespace oxc;
+
 static constexpr float pi_f = std::numbers::pi_v<float>;
 static constexpr float pi_half_f = pi_f / 2;
 
@@ -54,5 +56,4 @@ float easing_step_01(  float x )
   return ( x > 0.1f ) ? 1.0f : 0.0f;
 }
 
-// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

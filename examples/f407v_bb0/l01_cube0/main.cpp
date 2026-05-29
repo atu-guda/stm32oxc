@@ -1,4 +1,4 @@
-#include <cstdarg>
+#include <coxc>
 #include <cerrno>
 #include <algorithm>
 // #include <charconv>
@@ -24,7 +24,7 @@
 #include <oxc_picoc.h>
 #include <oxc_picoc_reghelpers.h>
 
-using namespace std;
+using namespace oxc;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
@@ -2369,5 +2369,4 @@ int cmd_dadc2( int argc, const char * const * argv )
 
 // ----------------------------------------  ------------------------------------------------------
 
-// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

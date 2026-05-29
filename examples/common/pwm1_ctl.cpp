@@ -10,7 +10,8 @@
 
 #include <../examples/common/inc/pwm1_ctl.h>
 
-using namespace std;
+using std::size;
+using std::clamp;
 
 
 void PWMData::reset_steps()

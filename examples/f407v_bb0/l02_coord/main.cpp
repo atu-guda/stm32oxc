@@ -23,7 +23,7 @@
 
 #define OUT std_out
 
-using namespace std;
+using namespace oxc;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
@@ -449,7 +449,7 @@ Machine::Machine( std::span<StepMover*> a_movers )
      : movers( a_movers ),
        mg_funcs( mg_code_funcs ), mg_funcs_sz( std::size( mg_code_funcs ) )
 {
-  ranges::fill( axis_scale, 1 );
+  std::ranges::fill( axis_scale, 1 );
 }
 
 void Machine::initHW()
@@ -502,7 +502,7 @@ ReturnCode Machine::move_common( MoveInfo &mi, xfloat fe_mmm )
     fe_mmm = fe_max;
   }
   fe_mmm *= fe_scale / 100;
-  fe_mmm = clamp( fe_mmm, fe_min, fe_max );
+  fe_mmm = std::clamp( fe_mmm, fe_min, fe_max );
   const xfloat k_t { 1.0f / TIM6_count_freq };
 
   xfloat t_sec = 60 * mi.len / fe_mmm; // only approx, as we can accel/deccel
@@ -870,8 +870,8 @@ ReturnCode Machine::g_move_circle( const GcodeBlock &gc )
   // here only relative value
 
   bool full_circ = fabsxf( x_e ) < near_l && fabsxf( y_e ) < near_l;
-  bool ij_mode = isfinite( x_r ) && isfinite( y_r );
-  bool r_mode = !ij_mode && isfinite( r_1 );
+  bool ij_mode = std::isfinite( x_r ) && std::isfinite( y_r );
+  bool r_mode = !ij_mode && std::isfinite( r_1 );
 
   if( ! ij_mode && ! r_mode ) {
     std_out << "# Nor I,J nor R defined" << NL;
@@ -979,10 +979,10 @@ bool calc_G2_R_mode( bool cv, xfloat x_e, xfloat y_e, xfloat &r_1, xfloat &x_r, 
   };
   xfloat h_1 = sqrt( h_12 );
 
-  xfloat x_rm = x_c + h_1 * cos( alp_2m );
-  xfloat y_rm = y_c + h_1 * sin( alp_2m );
-  xfloat x_rp = x_c + h_1 * cos( alp_2p );
-  xfloat y_rp = y_c + h_1 * sin( alp_2p );
+  xfloat x_rm = x_c + h_1 * cosxf( alp_2m );
+  xfloat y_rm = y_c + h_1 * sinxf( alp_2m );
+  xfloat x_rp = x_c + h_1 * cosxf( alp_2p );
+  xfloat y_rp = y_c + h_1 * sinxf( alp_2p );
 
   // printf( "# rm= ( %g, %g ),   rp= ( %g, %g )\n", x_rm, y_rm, x_rp, y_rp );
 
@@ -1224,7 +1224,7 @@ ReturnCode Machine::m_get_var(   const GcodeBlock &gc )     // M997 name=S
 {
   auto v = get_val( gc.get_str0() );
   OUT << "# " << gc.get_str0() << " = ";
-  if ( isfinite( v ) )  {
+  if ( std::isfinite( v ) )  {
     OUT << v << NL;
     return ReturnCode::rcOk;
   }
@@ -1494,5 +1494,4 @@ int wait_next_motor_tick()
 
 // ----------------------------------------  ------------------------------------------------------
 
-// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

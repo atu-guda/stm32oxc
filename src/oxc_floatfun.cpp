@@ -4,7 +4,7 @@
 
 #include <oxc_floatfun.h>
 
-// using namespace std;
+using namespace oxc;
 
 float exp10if( int x )
 {

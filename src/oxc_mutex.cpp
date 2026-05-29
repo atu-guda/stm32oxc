@@ -1,5 +1,6 @@
 #include <oxc_mutex.h>
 
+using namespace oxc;
 
 void mu_lock( mu_t *m )
 {

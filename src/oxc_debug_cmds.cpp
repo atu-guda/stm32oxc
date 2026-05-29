@@ -1,7 +1,8 @@
-
 #include <oxc_outstream.h>
 #include <oxc_console.h>
 #include <oxc_debug1.h>
+
+using namespace oxc;
 
 DCL_CMD_REG( test_rate, 0, "[ n [len [flush] ] ] - test output rate"  );
 CMD_FUNCTION( test_rate )
@@ -29,5 +30,4 @@ CMD_FUNCTION( test_delays )
 }
 
 
-// vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include,/usr/share/stm32oxc/inc
 

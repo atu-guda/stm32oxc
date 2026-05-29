@@ -1,5 +1,7 @@
 #include <oxc_pca9685.h>
 
+using namespace oxc;
+
 bool PCA9685::init( uint8_t presc_new )
 {
   if( presc_new > 2 ) {
