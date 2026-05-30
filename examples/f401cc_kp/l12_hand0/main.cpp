@@ -1032,7 +1032,7 @@ static const constexpr TIM_MasterConfigTypeDef sMasterConfig_def {
 int tim_pwm_cfg_common( uint32_t cnt_freq, uint32_t freq, TIM_HandleTypeDef &t_h, TIM_TypeDef  *instance,
                          std::span<const tim_ch_type> channels )
 {
-  const uint32_t psc { calc_TIM_psc_for_cnt_freq( TIM_LWM, cnt_freq ) };
+  const uint32_t psc { calc_TIM_psc_for_cnt_freq( TIM_LWM, cnt_freq ) }; // BUG: TIM_LWM only?
   const auto tim_arr = calc_TIM_arr_for_base_psc( TIM_LWM, psc, freq );
 
   UVAR_a = psc;

@@ -7,6 +7,7 @@
 #include <oxc_base.h>
 #include <oxc_bitops.h>
 #include <oxc_refptr.h>
+#include <oxc_pinbase.h>
 
 enum class GpioModer { in = 0, out = 1, af = 2, analog = 3 };
 enum class GpioPull {  no = 0,  up = 1, down = 2 };
@@ -28,6 +29,8 @@ class PinMask {
    explicit constexpr PinMask( uint16_t mask_ ) : mask ( mask_ ) {};
    inline constexpr uint16_t  bitmask() const { return mask; }
    friend inline constexpr const PinMask operator|( PinMask lhs, PinMask rhs ) { return PinMask( lhs.mask | rhs.mask ) ; }
+   friend inline constexpr const PinMask operator&( PinMask lhs, PinMask rhs ) { return PinMask( lhs.mask & rhs.mask ) ; }
+   friend inline constexpr const PinMask operator^( PinMask lhs, PinMask rhs ) { return PinMask( lhs.mask ^ rhs.mask ) ; }
    inline constexpr bool isPinSet( PinNum pin ) const;
    // TODO: iterator, more functions/operators
   private:
@@ -58,11 +61,15 @@ constexpr inline PinMask make_pinMask( PinNum pin_num, uint8_t n ) { return PinM
 
 
 // --------------------------------- PortPin --------------------------------------
-
+//* Combines in one 16-bit POD value port index and pin number.
+//* Have predefined values like PA0 .. PA15 .. PM15, PBAD, PSPEC0 - PSPEC7 (special values)
+//* in config headers: inline constexpr PortPin My_Pin { PC4 };
 class PortPin {
   public:
    enum PortNum { PortA = 0, PortB, PortC, PortD, PortE, PortF, PortG, PortH, PortI, PortJ, PortK, PortL, PortM,
-          PortSpec0 = 0x80, PortSpec1 = 0x80, PortBad = 0xFF, PortSpecMask = 0x80 };
+          PortSpec0 = 0x80, PortSpec1 = 0x81, PortSpec2 = 0x82, PortSpec3 = 0x83,
+          PortSpec4 = 0x84, PortSpec5 = 0x85, PortSpec6 = 0x87, PortSpec7 = 0x87,
+          PortBad = 0xFF, PortSpecMask = 0x80 };
    constexpr PortPin( uint8_t port_num_, PinNum pin_num ) : port_num( port_num_ ), num( pin_num ) {};
    explicit constexpr PortPin( const char *s ); // TODO: "A1" "F15" "HF"?
    inline constexpr uint8_t portNum() const { return port_num; };
@@ -110,6 +117,7 @@ constexpr inline uint8_t GpioIdx( const GpioRegs &gp )
   return (uint8_t)( ( reinterpret_cast<unsigned>(&gp) - GPIOA_BASE ) / ( GPIOB_BASE - GPIOA_BASE ) );
 }
 
+//* GpioA - GpioM direct access to GPIO registers
 class GpioRegs {
   public:
 
@@ -526,6 +534,24 @@ class PinOut
 
 [[ noreturn ]] void die4led( PinMask n );
 
+// -------------- PinGpio ---------------------------------------
+// for generic interface
+namespace oxc {
+class PinGpio : public PinBase
+{
+  public:
+   constexpr explicit PinGpio( const PinOut& pin_ ) : pin( pin_ ) {};
+   constexpr explicit PinGpio( PortPin portpin ) : pin( portpin ) {};
+   virtual void set()           override { pin.set(); };
+   virtual void reset()         override { pin.reset(); };
+   virtual void write( bool v ) override { pin.write( v ); };
+   virtual void toggle()        override { pin.toggle(); };
+   virtual bool get()           override { return pin.read_in(); };
+   virtual bool initHW()        override { pin.initHW(); return true; };
+  protected:
+   PinOut pin;
+};
+};
 
 // --------------- PinsIn ----------------------------------------
 // PinsIn pi( GpioB, 12, 4 [, GpioPull::{no,down,up} ] );

@@ -5,6 +5,12 @@
 inline constexpr PortPin PBAD   { PortPin::PortBad,    0xFF_pin };
 inline constexpr PortPin PSPEC0 { PortPin::PortSpec0,  0_pin };
 inline constexpr PortPin PSPEC1 { PortPin::PortSpec1,  0_pin };
+inline constexpr PortPin PSPEC2 { PortPin::PortSpec2,  0_pin };
+inline constexpr PortPin PSPEC3 { PortPin::PortSpec3,  0_pin };
+inline constexpr PortPin PSPEC4 { PortPin::PortSpec4,  0_pin };
+inline constexpr PortPin PSPEC5 { PortPin::PortSpec5,  0_pin };
+inline constexpr PortPin PSPEC6 { PortPin::PortSpec6,  0_pin };
+inline constexpr PortPin PSPEC7 { PortPin::PortSpec7,  0_pin };
 
 inline constexpr PortPin PA0  { PortPin::PortA,  0_pin };
 inline constexpr PortPin PA1  { PortPin::PortA,  1_pin };
