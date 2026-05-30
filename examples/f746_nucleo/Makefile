@@ -64,6 +64,8 @@ SUBDIRS = \
   80_math_stat \
   83_usbh_msc \
   87_mov_pwmctltim \
+  87a_mov_servo_lwm \
+  87b_mov_servo_c_lwm \
   l39a_step_as5600 
 
 #  82_picoc \
