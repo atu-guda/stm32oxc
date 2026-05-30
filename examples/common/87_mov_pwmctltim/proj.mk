@@ -22,8 +22,10 @@ USE_OXC_TIM = y
 # NOUSE_DEFAULT_UART_INIT = y
 
 SRCS += main.cpp
-SRCS += oxc_pwmctltim.cpp
 SRCS += oxc_floatfun.cpp
+SRCS += oxc_pwmctltim.cpp
+
+SRCS += oxc_motorpwm.cpp
 
 # SRCS += oxc_debug_cmds.cpp
 

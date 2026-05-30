@@ -6,6 +6,8 @@
 
 #include <oxc_main.h>
 
+#include <oxc_motorpwm.h>
+
 #include <main.h>
 
 using namespace oxc;
@@ -23,6 +25,7 @@ DCL_CMD_REG(      test0,  'T',     " [arg ] - test something"  );
 DCL_CMD_REG(      tinfo,  'P',     " print info"  );
 DCL_CMD_REG(    setfreq,  'F',     " Hz - set freq"  );
 DCL_CMD_REG(      pulse,  'U',     " []- test pulse in us"  );
+DCL_CMD_REG(       setV,  'V',     " v [t_us] - set v"  );
 
 
 void idle_main_task()
@@ -38,9 +41,9 @@ TIM_HandleTypeDef tim_pwm_h;
 
 PinGpio pwm_left_pin(  PwmLeftPin  );
 PinGpio pwm_right_pin( PwmRightPin );
-// PinOut pwm_pwm_pin( PwmPwmPin );
-
 constinit PwmCtlTim pwm1( TIM_PWM_BASE, tim_pwm_chspins );
+
+MotorPwm1P2D mot0( pwm1, 0, pwm_left_pin, pwm_right_pin );
 
 int main(void)
 {
@@ -53,8 +56,8 @@ int main(void)
   pwm_right_pin.initHW();
 
   auto [ psc_i, arr_i ] = calc_tim_psc_arr( get_TIM_in_freq( TIM_PWM ), 20000 );
-  tim_pwm_h.Instance = TIM_PWM;
   pwm1.setAllowPSCadj( true );
+  tim_pwm_h.Instance = TIM_PWM;
   pwm1.initHW( tim_pwm_h, psc_i, arr_i ); // do not really good
   pwm1.initPins();
   pwm1.enable();
@@ -114,7 +117,21 @@ CMD_FUNCTION( pulse ) // U
   return 0;
 }
 
-// TODO: move to lib
+CMD_FUNCTION( setV ) // V
+{
+  float v = arg2float_d( 1, argc, argv, 0 );
+  auto  t = arg2ulong_d( 2, argc, argv, 1000, 0 );
+
+  mot0.set_v( v );
+  delay_ms_brk( t );
+  // std_out << '#' << pu << ' ' << pwm1.getPwmRaw( 0 ) << NL;
+  mot0.stop();
+
+
+  return 0;
+}
+
+
 
 
 
@@ -136,3 +153,4 @@ void HAL_TIM_PWM_MspDeInit( TIM_HandleTypeDef* htim )
     return;
   }
 }
+

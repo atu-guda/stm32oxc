@@ -63,6 +63,7 @@ SUBDIRS = \
   53_adcdma_sd \
   80_math_stat \
   83_usbh_msc \
+  87_mov_pwmctltim \
   l39a_step_as5600 
 
 #  82_picoc \
