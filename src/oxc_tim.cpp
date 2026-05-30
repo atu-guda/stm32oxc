@@ -104,6 +104,40 @@ std::pair<uint32_t,uint32_t> calc_tim_psc_arr( float f_in, float f_out, uint32_t
   return { psc_e, arr_e };
 }
 
+//  t_h.Instance must be set beforehand;
+ReturnCode tim_pwm_cfg_default( TIM_HandleTypeDef &t_h, uint32_t psc, uint32_t arr, std::span<const TimChPin> chpins )
+{
+  if( t_h.Instance == nullptr ) {
+    return rcFatal;
+  }
+
+  t_h.Init.Prescaler         = psc;
+  t_h.Init.Period            = arr;
+  t_h.Init.ClockDivision     = 0;
+  t_h.Init.CounterMode       = TIM_COUNTERMODE_UP;
+  t_h.Init.RepetitionCounter = 0;
+  if( HAL_TIM_PWM_Init( &t_h ) != HAL_OK ) {
+    errno = 3000;
+    return rcErr;
+  }
+
+  HAL_TIM_ConfigClockSource( &t_h, &sClockSourceConfig_def );
+
+  if( HAL_TIMEx_MasterConfigSynchronization( &t_h, &sMasterConfig_def ) != HAL_OK ) {
+    errno = 3001;
+    return rcErr;
+  }
+
+  for( auto ch : chpins ) {
+    if( HAL_TIM_PWM_ConfigChannel( &t_h, &tim_oc_cfg_default_pwm1, TimCh::ch2hal_ch(ch.ch) ) != HAL_OK ) {
+      errno = 3002;
+      return rcErr;
+    }
+    HAL_TIM_PWM_Start( &t_h, TimCh::ch2hal_ch(ch.ch) );
+  }
+  return rcOk;
+}
+
 #ifdef USE_OXC_DEBUG
 void tim_print_cfg( TIM_TypeDef *tim )
 {

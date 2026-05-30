@@ -35,7 +35,7 @@ class PwmCtlTim : public PwmCtl {
    uint32_t getPwmRaw(  std::size_t ch ) const;
 
    std::size_t initPins();
-   bool initHW( uint32_t psc, uint32_t arr );
+   ReturnCode initHW( TIM_HandleTypeDef &t_h, uint32_t psc, uint32_t arr );
    inline reg32* pccr( std::size_t ch ) const { return reinterpret_cast<reg32*>(ccrs_a[ch]); };
    void enable()  { tim_p()->CR1 |=  1u; };
    void disable() { tim_p()->CR1 &= ~1u; };

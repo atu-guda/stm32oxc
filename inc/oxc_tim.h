@@ -3,6 +3,8 @@
 
 // common timer related functions
 
+#include <span>
+
 #include <oxc_gpio.h>
 
 namespace oxc {
@@ -91,7 +93,32 @@ uint32_t calc_TIM_arr_for_base_psc(  TIM_TypeDef *tim, uint32_t psc, uint32_t ba
 
 // returns { psc, arr}, { 0xFFFFFFFF, 0 } - if bad
 std::pair<uint32_t,uint32_t> calc_tim_psc_arr( float f_in, float f_out, uint32_t arr_min = 100, uint32_t arr_max = 0xFFFF );
+ReturnCode tim_pwm_cfg_default( TIM_HandleTypeDef &t_h, uint32_t psc, uint32_t arr, std::span<const oxc::TimChPin> chpins );
 
 void tim_print_cfg( TIM_TypeDef *tim ); // real if USE_OXC_DEBUG
 
+static const constexpr TIM_OC_InitTypeDef tim_oc_cfg_default_pwm1 {
+  .OCMode       = TIM_OCMODE_PWM1,
+  .Pulse        = 0,
+  .OCPolarity   = TIM_OCPOLARITY_HIGH,
+  .OCNPolarity  = TIM_OCNPOLARITY_HIGH,
+  .OCFastMode   = TIM_OCFAST_DISABLE,
+  .OCIdleState  = TIM_OCIDLESTATE_RESET,
+  .OCNIdleState = TIM_OCNIDLESTATE_RESET,
+};
+static const constexpr TIM_ClockConfigTypeDef sClockSourceConfig_def {
+  .ClockSource    = TIM_CLOCKSOURCE_INTERNAL,
+  .ClockPolarity  = 0, // ignored
+  .ClockPrescaler = 0,
+  .ClockFilter    = 0
+};
+static const constexpr TIM_MasterConfigTypeDef sMasterConfig_def {
+  .MasterOutputTrigger  = TIM_TRGO_UPDATE,
+  #ifdef TIM_TRGO2_ENABLE
+  .MasterOutputTrigger2 = TIM_TRGO2_UPDATE,
+  #endif
+  .MasterSlaveMode      = TIM_MASTERSLAVEMODE_DISABLE,
+};
+
 #endif
+
