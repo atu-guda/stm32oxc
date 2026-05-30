@@ -105,7 +105,8 @@ std::pair<uint32_t,uint32_t> calc_tim_psc_arr( float f_in, float f_out, uint32_t
 }
 
 //  t_h.Instance must be set beforehand;
-ReturnCode tim_pwm_cfg_default( TIM_HandleTypeDef &t_h, uint32_t psc, uint32_t arr, std::span<const TimChPin> chpins )
+ReturnCode tim_pwm_cfg_default( TIM_HandleTypeDef &t_h, uint32_t psc, uint32_t arr,
+                                std::span<const TimChPin> chpins, uint32_t cmode )
 {
   if( t_h.Instance == nullptr ) {
     return rcFatal;
@@ -114,7 +115,7 @@ ReturnCode tim_pwm_cfg_default( TIM_HandleTypeDef &t_h, uint32_t psc, uint32_t a
   t_h.Init.Prescaler         = psc;
   t_h.Init.Period            = arr;
   t_h.Init.ClockDivision     = 0;
-  t_h.Init.CounterMode       = TIM_COUNTERMODE_UP;
+  t_h.Init.CounterMode       = cmode;
   t_h.Init.RepetitionCounter = 0;
   if( HAL_TIM_PWM_Init( &t_h ) != HAL_OK ) {
     errno = 3000;

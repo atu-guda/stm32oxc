@@ -93,7 +93,8 @@ uint32_t calc_TIM_arr_for_base_psc(  TIM_TypeDef *tim, uint32_t psc, uint32_t ba
 
 // returns { psc, arr}, { 0xFFFFFFFF, 0 } - if bad
 std::pair<uint32_t,uint32_t> calc_tim_psc_arr( float f_in, float f_out, uint32_t arr_min = 100, uint32_t arr_max = 0xFFFF );
-ReturnCode tim_pwm_cfg_default( TIM_HandleTypeDef &t_h, uint32_t psc, uint32_t arr, std::span<const oxc::TimChPin> chpins );
+ReturnCode tim_pwm_cfg_default( TIM_HandleTypeDef &t_h, uint32_t psc, uint32_t arr,
+    std::span<const oxc::TimChPin> chpins, uint32_t cmode = TIM_COUNTERMODE_UP );
 
 void tim_print_cfg( TIM_TypeDef *tim ); // real if USE_OXC_DEBUG
 

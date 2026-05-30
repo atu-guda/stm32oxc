@@ -48,7 +48,6 @@ const uint32_t countmodes[] = {
   TIM_COUNTERMODE_CENTERALIGNED2,
   TIM_COUNTERMODE_CENTERALIGNED3
 };
-const auto n_countmodes = size(countmodes);
 
 bool on_servo { false };
 
@@ -76,10 +75,10 @@ int main(void)
 
   std::ranges::generate( pwm_f, [i = 0] () mutable { return (++i) * 0.2f; });
 
-  TIM_EXA_CLKEN;
-  tim_cfg( UVAR_p, UVAR_a, UVAR_m );
   pwm1.setAllowPSCadj( true );
-  // pwm1.initHW( psc_i, arr_i ); // do not really good
+  tim_h.Instance = TIM_EXA;
+  pwm1.initHW( tim_h, psc_i, arr_i ); // do not really good
+  pwm1.setPwms( pwm_f );
   pwm1.initPins();
 
   srl.re_ps();
@@ -96,9 +95,10 @@ CMD_FUNCTION( test0 ) // T
 {
   for( size_t i=0; i<pwm_f.size(); ++i ) {
     pwm_f[i] = arg2float_d( i+1, argc, argv, pwm_f[i], 0.0f, 1.0f );
-    pwm1.setPwm( i, pwm_f[i] );
     std_out << i << ' ' << pwm_f[i] << NL;
   }
+
+  pwm1.setPwms( pwm_f );
 
   tim_print_cfg( TIM_EXA );
 
@@ -215,7 +215,8 @@ CMD_FUNCTION( go_servo ) // G
 
 CMD_FUNCTION( tinit ) // I
 {
-  tim_cfg( UVAR_p, UVAR_a, UVAR_m );
+  auto mode_idx = std::min( (size_t)(UVAR_m), std::size(countmodes)-1 );
+  pwm1.initHW( tim_h, UVAR_p, UVAR_a, countmodes[mode_idx] );
   tim_print_cfg( TIM_EXA );
 
   return 0;
@@ -239,52 +240,6 @@ CMD_FUNCTION( servo ) // S
 
 
 //  ----------------------------- configs ----------------
-
-void tim_cfg( uint32_t psc, uint32_t arr, uint32_t cmode )
-{
-  tim_h.Instance               = TIM_EXA;
-  tim_h.Init.Prescaler         = psc;
-  tim_h.Init.Period            = arr;
-  tim_h.Init.ClockDivision     = 0;
-  if( cmode > n_countmodes ) {
-    cmode = 0;
-  }
-  tim_h.Init.CounterMode       = countmodes[cmode];
-  tim_h.Init.RepetitionCounter = 0;
-  if( HAL_TIM_PWM_Init( &tim_h ) != HAL_OK ) {
-    UVAR_e = 1; // like error
-    return;
-  }
-
-  TIM_ClockConfigTypeDef sClockSourceConfig;
-  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  HAL_TIM_ConfigClockSource( &tim_h, &sClockSourceConfig );
-
-  pwm_recalc();
-}
-
-void pwm_recalc()
-{
-  TIM_OC_InitTypeDef tim_oc_cfg;
-  tim_oc_cfg.OCMode       = TIM_OCMODE_PWM1;
-  tim_oc_cfg.OCPolarity   = UVAR_o ? TIM_OCPOLARITY_LOW : TIM_OCPOLARITY_HIGH;
-  tim_oc_cfg.OCNPolarity  = TIM_OCNPOLARITY_HIGH;
-  tim_oc_cfg.OCFastMode   = TIM_OCFAST_DISABLE;
-  tim_oc_cfg.OCIdleState  = TIM_OCIDLESTATE_RESET;
-  tim_oc_cfg.OCNIdleState = TIM_OCNIDLESTATE_RESET;
-
-  int pbase = TIM_EXA->ARR / 20;
-  for( auto ch : { TIM_CHANNEL_1, TIM_CHANNEL_2, TIM_CHANNEL_3, TIM_CHANNEL_4 } ) { // TODO: tmp
-    HAL_TIM_PWM_Stop( &tim_h, ch );
-    tim_oc_cfg.Pulse = pbase * ( ch + 1 ) ; // TMP
-    if( HAL_TIM_PWM_ConfigChannel( &tim_h, &tim_oc_cfg, ch ) != HAL_OK ) {
-      UVAR_e = 11 + ch;
-      return;
-    }
-    HAL_TIM_PWM_Start( &tim_h, ch );
-  }
-
-}
 
 
 

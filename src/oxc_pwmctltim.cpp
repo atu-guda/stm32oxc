@@ -115,13 +115,13 @@ size_t oxc::PwmCtlTim::initPins()
 }
 
 // TODO: need arch-dependent traits // do not really good
-ReturnCode oxc::PwmCtlTim::initHW( TIM_HandleTypeDef &t_h, uint32_t psc, uint32_t arr )
+ReturnCode oxc::PwmCtlTim::initHW( TIM_HandleTypeDef &t_h, uint32_t psc, uint32_t arr, uint32_t cmode )
 {
   auto tim = tim_p();
   if( !tim ) {
     return rcFatal;
   }
   t_h.Instance = tim;
-  return tim_pwm_cfg_default( t_h, psc, arr, channels );
+  return tim_pwm_cfg_default( t_h, psc, arr, channels, cmode );
 }
 

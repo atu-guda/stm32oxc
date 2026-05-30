@@ -1,6 +1,8 @@
 #ifndef _OXC_PWMCTL_H
 #define _OXC_PWMCTL_H
 
+#include <span>
+#include <ranges>
 
 namespace oxc {
 
@@ -14,6 +16,16 @@ class PwmCtl {
    virtual bool setPwmU16( std::size_t ch, uint16_t pwm ) = 0; //* pwm: 0: 65535
    virtual bool setPwm(    std::size_t ch, float pwm )    = 0; //* pwm: 0: 1
    virtual bool setPulse(  std::size_t ch, uint32_t us )  = 0; //*
+   bool setPwms( std::span<float> pwms )
+   {
+     for( auto [ch,v] : std::views::enumerate( pwms )  )
+     {
+       if( !setPwm( ch, v ) ) {
+         return false;
+       }
+     }
+     return true;
+   };
   protected:
    std::size_t n_ch;
 };
