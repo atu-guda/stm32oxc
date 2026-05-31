@@ -3,9 +3,6 @@
 #include <oxc_floatfun.h>
 #include <oxc_main.h>
 #include <oxc_pwmctltim.h>
-
-#include <oxc_main.h>
-
 #include <oxc_motorpwm.h>
 
 #include <main.h>
@@ -33,16 +30,14 @@ void idle_main_task()
   leds.toggle( 1_mask );
 }
 
-
-// constexpr test
-// constexpr auto gpioa_idx = GpioA.getIdx();
+void init_mot0();
 
 TIM_HandleTypeDef tim_pwm_h;
 
-PinGpio pwm_left_pin(  PwmLeftPin  );
-PinGpio pwm_right_pin( PwmRightPin );
 constinit PwmCtlTim pwm1( TIM_PWM_BASE, tim_pwm_chspins );
 
+PinGpio pwm_left_pin(  PwmLeftPin  );
+PinGpio pwm_right_pin( PwmRightPin );
 MotorPwm1P2D mot0( pwm1, 0, pwm_left_pin, pwm_right_pin );
 
 int main(void)
@@ -52,15 +47,7 @@ int main(void)
   UVAR_t = 100;
   UVAR_n =  20;
 
-  pwm_left_pin.initHW();
-  pwm_right_pin.initHW();
-
-  auto [ psc_i, arr_i ] = calc_tim_psc_arr( get_TIM_in_freq( TIM_PWM ), 20000 );
-  pwm1.setAllowPSCadj( true );
-  tim_pwm_h.Instance = TIM_PWM;
-  pwm1.initHW( tim_pwm_h, psc_i, arr_i ); // do not really good
-  pwm1.initPins();
-  pwm1.enable();
+  init_mot0();
 
   BOARD_POST_INIT_BLINK;
 
@@ -71,6 +58,15 @@ int main(void)
   return 0;
 }
 
+void init_mot0()
+{
+  auto [ psc_i, arr_i ] = calc_tim_psc_arr( get_TIM_in_freq( TIM_PWM ), 20000 );
+  pwm1.setAllowPSCadj( true );
+  tim_pwm_h.Instance = TIM_PWM;
+  pwm1.initHW( tim_pwm_h, psc_i, arr_i );
+  mot0.initHW();
+  pwm1.enable();
+}
 
 CMD_FUNCTION( test0 )
 {

@@ -480,6 +480,7 @@ extern PinsOut leds;
 // --------------- PinOut ----------------------------------------
 // single output pin
 // PinOut p1( GpioA, 8 ); // GPIOA 8
+// PinOut p1( PA8 );
 // p1.write( true ); p1.set(); p1.reset(); p1.sr( false ); p1.toggle(); p1 = false;
 class PinOut
 {
@@ -490,10 +491,10 @@ class PinOut
        mask( make_gpio_mask( start.Num(), 1 ) ),
        maskR( mask.bitmask() << 16 )
      {};
-   constexpr PinOut( PortPin pp )
+   explicit constexpr PinOut( PortPin pp )
      : PinOut( pp.port(),  pp.pinNum() )
      {};
-   void initHW() { gpio.enableClk(); gpio.cfgOut_N( mask );}
+   void initHW() { gpio.enableClk(); gpio.cfgOut( start );}
    GpioRegs& dev() { return gpio; }
    inline void write( bool doSet )
    {

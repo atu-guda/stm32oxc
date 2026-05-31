@@ -7,7 +7,7 @@ using std::size_t;
 using std::array;
 using std::vector;
 
-using namespace oxc; // accaptable for main.h
+using namespace oxc; // acceptable for main.h
 
 
 extern int debug;
@@ -35,7 +35,7 @@ inline constexpr PortPin  BTN_STOP_PIN      {  PA8 };
 inline constexpr uint32_t BTN_STOP_BIT      { BTN_STOP_PIN.bitmask() };
 inline constexpr uint16_t BTN_STOP_IRQ_PRTY { 5 };
 inline constexpr auto     BTN_STOP_IRQ_N    { EXTI9_5_IRQn };
-inline constexpr auto     BTN_STOP_EXTI_DIR { ExtiEv::down };
+inline constexpr auto     BTN_STOP_EXTI_DIR { ExtiEv::down }; // TODO: auto
 void init_EXTI();
 
 inline constexpr PortPin LWM_PIN0 { PA0 };
@@ -76,21 +76,20 @@ extern TIM_HandleTypeDef tim_mq0_h;
 inline constexpr PortPin MQ0_PIN_PWM { PB0 };
 inline constexpr PortPin MQ0_PIN_L   { PB1 };
 inline constexpr PortPin MQ0_PIN_R   { PB2 };
-#define TIM_MQ0 TIM3
-#define TIM_MQ0_BASE TIM3_BASE
-#define TIM_MQ0_EN  __GPIOB_CLK_ENABLE(); __TIM3_CLK_ENABLE();
-#define TIM_MQ0_DIS __TIM3_CLK_DISABLE();
-#define TIM_MQ0_CHANNEL TIM_CHANNEL_3
-#define TIM_MQ0_CCR CCR3
+
+#define TIM_MQ0_NUM 3
+#define TIM_MQ0_BASE OXC_EVAL3( TIM, TIM_MQ0_NUM, _BASE )
+#define TIM_MQ0      OXC_EVAL2( TIM, TIM_MQ0_NUM )
+#define TIM_MQ0_EN   OXC_EVAL3( __TIM, TIM_MQ0_NUM, _CLK_ENABLE()  );
+#define TIM_MQ0_DIS  OXC_EVAL3( __TIM, TIM_MQ0_NUM, _CLK_DISABLE() );
+// #define TIM_MQ0_CHANNEL TIM_CHANNEL_3
+// #define TIM_MQ0_CCR CCR3
 #define TIM_MQ0_GPIO_AF GPIO_AF2_TIM3
 inline constexpr std::array mq0_chs {
   TimChPin {  TimCh3, TIM_MQ0_GPIO_AF, MQ0_PIN_PWM },
 };
-inline constexpr uint32_t tim_mq0_psc_freq   {  72000000 }; // 72 MHz -> 72MHz
 inline constexpr uint32_t tim_mq0_freq       {     20000 }; // 20 kHz , ARR = 3599
-int  tim_mq0_cfg();
-void tim_mq0_start();
-void tim_mo0_stop();
+ReturnCode  tim_mq0_cfg();
 
 
 // sensors from servo Q1-Q2, PA6 (Q3) is unused for now

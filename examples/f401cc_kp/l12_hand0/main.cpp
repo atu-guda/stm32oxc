@@ -20,6 +20,8 @@
 #include <oxc_easing.h>
 
 #include <oxc_pwmctltim.h>
+#include <oxc_motorpwm.h>
+#include <oxc_motor_servo_lwm.h>
 
 #include "main.h"
 
@@ -58,14 +60,16 @@ auto out_q_fmt = [](xfloat x) { return FltFmt(x, cvtff_fix,8,4); };
 PinsOut ledsx( LEDSX_START, LEDSX_N );
 PinsIn  pin_stop( BTN_STOP_PIN, 1, GpioPull::up );
 
-PwmCtlTim mq0_pwm( TIM_MQ0_BASE, mq0_chs );
-
-// TODO: hide in motor class
+// base (Q0) motor part
+TIM_HandleTypeDef tim_mq0_h;
+constinit PwmCtlTim mq0_pwm( TIM_MQ0_BASE, mq0_chs );
 PinOut mq0_pin_l { MQ0_PIN_L };
 PinOut mq0_pin_r { MQ0_PIN_R };
+PinGpio mq0_left_pin(  mq0_pin_l );
+PinGpio mq0_right_pin( mq0_pin_r );
+MotorPwm1P2D mot_q0( mq0_pwm, 0, mq0_left_pin, mq0_right_pin );
 
 TIM_HandleTypeDef tim_lwm_h;
-TIM_HandleTypeDef tim_mq0_h;
 
 I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );
@@ -112,8 +116,8 @@ void MovePart::from_coords( std::span<const CoordInfo> coos, unsigned tp )
 
 // ----------- sensors ----------------
 
-SensorAS5600 sens_enc( ang_sens );
-SensorAdc sens_adc( ADC1_NCH );
+SensorAS5600    sens_enc(  ang_sens   );
+SensorAdc       sens_adc(  ADC1_NCH   );
 SensorFakeMover sens_grip( mover_grip );
 
 std::array<Sensor*,3> sensors { &sens_adc, &sens_enc, &sens_grip };
@@ -333,13 +337,13 @@ int main(void)
     die4led( 2_mask );
   }
 
-  if( ! tim_mq0_cfg() ) {
+  if( tim_mq0_cfg() != rcOk ) {
     std_out << "Err: timer MQ0 init"  NL;
     die4led( 2_mask );
   }
 
   mq0_pwm.initPins();
-  mq0_pin_l.initHW(); // TODO: to class
+  mq0_pin_l.initHW(); // to class?
   mq0_pin_r.initHW();
 
   init_EXTI();
@@ -354,7 +358,6 @@ int main(void)
   mover_base.set_lwm_times( 1300, 1700 );
 
   tim_lwm_start();
-  tim_mq0_start();
   measure_store_coords();
 
   BOARD_POST_INIT_BLINK;
@@ -1017,16 +1020,6 @@ static const constexpr TIM_OC_InitTypeDef tim_oc_cfg_default {
   .OCIdleState  = TIM_OCIDLESTATE_RESET,
   .OCNIdleState = TIM_OCNIDLESTATE_RESET,
 };
-static const constexpr TIM_ClockConfigTypeDef sClockSourceConfig_def {
-  .ClockSource    = TIM_CLOCKSOURCE_INTERNAL,
-  .ClockPolarity  = 0, // ignored
-  .ClockPrescaler = 0,
-  .ClockFilter    = 0
-};
-static const constexpr TIM_MasterConfigTypeDef sMasterConfig_def {
-  .MasterOutputTrigger = TIM_TRGO_UPDATE,
-  .MasterSlaveMode     = TIM_MASTERSLAVEMODE_DISABLE,
-};
 
 
 int tim_pwm_cfg_common( uint32_t cnt_freq, uint32_t freq, TIM_HandleTypeDef &t_h, TIM_TypeDef  *instance,
@@ -1110,19 +1103,19 @@ void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim )
 
 }
 
-const std::array tim_mq0_channels { TIM_MQ0_CHANNEL };
 
-// TODO: combine to common PWM config + return code type
-int tim_mq0_cfg()
+ReturnCode tim_mq0_cfg()
 {
-  return tim_pwm_cfg_common( tim_mq0_psc_freq, tim_mq0_freq, tim_mq0_h, TIM_MQ0, tim_mq0_channels );
+  auto [ psc, arr ] = calc_tim_psc_arr( get_TIM_in_freq( TIM_MQ0 ), tim_mq0_freq );
+  // pwm1.setAllowPSCadj( true );
+  // tim_pwm_h.Instance = TIM_PWM;
+  // pwm1.initHW( tim_pwm_h, psc_i, arr_i ); // do not really good
+  // pwm1.initPins();
+  // pwm1.enable();
+  return tim_pwm_cfg_default( tim_mq0_h, psc, arr, mq0_chs );
 }
 
 
-void tim_mq0_start()
-{
-  HAL_TIM_PWM_Start( &tim_mq0_h, TIM_MQ0_CHANNEL );
-}
 
 
 void HAL_TIM_PWM_MspDeInit( TIM_HandleTypeDef* htim )
@@ -1137,20 +1130,9 @@ void HAL_TIM_PWM_MspDeInit( TIM_HandleTypeDef* htim )
   }
 }
 
-void tim_mq0_stop()
-{
-  HAL_TIM_PWM_Stop( &tim_mq0_h, TIM_MQ0_CHANNEL );
-}
-
-// void TIM_LWM_IRQ_HANDLER()
-// {
-//   HAL_TIM_IRQHandler( &tim_lwm_h );
-// }
-
 
 void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
 {
-
 }
 
 
@@ -1172,7 +1154,7 @@ void HAL_GPIO_EXTI_Callback( uint16_t pin_bit )
 
   if( need_stop ) {
     tim_lwm_stop(); // TODO: not such stop
-    tim_mq0_stop(); // TODO: same
+    // tim_mq0_stop(); // TODO: same
   }
 }
 

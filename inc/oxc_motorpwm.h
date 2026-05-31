@@ -23,6 +23,7 @@ class MotorPwm1P2D : public MotorBase {
    virtual float get_v() const override { return 0; }
    virtual float get_x() const override { return 0; }
 
+   void initHW() { pin_l.initHW();  pin_r.initHW(); };
    void set_zeto_v( float v_ ) { zero_v = v_; };
   protected:
    PwmCtl &pwmc;

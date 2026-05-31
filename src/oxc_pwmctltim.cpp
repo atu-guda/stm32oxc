@@ -111,7 +111,7 @@ size_t oxc::PwmCtlTim::initPins()
     chp.pin.cfgAF( chp.af );
     ++n;
   }
-  return n;
+  return n; // useless
 }
 
 // TODO: need arch-dependent traits // do not really good
@@ -122,6 +122,11 @@ ReturnCode oxc::PwmCtlTim::initHW( TIM_HandleTypeDef &t_h, uint32_t psc, uint32_
     return rcFatal;
   }
   t_h.Instance = tim;
-  return tim_pwm_cfg_default( t_h, psc, arr, channels, cmode );
+  auto rc = tim_pwm_cfg_default( t_h, psc, arr, channels, cmode );
+  if( rc != rcOk ) {
+    return rc;
+  }
+  initPins(); // ignore size - useless
+  return rcOk;
 }
 
