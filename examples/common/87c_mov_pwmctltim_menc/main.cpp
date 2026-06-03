@@ -1,5 +1,7 @@
 #include <climits>
 #include <oxc_auto.h>
+#include <oxc_cpptypes.h>
+#include <oxc_atleave.h>
 #include <oxc_floatfun.h>
 #include <oxc_main.h>
 #include <oxc_pwmctltim.h>
@@ -18,6 +20,13 @@ BOARD_CONSOLE_DEFINES;
 
 const char* common_help_string = "Appication to test PWM motor + AS5600 encoder" NL;
 
+uint32_t last_cmd_end_tick     {     0 };
+uint32_t off_motor_idle_ticks  { 60000 };
+uint32_t last_measure_tick     {     0 };
+uint32_t measure_idle_ticks    {   100 };
+
+int t_step                     {   50  };
+
 // --- local commands;
 DCL_CMD_REG(      test0,  'T',     " [arg ] - test something"  );
 DCL_CMD_REG(      tinfo,  'P',     " print info"  );
@@ -26,15 +35,13 @@ DCL_CMD_REG(      pulse,  'U',     " []- test pulse in us"  );
 DCL_CMD_REG(       setV,  'V',     " v [t_us] - set v"  );
 DCL_CMD_REG(    measure,  'M',     " - measure angle..."  );
 
+ReturnCode measure_store_coords();
 
-void idle_main_task()
-{
-  leds.toggle( 1_mask );
-}
 
 I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );
 AS5600 ang_sens( i2cd );
+
 
 void init_mot0();
 
@@ -45,6 +52,18 @@ constinit PwmCtlTim pwm1( TIM_PWM_BASE, tim_pwm_chspins );
 PinGpio pwm_left_pin(  PwmLeftPin  );
 PinGpio pwm_right_pin( PwmRightPin );
 MotorPwm1P2D mot0( pwm1, 0, pwm_left_pin, pwm_right_pin );
+
+void idle_main_task()
+{
+  const uint32_t t = HAL_GetTick();
+  if( t - last_cmd_end_tick > off_motor_idle_ticks ) {
+    // stop();
+    last_cmd_end_tick = t;
+  }
+  if( ( t - last_measure_tick ) > measure_idle_ticks ) {
+    measure_store_coords();
+  }
+}
 
 int main(void)
 {
@@ -57,6 +76,11 @@ int main(void)
   i2c_dbg = &i2cd;
   i2c_client_def = &ang_sens;
   ang_sens.setCfg( AS5600::CfgBits::cfg_pwr_mode_nom |  AS5600::CfgBits::cfg_hyst_off );
+
+  if( !ang_sens.isMagnetDetected()  ) {
+    std_out << "# Error: no magnet" << NL;
+    die4led( 1_mask );
+  }
 
   init_mot0();
 
@@ -165,5 +189,33 @@ void HAL_TIM_PWM_MspDeInit( TIM_HandleTypeDef* htim )
     TIM_PWM_CLKDIS;
     return;
   }
+}
+
+ReturnCode measure_store_coords()
+{
+  auto old_tick { last_measure_tick };
+  last_measure_tick = HAL_GetTick();
+  // auto dt = std::max( last_measure_tick - old_tick, 2_u32 );
+
+  leds[2].set();
+  DoAtLeave _( []() { leds[2].reset(); } );
+
+  ang_sens.getAngleN();
+
+  // for( auto ps : sensors ) {
+  //   auto rc = ps->measure( adc_n );
+  //   if( rc < 1 ) {
+  //     ledsx[0].set();
+  //     return 0;
+  //   }
+  // }
+  //
+  // for( auto &co : coords ) {
+  //   auto q_o = co.q_cur;
+  //   co.q_cur = co.sens->get( co.sens_ch );
+  //   co.nu_cur = 1000 * ( co.q_cur - q_o ) / dt; // 1000 is ms/s
+  // }
+
+  return rcOk;
 }
 
