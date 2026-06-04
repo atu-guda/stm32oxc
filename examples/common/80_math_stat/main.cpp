@@ -54,6 +54,7 @@ bool set_pmin( float v, int /* idx */ )
 }
 
 int iv = 42;
+unsigned uv = 0xFFFFFFFF;
 int iva[] = { -7, 8, 9, -10, 15 };
 int ivf = 17;
 
@@ -86,7 +87,7 @@ constexpr const NamedObj *const fl01_objs[] = {
   nullptr
 };
 
-const NamedObjs fl01( fl01_objs );
+NamedObjs fl01( fl01_objs );
 
 
 constexpr NamedSubObj fl0_sub    {     "sub",       &fl01 };
@@ -95,6 +96,7 @@ constexpr NamedFloat fl0_pwm_min { "pwm_min",   get_pmin, set_pmin  };
 constexpr NamedFloat fl0_va      {      "va",         va,  size(va) };
 
 constexpr NamedInt   fl0_iv      {   "iv",          &iv  };
+constexpr NamedInt   fl0_uv      {   "uv",          &uv  };
 constexpr NamedInt   fl0_iva     {   "iva",         iva, size(iva) };
 constexpr NamedInt   fl0_ivf     {   "ivf",     get_ivf, set_ivf };
 
@@ -104,6 +106,7 @@ constexpr const NamedObj *const fl0_objs[] = {
   & fl0_pwm_min,
   & fl0_va,
   & fl0_iv,
+  & fl0_uv,
   & fl0_iva,
   & fl0_ivf,
   nullptr

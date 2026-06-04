@@ -6,12 +6,11 @@
 
 class NamedFloat : public NamedObj {
   public:
-   constexpr NamedFloat( const char *nm, float *p_f, unsigned n_elm = 1, unsigned flg = Flags::no )
-     : NamedObj( nm, n_elm, flg ), p( p_f ) {};
+   constexpr NamedFloat( const char *nm, float *p_f, std::size_t n_elm = 1, Flags flg = Flags::no )
+     : NamedObj( nm, p_f, n_elm, flg, types::FLOAT ) {};
    constexpr NamedFloat( const char *nm, float (*p_get)(int), bool (*p_set)(float,int),
-                         unsigned n_elm = 1, unsigned flg = Flags::no )
-     : NamedObj( nm, n_elm, flg ), fun_get( p_get ), fun_set( p_set ) {};
-   virtual void* getAddr() const override { return p; };
+                         std::size_t n_elm = 1, Flags flg = Flags::no )
+     : NamedObj( nm, nullptr, n_elm, flg ), fun_get( p_get ), fun_set( p_set ) {};
    virtual bool  get(    int &v, int idx = 0 ) const override;
    virtual bool  get(  float &v, int idx = 0 ) const override;
    virtual bool  get(   CStr &v, int idx = 0 ) const override;
@@ -20,7 +19,6 @@ class NamedFloat : public NamedObj {
    virtual bool  set( float v, int idx = 0 ) const override;
    virtual bool  set( const char *v, int idx = 0 ) const override;
   protected:
-   float *p = nullptr;
    float (*fun_get)( int idx ) = nullptr;
    bool  (*fun_set)( float v, int idx ) = nullptr;
 

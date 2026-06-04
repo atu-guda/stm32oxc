@@ -22,8 +22,9 @@ bool NamedFloat::do_set( float v, int idx ) const
   }
 
   if( p ) {
+    auto pf = static_cast<float*>(p);
     for( int j=idx_s; j<idx_e; ++j ) {
-      p[j] = v;
+      pf[j] = v;
     }
     return true;
   }
@@ -50,7 +51,8 @@ bool NamedFloat::do_get( float &rv, int idx ) const
   }
 
   if( p ) {
-    rv = p[idx];
+    auto pf = static_cast<float*>(p);
+    rv = pf[idx];
     return true;
   }
 

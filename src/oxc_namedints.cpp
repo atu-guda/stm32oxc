@@ -22,8 +22,9 @@ bool NamedInt::do_set( int v, int idx ) const
   }
 
   if( p ) {
+    auto pi { static_cast<int*>( p ) };
     for( int j=idx_s; j<idx_e; ++j ) {
-      p[j] = v;
+      pi[j] = v;
     }
     return true;
   }
@@ -50,7 +51,8 @@ bool NamedInt::do_get( int &rv, int idx ) const
   }
 
   if( p ) {
-    rv = p[idx];
+    auto pi { static_cast<int*>( p ) };
+    rv = pi[idx];
     return true;
   }
 

@@ -9,13 +9,6 @@ using namespace oxc;
 
 // -------------------------------------------------------------------
 
-const NamedObjs*  NamedObj::getSubObjs() const
-{
-  return nullptr;
-}
-
-// -------------------------------------------------------------------
-
 bool NamedSubObj::get( int & /*v*/, int /*idx*/ ) const
 {
   return false;
@@ -37,7 +30,7 @@ bool NamedSubObj::get( CStr & /*v*/, int /*idx*/ ) const
 bool NamedSubObj::out( OutStream &os, int idx, int fmt ) const
 {
   os << "{" NL;
-  bool ok = par_obj->out( os, "", fmt );
+  bool ok = static_cast<NamedObjs *>(p)->out( os, "", fmt );
   os << "#> }";
   return ok;
 }
@@ -58,9 +51,9 @@ bool NamedSubObj::set( const char * /*v*/, int /*idx*/ ) const
 }
 
 
-const NamedObjs*  NamedSubObj::getSubObjs() const
+NamedObjs*  NamedSubObj::getSubObjs() const
 {
-  return par_obj;
+  return static_cast<NamedObjs *>(p);
 }
 
 // -------------------------------------------------------------------
