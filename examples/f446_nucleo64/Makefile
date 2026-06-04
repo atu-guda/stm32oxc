@@ -1,5 +1,6 @@
 
 SUBDIRS = \
+  000_zero \
   00_leds \
   01_leds_oxc \
   01a_leds_tim_oxc_mu \

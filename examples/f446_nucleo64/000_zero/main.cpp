@@ -1,0 +1,1 @@
+../../common/000_zero/main.cpp
