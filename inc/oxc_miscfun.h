@@ -52,14 +52,24 @@ inline constexpr int sign( int x ) { return (x>0) ? 1 : ( (x<0) ? -1: 0 ) ; }
 inline constexpr int imin( int a, int b ) { return (a<b) ? a : b; }
 inline constexpr int imax( int a, int b ) { return (a>b) ? a : b; }
 
+inline constexpr uint32_t powers_of_10_i[] {
+           1,
+          10,
+         100,
+        1000,
+       10000,
+      100000,
+     1000000,
+    10000000,
+   100000000,
+  1000000000, // max for 32bit
+  0xFFFFFFFF, // guard
+};
+
 //* returns 10^p, p >= 0
-inline constexpr int exp10i( int p )
+inline constexpr uint32_t exp10i( uint32_t p )
 {
-  int r = 1;
-  for( int i=0; i<p; ++i ) {
-    r *= 10;
-  }
-  return r;
+  return powers_of_10_i[p];
 }
 
 // TODO: callback for parameter parsing: default $a .. $z
@@ -191,4 +201,3 @@ bool splitNameWithIdx( const char *s, char *d0, char *d1, int &idx, const char *
 
 #endif
 
-// vim: path=.,/usr/share/stm32cube/inc
