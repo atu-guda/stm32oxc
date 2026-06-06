@@ -25,7 +25,8 @@ const char* common_help_string = "Appication to test misc math" NL;
 DCL_CMD_REG( test0, 'T', " - test statistics"  );
 DCL_CMD_REG( testout, 'O', " - test output"  );
 DCL_CMD_REG( testsplit, 'X', " expr - test var split"  );
-DCL_CMD_REG( testopt, 'Y', " n - test optiona/expected"  );
+DCL_CMD_REG( testopt, 'Y', " n - test optional/expected"  );
+DCL_CMD_REG( out_uns, 'U', " [v] - test unssigned in/out"  );
 
 
 void idle_main_task()
@@ -284,5 +285,26 @@ CMD_FUNCTION( testopt )
 
   return 0;
 }
+
+CMD_FUNCTION( out_uns )
+{
+  // TODO: cmp with array
+  // char s[80];
+  // CStr cs( s, size(s) );
+  // CStr cs{ s };
+  // s[0] = 'x'; s[1] = '\0';
+
+  if( argc > 1 ) {
+    uv = arg2ulong_d( 1, argc, argv, 0xFFFFFFFF );
+  }
+
+  std_out << " uv= " << uv << ' ' <<  /* FmtInt( uv ) << ' ' << */  HexInt(uv)
+    // << ' ' << s << ' ' << cs.n
+    << NL;
+
+
+  return 0;
+}
+
 
 

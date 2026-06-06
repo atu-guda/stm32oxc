@@ -38,10 +38,12 @@ struct BitNames {
   const char *const name; //* bit name or bitfield base (nullptr-end too)
 };
 
+//* just holds pointer to buffer and its size
 struct CStr {
-  constexpr CStr( char *a_s, unsigned a_n ) : s( a_s ), n( a_n ) {};
+  constexpr CStr( char *a_s, std::size_t a_n ) : s( a_s ), n( a_n ) {};
+  template<std::size_t N> explicit constexpr CStr( char (&a_s)[N] ) : s( a_s ), n(N) {};
   char *s;
-  const unsigned n;
+  const std::size_t n;
 };
 
 
