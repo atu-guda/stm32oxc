@@ -59,6 +59,16 @@ class FmtInt : public OutStreamFmt {
    const char fill_ch;
 };
 
+class FmtUns : public OutStreamFmt {
+  public:
+   constexpr FmtUns( unsigned a, unsigned _min_sz, char _fill_ch = ' ' )
+     : v(a), min_sz( _min_sz ), fill_ch( _fill_ch ) {}
+   virtual void out( OutStream &os ) const override;
+   const unsigned v;
+   const unsigned min_sz;
+   const char fill_ch;
+};
+
 class FixedPoint1 : public OutStreamFmt {
   public:
    explicit constexpr FixedPoint1( int a ) : v( a ) {};

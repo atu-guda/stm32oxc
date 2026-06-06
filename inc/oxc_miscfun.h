@@ -25,10 +25,11 @@ char* char2hex( char c, char *s );
 char* word2hex(  uint32_t d, char *s );
 char* u64_2hex(  uint64_t d, char *s );
 char* short2hex( uint16_t d, char *s );
-// return number of the appended chars
-unsigned i2dec_n( int n, char *s, unsigned min_sz = 1, char fill_ch = ' ' );
+// returns pointer to added '\0' at the end
+char* i2dec_n( int v,      char *s, unsigned min_sz = 1, char fill_ch = ' ' );
+char* u2dec_n( unsigned v, char *s, unsigned min_sz = 1, char fill_ch = ' ' );
 // if s == 0 returns ptr to inner static buffer
-char* i2dec( int n, char *s, unsigned min_sz = 1, char fill_ch = ' ' );
+char* i2dec( int v, char *s, unsigned min_sz = 1, char fill_ch = ' ' );
 // fixed point int representation to string
 char* ifcvt( int v, int mult, char *s, unsigned min_sz_frac = 1,  unsigned min_sz_int = 1, char plus_ch = ' ' );
 

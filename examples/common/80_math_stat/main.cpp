@@ -54,10 +54,10 @@ bool set_pmin( float v, int /* idx */ )
   return true;
 }
 
-int iv = 42;
-unsigned uv = 0xFFFFFFFF;
-int iva[] = { -7, 8, 9, -10, 15 };
-int ivf = 17;
+int iv      {         42 };
+unsigned uv { 0xFFFFFFFF };
+int iva[]   { -7, 8, 9, -10, 15 };
+int ivf     { 17 };
 
 int get_ivf( int /*idx*/ )
 {
@@ -298,8 +298,14 @@ CMD_FUNCTION( out_uns )
     uv = arg2ulong_d( 1, argc, argv, 0xFFFFFFFF );
   }
 
-  std_out << " uv= " << uv << ' ' <<  /* FmtInt( uv ) << ' ' << */  HexInt(uv)
+  char s[80];
+  // auto t = u2dec_n( uv, s, 10 );
+  auto t = u2dec_n( uv, s );
+  --t;
+
+  std_out << " uv= " << uv << ' ' <<  FmtUns( uv, 20, '*' ) << ' ' <<   HexInt(uv)
     // << ' ' << s << ' ' << cs.n
+    << ':' << s << ':' << t << ':' << HexInt(s) << ' ' << HexInt(t)
     << NL;
 
 

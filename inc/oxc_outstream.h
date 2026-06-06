@@ -26,10 +26,11 @@ class OutStream {
    OutStream& operator+=( const char *rhs ) { append( rhs ); return *this; }
    OutStream& operator<<( const char *rhs ) { append( rhs ); return *this; }
    OutStream& operator+=( int rhs );
+   OutStream& operator+=( unsigned rhs );
    OutStream& operator<<( int rhs )       { return operator+=( rhs ); }
-   OutStream& operator<<( unsigned rhs )  { return operator+=( (int)rhs ); }
+   OutStream& operator<<( unsigned rhs )  { return operator+=( rhs ); }
    OutStream& operator<<( long rhs )      { return operator+=( (int)rhs ); }
-   OutStream& operator<<( unsigned long rhs )  { return operator+=( (int)rhs ); }
+   OutStream& operator<<( unsigned long rhs )  { return operator+=( (unsigned)rhs ); }
    OutStream& operator<<( const OutStreamFmt &rhs ) { rhs.out( *this ); return *this; }
   private:
    DevOut *out = nullptr;

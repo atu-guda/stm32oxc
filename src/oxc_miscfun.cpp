@@ -74,32 +74,62 @@ char* short2hex( uint16_t d,  char *s )
   return s;
 }
 
-
-unsigned i2dec_n( int n, char *s, unsigned min_sz, char fill_ch )
+char* u2dec_n( unsigned v, char *s, unsigned min_sz, char fill_ch )
 {
-  char tbuf[INT_STR_SZ_DEC];
   if( !s ) {
-    return 0;
+    return nullptr;
   }
-  if( min_sz < 1 ) { min_sz = 1; }
-  if( min_sz > INT_STR_SZ_DEC-2 ) { min_sz = INT_STR_SZ_DEC-2; }
+  min_sz = std::clamp( min_sz, 1u, INT_STR_SZ_DEC-2 );
+
+  unsigned nc { 0 };
+
+  char tbuf[INT_STR_SZ_DEC];
+  char *tmpptr { tbuf };
+  *tmpptr++ = '\0'; // will be EOS after reversal
+
+  do {
+    *tmpptr++ = dec_digits[ v % 10 ]; ++nc;
+  } while( v /= 10 );
+
+  while( nc < min_sz ) {
+    *tmpptr++ = fill_ch; ++nc;
+  }
 
   char *bufptr = s;
-  char *tmpptr = tbuf + 1;
-  *tbuf = '\0';
-  unsigned u, nc = 0;
+  while( ( *bufptr++ = *--tmpptr ) != '\0' ) {
+    /* NOP */
+  }
+  --bufptr; // compensate overrun, so in mut pint now to '\0'
+  return bufptr;
+}
+
+
+
+char* i2dec_n( int v, char *s, unsigned min_sz, char fill_ch )
+{
+  if( !s ) {
+    return nullptr;
+  }
+  min_sz = std::clamp( min_sz, 1u, INT_STR_SZ_DEC-2 );
+
+  unsigned u, nc { 0 };
 
   bool neg { false };
-  if( n < 0 ){ //  sign
-    u = ( (unsigned)(-(1+n)) ) + 1; // INT_MIN handling
+  if( v < 0 ){ //  sign
+    u = ( (unsigned)(-(1+v)) ) + 1; // INT_MIN handling
     neg = true;
   } else {
-    u=n;
+    u=v;
   }
+
+  char tbuf[INT_STR_SZ_DEC];
+  char *tmpptr { tbuf };
+  *tmpptr++ = '\0'; // will be EOS after reversal
 
   do {
     *tmpptr++ = dec_digits[ u % 10 ]; ++nc;
   } while( u /= 10 );
+
   if( neg ) {
     *tmpptr++ = '-'; ++nc;
   }
@@ -108,20 +138,21 @@ unsigned i2dec_n( int n, char *s, unsigned min_sz, char fill_ch )
     *tmpptr++ = fill_ch; ++nc;
   }
 
+  char *bufptr = s;
   while( ( *bufptr++ = *--tmpptr ) != '\0' ) {
     /* NOP */
   }
 
-  return nc;
+  return bufptr;
 }
 
-char* i2dec( int n, char *s, unsigned min_sz, char fill_ch )
+char* i2dec( int v, char *s, unsigned min_sz, char fill_ch )
 {
   static char sbuf[INT_STR_SZ_DEC];
   if( !s ) {
     s = sbuf;
   }
-  i2dec_n( n, s, min_sz, fill_ch );
+  i2dec_n( v, s, min_sz, fill_ch );
   return s;
 }
 

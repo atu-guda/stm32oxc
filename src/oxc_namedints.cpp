@@ -92,7 +92,11 @@ bool NamedInt::get( CStr &v, int idx ) const
     int x = 0;
     bool ok = do_get( x, idx );
     if( ok ) {
-      i2dec_n( x, v.s, v.n );
+      if( type == types::UINT ) {
+        u2dec_n( x, v.s );
+      } else {
+        i2dec_n( x, v.s );
+      }
       return true;
     } else {
       v.s[0] = '?'; v.s[1] = '\0';
@@ -101,7 +105,7 @@ bool NamedInt::get( CStr &v, int idx ) const
   }
 
   if( idx == -2  ||  idx == -3 ) {
-    if( v.n < 12 * ne + 2 ) {
+    if( v.n < ( INT_STR_SZ_DEC + 2 ) * ne + 2 ) {
       strcpy( v.s, "[...]" );
       return false;
     }
@@ -123,10 +127,16 @@ bool NamedInt::get( CStr &v, int idx ) const
 
 void NamedInt::do_out( OutStream &os, int x, int fmt )
 {
-  if( fmt == 1 ) {
+  if( fmt & 1 ) {
     os << HexInt( x );
   } else {
-    os << x;
+    char buf[INT_STR_SZ_DEC];
+    if( fmt & 2 ) {
+      u2dec_n( x, buf );
+    } else {
+      i2dec_n( x, buf );
+    }
+    os << buf;
   }
 }
 
@@ -134,6 +144,9 @@ bool NamedInt::out( OutStream &os, int idx, int fmt ) const
 {
   if( idx == -1  &&  ne > 1 ) {
     idx = -2;
+  }
+  if( type == types::UINT ) {
+    fmt |= 2;
   }
 
   if( idx >= -1 ) {

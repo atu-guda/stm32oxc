@@ -48,6 +48,14 @@ OutStream& OutStream::operator+=( int rhs )
   return *this;
 }
 
+OutStream& OutStream::operator+=( unsigned rhs )
+{
+  char buf[INT_STR_SZ_DEC];
+  u2dec_n( rhs, buf );
+  append( buf );
+  return *this;
+}
+
 void HexInt::out( OutStream &os ) const
 {
   if( pr ) {
@@ -87,6 +95,13 @@ void FmtInt::out( OutStream &os ) const
 {
   char buf[INT_STR_SZ_DEC];
   i2dec_n( v, buf, min_sz, fill_ch );
+  os.append( buf );
+}
+
+void FmtUns::out( OutStream &os ) const
+{
+  char buf[INT_STR_SZ_DEC];
+  u2dec_n( v, buf, min_sz, fill_ch );
   os.append( buf );
 }
 
