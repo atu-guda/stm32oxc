@@ -20,8 +20,6 @@ void HAL_TIM_IC_CaptureCallback( TIM_HandleTypeDef *htim )
 }
 
 
-static TIM_MasterConfigTypeDef sMasterConfig_def =
-{ .MasterOutputTrigger = TIM_TRGO_RESET, .MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE };
 
 
 static int tim_base_config( TIM_HandleTypeDef *th );
