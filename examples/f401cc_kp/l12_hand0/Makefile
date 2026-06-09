@@ -33,8 +33,8 @@ SRCS += oxc_namedobjs.cpp
 SRCS += oxc_outstr.cpp
 SRCS += oxc_easing.cpp
 SRCS += oxc_pwmctltim.cpp
-SRCS += oxc_motorpwm.cpp
-SRCS += oxc_motor_servo_lwm_base.cpp
+SRCS += oxc_actu_dcpwm.cpp
+SRCS += oxc_actu_servo_lwm_base.cpp
 #SRCS += oxc_statdata.cpp
 
 

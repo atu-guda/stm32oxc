@@ -5,7 +5,7 @@
 #include <oxc_floatfun.h>
 #include <oxc_main.h>
 #include <oxc_pwmctltim.h>
-#include <oxc_motorpwm.h>
+#include <oxc_actu_dcpwm.h>
 #include <oxc_as5600.h>
 
 #include <main.h>
@@ -51,7 +51,7 @@ constinit PwmCtlTim pwm1( TIM_PWM_BASE, tim_pwm_chspins );
 
 PinGpio pwm_left_pin(  PwmLeftPin  );
 PinGpio pwm_right_pin( PwmRightPin );
-MotorPwm1P2D mot0( pwm1, 0, pwm_left_pin, pwm_right_pin );
+ActuDcPwm_1P2D mot0( pwm1, 0, pwm_left_pin, pwm_right_pin );
 
 void idle_main_task()
 {
@@ -153,7 +153,7 @@ CMD_FUNCTION( setV ) // V
   float v = arg2float_d( 1, argc, argv, 0 );
   auto  t = arg2ulong_d( 2, argc, argv, 1000, 0 );
 
-  mot0.set_v( v );
+  mot0.setV( v );
   delay_ms_brk( t );
   // std_out << '#' << pu << ' ' << pwm1.getPwmRaw( 0 ) << NL;
   mot0.stop();

@@ -1,26 +1,25 @@
-#ifndef _OXC_MOTOR_SERVO_LWM_BASE_H
-#define _OXC_MOTOR_SERVO_LWM_BASE_H
+#ifndef _OXC_ACTU_SERVO_LWM_BASE_H
+#define _OXC_ACTU_SERVO_LWM_BASE_H
 
-#include <oxc_motor.h>
-#include <oxc_gpio.h>
+#include <oxc_actu_base.h>
+#include <oxc_pwmctl.h>
 
 namespace oxc {
 
 
 // base: LWM controlled servo
-class MotorServoLWMBase : public MotorBase {
+class ActuServoLWMBase : public Actuator {
   public:
-   MotorServoLWMBase( PwmCtl &pwmc_, std::size_t ch_ )
+   ActuServoLWMBase( PwmCtl &pwmc_, std::size_t ch_ )
      : pwmc( pwmc_ ), ch(ch_)   {  }
-   ReturnCode set_xv( float xv ); // base: x or v
+   ReturnCode setXV( float xv ); // base: x or v
    // all other unimplemented
    // virtual ReturnCode set_v( float v ) override;
    // virtual ReturnCode set_x( float x ) override;
    // virtual ReturnCode stop() override;
    // virtual ReturnCode brk() override;
    // virtual ReturnCode idle() override;
-   virtual float get_v() const override { return 0; }
-   virtual float get_x() const override { return 0; }
+   virtual ReturnCode init() { return rcOk; /* pwmc.initHW() ? rcOk : rcErr; */ } // TODO: fix
 
    void set_t_on_limits( uint32_t t_on_min_, uint32_t t_on_max_ )
    {

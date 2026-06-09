@@ -20,8 +20,8 @@
 #include <oxc_easing.h>
 
 #include <oxc_pwmctltim.h>
-#include <oxc_motorpwm.h>
-#include <oxc_motor_servo_lwm.h>
+#include <oxc_actu_dcpwm.h>
+#include <oxc_actu_servo_lwm.h>
 
 #include "main.h"
 
@@ -67,7 +67,7 @@ PinOut mq0_pin_l { MQ0_PIN_L };
 PinOut mq0_pin_r { MQ0_PIN_R };
 PinGpio mq0_left_pin(  mq0_pin_l );
 PinGpio mq0_right_pin( mq0_pin_r );
-MotorPwm1P2D mot_q0( mq0_pwm, 0, mq0_left_pin, mq0_right_pin );
+ActuDcPwm_1P2D mot_q0( mq0_pwm, 0, mq0_left_pin, mq0_right_pin );
 
 TIM_HandleTypeDef tim_lwm_h;
 

@@ -6,7 +6,7 @@
 
 #include <oxc_main.h>
 
-#include <oxc_motor_servo_c_lwm.h>
+#include <oxc_actu_servo_c_lwm.h>
 
 #include <main.h>
 
@@ -41,7 +41,7 @@ TIM_HandleTypeDef tim_pwm_h;
 
 constinit PwmCtlTim pwm1( TIM_PWM_BASE, tim_pwm_chspins );
 
-MotorServoContLWM mot0( pwm1, 0 );
+ActuServoContLWM mot0( pwm1, 0 );
 
 int main(void)
 {
@@ -115,7 +115,7 @@ CMD_FUNCTION( setV ) // V
   float v = arg2float_d( 1, argc, argv, 0 );
   auto  t = arg2ulong_d( 2, argc, argv, 1000, 0 );
 
-  mot0.set_v( v );
+  mot0.setV( v );
   delay_ms_brk( t );
   // std_out << '#' << pu << ' ' << pwm1.getPwmRaw( 0 ) << NL;
   mot0.stop();

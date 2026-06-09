@@ -25,7 +25,7 @@ SRCS += main.cpp
 SRCS += oxc_floatfun.cpp
 SRCS += oxc_pwmctltim.cpp
 
-SRCS += oxc_motor_servo_lwm_base.cpp
+SRCS += oxc_actu_servo_lwm_base.cpp
 
 # SRCS += oxc_debug_cmds.cpp
 

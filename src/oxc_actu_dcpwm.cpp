@@ -1,10 +1,15 @@
-#include <oxc_motorpwm.h>
+#include <oxc_actu_dcpwm.h>
 
 using namespace oxc;
 
-ReturnCode oxc::MotorPwm1P2D::set_v( float v )
+ReturnCode oxc::ActuDcPwm_1P2D::setX( float x )
 {
-  int dir = 0;
+  return rcErr;
+}
+
+ReturnCode oxc::ActuDcPwm_1P2D::setV( float v )
+{
+  int8_t dir { 0 };
   if( v < -zero_v ) {
     v = -v; dir = -1;
   } else if( v > zero_v ) {
@@ -28,26 +33,26 @@ ReturnCode oxc::MotorPwm1P2D::set_v( float v )
   return rcOk;
 }
 
-ReturnCode oxc::MotorPwm1P2D::set_x( float x )
+ReturnCode oxc::ActuDcPwm_1P2D::setTo( float to )
 {
   return rcErr;
 }
 
-ReturnCode oxc::MotorPwm1P2D::stop()
+ReturnCode oxc::ActuDcPwm_1P2D::stop()
 {
   pin_l.reset(); pin_r.reset();
   pwmc.setPwm( ch, 0 );
   return rcOk;
 }
 
-ReturnCode oxc::MotorPwm1P2D::brk()
+ReturnCode oxc::ActuDcPwm_1P2D::brk()
 {
   pin_l.set(); pin_r.set();
   pwmc.setPwm( ch, 0 );
   return rcOk;
 }
 
-ReturnCode oxc::MotorPwm1P2D::idle()
+ReturnCode oxc::ActuDcPwm_1P2D::idle()
 {
   return stop(); // param?
 }
