@@ -548,7 +548,7 @@ class PinGpio : public PinBase
    virtual void write( bool v ) override { pin.write( v ); };
    virtual void toggle()        override { pin.toggle(); };
    virtual bool get()           override { return pin.read_in(); };
-   virtual bool initHW()        override { pin.initHW(); return true; };
+   virtual ReturnCode initHW()  override { pin.initHW(); return rcOk; };
   protected:
    PinOut pin;
 };
@@ -588,7 +588,7 @@ class IoPin {
    };
    void set_sw0( bool s ) { if( s ) sw1(); else sw0(); }
    uint8_t rw() {
-     delay_bad_mcs( 1 );
+     oxc::delay_bad_mcs( 1 );
      return rw_raw();
    };
    inline uint8_t rw_raw() {

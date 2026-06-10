@@ -110,8 +110,8 @@ CMD_FUNCTION( write_reg )
 
   std_out <<  "# write1reg :  " << reg << ' ' << val << ' ' << UVAR_u << NL;
   auto rc = m_srv.writeReg( UVAR_u, reg, val );
-  std_out << "# rc " << rc << ' ' << m_srv.getError() << ' ' << m_srv.getReplError() << NL;
-  return rc;
+  std_out << "# rc " << rc.code << ' ' << m_srv.getError() << ' ' << m_srv.getReplError() << NL;
+  return rc.isOk() ? 0 : 1;
 }
 
 CMD_FUNCTION( read_regs )
@@ -122,7 +122,7 @@ CMD_FUNCTION( read_regs )
   std_out <<  "# readNRegs :  " << start << ' ' << n << ' ' << UVAR_u << NL;
   auto rc = m_srv.readRegs( UVAR_u, start, n );
 
-  std_out << "# rc " << rc << ' ' << m_srv.getError() << ' ' << m_srv.getReplError() << NL;
+  std_out << "# rc " << rc.code << ' ' << m_srv.getError() << ' ' << m_srv.getReplError() << NL;
 
   if( rc == rcOk ) {
     for( uint16_t i=start; i<start+n; ++i ) {
@@ -130,7 +130,7 @@ CMD_FUNCTION( read_regs )
       std_out << "# " << HexInt16(i) << ' ' << HexInt16(v) << ' ' << v << NL;
     }
   }
-  return rc;
+  return rc.isOk() ? 0 : 1;
 }
 
 
@@ -144,7 +144,7 @@ CMD_FUNCTION( read_reg )
   if( v ) {
     std_out << "# v= "  << HexInt16(v.value()) << ' ' << v.value() << NL;
   } else {
-    std_out << "# rc " << v.error() << ' ' << m_srv.getError() << ' ' << m_srv.getReplError() << NL;
+    std_out << "# rc " << v.error().code << ' ' << m_srv.getError() << ' ' << m_srv.getReplError() << NL;
   }
 
   return 0;

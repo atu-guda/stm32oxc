@@ -112,7 +112,7 @@ int main(void)
   motor_dir.reset( 0x1F_mask );
   proxy_sens.initHW();
 
-  // UVAR_e = i2c_default_init( i2ch );
+  // i2c_default_init( i2ch );
   // i2c_dbg = &i2cd;
   // i2c_client_def = &XXXXX;
 

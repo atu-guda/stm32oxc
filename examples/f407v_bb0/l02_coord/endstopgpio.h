@@ -9,7 +9,7 @@ class EndStopGpioPos : public EndStop {
   public:
    EndStopGpioPos( PortPin a_start, uint8_t a_n = 2 )
      : pins( a_start, a_n, GpioPull::down ) {}
-   virtual ReturnCode initHW() override { pins.initHW(); return rcOk; };
+   virtual ReturnCode initHW() override { pins.initHW(); return oxc::rcOk; };
    virtual uint16_t read() override { v = pins.read().bitmask(); return v; }
    virtual bool is_minus_stop() const override { return ( ( v & minusBit ) == 0 ) ; }
    virtual bool is_minus_go()   const override { return ( ( v & minusBit ) != 0 ) ; }

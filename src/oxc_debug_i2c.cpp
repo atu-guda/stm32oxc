@@ -87,7 +87,7 @@ CMD_FUNCTION( i2c_init )
 {
   CHECK_I2C_DEV;
 
-  UVAR_e = i2c_default_init( *i2c_dbg->dev() /*, 400000 */ );
+  i2c_default_init( *i2c_dbg->dev() /*, 400000 */ );
 
   if( UVAR_d > 0 ) {
     dump32( (void*)(BOARD_I2C_DEFAULT), 0x30 );

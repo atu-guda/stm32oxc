@@ -164,6 +164,12 @@ int post_exec( int rc )
   return rc;
 }
 
+// fake
+int wait_eot( wait_tx )
+{
+  return 0;
+}
+
 
 int main(void)
 {

@@ -6,6 +6,8 @@
 
 #define OUT std_out
 
+using namespace oxc;
+
 
 void GcodeBlock::init()
 {

@@ -46,7 +46,7 @@ int main(void)
   // config
   UVAR_c = AS5600::CfgBits::cfg_pwr_mode_nom |  AS5600::CfgBits::cfg_hyst_off;
 
-  UVAR_e = i2c_default_init( i2ch /*, 400000 */ );
+  i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
   i2c_client_def = &ang_sens;
 

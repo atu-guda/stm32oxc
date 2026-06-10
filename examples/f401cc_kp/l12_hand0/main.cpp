@@ -319,7 +319,7 @@ int main(void)
   pin_stop.initHW();
 
 
-  UVAR_v = i2c_default_init( i2ch /*, 400000 */ );
+  i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
   i2c_client_def = &ang_sens;
 

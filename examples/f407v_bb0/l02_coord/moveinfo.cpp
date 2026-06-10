@@ -88,7 +88,7 @@ ReturnCode MoveInfo::prep_move_circ( const xfloat *prm )
 ReturnCode MoveInfo::calc_step( xfloat a, xfloat *coo )
 {
   if( !isGood() || coo == nullptr ) {
-    return ReturnCode::rcErr;
+    return rcErr;
   }
   return step_pfun( *this, a, coo );
 }
@@ -100,7 +100,7 @@ ReturnCode step_line_fun( MoveInfo &mi, xfloat a, xfloat *coo )
     coo[i] =  a * mi.k_x[i];
   }
 
-  return ReturnCode::rcOk;
+  return rcOk;
 }
 
 ReturnCode step_circ_fun( MoveInfo &mi, xfloat a, xfloat *coo )
@@ -124,6 +124,6 @@ ReturnCode step_circ_fun( MoveInfo &mi, xfloat a, xfloat *coo )
   coo[2]  = a * z_e;
   coo[3]  = a * e_e;
 
-  return ReturnCode::rcOk;
+  return rcOk;
 }
 

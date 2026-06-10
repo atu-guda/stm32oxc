@@ -3,7 +3,7 @@
 
 #include <oxc_asm.h>
 
-// only form C++
+// only from C++
 
 template <typename F, typename... Args > auto at_disabled_irq( F fun, Args&&... args )
 {

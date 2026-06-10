@@ -21,14 +21,14 @@ volatile int sigint_count   =  0;
 volatile int task_leds_step = 50; // 500 ms def
 
 
-void default_wait1()
+void oxc::default_wait1()
 {
   delay_ms( 1 );
 }
 
-AuxTickFun oxc_aux_tick_funcs[AUX_TICK_FUN_N];
+AuxTickFun oxc::oxc_aux_tick_funcs[AUX_TICK_FUN_N];
 
-ReturnCode  oxc_add_aux_tick_fun( AuxTickFun f )
+ReturnCode  oxc::oxc_add_aux_tick_fun( AuxTickFun f )
 {
   return at_disabled_irq( [f]() {
     for( auto &fp : oxc_aux_tick_funcs ) {
@@ -41,7 +41,7 @@ ReturnCode  oxc_add_aux_tick_fun( AuxTickFun f )
   } );
 }
 
-ReturnCode oxc_del_aux_tick_fun( AuxTickFun f )
+ReturnCode oxc::oxc_del_aux_tick_fun( AuxTickFun f )
 {
   return at_disabled_irq( [f]() {
     for( auto &fp : oxc_aux_tick_funcs ) {
@@ -54,7 +54,7 @@ ReturnCode oxc_del_aux_tick_fun( AuxTickFun f )
   } );
 }
 
-void oxc_clear_aux_tick_funs()
+void oxc::oxc_clear_aux_tick_funs()
 {
   at_disabled_irq( []() {
     for( auto &fp : oxc_aux_tick_funcs ) {
@@ -63,7 +63,7 @@ void oxc_clear_aux_tick_funs()
   } );
 }
 
-void oxc_call_aux_tick_funcs()
+void oxc::oxc_call_aux_tick_funcs()
 {
   for( auto fp : oxc_aux_tick_funcs ) {
     if( fp != nullptr ) {
@@ -121,7 +121,7 @@ void wakeFromIRQ( long wake )
   #endif
 }
 
-[[ noreturn ]] void die( uint16_t n )
+[[ noreturn ]] void oxc::die( uint16_t n )
 {
   #ifdef USE_FREERTOS
   taskDISABLE_INTERRUPTS();
@@ -152,12 +152,12 @@ uint32_t delay_calibrate_value = 200 * 16; // for initial 16 MHz
   #endif
 #endif
 
-void approx_delay_calibrate()
+void approx_delay_calibrate() // not oxc:: ???
 {
   delay_calibrate_value = HAL_RCC_GetSysClockFreq() / DELAY_APPROX_COEFF;
 }
 
-void do_delay_calibrate()
+void oxc::do_delay_calibrate()
 {
   uint32_t n = delay_calibrate_value * 500; // for calibrate 500 ms
   uint32_t tm0 = HAL_GetTick();
@@ -166,7 +166,7 @@ void do_delay_calibrate()
   delay_calibrate_value = n / dlt;
 }
 
-void delay_bad_mcs( uint32_t mcs )
+void oxc::delay_bad_mcs( uint32_t mcs )
 {
   uint32_t n = mcs * delay_calibrate_value / 1000;
   for( uint32_t i=0; i<n; ++i ) {
@@ -174,7 +174,7 @@ void delay_bad_mcs( uint32_t mcs )
   }
 }
 
-void delay_bad_100ns( uint32_t ns100 )
+void oxc::delay_bad_100ns( uint32_t ns100 )
 {
   uint32_t n = ns100 * delay_calibrate_value / 10000;
   for( uint32_t i=0; i<n; ++i ) {
@@ -189,24 +189,24 @@ void HAL_Delay( uint32_t Delay )
 }
 #endif
 
-void delay_ms( uint32_t ms )
+void oxc::delay_ms( uint32_t ms )
 {
   return (void)delay_ms_until_brk_ex( nullptr, ms, false );
 }
 
-int delay_ms_brk( uint32_t ms )
+int oxc::delay_ms_brk( uint32_t ms )
 {
   return delay_ms_until_brk_ex( nullptr, ms, true );
 }
 
-int delay_ms_until_brk( uint32_t *tc0, uint32_t ms )
+int oxc::delay_ms_until_brk( uint32_t *tc0, uint32_t ms )
 {
   return delay_ms_until_brk_ex( tc0, ms, true );
 }
 
 #ifdef USE_FREERTOS
 
-int  delay_ms_until_brk_ex( uint32_t *tc0, uint32_t ms, int check_break ) // FreeRTOS version
+int  oxc::delay_ms_until_brk_ex( uint32_t *tc0, uint32_t ms, int check_break ) // FreeRTOS version
 {
   if( __get_PRIMASK() ) {
     delay_bad_ms( ms );
@@ -238,7 +238,7 @@ int  delay_ms_until_brk_ex( uint32_t *tc0, uint32_t ms, int check_break ) // Fre
 #else
 
 
-int  delay_ms_until_brk_ex( uint32_t *tc0, uint32_t ms, int check_break )
+int  oxc::delay_ms_until_brk_ex( uint32_t *tc0, uint32_t ms, int check_break )
 {
   if( __get_PRIMASK() ) {
     delay_bad_ms( ms );
@@ -273,20 +273,20 @@ int  delay_ms_until_brk_ex( uint32_t *tc0, uint32_t ms, int check_break )
 #endif
 // end FreeRTOS/not
 
-__weak int on_delay_actions() // to be redefined by user if need
+__weak int oxc::on_delay_actions() // to be redefined by user if need
 {
   return 0;
 }
 
 
-void delay_bad_n( uint32_t dly )
+void oxc::delay_bad_n( uint32_t dly )
 {
   for( uint32_t i=0; i<dly; ++i ) {
     __asm volatile ( "nop;");
   }
 }
 
-void delay_bad_s( uint32_t s )
+void oxc::delay_bad_s( uint32_t s )
 {
   uint32_t n = s * delay_calibrate_value * 1000;
   for( uint32_t i=0; i<n; ++i ) {
@@ -294,7 +294,7 @@ void delay_bad_s( uint32_t s )
   }
 }
 
-void delay_bad_ms( uint32_t ms )
+void oxc::delay_bad_ms( uint32_t ms )
 {
   uint32_t n = ms * delay_calibrate_value;
   for(  uint32_t i = 0; i<n; ++i ) {
@@ -302,7 +302,7 @@ void delay_bad_ms( uint32_t ms )
   }
 }
 
-void delay_mcs( uint32_t mcs )
+void oxc::delay_mcs( uint32_t mcs )
 {
   uint32_t ms = mcs / 1000;
   uint32_t mcs_r = mcs % 1000;

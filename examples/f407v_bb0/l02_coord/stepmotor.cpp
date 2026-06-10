@@ -1,5 +1,7 @@
 #include "stepmotor.h"
 
+using namespace oxc;
+
 void StepMotorGpio2::step()
 {
   if( dir == 0 ) {

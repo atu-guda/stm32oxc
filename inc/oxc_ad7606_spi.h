@@ -8,6 +8,8 @@
 
 #include <oxc_spi.h>
 
+using oxc::delay_bad_n;
+
 class AD7606_SPI {
   public:
    // enum {

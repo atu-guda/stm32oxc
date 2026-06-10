@@ -5,6 +5,7 @@
 
 #include <oxc_gpio.h>
 
+using oxc::delay_bad_mcs;
 
 class HX711 {
   public:

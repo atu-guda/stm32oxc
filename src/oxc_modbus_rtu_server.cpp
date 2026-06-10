@@ -73,7 +73,7 @@ ReturnCode MODBUS_RTU_server::readRegs( uint8_t addr, uint16_t start, uint16_t n
 
 ReturnCode MODBUS_RTU_server::writeReg_ntry( uint8_t addr, uint16_t reg, uint16_t val )
 {
-  ReturnCode rc;
+  ReturnCode rc { rcErr };
   for( uint32_t i=0; i<n_try && !break_flag; ++i ) {
     rc = writeReg( addr, reg, val );
     if( rc == rcOk ) {
@@ -86,7 +86,7 @@ ReturnCode MODBUS_RTU_server::writeReg_ntry( uint8_t addr, uint16_t reg, uint16_
 
 ReturnCode MODBUS_RTU_server::readRegs_ntry( uint8_t addr, uint16_t start, uint16_t n )
 {
-  ReturnCode rc;
+  ReturnCode rc { rcErr };
   for( uint32_t i=0; i<n_try && !break_flag; ++i ) {
     rc = readRegs( addr, start, n );
     if( rc == rcOk ) {

@@ -1,7 +1,7 @@
 #ifndef _ENDSTOP_H
 #define _ENDSTOP_H
 
-enum ReturnCode;
+using oxc::ReturnCode;
 
 //* abstract class to represent common endstop
 class EndStop {
@@ -28,7 +28,7 @@ class EndStop {
 class EndStopGood : public EndStop {
   public:
    EndStopGood() { v = 0xFF; };
-   virtual ReturnCode initHW() override { return rcOk; };
+   virtual ReturnCode initHW() override { return oxc::rcOk; };
    virtual uint16_t read() override { v = 0xFF; return v; };
    virtual bool is_minus_stop() const override { return false; };
    virtual bool is_minus_go()   const override { return true;  };
@@ -45,7 +45,7 @@ class EndStopGood : public EndStop {
 class EndStopBad : public EndStop {
   public:
    EndStopBad();
-   virtual ReturnCode initHW() override { return rcOk; };
+   virtual ReturnCode initHW() override { return oxc::rcOk; };
    virtual uint16_t read() override { v = 0; return v; };
    virtual bool is_minus_stop() const override { return true; };
    virtual bool is_minus_go()   const override { return false;  };

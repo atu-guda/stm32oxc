@@ -56,16 +56,6 @@
   #define NL "\n"
 #endif
 
-enum ReturnCode {
-  rcOk = 0,
-  rcInfo = 1,
-  rcWarn = 2,
-  rcExtra = 3,
-  rcEnd = 4,
-  rcErr = 10,
-  rcFatal = 20
-};
-
 #ifndef   __IO
   #define __IO volatile
 #endif
@@ -74,6 +64,50 @@ typedef const char *const ccstr;
 typedef uint32_t mu_t; // mutex_t alike
 
 typedef void (*AuxTickFun)(void);
+
+namespace oxc {
+
+struct ReturnCode {
+  enum ReturnCodeNum {
+    rcnOk    =  0,
+    rcnInfo  =  1,
+    rcnWarn  =  2,
+    rcnExtra =  3,
+    rcnEnd   =  4,
+    rcnErr   = 10,
+    rcnFatal = 20
+  };
+
+  uint16_t code;
+  uint16_t data;
+
+  constexpr ReturnCode( uint16_t co, uint16_t da = 0 ) noexcept : code( co ), data( da ) {};
+  constexpr bool isOk()      const noexcept { return code <  rcnErr; }
+  constexpr bool isWarning() const noexcept { return code == rcnWarn; }
+  constexpr bool isError()   const noexcept { return code >= rcnErr; }
+  constexpr bool isFatal()   const noexcept { return code >= rcnFatal; }
+
+  constexpr bool operator==( enum ReturnCodeNum rcn ) const noexcept {
+    return code == rcn && data == 0;
+  }
+  constexpr bool operator!=( enum ReturnCodeNum rcn ) const noexcept {
+    return !( *this == rcn );
+  }
+  constexpr bool operator==( const ReturnCode &rhs ) const noexcept = default;
+  constexpr uint32_t toUint32() const { return code << 16 | data; }
+
+  void ifErr( void(*f)(void)  ) { if( isError() ) { f(); } }
+
+};
+static_assert( sizeof(ReturnCode) == sizeof(uint32_t) );
+
+inline constexpr ReturnCode rcOk    { ReturnCode::rcnOk,    0 };
+inline constexpr ReturnCode rcWarn  { ReturnCode::rcnWarn,  0 };
+inline constexpr ReturnCode rcErr   { ReturnCode::rcnErr ,  0 };
+inline constexpr ReturnCode rcFatal { ReturnCode::rcnFatal, 0 };
+
+}
+
 
 
 #endif

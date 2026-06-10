@@ -49,7 +49,7 @@ int main(void)
   UVAR_r = 100;  // R_sh in mOhm
   UVAR_i = 100;  // I_max in mA
 
-  UVAR_e = i2c_default_init( i2ch /*, 400000 */ );
+  i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
   i2c_client_def = &ina228;
 

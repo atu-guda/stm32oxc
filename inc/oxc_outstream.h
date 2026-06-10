@@ -31,6 +31,7 @@ class OutStream {
    OutStream& operator<<( unsigned rhs )  { return operator+=( rhs ); }
    OutStream& operator<<( long rhs )      { return operator+=( (int)rhs ); }
    OutStream& operator<<( unsigned long rhs )  { return operator+=( (unsigned)rhs ); }
+   OutStream& operator<<( oxc::ReturnCode rhs )  { return operator+=( rhs.code ); }
    OutStream& operator<<( const OutStreamFmt &rhs ) { rhs.out( *this ); return *this; }
   private:
    DevOut *out = nullptr;

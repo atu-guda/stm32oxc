@@ -4,7 +4,7 @@
 
 using namespace oxc;
 
-void (*RingBuf::wait_fun)(void) = default_wait1;
+void (*RingBuf::wait_fun)(void) = oxc::default_wait1;
 
 RingBuf::RingBuf( char *a_b, unsigned a_cap )
   : b( a_b ), cap( a_cap )

@@ -208,7 +208,7 @@ int main(void)
   UVAR_n =  100; // default main loop count
   UVAR_t =   10; // time step  on cmd_dyn
 
-  UVAR_v = i2c_default_init( i2ch /*, 400000 */ );
+  i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
   i2c_client_def = &ang_sens;
 

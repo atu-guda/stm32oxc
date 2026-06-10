@@ -54,7 +54,7 @@ uint32_t TMC2209::TMC_devices::read_reg_1( uint8_t dev, uint8_t reg )
     return TMC2209::bad_val;
   }
 
-  delay_ms( 1 ); // TODO: config
+  oxc::delay_ms( 1 ); // TODO: config
 
   memset( buf, '\x00', sizeof(buf) );
 
@@ -71,7 +71,7 @@ uint32_t TMC2209::TMC_devices::read_reg_1( uint8_t dev, uint8_t reg )
   TMC2209::rwdata *rd = std::bit_cast<TMC2209::rwdata*>( buf + sizeof(TMC2209::rreq) );
   // TODO: check crc
   uint32_t v = __builtin_bswap32( rd->data );
-  delay_mcs( 100 );
+  oxc::delay_mcs( 100 );
   return v;
 }
 
@@ -82,7 +82,7 @@ uint32_t TMC2209::TMC_devices::read_reg( uint8_t dev, uint8_t reg )
     if( v != TMC2209::bad_val ) {
       return v;
     }
-    delay_ms( wait_max );
+    oxc::delay_ms( wait_max );
   }
   return TMC2209::bad_val;
 }
@@ -117,7 +117,7 @@ int TMC2209::TMC_devices::write_reg( uint8_t dev, uint8_t reg, uint32_t v )
       return 1;
     }
 
-    delay_ms( wait_max );
+    oxc::delay_ms( wait_max );
   }
   return TMC2209::bad_val;
 }

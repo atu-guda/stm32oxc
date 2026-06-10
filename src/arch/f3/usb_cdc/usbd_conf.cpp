@@ -288,8 +288,8 @@ uint32_t USBD_LL_GetRxDataSize( USBD_HandleTypeDef *pdev, uint8_t  ep_addr )
 void  USBD_LL_Delay( uint32_t delay )
 {
   // HAL_Delay( delay );
-  delay_ms( delay );
-  // delay_bad_ms( delay );
+  oxc::delay_ms( delay );
+  // oxc::delay_bad_ms( delay );
 }
 
 void *USBD_static_malloc( uint32_t size )

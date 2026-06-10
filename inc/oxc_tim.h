@@ -7,6 +7,8 @@
 
 #include <oxc_gpio.h>
 
+using oxc::ReturnCode;
+
 namespace oxc {
 
 inline constexpr std::size_t tim_max_ccrs { 8 };

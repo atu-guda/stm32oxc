@@ -87,7 +87,7 @@ CMD_FUNCTION( test0 )
   for( int i=0; i<n && !break_flag; ++i ) {
     ReturnCode rc = rd.setV( v_set );
     if( rc != rcOk ) {
-      std_out << "# setV error: " << rc << NL;
+      std_out << "# setV error: " << rc.code << NL;
       break;
     }
 
@@ -96,7 +96,7 @@ CMD_FUNCTION( test0 )
     }
     rc = rd.readMain();
     if( rc != rcOk ) {
-      std_out << "# readMain error: " << rc << NL;
+      std_out << "# readMain error: " << rc.code << NL;
       break;
     }
     auto err = rd.get_Err();
@@ -114,7 +114,7 @@ CMD_FUNCTION( test0 )
   break_flag = 0;
   std_out << "# prepare to OFF: " ;
   delay_ms( 200 );
-  std_out << rd.off() << NL;
+  std_out << rd.off().code << NL;
 
   return 0;
 }
@@ -125,7 +125,7 @@ CMD_FUNCTION( init )
   std_out <<  "#  init: addr=" << (int)addr  << NL;
   rd.setAddr( addr );
   auto rc = rd.init();
-  std_out << "# scale= " << rd.getScale() << " rc= " << rc << NL;
+  std_out << "# scale= " << rd.getScale() << " rc= " << rc.code << NL;
 
   return 0;
 }
@@ -191,7 +191,7 @@ CMD_FUNCTION( write_reg )
   std_out <<  "# write1reg :  " << reg << ' ' << val << ' ' << UVAR_u << NL;
   auto rc = m_srv.writeReg( UVAR_u, reg, val );
   std_out << "# rc " << rc << ' ' << m_srv.getError() << ' ' << m_srv.getReplError() << NL;
-  return rc;
+  return rc.isOk() ? 0 : 1;
 }
 
 CMD_FUNCTION( read_regs )
@@ -210,7 +210,7 @@ CMD_FUNCTION( read_regs )
       std_out << "# " << HexInt16(i) << ' ' << HexInt16(v) << ' ' << v << NL;
     }
   }
-  return rc;
+  return rc.isOk() ? 0 : 1;
 }
 
 

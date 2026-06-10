@@ -11,7 +11,7 @@
 #endif
 
 #ifdef USE_OXC_DEVIO
-#define ADD_DEVIO_TICKFUN oxc_add_aux_tick_fun( DevIO::tick_actions_all )
+#define ADD_DEVIO_TICKFUN oxc::oxc_add_aux_tick_fun( DevIO::tick_actions_all )
 #else
 #define ADD_DEVIO_TICKFUN
 #endif
@@ -29,7 +29,7 @@
 
 #define STD_PROLOG_UART_NOCON \
   STD_PROLOG_START; \
-  delay_ms( PROLOG_LED_TIME ); leds.write( 0_mask ); delay_ms( PROLOG_LED_TIME ); \
+  oxc::delay_ms( PROLOG_LED_TIME ); leds.write( 0_mask ); oxc::delay_ms( PROLOG_LED_TIME ); \
   if( ! init_uart( &uah_console ) ) { \
     die4led( 1_mask ); \
   } \
@@ -43,7 +43,7 @@
 
 #define STD_PROLOG_USBCDC \
   STD_PROLOG_START; \
-  delay_ms( PROLOG_LED_TIME ); leds.write( 0_mask ); delay_ms( PROLOG_LED_TIME ); \
+  oxc::delay_ms( PROLOG_LED_TIME ); leds.write( 0_mask ); oxc::delay_ms( PROLOG_LED_TIME ); \
   if( ! dev_console.init() ) { \
     die4led( 1_mask ); \
   } \

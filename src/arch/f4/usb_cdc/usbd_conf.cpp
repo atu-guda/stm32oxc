@@ -6,6 +6,8 @@
 #include <usbd_core.h>
 
 
+using namespace oxc;
+
 extern "C" {
   USBD_StatusTypeDef USBD_LL_PrepareReceive( USBD_HandleTypeDef *pdev, uint8_t ep_addr, uint8_t *pbuf, uint32_t sz );
   USBD_StatusTypeDef USBD_LL_Transmit( USBD_HandleTypeDef *pdev, uint8_t ep_addr, uint8_t *pbuf, uint32_t sz );

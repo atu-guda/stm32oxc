@@ -9,6 +9,8 @@
 
 #include <oxc_lidar_ld20.h>
 
+using namespace oxc;
+
 USE_DIE4LED_ERROR_HANDLER;
 BOARD_DEFINE_LEDS;
 

@@ -51,7 +51,7 @@ class GcodeBlock {
     char str0[max_str_sz+2], str1[max_str_sz+2];
     int err_pos  { 0 };
     int err_code { 0 };
-    ReturnCode mach_rc  { rcOk };
+    ReturnCode mach_rc  { oxc::rcOk };
 };
 
 

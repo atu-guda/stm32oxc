@@ -22,9 +22,9 @@ class ActuDcPwm_1P2D : public Actuator {
    virtual ReturnCode stop() override;
    virtual ReturnCode brk()  override;
    virtual ReturnCode idle() override;
-   virtual ReturnCode init() override { return initHW() ? rcOk : rcErr; };
+   virtual ReturnCode init() override { return initHW(); };
 
-   bool initHW() { return /* pwmc.initHW() && */ pin_l.initHW() &&  pin_r.initHW(); }; // TODO: use initHW
+   ReturnCode initHW() { /* pwmc.initHW() && */ pin_l.initHW() ; pin_r.initHW(); return rcOk; }; // TODO: use initHW
    void set_zero_v( float v_ ) { zero_v = v_; };
   protected:
    PwmCtl &pwmc;   //* any PWM controller

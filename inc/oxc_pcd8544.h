@@ -37,7 +37,7 @@ class PCD8544 {
    PCD8544( DevSPI &a_spi, PinOut &a_rst, PinOut &a_dc )
      : spi_d( a_spi ),  rst( a_rst ), dc( a_dc ) {};
    int init();
-   void reset() { rst.reset(); delay_bad_mcs( 10 ); rst.set(); }
+   void reset() { rst.reset(); oxc::delay_bad_mcs( 10 ); rst.set(); }
    int cmd( const uint8_t *cmds, uint16_t n );
    int cmd( uint8_t acmd ) { return cmd( &acmd, 1 ); };
    int xcmd( uint8_t acmd ); // send extended cmd + switch mode +-

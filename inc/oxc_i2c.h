@@ -3,7 +3,7 @@
 
 #include <oxc_miscfun.h>
 
-int i2c_default_init( I2C_HandleTypeDef &i2c, int speed = 100000 );
+oxc::ReturnCode i2c_default_init( I2C_HandleTypeDef &i2c, int speed = 100000 );
 
 class DevI2C  {
   public:

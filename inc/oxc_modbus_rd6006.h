@@ -32,9 +32,9 @@ class RD6006_Modbus {
    uint8_t getAddr() const  { return addr; }
    ReturnCode init();
    uint32_t getScale() const { return scale; };
-   ReturnCode on()  { return scale ? mbus.writeReg_ntry( addr, regOn, 1 ) : rcErr; }
-   ReturnCode off() { return scale ? mbus.writeReg_ntry( addr, regOn, 0 ) : rcErr; }
-   ReturnCode onoff( bool do_on ) { return scale ? mbus.writeReg_ntry( addr, regOn, do_on ) : rcErr; }
+   ReturnCode on()  { return scale ? mbus.writeReg_ntry( addr, regOn, 1 ) : oxc::rcErr; }
+   ReturnCode off() { return scale ? mbus.writeReg_ntry( addr, regOn, 0 ) : oxc::rcErr; }
+   ReturnCode onoff( bool do_on ) { return scale ? mbus.writeReg_ntry( addr, regOn, do_on ) : oxc::rcErr; }
    bool isOn() { auto v { mbus.readGetReg_ntry( addr, regOn) }; return v ? bool(v.value()) : false; }
    ReturnCode lock()   { return mbus.writeReg_ntry( addr, regLock, 1 ); }
    ReturnCode unlock() { return mbus.writeReg_ntry( addr, regLock, 0 ); }

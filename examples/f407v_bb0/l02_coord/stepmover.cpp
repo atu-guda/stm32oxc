@@ -1,5 +1,8 @@
 #include "stepmover.h"
 
+using namespace oxc;
+
+inline constexpr ReturnCode rcEnd   { ReturnCode::rcnEnd ,  0 };
 
 StepMover::StepMover( StepMotor &a_motor, EndStop *a_endstops, uint32_t a_tick_2mm, uint32_t a_max_speed, uint32_t a_max_l )
   : motor( a_motor ), endstops( a_endstops ), tick2mm( a_tick_2mm ), max_speed( a_max_speed ), max_l( a_max_l )

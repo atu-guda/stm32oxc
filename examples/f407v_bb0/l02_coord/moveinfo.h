@@ -3,6 +3,8 @@
 
 #include <oxc_floatfun.h>
 
+using oxc::ReturnCode;
+
 struct MoveInfo {
   using Act_Pfun = ReturnCode (*)( MoveInfo &mi, xfloat a, xfloat *coo );
   static const unsigned max_n_koeffs { 10 };

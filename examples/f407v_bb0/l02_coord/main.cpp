@@ -19,6 +19,8 @@
 #include <fatfs_sd_st.h>
 #include <ff.h>
 
+using namespace oxc;
+
 #include "main.h"
 
 #define OUT std_out
@@ -149,8 +151,8 @@ int gcode_cmdline_handler( char *s )
   motors_on();
 
   GcodeBlock cb ( gcode_act_fun_me_st );
-  int rc = cb.process( cmd );
-  std_out << "# rc " << rc << " line \"" << cmd << "\" pos " << cb.get_err_pos() << NL;
+  auto rc = cb.process( cmd );
+  std_out << "# rc " << rc.code << " line \"" << cmd << "\" pos " << cb.get_err_pos() << NL;
 
   return 0;
 }
@@ -200,7 +202,7 @@ int main()
 
   me_st.initHW();
 
-  // UVAR_e = i2c_default_init( i2ch );
+  // i2c_default_init( i2ch );
   // i2c_dbg = &i2cd;
   // i2c_client_def = &lcdt;
   // lcdt.init_4b();
@@ -276,9 +278,9 @@ int cmd_rel( int argc, const char * const * argv )
 
   DoAtLeave do_off_motors( []() { motors_off(); } );
   motors_on();
-  int rc = me_st.move_line( d_mm, fe_mmm );
+  auto rc = me_st.move_line( d_mm, fe_mmm );
 
-  return rc;
+  return rc.isOk() ? 0 : 1;
 }
 
 int cmd_abs( int argc, const char * const * argv )
@@ -294,9 +296,9 @@ int cmd_abs( int argc, const char * const * argv )
 
   DoAtLeave do_off_motors( []() { motors_off(); } );
   motors_on();
-  int rc = me_st.move_line( d_mm, fe_mmm );
+  auto rc = me_st.move_line( d_mm, fe_mmm );
 
-  return rc;
+  return rc.isOk() ? 0 : 1;
 }
 
 
@@ -309,7 +311,7 @@ int cmd_home( int argc, const char * const * argv )
 
   ReturnCode rc = me_st.go_home( axis );
 
-  return rc;
+  return rc.isOk() ? 0 : 1;
 }
 
 
@@ -369,7 +371,7 @@ int cmd_gexec( int argc, const char * const * argv )
       break_flag = 0;
     }
 
-    if( rc >= ReturnCode::rcEnd ) {
+    if( rc.code >= ReturnCode::rcnEnd ) {
       std_out << " line \"" << s << "\" pos " << cb.get_err_pos() << ' ' << cb.get_err_code() << NL;
       break;
     }
@@ -545,9 +547,9 @@ ReturnCode Machine::move_common( MoveInfo &mi, xfloat fe_mmm )
     last_a = a;
 
     leds[2].reset();
-    if( rc_c >= ReturnCode::rcErr ) {
+    if( rc_c.isError() ) {
       errno = 2001;
-      rc = rc_c;
+      rc = rc_c.code;
       break;
     }
 
@@ -570,12 +572,12 @@ ReturnCode Machine::move_common( MoveInfo &mi, xfloat fe_mmm )
         continue;
       }
       rc = rc_s;
-      if( rc_s >= rcErr ) {
+      if( rc_s.isError() ) {
         keep_move = false;
         errno = 2003;
         break;
       }
-      if( rc_s >= rcEnd && bounded_move ) {
+      if( rc_s.code >= ReturnCode::rcnEnd && bounded_move ) {
         keep_move = false;
         errno = 2004;
         break;
@@ -583,8 +585,8 @@ ReturnCode Machine::move_common( MoveInfo &mi, xfloat fe_mmm )
     }
 
     if( n_ok < 1 ) {
-      if( rc < rcEnd ) {
-        rc = rcEnd; // TODO: or worse
+      if( rc.code < ReturnCode::rcnEnd ) {
+        rc = { ReturnCode::rcnEnd, 0 }; // TODO: or worse
       }
       errno = 2005;
       break;
@@ -676,7 +678,7 @@ ReturnCode Machine::go_home( unsigned motor_bits )
   bounded_move = false;
   move_mode = moveCommon;
   auto rc = move_line( coo, fe_g1 );
-  if( rc != rcEnd ) {
+  if( rc.code != ReturnCode::rcnEnd ) {
     OUT << "# Error: fail to find all endstops: " << endstops2str_read() << ' ' << rc << NL;
     return rcErr;
   }
@@ -691,21 +693,21 @@ ReturnCode Machine::go_home( unsigned motor_bits )
     if( debug ) {
       OUT << "# debug: from 1/ " << i << ' ' << rc << NL;
     }
-    if( rc >= rcErr ) {
+    if( rc.isError() ) {
       break;
     }
     rc = go_to_es_nc( i, mover, estp );
     if( debug ) {
       OUT << "# debug: from 2/ " << i << ' ' << rc << NL;
     }
-    if( rc >= rcErr ) {
+    if( rc.isError() ) {
       break;
     }
     rc = go_from_es_nc( i, mover, estp );
     if( debug ) {
       OUT << "# debug: from 2/ " << i << ' ' << rc << NL;
     }
-    if( rc >= rcErr ) {
+    if( rc.isError() ) {
       break;
     }
     mover->set_x( 0 );
@@ -1016,24 +1018,24 @@ ReturnCode Machine::g_wait( const GcodeBlock &gc )
   w += gc.fpv_or_def( 'S', 1 );
   OUT << "# wait " << w << NL;
   delay_ms_brk( (uint32_t)w );
-  return ReturnCode::rcOk;
+  return rcOk;
 }
 
 ReturnCode Machine::g_set_plane( const GcodeBlock &gc ) // G17
 {
-  return ReturnCode::rcOk; // the only plane
+  return rcOk; // the only plane
 }
 
 ReturnCode Machine::g_set_unit_inch( const GcodeBlock &gc ) // G20
 {
   inchUnit = true;
-  return ReturnCode::rcOk;
+  return rcOk;
 }
 
 ReturnCode Machine::g_set_unit_mm( const GcodeBlock &gc ) // G21
 {
   inchUnit = false;
-  return ReturnCode::rcOk;
+  return rcOk;
 }
 
 ReturnCode Machine::g_home( const GcodeBlock &gc ) // G28
@@ -1055,19 +1057,19 @@ ReturnCode Machine::g_home( const GcodeBlock &gc ) // G28
 ReturnCode Machine::g_off_compens( const GcodeBlock &gc ) // G40 - X
 {
   OUT << "#  G40 unsupported  " << NL;
-  return ReturnCode::rcOk; // for now
+  return rcOk; // for now
 }
 
 ReturnCode Machine::g_set_absmove( const GcodeBlock &gc ) // G90
 {
   relmove = false;
-  return ReturnCode::rcOk;
+  return rcOk;
 }
 
 ReturnCode Machine::g_set_relmove( const GcodeBlock &gc ) // G91
 {
   relmove = true;
-  return ReturnCode::rcOk;
+  return rcOk;
 }
 
 ReturnCode Machine::g_set_origin( const GcodeBlock &gc ) // G92
@@ -1099,28 +1101,28 @@ ReturnCode Machine::g_set_origin( const GcodeBlock &gc ) // G92
     ++i;
   }
 
-  return ReturnCode::rcOk;
+  return rcOk;
 }
 
 ReturnCode Machine::m_end0( const GcodeBlock &gc )          // M0
 {
   pwm_set( 0, 0 );
   motors_off();
-  return ReturnCode::rcEnd;
+  return { ReturnCode::rcnEnd, 0 };
 }
 
 ReturnCode Machine::m_pause( const GcodeBlock &gc )         // M1
 {
   // TODO: pause for what?
   OUT << "# pause?" << NL;
-  return ReturnCode::rcOk;
+  return rcOk;
 }
 
 ReturnCode Machine::m_end( const GcodeBlock &gc )           // M2
 {
   pwm_set( 0, 0 );
   motors_off();
-  return ReturnCode::rcEnd;
+  return { ReturnCode::rcnEnd, 0 };
 }
 
 ReturnCode Machine::m_set_spin( const GcodeBlock &gc )      // M3, M4
@@ -1134,7 +1136,7 @@ ReturnCode Machine::m_set_spin( const GcodeBlock &gc )      // M3, M4
     OUT << '+';
   }
   OUT << NL;
-  return ReturnCode::rcOk;
+  return rcOk;
 }
 
 ReturnCode Machine::m_spin_off( const GcodeBlock &gc )      // M5
@@ -1142,7 +1144,7 @@ ReturnCode Machine::m_spin_off( const GcodeBlock &gc )      // M5
   OUT << "# M5 " << NL;
   pwm_off( 0 );
   spinOn = false;
-  return ReturnCode::rcOk;
+  return rcOk;
 }
 
 ReturnCode Machine::m_out_where( const GcodeBlock &gc )     // M114
@@ -1155,21 +1157,21 @@ ReturnCode Machine::m_out_where( const GcodeBlock &gc )     // M114
   OUT << NL "# F= " << fe_g1 << " S= " << spin << " / " << spin100
       << " n_mo= " << n_mo << ' ' << movers.size() << ' ' << endstops2str_read() << NL;
 
-  return ReturnCode::rcOk;
+  return rcOk;
 }
 
 ReturnCode Machine::m_out_str( const GcodeBlock &gc )       // M117
 {
   OUT << "# M117" << NL;
   OUT << gc.get_str0() << NL;
-  return ReturnCode::rcOk;
+  return rcOk;
 }
 
 ReturnCode Machine::m_set_feed_scale( const GcodeBlock &gc )// M220
 {
   fe_scale = gc.fpv_or_def( 'S', fe_scale );
   OUT << "# M220 feed scale " << fe_scale << NL;
-  return ReturnCode::rcOk;
+  return rcOk;
 }
 
 ReturnCode Machine::m_set_spin_scale( const GcodeBlock &gc )// M221
@@ -1177,42 +1179,42 @@ ReturnCode Machine::m_set_spin_scale( const GcodeBlock &gc )// M221
   spin100  = gc.fpv_or_def( 'S', spin100 );
   spin_max = gc.fpv_or_def( 'U', spin_max );
   OUT << "# M221 spindle scale " << spin100 << ' ' << spin_max << NL;
-  return ReturnCode::rcOk;
+  return rcOk;
 }
 
 ReturnCode Machine::m_out_mode( const GcodeBlock &gc )      // M450
 {
   static const char* const mode_names[] = { "FFF", "Laser", "CNC", "??3", "??4", "??5" };
   OUT << "PrinterMode:" << mode_names[mode] << NL;
-  return ReturnCode::rcOk;
+  return rcOk;
 }
 
 ReturnCode Machine::m_set_mode_fff( const GcodeBlock &gc )  // M451
 {
   OUT << "# M451 " << NL;
   set_mode( Machine::modeFFF );
-  return ReturnCode::rcOk;
+  return rcOk;
 }
 
 ReturnCode Machine::m_set_mode_laser( const GcodeBlock &gc )// M452
 {
   OUT << "# M452 " << NL;
   set_mode( Machine::modeLaser );
-  return ReturnCode::rcOk;
+  return rcOk;
 }
 
 ReturnCode Machine::m_set_mode_cnc( const GcodeBlock &gc )  // M453
 {
   OUT << "# M453 " << NL;
   set_mode( Machine::modeCNC );
-  return ReturnCode::rcOk;
+  return rcOk;
 }
 
 // local codes
 ReturnCode Machine::m_list_vars( const GcodeBlock &gc )     // M995
 {
   out_vals();
-  return ReturnCode::rcOk;
+  return rcOk;
 }
 
 ReturnCode Machine::m_set_var(   const GcodeBlock &gc )     // M996 name=S, value = V
@@ -1226,31 +1228,31 @@ ReturnCode Machine::m_get_var(   const GcodeBlock &gc )     // M997 name=S
   OUT << "# " << gc.get_str0() << " = ";
   if ( std::isfinite( v ) )  {
     OUT << v << NL;
-    return ReturnCode::rcOk;
+    return rcOk;
   }
   OUT << "NAN" << NL;
-  return ReturnCode::rcErr;
+  return rcErr;
 }
 
 
 ReturnCode Machine::set_val( const char *name, xfloat v )
 {
   if( !name ) {
-    return ReturnCode::rcErr;
+    return rcErr;
   }
   for( const auto &vi: var_info ) {
     if( strcmp( name, vi.name ) == 0 ) {
       if( vi.fptr ) {
         this->*(vi.fptr) = v;
-        return ReturnCode::rcOk;
+        return rcOk;
       } else if( vi.iptr ) {
         this->*(vi.iptr) = (int)v;
-        return ReturnCode::rcOk;
+        return rcOk;
       }
-      return ReturnCode::rcErr;
+      return rcErr;
     }
   }
-  return ReturnCode::rcErr;
+  return rcErr;
 }
 
 xfloat Machine::get_val( const char *name ) const
@@ -1291,11 +1293,11 @@ ReturnCode Machine::call_mg( const GcodeBlock &cb )
   auto is_m = cb.is_set('M');
   if( is_g && is_m ) {
     OUT << "#  M/G error: M and G" << NL;
-    return ReturnCode::rcErr; // TODO: err_val: both commands
+    return rcErr; // TODO: err_val: both commands
   }
 
   auto mach_rc = prep_fun( cb );
-  if( mach_rc >= ReturnCode::rcErr ) {
+  if( mach_rc.isError() ) {
     return mach_rc;
   }
 
@@ -1305,7 +1307,7 @@ ReturnCode Machine::call_mg( const GcodeBlock &cb )
   auto f = std::find_if( mg_funcs, mg_funcs + mg_funcs_sz, [code]( auto el ) { return el.num == code; } );
   if( f == mg_funcs + mg_funcs_sz ) {
     OUT << "# warn: unsupported " << chfun << ' ' << code << NL;
-    return ReturnCode::rcOk;
+    return rcOk;
   }
 
   auto fun = f->fun;
@@ -1348,7 +1350,7 @@ ReturnCode Machine::prep_fun(  const GcodeBlock &gc )
 {
   if( gc.is_set('M') ) { // special values for M commands
     // OUT << 'M' << NL;
-    return ReturnCode::rcOk;
+    return rcOk;
   }
 
   bool was_out { false };
@@ -1372,7 +1374,7 @@ ReturnCode Machine::prep_fun(  const GcodeBlock &gc )
   if( was_out ) {
     OUT << NL;
   }
-  return ReturnCode::rcOk;
+  return rcOk;
 }
 
 // --------------------------- PWM ----------------------------------------
@@ -1429,7 +1431,7 @@ int cmd_pwm( int argc, const char * const * argv )
   std_out << "# PWM: ch: " << ch << " power: " << pwr << NL;
   auto rc  = pwm_set( ch, pwr );
   // tim_print_cfg( pwm_tims[ch]->Instance );
-  return (int)rc; // rcOk = 0 = cmd_ok
+  return rc.isOk() ? 0 : 1;
 }
 
 // ------------------------------ EXTI handlers -------------------

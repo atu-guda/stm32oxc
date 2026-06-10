@@ -656,7 +656,7 @@ CMD_FUNCTION( write_reg )
   std_out <<  "# write1reg :  " << reg << ' ' << val << ' ' << rd_addr << NL;
   auto rc = m_srv.writeReg( rd_addr, reg, val );
   std_out << "# rc " << rc << ' ' << m_srv.getError() << ' ' << m_srv.getReplError() << NL;
-  return rc;
+  return rc.isOk() ? 0 : 1;
 }
 
 CMD_FUNCTION( read_regs )
@@ -675,7 +675,7 @@ CMD_FUNCTION( read_regs )
       std_out << "# " << HexInt16(i) << ' ' << HexInt16(v) << ' ' << v << NL;
     }
   }
-  return rc;
+  return rc.isOk() ? 0 : 1;
 }
 
 

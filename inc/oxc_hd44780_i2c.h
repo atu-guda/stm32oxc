@@ -32,8 +32,8 @@ class HD44780_i2c : public I2CClient {
     void puts( const char *s );
     void gotoxy( uint8_t x, uint8_t y );
     void puts_xy(  uint8_t x, uint8_t y, const char *s ) { gotoxy( x, y ); puts( s ); };
-    void cls()   { cmd( lcd_cmd_cls );  delay_ms( 4 ); }
-    void home()  { cmd( lcd_cmd_home ); delay_ms( 2 ); }
+    void cls()   { cmd( lcd_cmd_cls );  oxc::delay_ms( 4 ); }
+    void home()  { cmd( lcd_cmd_home ); oxc::delay_ms( 2 ); }
     void on()       { mod |=  lcd_cmd_bit_on; cmd( mod | lcd_cmd_onoff ); }
     void off()      { mod &= ~lcd_cmd_bit_on; cmd( mod | lcd_cmd_onoff ); }
     void curs_on()  { mod |=  lcd_cmd_cur_on; cmd( mod | lcd_cmd_onoff ); }

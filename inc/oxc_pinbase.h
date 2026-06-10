@@ -13,7 +13,7 @@ class PinBase {
    virtual void write( bool v ) = 0;
    virtual void toggle()        = 0;
    virtual bool get()           = 0;
-   virtual bool initHW()        = 0;
+   virtual ReturnCode initHW()  = 0;
 };
 
 

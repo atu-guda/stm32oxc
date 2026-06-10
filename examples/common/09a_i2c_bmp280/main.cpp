@@ -30,7 +30,7 @@ int main(void)
   UVAR_n =   10;
   UVAR_p = BMP280::def_i2c_addr;
 
-  UVAR_e = i2c_default_init( i2ch /*, 400000 */ );
+  i2c_default_init( i2ch /*, 400000 */ );
 
   i2c_dbg = &i2cd;
   i2c_client_def = &baro;

@@ -1,5 +1,7 @@
 #include <oxc_auto.h>
 
+using namespace oxc;
+
 // now local?
 constexpr uint16_t BOARD_LEDS_OFS { BOARD_LEDS_START.pinNum().Num() };
 constexpr PinMask BOARD_LEDS_MASK { BOARD_LEDS_ALL << BOARD_LEDS_OFS };

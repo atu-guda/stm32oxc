@@ -3,6 +3,7 @@
 
 #include <oxc_modbus_rtu_base.h>
 
+using oxc::ReturnCode;
 
 // ================================================= server ===============================
 

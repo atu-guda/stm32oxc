@@ -6,7 +6,7 @@ using namespace oxc;
 USE_DIE4LED_ERROR_HANDLER;
 
 TIM_HandleTypeDef htim2;
-void MX_TIM2_Init();
+ReturnCode MX_TIM2_Init();
 
 
 uint32_t xxn = 0;
@@ -21,7 +21,9 @@ int main(void)
   STD_PROLOG_START;
 
   leds.write( 0_mask );
-  MX_TIM2_Init();
+  if( !MX_TIM2_Init().isOk() ) {
+    die4led( 1_mask );
+  }
   HAL_TIM_Base_Start_IT( &htim2 );
 
   while(1) {
@@ -66,7 +68,7 @@ void TIM2_IRQHandler(void)
   leds.reset( BIT3M );
 }
 
-void MX_TIM2_Init()
+ReturnCode MX_TIM2_Init()
 {
   TIM_ClockConfigTypeDef sClockSourceConfig;
   TIM_MasterConfigTypeDef sMasterConfig;
@@ -81,20 +83,20 @@ void MX_TIM2_Init()
     htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   #endif
   if( HAL_TIM_Base_Init( &htim2 ) != HAL_OK ) {
-    die4led( 0_mask );
+    return { ReturnCode::rcnErr, 1 };
   }
 
   sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
   if( HAL_TIM_ConfigClockSource( &htim2, &sClockSourceConfig ) != HAL_OK ) {
-    die4led( 1_mask );
+    return { ReturnCode::rcnErr, 2 };
   }
 
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   if( HAL_TIMEx_MasterConfigSynchronization( &htim2, &sMasterConfig) != HAL_OK )   {
-    die4led( 2_mask );
+    return { ReturnCode::rcnErr, 3 };
   }
-
+  return rcOk;
 }
 
 void HAL_TIM_Base_MspInit( TIM_HandleTypeDef* tim_baseHandle )

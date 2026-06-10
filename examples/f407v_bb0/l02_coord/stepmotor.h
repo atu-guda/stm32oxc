@@ -3,6 +3,8 @@
 
 #include <oxc_gpio.h>
 
+using oxc::ReturnCode;
+
 
 //* abstract class for different controlled stepmotors
 class StepMotor {
@@ -18,7 +20,7 @@ class StepMotor {
 //* fake motor
 class StepMotorFake : public StepMotor{
   public:
-   virtual ReturnCode initHW() override { return rcOk; }
+   virtual ReturnCode initHW() override { return oxc::rcOk; }
    virtual void step() override {};
    virtual void set_dir( int d ) override { dir = d; }
   protected:
@@ -31,7 +33,7 @@ class StepMotorGpio2 : public StepMotor {
    enum { pinStep = 0x01, pinDir = 0x02 };
    StepMotorGpio2( PortPin start )
      : pins( start, 2 ) {}
-   virtual ReturnCode initHW() override { pins.initHW(); pins.write( 0_mask ); return rcOk; }
+   virtual ReturnCode initHW() override { pins.initHW(); pins.write( 0_mask ); return oxc::rcOk; }
    virtual void step() override;
    virtual void set_dir( int d ) override;
   protected:

@@ -25,7 +25,7 @@ void aux_tick_fun2(void)
 
 int delay_led_step { 500 };
 
-int on_delay_actions()
+int local_on_delay_actions()
 {
   static OxcTicker delay_tick( &delay_led_step, 1 );
   if( delay_tick.isTick() ) {
@@ -70,7 +70,7 @@ void xxx_main_loop_nortos( SmallRL *sm, AuxTickFun f_idle )
       if( UVAR_q > 0 ) {
         delay_ms( UVAR_q );
       } else {
-        on_delay_actions();
+        local_on_delay_actions();
       }
 
     }

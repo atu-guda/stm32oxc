@@ -96,7 +96,7 @@ class UsartIO : public DevIO {
   devio_fds[0] = &io; \
   devio_fds[1] = &io; \
   devio_fds[2] = &io; \
-  delay_ms( 10 );
+  oxc::delay_ms( 10 );
 
 #endif
 // vim: path=.,/usr/share/stm32cube/inc/,/usr/arm-none-eabi/include

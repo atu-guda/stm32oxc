@@ -19,6 +19,8 @@
   #error "Required and given MCBASE is not equal"
 #endif
 
+namespace oxc {};
+
 #include <oxc_types.h>
 #include <oxc_irqlist.h>
 
@@ -76,6 +78,8 @@ void approx_delay_calibrate(void); // same
 }
 #endif
 
+namespace oxc {
+
 void die( uint16_t n ) __attribute__((noreturn));
 void do_delay_calibrate(void);
 void delay_ms( uint32_t ms ); // base on vTaskDelay - switch to scheduler (if avail), or to HAL
@@ -100,11 +104,13 @@ ReturnCode  oxc_del_aux_tick_fun( AuxTickFun f );
 void oxc_clear_aux_tick_funs(void);
 void oxc_call_aux_tick_funcs(void);
 
+}; // namespace oxc
 
-#define USE_DIE_ERROR_HANDLER void Error_Handler( int rc ) { die( rc ); };
+
+#define USE_DIE_ERROR_HANDLER void Error_Handler( int rc ) { oxc::die( rc ); };
 #define USE_DIE4LED_ERROR_HANDLER void Error_Handler( PinMask rc ) { die4led( rc ); };
-#define USE_DIE_EXIT void exit( int rc ) { die( rc ); };
-#define USE_DIE4LED_EXIT void exit( int rc ) { die4led( rc ); };
+#define USE_DIE_EXIT void exit( int rc ) { oxc::die( rc ); };
+#define USE_DIE4LED_EXIT void exit( int rc ) {die4led( rc ); };
 
 
 #ifdef USE_FREERTOS

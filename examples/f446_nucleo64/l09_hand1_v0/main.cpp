@@ -15,6 +15,7 @@
 
 #include "main.h"
 
+using namespace oxc;
 using namespace SMLRL;
 
 USE_DIE4LED_ERROR_HANDLER;
@@ -165,7 +166,7 @@ int main(void)
   pins_l0_stop.initHW();
   pins_l0_ctrl.initHW();
 
-  UVAR_v = i2c_default_init( i2ch /*, 400000 */ );
+  i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
   i2c_client_def = &ang_sens;
 

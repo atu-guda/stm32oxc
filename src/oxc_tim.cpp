@@ -118,21 +118,18 @@ ReturnCode tim_pwm_cfg_default( TIM_HandleTypeDef &t_h, uint32_t psc, uint32_t a
   t_h.Init.CounterMode       = cmode;
   t_h.Init.RepetitionCounter = 0;
   if( HAL_TIM_PWM_Init( &t_h ) != HAL_OK ) {
-    errno = 3000;
-    return rcErr;
+    return { ReturnCode::rcnErr, 3000 };
   }
 
   HAL_TIM_ConfigClockSource( &t_h, &sClockSourceConfig_def );
 
   if( HAL_TIMEx_MasterConfigSynchronization( &t_h, &sMasterConfig_def ) != HAL_OK ) {
-    errno = 3001;
-    return rcErr;
+    return { ReturnCode::rcnErr, 3001 };
   }
 
   for( auto ch : chpins ) {
     if( HAL_TIM_PWM_ConfigChannel( &t_h, &tim_oc_cfg_default_pwm1, TimCh::ch2hal_ch(ch.ch) ) != HAL_OK ) {
-      errno = 3002;
-      return rcErr;
+      return { ReturnCode::rcnErr, (uint16_t)(3100 | ch.ch.n) };
     }
     HAL_TIM_PWM_Start( &t_h, TimCh::ch2hal_ch(ch.ch) );
   }

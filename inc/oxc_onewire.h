@@ -3,7 +3,7 @@
 
 #include <oxc_gpio.h>
 
-#define d_mcs delay_bad_mcs
+#define d_mcs oxc::delay_bad_mcs
 
 
 class OneWire {

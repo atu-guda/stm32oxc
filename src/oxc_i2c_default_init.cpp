@@ -3,7 +3,7 @@
 
 using namespace oxc;
 
-int i2c_default_init( I2C_HandleTypeDef &i2c, int speed )
+ReturnCode i2c_default_init( I2C_HandleTypeDef &i2c, int speed )
 {
   i2c.Instance              = BOARD_I2C_DEFAULT;
   #if defined (STM32F3) || defined (STM32F7) || defined (STM32H5) || defined (STM32H7) || defined (STM32G4)
@@ -27,14 +27,14 @@ int i2c_default_init( I2C_HandleTypeDef &i2c, int speed )
   i2c.Init.OwnAddress1        = 0;
   i2c.Init.OwnAddress2        = 0;
   if( HAL_I2C_Init( &i2c ) != HAL_OK ) {
-    return 0;
+    return rcErr;
   }
 
   #if defined (STM32F3) || defined (STM32F7) || defined (STM32G4)
   HAL_I2CEx_AnalogFilter_Config( &i2c, I2C_ANALOGFILTER_ENABLED );
   // HAL_I2CEx_ConfigDigitalFilter( &i2c, 0 );
   #endif
-  return 1;
+  return rcOk;
 }
 
 
