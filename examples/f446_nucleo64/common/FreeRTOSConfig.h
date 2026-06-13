@@ -31,6 +31,7 @@ extern uint32_t SystemCoreClock;
 /* Co-routine definitions. */
 #define configUSE_CO_ROUTINES             0
 #define configMAX_CO_ROUTINE_PRIORITIES   ( 2 )
+#define configCHECK_HANDLER_INSTALLATION  0
 
 #define configUSE_MUTEXES                 1
 #define configUSE_RECURSIVE_MUTEXES       0
