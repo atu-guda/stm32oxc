@@ -3,7 +3,6 @@
 
 #include <oxc_base.h>
 #include <oxc_miscfun.h>
-#include <oxc_cpptypes.h>
 
 
 // TODO: namespace oxc_modbus
@@ -25,6 +24,10 @@ enum class ModbusFunctionCode : uint8_t {
 };
 
 extern const uint16_t ModbusRtu_CRC_table[256];
+
+using oxc::cbyte_span;
+using oxc::byte_span;
+using oxc::ReturnCode;
 
 uint16_t calcRtuCrc( cbyte_span s );
 uint16_t calcRtuCrcSub( cbyte_span s ); // w/o last 2 bytes

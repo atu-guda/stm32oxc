@@ -1,6 +1,5 @@
 #include <cmath>
 
-#include <oxc_cpptypes.h>
 #include <oxc_tim.h>
 
 #ifdef USE_OXC_DEBUG

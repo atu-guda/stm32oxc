@@ -4,13 +4,13 @@
 #define TO_MACRO_STR(x) #x
 #define OXC_PASTER2(x,y) x ## y
 #define OXC_PASTER3(x,y,z) x ## y ## z
+#define OXC_PASTER4(x,y,z,t) x ## y ## z ## t
 #define OXC_EVAL2(x,y)    OXC_PASTER2(x,y)
 #define OXC_EVAL3(x,y,z)  OXC_PASTER3(x,y,z)
+#define OXC_EVAL4(x,y,z,t)  OXC_PASTER4(x,y,z,t)
 
-#ifdef __cplusplus
-  #include <type_traits>
-  #include <utility>
-#endif
+#include <type_traits>
+#include <utility>
 
 // includes <stm32xxxx_hal.h> and its configs, defines reg names, exti....
 #include <oxc_archdef.h>
@@ -51,15 +51,8 @@ extern volatile int task_leds_step; // initial = 50
 #endif
 
 
-#ifdef __cplusplus
-  namespace oxc {};
-#endif
-
-#ifdef __cplusplus
- extern "C" {
-#endif
-
-
+extern "C" {
+// functions to interact with HAL and FreeRTOS
 void taskYieldFun(void);
 void wakeFromIRQ( long wake );
 void vApplicationIdleHook(void);
@@ -72,11 +65,7 @@ void SystemClock_Config(void);
 int  SystemClockCfg(void); // returns: 0: ok >0 + set errno: error TODO: not C, C++
 void approx_delay_calibrate(void); // same
 
-
-
-#ifdef __cplusplus
-}
-#endif
+} // extern "C"
 
 namespace oxc {
 
@@ -135,4 +124,3 @@ void oxc_call_aux_tick_funcs(void);
 
 #endif
 
-// vim: path=.,/usr/share/stm32cube/inc
