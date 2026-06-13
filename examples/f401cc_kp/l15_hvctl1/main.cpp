@@ -3,7 +3,6 @@
 
 #include <oxc_auto.h>
 #include <oxc_main.h>
-#include <oxc_cpptypes.h>
 #include <oxc_atleave.h>
 #include <oxc_floatfun.h>
 #include <oxc_namedints.h>

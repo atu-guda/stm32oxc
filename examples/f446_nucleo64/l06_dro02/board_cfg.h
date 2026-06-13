@@ -50,7 +50,7 @@
 //#define BOARD_BTN1_ACTIVE_DOWN 0
 
 
-#define   TIM_EXA              TIM1
+#define   TIM_EXA_NUM          1
 #define   TIM_EXA_PIN1         PA8
 #define   TIM_EXA_PIN2         PA9
 #define   TIM_EXA_PIN3         PA10
@@ -59,8 +59,6 @@
 #define   TIM_EXA_PINS         { TIM_EXA_PIN1, TIM_EXA_PIN2, TIM_EXA_PIN3, TIM_EXA_PIN4 }
 //#define TIM_EXA_PIN_EXT PA11
 //#define TIM_EXA_GPIOAF_EXT GPIO_AF11_TIM1
-#define   TIM_EXA_CLKEN        __TIM1_CLK_ENABLE();
-#define   TIM_EXA_CLKDIS       __TIM1_CLK_DISABLE();
 #define   TIM_EXA_IRQ          TIM1_CC_IRQn
 #define   TIM_EXA_IRQHANDLER   TIM1_CC_IRQHandler
 

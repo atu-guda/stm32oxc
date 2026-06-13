@@ -49,9 +49,8 @@
 
 
 
-#ifndef   TIM_EXA
-#define   TIM_EXA               TIM3
-#define   TIM_EXA_BASE          TIM3_BASE
+#ifndef   TIM_EXA_NUM
+#define   TIM_EXA_NUM             3
 #define   TIM_EXA_PIN1          PA6
 #define   TIM_EXA_PIN2          PA7
 #define   TIM_EXA_PIN3          PB0
@@ -60,21 +59,17 @@
 #define   TIM_EXA_PINS          { TIM_EXA_PIN1, TIM_EXA_PIN2, TIM_EXA_PIN3, TIM_EXA_PIN4 }
 //#define TIM_EXA_PIN_EXT        PA11
 //#define TIM_EXA_GPIOAF_EXT     GPIO_AF11_TIM1
-#define   TIM_EXA_CLKEN         __TIM3_CLK_ENABLE();
-#define   TIM_EXA_CLKDIS        __TIM3_CLK_DISABLE();
 #define   TIM_EXA_IRQ           TIM3_IRQn
 #define   TIM_EXA_IRQHANDLER    TIM3_IRQHandler
 #endif
 
-#ifndef   TIM_IN_EXA
-#define   TIM_IN_EXA            TIM2
+#ifndef   TIM_IN_EXA_NUM
+#define   TIM_IN_EXA_NUM          2
 #define   TIM_IN_EXA_PIN1       PA0
 #define   TIM_IN_EXA_PIN2       PA1
 #define   TIM_IN_EXA_PIN3       PB2
 #define   TIM_IN_EXA_PIN4       PB3
 #define   TIM_IN_EXA_GPIOAF       1
-#define   TIM_IN_EXA_CLKEN      __TIM2_CLK_ENABLE();
-#define   TIM_IN_EXA_CLKDIS     __TIM2_CLK_DISABLE();
 #define   TIM_IN_EXA_IRQ        TIM2_IRQn
 #define   TIM_IN_EXA_IRQHANDLER TIM2_IRQHandler
 #endif

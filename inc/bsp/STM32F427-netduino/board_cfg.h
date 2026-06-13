@@ -75,17 +75,13 @@
 #define BOARD_DEFINE_GO2_CS   PinsOut spi_cs_go2( GPIOD, 1, 1 );
 #define BOARD_DEFINE_GO3_CS   PinsOut spi_cs_go3( GPIOD, 2, 1 );
 
-// #define TIM_EXA        TIM1
-// #define_BASEEXA        TIM1_BASE
-// #define TIM_EXA_STR    "TIM1"
+// #define TIM_EXA_NUM    1
 // #define TIM_EXA_GPIO   GPIOE
 // #define TIM_EXA_PIN1   GPIO_PIN_9
 // #define TIM_EXA_PIN2   GPIO_PIN_11
 // #define TIM_EXA_PIN3   GPIO_PIN_13
 // #define TIM_EXA_PIN4   GPIO_PIN_14
 // #define TIM_EXA_PINS   ( TIM_EXA_PIN1 | TIM_EXA_PIN2 | TIM_EXA_PIN3 | TIM_EXA_PIN4 )
-// #define TIM_EXA_CLKEN  __GPIOE_CLK_ENABLE(); __TIM1_CLK_ENABLE();
-// #define TIM_EXA_CLKDIS __TIM1_CLK_DISABLE();
 // #define TIM_EXA_GPIOAF GPIO_AF1_TIM1
 // #define TIM_EXA_IRQ    TIM1_BRK_TIM9_IRQn
 
