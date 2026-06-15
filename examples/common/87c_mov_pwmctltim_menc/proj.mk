@@ -23,8 +23,15 @@ USE_OXC_TIM = y
 
 SRCS += main.cpp
 SRCS += oxc_floatfun.cpp
-SRCS += oxc_pwmctltim.cpp
+SRCS += oxc_namedobjs.cpp
+SRCS += oxc_namedints.cpp
+SRCS += oxc_namedfloats.cpp
+
 SRCS += oxc_as5600.cpp
+
+SRCS += oxc_easing.cpp
+
+SRCS += oxc_pwmctltim.cpp
 
 SRCS += oxc_actu_dcpwm.cpp
 

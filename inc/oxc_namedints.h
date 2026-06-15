@@ -6,13 +6,19 @@
 
 class NamedInt : public NamedObj {
   public:
-   constexpr NamedInt( const char *nm, int *p_i, std::size_t n_elm = 1, Flags flg = Flags::no )
+   constexpr NamedInt( const char *nm, int *p_i,      std::size_t n_elm = 1, Flags flg = Flags::no )
+     : NamedObj( nm, p_i, n_elm, flg, types::INT ) {};
+   constexpr NamedInt( const char *nm, int32_t *p_i,  std::size_t n_elm = 1, Flags flg = Flags::no )
      : NamedObj( nm, p_i, n_elm, flg, types::INT ) {};
    constexpr NamedInt( const char *nm, unsigned *p_u, std::size_t n_elm = 1, Flags flg = Flags::no )
+     : NamedObj( nm, p_u, n_elm, flg, types::UINT ) {};
+   constexpr NamedInt( const char *nm, uint32_t *p_u, std::size_t n_elm = 1, Flags flg = Flags::no )
      : NamedObj( nm, p_u, n_elm, flg, types::UINT ) {};
    constexpr NamedInt( const char *nm, int (*p_get)(int), bool (*p_set)(int,int),
                          std::size_t n_elm = 1, Flags flg = Flags::no )
      : NamedObj( nm, nullptr, n_elm, flg ), fun_get( p_get ), fun_set( p_set ) {};
+   static_assert( sizeof(int) == sizeof(int32_t) );
+   static_assert( sizeof(unsigned) == sizeof(uint32_t) );
    virtual bool  get(    int &v, int idx = 0 ) const override;
    virtual bool  get(  float &v, int idx = 0 ) const override;
    virtual bool  get(   CStr &v, int idx = 0 ) const override;

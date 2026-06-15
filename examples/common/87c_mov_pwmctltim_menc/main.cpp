@@ -2,12 +2,17 @@
 #include <oxc_auto.h>
 #include <oxc_atleave.h>
 #include <oxc_floatfun.h>
+#include <oxc_namedints.h>
+#include <oxc_namedfloats.h>
 #include <oxc_main.h>
-#include <oxc_pwmctltim.h>
-#include <oxc_actu_dcpwm.h>
+
 #include <oxc_as5600.h>
 
-#include <main.h>
+#include <oxc_easing.h>
+#include <oxc_pwmctltim.h>
+#include <oxc_actu_dcpwm.h>
+
+#include "main.h"
 
 using namespace oxc;
 using namespace SMLRL;
@@ -19,20 +24,84 @@ BOARD_CONSOLE_DEFINES;
 
 const char* common_help_string = "Appication to test PWM motor + AS5600 encoder" NL;
 
+// ------------------------ named global vars -----------------------------------
+
+#define NAMED_VARS_LIST    \
+  IX(                 debug,         0 ) \
+  IX(                  q0_i,         0 ) \
+  UX(  off_motor_idle_ticks,     60000 ) \
+  UX(    measure_idle_ticks,       100 ) \
+  UX(                t_pre,        200 ) \
+  UX(                t_run,       1000 ) \
+  UX(                t_post,      2000 ) \
+  UX(                t_step,        10 ) \
+  UX(             t_start_i,         0 ) \
+  UX(               t_cur_i,         0 ) \
+  UX(                  t_dt,         0 ) \
+  UX(         first_measure,         1 ) \
+  FX(                t_dt_f,      0.0f ) \
+  FX(               t_cur_f,      0.0f ) \
+  FX(                 nu0_i,      0.0f )
+
 uint32_t last_cmd_end_tick     {     0 };
-uint32_t off_motor_idle_ticks  { 60000 };
 uint32_t last_measure_tick     {     0 };
-uint32_t measure_idle_ticks    {   100 };
 
-int t_step                     {   50  };
 
-// --- local commands;
+// global vars itself
+#define IX( name, init)      int   name { init };
+#define UX( name, init) uint32_t   name { init };
+#define FX( name, init)    float   name { init };
+NAMED_VARS_LIST
+#undef IX
+#undef UX
+#undef FX
+
+// objects to global vars
+#define IX(name, init) constexpr NamedInt   ob_##name { #name, &name };
+#define UX(name, init) constexpr NamedInt   ob_##name { #name, &name };
+#define FX(name, init) constexpr NamedFloat ob_##name { #name, &name };
+NAMED_VARS_LIST
+#undef IX
+#undef UX
+#undef FX
+
+#define IX(name, init) &ob_##name,
+#define UX(name, init) &ob_##name,
+#define FX(name, init) &ob_##name,
+constexpr const NamedObj *const objs_info[] = {
+    NAMED_VARS_LIST
+    nullptr
+};
+#undef IX
+#undef UX
+#undef FX
+
+NamedObjs objs( objs_info );
+// print/set hook functions
+
+bool print_var_ex( const char *nm, int fmt )
+{
+  return objs.print( nm, fmt );
+}
+
+bool set_var_ex( const char *nm, const char *s )
+{
+  auto ok =  objs.set( nm, s );
+  print_var_ex( nm, 0 );
+  return ok;
+}
+
+// ------------------------ end: named global vars -----------------------------------
+
+// ------------------------ - local commands; ---------------------------------------
 DCL_CMD_REG(      test0,  'T',     " [arg ] - test something"  );
 DCL_CMD_REG(      tinfo,  'P',     " print info"  );
 DCL_CMD_REG(    setfreq,  'F',     " Hz - set freq"  );
 DCL_CMD_REG(      pulse,  'U',     " []- test pulse in us"  );
 DCL_CMD_REG(       setV,  'V',     " v [t_us] - set v"  );
 DCL_CMD_REG(    measure,  'M',     " - measure angle..."  );
+
+// -------------------------------------------------------------------------------------
 
 ReturnCode measure_store_coords();
 
@@ -45,21 +114,50 @@ AS5600 ang_sens( i2cd );
 void init_mot0();
 
 TIM_HandleTypeDef tim_pwm_h;
+// auto tim_pwm_clk_enable = [](){ TIM_PWM_CLKEN }; // just test: how to store code from macro
 
 constinit PwmCtlTim pwm1( TIM_PWM_BASE, tim_pwm_chspins );
 
 PinGpio pwm_left_pin(  PwmLeftPin  );
 PinGpio pwm_right_pin( PwmRightPin );
-ActuDcPwm_1P2D mot0( pwm1, 0, pwm_left_pin, pwm_right_pin );
+ActuDcPwm_1P2D actu0( pwm1, 0, pwm_left_pin, pwm_right_pin );
+
+const EasingFunInfo easing_fun_info[] = {
+  { easing_one,       1.0f },    // 0
+  { easing_poly2_in,  0.5f },    // 1
+  { easing_poly2_out, 0.5f },    // 2
+  { easing_poly3_io,  0.6f },    // 3
+  { easing_trig_in,   0.6f },    // 4 0.6 approx 1/pi_half_f
+  { easing_trig_out,  0.6f },    // 5
+  { easing_trig_io,   0.6f },    // 6
+  { easing_step_01,   1.0f },    // 7
+  { easing_one,       1.0f }     // protect // 8
+};
+constexpr auto easing_fun_n { std::size( easing_fun_info) };
+
+
+void start_count_time()
+{
+  t_start_i = GET_OS_TICK();
+  t_cur_i = 0;  t_cur_f = 0;
+  first_measure = 1;
+}
+
+
+void calc_current_time()
+{
+  t_cur_i = GET_OS_TICK() - t_start_i;
+  t_cur_f = t_cur_i * 1e-3f;
+}
 
 void idle_main_task()
 {
-  const uint32_t t = HAL_GetTick();
-  if( t - last_cmd_end_tick > off_motor_idle_ticks ) {
+  calc_current_time();
+  if( t_cur_i - last_cmd_end_tick >= off_motor_idle_ticks ) {
     // stop();
-    last_cmd_end_tick = t;
+    last_cmd_end_tick = t_cur_i;
   }
-  if( ( t - last_measure_tick ) > measure_idle_ticks ) {
+  if( ( t_cur_i - last_measure_tick ) >= measure_idle_ticks ) {
     measure_store_coords();
   }
 }
@@ -70,6 +168,9 @@ int main(void)
 
   UVAR_t = 100;
   UVAR_n =  20;
+
+  print_var_hook = print_var_ex;
+  set_var_hook   = set_var_ex;
 
   i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
@@ -87,6 +188,8 @@ int main(void)
 
   oxc_add_aux_tick_fun( led_task_nortos );
 
+  start_count_time();
+
   std_main_loop_nortos( &srl, idle_main_task );
 
   return 0;
@@ -98,7 +201,7 @@ void init_mot0()
   pwm1.setAllowPSCadj( true );
   tim_pwm_h.Instance = TIM_PWM;
   pwm1.initHW( tim_pwm_h, psc_i, arr_i );
-  mot0.initHW();
+  actu0.initHW();
   pwm1.enable();
 }
 
@@ -149,13 +252,37 @@ CMD_FUNCTION( pulse ) // U
 
 CMD_FUNCTION( setV ) // V
 {
-  float v = arg2float_d( 1, argc, argv, 0 );
-  auto  t = arg2ulong_d( 2, argc, argv, 1000, 0 );
+  float v   = arg2float_d( 1, argc, argv, 0 );
+  auto  t_r = arg2ulong_d( 2, argc, argv, t_run, 1 );
 
-  mot0.setV( v );
-  delay_ms_brk( t );
+  const auto t_all { t_pre + t_r + t_post };
+  const auto t_e1  { t_pre + t_r          }; // end of active phase
+
+
+  start_count_time();
+  uint32_t tc0 { GET_OS_TICK() };
+  break_flag = 0;
+  int state = 0;
+  float v_c = 0;
+  for( decltype(+t_all) t=0; t <= t_all && !break_flag; t += t_step ) {
+    calc_current_time();
+    measure_store_coords();
+
+    if( state == 0 && t_cur_i >= t_pre ) {
+      actu0.setV( v ); v_c = v;
+      state = 1;
+    }
+    if( state == 1 && t_cur_i >= t_e1 ) {
+      actu0.setV( 0 ); v_c = 0;
+      state = 2;
+    }
+
+    std_out << FltFmt( t_cur_f, cvtff_fix, 9, 3 ) << ' ' << v_c << ' '
+            << FmtInt( q0_i, 8 ) << ' ' << nu0_i << ' ' << t_dt_f << NL;
+
+    delay_ms_until_brk( &tc0, t_step );
+  }
   // std_out << '#' << pu << ' ' << pwm1.getPwmRaw( 0 ) << NL;
-  mot0.stop();
 
   return 0;
 }
@@ -193,13 +320,21 @@ void HAL_TIM_PWM_MspDeInit( TIM_HandleTypeDef* htim )
 ReturnCode measure_store_coords()
 {
   auto old_tick { last_measure_tick };
-  last_measure_tick = HAL_GetTick();
-  // auto dt = std::max( last_measure_tick - old_tick, 2_u32 );
+  last_measure_tick = t_cur_i;
+  if( first_measure ) {
+    t_dt = 0;
+    t_dt_f = 0;
+  } else {
+    t_dt = std::max( last_measure_tick - old_tick, 1_u32 );
+    t_dt_f = t_dt * 1e-3f;
+  }
 
   leds[2].set();
   DoAtLeave _( []() { leds[2].reset(); } );
 
-  ang_sens.getAngleN();
+  auto q0_i_old = q0_i;
+  q0_i = ang_sens.getAngleN();
+  nu0_i = first_measure ? 0 : ( ( q0_i - q0_i_old ) / t_dt_f );
 
   // for( auto ps : sensors ) {
   //   auto rc = ps->measure( adc_n );
@@ -209,12 +344,8 @@ ReturnCode measure_store_coords()
   //   }
   // }
   //
-  // for( auto &co : coords ) {
-  //   auto q_o = co.q_cur;
-  //   co.q_cur = co.sens->get( co.sens_ch );
-  //   co.nu_cur = 1000 * ( co.q_cur - q_o ) / dt; // 1000 is ms/s
-  // }
 
+  first_measure = 0;
   return rcOk;
 }
 
