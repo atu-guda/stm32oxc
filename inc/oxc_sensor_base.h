@@ -13,7 +13,7 @@ class PhysicalSensor {
    virtual ~PhysicalSensor() = default;
    virtual ReturnCode initHW() = 0;
    virtual ReturnCode measure() = 0;
-   virtual int32_t get( size_t ch ) = 0;
+   virtual int32_t get( size_t ch ) = 0; // single-channel sensors may ignore ch
    size_t size() const { return n_ch; };
    ReturnCode status() { return sta; }
 
@@ -28,6 +28,18 @@ class SensorBase {
    virtual float get() = 0;
    virtual int32_t get_i() = 0;
   protected:
+};
+
+class SensorSimple : public SensorBase {
+  public:
+   SensorSimple( PhysicalSensor &psens_, size_t ch_, float k_a_, float k_b_ ) : // TODO: object for conversion?
+     psens( psens_ ), ch( ch_ ), k_a( k_a_ ), k_b( k_b_ ) {}
+   virtual float get() override     { return psens.get( ch ) * k_a + k_b; };
+   virtual int32_t get_i() override { return psens.get( ch ); }
+  protected:
+   PhysicalSensor &psens;
+   size_t ch;
+   float k_a, k_b;
 };
 
 

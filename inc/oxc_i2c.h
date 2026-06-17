@@ -5,6 +5,9 @@
 
 oxc::ReturnCode i2c_default_init( I2C_HandleTypeDef &i2c, int speed = 100000 );
 
+using oxc::uint8_t_o;
+using oxc::uint16_t_o;
+
 class DevI2C  {
   public:
    enum {
@@ -34,7 +37,9 @@ class DevI2C  {
    int  send_reg2(  uint16_t reg, const uint8_t *ds, int ns, uint8_t addr = 0 );
    int  send_reg2(  uint8_t reg,  uint8_t d, uint8_t addr = 0 )
      { return send_reg2( reg, &d, 1, addr ); }
-   int  recv( uint8_t addr = 0 );
+   uint8_t_o  recv( uint8_t addr = 0 );
+   uint8_t    recv_def( uint8_t addr = 0, uint8_t def = 0 ) { return recv( addr ).value_or( def ); };
+   //* returns nuber of recieved bytes or 0
    int  recv( uint8_t *dd, int nd, uint8_t addr = 0 );
    int  recv_reg12(  int8_t reg,  uint8_t *dd, int nd, bool is2byte, uint8_t addr = 0 );
    int  recv_reg1(  int8_t reg,  uint8_t *dd, int nd, uint8_t addr = 0 );
@@ -76,18 +81,23 @@ class I2CClient {
      { return dev.send_reg2( reg, ds, ns, addr ); }
    int  send_reg2(  uint8_t reg,  uint8_t d )
      { return dev.send_reg2( reg, d, addr ); }
-   int  recv()
+   uint8_t_o  recv()
      { return dev.recv( addr ); }
+   uint8_t  recv_def( uint8_t def = 0 )
+     { return dev.recv_def( addr, def ); }
    int  recv( uint8_t *dd, int nd )
      { return dev.recv( dd, nd, addr ); }
    int  recv_reg12(  int8_t reg,  uint8_t *dd, int nd, bool is2byte )
      { return dev.recv_reg12( reg, dd, nd, is2byte, addr ); }
    int  recv_reg1(  int8_t reg,  uint8_t *dd, int nd )
      { return dev.recv_reg1( reg, dd, nd, addr ); }
-   uint8_t recv_reg1_8bit(  int8_t reg,  uint8_t defVal = 0 );
-   uint16_t recv_reg1_16bit(  int8_t reg,  uint16_t defVal = 0 );
+   uint8_t_o recv_reg1_8bit_o(  int8_t reg );
+   uint8_t   recv_reg1_8bit(  int8_t reg,  uint8_t defVal = 0 ) { return recv_reg1_8bit_o( reg ).value_or( defVal ); };
+   uint16_t_o recv_reg1_16bit_o( int8_t reg );
+   uint16_t   recv_reg1_16bit(  int8_t reg,  uint16_t defVal = 0 ) { return recv_reg1_16bit_o( reg ).value_or( defVal ); } ;
    int recv_reg1_16bit_n(  int8_t reg, uint16_t *d, int n );
-   uint16_t recv_reg1_16bit_rev(  int8_t reg,  uint16_t defVal = 0 );
+   uint16_t_o recv_reg1_16bit_rev_o(  int8_t reg );
+   uint16_t recv_reg1_16bit_rev(  int8_t reg,  uint16_t defVal = 0 ) { return recv_reg1_16bit_rev_o( reg ).value_or( defVal ); };
    int recv_reg1_16bit_n_rev(  int8_t reg, uint16_t *d, int n );
    int  recv_reg2(  int16_t reg, uint8_t *dd, int nd )
      { return dev.recv_reg2( reg, dd, nd, addr ); }

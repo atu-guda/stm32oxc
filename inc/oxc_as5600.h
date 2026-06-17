@@ -5,6 +5,9 @@
 
 #include <oxc_i2c.h>
 
+using oxc::uint32_t_o;
+using oxc::int32_t_o;
+
 // inner regs: 1-byte addr
 
 class AS5600 : public I2CClient {
@@ -94,9 +97,12 @@ class AS5600 : public I2CClient {
 
    uint16_t getAngleRaw() { return getReg( reg_raw_angle_high ); }
    uint16_t getAngleNoTurn() { return getReg( reg_angle_high ); }
-   uint16_t getAngle();
+   uint16_t_o getAngle_o();
+   uint16_t getAngle() { return getAngle_o().value_or( 0xFFFF ); }
+   int32_t_o  getAngleN_o()
+     { auto vo = getAngle_o(); if( !vo ) { return {}; } return val2turn * n_turn + vo.value(); }; // order!
    int32_t  getAngleN()
-     { auto v = getAngle(); return val2turn * n_turn + v; }; // order!
+     { return getAngleN_o().value_or( 0xFFFFFFFF ); }
    uint32_t getAngle_mDeg()  { return to_mDeg( getAngle() ); }
    int32_t  getAngleN_mDeg() { return to_mDeg( getAngleN() ); }
    uint16_t getOldVal() const { return old_val; }

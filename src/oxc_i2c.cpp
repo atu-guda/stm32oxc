@@ -83,13 +83,15 @@ int  DevI2C::send_reg2(  uint16_t reg, const uint8_t *ds, int ns, uint8_t addr )
   return send_reg12( reg, ds, ns, true, addr );
 }
 
-int  DevI2C::recv( uint8_t addr )
+uint8_t_o  DevI2C::recv( uint8_t addr )
 {
   addr = effAddr( addr );
   uint8_t v;
   HAL_StatusTypeDef rc = HAL_I2C_Master_Receive( i2ch, addr, (uint8_t*)(&v), 1, maxWait );
-  return ( rc == HAL_OK ) ? v : -1;
-
+  if ( rc == HAL_OK ) {
+    return v;
+  };
+  return {};
 }
 
 int  DevI2C::recv( uint8_t *dd, int nd, uint8_t addr )
@@ -128,31 +130,32 @@ int  DevI2C::recv_reg2(  int16_t reg, uint8_t *dd, int nd, uint8_t addr )
 // --------------- I2CClient functions -------------------------
 
 
-uint8_t I2CClient::recv_reg1_8bit(  int8_t reg,  uint8_t defVal )
+uint8_t_o I2CClient::recv_reg1_8bit_o( int8_t reg )
 {
-  uint8_t v = defVal, vx;
+  uint8_t vx;
   if( dev.recv_reg1( reg, &vx, 1, addr ) == 1 ) {
-    v = vx;
+    return vx;
   }
-  return v;
+  return {};
 }
 
-uint16_t I2CClient::recv_reg1_16bit(  int8_t reg,  uint16_t defVal )
+
+uint16_t_o I2CClient::recv_reg1_16bit_o( int8_t reg )
 {
-  uint16_t v = defVal, vx;
+  uint16_t vx;
   if( dev.recv_reg1( reg, (uint8_t*)(&vx), 2, addr ) == 2 ) {
-    v = vx;
+    return vx;
   }
-  return v;
+  return {};
 }
 
-uint16_t I2CClient::recv_reg1_16bit_rev(  int8_t reg,  uint16_t defVal )
+uint16_t_o I2CClient::recv_reg1_16bit_rev_o(  int8_t reg )
 {
-  uint16_t v = defVal, vx;
+  uint16_t vx;
   if( dev.recv_reg1( reg, (uint8_t*)(&vx), 2, addr ) == 2 ) {
-    v = rev16( vx );
+    return rev16( vx );
   }
-  return v;
+  return {};
 }
 
 

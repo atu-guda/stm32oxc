@@ -11,13 +11,19 @@ ReturnCode SensorAS5600::initHW()
 
 ReturnCode SensorAS5600::measure()
 {
-  v = dev.getAngleN();
+  auto vo = dev.getAngleN_o();
+  if( vo ) {
+    v = vo.value();
+    return rcOk;
+  }
+  sta = ReturnCode{ ReturnCode::rcnErr, 3 }; // fail to measure
+  return sta;
 }
 
 
-int32_t SensorAS5600::get( size_t ch )
+int32_t SensorAS5600::get( size_t /* ch */ )
 {
-  return 0;
+  return v;
 }
 
 

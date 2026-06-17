@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <span>
 #include <expected>
+#include <optional>
 
 #define UNUSED_ARG __attribute__((unused))
 
@@ -166,6 +167,17 @@ using exprc_int32_t  = std::expected<int32_t,  oxc::ReturnCode>;
 using exprc_uint32_t = std::expected<uint32_t, oxc::ReturnCode>;
 using exprc_int64_t  = std::expected<int64_t,  oxc::ReturnCode>;
 using exprc_uint64_t = std::expected<uint64_t, oxc::ReturnCode>;
+
+using int_t_o    = std::optional<int     >;
+using uint_t_o   = std::optional<unsigned>;
+using int8_t_o   = std::optional<int8_t  >;
+using uint8_t_o  = std::optional<uint8_t >;
+using int16_t_o  = std::optional<int16_t >;
+using uint16_t_o = std::optional<uint16_t>;
+using int32_t_o  = std::optional<int32_t >;
+using uint32_t_o = std::optional<uint32_t>;
+using int64_t_o  = std::optional<int64_t >;
+using uint64_t_o = std::optional<uint64_t>;
 
 template< typename DevType, std::uintptr_t addr_ >
 struct DevPtr

@@ -3,12 +3,13 @@
 
 using namespace oxc;
 
-uint16_t AS5600::getAngle()
+uint16_t_o AS5600::getAngle_o()
 {
-  uint16_t v = recv_reg1_16bit_rev( reg_angle_high, 0xFFFF ); // 0xFFFF - value if error, sensor is 12-bit
-  if( v == 0xFFFF ) {
-    return v;
+  auto vo = recv_reg1_16bit_rev_o( reg_angle_high );
+  if( !vo ) {
+    return {};
   }
+  auto v = vo.value();
 
   int16_t dv = (int16_t)v - (int16_t)old_val;
   if( dv > jumpVal ) {
@@ -19,6 +20,8 @@ uint16_t AS5600::getAngle()
   old_val = v;
   return v;
 };
+
+
 
 
 
