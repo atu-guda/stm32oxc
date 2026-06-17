@@ -35,6 +35,8 @@ SRCS += oxc_pwmctltim.cpp
 
 SRCS += oxc_actu_dcpwm.cpp
 
+SRCS += oxc_sensor_as5600.cpp
+
 # SRCS += oxc_debug_cmds.cpp
 
 

@@ -6,11 +6,12 @@
 #include <oxc_namedfloats.h>
 #include <oxc_main.h>
 
-#include <oxc_as5600.h>
 
 #include <oxc_easing.h>
 #include <oxc_pwmctltim.h>
 #include <oxc_actu_dcpwm.h>
+
+#include <oxc_sensor_as5600.h>
 
 #include "main.h"
 

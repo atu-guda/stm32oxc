@@ -1,9 +1,26 @@
 #ifndef _OXC_ACTU_BASE_H
 #define _OXC_ACTU_BASE_H
 
-#include <oxc_base.h>
+// only for ReturnCode
+#include <oxc_types.h>
+
+using std::size_t;
 
 namespace oxc {
+
+
+class PhysicalActuator {
+  public:
+   PhysicalActuator( size_t n_ch_ ) : n_ch ( n_ch_ ) {};
+   virtual ~PhysicalActuator() = default;
+   virtual ReturnCode initHW() = 0;
+   virtual ReturnCode set( size_t ch, float a ) = 0; // just value, range still not selected
+   virtual ReturnCode commit() = 0;
+   size_t size() const { return n_ch; };
+
+  protected:
+   size_t n_ch;
+};
 
 class Actuator {
   public:
