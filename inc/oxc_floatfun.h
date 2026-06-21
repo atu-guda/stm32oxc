@@ -31,6 +31,15 @@ enum cvtff_flags {
 
 extern float exp10if( int x );
 
+inline constexpr float pi_f     { std::numbers::pi_v<float> };
+inline constexpr float pi_d2_f  { std::numbers::pi_v<float>/2 };
+inline constexpr float inv_pi_f { 1.0f / pi_f };
+inline constexpr float rad2deg_k_f { 180.0f / pi_f    };
+inline constexpr float deg2rad_k_f { pi_f   / 180.0f  };
+
+inline constexpr  float r2d(   float x ) { return x * rad2deg_k_f; }
+inline constexpr  float d2r(   float x ) { return x * deg2rad_k_f; }
+
 inline constexpr xfloat pow2( xfloat x ) { return x * x; }
 inline constexpr  float pow2f( float x ) { return x * x; }
 inline constexpr xfloat signxf( xfloat x ) { return (x>0) ? 1 : ((x<0) ? -1 : 0 ); }
@@ -47,8 +56,8 @@ float arg2float_d( int narg, int argc, const char * const * argv, float def,
 xfloat to_SI_prefix( xfloat v, char *c );
 
 
-const unsigned buf_len_float  = 36;
-const unsigned buf_len_double = 72;
+const std::size_t buf_len_float  = 36;
+const std::size_t buf_len_double = 72;
 // const char* const def_float_fmt_init = "%#g";
 
 class FltFmt : public OutStreamFmt {
@@ -104,6 +113,15 @@ OutStream& operator<<( OutStream &os, double rhs );
 #endif
 
 #ifdef OXC_HAVE_DOUBLE
+
+inline constexpr double pi_d     { std::numbers::pi_v<double> };
+inline constexpr double pi_d2_d  { std::numbers::pi_v<double>/2 };
+inline constexpr double inv_pi_d { 1.0 / pi_d };
+inline constexpr double rad2deg_k_d { 180.0 / pi_d    };
+inline constexpr double deg2rad_k_d { pi_d   / 180.0  };
+
+inline constexpr  double r2d(   double x ) { return x * rad2deg_k_d; }
+inline constexpr  double d2r(   double x ) { return x * deg2rad_k_d; }
 
 inline constexpr double pow2d( double x ) { return x * x; }
 

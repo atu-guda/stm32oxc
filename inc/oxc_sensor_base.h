@@ -1,11 +1,35 @@
 #ifndef _OXC_SENSOR_BASE_H
 #define _OXC_SENSOR_BASE_H
 
+#include <cmath>
+
 #include <oxc_types.h>
 
 using std::size_t;
 
 namespace oxc {
+
+struct CoordTransform {
+  public:
+   virtual ~CoordTransform() = default;
+   virtual float   toPhys( int32_t iv ) = 0;
+   virtual int32_t toInternal( float pv ) = 0;
+};
+
+struct LinearCoordTransform : public CoordTransform {
+  public:
+   struct PhysicalToInternalInit {};
+   //* default coeffs is internal to Physical, a!=0, ra!=0
+   constexpr LinearCoordTransform( float a_, float b_ )
+     : a( not_small(a_) ), b( b_ ), ra (1.0f/a) {}
+   //* coeffs for Physical to internal
+   constexpr LinearCoordTransform( float ra_, float rb_, PhysicalToInternalInit /*in*/)
+     :  a( 1.0f/not_small(ra_) ), b( -rb_ ), ra( not_small(ra_) ) {}
+   virtual float   toPhys( int32_t iv )  override  { return iv * a + b;  };
+   virtual int32_t toInternal( float pv ) override { return int32_t( ( ( pv - b ) * ra ) + 0.499f ); }
+   static constexpr float not_small( float aa ) { return std::fabsf(aa) > 1e-9f ? aa : 1.0f; }
+   float a, b, ra;
+};
 
 class PhysicalSensor {
   public:
@@ -24,22 +48,15 @@ class PhysicalSensor {
 
 class SensorBase {
   public:
+   explicit constexpr SensorBase( PhysicalSensor &psens_, size_t ch_, CoordTransform &coo_tr_ )
+     : psens( psens_ ), ch( ch_ ), coo_tr( coo_tr_ ) {}
    virtual ~SensorBase() = default;
-   virtual float get() = 0;
-   virtual int32_t get_i() = 0;
-  protected:
-};
-
-class SensorSimple : public SensorBase {
-  public:
-   SensorSimple( PhysicalSensor &psens_, size_t ch_, float k_a_, float k_b_ ) : // TODO: object for conversion?
-     psens( psens_ ), ch( ch_ ), k_a( k_a_ ), k_b( k_b_ ) {}
-   virtual float get() override     { return psens.get( ch ) * k_a + k_b; };
-   virtual int32_t get_i() override { return psens.get( ch ); }
+   virtual float get()      { return coo_tr.toPhys( psens.get( ch ) ); }
+   virtual int32_t get_i()  { return                psens.get( ch ); }
   protected:
    PhysicalSensor &psens;
    size_t ch;
-   float k_a, k_b;
+   CoordTransform &coo_tr;
 };
 
 

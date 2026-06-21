@@ -42,6 +42,7 @@ const char* common_help_string = "Appication to test PWM motor + AS5600 encoder"
   UX(         first_measure,         1 ) \
   FX(                t_dt_f,      0.0f ) \
   FX(               t_cur_f,      0.0f ) \
+  FX(                    q0,      0.0f ) \
   FX(                 nu0_i,      0.0f )
 
 uint32_t last_cmd_end_tick     {     0 };
@@ -94,6 +95,7 @@ bool set_var_ex( const char *nm, const char *s )
 
 // ------------------------ end: named global vars -----------------------------------
 
+
 // ------------------------ - local commands; ---------------------------------------
 DCL_CMD_REG(      test0,  'T',     " [arg ] - test something"  );
 DCL_CMD_REG(      tinfo,  'P',     " print info"  );
@@ -101,16 +103,24 @@ DCL_CMD_REG(    setfreq,  'F',     " Hz - set freq"  );
 DCL_CMD_REG(      pulse,  'U',     " []- test pulse in us"  );
 DCL_CMD_REG(       setV,  'V',     " v [t_us] - set v"  );
 DCL_CMD_REG(    measure,  'M',     " - measure angle..."  );
+DCL_CMD_REG(    zero_q0, '\0',     "[val] - zero q0 (to val or current)"  );
 
 // -------------------------------------------------------------------------------------
 
-ReturnCode measure_store_coords();
+ReturnCode measure_all();
 
 
 I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );
-AS5600 ang_sens( i2cd );
+AS5600 ang_sens_dev( i2cd );
 
+// ------------------------ - local sensors ; ---------------------------------------
+
+LinearCoordTransform coo_tr_AS5600( -SensorAS5600::k_i2ph, -2.1015536f );
+SensorAS5600 ang_sens_ph( ang_sens_dev );
+SensorBase   ang_sens_q0( ang_sens_ph, 0, coo_tr_AS5600 );
+
+// ------------------------ - local sensors end ---------------------------------------
 
 void init_mot0();
 
@@ -159,9 +169,13 @@ void idle_main_task()
     last_cmd_end_tick = t_cur_i;
   }
   if( ( t_cur_i - last_measure_tick ) >= measure_idle_ticks ) {
-    measure_store_coords();
+    measure_all();
   }
 }
+
+// misc tests
+// LinearCoordTransform toPh( 0.01f, 1.0f );
+// LinearCoordTransform toIn( 0.02f, 2.0f, LinearCoordTransform::PhysicalToInternalInit{} );
 
 int main(void)
 {
@@ -175,11 +189,10 @@ int main(void)
 
   i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
-  i2c_client_def = &ang_sens;
-  ang_sens.setCfg( AS5600::CfgBits::cfg_pwr_mode_nom |  AS5600::CfgBits::cfg_hyst_off );
+  i2c_client_def = &ang_sens_dev;
 
-  if( !ang_sens.isMagnetDetected()  ) {
-    std_out << "# Error: no magnet" << NL;
+  if( ang_sens_ph.initHW() != rcOk  ) {
+    std_out << "# Error: no magnet sensor" << NL;
     die4led( 1_mask );
   }
 
@@ -267,7 +280,7 @@ CMD_FUNCTION( setV ) // V
   float v_c = 0;
   for( decltype(+t_all) t=0; t <= t_all && !break_flag; t += t_step ) {
     calc_current_time();
-    measure_store_coords();
+    measure_all();
 
     if( state == 0 && t_cur_i >= t_pre ) {
       actu0.setV( v ); v_c = v;
@@ -279,7 +292,8 @@ CMD_FUNCTION( setV ) // V
     }
 
     std_out << FltFmt( t_cur_f, cvtff_fix, 9, 3 ) << ' ' << v_c << ' '
-            << FmtInt( q0_i, 8 ) << ' ' << nu0_i << ' ' << t_dt_f << NL;
+            << FmtInt( q0_i, 8 ) << ' ' << q0 << ' ' << r2d( q0 ) << ' '
+            << nu0_i << NL;
 
     delay_ms_until_brk( &tc0, t_step );
   }
@@ -291,11 +305,28 @@ CMD_FUNCTION( setV ) // V
 
 CMD_FUNCTION( measure ) // M
 {
-  std_out << ang_sens.getAngleN() << ' ' << ang_sens.isMagnetDetected() << NL;
+  std_out << ang_sens_dev.getAngleN() << ' ' << ang_sens_dev.isMagnetDetected() << ' '
+          << ang_sens_q0.get() << ' ' << ang_sens_q0.get_i() << ' ' << r2d( ang_sens_q0.get() )
+          << NL;
 
   return 0;
 }
 
+
+CMD_FUNCTION( zero_q0 )
+{
+  auto rc = ang_sens_ph.measure();
+  if( rc.isError() ) {
+    std_out << "# Measure error " << rc.data << NL;
+    return 1;
+  }
+
+  float v   = arg2float_d( 1, argc, argv, ang_sens_q0.get() );
+  coo_tr_AS5600 = LinearCoordTransform( -SensorAS5600::k_i2ph, coo_tr_AS5600.b-v );
+  cmd_measure( argc, argv );
+
+  return 0;
+}
 
 
 
@@ -318,7 +349,7 @@ void HAL_TIM_PWM_MspDeInit( TIM_HandleTypeDef* htim )
   }
 }
 
-ReturnCode measure_store_coords()
+ReturnCode measure_all()
 {
   auto old_tick { last_measure_tick };
   last_measure_tick = t_cur_i;
@@ -333,9 +364,16 @@ ReturnCode measure_store_coords()
   leds[2].set();
   DoAtLeave _( []() { leds[2].reset(); } );
 
-  auto q0_i_old = q0_i;
-  q0_i = ang_sens.getAngleN();
-  nu0_i = first_measure ? 0 : ( ( q0_i - q0_i_old ) / t_dt_f );
+  auto rc = ang_sens_ph.measure();
+  if( !rc.isOk() ) {
+    leds[0].set();
+    return rc;
+  }
+
+  auto q0_old = q0;
+  q0_i  = ang_sens_q0.get_i(); // debug
+  q0  = ang_sens_q0.get();
+  nu0_i = first_measure ? 0 : ( ( q0 - q0_old ) / t_dt_f );
 
   // for( auto ps : sensors ) {
   //   auto rc = ps->measure( adc_n );
