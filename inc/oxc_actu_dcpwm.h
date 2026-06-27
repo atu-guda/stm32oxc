@@ -16,15 +16,21 @@ class ActuDcPwm_1P2D : public Actuator {
    {
      props = canSetV | canBreak;
    }
-   virtual ReturnCode setX(  float x  ) override;
+   virtual ReturnCode setX(  float x  ) override; // No
    virtual ReturnCode setV(  float v  ) override;
-   virtual ReturnCode setTo( float to ) override;
+   virtual ReturnCode setTo( float to ) override; // No
    virtual ReturnCode stop() override;
    virtual ReturnCode brk()  override;
    virtual ReturnCode idle() override;
    virtual ReturnCode init() override { return initHW(); };
 
-   ReturnCode initHW() { /* pwmc.initHW() && */ pin_l.initHW() ; pin_r.initHW(); return rcOk; }; // TODO: use initHW
+   ReturnCode initHW() {
+     oxc::ReturnCode rc = pin_l.initHW();
+     // pwmc.initHW() && 
+     if( !rc ) return rc;
+     rc = pin_r.initHW();
+     return rc;
+   }
    void set_zero_v( float v_ ) { zero_v = v_; };
   protected:
    PwmCtl &pwmc;   //* any PWM controller

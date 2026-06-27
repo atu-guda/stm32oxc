@@ -3,6 +3,7 @@
 
 // only for ReturnCode
 #include <oxc_types.h>
+#include <oxc_coordtransform.h>
 
 using std::size_t;
 
@@ -14,7 +15,7 @@ class PhysicalActuator {
    PhysicalActuator( size_t n_ch_ ) : n_ch ( n_ch_ ) {};
    virtual ~PhysicalActuator() = default;
    virtual ReturnCode initHW() = 0;
-   virtual ReturnCode set( size_t ch, float a ) = 0; // just value, range still not selected
+   virtual ReturnCode set( size_t ch, int32_t a ) = 0; // just value, range still not selected
    virtual ReturnCode commit() = 0;
    size_t size() const { return n_ch; };
 
@@ -32,9 +33,9 @@ class Actuator {
      flagReady = 1, flagError = 2, flagIdle = 4
    };
    // TODO non-virt setX + virtual do_setX...
-   virtual ReturnCode setX(  float x )  = 0;  // [-1;1]
-   virtual ReturnCode setV(  float v )  = 0;  // [-1;1]
-   virtual ReturnCode setTo( float to ) = 0;  // [-1;1]
+   virtual ReturnCode setX(  float x )  = 0;
+   virtual ReturnCode setV(  float v )  = 0;
+   virtual ReturnCode setTo( float to ) = 0;
    virtual ReturnCode stop() = 0;
    virtual ReturnCode brk()  = 0;
    virtual ReturnCode idle() = 0;
@@ -42,6 +43,7 @@ class Actuator {
    uint32_t getProps() const { return props; }
    uint32_t getFlags() const { return flags; }
   protected:
+   // CoordTransform &coo_tr;
    uint32_t props {0};
    uint32_t flags {0};
 };

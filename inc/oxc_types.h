@@ -98,6 +98,7 @@ struct ReturnCode {
   }
   constexpr bool operator==( const ReturnCode &rhs ) const noexcept = default;
   constexpr uint32_t toUint32() const { return code << 16 | data; }
+  constexpr explicit operator bool() const noexcept { return isOk(); }
 
   void ifErr( void(*f)(void)  ) { if( isError() ) { f(); } }
 
