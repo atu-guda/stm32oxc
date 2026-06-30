@@ -11,6 +11,8 @@
 #include <oxc_pwmctltim.h>
 #include <oxc_actu_dcpwm.h>
 
+#include <oxc_robo_tmp.h>
+
 #include <oxc_sensor_as5600.h>
 
 #include "main.h"

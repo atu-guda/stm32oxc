@@ -23,10 +23,17 @@ class PhysicalActuator {
    size_t n_ch;
 };
 
+struct ActuatorLimits
+{
+  float max_v;
+  float max_a;
+  float max_eff;
+};
+
 class Actuator {
   public:
    enum Props {
-     canSetX  =     1, canSetV = 2, catSetTorque = 4,
+     canSetX  =     1, canSetV = 2, canSetTorque = 4,
      canBreak =  0x10
    };
    enum Flags {

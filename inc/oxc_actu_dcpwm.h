@@ -25,11 +25,10 @@ class ActuDcPwm_1P2D : public Actuator {
    virtual ReturnCode init() override { return initHW(); };
 
    ReturnCode initHW() {
-     oxc::ReturnCode rc = pin_l.initHW();
      // pwmc.initHW() && 
+     auto rc { pin_l.initHW() };
      if( !rc ) return rc;
-     rc = pin_r.initHW();
-     return rc;
+     return pin_r.initHW();
    }
    void set_zero_v( float v_ ) { zero_v = v_; };
   protected:
