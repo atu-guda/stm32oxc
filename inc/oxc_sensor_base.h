@@ -4,6 +4,7 @@
 #include <cmath>
 
 #include <oxc_types.h>
+#include <oxc_robo_base.h>
 #include <oxc_coordtransform.h>
 
 using std::size_t;

@@ -2,6 +2,8 @@
 #include <oxc_auto.h>
 #include <oxc_floatfun.h>
 #include <oxc_main.h>
+#include <oxc_pingpio.h>
+#include <oxc_robopin.h>
 #include <oxc_pwmctltim.h>
 #include <oxc_actu_dcpwm.h>
 
@@ -23,6 +25,7 @@ DCL_CMD_REG(      tinfo,  'P',     " print info"  );
 DCL_CMD_REG(    setfreq,  'F',     " Hz - set freq"  );
 DCL_CMD_REG(      pulse,  'U',     " []- test pulse in us"  );
 DCL_CMD_REG(       setV,  'V',     " v [t_us] - set v"  );
+DCL_CMD_REG(     commit,  'C',     " commit all hw devices"  );
 
 
 void idle_main_task()
@@ -38,7 +41,14 @@ constinit PwmCtlTim pwm1( TIM_PWM_BASE, tim_pwm_chspins );
 
 PinGpio pwm_left_pin(  PwmLeftPin  );
 PinGpio pwm_right_pin( PwmRightPin );
-ActuDcPwm_1P2D mot0( pwm1, 0, pwm_left_pin, pwm_right_pin );
+RoboPin q0_pin_l( pwm_left_pin );
+RoboPin q0_pin_r( pwm_right_pin );
+ActuDcPwm_1P2D mot0( pwm1, 0, q0_pin_l, q0_pin_r );
+
+RoboDevice* hw_robo_devices[] {
+  &q0_pin_l,
+  &q0_pin_r,
+};
 
 int main(void)
 {
@@ -64,7 +74,7 @@ void init_mot0()
   pwm1.setAllowPSCadj( true );
   tim_pwm_h.Instance = TIM_PWM;
   pwm1.initHW( tim_pwm_h, psc_i, arr_i );
-  mot0.initHW();
+  // mot0.initHW();
   pwm1.enable();
 }
 
@@ -126,6 +136,20 @@ CMD_FUNCTION( setV ) // V
 
   return 0;
 }
+
+CMD_FUNCTION( commit ) // C
+{
+  for( size_t i=0; auto dev : hw_robo_devices ) {
+    auto rc = dev->commit();
+    if( !rc.isOk() ) {
+      std_out << "# Err: commit " << i << ' ' << rc.code << ' ' << rc.data << NL;
+      return 2;
+    }
+    ++i;
+  }
+  return 0;
+}
+
 
 
 

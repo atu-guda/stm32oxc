@@ -37,6 +37,7 @@ fl.txt
 # auto-generated tmp files
 *.i
 *.ii
+*.gch
 
 # output data files
 examples/*/*/data/*

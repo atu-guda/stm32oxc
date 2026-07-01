@@ -3,7 +3,7 @@
 
 #include <oxc_actu_base.h>
 #include <oxc_pwmctl.h>
-#include <oxc_pinbase.h>
+#include <oxc_robopin.h>
 
 namespace oxc {
 
@@ -11,7 +11,7 @@ namespace oxc {
 // PWM controlled: 1 pwm channel, 2 direction
 class ActuDcPwm_1P2D : public Actuator {
   public:
-   ActuDcPwm_1P2D( PwmCtl &pwmc_, std::size_t ch_, PinBase &pin_l_, PinBase &pin_r_ )
+   ActuDcPwm_1P2D( PwmCtl &pwmc_, std::size_t ch_, RoboPin &pin_l_, RoboPin &pin_r_ )
      : pwmc( pwmc_ ), ch(ch_), pin_l( pin_l_ ), pin_r( pin_r_ )
    {
      props = canSetV | canBreak;
@@ -22,20 +22,14 @@ class ActuDcPwm_1P2D : public Actuator {
    virtual ReturnCode stop() override;
    virtual ReturnCode brk()  override;
    virtual ReturnCode idle() override;
-   virtual ReturnCode init() override { return initHW(); };
+   virtual ReturnCode init() override { return rcOk; }; // TODO: real init?
 
-   ReturnCode initHW() {
-     // pwmc.initHW() && 
-     auto rc { pin_l.initHW() };
-     if( !rc ) return rc;
-     return pin_r.initHW();
-   }
    void set_zero_v( float v_ ) { zero_v = v_; };
   protected:
    PwmCtl &pwmc;   //* any PWM controller
    std::size_t ch; //* channel in this controller - often used
-   PinBase &pin_l; //* pins to set direction/stop mode
-   PinBase &pin_r;
+   RoboPin &pin_l; //* pins to set direction/stop mode
+   RoboPin &pin_r;
    float  zero_v { 1e-6 }; // if v is set lower then this - stop
 
 };

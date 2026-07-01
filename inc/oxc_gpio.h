@@ -7,7 +7,8 @@
 #include <oxc_base.h>
 #include <oxc_bitops.h>
 #include <oxc_refptr.h>
-#include <oxc_pinbase.h>
+
+using namespace oxc;
 
 enum class GpioModer { in = 0, out = 1, af = 2, analog = 3 };
 enum class GpioPull {  no = 0,  up = 1, down = 2 };
@@ -494,7 +495,7 @@ class PinOut
    explicit constexpr PinOut( PortPin pp )
      : PinOut( pp.port(),  pp.pinNum() )
      {};
-   void initHW() { gpio.enableClk(); gpio.cfgOut( start );}
+   oxc::ReturnCode initHW() { gpio.enableClk(); gpio.cfgOut( start ); return rcOk; }
    GpioRegs& dev() { return gpio; }
    inline void write( bool doSet )
    {
@@ -535,24 +536,6 @@ class PinOut
 
 [[ noreturn ]] void die4led( PinMask n );
 
-// -------------- PinGpio ---------------------------------------
-// for generic interface
-namespace oxc {
-class PinGpio : public PinBase
-{
-  public:
-   constexpr explicit PinGpio( const PinOut& pin_ ) : pin( pin_ ) {};
-   constexpr explicit PinGpio( PortPin portpin ) : pin( portpin ) {};
-   virtual void set()           override { pin.set(); };
-   virtual void reset()         override { pin.reset(); };
-   virtual void write( bool v ) override { pin.write( v ); };
-   virtual void toggle()        override { pin.toggle(); };
-   virtual bool get()           override { return pin.read_in(); };
-   virtual ReturnCode initHW()  override { pin.initHW(); return rcOk; };
-  protected:
-   PinOut pin;
-};
-};
 
 // --------------- PinsIn ----------------------------------------
 // PinsIn pi( GpioB, 12, 4 [, GpioPull::{no,down,up} ] );
