@@ -41,8 +41,8 @@ constinit PwmCtlTim pwm1( TIM_PWM_BASE, tim_pwm_chspins );
 
 PinGpio pwm_left_pin(  PwmLeftPin  );
 PinGpio pwm_right_pin( PwmRightPin );
-RoboPin q0_pin_l( pwm_left_pin );
-RoboPin q0_pin_r( pwm_right_pin );
+RoboPin q0_pin_l( "q0_pin_l", pwm_left_pin );
+RoboPin q0_pin_r( "q0_pin_r", pwm_right_pin );
 ActuDcPwm_1P2D mot0( pwm1, 0, q0_pin_l, q0_pin_r );
 
 RoboDevice* hw_robo_devices[] {

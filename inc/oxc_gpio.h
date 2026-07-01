@@ -495,7 +495,7 @@ class PinOut
    explicit constexpr PinOut( PortPin pp )
      : PinOut( pp.port(),  pp.pinNum() )
      {};
-   oxc::ReturnCode initHW() { gpio.enableClk(); gpio.cfgOut( start ); return rcOk; }
+   ReturnCode initHW() { gpio.enableClk(); gpio.cfgOut( start ); return rcOk; }
    GpioRegs& dev() { return gpio; }
    inline void write( bool doSet )
    {

@@ -25,9 +25,9 @@ ReturnCode oxc::ActuDcPwm_1P2D::setV( float v )
   }
 
   if( dir > 0 ) {
-    pin_r.accept( 0, 1 );
+    pin_r.set();
   } else if( dir < 0 ) {
-    pin_l.accept( 0, 1 );
+    pin_l.set();
   }
 
   return rcOk;
@@ -40,14 +40,14 @@ ReturnCode oxc::ActuDcPwm_1P2D::setTo( float to )
 
 ReturnCode oxc::ActuDcPwm_1P2D::stop()
 {
-  pin_l.accept( 0, 0 ); pin_r.accept( 0, 0 );
+  pin_l.reset(); pin_r.reset();
   pwmc.setPwm( ch, 0 );
   return rcOk;
 }
 
 ReturnCode oxc::ActuDcPwm_1P2D::brk()
 {
-  pin_l.accept( 0, 1 ); pin_r.accept( 0, 1 );
+  pin_l.set(); pin_r.set();
   pwmc.setPwm( ch, 0 );
   return rcOk;
 }

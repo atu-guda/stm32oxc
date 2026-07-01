@@ -13,41 +13,38 @@ namespace oxc {
 //* base abstract class for interface to hardware devices
 class RoboDevice {
   public:
-   constexpr explicit RoboDevice( size_t n_ch_ ) noexcept : n_ch( n_ch_ ) {};
+   template<size_t N> // for only string literals as name
+     constexpr explicit RoboDevice( const char (&name_)[N] ) noexcept : name( name_ ) {};
    RoboDevice( const RoboDevice &rhs ) = delete;
    virtual ~RoboDevice()  = default;
-   ReturnCode getStatus() const { return last_status; }
-   // reInit()?
-   ReturnCode measure()  { return (last_status = do_measure()); }
-   ReturnCode commit()   { return (last_status = do_commit()); }
-   ReturnCode accept( size_t ch, int32_t v ) { return (last_status = do_accept( ch, v )); }
-   virtual exprc_int32_t  get ( size_t ch ) const = 0;
+   const char* getName() const noexcept { return name; }
+   virtual ReturnCode measure()   = 0;
+   virtual ReturnCode commit()    = 0;
+   virtual ReturnCode initHW()    = 0;
   protected:
-   virtual ReturnCode do_measure() = 0;
-   virtual ReturnCode do_commit()  = 0;
-   virtual ReturnCode do_accept( size_t ch, int32_t v ) = 0;
-
-   size_t n_ch;
-   ReturnCode last_status { rcErr };
+   const char *name; // not own: only for debug
 };
 
-class RoboDeviceOut : public RoboDevice {
+
+
+//* interfaces for actuators
+class ActuPositionSink {
   public:
-   constexpr explicit RoboDeviceOut( size_t n_ch_ ) noexcept : RoboDevice( n_ch_ ) {};
-   RoboDeviceOut( const RoboDeviceOut &rhs ) = delete;
-   virtual exprc_int32_t  get ( size_t ch ) const override { return std::unexpected( rcErr ); };
-  protected:
-   virtual ReturnCode do_measure() override { return rcErr; }
+    virtual ReturnCode setQ( float q ) = 0;
 };
 
-class RoboDeviceIn : public RoboDevice {
+class ActuVelocitySink
+{
   public:
-   constexpr explicit RoboDeviceIn( size_t n_ch_ ) noexcept : RoboDevice( n_ch_ ) {};
-   RoboDeviceIn( const RoboDeviceIn &rhs ) = delete;
-  protected:
-   virtual ReturnCode do_commit()  override { return rcErr; }
-   virtual ReturnCode do_accept( size_t ch, int32_t v ) override { return rcErr; }
+    virtual ReturnCode setV( float v ) = 0;
 };
+
+class ActuForceSink
+{
+  public:
+    virtual ReturnCode setTau( float tau ) = 0;
+};
+
 
 
 

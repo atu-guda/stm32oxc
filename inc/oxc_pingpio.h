@@ -17,6 +17,7 @@ class PinGpio : public PinBase
    virtual void write( bool v ) override { pin.write( v );       }
    virtual void toggle()        override { pin.toggle();         }
    virtual bool get()           override { return pin.read_in(); }
+   virtual ReturnCode initHW()  override { return pin.initHW();  }
   protected:
    PinOut pin;
 };
