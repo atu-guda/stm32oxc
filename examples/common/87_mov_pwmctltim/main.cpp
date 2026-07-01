@@ -5,6 +5,7 @@
 #include <oxc_pingpio.h>
 #include <oxc_robopin.h>
 #include <oxc_pwmctltim.h>
+#include <oxc_robopwmctl.h>
 #include <oxc_actu_dcpwm.h>
 
 #include <main.h>
@@ -26,6 +27,7 @@ DCL_CMD_REG(    setfreq,  'F',     " Hz - set freq"  );
 DCL_CMD_REG(      pulse,  'U',     " []- test pulse in us"  );
 DCL_CMD_REG(       setV,  'V',     " v [t_us] - set v"  );
 DCL_CMD_REG(     commit,  'C',     " commit all hw devices"  );
+DCL_CMD_REG(     test1,   'X',     " v - test as robo device"  );
 
 
 void idle_main_task()
@@ -34,20 +36,25 @@ void idle_main_task()
 }
 
 void init_mot0();
+bool commit_all();
+bool measure_all();
 
 TIM_HandleTypeDef tim_pwm_h;
 
-constinit PwmCtlTim pwm1( TIM_PWM_BASE, tim_pwm_chspins );
+constinit PwmCtlTim pwm1( TIM_PWM_BASE, tim_pwm_chspins, tim_pwm_h );
+RoboPwmCtl q0_pwm( "q0_pwm", pwm1 );
 
 PinGpio pwm_left_pin(  PwmLeftPin  );
 PinGpio pwm_right_pin( PwmRightPin );
 RoboPin q0_pin_l( "q0_pin_l", pwm_left_pin );
 RoboPin q0_pin_r( "q0_pin_r", pwm_right_pin );
+
 ActuDcPwm_1P2D mot0( pwm1, 0, q0_pin_l, q0_pin_r );
 
 RoboDevice* hw_robo_devices[] {
   &q0_pin_l,
   &q0_pin_r,
+  &q0_pwm,
 };
 
 int main(void)
@@ -73,7 +80,11 @@ void init_mot0()
   auto [ psc_i, arr_i ] = calc_tim_psc_arr( get_TIM_in_freq( TIM_PWM ), 20000 );
   pwm1.setAllowPSCadj( true );
   tim_pwm_h.Instance = TIM_PWM;
-  pwm1.initHW( tim_pwm_h, psc_i, arr_i );
+  pwm1.setHardParams( psc_i, arr_i );
+  q0_pwm.initHW();
+  for( auto dev : hw_robo_devices ) {
+    dev->initHW();
+  }
   // mot0.initHW();
   pwm1.enable();
 }
@@ -139,17 +150,45 @@ CMD_FUNCTION( setV ) // V
 
 CMD_FUNCTION( commit ) // C
 {
+  return commit_all() ? 0 : 2;
+}
+
+CMD_FUNCTION( test1 ) // X
+{
+  float pwm_v = arg2float_d( 1, argc, argv, 0.5f, 0.0f, 1.0f );
+  int v0 = arg2long_d( 2, argc, argv,  UVAR_v, INT_MIN, INT_MAX );
+
+  q0_pwm.setPwm( 0, pwm_v );
+
+  q0_pin_l.write( v0 & 1 );
+  q0_pin_r.write( v0 & 2);
+  return commit_all() ? 0 : 2;
+}
+
+
+bool commit_all()
+{
   for( size_t i=0; auto dev : hw_robo_devices ) {
     auto rc = dev->commit();
     if( !rc.isOk() ) {
-      std_out << "# Err: commit " << i << ' ' << rc.code << ' ' << rc.data << NL;
-      return 2;
+      UVAR_e = i;
     }
     ++i;
   }
-  return 0;
+  return true;
 }
 
+bool measure_all()
+{
+  for( size_t i=0; auto dev : hw_robo_devices ) {
+    auto rc = dev->measure();
+    if( !rc.isOk() ) {
+      UVAR_e = i;
+    }
+    ++i;
+  }
+  return true;
+}
 
 
 

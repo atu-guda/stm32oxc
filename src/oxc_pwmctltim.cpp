@@ -19,13 +19,15 @@ bool oxc::PwmCtlTim::setFreq( float freq )
 
   if( allowPSCadj ) {
     uint32_t freq_in = get_TIM_in_freq( tim );
-    auto [ psc, arr ] = calc_tim_psc_arr( freq_in, freq, arr_max, 0xFFFF ); // TODO: timer traits
+    auto [ psc_, arr_ ] = calc_tim_psc_arr( freq_in, freq, arr_max, 0xFFFF ); // TODO: timer traits
     if( psc == 0xFFFFFFFF ) {
       return false;
     }
+    psc = psc_; arr = arr_;
     tim->PSC = psc; tim->ARR = arr; tim->CNT = 0;
+
   } else {
-    auto arr =  calc_TIM_arr_for_base_freq( tim, freq );
+    arr =  calc_TIM_arr_for_base_freq( tim, freq );
     tim->ARR = arr; tim->CNT = 0;
   }
 
@@ -63,30 +65,30 @@ bool oxc::PwmCtlTim::setPwmU16( size_t ch, uint16_t pwm )
   return true;
 }
 
-bool oxc::PwmCtlTim::setPwm(    size_t ch, float pwm )
+uint32_t oxc::PwmCtlTim::pwm2raw( float pwm )
 {
-  if( isBadCh( ch ) ) {
-    return false;
-  }
   auto tim = tim_p();
   const auto a = tim->ARR;
-  auto c = std::clamp( (uint32_t)( pwm * a ), (uint32_t)0, a );
-  *pccr( ch ) = c;
-  return true;
+  return std::clamp( (uint32_t)( pwm * a ), (uint32_t)0, a );
+}
+
+bool oxc::PwmCtlTim::setPwm(    size_t ch, float pwm )
+{
+  return setPwmRaw( ch, pwm2raw( pwm ) );
+}
+
+uint32_t oxc::PwmCtlTim::pulse2raw( uint32_t us )
+{
+  auto tim = tim_p();
+  return (int32_t)( (uint64_t) get_TIM_cnt_freq( tim ) * us / 1000000 ); // TODO cache cnt_freq
 }
 
 bool oxc::PwmCtlTim::setPulse(  std::size_t ch, uint32_t us )
 {
-  if( isBadCh( ch ) ) {
-    return false;
-  }
-  auto tim = tim_p();
-  auto c = (int32_t)( (uint64_t) get_TIM_cnt_freq( tim ) * us / 1000000 );
-  *pccr( ch ) = c;
-  return true;
+  return setPwmRaw( ch, pulse2raw( us ) );
 }
 
-bool oxc::PwmCtlTim::setPwmRaw(  std::size_t ch, uint32_t v )
+bool oxc::PwmCtlTim::setPwmRaw( std::size_t ch, uint32_t v )
 {
   if( isBadCh( ch ) ) {
     return false;
@@ -115,7 +117,14 @@ size_t oxc::PwmCtlTim::initPins()
 }
 
 // TODO: need arch-dependent traits // do not really good
-ReturnCode oxc::PwmCtlTim::initHW( TIM_HandleTypeDef &t_h, uint32_t psc, uint32_t arr, uint32_t cmode )
+ReturnCode oxc::PwmCtlTim::setHardParams( uint32_t psc_, uint32_t arr_, uint32_t cmode_ )
+{
+  psc = psc_; arr = arr_; cmode = cmode_;
+  return rcOk;
+}
+
+// TODO: need arch-dependent traits // do not really good
+ReturnCode oxc::PwmCtlTim::initHW()
 {
   auto tim = tim_p();
   if( !tim ) {
