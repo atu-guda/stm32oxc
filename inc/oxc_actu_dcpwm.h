@@ -2,8 +2,8 @@
 #define _OXC_ACTU_DCPWM_H
 
 #include <oxc_actu_base.h>
-#include <oxc_pwmctl.h>
 #include <oxc_robopin.h>
+#include <oxc_robopwmctl.h>
 
 namespace oxc {
 

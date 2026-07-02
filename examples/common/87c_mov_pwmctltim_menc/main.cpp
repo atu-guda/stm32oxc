@@ -5,13 +5,13 @@
 #include <oxc_namedints.h>
 #include <oxc_namedfloats.h>
 #include <oxc_main.h>
-
+#include <oxc_pingpio.h>
+#include <oxc_robopin.h>
 
 #include <oxc_easing.h>
 #include <oxc_pwmctltim.h>
+#include <oxc_robopwmctl.h>
 #include <oxc_actu_dcpwm.h>
-
-#include <oxc_robo_tmp.h>
 
 #include <oxc_sensor_as5600.h>
 
@@ -125,15 +125,19 @@ SensorBase   ang_sens_q0( ang_sens_ph, 0, coo_tr_AS5600 );
 // ------------------------ - local sensors end ---------------------------------------
 
 void init_mot0();
+bool commit_all();
 
 TIM_HandleTypeDef tim_pwm_h;
 // auto tim_pwm_clk_enable = [](){ TIM_PWM_CLKEN }; // just test: how to store code from macro
 
-constinit PwmCtlTim pwm1( TIM_PWM_BASE, tim_pwm_chspins );
+constinit PwmCtlTim pwm1( TIM_PWM_BASE, tim_pwm_chspins, tim_pwm_h );
+RoboPwmCtl q0_pwm( "q0_pwm", pwm1 );
 
 PinGpio pwm_left_pin(  PwmLeftPin  );
 PinGpio pwm_right_pin( PwmRightPin );
-ActuDcPwm_1P2D actu0( pwm1, 0, pwm_left_pin, pwm_right_pin );
+RoboPin q0_pin_l( "q0_pin_l", pwm_left_pin );
+RoboPin q0_pin_r( "q0_pin_r", pwm_right_pin );
+ActuDcPwm_1P2D actu0( pwm1, 0, q0_pin_l, q0_pin_r );
 
 const EasingFunInfo easing_fun_info[] = {
   { easing_one,       1.0f },    // 0
@@ -179,6 +183,12 @@ void idle_main_task()
 // LinearCoordTransform toPh( 0.01f, 1.0f );
 // LinearCoordTransform toIn( 0.02f, 2.0f, LinearCoordTransform::PhysicalToInternalInit{} );
 
+RoboDevice* hw_robo_devices[] {
+  &q0_pin_l,
+  &q0_pin_r,
+  &q0_pwm,
+};
+
 int main(void)
 {
   BOARD_PROLOG;
@@ -216,9 +226,11 @@ void init_mot0()
   auto [ psc_i, arr_i ] = calc_tim_psc_arr( get_TIM_in_freq( TIM_PWM ), 20000 );
   pwm1.setAllowPSCadj( true );
   tim_pwm_h.Instance = TIM_PWM;
-  pwm1.initHW( tim_pwm_h, psc_i, arr_i );
-  actu0.initHW();
+  pwm1.setHardParams( psc_i, arr_i );
   pwm1.enable();
+  for( auto dev : hw_robo_devices ) {
+    dev->initHW();
+  }
 }
 
 CMD_FUNCTION( test0 )

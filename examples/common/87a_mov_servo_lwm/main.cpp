@@ -39,7 +39,7 @@ void idle_main_task()
 
 TIM_HandleTypeDef tim_pwm_h;
 
-constinit PwmCtlTim pwm1( TIM_PWM_BASE, tim_pwm_chspins );
+constinit PwmCtlTim pwm1( TIM_PWM_BASE, tim_pwm_chspins, tim_pwm_h );
 
 ActuServoLWM mot0( pwm1, 0 );
 
@@ -53,7 +53,8 @@ int main(void)
   auto [ psc_i, arr_i ] = calc_tim_psc_arr( get_TIM_in_freq( TIM_PWM ), 50 );
   pwm1.setAllowPSCadj( true );
   tim_pwm_h.Instance = TIM_PWM;
-  pwm1.initHW( tim_pwm_h, psc_i, arr_i ); // do not really good
+  pwm1.setHardParams( psc_i, arr_i, TIM_COUNTERMODE_UP );
+  pwm1.initHW(); // do not really good
   pwm1.initPins();
   pwm1.enable();
 
