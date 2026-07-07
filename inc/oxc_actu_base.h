@@ -10,27 +10,7 @@ using std::size_t;
 namespace oxc {
 
 
-class PhysicalActuator {
-  public:
-   PhysicalActuator( size_t n_ch_ ) : n_ch ( n_ch_ ) {};
-   virtual ~PhysicalActuator() = default;
-   virtual ReturnCode initHW() = 0;
-   virtual ReturnCode set( size_t ch, int32_t a ) = 0; // just value, range still not selected
-   virtual ReturnCode commit() = 0;
-   size_t size() const { return n_ch; };
-
-  protected:
-   size_t n_ch;
-};
-
-struct ActuatorLimits
-{
-  float max_v;
-  float max_a;
-  float max_eff;
-};
-
-class Actuator {
+class Actuator { // obsoleted: use Robo*Sync
   public:
    enum Props {
      canSetX  =     1, canSetV = 2, canSetTorque = 4,

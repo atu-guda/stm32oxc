@@ -25,9 +25,8 @@ DCL_CMD_REG(      test0,  'T',     " [arg ] - test something"  );
 DCL_CMD_REG(      tinfo,  'P',     " print info"  );
 DCL_CMD_REG(    setfreq,  'F',     " Hz - set freq"  );
 DCL_CMD_REG(      pulse,  'U',     " []- test pulse in us"  );
-DCL_CMD_REG(       setV,  'V',     " v [t_us] - set v"  );
+DCL_CMD_REG(       setV,  'V',     " v [t_us] - set v as robo"  );
 DCL_CMD_REG(     commit,  'C',     " commit all hw devices"  );
-DCL_CMD_REG(     test1,   'X',     " v - test as robo device"  );
 
 
 void idle_main_task()
@@ -44,12 +43,13 @@ TIM_HandleTypeDef tim_pwm_h;
 constinit PwmCtlTim pwm1( TIM_PWM_BASE, tim_pwm_chspins, tim_pwm_h );
 RoboPwmCtl q0_pwm( "q0_pwm", pwm1 );
 
-PinGpio pwm_left_pin(  PwmLeftPin  );
-PinGpio pwm_right_pin( PwmRightPin );
-RoboPin q0_pin_l( "q0_pin_l", pwm_left_pin );
-RoboPin q0_pin_r( "q0_pin_r", pwm_right_pin );
+PinGpio pwm_left_pin{  PwmLeftPin  };
+PinGpio pwm_right_pin{ PwmRightPin };
+RoboPin q0_pin_l{ "q0_pin_l", pwm_left_pin };
+RoboPin q0_pin_r{ "q0_pin_r", pwm_right_pin };
+LinearCoordTransform q0_coord_tr { 1.986f, 0 }; // TODO: coeff (mech dependent) to header
 
-ActuDcPwm_1P2D mot0( pwm1, 0, q0_pin_l, q0_pin_r );
+ActuDcPwm_1P2D q0_actu( q0_pwm, 0, q0_pin_l, q0_pin_r, q0_coord_tr );
 
 RoboDevice* hw_robo_devices[] {
   &q0_pin_l,
@@ -61,8 +61,8 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR_t = 100;
-  UVAR_n =  20;
+  UVAR_t =  20;
+  UVAR_n = 100;
 
   init_mot0();
 
@@ -85,7 +85,6 @@ void init_mot0()
   for( auto dev : hw_robo_devices ) {
     dev->initHW();
   }
-  // mot0.initHW();
   pwm1.enable();
 }
 
@@ -139,29 +138,21 @@ CMD_FUNCTION( setV ) // V
   float v = arg2float_d( 1, argc, argv, 0 );
   auto  t = arg2ulong_d( 2, argc, argv, 1000, 0 );
 
-  mot0.setV( v );
+  auto rc = q0_actu.setV( v );
+  std_out << "# v= " << v << " rc.code= " << rc.code << NL;
+  commit_all();
   delay_ms_brk( t );
-  // std_out << '#' << pu << ' ' << pwm1.getPwmRaw( 0 ) << NL;
-  mot0.stop();
+  std_out << "# v_phy= " << q0_actu.get_v_phy() << " v_int= " << q0_actu.get_v_int()
+          << " raw0: " << pwm1.getPwmRaw( 0 ) << NL;
 
+  q0_actu.idle();
+  commit_all();
 
   return 0;
 }
 
 CMD_FUNCTION( commit ) // C
 {
-  return commit_all() ? 0 : 2;
-}
-
-CMD_FUNCTION( test1 ) // X
-{
-  float pwm_v = arg2float_d( 1, argc, argv, 0.5f, 0.0f, 1.0f );
-  int v0 = arg2long_d( 2, argc, argv,  UVAR_v, INT_MIN, INT_MAX );
-
-  q0_pwm.setPwm( 0, pwm_v );
-
-  q0_pin_l.write( v0 & 1 );
-  q0_pin_r.write( v0 & 2);
   return commit_all() ? 0 : 2;
 }
 

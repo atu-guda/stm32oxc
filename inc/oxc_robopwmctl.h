@@ -23,7 +23,7 @@ class RoboPwmCtl : public RoboDevice {
    bool setPwm(   std::size_t ch, float pwm )   { if( ch >= max_ch) { return false; }; pr[ch] = pwmctl.pwm2raw( pwm );  return true; }
    bool setPulse( std::size_t ch, uint32_t us ) { if( ch >= max_ch) { return false; }; pr[ch] = pwmctl.pulse2raw( us ); return true; }
   protected:
-   uint32_t pr[max_ch] {};
+   uint32_t pr[max_ch] {}; // TODO: external storage with good size?
    PwmCtl &pwmctl;
 };
 

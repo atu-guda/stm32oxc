@@ -26,23 +26,50 @@ class RoboDevice {
 };
 
 
+struct ActuatorLimits
+{
+  float max_v;
+  float max_a;
+  float max_eff;
+};
+
 
 //* interfaces for actuators
 class ActuPositionSink {
   public:
-    virtual ReturnCode setQ( float q ) = 0;
+   virtual ReturnCode setQ( float q ) = 0;
+   virtual ReturnCode brk()           = 0;
+   virtual ReturnCode idle()          = 0;
+   float get_q_phy() const { return q_phy; }
+   float get_q_int() const { return q_int; }
+  protected:
+   float q_phy { 0 }; // physical
+   float q_int { 0 }; // internal
 };
 
 class ActuVelocitySink
 {
   public:
-    virtual ReturnCode setV( float v ) = 0;
+   virtual ReturnCode setV( float v_p ) = 0;
+   virtual ReturnCode brk()             = 0;
+   virtual ReturnCode idle()            = 0;
+   float get_v_phy() const { return v_phy; }
+   float get_v_int() const { return v_int * dir; }
+  protected:
+   float v_phy { 0 }; // physical
+   float v_int { 0 }; // internal
+   int8_t dir  { 0 };
 };
 
 class ActuForceSink
 {
   public:
-    virtual ReturnCode setTau( float tau ) = 0;
+   virtual ReturnCode setTau( float tau ) = 0;
+   float get_tau_phy() const { return tau_phy; }
+   float get_tau_int() const { return tau_int; }
+  protected:
+   float tau_phy { 0 }; // physical
+   float tau_int { 0 }; // internal
 };
 
 

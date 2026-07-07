@@ -12,6 +12,7 @@ using std::size_t;
 namespace oxc {
 
 
+// TODO: remove: use RoboDevice or its childs
 class PhysicalSensor {
   public:
    PhysicalSensor( size_t n_ch_ ) : n_ch ( n_ch_ ) {};

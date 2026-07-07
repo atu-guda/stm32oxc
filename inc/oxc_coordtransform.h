@@ -12,8 +12,8 @@ namespace oxc {
 struct CoordTransform {
   public:
    virtual ~CoordTransform() = default;
-   virtual float   toPhys( int32_t iv ) = 0;
-   virtual int32_t toInternal( float pv ) = 0;
+   virtual float   toPhys(   float iv ) = 0;
+   virtual float toInternal( float pv ) = 0;
 };
 
 struct LinearCoordTransform : public CoordTransform {
@@ -25,8 +25,8 @@ struct LinearCoordTransform : public CoordTransform {
    //* coeffs for Physical to internal
    constexpr LinearCoordTransform( float ra_, float rb_, PhysicalToInternalInit /*in*/)
      :  a( 1.0f/not_small(ra_) ), b( -rb_ ), ra( not_small(ra_) ) {}
-   virtual float   toPhys( int32_t iv )  override  { return iv * a + b;  };
-   virtual int32_t toInternal( float pv ) override { return int32_t( ( ( pv - b ) * ra ) + 0.499f ); }
+   virtual float toPhys( float iv )     override { return iv * a + b;      }
+   virtual float toInternal( float pv ) override { return ( pv - b ) * ra; }
    static constexpr float not_small( float aa ) { return std::fabsf(aa) > 1e-9f ? aa : 1.0f; }
    float a, b, ra;
 };

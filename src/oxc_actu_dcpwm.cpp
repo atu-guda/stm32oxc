@@ -2,46 +2,42 @@
 
 using namespace oxc;
 
-ReturnCode oxc::ActuDcPwm_1P2D::setX( float x )
-{
-  return rcErr;
-}
 
-ReturnCode oxc::ActuDcPwm_1P2D::setV( float v )
+ReturnCode oxc::ActuDcPwm_1P2D::setV( float v_p )
 {
-  int8_t dir { 0 };
-  if( v < -zero_v ) {
-    v = -v; dir = -1;
-  } else if( v > zero_v ) {
+  v_phy = v_p;
+  v_int = coo_tr.toInternal( v_phy );
+
+  dir = 0;
+  if( v_int < -zero_v ) {
+    v_int = -v_int; dir = -1;
+  } else if( v_int > zero_v ) {
     dir = 1;
   } else {
-    v = 0;
+    v_int = 0;
   }
-  v = std::clamp( v, -1.0f, 1.0f );
+  v_int = std::clamp( v_int, 0.0f, 1.0f );
 
-  stop();
-  if( !pwmc.setPwm( ch, v ) ) {
-      return rcErr;
+  pin_l.set(); pin_r.set();
+  if( !pwmc.setPwm( ch, v_int ) ) {
+    return rcErr;
   }
 
   if( dir > 0 ) {
-    pin_r.set();
+    pin_l.reset();
   } else if( dir < 0 ) {
-    pin_l.set();
+    pin_r.reset();
   }
 
   return rcOk;
 }
 
-ReturnCode oxc::ActuDcPwm_1P2D::setTo( float to )
-{
-  return rcErr;
-}
 
-ReturnCode oxc::ActuDcPwm_1P2D::stop()
+ReturnCode oxc::ActuDcPwm_1P2D::idle()
 {
   pin_l.reset(); pin_r.reset();
   pwmc.setPwm( ch, 0 );
+  v_phy = v_int = 0; dir = 0;
   return rcOk;
 }
 
@@ -49,12 +45,9 @@ ReturnCode oxc::ActuDcPwm_1P2D::brk()
 {
   pin_l.set(); pin_r.set();
   pwmc.setPwm( ch, 0 );
+  v_phy = v_int = 0; dir = 0;
   return rcOk;
 }
 
-ReturnCode oxc::ActuDcPwm_1P2D::idle()
-{
-  return stop(); // param?
-}
 
 
