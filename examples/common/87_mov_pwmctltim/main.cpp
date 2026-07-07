@@ -48,7 +48,6 @@ PinGpio pwm_right_pin{ PwmRightPin };
 RoboPin q0_pin_l{ "q0_pin_l", pwm_left_pin };
 RoboPin q0_pin_r{ "q0_pin_r", pwm_right_pin };
 LinearCoordTransform q0_coord_tr { 1.986f, 0 }; // TODO: coeff (mech dependent) to header
-
 ActuDcPwm_1P2D q0_actu( q0_pwm, 0, q0_pin_l, q0_pin_r, q0_coord_tr );
 
 RoboDevice* hw_robo_devices[] {

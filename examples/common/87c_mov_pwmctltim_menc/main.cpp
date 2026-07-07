@@ -133,11 +133,12 @@ TIM_HandleTypeDef tim_pwm_h;
 constinit PwmCtlTim pwm1( TIM_PWM_BASE, tim_pwm_chspins, tim_pwm_h );
 RoboPwmCtl q0_pwm( "q0_pwm", pwm1 );
 
-PinGpio pwm_left_pin(  PwmLeftPin  );
-PinGpio pwm_right_pin( PwmRightPin );
-RoboPin q0_pin_l( "q0_pin_l", pwm_left_pin );
-RoboPin q0_pin_r( "q0_pin_r", pwm_right_pin );
-ActuDcPwm_1P2D actu0( pwm1, 0, q0_pin_l, q0_pin_r );
+PinGpio pwm_left_pin{  PwmLeftPin  };
+PinGpio pwm_right_pin{ PwmRightPin };
+RoboPin q0_pin_l{ "q0_pin_l", pwm_left_pin };
+RoboPin q0_pin_r{ "q0_pin_r", pwm_right_pin };
+LinearCoordTransform q0_coord_tr { 1.986f, 0 }; // TODO: coeff (mech dependent) to header
+ActuDcPwm_1P2D q0_actu( q0_pwm, 0, q0_pin_l, q0_pin_r, q0_coord_tr );
 
 const EasingFunInfo easing_fun_info[] = {
   { easing_one,       1.0f },    // 0
@@ -227,10 +228,11 @@ void init_mot0()
   pwm1.setAllowPSCadj( true );
   tim_pwm_h.Instance = TIM_PWM;
   pwm1.setHardParams( psc_i, arr_i );
-  pwm1.enable();
+  q0_pwm.initHW();
   for( auto dev : hw_robo_devices ) {
     dev->initHW();
   }
+  pwm1.enable();
 }
 
 CMD_FUNCTION( test0 )
@@ -297,11 +299,11 @@ CMD_FUNCTION( setV ) // V
     measure_all();
 
     if( state == 0 && t_cur_i >= t_pre ) {
-      actu0.setV( v ); v_c = v;
+      q0_actu.setV( v ); v_c = v;
       state = 1;
     }
     if( state == 1 && t_cur_i >= t_e1 ) {
-      actu0.setV( 0 ); v_c = 0;
+      q0_actu.setV( 0 ); v_c = 0;
       state = 2;
     }
 
