@@ -12,7 +12,7 @@ namespace oxc {
 // PWM controlled: 1 pwm channel, 2 direction
 class ActuDcPwm_1P2D : public ActuVelocitySink {
   public:
-   ActuDcPwm_1P2D( RoboPwmCtl &pwmc_, std::size_t ch_, RoboPin &pin_l_, RoboPin &pin_r_, CoordTransform &coo_tr_)
+   ActuDcPwm_1P2D( RoboPwmCtl &pwmc_, std::size_t ch_, RoboPin &pin_l_, RoboPin &pin_r_, CoordTransform &coo_tr_ )
      : pwmc( pwmc_ ), ch(ch_), pin_l( pin_l_ ), pin_r( pin_r_ ), coo_tr( coo_tr_ )
    { }
    virtual ReturnCode setV( float v ) override;

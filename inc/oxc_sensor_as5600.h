@@ -6,14 +6,16 @@
 #include <oxc_sensor_base.h>
 #include <oxc_as5600.h>
 
-using oxc::PhysicalSensor;
+using oxc::RoboSensor;
 using oxc::ReturnCode;
 
 namespace oxc {
 
-class SensorAS5600 : public PhysicalSensor {
+class SensorAS5600 : public RoboSensor {
   public:
-   SensorAS5600( AS5600 &dev_ ) : PhysicalSensor( 1 ), dev( dev_ ) {};
+   template<size_t N>
+     SensorAS5600( const char (&name_)[N], AS5600 &dev_ )
+         : RoboSensor( name_, 1 ), dev( dev_ ) {};
    virtual ReturnCode initHW() override;
    virtual ReturnCode measure() override;
    virtual int32_t get( size_t ch ) override;

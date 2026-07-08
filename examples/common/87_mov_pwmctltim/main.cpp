@@ -34,9 +34,10 @@ void idle_main_task()
   leds.toggle( 1_mask );
 }
 
-void init_mot0();
-bool commit_all();
-bool measure_all();
+size_t err_idx { 0 };
+ReturnCode init_all();
+ReturnCode commit_all();
+ReturnCode measure_all();
 
 TIM_HandleTypeDef tim_pwm_h;
 
@@ -50,10 +51,13 @@ RoboPin q0_pin_r{ "q0_pin_r", pwm_right_pin };
 LinearCoordTransform q0_coord_tr { 1.986f, 0 }; // TODO: coeff (mech dependent) to header
 ActuDcPwm_1P2D q0_actu( q0_pwm, 0, q0_pin_l, q0_pin_r, q0_coord_tr );
 
-RoboDevice* hw_robo_devices[] {
+RoboDevice* hw_robo_actu[] {
   &q0_pin_l,
   &q0_pin_r,
   &q0_pwm,
+};
+
+RoboDevice* hw_robo_sens[] {
 };
 
 int main(void)
@@ -63,7 +67,7 @@ int main(void)
   UVAR_t =  20;
   UVAR_n = 100;
 
-  init_mot0();
+  init_all();
 
   BOARD_POST_INIT_BLINK;
 
@@ -74,18 +78,36 @@ int main(void)
   return 0;
 }
 
-void init_mot0()
+ReturnCode init_all()
 {
+  // q0:
   auto [ psc_i, arr_i ] = calc_tim_psc_arr( get_TIM_in_freq( TIM_PWM ), 20000 );
   pwm1.setAllowPSCadj( true );
   tim_pwm_h.Instance = TIM_PWM;
   pwm1.setHardParams( psc_i, arr_i );
-  q0_pwm.initHW();
-  for( auto dev : hw_robo_devices ) {
-    dev->initHW();
-  }
   pwm1.enable();
+
+  size_t idx { 0 };
+  ReturnCode rc { rcOk };
+  for( auto dev : hw_robo_actu ) {
+    rc = dev->initHW();
+    if( rc.isError() ) {
+      err_idx = idx;
+      return rc;
+    }
+    ++idx;
+  }
+  // for( auto dev : hw_robo_sens ) {
+  //   dev->initHW();
+  //   if( rc.isError() ) {
+  //     err_idx = idx;
+  //     return rc;
+  //   }
+  //   ++idx;
+  // }
+  return rcOk;
 }
+
 
 CMD_FUNCTION( test0 )
 {
@@ -156,31 +178,35 @@ CMD_FUNCTION( commit ) // C
 }
 
 
-bool commit_all()
+ReturnCode measure_all()
 {
-  for( size_t i=0; auto dev : hw_robo_devices ) {
+  for( size_t idx=0; auto dev : hw_robo_sens ) {
+    auto rc = dev->measure();
+    if( rc.isError() ) { // TODO: param: break on error
+      leds[0].set();
+      err_idx = idx;
+      return rc;
+    }
+    ++idx;
+  }
+
+  // first_measure = 0;
+  return rcOk;
+}
+
+ReturnCode commit_all()
+{
+  for( size_t idx=0; auto dev : hw_robo_actu ) {
     auto rc = dev->commit();
     if( !rc.isOk() ) {
-      UVAR_e = i;
+      err_idx = idx;
+      UVAR_e = idx;
+      return rc;
     }
-    ++i;
+    ++idx;
   }
-  return true;
+  return rcOk;
 }
-
-bool measure_all()
-{
-  for( size_t i=0; auto dev : hw_robo_devices ) {
-    auto rc = dev->measure();
-    if( !rc.isOk() ) {
-      UVAR_e = i;
-    }
-    ++i;
-  }
-  return true;
-}
-
-
 
 
 

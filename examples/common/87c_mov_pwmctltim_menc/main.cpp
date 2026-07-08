@@ -42,6 +42,7 @@ const char* common_help_string = "Appication to test PWM motor + AS5600 encoder"
   UX(               t_cur_i,         0 ) \
   UX(                  t_dt,         0 ) \
   UX(         first_measure,         1 ) \
+  UX(               err_idx,         0 ) \
   FX(                t_dt_f,      0.0f ) \
   FX(               t_cur_f,      0.0f ) \
   FX(                    q0,      0.0f ) \
@@ -109,7 +110,6 @@ DCL_CMD_REG(    zero_q0, '\0',     "[val] - zero q0 (to val or current)"  );
 
 // -------------------------------------------------------------------------------------
 
-ReturnCode measure_all();
 
 
 I2C_HandleTypeDef i2ch;
@@ -119,13 +119,15 @@ AS5600 ang_sens_dev( i2cd );
 // ------------------------ - local sensors ; ---------------------------------------
 
 LinearCoordTransform coo_tr_AS5600( -SensorAS5600::k_i2ph, -2.1015536f );
-SensorAS5600 ang_sens_ph( ang_sens_dev );
-SensorBase   ang_sens_q0( ang_sens_ph, 0, coo_tr_AS5600 );
+SensorAS5600 ang_sens_ph( "q0_sens", ang_sens_dev );
+SensorBase   q0_ang_sens( ang_sens_ph, 0, coo_tr_AS5600 );
 
 // ------------------------ - local sensors end ---------------------------------------
 
-void init_mot0();
-bool commit_all();
+// TODO: to main object
+ReturnCode init_all();
+ReturnCode commit_all();
+ReturnCode measure_all();
 
 TIM_HandleTypeDef tim_pwm_h;
 // auto tim_pwm_clk_enable = [](){ TIM_PWM_CLKEN }; // just test: how to store code from macro
@@ -184,10 +186,14 @@ void idle_main_task()
 // LinearCoordTransform toPh( 0.01f, 1.0f );
 // LinearCoordTransform toIn( 0.02f, 2.0f, LinearCoordTransform::PhysicalToInternalInit{} );
 
-RoboDevice* hw_robo_devices[] {
+RoboDevice* hw_robo_actu[] {
   &q0_pin_l,
   &q0_pin_r,
   &q0_pwm,
+};
+
+RoboDevice* hw_robo_sens[] {
+  &ang_sens_ph,
 };
 
 int main(void)
@@ -209,7 +215,7 @@ int main(void)
     die4led( 1_mask );
   }
 
-  init_mot0();
+  init_all();
 
   BOARD_POST_INIT_BLINK;
 
@@ -222,18 +228,84 @@ int main(void)
   return 0;
 }
 
-void init_mot0()
+ReturnCode init_all()
 {
+  // q0:
   auto [ psc_i, arr_i ] = calc_tim_psc_arr( get_TIM_in_freq( TIM_PWM ), 20000 );
   pwm1.setAllowPSCadj( true );
   tim_pwm_h.Instance = TIM_PWM;
   pwm1.setHardParams( psc_i, arr_i );
-  q0_pwm.initHW();
-  for( auto dev : hw_robo_devices ) {
-    dev->initHW();
-  }
   pwm1.enable();
+
+  size_t idx { 0 };
+  ReturnCode rc { rcOk };
+  for( auto dev : hw_robo_actu ) {
+    rc = dev->initHW();
+    if( rc.isError() ) {
+      err_idx = idx;
+      return rc;
+    }
+    ++idx;
+  }
+  for( auto dev : hw_robo_sens ) {
+    dev->initHW();
+    if( rc.isError() ) {
+      err_idx = idx;
+      return rc;
+    }
+    ++idx;
+  }
+  return rcOk;
 }
+
+ReturnCode measure_all()
+{
+  auto old_tick { last_measure_tick };
+  last_measure_tick = t_cur_i;
+  if( first_measure ) {
+    t_dt = 0;
+    t_dt_f = 0;
+  } else {
+    t_dt = std::max( last_measure_tick - old_tick, 1_u32 );
+    t_dt_f = t_dt * 1e-3f;
+  }
+
+  leds[2].set();
+  DoAtLeave _( []() { leds[2].reset(); } );
+
+  size_t idx { 0 };
+  for( auto dev : hw_robo_sens ) {
+    auto rc = dev->measure();
+    if( rc.isError() ) { // TODO: param: break on error
+      leds[0].set();
+      err_idx = idx;
+      return rc;
+    }
+  }
+
+  // TODO: move to joint part
+  auto q0_old = q0;
+  q0_i  = q0_ang_sens.get_i(); // debug
+  q0  = q0_ang_sens.get();
+  nu0_i = first_measure ? 0 : ( ( q0 - q0_old ) / t_dt_f );
+
+  first_measure = 0;
+  return rcOk;
+}
+
+ReturnCode commit_all()
+{
+  size_t idx { 0 };
+  for( auto dev : hw_robo_actu ) {
+    auto rc = dev->commit();
+    if( rc.isError() ) { // TODO: param: break on error
+      err_idx = idx;
+      return rc;
+    }
+  }
+  return rcOk;
+}
+
 
 CMD_FUNCTION( test0 )
 {
@@ -307,6 +379,8 @@ CMD_FUNCTION( setV ) // V
       state = 2;
     }
 
+    commit_all();
+
     std_out << FltFmt( t_cur_f, cvtff_fix, 9, 3 ) << ' ' << v_c << ' '
             << FmtInt( q0_i, 8 ) << ' ' << q0 << ' ' << r2d( q0 ) << ' '
             << nu0_i << NL;
@@ -322,7 +396,7 @@ CMD_FUNCTION( setV ) // V
 CMD_FUNCTION( measure ) // M
 {
   std_out << ang_sens_dev.getAngleN() << ' ' << ang_sens_dev.isMagnetDetected() << ' '
-          << ang_sens_q0.get() << ' ' << ang_sens_q0.get_i() << ' ' << r2d( ang_sens_q0.get() )
+          << q0_ang_sens.get() << ' ' << q0_ang_sens.get_i() << ' ' << r2d( q0_ang_sens.get() )
           << NL;
 
   return 0;
@@ -337,7 +411,7 @@ CMD_FUNCTION( zero_q0 )
     return 1;
   }
 
-  float v   = arg2float_d( 1, argc, argv, ang_sens_q0.get() );
+  float v   = arg2float_d( 1, argc, argv, q0_ang_sens.get() );
   coo_tr_AS5600 = LinearCoordTransform( -SensorAS5600::k_i2ph, coo_tr_AS5600.b-v );
   cmd_measure( argc, argv );
 
@@ -365,42 +439,4 @@ void HAL_TIM_PWM_MspDeInit( TIM_HandleTypeDef* htim )
   }
 }
 
-ReturnCode measure_all()
-{
-  auto old_tick { last_measure_tick };
-  last_measure_tick = t_cur_i;
-  if( first_measure ) {
-    t_dt = 0;
-    t_dt_f = 0;
-  } else {
-    t_dt = std::max( last_measure_tick - old_tick, 1_u32 );
-    t_dt_f = t_dt * 1e-3f;
-  }
-
-  leds[2].set();
-  DoAtLeave _( []() { leds[2].reset(); } );
-
-  auto rc = ang_sens_ph.measure();
-  if( !rc.isOk() ) {
-    leds[0].set();
-    return rc;
-  }
-
-  auto q0_old = q0;
-  q0_i  = ang_sens_q0.get_i(); // debug
-  q0  = ang_sens_q0.get();
-  nu0_i = first_measure ? 0 : ( ( q0 - q0_old ) / t_dt_f );
-
-  // for( auto ps : sensors ) {
-  //   auto rc = ps->measure( adc_n );
-  //   if( rc < 1 ) {
-  //     ledsx[0].set();
-  //     return 0;
-  //   }
-  // }
-  //
-
-  first_measure = 0;
-  return rcOk;
-}
 
