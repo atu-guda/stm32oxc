@@ -28,20 +28,32 @@ DCL_CMD_REG(      pulse,  'U',     " []- test pulse in us"  );
 DCL_CMD_REG(       setV,  'V',     " v [t_us] - set v"  );
 
 
+size_t err_idx { 0 };
+// TODO: to main object
+ReturnCode init_all();
+ReturnCode commit_all();
+ReturnCode measure_all();
+
 void idle_main_task()
 {
   leds.toggle( 1_mask );
 }
 
 
-// constexpr test
-// constexpr auto gpioa_idx = GpioA.getIdx();
 
 TIM_HandleTypeDef tim_pwm_h;
-
 constinit PwmCtlTim pwm1( TIM_PWM_BASE, tim_pwm_chspins, tim_pwm_h );
+RoboPwmCtl q0_pwm( "q0_pwm", pwm1 );
+LinearCoordTransform q0_coord_tr { 1.986f, 0 }; // TODO: coeff (mech dependent) to header
+ActuServoContLWM q0_actu( q0_pwm, 0, q0_coord_tr );
 
-ActuServoContLWM mot0( pwm1, 0 );
+RoboDevice* hw_robo_actu[] {
+  &q0_pwm,
+};
+
+RoboDevice* hw_robo_sens[] {
+};
+
 
 int main(void)
 {
@@ -50,13 +62,8 @@ int main(void)
   UVAR_t = 100;
   UVAR_n =  20;
 
-  auto [ psc_i, arr_i ] = calc_tim_psc_arr( get_TIM_in_freq( TIM_PWM ), 50 );
-  pwm1.setAllowPSCadj( true );
-  tim_pwm_h.Instance = TIM_PWM;
-  pwm1.setHardParams( psc_i, arr_i, TIM_COUNTERMODE_UP );
-  pwm1.initHW(); // do not really good
-  pwm1.initPins();
-  pwm1.enable();
+  init_all();
+
 
   BOARD_POST_INIT_BLINK;
 
@@ -66,6 +73,67 @@ int main(void)
 
   return 0;
 }
+
+ReturnCode init_all()
+{
+  // q0:
+  auto [ psc_i, arr_i ] = calc_tim_psc_arr( get_TIM_in_freq( TIM_PWM ), 50 );
+  pwm1.setAllowPSCadj( true );
+  tim_pwm_h.Instance = TIM_PWM;
+  pwm1.setHardParams( psc_i, arr_i, TIM_COUNTERMODE_UP );
+  pwm1.enable();
+  pwm1.initPins(); // ??
+
+  size_t idx { 0 };
+  ReturnCode rc { rcOk };
+  for( auto dev : hw_robo_actu ) {
+    rc = dev->initHW();
+    if( rc.isError() ) {
+      err_idx = idx;
+      return rc;
+    }
+    ++idx;
+  }
+  for( auto dev : hw_robo_sens ) {
+    dev->initHW();
+    if( rc.isError() ) {
+      err_idx = idx;
+      return rc;
+    }
+    ++idx;
+  }
+  return rcOk;
+}
+
+ReturnCode measure_all()
+{
+  size_t idx { 0 };
+  for( auto dev : hw_robo_sens ) {
+    auto rc = dev->measure();
+    if( rc.isError() ) { // TODO: param: break on error
+      leds[0].set();
+      err_idx = idx;
+      return rc;
+    }
+  }
+
+  return rcOk;
+}
+
+ReturnCode commit_all()
+{
+  size_t idx { 0 };
+  for( auto dev : hw_robo_actu ) {
+    auto rc = dev->commit();
+    if( rc.isError() ) { // TODO: param: break on error
+      err_idx = idx;
+      return rc;
+    }
+  }
+  return rcOk;
+}
+
+
 
 
 CMD_FUNCTION( test0 )
@@ -116,10 +184,13 @@ CMD_FUNCTION( setV ) // V
   float v = arg2float_d( 1, argc, argv, 0 );
   auto  t = arg2ulong_d( 2, argc, argv, 1000, 0 );
 
-  mot0.setV( v );
+  q0_actu.setV( v );
+  commit_all();
   delay_ms_brk( t );
-  // std_out << '#' << pu << ' ' << pwm1.getPwmRaw( 0 ) << NL;
-  mot0.stop();
+  std_out << '#' << v << ' ' << pwm1.getPwmRaw( 0 )
+          << ' ' << q0_actu.get_v_int() << ' ' << q0_actu.get_v_phy() << NL;
+  q0_actu.idle();
+  commit_all();
 
   return 0;
 }

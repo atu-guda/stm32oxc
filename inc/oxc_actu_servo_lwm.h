@@ -16,9 +16,9 @@ class ActuServoLWM : public ActuServoLWMBase, public ActuPositionSink {
      q_int = std::clamp( coo_tr.toInternal( q ), -1.0f, 1.0f );
      q_phy = coo_tr.toPhys( q_int );
      return setXV( q_int );
-   };
-   virtual ReturnCode brk()           override { return rcOk; };
-   virtual ReturnCode idle()          override { return pwmc.setPulse( ch, 0 ); };
+   }
+   virtual ReturnCode brk()  override { return rcOk; };
+   virtual ReturnCode idle() override { return pwmc.setPulse( ch, 0 ); };
   protected:
    CoordTransform &coo_tr;
 
