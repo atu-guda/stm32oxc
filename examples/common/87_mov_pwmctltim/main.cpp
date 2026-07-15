@@ -8,7 +8,7 @@
 #include <oxc_robopwmctl.h>
 #include <oxc_actu_dcpwm.h>
 
-#include <main.h>
+#include <board_robo_cfg.h>
 
 using namespace oxc;
 using namespace SMLRL;
@@ -41,11 +41,11 @@ ReturnCode measure_all();
 
 TIM_HandleTypeDef tim_pwm_h;
 
-constinit PwmCtlTim pwm1( TIM_PWM_BASE, tim_pwm_chspins, tim_pwm_h );
+constinit PwmCtlTim pwm1( TIM_MPWM_BASE, tim_pwm_chspins, tim_pwm_h );
 RoboPwmCtl q0_pwm( "q0_pwm", pwm1 );
 
-PinGpio pwm_left_pin{  PwmLeftPin  };
-PinGpio pwm_right_pin{ PwmRightPin };
+PinGpio pwm_left_pin{  MPwmLeftPin  };
+PinGpio pwm_right_pin{ MPwmRightPin };
 RoboPin q0_pin_l{ "q0_pin_l", pwm_left_pin };
 RoboPin q0_pin_r{ "q0_pin_r", pwm_right_pin };
 LinearCoordTransform q0_coord_tr { 1.986f, 0 }; // TODO: coeff (mech dependent) to header
@@ -81,9 +81,9 @@ int main(void)
 ReturnCode init_all()
 {
   // q0:
-  auto [ psc_i, arr_i ] = calc_tim_psc_arr( get_TIM_in_freq( TIM_PWM ), 20000 );
+  auto [ psc_i, arr_i ] = calc_tim_psc_arr( get_TIM_in_freq( TIM_MPWM ), 20000 );
   pwm1.setAllowPSCadj( true );
-  tim_pwm_h.Instance = TIM_PWM;
+  tim_pwm_h.Instance = TIM_MPWM;
   pwm1.setHardParams( psc_i, arr_i );
   pwm1.enable();
 
@@ -123,11 +123,11 @@ CMD_FUNCTION( test0 )
 
 CMD_FUNCTION( tinfo ) // P
 {
-  tim_print_cfg( TIM_PWM );
+  tim_print_cfg( TIM_MPWM );
 
   std_out << "# freq:  "  << pwm1.getFreq() << NL;
 
-  dump32( TIM_PWM, 0x60 );
+  dump32( TIM_MPWM, 0x60 );
 
   return 0;
 }
@@ -149,7 +149,7 @@ CMD_FUNCTION( pulse ) // U
   pwm1.setPulse( 0, pu );
   std_out << '#' << pu << ' ' << pwm1.getPwmRaw( 0 ) << NL;
 
-  tim_print_cfg( TIM_PWM );
+  tim_print_cfg( TIM_MPWM );
 
   return 0;
 }
@@ -215,16 +215,16 @@ ReturnCode commit_all()
 
 void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim )
 {
-  if( htim->Instance == TIM_PWM ) {
-    TIM_PWM_CLKEN;
+  if( htim->Instance == TIM_MPWM ) {
+    TIM_MPWM_CLKEN;
     return;
   }
 }
 
 void HAL_TIM_PWM_MspDeInit( TIM_HandleTypeDef* htim )
 {
-  if( htim->Instance == TIM_PWM ) {
-    TIM_PWM_CLKDIS;
+  if( htim->Instance == TIM_MPWM ) {
+    TIM_MPWM_CLKDIS;
     return;
   }
 }
