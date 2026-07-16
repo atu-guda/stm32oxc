@@ -180,16 +180,16 @@ using uint32_t_o = std::optional<uint32_t>;
 using int64_t_o  = std::optional<int64_t >;
 using uint64_t_o = std::optional<uint64_t>;
 
-template< typename DevType, std::uintptr_t addr_ >
-struct DevPtr
-{
-  static constexpr auto addr { addr_ };
-  static volatile DevType& pdev() noexcept {
-    return *reinterpret_cast<volatile DevType*>( addr );
-  }
-};
+// template< typename DevType, std::uintptr_t addr_ >
+// struct DevPtr
+// {
+//   static constexpr auto addr { addr_ };
+//   static volatile DevType& pdev() noexcept {
+//     return *reinterpret_cast<volatile DevType*>( addr );
+//   }
+// };
 
-// usage like
+// usage like ????
 // using Tim1 = DevPtr<TIM_TypeDef, TIM1_BASE>;
 
 } // namespace oxc

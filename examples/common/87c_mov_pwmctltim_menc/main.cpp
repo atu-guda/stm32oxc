@@ -132,13 +132,12 @@ ReturnCode commit_all();
 ReturnCode measure_all();
 
 TIM_HandleTypeDef tim_pwm_h;
-// auto tim_pwm_clk_enable = [](){ TIM_MPWM_CLKEN }; // just test: how to store code from macro
 
-constinit PwmCtlTim pwm1( TIM_MPWM_BASE, tim_pwm_chspins, tim_pwm_h );
+constinit PwmCtlTim pwm1( TIM_MPWM_BASE, tim_MPWM_chspins, tim_pwm_h );
 RoboPwmCtl q0_pwm( "q0_pwm", pwm1 );
 
-PinGpio pwm_left_pin{  MPwmLeftPin  };
-PinGpio pwm_right_pin{ MPwmRightPin };
+PinGpio pwm_left_pin{  MPWM_CtlPin_L  };
+PinGpio pwm_right_pin{ MPWM_CtlPin_R };
 RoboPin q0_pin_l{ "q0_pin_l", pwm_left_pin };
 RoboPin q0_pin_r{ "q0_pin_r", pwm_right_pin };
 LinearCoordTransform q0_coord_tr { 1.986f, 0 }; // TODO: coeff (mech dependent) to header
@@ -198,6 +197,7 @@ RoboDevice* hw_robo_sens[] {
   &ang_sens_ph,
 };
 
+
 int main(void)
 {
   BOARD_PROLOG;
@@ -219,6 +219,7 @@ int main(void)
 
   init_all();
 
+
   BOARD_POST_INIT_BLINK;
 
   oxc_add_aux_tick_fun( led_task_nortos );
@@ -233,11 +234,12 @@ int main(void)
 ReturnCode init_all()
 {
   // q0:
-  auto [ psc_i, arr_i ] = calc_tim_psc_arr( get_TIM_in_freq( TIM_MPWM ), 20000 );
+  auto [ psc_i, arr_i ] = calc_tim_psc_arr( get_TIM_in_freq( TIM_MPWM_BASE ), 20000 );
   pwm1.setAllowPSCadj( true );
-  tim_pwm_h.Instance = TIM_MPWM;
-  pwm1.setHardParams( psc_i, arr_i );
+  tim_pwm_h.Instance = addr2TIM( TIM_MPWM_BASE );
+  pwm1.setHardParams( psc_i, arr_i, TIM_COUNTERMODE_UP );
   pwm1.enable();
+
 
   size_t idx { 0 };
   ReturnCode rc { rcOk };
@@ -323,11 +325,11 @@ CMD_FUNCTION( test0 )
 
 CMD_FUNCTION( tinfo ) // P
 {
-  tim_print_cfg( TIM_MPWM );
+  tim_print_cfg( TIM_MPWM_BASE );
 
   std_out << "# freq:  "  << pwm1.getFreq() << NL;
 
-  dump32( TIM_MPWM, 0x60 );
+  dump32( (void*)TIM_MPWM_BASE, 0x60 );
 
   return 0;
 }
@@ -349,7 +351,7 @@ CMD_FUNCTION( pulse ) // U
   pwm1.setPulse( 0, pu );
   std_out << '#' << pu << ' ' << pwm1.getPwmRaw( 0 ) << NL;
 
-  tim_print_cfg( TIM_MPWM );
+  tim_print_cfg( TIM_MPWM_BASE );
 
   return 0;
 }
@@ -427,18 +429,17 @@ CMD_FUNCTION( zero_q0 )
 
 void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim )
 {
-  if( htim->Instance == TIM_MPWM ) {
-    TIM_MPWM_CLKEN;
+  if( htim->Instance == addr2TIM(TIM_MPWM_BASE) ) {
+    TIM_MPWM_CLKEN();
     return;
   }
 }
 
 void HAL_TIM_PWM_MspDeInit( TIM_HandleTypeDef* htim )
 {
-  if( htim->Instance == TIM_MPWM ) {
-    TIM_MPWM_CLKDIS;
+  if( htim->Instance == addr2TIM(TIM_MPWM_BASE) ) {
+    TIM_MPWM_CLKDIS();
     return;
   }
 }
-
 

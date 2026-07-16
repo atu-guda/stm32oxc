@@ -1,7 +1,6 @@
 #ifndef _OXC_ACTU_SERVO_LWM_BASE_H
 #define _OXC_ACTU_SERVO_LWM_BASE_H
 
-#include <oxc_robo_base.h>
 #include <oxc_robopwmctl.h>
 
 namespace oxc {

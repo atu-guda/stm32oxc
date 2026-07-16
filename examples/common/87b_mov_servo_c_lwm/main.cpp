@@ -42,7 +42,7 @@ void idle_main_task()
 
 
 TIM_HandleTypeDef tim_servolwm_h;
-constinit PwmCtlTim pwm1( TIM_SERVOLWM_BASE, tim_servolwm_chspins, tim_servolwm_h );
+constinit PwmCtlTim pwm1( TIM_SERVOLWM_BASE, tim_SERVOLWM_chspins, tim_servolwm_h );
 RoboPwmCtl q0_pwm( "q0_pwm", pwm1 );
 LinearCoordTransform q0_coord_tr { 1.986f, 0 }; // TODO: coeff (mech dependent) to header
 ActuServoContLWM q0_actu( q0_pwm, 0, q0_coord_tr );
@@ -77,9 +77,9 @@ int main(void)
 ReturnCode init_all()
 {
   // q0:
-  auto [ psc_i, arr_i ] = calc_tim_psc_arr( get_TIM_in_freq( TIM_SERVOLWM ), 50 );
+  auto [ psc_i, arr_i ] = calc_tim_psc_arr( get_TIM_in_freq( TIM_SERVOLWM_BASE ), 50 );
   pwm1.setAllowPSCadj( true );
-  tim_servolwm_h.Instance = TIM_SERVOLWM;
+  tim_servolwm_h.Instance = addr2TIM( TIM_SERVOLWM_BASE );
   pwm1.setHardParams( psc_i, arr_i, TIM_COUNTERMODE_UP );
   pwm1.enable();
   pwm1.initPins(); // ??
@@ -148,11 +148,11 @@ CMD_FUNCTION( test0 )
 
 CMD_FUNCTION( tinfo ) // P
 {
-  tim_print_cfg( TIM_SERVOLWM );
+  tim_print_cfg( TIM_SERVOLWM_BASE );
 
   std_out << "# freq:  "  << pwm1.getFreq() << NL;
 
-  dump32( TIM_SERVOLWM, 0x60 );
+  dump32( (void*)TIM_SERVOLWM_BASE, 0x60 );
 
   return 0;
 }
@@ -174,7 +174,7 @@ CMD_FUNCTION( pulse ) // U
   pwm1.setPulse( 0, pu );
   std_out << '#' << pu << ' ' << pwm1.getPwmRaw( 0 ) << NL;
 
-  tim_print_cfg( TIM_SERVOLWM );
+  tim_print_cfg( TIM_SERVOLWM_BASE );
 
   return 0;
 }
@@ -199,16 +199,16 @@ CMD_FUNCTION( setV ) // V
 
 void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim )
 {
-  if( htim->Instance == TIM_SERVOLWM ) {
-    TIM_SERVOLWM_CLKEN;
+  if( htim->Instance == addr2TIM( TIM_SERVOLWM_BASE ) ) {
+    TIM_SERVOLWM_CLKEN();
     return;
   }
 }
 
 void HAL_TIM_PWM_MspDeInit( TIM_HandleTypeDef* htim )
 {
-  if( htim->Instance == TIM_SERVOLWM ) {
-    TIM_SERVOLWM_CLKDIS;
+  if( htim->Instance == addr2TIM( TIM_SERVOLWM_BASE ) ) {
+    TIM_SERVOLWM_CLKDIS();
     return;
   }
 }

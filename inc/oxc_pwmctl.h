@@ -1,8 +1,9 @@
 #ifndef _OXC_PWMCTL_H
 #define _OXC_PWMCTL_H
 
-#include <span>
 #include <ranges>
+
+#include <oxc_types.h>
 
 namespace oxc {
 
