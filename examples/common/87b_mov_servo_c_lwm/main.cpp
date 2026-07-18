@@ -39,6 +39,7 @@ void idle_main_task()
   leds.toggle( 1_mask );
 }
 
+TIM_HandleTypeDef tim_encoder_h;
 
 
 TIM_HandleTypeDef tim_servolwm_h;
@@ -79,10 +80,12 @@ ReturnCode init_all()
   // q0:
   auto [ psc_i, arr_i ] = calc_tim_psc_arr( get_TIM_in_freq( TIM_SERVOLWM_BASE ), 50 );
   pwm1.setAllowPSCadj( true );
-  tim_servolwm_h.Instance = addr2TIM( TIM_SERVOLWM_BASE );
+  tim_servolwm_h.Instance = TIM_SERVOLWM;
   pwm1.setHardParams( psc_i, arr_i, TIM_COUNTERMODE_UP );
   pwm1.enable();
-  pwm1.initPins(); // ??
+
+  tim_encoder_h.Instance = TIM_ENCO;
+  tim_enco_cfg_default( tim_encoder_h );
 
   size_t idx { 0 };
   ReturnCode rc { rcOk };
@@ -148,11 +151,14 @@ CMD_FUNCTION( test0 )
 
 CMD_FUNCTION( tinfo ) // P
 {
+  std_out << "# LWM freq:  "  << pwm1.getFreq() << NL;
+
   tim_print_cfg( TIM_SERVOLWM_BASE );
 
-  std_out << "# freq:  "  << pwm1.getFreq() << NL;
-
   dump32( (void*)TIM_SERVOLWM_BASE, 0x60 );
+
+  std_out << "# Encoder:  " << TIM_ENCO->CNT << NL;
+  tim_print_cfg( TIM_ENCODER_BASE );
 
   return 0;
 }
@@ -195,21 +201,42 @@ CMD_FUNCTION( setV ) // V
   return 0;
 }
 
+// ----------------------- encoder timer part ---------------
 
+
+// -----------------------  timers init part ---------------
 
 void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim )
 {
-  if( htim->Instance == addr2TIM( TIM_SERVOLWM_BASE ) ) {
+  if( htim->Instance == TIM_SERVOLWM ) {
     TIM_SERVOLWM_CLKEN();
+    return;
+  }
+  if( htim->Instance == TIM_ENCO ) {
+    TIM_ENCODER_CLKEN();
     return;
   }
 }
 
 void HAL_TIM_PWM_MspDeInit( TIM_HandleTypeDef* htim )
 {
-  if( htim->Instance == addr2TIM( TIM_SERVOLWM_BASE ) ) {
+  if( htim->Instance == TIM_SERVOLWM ) {
     TIM_SERVOLWM_CLKDIS();
     return;
   }
+  if( htim->Instance == TIM_ENCO ) {
+    TIM_ENCODER_CLKDIS();
+    return;
+  }
 }
+
+void HAL_TIM_Encoder_MspInit( TIM_HandleTypeDef* tim_encoderHandle )
+{
+  if( tim_encoderHandle->Instance == TIM_ENCO ) {
+    TIM_ENCODER_CLKEN();
+    ENCODER_EncoPin_A.cfgAF( ENCODER_AF );
+    ENCODER_EncoPin_B.cfgAF( ENCODER_AF );
+  }
+}
+
 

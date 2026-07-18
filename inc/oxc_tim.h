@@ -154,6 +154,7 @@ inline uint32_t calc_TIM_arr_for_base_psc(  uintptr_t tim_addr, uint32_t psc, ui
 std::pair<uint32_t,uint32_t> calc_tim_psc_arr( float f_in, float f_out, uint32_t arr_min = 100, uint32_t arr_max = 0xFFFF );
 ReturnCode tim_pwm_cfg_default( TIM_HandleTypeDef &t_h, uint32_t psc, uint32_t arr,
     std::span<const oxc::TimChPin> chpins, uint32_t cmode = TIM_COUNTERMODE_UP );
+ReturnCode tim_enco_cfg_default( TIM_HandleTypeDef &t_h );
 
 void tim_print_cfg( TIM_TypeDef *tim ); // real if USE_OXC_DEBUG
 inline void tim_print_cfg( uintptr_t tim_addr ) { tim_print_cfg( addr2TIM( tim_addr ) ); };
@@ -181,6 +182,30 @@ static const constexpr TIM_MasterConfigTypeDef sMasterConfig_def {
   .MasterOutputTrigger2 = TIM_TRGO2_UPDATE,
   #endif
   .MasterSlaveMode      = TIM_MASTERSLAVEMODE_DISABLE,
+};
+
+static constexpr TIM_Encoder_InitTypeDef tim_enco_cfg_default_filt1 {
+  .EncoderMode  = TIM_ENCODERMODE_TI12,
+  .IC1Polarity  = TIM_ICPOLARITY_RISING,
+  .IC1Selection = TIM_ICSELECTION_DIRECTTI,
+  .IC1Prescaler = TIM_ICPSC_DIV1,
+  .IC1Filter    = 1,
+  .IC2Polarity  = TIM_ICPOLARITY_RISING,
+  .IC2Selection = TIM_ICSELECTION_DIRECTTI,
+  .IC2Prescaler = TIM_ICPSC_DIV1,
+  .IC2Filter    = 1,
+};
+
+static constexpr TIM_Encoder_InitTypeDef tim_enco_cfg_default_filt3 {
+  .EncoderMode  = TIM_ENCODERMODE_TI12,
+  .IC1Polarity  = TIM_ICPOLARITY_RISING,
+  .IC1Selection = TIM_ICSELECTION_DIRECTTI,
+  .IC1Prescaler = TIM_ICPSC_DIV1,
+  .IC1Filter    = 3,
+  .IC2Polarity  = TIM_ICPOLARITY_RISING,
+  .IC2Selection = TIM_ICSELECTION_DIRECTTI,
+  .IC2Prescaler = TIM_ICPSC_DIV1,
+  .IC2Filter    = 3,
 };
 
 #endif
