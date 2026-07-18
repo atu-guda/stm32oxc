@@ -7,6 +7,7 @@
 #include <oxc_main.h>
 
 #include <oxc_actu_servo_c_lwm.h>
+#include <oxc_sensor_encoder.h>
 
 #include <board_robo_cfg.h>
 
@@ -40,6 +41,8 @@ void idle_main_task()
 }
 
 TIM_HandleTypeDef tim_encoder_h;
+EncoderProxyAddr q0_enc_proxy( TIM_ENCODER_BASE + tim_cnt_offset, false );
+SensorEncoder q0_sens( "q0_enco", q0_enc_proxy, 2048, false, 0xFFFF );
 
 
 TIM_HandleTypeDef tim_servolwm_h;
@@ -53,6 +56,7 @@ RoboDevice* hw_robo_actu[] {
 };
 
 RoboDevice* hw_robo_sens[] {
+  &q0_sens,
 };
 
 
@@ -193,8 +197,9 @@ CMD_FUNCTION( setV ) // V
   q0_actu.setV( v );
   commit_all();
   delay_ms_brk( t );
+  measure_all();
   std_out << '#' << v << ' ' << pwm1.getPwmRaw( 0 )
-          << ' ' << q0_actu.get_v_int() << ' ' << q0_actu.get_v_phy() << NL;
+          << ' ' << q0_actu.get_v_int() << ' ' << q0_actu.get_v_phy() << ' ' << q0_sens.get(0) << NL;
   q0_actu.idle();
   commit_all();
 

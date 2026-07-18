@@ -33,6 +33,8 @@ inline constexpr std::size_t tim_max_ccrs { 8 };
   #error "Unknown MCU for timers definitions"
 #endif
 
+inline constexpr std::uintptr_t tim_cnt_offset { 0x24 };
+
 using tim_ch_type = decltype( TIM_CHANNEL_1 );
 
 //* type-aware timer channel number + converters to CCR addr and to TIM_CHANNEL_*
