@@ -27,6 +27,7 @@ DCL_CMD_REG(      tinfo,  'P',     " print info"  );
 DCL_CMD_REG(    setfreq,  'F',     " Hz - set freq"  );
 DCL_CMD_REG(      pulse,  'U',     " []- test pulse in us"  );
 DCL_CMD_REG(       setV,  'V',     " v [t_us] - set v"  );
+DCL_CMD_REG(     setRef,  'Z',     " [v] - set [zero] encoder value"  );
 
 
 size_t err_idx { 0 };
@@ -42,7 +43,9 @@ void idle_main_task()
 
 TIM_HandleTypeDef tim_encoder_h;
 EncoderProxyAddr q0_enc_proxy( TIM_ENCODER_BASE + tim_cnt_offset, false );
-SensorEncoder q0_sens( "q0_enco", q0_enc_proxy, 2048, false, 0xFFFF );
+SensorEncoder q0_sens_hw( "q0_enco", q0_enc_proxy, 2048, true, 0xFFFF ); // true - reverse
+LinearCoordTransform q0_sens_tr { 2 * pi_f / q0_sens_hw.getScale(0), 0 };
+SensorBase q0_sens( q0_sens_hw, 0, q0_sens_tr );
 
 
 TIM_HandleTypeDef tim_servolwm_h;
@@ -56,7 +59,7 @@ RoboDevice* hw_robo_actu[] {
 };
 
 RoboDevice* hw_robo_sens[] {
-  &q0_sens,
+  &q0_sens_hw,
 };
 
 
@@ -64,8 +67,8 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR_t = 100;
-  UVAR_n =  20;
+  UVAR_t =  20;
+  UVAR_n =  50;
 
   init_all();
 
@@ -161,7 +164,8 @@ CMD_FUNCTION( tinfo ) // P
 
   dump32( (void*)TIM_SERVOLWM_BASE, 0x60 );
 
-  std_out << "# Encoder:  " << TIM_ENCO->CNT << NL;
+  std_out << "# Encoder:  " << TIM_ENCO->CNT
+          <<  " hw:" << q0_sens_hw.get(0) << " log: " << q0_sens.get() <<NL;
   tim_print_cfg( TIM_ENCODER_BASE );
 
   return 0;
@@ -192,19 +196,43 @@ CMD_FUNCTION( pulse ) // U
 CMD_FUNCTION( setV ) // V
 {
   float v = arg2float_d( 1, argc, argv, 0 );
-  auto  t = arg2ulong_d( 2, argc, argv, 1000, 0 );
+  auto  n = arg2ulong_d( 2, argc, argv, UVAR_n, 0 );
+  uint32_t t_step = UVAR_t;
+
 
   q0_actu.setV( v );
   commit_all();
-  delay_ms_brk( t );
-  measure_all();
-  std_out << '#' << v << ' ' << pwm1.getPwmRaw( 0 )
-          << ' ' << q0_actu.get_v_int() << ' ' << q0_actu.get_v_phy() << ' ' << q0_sens.get(0) << NL;
+
+  break_flag = 0;
+  uint32_t tm0 { GET_OS_TICK() }, tm00 { tm0 };
+  for( uint32_t i=0; i <= n && !break_flag; ++i ) {
+    uint32_t tcc = GET_OS_TICK() - tm00;
+    auto rc = measure_all();
+    if( rc.isError() ) {
+      break_flag = 2; break;
+    }
+    std_out << FmtInt( tcc, 8 ) << ' '  << v << ' ' << pwm1.getPwmRaw( 0 )
+            << ' ' << q0_actu.get_v_int() << ' ' << q0_actu.get_v_phy() << ' '
+            << q0_sens_hw.get(0) << ' ' << r2d( q0_sens.get() ) << NL;
+
+    delay_ms_until_brk( &tm0, t_step );
+  }
   q0_actu.idle();
   commit_all();
 
   return 0;
 }
+
+CMD_FUNCTION( setRef ) // Z
+{
+  auto nv = arg2long_d( 1, argc, argv, 0 );
+  auto v0 = q0_sens_hw.get( 0 );
+  q0_sens_hw.setVal( 0, nv );
+  auto v1 = q0_sens_hw.get( 0 );
+  std_out << "# old: " << v0 << " new: " << v1 << NL;
+  return 0;
+}
+
 
 // ----------------------- encoder timer part ---------------
 

@@ -78,7 +78,7 @@ CMD_FUNCTION( test0 )
 
   term_clear();
 
-  uint32_t tm0 = HAL_GetTick(), tm00 = tm0;
+  uint32_t tm0 = GET_OS_TICK(), tm00 { tm0 };
 
   break_flag = 0;
   for( int i=0; i<n && !break_flag; ++i ) {

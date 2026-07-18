@@ -7,7 +7,7 @@ ReturnCode oxc::SensorEncoder::measure()
 {
   auto vce = enc.get();
   if( !vce ) {
-    return vce.error();
+    return (sta = vce.error() ); 
   }
   uint32_t vc { vce.value() };
 
@@ -26,6 +26,6 @@ ReturnCode oxc::SensorEncoder::measure()
 
   v += dlt;
   last_raw_v = vc;
-  return rcOk;
+  return (sta = rcOk);
 }
 

@@ -36,9 +36,11 @@ class SensorEncoder : public RoboSensor {
            half_period( (int32_t)(max_val / 2) ),
            signed_period( (int32_t)(max_val + 1) ),
            rev_dir( rev_dir_ ) {};
-   virtual ReturnCode initHW()  override { return rcOk; } // not here
+   virtual ReturnCode initHW()  override { sta = rcOk; return rcOk; } // not here
    virtual ReturnCode measure() override;
-   virtual int32_t get( size_t ch ) override { return v; }
+   virtual void setVal( size_t ch, int32_t nv ) override { start_pos = v - nv; };
+   virtual int32_t get( size_t ch ) override { return v - start_pos; }
+   virtual int32_t getScale( size_t ch ) override { return ppr; }
    uint32_t get_raw_v() const { return last_raw_v; };
    int32_t  get_dlt()   const { return dlt; };
   protected:
@@ -47,7 +49,7 @@ class SensorEncoder : public RoboSensor {
    const uint32_t max_val;       //* maximum value from HW counter
    const int32_t  half_period;
    const int32_t  signed_period;
-   uint32_t start_pos { 0 };
+   int32_t  start_pos { 0 };
    int32_t  v { 0 };
    int32_t  dlt { 0 };
    uint32_t last_raw_v { 0 };

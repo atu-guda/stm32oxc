@@ -20,6 +20,8 @@ class RoboSensor : public RoboDevice {
      : RoboDevice( name_ ), n_ch ( n_ch_ ) {};
    virtual ReturnCode commit() override { return rcOk; }
    virtual int32_t get( size_t ch ) = 0; // single-channel sensors may ignore ch
+   virtual int32_t getScale( size_t ch ) = 0; // single-channel sensors may ignore ch
+   virtual void setVal( size_t ch, int32_t v ) {}; // by default - do nothing
    size_t size() const { return n_ch; };
    ReturnCode status() { return sta; }
 
