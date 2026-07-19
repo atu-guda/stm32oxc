@@ -49,11 +49,8 @@ RoboPwmCtl q0_pwm( "q0_pwm", pwm1 );
 LinearCoordTransform q0_coord_tr { 1.986f, 0 }; // TODO: coeff (mech dependent) to header
 ActuServoContLWM q0_actu( q0_pwm, 0, q0_coord_tr );
 
-RoboDevice* hw_robo_actu[] {
+RoboDevice* hw_robo_devs[] {
   &q0_pwm,
-};
-
-RoboSensor* hw_robo_sens[] {
   &q0_sens_hw,
 };
 
@@ -63,7 +60,7 @@ RoboJoint* robo_joints[] {
   &fake_joint,
 };
 
-RoboAssembly robo( hw_robo_sens, hw_robo_actu, robo_joints );
+RoboAssembly robo( hw_robo_devs, robo_joints );
 
 
 int main(void)

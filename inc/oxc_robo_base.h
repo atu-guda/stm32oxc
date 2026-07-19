@@ -133,17 +133,16 @@ class RoboJoint {
 
 class RoboAssembly {
   public:
-   constexpr RoboAssembly( std::span<RoboSensor*>  psensors_,
-                           std::span<RoboDevice*>  pactuators_,
+   constexpr RoboAssembly( std::span<RoboDevice*>  pdevs_,
                            std::span<RoboJoint*> joints_ ) noexcept
-     : psensors( psensors_ ), pactuators( pactuators_ ), joints( joints_ ) {}
+     : pdevs( pdevs_ ), joints( joints_ ) {}
    RoboAssembly( const RoboAssembly &rhs ) = delete;
-   ReturnCode init_all();
-   ReturnCode measure_all();
-   ReturnCode commit_all();
+   ReturnCode for_all_till_err( ReturnCode (RoboDevice::*fun)() );
+   ReturnCode init_all()    { return for_all_till_err( &RoboDevice::initHW  ); }
+   ReturnCode measure_all() { return for_all_till_err( &RoboDevice::measure ); };
+   ReturnCode commit_all()  { return for_all_till_err( &RoboDevice::commit  ); }
   protected:
-   std::span<RoboSensor*>   psensors;
-   std::span<RoboDevice*> pactuators; // RoboActuator?
+   std::span<RoboDevice*>      pdevs;
    std::span<RoboJoint*>      joints;
 
 };
