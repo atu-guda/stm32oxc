@@ -24,6 +24,7 @@ USE_OXC_TIM = y
 SRCS += main.cpp
 SRCS += oxc_floatfun.cpp
 SRCS += oxc_pwmctltim.cpp
+SRCS += oxc_robo_base.cpp
 
 SRCS += oxc_actu_servo_lwm_base.cpp
 SRCS += oxc_sensor_encoder.cpp

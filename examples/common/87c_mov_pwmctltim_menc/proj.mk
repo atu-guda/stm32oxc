@@ -32,6 +32,7 @@ SRCS += oxc_as5600.cpp
 SRCS += oxc_easing.cpp
 
 SRCS += oxc_pwmctltim.cpp
+SRCS += oxc_robo_base.cpp
 
 SRCS += oxc_actu_dcpwm.cpp
 

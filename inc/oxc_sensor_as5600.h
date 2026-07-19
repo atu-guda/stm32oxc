@@ -3,7 +3,7 @@
 
 
 #include <oxc_floatfun.h>
-#include <oxc_sensor_base.h>
+#include <oxc_robo_base.h>
 #include <oxc_as5600.h>
 
 using oxc::RoboSensor;

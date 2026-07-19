@@ -29,11 +29,7 @@ DCL_CMD_REG(       setV,  'V',     " v [t_us] - set v"  );
 DCL_CMD_REG(     setRef,  'Z',     " [v] - set [zero] encoder value"  );
 
 
-size_t err_idx { 0 };
-// TODO: to main object
-ReturnCode init_all();
-ReturnCode commit_all();
-ReturnCode measure_all();
+ReturnCode init_hw_all();
 
 void idle_main_task()
 {
@@ -57,9 +53,17 @@ RoboDevice* hw_robo_actu[] {
   &q0_pwm,
 };
 
-RoboDevice* hw_robo_sens[] {
+RoboSensor* hw_robo_sens[] {
   &q0_sens_hw,
 };
+
+RoboJoint fake_joint;
+
+RoboJoint* robo_joints[] {
+  &fake_joint,
+};
+
+RoboAssembly robo( hw_robo_sens, hw_robo_actu, robo_joints );
 
 
 int main(void)
@@ -73,7 +77,7 @@ int main(void)
   UVAR_r = 1000; // t_run,  ms, def
   UVAR_o =  500; // t_post, ms
 
-  init_all();
+  init_hw_all();
 
 
   BOARD_POST_INIT_BLINK;
@@ -85,7 +89,7 @@ int main(void)
   return 0;
 }
 
-ReturnCode init_all()
+ReturnCode init_hw_all()
 {
   // q0:
   auto [ psc_i, arr_i ] = calc_tim_psc_arr( get_TIM_in_freq( TIM_SERVOLWM_BASE ), 50 );
@@ -97,53 +101,8 @@ ReturnCode init_all()
   tim_encoder_h.Instance = TIM_ENCO;
   tim_enco_cfg_default( tim_encoder_h );
 
-  size_t idx { 0 };
-  ReturnCode rc { rcOk };
-  for( auto dev : hw_robo_actu ) {
-    rc = dev->initHW();
-    if( rc.isError() ) {
-      err_idx = idx;
-      return rc;
-    }
-    ++idx;
-  }
-  for( auto dev : hw_robo_sens ) {
-    dev->initHW();
-    if( rc.isError() ) {
-      err_idx = idx;
-      return rc;
-    }
-    ++idx;
-  }
-  return rcOk;
-}
+  return robo.init_all();
 
-ReturnCode measure_all()
-{
-  size_t idx { 0 };
-  for( auto dev : hw_robo_sens ) {
-    auto rc = dev->measure();
-    if( rc.isError() ) { // TODO: param: break on error
-      leds[0].set();
-      err_idx = idx;
-      return rc;
-    }
-  }
-
-  return rcOk;
-}
-
-ReturnCode commit_all()
-{
-  size_t idx { 0 };
-  for( auto dev : hw_robo_actu ) {
-    auto rc = dev->commit();
-    if( rc.isError() ) { // TODO: param: break on error
-      err_idx = idx;
-      return rc;
-    }
-  }
-  return rcOk;
 }
 
 
@@ -209,7 +168,7 @@ ReturnCode run_v_loop( const RunLoopState &rls, const RunLoopData &rld, void *da
   }
   auto d = static_cast<Data_setV*>(data);
 
-  auto rc = measure_all();
+  auto rc = robo.measure_all();
   if( rc.isError() ) {
     return rc;
   }
@@ -217,7 +176,7 @@ ReturnCode run_v_loop( const RunLoopState &rls, const RunLoopData &rld, void *da
 
   if( rls.stage & RunLoopState::stage_change_flag  ) {
     q0_actu.setV( v );
-    commit_all();
+    robo.commit_all();
   }
 
   std_out << FmtInt( rls.tc, 8 ) << ' '  << v << ' ' << pwm1.getPwmRaw( 0 )
@@ -243,7 +202,7 @@ CMD_FUNCTION( setV ) // V
 
   if( UVAR_l ) {
     q0_actu.idle();
-    commit_all();
+    robo.commit_all();
   }
 
   return rc.isOk() ? 0 : 2;
