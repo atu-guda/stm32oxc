@@ -67,8 +67,12 @@ int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR_t =  20;
-  UVAR_n =  50;
+  UVAR_l =    1; // idLe after run
+  UVAR_t =   20; // t_step, ms
+  UVAR_n =   50;
+  UVAR_p =  200; // t_pre,  ms
+  UVAR_r = 1000; // t_run,  ms, def
+  UVAR_o =  500; // t_post, ms
 
   init_all();
 
@@ -193,34 +197,116 @@ CMD_FUNCTION( pulse ) // U
   return 0;
 }
 
-CMD_FUNCTION( setV ) // V
+// XXXXXXXXXX
+
+struct RunLoopData
 {
-  float v = arg2float_d( 1, argc, argv, 0 );
-  auto  n = arg2ulong_d( 2, argc, argv, UVAR_n, 0 );
-  uint32_t t_step = UVAR_t;
+  uint32_t t_step;
+  uint32_t t_pre;
+  uint32_t t_run;
+  uint32_t t_post;
+  uint32_t t_12;  // stage  1(run)  -> 2(post)
+  uint32_t t_end; // stage  2(post) -> 3(end)
+  void init_n_step( uint32_t n, uint32_t t_step_ ) {
+    t_step = t_step_; t_pre = 0; t_run = n * t_step; t_post = 0; t_12 = t_end = t_run;
+  }
+  void init_t( uint32_t t_step_, uint32_t t_pre_, uint32_t t_run_, uint32_t t_post_ ) {
+    t_step = t_step_; t_pre = t_pre_; t_run = t_run_; t_post = t_post_;
+    t_12 = t_pre + t_run; t_end = t_12 + t_post;
+  }
+};
 
+struct RunLoopState
+{
+  enum  { stage_change_flag   = 0x8000, stage_num_mask = 0x0FFF, stage_pre = 0, stage_run = 1, stage_post = 2, stage_end = 3 };
+  uint32_t i     ; //* iteration
+  uint32_t t     ; //* near i * t_step, ms
+  uint32_t tc    ; //* measured time, ms
+  uint32_t stage ; //* pre + change 0:pre, 1: run, 2: post
+};
 
-  q0_actu.setV( v );
-  commit_all();
+using run_periodic_fun = ReturnCode (*)( const RunLoopState &rls, const RunLoopData &rld, void *data );
+
+// atu:
+ReturnCode run_periodic( const RunLoopData &rld, run_periodic_fun fun, void *data )
+{
+  RunLoopState rls;
+
+  uint32_t tm0 { GET_OS_TICK() };
+  const uint32_t tm00 { tm0 };
 
   break_flag = 0;
-  uint32_t tm0 { GET_OS_TICK() }, tm00 { tm0 };
-  for( uint32_t i=0; i <= n && !break_flag; ++i ) {
-    uint32_t tcc = GET_OS_TICK() - tm00;
-    auto rc = measure_all();
-    if( rc.isError() ) {
+  rls.i = 0; rls.stage = RunLoopState::stage_change_flag;
+  for( rls.t = 0; rls.t <= rld.t_end && !break_flag; rls.t += rld.t_step, ++rls.i ) {
+    rls.tc = GET_OS_TICK() - tm00;
+    if( ( rls.stage & RunLoopState::stage_num_mask ) == 0 && rls.t >= rld.t_pre ) { // switch to run
+      rls.stage = 1 | RunLoopState::stage_change_flag;
+    }
+    if( ( rls.stage & RunLoopState::stage_num_mask ) == 1 && rls.t >= rld.t_12 ) { // switch to post
+      rls.stage = 2 | RunLoopState::stage_change_flag;
+    }
+
+    auto rc = fun( rls, rld, data );
+    if( !rc.isOk () ) {
       break_flag = 2; break;
     }
-    std_out << FmtInt( tcc, 8 ) << ' '  << v << ' ' << pwm1.getPwmRaw( 0 )
-            << ' ' << q0_actu.get_v_int() << ' ' << q0_actu.get_v_phy() << ' '
-            << q0_sens_hw.get(0) << ' ' << r2d( q0_sens.get() ) << NL;
-
-    delay_ms_until_brk( &tm0, t_step );
+    rls.stage &= RunLoopState::stage_num_mask;
+    delay_ms_until_brk( &tm0, rld.t_step );
   }
-  q0_actu.idle();
-  commit_all();
+  // rls.stage = 3 | RunLoopState::stage_change_flag; // unused, as rls dropped
+  return break_flag ? rcErr : rcOk;
+}
 
-  return 0;
+struct Data_setV
+{
+  float v;
+};
+
+ReturnCode run_v_loop( const RunLoopState &rls, const RunLoopData &rld, void *data )
+{
+  if( !data ) {
+    return rcFatal;
+  }
+  auto d = static_cast<Data_setV*>(data);
+
+  auto rc = measure_all();
+  if( rc.isError() ) {
+    return rc;
+  }
+  float v = ( ( rls.stage & RunLoopState::stage_num_mask ) == 1 ) ? d->v : 0;
+
+  if( rls.stage & RunLoopState::stage_change_flag  ) {
+    q0_actu.setV( v );
+    commit_all();
+  }
+
+  std_out << FmtInt( rls.tc, 8 ) << ' '  << v << ' ' << pwm1.getPwmRaw( 0 )
+    << ' ' << q0_actu.get_v_int() << ' ' << q0_actu.get_v_phy() << ' '
+    << q0_sens_hw.get(0) << ' ' << r2d( q0_sens.get() )
+    << ' ' << HexInt(rls.stage) << NL;
+
+  return rcOk;
+}
+
+CMD_FUNCTION( setV ) // V
+{
+  struct Data_setV d;
+  d.v        = arg2float_d( 1, argc, argv, 0 );
+  auto t_run = arg2ulong_d( 2, argc, argv, UVAR_r, 0 );
+
+  RunLoopData rld;
+  rld.init_t( UVAR_t, UVAR_p, t_run, UVAR_o );
+  // std_out << "# rld: " << rld.t_step << ' ' << rld.t_pre << ' ' << rld.t_run 
+  //  << ' ' << rld.t_post << ' ' << rld.t_12 << ' ' << rld.t_end << NL;
+
+  auto rc = run_periodic( rld, run_v_loop, &d );
+
+  if( UVAR_l ) {
+    q0_actu.idle();
+    commit_all();
+  }
+
+  return rc.isOk() ? 0 : 2;
 }
 
 CMD_FUNCTION( setRef ) // Z
