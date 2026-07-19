@@ -372,3 +372,32 @@ bool splitNameWithIdx( const char *s, char *d0, char *d1, int &idx, const char *
   return true;
 }
 
+ReturnCode oxc::run_periodic( const RunLoopData &rld, run_periodic_fun fun, void *data )
+{
+  RunLoopState rls;
+
+  uint32_t tm0 { GET_OS_TICK() };
+  const uint32_t tm00 { tm0 };
+
+  break_flag = 0;
+  rls.i = 0; rls.stage = RunLoopState::stage_change_flag;
+  for( rls.t = 0; rls.t <= rld.t_end && !break_flag; rls.t += rld.t_step, ++rls.i ) {
+    rls.tc = GET_OS_TICK() - tm00;
+    if( ( rls.stage & RunLoopState::stage_num_mask ) == 0 && rls.t >= rld.t_pre ) { // switch to run
+      rls.stage = 1 | RunLoopState::stage_change_flag;
+    }
+    if( ( rls.stage & RunLoopState::stage_num_mask ) == 1 && rls.t >= rld.t_12 ) { // switch to post
+      rls.stage = 2 | RunLoopState::stage_change_flag;
+    }
+
+    auto rc = fun( rls, rld, data );
+    if( !rc.isOk () ) {
+      break_flag = 2; break;
+    }
+    rls.stage &= RunLoopState::stage_num_mask;
+    delay_ms_until_brk( &tm0, rld.t_step );
+  }
+  // rls.stage = 3 | RunLoopState::stage_change_flag; // unused, as rls dropped
+  return break_flag ? rcErr : rcOk;
+}
+

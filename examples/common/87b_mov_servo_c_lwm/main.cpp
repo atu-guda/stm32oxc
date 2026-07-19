@@ -1,7 +1,6 @@
 #include <climits>
 #include <oxc_auto.h>
 #include <oxc_floatfun.h>
-#include <oxc_main.h>
 #include <oxc_pwmctltim.h>
 
 #include <oxc_main.h>
@@ -197,65 +196,6 @@ CMD_FUNCTION( pulse ) // U
   return 0;
 }
 
-// XXXXXXXXXX
-
-struct RunLoopData
-{
-  uint32_t t_step;
-  uint32_t t_pre;
-  uint32_t t_run;
-  uint32_t t_post;
-  uint32_t t_12;  // stage  1(run)  -> 2(post)
-  uint32_t t_end; // stage  2(post) -> 3(end)
-  void init_n_step( uint32_t n, uint32_t t_step_ ) {
-    t_step = t_step_; t_pre = 0; t_run = n * t_step; t_post = 0; t_12 = t_end = t_run;
-  }
-  void init_t( uint32_t t_step_, uint32_t t_pre_, uint32_t t_run_, uint32_t t_post_ ) {
-    t_step = t_step_; t_pre = t_pre_; t_run = t_run_; t_post = t_post_;
-    t_12 = t_pre + t_run; t_end = t_12 + t_post;
-  }
-};
-
-struct RunLoopState
-{
-  enum  { stage_change_flag   = 0x8000, stage_num_mask = 0x0FFF, stage_pre = 0, stage_run = 1, stage_post = 2, stage_end = 3 };
-  uint32_t i     ; //* iteration
-  uint32_t t     ; //* near i * t_step, ms
-  uint32_t tc    ; //* measured time, ms
-  uint32_t stage ; //* pre + change 0:pre, 1: run, 2: post
-};
-
-using run_periodic_fun = ReturnCode (*)( const RunLoopState &rls, const RunLoopData &rld, void *data );
-
-// atu:
-ReturnCode run_periodic( const RunLoopData &rld, run_periodic_fun fun, void *data )
-{
-  RunLoopState rls;
-
-  uint32_t tm0 { GET_OS_TICK() };
-  const uint32_t tm00 { tm0 };
-
-  break_flag = 0;
-  rls.i = 0; rls.stage = RunLoopState::stage_change_flag;
-  for( rls.t = 0; rls.t <= rld.t_end && !break_flag; rls.t += rld.t_step, ++rls.i ) {
-    rls.tc = GET_OS_TICK() - tm00;
-    if( ( rls.stage & RunLoopState::stage_num_mask ) == 0 && rls.t >= rld.t_pre ) { // switch to run
-      rls.stage = 1 | RunLoopState::stage_change_flag;
-    }
-    if( ( rls.stage & RunLoopState::stage_num_mask ) == 1 && rls.t >= rld.t_12 ) { // switch to post
-      rls.stage = 2 | RunLoopState::stage_change_flag;
-    }
-
-    auto rc = fun( rls, rld, data );
-    if( !rc.isOk () ) {
-      break_flag = 2; break;
-    }
-    rls.stage &= RunLoopState::stage_num_mask;
-    delay_ms_until_brk( &tm0, rld.t_step );
-  }
-  // rls.stage = 3 | RunLoopState::stage_change_flag; // unused, as rls dropped
-  return break_flag ? rcErr : rcOk;
-}
 
 struct Data_setV
 {
