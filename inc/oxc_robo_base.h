@@ -139,7 +139,7 @@ class RoboAssembly {
    RoboAssembly( const RoboAssembly &rhs ) = delete;
    ReturnCode for_all_till_err( ReturnCode (RoboDevice::*fun)() );
    ReturnCode init_all()    { return for_all_till_err( &RoboDevice::initHW  ); }
-   ReturnCode measure_all() { return for_all_till_err( &RoboDevice::measure ); };
+   ReturnCode measure_all() { return for_all_till_err( &RoboDevice::measure ); }
    ReturnCode commit_all()  { return for_all_till_err( &RoboDevice::commit  ); }
   protected:
    std::span<RoboDevice*>      pdevs;

@@ -89,10 +89,11 @@ int main(void)
 ReturnCode init_hw_all()
 {
   // q0:
-  auto [ psc_i, arr_i ] = calc_tim_psc_arr( get_TIM_in_freq( TIM_SERVOLWM_BASE ), 50 );
+  auto [ psc_i, arr_i ] = calc_tim_psc_arr( get_TIM_in_freq( TIM_SERVOLWM_BASE ), SERVOLWM_FREQ );
   pwm1.setAllowPSCadj( true );
   tim_servolwm_h.Instance = TIM_SERVOLWM;
   pwm1.setHardParams( psc_i, arr_i, TIM_COUNTERMODE_UP );
+  // pwm1.setPwm( 0, 0 );
   pwm1.enable();
 
   tim_encoder_h.Instance = TIM_ENCO;
@@ -179,7 +180,7 @@ ReturnCode run_v_loop( const RunLoopState &rls, const RunLoopData &rld, void *da
   std_out << FmtInt( rls.tc, 8 ) << ' '  << v << ' ' << pwm1.getPwmRaw( 0 )
     << ' ' << q0_actu.get_v_int() << ' ' << q0_actu.get_v_phy() << ' '
     << q0_sens_hw.get(0) << ' ' << r2d( q0_sens.get() )
-    << ' ' << HexInt(rls.stage) << NL;
+    << NL;
 
   return rcOk;
 }
@@ -192,8 +193,6 @@ CMD_FUNCTION( setV ) // V
 
   RunLoopData rld;
   rld.init_t( UVAR_t, UVAR_p, t_run, UVAR_o );
-  // std_out << "# rld: " << rld.t_step << ' ' << rld.t_pre << ' ' << rld.t_run 
-  //  << ' ' << rld.t_post << ' ' << rld.t_12 << ' ' << rld.t_end << NL;
 
   auto rc = run_periodic( rld, run_v_loop, &d );
 
