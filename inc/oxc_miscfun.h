@@ -204,19 +204,18 @@ namespace oxc {
 
 struct RunLoopData
 {
+  constexpr RunLoopData(  uint32_t n, uint32_t t_step_ ) noexcept :
+    t_step(t_step_), t_pre(0), t_run( n * t_step ), t_post(0), t_12(t_run), t_end(t_run) {};
+  constexpr RunLoopData( uint32_t t_step_, uint32_t t_pre_, uint32_t t_run_, uint32_t t_post_ ) noexcept :
+    t_step( t_step_ ), t_pre( t_pre_ ), t_run( t_run_ ), t_post( t_post_ ),
+    t_12( t_pre + t_run ), t_end( t_12 + t_post ) {}
+
   uint32_t t_step;
   uint32_t t_pre;
   uint32_t t_run;
   uint32_t t_post;
   uint32_t t_12;  // stage  1(run)  -> 2(post)
   uint32_t t_end; // stage  2(post) -> 3(end)
-  void init_n_step( uint32_t n, uint32_t t_step_ ) {
-    t_step = t_step_; t_pre = 0; t_run = n * t_step; t_post = 0; t_12 = t_end = t_run;
-  }
-  void init_t( uint32_t t_step_, uint32_t t_pre_, uint32_t t_run_, uint32_t t_post_ ) {
-    t_step = t_step_; t_pre = t_pre_; t_run = t_run_; t_post = t_post_;
-    t_12 = t_pre + t_run; t_end = t_12 + t_post;
-  }
 };
 
 struct RunLoopState

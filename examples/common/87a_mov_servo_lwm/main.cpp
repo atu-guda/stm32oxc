@@ -179,8 +179,7 @@ CMD_FUNCTION( setX ) // X
   d.x = arg2float_d( 1, argc, argv, 0 );
   auto t_run = arg2ulong_d( 2, argc, argv, UVAR_r, 0 );
 
-  RunLoopData rld;
-  rld.init_t( UVAR_t, UVAR_p, t_run, UVAR_o );
+  RunLoopData rld( UVAR_t, UVAR_p, t_run, UVAR_o );
 
   auto rc = run_periodic( rld, run_x_loop, &d );
 
