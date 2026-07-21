@@ -87,8 +87,11 @@ uint32_t ADC_Info::start_DMA_wait( uint32_t n_ch, uint32_t n, uint32_t t_wait ) 
     return 2;
   }
 
-  for( uint32_t ti=0; end_dma == 0 && ti < t_wait + 1000 && !break_flag;  ++ti ) {
-    delay_ms( 1 );
+  auto delay_fun  = ( t_wait > 5 ) ? ( [](){ delay_ms(1); } ) : ( [](){ delay_mcs( 50 );} );
+  const auto tw_x = ( t_wait > 5 ) ? ( t_wait )               : ( t_wait * 20 );
+
+  for( uint32_t ti=0; end_dma == 0 && ti < tw_x + 1000 && !break_flag;  ++ti ) {
+    delay_fun();
   }
 
   HAL_ADC_Stop_DMA( &hadc ); // needed

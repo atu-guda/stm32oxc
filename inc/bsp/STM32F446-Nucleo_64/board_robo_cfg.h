@@ -38,7 +38,6 @@ inline constexpr AdcChannelInfo ADC_SENSOR_CHPINS[] {
 #define ADC_SENSOR_DMA_CLK_DIS  __HAL_RCC_DMA2_CLK_DISABLE
 extern ADC_HandleTypeDef hadc_sensor;
 extern DMA_HandleTypeDef hdma_adc_sensor;
-inline uint32_t  adc_sensor_end_dma {0};
 inline constexpr uint32_t  ADC_SENSOR_SAMPLETIME      { ADC_SAMPLETIME_144CYCLES };
 inline constexpr uint32_t  ADC_SENSOR_ClockPrescaler  { ADC_CLOCK_SYNC_PCLK_DIV4 };
 inline constexpr uint32_t  ADC_SENSOR_Resolution      { ADC_RESOLUTION_12B };

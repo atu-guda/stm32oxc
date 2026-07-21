@@ -206,45 +206,8 @@ CMD_FUNCTION( setX ) // X
 CMD_FUNCTION( testADC ) // A
 {
   std::fill( begin(adc_buf), end(adc_buf), 0 );
-  const uint32_t unsigned stime_idx = adc_arch_sampletimes_n - 2;
 
-  const uint32_t t_step_ms = UVAR_t;
-  adc_s1.t_step_f = (decltype(adc_s1.t_step_f))(1e-3f) * t_step_ms;
-  const xfloat freq_sampl = (xfloat)1e6f / t_step_ms;
-
-  const uint32_t adc_arch_clock_in = ADC_getFreqIn( &adc_s1.hadc );
-  uint32_t s_div = 0;
-  uint32_t div_bits = ADC_calc_div( &adc_s1.hadc, ADC_FREQ_MAX, &s_div );
-
-  std_out <<  NL "# Test0: adc_n_ch= " << adc_n_ch
-    << " t= " << t_step_ms << " ms, freq_sampl= " << freq_sampl
-    << " freq_in= " << adc_arch_clock_in
-    << " freq_max= " << ADC_FREQ_MAX << NL;
-
-  if( s_div == 0  ||  div_bits == 0xFFFFFFFF ) {
-    std_out << "# error: fail to calc divisor" NL;
-    return 7;
-  }
-  const uint32_t adc_freq = adc_arch_clock_in / s_div;
-  adc_s1.adc_clk = adc_freq; // TODO: place in good? place
-  const uint32_t adc_clock_ns = (unsigned)( ( 1000000000LL + adc_freq - 1 ) / adc_freq );
-  std_out << "# div= " << s_div << " bits: " << HexInt( div_bits ) << " freq: " << adc_freq
-          << " adc_clock_ns: " << adc_clock_ns << NL;
-
-
-  adc_s1.prepare_multi_ev( adc_n_ch, div_bits, adc_arch_sampletimes[stime_idx].code, ADC_SOFTWARE_START, BOARD_ADC_DEFAULT_RESOLUTION );
-
-  if( ! adc_s1.init_common() ) {
-    std_out << "# error: fail to init ADC: errno= " << errno << NL;
-  }
-
-  uint32_t t_wait0 = 10; // ms?
-  delay_ms( 1 );
-
-  // really need for H7 - DMA not work with ordinary memory ???
-  // adcd.free(); ?????
-  adc_s1.data = adc_buf;
-  adc_s1.reset_cnt();
+  const uint32_t t_wait0 = 2; // ms?
 
   int rc = 0;
   if( UVAR_l ) {  leds[2].set(); }
@@ -255,12 +218,10 @@ CMD_FUNCTION( testADC ) // A
     rc = 4;
   }
 
-  HAL_ADC_Stop_DMA( &adc_s1.hadc ); // ????? not?
-
   for( auto v : adc_buf ) {
     std_out << v << ' ';
   }
-  std_out << NL;
+  std_out << HexInt(ADC_CLOCK_SYNC_PCLK_DIV4) << NL;
 
   return rc;
 }
@@ -271,6 +232,17 @@ CMD_FUNCTION( testADC ) // A
 
 ReturnCode init_adc_s1()
 {
+  const uint32_t unsigned stime_idx = adc_arch_sampletimes_n - 2;
+
+  adc_s1.prepare_multi_ev( adc_n_ch, ADC_CLOCK_SYNC_PCLK_DIV4, adc_arch_sampletimes[stime_idx].code, ADC_SOFTWARE_START, BOARD_ADC_DEFAULT_RESOLUTION );
+
+  if( ! adc_s1.init_common() ) {
+    std_out << "# error: fail to init ADC: errno= " << errno << NL;
+  }
+
+  // TODO: check H7 - DMA not work with ordinary memory ???
+  adc_s1.data = adc_buf;
+  adc_s1.reset_cnt();
 
   return rcOk;
 }
