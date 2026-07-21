@@ -13,6 +13,9 @@
 using namespace oxc;
 using namespace SMLRL;
 
+using std::begin;
+using std::end;
+
 USE_DIE4LED_ERROR_HANDLER;
 BOARD_DEFINE_LEDS;
 
@@ -26,6 +29,7 @@ DCL_CMD_REG(      tinfo,  'P',     " print info"  );
 DCL_CMD_REG(    setfreq,  'F',     " Hz - set freq"  );
 DCL_CMD_REG(      pulse,  'U',     " []- test pulse in us"  );
 DCL_CMD_REG(       setX,  'X',     " x [t_us] - set x"  );
+DCL_CMD_REG(    testADC,  'A',     " test ADC"  ); // TODO: remove
 
 
 
@@ -43,6 +47,11 @@ constinit PwmCtlTim pwm1( TIM_SERVOLWM_BASE, tim_SERVOLWM_chspins, tim_servolwm_
 RoboPwmCtl q0_pwm( "q0_pwm", pwm1 );
 LinearCoordTransform q0_coord_tr { pi_f/2, 0 }; // TODO: coeff (mech dependent) to header
 ActuServoLWM q0_actu( q0_pwm, 0, q0_coord_tr );
+
+ADC_HandleTypeDef hadc_sensor;
+DMA_HandleTypeDef hdma_adc_sensor;
+ADC_Info adc_s1 ( ADC_SENSOR, ADC_SENSOR_CHPINS ); // overkill?
+ReturnCode init_adc_s1();
 
 RoboDevice* hw_robo_devs[] {
   &q0_pwm,
@@ -91,8 +100,10 @@ ReturnCode init_hw_all()
   pwm1.setPwm( 0, 0 );
   pwm1.enable();
 
-  return robo.init_all();
+  // MX_DMA_Init();
+  init_adc_s1();
 
+  return robo.init_all();
 }
 
 
@@ -191,7 +202,166 @@ CMD_FUNCTION( setX ) // X
   return rc.isOk() ? 0 : 2;
 }
 
+CMD_FUNCTION( testADC ) // A
+{
+  const constexpr uint32_t n_ch = std::size( ADC_SENSOR_CHPINS ) - 1;
+  uint16_t abuf[ n_ch ];
+  std::fill( begin(abuf), end(abuf), 0 );
+  const uint32_t unsigned stime_idx = adc_arch_sampletimes_n - 2;
 
+  const uint32_t t_step_ms = UVAR_t;
+  adc_s1.t_step_f = (decltype(adc_s1.t_step_f))(1e-3f) * t_step_ms;
+  const xfloat freq_sampl = (xfloat)1e6f / t_step_ms;
+
+  const uint32_t adc_arch_clock_in = ADC_getFreqIn( &adc_s1.hadc );
+  uint32_t s_div = 0;
+  uint32_t div_bits = ADC_calc_div( &adc_s1.hadc, ADC_FREQ_MAX, &s_div );
+
+  std_out <<  NL "# Test0: n_ch= " << n_ch
+    << " t= " << t_step_ms << " ms, freq_sampl= " << freq_sampl
+    << " freq_in= " << adc_arch_clock_in
+    << " freq_max= " << ADC_FREQ_MAX << NL;
+
+  if( s_div == 0  ||  div_bits == 0xFFFFFFFF ) {
+    std_out << "# error: fail to calc divisor" NL;
+    return 7;
+  }
+  const uint32_t adc_freq = adc_arch_clock_in / s_div;
+  adc_s1.adc_clk = adc_freq; // TODO: place in good? place
+  const uint32_t adc_clock_ns = (unsigned)( ( 1000000000LL + adc_freq - 1 ) / adc_freq );
+  std_out << "# div= " << s_div << " bits: " << HexInt( div_bits ) << " freq: " << adc_freq
+          << " adc_clock_ns: " << adc_clock_ns << NL;
+
+  uint32_t stime_ns = ADC_conv_time_tick( stime_idx, n_ch, BOARD_ADC_DEFAULT_BITS );
+  if( stime_ns == 0xFFFFFFFF ) {
+    std_out << "# error: fail to calculate conversion time" NL;
+    return 8;
+  }
+  stime_ns *= adc_clock_ns;
+
+  uint32_t t_wait0 = 1 + uint32_t( ( 999 + stime_ns ) / 1000 ); // in ms
+
+  if( t_step_ms * 1000000 <= stime_ns ) {
+    std_out << "# warn: time step (" << t_step_ms * 1000000 << ") ns < conversion time (" << stime_ns << ") ns" NL;
+  }
+
+  std_out << "# stime_idx= " << stime_idx << " 10ticks= " << adc_arch_sampletimes[stime_idx].stime10
+          << " stime_ns= "  << stime_ns  << " code= " <<  adc_arch_sampletimes[stime_idx].code
+          << " t_wait0= " << t_wait0 << " ms" NL;
+
+  adc_s1.prepare_multi_ev( n_ch, div_bits, adc_arch_sampletimes[stime_idx].code, ADC_SOFTWARE_START, BOARD_ADC_DEFAULT_RESOLUTION );
+
+  if( ! adc_s1.init_common() ) {
+    std_out << "# error: fail to init ADC: errno= " << errno << NL;
+  }
+
+  if( UVAR_d > 0 ) {
+    adc_s1.pr_state();
+  }
+  if( UVAR_d > 1 ) {
+    dump32( BOARD_ADC_DEFAULT_DEV, 0x100 );
+  }
+  delay_ms( 10 );
+
+  // really need for H7 - DMA not work with ordinary memory ???
+  // adcd.free(); ?????
+  adc_s1.data = abuf;
+  adc_s1.reset_cnt();
+
+  int rc = 0;
+  if( UVAR_l ) {  leds[2].set(); }
+  uint32_t r = adc_s1.start_DMA_wait( n_ch, 1, t_wait0 );
+  if( UVAR_l ) {  leds[2].reset(); }
+
+  if( r != 0 ) {
+    std_out <<  "# error: start_DMA_wait " << r << NL;
+    rc = 1;
+  }
+
+  if( UVAR_d > 0 ) {
+    adc_s1.pr_state();
+  }
+  if( UVAR_d > 1 ) {
+    dump32( BOARD_ADC_DEFAULT_DEV, 0x200 );
+  }
+  HAL_ADC_Stop_DMA( &adc_s1.hadc ); // ????? not?
+
+  adc_s1.data = nullptr;
+
+  for( auto v : abuf ) {
+    std_out << v << ' ';
+  }
+  std_out << NL;
+
+  return rc;
+}
+
+
+// ------------------------ ADC -------------------------------
+// BUG: arch-dependent part for now
+
+ReturnCode init_adc_s1()
+{
+
+  return rcOk;
+}
+
+void HAL_ADC_MspInit( ADC_HandleTypeDef* adcHandle )
+{
+  if( adcHandle->Instance != ADC_SENSOR ) {
+    return;
+  }
+  // std_out << "# debug: " << __PRETTY_FUNCTION__ << NL;
+  ADC_SENSOR_CLK_EN();
+  ADC_SENSOR_DMA_CLK_EN();
+
+  adc_s1.init_gpio_channels();
+
+  adc_s1.DMA_reinit( DMA_NORMAL );
+
+  HAL_NVIC_SetPriority( ADC_SENSOR_DMA_IRQ, 2, 0 );
+  HAL_NVIC_EnableIRQ(   ADC_SENSOR_DMA_IRQ );
+}
+
+void HAL_ADC_MspDeInit( ADC_HandleTypeDef* adcHandle )
+{
+  if( adcHandle->Instance != ADC_SENSOR ) {
+    return;
+  }
+  // std_out << "# debug: " << __PRETTY_FUNCTION__ << NL;
+  ADC_SENSOR_CLK_DIS();
+  ADC_SENSOR_DMA_CLK_DIS();
+}
+
+void HAL_ADC_ConvHalfCpltCallback( ADC_HandleTypeDef *hadc )
+{
+  // leds[1].set();
+  // adc_s1.convHalfCpltCallback( hadc );
+}
+
+
+void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc )
+{
+  // leds[1].set();
+  adc_s1.convCpltCallback( hadc );
+}
+
+void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc )
+{
+  // leds[0].set();
+  adc_s1.errorCallback( hadc );
+}
+
+void BOARD_ADC_DMA_IRQHANDLER(void)
+{
+  leds[0].set();
+  HAL_DMA_IRQHandler( &adc_s1.hdma_adc );
+}
+
+
+
+
+// ------------------- TIM callbacks+init --------------------------
 
 void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim )
 {
