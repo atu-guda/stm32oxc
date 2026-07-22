@@ -217,14 +217,14 @@ CMD_FUNCTION( testADC ) // A
   for( decltype(+n_ch) ch = 0; ch <n_ch; ++ch ) {
     std_out << sensor_adc1.get( ch ) << ' ';
   }
-  std_out << NL;
+  std_out << r2d( q0_sens.get() ) << NL;
 
   return rc.isOk() ? 0 : 2;
 }
 
 
 // ------------------------ ADC -------------------------------
-// BUG: arch-dependent part
+// arch-dependent part
 
 void HAL_ADC_MspInit( ADC_HandleTypeDef* adcHandle )
 {

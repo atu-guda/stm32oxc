@@ -29,15 +29,13 @@ DCL_CMD_REG(       setV,  'V',     " v [t_us] - set v as robo"  );
 DCL_CMD_REG(     commit,  'C',     " commit all hw devices"  );
 
 
+ReturnCode init_hw_all();
+
 void idle_main_task()
 {
   leds.toggle( 1_mask );
 }
 
-size_t err_idx { 0 };
-ReturnCode init_all();
-ReturnCode commit_all();
-ReturnCode measure_all();
 
 TIM_HandleTypeDef tim_pwm_h;
 
@@ -51,24 +49,33 @@ RoboPin q0_pin_r{ "q0_pin_r", pwm_right_pin };
 LinearCoordTransform q0_coord_tr { 1.986f, 0 }; // TODO: coeff (mech dependent) to header
 ActuDcPwm_1P2D q0_actu( pwm1_ctl, 0, q0_pin_l, q0_pin_r, q0_coord_tr );
 
-RoboDevice* hw_robo_actu[] {
+RoboDevice* hw_robo_devs[] {
   &q0_pin_l,
   &q0_pin_r,
   &pwm1_ctl,
 };
 
-RoboDevice* hw_robo_sens[] {
+RoboJoint fake_joint;
+
+RoboJoint* robo_joints[] {
+  &fake_joint,
 };
+
+RoboAssembly robo( hw_robo_devs, robo_joints );
 
 
 int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR_t =  20;
-  UVAR_n = 100;
+  UVAR_l =    1; // idLe after run
+  UVAR_t =   20; // t_step, ms
+  UVAR_n =   50;
+  UVAR_p =  200; // t_pre,  ms
+  UVAR_r = 1000; // t_run,  ms, def
+  UVAR_o =  500; // t_post, ms
 
-  init_all();
+  init_hw_all();
 
 
   BOARD_POST_INIT_BLINK;
@@ -80,36 +87,18 @@ int main(void)
   return 0;
 }
 
-ReturnCode init_all()
+ReturnCode init_hw_all()
 {
   // q0:
   auto [ psc_i, arr_i ] = calc_tim_psc_arr( get_TIM_in_freq( TIM_MPWM_BASE ), 20000 );
   pwm1.setAllowPSCadj( true );
-  tim_pwm_h.Instance = addr2TIM( TIM_MPWM_BASE );
+  tim_pwm_h.Instance = TIM_MPWM;
   pwm1.setHardParams( psc_i, arr_i, TIM_COUNTERMODE_UP );
   pwm1.enable();
 
-
-  size_t idx { 0 };
-  ReturnCode rc { rcOk };
-  for( auto dev : hw_robo_actu ) {
-    rc = dev->initHW();
-    if( rc.isError() ) {
-      err_idx = idx;
-      return rc;
-    }
-    ++idx;
-  }
-  // for( auto dev : hw_robo_sens ) {
-  //   dev->initHW();
-  //   if( rc.isError() ) {
-  //     err_idx = idx;
-  //     return rc;
-  //   }
-  //   ++idx;
-  // }
-  return rcOk;
+  return robo.init_all();
 }
+
 
 
 
@@ -121,7 +110,7 @@ CMD_FUNCTION( test0 )
   pwm1.setPwm( 0, pwm_v );
 
   pwm_left_pin.write(  v0 & 1 );
-  pwm_right_pin.write( v0 & 2);
+  pwm_right_pin.write( v0 & 2 );
   return v0;
 }
 
@@ -158,68 +147,73 @@ CMD_FUNCTION( pulse ) // U
   return 0;
 }
 
+struct Data_setV
+{
+  float v;
+};
+
+ReturnCode run_v_loop( const RunLoopState &rls, const RunLoopData &rld, void *data )
+{
+  if( !data ) {
+    return rcFatal;
+  }
+  auto d = static_cast<Data_setV*>(data);
+
+  auto rc = robo.measure_all();
+  if( rc.isError() ) {
+    return rc;
+  }
+  float v = ( ( rls.stage & RunLoopState::stage_num_mask ) == 1 ) ? d->v : 0;
+
+  if( rls.stage & RunLoopState::stage_change_flag  ) {
+    q0_actu.setV( v );
+    robo.commit_all();
+  }
+
+  std_out << FmtInt( rls.tc, 8 ) << ' '  << v << ' ' << pwm1.getPwmRaw( 0 )
+    << ' ' << q0_actu.get_v_int() << ' ' << q0_actu.get_v_phy() << ' '
+    // << q0_sens_hw.get(0) << ' ' << r2d( q0_sens.get() )
+    << NL;
+
+  return rcOk;
+}
+
+
 CMD_FUNCTION( setV ) // V
 {
-  float v = arg2float_d( 1, argc, argv, 0 );
-  auto  t = arg2ulong_d( 2, argc, argv, 1000, 0 );
+  struct Data_setV d;
+  d.v        = arg2float_d( 1, argc, argv, 0 );
+  auto t_run = arg2ulong_d( 2, argc, argv, UVAR_r, 0 );
 
-  auto rc = q0_actu.setV( v );
-  std_out << "# v= " << v << " rc.code= " << rc.code << NL;
-  commit_all();
-  delay_ms_brk( t );
-  std_out << "# v_phy= " << q0_actu.get_v_phy() << " v_int= " << q0_actu.get_v_int()
-          << " raw0: " << pwm1.getPwmRaw( 0 ) << NL;
+  RunLoopData rld( UVAR_t, UVAR_p, t_run, UVAR_o );
 
-  q0_actu.idle();
-  commit_all();
+  auto rc = run_periodic( rld, run_v_loop, &d );
 
-  return 0;
+  if( UVAR_l ) {
+    q0_actu.idle();
+    robo.commit_all();
+  }
+
+  return rc.isOk() ? 0 : 2;
 }
 
 CMD_FUNCTION( commit ) // C
 {
-  return commit_all() ? 0 : 2;
-}
-
-
-ReturnCode measure_all()
-{
-  for( size_t idx=0; auto dev : hw_robo_sens ) {
-    auto rc = dev->measure();
-    if( rc.isError() ) { // TODO: param: break on error
-      leds[0].set();
-      err_idx = idx;
-      return rc;
-    }
-    ++idx;
-  }
-
-  // first_measure = 0;
-  return rcOk;
-}
-
-ReturnCode commit_all()
-{
-  for( size_t idx=0; auto dev : hw_robo_actu ) {
-    auto rc = dev->commit();
-    if( !rc.isOk() ) {
-      err_idx = idx;
-      UVAR_e = idx;
-      return rc;
-    }
-    ++idx;
-  }
-  return rcOk;
+  return robo.commit_all().isOk() ? 0: 2;
 }
 
 
 
 
 
+
+
+
+// -----------------------  timers init part ---------------
 
 void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim )
 {
-  if( htim->Instance == addr2TIM(TIM_MPWM_BASE) ) {
+  if( htim->Instance == TIM_MPWM ) {
     TIM_MPWM_CLKEN();
     return;
   }
@@ -227,7 +221,7 @@ void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim )
 
 void HAL_TIM_PWM_MspDeInit( TIM_HandleTypeDef* htim )
 {
-  if( htim->Instance == addr2TIM(TIM_MPWM_BASE) ) {
+  if( htim->Instance == TIM_MPWM ) {
     TIM_MPWM_CLKDIS();
     return;
   }
