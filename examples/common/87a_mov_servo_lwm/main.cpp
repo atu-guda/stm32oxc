@@ -6,6 +6,7 @@
 #include <oxc_main.h>
 
 #include <oxc_actu_servo_lwm.h>
+#include <oxc_sensor_adcint.h>
 
 
 #include <board_robo_cfg.h>
@@ -50,13 +51,15 @@ ActuServoLWM q0_actu( q0_pwm, 0, q0_coord_tr );
 
 ADC_HandleTypeDef hadc_sensor;
 DMA_HandleTypeDef hdma_adc_sensor;
-ADC_Info adc_s1 ( ADC_SENSOR, ADC_SENSOR_CHPINS ); // overkill?
-ReturnCode init_adc_s1();
+ADC_Info adc_s1 ( ADC_SENSOR, ADC_SENSOR_CHPINS );
 const constexpr uint32_t adc_n_ch = std::size( ADC_SENSOR_CHPINS ) - 1;
 uint16_t adc_buf[ adc_n_ch ];
+const uint32_t unsigned stime_idx = adc_arch_sampletimes_n - 2;
+SensorAdcInt sensor_adc1( "adc1", adc_s1, 10, ADC_SENSOR_ClockPrescaler, adc_arch_sampletimes[stime_idx].code, ADC_SENSOR_Resolution );
 
 RoboDevice* hw_robo_devs[] {
   &q0_pwm,
+  &sensor_adc1,
 
 };
 
@@ -101,8 +104,6 @@ ReturnCode init_hw_all()
   pwm1.setHardParams( psc_i, arr_i, TIM_COUNTERMODE_UP );
   pwm1.setPwm( 0, 0 );
   pwm1.enable();
-
-  init_adc_s1();
 
   return robo.init_all();
 }
@@ -205,47 +206,22 @@ CMD_FUNCTION( setX ) // X
 
 CMD_FUNCTION( testADC ) // A
 {
-  std::fill( begin(adc_buf), end(adc_buf), 0 );
-
-  const uint32_t t_wait0 = 2; // ms?
-
-  int rc = 0;
   if( UVAR_l ) {  leds[2].set(); }
-  uint32_t r = adc_s1.start_DMA_wait( adc_n_ch, 1, t_wait0 );
+  auto rc = sensor_adc1.measure();
   if( UVAR_l ) {  leds[2].reset(); }
 
-  if( r != 0 ) {
-    rc = 4;
+  const auto n_ch = sensor_adc1.size();
+  for( decltype(+n_ch) ch = 0; ch <n_ch; ++ch ) {
+    std_out << sensor_adc1.get( ch ) << ' ';
   }
+  std_out << NL;
 
-  for( auto v : adc_buf ) {
-    std_out << v << ' ';
-  }
-  std_out << HexInt(ADC_CLOCK_SYNC_PCLK_DIV4) << NL;
-
-  return rc;
+  return rc.isOk() ? 0 : 2;
 }
 
 
 // ------------------------ ADC -------------------------------
-// BUG: arch-dependent part for now
-
-ReturnCode init_adc_s1()
-{
-  const uint32_t unsigned stime_idx = adc_arch_sampletimes_n - 2;
-
-  adc_s1.prepare_multi_ev( adc_n_ch, ADC_CLOCK_SYNC_PCLK_DIV4, adc_arch_sampletimes[stime_idx].code, ADC_SOFTWARE_START, BOARD_ADC_DEFAULT_RESOLUTION );
-
-  if( ! adc_s1.init_common() ) {
-    std_out << "# error: fail to init ADC: errno= " << errno << NL;
-  }
-
-  // TODO: check H7 - DMA not work with ordinary memory ???
-  adc_s1.data = adc_buf;
-  adc_s1.reset_cnt();
-
-  return rcOk;
-}
+// BUG: arch-dependent part
 
 void HAL_ADC_MspInit( ADC_HandleTypeDef* adcHandle )
 {
@@ -256,7 +232,6 @@ void HAL_ADC_MspInit( ADC_HandleTypeDef* adcHandle )
   ADC_SENSOR_DMA_CLK_EN();
 
   adc_s1.init_gpio_channels();
-
   adc_s1.DMA_reinit( DMA_NORMAL );
 
   HAL_NVIC_SetPriority( ADC_SENSOR_DMA_IRQ, ADC_SENSOR_DMA_IRQ_PRTY, 0 );

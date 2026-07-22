@@ -158,6 +158,22 @@ uint32_t ADC_calcfreq( ADC_HandleTypeDef* hadc, ADC_freq_info *fi );
 
 HAL_StatusTypeDef ADC_Start_DMA_n( ADC_HandleTypeDef* hadc, uint32_t* pData, uint32_t Length, uint32_t chunkLength );
 
+constexpr uint32_t ADC_resol_to_scale( uint32_t resol )
+{
+  switch( resol ) {
+    case ADC_RESOLUTION_8B:   return 0x00100;
+    case ADC_RESOLUTION_10B:  return 0x00400;
+    case ADC_RESOLUTION_12B:  return 0x01000;
+    #ifdef ADC_RESOLUTION_14B
+    case ADC_RESOLUTION_14B:  return 0x04000;
+    #endif
+    #ifdef ADC_RESOLUTION_16B
+    case ADC_RESOLUTION_16B:  return 0x10000;
+    #endif
+    default:                  return       1; // safe value for div
+  }
+}
+
 #endif
 
 // vim: path=.,/usr/share/stm32cube/inc

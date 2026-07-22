@@ -27,6 +27,7 @@ SRCS += oxc_pwmctltim.cpp
 SRCS += oxc_robo_base.cpp
 
 SRCS += oxc_actu_servo_lwm_base.cpp
+SRCS += oxc_sensor_adcint.cpp
 
 # SRCS += oxc_debug_cmds.cpp
 
