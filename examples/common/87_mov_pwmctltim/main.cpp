@@ -42,19 +42,19 @@ ReturnCode measure_all();
 TIM_HandleTypeDef tim_pwm_h;
 
 constinit PwmCtlTim pwm1( TIM_MPWM_BASE, tim_MPWM_chspins, tim_pwm_h );
-RoboPwmCtl q0_pwm( "q0_pwm", pwm1 );
+RoboPwmCtl pwm1_ctl( "pwm1_ctl", pwm1 );
 
 PinGpio pwm_left_pin{  MPWM_CtlPin_L  };
 PinGpio pwm_right_pin{ MPWM_CtlPin_R };
 RoboPin q0_pin_l{ "q0_pin_l", pwm_left_pin };
 RoboPin q0_pin_r{ "q0_pin_r", pwm_right_pin };
 LinearCoordTransform q0_coord_tr { 1.986f, 0 }; // TODO: coeff (mech dependent) to header
-ActuDcPwm_1P2D q0_actu( q0_pwm, 0, q0_pin_l, q0_pin_r, q0_coord_tr );
+ActuDcPwm_1P2D q0_actu( pwm1_ctl, 0, q0_pin_l, q0_pin_r, q0_coord_tr );
 
 RoboDevice* hw_robo_actu[] {
   &q0_pin_l,
   &q0_pin_r,
-  &q0_pwm,
+  &pwm1_ctl,
 };
 
 RoboDevice* hw_robo_sens[] {

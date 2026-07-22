@@ -45,12 +45,12 @@ SensorBase q0_sens( q0_sens_hw, 0, q0_sens_tr );
 
 TIM_HandleTypeDef tim_servolwm_h;
 constinit PwmCtlTim pwm1( TIM_SERVOLWM_BASE, tim_SERVOLWM_chspins, tim_servolwm_h );
-RoboPwmCtl q0_pwm( "q0_pwm", pwm1 );
+RoboPwmCtl pwm1_ctl( "pwm1_ctl", pwm1 );
 LinearCoordTransform q0_coord_tr { 1.986f, 0 }; // TODO: coeff (mech dependent) to header
-ActuServoContLWM q0_actu( q0_pwm, 0, q0_coord_tr );
+ActuServoContLWM q0_actu( pwm1_ctl, 0, q0_coord_tr );
 
 RoboDevice* hw_robo_devs[] {
-  &q0_pwm,
+  &pwm1_ctl,
   &q0_sens_hw,
 };
 

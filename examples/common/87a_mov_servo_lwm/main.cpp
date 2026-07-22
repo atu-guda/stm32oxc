@@ -45,9 +45,9 @@ void idle_main_task()
 
 TIM_HandleTypeDef tim_servolwm_h;
 constinit PwmCtlTim pwm1( TIM_SERVOLWM_BASE, tim_SERVOLWM_chspins, tim_servolwm_h );
-RoboPwmCtl q0_pwm( "q0_pwm", pwm1 );
+RoboPwmCtl pwm1_ctl( "pwm1_ctl", pwm1 );
 LinearCoordTransform q0_coord_tr { pi_f/2, 0 }; // TODO: coeff (mech dependent) to header
-ActuServoLWM q0_actu( q0_pwm, 0, q0_coord_tr );
+ActuServoLWM q0_actu( pwm1_ctl, 0, q0_coord_tr );
 
 ADC_HandleTypeDef hadc_sensor;
 DMA_HandleTypeDef hdma_adc_sensor;
@@ -58,7 +58,7 @@ const uint32_t unsigned stime_idx = adc_arch_sampletimes_n - 2;
 SensorAdcInt sensor_adc1( "adc1", adc_s1, 10, ADC_SENSOR_ClockPrescaler, adc_arch_sampletimes[stime_idx].code, ADC_SENSOR_Resolution );
 
 RoboDevice* hw_robo_devs[] {
-  &q0_pwm,
+  &pwm1_ctl,
   &sensor_adc1,
 
 };

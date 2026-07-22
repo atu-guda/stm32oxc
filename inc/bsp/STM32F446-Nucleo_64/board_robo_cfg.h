@@ -23,7 +23,8 @@ DEFINE_TIMER_DATA_ENCO( ENCODER, 1, GPIO_AF1_TIM1, PA8, PA9 );
 
 
 
-// ------- ADC: A0, A1, A4, B0 {0,1,4,8}
+// ------- ADC: A0, A1, A4, B0 {0,1,4,8} - only if needed
+#ifdef _OXC_ADC_H
 #define ADC_SENSOR ADC1
 inline constexpr AdcChannelInfo ADC_SENSOR_CHPINS[] {
   { ADC_CHANNEL_0, PA0 },
@@ -45,7 +46,7 @@ inline constexpr uint32_t  ADC_SENSOR_DMA_Instance_B  { DMA2_Stream0_BASE };
 inline constexpr uint32_t  ADC_SENSOR_DMA_Channel     { DMA_CHANNEL_0 };
 inline constexpr IRQn_Type ADC_SENSOR_DMA_IRQ         { DMA2_Stream0_IRQn };
 inline constexpr uint32_t  ADC_SENSOR_DMA_IRQ_PRTY    { 4 };
-
+#endif
 
 #endif
 
