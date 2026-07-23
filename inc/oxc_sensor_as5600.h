@@ -19,6 +19,7 @@ class SensorAS5600 : public RoboSensor {
    virtual ReturnCode initHW() override;
    virtual ReturnCode measure() override;
    virtual int32_t get( size_t ch ) override;
+   virtual int32_t getScale( size_t ch ) { return 0x01000; } // 12bit
    static constexpr const float k_i2ph { 2 * pi_f / AS5600::val2turn };
   protected:
    int32_t v { 0 };
