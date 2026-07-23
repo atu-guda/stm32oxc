@@ -39,9 +39,6 @@ const char* common_help_string = "Appication to test PWM motor + AS5600 encoder"
   UX(                t_post,       500 ) \
   UX(                t_step,        20 )
 
-uint32_t last_cmd_end_tick     {     0 };
-uint32_t last_measure_tick     {     0 };
-
 
 // global vars itself
 #define IX( name, init)      int   name { init };
@@ -74,18 +71,8 @@ constexpr const NamedObj *const objs_info[] = {
 
 NamedObjs objs( objs_info );
 // print/set hook functions
+DEFINE_NAMEDOBJ_FUNCS(objs)
 
-bool print_var_ex( const char *nm, int fmt )
-{
-  return objs.print( nm, fmt );
-}
-
-bool set_var_ex( const char *nm, const char *s )
-{
-  auto ok =  objs.set( nm, s );
-  print_var_ex( nm, 0 );
-  return ok;
-}
 
 // ------------------------ end: named global vars -----------------------------------
 
@@ -176,8 +163,7 @@ int main(void)
 
   UVAR_l =    1; // idLe after run ?
 
-  print_var_hook = print_var_ex;
-  set_var_hook   = set_var_ex;
+  SET_NAMEDOBJ_FUNCS;
 
   if( ! init_hw_all().isOk() ) {
     std_out << "# Error: HW init" << NL;

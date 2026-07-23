@@ -88,4 +88,9 @@ class NamedObjs {
    }
 };
 
+#define DEFINE_NAMEDOBJ_FUNCS(objs) \
+bool print_var_ex( const char *nm, int fmt ) { return objs.print( nm, fmt ); } \
+bool set_var_ex( const char *nm, const char *s ) { auto ok =  objs.set( nm, s ); print_var_ex( nm, 0 );  return ok; }
+#define SET_NAMEDOBJ_FUNCS print_var_hook = print_var_ex; set_var_hook   = set_var_ex;
+
 #endif
