@@ -23,21 +23,23 @@ class EncoderProxyAS5600 : public EncoderProxy {
    AS5600 &dev;
 };
 
-class SensorAS5600 : public RoboSensor {
+//* utility class to get correct initialization order in the SensorAS5600
+class SensorAS5600Base {
+  protected:
+   EncoderProxyAS5600 prox;
+     SensorAS5600Base( AS5600 &dev_ ) noexcept : prox( dev_ ) {}
+};
+
+class SensorAS5600 : public SensorAS5600Base, public SensorEncoder {
   public:
    template<size_t N>
      SensorAS5600( const char (&name_)[N], AS5600 &dev_, bool rev_dir_ = false )
-         : RoboSensor( name_, 1 ), // DUP?
-           prox( dev_ ),
-           enc( name_, prox, AS5600::val2turn, rev_dir_, AS5600::val2turn - 1 ) {};
+         : SensorAS5600Base( dev_ ),
+           SensorEncoder( name_, prox, AS5600::val2turn, rev_dir_, AS5600::val2turn - 1 )
+           {};
    virtual ReturnCode initHW() override;
-   virtual ReturnCode measure() override { return enc.measure(); }
-   virtual int32_t get( size_t ch ) override { return enc.get( ch ); }
-   virtual int32_t getScale( size_t ch ) { return enc.getScale( ch ); }
    static constexpr const float k_i2ph { 2 * pi_f / AS5600::val2turn };
   protected:
-   EncoderProxyAS5600 prox;
-   SensorEncoder enc;
 };
 
 
