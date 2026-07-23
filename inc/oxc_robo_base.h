@@ -138,12 +138,32 @@ class RoboAssembly {
      : pdevs( pdevs_ ), joints( joints_ ) {}
    RoboAssembly( const RoboAssembly &rhs ) = delete;
    ReturnCode for_all_till_err( ReturnCode (RoboDevice::*fun)() );
-   ReturnCode init_all()    { return for_all_till_err( &RoboDevice::initHW  ); }
-   ReturnCode measure_all() { return for_all_till_err( &RoboDevice::measure ); }
-   ReturnCode commit_all()  { return for_all_till_err( &RoboDevice::commit  ); }
+   ReturnCode init_all();
+   ReturnCode measure_all();
+   ReturnCode commit_all();
+   RoboDevice* get_last_err_dev() const { return last_err_dev; }
+   void set_measure_idle_ticks( uint32_t v ) { measure_idle_ticks = v; }
+
+   void start_time();
+   void calc_current_time();
+   void at_main_idle();
+   uint32_t get_t_cur_i() const { return t_cur_i; }
+   float    get_t_cur()   const { return t_cur_f; }
+   uint32_t get_t_dt_i()  const { return t_dt;    }
+   float    get_t_dt()    const { return t_dt_f;  }
+
   protected:
    std::span<RoboDevice*>      pdevs;
    std::span<RoboJoint*>      joints;
+   RoboDevice* last_err_dev { nullptr };
+   uint32_t t_start_i       {       0 };
+   uint32_t t_cur_i         {       0 };
+   uint32_t t_dt            {       0 };
+   float    t_cur_f         {    0.0f };
+   float    t_dt_f          {    0.0f };
+   uint32_t t_meas_i        {       0 };
+   uint32_t measure_idle_ticks {  100 };
+   bool     first_measure   {    true };
 
 };
 

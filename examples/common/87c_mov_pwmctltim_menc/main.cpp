@@ -33,21 +33,11 @@ const char* common_help_string = "Appication to test PWM motor + AS5600 encoder"
 
 #define NAMED_VARS_LIST    \
   IX(                 debug,         0 ) \
-  IX(                  q0_i,         0 ) \
   UX(  off_motor_idle_ticks,     60000 ) \
-  UX(    measure_idle_ticks,       100 ) \
   UX(                t_pre,        200 ) \
   UX(                t_run,       1000 ) \
   UX(                t_post,       500 ) \
-  UX(                t_step,        20 ) \
-  UX(             t_start_i,         0 ) \
-  UX(               t_cur_i,         0 ) \
-  UX(                  t_dt,         0 ) \
-  UX(         first_measure,         1 ) \
-  FX(                t_dt_f,      0.0f ) \
-  FX(               t_cur_f,      0.0f ) \
-  FX(                    q0,      0.0f ) \
-  FX(                 nu0_i,      0.0f )
+  UX(                t_step,        20 )
 
 uint32_t last_cmd_end_tick     {     0 };
 uint32_t last_measure_tick     {     0 };
@@ -120,8 +110,8 @@ AS5600 ang_sens_dev( i2cd );
 
 // ------------------------ - local sensors ; ---------------------------------------
 
-LinearCoordTransform coo_tr_AS5600( -SensorAS5600::k_i2ph, -2.1015536f );
-SensorAS5600 ang_sens_ph( "q0_sens", ang_sens_dev, false );
+LinearCoordTransform coo_tr_AS5600( SensorAS5600::k_i2ph, -2.1015536f );
+SensorAS5600 ang_sens_ph( "q0_sens", ang_sens_dev, true );
 SensorBase   q0_ang_sens( ang_sens_ph, 0, coo_tr_AS5600 );
 
 // ------------------------ - local sensors end ---------------------------------------
@@ -173,30 +163,10 @@ RoboJoint* robo_joints[] {
 
 RoboAssembly robo( hw_robo_devs, robo_joints );
 
-void start_count_time()
-{
-  t_start_i = GET_OS_TICK();
-  t_cur_i = 0;  t_cur_f = 0;
-  first_measure = 1;
-}
-
-
-void calc_current_time()
-{
-  t_cur_i = GET_OS_TICK() - t_start_i;
-  t_cur_f = t_cur_i * 1e-3f;
-}
 
 void idle_main_task()
 {
-  calc_current_time();
-  if( t_cur_i - last_cmd_end_tick >= off_motor_idle_ticks ) {
-    // stop();
-    last_cmd_end_tick = t_cur_i;
-  }
-  if( ( t_cur_i - last_measure_tick ) >= measure_idle_ticks ) {
-    robo.measure_all();
-  }
+  robo.at_main_idle();
 }
 
 
@@ -218,7 +188,7 @@ int main(void)
 
   oxc_add_aux_tick_fun( led_task_nortos );
 
-  start_count_time();
+  robo.start_time();
 
   std_main_loop_nortos( &srl, idle_main_task );
 
@@ -242,25 +212,6 @@ ReturnCode init_hw_all()
   return robo.init_all();
 }
 
-// TODO: move to robo
-ReturnCode measure_all()
-{
-  auto old_tick { last_measure_tick };
-  last_measure_tick = t_cur_i;
-  if( first_measure ) {
-    t_dt = 0;
-    t_dt_f = 0;
-  } else {
-    t_dt = std::max( last_measure_tick - old_tick, 1_u32 );
-    t_dt_f = t_dt * 1e-3f;
-  }
-
-  leds[2].set();
-  DoAtLeave _( []() { leds[2].reset(); } );
-
-  first_measure = 0;
-  return rcOk;
-}
 
 
 CMD_FUNCTION( test0 )
@@ -320,7 +271,6 @@ ReturnCode run_v_loop( const RunLoopState &rls, const RunLoopData &rld, void *da
   }
   auto d = static_cast<Data_setV*>(data);
 
-  calc_current_time();
   auto rc = robo.measure_all();
   if( rc.isError() ) {
     return rc;
@@ -332,9 +282,16 @@ ReturnCode run_v_loop( const RunLoopState &rls, const RunLoopData &rld, void *da
     robo.commit_all();
   }
 
-  std_out << FmtInt( rls.tc, 8 ) << ' '  << v << ' ' << FmtInt( pwm1.getPwmRaw( 0 ), 6 )
-    << ' ' << q0_actu.get_v_int() << ' ' << q0_actu.get_v_phy()
-    << ' ' <<  FmtInt( ang_sens_ph.get(0), 6 )  << ' ' << r2d( q0_ang_sens.get() )
+  std_out
+    //<< FmtInt( rls.tc, 8 )
+    << FltFmt( robo.get_t_cur(), cvtff_auto, 12, 3 )
+    << ' '  << v
+    // << ' ' << FmtInt( pwm1.getPwmRaw( 0 ), 6 )
+    << ' ' << q0_actu.get_v_int()
+    << ' ' << q0_actu.get_v_phy()
+    // << ' ' << FmtInt( ang_sens_ph.get(0), 6 )
+    << ' ' << r2d( q0_ang_sens.get() )
+    // << ' ' << robo.get_t_dt()
     << NL;
 
   return rcOk;
@@ -349,7 +306,7 @@ CMD_FUNCTION( setV ) // V
 
   RunLoopData rld( t_step, t_pre, t_run_c , t_post );
 
-  start_count_time();
+  robo.start_time();
   auto rc = run_periodic( rld, run_v_loop, &d );
 
   if( UVAR_l ) {
@@ -360,9 +317,6 @@ CMD_FUNCTION( setV ) // V
   return rc.isOk() ? 0 : 2;
 }
 
-// std_out << FltFmt( t_cur_f, cvtff_fix, 9, 3 ) << ' ' << v_c << ' '
-//         << FmtInt( q0_i, 8 ) << ' ' << q0 << ' ' << r2d( q0 ) << ' '
-//         << nu0_i << NL;
 
 
 CMD_FUNCTION( measure ) // M
@@ -384,7 +338,7 @@ CMD_FUNCTION( zero_q0 )
   }
 
   float v   = arg2float_d( 1, argc, argv, q0_ang_sens.get() );
-  coo_tr_AS5600 = LinearCoordTransform( -SensorAS5600::k_i2ph, coo_tr_AS5600.b-v );
+  coo_tr_AS5600 = LinearCoordTransform( SensorAS5600::k_i2ph, coo_tr_AS5600.b-v );
   cmd_measure( argc, argv );
 
   return 0;

@@ -28,6 +28,10 @@ class EncoderProxyAddr : public EncoderProxy {
    bool rw;
 };
 
+// TODO: add base class like SensorAS5600Base
+
+// TODO: separate wrapping to own class.
+
 class SensorEncoder : public RoboSensor {
   public:
    template<size_t N>
