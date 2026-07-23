@@ -33,6 +33,7 @@ SRCS += oxc_easing.cpp
 
 SRCS += oxc_pwmctltim.cpp
 SRCS += oxc_robo_base.cpp
+SRCS += oxc_sensor_encoder.cpp
 
 SRCS += oxc_actu_dcpwm.cpp
 

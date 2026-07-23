@@ -121,7 +121,7 @@ AS5600 ang_sens_dev( i2cd );
 // ------------------------ - local sensors ; ---------------------------------------
 
 LinearCoordTransform coo_tr_AS5600( -SensorAS5600::k_i2ph, -2.1015536f );
-SensorAS5600 ang_sens_ph( "q0_sens", ang_sens_dev );
+SensorAS5600 ang_sens_ph( "q0_sens", ang_sens_dev, false );
 SensorBase   q0_ang_sens( ang_sens_ph, 0, coo_tr_AS5600 );
 
 // ------------------------ - local sensors end ---------------------------------------
