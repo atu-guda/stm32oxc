@@ -29,7 +29,7 @@ class SensorAS5600 : public RoboSensor {
      SensorAS5600( const char (&name_)[N], AS5600 &dev_, bool rev_dir_ = false )
          : RoboSensor( name_, 1 ), // DUP?
            prox( dev_ ),
-           enc( name_, prox, 0x01000, rev_dir_, 0x0FFF ) {};
+           enc( name_, prox, AS5600::val2turn, rev_dir_, AS5600::val2turn - 1 ) {};
    virtual ReturnCode initHW() override;
    virtual ReturnCode measure() override { return enc.measure(); }
    virtual int32_t get( size_t ch ) override { return enc.get( ch ); }

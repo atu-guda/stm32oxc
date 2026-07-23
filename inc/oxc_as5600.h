@@ -97,6 +97,7 @@ class AS5600 : public I2CClient {
 
    uint16_t getAngleRaw() { return getReg( reg_raw_angle_high ); }
    uint16_t getAngleNoTurn() { return getReg( reg_angle_high ); }
+   uint16_t_o getAngleNoTurn_o() { return recv_reg1_16bit_rev_o( reg_angle_high );  }
    uint16_t_o getAngle_o();
    uint16_t getAngle() { return getAngle_o().value_or( 0xFFFF ); }
    int32_t_o  getAngleN_o()

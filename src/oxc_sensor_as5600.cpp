@@ -4,7 +4,7 @@
 
 oxc::exprc_uint32_t oxc::EncoderProxyAS5600::get()
 {
-  auto vo = dev.getAngleN_o();
+  auto vo = dev.getAngleNoTurn_o();
   if( vo ) {
     return vo.value();
   }
