@@ -52,7 +52,7 @@ const uint32_t countmodes[] = {
 bool on_servo { false };
 
 std::array<float,size(tim_exa_chspins) > pwm_f;
-constinit PwmCtlTim pwm1( TIM_EXA_BASE, tim_exa_chspins );
+constinit PwmCtlTim pwm1( TIM_EXA_BASE, tim_exa_chspins, tim_h );
 
 
 int main(void)
@@ -77,7 +77,8 @@ int main(void)
 
   pwm1.setAllowPSCadj( true );
   tim_h.Instance = TIM_EXA;
-  pwm1.initHW( tim_h, psc_i, arr_i ); // do not really good
+  pwm1.setHardParams( psc_i, arr_i, TIM_COUNTERMODE_UP );
+  pwm1.initHW();
   pwm1.setPwms( pwm_f );
   pwm1.initPins();
 
@@ -216,7 +217,8 @@ CMD_FUNCTION( go_servo ) // G
 CMD_FUNCTION( tinit ) // I
 {
   auto mode_idx = std::min( (size_t)(UVAR_m), std::size(countmodes)-1 );
-  pwm1.initHW( tim_h, UVAR_p, UVAR_a, countmodes[mode_idx] );
+  pwm1.setHardParams( UVAR_p, UVAR_a, countmodes[mode_idx] );
+  pwm1.initHW();
   tim_print_cfg( TIM_EXA );
 
   return 0;

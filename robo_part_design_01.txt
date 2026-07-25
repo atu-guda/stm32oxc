@@ -1,0 +1,105 @@
+## ------------------------------------ Level 0a: --------------------------------------------------
+To add:
+Functions - abstract classes for real devices (may be 2 levels)
+inc/oxc_abstr_fun.h
+
+F_IO ( size, setVal(ch, int32_t), getVal(ch), act )
+
+F_Pins
+F_Pin ?
+F_PwmCtl
+F_ADC
+F_DAC
+F_Enco
+
+## ------------------------------------ Level 1a: --------------------------------------------------
+
+real hardware, any API, any class names, may be _hw suffix - if need
+coordinates: inner
++? public Function + value->ch enum
+
+inc/oxc_gpio.h: PinsOut (set,reset,write,sr,read,...,), PinOut(), PinsIn(+pull), IoPin()
+inc/oxc_tim.h: only configs
+inc/oxc_adc.h: ADC_Info( start_DMA_wait, configs )
+inc/oxc_ads1115.h: ADS1115( getOneShot, getContValue, getOneShotNch ... )
+inc/oxc_as5600.h: AS5600( getAngleRaw, getAngleNoTurn_o, setStartPos, isMagnetDetected ... )
+inc/oxc_bmp085.h: BMP085( getAllCalc, get_P, get_T10 )
+inc/oxc_bmp280.h: BMP280( readData, get_T, get_P )
+inc/oxc_hmc5983.h: HMC5983( read1, getMag{XYZ}, getMagAll, getMagAllmcGa ....) (magnitometr)
+inc/oxc_hx711.h: HX711( read, have PinOut, PinIn - rework?)
+inc/oxc_ina226.h: INA226( getVsh, getVbus, +_last + convert)
+inc/oxc_ina228.h: INA228( getVsh, getVbus, getVV() ... )
+inc/oxc_lsm303dlhc_accel.h: LSM303DHLC_Accel( getAcc{X,Y,Z,All) )
+inc/oxc_lsm303dlhc_mag.h: LSM303DHLC_Mag( getMag{X,Y,Z,All} )
+inc/oxc_mcp23017.h: MCP23017( set_dir_{a,b,}, get_{a,b,}, set_{a,b,} ) (GPIO 2x8)
+inc/oxc_mcp4725.h: MCP4725( setOutFast ?) (DAC)
+inc/oxc_mpu6050.h: MPU6050 ( getAcc{X,Y,Z,All}, getGyro{X,Y,Z,All}, getTemp, getAll ) {acc,hyro,T}
+inc/oxc_pca9685.h: PCA9685( setFreq, set,setServo ... ) (PWM*16,12bit)
+inc/oxc_pcf8591.h: PCF8561( setMode, getIn, setOut ) (ADC4/DAC1 8bit)
+inc/oxc_spi_ad9833.h: DevAD9833(?) (waveform generator?)
+inc/oxc_spi_ads1220.h: ADS1220( read_wait, read_nowait, read_single ) (ADC 24bit, 4 chmux, PGA)
+inc/oxc_spi_dac8563.h: DevSPI_DAC8563() (setu{_,a,b,ab})
+
+## ------------------------------------ Level 2a: --------------------------------------------------
+
+RoboDevice (hw indep) + children(hw dependent)
+class name: RD_Function_HW  object suffix: _rd, filename: oxc_rd_fun_hw.{h,cpp}
+   or:      Function_HW_RD, object suffix: _rd, filename: oxc_xxxx_rd.{h,cpp}
+Functions: Pin, PwmCtl, Enco, ADC, DAC, ? Acc, Mag, Hyro, / or Ain, Aout, Aio 
+TODO: replace name with id (uint32_t)
+use API(0a), partially translates upsize, but with buffer
+provides measure(), commit(), init(?) (from initHW, but HW is not here)
+may be RoboSensor - to add get(), size - or incorporate.
+may be + set() - for common interface. ??? begin,end, cbegin, cend, [] int32_t
+coordinates: inner
+
+init, measure, commit - called by scheduler
+
+RD_Pin_GPIO( )
+RD_Pin_MCP23017
+RD_Pin_PCA9685
+RD_PwmCtl_TIM( from )
+RD_Enco_Tim
+RD_Ain_Internal
+RD_Ain_BMP280
+
+
+## ------------------------------------ Level 0b: --------------------------------------------------
+
+RoboFunction- no base class - pure interface, HW independent
+or RoboResource ?
+Class name: RF_function, no objects, filename: oxc_rf_function.h (or in base)
+API: by function
+
+RF_Pin ( from RoboPin )
+RF_PwmCtl ( from RoboPwmCtl ) or RF_PwmCh - 1 channel
+RF_Enco
+RF_Ain
+
+or may be more generic?
+
+
+## ------------------------------------ Level 1b: --------------------------------------------------
+
+Functions realization: : public RF_*
+Realization is performed by RoboDevice children.
+
+RFR_Pin_GPIO
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Extra:
+inc/oxc_coordtransform.h: CoordTransform(toPhys,toInternal), LinearCoordTransform...
+inc/oxc_easing.h: EasingFun, easing_one, easing_poly2_in ... easing_trig_io TODO: +info struct
+

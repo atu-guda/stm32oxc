@@ -1,7 +1,6 @@
 #ifndef _OXC_ACTU_DCPWM_H
 #define _OXC_ACTU_DCPWM_H
 
-#include <oxc_actu_base.h>
 #include <oxc_robopin.h>
 #include <oxc_robopwmctl.h>
 #include <oxc_coordtransform.h>

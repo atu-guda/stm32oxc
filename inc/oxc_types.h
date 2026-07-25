@@ -158,16 +158,16 @@ using cint32_t_span  = std::span<const int32_t>;
 using uint32_t_span  = std::span<uint32_t>;
 using cuint32_t_span = std::span<const uint32_t>;
 
-using exprc_int_t    = std::expected<int,      oxc::ReturnCode>;
-using exprc_uint_t   = std::expected<unsigned, oxc::ReturnCode>;
-using exprc_int8_t   = std::expected<int8_t,   oxc::ReturnCode>;
-using exprc_uint8_t  = std::expected<uint8_t,  oxc::ReturnCode>;
-using exprc_int16_t  = std::expected<int16_t,  oxc::ReturnCode>;
-using exprc_uint16_t = std::expected<uint16_t, oxc::ReturnCode>;
-using exprc_int32_t  = std::expected<int32_t,  oxc::ReturnCode>;
-using exprc_uint32_t = std::expected<uint32_t, oxc::ReturnCode>;
-using exprc_int64_t  = std::expected<int64_t,  oxc::ReturnCode>;
-using exprc_uint64_t = std::expected<uint64_t, oxc::ReturnCode>;
+using int_t_er    = std::expected<int,      oxc::ReturnCode>;
+using uint_t_er   = std::expected<unsigned, oxc::ReturnCode>;
+using int8_t_er   = std::expected<int8_t,   oxc::ReturnCode>;
+using uint8_t_er  = std::expected<uint8_t,  oxc::ReturnCode>;
+using int16_t_er  = std::expected<int16_t,  oxc::ReturnCode>;
+using uint16_t_er = std::expected<uint16_t, oxc::ReturnCode>;
+using int32_t_er  = std::expected<int32_t,  oxc::ReturnCode>;
+using uint32_t_er = std::expected<uint32_t, oxc::ReturnCode>;
+using int64_t_er  = std::expected<int64_t,  oxc::ReturnCode>;
+using uint64_t_er = std::expected<uint64_t, oxc::ReturnCode>;
 
 using int_t_o    = std::optional<int     >;
 using uint_t_o   = std::optional<unsigned>;

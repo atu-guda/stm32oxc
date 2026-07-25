@@ -2,7 +2,7 @@
 
 // using namespace oxc;
 
-oxc::exprc_uint32_t oxc::EncoderProxyAS5600::get()
+oxc::uint32_t_er oxc::EncoderProxyAS5600::get()
 {
   auto vo = dev.getAngleNoTurn_o();
   if( vo ) {

@@ -16,7 +16,7 @@ namespace oxc {
 class EncoderProxyAS5600 : public EncoderProxy {
   public:
    explicit constexpr EncoderProxyAS5600( AS5600 &dev_ ) noexcept: dev ( dev_ ) {};
-   exprc_uint32_t get()             override;
+   uint32_t_er    get()             override;
    ReturnCode     set( uint32_t v ) override;
    AS5600& getDev() { return dev; }
   protected:

@@ -10,6 +10,8 @@ using oxc::int32_t_o;
 
 // inner regs: 1-byte addr
 
+// TODO: use separate phase unwrapping object
+
 class AS5600 : public I2CClient {
   public:
    enum RegNums {

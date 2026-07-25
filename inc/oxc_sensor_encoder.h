@@ -12,7 +12,7 @@ namespace oxc {
 //* abstract class to encoder counter access
 class EncoderProxy {
   public:
-   virtual exprc_uint32_t get()             = 0;
+   virtual uint32_t_er    get()             = 0;
    virtual ReturnCode     set( uint32_t v ) = 0;
   protected:
 };
@@ -21,7 +21,7 @@ class EncoderProxy {
 class EncoderProxyAddr : public EncoderProxy {
   public:
    explicit constexpr EncoderProxyAddr( intptr_t pvi_, bool rw_ = false ) noexcept: pvi ( pvi_ ), rw( rw_ ) {};
-   exprc_uint32_t get()             override { return *(reinterpret_cast<uint32_t*>(pvi)); }
+   uint32_t_er get()                override { return *(reinterpret_cast<uint32_t*>(pvi)); }
    ReturnCode     set( uint32_t v ) override { if( rw ) { *(reinterpret_cast<uint32_t*>(pvi)) = v; }; return rcOk; };
   protected:
    intptr_t pvi;

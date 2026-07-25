@@ -28,4 +28,3 @@ struct RefPtr {
 
 #endif
 
-// vim: path=.,/usr/share/stm32cube/inc
