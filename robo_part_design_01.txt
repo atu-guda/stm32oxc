@@ -3,6 +3,8 @@ To add:
 Functions - abstract classes for real devices (may be 2 levels)
 inc/oxc_abstr_fun.h
 
+??? mix to existing, child of real or  ref/have?
+
 F_IO ( size, setVal(ch, int32_t), getVal(ch), act )
 
 F_Pins
@@ -66,7 +68,9 @@ RD_Ain_BMP280
 
 ## ------------------------------------ Level 0b: --------------------------------------------------
 
-RoboFunction- no base class - pure interface, HW independent
+
+RoboFunction - no base class - pure interface, HW independent (~ function)
+or Function with different realization?
 or RoboResource ?
 Class name: RF_function, no objects, filename: oxc_rf_function.h (or in base)
 API: by function
