@@ -45,4 +45,3 @@ class PixBuf {
 
 #endif
 
-// vim: path=.,/usr/share/stm32cube/inc

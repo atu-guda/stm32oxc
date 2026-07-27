@@ -157,6 +157,8 @@ using int32_t_span   = std::span<int32_t>;
 using cint32_t_span  = std::span<const int32_t>;
 using uint32_t_span  = std::span<uint32_t>;
 using cuint32_t_span = std::span<const uint32_t>;
+using float_span     = std::span<float>;
+using cfloat_span    = std::span<const float>;
 
 using int_t_er    = std::expected<int,      oxc::ReturnCode>;
 using uint_t_er   = std::expected<unsigned, oxc::ReturnCode>;
@@ -168,6 +170,7 @@ using int32_t_er  = std::expected<int32_t,  oxc::ReturnCode>;
 using uint32_t_er = std::expected<uint32_t, oxc::ReturnCode>;
 using int64_t_er  = std::expected<int64_t,  oxc::ReturnCode>;
 using uint64_t_er = std::expected<uint64_t, oxc::ReturnCode>;
+using float_er    = std::expected<float,    oxc::ReturnCode>;
 
 using int_t_o    = std::optional<int     >;
 using uint_t_o   = std::optional<unsigned>;
@@ -179,18 +182,8 @@ using int32_t_o  = std::optional<int32_t >;
 using uint32_t_o = std::optional<uint32_t>;
 using int64_t_o  = std::optional<int64_t >;
 using uint64_t_o = std::optional<uint64_t>;
+using float_o    = std::optional<float>;
 
-// template< typename DevType, std::uintptr_t addr_ >
-// struct DevPtr
-// {
-//   static constexpr auto addr { addr_ };
-//   static volatile DevType& pdev() noexcept {
-//     return *reinterpret_cast<volatile DevType*>( addr );
-//   }
-// };
-
-// usage like ????
-// using Tim1 = DevPtr<TIM_TypeDef, TIM1_BASE>;
 
 } // namespace oxc
 

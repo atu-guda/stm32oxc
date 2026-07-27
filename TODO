@@ -1,3 +1,5 @@
+PinMask, PinNum ... - HW independent, move to separate header
+Use run_periodic everyware, where needed
 Check H& ADC DMA to stack memory
 Move generic FreeRTOS config to one file
 05d - func for EXTI->IRQ, not macro only : func exsist fot f407v:l02_coord

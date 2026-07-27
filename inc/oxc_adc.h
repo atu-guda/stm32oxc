@@ -176,4 +176,3 @@ constexpr uint32_t ADC_resol_to_scale( uint32_t resol )
 
 #endif
 
-// vim: path=.,/usr/share/stm32cube/inc

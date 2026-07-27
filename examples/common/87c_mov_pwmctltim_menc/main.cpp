@@ -5,6 +5,10 @@
 #include <oxc_namedints.h>
 #include <oxc_namedfloats.h>
 #include <oxc_main.h>
+
+// TMP: just to check header
+#include <oxc_abstr_fun.h>
+
 #include <oxc_pingpio.h>
 #include <oxc_robopin.h>
 
