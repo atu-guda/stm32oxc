@@ -29,6 +29,16 @@ class RoboDevice {
    const char *name; // not own: only for debug
 };
 
+//* fake Robo device - for test purpose
+class FakeRoboDevice : public RoboDevice {
+  public:
+   template<size_t N> // for only string literals as name
+     constexpr explicit FakeRoboDevice( const char (&name_)[N] ) noexcept : RoboDevice( name_ ) {};
+   virtual ReturnCode measure() override { return rcOk; }
+   virtual ReturnCode commit()  override { return rcOk; }
+   virtual ReturnCode initHW()  override { return rcOk; }
+};
+
 //* physycal part of robo sensors with channels
 class RoboSensor : public RoboDevice {
   public:
