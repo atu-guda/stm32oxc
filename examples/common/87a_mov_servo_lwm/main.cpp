@@ -45,7 +45,7 @@ void idle_main_task()
 
 TIM_HandleTypeDef tim_servolwm_h;
 constinit PwmCtlTim pwm1( TIM_SERVOLWM_BASE, tim_SERVOLWM_chspins, tim_servolwm_h );
-RoboPwmCtl pwm1_ctl( "pwm1_ctl", pwm1 );
+RoboPwmCtl pwm1_ctl( 111, pwm1 );
 LinearCoordTransform q0_act_coord_tr { pi_f/2, 0 }; // TODO: coeff (mech dependent) to header
 ActuServoLWM q0_actu( pwm1_ctl, 0, q0_act_coord_tr );
 
@@ -55,7 +55,7 @@ ADC_Info adc_s1 ( ADC_SENSOR, ADC_SENSOR_CHPINS );
 const constexpr uint32_t adc_n_ch = std::size( ADC_SENSOR_CHPINS ) - 1;
 uint16_t adc_buf[ adc_n_ch ];
 const uint32_t unsigned stime_idx = adc_arch_sampletimes_n - 2;
-SensorAdcInt sensor_adc1( "adc1", adc_s1, 10, ADC_SENSOR_ClockPrescaler, adc_arch_sampletimes[stime_idx].code, ADC_SENSOR_Resolution );
+SensorAdcInt sensor_adc1( 121, adc_s1, 10, ADC_SENSOR_ClockPrescaler, adc_arch_sampletimes[stime_idx].code, ADC_SENSOR_Resolution );
 LinearCoordTransform q0_sens_tr { 2 * pi_f / sensor_adc1.getScale(0), -pi_f };
 SensorBase q0_sens( sensor_adc1, 0, q0_sens_tr );
 

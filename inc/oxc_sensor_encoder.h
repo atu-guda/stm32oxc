@@ -34,9 +34,8 @@ class EncoderProxyAddr : public EncoderProxy {
 
 class SensorEncoder : public RoboSensor {
   public:
-   template<size_t N>
-     SensorEncoder( const char (&name_)[N], EncoderProxy &enc_, uint32_t ppr_, bool rev_dir_ = false, uint32_t max_val_ = 0xFFFF )
-         : RoboSensor( name_, 1 ), enc( enc_ ), ppr( ppr_ ),  max_val( max_val_ ),
+   SensorEncoder(  uint32_t id_, EncoderProxy &enc_, uint32_t ppr_, bool rev_dir_ = false, uint32_t max_val_ = 0xFFFF )
+         : RoboSensor( id_, 1 ), enc( enc_ ), ppr( ppr_ ),  max_val( max_val_ ),
            half_period( (int32_t)(max_val / 2) ),
            signed_period( (int32_t)(max_val + 1) ),
            rev_dir( rev_dir_ ) {};

@@ -38,14 +38,14 @@ void idle_main_task()
 
 TIM_HandleTypeDef tim_encoder_h;
 EncoderProxyAddr q0_enc_proxy( TIM_ENCODER_BASE + tim_cnt_offset, false );
-SensorEncoder q0_sens_hw( "q0_enco", q0_enc_proxy, 2048, true, 0xFFFF ); // true - reverse
+SensorEncoder q0_sens_hw( 121, q0_enc_proxy, 2048, true, 0xFFFF ); // true - reverse
 LinearCoordTransform q0_sens_tr { 2 * pi_f / q0_sens_hw.getScale(0), 0 };
 SensorBase q0_sens( q0_sens_hw, 0, q0_sens_tr );
 
 
 TIM_HandleTypeDef tim_servolwm_h;
 constinit PwmCtlTim pwm1( TIM_SERVOLWM_BASE, tim_SERVOLWM_chspins, tim_servolwm_h );
-RoboPwmCtl pwm1_ctl( "pwm1_ctl", pwm1 );
+RoboPwmCtl pwm1_ctl( 111, pwm1 );
 LinearCoordTransform q0_act_coord_tr { 1.986f, 0 }; // TODO: coeff (mech dependent) to header
 ActuServoContLWM q0_actu( pwm1_ctl, 0, q0_act_coord_tr );
 

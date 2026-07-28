@@ -15,25 +15,23 @@ namespace oxc {
 //* base abstract class for interface to hardware devices
 class RoboDevice {
   public:
-   template<size_t N> // for only string literals as name
-     constexpr explicit RoboDevice( const char (&name_)[N] ) noexcept : name( name_ ) {};
+   constexpr explicit RoboDevice( uint32_t id_ ) noexcept : id( id_ ) {};
    RoboDevice( const RoboDevice &rhs ) = delete;
    virtual ~RoboDevice()  = default;
-   const char* getName() const noexcept { return name; }
+   uint32_t getId() const noexcept { return id; }
    ReturnCode status() const noexcept   { return sta; }
    virtual ReturnCode measure()   = 0;
    virtual ReturnCode commit()    = 0;
    virtual ReturnCode initHW()    = 0;
   protected:
    ReturnCode sta { ReturnCode::rcnErr, 1 }; // uninitialised
-   const char *name; // not own: only for debug
+   uint32_t id; //* simple id for debug
 };
 
 //* fake Robo device - for test purpose
 class FakeRoboDevice : public RoboDevice {
   public:
-   template<size_t N> // for only string literals as name
-     constexpr explicit FakeRoboDevice( const char (&name_)[N] ) noexcept : RoboDevice( name_ ) {};
+   constexpr explicit FakeRoboDevice( uint32_t id_ ) noexcept : RoboDevice( id_ ) {};
    virtual ReturnCode measure() override { return rcOk; }
    virtual ReturnCode commit()  override { return rcOk; }
    virtual ReturnCode initHW()  override { return rcOk; }
@@ -42,9 +40,8 @@ class FakeRoboDevice : public RoboDevice {
 //* physycal part of robo sensors with channels
 class RoboSensor : public RoboDevice {
   public:
-   template<size_t N> // for only string literals as name
-     constexpr explicit RoboSensor( const char (&name_)[N], size_t n_ch_ ) noexcept
-     : RoboDevice( name_ ), n_ch ( n_ch_ ) {};
+   constexpr explicit RoboSensor( uint32_t id_, size_t n_ch_ ) noexcept
+     : RoboDevice( id_ ), n_ch ( n_ch_ ) {};
    virtual ReturnCode commit() override { return rcOk; }
    virtual int32_t get( size_t ch ) = 0; // single-channel sensors may ignore ch
    virtual int32_t getScale( size_t ch ) = 0; // single-channel sensors may ignore ch

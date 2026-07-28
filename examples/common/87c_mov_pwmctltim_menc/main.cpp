@@ -102,7 +102,7 @@ AS5600 ang_sens_dev( i2cd );
 // ------------------------ - local sensors ; ---------------------------------------
 
 LinearCoordTransform coo_tr_AS5600( SensorAS5600::k_i2ph, -2.1015536f );
-SensorAS5600 ang_sens_ph( "q0_sens", ang_sens_dev, true );
+SensorAS5600 ang_sens_ph( 121, ang_sens_dev, true );
 SensorBase   q0_ang_sens( ang_sens_ph, 0, coo_tr_AS5600 );
 
 // ------------------------ - local sensors end ---------------------------------------
@@ -111,12 +111,12 @@ SensorBase   q0_ang_sens( ang_sens_ph, 0, coo_tr_AS5600 );
 TIM_HandleTypeDef tim_pwm_h;
 
 constinit PwmCtlTim pwm1( TIM_MPWM_BASE, tim_MPWM_chspins, tim_pwm_h );
-RoboPwmCtl pwm1_ctl( "pwm1_ctl", pwm1 );
+RoboPwmCtl pwm1_ctl( 111, pwm1 );
 
 PinGpio pwm_left_pin{  MPWM_CtlPin_L  };
 PinGpio pwm_right_pin{ MPWM_CtlPin_R };
-RoboPin q0_pin_l{ "q0_pin_l", pwm_left_pin };
-RoboPin q0_pin_r{ "q0_pin_r", pwm_right_pin };
+RoboPin q0_pin_l{ 112, pwm_left_pin };
+RoboPin q0_pin_r{ 113, pwm_right_pin };
 LinearCoordTransform q0_coord_tr { 1.986f, 0 }; // TODO: coeff (mech dependent) to header
 ActuDcPwm_1P2D q0_actu( pwm1_ctl, 0, q0_pin_l, q0_pin_r, q0_coord_tr );
 

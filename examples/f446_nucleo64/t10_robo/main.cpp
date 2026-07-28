@@ -36,7 +36,7 @@ ReturnCode init_hw_all();
 
 // ------------------------ - local sensors end ---------------------------------------
 
-FakeRoboDevice fake_rd( "fake" );
+FakeRoboDevice fake_rd( 111 );
 
 
 RoboDevice* hw_robo_devs[] {

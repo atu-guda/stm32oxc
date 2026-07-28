@@ -11,8 +11,7 @@ namespace oxc {
 class RoboPin : public RoboDevice
 {
   public:
-   template<size_t N>
-     constexpr explicit RoboPin( const char (&name_)[N], PinBase& pin_ ) : RoboDevice( name_ ), pin( pin_ ) {}
+   constexpr explicit RoboPin(  uint32_t id_, PinBase& pin_ ) : RoboDevice( id_ ), pin( pin_ ) {}
    virtual ReturnCode commit()  override { pin.write( vo ); return rcOk; }
    virtual ReturnCode measure() override { vi = pin.get(); return rcOk; }
    virtual ReturnCode initHW()  override { return pin.initHW(); }

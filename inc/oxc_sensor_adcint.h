@@ -15,10 +15,9 @@ namespace oxc {
 class SensorAdcInt : public RoboSensor {
   public:
    enum { max_inner_ch = 16 };
-   template<size_t N>
-     SensorAdcInt( const char (&name_)[N], ADC_Info &adc_, uint32_t n_aver_, uint32_t clock_div_, uint32_t sample_time_,
+   SensorAdcInt(  uint32_t id_, ADC_Info &adc_, uint32_t n_aver_, uint32_t clock_div_, uint32_t sample_time_,
           uint32_t resol_ = ADC_RESOLUTION_12B )
-         : RoboSensor( name_, adc_.n_ch_max ), adc( adc_ ), n_aver( n_aver_ ), clock_div( clock_div_), sample_time( sample_time_ ),
+         : RoboSensor( id_, adc_.n_ch_max ), adc( adc_ ), n_aver( n_aver_ ), clock_div( clock_div_), sample_time( sample_time_ ),
             resol( resol_), scale( ADC_resol_to_scale( resol_ ) )
            {};
    virtual ReturnCode initHW()  override;

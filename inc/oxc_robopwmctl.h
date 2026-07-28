@@ -10,9 +10,8 @@ namespace oxc {
 class RoboPwmCtl : public RoboDevice {
   public:
    static constexpr size_t max_ch { 32 };
-   template<size_t N> // for only string literals as name
-     constexpr explicit RoboPwmCtl( const char (&name_)[N], PwmCtl &pwmctl_ ) noexcept
-     : RoboDevice( name_ ), pwmctl( pwmctl_ ) {};
+   constexpr explicit RoboPwmCtl(  uint32_t id_, PwmCtl &pwmctl_ ) noexcept
+     : RoboDevice( id_ ), pwmctl( pwmctl_ ) {};
    virtual ReturnCode commit()  override { return pwmctl.setPwmsRaw( std::span<uint32_t>( pr, pwmctl.size() ) ); }
    virtual ReturnCode measure() override { return rcOk; }
    virtual ReturnCode initHW()  override { return pwmctl.initHW(); }

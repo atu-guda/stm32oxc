@@ -32,10 +32,9 @@ class SensorAS5600Base {
 
 class SensorAS5600 : public SensorAS5600Base, public SensorEncoder {
   public:
-   template<size_t N>
-     SensorAS5600( const char (&name_)[N], AS5600 &dev_, bool rev_dir_ = false )
+   SensorAS5600( uint32_t id_, AS5600 &dev_, bool rev_dir_ = false )
          : SensorAS5600Base( dev_ ),
-           SensorEncoder( name_, prox, AS5600::val2turn, rev_dir_, AS5600::val2turn - 1 )
+           SensorEncoder( id_, prox, AS5600::val2turn, rev_dir_, AS5600::val2turn - 1 )
            {};
    virtual ReturnCode initHW() override;
    static constexpr const float k_i2ph { 2 * pi_f / AS5600::val2turn };
