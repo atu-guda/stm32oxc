@@ -6,6 +6,7 @@ inc/oxc_abstr_fun.h
 ??? mix to existing, child of real or  ref/have?
 
 F_IO ( size, setVal(ch, int32_t), getVal(ch), act )
+F_Analog
 
 F_Pins
 F_Pin ?

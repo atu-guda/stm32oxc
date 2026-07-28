@@ -10,7 +10,7 @@ using std::int32_t;
 using oxc::ReturnCode;
 
 //* Abstract classes to realize common functions + mix to real HW classes
-// or may be RoboDevice childern - with buffers
+// or may be RoboDevice children - with buffers
 
 namespace oxc {
 
