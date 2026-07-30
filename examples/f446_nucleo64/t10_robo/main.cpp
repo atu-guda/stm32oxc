@@ -4,7 +4,7 @@
 #include <oxc_main.h>
 
 // TMP: just to check header
-#include <oxc_abstr_fun.h>
+#include <oxc_capabilities.h>
 
 #include <oxc_robo_base.h>
 

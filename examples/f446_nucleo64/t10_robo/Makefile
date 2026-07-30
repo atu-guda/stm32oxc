@@ -27,7 +27,7 @@ SRCS  += main.cpp
 
 SRCS  += oxc_floatfun.cpp
 
-SRCS += oxc_abstr_fun.cpp
+SRCS += oxc_capabilities.cpp
 
 SRCS += oxc_robo_base.cpp
 

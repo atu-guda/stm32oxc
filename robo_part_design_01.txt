@@ -1,19 +1,19 @@
 ## ------------------------------------ Level 0a: --------------------------------------------------
-To add:
-Functions - abstract classes for real devices (may be 2 levels)
-inc/oxc_abstr_fun.h
+
+Capablities - abstract classes to provide both capabilities and set/get, measure/commit phases, no HW
+inc/oxc_abstr_fun.h -> inc/oxc_capabilities.h src/oxc_capabilities.cpp
 
 ??? mix to existing, child of real or  ref/have?
 
-F_IO ( size, setVal(ch, int32_t), getVal(ch), act )
-F_Analog
+IOCapability ( size, setVal(ch, int32_t), getVal(ch), act )
+AnalogCapability (+ scale, non-virtual setValF ...)
 
-F_Pins
-F_Pin ?
-F_PwmCtl
-F_ADC
-F_DAC
-F_Enco
+PinsCapability
+PinCapability ?
+PwmCtlCapability
+ADCCapability
+DACCapability
+EncoCapability
 
 ## ------------------------------------ Level 1a: --------------------------------------------------
 
@@ -73,20 +73,20 @@ RD_Ain_BMP280
 RoboFunction - no base class - pure interface, HW independent (~ function)
 or Function with different realization?
 or RoboResource ?
-Class name: RF_function, no objects, filename: oxc_rf_function.h (or in base)
+Class name: RCap_function, no objects, filename: oxc_rf_function.h (or in base)
 API: by function
 
-RF_Pin ( from RoboPin )
-RF_PwmCtl ( from RoboPwmCtl ) or RF_PwmCh - 1 channel
-RF_Enco
-RF_Ain
+RCap_Pin ( from RoboPin )
+RCap_PwmCtl ( from RoboPwmCtl ) or RCap_PwmCh - 1 channel
+RCap_Enco
+RCap_Ain
 
 or may be more generic?
 
 
 ## ------------------------------------ Level 1b: --------------------------------------------------
 
-Functions realization: : public RF_*
+Functions realization: : public RCap_*
 Realization is performed by RoboDevice children.
 
 RFR_Pin_GPIO

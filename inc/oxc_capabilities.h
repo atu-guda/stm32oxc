@@ -1,5 +1,7 @@
-#ifndef _OXC_ABSTR_FUN_H
-#define _OXC_ABSTR_FUN_H
+#ifndef _OXC_CAPABILITIES_H
+#define _OXC_CAPABILITIES_H
+
+#include <cmath>
 
 #include <oxc_types.h>
 
@@ -9,19 +11,22 @@ using std::int32_t;
 
 using oxc::ReturnCode;
 
-//* Abstract classes to realize common functions + mix to real HW classes
+//* Abstract classes to realize common capabilities + mix to real HW classes
 // or may be RoboDevice children - with buffers
 
 namespace oxc {
 
 //* pack of digital I/O channels
-class F_IO {
+class IOCapability {
   public:
-   explicit constexpr F_IO( size_t sz_, size_t bitsz_ ) noexcept : sz( sz_ ), bitsz( bitsz_ ) {};
+   explicit constexpr IOCapability( size_t sz_, size_t bitsz_ ) noexcept : sz( sz_ ), bitsz( bitsz_ ) {};
    virtual constexpr size_t size()    const noexcept { return sz; }
    virtual constexpr size_t bitsize() const noexcept { return bitsz; }
    virtual ReturnCode setVal( size_t ch, int32_t v ) noexcept = 0;
    virtual int32_t_er getVal( size_t ch ) noexcept = 0;
+   virtual ReturnCode measure() noexcept = 0;
+   virtual ReturnCode commit()  noexcept = 0;
+   virtual ReturnCode init()    noexcept = 0;
    ReturnCode setVals( cint32_t_span vs ) noexcept;
    ReturnCode getVals(  int32_t_span vs ) noexcept;
   protected:
@@ -30,14 +35,13 @@ class F_IO {
 };
 
 
-class F_Analog : public F_IO {
+class AnalogCapability : public IOCapability {
   public:
-   explicit constexpr F_Analog( size_t sz_, size_t bitsz_, int32_t scale_ ) noexcept
-     : F_IO( sz_, bitsz_ ), scale( scale_ )   {};
+   explicit constexpr AnalogCapability( size_t sz_, size_t bitsz_, int32_t scale_ ) noexcept
+     : IOCapability( sz_, bitsz_ ), scale( scale_ )   {};
    virtual constexpr size_t     getScale() noexcept { return scale; }
    virtual ReturnCode setValF( size_t ch, float v ) noexcept { // non-virtual?
-     auto vi = (int32_t)(v*scale); // round?
-     return setVal( ch, vi );
+     return setVal( ch, (int32_t) std::lroundf( v * scale ) );
    }
    virtual float_er   getValF( size_t ch ) noexcept {
      auto vi_er = getVal( ch );
@@ -46,14 +50,16 @@ class F_Analog : public F_IO {
      }
      return vi_er.value() / scale;
    }
+   ReturnCode setValFs( cfloat_span vs ) noexcept;
+   ReturnCode getValFs(  float_span vs ) noexcept;
   protected:
    const int32_t scale;
 };
 
 
-class F_Pins : public F_IO {
+class PinsCapability : public IOCapability {
   public:
-   explicit constexpr F_Pins( size_t bitsz_ ) noexcept : F_IO( 1, bitsz_ )  {};
+   explicit constexpr PinsCapability( size_t bitsz_ ) noexcept : IOCapability( 1, bitsz_ )  {};
    virtual int32_t_er read()             = 0;
    virtual void write(     int32_t v )   = 0;
    virtual void set(       int32_t v )   = 0;
@@ -64,9 +70,9 @@ class F_Pins : public F_IO {
    virtual void togglebit( int32_t pos ) = 0;
 };
 
-class F_Pin : public F_IO {
+class PinCapability : public IOCapability {
   public:
-   explicit constexpr F_Pin() noexcept : F_IO( 1, 1 )  {};
+   explicit constexpr PinCapability() noexcept : IOCapability( 1, 1 )  {};
    virtual int32_t_er read()    = 0;
    virtual void write()         = 0;
    virtual void set()           = 0;
@@ -74,7 +80,7 @@ class F_Pin : public F_IO {
    virtual void toggle()        = 0;
 };
 
-class F_Pwm : public F_Analog {
+class PwmCapability : public AnalogCapability {
   public:
     virtual ReturnCode setFreq( float freq ) = 0;
     constexpr float getFreq() const noexcept { return freq; }
@@ -84,10 +90,10 @@ class F_Pwm : public F_Analog {
     float freq {1};
 };
 
-class F_Encoder : public F_IO {
+class EncoderCapability : public IOCapability {
   public:
-   explicit constexpr F_Encoder( size_t bitsz_, int32_t scale_ ) noexcept
-     : F_IO( 1, bitsz_ ), scale( scale_ )   {};
+   explicit constexpr EncoderCapability( size_t bitsz_, int32_t scale_ ) noexcept
+     : IOCapability( 1, bitsz_ ), scale( scale_ )   {};
   protected:
    const int32_t scale;
 };
