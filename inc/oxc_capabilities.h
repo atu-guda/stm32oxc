@@ -14,19 +14,28 @@ using oxc::ReturnCode;
 //* Abstract classes to realize common capabilities + mix to real HW classes
 // or may be RoboDevice children - with buffers
 
+// TODO: split pure and robo capabilities, may be rename robo =? Buf
+
 namespace oxc {
 
-//* pack of digital I/O channels
-class IOCapability {
+//* try: separate robo functions
+class RoboObject {
   public:
-   explicit constexpr IOCapability( size_t sz_, size_t bitsz_ ) noexcept : sz( sz_ ), bitsz( bitsz_ ) {};
+   virtual ReturnCode init()    noexcept = 0;
+   virtual ReturnCode measure() noexcept = 0;
+   virtual ReturnCode think()   noexcept = 0;
+   virtual ReturnCode commit()  noexcept = 0;
+};
+
+//* pack of digital I/O channels
+class IoCapability {
+  public:
+   explicit constexpr IoCapability( size_t sz_, size_t bitsz_ ) noexcept : sz( sz_ ), bitsz( bitsz_ ) {};
    virtual constexpr size_t size()    const noexcept { return sz; }
    virtual constexpr size_t bitsize() const noexcept { return bitsz; }
    virtual ReturnCode setVal( size_t ch, int32_t v ) noexcept = 0;
    virtual int32_t_er getVal( size_t ch ) noexcept = 0;
-   virtual ReturnCode measure() noexcept = 0;
-   virtual ReturnCode commit()  noexcept = 0;
-   virtual ReturnCode init()    noexcept = 0;
+   //* just convenience functions
    ReturnCode setVals( cint32_t_span vs ) noexcept;
    ReturnCode getVals(  int32_t_span vs ) noexcept;
   protected:
@@ -35,10 +44,20 @@ class IOCapability {
 };
 
 
-class AnalogCapability : public IOCapability {
+
+//* pack of digital I/O channels + robo interface
+class IoRoboCapability : public IoCapability, public RoboObject {
+  public:
+   explicit constexpr IoRoboCapability( size_t sz_, size_t bitsz_ ) noexcept : IoCapability( sz, bitsz ) {};
+  protected:
+   // TODO: dirty, fresh?
+};
+
+
+class AnalogCapability : public IoCapability {
   public:
    explicit constexpr AnalogCapability( size_t sz_, size_t bitsz_, int32_t scale_ ) noexcept
-     : IOCapability( sz_, bitsz_ ), scale( scale_ )   {};
+     : IoCapability( sz_, bitsz_ ), scale( scale_ )   {};
    virtual constexpr size_t     getScale() noexcept { return scale; }
    virtual ReturnCode setValF( size_t ch, float v ) noexcept { // non-virtual?
      return setVal( ch, (int32_t) std::lroundf( v * scale ) );
@@ -56,10 +75,18 @@ class AnalogCapability : public IOCapability {
    const int32_t scale;
 };
 
-
-class PinsCapability : public IOCapability {
+class AnalogRoboCapability : public AnalogCapability, public RoboObject {
   public:
-   explicit constexpr PinsCapability( size_t bitsz_ ) noexcept : IOCapability( 1, bitsz_ )  {};
+   explicit constexpr AnalogRoboCapability( size_t sz_, size_t bitsz_, int32_t scale_ ) noexcept
+     : AnalogCapability( sz_, bitsz_, scale_ ) {};
+  protected:
+};
+
+
+
+class PinsCapability : public IoCapability {
+  public:
+   explicit constexpr PinsCapability( size_t bitsz_ ) noexcept : IoCapability( 1, bitsz_ )  {};
    virtual int32_t_er read()             = 0;
    virtual void write(     int32_t v )   = 0;
    virtual void set(       int32_t v )   = 0;
@@ -70,9 +97,17 @@ class PinsCapability : public IOCapability {
    virtual void togglebit( int32_t pos ) = 0;
 };
 
-class PinCapability : public IOCapability {
+class PinsRoboCapability : public PinsCapability, public RoboObject {
   public:
-   explicit constexpr PinCapability() noexcept : IOCapability( 1, 1 )  {};
+   explicit constexpr PinsRoboCapability( size_t bitsz_ ) noexcept
+     : PinsCapability( bitsz_ ) {};
+  protected:
+};
+
+
+class PinCapability : public IoCapability {
+  public:
+   explicit constexpr PinCapability() noexcept : IoCapability( 1, 1 )  {};
    virtual int32_t_er read()    = 0;
    virtual void write()         = 0;
    virtual void set()           = 0;
@@ -80,8 +115,18 @@ class PinCapability : public IOCapability {
    virtual void toggle()        = 0;
 };
 
+class PinRoboCapability : public PinCapability, public RoboObject {
+  public:
+   explicit constexpr PinRoboCapability() noexcept
+     : PinCapability() {};
+  protected:
+};
+
+
 class PwmCapability : public AnalogCapability {
   public:
+    explicit constexpr PwmCapability( size_t sz_, size_t bitsz_, int32_t scale_ ) noexcept
+     : AnalogCapability( sz_, bitsz_, scale_ ) {};
     virtual ReturnCode setFreq( float freq ) = 0;
     constexpr float getFreq() const noexcept { return freq; }
     ReturnCode setDuty( size_t ch, float duty ) { return setValF( ch, duty ); }
@@ -90,12 +135,27 @@ class PwmCapability : public AnalogCapability {
     float freq {1};
 };
 
-class EncoderCapability : public IOCapability {
+class PwmRoboCapability : public PwmCapability, public RoboObject {
+  public:
+   explicit constexpr PwmRoboCapability( size_t sz_, size_t bitsz_, int32_t scale_ ) noexcept
+     : PwmCapability( sz_, bitsz_, scale_ ) {};
+  protected:
+};
+
+
+class EncoderCapability : public IoCapability { // or AnalogCapability?
   public:
    explicit constexpr EncoderCapability( size_t bitsz_, int32_t scale_ ) noexcept
-     : IOCapability( 1, bitsz_ ), scale( scale_ )   {};
+     : IoCapability( 1, bitsz_ ), scale( scale_ )   {};
   protected:
    const int32_t scale;
+};
+
+class EncoderRoboCapability : public EncoderCapability {
+  public:
+   explicit constexpr EncoderRoboCapability( size_t bitsz_, int32_t scale_ ) noexcept
+     : EncoderCapability( bitsz_, scale_ ) {};
+  protected:
 };
 
 }; //namespace oxc

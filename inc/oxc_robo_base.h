@@ -6,9 +6,7 @@
 #include <span>
 
 #include <oxc_coordtransform.h>
-
-using std::size_t;
-using std::int32_t;
+#include <oxc_capabilities.h>
 
 namespace oxc {
 
@@ -76,7 +74,7 @@ struct ActuatorLimits
 };
 
 
-//* interfaces for actuators
+//* interfaces for actuators // TODO: capabilities? 
 class ActuPositionSink {
   public:
    virtual ReturnCode setQ( float q ) = 0;

@@ -4,7 +4,7 @@
 
 using namespace oxc;
 
-ReturnCode oxc::IOCapability::setVals( cint32_t_span vs ) noexcept
+ReturnCode oxc::IoCapability::setVals( cint32_t_span vs ) noexcept
 {
   for( auto [ch,v] : std::views::enumerate( vs )  ) {
     if( (size_t)ch >= size() ) {
@@ -17,7 +17,7 @@ ReturnCode oxc::IOCapability::setVals( cint32_t_span vs ) noexcept
   return rcOk;
 }
 
-ReturnCode oxc::IOCapability::getVals( int32_t_span vs ) noexcept
+ReturnCode oxc::IoCapability::getVals( int32_t_span vs ) noexcept
 {
   for( auto [ch,v] : std::views::enumerate( vs )  ) {
     if( (size_t)ch >= size() ) {
