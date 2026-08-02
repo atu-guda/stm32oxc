@@ -36,17 +36,13 @@ ReturnCode init_hw_all();
 
 // ------------------------ - local sensors end ---------------------------------------
 
-FakeRoboDevice fake_rd( 111 );
-TestRoboDevice test_rd; // ( /* 112  */ );
+TestRoboDevice test_rd{ 112};
 
 
 IoRoboCapability* hw_robo_caps[] {
   &test_rd,
 };
 
-RoboDevice* hw_robo_devs[] {
-  &fake_rd,
-};
 
 RoboJoint fake_joint;
 
@@ -54,7 +50,7 @@ RoboJoint* robo_joints[] {
   &fake_joint,
 };
 
-RoboAssembly robo( hw_robo_devs, robo_joints );
+RoboAssembly robo( hw_robo_caps, robo_joints );
 
 
 void idle_main_task()

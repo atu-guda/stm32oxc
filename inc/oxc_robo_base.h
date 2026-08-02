@@ -11,21 +11,6 @@
 
 namespace oxc {
 
-//* base abstract class for interface to hardware devices
-class RoboDevice {
-  public:
-   constexpr explicit RoboDevice( uint32_t id_ ) noexcept : id( id_ ) {};
-   RoboDevice( const RoboDevice &rhs ) = delete;
-   virtual ~RoboDevice()  = default;
-   uint32_t getId() const noexcept { return id; }
-   ReturnCode status() const noexcept   { return sta; }
-   virtual ReturnCode measure()   = 0;
-   virtual ReturnCode commit()    = 0;
-   virtual ReturnCode initHW()    = 0;
-  protected:
-   ReturnCode sta { ReturnCode::rcnErr, 1 }; // uninitialised
-   uint32_t id; //* simple id for debug
-};
 
 //* just to test design - second try
 class TestRoboDevice : public IoRoboCapability {
@@ -43,40 +28,53 @@ class TestRoboDevice : public IoRoboCapability {
 
 
 
-//* fake Robo device - for test purpose
-class FakeRoboDevice : public RoboDevice {
+//* One channel for digital sensor: selects 1 channel of the IoRoboCapability
+class SensorChannel {
   public:
-   constexpr explicit FakeRoboDevice( uint32_t id_ ) noexcept : RoboDevice( id_ ) {};
-   virtual ReturnCode measure() override { return rcOk; }
-   virtual ReturnCode commit()  override { return rcOk; }
-   virtual ReturnCode initHW()  override { return rcOk; }
-};
-
-//* physycal part of robo sensors with channels
-class RoboSensor : public RoboDevice {
-  public:
-   constexpr explicit RoboSensor( uint32_t id_, size_t n_ch_ ) noexcept
-     : RoboDevice( id_ ), n_ch ( n_ch_ ) {};
-   virtual ReturnCode commit() override { return rcOk; }
-   virtual int32_t get( size_t ch ) = 0; // single-channel sensors may ignore ch
-   virtual int32_t getScale( size_t ch ) = 0; // single-channel sensors may ignore ch
-   virtual void setVal( size_t ch, int32_t v ) {}; // by default - do nothing
-   size_t size() const { return n_ch; };
-
+   explicit constexpr SensorChannel( IoRoboCapability &psens_, size_t ch_ ) noexcept
+     : psens( psens_ ), ch( ch_ ) {}
+   int32_t_er get_i()  { return  psens.getVal( ch ); }
   protected:
-   const size_t n_ch;
+   IoRoboCapability &psens;
+   const size_t ch;
 };
 
-//* logical sensor: selects and scale 1 channel of the RoboSensor
-class SensorBase {
+
+//* One channel for analog sensor: selects and scale 1 channel of the AnalogRoboCapability
+class SensorAnalogChannel {
   public:
-   explicit constexpr SensorBase( RoboSensor &psens_, size_t ch_, CoordTransform &coo_tr_ )
+   explicit constexpr SensorAnalogChannel( AnalogRoboCapability &psens_, size_t ch_, CoordTransform &coo_tr_ ) noexcept
      : psens( psens_ ), ch( ch_ ), coo_tr( coo_tr_ ) {}
-   virtual ~SensorBase() = default;
-   virtual float     get()  { return coo_tr.toPhys( psens.get( ch ) ); }
-   virtual int32_t get_i()  { return                psens.get( ch ); }
+   float_er     get() noexcept { auto v = psens.getValF( ch ); if( v ) { v = coo_tr.toPhys( v.value() ); } return v; }
+   int32_t_er get_i() noexcept { return psens.getVal( ch ); }
   protected:
-   RoboSensor &psens;
+   AnalogRoboCapability &psens;
+   const size_t ch;
+   CoordTransform &coo_tr;
+};
+
+
+//* One channel for digital actuator: selects 1 channel of the IoRoboCapability
+class ActuatorChannel {
+  public:
+   explicit constexpr ActuatorChannel( IoRoboCapability &actu_, size_t ch_ ) noexcept
+     : actu( actu_ ), ch( ch_ ) {}
+   ReturnCode set_i( int32_t v ) noexcept { return  actu.setVal( ch, v ); }
+  protected:
+   IoRoboCapability &actu;
+   const size_t ch;
+};
+
+
+//* One channel for analog actuator: selects and scale 1 channel of the AnalogRoboCapability
+class ActuatorAnalogChannel {
+  public:
+   explicit constexpr ActuatorAnalogChannel( AnalogRoboCapability &actu_, size_t ch_, CoordTransform &coo_tr_ ) noexcept
+     : actu( actu_ ), ch( ch_ ), coo_tr( coo_tr_ ) {}
+   ReturnCode set( float v ) noexcept { return actu.setValF( ch, coo_tr.toPhys( v ) ); }
+   ReturnCode set_i( int32_t vi ) noexcept { return actu.setVal( ch, vi ); }
+  protected:
+   AnalogRoboCapability &actu;
    const size_t ch;
    CoordTransform &coo_tr;
 };
@@ -155,15 +153,15 @@ class RoboJoint {
 
 class RoboAssembly {
   public:
-   constexpr RoboAssembly( std::span<RoboDevice*>  pdevs_,
+   constexpr RoboAssembly( std::span<IoRoboCapability*>  pdevs_,
                            std::span<RoboJoint*> joints_ ) noexcept
      : pdevs( pdevs_ ), joints( joints_ ) {}
    RoboAssembly( const RoboAssembly &rhs ) = delete;
-   ReturnCode for_all_till_err( ReturnCode (RoboDevice::*fun)() );
+   ReturnCode for_all_till_err( ReturnCode (IoRoboCapability::*fun)() );
    ReturnCode init_all();
    ReturnCode measure_all();
    ReturnCode commit_all();
-   RoboDevice* get_last_err_dev() const { return last_err_dev; }
+   IoRoboCapability* get_last_err_dev() const { return last_err_dev; }
    void set_measure_idle_ticks( uint32_t v ) { measure_idle_ticks = v; }
 
    void start_time();
@@ -175,9 +173,9 @@ class RoboAssembly {
    float    get_t_dt()    const { return t_dt_f;  }
 
   protected:
-   std::span<RoboDevice*>      pdevs;
-   std::span<RoboJoint*>      joints;
-   RoboDevice* last_err_dev { nullptr };
+   std::span<IoRoboCapability*>  pdevs;
+   std::span<RoboJoint*>        joints;
+   IoRoboCapability* last_err_dev { nullptr };
    uint32_t t_start_i       {       0 };
    uint32_t t_cur_i         {       0 };
    uint32_t t_dt            {       0 };

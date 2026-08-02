@@ -3,9 +3,8 @@
 #include <oxc_robo_base.h>
 
 using namespace oxc;
-// using oxc::ReturnCode;
 
-oxc::ReturnCode oxc::RoboAssembly::for_all_till_err( ReturnCode (RoboDevice::*fun)() )
+oxc::ReturnCode oxc::RoboAssembly::for_all_till_err( ReturnCode (IoRoboCapability::*fun)() )
 {
   last_err_dev = nullptr;
   for( auto dev : pdevs ) {
@@ -34,7 +33,7 @@ void oxc::RoboAssembly::calc_current_time()
 
 ReturnCode oxc::RoboAssembly::init_all()
 {
-  return for_all_till_err( &RoboDevice::initHW  );
+  return for_all_till_err( &IoRoboCapability::init );
 }
 
 ReturnCode oxc::RoboAssembly::measure_all()
@@ -50,8 +49,8 @@ ReturnCode oxc::RoboAssembly::measure_all()
     t_dt_f = t_dt * 1e-3f;
   }
 
-  leds[1].set();
-  auto rc =  for_all_till_err( &RoboDevice::measure );
+  leds[1].set(); // TODO: remove after debug - or hook functions
+  auto rc =  for_all_till_err( &IoRoboCapability::measure );
   leds[1].reset();
   first_measure = false;
   return rc;
@@ -59,7 +58,7 @@ ReturnCode oxc::RoboAssembly::measure_all()
 
 ReturnCode oxc::RoboAssembly::commit_all()
 {
-  return for_all_till_err( &RoboDevice::commit  );
+  return for_all_till_err( &IoRoboCapability::commit );
 }
 
 void oxc::RoboAssembly::at_main_idle()
