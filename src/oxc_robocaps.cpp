@@ -1,0 +1,63 @@
+#include <ranges>
+
+#include <oxc_robocaps.h>
+
+using namespace oxc;
+
+
+ReturnCode oxc::RoboObject::init() noexcept
+{
+  sta = doInit();
+  return sta;
+}
+
+
+ReturnCode oxc::RoboObject::measure() noexcept
+{
+  sta = doMeasure();
+  return sta;
+}
+
+
+ReturnCode oxc::RoboObject::think() noexcept
+{
+  sta = doThink();
+  return sta;
+}
+
+
+ReturnCode oxc::RoboObject::commit() noexcept
+{
+  sta = doCommit();
+  if( sta.isOk() ) {
+    dirty = false;
+  }
+  return sta;
+}
+
+
+
+
+
+ReturnCode oxc::IoRoboCapability::setVal( size_t ch, int32_t v ) noexcept
+{
+  if( ch >= sz ) {
+    return rcErr;
+  }
+  if( v != buf[ch] ) {
+    buf[ch] = v;
+    dirty = true;
+  }
+  return rcOk;
+}
+
+int32_t_er oxc::IoRoboCapability::getVal( size_t ch ) noexcept
+{
+  if( ch >= sz ) {
+    return std::unexpected( rcErr );
+  }
+  return buf[ch];
+}
+
+
+

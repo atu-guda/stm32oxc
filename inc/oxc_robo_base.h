@@ -6,7 +6,7 @@
 #include <span>
 
 #include <oxc_coordtransform.h>
-#include <oxc_capabilities.h>
+#include <oxc_robocaps.h>
 
 
 namespace oxc {
@@ -31,7 +31,7 @@ class RoboDevice {
 class TestRoboDevice : public IoRoboCapability {
   public:
    enum { xx_n_ch = 4, xx_bitsz = 32 };
-   TestRoboDevice() : IoRoboCapability( xx_n_ch, xx_bitsz, xx_buf ) {};
+   TestRoboDevice( uint32_t id_ = 0 ) : IoRoboCapability( xx_n_ch, xx_bitsz, xx_buf, id_ ) {};
   protected:
    virtual ReturnCode doInit()    noexcept override { std::ranges::fill( xx_buf, 0 ); dirty = false; return rcOk; };
    virtual ReturnCode doMeasure() noexcept override { return rcOk; };
