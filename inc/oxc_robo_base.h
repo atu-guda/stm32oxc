@@ -8,6 +8,7 @@
 #include <oxc_coordtransform.h>
 #include <oxc_capabilities.h>
 
+
 namespace oxc {
 
 //* base abstract class for interface to hardware devices
@@ -25,6 +26,22 @@ class RoboDevice {
    ReturnCode sta { ReturnCode::rcnErr, 1 }; // uninitialised
    uint32_t id; //* simple id for debug
 };
+
+//* just to test design - second try
+class TestRoboDevice : public IoRoboCapability {
+  public:
+   enum { xx_n_ch = 4, xx_bitsz = 32 };
+   TestRoboDevice() : IoRoboCapability( xx_n_ch, xx_bitsz, xx_buf ) {};
+  protected:
+   virtual ReturnCode doInit()    noexcept override { std::ranges::fill( xx_buf, 0 ); dirty = false; return rcOk; };
+   virtual ReturnCode doMeasure() noexcept override { return rcOk; };
+   virtual ReturnCode doThink()   noexcept override { return rcOk; };
+   virtual ReturnCode doCommit()  noexcept override { xx_t = xx_buf[0]; dirty = false; return rcOk; };
+   int32_t xx_buf[xx_n_ch];
+   int32_t xx_t {0};
+};
+
+
 
 //* fake Robo device - for test purpose
 class FakeRoboDevice : public RoboDevice {

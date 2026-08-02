@@ -14,17 +14,28 @@ using oxc::ReturnCode;
 //* Abstract classes to realize common capabilities + mix to real HW classes
 // or may be RoboDevice children - with buffers
 
-// TODO: split pure and robo capabilities, may be rename robo =? Buf
+// TODO: split file: pure and robo capabilities, may be rename robo =? Buf
 
 namespace oxc {
 
 //* try: separate robo functions
 class RoboObject {
   public:
-   virtual ReturnCode init()    noexcept = 0;
-   virtual ReturnCode measure() noexcept = 0;
-   virtual ReturnCode think()   noexcept = 0;
-   virtual ReturnCode commit()  noexcept = 0;
+   virtual ~RoboObject() = default;
+   ReturnCode init() noexcept;
+   ReturnCode measure() noexcept;
+   ReturnCode think() noexcept;
+   ReturnCode commit() noexcept;
+   ReturnCode getStatus() const noexcept { return sta; }
+   bool isDirty() const noexcept { return dirty; }
+  protected:
+   virtual ReturnCode doInit()    noexcept = 0;
+   virtual ReturnCode doMeasure() noexcept = 0;
+   virtual ReturnCode doThink()   noexcept = 0;
+   virtual ReturnCode doCommit()  noexcept = 0;
+  protected:
+   ReturnCode sta { ReturnCode::rcnErr, 1000 }; // uninitialised
+   bool dirty { false };
 };
 
 //* pack of digital I/O channels
@@ -48,8 +59,13 @@ class IoCapability {
 //* pack of digital I/O channels + robo interface
 class IoRoboCapability : public IoCapability, public RoboObject {
   public:
-   explicit constexpr IoRoboCapability( size_t sz_, size_t bitsz_ ) noexcept : IoCapability( sz, bitsz ) {};
+   explicit constexpr IoRoboCapability( size_t sz_, size_t bitsz_, int32_t_span buf_ ) noexcept :
+     IoCapability( sz_, bitsz_ ),
+     buf( buf_ ) {};
+   virtual ReturnCode setVal( size_t ch, int32_t v ) noexcept override;
+   virtual int32_t_er getVal( size_t ch ) noexcept override;
   protected:
+   int32_t_span buf;
    // TODO: dirty, fresh?
 };
 
