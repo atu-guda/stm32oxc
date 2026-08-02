@@ -479,6 +479,7 @@ class PinsOut : public Pins
 extern PinsOut leds;
 
 // --------------- PinOut ----------------------------------------
+// TODO: rename to GpioPin +  pull
 // single output pin
 // PinOut p1( GpioA, 8 ); // GPIOA 8
 // PinOut p1( PA8 );

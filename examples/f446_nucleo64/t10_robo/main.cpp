@@ -3,10 +3,9 @@
 #include <oxc_floatfun.h>
 #include <oxc_main.h>
 
-// TMP: just to check header
-#include <oxc_capabilities.h>
-
 #include <oxc_robo_base.h>
+
+#include <oxc_gpio_d.h>
 
 #include <board_robo_cfg.h>
 
@@ -30,13 +29,16 @@ DCL_CMD_REG(      test0,  'T',     " [arg ] - test something"  );
 
 ReturnCode init_hw_all();
 
+// ------------------------ Devices: capabilities ; ---------------------------------------
+
+Gpio_Pin_Dev pin1_d( PC10 );
 
 // ------------------------ - local sensors ; ---------------------------------------
 
 
 // ------------------------ - local sensors end ---------------------------------------
 
-TestRoboDevice test_rd{ 112};
+TestRoboDevice test_rd{ 112 };
 
 
 RoboObject* hw_robo_objs[] {
@@ -64,6 +66,7 @@ int main(void)
   BOARD_PROLOG;
 
   UVAR_l =    1; // idLe after run ?
+  UVAR_n =   20; // n test
 
   if( ! init_hw_all().isOk() ) {
     std_out << "# Error: HW init" << NL;
@@ -83,18 +86,59 @@ int main(void)
 
 ReturnCode init_hw_all()
 {
-  // q0 sens:
+  pin1_d.initHW();
 
   return robo.init_all();
 }
 
-
+void test_pin1();
 
 CMD_FUNCTION( test0 )
 {
-  // float pwm_v = arg2float_d( 1, argc, argv, 0.5f, 0.0f, 1.0f );
+  test_pin1();
+
   // int v0 = arg2long_d( 2, argc, argv,  UVAR_v, INT_MIN, INT_MAX );
 
   return 0;
 }
 
+
+void test_pin1()
+{
+  switch( UVAR_z ) {
+    case 0:
+    for( int i=0; i<UVAR_n; ++i ) {
+      pin1_d.set();
+      delay_ms( 50 );
+      std_out << pin1_d.read().value_or( 5 ) << NL;
+      pin1_d.reset();
+      delay_ms( 50 );
+      std_out << pin1_d.read().value_or( 6 ) << NL;
+    }
+    break;
+
+    case 1:
+    for( int i=0; i<UVAR_n; ++i ) {
+      pin1_d.toggle();
+      delay_ms( 100 );
+    }
+    break;
+
+    case 2:
+    for( int i=0; i<UVAR_n; ++i ) {
+      pin1_d.write( i & 1 );
+      delay_ms( 200 );
+    }
+    break;
+
+    case 3:
+    for( int i=0; i<UVAR_n; ++i ) {
+      pin1_d.setVal( 0, i & 1 );
+      delay_ms( 100 );
+    }
+    break;
+    default: break;
+  }
+
+  pin1_d.reset();
+}

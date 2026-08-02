@@ -59,25 +59,25 @@ class AnalogCapability : public IoCapability {
 class PinsCapability : public IoCapability {
   public:
    explicit constexpr PinsCapability( size_t bitsz_ ) noexcept : IoCapability( 1, bitsz_ )  {};
-   virtual int32_t_er read()             = 0;
-   virtual void write(     int32_t v )   = 0;
-   virtual void set(       int32_t v )   = 0;
-   virtual void reset(     int32_t v )   = 0;
-   virtual void toggle(    int32_t v )   = 0;
-   virtual void setbit(    int32_t pos ) = 0;
-   virtual void resetbit(  int32_t pos ) = 0;   // reset given (by pos) 1 bit to '0' (AND~)
-   virtual void togglebit( int32_t pos ) = 0;
+   virtual int32_t_er read()             noexcept = 0;
+   virtual void write(     int32_t v )   noexcept = 0;
+   virtual void set(       int32_t v )   noexcept = 0;
+   virtual void reset(     int32_t v )   noexcept = 0;
+   virtual void toggle(    int32_t v )   noexcept = 0;
+   virtual void setbit(    int32_t pos ) noexcept = 0;
+   virtual void resetbit(  int32_t pos ) noexcept = 0;   // reset given (by pos) 1 bit to '0' (AND~)
+   virtual void togglebit( int32_t pos ) noexcept = 0;
 };
 
 
 class PinCapability : public IoCapability {
   public:
    explicit constexpr PinCapability() noexcept : IoCapability( 1, 1 )  {};
-   virtual int32_t_er read()    = 0;
-   virtual void write()         = 0;
-   virtual void set()           = 0;
-   virtual void reset()         = 0;
-   virtual void toggle()        = 0;
+   virtual int32_t_er read()    noexcept  = 0;
+   virtual void write( bool v ) noexcept  = 0;
+   virtual void set()           noexcept  = 0;
+   virtual void reset()         noexcept  = 0;
+   virtual void toggle()        noexcept  = 0;
 };
 
 
