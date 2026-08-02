@@ -4,7 +4,7 @@
 
 using namespace oxc;
 
-oxc::ReturnCode oxc::RoboAssembly::for_all_till_err( ReturnCode (IoRoboCapability::*fun)() )
+oxc::ReturnCode oxc::RoboAssembly::for_all_till_err ( ReturnCode (RoboObject::*fun)() ) noexcept
 {
   last_err_dev = nullptr;
   for( auto dev : pdevs ) {
@@ -31,12 +31,12 @@ void oxc::RoboAssembly::calc_current_time()
   t_cur_f = t_cur_i * 1e-3f;
 }
 
-ReturnCode oxc::RoboAssembly::init_all()
+ReturnCode oxc::RoboAssembly::init_all() noexcept
 {
-  return for_all_till_err( &IoRoboCapability::init );
+  return for_all_till_err( &RoboObject::init );
 }
 
-ReturnCode oxc::RoboAssembly::measure_all()
+ReturnCode oxc::RoboAssembly::measure_all() noexcept
 {
   auto old_meas = t_meas_i;
   calc_current_time();
@@ -50,18 +50,23 @@ ReturnCode oxc::RoboAssembly::measure_all()
   }
 
   leds[1].set(); // TODO: remove after debug - or hook functions
-  auto rc =  for_all_till_err( &IoRoboCapability::measure );
+  auto rc =  for_all_till_err( &RoboObject::measure );
   leds[1].reset();
   first_measure = false;
   return rc;
 }
 
-ReturnCode oxc::RoboAssembly::commit_all()
+ReturnCode oxc::RoboAssembly::think_all() noexcept
 {
-  return for_all_till_err( &IoRoboCapability::commit );
+  return for_all_till_err( &RoboObject::think );
 }
 
-void oxc::RoboAssembly::at_main_idle()
+ReturnCode oxc::RoboAssembly::commit_all() noexcept
+{
+  return for_all_till_err( &RoboObject::commit );
+}
+
+void oxc::RoboAssembly::at_main_idle() noexcept
 {
   calc_current_time();
   if( ( t_cur_i - t_meas_i ) >= measure_idle_ticks ) {

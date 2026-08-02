@@ -1,25 +1,48 @@
+### *a - HW independent
 ## ------------------------------------ Level 0a: --------------------------------------------------
 
 Capablities - abstract classes to provide both capabilities and set/get, measure/commit phases, no HW
-inc/oxc_abstr_fun.h -> inc/oxc_capabilities.h src/oxc_capabilities.cpp
-
-??? mix to existing, child of real or  ref/have?
+inc/oxc_capabilities.h src/oxc_capabilities.cpp
 
 IOCapability ( size, setVal(ch, int32_t), getVal(ch), act )
-AnalogCapability (+ scale, non-virtual setValF ...)
+AnalogCapability (+ scale, non-virtual setValF ..., values [0:1] [-1:1] ?)
 
 PinsCapability
 PinCapability ?
 PwmCtlCapability
-ADCCapability
-DACCapability
 EncoCapability
+? ADCCapability
+? DACCapability
+
+??? begin,end, cbegin, cend, [] int32_t
 
 ## ------------------------------------ Level 1a: --------------------------------------------------
+Buffer/robo related capabilities
+inc/oxc_robocaps.h src/oxc_robocaps.cpp
+
+RoboObject (init,measure,think,commit...)
+-->
+IoRoboCapability
+AnalogRoboCapability
+PinsRoboCapability
+PinRoboCapability
+PwmRoboCapability
+EncoderRoboCapability
+
+## ------------------------------------ Level 2a: --------------------------------------------------
+
+SensorChannel ( get_i )
+SensorAnalogChannel (get, get_i)
+ActuatorChannel (set_i)
+ActuatorAnalogChannel (set, set_i )
+
+
+
+
+## ------------------------------------ Level 0b: --------------------------------------------------
 
 real hardware, any API, any class names, may be _hw suffix - if need
 coordinates: inner
-+? public Function + value->ch enum
 
 inc/oxc_gpio.h: PinsOut (set,reset,write,sr,read,...,), PinOut(), PinsIn(+pull), IoPin()
 inc/oxc_tim.h: only configs
@@ -43,68 +66,38 @@ inc/oxc_spi_ad9833.h: DevAD9833(?) (waveform generator?)
 inc/oxc_spi_ads1220.h: ADS1220( read_wait, read_nowait, read_single ) (ADC 24bit, 4 chmux, PGA)
 inc/oxc_spi_dac8563.h: DevSPI_DAC8563() (setu{_,a,b,ab})
 
-## ------------------------------------ Level 2a: --------------------------------------------------
-
-RoboDevice (hw indep) + children(hw dependent)
-class name: RD_Function_HW  object suffix: _rd, filename: oxc_rd_fun_hw.{h,cpp}
-   or:      Function_HW_RD, object suffix: _rd, filename: oxc_xxxx_rd.{h,cpp}
-Functions: Pin, PwmCtl, Enco, ADC, DAC, ? Acc, Mag, Hyro, / or Ain, Aout, Aio 
-TODO: replace name with id (uint32_t)
-use API(0a), partially translates upsize, but with buffer
-provides measure(), commit(), init(?) (from initHW, but HW is not here)
-may be RoboSensor - to add get(), size - or incorporate.
-may be + set() - for common interface. ??? begin,end, cbegin, cend, [] int32_t
-coordinates: inner
-
-init, measure, commit - called by scheduler
-
-RD_Pin_GPIO( )
-RD_Pin_MCP23017
-RD_Pin_PCA9685
-RD_PwmCtl_TIM( from )
-RD_Enco_Tim
-RD_Ain_Internal
-RD_Ain_BMP280
-
-
-## ------------------------------------ Level 0b: --------------------------------------------------
-
-
-RoboFunction - no base class - pure interface, HW independent (~ function)
-or Function with different realization?
-or RoboResource ?
-Class name: RCap_function, no objects, filename: oxc_rf_function.h (or in base)
-API: by function
-
-RCap_Pin ( from RoboPin )
-RCap_PwmCtl ( from RoboPwmCtl ) or RCap_PwmCh - 1 channel
-RCap_Enco
-RCap_Ain
-
-or may be more generic?
-
+TODO: remove DevSPI, oxc_spi_
 
 ## ------------------------------------ Level 1b: --------------------------------------------------
 
-Functions realization: : public RCap_*
-Realization is performed by RoboDevice children.
+Capability and RoboCapability interfaces to real devices.
+If device supports immediate actions - both Capability and RoboCapability.
+If pre/post actions required - only RoboCapability
 
-RFR_Pin_GPIO
+Capability     + HW = <Device>; _Dev, _d
+RoboCapability + HW = <RoboDevice>; _RDev, _rd
+
+class name: HW_Dev, HW_RDev,  object suffix: _d, _rd, filename: oxc_hw_[r]d.{h,cpp}
+coordinates: inner(int), [-1:1] - float
+
+init, measure, think, commit - called by scheduler (policy to continue)
+
+PinsOut_cap( ), PinsOut_rcap( ): oxc_gpio_[rcap].* - multiple classes per file?
+PinOut_cap( ),  PinOut_rcap( )
+? IoPin?
+
+PwmTimCtl_cap, _rcap
+
+AdcInner_rcap
+
+DacInner_*
+
+EncoTim_*
 
 
+## ------------------------------------------- Extra: -----------------------------------------
 
-
-
-
-
-
-
-
-
-
-
-
-## Extra:
 inc/oxc_coordtransform.h: CoordTransform(toPhys,toInternal), LinearCoordTransform...
 inc/oxc_easing.h: EasingFun, easing_one, easing_poly2_in ... easing_trig_io TODO: +info struct
+encoder object
 

@@ -39,7 +39,7 @@ ReturnCode init_hw_all();
 TestRoboDevice test_rd{ 112};
 
 
-IoRoboCapability* hw_robo_caps[] {
+RoboObject* hw_robo_objs[] {
   &test_rd,
 };
 
@@ -50,7 +50,7 @@ RoboJoint* robo_joints[] {
   &fake_joint,
 };
 
-RoboAssembly robo( hw_robo_caps, robo_joints );
+RoboAssembly robo( hw_robo_objs, robo_joints );
 
 
 void idle_main_task()

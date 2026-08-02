@@ -153,29 +153,30 @@ class RoboJoint {
 
 class RoboAssembly {
   public:
-   constexpr RoboAssembly( std::span<IoRoboCapability*>  pdevs_,
+   constexpr RoboAssembly( std::span<RoboObject*>  pdevs_,
                            std::span<RoboJoint*> joints_ ) noexcept
      : pdevs( pdevs_ ), joints( joints_ ) {}
    RoboAssembly( const RoboAssembly &rhs ) = delete;
-   ReturnCode for_all_till_err( ReturnCode (IoRoboCapability::*fun)() );
-   ReturnCode init_all();
-   ReturnCode measure_all();
-   ReturnCode commit_all();
-   IoRoboCapability* get_last_err_dev() const { return last_err_dev; }
-   void set_measure_idle_ticks( uint32_t v ) { measure_idle_ticks = v; }
+   ReturnCode for_all_till_err( ReturnCode (RoboObject::*fun)() ) noexcept;
+   ReturnCode init_all() noexcept;
+   ReturnCode measure_all() noexcept;
+   ReturnCode think_all() noexcept;
+   ReturnCode commit_all() noexcept;
+   RoboObject* get_last_err_dev() const  noexcept{ return last_err_dev; }
+   void set_measure_idle_ticks( uint32_t v ) noexcept { measure_idle_ticks = v; }
 
    void start_time();
    void calc_current_time();
    void at_main_idle();
-   uint32_t get_t_cur_i() const { return t_cur_i; }
-   float    get_t_cur()   const { return t_cur_f; }
-   uint32_t get_t_dt_i()  const { return t_dt;    }
-   float    get_t_dt()    const { return t_dt_f;  }
+   uint32_t get_t_cur_i() const noexcept { return t_cur_i; }
+   float    get_t_cur()   const noexcept { return t_cur_f; }
+   uint32_t get_t_dt_i()  const noexcept { return t_dt;    }
+   float    get_t_dt()    const noexcept { return t_dt_f;  }
 
   protected:
-   std::span<IoRoboCapability*>  pdevs;
+   std::span<RoboObject*>  pdevs;
    std::span<RoboJoint*>        joints;
-   IoRoboCapability* last_err_dev { nullptr };
+   RoboObject* last_err_dev { nullptr };
    uint32_t t_start_i       {       0 };
    uint32_t t_cur_i         {       0 };
    uint32_t t_dt            {       0 };
