@@ -86,21 +86,27 @@ class PinCapability : public IoCapability, public PinPureCapability {
    explicit constexpr PinCapability() noexcept : IoCapability( 2, 1, 1 )  {};
 };
 
-
-class PwmCapability : public IoCapability {
+class PwmPureCapability {
   public:
-    explicit constexpr PwmCapability( size_t sz_, size_t bitsz_, int32_t scale_ ) noexcept
-     : IoCapability( sz_, bitsz_, scale_ ) {};
-    virtual ReturnCode setFreq( float freq ) = 0;
-    constexpr float getFreq() const noexcept { return freq; }
-    ReturnCode setDuty( size_t ch, float duty ) { return setValF( ch, duty ); }
-    virtual ReturnCode setPulse(  size_t ch, float p_t ) = 0;
+   virtual ReturnCode setFreq( float freq ) = 0;
+   virtual ReturnCode setDuty( size_t ch, float duty ) = 0;
+   virtual ReturnCode setPulse( size_t ch, float p_t ) = 0;
+   virtual float getFreq() const noexcept = 0;
+};
+
+class PwmCapability : public IoCapability, public PwmPureCapability { // + PinsPureCapability?
+  public:
+    explicit constexpr PwmCapability( size_t sz_, size_t bitsz_ ) noexcept
+     : IoCapability( sz_, bitsz_, (1<<bitsz_)-1 ) {};
   protected:
-    float freq {1};
+};
+
+class EncoderPureCapability {
+  public:
 };
 
 
-class EncoderCapability : public IoCapability {
+class EncoderCapability : public IoCapability, public EncoderPureCapability {
   public:
    explicit constexpr EncoderCapability( size_t bitsz_, int32_t scale_ ) noexcept
      : IoCapability( 1, bitsz_, scale_ ) {};

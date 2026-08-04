@@ -30,7 +30,7 @@ ReturnCode oxc::RoboObject::commit() noexcept
 {
   sta = doCommit();
   if( sta.isOk() ) {
-    dirty = false;
+    dirty = 0;
   }
   return sta;
 }
@@ -46,7 +46,7 @@ ReturnCode oxc::IoRoboCapability::setVal( size_t ch, int32_t v ) noexcept
   }
   if( v != iobuf[ch] ) {
     iobuf[ch] = v;
-    dirty = true;
+    dirty |= (1<<ch);
   }
   return rcOk;
 }

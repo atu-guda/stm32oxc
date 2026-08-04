@@ -8,7 +8,7 @@ namespace oxc {
 
 class RoboObject {
   public:
-   explicit RoboObject( uint32_t id_, int32_t_span iobuf_ ) noexcept : id( id_ ), iobuf( iobuf_ ) {};
+   explicit RoboObject( uint32_t id_ ) noexcept : id( id_ ) {};
    virtual ~RoboObject() = default;
    ReturnCode init() noexcept;
    ReturnCode measure() noexcept;
@@ -16,7 +16,6 @@ class RoboObject {
    ReturnCode commit() noexcept;
    uint32_t getId() const noexcept { return id; }
    ReturnCode getStatus() const noexcept { return sta; }
-   bool isDirty() const noexcept { return dirty; }
   protected:
    virtual ReturnCode doInit()    noexcept = 0;
    virtual ReturnCode doMeasure() noexcept = 0;
@@ -24,7 +23,6 @@ class RoboObject {
    virtual ReturnCode doCommit()  noexcept = 0;
   protected:
    const uint32_t id; //* simple id for debug
-   int32_t_span iobuf;
    ReturnCode sta { ReturnCode::rcnErr, 1000 }; // uninitialised
    bool dirty { false };
 };
@@ -35,10 +33,13 @@ class IoRoboCapability : public IoCapability, public RoboObject {
   public:
    explicit constexpr IoRoboCapability( size_t sz_, size_t bitsz_, int32_t scale_,
                                         int32_t_span iobuf_, uint32_t id_ = 0 ) noexcept :
-     IoCapability( sz_, bitsz_, scale_ ), RoboObject( id_, iobuf_ ) {};
+     IoCapability( sz_, bitsz_, scale_ ), RoboObject( id_ ), iobuf( iobuf_ ) {};
    virtual ReturnCode setVal( size_t ch, int32_t v ) noexcept override;
    virtual int32_t_er getVal( size_t ch ) noexcept override;
+   uint32_t getDirty() const noexcept { return dirty; }
   protected:
+   int32_t_span iobuf;
+   uint32_t dirty { 0 }; // bit per channel, so now no more than 32 channels
 };
 
 
@@ -64,19 +65,19 @@ class PinRoboCapability : public PinPureCapability, public IoRoboCapability {
 
 
 
-class PwmRoboCapability : public PwmCapability, public RoboObject {
+class PwmRoboCapability : public PwmPureCapability, public IoRoboCapability { // + PinsPureCapability?
   public:
    explicit constexpr PwmRoboCapability( size_t sz_, size_t bitsz_, int32_t scale_,
        int32_t_span iobuf_, uint32_t id_ = 0 ) noexcept
-     : PwmCapability( sz_, bitsz_, scale_ ), RoboObject( id_, iobuf_ ) {};
+     : IoRoboCapability( sz_, bitsz_, scale_, iobuf_, id_ ) {};
   protected:
 };
 
 
-class EncoderRoboCapability : public EncoderCapability, public RoboObject {
+class EncoderRoboCapability : public EncoderPureCapability, public IoRoboCapability {
   public:
    explicit constexpr EncoderRoboCapability( size_t bitsz_, int32_t scale_, uint32_t id_ = 0 ) noexcept
-     : EncoderCapability( bitsz_, scale_ ), RoboObject( id_, vv ) {};
+     : IoRoboCapability( 1, bitsz_, scale_,  vv, id_ ) {};
   protected:
    int32_t vv[1]; // 0-out
 };

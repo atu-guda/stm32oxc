@@ -24,7 +24,8 @@ const char* common_help_string = "Appication to test misc robo parts. TMP." NL;
 
 
 // ------------------------ - local commands; ---------------------------------------
-DCL_CMD_REG(      test0,  'T',     " [arg ] - test something"  );
+DCL_CMD_REG(      test0,  'T',     " [arg ] - pin1_d"  );
+DCL_CMD_REG(      test1,  'D',     " [arg ] - pin2_rd"  );
 
 // -------------------------------------------------------------------------------------
 
@@ -62,6 +63,8 @@ void idle_main_task()
   robo.at_main_idle();
 }
 
+void test_pin1();
+void test_pin2();
 
 int main(void)
 {
@@ -89,11 +92,11 @@ int main(void)
 ReturnCode init_hw_all()
 {
   pin1_d.initHW();
+  pin2_rd.initHW();
 
   return robo.init_all();
 }
 
-void test_pin1();
 
 CMD_FUNCTION( test0 )
 {
@@ -104,6 +107,12 @@ CMD_FUNCTION( test0 )
   return 0;
 }
 
+
+CMD_FUNCTION( test1 )
+{
+  test_pin2();
+  return 0;
+}
 
 void test_pin1()
 {
@@ -144,3 +153,48 @@ void test_pin1()
 
   pin1_d.reset();
 }
+
+
+void test_pin2()
+{
+  pin2_rd.init();
+  switch( UVAR_z ) {
+    case 0:
+    for( int i=0; i<UVAR_n; ++i ) {
+      pin2_rd.set(); pin2_rd.commit();
+      delay_ms( 50 );
+      pin2_rd.measure();
+      std_out << pin2_rd.read().value_or( 5 ) << NL;
+      pin2_rd.reset(); pin2_rd.commit();
+      pin2_rd.measure();
+      delay_ms( 50 );
+      std_out << pin2_rd.read().value_or( 6 ) << NL;
+    }
+    break;
+
+    case 1:
+    for( int i=0; i<UVAR_n; ++i ) {
+      pin2_rd.toggle(); pin2_rd.commit();
+      delay_ms( 100 );
+    }
+    break;
+
+    case 2:
+    for( int i=0; i<UVAR_n; ++i ) {
+      pin2_rd.write( i & 1 ); pin2_rd.commit();
+      delay_ms( 200 );
+    }
+    break;
+
+    case 3:
+    for( int i=0; i<UVAR_n; ++i ) {
+      pin2_rd.setVal( 0, i & 1 ); pin2_rd.commit();
+      delay_ms( 100 );
+    }
+    break;
+    default: break;
+  }
+
+  // pin2_rd.reset(); pin2_rd.commit();
+}
+
