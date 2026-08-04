@@ -6,6 +6,7 @@
 #include <oxc_robo_base.h>
 
 #include <oxc_gpio_d.h>
+#include <oxc_gpio_rd.h>
 
 #include <board_robo_cfg.h>
 
@@ -32,6 +33,7 @@ ReturnCode init_hw_all();
 // ------------------------ Devices: capabilities ; ---------------------------------------
 
 Gpio_Pin_Dev pin1_d( PC10 );
+Gpio_Pin_RDev pin2_rd( PC11 );
 
 // ------------------------ - local sensors ; ---------------------------------------
 

@@ -15,8 +15,8 @@ namespace oxc {
 //* just to test design - second try
 class TestRoboDevice : public IoRoboCapability {
   public:
-   enum { xx_n_ch = 4, xx_bitsz = 32 };
-   TestRoboDevice( uint32_t id_ = 0 ) : IoRoboCapability( xx_n_ch, xx_bitsz, xx_buf, id_ ) {};
+   enum { xx_n_ch = 4, xx_bitsz = 16 };
+   TestRoboDevice( uint32_t id_ = 0 ) : IoRoboCapability( xx_n_ch, xx_bitsz, (1<<xx_bitsz)-1, xx_buf, id_ ) {};
   protected:
    virtual ReturnCode doInit()    noexcept override { std::ranges::fill( xx_buf, 0 ); dirty = false; return rcOk; };
    virtual ReturnCode doMeasure() noexcept override { return rcOk; };
@@ -40,15 +40,15 @@ class SensorChannel {
 };
 
 
-//* One channel for analog sensor: selects and scale 1 channel of the AnalogRoboCapability
+//* One channel for analog sensor: selects and scale 1 channel of the IoRoboCapability
 class SensorAnalogChannel {
   public:
-   explicit constexpr SensorAnalogChannel( AnalogRoboCapability &psens_, size_t ch_, CoordTransform &coo_tr_ ) noexcept
+   explicit constexpr SensorAnalogChannel( IoRoboCapability &psens_, size_t ch_, CoordTransform &coo_tr_ ) noexcept
      : psens( psens_ ), ch( ch_ ), coo_tr( coo_tr_ ) {}
    float_er     get() noexcept { auto v = psens.getValF( ch ); if( v ) { v = coo_tr.toPhys( v.value() ); } return v; }
    int32_t_er get_i() noexcept { return psens.getVal( ch ); }
   protected:
-   AnalogRoboCapability &psens;
+   IoRoboCapability &psens;
    const size_t ch;
    CoordTransform &coo_tr;
 };
@@ -66,15 +66,15 @@ class ActuatorChannel {
 };
 
 
-//* One channel for analog actuator: selects and scale 1 channel of the AnalogRoboCapability
+//* One channel for analog actuator: selects and scale 1 channel of the IoRoboCapability
 class ActuatorAnalogChannel {
   public:
-   explicit constexpr ActuatorAnalogChannel( AnalogRoboCapability &actu_, size_t ch_, CoordTransform &coo_tr_ ) noexcept
+   explicit constexpr ActuatorAnalogChannel( IoRoboCapability &actu_, size_t ch_, CoordTransform &coo_tr_ ) noexcept
      : actu( actu_ ), ch( ch_ ), coo_tr( coo_tr_ ) {}
    ReturnCode set( float v ) noexcept { return actu.setValF( ch, coo_tr.toPhys( v ) ); }
    ReturnCode set_i( int32_t vi ) noexcept { return actu.setVal( ch, vi ); }
   protected:
-   AnalogRoboCapability &actu;
+   IoRoboCapability &actu;
    const size_t ch;
    CoordTransform &coo_tr;
 };

@@ -37,7 +37,7 @@ ReturnCode oxc::IoCapability::getVals( int32_t_span vs ) noexcept
 
 
 
-ReturnCode oxc::AnalogCapability::setValFs( cfloat_span vs ) noexcept
+ReturnCode oxc::IoCapability::setValFs( cfloat_span vs ) noexcept
 {
   for( auto [ch,v] : std::views::enumerate( vs )  ) {
     if( (size_t)ch >= size() ) {
@@ -51,7 +51,7 @@ ReturnCode oxc::AnalogCapability::setValFs( cfloat_span vs ) noexcept
 }
 
 
-ReturnCode oxc::AnalogCapability::getValFs( float_span vs ) noexcept
+ReturnCode oxc::IoCapability::getValFs( float_span vs ) noexcept
 {
   for( auto [ch,v] : std::views::enumerate( vs )  ) {
     if( (size_t)ch >= size() ) {

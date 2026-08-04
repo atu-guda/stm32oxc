@@ -13,66 +13,66 @@ using oxc::ReturnCode;
 
 //* Abstract classes to realize common capabilities + mix to real HW classes
 
-
 namespace oxc {
 
 
 //* pack of digital I/O channels
 class IoCapability {
   public:
-   explicit constexpr IoCapability( size_t sz_, size_t bitsz_ ) noexcept : sz( sz_ ), bitsz( bitsz_ ) {};
-   virtual constexpr size_t size()    const noexcept { return sz; }
-   virtual constexpr size_t bitsize() const noexcept { return bitsz; }
+   explicit constexpr IoCapability( size_t sz_, size_t bitsz_, int32_t scale_ ) noexcept :
+     sz( sz_ ), bitsz( bitsz_ ), scale( scale_ ) {};
+   virtual ~IoCapability() = default; // really unneeded now
+   // main interface
    virtual ReturnCode setVal( size_t ch, int32_t v ) noexcept = 0;
-   virtual int32_t_er getVal( size_t ch ) noexcept = 0;
+   virtual int32_t_er getVal( size_t ch )            noexcept = 0;
+   constexpr size_t size()     const noexcept { return sz;    }
+   constexpr size_t bitsize()  const noexcept { return bitsz; }
+   constexpr size_t getScale() const noexcept { return scale; }
    //* just convenience functions
    ReturnCode setVals( cint32_t_span vs ) noexcept;
    ReturnCode getVals(  int32_t_span vs ) noexcept;
-  protected:
-   const size_t sz;
-   const size_t bitsz;
-};
-
-
-class AnalogCapability : public IoCapability {
-  public:
-   explicit constexpr AnalogCapability( size_t sz_, size_t bitsz_, int32_t scale_ ) noexcept
-     : IoCapability( sz_, bitsz_ ), scale( scale_ )   {};
-   virtual constexpr size_t     getScale() noexcept { return scale; }
-   virtual ReturnCode setValF( size_t ch, float v ) noexcept { // non-virtual?
+   ReturnCode setValFs( cfloat_span vs )  noexcept;
+   ReturnCode getValFs(  float_span vs )  noexcept;
+   ReturnCode setValF( size_t ch, float v ) noexcept {
      return setVal( ch, (int32_t) std::lroundf( v * scale ) );
    }
-   virtual float_er   getValF( size_t ch ) noexcept {
+   float_er   getValF( size_t ch ) noexcept {
      auto vi_er = getVal( ch );
      if( !vi_er ) {
        return vi_er;
      }
      return vi_er.value() / scale;
    }
-   ReturnCode setValFs( cfloat_span vs ) noexcept;
-   ReturnCode getValFs(  float_span vs ) noexcept;
   protected:
+   const size_t sz;
+   const size_t bitsz;
    const int32_t scale;
 };
 
 
-class PinsCapability : public IoCapability {
+
+class PinsPureCapability {
   public:
-   explicit constexpr PinsCapability( size_t bitsz_ ) noexcept : IoCapability( 1, bitsz_ )  {};
    virtual int32_t_er read()             noexcept = 0;
    virtual void write(     int32_t v )   noexcept = 0;
    virtual void set(       int32_t v )   noexcept = 0;
    virtual void reset(     int32_t v )   noexcept = 0;
    virtual void toggle(    int32_t v )   noexcept = 0;
    virtual void setbit(    int32_t pos ) noexcept = 0;
-   virtual void resetbit(  int32_t pos ) noexcept = 0;   // reset given (by pos) 1 bit to '0' (AND~)
+   virtual void resetbit(  int32_t pos ) noexcept = 0;
    virtual void togglebit( int32_t pos ) noexcept = 0;
 };
 
 
-class PinCapability : public IoCapability {
+
+class PinsCapability : public IoCapability, public PinsPureCapability {
   public:
-   explicit constexpr PinCapability() noexcept : IoCapability( 1, 1 )  {};
+   explicit constexpr PinsCapability( size_t bitsz_ ) noexcept : IoCapability( 1, bitsz_, (1<<bitsz)-1 )  {};
+};
+
+
+class PinPureCapability {
+  public:
    virtual int32_t_er read()    noexcept  = 0;
    virtual void write( bool v ) noexcept  = 0;
    virtual void set()           noexcept  = 0;
@@ -81,10 +81,16 @@ class PinCapability : public IoCapability {
 };
 
 
-class PwmCapability : public AnalogCapability {
+class PinCapability : public IoCapability, public PinPureCapability {
+  public:
+   explicit constexpr PinCapability() noexcept : IoCapability( 2, 1, 1 )  {};
+};
+
+
+class PwmCapability : public IoCapability {
   public:
     explicit constexpr PwmCapability( size_t sz_, size_t bitsz_, int32_t scale_ ) noexcept
-     : AnalogCapability( sz_, bitsz_, scale_ ) {};
+     : IoCapability( sz_, bitsz_, scale_ ) {};
     virtual ReturnCode setFreq( float freq ) = 0;
     constexpr float getFreq() const noexcept { return freq; }
     ReturnCode setDuty( size_t ch, float duty ) { return setValF( ch, duty ); }
@@ -94,12 +100,11 @@ class PwmCapability : public AnalogCapability {
 };
 
 
-class EncoderCapability : public IoCapability { // or AnalogCapability?
+class EncoderCapability : public IoCapability {
   public:
    explicit constexpr EncoderCapability( size_t bitsz_, int32_t scale_ ) noexcept
-     : IoCapability( 1, bitsz_ ), scale( scale_ )   {};
+     : IoCapability( 1, bitsz_, scale_ ) {};
   protected:
-   const int32_t scale;
 };
 
 

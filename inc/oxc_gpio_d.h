@@ -6,6 +6,8 @@
 
 namespace oxc {
 
+//* PinCapability interfae to one GPIO pin
+// as workhorse class is small, contain it by value
 class Gpio_Pin_Dev : public PinCapability
 {
   public:

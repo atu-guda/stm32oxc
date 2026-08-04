@@ -44,8 +44,8 @@ ReturnCode oxc::IoRoboCapability::setVal( size_t ch, int32_t v ) noexcept
   if( ch >= sz ) {
     return rcErr;
   }
-  if( v != buf[ch] ) {
-    buf[ch] = v;
+  if( v != iobuf[ch] ) {
+    iobuf[ch] = v;
     dirty = true;
   }
   return rcOk;
@@ -56,7 +56,7 @@ int32_t_er oxc::IoRoboCapability::getVal( size_t ch ) noexcept
   if( ch >= sz ) {
     return std::unexpected( rcErr );
   }
-  return buf[ch];
+  return iobuf[ch];
 }
 
 
