@@ -16,6 +16,7 @@ class RoboObject {
    ReturnCode commit() noexcept;
    uint32_t getId() const noexcept { return id; }
    ReturnCode getStatus() const noexcept { return sta; }
+   uint32_t getDirty() const noexcept { return dirty; }
   protected:
    virtual ReturnCode doInit()    noexcept = 0;
    virtual ReturnCode doMeasure() noexcept = 0;
@@ -24,6 +25,7 @@ class RoboObject {
   protected:
    const uint32_t id; //* simple id for debug
    ReturnCode sta { ReturnCode::rcnErr, 1000 }; // uninitialised
+   uint32_t dirty { 0 }; // bit per channel, so now no more than 32 channels, here: used in commit
 };
 
 
@@ -35,10 +37,8 @@ class IoRoboCapability : public IoCapability, public RoboObject {
      IoCapability( sz_, szF_, bitsz_ ), RoboObject( id_ ), iobuf( iobuf_ ) {};
    virtual ReturnCode setVal( size_t ch, int32_t v ) noexcept override;
    virtual int32_t_er getVal( size_t ch ) noexcept override;
-   uint32_t getDirty() const noexcept { return dirty; }
   protected:
    int32_t_span iobuf;
-   uint32_t dirty { 0 }; // bit per channel, so now no more than 32 channels
 };
 
 

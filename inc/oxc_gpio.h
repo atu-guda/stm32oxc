@@ -389,6 +389,14 @@ class Pins
    {
      return read().bitmask();
    }
+   inline PinMask read_out() const
+   {
+     return PinMask( ( gpio.ODR & mask.bitmask() ) >> start.Num() );
+   }
+   inline uint16_t read_outUint() const
+   {
+     return read_out().bitmask();
+   }
   protected:
    GpioRegs &gpio;
    const PinNum start;

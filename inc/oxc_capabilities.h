@@ -51,10 +51,10 @@ class PinsPureCapability {
   public:
    enum { n_ch_int = 2, n_ch_float = 2 };
    virtual int32_t_er read()             noexcept = 0;
-   virtual void write(     int32_t v )   noexcept = 0;
-   virtual void set(       int32_t v )   noexcept = 0;
-   virtual void reset(     int32_t v )   noexcept = 0;
-   virtual void toggle(    int32_t v )   noexcept = 0;
+   virtual void write(     int32_t v   ) noexcept = 0;
+   virtual void set(       int32_t v   ) noexcept = 0;
+   virtual void reset(     int32_t v   ) noexcept = 0;
+   virtual void toggle(    int32_t v   ) noexcept = 0;
    virtual void setbit(    int32_t pos ) noexcept = 0;
    virtual void resetbit(  int32_t pos ) noexcept = 0;
    virtual void togglebit( int32_t pos ) noexcept = 0;

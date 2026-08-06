@@ -24,8 +24,9 @@ const char* common_help_string = "Appication to test misc robo parts. TMP." NL;
 
 
 // ------------------------ - local commands; ---------------------------------------
-DCL_CMD_REG(      test0,  'T',     " [arg ] - pin1_d"  );
-DCL_CMD_REG(      test1,  'D',     " [arg ] - pin2_rd"  );
+DCL_CMD_REG(      test_pin_d,   'T',     " [arg ] - pin1_d"  );
+DCL_CMD_REG(      test_pin_rd,  'D',     " [arg ] - pin2_rd"  );
+DCL_CMD_REG(      test_pins_d,  'S',     " [arg ] - pins_d"  );
 
 // -------------------------------------------------------------------------------------
 
@@ -35,6 +36,9 @@ ReturnCode init_hw_all();
 
 Gpio_Pin_Dev pin1_d( PC10 );
 Gpio_Pin_RDev pin2_rd( PC11 );
+
+Gpio_Pins_Dev pins_d( PC0, 4 ); // copy of leds
+
 
 // ------------------------ - local sensors ; ---------------------------------------
 
@@ -65,6 +69,7 @@ void idle_main_task()
 
 void test_pin1( uint32_t tp, uint32_t n );
 void test_pin2( uint32_t tp, uint32_t n );
+void test_pins_d( uint32_t tp, uint32_t n );
 
 int main(void)
 {
@@ -94,11 +99,13 @@ ReturnCode init_hw_all()
   pin1_d.initHW();
   pin2_rd.initHW();
 
+  pins_d.initHW(); // dup from leds, but may be another pins?
+
   return robo.init_all();
 }
 
 
-CMD_FUNCTION( test0 )
+CMD_FUNCTION( test_pin_d )
 {
   auto tp = arg2ulong_d( 1, argc, argv,  0 );
   auto n  = arg2ulong_d( 2, argc, argv,  UVAR_n );
@@ -108,11 +115,19 @@ CMD_FUNCTION( test0 )
 }
 
 
-CMD_FUNCTION( test1 )
+CMD_FUNCTION( test_pin_rd )
 {
   auto tp = arg2ulong_d( 1, argc, argv,  0 );
   auto n  = arg2ulong_d( 2, argc, argv,  UVAR_n );
   test_pin2( tp, n );
+  return 0;
+}
+
+CMD_FUNCTION( test_pins_d )
+{
+  auto tp = arg2ulong_d( 1, argc, argv,  0 );
+  auto n  = arg2ulong_d( 2, argc, argv,  UVAR_n );
+  test_pins_d( tp, n );
   return 0;
 }
 
@@ -206,3 +221,11 @@ void test_pin2( uint32_t tp, uint32_t n )
   // pin2_rd.reset(); pin2_rd.commit();
 }
 
+void test_pins_d( uint32_t tp, uint32_t n )
+{
+  for( uint32_t i=0; i<n; ++i ) {
+    pins_d.write( i );
+    delay_ms( 50 );
+    std_out << pins_d.read().value_or( 255 ) << NL;
+  }
+}
