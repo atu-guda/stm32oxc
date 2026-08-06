@@ -24,16 +24,15 @@ class RoboObject {
   protected:
    const uint32_t id; //* simple id for debug
    ReturnCode sta { ReturnCode::rcnErr, 1000 }; // uninitialised
-   bool dirty { false };
 };
 
 
 //* pack of digital I/O channels + robo interface
 class IoRoboCapability : public IoCapability, public RoboObject {
   public:
-   explicit constexpr IoRoboCapability( size_t sz_, size_t bitsz_, int32_t scale_,
+   explicit constexpr IoRoboCapability( size_t sz_, size_t szF_, size_t bitsz_,
                                         int32_t_span iobuf_, uint32_t id_ = 0 ) noexcept :
-     IoCapability( sz_, bitsz_, scale_ ), RoboObject( id_ ), iobuf( iobuf_ ) {};
+     IoCapability( sz_, szF_, bitsz_ ), RoboObject( id_ ), iobuf( iobuf_ ) {};
    virtual ReturnCode setVal( size_t ch, int32_t v ) noexcept override;
    virtual int32_t_er getVal( size_t ch ) noexcept override;
    uint32_t getDirty() const noexcept { return dirty; }
@@ -48,9 +47,11 @@ class IoRoboCapability : public IoCapability, public RoboObject {
 class PinsRoboCapability : public PinsPureCapability, public IoRoboCapability {
   public:
    explicit constexpr PinsRoboCapability( size_t bitsz_, uint32_t id_ = 0 ) noexcept
-     : IoRoboCapability( 2, bitsz_, (1<<bitsz)-1, vv, id_ ) {};
+     : IoRoboCapability( n_ch_int, n_ch_float, bitsz_, vv, id_ ) {};
+   virtual ReturnCode setValF( size_t ch, float v )  noexcept override { return setVal( ch, (int32_t)v ); }
+   virtual float_er   getValF( size_t ch )           noexcept override { return getVal( ch ); } // how converted?
   protected:
-   int32_t vv[2]; // 0-out 1-in
+   int32_t vv[n_ch_int]; // 0-out 1-in
 };
 
 
@@ -58,9 +59,11 @@ class PinsRoboCapability : public PinsPureCapability, public IoRoboCapability {
 class PinRoboCapability : public PinPureCapability, public IoRoboCapability {
   public:
    explicit constexpr PinRoboCapability( uint32_t id_ = 0 ) noexcept
-     : IoRoboCapability( 2, 1, 1, vv, id_ ) {};
+     : IoRoboCapability( n_ch_int, n_ch_int, 1, vv, id_ ) {};
+   virtual ReturnCode setValF( size_t ch, float v )  noexcept override { return setVal( ch, (int32_t)v ); }
+   virtual float_er   getValF( size_t ch )           noexcept override { return getVal( ch ); } // how converted?
   protected:
-   int32_t vv[2]; // 0-out 1-in
+   int32_t vv[n_ch_int]; // 0-out 1-in
 };
 
 

@@ -63,14 +63,14 @@ void idle_main_task()
   robo.at_main_idle();
 }
 
-void test_pin1();
-void test_pin2();
+void test_pin1( uint32_t tp, uint32_t n );
+void test_pin2( uint32_t tp, uint32_t n );
 
 int main(void)
 {
   BOARD_PROLOG;
 
-  UVAR_l =    1; // idLe after run ?
+  UVAR_l =    1; // idle after run ?
   UVAR_n =   20; // n test
 
   if( ! init_hw_all().isOk() ) {
@@ -100,9 +100,9 @@ ReturnCode init_hw_all()
 
 CMD_FUNCTION( test0 )
 {
-  test_pin1();
-
-  // int v0 = arg2long_d( 2, argc, argv,  UVAR_v, INT_MIN, INT_MAX );
+  auto tp = arg2ulong_d( 1, argc, argv,  0 );
+  auto n  = arg2ulong_d( 2, argc, argv,  UVAR_n );
+  test_pin1( tp, n );
 
   return 0;
 }
@@ -110,18 +110,20 @@ CMD_FUNCTION( test0 )
 
 CMD_FUNCTION( test1 )
 {
-  test_pin2();
+  auto tp = arg2ulong_d( 1, argc, argv,  0 );
+  auto n  = arg2ulong_d( 2, argc, argv,  UVAR_n );
+  test_pin2( tp, n );
   return 0;
 }
 
-void test_pin1()
+void test_pin1( uint32_t tp, uint32_t n )
 {
-  switch( UVAR_z ) {
+  switch( tp ) {
     case 0:
-    for( int i=0; i<UVAR_n; ++i ) {
+    for( uint32_t i=0; i<n; ++i ) {
       pin1_d.set();
       delay_ms( 50 );
-      std_out << pin1_d.read().value_or( 5 ) << NL;
+      std_out << i << ' ' << pin1_d.read().value_or( 5 ) << ' ';
       pin1_d.reset();
       delay_ms( 50 );
       std_out << pin1_d.read().value_or( 6 ) << NL;
@@ -129,21 +131,21 @@ void test_pin1()
     break;
 
     case 1:
-    for( int i=0; i<UVAR_n; ++i ) {
+    for( uint32_t i=0; i<n; ++i ) {
       pin1_d.toggle();
       delay_ms( 100 );
     }
     break;
 
     case 2:
-    for( int i=0; i<UVAR_n; ++i ) {
+    for( uint32_t i=0; i<n; ++i ) {
       pin1_d.write( i & 1 );
       delay_ms( 200 );
     }
     break;
 
     case 3:
-    for( int i=0; i<UVAR_n; ++i ) {
+    for( uint32_t i=0; i<n; ++i ) {
       pin1_d.setVal( 0, i & 1 );
       delay_ms( 100 );
     }
@@ -151,20 +153,21 @@ void test_pin1()
     default: break;
   }
 
-  pin1_d.reset();
+  // pin1_d.reset();
 }
 
 
-void test_pin2()
+void test_pin2( uint32_t tp, uint32_t n )
 {
   pin2_rd.init();
-  switch( UVAR_z ) {
+
+  switch( tp ) {
     case 0:
-    for( int i=0; i<UVAR_n; ++i ) {
+    for( uint32_t i=0; i<n; ++i ) {
       pin2_rd.set(); pin2_rd.commit();
       delay_ms( 50 );
       pin2_rd.measure();
-      std_out << pin2_rd.read().value_or( 5 ) << NL;
+      std_out << i << ' ' << pin2_rd.read().value_or( 5 ) << ' ';
       pin2_rd.reset(); pin2_rd.commit();
       pin2_rd.measure();
       delay_ms( 50 );
@@ -173,23 +176,28 @@ void test_pin2()
     break;
 
     case 1:
-    for( int i=0; i<UVAR_n; ++i ) {
+    for( uint32_t i=0; i<n; ++i ) {
       pin2_rd.toggle(); pin2_rd.commit();
       delay_ms( 100 );
     }
     break;
 
     case 2:
-    for( int i=0; i<UVAR_n; ++i ) {
+    for( uint32_t i=0; i<n; ++i ) {
       pin2_rd.write( i & 1 ); pin2_rd.commit();
       delay_ms( 200 );
     }
     break;
 
     case 3:
-    for( int i=0; i<UVAR_n; ++i ) {
-      pin2_rd.setVal( 0, i & 1 ); pin2_rd.commit();
+    for( uint32_t i=0; i<n; ++i ) {
+      pin2_rd.setVal( 0, i & 1 ); pin2_rd.commit(); pin2_rd.measure();
       delay_ms( 100 );
+      std_out << i << ' ' << (i&1) << ' ' << pin2_rd.read().value_or( 7 )
+              << ' ' << pin2_rd.getValF( 0 ).value_or( 0.7f )
+              << ' ' << pin2_rd.getValF( 1 ).value_or( 0.7f )
+              << ' ' << pin2_rd.getValF( 2 ).value_or( 0.7f )
+              << NL;
     }
     break;
     default: break;

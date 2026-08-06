@@ -29,9 +29,10 @@ ReturnCode oxc::RoboObject::think() noexcept
 ReturnCode oxc::RoboObject::commit() noexcept
 {
   sta = doCommit();
-  if( sta.isOk() ) {
-    dirty = 0;
-  }
+  // BUG: where to store dirty?
+  // if( sta.isOk() ) {
+  //   dirty = 0;
+  // }
   return sta;
 }
 

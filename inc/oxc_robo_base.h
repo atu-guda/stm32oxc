@@ -15,14 +15,17 @@ namespace oxc {
 //* just to test design - second try
 class TestRoboDevice : public IoRoboCapability {
   public:
-   enum { xx_n_ch = 4, xx_bitsz = 16 };
-   TestRoboDevice( uint32_t id_ = 0 ) : IoRoboCapability( xx_n_ch, xx_bitsz, (1<<xx_bitsz)-1, xx_buf, id_ ) {};
+   enum { n_ch_int = 4, n_ch_float = 2, xx_bitsz = 16 };
+   TestRoboDevice( uint32_t id_ = 0 ) : IoRoboCapability( n_ch_int, n_ch_float, xx_bitsz, xx_buf, id_ ) {};
+   //* fake at all
+   virtual ReturnCode setValF( size_t ch, float v )  noexcept override { return setVal( ch, (int32_t)v ); }
+   virtual float_er   getValF( size_t ch )           noexcept override { return getVal( ch ); } // how converted?
   protected:
    virtual ReturnCode doInit()    noexcept override { std::ranges::fill( xx_buf, 0 ); dirty = false; return rcOk; };
    virtual ReturnCode doMeasure() noexcept override { return rcOk; };
    virtual ReturnCode doThink()   noexcept override { return rcOk; };
    virtual ReturnCode doCommit()  noexcept override { xx_t = xx_buf[0]; dirty = false; return rcOk; };
-   int32_t xx_buf[xx_n_ch];
+   int32_t xx_buf[n_ch_int];
    int32_t xx_t {0};
 };
 
