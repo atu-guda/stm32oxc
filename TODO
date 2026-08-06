@@ -1,4 +1,5 @@
 PinMask, PinNum ... - HW independent, move to separate header
+Output formats for *_o, *_er types
 Use run_periodic everyware, where needed
 Check H& ADC DMA to stack memory
 Move generic FreeRTOS config to one file

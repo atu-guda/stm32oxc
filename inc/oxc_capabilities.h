@@ -15,6 +15,47 @@ using oxc::ReturnCode;
 
 namespace oxc {
 
+class ValueTransform {
+  public:
+   virtual ~ValueTransform() = default; // unused?
+};
+
+class ValueTransform1x1 : ValueTransform {
+  public:
+   virtual float  toInnerF( float v )    const noexcept = 0;
+   virtual float fromInner( int32_t iv ) const noexcept = 0;
+   // virtual int32_t toInner( float v )  const noexcept { return std::lroundf( toInnerF( v ) ); }
+};
+
+class ZeroValueTransform : public ValueTransform1x1 {
+  public:
+   virtual float toInnerF(  float v    ) const noexcept override { return 0; }
+   virtual float fromInner( int32_t iv ) const noexcept override { return 0; }
+};
+
+inline static ZeroValueTransform globalZeroValueTransform;
+
+class UnityValueTransform : public ValueTransform1x1 {
+  public:
+   virtual float toInnerF(  float v )    const noexcept override { return  v;  }
+   virtual float fromInner( int32_t iv ) const noexcept override { return  iv; }
+};
+
+inline static UnityValueTransform globalUnityValueTransform;
+
+class LinearValueTransform : public ValueTransform1x1 {
+  public:
+   explicit constexpr LinearValueTransform( float a_, float b_ = 0 ) : // a, b - use in toInner
+     a( not_small( a_ )), b( b_ ), ra( 1.0f/a ) {};
+   constexpr LinearValueTransform( float ra_, float rb_, int /*fake */ ) // ra - reversre
+     :  a( 1.0f/not_small(ra_) ), b( -rb_ ), ra( not_small(ra_) ) {}
+   virtual float toInnerF(  float v )    const noexcept override { return a*v + b;         }
+   virtual float fromInner( int32_t iv ) const noexcept override { return ( iv - b ) * ra; }
+   float a, b, ra;
+   static constexpr float not_small( float aa ) { return std::fabsf(aa) > 1e-9f ? aa : 1.0f; }
+};
+
+
 
 //* pack of digital I/O channels
 class IoCapability {
@@ -30,8 +71,17 @@ class IoCapability {
    constexpr size_t size()     const noexcept { return sz;    }
    constexpr size_t sizeF()    const noexcept { return szF;    }
    constexpr size_t bitsize()  const noexcept { return bitsz; }
-   // constexpr size_t getScale() const noexcept { return scale; }
    //* just convenience functions
+   ReturnCode setValF_common( const ValueTransform1x1 &tr, size_t ch, float v )  noexcept // not so common - lroundf
+     { return setVal( ch, (int32_t)tr.toInnerF( v ) ); }
+   float_er   getValF_common( const ValueTransform1x1 &tr, size_t ch )           noexcept
+   {
+     auto t = getVal( ch );
+     if( !t ) {
+       return t;
+     }
+     return tr.fromInner( t.value() );
+   }
    // may be useless now
    // ReturnCode setVals( cint32_t_span vs ) noexcept;
    // ReturnCode getVals(  int32_t_span vs ) noexcept;
@@ -42,7 +92,6 @@ class IoCapability {
    const size_t sz;     //* number of integer channels
    const size_t szF;    //* number of floating channels - may be different
    const size_t bitsz;  //* integer channel bitsize - why here? -many different usages?
-   // const int32_t scale; not here
 };
 
 
@@ -65,9 +114,13 @@ class PinsPureCapability {
 // channels: [0] - set, [1] - get, floats: just copy for now
 class PinsCapability : public IoCapability, public PinsPureCapability {
   public:
-   explicit constexpr PinsCapability( size_t bitsz_ ) noexcept : IoCapability( n_ch_int, n_ch_float, bitsz_ )  {};
-   virtual ReturnCode setValF( size_t ch, float v )  noexcept override { return setVal( ch, (int32_t)v ); }
-   virtual float_er   getValF( size_t ch )           noexcept override { return getVal( ch ); } // how converted?
+   explicit constexpr PinsCapability( size_t bitsz_,
+       const ValueTransform1x1 &tr_ = globalUnityValueTransform ) noexcept :
+     IoCapability( n_ch_int, n_ch_float, bitsz_ ), tr( tr_ )  {};
+   virtual ReturnCode setValF( size_t ch, float v )  noexcept override { return setValF_common( tr, ch, v ); }
+   virtual float_er   getValF( size_t ch )           noexcept override { return getValF_common( tr, ch ); }
+  protected:
+   const ValueTransform1x1 &tr;
 };
 
 
@@ -86,9 +139,12 @@ class PinPureCapability {
 // channels: [0] - set, [1] - get, floats: just copy for now
 class PinCapability : public IoCapability, public PinPureCapability {
   public:
-   explicit constexpr PinCapability() noexcept : IoCapability( n_ch_int, n_ch_float, 1 )  {};
-   virtual ReturnCode setValF( size_t ch, float v )  noexcept override { return setVal( ch, (int32_t)v ); }
-   virtual float_er   getValF( size_t ch )           noexcept override { return getValF( ch ); }
+   constexpr PinCapability( const ValueTransform1x1 &tr_ = globalUnityValueTransform ) noexcept :
+     IoCapability( n_ch_int, n_ch_float, 1 ), tr( tr_ )  {};
+   virtual ReturnCode setValF( size_t ch, float v )  noexcept override { return setValF_common( tr, ch, v ); }
+   virtual float_er   getValF( size_t ch )           noexcept override { return getValF_common( tr, ch ); }
+  protected:
+   const ValueTransform1x1 &tr;
 };
 
 
@@ -96,7 +152,7 @@ class PwmPureCapability {
   public:
    virtual ReturnCode setFreq( float freq ) = 0;
    virtual ReturnCode setDuty( size_t ch, float duty ) = 0;
-   virtual ReturnCode setPulse( size_t ch, float p_t ) = 0;
+   // virtual ReturnCode setPulse( size_t ch, float p_t ) = 0; // TODO: remove, lineary depends on Duty
    virtual float getFreq() const noexcept = 0;
 };
 
@@ -105,6 +161,7 @@ class PwmCapability : public IoCapability, public PwmPureCapability { // + PinsP
     explicit constexpr PwmCapability( size_t sz_, size_t bitsz_ ) noexcept
      : IoCapability( sz_, bitsz_, (1<<bitsz_)-1 ) {};
   protected:
+   // const ValueTransform1x1 &tr_duty;
 };
 
 

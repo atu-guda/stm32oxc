@@ -16,6 +16,22 @@ struct CoordTransform {
    virtual float toInternal( float pv ) = 0;
 };
 
+struct ZeroCoordTransform : public CoordTransform {
+  public:
+   virtual float   toPhys(   float iv ) override { return 0; }
+   virtual float toInternal( float pv ) override { return 0; }
+};
+
+inline static ZeroCoordTransform globalZeroCoordTransform;
+
+struct UnityCoordTransform : public CoordTransform {
+  public:
+   virtual float   toPhys(   float iv ) override { return iv; }
+   virtual float toInternal( float pv ) override { return pv; }
+};
+
+inline static UnityCoordTransform globalUnityCoordTransform;
+
 struct LinearCoordTransform : public CoordTransform {
   public:
    struct PhysicalToInternalInit {};
