@@ -27,6 +27,7 @@ const char* common_help_string = "Appication to test misc robo parts. TMP." NL;
 DCL_CMD_REG(      test_pin_d,   'T',     " [arg ] - pin1_d"  );
 DCL_CMD_REG(      test_pin_rd,  'D',     " [arg ] - pin2_rd"  );
 DCL_CMD_REG(      test_pins_d,  'S',     " [arg ] - pins_d"  );
+DCL_CMD_REG(      test_pins_rd, 'U',     " [arg ] - pins_rd"  );
 
 // -------------------------------------------------------------------------------------
 
@@ -38,6 +39,7 @@ Gpio_Pin_Dev pin1_d( PC10 );
 Gpio_Pin_RDev pin2_rd( PC11 );
 
 Gpio_Pins_Dev pins_d( PC0, 4 ); // copy of leds
+Gpio_Pins_RDev pins_rd( PC0, 4 ); // copy of leds
 
 
 // ------------------------ - local sensors ; ---------------------------------------
@@ -50,6 +52,8 @@ TestRoboDevice test_rd{ 112 };
 
 RoboObject* hw_robo_objs[] {
   &test_rd,
+  &pin2_rd,
+  &pins_rd,
 };
 
 
@@ -70,6 +74,7 @@ void idle_main_task()
 void test_pin1( uint32_t tp, uint32_t n );
 void test_pin2( uint32_t tp, uint32_t n );
 void test_pins_d( uint32_t tp, uint32_t n );
+void test_pins_rd( uint32_t tp, uint32_t n );
 
 int main(void)
 {
@@ -130,6 +135,15 @@ CMD_FUNCTION( test_pins_d )
   test_pins_d( tp, n );
   return 0;
 }
+
+CMD_FUNCTION( test_pins_rd )
+{
+  auto tp = arg2ulong_d( 1, argc, argv,  0 );
+  auto n  = arg2ulong_d( 2, argc, argv,  UVAR_n );
+  test_pins_rd( tp, n );
+  return 0;
+}
+
 
 void test_pin1( uint32_t tp, uint32_t n )
 {
@@ -229,3 +243,15 @@ void test_pins_d( uint32_t tp, uint32_t n )
     std_out << pins_d.read().value_or( 255 ) << NL;
   }
 }
+
+
+void test_pins_rd( uint32_t tp, uint32_t n )
+{
+  for( uint32_t i=0; i<n; ++i ) {
+    pins_rd.write( i ); pins_rd.toggle( 3 );
+    pins_rd.commit(); pins_rd.measure();
+    delay_ms( 50 );
+    std_out << pins_rd.read().value_or( 255 ) << NL;
+  }
+}
+

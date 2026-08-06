@@ -34,7 +34,7 @@ class Gpio_Pin_Dev : public PinCapability
    PinOut* getPin() noexcept { return &pin; } // low-level access: for special init...
   protected:
    PinOut pin;
-};
+}; // Gpio_Pins_Dev
 
 
 //* PinsCapability interface to sequence for the GPIO pins
@@ -57,9 +57,9 @@ class Gpio_Pins_Dev : public PinsCapability
 
    // PinsCapability:
    virtual int32_t_er read()             noexcept override { return pins.readUint();       }
-   virtual void write(     int32_t v   ) noexcept override { pins.write( PinMask( v ) );   }
-   virtual void set(       int32_t v   ) noexcept override { pins.set( PinMask( v ) );     }
-   virtual void reset(     int32_t v   ) noexcept override { pins.reset( PinMask( v ) );   }
+   virtual void write(     int32_t v   ) noexcept override { pins.write(  PinMask( v ) );  }
+   virtual void set(       int32_t v   ) noexcept override { pins.set(    PinMask( v ) );  }
+   virtual void reset(     int32_t v   ) noexcept override { pins.reset(  PinMask( v ) );  }
    virtual void toggle(    int32_t v   ) noexcept override { pins.toggle( PinMask( v ) );  }
    virtual void setbit(    int32_t pos ) noexcept override { pins.setbit(    PinNum( pos ) );  }
    virtual void resetbit(  int32_t pos ) noexcept override { pins.resetbit(  PinNum( pos ) );  }
@@ -69,7 +69,7 @@ class Gpio_Pins_Dev : public PinsCapability
    PinsOut* getPins() noexcept { return &pins; } // low-level access: for special init...
   protected:
    PinsOut pins;
-};
+}; // Gpio_Pins_Dev
 
 }; // namespace oxc
 
