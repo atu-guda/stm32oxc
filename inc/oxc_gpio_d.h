@@ -11,15 +11,17 @@ namespace oxc {
 class Gpio_Pin_Dev : public PinCapability
 {
   public:
-   constexpr explicit Gpio_Pin_Dev( const PinOut& pin_ ) : pin( pin_ )    {}
-   constexpr explicit Gpio_Pin_Dev( PortPin portpin_   ) : pin( portpin_ ) {}
+   constexpr explicit Gpio_Pin_Dev( const PinOut& pin_, const ValueTransform1x1 &tr_ = globalUnityValueTransform ) :
+     PinCapability( tr_ ), pin( pin_ )    {}
+   constexpr explicit Gpio_Pin_Dev( PortPin portpin_,   const ValueTransform1x1 &tr_ = globalUnityValueTransform ) :
+     PinCapability( tr_ ), pin( portpin_ ) {}
 
    // IOCapability:
    virtual ReturnCode setVal( size_t ch, int32_t v ) noexcept override
-     { if( ch != 0 ) { return rcErr; }; pin.write((bool)v); return rcOk; }
+     { if( ch != ch_out ) { return rcErr; }; pin.write((bool)v); return rcOk; }
    virtual int32_t_er getVal( size_t ch ) noexcept override
-     { if( ch == 1 ) { return pin.read_in(); }
-       if( ch == 0 ) { return pin.read_out(); }
+     { if( ch == ch_in  ) { return pin.read_in(); }
+       if( ch == ch_out ) { return pin.read_out(); }
        return std::unexpected( rcErr );
      }
 
@@ -48,10 +50,10 @@ class Gpio_Pins_Dev : public PinsCapability
 
    // IOCapability:
    virtual ReturnCode setVal( size_t ch, int32_t v ) noexcept override
-     { if( ch != 0 ) { return rcErr; }; pins.write( PinMask(v) ); return rcOk; }
+     { if( ch != ch_out ) { return rcErr; }; pins.write( PinMask(v) ); return rcOk; }
    virtual int32_t_er getVal( size_t ch ) noexcept override
-     { if( ch == 1 ) { return pins.readUint(); }
-       if( ch == 0 ) { return pins.read_outUint(); }
+     { if( ch == ch_in  ) { return pins.readUint();     }
+       if( ch == ch_out ) { return pins.read_outUint(); }
        return std::unexpected( rcErr );
      }
 

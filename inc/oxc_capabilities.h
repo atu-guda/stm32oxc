@@ -98,7 +98,7 @@ class IoCapability {
 
 class PinsPureCapability {
   public:
-   enum { n_ch_int = 2, n_ch_float = 2 };
+   enum { n_ch_int = 2, n_ch_float = 2, ch_out = 0, ch_in = 1, ch_out_bit = 1, ch_in_bit = 2 };
    virtual int32_t_er read()             noexcept = 0;
    virtual void write(     int32_t v   ) noexcept = 0;
    virtual void set(       int32_t v   ) noexcept = 0;
@@ -126,7 +126,7 @@ class PinsCapability : public IoCapability, public PinsPureCapability {
 
 class PinPureCapability {
   public:
-   enum { n_ch_int = 2, n_ch_float = 2 };
+   enum { n_ch_int = 2, n_ch_float = 2, ch_out = 0, ch_in = 1, ch_out_bit = 1, ch_in_bit = 2 };
    virtual int32_t_er read()    noexcept  = 0;
    virtual void write( bool v ) noexcept  = 0;
    virtual void set()           noexcept  = 0;

@@ -46,11 +46,12 @@ class IoRoboCapability : public IoCapability, public RoboObject {
 
 class PinsRoboCapability : public PinsPureCapability, public IoRoboCapability {
   public:
-   explicit constexpr PinsRoboCapability( size_t bitsz_, uint32_t id_ = 0 ) noexcept
-     : IoRoboCapability( n_ch_int, n_ch_float, bitsz_, vv, id_ ) {};
-   virtual ReturnCode setValF( size_t ch, float v )  noexcept override { return setVal( ch, (int32_t)v ); }
-   virtual float_er   getValF( size_t ch )           noexcept override { return getVal( ch ); } // how converted?
+   explicit constexpr PinsRoboCapability( size_t bitsz_, const ValueTransform1x1 &tr_ = globalUnityValueTransform, uint32_t id_ = 0 ) noexcept
+     : IoRoboCapability( n_ch_int, n_ch_float, bitsz_, vv, id_ ), tr( tr_ ) {};
+   virtual ReturnCode setValF( size_t ch, float v )  noexcept override { return setValF_common( tr, ch, v ); }
+   virtual float_er   getValF( size_t ch )           noexcept override { return getValF_common( tr, ch ); }
   protected:
+   const ValueTransform1x1 &tr;
    int32_t vv[n_ch_int]; // 0-out 1-in
 };
 
@@ -58,11 +59,12 @@ class PinsRoboCapability : public PinsPureCapability, public IoRoboCapability {
 
 class PinRoboCapability : public PinPureCapability, public IoRoboCapability {
   public:
-   explicit constexpr PinRoboCapability( uint32_t id_ = 0 ) noexcept
-     : IoRoboCapability( n_ch_int, n_ch_int, 1, vv, id_ ) {};
+   explicit constexpr PinRoboCapability( const ValueTransform1x1 &tr_ = globalUnityValueTransform, uint32_t id_ = 0 ) noexcept
+     : IoRoboCapability( n_ch_int, n_ch_int, 1, vv, id_ ), tr( tr_ ) {};
    virtual ReturnCode setValF( size_t ch, float v )  noexcept override { return setVal( ch, (int32_t)v ); }
    virtual float_er   getValF( size_t ch )           noexcept override { return getVal( ch ); } // how converted?
   protected:
+   const ValueTransform1x1 &tr;
    int32_t vv[n_ch_int]; // 0-out 1-in
 };
 
