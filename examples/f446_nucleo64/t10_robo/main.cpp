@@ -39,7 +39,8 @@ Gpio_Pin_Dev pin1_d( PC10 );
 Gpio_Pin_RDev pin2_rd( PC11 );
 
 Gpio_Pins_Dev pins_d( PC0, 4 ); // copy of leds
-Gpio_Pins_RDev pins_rd( PC0, 4 ); // copy of leds
+LinearValueTransform pins_tr( 5.0f, 0.5f );
+Gpio_Pins_RDev pins_rd( PC0, 4, pins_tr ); // copy of leds
 
 
 // ------------------------ - local sensors ; ---------------------------------------
@@ -82,6 +83,8 @@ int main(void)
 
   UVAR_l =    1; // idle after run ?
   UVAR_n =   20; // n test
+  UVAR_s = 1000; // scale
+  UVAR_t =   50; // default delay
 
   if( ! init_hw_all().isOk() ) {
     std_out << "# Error: HW init" << NL;
@@ -151,10 +154,10 @@ void test_pin1( uint32_t tp, uint32_t n )
     case 0:
     for( uint32_t i=0; i<n; ++i ) {
       pin1_d.set();
-      delay_ms( 50 );
+      delay_ms( UVAR_t );
       std_out << i << ' ' << pin1_d.read().value_or( 5 ) << ' ';
       pin1_d.reset();
-      delay_ms( 50 );
+      delay_ms( UVAR_t );
       std_out << pin1_d.read().value_or( 6 ) << NL;
     }
     break;
@@ -194,12 +197,12 @@ void test_pin2( uint32_t tp, uint32_t n )
     case 0:
     for( uint32_t i=0; i<n; ++i ) {
       pin2_rd.set(); pin2_rd.commit();
-      delay_ms( 50 );
+      delay_ms( UVAR_t );
       pin2_rd.measure();
       std_out << i << ' ' << pin2_rd.read().value_or( 5 ) << ' ';
       pin2_rd.reset(); pin2_rd.commit();
       pin2_rd.measure();
-      delay_ms( 50 );
+      delay_ms( UVAR_t );
       std_out << pin2_rd.read().value_or( 6 ) << NL;
     }
     break;
@@ -239,7 +242,7 @@ void test_pins_d( uint32_t tp, uint32_t n )
 {
   for( uint32_t i=0; i<n; ++i ) {
     pins_d.write( i );
-    delay_ms( 50 );
+    delay_ms( UVAR_t );
     std_out << pins_d.read().value_or( 255 ) << NL;
   }
 }
@@ -247,11 +250,29 @@ void test_pins_d( uint32_t tp, uint32_t n )
 
 void test_pins_rd( uint32_t tp, uint32_t n )
 {
-  for( uint32_t i=0; i<n; ++i ) {
-    pins_rd.write( i ); pins_rd.toggle( 3 );
-    pins_rd.commit(); pins_rd.measure();
-    delay_ms( 50 );
-    std_out << pins_rd.read().value_or( 255 ) << NL;
+  switch( tp ) {
+    case 0:
+      for( uint32_t i=0; i<n; ++i ) {
+        pins_rd.write( i ); pins_rd.toggle( 3 );
+        pins_rd.commit(); pins_rd.measure();
+        delay_ms( UVAR_t );
+        std_out << pins_rd.read().value_or( 255 ) << NL;
+      }
+      break;
+
+    case 1:
+      for( uint32_t i=0; i<n; ++i ) {
+        float v = 0.1 * i * UVAR_s;
+        pins_rd.setValF( 0, v ); pins_rd.commit(); pins_rd.measure();
+        delay_ms( UVAR_t );
+        std_out << v << ' ' << pins_rd.read().value_or( 255 )
+          << ' ' << pins_rd.getVal( 0 ).value_or( -555 )
+          << ' ' << pins_rd.getValF( 0 ).value_or( -555.0f )
+          << NL;
+      }
+      break;
+
+    default: break;
   }
 }
 
