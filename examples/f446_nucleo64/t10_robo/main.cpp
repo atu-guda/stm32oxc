@@ -37,6 +37,7 @@ ReturnCode init_hw_all();
 
 Gpio_Pin_Dev pin1_d( PC10 );
 Gpio_Pin_RDev pin2_rd( PC11 );
+Gpio_IPin_RDev pini_rd( PC13 );
 
 Gpio_Pins_Dev pins_d( PC0, 4 ); // copy of leds
 LinearValueTransform pins_tr( 5.0f, 0.5f );
@@ -84,7 +85,7 @@ int main(void)
   UVAR_l =    1; // idle after run ?
   UVAR_n =   20; // n test
   UVAR_s = 1000; // scale
-  UVAR_t =   50; // default delay
+  UVAR_t =  100; // default delay
 
   if( ! init_hw_all().isOk() ) {
     std_out << "# Error: HW init" << NL;
@@ -106,6 +107,8 @@ ReturnCode init_hw_all()
 {
   pin1_d.initHW();
   pin2_rd.initHW();
+  // pini_rd.getPin()->cfgIn();
+  PC13.cfgIn();
 
   pins_d.initHW(); // dup from leds, but may be another pins?
 
@@ -201,9 +204,10 @@ void test_pin2( uint32_t tp, uint32_t n )
       pin2_rd.measure();
       std_out << i << ' ' << pin2_rd.read().value_or( 5 ) << ' ';
       pin2_rd.reset(); pin2_rd.commit();
-      pin2_rd.measure();
+      pin2_rd.measure(); pini_rd.measure();
       delay_ms( UVAR_t );
-      std_out << pin2_rd.read().value_or( 6 ) << NL;
+      std_out << pin2_rd.read().value_or( 6 )
+        << ' ' << pini_rd.getVal( PinPureCapability::ch_in ).value_or( 77 ) << NL;
     }
     break;
 
