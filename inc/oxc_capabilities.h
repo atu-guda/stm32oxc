@@ -11,11 +11,10 @@ using std::int32_t;
 
 using oxc::ReturnCode;
 
-//* Abstract classes to realize common capabilities + mix to real HW classes
 
 namespace oxc {
 
-class ValueTransform {
+class ValueTransform { // TODO: remove at all?
   public:
    virtual ~ValueTransform() = default; // unused?
 };
@@ -25,6 +24,12 @@ class ValueTransform1x1 : ValueTransform {
    virtual float  toInnerF( float v )    const noexcept = 0;
    virtual float fromInner( int32_t iv ) const noexcept = 0;
    // virtual int32_t toInner( float v )  const noexcept { return std::lroundf( toInnerF( v ) ); }
+};
+
+class ValueTransform1xN : ValueTransform {
+  public:
+   virtual bool  toInnerF( float v, int32_t *ivs ) const noexcept = 0;
+   virtual float fromInner( const int32_t *ivs )   const noexcept = 0;
 };
 
 class ZeroValueTransform : public ValueTransform1x1 {
@@ -55,7 +60,9 @@ class LinearValueTransform : public ValueTransform1x1 {
    static constexpr float not_small( float aa ) { return std::fabsf(aa) > 1e-9f ? aa : 1.0f; }
 };
 
+// ----------------------------------------------------------------------------------------
 
+//* Abstract classes to realize common capabilities + mix to real HW classes
 
 //* pack of digital I/O channels
 class IoCapability {
@@ -150,18 +157,22 @@ class PinCapability : public IoCapability, public PinPureCapability {
 
 class PwmPureCapability {
   public:
-   virtual ReturnCode setFreq( float freq ) = 0;
    virtual ReturnCode setDuty( size_t ch, float duty ) = 0;
-   // virtual ReturnCode setPulse( size_t ch, float p_t ) = 0; // TODO: remove, lineary depends on Duty
+   virtual ReturnCode setFreq( float freq ) = 0;
    virtual float getFreq() const noexcept = 0;
 };
 
+// channels: 0..sz-1 - duty, sz..sz+n_cfg_ch - freq config
 class PwmCapability : public IoCapability, public PwmPureCapability { // + PinsPureCapability?
   public:
-    explicit constexpr PwmCapability( size_t sz_, size_t bitsz_ ) noexcept
-     : IoCapability( sz_, bitsz_, (1<<bitsz_)-1 ) {};
+   enum { n_cfg_ch = 4 };
+    explicit constexpr PwmCapability( size_t sz_, size_t bitsz_,
+        const ValueTransform1xN &tr_f_, const ValueTransform1x1 &tr_d_ = globalZeroValueTransform ) noexcept
+     : IoCapability( sz_ + n_cfg_ch, sz_ + 1, bitsz_ ),
+       tr_f( tr_f_ ), tr_d( tr_d_ ) {};
   protected:
-   // const ValueTransform1x1 &tr_duty;
+   const ValueTransform1xN &tr_f; // transformation for frequiency
+   const ValueTransform1x1 &tr_d; // transformation for duty
 };
 
 

@@ -69,13 +69,17 @@ class PinRoboCapability : public PinPureCapability, public IoRoboCapability {
 };
 
 
-
-class PwmRoboCapability : public PwmPureCapability, public IoRoboCapability { // + PinsPureCapability?
+// channels: 0..sz-1 - duty, sz..sz+n_cfg_ch - freq config
+class PwmRoboCapability : public PwmPureCapability, public IoRoboCapability {
   public:
-   explicit constexpr PwmRoboCapability( size_t sz_, size_t bitsz_, int32_t scale_,
-       int32_t_span iobuf_, uint32_t id_ = 0 ) noexcept
-     : IoRoboCapability( sz_, bitsz_, scale_, iobuf_, id_ ) {};
+   enum { n_cfg_ch = 4 };
+   explicit constexpr PwmRoboCapability( size_t sz_, size_t bitsz_, int32_t_span iobuf_,
+       const ValueTransform1xN &tr_f_, const ValueTransform1x1 &tr_d_ = globalZeroValueTransform, uint32_t id_ = 0 ) noexcept
+     : IoRoboCapability( sz_ + n_cfg_ch, sz_ + 1, bitsz_, iobuf_, id_ ),
+       tr_f( tr_f_ ), tr_d( tr_d_ ) {};
   protected:
+   const ValueTransform1xN &tr_f; // transformation for frequiency
+   const ValueTransform1x1 &tr_d; // transformation for duty
 };
 
 
