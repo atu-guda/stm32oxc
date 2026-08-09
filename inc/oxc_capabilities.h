@@ -17,20 +17,19 @@ namespace oxc {
 
 class ValFiTrans1x1 {
   public:
-   virtual float  toInnerF( float v )    const noexcept = 0;
+   virtual int32_t    toInner( float v ) const noexcept = 0;
    virtual float fromInner( int32_t iv ) const noexcept = 0;
-   // virtual int32_t toInner( float v )  const noexcept { return std::lroundf( toInnerF( v ) ); }
 };
 
 class ValFiTrans1xN {
   public:
-   virtual bool  toInnerF( float v, int32_t *ivs ) const noexcept = 0;
-   virtual float fromInner( const int32_t *ivs )   const noexcept = 0;
+   virtual bool  toInner( float v, int32_t *ivs ) const noexcept = 0;
+   virtual float fromInner( const int32_t *ivs )  const noexcept = 0;
 };
 
 class ZeroValFiTrans : public ValFiTrans1x1 {
   public:
-   virtual float toInnerF(  float v    ) const noexcept override { return 0; }
+   virtual int32_t toInner(  float v   ) const noexcept override { return 0; }
    virtual float fromInner( int32_t iv ) const noexcept override { return 0; }
 };
 
@@ -38,7 +37,7 @@ inline static ZeroValFiTrans globalZeroValFiTrans;
 
 class UnityValFiTrans : public ValFiTrans1x1 {
   public:
-   virtual float toInnerF(  float v )    const noexcept override { return  v;  }
+   virtual int32_t toInner(  float v   ) const noexcept override { return  (int32_t)v;  }
    virtual float fromInner( int32_t iv ) const noexcept override { return  iv; }
 };
 
@@ -50,10 +49,19 @@ class LinearValFiTrans : public ValFiTrans1x1 {
      a( not_small( a_ )), b( b_ ), ra( 1.0f/a ) {};
    constexpr LinearValFiTrans( float ra_, float rb_, int /*fake */ ) // ra - reversre
      :  a( 1.0f/not_small(ra_) ), b( -rb_ ), ra( not_small(ra_) ) {}
-   virtual float toInnerF(  float v )    const noexcept override { return a*v + b;         }
-   virtual float fromInner( int32_t iv ) const noexcept override { return ( iv - b ) * ra; }
+   virtual int32_t toInner(    float v ) const noexcept override { return (int32_t)(a*v + b );  }
+   virtual float fromInner( int32_t iv ) const noexcept override { return ( iv - b ) * ra;      }
    float a, b, ra;
    static constexpr float not_small( float aa ) { return std::fabsf(aa) > 1e-9f ? aa : 1.0f; }
+};
+
+class LinRoundValFiTrans : public LinearValFiTrans {
+  public:
+   explicit constexpr LinRoundValFiTrans( float a_, float b_ = 0 ) :
+     LinearValFiTrans( a_, b_ ) {};
+   constexpr LinRoundValFiTrans( float ra_, float rb_, int /*fake */ ) : // ra - reversre
+     LinearValFiTrans( ra_, rb_, 0 ) {};
+   virtual int32_t toInner(    float v ) const noexcept override { return std::lroundf( a*v + b );  }
 };
 
 // ----------------------------------------------------------------------------------------
@@ -76,7 +84,7 @@ class IoCapability {
    constexpr size_t bitsize()  const noexcept { return bitsz; }
    //* just convenience functions
    ReturnCode setValF_common( const ValFiTrans1x1 &tr, size_t ch, float v )  noexcept // not so common - lroundf
-     { return setVal( ch, (int32_t)tr.toInnerF( v ) ); }
+     { return setVal( ch, tr.toInner( v ) ); }
    float_er   getValF_common( const ValFiTrans1x1 &tr, size_t ch )           noexcept
    {
      auto t = getVal( ch );
