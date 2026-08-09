@@ -16,7 +16,7 @@ class  Tim_Pwm_Dev : public PwmCapability {
   public:
    static constexpr size_t max_ch { 8 }; // really 6, but what if?
    constexpr Tim_Pwm_Dev( uintptr_t tim_addr_, span<const TimChPin> channels_, size_t bitsz_, TIM_HandleTypeDef &t_h_,
-        const ValueTransform1xN &tr_f_, const ValueTransform1x1 &tr_d_ = globalUnityValueTransform
+        const ValFiTrans1xN &tr_f_, const ValFiTrans1x1 &tr_d_ = globalUnityValFiTrans
        ) noexcept
      : PwmCapability( channels_.size(), bitsz_, tr_f_, tr_d_ ),
        tim_addr( tim_addr_ ),

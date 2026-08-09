@@ -46,12 +46,12 @@ class IoRoboCapability : public IoCapability, public RoboObject {
 
 class PinsRoboCapability : public PinsPureCapability, public IoRoboCapability {
   public:
-   explicit constexpr PinsRoboCapability( size_t bitsz_, const ValueTransform1x1 &tr_ = globalUnityValueTransform, uint32_t id_ = 0 ) noexcept
+   explicit constexpr PinsRoboCapability( size_t bitsz_, const ValFiTrans1x1 &tr_ = globalUnityValFiTrans, uint32_t id_ = 0 ) noexcept
      : IoRoboCapability( n_ch_int, n_ch_float, bitsz_, vv, id_ ), tr( tr_ ) {};
    virtual ReturnCode setValF( size_t ch, float v )  noexcept override { return setValF_common( tr, ch, v ); }
    virtual float_er   getValF( size_t ch )           noexcept override { return getValF_common( tr, ch ); }
   protected:
-   const ValueTransform1x1 &tr;
+   const ValFiTrans1x1 &tr;
    int32_t vv[n_ch_int]; // 0-out 1-in
 };
 
@@ -59,12 +59,12 @@ class PinsRoboCapability : public PinsPureCapability, public IoRoboCapability {
 
 class PinRoboCapability : public PinPureCapability, public IoRoboCapability {
   public:
-   explicit constexpr PinRoboCapability( const ValueTransform1x1 &tr_ = globalUnityValueTransform, uint32_t id_ = 0 ) noexcept
+   explicit constexpr PinRoboCapability( const ValFiTrans1x1 &tr_ = globalUnityValFiTrans, uint32_t id_ = 0 ) noexcept
      : IoRoboCapability( n_ch_int, n_ch_int, 1, vv, id_ ), tr( tr_ ) {};
    virtual ReturnCode setValF( size_t ch, float v )  noexcept override { return setVal( ch, (int32_t)v ); }
    virtual float_er   getValF( size_t ch )           noexcept override { return getVal( ch ); } // how converted?
   protected:
-   const ValueTransform1x1 &tr;
+   const ValFiTrans1x1 &tr;
    int32_t vv[n_ch_int]; // 0-out 1-in
 };
 
@@ -74,12 +74,12 @@ class PwmRoboCapability : public PwmPureCapability, public IoRoboCapability {
   public:
    enum { n_cfg_ch = 4 };
    explicit constexpr PwmRoboCapability( size_t sz_, size_t bitsz_, int32_t_span iobuf_,
-       const ValueTransform1xN &tr_f_, const ValueTransform1x1 &tr_d_ = globalZeroValueTransform, uint32_t id_ = 0 ) noexcept
+       const ValFiTrans1xN &tr_f_, const ValFiTrans1x1 &tr_d_ = globalZeroValFiTrans, uint32_t id_ = 0 ) noexcept
      : IoRoboCapability( sz_ + n_cfg_ch, sz_ + 1, bitsz_, iobuf_, id_ ),
        tr_f( tr_f_ ), tr_d( tr_d_ ) {};
   protected:
-   const ValueTransform1xN &tr_f; // transformation for frequiency
-   const ValueTransform1x1 &tr_d; // transformation for duty
+   const ValFiTrans1xN &tr_f; // transformation for frequiency
+   const ValFiTrans1x1 &tr_d; // transformation for duty
 };
 
 

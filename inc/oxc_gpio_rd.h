@@ -12,9 +12,9 @@ namespace oxc {
 class Gpio_XPin_RDev : public PinRoboCapability
 {
   public:
-   constexpr explicit Gpio_XPin_RDev( const PinOut& pin_, const ValueTransform1x1 &tr_ = globalUnityValueTransform, uint32_t id_ = 0 ) :
+   constexpr explicit Gpio_XPin_RDev( const PinOut& pin_, const ValFiTrans1x1 &tr_ = globalUnityValFiTrans, uint32_t id_ = 0 ) :
      PinRoboCapability( tr_, id_ ), pin( pin_ )    {}
-   constexpr explicit Gpio_XPin_RDev( PortPin portpin_, const ValueTransform1x1 &tr_ = globalUnityValueTransform,  uint32_t id_ = 0 ) :
+   constexpr explicit Gpio_XPin_RDev( PortPin portpin_, const ValFiTrans1x1 &tr_ = globalUnityValFiTrans,  uint32_t id_ = 0 ) :
      PinRoboCapability( tr_, id_ ), pin( portpin_ )    {}
 
    // Pin[Robo]Capability:
@@ -38,9 +38,9 @@ class Gpio_XPin_RDev : public PinRoboCapability
 class Gpio_IPin_RDev : public Gpio_XPin_RDev
 {
   public:
-   constexpr explicit Gpio_IPin_RDev( const PinOut& pin_, const ValueTransform1x1 &tr_ = globalUnityValueTransform, uint32_t id_ = 0 ) :
+   constexpr explicit Gpio_IPin_RDev( const PinOut& pin_, const ValFiTrans1x1 &tr_ = globalUnityValFiTrans, uint32_t id_ = 0 ) :
      Gpio_XPin_RDev( pin, tr_, id_ ) {}
-   constexpr explicit Gpio_IPin_RDev( PortPin portpin_, const ValueTransform1x1 &tr_ = globalUnityValueTransform, uint32_t id_ = 0 ) :
+   constexpr explicit Gpio_IPin_RDev( PortPin portpin_, const ValFiTrans1x1 &tr_ = globalUnityValFiTrans, uint32_t id_ = 0 ) :
      Gpio_XPin_RDev( portpin_, tr_, id_ ) {}
 
    // Pin[Robo]Capability: part
@@ -61,10 +61,10 @@ class Gpio_OPin_RDev : public Gpio_XPin_RDev
 {
   public:
    constexpr explicit Gpio_OPin_RDev( const PinOut& pin_,
-       const ValueTransform1x1 &tr_ = globalUnityValueTransform, uint32_t id_ = 0 ) :
+       const ValFiTrans1x1 &tr_ = globalUnityValFiTrans, uint32_t id_ = 0 ) :
      Gpio_XPin_RDev( pin, tr_, id_ ) {}
    constexpr explicit Gpio_OPin_RDev( PortPin portpin_,
-       const ValueTransform1x1 &tr_ = globalUnityValueTransform,  uint32_t id_ = 0 ) :
+       const ValFiTrans1x1 &tr_ = globalUnityValFiTrans,  uint32_t id_ = 0 ) :
      Gpio_XPin_RDev( portpin_, tr_, id_ ) {}
 
    // Pin[Robo]Capability:
@@ -85,10 +85,10 @@ class Gpio_Pin_RDev : public Gpio_OPin_RDev
 {
   public:
    constexpr explicit Gpio_Pin_RDev( const PinOut& pin_,
-       const ValueTransform1x1 &tr_ = globalUnityValueTransform, uint32_t id_ = 0 ) :
+       const ValFiTrans1x1 &tr_ = globalUnityValFiTrans, uint32_t id_ = 0 ) :
      Gpio_OPin_RDev( pin_, tr_, id_ )   {}
    constexpr explicit Gpio_Pin_RDev( PortPin portpin_,
-       const ValueTransform1x1 &tr_ = globalUnityValueTransform, uint32_t id_ = 0 ) :
+       const ValFiTrans1x1 &tr_ = globalUnityValFiTrans, uint32_t id_ = 0 ) :
      Gpio_OPin_RDev( portpin_, tr_, id_ )   {}
   protected:
    virtual ReturnCode doMeasure() noexcept override { vv[ch_in] = pin.read_in(); return rcOk; } // real read
@@ -105,10 +105,10 @@ class Gpio_XPins_RDev : public PinsRoboCapability
 {
   public:
    constexpr explicit Gpio_XPins_RDev( GpioRegs &gi_, PinNum a_start_, uint8_t a_n_,
-       const ValueTransform1x1 &tr_ = globalUnityValueTransform,  uint32_t id_ = 0 ) :
+       const ValFiTrans1x1 &tr_ = globalUnityValFiTrans,  uint32_t id_ = 0 ) :
      PinsRoboCapability( a_n_, tr_, id_ ), pins( gi_, a_start_, a_n_ )    {}
    constexpr explicit Gpio_XPins_RDev( PortPin pp_, uint8_t a_n_,
-       const ValueTransform1x1 &tr_ = globalUnityValueTransform, uint32_t id_ = 0 ) :
+       const ValFiTrans1x1 &tr_ = globalUnityValFiTrans, uint32_t id_ = 0 ) :
      PinsRoboCapability( a_n_, tr_, id_ ), pins( pp_, a_n_ )    {}
 
    // Pins[Robo]Capability:
@@ -133,10 +133,10 @@ class Gpio_OPins_RDev : public Gpio_XPins_RDev
 {
   public:
    constexpr explicit Gpio_OPins_RDev( GpioRegs &gi_, PinNum a_start_, uint8_t a_n_,
-       const ValueTransform1x1 &tr_ = globalUnityValueTransform,  uint32_t id_ = 0 ) :
+       const ValFiTrans1x1 &tr_ = globalUnityValFiTrans,  uint32_t id_ = 0 ) :
      Gpio_XPins_RDev( gi_, a_start_, a_n_, tr_, id_ ) {}
    constexpr explicit Gpio_OPins_RDev( PortPin pp_, uint8_t a_n_,
-       const ValueTransform1x1 &tr_ = globalUnityValueTransform, uint32_t id_ = 0 ) :
+       const ValFiTrans1x1 &tr_ = globalUnityValFiTrans, uint32_t id_ = 0 ) :
      Gpio_XPins_RDev( pp_, a_n_, tr_, id_ ) {}
 
    // Pins[Robo]Capability:
@@ -166,10 +166,10 @@ class Gpio_IPins_RDev : public Gpio_XPins_RDev
 {
   public:
    constexpr explicit Gpio_IPins_RDev( GpioRegs &gi_, PinNum a_start_, uint8_t a_n_,
-       const ValueTransform1x1 &tr_ = globalUnityValueTransform,  uint32_t id_ = 0 ) :
+       const ValFiTrans1x1 &tr_ = globalUnityValFiTrans,  uint32_t id_ = 0 ) :
      Gpio_XPins_RDev( gi_, a_start_, a_n_, tr_, id_ ) {}
    constexpr explicit Gpio_IPins_RDev( PortPin pp_, uint8_t a_n_,
-       const ValueTransform1x1 &tr_ = globalUnityValueTransform, uint32_t id_ = 0 ) :
+       const ValFiTrans1x1 &tr_ = globalUnityValFiTrans, uint32_t id_ = 0 ) :
      Gpio_XPins_RDev( pp_, a_n_, tr_, id_ ) {}
 
    // Pins[Robo]Capability:
@@ -193,10 +193,10 @@ class Gpio_IPins_RDev : public Gpio_XPins_RDev
 class Gpio_Pins_RDev : public Gpio_OPins_RDev {
   public:
    constexpr explicit Gpio_Pins_RDev( GpioRegs &gi_, PinNum a_start_, uint8_t a_n_,
-       const ValueTransform1x1 &tr_ = globalUnityValueTransform, uint32_t id_ = 0 ) :
+       const ValFiTrans1x1 &tr_ = globalUnityValFiTrans, uint32_t id_ = 0 ) :
      Gpio_OPins_RDev( gi_, a_start_, a_n_, tr_, id_ )    {}
    constexpr explicit Gpio_Pins_RDev( PortPin pp_, uint8_t a_n_,
-       const ValueTransform1x1 &tr_ = globalUnityValueTransform, uint32_t id_ = 0 ) :
+       const ValFiTrans1x1 &tr_ = globalUnityValFiTrans, uint32_t id_ = 0 ) :
      Gpio_OPins_RDev( pp_, a_n_, tr_, id_ )    {}
 
    // RoboObject:

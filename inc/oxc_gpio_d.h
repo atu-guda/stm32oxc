@@ -11,9 +11,9 @@ namespace oxc {
 class Gpio_Pin_Dev : public PinCapability
 {
   public:
-   constexpr explicit Gpio_Pin_Dev( const PinOut& pin_, const ValueTransform1x1 &tr_ = globalUnityValueTransform ) :
+   constexpr explicit Gpio_Pin_Dev( const PinOut& pin_, const ValFiTrans1x1 &tr_ = globalUnityValFiTrans ) :
      PinCapability( tr_ ), pin( pin_ )    {}
-   constexpr explicit Gpio_Pin_Dev( PortPin portpin_,   const ValueTransform1x1 &tr_ = globalUnityValueTransform ) :
+   constexpr explicit Gpio_Pin_Dev( PortPin portpin_,   const ValFiTrans1x1 &tr_ = globalUnityValFiTrans ) :
      PinCapability( tr_ ), pin( portpin_ ) {}
 
    // IOCapability:

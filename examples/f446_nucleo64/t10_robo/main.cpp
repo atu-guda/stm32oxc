@@ -42,7 +42,7 @@ Gpio_Pin_RDev pin2_rd( PC11 );
 Gpio_IPin_RDev pini_rd( PC13 );
 
 Gpio_Pins_Dev pins_d( PC0, 4 ); // copy of leds
-LinearValueTransform pins_tr( 5.0f, 0.5f );
+LinearValFiTrans pins_tr( 5.0f, 0.5f );
 Gpio_Pins_RDev pins_rd( PC0, 4, pins_tr ); // copy of leds
 
 
