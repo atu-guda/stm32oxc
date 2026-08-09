@@ -7,7 +7,7 @@
 namespace oxc {
 
 //* iface to PwmCtl as RoboDevice
-class RoboPwmCtl : public RoboDevice {
+class [[deprecated]] RoboPwmCtl : public RoboDevice {
   public:
    static constexpr size_t max_ch { 32 };
    constexpr explicit RoboPwmCtl(  uint32_t id_, PwmCtl &pwmctl_ ) noexcept

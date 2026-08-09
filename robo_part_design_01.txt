@@ -5,11 +5,10 @@ Capablities - abstract classes to provide both capabilities and set/get, measure
 inc/oxc_capabilities.h src/oxc_capabilities.cpp
 
 IOCapability ( size, setVal(ch, int32_t), getVal(ch), act )
-AnalogCapability (+ scale, non-virtual setValF ..., values [0:1] [-1:1] ?)
 
 PinsCapability
 PinCapability ?
-PwmCtlCapability
+PwmCapability
 EncoCapability
 ? ADCCapability
 ? DACCapability
@@ -23,14 +22,13 @@ inc/oxc_robocaps.h src/oxc_robocaps.cpp
 RoboObject (init,measure,think,commit...)
 -->
 IoRoboCapability
-AnalogRoboCapability
 PinsRoboCapability
 PinRoboCapability
 PwmRoboCapability
 EncoderRoboCapability
 
 ## ------------------------------------ Level 2a: --------------------------------------------------
-
+// unnned, as we have ValueTransform
 SensorChannel ( get_i )
 SensorAnalogChannel (get, get_i)
 ActuatorChannel (set_i)
@@ -71,26 +69,24 @@ TODO: remove DevSPI, oxc_spi_
 ## ------------------------------------ Level 1b: --------------------------------------------------
 
 Capability and RoboCapability interfaces to real devices.
-If device supports immediate actions - both Capability and RoboCapability.
-If pre/post actions required - only RoboCapability
+If device supports immediate actions - both Capability and IoRoboCapability.
+If pre/post actions required - only IoRoboCapability
 
-Capability     + HW = <Device>; _Dev, _d
-RoboCapability + HW = <RoboDevice>; _RDev, _rd
-
-class name: HW_Dev, HW_RDev,  object suffix: _d, _rd, filename: oxc_hw_[r]d.{h,cpp}
-coordinates: inner(int), [-1:1] - float
+class name: HW_Cap_Dev, HW_Cap_RDev,  object suffix: _d, _rd, filename: oxc_hw_[cap]_[r]d.{h,cpp}
 
 init, measure, think, commit - called by scheduler (policy to continue)
 
-PinsOut_cap( ), PinsOut_rcap( ): oxc_gpio_[rcap].* - multiple classes per file?
-PinOut_cap( ),  PinOut_rcap( )
-? IoPin?
+oxc_gpio_d.h  : Gpio_Pin_Dev, Gpio_Pins_Dev
+oxc_gpio_rd.h : Gpio_XPin_RDev, Gpio_IPin_RDev, Gpio_OPin_RDev, Gpio_Pin_RDev
+                Gpio_XPins_RDev, Gpio_OPins_RDev, Gpio_IPins_RDev, Gpio_Pins_RDev
 
-PwmTimCtl_cap, _rcap
 
-AdcInner_rcap
+oxc_tim_pwm_d.h  : Tim_Pwm_Dev
+oxc_tim_pwm_rd.h : Tim_Pwm_RDev
 
-DacInner_*
+Adc
+
+Dac
 
 EncoTim_*
 

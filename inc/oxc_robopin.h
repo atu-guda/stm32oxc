@@ -7,8 +7,8 @@
 // for ReboDevice interface
 namespace oxc {
 
-//* RoboDevice interface to Pin
-class RoboPin : public RoboDevice
+//* RoboDevice interface to Pin TODO: replace with Gpio_Pin_[R]Dev
+class [[deprecated]] RoboPin : public RoboDevice
 {
   public:
    constexpr explicit RoboPin(  uint32_t id_, PinBase& pin_ ) : RoboDevice( id_ ), pin( pin_ ) {}

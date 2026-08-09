@@ -10,7 +10,7 @@
 namespace oxc {
 
 //* PWM controller based on STM32 timers with pwm capability
-class PwmCtlTim : public PwmCtl {
+class [[deprecated]] PwmCtlTim : public PwmCtl {
   public:
    static constexpr std::size_t max_ch { 8 }; // really 6, but what if?
    constexpr PwmCtlTim( std::uintptr_t tim_addr_, std::span<const TimChPin> channels_, TIM_HandleTypeDef &t_h_ )

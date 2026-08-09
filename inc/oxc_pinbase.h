@@ -7,7 +7,7 @@ namespace oxc {
 
 //* abstract base for different simple I/O pin actions
 //* not all must be real
-class PinBase  {
+class [[deprecated]] PinBase  {
   public:
    virtual void set()           = 0; // direct access functions
    virtual void reset()         = 0;

@@ -7,7 +7,7 @@
 // -------------- PinGpio ---------------------------------------
 // for generic interface
 namespace oxc {
-class PinGpio : public PinBase
+class [[deprecated]] PinGpio : public PinBase
 {
   public:
    constexpr explicit PinGpio( const PinOut& pin_ ) : pin( pin_ )    {}

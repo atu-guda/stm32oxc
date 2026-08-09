@@ -8,7 +8,7 @@
 namespace oxc {
 
 //* abstraction for real PWM controllers
-class PwmCtl {
+class [[deprecated]] PwmCtl {
   public:
    constexpr explicit PwmCtl( std::size_t n_ch_ ) : n_ch( n_ch_ ) {};
    constexpr std::size_t size() const     { return n_ch; };

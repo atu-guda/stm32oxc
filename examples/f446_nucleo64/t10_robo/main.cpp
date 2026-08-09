@@ -8,6 +8,8 @@
 #include <oxc_gpio_d.h>
 #include <oxc_gpio_rd.h>
 
+#include <oxc_tim_pwm_d.h>
+
 #include <board_robo_cfg.h>
 
 

@@ -155,12 +155,15 @@ class PinCapability : public IoCapability, public PinPureCapability {
 };
 
 
+
+//* frequiency in in Hz, duty: [0:1]
 class PwmPureCapability {
   public:
-   virtual ReturnCode setDuty( size_t ch, float duty ) = 0;
-   virtual ReturnCode setFreq( float freq ) = 0;
-   virtual float getFreq() const noexcept = 0;
+   virtual ReturnCode setDuty( size_t ch, float duty ) noexcept = 0;
+   virtual ReturnCode setFreq( float freq )            noexcept = 0;
+   virtual float getFreq() const                       noexcept = 0;
 };
+
 
 // channels: 0..sz-1 - duty, sz..sz+n_cfg_ch - freq config
 class PwmCapability : public IoCapability, public PwmPureCapability { // + PinsPureCapability?

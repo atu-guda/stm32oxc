@@ -24,7 +24,7 @@ class PinMask;
 class PinNum;
 class PortPin;
 
-
+//* TODO: to oxc_types.h HW independent, but only 16bit
 class PinMask {
   public:
    explicit constexpr PinMask( uint16_t mask_ ) : mask ( mask_ ) {};
@@ -42,6 +42,7 @@ constexpr PinMask operator""_mask( unsigned long long v ) {
   return PinMask( v );
 }
 
+//* TODO: to oxc_types.h HW independent, but only 8bit
 class PinNum {
   public:
    explicit constexpr PinNum( uint8_t num_ ) : num ( num_ ) {};
@@ -65,6 +66,7 @@ constexpr inline PinMask make_pinMask( PinNum pin_num, uint8_t n ) { return PinM
 //* Combines in one 16-bit POD value port index and pin number.
 //* Have predefined values like PA0 .. PA15 .. PM15, PBAD, PSPEC0 - PSPEC7 (special values)
 //* in config headers: inline constexpr PortPin My_Pin { PC4 };
+// TODO: rename to GpioPortPin ?
 class PortPin {
   public:
    enum PortNum { PortA = 0, PortB, PortC, PortD, PortE, PortF, PortG, PortH, PortI, PortJ, PortK, PortL, PortM,
@@ -362,6 +364,7 @@ constexpr auto Gpios { RefPtr(GPIOs) };
 void GPIO_WriteBits( GPIO_TypeDef* GPIOx, uint16_t PortVal, uint16_t mask );
 void board_def_btn_init( bool needIRQ );
 
+// TODO: rename to GpioPins ?
 class Pins
 {
   public:
@@ -413,6 +416,7 @@ class Pins
 // p[1] = 1; p |= 0x0F; p ^= 0xAA;  p %= 0x77; // (reset: not &=, ~&= )
 // p[1].set(); p[0].reset();
 // p = 0x0C; // =write
+// TODO: rename to GpioPins ?
 
 class PinsOut : public Pins
 {
@@ -487,7 +491,7 @@ class PinsOut : public Pins
 extern PinsOut leds;
 
 // --------------- PinOut ----------------------------------------
-// TODO: rename to GpioPin +  pull
+// TODO: rename to GpioPin* +  pull
 // single output pin
 // PinOut p1( GpioA, 8 ); // GPIOA 8
 // PinOut p1( PA8 );
@@ -548,6 +552,7 @@ class PinOut
 
 // --------------- PinsIn ----------------------------------------
 // PinsIn pi( GpioB, 12, 4 [, GpioPull::{no,down,up} ] );
+// TODO: rename to GpioPinsIn ?
 class PinsIn : public Pins
 {
   public:
@@ -566,6 +571,7 @@ class PinsIn : public Pins
 // --------------- IoPin ?? really pin, not pins? --------------------------------
 // IoPin io( GpioE, 0x11 );
 // io.sw1(); io.sw0(); io.set_sw0( true ); x = io.rw(); y = io.rw_raw();
+// TODO: rename to GpioIoPin or combine?
 class IoPin {
   public:
    constexpr IoPin( GpioRegs &gi, PinMask a_mask )

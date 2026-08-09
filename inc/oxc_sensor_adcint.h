@@ -12,7 +12,7 @@
 namespace oxc {
 
 
-class SensorAdcInt : public RoboSensor {
+class [[deprecated]] SensorAdcInt : public RoboSensor {
   public:
    enum { max_inner_ch = 16 };
    SensorAdcInt(  uint32_t id_, ADC_Info &adc_, uint32_t n_aver_, uint32_t clock_div_, uint32_t sample_time_,
