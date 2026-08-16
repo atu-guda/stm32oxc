@@ -45,23 +45,32 @@ inline static UnityValFiTrans globalUnityValFiTrans;
 
 class LinearValFiTrans : public ValFiTrans1x1 {
   public:
-   explicit constexpr LinearValFiTrans( float a_, float b_ = 0 ) : // a, b - use in toInner
+   explicit constexpr LinearValFiTrans( float a_, float b_ = 0 ) noexcept : // a, b - use in toInner
      a( not_small( a_ )), b( b_ ), ra( 1.0f/a ) {};
-   constexpr LinearValFiTrans( float ra_, float rb_, int /*fake */ ) // ra - reversre
-     :  a( 1.0f/not_small(ra_) ), b( -rb_ ), ra( not_small(ra_) ) {}
    virtual int32_t toInner(    float v ) const noexcept override { return (int32_t)(a*v + b );  }
    virtual float fromInner( int32_t iv ) const noexcept override { return ( iv - b ) * ra;      }
    float a, b, ra;
    static constexpr float not_small( float aa ) { return std::fabsf(aa) > 1e-9f ? aa : 1.0f; }
 };
 
+// like LinearValFiTrans, but with correct rounding
 class LinRoundValFiTrans : public LinearValFiTrans {
   public:
-   explicit constexpr LinRoundValFiTrans( float a_, float b_ = 0 ) :
+   explicit constexpr LinRoundValFiTrans( float a_, float b_ = 0 ) noexcept :
      LinearValFiTrans( a_, b_ ) {};
-   constexpr LinRoundValFiTrans( float ra_, float rb_, int /*fake */ ) : // ra - reversre
-     LinearValFiTrans( ra_, rb_, 0 ) {};
    virtual int32_t toInner(    float v ) const noexcept override { return std::lroundf( a*v + b );  }
+
+};
+
+class LinScaledValFiTrans : public LinearValFiTrans {
+  public:
+   explicit constexpr LinScaledValFiTrans( float a_, float b_ = 0 ) noexcept :
+     LinearValFiTrans( a_, b_ ) {};
+   virtual int32_t toInner(    float v ) const noexcept override { return std::lroundf( *pscale * ( a*v + b ) );  }
+   void setScaleVar( const int32_t* pscale_ ) noexcept { pscale = pscale_; }
+  protected:
+   int32_t scale_inner { 1 };
+   const int32_t* pscale { & scale_inner };
 };
 
 // ----------------------------------------------------------------------------------------
@@ -93,11 +102,6 @@ class IoCapability {
      }
      return tr.fromInner( t.value() );
    }
-   // may be useless now
-   // ReturnCode setVals( cint32_t_span vs ) noexcept;
-   // ReturnCode getVals(  int32_t_span vs ) noexcept;
-   // ReturnCode setValFs( cfloat_span vs )  noexcept;
-   // ReturnCode getValFs(  float_span vs )  noexcept;
 
   protected:
    const size_t sz;     //* number of integer channels
@@ -147,7 +151,7 @@ class PinPureCapability {
 
 
 //* Single pin.
-// channels: [0] - set, [1] - get, floats: just copy for now
+// channels: [0] - set, [1] - get
 class PinCapability : public IoCapability, public PinPureCapability {
   public:
    constexpr PinCapability( const ValFiTrans1x1 &tr_ = globalUnityValFiTrans ) noexcept :
@@ -174,12 +178,12 @@ class PwmCapability : public IoCapability, public PwmPureCapability { // + PinsP
   public:
    enum { n_cfg_ch = 4 };
     explicit constexpr PwmCapability( size_t sz_, size_t bitsz_,
-        const ValFiTrans1xN &tr_f_, const ValFiTrans1x1 &tr_d_ = globalZeroValFiTrans ) noexcept
+        const ValFiTrans1xN &tr_f_, LinScaledValFiTrans &tr_d_ ) noexcept
      : IoCapability( sz_ + n_cfg_ch, sz_ + 1, bitsz_ ),
        tr_f( tr_f_ ), tr_d( tr_d_ ) {};
   protected:
    const ValFiTrans1xN &tr_f; // transformation for frequiency
-   const ValFiTrans1x1 &tr_d; // transformation for duty
+   LinScaledValFiTrans &tr_d; // transformation for duty
 };
 
 
