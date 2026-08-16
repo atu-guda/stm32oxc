@@ -25,7 +25,7 @@ class RoboObject {
   protected:
    const uint32_t id; //* simple id for debug
    ReturnCode sta { ReturnCode::rcnErr, 1000 }; // uninitialised
-   uint32_t dirty { 0 }; // bit per channel, so now no more than 32 channels, here: used in commit
+   uint32_t dirty { 0 }; // bit per HW channel, so now no more than 32 channels, here: used in commit
 };
 
 
