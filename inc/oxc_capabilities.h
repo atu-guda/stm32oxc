@@ -81,29 +81,26 @@ class LinScaledValFiTrans : public LinearValFiTrans {
 
 class TransFF {
   public:
-   // virtual ~TransFF() = default; // ??? no death by default
    virtual float f( float v ) const noexcept = 0;
 };
 
 class TransFI {
   public:
-   // virtual ~TransFI() = default; // ???
    virtual int32_t f( float v ) const noexcept = 0;
 };
 
 class TransIF {
   public:
-   // virtual ~TransIF() = default; // ???
    virtual float f( int32_t v ) const noexcept = 0;
 };
 
 class TransII {
   public:
-   // virtual ~TransII() = default; // ???
    virtual int32_t f( int32_t v ) const noexcept = 0;
 };
 
 // ---------- Trans** basic realizations
+// FF
 
 class TransFFUnity : public TransFF {
   public:
@@ -127,6 +124,13 @@ class TransFFLinLim : public TransFFLin {
    float xmin, xmax;
 };
 
+// FI
+
+class TransFIUnity : public TransFI {
+  public:
+   virtual int32_t f( float v ) const noexcept override { return (int32_t)( v ); }
+};
+inline TransFIUnity globalTransFIUnity;
 
 class TransFILin : public TransFI {
   public:
@@ -152,6 +156,30 @@ class TransFILinLim : public TransFILin {
 };
 
 
+// IF
+
+class TransIFUnity : public TransIF {
+  public:
+   virtual float f( int32_t v ) const noexcept override { return (float)( v ); }
+};
+inline TransIFUnity globalTransIFUnity;
+
+
+class TransIFLin : public TransIF {
+  public:
+   constexpr TransIFLin ( float a_, float b_ ) : a(a_), b(b_) {}
+   virtual float f( int32_t v ) const noexcept override { return ( a*v + b ); }
+   float a, b;
+};
+
+
+
+// II
+class TransIIUnity : public TransII {
+  public:
+   virtual int32_t f( int32_t v ) const noexcept override { return v; }
+};
+inline TransIIUnity globalTransIIUnity;
 
 
 // ----------------------------------------------------------------------------------------
@@ -195,19 +223,19 @@ class IoCapability {
 class PinsPureCapability {
   public:
    enum { n_ch_int = 2, n_ch_float = 2, ch_out = 0, ch_in = 1, ch_out_bit = 1, ch_in_bit = 2 };
-   virtual int32_t_er read()             noexcept = 0;
-   virtual void write(     int32_t v   ) noexcept = 0;
-   virtual void set(       int32_t v   ) noexcept = 0;
-   virtual void reset(     int32_t v   ) noexcept = 0;
-   virtual void toggle(    int32_t v   ) noexcept = 0;
-   virtual void setbit(    int32_t pos ) noexcept = 0;
-   virtual void resetbit(  int32_t pos ) noexcept = 0;
-   virtual void togglebit( int32_t pos ) noexcept = 0;
+   virtual int32_t_er read()             noexcept = 0; // 0 r
+   virtual void write(     int32_t v   ) noexcept = 0; // 1 r/w
+   virtual void set(       int32_t v   ) noexcept = 0; // 2 w
+   virtual void reset(     int32_t v   ) noexcept = 0; // 3
+   virtual void toggle(    int32_t v   ) noexcept = 0; // 4
+   virtual void setbit(    int32_t pos ) noexcept = 0; // 5
+   virtual void resetbit(  int32_t pos ) noexcept = 0; // 6
+   virtual void togglebit( int32_t pos ) noexcept = 0; // 7
 };
 
 
 //* pack of pins.
-// channels: [0] - set, [1] - get, floats: just copy for now
+// channels: [1] - set, [0] - get
 class PinsCapability : public IoCapability, public PinsPureCapability {
   public:
    explicit constexpr PinsCapability( size_t bitsz_,
