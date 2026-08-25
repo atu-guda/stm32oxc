@@ -4,78 +4,49 @@
 
 using namespace oxc;
 
- // stash:
- //  explicit constexpr IoCapability( size_t sz_, size_t bitsz_, int32_t scale_ ) noexcept :
- // ReturnCode setValF( size_t ch, float v ) noexcept {
- //   return setVal( ch, (int32_t) std::lroundf( v * scale ) );
- // }
- // float_er   getValF( size_t ch ) noexcept {
- //   auto vi_er = getVal( ch );
- //   if( !vi_er ) {
- //     return vi_er;
- //   }
- //   return vi_er.value() / scale;
- // }
+int32_t_er oxc::PinsCapability::getVal( size_t ch ) noexcept
+{
+  switch( ch ) {
+    case ch_read  : return pins.read();
+    case ch_write : return pins.readwr();
+  }
+  return std::unexpected( rcErr );
+}
 
-// may be useless now
+ReturnCode oxc::PinsCapability::setVal( size_t ch, int32_t v ) noexcept
+{
+  switch( ch ) {
+    case ch_write     : pins.write(     v ); return rcOk;
+    case ch_set       : pins.set(       v ); return rcOk;
+    case ch_reset     : pins.reset(     v ); return rcOk;
+    case ch_toggle    : pins.toggle(    v ); return rcOk;
+    case ch_setbit    : pins.setbit(    v ); return rcOk;
+    case ch_resetbit  : pins.resetbit(  v ); return rcOk;
+    case ch_togglebit : pins.togglebit( v ); return rcOk;
+  }
+  return rcErr;
+}
 
-// ReturnCode oxc::IoCapability::setVals( cint32_t_span vs ) noexcept
-// {
-//   for( auto [ch,v] : std::views::enumerate( vs )  ) {
-//     if( (size_t)ch >= size() ) {
-//       break;
-//     }
-//     if( auto rc = setVal( ch, v ); rc.isError() ) {
-//       return rc;
-//     }
-//   }
-//   return rcOk;
-// }
-//
-// ReturnCode oxc::IoCapability::getVals( int32_t_span vs ) noexcept
-// {
-//   for( auto [ch,v] : std::views::enumerate( vs )  ) {
-//     if( (size_t)ch >= size() ) {
-//       break;
-//     }
-//     auto rcv = getVal( ch );
-//     if( !rcv ) {
-//       return rcv.error();
-//     }
-//     vs[ch] = rcv.value();
-//   }
-//   return rcOk;
-// }
-//
-//
-//
-//
-// ReturnCode oxc::IoCapability::setValFs( cfloat_span vs ) noexcept
-// {
-//   for( auto [ch,v] : std::views::enumerate( vs )  ) {
-//     if( (size_t)ch >= size() ) {
-//       break;
-//     }
-//     if( auto rc = setValF( ch, v ); rc.isError() ) {
-//       return rc;
-//     }
-//   }
-//   return rcOk;
-// }
-//
-//
-// ReturnCode oxc::IoCapability::getValFs( float_span vs ) noexcept
-// {
-//   for( auto [ch,v] : std::views::enumerate( vs )  ) {
-//     if( (size_t)ch >= size() ) {
-//       break;
-//     }
-//     auto rcv = getValF( ch );
-//     if( !rcv ) {
-//       return rcv.error();
-//     }
-//     vs[ch] = rcv.value();
-//   }
-//   return rcOk;
-// }
+
+int32_t_er oxc::PinCapability::getVal( size_t ch ) noexcept
+{
+  switch( ch ) {
+    case ch_read  : return pin.read();
+    case ch_write : return pin.readwr();
+  }
+  return std::unexpected( rcErr );
+}
+
+
+ReturnCode oxc::PinCapability::setVal( size_t ch, int32_t v ) noexcept
+{
+  switch( ch ) {
+    case ch_write     : pin.write( v ); return rcOk;
+    case ch_set       : pin.set();      return rcOk;
+    case ch_reset     : pin.reset();    return rcOk;
+    case ch_toggle    : pin.toggle();   return rcOk;
+  }
+  return rcErr;
+}
+
 

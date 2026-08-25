@@ -32,11 +32,9 @@ class RoboObject {
 //* pack of digital I/O channels + robo interface
 class IoRoboCapability : public IoCapability, public RoboObject {
   public:
-   explicit constexpr IoRoboCapability( size_t sz_, size_t szF_, size_t bitsz_,
+   explicit constexpr IoRoboCapability( size_t sz_, size_t szF_,
                                         int32_t_span iobuf_, uint32_t id_ = 0 ) noexcept :
-     IoCapability( sz_, szF_, bitsz_ ), RoboObject( id_ ), iobuf( iobuf_ ) {};
-   virtual ReturnCode setVal( size_t ch, int32_t v ) noexcept override;
-   virtual int32_t_er getVal( size_t ch ) noexcept override;
+     IoCapability( sz_, szF_ ), RoboObject( id_ ), iobuf( iobuf_ ) {};
   protected:
    int32_t_span iobuf;
 };
@@ -44,50 +42,70 @@ class IoRoboCapability : public IoCapability, public RoboObject {
 
 
 
-class PinsRoboCapability : public PinsPureCapability, public IoRoboCapability {
+class PinsRoboCapability : public IoRoboCapability {
   public:
-   explicit constexpr PinsRoboCapability( size_t bitsz_, const ValFiTrans1x1 &tr_ = globalUnityValFiTrans, uint32_t id_ = 0 ) noexcept
-     : IoRoboCapability( n_ch_int, n_ch_float, bitsz_, vv, id_ ), tr( tr_ ) {};
-   virtual ReturnCode setValF( size_t ch, float v )  noexcept override { return setValF_common( tr, ch, v ); }
-   virtual float_er   getValF( size_t ch )           noexcept override { return getValF_common( tr, ch ); }
+   enum { // copy?
+     ch_read = 0, ch_write = 1, ch_set = 2, ch_reset = 3, ch_toggle = 4,
+     ch_setbit = 5, ch_resetbit = 6, ch_togglebit = 7, n_ch_int, n_ch_float = 0
+   };
+   explicit constexpr PinsRoboCapability( PinsPureCapability &pins_, uint32_t id_ = 0 ) noexcept
+     : IoRoboCapability( n_ch_int, n_ch_float, vv, id_ ), pins( pins_ ) {};
+   virtual ReturnCode setVal( size_t ch, int32_t v ) noexcept override;
+   virtual int32_t_er getVal( size_t ch )            noexcept override;
+   virtual ReturnCode setValF( size_t ch, float v )  noexcept override { return rcErr; }
+   virtual float_er   getValF( size_t ch )           noexcept override { return std::unexpected(rcErr); }
   protected:
-   const ValFiTrans1x1 &tr;
-   int32_t vv[n_ch_int]; // 0-out 1-in
+   virtual ReturnCode doInit()    noexcept override { vv[0] = vv[1] = 0;   return rcOk; }
+   virtual ReturnCode doMeasure() noexcept override { auto v = pins.read(); if( v ) { vv[0] = v.value();  return rcOk;}; return rcErr; }
+   virtual ReturnCode doThink()   noexcept override { return rcOk; }
+   virtual ReturnCode doCommit()  noexcept override { pins.write( vv[1] ); return rcOk; }
+  protected:
+   PinsPureCapability &pins;
+   int32_t vv[2]; // 0-in 1-out
 };
 
 
 
 class PinRoboCapability : public PinPureCapability, public IoRoboCapability {
   public:
-   explicit constexpr PinRoboCapability( const ValFiTrans1x1 &tr_ = globalUnityValFiTrans, uint32_t id_ = 0 ) noexcept
-     : IoRoboCapability( n_ch_int, n_ch_int, 1, vv, id_ ), tr( tr_ ) {};
-   virtual ReturnCode setValF( size_t ch, float v )  noexcept override { return setVal( ch, (int32_t)v ); }
-   virtual float_er   getValF( size_t ch )           noexcept override { return getVal( ch ); } // how converted?
+   enum { // copy?
+     ch_read = 0, ch_write = 1, ch_set = 2, ch_reset = 3, ch_toggle = 4,
+     n_ch_int, n_ch_float = 0
+   };
+   explicit constexpr PinRoboCapability( PinPureCapability &pin_, uint32_t id_ = 0 ) noexcept
+     : IoRoboCapability( n_ch_int, 0, vv, id_ ), pin( pin_ ) {};
+   virtual ReturnCode setVal( size_t ch, int32_t v ) noexcept override;
+   virtual int32_t_er getVal( size_t ch )            noexcept override;
+   virtual ReturnCode setValF( size_t ch, float v )  noexcept override { return rcErr; }
+   virtual float_er   getValF( size_t ch )           noexcept override { return std::unexpected(rcErr); }
   protected:
-   const ValFiTrans1x1 &tr;
-   int32_t vv[n_ch_int]; // 0-out 1-in
+   virtual ReturnCode doInit()    noexcept override { vv[0] = vv[1] = 0;   return rcOk; }
+   virtual ReturnCode doMeasure() noexcept override { auto v = pin.read(); if( v ) { vv[0] = v.value(); return rcOk;}; return rcErr; }
+   virtual ReturnCode doThink()   noexcept override { return rcOk; }
+   virtual ReturnCode doCommit()  noexcept override { pin.write( vv[1] ); return rcOk; }
+  protected:
+   PinPureCapability &pin;
+   int32_t vv[2]; // 0-in 1-out
 };
 
 
-// channels: 0..sz-1 - duty, sz..sz+n_cfg_ch - freq config
 class PwmRoboCapability : public PwmPureCapability, public IoRoboCapability {
   public:
-   enum { n_cfg_ch = 4 };
-   explicit constexpr PwmRoboCapability( size_t sz_, size_t bitsz_, int32_t_span iobuf_,
-       const ValFiTrans1xN &tr_f_, const ValFiTrans1x1 &tr_d_ = globalZeroValFiTrans, uint32_t id_ = 0 ) noexcept
-     : IoRoboCapability( sz_ + n_cfg_ch, sz_ + 1, bitsz_, iobuf_, id_ ),
-       tr_f( tr_f_ ), tr_d( tr_d_ ) {};
+   explicit constexpr PwmRoboCapability( PwmPureCapability &pwm_, size_t sz_, size_t bitsz_, int32_t_span iobuf_,
+       uint32_t id_ = 0 ) noexcept
+     : IoRoboCapability( 2 * sz_ + 1, sz_ + 1, iobuf_, id_ ), pwm( pwm_ )
+       {};
   protected:
-   const ValFiTrans1xN &tr_f; // transformation for frequiency
-   const ValFiTrans1x1 &tr_d; // transformation for duty
+   PwmPureCapability &pwm;
 };
 
 
 class EncoderRoboCapability : public EncoderPureCapability, public IoRoboCapability {
   public:
-   explicit constexpr EncoderRoboCapability( size_t bitsz_, int32_t scale_, uint32_t id_ = 0 ) noexcept
-     : IoRoboCapability( 1, bitsz_, scale_,  vv, id_ ) {};
+   explicit constexpr EncoderRoboCapability( EncoderPureCapability &enc_, size_t bitsz_, int32_t scale_, uint32_t id_ = 0 ) noexcept
+     : IoRoboCapability( 1, 0,  vv, id_ ), enc(enc_) {};
   protected:
+   EncoderPureCapability &enc;
    int32_t vv[1]; // 0-out
 };
 

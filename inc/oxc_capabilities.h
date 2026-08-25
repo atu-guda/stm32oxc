@@ -18,64 +18,6 @@ namespace oxc {
 class IoCapability;
 
 
-class ValFiTrans1x1 {
-  public:
-   virtual int32_t    toInner( float v ) const noexcept = 0;
-   virtual float fromInner( int32_t iv ) const noexcept = 0;
-};
-
-class ValFiTrans1xN {
-  public:
-   virtual bool  toInner( float v, int32_t *ivs ) const noexcept = 0;
-   virtual float fromInner( const int32_t *ivs )  const noexcept = 0;
-};
-
-class ZeroValFiTrans : public ValFiTrans1x1 {
-  public:
-   virtual int32_t toInner(  float v   ) const noexcept override { return 0; }
-   virtual float fromInner( int32_t iv ) const noexcept override { return 0; }
-};
-
-inline static ZeroValFiTrans globalZeroValFiTrans;
-
-class UnityValFiTrans : public ValFiTrans1x1 {
-  public:
-   virtual int32_t toInner(  float v   ) const noexcept override { return  (int32_t)v;  }
-   virtual float fromInner( int32_t iv ) const noexcept override { return  iv; }
-};
-
-inline static UnityValFiTrans globalUnityValFiTrans;
-
-class LinearValFiTrans : public ValFiTrans1x1 {
-  public:
-   explicit constexpr LinearValFiTrans( float a_, float b_ = 0 ) noexcept : // a, b - use in toInner
-     a( not_small( a_ )), b( b_ ), ra( 1.0f/a ) {};
-   virtual int32_t toInner(    float v ) const noexcept override { return (int32_t)(a*v + b );  }
-   virtual float fromInner( int32_t iv ) const noexcept override { return ( iv - b ) * ra;      }
-   float a, b, ra;
-   static constexpr float not_small( float aa ) { return std::fabsf(aa) > 1e-9f ? aa : 1.0f; }
-};
-
-// like LinearValFiTrans, but with correct rounding
-class LinRoundValFiTrans : public LinearValFiTrans {
-  public:
-   explicit constexpr LinRoundValFiTrans( float a_, float b_ = 0 ) noexcept :
-     LinearValFiTrans( a_, b_ ) {};
-   virtual int32_t toInner(    float v ) const noexcept override { return std::lroundf( a*v + b );  }
-
-};
-
-class LinScaledValFiTrans : public LinearValFiTrans {
-  public:
-   explicit constexpr LinScaledValFiTrans( float a_, float b_ = 0 ) noexcept :
-     LinearValFiTrans( a_, b_ ) {};
-   virtual int32_t toInner(    float v ) const noexcept override { return std::lroundf( *pscale * ( a*v + b ) );  }
-   void setScaleVar( const int32_t* pscale_ ) noexcept { pscale = pscale_; }
-  protected:
-   int32_t scale_inner { 1 };
-   const int32_t* pscale { & scale_inner };
-};
-
 // -------------- More transforms: FF, FI, IF, FI - one-side only ------------------------
 // TODO: chain here?
 
@@ -100,7 +42,8 @@ class TransII {
 };
 
 // ---------- Trans** basic realizations
-// FF
+
+// ----------------- FF
 
 class TransFFUnity : public TransFF {
   public:
@@ -124,7 +67,7 @@ class TransFFLinLim : public TransFFLin {
    float xmin, xmax;
 };
 
-// FI
+// ----------------- FI
 
 class TransFIUnity : public TransFI {
   public:
@@ -156,7 +99,7 @@ class TransFILinLim : public TransFILin {
 };
 
 
-// IF
+// ----------------- IF
 
 class TransIFUnity : public TransIF {
   public:
@@ -174,13 +117,19 @@ class TransIFLin : public TransIF {
 
 
 
-// II
+// ----------------- II
 class TransIIUnity : public TransII {
   public:
    virtual int32_t f( int32_t v ) const noexcept override { return v; }
 };
 inline TransIIUnity globalTransIIUnity;
 
+class TransIILin : public TransII {
+  public:
+   constexpr TransIILin ( int32_t an_, int32_t ad_, int32_t b_ ) : an(an_), ad(ad_), b(b_) {}
+   virtual int32_t f( int32_t v ) const noexcept override { return v * an / ad + b; }
+   int32_t an, ad, b;
+};
 
 // ----------------------------------------------------------------------------------------
 
@@ -189,8 +138,8 @@ inline TransIIUnity globalTransIIUnity;
 //* pack of digital I/O channels
 class IoCapability {
   public:
-   explicit constexpr IoCapability( size_t sz_, size_t szF_, size_t bitsz_ ) noexcept :
-     sz( sz_ ), szF( szF_ ), bitsz( bitsz_ ) {};
+   explicit constexpr IoCapability( size_t sz_, size_t szF_ ) noexcept :
+     sz( sz_ ), szF( szF_ ) {};
    virtual ~IoCapability() = default; // really unneeded now
    // main interface
    virtual ReturnCode setVal( size_t ch, int32_t v ) noexcept = 0;
@@ -199,32 +148,19 @@ class IoCapability {
    virtual float_er   getValF( size_t ch )           noexcept = 0;
    constexpr size_t size()     const noexcept { return sz;    }
    constexpr size_t sizeF()    const noexcept { return szF;    }
-   constexpr size_t bitsize()  const noexcept { return bitsz; }
-   //* just convenience functions
-   ReturnCode setValF_common( const ValFiTrans1x1 &tr, size_t ch, float v )  noexcept // not so common - lroundf
-     { return setVal( ch, tr.toInner( v ) ); }
-   float_er   getValF_common( const ValFiTrans1x1 &tr, size_t ch )           noexcept
-   {
-     auto t = getVal( ch );
-     if( !t ) {
-       return t;
-     }
-     return tr.fromInner( t.value() );
-   }
 
   protected:
    const size_t sz;     //* number of integer interface channels
    const size_t szF;    //* number of floating interface channels
-   const size_t bitsz;  //* integer channel bitsize - why here? -many different usages?
 };
 
 
 
 class PinsPureCapability {
   public:
-   enum { n_ch_int = 2, n_ch_float = 2, ch_out = 0, ch_in = 1, ch_out_bit = 1, ch_in_bit = 2 };
-   virtual int32_t_er read()             noexcept = 0; // 0 r
-   virtual void write(     int32_t v   ) noexcept = 0; // 1 r/w
+   virtual int32_t_er read()             noexcept = 0; // 0 r - index for PinsCapability
+   virtual int32_t_er readwr()           noexcept = 0; // 1 r -|
+   virtual void write(     int32_t v   ) noexcept = 0; // 1 w -|
    virtual void set(       int32_t v   ) noexcept = 0; // 2 w
    virtual void reset(     int32_t v   ) noexcept = 0; // 3
    virtual void toggle(    int32_t v   ) noexcept = 0; // 4
@@ -235,64 +171,73 @@ class PinsPureCapability {
 
 
 //* pack of pins.
-// channels: [1] - set, [0] - get
-class PinsCapability : public IoCapability, public PinsPureCapability {
+class PinsCapability : public IoCapability {
   public:
-   explicit constexpr PinsCapability( size_t bitsz_,
-       const ValFiTrans1x1 &tr_ = globalUnityValFiTrans ) noexcept :
-     IoCapability( n_ch_int, n_ch_float, bitsz_ ), tr( tr_ )  {};
-   virtual ReturnCode setValF( size_t ch, float v )  noexcept override { return setValF_common( tr, ch, v ); }
-   virtual float_er   getValF( size_t ch )           noexcept override { return getValF_common( tr, ch ); }
+   enum {
+     ch_read = 0, ch_write = 1, ch_set = 2, ch_reset = 3, ch_toggle = 4,
+     ch_setbit = 5, ch_resetbit = 6, ch_togglebit = 7, n_ch_int, n_ch_float = 0
+   };
+   explicit constexpr PinsCapability( PinsPureCapability &pins_ ) noexcept :
+     IoCapability( n_ch_int, n_ch_float ), pins( pins_ ) {};
+   virtual ReturnCode setVal( size_t ch, int32_t v ) noexcept override;
+   virtual int32_t_er getVal( size_t ch )            noexcept override;
+   virtual ReturnCode setValF( size_t ch, float v )  noexcept override { return rcErr; }
+   virtual float_er   getValF( size_t ch )           noexcept override { return std::unexpected(rcErr); }
   protected:
-   const ValFiTrans1x1 &tr;
+   PinsPureCapability &pins;
 };
 
-
+//* single pin
 class PinPureCapability {
   public:
-   enum { n_ch_int = 2, n_ch_float = 2, ch_out = 0, ch_in = 1, ch_out_bit = 1, ch_in_bit = 2 };
-   virtual int32_t_er read()    noexcept  = 0;
-   virtual void write( bool v ) noexcept  = 0;
-   virtual void set()           noexcept  = 0;
-   virtual void reset()         noexcept  = 0;
-   virtual void toggle()        noexcept  = 0;
+   virtual int32_t_er read()    noexcept  = 0; // 0 - r
+   virtual int32_t_er readwr()  noexcept  = 0; // 1 - r
+   virtual void write( bool v ) noexcept  = 0; // 1 - w
+   virtual void set()           noexcept  = 0; // 2 - w
+   virtual void reset()         noexcept  = 0; // 3 - w
+   virtual void toggle()        noexcept  = 0; // 4 - w
 };
 
 
 //* Single pin.
-// channels: [0] - set, [1] - get
 class PinCapability : public IoCapability, public PinPureCapability {
   public:
-   constexpr PinCapability( const ValFiTrans1x1 &tr_ = globalUnityValFiTrans ) noexcept :
-     IoCapability( n_ch_int, n_ch_float, 1 ), tr( tr_ )  {};
-   virtual ReturnCode setValF( size_t ch, float v )  noexcept override { return setValF_common( tr, ch, v ); }
-   virtual float_er   getValF( size_t ch )           noexcept override { return getValF_common( tr, ch ); }
+   enum {
+     ch_read = 0, ch_write = 1, ch_set = 2, ch_reset = 3, ch_toggle = 4,
+     n_ch_int, n_ch_float = 0
+   };
+   constexpr PinCapability( PinPureCapability &pin_ ) noexcept :
+     IoCapability( n_ch_int, n_ch_float ), pin( pin_ ) {};
+   virtual ReturnCode setVal( size_t ch, int32_t v ) noexcept override;
+   virtual int32_t_er getVal( size_t ch )            noexcept override;
+   virtual ReturnCode setValF( size_t ch, float v )  noexcept override { return rcErr; }
+   virtual float_er   getValF( size_t ch )           noexcept override { return std::unexpected(rcErr); }
   protected:
-   const ValFiTrans1x1 &tr;
+   PinPureCapability &pin;
 };
 
 
 
-//* frequiency in in Hz, duty: [0:1]
+//* frequiency in Hz, duty: [0:1]
 class PwmPureCapability {
   public:
-   virtual ReturnCode setDuty( size_t ch, float duty ) noexcept = 0;
-   virtual ReturnCode setFreq( float freq )            noexcept = 0;
-   virtual float getFreq() const                       noexcept = 0;
+   virtual ReturnCode setDuty(  size_t ch, float duty ) noexcept = 0;
+   virtual ReturnCode setPulse( size_t ch, float pu_s ) noexcept = 0;
+   virtual ReturnCode setFreq( float freq )             noexcept = 0;
+   virtual float getFreq() const                        noexcept = 0;
 };
 
 
 // channels: 0..sz-1 - duty, sz..sz+n_cfg_ch - freq config
-class PwmCapability : public IoCapability, public PwmPureCapability { // + PinsPureCapability?
+class PwmCapability : public IoCapability {
   public:
-   enum { n_cfg_ch = 4 };
-    explicit constexpr PwmCapability( size_t sz_, size_t bitsz_,
-        const ValFiTrans1xN &tr_f_, LinScaledValFiTrans &tr_d_ ) noexcept
-     : IoCapability( sz_ + n_cfg_ch, sz_ + 1, bitsz_ ),
-       tr_f( tr_f_ ), tr_d( tr_d_ ) {};
+    explicit constexpr PwmCapability( PwmPureCapability &pwm_, size_t n_pwm_ch_, size_t bitsz_ ) noexcept
+     : IoCapability( 0, n_pwm_ch_ * 2 + 1 ), pwm( pwm_ ), n_pwm_ch( n_pwm_ch_ ), bitsz( bitsz_ )
+       {};
   protected:
-   const ValFiTrans1xN &tr_f; // transformation for frequiency
-   LinScaledValFiTrans &tr_d; // transformation for duty
+    PwmPureCapability &pwm;
+    const size_t n_pwm_ch;
+    const size_t bitsz;
 };
 
 
@@ -302,11 +247,14 @@ class EncoderPureCapability {
 };
 
 
-class EncoderCapability : public IoCapability, public EncoderPureCapability {
+class EncoderCapability : public IoCapability {
   public:
-   explicit constexpr EncoderCapability( size_t bitsz_, int32_t scale_ ) noexcept
-     : IoCapability( 1, bitsz_, scale_ ) {};
+   explicit constexpr EncoderCapability( EncoderPureCapability &enc_, size_t bitsz_, int32_t scale_ ) noexcept
+     : IoCapability( 1, 0 ), enc( enc_ ), bitsz( bitsz_ ), scale( scale_ ) {};
   protected:
+   EncoderPureCapability &enc;
+   const size_t bitsz;
+   const int32_t scale;
 };
 
 // ---------------------------- Channels --------------------------------------------------

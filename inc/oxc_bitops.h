@@ -59,4 +59,4 @@ inline void replace_bits( T &v, uint8_t pos, uint8_t n, uint32_t bits )
 }
 
 #endif
-// vim: path=.,/usr/share/stm32cube/inc
+

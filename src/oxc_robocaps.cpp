@@ -1,5 +1,6 @@
 #include <ranges>
 
+#include <oxc_bitops.h>
 #include <oxc_robocaps.h>
 
 using namespace oxc;
@@ -37,27 +38,53 @@ ReturnCode oxc::RoboObject::commit() noexcept
 
 
 
-
-
-ReturnCode oxc::IoRoboCapability::setVal( size_t ch, int32_t v ) noexcept
+int32_t_er oxc::RoboPinsCapability::getVal( size_t ch ) noexcept
 {
-  if( ch >= sz ) {
-    return rcErr;
+  switch( ch ) {
+    case ch_read  : return vv[0];
+    case ch_write : return vv[1];
   }
-  if( v != iobuf[ch] ) {
-    iobuf[ch] = v;
-    dirty |= (1<<ch);
-  }
-  return rcOk;
+  return std::unexpected( rcErr );
 }
 
-int32_t_er oxc::IoRoboCapability::getVal( size_t ch ) noexcept
+ReturnCode oxc::RoboPinsCapability::setVal( size_t ch, int32_t v ) noexcept
 {
-  if( ch >= sz ) {
-    return std::unexpected( rcErr );
+  switch( ch ) {
+    case ch_write     : vv[1]  =  v;  return rcOk;
+    case ch_set       : vv[1] |=  v;  return rcOk;
+    case ch_reset     : vv[1] |= ~v;  return rcOk;
+    case ch_toggle    : vv[1] ^=  v;  return rcOk;
+    case ch_setbit    : setbit(    vv[1], v ); return rcOk;
+    case ch_resetbit  : resetbit(  vv[1], v ); return rcOk;
+    case ch_togglebit : togglebit( vv[1], v ); return rcOk;
   }
-  return iobuf[ch];
+  return rcErr;
 }
+
+
+
+
+int32_t_er oxc::PinRoboCapability::getVal( size_t ch ) noexcept
+{
+  switch( ch ) {
+    case ch_read  : return vv[0];
+    case ch_write : return vv[1];
+  }
+  return std::unexpected( rcErr );
+}
+
+
+ReturnCode oxc::PinRoboCapability::setVal( size_t ch, int32_t v ) noexcept
+{
+  switch( ch ) {
+    case ch_write     : vv[1] =  v;     return rcOk;
+    case ch_set       : vv[1] =  1;     return rcOk;
+    case ch_reset     : vv[1] =  0;     return rcOk;
+    case ch_toggle    : vv[1] = !vv[1]; return rcOk;
+  }
+  return rcErr;
+}
+
 
 
 
