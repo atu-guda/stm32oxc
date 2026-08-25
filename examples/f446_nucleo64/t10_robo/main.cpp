@@ -6,7 +6,6 @@
 #include <oxc_robo_base.h>
 
 #include <oxc_gpio_d.h>
-#include <oxc_gpio_rd.h>
 
 #include <oxc_tim_pwm_d.h>
 
@@ -37,13 +36,16 @@ ReturnCode init_hw_all();
 
 // ------------------------ Devices: capabilities ; ---------------------------------------
 
-Gpio_Pin_Dev pin1_d( PC10 );
-Gpio_Pin_RDev pin2_rd( PC11 );
-Gpio_IPin_RDev pini_rd( PC13 );
+Gpio_Pin_Dev  pin1_hd( PC10 );
+PinCapability pin1_d( pin1_d );
+Gpio_Pin_Dev  pin2_hd( PC11 );
+PinRoboCapability pin2_rd( pin2_hd );
+Gpio_Pin_Dev  pini_hd( PC13 );
+PinRoboCapability pini_rd( pini_hd );
 
-Gpio_Pins_Dev pins_d( PC0, 4 ); // copy of leds
-LinearValFiTrans pins_tr( 5.0f, 0.5f );
-Gpio_Pins_RDev pins_rd( PC0, 4, pins_tr ); // copy of leds
+Gpio_Pins_Dev pins_hd( PC0, 4 ); // copy of leds
+PinsCapability pins_d( pins_hd );
+PinsRoboCapability pins_rd( pins_hd ); // copy of leds
 
 
 // ------------------------ - local sensors ; ---------------------------------------
@@ -51,11 +53,11 @@ Gpio_Pins_RDev pins_rd( PC0, 4, pins_tr ); // copy of leds
 
 // ------------------------ - local sensors end ---------------------------------------
 
-TestRoboDevice test_rd{ 112 };
+// TestRoboDevice test_rd{ 112 };
 
 
 RoboObject* hw_robo_objs[] {
-  &test_rd,
+  // &test_rd,
   &pin2_rd,
   &pins_rd,
 };
@@ -107,12 +109,12 @@ int main(void)
 
 ReturnCode init_hw_all()
 {
-  pin1_d.initHW();
-  pin2_rd.initHW();
+  //pin1_d.initHW();
+  //pin2_rd.initHW();
   // pini_rd.getPin()->cfgIn();
   PC13.cfgIn();
 
-  pins_d.initHW(); // dup from leds, but may be another pins?
+  //pins_d.initHW(); // dup from leds, but may be another pins?
 
   return robo.init_all();
 }
@@ -158,25 +160,25 @@ void test_pin1( uint32_t tp, uint32_t n )
   switch( tp ) {
     case 0:
     for( uint32_t i=0; i<n; ++i ) {
-      pin1_d.set();
+      pin1_hd.set();
       delay_ms( UVAR_t );
-      std_out << i << ' ' << pin1_d.read().value_or( 5 ) << ' ';
-      pin1_d.reset();
+      std_out << i << ' ' << pin1_hd.read().value_or( 5 ) << ' ';
+      pin1_hd.reset();
       delay_ms( UVAR_t );
-      std_out << pin1_d.read().value_or( 6 ) << NL;
+      std_out << pin1_hd.read().value_or( 6 ) << NL;
     }
     break;
 
     case 1:
     for( uint32_t i=0; i<n; ++i ) {
-      pin1_d.toggle();
+      pin1_hd.toggle();
       delay_ms( 100 );
     }
     break;
 
     case 2:
     for( uint32_t i=0; i<n; ++i ) {
-      pin1_d.write( i & 1 );
+      pin1_hd.write( i & 1 );
       delay_ms( 200 );
     }
     break;
@@ -201,28 +203,28 @@ void test_pin2( uint32_t tp, uint32_t n )
   switch( tp ) {
     case 0:
     for( uint32_t i=0; i<n; ++i ) {
-      pin2_rd.set(); pin2_rd.commit();
+      pin2_hd.set(); pin2_rd.commit();
       delay_ms( UVAR_t );
       pin2_rd.measure();
-      std_out << i << ' ' << pin2_rd.read().value_or( 5 ) << ' ';
-      pin2_rd.reset(); pin2_rd.commit();
+      std_out << i << ' ' << pin2_hd.read().value_or( 5 ) << ' ';
+      pin2_hd.reset(); pin2_rd.commit();
       pin2_rd.measure(); pini_rd.measure();
       delay_ms( UVAR_t );
-      std_out << pin2_rd.read().value_or( 6 )
-        << ' ' << pini_rd.getVal( PinPureCapability::ch_in ).value_or( 77 ) << NL;
+      std_out << pin2_hd.read().value_or( 6 )
+        << ' ' << pini_rd.getVal( 0 /*PinCapability::ch_in*/ ).value_or( 77 ) << NL;
     }
     break;
 
     case 1:
     for( uint32_t i=0; i<n; ++i ) {
-      pin2_rd.toggle(); pin2_rd.commit();
+      pin2_hd.toggle(); pin2_rd.commit();
       delay_ms( 100 );
     }
     break;
 
     case 2:
     for( uint32_t i=0; i<n; ++i ) {
-      pin2_rd.write( i & 1 ); pin2_rd.commit();
+      pin2_hd.write( i & 1 ); pin2_rd.commit();
       delay_ms( 200 );
     }
     break;
@@ -231,7 +233,7 @@ void test_pin2( uint32_t tp, uint32_t n )
     for( uint32_t i=0; i<n; ++i ) {
       pin2_rd.setVal( 0, i & 1 ); pin2_rd.commit(); pin2_rd.measure();
       delay_ms( 100 );
-      std_out << i << ' ' << (i&1) << ' ' << pin2_rd.read().value_or( 7 )
+      std_out << i << ' ' << (i&1) << ' ' << pin2_hd.read().value_or( 7 )
               << ' ' << pin2_rd.getValF( 0 ).value_or( 0.7f )
               << ' ' << pin2_rd.getValF( 1 ).value_or( 0.7f )
               << ' ' << pin2_rd.getValF( 2 ).value_or( 0.7f )
@@ -247,9 +249,9 @@ void test_pin2( uint32_t tp, uint32_t n )
 void test_pins_d( uint32_t tp, uint32_t n )
 {
   for( uint32_t i=0; i<n; ++i ) {
-    pins_d.write( i );
+    pins_hd.write( i );
     delay_ms( UVAR_t );
-    std_out << pins_d.read().value_or( 255 ) << NL;
+    std_out << pins_hd.read().value_or( 255 ) << NL;
   }
 }
 
@@ -259,10 +261,10 @@ void test_pins_rd( uint32_t tp, uint32_t n )
   switch( tp ) {
     case 0:
       for( uint32_t i=0; i<n; ++i ) {
-        pins_rd.write( i ); pins_rd.toggle( 3 );
+        pins_hd.write( i ); pins_hd.toggle( 3 );
         pins_rd.commit(); pins_rd.measure();
         delay_ms( UVAR_t );
-        std_out << pins_rd.read().value_or( 255 ) << NL;
+        std_out << pins_hd.read().value_or( 255 ) << NL;
       }
       break;
 
@@ -271,7 +273,7 @@ void test_pins_rd( uint32_t tp, uint32_t n )
         float v = 0.1 * i * UVAR_s;
         pins_rd.setValF( 0, v ); pins_rd.commit(); pins_rd.measure();
         delay_ms( UVAR_t );
-        std_out << v << ' ' << pins_rd.read().value_or( 255 )
+        std_out << v << ' ' << pins_hd.read().value_or( 255 )
           << ' ' << pins_rd.getVal( 0 ).value_or( -555 )
           << ' ' << pins_rd.getValF( 0 ).value_or( -555.0f )
           << NL;

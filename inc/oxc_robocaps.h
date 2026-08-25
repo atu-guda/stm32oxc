@@ -6,9 +6,11 @@
 
 namespace oxc {
 
+// TODO: flag to ignore measure/commit
 class RoboObject {
   public:
-   explicit RoboObject( uint32_t id_ ) noexcept : id( id_ ) {};
+   enum Flags { noFlag = 0, noInit = 1, noMeasure = 2, noThink = 4, noCommit = 8 };
+   explicit RoboObject( uint32_t id_, Flags flags_ = noFlag ) noexcept : id( id_ ), flags ( flags_ ) {};
    virtual ~RoboObject() = default;
    ReturnCode init() noexcept;
    ReturnCode measure() noexcept;
@@ -24,6 +26,7 @@ class RoboObject {
    virtual ReturnCode doCommit()  noexcept = 0;
   protected:
    const uint32_t id; //* simple id for debug
+   Flags flags;
    ReturnCode sta { ReturnCode::rcnErr, 1000 }; // uninitialised
    uint32_t dirty { 0 }; // bit per HW channel, so now no more than 32 channels, here: used in commit
 };
@@ -66,7 +69,7 @@ class PinsRoboCapability : public IoRoboCapability {
 
 
 
-class PinRoboCapability : public PinPureCapability, public IoRoboCapability {
+class PinRoboCapability : public IoRoboCapability {
   public:
    enum { // copy?
      ch_read = 0, ch_write = 1, ch_set = 2, ch_reset = 3, ch_toggle = 4,
@@ -89,7 +92,7 @@ class PinRoboCapability : public PinPureCapability, public IoRoboCapability {
 };
 
 
-class PwmRoboCapability : public PwmPureCapability, public IoRoboCapability {
+class PwmRoboCapability : public IoRoboCapability {
   public:
    explicit constexpr PwmRoboCapability( PwmPureCapability &pwm_, size_t sz_, size_t bitsz_, int32_t_span iobuf_,
        uint32_t id_ = 0 ) noexcept
@@ -100,7 +103,7 @@ class PwmRoboCapability : public PwmPureCapability, public IoRoboCapability {
 };
 
 
-class EncoderRoboCapability : public EncoderPureCapability, public IoRoboCapability {
+class EncoderRoboCapability : public IoRoboCapability {
   public:
    explicit constexpr EncoderRoboCapability( EncoderPureCapability &enc_, size_t bitsz_, int32_t scale_, uint32_t id_ = 0 ) noexcept
      : IoRoboCapability( 1, 0,  vv, id_ ), enc(enc_) {};

@@ -8,37 +8,45 @@ using namespace oxc;
 
 ReturnCode oxc::RoboObject::init() noexcept
 {
-  sta = doInit();
+  if( ! ( flags & noInit ) ) {
+    sta = doInit();
+  }
   return sta;
 }
 
 
 ReturnCode oxc::RoboObject::measure() noexcept
 {
-  sta = doMeasure();
+  if( ! ( flags & noInit ) ) {
+    sta = doMeasure();
+  }
   return sta;
 }
 
 
 ReturnCode oxc::RoboObject::think() noexcept
 {
-  sta = doThink();
+  if( ! ( flags & noInit ) ) {
+    sta = doThink();
+  }
   return sta;
 }
 
 
 ReturnCode oxc::RoboObject::commit() noexcept
 {
-  sta = doCommit();
-  if( sta.isOk() ) {
-    dirty = 0;
+  if( ! ( flags & noInit ) ) {
+    sta = doCommit();
+    if( sta.isOk() ) {
+      dirty = 0;
+    }
   }
   return sta;
 }
 
 
 
-int32_t_er oxc::RoboPinsCapability::getVal( size_t ch ) noexcept
+int32_t_er oxc::PinsRoboCapability::getVal( size_t ch ) noexcept
 {
   switch( ch ) {
     case ch_read  : return vv[0];
@@ -47,16 +55,16 @@ int32_t_er oxc::RoboPinsCapability::getVal( size_t ch ) noexcept
   return std::unexpected( rcErr );
 }
 
-ReturnCode oxc::RoboPinsCapability::setVal( size_t ch, int32_t v ) noexcept
+ReturnCode oxc::PinsRoboCapability::setVal( size_t ch, int32_t v ) noexcept
 {
   switch( ch ) {
     case ch_write     : vv[1]  =  v;  return rcOk;
     case ch_set       : vv[1] |=  v;  return rcOk;
     case ch_reset     : vv[1] |= ~v;  return rcOk;
     case ch_toggle    : vv[1] ^=  v;  return rcOk;
-    case ch_setbit    : setbit(    vv[1], v ); return rcOk;
-    case ch_resetbit  : resetbit(  vv[1], v ); return rcOk;
-    case ch_togglebit : togglebit( vv[1], v ); return rcOk;
+    case ch_setbit    : set_bit(    vv[1], v ); return rcOk;
+    case ch_resetbit  : reset_bit(  vv[1], v ); return rcOk;
+    case ch_togglebit : toggle_bit( vv[1], v ); return rcOk;
   }
   return rcErr;
 }

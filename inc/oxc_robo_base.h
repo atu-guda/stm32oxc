@@ -32,6 +32,7 @@ class TestRoboDevice : public IoRoboCapability {
 
 
 //* One channel for digital sensor: selects 1 channel of the IoRoboCapability
+//* TODO: remove, use InCh*
 class SensorChannel {
   public:
    explicit constexpr SensorChannel( IoRoboCapability &psens_, size_t ch_ ) noexcept

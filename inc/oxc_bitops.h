@@ -44,6 +44,13 @@ inline void reset_bit( T &v, uint8_t pos )
 }
 
 template<std::integral T>
+inline void toggle_bit( T &v, uint8_t pos )
+{
+  v ^= ( 1u << pos );
+}
+
+
+template<std::integral T>
 inline void reset_bits( T &v, uint8_t pos, uint8_t n )
 {
   v &= ~ make_bit_mask( pos, n );

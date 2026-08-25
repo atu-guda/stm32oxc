@@ -12,14 +12,11 @@ using std::array;
 
 namespace oxc {
 
-class  Tim_Pwm_Dev : public PwmCapability {
+class  Tim_Pwm_Dev : public PwmPureCapability {
   public:
    static constexpr size_t max_ch { 8 }; // really 6, but what if?
-   constexpr Tim_Pwm_Dev( uintptr_t tim_addr_, span<const TimChPin> channels_, size_t bitsz_, TIM_HandleTypeDef &t_h_,
-        const ValFiTrans1xN &tr_f_, LinScaledValFiTrans &tr_d_
-       ) noexcept
-     : PwmCapability( channels_.size(), bitsz_, tr_f_, tr_d_ ),
-       tim_addr( tim_addr_ ),
+   constexpr Tim_Pwm_Dev( uintptr_t tim_addr_, span<const TimChPin> channels_, size_t bitsz_, TIM_HandleTypeDef &t_h_ ) noexcept
+     : tim_addr( tim_addr_ ),
        channels( channels_ ),
        n_ch( channels_.size() ),
        t_h( t_h_ )

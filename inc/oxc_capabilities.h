@@ -4,7 +4,7 @@
 #include <cmath>
 #include <climits>
 
-#include <oxc_types.h>
+#include <oxc_purecaps.h>
 
 using std::size_t;
 using std::uint32_t;
@@ -155,21 +155,6 @@ class IoCapability {
 };
 
 
-
-class PinsPureCapability {
-  public:
-   virtual int32_t_er read()             noexcept = 0; // 0 r - index for PinsCapability
-   virtual int32_t_er readwr()           noexcept = 0; // 1 r -|
-   virtual void write(     int32_t v   ) noexcept = 0; // 1 w -|
-   virtual void set(       int32_t v   ) noexcept = 0; // 2 w
-   virtual void reset(     int32_t v   ) noexcept = 0; // 3
-   virtual void toggle(    int32_t v   ) noexcept = 0; // 4
-   virtual void setbit(    int32_t pos ) noexcept = 0; // 5
-   virtual void resetbit(  int32_t pos ) noexcept = 0; // 6
-   virtual void togglebit( int32_t pos ) noexcept = 0; // 7
-};
-
-
 //* pack of pins.
 class PinsCapability : public IoCapability {
   public:
@@ -187,20 +172,9 @@ class PinsCapability : public IoCapability {
    PinsPureCapability &pins;
 };
 
-//* single pin
-class PinPureCapability {
-  public:
-   virtual int32_t_er read()    noexcept  = 0; // 0 - r
-   virtual int32_t_er readwr()  noexcept  = 0; // 1 - r
-   virtual void write( bool v ) noexcept  = 0; // 1 - w
-   virtual void set()           noexcept  = 0; // 2 - w
-   virtual void reset()         noexcept  = 0; // 3 - w
-   virtual void toggle()        noexcept  = 0; // 4 - w
-};
-
 
 //* Single pin.
-class PinCapability : public IoCapability, public PinPureCapability {
+class PinCapability : public IoCapability {
   public:
    enum {
      ch_read = 0, ch_write = 1, ch_set = 2, ch_reset = 3, ch_toggle = 4,
@@ -218,33 +192,17 @@ class PinCapability : public IoCapability, public PinPureCapability {
 
 
 
-//* frequiency in Hz, duty: [0:1]
-class PwmPureCapability {
-  public:
-   virtual ReturnCode setDuty(  size_t ch, float duty ) noexcept = 0;
-   virtual ReturnCode setPulse( size_t ch, float pu_s ) noexcept = 0;
-   virtual ReturnCode setFreq( float freq )             noexcept = 0;
-   virtual float getFreq() const                        noexcept = 0;
-};
-
-
 // channels: 0..sz-1 - duty, sz..sz+n_cfg_ch - freq config
 class PwmCapability : public IoCapability {
   public:
     explicit constexpr PwmCapability( PwmPureCapability &pwm_, size_t n_pwm_ch_, size_t bitsz_ ) noexcept
-     : IoCapability( 0, n_pwm_ch_ * 2 + 1 ), pwm( pwm_ ), n_pwm_ch( n_pwm_ch_ ), bitsz( bitsz_ )
+     : IoCapability( 0, n_pwm_ch_ * 2 + 1 ), pwm( pwm_ ), n_pwm_ch( n_pwm_ch_ )
        {};
   protected:
     PwmPureCapability &pwm;
     const size_t n_pwm_ch;
-    const size_t bitsz;
 };
 
-
-
-class EncoderPureCapability {
-  public:
-};
 
 
 class EncoderCapability : public IoCapability {

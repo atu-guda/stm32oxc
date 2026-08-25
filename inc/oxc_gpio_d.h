@@ -1,7 +1,7 @@
 #ifndef _OXC_GPIO_D_H
 #define _OXC_GPIO_D_H
 
-#include <oxc_capabilities.h>
+#include <oxc_purecaps.h>
 #include <oxc_gpio.h>
 
 namespace oxc {
@@ -16,7 +16,8 @@ class Gpio_Pin_Dev : public PinPureCapability
    ReturnCode initHW() noexcept { return pin.initHW();  }
    PinOut* getPin() noexcept { return &pin; } // low-level access: for special init...
 
-   virtual int32_t_er read()    noexcept override { return pin.read_in(); }
+   virtual int32_t_er read()    noexcept override { return pin.read_in();  }
+   virtual int32_t_er readwr()  noexcept override { return pin.read_out(); }
    virtual void write( bool v ) noexcept override { pin.write( v );        }
    virtual void set()           noexcept override { pin.set();             }
    virtual void reset()         noexcept override { pin.reset();           }
@@ -37,6 +38,7 @@ class Gpio_Pins_Dev : public PinsPureCapability
    PinsOut* getPins() noexcept { return &pins; } // low-level access: for special init...
 
    virtual int32_t_er read()             noexcept override { return pins.readUint();       }
+   virtual int32_t_er readwr()           noexcept override { return pins.readUint();       }
    virtual void write(     int32_t v   ) noexcept override { pins.write(  PinMask( v ) );  }
    virtual void set(       int32_t v   ) noexcept override { pins.set(    PinMask( v ) );  }
    virtual void reset(     int32_t v   ) noexcept override { pins.reset(  PinMask( v ) );  }
@@ -52,3 +54,4 @@ class Gpio_Pins_Dev : public PinsPureCapability
 }; // namespace oxc
 
 #endif
+
