@@ -19,6 +19,8 @@ class RoboObject {
    uint32_t getId() const noexcept { return id; }
    ReturnCode getStatus() const noexcept { return sta; }
    uint32_t getDirty() const noexcept { return dirty; }
+   Flags getFlags() const noexcept { return flags; }
+   void  setFlags( Flags flags_ ) noexcept { flags = flags_; }
   protected:
    virtual ReturnCode doInit()    noexcept = 0;
    virtual ReturnCode doMeasure() noexcept = 0;

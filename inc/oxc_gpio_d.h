@@ -38,7 +38,7 @@ class Gpio_Pins_Dev : public PinsPureCapability
    PinsOut* getPins() noexcept { return &pins; } // low-level access: for special init...
 
    virtual int32_t_er read()             noexcept override { return pins.readUint();       }
-   virtual int32_t_er readwr()           noexcept override { return pins.readUint();       }
+   virtual int32_t_er readwr()           noexcept override { return pins.read_outUint();   }
    virtual void write(     int32_t v   ) noexcept override { pins.write(  PinMask( v ) );  }
    virtual void set(       int32_t v   ) noexcept override { pins.set(    PinMask( v ) );  }
    virtual void reset(     int32_t v   ) noexcept override { pins.reset(  PinMask( v ) );  }

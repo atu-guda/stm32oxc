@@ -3,10 +3,6 @@
 
 #include <oxc_types.h>
 
-using std::size_t;
-using std::int32_t;
-
-using oxc::ReturnCode;
 
 
 namespace oxc {

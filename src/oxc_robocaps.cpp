@@ -17,7 +17,7 @@ ReturnCode oxc::RoboObject::init() noexcept
 
 ReturnCode oxc::RoboObject::measure() noexcept
 {
-  if( ! ( flags & noInit ) ) {
+  if( ! ( flags & noMeasure ) ) {
     sta = doMeasure();
   }
   return sta;
@@ -26,7 +26,7 @@ ReturnCode oxc::RoboObject::measure() noexcept
 
 ReturnCode oxc::RoboObject::think() noexcept
 {
-  if( ! ( flags & noInit ) ) {
+  if( ! ( flags & noThink ) ) {
     sta = doThink();
   }
   return sta;
@@ -35,7 +35,7 @@ ReturnCode oxc::RoboObject::think() noexcept
 
 ReturnCode oxc::RoboObject::commit() noexcept
 {
-  if( ! ( flags & noInit ) ) {
+  if( ! ( flags & noCommit ) ) {
     sta = doCommit();
     if( sta.isOk() ) {
       dirty = 0;
@@ -60,7 +60,7 @@ ReturnCode oxc::PinsRoboCapability::setVal( size_t ch, int32_t v ) noexcept
   switch( ch ) {
     case ch_write     : vv[1]  =  v;  return rcOk;
     case ch_set       : vv[1] |=  v;  return rcOk;
-    case ch_reset     : vv[1] |= ~v;  return rcOk;
+    case ch_reset     : vv[1] &= ~v;  return rcOk;
     case ch_toggle    : vv[1] ^=  v;  return rcOk;
     case ch_setbit    : set_bit(    vv[1], v ); return rcOk;
     case ch_resetbit  : reset_bit(  vv[1], v ); return rcOk;

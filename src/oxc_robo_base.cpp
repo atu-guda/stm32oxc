@@ -49,9 +49,9 @@ ReturnCode oxc::RoboAssembly::measure_all() noexcept
     t_dt_f = t_dt * 1e-3f;
   }
 
-  leds[1].set(); // TODO: remove after debug - or hook functions
+  // leds[1].set(); // TODO: remove after debug - or hook functions
   auto rc =  for_all_till_err( &RoboObject::measure );
-  leds[1].reset();
+  // leds[1].reset();
   first_measure = false;
   return rc;
 }

@@ -6,11 +6,6 @@
 
 #include <oxc_purecaps.h>
 
-using std::size_t;
-using std::uint32_t;
-using std::int32_t;
-
-using oxc::ReturnCode;
 
 
 namespace oxc {
@@ -164,6 +159,7 @@ class PinsCapability : public IoCapability {
    };
    explicit constexpr PinsCapability( PinsPureCapability &pins_ ) noexcept :
      IoCapability( n_ch_int, n_ch_float ), pins( pins_ ) {};
+   PinsCapability( const PinsCapability &r ) = delete;
    virtual ReturnCode setVal( size_t ch, int32_t v ) noexcept override;
    virtual int32_t_er getVal( size_t ch )            noexcept override;
    virtual ReturnCode setValF( size_t ch, float v )  noexcept override { return rcErr; }
@@ -182,6 +178,7 @@ class PinCapability : public IoCapability {
    };
    constexpr PinCapability( PinPureCapability &pin_ ) noexcept :
      IoCapability( n_ch_int, n_ch_float ), pin( pin_ ) {};
+   PinCapability( const PinCapability &rhs ) = delete;
    virtual ReturnCode setVal( size_t ch, int32_t v ) noexcept override;
    virtual int32_t_er getVal( size_t ch )            noexcept override;
    virtual ReturnCode setValF( size_t ch, float v )  noexcept override { return rcErr; }
@@ -198,6 +195,7 @@ class PwmCapability : public IoCapability {
     explicit constexpr PwmCapability( PwmPureCapability &pwm_, size_t n_pwm_ch_, size_t bitsz_ ) noexcept
      : IoCapability( 0, n_pwm_ch_ * 2 + 1 ), pwm( pwm_ ), n_pwm_ch( n_pwm_ch_ )
        {};
+    PwmCapability( const PwmCapability &r ) = delete;
   protected:
     PwmPureCapability &pwm;
     const size_t n_pwm_ch;
@@ -209,6 +207,7 @@ class EncoderCapability : public IoCapability {
   public:
    explicit constexpr EncoderCapability( EncoderPureCapability &enc_, size_t bitsz_, int32_t scale_ ) noexcept
      : IoCapability( 1, 0 ), enc( enc_ ), bitsz( bitsz_ ), scale( scale_ ) {};
+   EncoderCapability( const EncoderCapability &r ) = delete;
   protected:
    EncoderPureCapability &enc;
    const size_t bitsz;
