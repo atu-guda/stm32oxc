@@ -5,7 +5,6 @@
 
 #include <span>
 
-#include <oxc_coordtransform.h>
 #include <oxc_robocaps.h>
 
 
@@ -30,58 +29,6 @@ class TestRoboDevice : public IoRoboCapability {
 };
 
 
-
-//* One channel for digital sensor: selects 1 channel of the IoRoboCapability
-//* TODO: remove, use InCh*
-class SensorChannel {
-  public:
-   explicit constexpr SensorChannel( IoRoboCapability &psens_, size_t ch_ ) noexcept
-     : psens( psens_ ), ch( ch_ ) {}
-   int32_t_er get_i()  { return  psens.getVal( ch ); }
-  protected:
-   IoRoboCapability &psens;
-   const size_t ch;
-};
-
-
-//* One channel for analog sensor: selects and scale 1 channel of the IoRoboCapability
-class SensorAnalogChannel {
-  public:
-   explicit constexpr SensorAnalogChannel( IoRoboCapability &psens_, size_t ch_, CoordTransform &coo_tr_ ) noexcept
-     : psens( psens_ ), ch( ch_ ), coo_tr( coo_tr_ ) {}
-   float_er     get() noexcept { auto v = psens.getValF( ch ); if( v ) { v = coo_tr.toPhys( v.value() ); } return v; }
-   int32_t_er get_i() noexcept { return psens.getVal( ch ); }
-  protected:
-   IoRoboCapability &psens;
-   const size_t ch;
-   CoordTransform &coo_tr;
-};
-
-
-//* One channel for digital actuator: selects 1 channel of the IoRoboCapability
-class ActuatorChannel {
-  public:
-   explicit constexpr ActuatorChannel( IoRoboCapability &actu_, size_t ch_ ) noexcept
-     : actu( actu_ ), ch( ch_ ) {}
-   ReturnCode set_i( int32_t v ) noexcept { return  actu.setVal( ch, v ); }
-  protected:
-   IoRoboCapability &actu;
-   const size_t ch;
-};
-
-
-//* One channel for analog actuator: selects and scale 1 channel of the IoRoboCapability
-class ActuatorAnalogChannel {
-  public:
-   explicit constexpr ActuatorAnalogChannel( IoRoboCapability &actu_, size_t ch_, CoordTransform &coo_tr_ ) noexcept
-     : actu( actu_ ), ch( ch_ ), coo_tr( coo_tr_ ) {}
-   ReturnCode set( float v ) noexcept { return actu.setValF( ch, coo_tr.toPhys( v ) ); }
-   ReturnCode set_i( int32_t vi ) noexcept { return actu.setVal( ch, vi ); }
-  protected:
-   IoRoboCapability &actu;
-   const size_t ch;
-   CoordTransform &coo_tr;
-};
 
 
 
