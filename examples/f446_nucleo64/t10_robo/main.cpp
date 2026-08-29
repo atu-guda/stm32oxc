@@ -40,6 +40,8 @@ DCL_CMD_REG(      rri,          '\0',     " i ch - read robo int"  );
 DCL_CMD_REG(      rrf,          '\0',     " i ch - read robo float"  );
 DCL_CMD_REG(      measure,      'M',      " i - measure robo"  );
 DCL_CMD_REG(      commit,       'C',      " i - commit robo"  );
+DCL_CMD_REG(      list_ob,      'L',      " - list objects"  );
+DCL_CMD_REG(      init,         '\0',     " - init"  );
 
 // -------------------------------------------------------------------------------------
 
@@ -49,19 +51,19 @@ ReturnCode init_hw_all();
 
 Gpio_Pin_Dev      pin1_hd( PC10 );
 PinCapability     pin1_d(  pin1_hd );
-PinRoboCapability pin1_rd( pin1_hd );
+PinRoboCapability pin1_rd( pin1_hd, 100 );
 
 Gpio_Pin_Dev      pin2_hd( PC11 );
 PinCapability     pin2_d(  pin1_hd );
-PinRoboCapability pin2_rd( pin2_hd );
+PinRoboCapability pin2_rd( pin2_hd, 101 );
 
 Gpio_Pin_Dev      pini_hd( PC13 );
 PinCapability     pini_d(  pini_hd );
-PinRoboCapability pini_rd( pini_hd );
+PinRoboCapability pini_rd( pini_hd, 102 );
 
 Gpio_Pins_Dev      pins_hd( PC0, 4 ); // copy of leds
 PinsCapability     pins_d(  pins_hd );
-PinsRoboCapability pins_rd( pins_hd ); // copy of leds
+PinsRoboCapability pins_rd( pins_hd, 200 );
 
 
 // ------------------------ - local sensors ; ---------------------------------------
@@ -371,4 +373,21 @@ CMD_FUNCTION( commit )
   std_out << "# rc= " << rc.code << ' ' << rc.data << NL;
   return 0;
 }
+
+CMD_FUNCTION( list_ob )
+{
+  for( auto [i,pob] : std::views::enumerate( robo_objs ) ) {
+    std_out << i << ' ' << pob->getId() << ' ' << pob->getStatus() << ' ' << pob->getDirty()
+            << ' ' << pob->getFlags() << ' ' << HexInt(pob) << NL;
+  }
+  return 0;
+}
+
+CMD_FUNCTION( init )
+{
+  auto rc = robo.init_all();
+  std_out << " rc= [" << rc.code << ", " << rc.data << "]" NL;
+  return 0;
+}
+
 

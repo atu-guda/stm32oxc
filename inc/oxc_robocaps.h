@@ -3,6 +3,7 @@
 
 #include <oxc_capabilities.h>
 
+// #include <oxc_debug1.h>
 
 namespace oxc {
 
@@ -51,7 +52,9 @@ class PinsRoboCapability : public IoRoboCapability {
   public:
    enum { // copy?
      ch_read = 0, ch_write = 1, ch_set = 2, ch_reset = 3, ch_toggle = 4,
-     ch_setbit = 5, ch_resetbit = 6, ch_togglebit = 7, n_ch_int, n_ch_float = 0
+     ch_setbit = 5, ch_resetbit = 6, ch_togglebit = 7,
+     ch_r_bit = 1, ch_w_bit = 2,
+     n_ch_int, n_ch_float = 0
    };
    explicit constexpr PinsRoboCapability( PinsPureCapability &pins_, uint32_t id_ = 0 ) noexcept
      : IoRoboCapability( n_ch_int, n_ch_float, vv, id_ ), pins( pins_ ) {};
@@ -63,7 +66,7 @@ class PinsRoboCapability : public IoRoboCapability {
    virtual ReturnCode doInit()    noexcept override { vv[0] = vv[1] = 0;   return rcOk; }
    virtual ReturnCode doMeasure() noexcept override { auto v = pins.read(); if( v ) { vv[0] = v.value();  return rcOk;}; return rcErr; }
    virtual ReturnCode doThink()   noexcept override { return rcOk; }
-   virtual ReturnCode doCommit()  noexcept override { pins.write( vv[1] ); return rcOk; }
+   virtual ReturnCode doCommit()  noexcept override { if( dirty & ch_w_bit ) { pins.write( vv[1] ); } return rcOk; }
   protected:
    PinsPureCapability &pins;
    int32_t vv[2]; // 0-in 1-out
@@ -75,6 +78,7 @@ class PinRoboCapability : public IoRoboCapability {
   public:
    enum { // copy?
      ch_read = 0, ch_write = 1, ch_set = 2, ch_reset = 3, ch_toggle = 4,
+     ch_r_bit = 1, ch_w_bit = 2,
      n_ch_int, n_ch_float = 0
    };
    explicit constexpr PinRoboCapability( PinPureCapability &pin_, uint32_t id_ = 0 ) noexcept
@@ -87,7 +91,7 @@ class PinRoboCapability : public IoRoboCapability {
    virtual ReturnCode doInit()    noexcept override { vv[0] = vv[1] = 0;   return rcOk; }
    virtual ReturnCode doMeasure() noexcept override { auto v = pin.read(); if( v ) { vv[0] = v.value(); return rcOk;}; return rcErr; }
    virtual ReturnCode doThink()   noexcept override { return rcOk; }
-   virtual ReturnCode doCommit()  noexcept override { pin.write( vv[1] ); return rcOk; }
+   virtual ReturnCode doCommit()  noexcept override { if( dirty & ch_w_bit ) { pin.write( vv[1] ); } return rcOk; }
   protected:
    PinPureCapability &pin;
    int32_t vv[2]; // 0-in 1-out
