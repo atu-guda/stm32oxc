@@ -42,6 +42,7 @@ DCL_CMD_REG(      measure,      'M',      " i - measure robo"  );
 DCL_CMD_REG(      commit,       'C',      " i - commit robo"  );
 DCL_CMD_REG(      list_ob,      'L',      " - list objects"  );
 DCL_CMD_REG(      init,         '\0',     " - init"  );
+DCL_CMD_REG(      outf,         'F',      " i_och v - output to float ch"  );
 
 // -------------------------------------------------------------------------------------
 
@@ -65,11 +66,20 @@ Gpio_Pins_Dev      pins_hd( PC0, 4 ); // copy of leds
 PinsCapability     pins_d(  pins_hd );
 PinsRoboCapability pins_rd( pins_hd, 200 );
 
+// ------------------------ - Channels and transforms ; ---------------------------------------
 
-// ------------------------ - local sensors ; ---------------------------------------
+TransFILin tr_pin1( 0.1, -1 );
+OutChFI    oc_pin1( pin1_rd, 1, tr_pin1 );
 
+TransFILin tr_pin2( 0.5, -0.5 );
+OutChFI    oc_pin2( pin2_rd, 1, tr_pin2 );
 
-// ------------------------ - local sensors end ---------------------------------------
+TransFILin tr_pins( 0.1, 1 );
+OutChFI    oc_pins( pins_rd, 1, tr_pins );
+
+OutChFSplit2 oc_split( oc_pin1, oc_pin2, globalTransFFUnity );
+
+// ------------------------ - Channels and transforms end ; ---------------------------------------
 
 // TestRoboDevice test_rd{ 112 };
 
@@ -98,6 +108,13 @@ RoboObject* robo_objs[] {
   &pin2_rd,
   &pini_rd,
   &pins_rd,
+};
+
+OutChFBase* outchfs[] {
+  &oc_pin1,
+  &oc_pin2,
+  &oc_pins,
+  &oc_split,
 };
 
 
@@ -360,16 +377,16 @@ CMD_FUNCTION( rrf )
 
 CMD_FUNCTION( measure )
 {
-  auto idx = arg2ulong_d( 1, argc, argv, 0, 0, std::size(rcaps)-1 );
-  auto rc = rcaps[idx]->measure();
+  auto idx = arg2ulong_d( 1, argc, argv, 100000, 0 ); // all by default
+  auto rc = ( idx >= std::size(rcaps) ) ? robo.measure_all() : rcaps[idx]->measure();
   std_out << "# rc= " << rc.code << ' ' << rc.data << NL;
   return 0;
 }
 
 CMD_FUNCTION( commit )
 {
-  auto idx = arg2ulong_d( 1, argc, argv, 0, 0, std::size(rcaps)-1 );
-  auto rc = rcaps[idx]->commit();
+  auto idx = arg2ulong_d( 1, argc, argv, 100000, 0 ); // all by default
+  auto rc = ( idx >= std::size(rcaps) ) ? robo.commit_all() : rcaps[idx]->commit();
   std_out << "# rc= " << rc.code << ' ' << rc.data << NL;
   return 0;
 }
@@ -389,5 +406,17 @@ CMD_FUNCTION( init )
   std_out << " rc= [" << rc.code << ", " << rc.data << "]" NL;
   return 0;
 }
+
+CMD_FUNCTION( outf )
+{
+  auto idx = arg2ulong_d( 1, argc, argv, 0, 0, std::size(outchfs)-1 );
+  float v  = arg2float_d( 2, argc, argv, 0 );
+  outchfs[idx]->out( v );
+  if( UVAR_a ) {
+    robo.commit_all();
+  }
+  return 0;
+}
+
 
 
