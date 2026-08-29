@@ -205,7 +205,7 @@ class EncoderCapability : public IoCapability {
 };
 
 // ---------------------------- Channels --------------------------------------------------
-
+// ------------- output: first char {F,I} - from source (control), second - to tagget (device)
 
 class OutChFBase {
   public:
@@ -329,6 +329,142 @@ class OutChII : public OutChI {
    const TransII &tr;
 };
 
+// ------------- input: first char {F,I} - to control (typeof in()), second - from device
+
+class InChFBase {
+  public:
+   virtual float in() const noexcept = 0;
+};
+
+class InChFConst : public InChFBase {
+  public:
+   InChFConst( float vc_ = 0 ) noexcept : vc(vc_) {};
+   virtual float in() const noexcept override { return vc; }
+   float vc;
+};
+
+class InChFProxy : public InChFBase {
+  public:
+   constexpr InChFProxy( const InChFBase &prev_, const TransFF &tr_ ) : prev( prev_ ), tr( tr_ ) {}
+   virtual float in() const noexcept override { return tr.f( prev.in() ); };
+  protected:
+   const InChFBase &prev;
+   const TransFF &tr;
+};
+
+
+class InChFSum2 : public InChFBase {
+  public:
+   constexpr InChFSum2( const InChFBase &prev0_, const InChFBase &prev1_, const TransFF &tr_, float a0_ = 1, float a1_ = 1 )
+     : prev0( prev0_ ), prev1( prev1_), tr( tr_ ), a0(a0_), a1(a1_) {}
+   virtual float in() const noexcept override { return tr.f( prev0.in() + prev1.in() ); };
+  protected:
+   const InChFBase &prev0;
+   const InChFBase &prev1;
+   const TransFF &tr;
+   float a0, a1;
+};
+
+class InChFFun2 : public InChFBase {
+  public:
+   constexpr InChFFun2( const InChFBase &prev0_, const InChFBase &prev1_, const TransFF &tr_, float(*fun_)(float,float) )
+     : prev0( prev0_ ), prev1( prev1_), tr( tr_ ), fun(fun_) {}
+   virtual float in() const noexcept override { return tr.f( fun( prev0.in(), prev1.in() ) ); };
+  protected:
+   const InChFBase &prev0;
+   const InChFBase &prev1;
+   const TransFF &tr;
+   float (*fun)(float,float);
+};
+
+
+
+class InChF : public InChFBase {
+  public:
+   constexpr InChF( IoCapability &cap_, size_t ch_ ) : cap( cap_ ), ch( ch_ ) {}
+   virtual float in() const noexcept = 0;
+  protected:
+   IoCapability &cap;
+   const size_t ch;
+};
+
+class InChFF : public InChF {
+  public:
+   constexpr InChFF( IoCapability &cap_, size_t ch_, TransFF &tr_ ) : InChF( cap_, ch_ ), tr( tr_ ) {}
+   virtual float in() const noexcept override { return tr.f( cap.getValF( ch ).value_or( NAN ) ); }
+  protected:
+   const TransFF &tr;
+};
+
+class InChFI : public InChF {
+  public:
+   constexpr InChFI( IoCapability &cap_, size_t ch_, TransIF &tr_ ) : InChF( cap_, ch_ ), tr( tr_ ) {}
+   virtual float in() const noexcept override { return tr.f( cap.getVal( ch ).value_or( -1 ) ); };
+  protected:
+   const TransIF &tr;
+};
+
+
+class InChIBase {
+  public:
+   virtual int32_t in() const noexcept = 0;
+};
+
+class InChIConst : public InChIBase {
+  public:
+   InChIConst( int32_t vc_ = 0 ) : vc( vc_ ) {};
+   virtual int32_t in() const noexcept override { return vc; };
+   int32_t vc;
+};
+
+
+class InChIProxy : public InChIBase {
+  public:
+   constexpr InChIProxy( const InChIBase &prev_, const TransII &tr_ ) : prev( prev_ ), tr( tr_ ) {}
+   virtual int32_t in() const noexcept override { return tr.f( prev.in() ); };
+  protected:
+   const InChIBase &prev;
+   const TransII &tr;
+};
+
+
+class InChISum2 : public InChIBase {
+  public:
+   constexpr InChISum2( const InChIBase &prev0_, const InChIBase &prev1_, const TransII &tr_, int32_t a0_ = 1, int32_t a1_ = 1 )
+     : prev0( prev0_ ), prev1( prev1_), tr( tr_ ), a0(a0_), a1(a1_) {}
+   virtual int32_t in() const noexcept override { return tr.f( prev0.in() + prev1.in() ); };
+  protected:
+   const InChIBase &prev0;
+   const InChIBase &prev1;
+   const TransII &tr;
+   int32_t a0, a1;
+};
+
+
+class InChI : public InChIBase {
+  public:
+   constexpr InChI( IoCapability &cap_, size_t ch_ ) : cap( cap_ ), ch( ch_ ) {}
+   virtual int32_t in() const noexcept = 0;
+  protected:
+   IoCapability &cap;
+   const size_t ch;
+};
+
+class InChIF : public InChI {
+  public:
+   constexpr InChIF( IoCapability &cap_, size_t ch_, TransFI &tr_ ) : InChI( cap_, ch_ ), tr( tr_ ) {}
+   virtual int32_t in() const noexcept override { return tr.f( cap.getValF( ch ).value_or( 0 ) ); };
+  protected:
+   const TransFI &tr;
+};
+
+class InChII : public InChI {
+  public:
+   constexpr InChII( IoCapability &cap_, size_t ch_, TransII &tr_ ) : InChI( cap_, ch_ ), tr( tr_ ) {}
+   virtual int32_t in() const noexcept override { return tr.f( cap.getVal( ch ).value_or( 0 ) ); };
+  protected:
+   const TransII &tr;
+};
 
 
 

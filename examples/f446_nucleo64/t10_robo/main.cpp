@@ -43,6 +43,7 @@ DCL_CMD_REG(      commit,       'C',      " i - commit robo"  );
 DCL_CMD_REG(      list_ob,      'L',      " - list objects"  );
 DCL_CMD_REG(      init,         '\0',     " - init"  );
 DCL_CMD_REG(      outf,         'F',      " i_och v - output to float ch"  );
+DCL_CMD_REG(      inf,          'I',      " read all float ch"  );
 
 // -------------------------------------------------------------------------------------
 
@@ -67,17 +68,32 @@ PinsCapability     pins_d(  pins_hd );
 PinsRoboCapability pins_rd( pins_hd, 200 );
 
 // ------------------------ - Channels and transforms ; ---------------------------------------
+// output
 
-TransFILin tr_pin1( 0.1, -1 );
-OutChFI    oc_pin1( pin1_rd, 1, tr_pin1 );
+TransFILin tro_pin1( 0.1f, -1.0f );
+OutChFI    oc_pin1( pin1_rd, 1, tro_pin1 );
 
-TransFILin tr_pin2( 0.5, -0.5 );
-OutChFI    oc_pin2( pin2_rd, 1, tr_pin2 );
+TransFILin tro_pin2( 0.5f, -0.5f );
+OutChFI    oc_pin2( pin2_rd, 1, tro_pin2 );
 
-TransFILin tr_pins( 0.1, 1 );
-OutChFI    oc_pins( pins_rd, 1, tr_pins );
+TransFILinLim tro_pins( 0.1f, 1.0f, 0, 14 );
+OutChFI    oc_pins( pins_rd, 1, tro_pins );
 
 OutChFSplit2 oc_split( oc_pin1, oc_pin2, globalTransFFUnity );
+
+// input
+TransIFLin tri_pin1( 10.0f, 0.3f );
+InChFI     ic_pin1( pin1_rd, 0, tri_pin1 );
+
+TransIFLin tri_pin2( 0.1f, -2.0f );
+InChFI     ic_pin2( pin2_rd, 0, tri_pin2 );
+
+TransIFLin tri_pins( 1.1f, 0.01f );
+InChFI     ic_pins( pins_rd, 0, tri_pins );
+
+InChFConst ic_const( 3.1415f );
+
+InChFSum2  ic_sum( ic_pins, ic_pin1, globalTransFFUnity, 0.1f, -0.1f );
 
 // ------------------------ - Channels and transforms end ; ---------------------------------------
 
@@ -115,6 +131,14 @@ OutChFBase* outchfs[] {
   &oc_pin2,
   &oc_pins,
   &oc_split,
+};
+
+InChFBase* inchfs[] {
+  &ic_pin1,
+  &ic_pin2,
+  &ic_pins,
+  &ic_const,
+  &ic_sum,
 };
 
 
@@ -417,6 +441,18 @@ CMD_FUNCTION( outf )
   }
   return 0;
 }
+
+
+CMD_FUNCTION( inf )
+{
+  robo.measure_all();
+  for( auto [i,pich] : std::views::enumerate( inchfs ) ) {
+    auto v = pich->in();
+    std_out << i << ' ' << v << NL;
+  }
+  return 0;
+}
+
 
 
 
