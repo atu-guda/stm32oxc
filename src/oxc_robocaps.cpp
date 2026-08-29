@@ -13,6 +13,7 @@ ReturnCode oxc::RoboObject::init() noexcept
   if( ! ( flags & noInit ) ) {
     sta = doInit();
   }
+  dirty = 0;
   return sta;
 }
 

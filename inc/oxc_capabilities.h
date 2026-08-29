@@ -133,20 +133,13 @@ class TransIILin : public TransII {
 //* pack of digital I/O channels
 class IoCapability {
   public:
-   explicit constexpr IoCapability( size_t sz_, size_t szF_ ) noexcept :
-     sz( sz_ ), szF( szF_ ) {};
    virtual ~IoCapability() = default; // really unneeded now
    // main interface
    virtual ReturnCode setVal( size_t ch, int32_t v ) noexcept = 0;
    virtual int32_t_er getVal( size_t ch )            noexcept = 0;
    virtual ReturnCode setValF( size_t ch, float v )  noexcept = 0;
    virtual float_er   getValF( size_t ch )           noexcept = 0;
-   constexpr size_t size()     const noexcept { return sz;    }
-   constexpr size_t sizeF()    const noexcept { return szF;    }
-
   protected:
-   const size_t sz;     //* number of integer interface channels
-   const size_t szF;    //* number of floating interface channels
 };
 
 
@@ -157,8 +150,7 @@ class PinsCapability : public IoCapability {
      ch_read = 0, ch_write = 1, ch_set = 2, ch_reset = 3, ch_toggle = 4,
      ch_setbit = 5, ch_resetbit = 6, ch_togglebit = 7, n_ch_int, n_ch_float = 0
    };
-   explicit constexpr PinsCapability( PinsPureCapability &pins_ ) noexcept :
-     IoCapability( n_ch_int, n_ch_float ), pins( pins_ ) {};
+   explicit constexpr PinsCapability( PinsPureCapability &pins_ ) noexcept : pins( pins_ ) {};
    PinsCapability( const PinsCapability &r ) = delete;
    virtual ReturnCode setVal( size_t ch, int32_t v ) noexcept override;
    virtual int32_t_er getVal( size_t ch )            noexcept override;
@@ -176,8 +168,7 @@ class PinCapability : public IoCapability {
      ch_read = 0, ch_write = 1, ch_set = 2, ch_reset = 3, ch_toggle = 4,
      n_ch_int, n_ch_float = 0
    };
-   constexpr PinCapability( PinPureCapability &pin_ ) noexcept :
-     IoCapability( n_ch_int, n_ch_float ), pin( pin_ ) {};
+   constexpr PinCapability( PinPureCapability &pin_ ) noexcept : pin( pin_ ) {};
    PinCapability( const PinCapability &rhs ) = delete;
    virtual ReturnCode setVal( size_t ch, int32_t v ) noexcept override;
    virtual int32_t_er getVal( size_t ch )            noexcept override;
@@ -193,8 +184,7 @@ class PinCapability : public IoCapability {
 class PwmCapability : public IoCapability {
   public:
     explicit constexpr PwmCapability( PwmPureCapability &pwm_, size_t n_pwm_ch_, size_t bitsz_ ) noexcept
-     : IoCapability( 0, n_pwm_ch_ * 2 + 1 ), pwm( pwm_ ), n_pwm_ch( n_pwm_ch_ )
-       {};
+     : pwm( pwm_ ), n_pwm_ch( n_pwm_ch_ ) {};
     PwmCapability( const PwmCapability &r ) = delete;
   protected:
     PwmPureCapability &pwm;
@@ -206,7 +196,7 @@ class PwmCapability : public IoCapability {
 class EncoderCapability : public IoCapability {
   public:
    explicit constexpr EncoderCapability( EncoderPureCapability &enc_, size_t bitsz_, int32_t scale_ ) noexcept
-     : IoCapability( 1, 0 ), enc( enc_ ), bitsz( bitsz_ ), scale( scale_ ) {};
+     : enc( enc_ ), bitsz( bitsz_ ), scale( scale_ ) {};
    EncoderCapability( const EncoderCapability &r ) = delete;
   protected:
    EncoderPureCapability &enc;

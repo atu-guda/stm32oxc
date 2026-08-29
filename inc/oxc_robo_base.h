@@ -16,15 +16,15 @@ namespace oxc {
 class TestRoboDevice : public IoRoboCapability {
   public:
    enum { n_ch_int = 4, n_ch_float = 2 };
-   TestRoboDevice( uint32_t id_ = 0 ) : IoRoboCapability( n_ch_int, n_ch_float, xx_buf, id_ ) {};
+   TestRoboDevice( uint32_t id_ = 0 ) : IoRoboCapability( xx_buf, id_ ) {};
    //* fake at all
    virtual ReturnCode setValF( size_t ch, float v )  noexcept override { return setVal( ch, (int32_t)v ); }
    virtual float_er   getValF( size_t ch )           noexcept override { return getVal( ch ); } // how converted?
   protected:
-   virtual ReturnCode doInit()    noexcept override { std::ranges::fill( xx_buf, 0 ); dirty = false; return rcOk; };
+   virtual ReturnCode doInit()    noexcept override { std::ranges::fill( xx_buf, 0 ); return rcOk; };
    virtual ReturnCode doMeasure() noexcept override { return rcOk; };
    virtual ReturnCode doThink()   noexcept override { return rcOk; };
-   virtual ReturnCode doCommit()  noexcept override { xx_t = xx_buf[0]; dirty = false; return rcOk; };
+   virtual ReturnCode doCommit()  noexcept override { xx_t = xx_buf[0]; return rcOk; };
    int32_t xx_buf[n_ch_int];
    int32_t xx_t {0};
 };
