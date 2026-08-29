@@ -13,7 +13,7 @@ namespace oxc {
 class IoCapability;
 
 
-// -------------- More transforms: FF, FI, IF, FI - one-side only ------------------------
+// --------------  Transforms: FF, FI, IF, FI - one-side only ------------------------
 // TODO: chain here?
 
 class TransFF {

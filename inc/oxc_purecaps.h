@@ -39,6 +39,7 @@ class PwmPureCapability {
   public:
    virtual ReturnCode setDuty(  size_t ch, float duty ) noexcept = 0;
    virtual ReturnCode setPulse( size_t ch, float pu_s ) noexcept = 0;
+   virtual ReturnCode setShift( size_t ch, float sh_s ) noexcept = 0;
    virtual ReturnCode setFreq( float freq )             noexcept = 0;
    virtual float getFreq() const                        noexcept = 0;
 };

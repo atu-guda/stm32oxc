@@ -97,7 +97,6 @@ InChFSum2  ic_sum( ic_pins, ic_pin1, globalTransFFUnity, 0.1f, -0.1f );
 
 // ------------------------ - Channels and transforms end ; ---------------------------------------
 
-// TestRoboDevice test_rd{ 112 };
 
 Gpio_Pin_Dev* hw_pin[] {
   &pin1_hd,
