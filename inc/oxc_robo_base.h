@@ -16,7 +16,7 @@ namespace oxc {
 class TestRoboDevice : public IoRoboCapability {
   public:
    enum { n_ch_int = 4, n_ch_float = 2 };
-   TestRoboDevice( uint32_t id_ = 0 ) : IoRoboCapability( xx_buf, id_ ) {};
+   TestRoboDevice( uint32_t id_ = 0 ) : IoRoboCapability( id_ ) {};
    //* fake at all
    virtual ReturnCode setValF( size_t ch, float v )  noexcept override { return setVal( ch, (int32_t)v ); }
    virtual float_er   getValF( size_t ch )           noexcept override { return getVal( ch ); } // how converted?

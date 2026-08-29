@@ -38,10 +38,8 @@ class RoboObject {
 //* pack of digital I/O channels + robo interface
 class IoRoboCapability : public IoCapability, public RoboObject {
   public:
-   explicit constexpr IoRoboCapability( int32_t_span iobuf_, uint32_t id_ = 0 ) noexcept :
-     RoboObject( id_ ), iobuf( iobuf_ ) {};
+   explicit constexpr IoRoboCapability( uint32_t id_ = 0 ) noexcept :  RoboObject( id_ ) {};
   protected:
-   int32_t_span iobuf;
 };
 
 
@@ -56,7 +54,7 @@ class PinsRoboCapability : public IoRoboCapability {
      n_ch_int, n_ch_float = 0
    };
    explicit constexpr PinsRoboCapability( PinsPureCapability &pins_, uint32_t id_ = 0 ) noexcept
-     : IoRoboCapability( vv, id_ ), pins( pins_ ) {};
+     : IoRoboCapability( id_ ), pins( pins_ ) {};
    virtual ReturnCode setVal( size_t ch, int32_t v ) noexcept override;
    virtual int32_t_er getVal( size_t ch )            noexcept override;
    virtual ReturnCode setValF( size_t ch, float v )  noexcept override { return rcErr; }
@@ -81,7 +79,7 @@ class PinRoboCapability : public IoRoboCapability {
      n_ch_int, n_ch_float = 0
    };
    explicit constexpr PinRoboCapability( PinPureCapability &pin_, uint32_t id_ = 0 ) noexcept
-     : IoRoboCapability( vv, id_ ), pin( pin_ ) {};
+     : IoRoboCapability( id_ ), pin( pin_ ) {};
    virtual ReturnCode setVal( size_t ch, int32_t v ) noexcept override;
    virtual int32_t_er getVal( size_t ch )            noexcept override;
    virtual ReturnCode setValF( size_t ch, float v )  noexcept override { return rcErr; }
@@ -99,9 +97,8 @@ class PinRoboCapability : public IoRoboCapability {
 
 class PwmRoboCapability : public IoRoboCapability {
   public:
-   explicit constexpr PwmRoboCapability( PwmPureCapability &pwm_, size_t sz_, size_t bitsz_, int32_t_span iobuf_,
-       uint32_t id_ = 0 ) noexcept
-     : IoRoboCapability( iobuf_, id_ ), pwm( pwm_ )
+   explicit constexpr PwmRoboCapability( PwmPureCapability &pwm_, size_t sz_, size_t bitsz_, uint32_t id_ = 0 ) noexcept
+     : IoRoboCapability( id_ ), pwm( pwm_ )
        {};
   protected:
    PwmPureCapability &pwm;
@@ -111,7 +108,7 @@ class PwmRoboCapability : public IoRoboCapability {
 class EncoderRoboCapability : public IoRoboCapability {
   public:
    explicit constexpr EncoderRoboCapability( EncoderPureCapability &enc_, size_t bitsz_, int32_t scale_, uint32_t id_ = 0 ) noexcept
-     : IoRoboCapability( vv, id_ ), enc(enc_) {};
+     : IoRoboCapability( id_ ), enc(enc_) {};
   protected:
    EncoderPureCapability &enc;
    int32_t vv[1]; // 0-out
