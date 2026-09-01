@@ -81,8 +81,10 @@ Pure capabilities to real devices
   files may be combined?
  oxc_{hardware}_{cap?}_d.*
 
-oxc_gpio_d.h: (no .cpp + embeded real device) ? TODO: split?
+oxc_gpio_pin_d.h: (no .cpp + embeded real device)
  Gpio_Pin_Dev  : public PinPureCapability (PinOut)
+
+oxc_gpio_pins_d.h: (no .cpp + embeded real device)
  Gpio_Pins_Dev : public PinsPureCapability (PinsOut)
 
 oxc_tim_pmw_d.
