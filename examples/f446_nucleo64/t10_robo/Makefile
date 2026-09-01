@@ -31,6 +31,7 @@ SRCS += oxc_capabilities.cpp
 SRCS += oxc_robocaps.cpp
 
 SRCS += oxc_robo_base.cpp
+SRCS += oxc_tim_pwm_d.cpp
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
 # see ../common/f4_modules.mk

@@ -15,7 +15,7 @@ namespace oxc {
 class  Tim_Pwm_Dev : public PwmPureCapability {
   public:
    static constexpr size_t max_ch { 8 }; // really 6, but what if?
-   constexpr Tim_Pwm_Dev( uintptr_t tim_addr_, span<const TimChPin> channels_, size_t bitsz_, TIM_HandleTypeDef &t_h_ ) noexcept
+   constexpr Tim_Pwm_Dev( uintptr_t tim_addr_, span<const TimChPin> channels_, TIM_HandleTypeDef &t_h_ ) noexcept
      : tim_addr( tim_addr_ ),
        channels( channels_ ),
        n_ch( channels_.size() ),
@@ -26,20 +26,26 @@ class  Tim_Pwm_Dev : public PwmPureCapability {
          }
        };
 
-   // PwmPureCapability:
-   virtual ReturnCode setDuty( size_t ch, float duty ) noexcept ;
-   virtual ReturnCode setFreq( float freq )            noexcept ;
-   virtual float getFreq() const                       noexcept ;
+   virtual uint32_t duty2raw(  float duty ) const noexcept override;
+   virtual uint32_t pulse2raw( float pu_s ) const noexcept override;
+   virtual uint32_t shift2raw( float pu_s ) const noexcept override;
+   virtual ReturnCode freq2cfgs( float freq, std::span<uint32_t> cfgs ) const noexcept override;
+   virtual float_er  cfg2freq( std::span<const uint32_t> cfgs ) const noexcept override;
+   // low-level interface
+   virtual ReturnCode setDutyRaw(  size_t ch, int32_t dr ) noexcept override;
+   virtual ReturnCode setShiftRaw( size_t ch, int32_t sr ) noexcept override;
+   virtual int32_t_er getDutyRaw(  size_t ch )  noexcept override;
+   virtual int32_t_er getShiftRaw( size_t ch )  noexcept override;
+   virtual ReturnCode applyCfg( std::span<const uint32_t> cfgs )  noexcept override;
+   virtual ReturnCode storeCfg( std::span<      uint32_t> cfgs ) const noexcept override;
 
-   // virtual uint32_t pwm2raw( float pwm ) override;
-   // virtual uint32_t pulse2raw( uint32_t us ) override;
+   ReturnCode readCfg() noexcept;
 
    TIM_TypeDef* tim_p() const { return reinterpret_cast<TIM_TypeDef*>( tim_addr ); };
    bool isBadCh( size_t ch ) const { return ( ch >= n_ch ) || ( ccrs_a[ch] == 0 )|| ( ccrs_a[ch] == tim_addr ); }
 
    ReturnCode initHW() ;
    void initPins();
-   ReturnCode setHardParams( uint32_t psc, uint32_t arr, uint32_t cmode = TIM_COUNTERMODE_UP );
    inline reg32* pccr( std::size_t ch ) const { return reinterpret_cast<reg32*>(ccrs_a[ch]); };
    void enable()  { tim_p()->CR1 |=  1u; };
    void disable() { tim_p()->CR1 &= ~1u; };
@@ -59,8 +65,11 @@ class  Tim_Pwm_Dev : public PwmPureCapability {
    bool allowPSCadj { true };
    // for init/cache
    TIM_HandleTypeDef &t_h;
-   uint32_t psc { 0 };
-   uint32_t arr { 1 };
+   uint32_t cfgv[4]; // 0 - ARR, 1 - PSC, 2 - freq_cnt, 3 - freq_base
+   uint32_t &arr       { cfgv[0] }; // aliases
+   uint32_t &psc       { cfgv[1] };
+   uint32_t &freq_cnt  { cfgv[2] }; // BAD, need float, only [0] [1] - bin param
+   uint32_t &freq_base { cfgv[3] };
    uint32_t cmode { TIM_COUNTERMODE_UP };
 
 };
