@@ -6,7 +6,8 @@
 
 #include <oxc_robo_base.h>
 
-#include <oxc_gpio_d.h>
+#include <oxc_gpio_pin_d.h>
+#include <oxc_gpio_pins_d.h>
 
 #include <oxc_tim_pwm_d.h>
 

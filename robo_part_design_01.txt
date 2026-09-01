@@ -1,42 +1,51 @@
 ### *a - HW independent
 ## ------------------------------------ Level 0a: --------------------------------------------------
 
-Capablities - abstract classes to provide both capabilities and set/get, measure/commit phases, no HW
-inc/oxc_capabilities.h src/oxc_capabilities.cpp
+Pure Capablities - abstract classes to provide capabilities - any functions
+inc/oxc_purecaps.h
 
-IOCapability ( size, setVal(ch, int32_t), getVal(ch), act )
+PinPureCapability
+PinsPureCapability
+PwmPureCapability
+EncoderPureCapability
+
+
+## ------------------------------------ Level 1a: --------------------------------------------------
+
+Capabilities: setVal[F]/getVal[F} interface to capabilities
+Converts enumerated values to pure capabilities functions
+inc/oxc_capabilities.h
+
+IoCapability
 
 PinsCapability
-PinCapability ?
+PinCapability
 PwmCapability
-EncoCapability
+EncoderCapability
 ? ADCCapability
 ? DACCapability
 
-??? begin,end, cbegin, cend, [] int32_t
++ Trans{F|I}{F|I} tr.f(x)
++ Channels: {In|Out}Ch{F|I}* itype in(ch), void out(ch,v) - direction relative to control
 
-## ------------------------------------ Level 1a: --------------------------------------------------
+
+## ------------------------------------ Level 2a: --------------------------------------------------
 Buffer/robo related capabilities
 inc/oxc_robocaps.h src/oxc_robocaps.cpp
 
 RoboObject (init,measure,think,commit...)
 -->
-IoRoboCapability
+IoRoboCapability: IoCapability + RoboObject
+
 PinsRoboCapability
 PinRoboCapability
 PwmRoboCapability
 EncoderRoboCapability
-
-## ------------------------------------ Level 2a: --------------------------------------------------
-// unnned, as we have ValueTransform
-SensorChannel ( get_i )
-SensorAnalogChannel (get, get_i)
-ActuatorChannel (set_i)
-ActuatorAnalogChannel (set, set_i )
+? ADCRoboCapability
+? DACRoboCapability
 
 
-
-
+# =================================================================================================
 ## ------------------------------------ Level 0b: --------------------------------------------------
 
 real hardware, any API, any class names, may be _hw suffix - if need
@@ -67,33 +76,29 @@ inc/oxc_spi_dac8563.h: DevSPI_DAC8563() (setu{_,a,b,ab})
 TODO: remove DevSPI, oxc_spi_
 
 ## ------------------------------------ Level 1b: --------------------------------------------------
+Pure capabilities to real devices
+ {Hardware}_{Capability}_Dev
+  files may be combined?
+ oxc_{hardware}_{cap?}_d.*
 
-Capability and RoboCapability interfaces to real devices.
+oxc_gpio_d.h: (no .cpp + embeded real device) ? TODO: split?
+ Gpio_Pin_Dev  : public PinPureCapability (PinOut)
+ Gpio_Pins_Dev : public PinsPureCapability (PinsOut)
+
+oxc_tim_pmw_d.
+ Tim_Pwm_Dev
+
+## ------------------------------------ Level 2b?: --------------------------------------------------
+
+????
+Capability and RoboCapability interfaces to level 1b - only if required.
+Unknown size of buffers////
+
 If device supports immediate actions - both Capability and IoRoboCapability.
-If pre/post actions required - only IoRoboCapability
-
-class name: HW_Cap_Dev, HW_Cap_RDev,  object suffix: _d, _rd, filename: oxc_hw_[cap]_[r]d.{h,cpp}
-
-init, measure, think, commit - called by scheduler (policy to continue)
-
-oxc_gpio_d.h  : Gpio_Pin_Dev, Gpio_Pins_Dev
-oxc_gpio_rd.h : Gpio_XPin_RDev, Gpio_IPin_RDev, Gpio_OPin_RDev, Gpio_Pin_RDev
-                Gpio_XPins_RDev, Gpio_OPins_RDev, Gpio_IPins_RDev, Gpio_Pins_RDev
-
-
-oxc_tim_pwm_d.h  : Tim_Pwm_Dev
-oxc_tim_pwm_rd.h : Tim_Pwm_RDev
-
-Adc
-
-Dac
-
-EncoTim_*
 
 
 ## ------------------------------------------- Extra: -----------------------------------------
 
-inc/oxc_coordtransform.h: CoordTransform(toPhys,toInternal), LinearCoordTransform...
 inc/oxc_easing.h: EasingFun, easing_one, easing_poly2_in ... easing_trig_io TODO: +info struct
 encoder object
 

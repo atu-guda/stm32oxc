@@ -183,7 +183,7 @@ class PinCapability : public IoCapability {
 // channels: 0..sz-1 - duty, sz..sz+n_cfg_ch - freq config
 class PwmCapability : public IoCapability {
   public:
-    explicit constexpr PwmCapability( PwmPureCapability &pwm_, size_t n_pwm_ch_, size_t bitsz_ ) noexcept
+    explicit constexpr PwmCapability( PwmPureCapability &pwm_, size_t n_pwm_ch_ ) noexcept
      : pwm( pwm_ ), n_pwm_ch( n_pwm_ch_ ) {};
     PwmCapability( const PwmCapability &r ) = delete;
   protected:

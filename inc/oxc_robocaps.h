@@ -97,7 +97,7 @@ class PinRoboCapability : public IoRoboCapability {
 
 class PwmRoboCapability : public IoRoboCapability {
   public:
-   explicit constexpr PwmRoboCapability( PwmPureCapability &pwm_, size_t sz_, size_t bitsz_, uint32_t id_ = 0 ) noexcept
+   explicit constexpr PwmRoboCapability( PwmPureCapability &pwm_, size_t n_ch_, uint32_t id_ = 0 ) noexcept
      : IoRoboCapability( id_ ), pwm( pwm_ )
        {};
   protected:
