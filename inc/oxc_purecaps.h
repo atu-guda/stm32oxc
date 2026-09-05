@@ -38,17 +38,31 @@ class PinsPureCapability {
 //* if freq is changed, drop duty0, shifts to 0
 class PwmPureCapability {
   public:
+   virtual ReturnCode setDuty(  size_t ch, float duty ) noexcept = 0; // f: 0   -  99
+   virtual ReturnCode setPulse( size_t ch, float pu_s ) noexcept = 0; // f: 100 - 199
+   virtual ReturnCode setShift( size_t ch, float sh_s ) noexcept = 0; // f: 200 - 299
+   virtual ReturnCode setFreq( float freq )             noexcept = 0; // f: 300
+   virtual float_er   getFreq() const                   noexcept = 0; // f: 300
+   virtual void       disable()                         noexcept = 0;
+   virtual void       enable()                          noexcept = 0;
+   virtual bool       isEnabled() const                 noexcept = 0;
+  protected:
+};
+
+// TODO: separate file?
+class PwmBaseBasic : public PwmPureCapability {
+  public:
    enum { max_cfg_reg = 8 };
-   ReturnCode setDuty(  size_t ch, float duty ) noexcept { return setDutyRaw(  ch,  duty2raw(duty) ); }
-   ReturnCode setPulse( size_t ch, float pu_s ) noexcept { return setDutyRaw(  ch, pulse2raw(pu_s) ); }
-   ReturnCode setShift( size_t ch, float sh_s ) noexcept { return setShiftRaw( ch, shift2raw(sh_s) ); }
-   ReturnCode setFreq( float freq ) noexcept {
+   ReturnCode setDuty(  size_t ch, float duty ) noexcept override { return setDutyRaw(  ch,  duty2raw(duty) ); }
+   ReturnCode setPulse( size_t ch, float pu_s ) noexcept override { return setDutyRaw(  ch, pulse2raw(pu_s) ); }
+   ReturnCode setShift( size_t ch, float sh_s ) noexcept override { return setShiftRaw( ch, shift2raw(sh_s) ); }
+   ReturnCode setFreq( float freq ) noexcept override {
      uint32_t cfgs[max_cfg_reg];
      ReturnCode rc = freq2cfgs( freq, cfgs );
      if( rc.isError() ) { return rc; }
      return applyCfg( cfgs );
    }
-   float_er getFreq() const noexcept {
+   float_er getFreq() const noexcept override {
      uint32_t cfgs[max_cfg_reg];
      ReturnCode rc = storeCfg( cfgs );
      if( rc.isError() ) { return std::unexpected(rc); }

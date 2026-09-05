@@ -12,7 +12,7 @@ using std::array;
 
 namespace oxc {
 
-class  Tim_Pwm_Dev : public PwmPureCapability {
+class  Tim_Pwm_Dev : public PwmBaseBasic {
   public:
    static constexpr size_t max_ch { 8 }; // really 6, but what if?
    constexpr Tim_Pwm_Dev( uintptr_t tim_addr_, span<const TimChPin> channels_, TIM_HandleTypeDef &t_h_ ) noexcept
@@ -47,9 +47,9 @@ class  Tim_Pwm_Dev : public PwmPureCapability {
    ReturnCode initHW() ;
    void initPins();
    inline reg32* pccr( std::size_t ch ) const { return reinterpret_cast<reg32*>(ccrs_a[ch]); };
-   void enable()  { tim_p()->CR1 |=  1u; };
-   void disable() { tim_p()->CR1 &= ~1u; };
-   bool isEnabled() const { return (bool)(tim_p()->CR1 & 1u); };
+   void enable()  noexcept override { tim_p()->CR1 |=  1u; };
+   void disable() noexcept override { tim_p()->CR1 &= ~1u; };
+   bool isEnabled() const noexcept override { return (bool)(tim_p()->CR1 & 1u); };
    void setAllowPSCadj( bool allow ) { allowPSCadj = allow; };
    void setArrMax( uint32_t arr_m ) { arr_max = arr_m; };
 
