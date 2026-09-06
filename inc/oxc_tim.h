@@ -53,7 +53,7 @@ struct TimCh {
   };
   static constexpr std::uintptr_t getCCR_a( std::uintptr_t  tim_addr, TimCh ch )
   {
-    return tim_addr + tim_ccr_offsets[ ch.n ];
+    return ( tim_ccr_offsets[ ch.n ] != 0 ) ? ( tim_addr + tim_ccr_offsets[ ch.n ] ) : 0; // TODO fake_ccr? static addr
   }
   static constexpr oxc::tim_ch_type ch2hal_ch( TimCh ch ) { return hal_ch_tab[ ch.n ]; };
   static reg32 fake_ccr;
@@ -69,7 +69,7 @@ constexpr inline TimCh TimCh6 { TimCh::TimChN6 };
 constexpr inline TimCh TimCh7 { TimCh::TimChN7 };
 constexpr inline TimCh TimCh8 { TimCh::TimChN8 };
 
-//* Combines timer channel, AF and pin - for dimple init
+//* Combines timer channel, AF and pin - for simple init
 struct TimChPin {
   TimCh ch;
   uint8_t af;

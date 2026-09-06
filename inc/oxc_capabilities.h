@@ -180,7 +180,7 @@ class PinCapability : public IoCapability {
 
 
 
-// channels: 0..sz-1 - duty, sz..sz+n_cfg_ch - freq config
+// channels: in float: 0..sz-1 - duty, 100.. - pulse, 200.. - shift 300 - freq (i/o)
 class PwmCapability : public IoCapability {
   public:
     explicit constexpr PwmCapability( PwmPureCapability &pwm_, size_t n_pwm_ch_ ) noexcept

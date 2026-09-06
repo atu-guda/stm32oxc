@@ -66,7 +66,7 @@ class PinsRoboCapability : public IoRoboCapability {
    virtual ReturnCode doCommit()  noexcept override { if( dirty & ch_w_bit ) { pins.write( vv[1] ); } return rcOk; }
   protected:
    PinsPureCapability &pins;
-   int32_t vv[2]; // 0-in 1-out
+   int32_t vv[2]; // 0-in 1-out TODO: just 2 vars
 };
 
 
@@ -76,7 +76,6 @@ class PinRoboCapability : public IoRoboCapability {
    enum { // copy?
      ch_read = 0, ch_write = 1, ch_set = 2, ch_reset = 3, ch_toggle = 4,
      ch_r_bit = 1, ch_w_bit = 2,
-     n_ch_int, n_ch_float = 0
    };
    explicit constexpr PinRoboCapability( PinPureCapability &pin_, uint32_t id_ = 0 ) noexcept
      : IoRoboCapability( id_ ), pin( pin_ ) {};
@@ -91,17 +90,36 @@ class PinRoboCapability : public IoRoboCapability {
    virtual ReturnCode doCommit()  noexcept override { if( dirty & ch_w_bit ) { pin.write( vv[1] ); } return rcOk; }
   protected:
    PinPureCapability &pin;
-   int32_t vv[2]; // 0-in 1-out
+   int32_t vv[2]; // 0-in 1-out TODO: just 2 vars
 };
 
 
+// channels: in float: 0..sz-1 - duty, 100.. - pulse, 200.. - shift 300 - freq (i/o)
 class PwmRoboCapability : public IoRoboCapability {
   public:
-   explicit constexpr PwmRoboCapability( PwmPureCapability &pwm_, size_t n_ch_, uint32_t id_ = 0 ) noexcept
-     : IoRoboCapability( id_ ), pwm( pwm_ )
+   enum { // copy?
+     ch0_pwm = 0, ch0_pulse = 100, ch0_shift = 200, ch_freq = 300
+   };
+   explicit constexpr PwmRoboCapability( PwmPureCapability &pwm_, size_t n_ch_, std::span<float> io_f_, uint32_t id_ = 0 ) noexcept
+     : IoRoboCapability( id_ ), pwm( pwm_ ), n_ch( n_ch_ ), io_f( io_f_ )
        {};
+   virtual ReturnCode setVal( size_t ch, int32_t v ) noexcept override { return rcErr; }
+   virtual int32_t_er getVal( size_t ch )            noexcept override { return std::unexpected(rcErr); }
+   virtual ReturnCode setValF( size_t ch, float v )  noexcept override;
+   virtual float_er   getValF( size_t ch )           noexcept override;
+  protected:
+   virtual ReturnCode doInit()    noexcept override;
+   virtual ReturnCode doMeasure() noexcept override;
+   virtual ReturnCode doThink()   noexcept override { return rcOk; }
+   virtual ReturnCode doCommit()  noexcept override;
   protected:
    PwmPureCapability &pwm;
+   size_t n_ch;
+   std::span<float> io_f;
+   float freq_get { 0 };
+   float freq_set { 0 };
+   uint32_t dirty_duty {0}, dirty_pulse {0}, dirty_shift {0};
+   bool dirty_f;
 };
 
 

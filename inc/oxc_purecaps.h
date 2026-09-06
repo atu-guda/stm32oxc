@@ -35,9 +35,9 @@ class PinsPureCapability {
 
 
 //* frequiency in Hz, duty: [0:1]
-//* if freq is changed, drop duty0, shifts to 0
 class PwmPureCapability {
   public:
+   virtual ReturnCode init() noexcept = 0;
    virtual ReturnCode setDuty(  size_t ch, float duty ) noexcept = 0; // f: 0   -  99
    virtual ReturnCode setPulse( size_t ch, float pu_s ) noexcept = 0; // f: 100 - 199
    virtual ReturnCode setShift( size_t ch, float sh_s ) noexcept = 0; // f: 200 - 299
@@ -46,6 +46,7 @@ class PwmPureCapability {
    virtual void       disable()                         noexcept = 0;
    virtual void       enable()                          noexcept = 0;
    virtual bool       isEnabled() const                 noexcept = 0;
+   // virtual bool    isFreqWillChange( float freq) const noexcept = 0;
   protected:
 };
 

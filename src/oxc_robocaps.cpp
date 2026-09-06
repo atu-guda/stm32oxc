@@ -106,6 +106,110 @@ ReturnCode oxc::PinRoboCapability::setVal( size_t ch, int32_t v ) noexcept
   return rcOk;
 }
 
+// ------------------ PwmRoboCapability
+
+ReturnCode oxc::PwmRoboCapability::setValF( size_t ch, float v )  noexcept
+{
+  if( ch > ch_freq ) {
+    return rcErr;
+  }
+
+  if( ch == ch_freq ) {
+    freq_set = v;
+    dirty |= 1;
+    dirty_f = true;
+    return rcOk;
+  }
+
+  // TODO: more generic: function
+  if( ch >= ch0_shift ) {
+    ch -= ch0_shift;
+    if( ch >= n_ch ) {
+      return rcErr;
+    }
+    io_f[2*n_ch+ch] = v;
+    set_bit( dirty_shift, ch );
+    dirty |= 8;
+    return rcOk;
+  }
+
+  if( ch >= ch0_pulse ) {
+    ch -= ch0_pulse;
+    if( ch >= n_ch ) {
+      return rcErr;
+    }
+    io_f[1*n_ch+ch] = v;
+    dirty |= 4;
+    set_bit( dirty_pulse, ch );
+    return rcOk;
+  }
+
+  if( ch >= n_ch ) {
+    return rcErr;
+  }
+  io_f[ch] = v;
+  dirty |= 2;
+  set_bit( dirty_duty, ch );
+
+  return rcOk;
+}
+
+
+float_er   oxc::PwmRoboCapability::getValF( size_t ch ) noexcept
+{
+  if( ch != ch_freq ) { // TODO?? more?
+    return std::unexpected( rcErr );
+  }
+  return freq_get;
+}
+
+
+ReturnCode oxc::PwmRoboCapability::doInit() noexcept
+{
+  dirty_f = false;
+  dirty_duty = dirty_pulse = dirty_shift = 0;
+  return pwm.init();
+}
+
+
+ReturnCode oxc::PwmRoboCapability::doMeasure() noexcept
+{
+  auto v = pwm.getFreq();
+  freq_get = v.value_or( 0.0f );
+  return v.error_or( rcOk );
+}
+
+
+ReturnCode oxc::PwmRoboCapability::doCommit()  noexcept
+{
+  auto was_en = pwm.isEnabled();
+  if( dirty_f ) {
+    pwm.disable();
+    dirty_duty = dirty_pulse = dirty_shift = 0xFFFFFFFF; // assume all changed TODO: but what to keep?
+    pwm.setFreq( freq_set );
+  }
+
+  for( size_t ch=0; ch < n_ch; ++ch ) {
+    if( check_bit( dirty_shift, ch ) ) {
+      pwm.setShift( ch, io_f[2*n_ch+ch] );
+    }
+    if( check_bit( dirty_pulse, ch ) ) {
+      pwm.setPulse( ch, io_f[1*n_ch+ch] );
+    }
+    if( check_bit( dirty_duty, ch ) ) {
+      pwm.setDuty( ch, io_f[ch] );
+    }
+  }
+
+  if( dirty_f && was_en ) {
+    pwm.enable();
+  }
+
+  dirty_f = false;
+  dirty_duty = dirty_pulse = dirty_shift = 0;
+  return rcOk;
+}
+
 
 
 

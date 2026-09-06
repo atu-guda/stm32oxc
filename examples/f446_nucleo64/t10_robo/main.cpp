@@ -45,6 +45,7 @@ DCL_CMD_REG(      list_ob,      'L',      " - list objects"  );
 DCL_CMD_REG(      init,         '\0',     " - init"  );
 DCL_CMD_REG(      outf,         'F',      " i_och v - output to float ch"  );
 DCL_CMD_REG(      inf,          'I',      " read all float ch"  );
+DCL_CMD_REG(      prt,          '\0',     " print tim info"  );
 
 // -------------------------------------------------------------------------------------
 
@@ -68,6 +69,11 @@ Gpio_Pins_Dev      pins_hd( PC0, 4 ); // copy of leds
 PinsCapability     pins_d(  pins_hd );
 PinsRoboCapability pins_rd( pins_hd, 200 );
 
+TIM_HandleTypeDef  tim_mpwm_h;
+Tim_Pwm_Dev        mpwm_hd( TIM_MPWM_BASE, tim_MPWM_chspins, tim_mpwm_h, 0xFFFF );
+float              mpwm_io[3*6];
+PwmRoboCapability  mpwm_rd( mpwm_hd, 1, mpwm_io, 500 );
+
 // ------------------------ - Channels and transforms ; ---------------------------------------
 // output
 
@@ -81,6 +87,10 @@ TransFILinLim tro_pins( 0.1f, 1.0f, 0, 14 );
 OutChFI    oc_pins( pins_rd, 1, tro_pins );
 
 OutChFSplit2 oc_split( oc_pin1, oc_pin2, globalTransFFUnity );
+
+OutChFF    oc_mpwm_duty(  mpwm_rd,   0, globalTransFFUnity );
+OutChFF    oc_mpwm_pulse( mpwm_rd, 100, globalTransFFUnity );
+OutChFF    oc_mpwm_freq(  mpwm_rd, 300, globalTransFFUnity );
 
 // input
 TransIFLin tri_pin1( 10.0f, 0.3f );
@@ -117,6 +127,7 @@ IoRoboCapability* rcaps[] {
   &pin2_rd,
   &pini_rd,
   &pins_rd,
+  &mpwm_rd,
 };
 
 RoboObject* robo_objs[] {
@@ -124,6 +135,7 @@ RoboObject* robo_objs[] {
   &pin2_rd,
   &pini_rd,
   &pins_rd,
+  &mpwm_rd,
 };
 
 OutChFBase* outchfs[] {
@@ -131,6 +143,9 @@ OutChFBase* outchfs[] {
   &oc_pin2,
   &oc_pins,
   &oc_split,
+  &oc_mpwm_duty,
+  &oc_mpwm_pulse,
+  &oc_mpwm_freq,
 };
 
 InChFBase* inchfs[] {
@@ -196,6 +211,11 @@ ReturnCode init_hw_all()
 
   pin2_rd.setFlags( RoboObject::noMeasure );
   pini_rd.setFlags( RoboObject::noCommit );
+
+  TIM_MPWM_CLKEN();
+  mpwm_hd.initHW();
+  mpwm_hd.enable();
+
 
   return robo.init_all();
 }
@@ -452,6 +472,14 @@ CMD_FUNCTION( inf )
   }
   return 0;
 }
+
+
+CMD_FUNCTION( prt )
+{
+  tim_print_cfg( TIM_MPWM_BASE );
+  return 0;
+}
+
 
 
 
