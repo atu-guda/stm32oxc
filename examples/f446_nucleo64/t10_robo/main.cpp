@@ -88,9 +88,11 @@ OutChFI    oc_pins( pins_rd, 1, tro_pins );
 
 OutChFSplit2 oc_split( oc_pin1, oc_pin2, globalTransFFUnity );
 
+TransFFLinLim tro_rad2pulse( 2.0e-3f/pi_f, 1.5e-3f, 0.5e-3f, 2.5e-3f ); // angle +/ pi/2 -> 500-2500 μs
 OutChFF    oc_mpwm_duty(  mpwm_rd,   0, globalTransFFUnity );
 OutChFF    oc_mpwm_pulse( mpwm_rd, 100, globalTransFFUnity );
 OutChFF    oc_mpwm_freq(  mpwm_rd, 300, globalTransFFUnity );
+OutChFF    oc_mpwm_rad2pulsr( mpwm_rd, 100, tro_rad2pulse );
 
 // input
 TransIFLin tri_pin1( 10.0f, 0.3f );
@@ -123,29 +125,30 @@ IoCapability* caps[] {
 };
 
 IoRoboCapability* rcaps[] {
-  &pin1_rd,
-  &pin2_rd,
-  &pini_rd,
-  &pins_rd,
-  &mpwm_rd,
+  &pin1_rd,   // 0
+  &pin2_rd,   // 1
+  &pini_rd,   // 2
+  &pins_rd,   // 3
+  &mpwm_rd,   // 4
 };
 
 RoboObject* robo_objs[] {
-  &pin1_rd,
-  &pin2_rd,
-  &pini_rd,
-  &pins_rd,
-  &mpwm_rd,
+  &pin1_rd,   // 0
+  &pin2_rd,   // 1
+  &pini_rd,   // 2
+  &pins_rd,   // 3
+  &mpwm_rd,   // 4
 };
 
 OutChFBase* outchfs[] {
-  &oc_pin1,
-  &oc_pin2,
-  &oc_pins,
-  &oc_split,
-  &oc_mpwm_duty,
-  &oc_mpwm_pulse,
-  &oc_mpwm_freq,
+  &oc_pin1,             // 0
+  &oc_pin2,             // 1
+  &oc_pins,             // 2
+  &oc_split,            // 3
+  &oc_mpwm_duty,        // 4
+  &oc_mpwm_pulse,       // 5
+  &oc_mpwm_rad2pulsr,   // 6
+  &oc_mpwm_freq,        // 7
 };
 
 InChFBase* inchfs[] {

@@ -118,7 +118,7 @@ class PwmRoboCapability : public IoRoboCapability {
    std::span<float> io_f;
    float freq_get { 0 };
    float freq_set { 0 };
-   uint32_t dirty_duty {0}, dirty_pulse {0}, dirty_shift {0};
+   uint32_t dirty_duty {0}, dirty_pulse {0}, dirty_shift {0}, pulse_flag {0};
    bool dirty_f;
 };
 

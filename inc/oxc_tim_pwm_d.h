@@ -69,13 +69,13 @@ class  Tim_Pwm_Dev : public PwmBaseBasic {
    span<const TimChPin> channels;
    const size_t n_ch; // cached channels.size()
    array<uintptr_t, max_ch> ccrs_a { 0 };
-   uint32_t arr_min { 10 };
+   uint32_t arr_min { 50 };
    uint32_t arr_max;
-   uint32_t fake_ccr { 0 };
+   uint32_t fake_ccr { 0 }; // TODO: how to use it?
    bool allowPSCadj { true };
    // for init/cache
-   TIM_HandleTypeDef &t_h;
-   uint32_t cfgv[4]; // 0 - ARR, 1 - PSC
+   TIM_HandleTypeDef &t_h; // TODO: remove, use own init
+   uint32_t cfgv[2]; // 0 - ARR, 1 - PSC
    uint32_t &arr       { cfgv[0] }; // aliases
    uint32_t &psc       { cfgv[1] };
    uint32_t freq_in   { 0 };

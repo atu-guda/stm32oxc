@@ -141,6 +141,7 @@ ReturnCode oxc::PwmRoboCapability::setValF( size_t ch, float v )  noexcept
     io_f[1*n_ch+ch] = v;
     dirty |= 4;
     set_bit( dirty_pulse, ch );
+    set_bit( pulse_flag, ch );
     return rcOk;
   }
 
@@ -150,6 +151,7 @@ ReturnCode oxc::PwmRoboCapability::setValF( size_t ch, float v )  noexcept
   io_f[ch] = v;
   dirty |= 2;
   set_bit( dirty_duty, ch );
+  reset_bit( pulse_flag, ch );
 
   return rcOk;
 }
@@ -167,7 +169,7 @@ float_er   oxc::PwmRoboCapability::getValF( size_t ch ) noexcept
 ReturnCode oxc::PwmRoboCapability::doInit() noexcept
 {
   dirty_f = false;
-  dirty_duty = dirty_pulse = dirty_shift = 0;
+  dirty_duty = dirty_pulse = dirty_shift = pulse_flag = 0;
   return pwm.init();
 }
 
@@ -193,10 +195,10 @@ ReturnCode oxc::PwmRoboCapability::doCommit()  noexcept
     if( check_bit( dirty_shift, ch ) ) {
       pwm.setShift( ch, io_f[2*n_ch+ch] );
     }
-    if( check_bit( dirty_pulse, ch ) ) {
+    if( check_bit( dirty_pulse, ch ) && check_bit( pulse_flag, ch ) ) {
       pwm.setPulse( ch, io_f[1*n_ch+ch] );
     }
-    if( check_bit( dirty_duty, ch ) ) {
+    if( check_bit( dirty_duty, ch ) && !check_bit( pulse_flag, ch ) ) {
       pwm.setDuty( ch, io_f[ch] );
     }
   }
@@ -207,6 +209,8 @@ ReturnCode oxc::PwmRoboCapability::doCommit()  noexcept
 
   dirty_f = false;
   dirty_duty = dirty_pulse = dirty_shift = 0;
+  // pulse_flag is not reset here - it keeps last operation
+  // and if later only freq changes - recalcs in rignt mode
   return rcOk;
 }
 

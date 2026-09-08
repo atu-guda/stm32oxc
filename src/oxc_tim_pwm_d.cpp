@@ -33,7 +33,7 @@ ReturnCode oxc::Tim_Pwm_Dev::freq2cfgs( float freq, std::span<uint32_t> cfgs ) c
   }
 
   if( allowPSCadj ) {
-    auto [ psc_, arr_ ] = calc_tim_psc_arr( freq_in, freq, arr_min, arr_max ); // TODO: timer traits
+    auto [ psc_, arr_ ] = calc_tim_psc_arr( freq_in, freq, arr_min, arr_max );
     if( psc == 0xFFFFFFFF ) {
       return rcErr;
     }
