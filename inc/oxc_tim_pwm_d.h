@@ -50,7 +50,7 @@ class  Tim_Pwm_Dev : public PwmBaseBasic {
    ReturnCode readCfg() noexcept;
 
    TIM_TypeDef* tim_p() const { return reinterpret_cast<TIM_TypeDef*>( tim_addr ); };
-   bool isBadCh( size_t ch ) const { return ( ch >= n_ch ) || ( ccrs_a[ch] == 0 )|| ( ccrs_a[ch] == tim_addr ); }
+   bool isBadCh( size_t ch ) const { return ( ch >= n_ch ) || ( ccrs_a[ch] == 0 )|| ( ccrs_a[ch] == SAFE_SINK_BASE ); }
 
    ReturnCode initHW();
    void initPins();
@@ -68,7 +68,7 @@ class  Tim_Pwm_Dev : public PwmBaseBasic {
    const uintptr_t tim_addr;
    span<const TimChPin> channels;
    const size_t n_ch; // cached channels.size()
-   array<uintptr_t, max_ch> ccrs_a { 0 };
+   array<uintptr_t, max_ch> ccrs_a { SAFE_SINK_BASE };
    uint32_t arr_min { 50 };
    uint32_t arr_max;
    uint32_t fake_ccr { 0 }; // TODO: how to use it?

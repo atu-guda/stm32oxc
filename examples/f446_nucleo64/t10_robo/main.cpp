@@ -74,6 +74,11 @@ Tim_Pwm_Dev        mpwm_hd( TIM_MPWM_BASE, tim_MPWM_chspins, tim_mpwm_h, 0xFFFF 
 float              mpwm_io[3*6];
 PwmRoboCapability  mpwm_rd( mpwm_hd, 1, mpwm_io, 500 );
 
+TIM_HandleTypeDef  tim_servolwm_h;
+Tim_Pwm_Dev        servolwm_hd( TIM_SERVOLWM_BASE, tim_SERVOLWM_chspins, tim_servolwm_h, 0xFFFF );
+float              servolwm_io[3*6];
+PwmRoboCapability  servolwm_rd( servolwm_hd, 1, servolwm_io, 501 );
+
 // ------------------------ - Channels and transforms ; ---------------------------------------
 // output
 
@@ -88,11 +93,12 @@ OutChFI    oc_pins( pins_rd, 1, tro_pins );
 
 OutChFSplit2 oc_split( oc_pin1, oc_pin2, globalTransFFUnity );
 
-TransFFLinLim tro_rad2pulse( 2.0e-3f/pi_f, 1.5e-3f, 0.5e-3f, 2.5e-3f ); // angle +/ pi/2 -> 500-2500 μs
 OutChFF    oc_mpwm_duty(  mpwm_rd,   0, globalTransFFUnity );
 OutChFF    oc_mpwm_pulse( mpwm_rd, 100, globalTransFFUnity );
 OutChFF    oc_mpwm_freq(  mpwm_rd, 300, globalTransFFUnity );
-OutChFF    oc_mpwm_rad2pulsr( mpwm_rd, 100, tro_rad2pulse );
+
+TransFFLinLim tro_rad2pulse( 2.0e-3f/pi_f, 1.5e-3f, 0.5e-3f, 2.5e-3f ); // angle +/ pi/2 -> 500-2500 μs
+OutChFF    oc_servolwm_rad2pulse( servolwm_rd, 100, tro_rad2pulse );
 
 // input
 TransIFLin tri_pin1( 10.0f, 0.3f );
@@ -125,19 +131,21 @@ IoCapability* caps[] {
 };
 
 IoRoboCapability* rcaps[] {
-  &pin1_rd,   // 0
-  &pin2_rd,   // 1
-  &pini_rd,   // 2
-  &pins_rd,   // 3
-  &mpwm_rd,   // 4
+  &pin1_rd,       // 0
+  &pin2_rd,       // 1
+  &pini_rd,       // 2
+  &pins_rd,       // 3
+  &mpwm_rd,       // 4
+  &servolwm_rd,   // 5
 };
 
 RoboObject* robo_objs[] {
-  &pin1_rd,   // 0
-  &pin2_rd,   // 1
-  &pini_rd,   // 2
-  &pins_rd,   // 3
-  &mpwm_rd,   // 4
+  &pin1_rd,       // 0
+  &pin2_rd,       // 1
+  &pini_rd,       // 2
+  &pins_rd,       // 3
+  &mpwm_rd,       // 4
+  &servolwm_rd,   // 5
 };
 
 OutChFBase* outchfs[] {
@@ -147,7 +155,7 @@ OutChFBase* outchfs[] {
   &oc_split,            // 3
   &oc_mpwm_duty,        // 4
   &oc_mpwm_pulse,       // 5
-  &oc_mpwm_rad2pulsr,   // 6
+  &oc_servolwm_rad2pulse, // 6
   &oc_mpwm_freq,        // 7
 };
 
@@ -219,6 +227,10 @@ ReturnCode init_hw_all()
   mpwm_hd.initHW();
   mpwm_hd.enable();
 
+  TIM_SERVOLWM_CLKEN();
+  servolwm_hd.initHW();
+  servolwm_hd.setFreq( SERVOLWM_FREQ );
+  servolwm_hd.enable();
 
   return robo.init_all();
 }

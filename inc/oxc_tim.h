@@ -53,7 +53,7 @@ struct TimCh {
   };
   static constexpr std::uintptr_t getCCR_a( std::uintptr_t  tim_addr, TimCh ch )
   {
-    return ( tim_ccr_offsets[ ch.n ] != 0 ) ? ( tim_addr + tim_ccr_offsets[ ch.n ] ) : 0; // TODO fake_ccr? static addr
+    return ( tim_ccr_offsets[ ch.n ] != 0 ) ? ( tim_addr + tim_ccr_offsets[ ch.n ] ) : SAFE_SINK_BASE;
   }
   static constexpr oxc::tim_ch_type ch2hal_ch( TimCh ch ) { return hal_ch_tab[ ch.n ]; };
   static reg32 fake_ccr;
