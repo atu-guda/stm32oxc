@@ -96,6 +96,16 @@ SECTIONS
     PROVIDE_HIDDEN (__fini_array_end = .);
   } >FLASH
 
+  /* Place for safe sink */
+  .safe_sink (NOLOAD) :
+  {
+      . = ALIGN(4);
+      __safe_sink_start = .;
+      . += 16;
+      __safe_sink_end   = .;
+  } >RAM
+
+
   /* used by the startup to initialize data */
   _sidata = LOADADDR(.data);
 

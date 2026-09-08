@@ -13,6 +13,8 @@
 #include <stm32h7xx_hal.h>
 
 
+#define   SAFE_SINK_BASE         0x24000000
+
 #define   SET_BIT_REG            BSRR
 #define   RESET_BIT_REG          BSRR
 #define   RESET_BIT_SHIFT        16
