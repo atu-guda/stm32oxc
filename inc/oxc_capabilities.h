@@ -180,6 +180,7 @@ class PinCapability : public IoCapability {
 
 
 
+// TODO: make it
 // channels: in float: 0..sz-1 - duty, 100.. - pulse, 200.. - shift 300 - freq (i/o)
 class PwmCapability : public IoCapability {
   public:
@@ -192,16 +193,21 @@ class PwmCapability : public IoCapability {
 };
 
 
-
 class EncoderCapability : public IoCapability {
   public:
-   explicit constexpr EncoderCapability( EncoderPureCapability &enc_, size_t bitsz_, int32_t scale_ ) noexcept
-     : enc( enc_ ), bitsz( bitsz_ ), scale( scale_ ) {};
+   enum { // int32_t channels pos: r/w, other - r/o
+     ch_pos = 0, ch_posraw = 1, ch_dlt = 2,
+     ch_pos_bit = 1
+   };
+   explicit constexpr EncoderCapability( EncoderPureCapability &enc_ ) noexcept
+     : enc( enc_ ) {};
    EncoderCapability( const EncoderCapability &r ) = delete;
+   virtual ReturnCode setVal( size_t ch, int32_t v ) noexcept override;
+   virtual int32_t_er getVal( size_t ch )            noexcept override;
+   virtual ReturnCode setValF( size_t ch, float v )  noexcept override { return rcErr; }
+   virtual float_er   getValF( size_t ch )           noexcept override { return std::unexpected(rcErr); }
   protected:
    EncoderPureCapability &enc;
-   const size_t bitsz;
-   const int32_t scale;
 };
 
 // ---------------------------- Channels --------------------------------------------------

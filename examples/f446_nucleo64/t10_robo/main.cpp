@@ -9,6 +9,8 @@
 #include <oxc_gpio_pin_d.h>
 #include <oxc_gpio_pins_d.h>
 
+#include <oxc_addr_enco_d.h>
+
 #include <oxc_tim_pwm_d.h>
 
 #include <board_robo_cfg.h>
@@ -27,7 +29,7 @@ BOARD_CONSOLE_DEFINES;
 const char* common_help_string = "Appication to test misc robo parts. TMP." NL;
 
 
-
+// TODO: [wr][cr][fi] out[fi], list_ob - to separate debug file
 // ------------------------ - local commands; ---------------------------------------
 DCL_CMD_REG(      test_pin_d,   'T',      " [arg ] - pin1_d"  );
 DCL_CMD_REG(      test_pins_hd, '\0',     " [arg ] - pins_hd"  );

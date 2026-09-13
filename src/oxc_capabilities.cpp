@@ -50,3 +50,23 @@ ReturnCode oxc::PinCapability::setVal( size_t ch, int32_t v ) noexcept
 }
 
 
+
+int32_t_er oxc::EncoderCapability::getVal( size_t ch ) noexcept
+{
+  // must be read() before!
+  switch( ch ) {
+    case ch_pos    : return enc.getPos();
+    case ch_posraw : return enc.getPosRaw();
+    case ch_dlt    : return enc.getDelta();
+  }
+  return std::unexpected( rcErr );
+}
+
+ReturnCode oxc::EncoderCapability::setVal( size_t ch, int32_t v ) noexcept
+{
+  if( ch == ch_pos ) {
+    enc.setPos(    v ); return rcOk;
+  }
+  return rcErr;
+}
+

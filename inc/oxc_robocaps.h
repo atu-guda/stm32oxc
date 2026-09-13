@@ -95,6 +95,7 @@ class PinRoboCapability : public IoRoboCapability {
 
 
 // channels: in float: 0..sz-1 - duty, 100.. - pulse, 200.. - shift 300 - freq (i/o)
+// TODO: default iobuf for 6-8 channels
 class PwmRoboCapability : public IoRoboCapability {
   public:
    enum { // copy?
@@ -125,11 +126,25 @@ class PwmRoboCapability : public IoRoboCapability {
 
 class EncoderRoboCapability : public IoRoboCapability {
   public:
-   explicit constexpr EncoderRoboCapability( EncoderPureCapability &enc_, size_t bitsz_, int32_t scale_, uint32_t id_ = 0 ) noexcept
+   enum { // int32_t channels pos: r/w, other - r/o
+     ch_pos = 0, ch_posraw = 1, ch_dlt = 2,
+     ch_pos_bit = 1
+   };
+   explicit constexpr EncoderRoboCapability( EncoderPureCapability &enc_, uint32_t id_ = 0 ) noexcept
      : IoRoboCapability( id_ ), enc(enc_) {};
+   virtual ReturnCode setVal( size_t ch, int32_t v ) noexcept override;
+   virtual int32_t_er getVal( size_t ch )            noexcept override;
+   virtual ReturnCode setValF( size_t ch, float v )  noexcept override { return rcErr; }
+   virtual float_er   getValF( size_t ch )           noexcept override { return std::unexpected(rcErr); }
+  protected:
+   virtual ReturnCode doInit()    noexcept override { pos = posraw = dlt = pos_set = 0; return rcOk; }
+   virtual ReturnCode doMeasure() noexcept override { auto rc = enc.read(); if( rc.isOk() ) { pos = enc.getPos(); posraw = enc.getPosRaw(); dlt = enc.getDelta(); return rcOk;}; return rcErr; }
+   virtual ReturnCode doThink()   noexcept override { return rcOk; }
+   virtual ReturnCode doCommit()  noexcept override { if( dirty & ch_pos_bit ) { enc.setPos( pos_set ); } return rcOk; }
   protected:
    EncoderPureCapability &enc;
-   int32_t vv[1]; // 0-out
+   int32_t pos {0}, posraw {0}, dlt {0};
+   int32_t pos_set {0};
 };
 
 }; //namespace oxc

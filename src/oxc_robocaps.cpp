@@ -214,6 +214,8 @@ ReturnCode oxc::PwmRoboCapability::doCommit()  noexcept
   return rcOk;
 }
 
+// ----------------------- EncoderRoboCapability
+
 
 
 

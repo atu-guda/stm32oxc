@@ -85,9 +85,14 @@ class PwmBaseBasic : public PwmPureCapability {
   protected:
 };
 
-
+//* may be 64_t: for some precise encoders (21-bit) 32 bit is too low
 class EncoderPureCapability {
   public:
+   virtual ReturnCode  read()               noexcept = 0;
+   virtual int32_t  getPos() const          noexcept = 0;
+   virtual int32_t  getPosRaw() const       noexcept = 0;
+   virtual int32_t  getDelta() const        noexcept = 0;
+   virtual ReturnCode setPos( int32_t pos ) noexcept = 0;
 };
 
 
