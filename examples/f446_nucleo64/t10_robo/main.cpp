@@ -72,7 +72,7 @@ PinsCapability     pins_d(  pins_hd );
 PinsRoboCapability pins_rd( pins_hd, 200 );
 
 TIM_HandleTypeDef  tim_mpwm_h;
-Tim_Pwm_Dev        mpwm_hd( TIM_MPWM_BASE, tim_MPWM_chspins, tim_mpwm_h, 0xFFFF );
+Tim_Pwm_Dev        mpwm_hd( TIM_MPWM_BASE, tim_MPWM_chspins, tim_mpwm_h, 0xFFFF ); // TODO: timer props
 float              mpwm_io[3*6];
 PwmRoboCapability  mpwm_rd( mpwm_hd, 1, mpwm_io, 500 );
 
@@ -80,6 +80,10 @@ TIM_HandleTypeDef  tim_servolwm_h;
 Tim_Pwm_Dev        servolwm_hd( TIM_SERVOLWM_BASE, tim_SERVOLWM_chspins, tim_servolwm_h, 0xFFFF );
 float              servolwm_io[3*6];
 PwmRoboCapability  servolwm_rd( servolwm_hd, 1, servolwm_io, 501 );
+
+TIM_HandleTypeDef  tim_enco_h;
+Addr_Enco_Dev      tim_enco_hd( TIM_ENCODER_CNTBASE, 0xFFFF, false );
+EncoderRoboCapability tim_enco_rd( tim_enco_hd, 502 );
 
 // ------------------------ - Channels and transforms ; ---------------------------------------
 // output
@@ -116,6 +120,9 @@ InChFConst ic_const( 3.1415f );
 
 InChFSum2  ic_sum( ic_pins, ic_pin1, globalTransFFUnity, 0.1f, -0.1f );
 
+TransIFLin tri_tim_enco( pi_f/600, 0 );
+InChFI     ic_tim_enco( tim_enco_rd, 0, tri_tim_enco );
+
 // ------------------------ - Channels and transforms end ; ---------------------------------------
 
 
@@ -139,6 +146,7 @@ IoRoboCapability* rcaps[] {
   &pins_rd,       // 3
   &mpwm_rd,       // 4
   &servolwm_rd,   // 5
+  &tim_enco_rd,   // 6
 };
 
 RoboObject* robo_objs[] {
@@ -148,25 +156,27 @@ RoboObject* robo_objs[] {
   &pins_rd,       // 3
   &mpwm_rd,       // 4
   &servolwm_rd,   // 5
+  &tim_enco_rd,   // 6
 };
 
 OutChFBase* outchfs[] {
-  &oc_pin1,             // 0
-  &oc_pin2,             // 1
-  &oc_pins,             // 2
-  &oc_split,            // 3
-  &oc_mpwm_duty,        // 4
-  &oc_mpwm_pulse,       // 5
+  &oc_pin1,               // 0
+  &oc_pin2,               // 1
+  &oc_pins,               // 2
+  &oc_split,              // 3
+  &oc_mpwm_duty,          // 4
+  &oc_mpwm_pulse,         // 5
   &oc_servolwm_rad2pulse, // 6
-  &oc_mpwm_freq,        // 7
+  &oc_mpwm_freq,          // 7
 };
 
 InChFBase* inchfs[] {
-  &ic_pin1,
-  &ic_pin2,
-  &ic_pins,
-  &ic_const,
-  &ic_sum,
+  &ic_pin1,            // 0
+  &ic_pin2,            // 1
+  &ic_pins,            // 2
+  &ic_const,           // 3
+  &ic_sum,             // 4
+  &ic_tim_enco,        // 5
 };
 
 
@@ -233,6 +243,10 @@ ReturnCode init_hw_all()
   servolwm_hd.initHW();
   servolwm_hd.setFreq( SERVOLWM_FREQ );
   servolwm_hd.enable();
+
+  TIM_ENCODER_CLKEN(); // manual config, as not in device
+  tim_enco_h.Instance = TIM_ENCO;
+  tim_enco_cfg_default( tim_enco_h, tim_ENCODER_chspins );
 
   return robo.init_all();
 }
@@ -494,6 +508,7 @@ CMD_FUNCTION( inf )
 CMD_FUNCTION( prt )
 {
   tim_print_cfg( TIM_MPWM_BASE );
+  tim_print_cfg( TIM_ENCODER_BASE );
   return 0;
 }
 

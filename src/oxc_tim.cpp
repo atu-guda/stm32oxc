@@ -136,13 +136,12 @@ ReturnCode tim_pwm_cfg_default( TIM_HandleTypeDef &t_h, uint32_t psc, uint32_t a
 }
 
 //  t_h.Instance must be set beforehand;
-ReturnCode tim_enco_cfg_default( TIM_HandleTypeDef &t_h )
+ReturnCode tim_enco_cfg_default( TIM_HandleTypeDef &t_h, std::span<const TimChPin> chpins )
 {
   if( t_h.Instance == nullptr ) {
     return rcFatal;
   }
 
-  // t_h.Instanc             = ???;
   t_h.Init.Prescaler         = 0;
   t_h.Init.CounterMode       = TIM_COUNTERMODE_UP;
   t_h.Init.Period            = 0xFFFFFFFF; // both 32 and 16 bit
@@ -150,15 +149,19 @@ ReturnCode tim_enco_cfg_default( TIM_HandleTypeDef &t_h )
   t_h.Init.RepetitionCounter = 0;
   t_h.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
 
-  if( HAL_TIM_Encoder_Init( &t_h, &tim_enco_cfg_default_filt3 ) != HAL_OK ) {
+  if( HAL_TIM_Encoder_Init( &t_h, &tim_enco_cfg_default_filt3 ) != HAL_OK ) { // TODO: config: globa or param
     return { ReturnCode::rcnErr, 3100 };
   }
 
   if( HAL_TIMEx_MasterConfigSynchronization( &t_h, &sMasterConfig_def ) != HAL_OK ) {
     return { ReturnCode::rcnErr, 3101 };
   }
-  HAL_TIM_Encoder_Start( &t_h, TIM_CHANNEL_1 );
-  HAL_TIM_Encoder_Start( &t_h, TIM_CHANNEL_2 );
+
+  for( auto ch : chpins ) {
+    ch.pin.enableClk();
+    ch.pin.cfgAF( ch.af );
+    HAL_TIM_Encoder_Start( &t_h, TimCh::ch2hal_ch(ch.ch) );
+  }
   return rcOk;
 }
 

@@ -80,9 +80,10 @@ static_assert( sizeof(TimChPin) == 4 );
 inline TIM_TypeDef* addr2TIM( uintptr_t addr ) { return reinterpret_cast<TIM_TypeDef*>(addr); }
 
 #define DEFINE_TIMER_DATA( NAME, TIM_NUM ) \
-  constexpr inline uint8_t  TIM_##NAME##_NUM = TIM_NUM; \
-  constexpr inline uint32_t TIM_##NAME##_BASE = OXC_EVAL3( TIM, TIM_NUM, _BASE ); \
-  constexpr inline auto     TIM_##NAME##_CLKEN  = [](){ OXC_EVAL3( __TIM, TIM_NUM, _CLK_ENABLE() ); }; \
+  constexpr inline uint8_t  TIM_##NAME##_NUM  { TIM_NUM }; \
+  constexpr inline uint32_t TIM_##NAME##_BASE { OXC_EVAL3( TIM, TIM_NUM, _BASE ) }; \
+  constexpr inline uint32_t TIM_##NAME##_CNTBASE { OXC_EVAL3( TIM, TIM_NUM, _BASE ) + tim_cnt_offset }; \
+  constexpr inline auto     TIM_##NAME##_CLKEN  = [](){ OXC_EVAL3( __TIM, TIM_NUM, _CLK_ENABLE() ); };  \
   constexpr inline auto     TIM_##NAME##_CLKDIS = [](){ OXC_EVAL3( __TIM, TIM_NUM, _CLK_DISABLE() ); };
 
 #define DEFINE_TIMER_DATA_PWM1( NAME, TIM_NUM, CH, AF, PIN ) \
@@ -156,7 +157,7 @@ inline uint32_t calc_TIM_arr_for_base_psc(  uintptr_t tim_addr, uint32_t psc, ui
 std::pair<uint32_t,uint32_t> calc_tim_psc_arr( float f_in, float f_out, uint32_t arr_min = 100, uint32_t arr_max = 0xFFFF );
 ReturnCode tim_pwm_cfg_default( TIM_HandleTypeDef &t_h, uint32_t psc, uint32_t arr,
     std::span<const oxc::TimChPin> chpins, uint32_t cmode = TIM_COUNTERMODE_UP );
-ReturnCode tim_enco_cfg_default( TIM_HandleTypeDef &t_h );
+ReturnCode tim_enco_cfg_default( TIM_HandleTypeDef &t_h, std::span<const TimChPin> chpins  );
 
 void tim_print_cfg( TIM_TypeDef *tim ); // real if USE_OXC_DEBUG
 inline void tim_print_cfg( uintptr_t tim_addr ) { tim_print_cfg( addr2TIM( tim_addr ) ); };

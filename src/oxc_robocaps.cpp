@@ -217,5 +217,29 @@ ReturnCode oxc::PwmRoboCapability::doCommit()  noexcept
 // ----------------------- EncoderRoboCapability
 
 
+int32_t_er oxc::EncoderRoboCapability::getVal( size_t ch ) noexcept
+{
+  switch( ch ) {
+    case ch_pos    : return pos;
+    case ch_posraw : return posraw;
+    case ch_dlt    : return dlt;
+  }
+  return std::unexpected( rcErr );
+}
+
+
+ReturnCode oxc::EncoderRoboCapability::setVal( size_t ch, int32_t v ) noexcept
+{
+  auto old_pos = pos_set;
+  switch( ch ) {
+    case ch_pos       : pos_set = v; break;
+    default           : return rcErr;
+  }
+  if( pos_set != old_pos ) {
+    dirty |= ch_pos_bit;
+  }
+  return rcOk;
+}
+
 
 
