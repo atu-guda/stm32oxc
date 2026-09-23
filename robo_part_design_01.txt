@@ -90,6 +90,9 @@ oxc_gpio_pins_d.h: (no .cpp + embeded real device)
 oxc_tim_pmw_d.
  Tim_Pwm_Dev
 
+oxc_addr_enco_d.*
+  Addr_Enco_Dev
+
 ## ------------------------------------ Level 2b?: --------------------------------------------------
 
 ????
@@ -102,5 +105,5 @@ If device supports immediate actions - both Capability and IoRoboCapability.
 ## ------------------------------------------- Extra: -----------------------------------------
 
 inc/oxc_easing.h: EasingFun, easing_one, easing_poly2_in ... easing_trig_io TODO: +info struct
-encoder object
+encoder object: oxc_encoder_eng.h EncoderEng
 

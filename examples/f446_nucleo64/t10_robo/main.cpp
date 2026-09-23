@@ -82,7 +82,8 @@ float              servolwm_io[3*6];
 PwmRoboCapability  servolwm_rd( servolwm_hd, 1, servolwm_io, 501 );
 
 TIM_HandleTypeDef  tim_enco_h;
-Addr_Enco_Dev      tim_enco_hd( TIM_ENCODER_CNTBASE, 0xFFFF, false );
+Addr_Enco_Dev      tim_enco_hd( TIM_ENCODER_CNTBASE, 0xFFFF, true );
+EncoderCapability  tim_enco_d( tim_enco_hd );
 EncoderRoboCapability tim_enco_rd( tim_enco_hd, 502 );
 
 // ------------------------ - Channels and transforms ; ---------------------------------------
@@ -120,7 +121,7 @@ InChFConst ic_const( 3.1415f );
 
 InChFSum2  ic_sum( ic_pins, ic_pin1, globalTransFFUnity, 0.1f, -0.1f );
 
-TransIFLin tri_tim_enco( pi_f/600, 0 );
+TransIFLin tri_tim_enco( pi_f/1200, 0 );
 InChFI     ic_tim_enco( tim_enco_rd, 0, tri_tim_enco );
 
 // ------------------------ - Channels and transforms end ; ---------------------------------------
@@ -133,10 +134,11 @@ Gpio_Pin_Dev* hw_pin[] {
 };
 
 IoCapability* caps[] {
-  &pin1_d,
-  &pin2_d,
-  &pini_d,
-  &pins_d,
+  &pin1_d,       // 0
+  &pin2_d,       // 1
+  &pini_d,       // 2
+  &pins_d,       // 3
+  &tim_enco_d,   // 4
 };
 
 IoRoboCapability* rcaps[] {
