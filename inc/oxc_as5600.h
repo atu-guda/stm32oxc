@@ -85,8 +85,10 @@ class AS5600 : public I2CClient {
    static const  int16_t jumpVal  = val2turn/2+8;
    static const uint32_t mDeg2turn = 360000; // miliDegrees per turn
 
-   AS5600( DevI2C &a_dev, uint8_t d_addr = def_addr )
+   explicit AS5600( DevI2C &a_dev, uint8_t d_addr = def_addr )
      : I2CClient( a_dev, d_addr ) {};
+   AS5600( const AS5600 &rhs ) = delete;
+
    static constexpr int32_t to_mDeg( int32_t ang12bit )
      { return int32_t( (int64_t)ang12bit * mDeg2turn / val2turn ); };
    static constexpr int32_t from_mDeg( int32_t mDeg )

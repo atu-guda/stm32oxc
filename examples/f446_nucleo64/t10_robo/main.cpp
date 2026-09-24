@@ -10,6 +10,7 @@
 #include <oxc_gpio_pins_d.h>
 
 #include <oxc_addr_enco_d.h>
+#include <oxc_as5600_enco_d.h>
 
 #include <oxc_tim_pwm_d.h>
 
@@ -53,6 +54,13 @@ DCL_CMD_REG(      prt,          '\0',     " print tim info"  );
 
 ReturnCode init_hw_all();
 
+// ------------------------ low-level devices -------------------------------------------
+
+I2C_HandleTypeDef i2ch;
+DevI2C i2cd( &i2ch, 0 );
+AS5600 as5600_sens( i2cd );
+
+
 // ------------------------ Devices: capabilities ; ---------------------------------------
 
 Gpio_Pin_Dev      pin1_hd( PC10 );
@@ -91,8 +99,13 @@ Addr_Enco_Dev      tim_enco_hd( TIM_ENCODER_CNTBASE, 0xFFFF, true ); // TODO: se
 EncoderCapability  tim_enco_d( tim_enco_hd );
 EncoderRoboCapability tim_enco_rd( tim_enco_hd, 700 );
 
+AS5600_Enco_Dev    as5600_enco_hd( as5600_sens, false );
+EncoderCapability  as5600_enco_d( as5600_enco_hd );
+EncoderRoboCapability as5600_enco_rd( as5600_enco_hd, 800 );
+
 // ------------------------ - Channels and transforms ; ---------------------------------------
 // output
+// TODO: channel names
 
 TransFILin tro_pin1( 0.1f, -1.0f );
 OutChFI    oc_pin1( pin1_rd, 1, tro_pin1 );
@@ -131,6 +144,9 @@ InChFSum2  ic_sum( ic_pins, ic_pin1, globalTransFFUnity, 0.1f, -0.1f );
 TransIFLin tri_tim_enco( pi_f/1200, 0 );
 InChFI     ic_tim_enco( tim_enco_rd, 0, tri_tim_enco );
 
+TransIFLin tri_as5600_enco( 2*pi_f/AS5600::val2turn, 0 );
+InChFI     ic_as5600_enco( as5600_enco_rd, 0, tri_as5600_enco );
+
 // ------------------------ - Channels and transforms end ; ---------------------------------------
 
 
@@ -141,35 +157,38 @@ Gpio_Pin_Dev* hw_pin[] {
 };
 
 IoCapability* caps[] {
-  &pin1_d,       // 0
-  &pin2_d,       // 1
-  &pini_d,       // 2
-  &pins_d,       // 3
-  &tim_enco_d,   // 4
+  &pin1_d,         // 0
+  &pin2_d,         // 1
+  &pini_d,         // 2
+  &pins_d,         // 3
+  &tim_enco_d,     // 4
+  &as5600_enco_d,  // 5
 };
 
 IoRoboCapability* rcaps[] {
-  &pin1_rd,       // 0
-  &pin2_rd,       // 1
-  &pini_rd,       // 2
-  &pins_rd,       // 3
-  &mpwm_rd,       // 4
-  &pin_mpwm_l_rd, // 5
-  &pin_mpwm_r_rd, // 6
-  &servolwm_rd,   // 7
-  &tim_enco_rd,   // 8
+  &pin1_rd,          // 0
+  &pin2_rd,          // 1
+  &pini_rd,          // 2
+  &pins_rd,          // 3
+  &mpwm_rd,          // 4
+  &pin_mpwm_l_rd,    // 5
+  &pin_mpwm_r_rd,    // 6
+  &servolwm_rd,      // 7
+  &tim_enco_rd,      // 8
+  &as5600_enco_rd,   // 9
 };
 
 RoboObject* robo_objs[] {
-  &pin1_rd,       // 0
-  &pin2_rd,       // 1
-  &pini_rd,       // 2
-  &pins_rd,       // 3
-  &mpwm_rd,       // 4
-  &pin_mpwm_l_rd, // 5
-  &pin_mpwm_r_rd, // 7
-  &servolwm_rd,   // 7
-  &tim_enco_rd,   // 8
+  &pin1_rd,          // 0
+  &pin2_rd,          // 1
+  &pini_rd,          // 2
+  &pins_rd,          // 3
+  &mpwm_rd,          // 4
+  &pin_mpwm_l_rd,    // 5
+  &pin_mpwm_r_rd,    // 7
+  &servolwm_rd,      // 7
+  &tim_enco_rd,      // 8
+  &as5600_enco_rd,   // 9
 };
 
 OutChFBase* outchfs[] {
@@ -190,6 +209,7 @@ InChFBase* inchfs[] {
   &ic_const,           // 3
   &ic_sum,             // 4
   &ic_tim_enco,        // 5
+  &ic_as5600_enco,     // 6
 };
 
 
@@ -263,6 +283,12 @@ ReturnCode init_hw_all()
   TIM_ENCODER_CLKEN(); // manual config, as not in device
   tim_enco_h.Instance = TIM_ENCO;
   tim_enco_cfg_default( tim_enco_h, tim_ENCODER_chspins );
+
+  i2c_default_init( i2ch /*, 400000 */ );
+  i2c_dbg = &i2cd;
+  i2c_client_def = &as5600_sens;
+  as5600_sens.setCfg( AS5600::CfgBits::cfg_pwr_mode_nom |  AS5600::CfgBits::cfg_hyst_off );
+  as5600_enco_hd.setPos( 0 );
 
   return robo.init_all();
 }
@@ -529,6 +555,8 @@ CMD_FUNCTION( prt )
   tim_print_cfg( TIM_ENCODER_BASE );
   std_out << "# SERVOLWM: " NL;
   tim_print_cfg( TIM_SERVOLWM_BASE );
+  delay_ms( 100 );
+  std_out << "# AS5600: " << as5600_sens.getAngleNoTurn() << NL;
   return 0;
 }
 

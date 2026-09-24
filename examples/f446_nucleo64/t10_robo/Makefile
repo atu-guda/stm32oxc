@@ -8,7 +8,7 @@ USE_OXC_DEBUG = y
 # USE_OXC_CONSOLE_UART = y
 # USE_OXC_CONSOLE_USB_CDC = y
 USE_OXC_CONSOLE_DEFAULT = y
-# USE_OXC_I2C = y
+USE_OXC_I2C = y
 # USE_OXC_SPI = y
 USE_OXC_TIM = y
 # USE_OXC_ADC = y
@@ -26,6 +26,7 @@ USE_OXC_TIM = y
 SRCS  += main.cpp
 
 SRCS  += oxc_floatfun.cpp
+SRCS  += oxc_as5600.cpp
 
 SRCS += oxc_capabilities.cpp
 SRCS += oxc_robocaps.cpp
