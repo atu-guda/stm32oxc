@@ -4,6 +4,7 @@
 // ------- Motor PWM control: left/right + break/... TIM3.1=PC6 (AF2), PC4, PC5
 DEFINE_TIMER_DATA_PWM1_2P( MPWM, 3, TimCh1, GPIO_AF2_TIM3, PC6, PC4, PC5 );
 #define TIM_MPWM addr2TIM( TIM_MPWM_BASE )
+inline constexpr uint32_t MPWM_FREQ { 1000 }; // may be float
 
 
 // ------- Servo LWM: TIM13.1=PA6(AF9)

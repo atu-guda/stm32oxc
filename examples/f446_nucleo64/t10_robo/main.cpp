@@ -75,16 +75,21 @@ TIM_HandleTypeDef  tim_mpwm_h;
 Tim_Pwm_Dev        mpwm_hd( TIM_MPWM_BASE, tim_MPWM_chspins, tim_mpwm_h, 0xFFFF ); // TODO: timer props
 float              mpwm_io[3*6];
 PwmRoboCapability  mpwm_rd( mpwm_hd, 1, mpwm_io, 500 );
+//
+Gpio_Pin_Dev      pin_mpwm_l_hd( MPWM_CtlPin_L );
+PinRoboCapability pin_mpwm_l_rd( pin_mpwm_l_hd, 501 );
+Gpio_Pin_Dev      pin_mpwm_r_hd( MPWM_CtlPin_R );
+PinRoboCapability pin_mpwm_r_rd( pin_mpwm_r_hd, 502 );
 
 TIM_HandleTypeDef  tim_servolwm_h;
 Tim_Pwm_Dev        servolwm_hd( TIM_SERVOLWM_BASE, tim_SERVOLWM_chspins, tim_servolwm_h, 0xFFFF );
 float              servolwm_io[3*6];
-PwmRoboCapability  servolwm_rd( servolwm_hd, 1, servolwm_io, 501 );
+PwmRoboCapability  servolwm_rd( servolwm_hd, 1, servolwm_io, 600 );
 
 TIM_HandleTypeDef  tim_enco_h;
-Addr_Enco_Dev      tim_enco_hd( TIM_ENCODER_CNTBASE, 0xFFFF, true );
+Addr_Enco_Dev      tim_enco_hd( TIM_ENCODER_CNTBASE, 0xFFFF, true ); // TODO: separate device to init
 EncoderCapability  tim_enco_d( tim_enco_hd );
-EncoderRoboCapability tim_enco_rd( tim_enco_hd, 502 );
+EncoderRoboCapability tim_enco_rd( tim_enco_hd, 700 );
 
 // ------------------------ - Channels and transforms ; ---------------------------------------
 // output
@@ -103,6 +108,8 @@ OutChFSplit2 oc_split( oc_pin1, oc_pin2, globalTransFFUnity );
 OutChFF    oc_mpwm_duty(  mpwm_rd,   0, globalTransFFUnity );
 OutChFF    oc_mpwm_pulse( mpwm_rd, 100, globalTransFFUnity );
 OutChFF    oc_mpwm_freq(  mpwm_rd, 300, globalTransFFUnity );
+OutChII    oc_mpwm_l( pin_mpwm_l_rd, 1, globalTransIIUnity );
+OutChII    oc_mpwm_r( pin_mpwm_r_rd, 1, globalTransIIUnity );
 
 TransFFLinLim tro_rad2pulse( 2.0e-3f/pi_f, 1.5e-3f, 0.5e-3f, 2.5e-3f ); // angle +/ pi/2 -> 500-2500 μs
 OutChFF    oc_servolwm_rad2pulse( servolwm_rd, 100, tro_rad2pulse );
@@ -147,8 +154,10 @@ IoRoboCapability* rcaps[] {
   &pini_rd,       // 2
   &pins_rd,       // 3
   &mpwm_rd,       // 4
-  &servolwm_rd,   // 5
-  &tim_enco_rd,   // 6
+  &pin_mpwm_l_rd, // 5
+  &pin_mpwm_r_rd, // 6
+  &servolwm_rd,   // 7
+  &tim_enco_rd,   // 8
 };
 
 RoboObject* robo_objs[] {
@@ -157,8 +166,10 @@ RoboObject* robo_objs[] {
   &pini_rd,       // 2
   &pins_rd,       // 3
   &mpwm_rd,       // 4
-  &servolwm_rd,   // 5
-  &tim_enco_rd,   // 6
+  &pin_mpwm_l_rd, // 5
+  &pin_mpwm_r_rd, // 7
+  &servolwm_rd,   // 7
+  &tim_enco_rd,   // 8
 };
 
 OutChFBase* outchfs[] {
@@ -237,9 +248,12 @@ ReturnCode init_hw_all()
   pin2_rd.setFlags( RoboObject::noMeasure );
   pini_rd.setFlags( RoboObject::noCommit );
 
-  TIM_MPWM_CLKEN();
+  TIM_MPWM_CLKEN(); // TODO: auto
   mpwm_hd.initHW();
+  mpwm_hd.setFreq( MPWM_FREQ );
   mpwm_hd.enable();
+  pin_mpwm_l_hd.initHW();
+  pin_mpwm_r_hd.initHW();
 
   TIM_SERVOLWM_CLKEN();
   servolwm_hd.initHW();
@@ -509,8 +523,12 @@ CMD_FUNCTION( inf )
 
 CMD_FUNCTION( prt )
 {
+  std_out << "# MPWM: " NL;
   tim_print_cfg( TIM_MPWM_BASE );
+  std_out << "# ENCODER: " NL;
   tim_print_cfg( TIM_ENCODER_BASE );
+  std_out << "# SERVOLWM: " NL;
+  tim_print_cfg( TIM_SERVOLWM_BASE );
   return 0;
 }
 
