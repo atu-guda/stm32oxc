@@ -110,44 +110,44 @@ constexpr int32_t as5600_zero { 2739 }; // Beware: mech-dependent constant
 // TODO: channel names
 
 TransFILin tro_pin1( 0.1f, -1.0f );
-OutChFI    oc_pin1( pin1_rd, 1, tro_pin1 );
+OutChFI    oc_pin1( pin1_rd, PinRoboCapability::ch_write, tro_pin1 );
 
 TransFILin tro_pin2( 0.5f, -0.5f );
-OutChFI    oc_pin2( pin2_rd, 1, tro_pin2 );
+OutChFI    oc_pin2( pin2_rd, PinRoboCapability::ch_write, tro_pin2 );
 
 TransFILinLim tro_pins( 0.1f, 1.0f, 0, 14 );
-OutChFI    oc_pins( pins_rd, 1, tro_pins );
+OutChFI    oc_pins( pins_rd, PinsRoboCapability::ch_write, tro_pins );
 
 OutChFSplit2 oc_split( oc_pin1, oc_pin2, globalTransFFUnity );
 
-OutChFF    oc_mpwm_duty(  mpwm_rd,   0, globalTransFFUnity );
-OutChFF    oc_mpwm_pulse( mpwm_rd, 100, globalTransFFUnity );
-OutChFF    oc_mpwm_freq(  mpwm_rd, 300, globalTransFFUnity );
-OutChII    oc_mpwm_l( pin_mpwm_l_rd, 1, globalTransIIUnity );
-OutChII    oc_mpwm_r( pin_mpwm_r_rd, 1, globalTransIIUnity );
+OutChFF    oc_mpwm_duty(  mpwm_rd, PwmRoboCapability::ch0_pwm,   globalTransFFUnity );
+OutChFF    oc_mpwm_pulse( mpwm_rd, PwmRoboCapability::ch0_pulse, globalTransFFUnity );
+OutChFF    oc_mpwm_freq(  mpwm_rd, PwmRoboCapability::ch_freq,   globalTransFFUnity );
+OutChII    oc_mpwm_l( pin_mpwm_l_rd, PinRoboCapability::ch_write, globalTransIIUnity );
+OutChII    oc_mpwm_r( pin_mpwm_r_rd, PinRoboCapability::ch_write, globalTransIIUnity );
 
 TransFFLinLim tro_rad2pulse( 2.0e-3f/pi_f, 1.5e-3f, 0.5e-3f, 2.5e-3f ); // angle +/ pi/2 -> 500-2500 μs
-OutChFF    oc_servolwm_rad2pulse( servolwm_rd, 100, tro_rad2pulse );
+OutChFF    oc_servolwm_rad2pulse( servolwm_rd, PwmRoboCapability::ch0_pulse, tro_rad2pulse );
 
 // input
 TransIFLin tri_pin1( 10.0f, 0.3f );
-InChFI     ic_pin1( pin1_rd, 0, tri_pin1 );
+InChFI     ic_pin1( pin1_rd, PinRoboCapability::ch_read, tri_pin1 );
 
 TransIFLin tri_pin2( 0.1f, -2.0f );
-InChFI     ic_pin2( pin2_rd, 0, tri_pin2 );
+InChFI     ic_pin2( pin2_rd, PinRoboCapability::ch_read, tri_pin2 );
 
 TransIFLin tri_pins( 1.1f, 0.01f );
-InChFI     ic_pins( pins_rd, 0, tri_pins );
+InChFI     ic_pins( pins_rd, PinRoboCapability::ch_read, tri_pins );
 
 InChFConst ic_const( 3.1415f );
 
 InChFSum2  ic_sum( ic_pins, ic_pin1, globalTransFFUnity, 0.1f, -0.1f );
 
 TransIFLin tri_tim_enco( pi_f/1200, 0 );
-InChFI     ic_tim_enco( tim_enco_rd, 0, tri_tim_enco );
+InChFI     ic_tim_enco( tim_enco_rd, EncoderRoboCapability::ch_pos, tri_tim_enco );
 
 TransIFLin tri_as5600_enco( 2*pi_f/AS5600::val2turn, 0 );
-InChFI     ic_as5600_enco( as5600_enco_rd, 0, tri_as5600_enco );
+InChFI     ic_as5600_enco( as5600_enco_rd, EncoderRoboCapability::ch_pos, tri_as5600_enco );
 
 // ------------------------ - Channels and transforms end ; ---------------------------------------
 
