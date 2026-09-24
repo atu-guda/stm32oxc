@@ -196,7 +196,7 @@ class PwmCapability : public IoCapability {
 class EncoderCapability : public IoCapability {
   public:
    enum { // int32_t channels pos: r/w, other - r/o
-     ch_pos = 0, ch_posraw = 1, ch_dlt = 2,
+     ch_pos = 0, ch_posraw = 1, ch_dlt = 2, ch_startpos = 3,
      ch_pos_bit = 1
    };
    explicit constexpr EncoderCapability( EncoderPureCapability &enc_ ) noexcept

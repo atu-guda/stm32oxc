@@ -220,9 +220,10 @@ ReturnCode oxc::PwmRoboCapability::doCommit()  noexcept
 int32_t_er oxc::EncoderRoboCapability::getVal( size_t ch ) noexcept
 {
   switch( ch ) {
-    case ch_pos    : return pos;
-    case ch_posraw : return posraw;
-    case ch_dlt    : return dlt;
+    case ch_pos      : return pos;
+    case ch_posraw   : return posraw;
+    case ch_dlt      : return dlt;
+    case ch_startpos : return start_pos;
   }
   return std::unexpected( rcErr );
 }

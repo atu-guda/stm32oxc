@@ -127,7 +127,7 @@ class PwmRoboCapability : public IoRoboCapability {
 class EncoderRoboCapability : public IoRoboCapability {
   public:
    enum { // int32_t channels pos: r/w, other - r/o
-     ch_pos = 0, ch_posraw = 1, ch_dlt = 2,
+     ch_pos = 0, ch_posraw = 1, ch_dlt = 2, ch_startpos = 3,
      ch_pos_bit = 1
    };
    explicit constexpr EncoderRoboCapability( EncoderPureCapability &enc_, uint32_t id_ = 0 ) noexcept
@@ -138,12 +138,18 @@ class EncoderRoboCapability : public IoRoboCapability {
    virtual float_er   getValF( size_t ch )           noexcept override { return std::unexpected(rcErr); }
   protected:
    virtual ReturnCode doInit()    noexcept override { pos = posraw = dlt = pos_set = 0; return rcOk; }
-   virtual ReturnCode doMeasure() noexcept override { auto rc = enc.read(); if( rc.isOk() ) { pos = enc.getPos(); posraw = enc.getPosRaw(); dlt = enc.getDelta(); return rcOk;}; return rcErr; }
+   virtual ReturnCode doMeasure() noexcept override {
+     auto rc = enc.read(); if( rc.isOk() ) {
+       pos = enc.getPos(); posraw = enc.getPosRaw(); dlt = enc.getDelta(); start_pos = enc.getStartPos();
+       return rcOk;
+     };
+     return rcErr;
+   }
    virtual ReturnCode doThink()   noexcept override { return rcOk; }
-   virtual ReturnCode doCommit()  noexcept override { if( dirty & ch_pos_bit ) { enc.setPos( pos_set ); } return rcOk; }
+   virtual ReturnCode doCommit()  noexcept override { if( dirty & ch_pos_bit ) { enc.setStartPos( pos_set ); } return rcOk; }
   protected:
    EncoderPureCapability &enc;
-   int32_t pos {0}, posraw {0}, dlt {0};
+   int32_t pos {0}, posraw {0}, dlt {0}, start_pos {0};
    int32_t pos_set {0};
 };
 

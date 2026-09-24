@@ -17,7 +17,8 @@ class Addr_Enco_Dev : public EncoderPureCapability
    virtual int32_t  getPos() const           noexcept override { return eng.getPos();    }
    virtual int32_t  getPosRaw() const        noexcept override { return eng.getPosRaw(); }
    virtual int32_t  getDelta() const         noexcept override { return eng.getDelta();  }
-   virtual ReturnCode  setPos( int32_t pos ) noexcept override { eng.setPos( pos ); return rcOk; }
+   virtual int32_t  getStartPos() const      noexcept override { return eng.getStartPos();  }
+   virtual ReturnCode  setStartPos( int32_t pos ) noexcept override { eng.setStartPos( pos ); return rcOk; }
 
   protected:
    EncoderEng eng;

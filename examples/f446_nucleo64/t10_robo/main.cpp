@@ -61,6 +61,7 @@ DevI2C i2cd( &i2ch, 0 );
 AS5600 as5600_sens( i2cd );
 
 
+
 // ------------------------ Devices: capabilities ; ---------------------------------------
 
 Gpio_Pin_Dev      pin1_hd( PC10 );
@@ -99,9 +100,10 @@ Addr_Enco_Dev      tim_enco_hd( TIM_ENCODER_CNTBASE, 0xFFFF, true ); // TODO: se
 EncoderCapability  tim_enco_d( tim_enco_hd );
 EncoderRoboCapability tim_enco_rd( tim_enco_hd, 700 );
 
-AS5600_Enco_Dev    as5600_enco_hd( as5600_sens, false );
+AS5600_Enco_Dev    as5600_enco_hd( as5600_sens, true );
 EncoderCapability  as5600_enco_d( as5600_enco_hd );
 EncoderRoboCapability as5600_enco_rd( as5600_enco_hd, 800 );
+constexpr int32_t as5600_zero { 2739 }; // Beware: mech-dependent constant
 
 // ------------------------ - Channels and transforms ; ---------------------------------------
 // output
@@ -288,7 +290,7 @@ ReturnCode init_hw_all()
   i2c_dbg = &i2cd;
   i2c_client_def = &as5600_sens;
   as5600_sens.setCfg( AS5600::CfgBits::cfg_pwr_mode_nom |  AS5600::CfgBits::cfg_hyst_off );
-  as5600_enco_hd.setPos( 0 );
+  as5600_enco_hd.setStartPos( as5600_zero );
 
   return robo.init_all();
 }

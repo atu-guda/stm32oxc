@@ -92,7 +92,8 @@ class EncoderPureCapability {
    virtual int32_t  getPos() const          noexcept = 0;
    virtual int32_t  getPosRaw() const       noexcept = 0;
    virtual int32_t  getDelta() const        noexcept = 0;
-   virtual ReturnCode setPos( int32_t pos ) noexcept = 0;
+   virtual int32_t  getStartPos() const     noexcept = 0;
+   virtual ReturnCode setStartPos( int32_t pos ) noexcept = 0;
 };
 
 

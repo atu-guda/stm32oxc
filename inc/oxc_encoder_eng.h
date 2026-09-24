@@ -15,8 +15,9 @@ class EncoderEng {
            rev_dir( rev_dir_ ) {};
    int32_t getPos() const noexcept { return pos - start_pos; }
    int32_t getPosRaw() const noexcept { return last_raw_pos; }
+   int32_t getStartPos() const noexcept { return start_pos; }
    int32_t getDelta()  const noexcept { return dlt; };
-   void    setPos( int32_t nv ) noexcept { start_pos = pos - nv; };
+   void    setStartPos( int32_t nsp ) noexcept { start_pos = nsp; pos = last_raw_pos = nsp; };
    void    accept( uint32_t v ) noexcept {
      dlt = (int32_t)v - (int32_t)last_raw_pos;
      // Phase unwrapping

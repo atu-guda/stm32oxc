@@ -15,12 +15,13 @@ class AS5600_Enco_Dev : public EncoderPureCapability
 {
   public:
    constexpr explicit AS5600_Enco_Dev( AS5600 &sens_, bool rev_ )
-     : sens( sens_ ), eng( AS5600::val2turn, rev_ ) {}
+     : sens( sens_ ), eng( AS5600::val2turn-1, rev_ ) {}
    virtual ReturnCode  read()                noexcept override { eng.accept( sens.getAngleNoTurn() ); return rcOk; }
    virtual int32_t  getPos() const           noexcept override { return eng.getPos();    }
    virtual int32_t  getPosRaw() const        noexcept override { return eng.getPosRaw(); }
    virtual int32_t  getDelta() const         noexcept override { return eng.getDelta();  }
-   virtual ReturnCode  setPos( int32_t pos ) noexcept override { eng.setPos( pos ); return rcOk; }
+   virtual int32_t  getStartPos() const      noexcept override { return eng.getStartPos();  }
+   virtual ReturnCode  setStartPos( int32_t pos ) noexcept override { eng.setStartPos( pos ); return rcOk; }
 
    AS5600* getDev() { return &sens; }
 
