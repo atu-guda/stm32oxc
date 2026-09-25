@@ -210,6 +210,35 @@ class EncoderCapability : public IoCapability {
    EncoderPureCapability &enc;
 };
 
+// beware: most ADC need read() before getVal()
+class AdcCapability : public IoCapability {
+  public:
+   explicit constexpr AdcCapability( AdcPureCapability &adc_ ) noexcept
+     : adc( adc_ ) {};
+   AdcCapability( const AdcCapability &r ) = delete;
+   virtual ReturnCode setVal( size_t ch, int32_t v ) noexcept override { return rcErr; }
+   virtual int32_t_er getVal( size_t ch )            noexcept override { return adc.getVal( ch ); }
+   virtual ReturnCode setValF( size_t ch, float v )  noexcept override { return rcErr; }
+   virtual float_er   getValF( size_t ch )           noexcept override { return std::unexpected(rcErr); }
+  protected:
+   AdcPureCapability &adc;
+};
+
+
+class DacCapability : public IoCapability {
+  public:
+   explicit constexpr DacCapability( DacPureCapability &dac_ ) noexcept
+     : dac( dac_ ) {};
+   DacCapability( const DacCapability &r ) = delete;
+   virtual ReturnCode setVal( size_t ch, int32_t v ) noexcept override { return dac.setVal( ch, v ); }
+   virtual int32_t_er getVal( size_t ch )            noexcept override { return std::unexpected(rcErr); }
+   virtual ReturnCode setValF( size_t ch, float v )  noexcept override { return rcErr; }
+   virtual float_er   getValF( size_t ch )           noexcept override { return std::unexpected(rcErr); }
+  protected:
+   DacPureCapability &dac;
+};
+
+
 // ---------------------------- Channels --------------------------------------------------
 // ------------- output: first char {F,I} - from source (control), second - to tagget (device)
 

@@ -88,12 +88,31 @@ class PwmBaseBasic : public PwmPureCapability {
 //* may be 64_t: for some precise encoders (21-bit) 32 bit is too low
 class EncoderPureCapability {
   public:
-   virtual ReturnCode  read()               noexcept = 0;
-   virtual int32_t  getPos() const          noexcept = 0;
-   virtual int32_t  getPosRaw() const       noexcept = 0;
-   virtual int32_t  getDelta() const        noexcept = 0;
-   virtual int32_t  getStartPos() const     noexcept = 0;
+   virtual ReturnCode  read()                    noexcept = 0;
+   virtual int32_t  getPos() const               noexcept = 0;
+   virtual int32_t  getPosRaw() const            noexcept = 0;
+   virtual int32_t  getDelta() const             noexcept = 0;
+   virtual int32_t  getStartPos() const          noexcept = 0;
    virtual ReturnCode setStartPos( int32_t pos ) noexcept = 0;
+};
+
+
+class AdcPureCapability {
+  public:
+   virtual ReturnCode read()                     noexcept = 0;
+   virtual int32_t_er getVal( size_t ch ) const  noexcept = 0;
+   virtual size_t     getNCh() const             noexcept = 0;
+   virtual size_t     getNBits() const           noexcept = 0;
+};
+
+
+// combine with previous?
+class DacPureCapability {
+  public:
+   virtual ReturnCode write()                               noexcept = 0;
+   virtual ReturnCode setVal( size_t ch, int32_t v ) const  noexcept = 0;
+   virtual size_t     getNCh() const                        noexcept = 0;
+   virtual size_t     getNBits() const                      noexcept = 0;
 };
 
 

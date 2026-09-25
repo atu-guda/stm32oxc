@@ -139,7 +139,8 @@ class EncoderRoboCapability : public IoRoboCapability {
   protected:
    virtual ReturnCode doInit()    noexcept override { pos = posraw = dlt = pos_set = 0; return rcOk; }
    virtual ReturnCode doMeasure() noexcept override {
-     auto rc = enc.read(); if( rc.isOk() ) {
+     auto rc = enc.read();
+     if( rc.isOk() ) {
        pos = enc.getPos(); posraw = enc.getPosRaw(); dlt = enc.getDelta(); start_pos = enc.getStartPos();
        return rcOk;
      };
@@ -151,6 +152,48 @@ class EncoderRoboCapability : public IoRoboCapability {
    EncoderPureCapability &enc;
    int32_t pos {0}, posraw {0}, dlt {0}, start_pos {0};
    int32_t pos_set {0};
+};
+
+class AdcRoboCapability : public IoRoboCapability {
+  public:
+   explicit constexpr AdcRoboCapability( AdcPureCapability &adc_, uint32_t id_ = 0 ) noexcept
+     : IoRoboCapability( id_ ), adc(adc_), n_ch( adc.getNCh() ) {};
+   virtual ReturnCode setVal( size_t ch, int32_t v ) noexcept override { return rcErr; }
+   virtual int32_t_er getVal( size_t ch )            noexcept override;
+   virtual ReturnCode setValF( size_t ch, float v )  noexcept override { return rcErr; }
+   virtual float_er   getValF( size_t ch )           noexcept override { return std::unexpected(rcErr); }
+  protected:
+   virtual ReturnCode doInit()    noexcept override { return rcOk; }
+   virtual ReturnCode doMeasure() noexcept override {
+     auto rc = adc.read();
+     if( rc.isOk() ) {
+       return rcOk;
+     };
+     return rcErr;
+   }
+   virtual ReturnCode doThink()   noexcept override { return rcOk; }
+   virtual ReturnCode doCommit()  noexcept override { return rcOk; }
+  protected:
+   AdcPureCapability &adc;
+   const size_t n_ch;
+};
+
+class DacRoboCapability : public IoRoboCapability {
+  public:
+   explicit constexpr DacRoboCapability( DacPureCapability &dac_, uint32_t id_ = 0 ) noexcept
+     : IoRoboCapability( id_ ), dac(dac_), n_ch( dac.getNCh() ) {};
+   virtual ReturnCode setVal( size_t ch, int32_t v ) noexcept override;
+   virtual int32_t_er getVal( size_t ch )            noexcept override { return std::unexpected(rcErr); };
+   virtual ReturnCode setValF( size_t ch, float v )  noexcept override { return rcErr; }
+   virtual float_er   getValF( size_t ch )           noexcept override { return std::unexpected(rcErr); }
+  protected:
+   virtual ReturnCode doInit()    noexcept override { return rcOk; }
+   virtual ReturnCode doMeasure() noexcept override { return rcOk; }
+   virtual ReturnCode doThink()   noexcept override { return rcOk; }
+   virtual ReturnCode doCommit()  noexcept override { return rcOk; }
+  protected:
+   DacPureCapability &dac;
+   const size_t n_ch;
 };
 
 }; //namespace oxc
