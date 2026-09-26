@@ -11,7 +11,7 @@ USE_OXC_CONSOLE_DEFAULT = y
 USE_OXC_I2C = y
 # USE_OXC_SPI = y
 USE_OXC_TIM = y
-# USE_OXC_ADC = y
+USE_OXC_ADC = y
 # USE_OXC_DAC = y
 # USE_OXC_DMA = y
 # USE_OXC_SD  = y
@@ -33,6 +33,7 @@ SRCS += oxc_robocaps.cpp
 
 SRCS += oxc_robo_base.cpp
 SRCS += oxc_tim_pwm_d.cpp
+SRCS += oxc_adcint_adc_d.cpp
 
 # aux: (hal, cortex, gpio, rcc added by ../common/board_add.mk )
 # see ../common/f4_modules.mk

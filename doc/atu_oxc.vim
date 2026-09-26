@@ -260,6 +260,8 @@ syntax keyword oxcHwDev Addr_Enco_Dev
 syntax keyword oxcHwDev Gpio_Pin_Dev
 syntax keyword oxcHwDev Gpio_Pins_Dev
 syntax keyword oxcHwDev Tim_Pwm_Dev
+syntax keyword oxcHwDev Adcint_Adc_Dev
+syntax keyword oxcHwDev Dacint_Dac_Dev
 
 syntax keyword oxcIO  std_out
 syntax keyword oxcIO  OUT

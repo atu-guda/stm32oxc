@@ -2,7 +2,7 @@
 
 #include <oxc_tim_pwm_d.h>
 
-#include <oxc_debug1.h> // TODO: remove after debug
+// #include <oxc_debug1.h> // TODO: remove after debug
 
 using namespace oxc;
 using std::size_t;
