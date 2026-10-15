@@ -92,6 +92,30 @@ inline TIM_TypeDef* addr2TIM( uintptr_t addr ) { return reinterpret_cast<TIM_Typ
   inline constexpr uint8_t OXC_EVAL2( NAME, _AF )        { AF }; \
   inline constexpr std::array OXC_EVAL3( tim_, NAME, _chspins ) { TimChPin {  CH, AF, PIN } };
 
+#define DEFINE_TIMER_DATA_PWM2( NAME, TIM_NUM, CH0, CH1, AF, PIN0, PIN1 ) \
+  DEFINE_TIMER_DATA( NAME, TIM_NUM ); \
+  inline constexpr PortPin OXC_EVAL2( NAME, _PwmPin0 )    { PIN0 }; \
+  inline constexpr PortPin OXC_EVAL2( NAME, _PwmPin1 )    { PIN1 }; \
+  inline constexpr uint8_t OXC_EVAL2( NAME, _AF )         { AF }; \
+  inline constexpr std::array OXC_EVAL3( tim_, NAME, _chspins ) { TimChPin { CH0, AF, PIN0 }, TimChPin { CH1, AF, PIN1 } };
+
+#define DEFINE_TIMER_DATA_PWM3( NAME, TIM_NUM, CH0, CH1, CH2, AF, PIN0, PIN1, PIN2 ) \
+  DEFINE_TIMER_DATA( NAME, TIM_NUM ); \
+  inline constexpr PortPin OXC_EVAL2( NAME, _PwmPin0 )    { PIN0 }; \
+  inline constexpr PortPin OXC_EVAL2( NAME, _PwmPin1 )    { PIN1 }; \
+  inline constexpr PortPin OXC_EVAL2( NAME, _PwmPin2 )    { PIN2 }; \
+  inline constexpr uint8_t OXC_EVAL2( NAME, _AF )         { AF }; \
+  inline constexpr std::array OXC_EVAL3( tim_, NAME, _chspins ) { TimChPin { CH0, AF, PIN0 }, TimChPin { CH1, AF, PIN1 }, TimChPin { CH2, AF, PIN2 } };
+
+#define DEFINE_TIMER_DATA_PWM4( NAME, TIM_NUM, CH0, CH1, CH2, CH3, AF, PIN0, PIN1, PIN2, PIN3 ) \
+  DEFINE_TIMER_DATA( NAME, TIM_NUM ); \
+  inline constexpr PortPin OXC_EVAL2( NAME, _PwmPin0 )    { PIN0 }; \
+  inline constexpr PortPin OXC_EVAL2( NAME, _PwmPin1 )    { PIN1 }; \
+  inline constexpr PortPin OXC_EVAL2( NAME, _PwmPin2 )    { PIN2 }; \
+  inline constexpr PortPin OXC_EVAL2( NAME, _PwmPin3 )    { PIN3 }; \
+  inline constexpr uint8_t OXC_EVAL2( NAME, _AF )         { AF }; \
+  inline constexpr std::array OXC_EVAL3( tim_, NAME, _chspins ) { TimChPin { CH0, AF, PIN0 }, TimChPin { CH1, AF, PIN1 }, TimChPin { CH2, AF, PIN2 }, TimChPin { CH3, AF, PIN3 } };
+
 #define DEFINE_TIMER_DATA_PWM1_1P( NAME, TIM_NUM, CH, AF, PIN_PWM, PIN_C ) \
   DEFINE_TIMER_DATA( NAME, TIM_NUM ); \
   inline constexpr PortPin OXC_EVAL2( NAME, _PwmPin )    { PIN_PWM }; \

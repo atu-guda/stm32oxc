@@ -21,7 +21,9 @@ syntax keyword oxcMacro USE_DIE_EXIT
 syntax keyword oxcMacro USE_DIE4LED_EXIT
 syntax keyword oxcMacro BOARD_DEFINE_LEDS
 syntax keyword oxcMacro BOARD_CONSOLE_DEFINES
+syntax keyword oxcMacro USBCDC_CONSOLE_DEFINES
 syntax keyword oxcMacro BOARD_PROLOG
+syntax keyword oxcMacro STD_PROLOG_USBCDC
 syntax keyword oxcMacro BOARD_POST_INIT_BLINK
 syntax keyword oxcMacro TO_MACRO_STR
 syntax keyword oxcMacro OXC_PASTER2
@@ -36,6 +38,9 @@ syntax keyword oxcMacro GET_OS_TICK
 syntax keyword oxcMacro CMD_FUNCTION
 syntax keyword oxcMacro DEFINE_TIMER_DATA
 syntax keyword oxcMacro DEFINE_TIMER_DATA_PWM1
+syntax keyword oxcMacro DEFINE_TIMER_DATA_PWM2
+syntax keyword oxcMacro DEFINE_TIMER_DATA_PWM3
+syntax keyword oxcMacro DEFINE_TIMER_DATA_PWM4
 syntax keyword oxcMacro DEFINE_TIMER_DATA_PWM1_1P
 syntax keyword oxcMacro DEFINE_TIMER_DATA_PWM1_2P
 syntax keyword oxcMacro DEFINE_TIMER_DATA_ENCO
@@ -344,6 +349,7 @@ syntax keyword oxcFunction Mu_tryloc
 syntax keyword oxcFunction Mu_unlock
 syntax keyword oxcFunction numFirstBit
 syntax keyword oxcFunction on_delay_actions
+syntax keyword oxcFunction std_main_loop_nortos
 syntax keyword oxcFunction oxc_add_aux_tick_fun
 syntax keyword oxcFunction oxc_call_aux_tick_funcs
 syntax keyword oxcFunction oxc_clear_aux_tick_funs

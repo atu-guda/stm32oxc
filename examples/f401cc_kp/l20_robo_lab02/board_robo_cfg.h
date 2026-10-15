@@ -1,0 +1,14 @@
+#ifndef _BOARD_ROBO_CFG_H
+#define _BOARD_ROBO_CFG_H
+
+class VIM_ASSUME_AS_CPP_FILE;
+
+// ------- Servo LWM: TIM1.{1,2,3} =PA8,PA9,PA10
+DEFINE_TIMER_DATA_PWM3( SERVOLWM, 1, TimCh1, TimCh2, TimCh3,  GPIO_AF1_TIM1, PA8, PA9, PA10 );
+#define TIM_SERVOLWM addr2TIM( TIM_SERVOLWM_BASE )
+inline constexpr uint32_t SERVOLWM_FREQ { 100 };
+
+
+
+#endif
+

@@ -189,7 +189,7 @@ RoboObject* robo_objs[] {
   &pins_rd,          // 3
   &mpwm_rd,          // 4
   &pin_mpwm_l_rd,    // 5
-  &pin_mpwm_r_rd,    // 7
+  &pin_mpwm_r_rd,    // 6
   &servolwm_rd,      // 7
   &tim_enco_rd,      // 8
   &as5600_enco_rd,   // 9
