@@ -18,6 +18,7 @@
 
 #include <oxc_tim_pwm_d.h>
 
+#include <oxc_adcint_adc_d.h>
 
 #include <board_robo_cfg.h>
 #include "main.h"

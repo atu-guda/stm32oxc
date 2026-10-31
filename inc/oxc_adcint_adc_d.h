@@ -28,6 +28,7 @@ class  Adcint_Adc_Dev : public AdcPureCapability {
    size_t n_ch;
    size_t n_bits;
    uint16_t hwbuf[max_ch];
+   // uint16_t hwbuf[max_ch]; TODO: data
 
 };
 

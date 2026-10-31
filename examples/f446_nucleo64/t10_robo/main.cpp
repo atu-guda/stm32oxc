@@ -62,6 +62,10 @@ I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );
 AS5600 as5600_sens( i2cd );
 
+// ------------ ADC
+ADC_HandleTypeDef hadc_sensor;
+DMA_HandleTypeDef hdma_adc_sensor;
+ADC_Info adc_s1 ( ADC_SENSOR, ADC_SENSOR_CHPINS );
 
 
 // ------------------------ Devices: capabilities ; ---------------------------------------
@@ -107,6 +111,10 @@ EncoderCapability  as5600_enco_d( as5600_enco_hd );
 EncoderRoboCapability as5600_enco_rd( as5600_enco_hd, 800 );
 constexpr int32_t as5600_zero { 2739 }; // Beware: mech-dependent constant
 
+Adcint_Adc_Dev adcint_adc_hd( adc_s1, ADC_SENSOR_N_CH, ADC_resol_to_bits( ADC_SENSOR_Resolution ) );
+AdcRoboCapability adcint_adc_rd(adcint_adc_hd, 900 );
+
+
 // ------------------------ - Channels and transforms ; ---------------------------------------
 // output
 // TODO: channel names
@@ -151,6 +159,12 @@ InChFI     ic_tim_enco( tim_enco_rd, EncoderRoboCapability::ch_pos, tri_tim_enco
 TransIFLin tri_as5600_enco( 2*pi_f/AS5600::val2turn, 0 );
 InChFI     ic_as5600_enco( as5600_enco_rd, EncoderRoboCapability::ch_pos, tri_as5600_enco );
 
+TransIFLin tri_adcint_adc( 1, 0 ); // TODO: calibrate
+InChFI     ic_adcint_adc_0( adcint_adc_rd, 0, tri_adcint_adc );
+InChFI     ic_adcint_adc_1( adcint_adc_rd, 1, tri_adcint_adc );
+InChFI     ic_adcint_adc_2( adcint_adc_rd, 2, tri_adcint_adc );
+InChFI     ic_adcint_adc_3( adcint_adc_rd, 3, tri_adcint_adc );
+
 // ------------------------ - Channels and transforms end ; ---------------------------------------
 
 
@@ -180,6 +194,7 @@ IoRoboCapability* rcaps[] {
   &servolwm_rd,      // 7
   &tim_enco_rd,      // 8
   &as5600_enco_rd,   // 9
+  &adcint_adc_rd,    // 10
 };
 
 RoboObject* robo_objs[] {
@@ -193,6 +208,7 @@ RoboObject* robo_objs[] {
   &servolwm_rd,      // 7
   &tim_enco_rd,      // 8
   &as5600_enco_rd,   // 9
+  &adcint_adc_rd,    // 10
 };
 
 OutChFBase* outchfs[] {
@@ -214,6 +230,10 @@ InChFBase* inchfs[] {
   &ic_sum,             // 4
   &ic_tim_enco,        // 5
   &ic_as5600_enco,     // 6
+  &ic_adcint_adc_0,    // 7
+  &ic_adcint_adc_1,    // 8
+  &ic_adcint_adc_2,    // 9
+  &ic_adcint_adc_3,    // 10
 };
 
 
@@ -293,6 +313,10 @@ ReturnCode init_hw_all()
   i2c_client_def = &as5600_sens;
   as5600_sens.setCfg( AS5600::CfgBits::cfg_pwr_mode_nom |  AS5600::CfgBits::cfg_hyst_off );
   as5600_enco_hd.setStartPos( as5600_zero );
+
+  // TODO: move to device
+  adc_s1.prepare_multi_ev( ADC_SENSOR_N_CH, ADC_SENSOR_ClockPrescaler, ADC_SENSOR_SAMPLETIME, ADC_SOFTWARE_START, ADC_SENSOR_Resolution );
+  adc_s1.init_common();
 
   return robo.init_all();
 }
@@ -564,6 +588,58 @@ CMD_FUNCTION( prt )
   return 0;
 }
 
+
+// ------------------------ ADC -------------------------------
+// arch-dependent part: TODO: move
+
+void HAL_ADC_MspInit( ADC_HandleTypeDef* adcHandle )
+{
+  if( adcHandle->Instance != ADC_SENSOR ) {
+    return;
+  }
+  ADC_SENSOR_CLK_EN();
+  ADC_SENSOR_DMA_CLK_EN();
+
+  adc_s1.init_gpio_channels();
+  adc_s1.DMA_reinit( DMA_NORMAL );
+
+  HAL_NVIC_SetPriority( ADC_SENSOR_DMA_IRQ, ADC_SENSOR_DMA_IRQ_PRTY, 0 );
+  HAL_NVIC_EnableIRQ(   ADC_SENSOR_DMA_IRQ );
+}
+
+void HAL_ADC_MspDeInit( ADC_HandleTypeDef* adcHandle )
+{
+  if( adcHandle->Instance != ADC_SENSOR ) {
+    return;
+  }
+  ADC_SENSOR_CLK_DIS();
+  ADC_SENSOR_DMA_CLK_DIS();
+}
+
+void HAL_ADC_ConvHalfCpltCallback( ADC_HandleTypeDef *hadc )
+{
+  // leds[1].set();
+  // adc_s1.convHalfCpltCallback( hadc );
+}
+
+
+void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc )
+{
+  // leds[1].set();
+  adc_s1.convCpltCallback( hadc );
+}
+
+void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc )
+{
+  // leds[0].set();
+  adc_s1.errorCallback( hadc );
+}
+
+void BOARD_ADC_DMA_IRQHANDLER(void)
+{
+  // leds[0].set();
+  HAL_DMA_IRQHandler( &adc_s1.hdma_adc );
+}
 
 
 

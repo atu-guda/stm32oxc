@@ -34,6 +34,7 @@ inline constexpr AdcChannelInfo ADC_SENSOR_CHPINS[] {
   { ADC_CHANNEL_8, PB0 },
   {             0, PBAD } // END
 };
+inline const constexpr uint32_t ADC_SENSOR_N_CH = std::size( ADC_SENSOR_CHPINS ) - 1;
 #define ADC_SENSOR_CLK_EN       __HAL_RCC_ADC1_CLK_ENABLE
 #define ADC_SENSOR_CLK_DIS      __HAL_RCC_ADC1_CLK_DISABLE
 #define ADC_SENSOR_DMA_CLK_EN   __HAL_RCC_DMA2_CLK_ENABLE

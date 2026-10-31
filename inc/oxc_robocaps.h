@@ -159,7 +159,7 @@ class AdcRoboCapability : public IoRoboCapability {
    explicit constexpr AdcRoboCapability( AdcPureCapability &adc_, uint32_t id_ = 0 ) noexcept
      : IoRoboCapability( id_ ), adc(adc_), n_ch( adc.getNCh() ) {};
    virtual ReturnCode setVal( size_t ch, int32_t v ) noexcept override { return rcErr; }
-   virtual int32_t_er getVal( size_t ch )            noexcept override;
+   virtual int32_t_er getVal( size_t ch )            noexcept override { return adc.getVal( ch ); }
    virtual ReturnCode setValF( size_t ch, float v )  noexcept override { return rcErr; }
    virtual float_er   getValF( size_t ch )           noexcept override { return std::unexpected(rcErr); }
   protected:

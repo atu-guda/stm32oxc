@@ -174,5 +174,21 @@ constexpr uint32_t ADC_resol_to_scale( uint32_t resol )
   }
 }
 
+constexpr uint32_t ADC_resol_to_bits( uint32_t resol )
+{
+  switch( resol ) {
+    case ADC_RESOLUTION_8B:   return  8;
+    case ADC_RESOLUTION_10B:  return 10;
+    case ADC_RESOLUTION_12B:  return 12;
+    #ifdef ADC_RESOLUTION_14B
+    case ADC_RESOLUTION_14B:  return 12;
+    #endif
+    #ifdef ADC_RESOLUTION_16B
+    case ADC_RESOLUTION_16B:  return 16;
+    #endif
+    default:                  return  1; // safe value for div
+  }
+}
+
 #endif
 
