@@ -159,7 +159,7 @@ InChFI     ic_tim_enco( tim_enco_rd, EncoderRoboCapability::ch_pos, tri_tim_enco
 TransIFLin tri_as5600_enco( 2*pi_f/AS5600::val2turn, 0 );
 InChFI     ic_as5600_enco( as5600_enco_rd, EncoderRoboCapability::ch_pos, tri_as5600_enco );
 
-TransIFLin tri_adcint_adc( 1, 0 ); // TODO: calibrate
+TransIFLin tri_adcint_adc( 9.2129e-4f, -1.861f ); // TODO: mech-dependent value
 InChFI     ic_adcint_adc_0( adcint_adc_rd, 0, tri_adcint_adc );
 InChFI     ic_adcint_adc_1( adcint_adc_rd, 1, tri_adcint_adc );
 InChFI     ic_adcint_adc_2( adcint_adc_rd, 2, tri_adcint_adc );
