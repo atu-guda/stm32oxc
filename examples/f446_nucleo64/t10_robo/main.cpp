@@ -111,7 +111,7 @@ EncoderCapability  as5600_enco_d( as5600_enco_hd );
 EncoderRoboCapability as5600_enco_rd( as5600_enco_hd, 800 );
 constexpr int32_t as5600_zero { 2739 }; // Beware: mech-dependent constant
 
-Adcint_Adc_Dev adcint_adc_hd( adc_s1, ADC_SENSOR_N_CH, ADC_resol_to_bits( ADC_SENSOR_Resolution ) );
+Adcint_Adc_Dev adcint_adc_hd( adc_s1, ADC_SENSOR_N_CH, ADC_resol_to_bits( ADC_SENSOR_Resolution ), 100 );
 AdcRoboCapability adcint_adc_rd(adcint_adc_hd, 900 );
 
 
