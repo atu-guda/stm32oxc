@@ -585,6 +585,7 @@ CMD_FUNCTION( prt )
   tim_print_cfg( TIM_SERVOLWM_BASE );
   delay_ms( 100 );
   std_out << "# AS5600: " << as5600_sens.getAngleNoTurn() << NL;
+  adc_s1.pr_state();
   return 0;
 }
 
@@ -605,6 +606,7 @@ void HAL_ADC_MspInit( ADC_HandleTypeDef* adcHandle )
 
   HAL_NVIC_SetPriority( ADC_SENSOR_DMA_IRQ, ADC_SENSOR_DMA_IRQ_PRTY, 0 );
   HAL_NVIC_EnableIRQ(   ADC_SENSOR_DMA_IRQ );
+  // UVAR_x = 1;
 }
 
 void HAL_ADC_MspDeInit( ADC_HandleTypeDef* adcHandle )
@@ -626,18 +628,21 @@ void HAL_ADC_ConvHalfCpltCallback( ADC_HandleTypeDef *hadc )
 void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc )
 {
   // leds[1].set();
+  // ++UVAR_i;
   adc_s1.convCpltCallback( hadc );
 }
 
 void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc )
 {
   // leds[0].set();
+  // ++UVAR_j;
   adc_s1.errorCallback( hadc );
 }
 
 void BOARD_ADC_DMA_IRQHANDLER(void)
 {
   // leds[0].set();
+  // ++UVAR_k;
   HAL_DMA_IRQHandler( &adc_s1.hdma_adc );
 }
 

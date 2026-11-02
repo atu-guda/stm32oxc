@@ -11,7 +11,7 @@ class  Adcint_Adc_Dev : public AdcPureCapability {
   public:
    enum { max_ch = 12 }; // may be more, but ...
    constexpr Adcint_Adc_Dev( ADC_Info &adci_, size_t n_ch_, size_t n_bits_ )
-     : adci( adci_ ), n_ch( n_ch_ ), n_bits( n_bits_ ) {}
+     : adci( adci_ ), n_ch( n_ch_ ), n_bits( n_bits_ ) { adci.data = hwbuf; }
    ReturnCode init() noexcept { adci.reset_cnt(); return rcOk; }
 
    virtual ReturnCode read()                     noexcept override;

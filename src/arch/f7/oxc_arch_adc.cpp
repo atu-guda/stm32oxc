@@ -49,7 +49,7 @@ uint32_t ADC_calc_div( ADC_HandleTypeDef* hadc, uint32_t freq_max, uint32_t *div
   } else if( dm <= 6 ) {
     bits = ADC_CLOCK_SYNC_PCLK_DIV6;
     div = 6;
-  } else if( dm <= 6 ) {
+  } else if( dm <= 8 ) {
     bits = ADC_CLOCK_SYNC_PCLK_DIV8;
     div = 8;
   } else  {
@@ -124,7 +124,7 @@ void ADC_Info::pr_state() const
      << " n_good= " << n_good << " n_bad= " << n_bad
      << " last_end= " << last_end << " last_error= " << last_error << " dma_error= " << dma_error << NL
      << "# good_SR= " << HexInt( good_SR ) << " bad_SR= " << HexInt(bad_SR) << " last_SR= " << HexInt(last_SR)
-     << " data= " << HexInt( (void*)(data), 1 )
+     << " data= " << HexInt( (void*)(data), 1 ) << " prepared= " << prepared
      <<  NL;
 }
 
