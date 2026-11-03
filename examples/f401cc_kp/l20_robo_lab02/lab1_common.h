@@ -13,6 +13,8 @@ extern float T_0;
 extern float T_1;
 extern float a_0;
 extern float a_1;
+extern float pha_0;
+extern float pha_1;
 
 int lab1_init( int x ); //* x - first argument (at will), returns 0 - ok, >0 - error, >1 - emerg. stop
 int lab1_step( uint32_t tc, float *alps ); //* tc - current time in ms from start, returns:0 - next, 1 - end, > 1 - err + end

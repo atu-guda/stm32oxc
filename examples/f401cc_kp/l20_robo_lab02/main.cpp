@@ -8,19 +8,18 @@
 #include <oxc_floatfun.h>
 #include <oxc_namedints.h>
 #include <oxc_namedfloats.h>
-#include <oxc_outstr.h>
-#include <oxc_easing.h>
 
 #include <oxc_robo_base.h>
 
-#include <oxc_gpio_pin_d.h>
-#include <oxc_gpio_pins_d.h>
+// #include <oxc_gpio_pin_d.h>
+// #include <oxc_gpio_pins_d.h>
 
 #include <oxc_tim_pwm_d.h>
 
 #include <oxc_adcint_adc_d.h>
 
 #include <board_robo_cfg.h>
+
 #include "main.h"
 #include "lab1_common.h"
 
@@ -34,10 +33,11 @@ BOARD_DEFINE_LEDS;
 
 USBCDC_CONSOLE_DEFINES;
 
-// int adc_n        {  100 };
 // auto out_q_fmt = [](xfloat x) { return FltFmt(x, cvtff_fix,8,4); };
 
 uint32_t      t_lab_max { 0 };
+float pha_0 {0};
+float pha_1 {0};
 
 // ------------------------ named global vars -----------------------------------
 
@@ -52,8 +52,8 @@ uint32_t      t_lab_max { 0 };
   UX(                adc_n,         20 ) \
   FX(                a_0,         0.4f ) \
   FX(                a_1,         0.4f ) \
-  FX(                T_0,         1.3f ) \
-  FX(                T_1,         2.7f )
+  FX(                T_0,         5.1f ) \
+  FX(                T_1,         9.0395f )
 
 
 // global vars itself
@@ -322,7 +322,10 @@ ReturnCode run_v_loop( const RunLoopState &rls, const RunLoopData &rld, void *da
 
   std_out
     << FmtInt( rls.tc, 8 ) << ' '
-    << t << ' ' << dbuf[0] << ' ' << dbuf[1]
+    << t << ' '
+    << pha_0 << ' ' << pha_1 << ' '
+    << dbuf[0] << ' ' << dbuf[1] << ' '
+    << inchfs[0]->in() << ' ' << inchfs[1]->in()
     // << FltFmt( robo.get_t_cur(), cvtff_auto, 12, 3 )
     << NL;
 
@@ -333,7 +336,7 @@ ReturnCode run_v_loop( const RunLoopState &rls, const RunLoopData &rld, void *da
 
 CMD_FUNCTION( run0 ) // R
 {
-  int idx = arg2long_d( 1, argc, argv, 0, 0, easing_fun_n-1 );
+  int idx = arg2long_d( 1, argc, argv, 3, 0, easing_fun_n-1 );
   struct Data_setAlp d;
   d.alp_0      = a_0;
   d.alp_1      = a_1;
