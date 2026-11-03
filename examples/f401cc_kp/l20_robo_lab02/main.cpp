@@ -22,6 +22,7 @@
 
 #include <board_robo_cfg.h>
 #include "main.h"
+#include "lab1_common.h"
 
 
 using namespace oxc;
@@ -36,6 +37,8 @@ USBCDC_CONSOLE_DEFINES;
 // int adc_n        {  100 };
 // auto out_q_fmt = [](xfloat x) { return FltFmt(x, cvtff_fix,8,4); };
 
+uint32_t      t_lab_max { 0 };
+
 // ------------------------ named global vars -----------------------------------
 
 #define NAMED_VARS_LIST    \
@@ -46,11 +49,11 @@ USBCDC_CONSOLE_DEFINES;
   UX(                t_run_c,   100000 ) \
   UX(                t_post,       500 ) \
   UX(                t_step,        20 ) \
-  UX(                adc_n,         10 ) \
-  FX(                a_0,         1.0f ) \
-  FX(                a_1,         1.0f ) \
-  FX(                T_0,         2.0f ) \
-  FX(                T_1,         2.2f )
+  UX(                adc_n,         20 ) \
+  FX(                a_0,         0.4f ) \
+  FX(                a_1,         0.4f ) \
+  FX(                T_0,         1.3f ) \
+  FX(                T_1,         2.7f )
 
 
 // global vars itself
@@ -301,21 +304,25 @@ ReturnCode run_v_loop( const RunLoopState &rls, const RunLoopData &rld, void *da
     return rc;
   }
 
-  float t = (float) std::max( rls.tc - rld.t_pre, 0_u32 ) * 1e-3f;
-  float ph_0 = t / T_0;
-  float ph_1 = t / T_1;
-  float q_0 = a_0 * sinf( ph_0 );
-  float q_1 = a_1 * sinf( ph_1 );
+  float dbuf[2];
+  uint32_t tc_i = std::max( rls.tc - rld.t_pre, 0_u32 );
+  float t = (float) tc_i * 1e-3f; // DUP?
+
+  int rc2 = lab1_step( tc_i, dbuf );
+  if( rc2 != 0 ) {
+    return rc2;
+  }
+
 
   if( !dry_run ) {
-    oc_servolwm_rad2pulse0.out( q_0 );
-    oc_servolwm_rad2pulse1.out( q_1 );
+    oc_servolwm_rad2pulse0.out( dbuf[0] );
+    oc_servolwm_rad2pulse1.out( dbuf[1] );
     robo.commit_all();
   }
 
   std_out
     << FmtInt( rls.tc, 8 ) << ' '
-    << t << ' ' << ph_0 << ' ' << ph_1 << ' ' << q_0 << ' ' << q_1
+    << t << ' ' << dbuf[0] << ' ' << dbuf[1]
     // << FltFmt( robo.get_t_cur(), cvtff_auto, 12, 3 )
     << NL;
 
@@ -326,11 +333,18 @@ ReturnCode run_v_loop( const RunLoopState &rls, const RunLoopData &rld, void *da
 
 CMD_FUNCTION( run0 ) // R
 {
+  int idx = arg2long_d( 1, argc, argv, 0, 0, easing_fun_n-1 );
   struct Data_setAlp d;
-  d.alp_0      = arg2float_d( 1, argc, argv, 0 );
-  d.alp_1      = arg2float_d( 2, argc, argv, 0 );
+  d.alp_0      = a_0;
+  d.alp_1      = a_1;
+
+  int rc1 = lab1_init( idx );
+  if( rc1 != 0 ) {
+    std_out << "# Error: init failed! rc=" << rc1 << NL;
+  }
 
   RunLoopData rld( t_step, t_pre, t_run_c , t_post );
+  t_lab_max = t_run_c;
 
   robo.start_time();
   auto rc = run_periodic( rld, run_v_loop, &d );
