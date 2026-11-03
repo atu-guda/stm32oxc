@@ -34,6 +34,7 @@ BOARD_DEFINE_LEDS;
 USBCDC_CONSOLE_DEFINES;
 
 // int adc_n        {  100 };
+// auto out_q_fmt = [](xfloat x) { return FltFmt(x, cvtff_fix,8,4); };
 
 // ------------------------ named global vars -----------------------------------
 
@@ -45,7 +46,7 @@ USBCDC_CONSOLE_DEFINES;
   UX(                t_run_c,   100000 ) \
   UX(                t_post,       500 ) \
   UX(                t_step,        20 ) \
-  UX(                adc_n,         20 ) \
+  UX(                adc_n,         10 ) \
   FX(                a_0,         1.0f ) \
   FX(                a_1,         1.0f ) \
   FX(                T_0,         2.0f ) \
@@ -88,9 +89,7 @@ DEFINE_NAMEDOBJ_FUNCS(objs)
 
 // ------------------------ end: named global vars -----------------------------------
 
-// auto out_q_fmt = [](xfloat x) { return FltFmt(x, cvtff_fix,8,4); };
-
-
+// ------------------------ easing functions  -----------------------------------
 
 const EasingFunInfo easing_fun_info[] = {
   { easing_one,       1.0f },    // 0
@@ -105,23 +104,60 @@ const EasingFunInfo easing_fun_info[] = {
 };
 constexpr auto easing_fun_n { std::size( easing_fun_info) };
 
+// ------------------------ end: easing functions -----------------------------------
 
+
+// ------------------------ low-level devices -------------------------------------------
+
+// ------------ LWM timer
 TIM_HandleTypeDef  tim_servolwm_h;
+
+// ------------ ADC
+ADC_HandleTypeDef hadc_sensor;
+DMA_HandleTypeDef hdma_adc_sensor;
+ADC_Info adc_s1 ( ADC_SENSOR, ADC_SENSOR_CHPINS );
+
+ReturnCode init_hw_all();
+
+// ------------------------ end: low-level devices -------------------------------------------
+
+
+// ------------------------ Capabilities + RoboCap (C) ---------------------------------------
+
 Tim_Pwm_Dev        servolwm_hd( TIM_SERVOLWM_BASE, tim_SERVOLWM_chspins, tim_servolwm_h, 0xFFFF );
 float              servolwm_io[3*6*3]; // TODO???
-PwmRoboCapability  servolwm_rd( servolwm_hd, 3, servolwm_io, 600 );
+PwmRoboCapability  servolwm_rd( servolwm_hd, 3, servolwm_io, 100 );
+
+Adcint_Adc_Dev adcint_adc_hd( adc_s1, ADC_SENSOR_N_CH, ADC_resol_to_bits( ADC_SENSOR_Resolution ), adc_n );
+AdcRoboCapability adcint_adc_rd( adcint_adc_hd, 200 );
+
+// ------------------------ Channels and transforms (T) ---------------------------------------
 
 TransFFLinLim tro_rad2pulse( 2.0e-3f/pi_f, 1.5e-3f, 0.5e-3f, 2.5e-3f ); // angle +/ pi/2 -> 500-2500 μs
 OutChFF    oc_servolwm_rad2pulse0( servolwm_rd, PwmRoboCapability::ch0_pulse  , tro_rad2pulse );
 OutChFF    oc_servolwm_rad2pulse1( servolwm_rd, PwmRoboCapability::ch0_pulse+1, tro_rad2pulse );
 OutChFF    oc_servolwm_rad2pulse2( servolwm_rd, PwmRoboCapability::ch0_pulse+2, tro_rad2pulse );
 
+TransIFLin tri_adcint_adc0( 1.739e-3f,  -2.694f ); // TODO: mech-dependent value
+TransIFLin tri_adcint_adc1( 9.346e-4f,  -1.933f );
+InChFI     ic_adcint_adc_0( adcint_adc_rd, 0, tri_adcint_adc0 );
+InChFI     ic_adcint_adc_1( adcint_adc_rd, 1, tri_adcint_adc1 );
+InChFI     ic_adcint_adc_2( adcint_adc_rd, 2, globalTransIFUnity ); // unused for now
+InChFI     ic_adcint_adc_0x( adcint_adc_rd, 0, globalTransIFUnity ); // pure int for calibrate
+InChFI     ic_adcint_adc_1x( adcint_adc_rd, 1, globalTransIFUnity );
+
+// ------------------------ Channels and transforms end ---------------------------------------
+
+// ------------------------ Robo (R) ---------------------------------------
+
 IoRoboCapability* rcaps[] {
   &servolwm_rd,      // 0
+  &adcint_adc_rd,    // 1
 };
 
 RoboObject* robo_objs[] {
   &servolwm_rd,      // 0
+  &adcint_adc_rd,    // 1
 };
 
 OutChFBase* outchfs[] {
@@ -129,6 +165,15 @@ OutChFBase* outchfs[] {
   &oc_servolwm_rad2pulse1, // 1
   &oc_servolwm_rad2pulse2, // 2
 };
+
+InChFBase* inchfs[] {
+  &ic_adcint_adc_0,    // 0
+  &ic_adcint_adc_1,    // 1
+  &ic_adcint_adc_2,    // 2
+  &ic_adcint_adc_0x,   // 3
+  &ic_adcint_adc_1x,   // 4
+};
+
 
 RoboJoint fake_joint;
 
@@ -138,16 +183,21 @@ RoboJoint* robo_joints[] {
 
 RoboAssembly robo( robo_objs, robo_joints );
 
-ReturnCode init_hw_all();
+
+// ------------------------ Robo end ---------------------------------------
 
 const char* common_help_string = "robo_lab02_ " __DATE__ " " __TIME__ NL;
 
 // --- local commands;
 
-// ------------------------   commands
-DCL_CMD_REG( test0,       'T', " alp_0 alp_1 - test " );
-DCL_CMD_REG( run0,        'R', " - run " );
-DCL_CMD_REG( prt,         '\0', " - print timer info " );
+DCL_CMD_REG(     test0,       'T',    " alp_0 alp_1 - test " );
+DCL_CMD_REG(      run0,       'R',    " [i] - run " );
+DCL_CMD_REG(      init,       '\0',   " - init"  );
+DCL_CMD_REG(      outf,       'F',    " i_och v - output to float ch"  );
+DCL_CMD_REG(       inf,       'I',    " read all float ch"  );
+DCL_CMD_REG(       prt,       '\0',   " - print devs info " );
+
+// -------------------------------------------------------------------------------------
 
 
 void idle_main_task()
@@ -161,6 +211,8 @@ void on_sigint( int /* c */ )
   // tim_lwm_stop();
   break_flag = 1;
 }
+
+void out_inputs();
 
 int main(void)
 {
@@ -193,9 +245,29 @@ ReturnCode init_hw_all()
   servolwm_hd.initHW();
   servolwm_hd.setFreq( SERVOLWM_FREQ );
   servolwm_hd.enable();
+
+  // TODO: move to device
+  adc_s1.prepare_multi_ev( ADC_SENSOR_N_CH, ADC_SENSOR_ClockPrescaler, ADC_SENSOR_SAMPLETIME, ADC_SOFTWARE_START, ADC_SENSOR_Resolution );
+  adc_s1.init_common();
+
   return robo.init_all();
 }
 
+void out_inputs()
+{
+  robo.measure_all();
+  for( auto [i,pich] : std::views::enumerate( inchfs ) ) {
+    auto v = pich->in();
+    std_out << i << ' ' << v << NL;
+  }
+
+  // test
+  // int32_t v = adcint_adc_rd.getVal( 0 ).value_or( 0 );
+  // float a = tri_adcint_adc0.a;
+  // float b = tri_adcint_adc0.b;
+  // float vv = v * a + b;
+  // std_out << '#' << v << ' ' << a << ' ' << b << ' ' << vv << NL;
+}
 
 
 
@@ -206,6 +278,8 @@ CMD_FUNCTION( test0 )
   oc_servolwm_rad2pulse0.out( alp0 );
   oc_servolwm_rad2pulse1.out( alp1 );
   robo.commit_all();
+  delay_ms( 1000 );
+  out_inputs();
   return 0;
 }
 
@@ -239,13 +313,6 @@ ReturnCode run_v_loop( const RunLoopState &rls, const RunLoopData &rld, void *da
     robo.commit_all();
   }
 
-  // float v = ( ( rls.stage & RunLoopState::stage_num_mask ) == 1 ) ? d->v : 0;
-
-  // if( rls.stage & RunLoopState::stage_change_flag  ) {
-  //   // q0_actu.setV( v );
-  //   robo.commit_all();
-  // }
-
   std_out
     << FmtInt( rls.tc, 8 ) << ' '
     << t << ' ' << ph_0 << ' ' << ph_1 << ' ' << q_0 << ' ' << q_1
@@ -273,13 +340,96 @@ CMD_FUNCTION( run0 ) // R
   return rc.isOk() ? 0 : 2;
 }
 
+CMD_FUNCTION( init )
+{
+  auto rc = robo.init_all();
+  std_out << " rc= [" << rc.code << ", " << rc.data << "]" NL;
+  return 0;
+}
+
+CMD_FUNCTION( outf )
+{
+  auto idx = arg2ulong_d( 1, argc, argv, 0, 0, std::size(outchfs)-1 );
+  float v  = arg2float_d( 2, argc, argv, 0 );
+  outchfs[idx]->out( v );
+  if( UVAR_a ) {
+    robo.commit_all();
+  }
+  return 0;
+}
+
+
+CMD_FUNCTION( inf )
+{
+  out_inputs();
+  return 0;
+}
+
+
 CMD_FUNCTION( prt )
 {
   std_out << "# SERVOLWM: " NL;
   tim_print_cfg( TIM_SERVOLWM_BASE );
+  adc_s1.pr_state();
   return 0;
 }
 
+
+// ------------------------------------ ADC ------------------------------------------------
+// arch-dependent part: TODO: ???
+
+void HAL_ADC_MspInit( ADC_HandleTypeDef* adcHandle )
+{
+  if( adcHandle->Instance != ADC_SENSOR ) {
+    return;
+  }
+  ADC_SENSOR_CLK_EN();
+  ADC_SENSOR_DMA_CLK_EN();
+
+  adc_s1.init_gpio_channels();
+  adc_s1.DMA_reinit( DMA_NORMAL );
+
+  HAL_NVIC_SetPriority( ADC_SENSOR_DMA_IRQ, ADC_SENSOR_DMA_IRQ_PRTY, 0 );
+  HAL_NVIC_EnableIRQ(   ADC_SENSOR_DMA_IRQ );
+  // UVAR_x = 1;
+}
+
+void HAL_ADC_MspDeInit( ADC_HandleTypeDef* adcHandle )
+{
+  if( adcHandle->Instance != ADC_SENSOR ) {
+    return;
+  }
+  ADC_SENSOR_CLK_DIS();
+  ADC_SENSOR_DMA_CLK_DIS();
+}
+
+void HAL_ADC_ConvHalfCpltCallback( ADC_HandleTypeDef *hadc )
+{
+  // leds[1].set();
+  // adc_s1.convHalfCpltCallback( hadc );
+}
+
+
+void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc )
+{
+  // leds[1].set();
+  // ++UVAR_i;
+  adc_s1.convCpltCallback( hadc );
+}
+
+void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc )
+{
+  // leds[0].set();
+  // ++UVAR_j;
+  adc_s1.errorCallback( hadc );
+}
+
+void BOARD_ADC_DMA_IRQHANDLER(void)
+{
+  // leds[0].set();
+  // ++UVAR_k;
+  HAL_DMA_IRQHandler( &adc_s1.hdma_adc );
+}
 
 // ------------------------------------  ------------------------------------------------
 
