@@ -9,13 +9,13 @@ DEFINE_TIMER_DATA_PWM3( SERVOLWM, 1, TimCh1, TimCh2, TimCh3,  GPIO_AF1_TIM1, PA8
 inline constexpr uint32_t SERVOLWM_FREQ { 100 };
 
 
-// ------- ADC: A5, A6, A7 {5,6,7} - only if needed, B0 = ch88
+// ------- ADC: A5, A6, A7 {5,6,7} - only if needed, B0 = ch8
 #ifdef _OXC_ADC_H
 #define ADC_SENSOR ADC1
 inline constexpr AdcChannelInfo ADC_SENSOR_CHPINS[] {
-  { ADC_CHANNEL_5, PA5 },
-  { ADC_CHANNEL_6, PA6 },
   { ADC_CHANNEL_7, PA7 },
+  { ADC_CHANNEL_6, PA6 },
+  { ADC_CHANNEL_5, PA5 },
   {             0, PBAD } // END
 };
 inline const constexpr uint32_t ADC_SENSOR_N_CH = std::size( ADC_SENSOR_CHPINS ) - 1;

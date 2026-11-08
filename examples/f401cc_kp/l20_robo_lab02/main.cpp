@@ -200,6 +200,7 @@ DCL_CMD_REG(      run0,       'R',    " [i] - run " );
 DCL_CMD_REG(      init,       '\0',   " - init"  );
 DCL_CMD_REG(      outf,       'F',    " i_och v - output to float ch"  );
 DCL_CMD_REG(       inf,       'I',    " read all float ch"  );
+DCL_CMD_REG(       off,       '\0',   " off servos"  );
 DCL_CMD_REG(       prt,       '\0',   " - print devs info " );
 
 // -------------------------------------------------------------------------------------
@@ -218,6 +219,7 @@ void on_sigint( int /* c */ )
 }
 
 void out_inputs();
+void off_servos();
 
 int main(void)
 {
@@ -272,6 +274,13 @@ void out_inputs()
   // float b = tri_adcint_adc0.b;
   // float vv = v * a + b;
   // std_out << '#' << v << ' ' << a << ' ' << b << ' ' << vv << NL;
+}
+
+void off_servos()
+{
+  servolwm_rd.setValF( 0, 0.0f );
+  servolwm_rd.setValF( 1, 0.0f );
+  robo.commit_all();
 }
 
 
@@ -354,7 +363,10 @@ CMD_FUNCTION( run0 ) // R
   robo.start_time();
   auto rc = run_periodic( rld, run_v_loop, &d );
 
-  robo.commit_all();
+  if( break_flag ) {
+    off_servos();
+  }
+
 
   return rc.isOk() ? 0 : 2;
 }
@@ -381,6 +393,12 @@ CMD_FUNCTION( outf )
 CMD_FUNCTION( inf )
 {
   out_inputs();
+  return 0;
+}
+
+CMD_FUNCTION( off )
+{
+  off_servos();
   return 0;
 }
 
