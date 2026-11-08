@@ -141,13 +141,14 @@ OutChFF    oc_servolwm_rad2pulse0( servolwm_rd, PwmRoboCapability::ch0_pulse  , 
 OutChFF    oc_servolwm_rad2pulse1( servolwm_rd, PwmRoboCapability::ch0_pulse+1, tro_rad2pulse );
 OutChFF    oc_servolwm_rad2pulse2( servolwm_rd, PwmRoboCapability::ch0_pulse+2, tro_rad2pulse );
 
-TransIFLin tri_adcint_adc0( 1.739e-3f,  -2.694f ); // TODO: mech-dependent value
+TransIFLin tri_adcint_adc0( 9.166e-4f,  -1.915f ); // TODO: mech-dependent value
 TransIFLin tri_adcint_adc1( 9.346e-4f,  -1.933f );
 InChFI     ic_adcint_adc_0( adcint_adc_rd, 0, tri_adcint_adc0 );
 InChFI     ic_adcint_adc_1( adcint_adc_rd, 1, tri_adcint_adc1 );
 InChFI     ic_adcint_adc_2( adcint_adc_rd, 2, globalTransIFUnity ); // unused for now
 InChFI     ic_adcint_adc_0x( adcint_adc_rd, 0, globalTransIFUnity ); // pure int for calibrate
 InChFI     ic_adcint_adc_1x( adcint_adc_rd, 1, globalTransIFUnity );
+InChFI     ic_adcint_adc_2x( adcint_adc_rd, 2, globalTransIFUnity );
 
 // ------------------------ Channels and transforms end ---------------------------------------
 
@@ -175,6 +176,7 @@ InChFBase* inchfs[] {
   &ic_adcint_adc_2,    // 2
   &ic_adcint_adc_0x,   // 3
   &ic_adcint_adc_1x,   // 4
+  &ic_adcint_adc_2x,   // 5
 };
 
 

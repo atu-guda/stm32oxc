@@ -8,6 +8,8 @@ PinPureCapability
 PinsPureCapability
 PwmPureCapability
 EncoderPureCapability
+AdcPureCapability
+DacPureCapability
 
 
 ## ------------------------------------ Level 1a: --------------------------------------------------
@@ -22,11 +24,8 @@ PinsCapability
 PinCapability
 PwmCapability
 EncoderCapability
-? ADCCapability
+ADCCapability
 ? DACCapability
-
-+ Trans{F|I}{F|I} tr.f(x)
-+ Channels: {In|Out}Ch{F|I}* itype in(ch), void out(ch,v) - direction relative to control
 
 
 ## ------------------------------------ Level 2a: --------------------------------------------------
@@ -41,7 +40,7 @@ PinsRoboCapability
 PinRoboCapability
 PwmRoboCapability
 EncoderRoboCapability
-? ADCRoboCapability
+ADCRoboCapability
 ? DACRoboCapability
 
 
@@ -96,6 +95,9 @@ oxc_addr_enco_d.*
 oxc_as5600_enco_d.*
   AS5600_Enco_Dev
 
+oxc_adcint_adc_d.*
+  Adcint_Adc_Dev
+
 ## ------------------------------------ Level 2b?: --------------------------------------------------
 
 ????
@@ -103,6 +105,28 @@ Capability and RoboCapability interfaces to level 1b - only if required.
 Unknown size of buffers////
 
 If device supports immediate actions - both Capability and IoRoboCapability.
+
+AdcRoboCapability
+
+## ------------------------------------------- Transforms: -----------------------------------------
+TransUT : virtual T f( U v ) const noexcept = 0;
+  TransFF TransFI TransIF TransII
+    TransFFUnity : globalTransFFUnity, TransFFLin, TransFFLinLim,
+    TransFIUnity : globalTransFIUnity, TransFILin, TransFILinRound, TransFILinLim,
+    TransIFUnity : globalTransIFUnity, TransIFLin,
+    TransIIUnity : globalTransIIUnity, TransIILin( an, ad, b )
+
+## ------------------------------------------- Channels: -----------------------------------------
+
+Out Ch {I,F} ?  virtual void out( T v ) const noexcept = 0;
+ first char {F,I} - from source (control), second - to tagget (device)
+  OutChFBase : OutChFNull OutChFProxy OutChFSplit2 OutChF OutChFF OutChFI
+  OutChIBase : OutChINull OutChIProxy OutChISplit2 OutChI OutChIF OutChII
+
+In Ch {I,F} ?  virtual T in() const noexcept = 0;
+ first char {F,I} - to control (typeof in()), second - from device
+  InChFBase : InChFConst InChFProxy InChFSum2 InChFFun2 InChF InChFF InChFI
+  InChIBase : InChIConst InChIProxy InChISum2 InChI InChIF InChII
 
 
 ## ------------------------------------------- Extra: -----------------------------------------
