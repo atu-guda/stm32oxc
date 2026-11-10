@@ -79,6 +79,7 @@ class RoboAssembly {
 
 };
 
+extern RoboAssembly& global_robo;
 
 
 }; // namespace oxc
