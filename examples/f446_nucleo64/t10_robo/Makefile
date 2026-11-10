@@ -30,6 +30,7 @@ SRCS  += oxc_as5600.cpp
 
 SRCS += oxc_capabilities.cpp
 SRCS += oxc_robocaps.cpp
+SRCS += oxc_robo_debug.cpp
 
 SRCS += oxc_robo_base.cpp
 SRCS += oxc_tim_pwm_d.cpp

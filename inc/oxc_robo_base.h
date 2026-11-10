@@ -5,6 +5,8 @@
 
 #include <span>
 
+// for DCL_*
+#include <oxc_console.h>
 #include <oxc_robocaps.h>
 
 
@@ -83,6 +85,20 @@ extern RoboAssembly& global_robo;
 
 
 }; // namespace oxc
+
+// definitions - in oxc_robo_debug.cpp
+DCL_CMD_ONLY(      robo_wi   );
+DCL_CMD_ONLY(      robo_wf   );
+DCL_CMD_ONLY(      robo_ri   );
+DCL_CMD_ONLY(      robo_rf   );
+DCL_CMD_ONLY(      robo_meas );
+DCL_CMD_ONLY(      robo_co   );
+DCL_CMD_ONLY(      robo_list );
+DCL_CMD_ONLY(      robo_init );
+DCL_CMD_ONLY(      out_cf    );
+DCL_CMD_ONLY(      out_ci    );
+DCL_CMD_ONLY(      in_cf     );
+DCL_CMD_ONLY(      in_ci     );
 
 
 #endif

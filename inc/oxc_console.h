@@ -102,8 +102,11 @@ extern "C" {
 }
 extern std::span<const CmdInfo*> cmds_global;
 
+#define DCL_CMD_ONLY(basename) \
+  int cmd_##basename( int argc, const char * const * argv );
+
 #define DCL_CMD(basename, acro, helpstr ) \
-  int cmd_##basename( int argc, const char * const * argv ); \
+  DCL_CMD_ONLY(basename) \
   const CmdInfo CMDINFO_##basename { #basename, acro, cmd_##basename, helpstr };
 
 #define REGISTER_CMD(pcmd) \

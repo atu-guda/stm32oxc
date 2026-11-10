@@ -3,6 +3,7 @@
 
 #include <cmath>
 #include <climits>
+#include <algorithm>
 
 #include <oxc_purecaps.h>
 
