@@ -1,14 +1,23 @@
 #include <climits>
+
 #include <oxc_auto.h>
 #include <oxc_floatfun.h>
 #include <oxc_main.h>
-#include <oxc_pingpio.h>
-#include <oxc_robopin.h>
-#include <oxc_pwmctltim.h>
-#include <oxc_robopwmctl.h>
-#include <oxc_actu_dcpwm.h>
+
+#include <oxc_robo_base.h>
+
+#include <oxc_gpio_pin_d.h>
+//#include <oxc_gpio_pins_d.h>
+
+// #include <oxc_addr_enco_d.h>
+// #include <oxc_as5600_enco_d.h>
+
+#include <oxc_tim_pwm_d.h>
+
+// #include <oxc_adcint_adc_d.h>
 
 #include <board_robo_cfg.h>
+
 
 using namespace oxc;
 using namespace SMLRL;

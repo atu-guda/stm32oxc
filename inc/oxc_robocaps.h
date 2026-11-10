@@ -196,6 +196,14 @@ class DacRoboCapability : public IoRoboCapability {
    const size_t n_ch;
 };
 
+// for global control and debug functions;
+extern std::span<IoRoboCapability*> global_robo_caps;
+extern std::span<RoboObject*> global_robo_objs;
+extern std::span<OutChFBase*> global_channels_out_f;
+extern std::span<OutChIBase*> global_channels_out_i;
+extern std::span<InChFBase*>  global_channels_in_f;
+extern std::span<InChIBase*>  global_channels_in_i;
+
 }; //namespace oxc
 
 

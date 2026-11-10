@@ -22,8 +22,6 @@
 using namespace oxc;
 using namespace SMLRL;
 
-using std::array;
-
 USE_DIE4LED_ERROR_HANDLER;
 BOARD_DEFINE_LEDS;
 
@@ -36,20 +34,20 @@ const char* common_help_string = "Appication to test misc robo parts. TMP." NL;
 // ------------------------ - local commands; ---------------------------------------
 DCL_CMD_REG(      test_pin_d,   'T',      " [arg ] - pin1_d"  );
 DCL_CMD_REG(      test_pins_hd, '\0',     " [arg ] - pins_hd"  );
-DCL_CMD_REG(      wci,          '\0',     " i ch vi - write cap int"  );
-DCL_CMD_REG(      wcf,          '\0',     " i ch vf - write cap float"  );
-DCL_CMD_REG(      rci,          '\0',     " i ch - read cap int"  );
-DCL_CMD_REG(      rcf,          '\0',     " i ch - read cap float"  );
-DCL_CMD_REG(      wri,          '\0',     " i ch vi - write robo int"  );
-DCL_CMD_REG(      wrf,          '\0',     " i ch vf - write robo float"  );
-DCL_CMD_REG(      rri,          '\0',     " i ch - read robo int"  );
-DCL_CMD_REG(      rrf,          '\0',     " i ch - read robo float"  );
+DCL_CMD_REG(      cap_wi,       '\0',     " i ch vi - write cap int"  );
+DCL_CMD_REG(      cap_wf,       '\0',     " i ch vf - write cap float"  );
+DCL_CMD_REG(      cap_ri,       '\0',     " i ch - read cap int"  );
+DCL_CMD_REG(      cap_rf,       '\0',     " i ch - read cap float"  );
+DCL_CMD_REG(      robo_wi,      '\0',     " i ch vi - write robo int"  );
+DCL_CMD_REG(      robo_wf,      '\0',     " i ch vf - write robo float"  );
+DCL_CMD_REG(      robo_ri,      '\0',     " i ch - read robo int"  );
+DCL_CMD_REG(      robo_rf,      '\0',     " i ch - read robo float"  );
 DCL_CMD_REG(      measure,      'M',      " i - measure robo"  );
 DCL_CMD_REG(      commit,       'C',      " i - commit robo"  );
-DCL_CMD_REG(      list_ob,      'L',      " - list objects"  );
-DCL_CMD_REG(      init,         '\0',     " - init"  );
-DCL_CMD_REG(      outf,         'F',      " i_och v - output to float ch"  );
-DCL_CMD_REG(      inf,          'I',      " read all float ch"  );
+DCL_CMD_REG(      list_ob,      'L',      " - list robo objects"  );
+DCL_CMD_REG(      init,         '\0',     " - init robo objects"  );
+DCL_CMD_REG(      out_cf,       'F',      " i_och v - output to float ch"  );
+DCL_CMD_REG(      in_cf,        'I',      " [idx] read float ch /all"  );
 DCL_CMD_REG(      prt,          '\0',     " print tim info"  );
 
 // -------------------------------------------------------------------------------------
@@ -165,6 +163,8 @@ InChFI     ic_adcint_adc_1( adcint_adc_rd, 1, tri_adcint_adc );
 InChFI     ic_adcint_adc_2( adcint_adc_rd, 2, tri_adcint_adc );
 InChFI     ic_adcint_adc_3( adcint_adc_rd, 3, tri_adcint_adc );
 
+InChIConst ic_iconst( 42 );
+
 // ------------------------ - Channels and transforms end ; ---------------------------------------
 
 
@@ -183,7 +183,7 @@ IoCapability* caps[] {
   &as5600_enco_d,  // 5
 };
 
-IoRoboCapability* rcaps[] {
+IoRoboCapability* robo_caps[] {
   &pin1_rd,          // 0
   &pin2_rd,          // 1
   &pini_rd,          // 2
@@ -196,6 +196,8 @@ IoRoboCapability* rcaps[] {
   &as5600_enco_rd,   // 9
   &adcint_adc_rd,    // 10
 };
+
+std::span<IoRoboCapability*> global_robo_caps { robo_caps };
 
 RoboObject* robo_objs[] {
   &pin1_rd,          // 0
@@ -211,7 +213,9 @@ RoboObject* robo_objs[] {
   &adcint_adc_rd,    // 10
 };
 
-OutChFBase* outchfs[] {
+std::span<RoboObject*> global_robo_objs { robo_objs };
+
+OutChFBase* channels_out_f[] {
   &oc_pin1,               // 0
   &oc_pin2,               // 1
   &oc_pins,               // 2
@@ -222,7 +226,16 @@ OutChFBase* outchfs[] {
   &oc_mpwm_freq,          // 7
 };
 
-InChFBase* inchfs[] {
+std::span<OutChFBase*> global_channels_out_f { channels_out_f };
+
+OutChIBase* channels_out_i[] {
+  &oc_mpwm_l,             // 0
+  &oc_mpwm_r,             // 1
+};
+
+std::span<OutChIBase*> global_channels_out_i { channels_out_i };
+
+InChFBase* channels_in_f[] {
   &ic_pin1,            // 0
   &ic_pin2,            // 1
   &ic_pins,            // 2
@@ -235,6 +248,14 @@ InChFBase* inchfs[] {
   &ic_adcint_adc_2,    // 9
   &ic_adcint_adc_3,    // 10
 };
+
+std::span<InChFBase*>  global_channels_in_f { channels_in_f };
+
+InChIBase* channels_in_i[] {
+  &ic_iconst,          // 0
+};
+
+std::span<InChIBase*>  global_channels_in_i { channels_in_i };
 
 
 RoboJoint fake_joint;
@@ -414,7 +435,7 @@ void test_pins_hd()
 
 }
 
-CMD_FUNCTION( wci )
+CMD_FUNCTION( cap_wi  )
 {
   auto idx = arg2ulong_d( 1, argc, argv, 0, 0, std::size(caps)-1 );
   auto ch  = arg2ulong_d( 2, argc, argv, 0 );
@@ -425,7 +446,7 @@ CMD_FUNCTION( wci )
 }
 
 
-CMD_FUNCTION( wcf )
+CMD_FUNCTION( cap_wf )
 {
   auto idx = arg2ulong_d( 1, argc, argv, 0, 0, std::size(caps)-1 );
   auto ch  = arg2ulong_d( 2, argc, argv, 0 );
@@ -436,7 +457,7 @@ CMD_FUNCTION( wcf )
 }
 
 
-CMD_FUNCTION( rci )
+CMD_FUNCTION( cap_ri )
 {
   auto idx = arg2ulong_d( 1, argc, argv, 0, 0, std::size(caps)-1 );
   auto ch  = arg2ulong_d( 2, argc, argv, 0 );
@@ -449,7 +470,7 @@ CMD_FUNCTION( rci )
   return 0;
 }
 
-CMD_FUNCTION( rcf )
+CMD_FUNCTION( cap_rf )
 {
   auto idx = arg2ulong_d( 1, argc, argv, 0, 0, std::size(caps)-1 );
   auto ch  = arg2ulong_d( 2, argc, argv, 0 );
@@ -464,41 +485,41 @@ CMD_FUNCTION( rcf )
 
 
 
-CMD_FUNCTION( wri )
+CMD_FUNCTION( robo_wi )
 {
-  auto idx = arg2ulong_d( 1, argc, argv, 0, 0, std::size(rcaps)-1 );
+  auto idx = arg2ulong_d( 1, argc, argv, 0, 0, std::size(robo_caps)-1 );
   auto ch  = arg2ulong_d( 2, argc, argv, 0 );
   int32_t vi  = arg2long_d(  3, argc, argv, 0 );
-  auto rc = rcaps[idx]->setVal( ch, vi );
+  auto rc = robo_caps[idx]->setVal( ch, vi );
   std_out << "# rc= " << rc.code << ' ' << rc.data << NL;
   if( UVAR_a ) {
-    rc = rcaps[idx]->commit();
+    rc = robo_caps[idx]->commit();
     std_out << "# rc= " << rc.code << ' ' << rc.data << NL;
   }
   return 0;
 }
 
 
-CMD_FUNCTION( wrf )
+CMD_FUNCTION( robo_wf )
 {
-  auto idx = arg2ulong_d( 1, argc, argv, 0, 0, std::size(rcaps)-1 );
+  auto idx = arg2ulong_d( 1, argc, argv, 0, 0, std::size(robo_caps)-1 );
   auto ch  = arg2ulong_d( 2, argc, argv, 0 );
   float vf = arg2float_d( 3, argc, argv, 0 );
-  auto rc = rcaps[idx]->setValF( ch, vf );
+  auto rc = robo_caps[idx]->setValF( ch, vf );
   std_out << "# rc= " << rc.code << ' ' << rc.data << NL;
   if( UVAR_a ) {
-    rc = rcaps[idx]->commit();
+    rc = robo_caps[idx]->commit();
     std_out << "# rc= " << rc.code << ' ' << rc.data << NL;
   }
   return 0;
 }
 
 
-CMD_FUNCTION( rri )
+CMD_FUNCTION( robo_ri )
 {
-  auto idx = arg2ulong_d( 1, argc, argv, 0, 0, std::size(rcaps)-1 );
+  auto idx = arg2ulong_d( 1, argc, argv, 0, 0, std::size(robo_caps)-1 );
   auto ch  = arg2ulong_d( 2, argc, argv, 0 );
-  auto r = rcaps[idx]->getVal( ch );
+  auto r = robo_caps[idx]->getVal( ch );
   if( r ) {
     std_out << "# val= " << r.value() << NL;
   } else {
@@ -507,11 +528,11 @@ CMD_FUNCTION( rri )
   return 0;
 }
 
-CMD_FUNCTION( rrf )
+CMD_FUNCTION( robo_rf )
 {
-  auto idx = arg2ulong_d( 1, argc, argv, 0, 0, std::size(rcaps)-1 );
+  auto idx = arg2ulong_d( 1, argc, argv, 0, 0, std::size(robo_caps)-1 );
   auto ch  = arg2ulong_d( 2, argc, argv, 0 );
-  auto r = rcaps[idx]->getValF( ch );
+  auto r = robo_caps[idx]->getValF( ch );
   if( r ) {
     std_out << "# val= " << r.value() << NL;
   } else {
@@ -523,7 +544,7 @@ CMD_FUNCTION( rrf )
 CMD_FUNCTION( measure )
 {
   auto idx = arg2ulong_d( 1, argc, argv, 100000, 0 ); // all by default
-  auto rc = ( idx >= std::size(rcaps) ) ? robo.measure_all() : rcaps[idx]->measure();
+  auto rc = ( idx >= std::size(robo_caps) ) ? robo.measure_all() : robo_caps[idx]->measure();
   std_out << "# rc= " << rc.code << ' ' << rc.data << NL;
   return 0;
 }
@@ -531,12 +552,12 @@ CMD_FUNCTION( measure )
 CMD_FUNCTION( commit )
 {
   auto idx = arg2ulong_d( 1, argc, argv, 100000, 0 ); // all by default
-  auto rc = ( idx >= std::size(rcaps) ) ? robo.commit_all() : rcaps[idx]->commit();
+  auto rc = ( idx >= std::size(robo_caps) ) ? robo.commit_all() : robo_caps[idx]->commit();
   std_out << "# rc= " << rc.code << ' ' << rc.data << NL;
   return 0;
 }
 
-CMD_FUNCTION( list_ob )
+CMD_FUNCTION( list_ob ) // L
 {
   for( auto [i,pob] : std::views::enumerate( robo_objs ) ) {
     std_out << i << ' ' << pob->getId() << ' ' << pob->getStatus() << ' ' << pob->getDirty()
@@ -552,11 +573,11 @@ CMD_FUNCTION( init )
   return 0;
 }
 
-CMD_FUNCTION( outf )
+CMD_FUNCTION( out_cf ) // F
 {
-  auto idx = arg2ulong_d( 1, argc, argv, 0, 0, std::size(outchfs)-1 );
+  auto idx = arg2ulong_d( 1, argc, argv, 0, 0, std::size(channels_out_f)-1 );
   float v  = arg2float_d( 2, argc, argv, 0 );
-  outchfs[idx]->out( v );
+  channels_out_f[idx]->out( v );
   if( UVAR_a ) {
     robo.commit_all();
   }
@@ -564,10 +585,20 @@ CMD_FUNCTION( outf )
 }
 
 
-CMD_FUNCTION( inf )
+CMD_FUNCTION( in_cf )
 {
   robo.measure_all();
-  for( auto [i,pich] : std::views::enumerate( inchfs ) ) {
+  auto idx = arg2long_d( 1, argc, argv, -1, -1, std::size(channels_in_f)-1 );
+
+  // single channel
+  if( idx > 0 ) {
+    auto v = channels_in_f[idx]->in();
+    std_out << idx << ' ' << v << NL;
+    return 0;
+  }
+
+  // all channels
+  for( auto [i,pich] : std::views::enumerate( channels_in_f ) ) {
     auto v = pich->in();
     std_out << i << ' ' << v << NL;
   }

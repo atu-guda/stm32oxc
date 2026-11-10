@@ -23,10 +23,14 @@ USE_OXC_TIM = y
 
 SRCS += main.cpp
 SRCS += oxc_floatfun.cpp
-SRCS += oxc_pwmctltim.cpp
-SRCS += oxc_robo_base.cpp
 
-SRCS += oxc_actu_dcpwm.cpp
+SRCS += oxc_capabilities.cpp
+SRCS += oxc_robocaps.cpp
+
+SRCS += oxc_robo_base.cpp
+SRCS += oxc_tim_pwm_d.cpp
+SRCS += oxc_adcint_adc_d.cpp
+
 
 # SRCS += oxc_debug_cmds.cpp
 
