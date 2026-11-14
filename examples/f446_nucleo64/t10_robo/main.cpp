@@ -49,15 +49,10 @@ I2C_HandleTypeDef i2ch;
 DevI2C i2cd( &i2ch, 0 );
 AS5600 as5600_sens( i2cd );
 
-// ------------ ADC
-ADC_HandleTypeDef hadc_sensor;
-DMA_HandleTypeDef hdma_adc_sensor;
-ADC_Info adc_s1 ( ADC_SENSOR, ADC_SENSOR_CHPINS );
 
+// ------------------------ Devices: capabilities ---------------------------------------
 
-// ------------------------ Devices: capabilities ; ---------------------------------------
-
-Gpio_Pin_Dev      pin1_hd( PC10 );
+Gpio_Pin_Dev      pin1_hd( PC10 ); // TODO: to header
 PinCapability     pin1_d(  pin1_hd );
 PinRoboCapability pin1_rd( pin1_hd, 100 );
 
@@ -98,13 +93,12 @@ EncoderCapability  as5600_enco_d( as5600_enco_hd );
 EncoderRoboCapability as5600_enco_rd( as5600_enco_hd, 800 );
 constexpr int32_t as5600_zero { 2739 }; // Beware: mech-dependent constant
 
-Adcint_Adc_Dev adcint_adc_hd( adc_s1, ADC_SENSOR_N_CH, ADC_resol_to_bits( ADC_SENSOR_Resolution ), 100 );
+Adcint_Adc_Dev adcint_adc_hd( adc_sensor, ADC_SENSOR_N_CH, ADC_resol_to_bits( ADC_SENSOR_Resolution ), 100 );
 AdcRoboCapability adcint_adc_rd(adcint_adc_hd, 900 );
 
 
-// ------------------------ - Channels and transforms ; ---------------------------------------
-// output
-// TODO: channel names
+// ------------------------ - Channels and transforms ---------------------------------------
+// output TODO: channel names
 
 TransFILin tro_pin1( 0.1f, -1.0f );
 OutChFI    oc_pin1( pin1_rd, PinRoboCapability::ch_write, tro_pin1 );
@@ -120,8 +114,10 @@ OutChFSplit2 oc_split( oc_pin1, oc_pin2, globalTransFFUnity );
 OutChFF    oc_mpwm_duty(  mpwm_rd, PwmRoboCapability::ch0_pwm,   globalTransFFUnity );
 OutChFF    oc_mpwm_pulse( mpwm_rd, PwmRoboCapability::ch0_pulse, globalTransFFUnity );
 OutChFF    oc_mpwm_freq(  mpwm_rd, PwmRoboCapability::ch_freq,   globalTransFFUnity );
-OutChII    oc_mpwm_l( pin_mpwm_l_rd, PinRoboCapability::ch_write, globalTransIIUnity );
-OutChII    oc_mpwm_r( pin_mpwm_r_rd, PinRoboCapability::ch_write, globalTransIIUnity );
+OutChII    oci_mpwm_l( pin_mpwm_l_rd, PinRoboCapability::ch_write, globalTransIIUnity );
+OutChII    oci_mpwm_r( pin_mpwm_r_rd, PinRoboCapability::ch_write, globalTransIIUnity );
+
+OutChINull oci_null;
 
 TransFFLinLim tro_rad2pulse( 2.0e-3f/pi_f, 1.5e-3f, 0.5e-3f, 2.5e-3f ); // angle +/ pi/2 -> 500-2500 μs
 OutChFF    oc_servolwm_rad2pulse( servolwm_rd, PwmRoboCapability::ch0_pulse, tro_rad2pulse );
@@ -132,7 +128,7 @@ InChFI     ic_pin1( pin1_rd, PinRoboCapability::ch_read, tri_pin1 );
 InChII     ici_pin1( pin1_rd, PinRoboCapability::ch_read, globalTransIIUnity );
 
 TransIFLin tri_pin2( 0.1f, -2.0f );
-InChFI     ic_pin2( pin2_rd, PinRoboCapability::ch_read, tri_pin2 );
+InChFI     ic_pin2(  pin2_rd, PinRoboCapability::ch_read, tri_pin2 );
 InChII     ici_pin2( pin2_rd, PinRoboCapability::ch_read, globalTransIIUnity );
 
 TransIFLin tri_pins( 1.1f, 0.01f );
@@ -154,9 +150,10 @@ InChFI     ic_adcint_adc_1( adcint_adc_rd, 1, tri_adcint_adc );
 InChFI     ic_adcint_adc_2( adcint_adc_rd, 2, tri_adcint_adc );
 InChFI     ic_adcint_adc_3( adcint_adc_rd, 3, tri_adcint_adc );
 
+//   input int
 InChIConst ic_iconst( 42 );
 
-// ------------------------ - Channels and transforms end ; ---------------------------------------
+// ------------------------ Channels and transforms end ---------------------------------------
 
 
 Gpio_Pin_Dev* hw_pin[] {
@@ -220,8 +217,9 @@ OutChFBase* channels_out_f[] {
 std::span<OutChFBase*> oxc::global_channels_out_f { channels_out_f };
 
 OutChIBase* channels_out_i[] {
-  &oc_mpwm_l,             // 0
-  &oc_mpwm_r,             // 1
+  &oci_mpwm_l,             // 0
+  &oci_mpwm_r,             // 1
+  &oci_null,               // 2
 };
 
 std::span<OutChIBase*> oxc::global_channels_out_i { channels_out_i };
@@ -331,8 +329,8 @@ ReturnCode init_hw_all()
   as5600_enco_hd.setStartPos( as5600_zero );
 
   // TODO: move to device
-  adc_s1.prepare_multi_ev( ADC_SENSOR_N_CH, ADC_SENSOR_ClockPrescaler, ADC_SENSOR_SAMPLETIME, ADC_SOFTWARE_START, ADC_SENSOR_Resolution );
-  adc_s1.init_common();
+  adc_sensor.prepare_multi_ev( ADC_SENSOR_N_CH, ADC_SENSOR_ClockPrescaler, ADC_SENSOR_SAMPLETIME, ADC_SOFTWARE_START, ADC_SENSOR_Resolution );
+  adc_sensor.init_common();
 
   return robo.init_all();
 }
@@ -490,66 +488,10 @@ CMD_FUNCTION( prt )
   tim_print_cfg( TIM_SERVOLWM_BASE );
   delay_ms( 100 );
   std_out << "# AS5600: " << as5600_sens.getAngleNoTurn() << NL;
-  adc_s1.pr_state();
+  adc_sensor.pr_state();
   return 0;
 }
 
-
-// ------------------------ ADC -------------------------------
-// arch-dependent part: TODO: move
-
-void HAL_ADC_MspInit( ADC_HandleTypeDef* adcHandle )
-{
-  if( adcHandle->Instance != ADC_SENSOR ) {
-    return;
-  }
-  ADC_SENSOR_CLK_EN();
-  ADC_SENSOR_DMA_CLK_EN();
-
-  adc_s1.init_gpio_channels();
-  adc_s1.DMA_reinit( DMA_NORMAL );
-
-  HAL_NVIC_SetPriority( ADC_SENSOR_DMA_IRQ, ADC_SENSOR_DMA_IRQ_PRTY, 0 );
-  HAL_NVIC_EnableIRQ(   ADC_SENSOR_DMA_IRQ );
-  // UVAR_x = 1;
-}
-
-void HAL_ADC_MspDeInit( ADC_HandleTypeDef* adcHandle )
-{
-  if( adcHandle->Instance != ADC_SENSOR ) {
-    return;
-  }
-  ADC_SENSOR_CLK_DIS();
-  ADC_SENSOR_DMA_CLK_DIS();
-}
-
-void HAL_ADC_ConvHalfCpltCallback( ADC_HandleTypeDef *hadc )
-{
-  // leds[1].set();
-  // adc_s1.convHalfCpltCallback( hadc );
-}
-
-
-void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc )
-{
-  // leds[1].set();
-  // ++UVAR_i;
-  adc_s1.convCpltCallback( hadc );
-}
-
-void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc )
-{
-  // leds[0].set();
-  // ++UVAR_j;
-  adc_s1.errorCallback( hadc );
-}
-
-void BOARD_ADC_DMA_IRQHANDLER(void)
-{
-  // leds[0].set();
-  // ++UVAR_k;
-  HAL_DMA_IRQHandler( &adc_s1.hdma_adc );
-}
 
 
 

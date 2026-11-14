@@ -1,28 +1,33 @@
 #include <climits>
+
 #include <oxc_auto.h>
 #include <oxc_floatfun.h>
-#include <oxc_pwmctltim.h>
-
 #include <oxc_main.h>
 
-#include <oxc_actu_servo_lwm.h>
-#include <oxc_sensor_adcint.h>
+#include <oxc_robo_base.h>
 
+// #include <oxc_gpio_pin_d.h>
+// #include <oxc_gpio_pins_d.h>
+
+// #include <oxc_addr_enco_d.h>
+// #include <oxc_as5600_enco_d.h>
+
+#include <oxc_tim_pwm_d.h>
+
+#include <oxc_adcint_adc_d.h>
 
 #include <board_robo_cfg.h>
 
+
 using namespace oxc;
 using namespace SMLRL;
-
-using std::begin;
-using std::end;
 
 USE_DIE4LED_ERROR_HANDLER;
 BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
-const char* common_help_string = "Appication to test LWM servo" NL;
+const char* common_help_string = "Appication to test LWM servo robo iface" NL;
 
 // --- local commands;
 DCL_CMD_REG(      test0,  'T',     " [arg ] - test something"  );
@@ -30,40 +35,85 @@ DCL_CMD_REG(      tinfo,  'P',     " print info"  );
 DCL_CMD_REG(    setfreq,  'F',     " Hz - set freq"  );
 DCL_CMD_REG(      pulse,  'U',     " []- test pulse in us"  );
 DCL_CMD_REG(       setX,  'X',     " x [t_us] - set x"  );
-DCL_CMD_REG(    testADC,  'A',     " test ADC"  ); // TODO: remove
 
 
+// -------------------------------------------------------------------------------------
 
 ReturnCode init_hw_all();
 
-void idle_main_task()
-{
-  leds.toggle( 1_mask );
-}
+// ------------------------ low-level devices -------------------------------------------
 
-
-
-TIM_HandleTypeDef tim_servolwm_h;
-constinit PwmCtlTim pwm1( TIM_SERVOLWM_BASE, tim_SERVOLWM_chspins, tim_servolwm_h );
-RoboPwmCtl pwm1_ctl( 111, pwm1 );
-LinearCoordTransform q0_act_coord_tr { pi_f/2, 0 }; // TODO: coeff (mech dependent) to header
-ActuServoLWM q0_actu( pwm1_ctl, 0, q0_act_coord_tr );
-
+// ------------ ADC
 ADC_HandleTypeDef hadc_sensor;
 DMA_HandleTypeDef hdma_adc_sensor;
 ADC_Info adc_s1 ( ADC_SENSOR, ADC_SENSOR_CHPINS );
-const constexpr uint32_t adc_n_ch = std::size( ADC_SENSOR_CHPINS ) - 1;
-uint16_t adc_buf[ adc_n_ch ];
-const uint32_t unsigned stime_idx = adc_arch_sampletimes_n - 2;
-SensorAdcInt sensor_adc1( 121, adc_s1, 10, ADC_SENSOR_ClockPrescaler, adc_arch_sampletimes[stime_idx].code, ADC_SENSOR_Resolution );
-LinearCoordTransform q0_sens_tr { 2 * pi_f / sensor_adc1.getScale(0), -pi_f };
-SensorBase q0_sens( sensor_adc1, 0, q0_sens_tr );
 
-RoboDevice* hw_robo_devs[] {
-  &pwm1_ctl,
-  &sensor_adc1,
 
+// ------------------------ Devices: capabilities ---------------------------------------
+
+
+TIM_HandleTypeDef  tim_servolwm_h;
+Tim_Pwm_Dev        servolwm_hd( TIM_SERVOLWM_BASE, tim_SERVOLWM_chspins, tim_servolwm_h, 0xFFFF );
+float              servolwm_io[3*6];
+PwmRoboCapability  servolwm_rd( servolwm_hd, 1, servolwm_io, 600 );
+
+Adcint_Adc_Dev adcint_adc_hd( adc_s1, ADC_SENSOR_N_CH, ADC_resol_to_bits( ADC_SENSOR_Resolution ), 100 );
+AdcRoboCapability adcint_adc_rd(adcint_adc_hd, 900 );
+
+
+// ------------------------ - Channels and transforms ; ---------------------------------------
+// output
+
+
+TransFFLinLim tro_rad2pulse( 2.0e-3f/pi_f, 1.5e-3f, 0.5e-3f, 2.5e-3f ); // angle +/ pi/2 -> 500-2500 μs
+OutChFF    oc_servolwm_rad2pulse( servolwm_rd, PwmRoboCapability::ch0_pulse, tro_rad2pulse );
+
+// input
+TransIFLin tri_adcint_adc( 9.2129e-4f, -1.861f ); // TODO: mech-dependent value
+InChFI     ic_adcint_adc_0( adcint_adc_rd, 0, tri_adcint_adc );
+
+// ------------------------ - Channels and transforms end ; ---------------------------------------
+
+
+IoRoboCapability* robo_caps[] {
+  &servolwm_rd,      // 0
+  &adcint_adc_rd,    // 1
 };
+
+std::span<IoRoboCapability*> oxc::global_robo_caps { robo_caps };
+
+RoboObject* robo_objs[] {
+  &servolwm_rd,      // 0
+  &adcint_adc_rd,    // 1
+};
+
+std::span<RoboObject*> oxc::global_robo_objs { robo_objs };
+
+OutChFBase* channels_out_f[] {
+  &oc_servolwm_rad2pulse, // 0
+  // &oc_mpwm_freq,          // 7 ??????????
+};
+
+std::span<OutChFBase*> oxc::global_channels_out_f { channels_out_f };
+
+OutChIBase* channels_out_i[] {
+  // &oc_mpwm_l,             // 0
+  // &oc_mpwm_r,             // 1
+};
+
+std::span<OutChIBase*> oxc::global_channels_out_i { channels_out_i };
+
+InChFBase* channels_in_f[] {
+  &ic_adcint_adc_0,    // 7
+};
+
+std::span<InChFBase*>  oxc::global_channels_in_f { channels_in_f };
+
+InChIBase* channels_in_i[] {
+};
+
+std::span<InChIBase*>  oxc::global_channels_in_i { channels_in_i };
+
 
 RoboJoint fake_joint;
 
@@ -71,7 +121,16 @@ RoboJoint* robo_joints[] {
   &fake_joint,
 };
 
-RoboAssembly robo( hw_robo_devs, robo_joints );
+RoboAssembly robo( robo_objs, robo_joints );
+
+RoboAssembly& oxc::global_robo{ robo };
+
+
+void idle_main_task()
+{
+  leds.toggle( 1_mask );
+}
+
 
 
 int main(void)
@@ -85,12 +144,16 @@ int main(void)
   UVAR_r = 1000; // t_run,  ms, def
   UVAR_o =  500; // t_post, ms
 
-  init_hw_all();
-
+  if( ! init_hw_all().isOk() ) {
+    std_out << "# Error: HW init" << NL;
+    die4led( 1_mask );
+  };
 
   BOARD_POST_INIT_BLINK;
 
-  oxc_add_aux_tick_fun( led_task_nortos );
+  // oxc_add_aux_tick_fun( led_task_nortos ); // tmp disable to test leds
+
+  robo.start_time();
 
   std_main_loop_nortos( &srl, idle_main_task );
 
@@ -99,13 +162,15 @@ int main(void)
 
 ReturnCode init_hw_all()
 {
-  // q0:
-  auto [ psc_i, arr_i ] = calc_tim_psc_arr( get_TIM_in_freq( TIM_SERVOLWM_BASE ), SERVOLWM_FREQ );
-  pwm1.setAllowPSCadj( true );
-  tim_servolwm_h.Instance = TIM_SERVOLWM;
-  pwm1.setHardParams( psc_i, arr_i, TIM_COUNTERMODE_UP );
-  pwm1.setPwm( 0, 0 );
-  pwm1.enable();
+  TIM_SERVOLWM_CLKEN();
+  servolwm_hd.initHW();
+  servolwm_hd.setFreq( SERVOLWM_FREQ );
+  servolwm_hd.enable();
+
+
+  // TODO: move to device
+  adc_s1.prepare_multi_ev( ADC_SENSOR_N_CH, ADC_SENSOR_ClockPrescaler, ADC_SENSOR_SAMPLETIME, ADC_SOFTWARE_START, ADC_SENSOR_Resolution );
+  adc_s1.init_common();
 
   return robo.init_all();
 }
@@ -118,7 +183,7 @@ CMD_FUNCTION( test0 )
   float pwm_v = arg2float_d( 1, argc, argv, 0.5f, 0.0f, 1.0f );
   int v0 = arg2long_d( 2, argc, argv,  UVAR_v, INT_MIN, INT_MAX );
 
-  pwm1.setPwm( 0, pwm_v );
+  // pwm1.setPwm( 0, pwm_v );
 
   return v0;
 }
@@ -127,7 +192,7 @@ CMD_FUNCTION( tinfo ) // P
 {
   tim_print_cfg( TIM_SERVOLWM_BASE );
 
-  std_out << "# freq:  "  << pwm1.getFreq() << NL;
+  // std_out << "# freq:  "  << pwm1.getFreq() << NL;
 
   dump32( (void*)TIM_SERVOLWM_BASE, 0x60 );
 
@@ -138,9 +203,9 @@ CMD_FUNCTION( setfreq ) // F
 {
   auto freq = arg2float_d( 1, argc, argv, 1, 0.01f );
 
-  pwm1.setFreq( freq );
+  // pwm1.setFreq( freq );
 
-  std_out << "# freq: " << freq << " => " << pwm1.getFreq() << NL;
+  std_out << "# freq: " << freq << " => " << /* pwm1.getFreq() <<*/ NL;
 
   return 0;
 }
@@ -148,8 +213,8 @@ CMD_FUNCTION( setfreq ) // F
 CMD_FUNCTION( pulse ) // U
 {
   uint32_t pu = arg2ulong_d( 1, argc, argv, 0 );
-  pwm1.setPulse( 0, pu );
-  std_out << '#' << pu << ' ' << pwm1.getPwmRaw( 0 ) << NL;
+  // pwm1.setPulse( 0, pu );
+  // std_out << '#' << pu << ' ' << pwm1.getPwmRaw( 0 ) << NL;
 
   tim_print_cfg( TIM_SERVOLWM_BASE );
 
@@ -176,13 +241,13 @@ ReturnCode run_x_loop( const RunLoopState &rls, const RunLoopData &rld, void *da
   float x = ( ( rls.stage & RunLoopState::stage_num_mask ) == 1 ) ? d->x : 0;
 
   if( rls.stage & RunLoopState::stage_change_flag  ) {
-    q0_actu.setQ( x );
+    // q0_actu.setQ( x );
     robo.commit_all();
   }
 
-  std_out << FmtInt( rls.tc, 8 ) << ' '  << x << ' ' << pwm1.getPwmRaw( 0 )
-    << ' ' << q0_actu.get_q_int() << ' ' << q0_actu.get_q_phy()
-    << ' ' << sensor_adc1.get(0) << ' ' << r2d( q0_sens.get() )
+  std_out << FmtInt( rls.tc, 8 ) << ' '  << x << ' ' // << pwm1.getPwmRaw( 0 )
+    // << ' ' << q0_actu.get_q_int() << ' ' << q0_actu.get_q_phy()
+    // << ' ' << sensor_adc1.get(0) << ' ' << r2d( q0_sens.get() )
     << NL;
 
   return rcOk;
@@ -200,27 +265,13 @@ CMD_FUNCTION( setX ) // X
   auto rc = run_periodic( rld, run_x_loop, &d );
 
   if( UVAR_l ) {
-    q0_actu.idle();
+    // q0_actu.idle();
     robo.commit_all();
   }
 
   return rc.isOk() ? 0 : 2;
 }
 
-CMD_FUNCTION( testADC ) // A
-{
-  if( UVAR_l ) {  leds[2].set(); }
-  auto rc = sensor_adc1.measure();
-  if( UVAR_l ) {  leds[2].reset(); }
-
-  const auto n_ch = sensor_adc1.size();
-  for( decltype(+n_ch) ch = 0; ch <n_ch; ++ch ) {
-    std_out << sensor_adc1.get( ch ) << ' ';
-  }
-  std_out << r2d( q0_sens.get() ) << NL;
-
-  return rc.isOk() ? 0 : 2;
-}
 
 
 // ------------------------ ADC -------------------------------
@@ -277,22 +328,4 @@ void BOARD_ADC_DMA_IRQHANDLER(void)
 
 
 
-
-// ------------------- TIM callbacks+init --------------------------
-
-void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim )
-{
-  if( htim->Instance == TIM_SERVOLWM ) {
-    TIM_SERVOLWM_CLKEN();
-    return;
-  }
-}
-
-void HAL_TIM_PWM_MspDeInit( TIM_HandleTypeDef* htim )
-{
-  if( htim->Instance == TIM_SERVOLWM ) {
-    TIM_SERVOLWM_CLKDIS();
-    return;
-  }
-}
 
