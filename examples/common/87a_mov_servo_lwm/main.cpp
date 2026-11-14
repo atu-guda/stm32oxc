@@ -43,11 +43,6 @@ ReturnCode init_hw_all();
 
 // ------------------------ low-level devices -------------------------------------------
 
-// ------------ ADC
-ADC_HandleTypeDef hadc_sensor;
-DMA_HandleTypeDef hdma_adc_sensor;
-ADC_Info adc_s1 ( ADC_SENSOR, ADC_SENSOR_CHPINS );
-
 
 // ------------------------ Devices: capabilities ---------------------------------------
 
@@ -57,22 +52,28 @@ Tim_Pwm_Dev        servolwm_hd( TIM_SERVOLWM_BASE, tim_SERVOLWM_chspins, tim_ser
 float              servolwm_io[3*6];
 PwmRoboCapability  servolwm_rd( servolwm_hd, 1, servolwm_io, 600 );
 
-Adcint_Adc_Dev adcint_adc_hd( adc_s1, ADC_SENSOR_N_CH, ADC_resol_to_bits( ADC_SENSOR_Resolution ), 100 );
-AdcRoboCapability adcint_adc_rd(adcint_adc_hd, 900 );
+ADC_Info adc_sensor ( ADC_SENSOR, ADC_SENSOR_CHPINS );
+Adcint_Adc_Dev adcint_adc_hd( adc_sensor, ADC_SENSOR_N_CH, ADC_resol_to_bits( ADC_SENSOR_Resolution ), 100 );
+AdcRoboCapability adcint_adc_rd( adcint_adc_hd, 900 );
 
 
-// ------------------------ - Channels and transforms ; ---------------------------------------
+// ------------------------ Channels and transforms ---------------------------------------
 // output
-
 
 TransFFLinLim tro_rad2pulse( 2.0e-3f/pi_f, 1.5e-3f, 0.5e-3f, 2.5e-3f ); // angle +/ pi/2 -> 500-2500 μs
 OutChFF    oc_servolwm_rad2pulse( servolwm_rd, PwmRoboCapability::ch0_pulse, tro_rad2pulse );
 
+OutChINull oci_null;
+
 // input
 TransIFLin tri_adcint_adc( 9.2129e-4f, -1.861f ); // TODO: mech-dependent value
 InChFI     ic_adcint_adc_0( adcint_adc_rd, 0, tri_adcint_adc );
+InChII     ic_adcint_adc_0i( adcint_adc_rd, 0, globalTransIIUnity );
 
-// ------------------------ - Channels and transforms end ; ---------------------------------------
+//   input int
+InChIConst ici_const( 42 );
+
+// ------------------------ Channels and transforms end ---------------------------------------
 
 
 IoRoboCapability* robo_caps[] {
@@ -97,7 +98,7 @@ OutChFBase* channels_out_f[] {
 std::span<OutChFBase*> oxc::global_channels_out_f { channels_out_f };
 
 OutChIBase* channels_out_i[] {
-  // &oc_mpwm_l,             // 0
+  &oci_null,                 // 0
   // &oc_mpwm_r,             // 1
 };
 
@@ -110,6 +111,8 @@ InChFBase* channels_in_f[] {
 std::span<InChFBase*>  oxc::global_channels_in_f { channels_in_f };
 
 InChIBase* channels_in_i[] {
+  &ici_const,          // 0
+  &ic_adcint_adc_0i,   // 1
 };
 
 std::span<InChIBase*>  oxc::global_channels_in_i { channels_in_i };
@@ -168,9 +171,7 @@ ReturnCode init_hw_all()
   servolwm_hd.enable();
 
 
-  // TODO: move to device
-  adc_s1.prepare_multi_ev( ADC_SENSOR_N_CH, ADC_SENSOR_ClockPrescaler, ADC_SENSOR_SAMPLETIME, ADC_SOFTWARE_START, ADC_SENSOR_Resolution );
-  adc_s1.init_common();
+  adc_sensor_init();
 
   return robo.init_all();
 }
@@ -195,6 +196,8 @@ CMD_FUNCTION( tinfo ) // P
   // std_out << "# freq:  "  << pwm1.getFreq() << NL;
 
   dump32( (void*)TIM_SERVOLWM_BASE, 0x60 );
+
+  adc_sensor.pr_state();
 
   return 0;
 }
@@ -271,61 +274,6 @@ CMD_FUNCTION( setX ) // X
 
   return rc.isOk() ? 0 : 2;
 }
-
-
-
-// ------------------------ ADC -------------------------------
-// arch-dependent part
-
-void HAL_ADC_MspInit( ADC_HandleTypeDef* adcHandle )
-{
-  if( adcHandle->Instance != ADC_SENSOR ) {
-    return;
-  }
-  ADC_SENSOR_CLK_EN();
-  ADC_SENSOR_DMA_CLK_EN();
-
-  adc_s1.init_gpio_channels();
-  adc_s1.DMA_reinit( DMA_NORMAL );
-
-  HAL_NVIC_SetPriority( ADC_SENSOR_DMA_IRQ, ADC_SENSOR_DMA_IRQ_PRTY, 0 );
-  HAL_NVIC_EnableIRQ(   ADC_SENSOR_DMA_IRQ );
-}
-
-void HAL_ADC_MspDeInit( ADC_HandleTypeDef* adcHandle )
-{
-  if( adcHandle->Instance != ADC_SENSOR ) {
-    return;
-  }
-  ADC_SENSOR_CLK_DIS();
-  ADC_SENSOR_DMA_CLK_DIS();
-}
-
-void HAL_ADC_ConvHalfCpltCallback( ADC_HandleTypeDef *hadc )
-{
-  // leds[1].set();
-  // adc_s1.convHalfCpltCallback( hadc );
-}
-
-
-void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc )
-{
-  // leds[1].set();
-  adc_s1.convCpltCallback( hadc );
-}
-
-void HAL_ADC_ErrorCallback( ADC_HandleTypeDef *hadc )
-{
-  // leds[0].set();
-  adc_s1.errorCallback( hadc );
-}
-
-void BOARD_ADC_DMA_IRQHANDLER(void)
-{
-  // leds[0].set();
-  HAL_DMA_IRQHandler( &adc_s1.hdma_adc );
-}
-
 
 
 

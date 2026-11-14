@@ -42,6 +42,7 @@ inline const constexpr uint32_t ADC_SENSOR_N_CH = std::size( ADC_SENSOR_CHPINS )
 extern ADC_HandleTypeDef hadc_sensor;
 extern DMA_HandleTypeDef hdma_adc_sensor;
 extern ADC_Info adc_sensor;
+ReturnCode adc_sensor_init();
 inline constexpr uint32_t  ADC_SENSOR_SAMPLETIME      { ADC_SAMPLETIME_144CYCLES };
 inline constexpr uint32_t  ADC_SENSOR_ClockPrescaler  { ADC_CLOCK_SYNC_PCLK_DIV4 };
 inline constexpr uint32_t  ADC_SENSOR_Resolution      { ADC_RESOLUTION_12B };

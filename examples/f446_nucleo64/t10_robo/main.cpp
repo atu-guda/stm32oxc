@@ -93,6 +93,7 @@ EncoderCapability  as5600_enco_d( as5600_enco_hd );
 EncoderRoboCapability as5600_enco_rd( as5600_enco_hd, 800 );
 constexpr int32_t as5600_zero { 2739 }; // Beware: mech-dependent constant
 
+ADC_Info adc_sensor ( ADC_SENSOR, ADC_SENSOR_CHPINS ); // here: need correct "data" init
 Adcint_Adc_Dev adcint_adc_hd( adc_sensor, ADC_SENSOR_N_CH, ADC_resol_to_bits( ADC_SENSOR_Resolution ), 100 );
 AdcRoboCapability adcint_adc_rd(adcint_adc_hd, 900 );
 
@@ -151,7 +152,7 @@ InChFI     ic_adcint_adc_2( adcint_adc_rd, 2, tri_adcint_adc );
 InChFI     ic_adcint_adc_3( adcint_adc_rd, 3, tri_adcint_adc );
 
 //   input int
-InChIConst ic_iconst( 42 );
+InChIConst ici_const( 42 );
 
 // ------------------------ Channels and transforms end ---------------------------------------
 
@@ -241,7 +242,7 @@ InChFBase* channels_in_f[] {
 std::span<InChFBase*>  oxc::global_channels_in_f { channels_in_f };
 
 InChIBase* channels_in_i[] {
-  &ic_iconst,          // 0
+  &ici_const,          // 0
   &ici_pin1,           // 1
   &ici_pin2,           // 2
 };
@@ -325,12 +326,11 @@ ReturnCode init_hw_all()
   i2c_default_init( i2ch /*, 400000 */ );
   i2c_dbg = &i2cd;
   i2c_client_def = &as5600_sens;
+  // TODO: to bsp
   as5600_sens.setCfg( AS5600::CfgBits::cfg_pwr_mode_nom |  AS5600::CfgBits::cfg_hyst_off );
   as5600_enco_hd.setStartPos( as5600_zero );
 
-  // TODO: move to device
-  adc_sensor.prepare_multi_ev( ADC_SENSOR_N_CH, ADC_SENSOR_ClockPrescaler, ADC_SENSOR_SAMPLETIME, ADC_SOFTWARE_START, ADC_SENSOR_Resolution );
-  adc_sensor.init_common();
+  adc_sensor_init();
 
   return robo.init_all();
 }

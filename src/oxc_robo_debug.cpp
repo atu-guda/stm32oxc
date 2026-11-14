@@ -28,11 +28,13 @@ CMD_FUNCTION( robo_wi )
   auto idx = arg2ulong_d( 1, argc, argv, 0, 0, oxc::global_robo_caps.size()-1 );
   auto ch  = arg2ulong_d( 2, argc, argv, 0 );
   int32_t vi  = arg2long_d(  3, argc, argv, 0 );
+  auto no_commit = arg2long_d( 4, argc, argv, 0 );
   auto rc = global_robo_caps[idx]->setVal( ch, vi );
-  std_out << "# rc= " << rc.code << ' ' << rc.data << NL;
-  if( UVAR_a ) {
+  std_out << "# idx= " << idx << " ch= " << ch
+          << " rc= " << rc.code << ' ' << rc.data << NL;
+  if( !no_commit ) {
     rc = global_robo_caps[idx]->commit();
-    std_out << "# rc= " << rc.code << ' ' << rc.data << NL;
+    std_out << "# commit rc= " << rc.code << ' ' << rc.data << NL;
   }
   return 0;
 }
@@ -43,11 +45,13 @@ CMD_FUNCTION( robo_wf )
   auto idx = arg2ulong_d( 1, argc, argv, 0, 0, oxc::global_robo_caps.size()-1 );
   auto ch  = arg2ulong_d( 2, argc, argv, 0 );
   float vf = arg2float_d( 3, argc, argv, 0 );
+  auto no_commit = arg2long_d( 4, argc, argv, 0 );
   auto rc = global_robo_caps[idx]->setValF( ch, vf );
-  std_out << "# rc= " << rc.code << ' ' << rc.data << NL;
-  if( UVAR_a ) {
+  std_out << "# idx= " << idx << " ch= " << ch
+          << " rc= " << rc.code << ' ' << rc.data << NL;
+  if( !no_commit ) {
     rc = global_robo_caps[idx]->commit();
-    std_out << "# rc= " << rc.code << ' ' << rc.data << NL;
+    std_out << "# commit rc= " << rc.code << ' ' << rc.data << NL;
   }
   return 0;
 }
@@ -58,10 +62,11 @@ CMD_FUNCTION( robo_ri )
   auto idx = arg2ulong_d( 1, argc, argv, 0, 0, oxc::global_robo_caps.size()-1 );
   auto ch  = arg2ulong_d( 2, argc, argv, 0 );
   auto r = global_robo_caps[idx]->getVal( ch );
+  std_out << "# idx= " << idx << " ch= " << ch;
   if( r ) {
-    std_out << "# val= " << r.value() << NL;
+    std_out << " val= " << r.value() << NL;
   } else {
-    std_out << "# eer " << r.error().code << NL;
+    std_out << " err " << r.error().code << NL;
   }
   return 0;
 }
@@ -71,10 +76,11 @@ CMD_FUNCTION( robo_rf )
   auto idx = arg2ulong_d( 1, argc, argv, 0, 0, oxc::global_robo_caps.size()-1 );
   auto ch  = arg2ulong_d( 2, argc, argv, 0 );
   auto r = global_robo_caps[idx]->getValF( ch );
+  std_out << "# idx= " << idx << " ch= " << ch;
   if( r ) {
-    std_out << "# val= " << r.value() << NL;
+    std_out << " val= " << r.value() << NL;
   } else {
-    std_out << "# eer " << r.error().code << NL;
+    std_out << " err " << r.error().code << NL;
   }
   return 0;
 }
@@ -83,7 +89,7 @@ CMD_FUNCTION( robo_meas )
 {
   auto idx = arg2ulong_d( 1, argc, argv, 1000000, 0 ); // all by default
   auto rc = ( idx >= global_robo_objs.size() ) ? global_robo.measure_all() : global_robo_objs[idx]->measure();
-  std_out << "# rc= " << rc.code << ' ' << rc.data << NL;
+  std_out << "# rc= " << rc.code << ' ' << rc.data << " idx= " << idx << NL;
   return 0;
 }
 
@@ -91,7 +97,7 @@ CMD_FUNCTION( robo_co )
 {
   auto idx = arg2ulong_d( 1, argc, argv, 1000000, 0 ); // all by default
   auto rc = ( idx >= global_robo_objs.size() ) ? global_robo.commit_all() : global_robo_objs[idx]->commit();
-  std_out << "# rc= " << rc.code << ' ' << rc.data << NL;
+  std_out << "# rc= " << rc.code << ' ' << rc.data << " idx= " << idx << NL;
   return 0;
 }
 
@@ -118,6 +124,7 @@ CMD_FUNCTION( out_cf ) // F
   float v  = arg2float_d( 2, argc, argv, 0 );
   auto no_commit = arg2long_d( 3, argc, argv, 0 );
   global_channels_out_f[idx]->out( v );
+  std_out << "# idx= " << idx << " v= " << v << NL;
   if( !no_commit ) {
     global_robo.commit_all();
   }
@@ -130,6 +137,7 @@ CMD_FUNCTION( out_ci )
   int32_t v  = arg2long_d( 2, argc, argv, 0 );
   auto no_commit = arg2long_d( 3, argc, argv, 0 );
   global_channels_out_i[idx]->out( v );
+  std_out << "# idx= " << idx << " v= " << v << NL;
   if( !no_commit ) {
     global_robo.commit_all();
   }
@@ -143,7 +151,7 @@ CMD_FUNCTION( in_cf )
   auto idx = arg2ulong_d( 1, argc, argv, 1000000, 1000000, oxc::global_channels_in_f.size()-1 );
 
   // single channel
-  if( idx >= oxc::global_channels_in_f.size() ) {
+  if( idx <= oxc::global_channels_in_f.size() ) {
     auto v = global_channels_in_f[idx]->in();
     std_out << idx << ' ' << v << NL;
     return 0;
@@ -163,7 +171,7 @@ CMD_FUNCTION( in_ci )
   auto idx = arg2ulong_d( 1, argc, argv, 1000000, 1000000, oxc::global_channels_in_i.size()-1 );
 
   // single channel
-  if( idx >= oxc::global_channels_in_i.size() ) {
+  if( idx <= oxc::global_channels_in_i.size() ) {
     auto v = oxc::global_channels_in_i[idx]->in();
     std_out << idx << ' ' << v << NL;
     return 0;
