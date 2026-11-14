@@ -67,7 +67,7 @@ OutChINull oci_null;
 
 // input
 TransIFLin tri_adcint_adc( 9.2129e-4f, -1.861f ); // TODO: mech-dependent value
-InChFI     ic_adcint_adc_0( adcint_adc_rd, 0, tri_adcint_adc );
+InChFI     ic_adcint_adc_0(  adcint_adc_rd, 0, tri_adcint_adc );
 InChII     ic_adcint_adc_0i( adcint_adc_rd, 0, globalTransIIUnity );
 
 //   input int
@@ -185,7 +185,7 @@ CMD_FUNCTION( test0 )
   float pwm_v = arg2float_d( 1, argc, argv, 0.5f, 0.0f, 1.0f );
   int v0 = arg2long_d( 2, argc, argv,  UVAR_v, INT_MIN, INT_MAX );
 
-  // pwm1.setPwm( 0, pwm_v );
+  servolwm_hd.setDuty( 0, pwm_v );
 
   return v0;
 }
@@ -193,8 +193,6 @@ CMD_FUNCTION( test0 )
 CMD_FUNCTION( tinfo ) // P
 {
   tim_print_cfg( TIM_SERVOLWM_BASE );
-
-  // std_out << "# freq:  "  << pwm1.getFreq() << NL;
 
   dump32( (void*)TIM_SERVOLWM_BASE, 0x60 );
 
@@ -207,18 +205,22 @@ CMD_FUNCTION( setfreq ) // F
 {
   auto freq = arg2float_d( 1, argc, argv, 1, 0.01f );
 
-  // pwm1.setFreq( freq );
+  // servolwm_hd.setFreq( freq );
+  servolwm_rd.setValF( PwmRoboCapability::ch_freq, freq );
+  robo.commit_all();
 
-  std_out << "# freq: " << freq << " => " << /* pwm1.getFreq() <<*/ NL;
+  std_out << "# freq: " << freq << " => " << servolwm_hd.getFreq().value_or( 0.0f ) << NL;
 
   return 0;
 }
 
 CMD_FUNCTION( pulse ) // U
 {
-  uint32_t pu = arg2ulong_d( 1, argc, argv, 0 );
-  // pwm1.setPulse( 0, pu );
-  // std_out << '#' << pu << ' ' << pwm1.getPwmRaw( 0 ) << NL;
+  float pu = arg2float_d( 1, argc, argv, 0 );
+
+  //servolwm_hd.setPulse( 0, pu );
+  servolwm_rd.setValF( PwmRoboCapability::ch0_pulse, pu );
+  robo.commit_all();
 
   tim_print_cfg( TIM_SERVOLWM_BASE );
 
@@ -245,14 +247,13 @@ ReturnCode run_x_loop( const RunLoopState &rls, const RunLoopData &rld, void *da
   float x = ( ( rls.stage & RunLoopState::stage_num_mask ) == 1 ) ? d->x : 0;
 
   if( rls.stage & RunLoopState::stage_change_flag  ) {
-    // q0_actu.setQ( x );
+    channels_out_f[0]->out( x );
     robo.commit_all();
   }
 
-  std_out << FmtInt( rls.tc, 8 ) << ' '  << x << ' ' // << pwm1.getPwmRaw( 0 )
-    // << ' ' << q0_actu.get_q_int() << ' ' << q0_actu.get_q_phy()
-    // << ' ' << sensor_adc1.get(0) << ' ' << r2d( q0_sens.get() )
-    << NL;
+  float x_m = channels_in_f[0]->in();
+
+  std_out << FmtInt( rls.tc, 8 ) << ' '  << x << ' ' << x_m << NL;
 
   return rcOk;
 }
@@ -261,15 +262,15 @@ ReturnCode run_x_loop( const RunLoopState &rls, const RunLoopData &rld, void *da
 CMD_FUNCTION( setX ) // X
 {
   struct Data_setX d;
-  d.x = arg2float_d( 1, argc, argv, 0 );
+  d.x = arg2float_d( 1, argc, argv, 0, -1.57f, 1.57f );
   auto t_run = arg2ulong_d( 2, argc, argv, UVAR_r, 0 );
 
   RunLoopData rld( UVAR_t, UVAR_p, t_run, UVAR_o );
 
   auto rc = run_periodic( rld, run_x_loop, &d );
 
-  if( UVAR_l ) {
-    // q0_actu.idle();
+  if( UVAR_l ) { // unbreak
+    servolwm_rd.setValF( 0, 0.0f );
     robo.commit_all();
   }
 
