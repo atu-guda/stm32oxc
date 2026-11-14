@@ -6,7 +6,7 @@ using namespace oxc;
 
 ADC_HandleTypeDef hadc_sensor;
 DMA_HandleTypeDef hdma_adc_sensor;
-// ADC_Info adc_sensor ( ADC_SENSOR, ADC_SENSOR_CHPINS );
+ADC_Info adc_sensor ( ADC_SENSOR, ADC_SENSOR_CHPINS );
 
 ReturnCode adc_sensor_init()
 {

@@ -52,7 +52,7 @@ Tim_Pwm_Dev        servolwm_hd( TIM_SERVOLWM_BASE, tim_SERVOLWM_chspins, tim_ser
 float              servolwm_io[3*6];
 PwmRoboCapability  servolwm_rd( servolwm_hd, 1, servolwm_io, 600 );
 
-ADC_Info adc_sensor ( ADC_SENSOR, ADC_SENSOR_CHPINS );
+// ADC_Info adc_sensor ( ADC_SENSOR, ADC_SENSOR_CHPINS );
 Adcint_Adc_Dev adcint_adc_hd( adc_sensor, ADC_SENSOR_N_CH, ADC_resol_to_bits( ADC_SENSOR_Resolution ), 100 );
 AdcRoboCapability adcint_adc_rd( adcint_adc_hd, 900 );
 
@@ -171,6 +171,7 @@ ReturnCode init_hw_all()
   servolwm_hd.enable();
 
 
+  adcint_adc_hd.init();
   adc_sensor_init();
 
   return robo.init_all();
