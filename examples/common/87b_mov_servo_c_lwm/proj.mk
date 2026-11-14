@@ -22,12 +22,19 @@ USE_OXC_TIM = y
 # NOUSE_DEFAULT_UART_INIT = y
 
 SRCS += main.cpp
-SRCS += oxc_floatfun.cpp
-SRCS += oxc_pwmctltim.cpp
-SRCS += oxc_robo_base.cpp
 
-SRCS += oxc_actu_servo_lwm_base.cpp
-SRCS += oxc_sensor_encoder.cpp
+SRCS += oxc_floatfun.cpp
+
+SRCS += oxc_capabilities.cpp
+SRCS += oxc_robocaps.cpp
+SRCS += oxc_robo_debug.cpp
+
+SRCS += oxc_robo_base.cpp
+SRCS += oxc_tim_pwm_d.cpp
+#SRCS += oxc_adcint_adc_d.cpp
+
+#SRCS += oxc_robo_bsp_adc.cpp
+
 
 # SRCS += oxc_debug_cmds.cpp
 
