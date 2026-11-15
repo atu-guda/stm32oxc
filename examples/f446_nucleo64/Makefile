@@ -74,6 +74,9 @@ SUBDIRS = \
   61_modbus_rtu_server \
   62_modbus_rd6006 \
   80_math_stat \
+  87_mov_pwmctltim \
+  87a_mov_servo_lwm \
+  87b_mov_servo_c_lwm \
   l03_motor_fb \
   l04_wheels1 \
   l06_dro02 \
