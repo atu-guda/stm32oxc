@@ -10,7 +10,7 @@
 // #include <oxc_gpio_pins_d.h>
 
 // #include <oxc_addr_enco_d.h>
-// #include <oxc_as5600_enco_d.h>
+#include <oxc_as5600_enco_d.h>
 
 #include <oxc_tim_pwm_d.h>
 
@@ -35,7 +35,7 @@ DCL_CMD_REG(      tinfo,  'P',     " print info"  );
 DCL_CMD_REG(    setfreq,  'F',     " Hz - set freq"  );
 DCL_CMD_REG(      pulse,  'U',     " []- test pulse in us"  );
 DCL_CMD_REG(       setV,  'V',     " v [t_us] - set v"  );
-// DCL_CMD_REG(     setRef,  'Z',     " [v] - set [zero] encoder value"  );
+DCL_CMD_REG(     setRef,  'Z',     " [v] - set [zero] encoder value"  );
 
 
 // -------------------------------------------------------------------------------------
@@ -43,6 +43,10 @@ DCL_CMD_REG(       setV,  'V',     " v [t_us] - set v"  );
 ReturnCode init_hw_all();
 
 // ------------------------ low-level devices -------------------------------------------
+
+I2C_HandleTypeDef i2ch;
+DevI2C i2cd( &i2ch, 0 );
+AS5600 as5600_sens( i2cd );
 
 
 // ------------------------ Devices: capabilities ---------------------------------------
@@ -58,9 +62,9 @@ PinRoboCapability pin_mpwm_l_rd( pin_mpwm_l_hd, 501 );
 Gpio_Pin_Dev      pin_mpwm_r_hd( MPWM_CtlPin_R );
 PinRoboCapability pin_mpwm_r_rd( pin_mpwm_r_hd, 502 );
 
-// AS5600_Enco_Dev    as5600_enco_hd( as5600_sens, true );
-// EncoderRoboCapability as5600_enco_rd( as5600_enco_hd, 800 );
-// constexpr int32_t as5600_zero { 2739 }; // Beware: mech-dependent constant
+AS5600_Enco_Dev    as5600_enco_hd( as5600_sens, true );
+EncoderRoboCapability as5600_enco_rd( as5600_enco_hd, 800 );
+constexpr int32_t as5600_zero { 2739 }; // Beware: mech-dependent constant
 
 
 
@@ -79,8 +83,9 @@ OutChINull oci_null;
 
 InChFConst ic_const( 3.1415f );
 
-// TransIFLin tri_as5600_enco( 2*pi_f/AS5600::val2turn, 0 );
-// InChFI     ic_as5600_enco( as5600_enco_rd, EncoderRoboCapability::ch_pos, tri_as5600_enco );
+TransIFLin tri_as5600_enco( /* 2* */ pi_f/AS5600::val2turn, 0 );
+InChFI     ic_as5600_enco(   as5600_enco_rd, EncoderRoboCapability::ch_pos, tri_as5600_enco );
+InChFI     ic_as5600_enco_d( as5600_enco_rd, EncoderRoboCapability::ch_dlt, tri_as5600_enco );
 
 //   input int
 InChIConst ici_const( 42 );
@@ -92,7 +97,7 @@ IoRoboCapability* robo_caps[] {
   &mpwm_rd,          // 0
   &pin_mpwm_l_rd,    // 1
   &pin_mpwm_r_rd,    // 2
-  //&as5600_enco_rd,   // 3
+  &as5600_enco_rd,   // 3
 };
 
 std::span<IoRoboCapability*> oxc::global_robo_caps { robo_caps };
@@ -101,7 +106,7 @@ RoboObject* robo_objs[] {
   &mpwm_rd,          // 0
   &pin_mpwm_l_rd,    // 1
   &pin_mpwm_r_rd,    // 2
-  //&as5600_enco_rd,   // 3
+  &as5600_enco_rd,   // 3
 };
 
 std::span<RoboObject*> oxc::global_robo_objs { robo_objs };
@@ -124,7 +129,8 @@ std::span<OutChIBase*> oxc::global_channels_out_i { channels_out_i };
 
 InChFBase* channels_in_f[] {
   &ic_const,               // 0
-  // &ic_as5600_enco,      // 1
+  &ic_as5600_enco,         // 1
+  &ic_as5600_enco_d,       // 2
 };
 
 std::span<InChFBase*>  oxc::global_channels_in_f { channels_in_f };
@@ -193,12 +199,13 @@ ReturnCode init_hw_all()
   pin_mpwm_l_hd.initHW();
   pin_mpwm_r_hd.initHW();
 
-  // i2c_default_init( i2ch #<{(|, 400000 |)}># );
-  // i2c_dbg = &i2cd;
-  // i2c_client_def = &as5600_sens;
-  // // TODO: to bsp
-  // as5600_sens.setCfg( AS5600::CfgBits::cfg_pwr_mode_nom |  AS5600::CfgBits::cfg_hyst_off );
-  // as5600_enco_hd.setStartPos( as5600_zero );
+  i2c_default_init( i2ch /*, 400000 */ );
+  i2c_dbg = &i2cd;
+  i2c_client_def = &as5600_sens;
+  // TODO: to bsp
+  as5600_sens.setCfg( AS5600::CfgBits::cfg_pwr_mode_nom |  AS5600::CfgBits::cfg_hyst_off );
+  as5600_enco_hd.read();
+  as5600_enco_hd.setStartPos( as5600_zero );
 
   return robo.init_all();
 }
@@ -280,13 +287,13 @@ ReturnCode run_v_loop( const RunLoopState &rls, const RunLoopData &rld, void *da
     robo.commit_all();
   }
 
-  // float x_m    = channels_in_f[0]->in();
-  // float d_m    = channels_in_f[1]->in();
-  // float v_m    = d_m * 1.0e3f / rld.t_step;
+  float x_m    = channels_in_f[1]->in();
+  float d_x    = channels_in_f[2]->in();
+  float v_m    = d_x * 1.0e3f / rld.t_step;
   // int32_t x_mi = channels_in_i[1]->in();
 
-  std_out << FmtInt( rls.tc, 8 ) << ' '  << v
-    // << ' ' << v_m << ' ' << x_m << ' ' << d_m << ' ' << x_mi
+  std_out << FmtInt( rls.tc, 8 ) << ' '  << v << ' ' << x_m
+    << ' ' << v_m << ' ' << d_x
     << NL;
 
   return rcOk;
@@ -306,14 +313,14 @@ CMD_FUNCTION( setV ) // V
   return rc.isOk() ? 0 : 2;
 }
 
-// CMD_FUNCTION( setRef ) // Z
-// {
-//   std_out << "#  pre: " << tim_enco_hd.getStartPos() << ' ' << tim_enco_hd.getPos() << NL;
-//   auto nv = arg2long_d( 1, argc, argv, 0 );
-//   tim_enco_hd.setStartPos( nv - tim_enco_hd.getPosRaw() );
-//   std_out << "# post: " << tim_enco_hd.getStartPos() << ' ' << tim_enco_hd.getPos() << NL;
-//   return 0;
-// }
+CMD_FUNCTION( setRef ) // Z
+{
+  std_out << "#  pre: " <<  as5600_enco_hd.getStartPos() << ' ' << as5600_enco_hd.getPos() << NL;
+  auto nv = arg2long_d( 1, argc, argv, 0 );
+  as5600_enco_hd.setStartPos( nv - as5600_enco_hd.getPosRaw() );
+  std_out << "# post: " << as5600_enco_hd.getStartPos() << ' ' << as5600_enco_hd.getPos() << NL;
+  return 0;
+}
 
 
 
