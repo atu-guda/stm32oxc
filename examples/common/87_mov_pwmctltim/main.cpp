@@ -7,7 +7,7 @@
 #include <oxc_robo_base.h>
 
 #include <oxc_gpio_pin_d.h>
-//#include <oxc_gpio_pins_d.h>
+// #include <oxc_gpio_pins_d.h>
 
 // #include <oxc_addr_enco_d.h>
 // #include <oxc_as5600_enco_d.h>
@@ -27,42 +27,116 @@ BOARD_DEFINE_LEDS;
 
 BOARD_CONSOLE_DEFINES;
 
-const char* common_help_string = "Appication to test misc movers" NL;
+const char* common_help_string = "Appication to test PWM+2pin controlled DC motor" NL;
 
 // --- local commands;
 DCL_CMD_REG(      test0,  'T',     " [arg ] - test something"  );
 DCL_CMD_REG(      tinfo,  'P',     " print info"  );
 DCL_CMD_REG(    setfreq,  'F',     " Hz - set freq"  );
 DCL_CMD_REG(      pulse,  'U',     " []- test pulse in us"  );
-DCL_CMD_REG(       setV,  'V',     " v [t_us] - set v as robo"  );
-DCL_CMD_REG(     commit,  'C',     " commit all hw devices"  );
+DCL_CMD_REG(       setV,  'V',     " v [t_us] - set v"  );
+// DCL_CMD_REG(     setRef,  'Z',     " [v] - set [zero] encoder value"  );
 
+
+// -------------------------------------------------------------------------------------
 
 ReturnCode init_hw_all();
 
-void idle_main_task()
-{
-  leds.toggle( 1_mask );
-}
+// ------------------------ low-level devices -------------------------------------------
 
 
-TIM_HandleTypeDef tim_pwm_h;
+// ------------------------ Devices: capabilities ---------------------------------------
 
-constinit PwmCtlTim pwm1( TIM_MPWM_BASE, tim_MPWM_chspins, tim_pwm_h );
-RoboPwmCtl pwm1_ctl( 111, pwm1 );
 
-PinGpio pwm_left_pin{  MPWM_CtlPin_L  };
-PinGpio pwm_right_pin{ MPWM_CtlPin_R };
-RoboPin q0_pin_l{ 112, pwm_left_pin };
-RoboPin q0_pin_r{ 113, pwm_right_pin };
-LinearCoordTransform q0_coord_tr { 1.986f, 0 }; // TODO: coeff (mech dependent) to header
-ActuDcPwm_1P2D q0_actu( pwm1_ctl, 0, q0_pin_l, q0_pin_r, q0_coord_tr );
+TIM_HandleTypeDef  tim_mpwm_h;
+Tim_Pwm_Dev        mpwm_hd( TIM_MPWM_BASE, tim_MPWM_chspins, tim_mpwm_h, 0xFFFF ); // TODO: timer props
+float              mpwm_io[3*6];
+PwmRoboCapability  mpwm_rd( mpwm_hd, 1, mpwm_io, 500 );
+//
+Gpio_Pin_Dev      pin_mpwm_l_hd( MPWM_CtlPin_L );
+PinRoboCapability pin_mpwm_l_rd( pin_mpwm_l_hd, 501 );
+Gpio_Pin_Dev      pin_mpwm_r_hd( MPWM_CtlPin_R );
+PinRoboCapability pin_mpwm_r_rd( pin_mpwm_r_hd, 502 );
 
-RoboDevice* hw_robo_devs[] {
-  &q0_pin_l,
-  &q0_pin_r,
-  &pwm1_ctl,
+// AS5600_Enco_Dev    as5600_enco_hd( as5600_sens, true );
+// EncoderRoboCapability as5600_enco_rd( as5600_enco_hd, 800 );
+// constexpr int32_t as5600_zero { 2739 }; // Beware: mech-dependent constant
+
+
+
+// ------------------------ Channels and transforms ---------------------------------------
+// output
+
+OutChFF    oc_mpwm_duty(  mpwm_rd, PwmRoboCapability::ch0_pwm,   globalTransFFUnity );
+OutChFF    oc_mpwm_pulse( mpwm_rd, PwmRoboCapability::ch0_pulse, globalTransFFUnity );
+OutChFF    oc_mpwm_freq(  mpwm_rd, PwmRoboCapability::ch_freq,   globalTransFFUnity );
+OutChII    oci_mpwm_l( pin_mpwm_l_rd, PinRoboCapability::ch_write, globalTransIIUnity );
+OutChII    oci_mpwm_r( pin_mpwm_r_rd, PinRoboCapability::ch_write, globalTransIIUnity );
+
+OutChINull oci_null;
+
+// input
+
+InChFConst ic_const( 3.1415f );
+
+// TransIFLin tri_as5600_enco( 2*pi_f/AS5600::val2turn, 0 );
+// InChFI     ic_as5600_enco( as5600_enco_rd, EncoderRoboCapability::ch_pos, tri_as5600_enco );
+
+//   input int
+InChIConst ici_const( 42 );
+
+// ------------------------ Channels and transforms end ---------------------------------------
+
+
+IoRoboCapability* robo_caps[] {
+  &mpwm_rd,          // 0
+  &pin_mpwm_l_rd,    // 1
+  &pin_mpwm_r_rd,    // 2
+  //&as5600_enco_rd,   // 3
 };
+
+std::span<IoRoboCapability*> oxc::global_robo_caps { robo_caps };
+
+RoboObject* robo_objs[] {
+  &mpwm_rd,          // 0
+  &pin_mpwm_l_rd,    // 1
+  &pin_mpwm_r_rd,    // 2
+  //&as5600_enco_rd,   // 3
+};
+
+std::span<RoboObject*> oxc::global_robo_objs { robo_objs };
+
+OutChFBase* channels_out_f[] {
+  &oc_mpwm_duty,  // 0
+  &oc_mpwm_pulse, // 1
+  &oc_mpwm_freq,  // 2
+};
+
+std::span<OutChFBase*> oxc::global_channels_out_f { channels_out_f };
+
+OutChIBase* channels_out_i[] {
+  &oci_null,                 // 0
+  &oci_mpwm_l,               // 1
+  &oci_mpwm_r,               // 2
+};
+
+std::span<OutChIBase*> oxc::global_channels_out_i { channels_out_i };
+
+InChFBase* channels_in_f[] {
+  &ic_const,               // 0
+  // &ic_as5600_enco,      // 1
+};
+
+std::span<InChFBase*>  oxc::global_channels_in_f { channels_in_f };
+
+InChIBase* channels_in_i[] {
+  &ici_const,          // 0
+  // &ici_tim_enco,       // 1
+  //&ic_adcint_adc_0i,   // 2
+};
+
+std::span<InChIBase*>  oxc::global_channels_in_i { channels_in_i };
+
 
 RoboJoint fake_joint;
 
@@ -70,7 +144,16 @@ RoboJoint* robo_joints[] {
   &fake_joint,
 };
 
-RoboAssembly robo( hw_robo_devs, robo_joints );
+RoboAssembly robo( robo_objs, robo_joints );
+
+RoboAssembly& oxc::global_robo{ robo };
+
+
+void idle_main_task()
+{
+  leds.toggle( 1_mask );
+}
+
 
 
 int main(void)
@@ -84,12 +167,16 @@ int main(void)
   UVAR_r = 1000; // t_run,  ms, def
   UVAR_o =  500; // t_post, ms
 
-  init_hw_all();
-
+  if( ! init_hw_all().isOk() ) {
+    std_out << "# Error: HW init" << NL;
+    die4led( 1_mask );
+  };
 
   BOARD_POST_INIT_BLINK;
 
-  oxc_add_aux_tick_fun( led_task_nortos );
+  // oxc_add_aux_tick_fun( led_task_nortos ); // tmp disable to test leds
+
+  robo.start_time();
 
   std_main_loop_nortos( &srl, idle_main_task );
 
@@ -98,12 +185,20 @@ int main(void)
 
 ReturnCode init_hw_all()
 {
-  // q0:
-  auto [ psc_i, arr_i ] = calc_tim_psc_arr( get_TIM_in_freq( TIM_MPWM_BASE ), 20000 );
-  pwm1.setAllowPSCadj( true );
-  tim_pwm_h.Instance = TIM_MPWM;
-  pwm1.setHardParams( psc_i, arr_i, TIM_COUNTERMODE_UP );
-  pwm1.enable();
+
+  TIM_MPWM_CLKEN(); // TODO: auto
+  mpwm_hd.initHW();
+  mpwm_hd.setFreq( MPWM_FREQ );
+  mpwm_hd.enable();
+  pin_mpwm_l_hd.initHW();
+  pin_mpwm_r_hd.initHW();
+
+  // i2c_default_init( i2ch #<{(|, 400000 |)}># );
+  // i2c_dbg = &i2cd;
+  // i2c_client_def = &as5600_sens;
+  // // TODO: to bsp
+  // as5600_sens.setCfg( AS5600::CfgBits::cfg_pwr_mode_nom |  AS5600::CfgBits::cfg_hyst_off );
+  // as5600_enco_hd.setStartPos( as5600_zero );
 
   return robo.init_all();
 }
@@ -116,10 +211,8 @@ CMD_FUNCTION( test0 )
   float pwm_v = arg2float_d( 1, argc, argv, 0.5f, 0.0f, 1.0f );
   int v0 = arg2long_d( 2, argc, argv,  UVAR_v, INT_MIN, INT_MAX );
 
-  pwm1.setPwm( 0, pwm_v );
+  mpwm_hd.setDuty( 0, pwm_v );
 
-  pwm_left_pin.write(  v0 & 1 );
-  pwm_right_pin.write( v0 & 2 );
   return v0;
 }
 
@@ -127,9 +220,11 @@ CMD_FUNCTION( tinfo ) // P
 {
   tim_print_cfg( TIM_MPWM_BASE );
 
-  std_out << "# freq:  "  << pwm1.getFreq() << NL;
+  // dump32( (void*)TIM_MPWM_BASE, 0x60 );
 
-  dump32( (void*)TIM_MPWM_BASE, 0x60 );
+  // std_out << "# Encoder:  " << TIM_ENCO->CNT
+  //         <<  " hw:" << q0_sens_hw.get(0) << " log: " << q0_sens.get() <<NL;
+  // tim_print_cfg( TIM_ENCODER_BASE );
 
   return 0;
 }
@@ -138,23 +233,28 @@ CMD_FUNCTION( setfreq ) // F
 {
   auto freq = arg2float_d( 1, argc, argv, 1, 0.01f );
 
-  pwm1.setFreq( freq );
+  // mpwm_hd.setFreq( freq );
+  mpwm_rd.setValF( PwmRoboCapability::ch_freq, freq );
+  robo.commit_all();
 
-  std_out << "# freq: " << freq << " => " << pwm1.getFreq() << NL;
+  std_out << "# freq: " << freq << " => " << mpwm_hd.getFreq().value_or( 0.0f ) << NL;
 
   return 0;
 }
 
 CMD_FUNCTION( pulse ) // U
 {
-  uint32_t pu = arg2ulong_d( 1, argc, argv, 0 );
-  pwm1.setPulse( 0, pu );
-  std_out << '#' << pu << ' ' << pwm1.getPwmRaw( 0 ) << NL;
+  float pu = arg2float_d( 1, argc, argv, 0 );
+
+  //mpwm_hd.setPulse( 0, pu );
+  mpwm_rd.setValF( PwmRoboCapability::ch0_pulse, pu );
+  robo.commit_all();
 
   tim_print_cfg( TIM_MPWM_BASE );
 
   return 0;
 }
+
 
 struct Data_setV
 {
@@ -174,14 +274,19 @@ ReturnCode run_v_loop( const RunLoopState &rls, const RunLoopData &rld, void *da
   }
   float v = ( ( rls.stage & RunLoopState::stage_num_mask ) == 1 ) ? d->v : 0;
 
+
   if( rls.stage & RunLoopState::stage_change_flag  ) {
-    q0_actu.setV( v );
+    channels_out_f[0]->out( v );
     robo.commit_all();
   }
 
-  std_out << FmtInt( rls.tc, 8 ) << ' '  << v << ' ' << pwm1.getPwmRaw( 0 )
-    << ' ' << q0_actu.get_v_int() << ' ' << q0_actu.get_v_phy() << ' '
-    // << q0_sens_hw.get(0) << ' ' << r2d( q0_sens.get() )
+  // float x_m    = channels_in_f[0]->in();
+  // float d_m    = channels_in_f[1]->in();
+  // float v_m    = d_m * 1.0e3f / rld.t_step;
+  // int32_t x_mi = channels_in_i[1]->in();
+
+  std_out << FmtInt( rls.tc, 8 ) << ' '  << v
+    // << ' ' << v_m << ' ' << x_m << ' ' << d_m << ' ' << x_mi
     << NL;
 
   return rcOk;
@@ -198,41 +303,17 @@ CMD_FUNCTION( setV ) // V
 
   auto rc = run_periodic( rld, run_v_loop, &d );
 
-  if( UVAR_l ) {
-    q0_actu.idle();
-    robo.commit_all();
-  }
-
   return rc.isOk() ? 0 : 2;
 }
 
-CMD_FUNCTION( commit ) // C
-{
-  return robo.commit_all().isOk() ? 0: 2;
-}
+// CMD_FUNCTION( setRef ) // Z
+// {
+//   std_out << "#  pre: " << tim_enco_hd.getStartPos() << ' ' << tim_enco_hd.getPos() << NL;
+//   auto nv = arg2long_d( 1, argc, argv, 0 );
+//   tim_enco_hd.setStartPos( nv - tim_enco_hd.getPosRaw() );
+//   std_out << "# post: " << tim_enco_hd.getStartPos() << ' ' << tim_enco_hd.getPos() << NL;
+//   return 0;
+// }
 
 
-
-
-
-
-
-
-// -----------------------  timers init part ---------------
-
-void HAL_TIM_PWM_MspInit( TIM_HandleTypeDef* htim )
-{
-  if( htim->Instance == TIM_MPWM ) {
-    TIM_MPWM_CLKEN();
-    return;
-  }
-}
-
-void HAL_TIM_PWM_MspDeInit( TIM_HandleTypeDef* htim )
-{
-  if( htim->Instance == TIM_MPWM ) {
-    TIM_MPWM_CLKDIS();
-    return;
-  }
-}
 
