@@ -311,9 +311,9 @@ ReturnCode run_v_loop( const RunLoopState &rls, const RunLoopData &rld, void *da
   // auto d = static_cast<Data_setAlp*>(data);
 
   auto rc = robo.measure_all();
-  if( rc.isError() ) {
-    return rc;
-  }
+  // if( rc.isError() ) {
+  //   return rc;
+  // }
 
   float dbuf[2];
   uint32_t tc_i = std::max( rls.tc - rld.t_pre, 0_u32 );

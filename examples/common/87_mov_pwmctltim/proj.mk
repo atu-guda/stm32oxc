@@ -31,6 +31,7 @@ SRCS += oxc_robo_debug.cpp
 
 SRCS += oxc_robo_base.cpp
 SRCS += oxc_tim_pwm_d.cpp
+SRCS += oxc_motordir_1v2d_roboctl.cpp
 #SRCS += oxc_adcint_adc_d.cpp
 
 #SRCS += oxc_robo_bsp_adc.cpp

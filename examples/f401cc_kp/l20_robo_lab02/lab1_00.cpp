@@ -1,1 +1,1 @@
-lab1_00_atu.cpp
+labs/lab1_00_kizim.cpp

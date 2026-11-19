@@ -11,6 +11,7 @@
 
 // #include <oxc_addr_enco_d.h>
 #include <oxc_as5600_enco_d.h>
+#include <oxc_motordir_1v2d_roboctl.h>
 
 #include <oxc_tim_pwm_d.h>
 
@@ -90,7 +91,21 @@ InChFI     ic_as5600_enco_d( as5600_enco_rd, EncoderRoboCapability::ch_dlt, tri_
 //   input int
 InChIConst ici_const( 42 );
 
+// for motdir0
+//  in:
+InChFConst ic_motdir0_v( 0.1f );
+InChIConst ici_motdir0_brk( 0 );
+InChIConst ici_motdir0_idle( 0 );
+//  out:
+
 // ------------------------ Channels and transforms end ---------------------------------------
+
+// ------------------------ RoboCtl --------------------------------------------------
+
+MotorDir_1V2D_RoboCtl motdir0( ic_motdir0_v, ici_motdir0_idle, ici_motdir0_brk,
+       oc_mpwm_duty, oci_mpwm_l, oci_mpwm_r, 1000  );
+
+// ------------------------ RoboCtl end --------------------------------------------------
 
 
 IoRoboCapability* robo_caps[] {
@@ -98,6 +113,7 @@ IoRoboCapability* robo_caps[] {
   &pin_mpwm_l_rd,    // 1
   &pin_mpwm_r_rd,    // 2
   &as5600_enco_rd,   // 3
+  &motdir0,          // 4
 };
 
 std::span<IoRoboCapability*> oxc::global_robo_caps { robo_caps };
@@ -107,6 +123,7 @@ RoboObject* robo_objs[] {
   &pin_mpwm_l_rd,    // 1
   &pin_mpwm_r_rd,    // 2
   &as5600_enco_rd,   // 3
+  &motdir0,          // 4
 };
 
 std::span<RoboObject*> oxc::global_robo_objs { robo_objs };
@@ -131,14 +148,15 @@ InChFBase* channels_in_f[] {
   &ic_const,               // 0
   &ic_as5600_enco,         // 1
   &ic_as5600_enco_d,       // 2
+  &ic_motdir0_v,           // 3
 };
 
 std::span<InChFBase*>  oxc::global_channels_in_f { channels_in_f };
 
 InChIBase* channels_in_i[] {
   &ici_const,          // 0
-  // &ici_tim_enco,       // 1
-  //&ic_adcint_adc_0i,   // 2
+  &ici_motdir0_idle,   // 1
+  &ici_motdir0_brk,    // 2
 };
 
 std::span<InChIBase*>  oxc::global_channels_in_i { channels_in_i };
@@ -280,6 +298,8 @@ ReturnCode run_v_loop( const RunLoopState &rls, const RunLoopData &rld, void *da
     return rc;
   }
   float v = ( ( rls.stage & RunLoopState::stage_num_mask ) == 1 ) ? d->v : 0;
+
+  robo.think_all();
 
 
   if( rls.stage & RunLoopState::stage_change_flag  ) {
